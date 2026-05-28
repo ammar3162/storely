@@ -38,8 +38,9 @@ export default function LoginPage() {
   async function handleForgot(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true); setError('')
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: undefined
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: false }
     })
     if (error) { setError(error.message); setLoading(false); return }
     setSuccess('تم إرسال كود التحقق لبريدك الإلكتروني')
@@ -51,7 +52,7 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true); setError('')
     const { error } = await supabase.auth.verifyOtp({
-      email, token: otp, type: 'recovery'
+      email, token: otp, type: 'email'
     })
     if (error) { setError('الكود غير صحيح أو منتهي الصلاحية'); setLoading(false); return }
     setMode('newpass')
@@ -70,11 +71,11 @@ export default function LoginPage() {
   }
 
   const titles: Record<Mode, { title: string; sub: string; icon: string }> = {
-    login:    { title: 'أهلاً بعودتك',       sub: 'سجّل دخولك للمتابعة',          icon: '👋' },
-    register: { title: 'إنشاء حساب جديد',    sub: 'ابدأ إدارة مخزونك الآن',       icon: '🚀' },
-    forgot:   { title: 'نسيت كلمة المرور؟', sub: 'سنرسل كود التحقق لبريدك',      icon: '🔑' },
-    verify:   { title: 'أدخل كود التحقق',    sub: 'تحقق من بريدك الإلكتروني',     icon: '📧' },
-    newpass:  { title: 'كلمة مرور جديدة',    sub: 'اختر كلمة مرور قوية وآمنة',    icon: '🔒' },
+    login:    { title: 'أهلاً بعودتك',        sub: 'سجّل دخولك للمتابعة',        icon: '👋' },
+    register: { title: 'إنشاء حساب جديد',     sub: 'ابدأ إدارة مخزونك الآن',     icon: '🚀' },
+    forgot:   { title: 'نسيت كلمة المرور؟',  sub: 'سنرسل كود التحقق لبريدك',    icon: '🔑' },
+    verify:   { title: 'أدخل كود التحقق',     sub: 'تحقق من بريدك الإلكتروني',   icon: '📧' },
+    newpass:  { title: 'كلمة مرور جديدة',     sub: 'اختر كلمة مرور قوية وآمنة',  icon: '🔒' },
   }
 
   const inp: React.CSSProperties = {
@@ -82,6 +83,21 @@ export default function LoginPage() {
     borderRadius:12, fontSize:15, outline:'none', boxSizing:'border-box',
     background:'white', color:'#1e293b', fontFamily:'system-ui', fontWeight:500,
     transition:'border-color 0.2s'
+  }
+
+  const btnPrimary: React.CSSProperties = {
+    width:'100%', padding:'14px',
+    background:'linear-gradient(135deg,#667eea,#764ba2)',
+    color:'white', border:'none', borderRadius:12, fontSize:15, fontWeight:800,
+    cursor:'pointer', fontFamily:'system-ui',
+    boxShadow:'0 4px 14px rgba(102,126,234,0.4)',
+    marginBottom:12
+  }
+
+  const btnSecondary: React.CSSProperties = {
+    width:'100%', padding:'12px', background:'#f1f5f9', color:'#64748b',
+    border:'none', borderRadius:12, fontSize:14, fontWeight:600,
+    cursor:'pointer', fontFamily:'system-ui'
   }
 
   return (
@@ -93,8 +109,7 @@ export default function LoginPage() {
       <div style={{
         background:'white', borderRadius:24, padding:'40px 36px',
         width:'100%', maxWidth:440,
-        boxShadow:'0 25px 60px rgba(0,0,0,0.25)',
-        animation:'fadeIn 0.4s ease'
+        boxShadow:'0 25px 60px rgba(0,0,0,0.25)'
       }}>
         <style>{`
           @keyframes fadeIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
@@ -121,7 +136,7 @@ export default function LoginPage() {
           <p style={{fontSize:13,color:'#64748b',margin:0}}>{titles[mode].sub}</p>
         </div>
 
-        {/* Tabs — login/register فقط */}
+        {/* Tabs */}
         {(mode === 'login' || mode === 'register') && (
           <div style={{display:'flex',background:'#f1f5f9',borderRadius:12,padding:4,marginBottom:24,gap:4}}>
             {(['login','register'] as Mode[]).map(m => (
@@ -151,7 +166,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Login Form */}
+        {/* Login */}
         {mode === 'login' && (
           <form onSubmit={handleLogin}>
             <div style={{marginBottom:16}}>
@@ -168,19 +183,13 @@ export default function LoginPage() {
                 نسيت كلمة المرور؟
               </button>
             </div>
-            <button type="submit" disabled={loading} style={{
-              width:'100%',padding:'14px',
-              background:'linear-gradient(135deg,#667eea,#764ba2)',
-              color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:800,
-              cursor:'pointer',fontFamily:'system-ui',
-              boxShadow:'0 4px 14px rgba(102,126,234,0.4)'
-            }}>
+            <button type="submit" disabled={loading} style={btnPrimary}>
               {loading ? '⏳ جاري الدخول...' : 'دخول →'}
             </button>
           </form>
         )}
 
-        {/* Register Form */}
+        {/* Register */}
         {mode === 'register' && (
           <form onSubmit={handleRegister}>
             <div style={{marginBottom:16}}>
@@ -191,37 +200,25 @@ export default function LoginPage() {
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>كلمة المرور</label>
               <input type="password" placeholder="6 أحرف على الأقل" required value={password} onChange={e => setPassword(e.target.value)} style={inp} />
             </div>
-            <button type="submit" disabled={loading} style={{
-              width:'100%',padding:'14px',
-              background:'linear-gradient(135deg,#667eea,#764ba2)',
-              color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:800,
-              cursor:'pointer',fontFamily:'system-ui',
-              boxShadow:'0 4px 14px rgba(102,126,234,0.4)'
-            }}>
+            <button type="submit" disabled={loading} style={btnPrimary}>
               {loading ? '⏳ جاري الإنشاء...' : 'إنشاء الحساب →'}
             </button>
           </form>
         )}
 
-        {/* Forgot Password */}
+        {/* Forgot */}
         {mode === 'forgot' && (
           <form onSubmit={handleForgot}>
             <div style={{marginBottom:24}}>
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني</label>
               <input type="email" placeholder="example@email.com" required value={email} onChange={e => setEmail(e.target.value)} style={inp} />
             </div>
-            <button type="submit" disabled={loading} style={{
-              width:'100%',padding:'14px',
-              background:'linear-gradient(135deg,#667eea,#764ba2)',
-              color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:800,
-              cursor:'pointer',fontFamily:'system-ui',marginBottom:12
-            }}>
+            <button type="submit" disabled={loading} style={btnPrimary}>
               {loading ? '⏳ جاري الإرسال...' : '📧 إرسال كود التحقق'}
             </button>
-            <button type="button" onClick={() => { setMode('login'); setError(''); setSuccess('') }} style={{
-              width:'100%',padding:'12px',background:'#f1f5f9',color:'#64748b',
-              border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'
-            }}>← رجوع لتسجيل الدخول</button>
+            <button type="button" onClick={() => { setMode('login'); setError(''); setSuccess('') }} style={btnSecondary}>
+              ← رجوع لتسجيل الدخول
+            </button>
           </form>
         )}
 
@@ -233,22 +230,16 @@ export default function LoginPage() {
             </div>
             <div style={{marginBottom:24}}>
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>كود التحقق</label>
-              <input type="text" placeholder="أدخل الكود المكون من 6 أرقام" required value={otp}
+              <input type="text" placeholder="أدخل الكود" required value={otp}
                 onChange={e => setOtp(e.target.value)}
                 style={{...inp,textAlign:'center',fontSize:22,fontWeight:800,letterSpacing:8}} />
             </div>
-            <button type="submit" disabled={loading} style={{
-              width:'100%',padding:'14px',
-              background:'linear-gradient(135deg,#667eea,#764ba2)',
-              color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:800,
-              cursor:'pointer',fontFamily:'system-ui',marginBottom:12
-            }}>
+            <button type="submit" disabled={loading} style={btnPrimary}>
               {loading ? '⏳ جاري التحقق...' : '✅ تحقق من الكود'}
             </button>
-            <button type="button" onClick={() => { setMode('forgot'); setError(''); setSuccess('') }} style={{
-              width:'100%',padding:'12px',background:'#f1f5f9',color:'#64748b',
-              border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'
-            }}>← إعادة إرسال الكود</button>
+            <button type="button" onClick={() => { setMode('forgot'); setError(''); setSuccess('') }} style={btnSecondary}>
+              ← إعادة إرسال الكود
+            </button>
           </form>
         )}
 
@@ -260,12 +251,7 @@ export default function LoginPage() {
               <input type="password" placeholder="6 أحرف على الأقل" required value={newPass}
                 onChange={e => setNewPass(e.target.value)} style={inp} />
             </div>
-            <button type="submit" disabled={loading} style={{
-              width:'100%',padding:'14px',
-              background:'linear-gradient(135deg,#667eea,#764ba2)',
-              color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:800,
-              cursor:'pointer',fontFamily:'system-ui'
-            }}>
+            <button type="submit" disabled={loading} style={btnPrimary}>
               {loading ? '⏳ جاري الحفظ...' : '🔒 حفظ كلمة المرور الجديدة'}
             </button>
           </form>
