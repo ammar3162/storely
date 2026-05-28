@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 
 'use client'
 import { useState, useEffect } from 'react'
@@ -45,7 +46,8 @@ export default function ReportsPage() {
       Number(p.vat_amount||0).toFixed(2),
       Number(p.total_incl_vat||0).toFixed(2)
     ])
-    const csv = '\ufeff' + [headers,...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n')
+    const csv = '﻿' + [headers,...rows].map(r => r.map(c => `"${c}"`).join(',')).join('
+')
     const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'})
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
@@ -228,4 +230,3 @@ export default function ReportsPage() {
     </div>
   )
 }
-export const dynamic = 'force-dynamic'
