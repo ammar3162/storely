@@ -132,3 +132,4 @@ export default function DispensesPage() {
     </div>
   )
 }
+export const dynamic = 'force-dynamic'
