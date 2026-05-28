@@ -10,13 +10,28 @@ export default function DashboardPage() {
   const [dispenses, setDispenses] = useState<any[]>([])
   const [loading, setLoading]     = useState(true)
   const [time, setTime]           = useState(new Date())
+  const [orgName, setOrgName]     = useState('')
   const supabase = createClient()
 
   useEffect(() => {
     loadAll()
+    loadOrgName()
     const t = setInterval(() => setTime(new Date()), 60000)
     return () => clearInterval(t)
   }, [])
+
+  async function loadOrgName() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data } = await supabase
+      .from('profiles')
+      .select('organizations(name)')
+      .eq('id', user.id)
+      .single()
+    if (data?.organizations) {
+      setOrgName((data.organizations as any).name || '')
+    }
+  }
 
   async function loadAll() {
     setLoading(true)
@@ -37,6 +52,7 @@ export default function DashboardPage() {
   const okStock    = products.length - lowStock.length
   const hour       = time.getHours()
   const greeting   = hour < 12 ? 'صباح الخير' : hour < 17 ? 'مساء الخير' : 'مساء النور'
+  const greetingFull = orgName ? `${greeting}، ${orgName} 👋` : `${greeting} 👋`
 
   if (loading) return (
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'70vh',flexDirection:'column',gap:20}}>
@@ -48,30 +64,61 @@ export default function DashboardPage() {
 
   return (
     <div style={{direction:'rtl',fontFamily:'system-ui',maxWidth:1100,margin:'0 auto'}}>
-      <div style={{background:'linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a78bfa 100%)',borderRadius:20,padding:'28px 32px',marginBottom:28,display:'flex',justifyContent:'space-between',alignItems:'center',boxShadow:'0 8px 32px rgba(99,102,241,0.3)',flexWrap:'wrap',gap:16}}>
+
+      {/* Header */}
+      <div style={{
+        background:'linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a78bfa 100%)',
+        borderRadius:20,padding:'28px 32px',marginBottom:28,
+        display:'flex',justifyContent:'space-between',alignItems:'center',
+        boxShadow:'0 8px 32px rgba(99,102,241,0.3)',flexWrap:'wrap',gap:16
+      }}>
         <div>
           <div style={{fontSize:13,color:'rgba(255,255,255,0.7)',fontWeight:600,marginBottom:6}}>
             {time.toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
           </div>
-          <h1 style={{fontSize:28,fontWeight:900,color:'white',margin:0}}>{greeting} 👋</h1>
-          <p style={{fontSize:14,color:'rgba(255,255,255,0.75)',margin:'6px 0 0',fontWeight:500}}>نظرة عامة على حالة مخزونك اليوم</p>
+          <h1 style={{fontSize:28,fontWeight:900,color:'white',margin:0,letterSpacing:'-0.5px'}}>
+            {greetingFull}
+          </h1>
+          <p style={{fontSize:14,color:'rgba(255,255,255,0.75)',margin:'6px 0 0',fontWeight:500}}>
+            نظرة عامة على حالة مخزونك اليوم
+          </p>
         </div>
-        <button onClick={loadAll} style={{padding:'10px 20px',background:'rgba(255,255,255,0.15)',color:'white',border:'1.5px solid rgba(255,255,255,0.3)',borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'system-ui'}}>🔄 تحديث</button>
+        <button onClick={loadAll} style={{
+          padding:'10px 20px',background:'rgba(255,255,255,0.15)',
+          color:'white',border:'1.5px solid rgba(255,255,255,0.3)',
+          borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'system-ui'
+        }}>🔄 تحديث</button>
       </div>
 
+      {/* Low stock alert */}
       {lowStock.length > 0 && (
-        <div style={{background:'linear-gradient(135deg,#fffbeb,#fef3c7)',border:'2px solid #fcd34d',borderRadius:16,padding:'16px 22px',marginBottom:24,display:'flex',alignItems:'center',gap:16}}>
+        <div style={{
+          background:'linear-gradient(135deg,#fffbeb,#fef3c7)',
+          border:'2px solid #fcd34d',borderRadius:16,
+          padding:'16px 22px',marginBottom:24,
+          display:'flex',alignItems:'center',gap:16
+        }}>
           <div style={{width:44,height:44,background:'#f59e0b',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>🔔</div>
           <div style={{flex:1}}>
-            <div style={{fontWeight:800,color:'#92400e',fontSize:15,marginBottom:4}}>تنبيه: {lowStock.length} صنف وصل للحد الأدنى!</div>
+            <div style={{fontWeight:800,color:'#92400e',fontSize:15,marginBottom:4}}>
+              تنبيه: {lowStock.length} صنف وصل للحد الأدنى!
+            </div>
             <div style={{fontSize:12,color:'#b45309',display:'flex',flexWrap:'wrap',gap:6}}>
-              {lowStock.map(p => <span key={p.id} style={{background:'rgba(245,158,11,0.15)',padding:'2px 10px',borderRadius:50,fontWeight:600}}>{p.name} ({p.qty})</span>)}
+              {lowStock.map(p => (
+                <span key={p.id} style={{background:'rgba(245,158,11,0.15)',padding:'2px 10px',borderRadius:50,fontWeight:600}}>
+                  {p.name} ({p.qty})
+                </span>
+              ))}
             </div>
           </div>
-          <Link href="/dashboard/inventory" style={{padding:'10px 20px',background:'#f59e0b',color:'white',borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none',flexShrink:0}}>طلب الآن</Link>
+          <Link href="/dashboard/inventory" style={{
+            padding:'10px 20px',background:'#f59e0b',color:'white',
+            borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none',flexShrink:0
+          }}>طلب الآن</Link>
         </div>
       )}
 
+      {/* Stats */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:16,marginBottom:28}}>
         {[
           {label:'قيمة المخزون الكلية',icon:'💰',value:totalValue.toLocaleString('ar-SA',{maximumFractionDigits:0})+' ﷼',sub:`${products.length} صنف مسجل`,color:'#6366f1',bg:'linear-gradient(135deg,#eef2ff,#e0e7ff)',border:'#c7d2fe'},
@@ -88,6 +135,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
+      {/* Quick Actions */}
       <div style={{marginBottom:28}}>
         <h2 style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:14}}>⚡ الإجراءات السريعة</h2>
         <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:14}}>
@@ -96,7 +144,12 @@ export default function DashboardPage() {
             {href:'/dashboard/dispenses',icon:'📤',label:'تسجيل صرف',desc:'خصم من المخزون',gradient:'linear-gradient(135deg,#ef4444,#dc2626)'},
             {href:'/dashboard/inventory',icon:'📦',label:'إدارة المخزون',desc:'عرض وتعديل الأصناف',gradient:'linear-gradient(135deg,#6366f1,#8b5cf6)'},
           ].map((q,i) => (
-            <Link key={i} href={q.href} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:10,padding:'24px 16px',background:q.gradient,borderRadius:16,textDecoration:'none',textAlign:'center'}}>
+            <Link key={i} href={q.href} style={{
+              display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+              gap:10,padding:'24px 16px',background:q.gradient,borderRadius:16,
+              textDecoration:'none',textAlign:'center',
+              boxShadow:'0 8px 24px rgba(0,0,0,0.15)'
+            }}>
               <div style={{fontSize:32}}>{q.icon}</div>
               <div style={{fontSize:14,fontWeight:800,color:'white'}}>{q.label}</div>
               <div style={{fontSize:11,color:'rgba(255,255,255,0.75)',fontWeight:500}}>{q.desc}</div>
@@ -105,7 +158,9 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Recent Activity */}
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
+
         <div style={{background:'white',borderRadius:18,overflow:'hidden',boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}>
           <div style={{padding:'18px 22px',borderBottom:'1px solid #f1f5f9',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <h3 style={{fontSize:15,fontWeight:800,color:'#0f172a',margin:0}}>🛒 آخر المشتريات</h3>
@@ -118,9 +173,14 @@ export default function DashboardPage() {
               <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 22px',background:i%2===0?'white':'#fafafa',borderBottom:i<purchases.length-1?'1px solid #f8fafc':'none'}}>
                 <div>
                   <div style={{fontWeight:700,fontSize:14,color:'#0f172a'}}>{p.product_name}</div>
-                  <div style={{fontSize:11,color:'#94a3b8',marginTop:3}}>{p.created_at?new Date(p.created_at).toLocaleDateString('ar-SA'):''}{p.employee_name?` • ${p.employee_name}`:''}</div>
+                  <div style={{fontSize:11,color:'#94a3b8',marginTop:3}}>
+                    {p.created_at?new Date(p.created_at).toLocaleDateString('ar-SA'):''}
+                    {p.employee_name?` • ${p.employee_name}`:''}
+                  </div>
                 </div>
-                <span style={{background:'#f0fdf4',color:'#16a34a',padding:'5px 14px',borderRadius:50,fontWeight:800,fontSize:13}}>{Number(p.total_incl_vat).toFixed(0)} ﷼</span>
+                <span style={{background:'#f0fdf4',color:'#16a34a',padding:'5px 14px',borderRadius:50,fontWeight:800,fontSize:13}}>
+                  {Number(p.total_incl_vat).toFixed(0)} ﷼
+                </span>
               </div>
             ))}
           </div>
@@ -138,13 +198,19 @@ export default function DashboardPage() {
               <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 22px',background:i%2===0?'white':'#fafafa',borderBottom:i<dispenses.length-1?'1px solid #f8fafc':'none'}}>
                 <div>
                   <div style={{fontWeight:700,fontSize:14,color:'#0f172a'}}>{d.product_name}</div>
-                  <div style={{fontSize:11,color:'#94a3b8',marginTop:3}}>{d.created_at?new Date(d.created_at).toLocaleDateString('ar-SA'):''}{d.reason?` • ${d.reason}`:''}</div>
+                  <div style={{fontSize:11,color:'#94a3b8',marginTop:3}}>
+                    {d.created_at?new Date(d.created_at).toLocaleDateString('ar-SA'):''}
+                    {d.reason?` • ${d.reason}`:''}
+                  </div>
                 </div>
-                <span style={{background:'#fef2f2',color:'#ef4444',padding:'5px 14px',borderRadius:50,fontWeight:800,fontSize:13}}>-{d.qty}</span>
+                <span style={{background:'#fef2f2',color:'#ef4444',padding:'5px 14px',borderRadius:50,fontWeight:800,fontSize:13}}>
+                  -{d.qty}
+                </span>
               </div>
             ))}
           </div>
         </div>
+
       </div>
     </div>
   )

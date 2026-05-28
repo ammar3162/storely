@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [mode, setMode]         = useState<Mode>('login')
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
+  const [orgName, setOrgName]   = useState('')
   const [newPass, setNewPass]   = useState('')
   const [otp, setOtp]           = useState('')
   const [loading, setLoading]   = useState(false)
@@ -28,10 +29,32 @@ export default function LoginPage() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
+    if (!orgName.trim()) { setError('أدخل اسم المؤسسة'); return }
     if (password.length < 6) { setError('كلمة المرور 6 أحرف على الأقل'); return }
     setLoading(true); setError('')
-    const { error } = await supabase.auth.signUp({ email, password })
+
+    const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) { setError(error.message); setLoading(false); return }
+
+    if (data.user) {
+      // إنشاء المؤسسة
+      const { data: org } = await supabase.from('organizations').insert({
+        name: orgName.trim(),
+        plan: 'basic',
+        plan_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+      }).select().single()
+
+      // ربط المستخدم بالمؤسسة
+      if (org) {
+        await supabase.from('profiles').upsert({
+          id: data.user.id,
+          org_id: org.id,
+          full_name: orgName.trim(),
+          role: 'owner'
+        })
+      }
+    }
+
     router.push('/dashboard')
   }
 
@@ -70,19 +93,10 @@ export default function LoginPage() {
     setTimeout(() => { setMode('login'); setSuccess('') }, 2000)
   }
 
-  const titles: Record<Mode, { title: string; sub: string; icon: string }> = {
-    login:    { title: 'أهلاً بعودتك',        sub: 'سجّل دخولك للمتابعة',        icon: '👋' },
-    register: { title: 'إنشاء حساب جديد',     sub: 'ابدأ إدارة مخزونك الآن',     icon: '🚀' },
-    forgot:   { title: 'نسيت كلمة المرور؟',  sub: 'سنرسل كود التحقق لبريدك',    icon: '🔑' },
-    verify:   { title: 'أدخل كود التحقق',     sub: 'تحقق من بريدك الإلكتروني',   icon: '📧' },
-    newpass:  { title: 'كلمة مرور جديدة',     sub: 'اختر كلمة مرور قوية وآمنة',  icon: '🔒' },
-  }
-
   const inp: React.CSSProperties = {
     width:'100%', padding:'13px 16px', border:'2px solid #e2e8f0',
     borderRadius:12, fontSize:15, outline:'none', boxSizing:'border-box',
     background:'white', color:'#1e293b', fontFamily:'system-ui', fontWeight:500,
-    transition:'border-color 0.2s'
   }
 
   const btnPrimary: React.CSSProperties = {
@@ -90,8 +104,7 @@ export default function LoginPage() {
     background:'linear-gradient(135deg,#667eea,#764ba2)',
     color:'white', border:'none', borderRadius:12, fontSize:15, fontWeight:800,
     cursor:'pointer', fontFamily:'system-ui',
-    boxShadow:'0 4px 14px rgba(102,126,234,0.4)',
-    marginBottom:12
+    boxShadow:'0 4px 14px rgba(102,126,234,0.4)', marginBottom:12
   }
 
   const btnSecondary: React.CSSProperties = {
@@ -111,10 +124,7 @@ export default function LoginPage() {
         width:'100%', maxWidth:440,
         boxShadow:'0 25px 60px rgba(0,0,0,0.25)'
       }}>
-        <style>{`
-          @keyframes fadeIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-          input:focus { border-color: #667eea !important; box-shadow: 0 0 0 3px rgba(102,126,234,0.15); }
-        `}</style>
+        <style>{`input:focus { border-color: #667eea !important; box-shadow: 0 0 0 3px rgba(102,126,234,0.15); }`}</style>
 
         {/* Logo */}
         <div style={{textAlign:'center',marginBottom:28}}>
@@ -125,15 +135,8 @@ export default function LoginPage() {
             fontSize:30,margin:'0 auto 14px',
             boxShadow:'0 8px 24px rgba(102,126,234,0.4)'
           }}>🏪</div>
-          <h1 style={{fontSize:26,fontWeight:900,color:'#0f172a',margin:'0 0 4px',letterSpacing:'-0.5px'}}>Storely</h1>
+          <h1 style={{fontSize:26,fontWeight:900,color:'#0f172a',margin:'0 0 4px'}}>Storely</h1>
           <p style={{fontSize:13,color:'#94a3b8',fontWeight:500}}>نظام إدارة المخزون للمعلات</p>
-        </div>
-
-        {/* Mode Header */}
-        <div style={{textAlign:'center',marginBottom:24}}>
-          <div style={{fontSize:32,marginBottom:8}}>{titles[mode].icon}</div>
-          <h2 style={{fontSize:20,fontWeight:800,color:'#0f172a',margin:'0 0 4px'}}>{titles[mode].title}</h2>
-          <p style={{fontSize:13,color:'#64748b',margin:0}}>{titles[mode].sub}</p>
         </div>
 
         {/* Tabs */}
@@ -154,14 +157,29 @@ export default function LoginPage() {
           </div>
         )}
 
+        {/* Mode Title */}
+        {mode !== 'login' && mode !== 'register' && (
+          <div style={{textAlign:'center',marginBottom:24}}>
+            <div style={{fontSize:32,marginBottom:8}}>
+              {mode==='forgot'?'🔑':mode==='verify'?'📧':'🔒'}
+            </div>
+            <h2 style={{fontSize:20,fontWeight:800,color:'#0f172a',margin:'0 0 4px'}}>
+              {mode==='forgot'?'نسيت كلمة المرور؟':mode==='verify'?'أدخل كود التحقق':'كلمة مرور جديدة'}
+            </h2>
+            <p style={{fontSize:13,color:'#64748b',margin:0}}>
+              {mode==='forgot'?'سنرسل كود التحقق لبريدك':mode==='verify'?'تحقق من بريدك الإلكتروني':'اختر كلمة مرور قوية وآمنة'}
+            </p>
+          </div>
+        )}
+
         {/* Alerts */}
         {error && (
-          <div style={{background:'#fef2f2',border:'1.5px solid #fecaca',borderRadius:12,padding:'12px 16px',marginBottom:16,fontSize:13,fontWeight:600,color:'#dc2626',display:'flex',alignItems:'center',gap:8}}>
+          <div style={{background:'#fef2f2',border:'1.5px solid #fecaca',borderRadius:12,padding:'12px 16px',marginBottom:16,fontSize:13,fontWeight:600,color:'#dc2626'}}>
             ⚠️ {error}
           </div>
         )}
         {success && (
-          <div style={{background:'#f0fdf4',border:'1.5px solid #bbf7d0',borderRadius:12,padding:'12px 16px',marginBottom:16,fontSize:13,fontWeight:600,color:'#16a34a',display:'flex',alignItems:'center',gap:8}}>
+          <div style={{background:'#f0fdf4',border:'1.5px solid #bbf7d0',borderRadius:12,padding:'12px 16px',marginBottom:16,fontSize:13,fontWeight:600,color:'#16a34a'}}>
             ✅ {success}
           </div>
         )}
@@ -193,6 +211,17 @@ export default function LoginPage() {
         {mode === 'register' && (
           <form onSubmit={handleRegister}>
             <div style={{marginBottom:16}}>
+              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>
+                🏪 اسم المؤسسة / المعل
+              </label>
+              <input type="text" placeholder="مثال: كوفي نصيف، مطعم الوليد..." required
+                value={orgName} onChange={e => setOrgName(e.target.value)}
+                style={{...inp,border:'2px solid #c7d2fe',background:'#eef2ff'}} />
+              <div style={{fontSize:11,color:'#6366f1',marginTop:4,fontWeight:600}}>
+                ℹ️ سيظهر هذا الاسم في لوحة التحكم
+              </div>
+            </div>
+            <div style={{marginBottom:16}}>
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني</label>
               <input type="email" placeholder="example@email.com" required value={email} onChange={e => setEmail(e.target.value)} style={inp} />
             </div>
@@ -201,7 +230,7 @@ export default function LoginPage() {
               <input type="password" placeholder="6 أحرف على الأقل" required value={password} onChange={e => setPassword(e.target.value)} style={inp} />
             </div>
             <button type="submit" disabled={loading} style={btnPrimary}>
-              {loading ? '⏳ جاري الإنشاء...' : 'إنشاء الحساب →'}
+              {loading ? '⏳ جاري الإنشاء...' : '🚀 إنشاء الحساب'}
             </button>
           </form>
         )}
@@ -222,17 +251,17 @@ export default function LoginPage() {
           </form>
         )}
 
-        {/* Verify OTP */}
+        {/* Verify */}
         {mode === 'verify' && (
           <form onSubmit={handleVerify}>
             <div style={{background:'#f0fdf4',border:'1.5px solid #bbf7d0',borderRadius:12,padding:'12px 16px',marginBottom:20,fontSize:13,color:'#16a34a',fontWeight:600}}>
-              📧 تم إرسال كود التحقق إلى: {email}
+              📧 تم إرسال الكود إلى: {email}
             </div>
             <div style={{marginBottom:24}}>
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>كود التحقق</label>
               <input type="text" placeholder="أدخل الكود" required value={otp}
                 onChange={e => setOtp(e.target.value)}
-                style={{...inp,textAlign:'center',fontSize:22,fontWeight:800,letterSpacing:8}} />
+                style={{...inp,textAlign:'center',fontSize:24,fontWeight:800,letterSpacing:6}} />
             </div>
             <button type="submit" disabled={loading} style={btnPrimary}>
               {loading ? '⏳ جاري التحقق...' : '✅ تحقق من الكود'}
