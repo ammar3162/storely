@@ -1,10 +1,8 @@
-export const dynamic = 'force-dynamic'
 'use client'
+export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-
 const REASONS = ['استهلاك يومي','طلب فرع','تلف','نقص مخزون','هدية','أخرى']
-
 export default function DispensesPage() {
   const [products, setProducts] = useState<any[]>([])
   const [history, setHistory]   = useState<any[]>([])
@@ -14,19 +12,15 @@ export default function DispensesPage() {
     product_name:'', employee_name:'', qty:'', reason:'استهلاك يومي', notes:''
   })
   const supabase = createClient()
-
   useEffect(() => { loadProducts(); loadHistory() }, [])
-
   async function loadProducts() {
     const { data } = await supabase.from('products').select('*').order('name')
     setProducts(data || [])
   }
-
   async function loadHistory() {
     const { data } = await supabase.from('dispenses').select('*').order('created_at', { ascending: false }).limit(20)
     setHistory(data || [])
   }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.product_name || !form.qty) return
@@ -56,15 +50,12 @@ export default function DispensesPage() {
     loadHistory()
     setTimeout(() => setSuccess(''), 4000)
   }
-
   const inp: React.CSSProperties = {
     width:'100%', padding:'11px 14px', border:'1.5px solid #e5e7eb',
     borderRadius:10, fontSize:14, outline:'none', boxSizing:'border-box',
     background:'white', color:'#1a1a2e', fontFamily:'system-ui'
   }
-
   const selectedProduct = products.find(p => p.name === form.product_name)
-
   return (
     <div>
       <h1 style={{fontSize:22,fontWeight:800,marginBottom:4}}>تسجيل صرف</h1>

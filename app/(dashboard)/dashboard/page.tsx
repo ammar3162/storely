@@ -1,9 +1,8 @@
-export const dynamic = 'force-dynamic'
 'use client'
+export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-
 export default function DashboardPage() {
   const [products, setProducts]   = useState<any[]>([])
   const [purchases, setPurchases] = useState<any[]>([])
@@ -11,13 +10,11 @@ export default function DashboardPage() {
   const [loading, setLoading]     = useState(true)
   const [time, setTime]           = useState(new Date())
   const supabase = createClient()
-
   useEffect(() => {
     loadAll()
     const t = setInterval(() => setTime(new Date()), 60000)
     return () => clearInterval(t)
   }, [])
-
   async function loadAll() {
     setLoading(true)
     const [p, pu, d] = await Promise.all([
@@ -30,15 +27,12 @@ export default function DashboardPage() {
     setDispenses(d.data || [])
     setLoading(false)
   }
-
   const totalValue = products.reduce((s, p) => s + (p.qty * p.cost_price), 0)
   const lowStock   = products.filter(p => p.qty <= p.reorder_point)
   const totalSpent = purchases.reduce((s, p) => s + (Number(p.total_incl_vat)||0), 0)
   const okStock    = products.length - lowStock.length
-
   const hour = time.getHours()
   const greeting = hour < 12 ? 'صباح الخير' : hour < 17 ? 'مساء الخير' : 'مساء النور'
-
   if (loading) return (
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'70vh',flexDirection:'column',gap:20}}>
       <div style={{width:56,height:56,border:'4px solid #e2e8f0',borderTopColor:'#6366f1',borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
@@ -46,10 +40,8 @@ export default function DashboardPage() {
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
-
   return (
     <div style={{direction:'rtl',fontFamily:'system-ui',maxWidth:1100,margin:'0 auto'}}>
-
       {/* Header */}
       <div style={{
         background:'linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a78bfa 100%)',
@@ -77,7 +69,6 @@ export default function DashboardPage() {
           }}>🔄 تحديث</button>
         </div>
       </div>
-
       {/* Low stock alert */}
       {lowStock.length > 0 && (
         <div style={{
@@ -109,7 +100,6 @@ export default function DashboardPage() {
           }}>طلب الآن</Link>
         </div>
       )}
-
       {/* Stats Grid */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:16,marginBottom:28}}>
         {[
@@ -157,7 +147,6 @@ export default function DashboardPage() {
           </div>
         ))}
       </div>
-
       {/* Quick Actions */}
       <div style={{marginBottom:28}}>
         <h2 style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:14,display:'flex',alignItems:'center',gap:8}}>
@@ -185,10 +174,8 @@ export default function DashboardPage() {
           ))}
         </div>
       </div>
-
       {/* Recent Activity */}
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
-
         {/* آخر المشتريات */}
         <div style={{background:'white',borderRadius:18,overflow:'hidden',boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}>
           <div style={{padding:'18px 22px',borderBottom:'1px solid #f1f5f9',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
@@ -230,7 +217,6 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
-
         {/* آخر الصرف */}
         <div style={{background:'white',borderRadius:18,overflow:'hidden',boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}>
           <div style={{padding:'18px 22px',borderBottom:'1px solid #f1f5f9',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
@@ -272,7 +258,6 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
-
       </div>
     </div>
   )

@@ -1,11 +1,9 @@
-export const dynamic = 'force-dynamic'
 'use client'
+export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-
 const UNITS = ['كيلو','لتر','علبة','كرتون','أسطوانة','قطعة','كيس','زجاجة','باكيت','درزن']
 const CATEGORIES = ['ألبان','قهوة','مشروبات','أدوات','مواد أساسية','إضافات','تنظيف','أخرى']
-
 export default function InventoryPage() {
   const [products, setProducts]       = useState<any[]>([])
   const [search, setSearch]           = useState('')
@@ -19,16 +17,13 @@ export default function InventoryPage() {
     name:'', unit:'كيلو', qty:'', reorder_point:'', cost_price:'', category:'قهوة'
   })
   const supabase = createClient()
-
   useEffect(() => { loadProducts() }, [])
-
   async function loadProducts() {
     setLoading(true)
     const { data } = await supabase.from('products').select('*').order('name')
     setProducts(data || [])
     setLoading(false)
   }
-
   async function addProduct(e: React.FormEvent) {
     e.preventDefault()
     const { data: { user } } = await supabase.auth.getUser()
@@ -44,7 +39,6 @@ export default function InventoryPage() {
     setTimeout(() => setSaveSuccess(''), 3000)
     loadProducts()
   }
-
   async function saveEdit(e: React.FormEvent) {
     e.preventDefault()
     await supabase.from('products').update({
@@ -57,30 +51,25 @@ export default function InventoryPage() {
     setTimeout(() => setSaveSuccess(''), 3000)
     loadProducts()
   }
-
   async function deleteProduct(id: string) {
     if (!confirm('هل تريد حذف هذا الصنف؟')) return
     await supabase.from('products').delete().eq('id', id)
     loadProducts()
   }
-
   const lowStock   = products.filter(p => p.qty <= p.reorder_point)
   const totalValue = products.reduce((s, p) => s + (p.qty * p.cost_price), 0)
   const categories = [...new Set(products.map(p => p.category).filter(Boolean))]
-
   const filtered = products.filter(p => {
     const matchSearch   = p.name.includes(search)
     const matchStatus   = filterStatus === 'all' ? true : filterStatus === 'low' ? p.qty <= p.reorder_point : p.qty > p.reorder_point
     const matchCategory = filterCategory ? p.category === filterCategory : true
     return matchSearch && matchStatus && matchCategory
   })
-
   const inp: React.CSSProperties = {
     width:'100%', padding:'11px 14px', border:'1.5px solid #e2e8f0',
     borderRadius:10, fontSize:14, outline:'none', boxSizing:'border-box',
     background:'white', color:'#1e293b', fontFamily:'system-ui', fontWeight:500
   }
-
   return (
     <div style={{direction:'rtl',fontFamily:'system-ui'}}>
       <style>{`
@@ -89,7 +78,6 @@ export default function InventoryPage() {
         .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.10) !important; }
         @keyframes fadeIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
-
       {/* Header */}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:24,flexWrap:'wrap',gap:12}}>
         <div>
@@ -115,7 +103,6 @@ export default function InventoryPage() {
           }}>＋ إضافة صنف</button>
         </div>
       </div>
-
       {/* Success Toast */}
       {saveSuccess && (
         <div style={{
@@ -124,7 +111,6 @@ export default function InventoryPage() {
           animation:'fadeIn 0.3s ease',display:'flex',alignItems:'center',gap:10
         }}>{saveSuccess}</div>
       )}
-
       {/* Stats */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:16,marginBottom:24}}>
         {[
@@ -148,7 +134,6 @@ export default function InventoryPage() {
           </div>
         ))}
       </div>
-
       {/* Low stock alert */}
       {lowStock.length > 0 && (
         <div style={{
@@ -175,7 +160,6 @@ export default function InventoryPage() {
           }}>عرض الناقصة</button>
         </div>
       )}
-
       {/* Toolbar */}
       <div style={{background:'white',borderRadius:14,padding:'14px 18px',marginBottom:16,boxShadow:'0 1px 4px rgba(0,0,0,0.06)',display:'flex',gap:10,flexWrap:'wrap',alignItems:'center'}}>
         <div style={{flex:1,minWidth:200,position:'relative'}}>
@@ -184,13 +168,11 @@ export default function InventoryPage() {
             onChange={e => setSearch(e.target.value)}
             style={{...inp,paddingRight:38,borderRadius:50}} />
         </div>
-
         <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
           style={{...inp,width:'auto',minWidth:140}}>
           <option value="">كل الفئات</option>
           {categories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-
         <div style={{display:'flex',background:'#f1f5f9',borderRadius:10,padding:3,gap:3}}>
           {[
             {key:'all',label:`الكل (${products.length})`},
@@ -208,7 +190,6 @@ export default function InventoryPage() {
           ))}
         </div>
       </div>
-
       {/* Table */}
       <div style={{background:'white',borderRadius:16,boxShadow:'0 2px 12px rgba(0,0,0,0.06)',overflow:'hidden'}}>
         {loading ? (
@@ -314,7 +295,6 @@ export default function InventoryPage() {
           </table>
         )}
       </div>
-
       {/* Add Modal */}
       {showAdd && (
         <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.65)',zIndex:999,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
@@ -367,7 +347,6 @@ export default function InventoryPage() {
           </div>
         </div>
       )}
-
       {/* Edit Modal */}
       {editProduct && (
         <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.65)',zIndex:999,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>

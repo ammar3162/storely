@@ -1,8 +1,7 @@
-export const dynamic = 'force-dynamic'
 'use client'
+export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-
 export default function PurchasesPage() {
   const [products, setProducts]       = useState<any[]>([])
   const [loading, setLoading]         = useState(false)
@@ -16,14 +15,11 @@ export default function PurchasesPage() {
     payment_method:'نقد', supplier:'', has_vat:false, notes:''
   })
   const supabase = createClient()
-
   useEffect(() => { loadProducts() }, [])
-
   async function loadProducts() {
     const { data } = await supabase.from('products').select('*').order('name')
     setProducts(data || [])
   }
-
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -32,22 +28,18 @@ export default function PurchasesPage() {
     reader.onload = ev => setInvoiceImg(ev.target?.result as string)
     reader.readAsDataURL(file)
   }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const productName = isNewProduct ? form.new_product_name : form.product_name
     if (!productName || !form.qty || !form.unit_price) return
     setLoading(true)
-
     const qty          = Number(form.qty)
     const unitPrice    = Number(form.unit_price)
     const amountNoVat  = +(unitPrice * qty).toFixed(2)
     const vatAmount    = form.has_vat ? +(amountNoVat * 0.15).toFixed(2) : 0
     const totalInclVat = +(amountNoVat + vatAmount).toFixed(2)
-
     const { data: { user } } = await supabase.auth.getUser()
     const { data: profile }  = await supabase.from('profiles').select('org_id').eq('id', user!.id).single()
-
     if (isNewProduct && form.new_product_name) {
       const existing = products.find(p => p.name === form.new_product_name)
       if (!existing) {
@@ -64,7 +56,6 @@ export default function PurchasesPage() {
         await supabase.from('products').update({ qty: product.qty + qty, cost_price: unitPrice }).eq('id', product.id)
       }
     }
-
     await supabase.from('purchases').insert({
       org_id: profile?.org_id,
       product_name:   productName,
@@ -78,7 +69,6 @@ export default function PurchasesPage() {
       notes:          form.notes,
       invoice_url:    invoiceImg ? 'يوجد صورة' : 'لا يوجد'
     })
-
     setSuccess(`✅ تم التسجيل — الإجمالي: ${totalInclVat} ريال`)
     setForm({ product_name:'', new_product_name:'', employee_name:'', qty:'', unit_price:'',
       payment_method:'نقد', supplier:'', has_vat:false, notes:'' })
@@ -89,11 +79,9 @@ export default function PurchasesPage() {
     loadProducts()
     setTimeout(() => setSuccess(''), 4000)
   }
-
   const amount = Number(form.unit_price) * Number(form.qty) || 0
   const vat    = form.has_vat ? +(amount * 0.15).toFixed(2) : 0
   const total  = +(amount + vat).toFixed(2)
-
   const inp: React.CSSProperties = {
     width:'100%', padding:'12px 14px', border:'2px solid #e5e7eb',
     borderRadius:10, fontSize:15, outline:'none', boxSizing:'border-box',
@@ -102,21 +90,17 @@ export default function PurchasesPage() {
   const lbl: React.CSSProperties = {
     fontSize:13, fontWeight:700, color:'#374151', display:'block', marginBottom:7
   }
-
   return (
     <div style={{maxWidth:620,margin:'0 auto'}}>
       <h1 style={{fontSize:24,fontWeight:900,marginBottom:4,color:'#111827'}}>🛒 تسجيل مشتريات</h1>
       <p style={{fontSize:14,color:'#6b7280',marginBottom:24}}>أضف مشتريات جديدة وحدّث المخزون تلقائياً</p>
-
       {success && (
         <div style={{background:'#ecfdf5',border:'2px solid #10b981',borderRadius:12,padding:'14px 18px',marginBottom:20,fontSize:15,fontWeight:700,color:'#059669'}}>
           {success}
         </div>
       )}
-
       <div style={{background:'white',borderRadius:20,padding:32,boxShadow:'0 4px 24px rgba(0,0,0,0.08)'}}>
         <form onSubmit={handleSubmit}>
-
           {/* المنتج */}
           <div style={{marginBottom:20}}>
             <label style={lbl}>📦 المنتج</label>
@@ -130,7 +114,6 @@ export default function PurchasesPage() {
               <option value="new">➕ منتج جديد غير موجود في القائمة</option>
             </select>
           </div>
-
           {isNewProduct && (
             <div style={{marginBottom:20,background:'#eff6ff',border:'2px solid #93c5fd',borderRadius:12,padding:16}}>
               <label style={{...lbl,color:'#1d4ed8'}}>✏️ اسم المنتج الجديد</label>
@@ -141,7 +124,6 @@ export default function PurchasesPage() {
               <div style={{fontSize:12,color:'#3b82f6',marginTop:8,fontWeight:600}}>ℹ️ سيُضاف تلقائياً للمخزون</div>
             </div>
           )}
-
           {/* الكمية والموظف */}
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20}}>
             <div>
@@ -155,7 +137,6 @@ export default function PurchasesPage() {
                 value={form.employee_name} onChange={e => setForm({...form,employee_name:e.target.value})} style={inp} />
             </div>
           </div>
-
           {/* المبلغ والمورد */}
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20}}>
             <div>
@@ -170,7 +151,6 @@ export default function PurchasesPage() {
                 value={form.supplier} onChange={e => setForm({...form,supplier:e.target.value})} style={inp} />
             </div>
           </div>
-
           {/* طريقة الدفع */}
           <div style={{marginBottom:20}}>
             <label style={lbl}>💳 طريقة الدفع</label>
@@ -181,7 +161,6 @@ export default function PurchasesPage() {
               <option value="آجل">📋 آجل</option>
             </select>
           </div>
-
           {/* VAT */}
           <div style={{marginBottom:20}}>
             <label style={{display:'flex',alignItems:'center',gap:12,cursor:'pointer',
@@ -195,7 +174,6 @@ export default function PurchasesPage() {
               </div>
             </label>
           </div>
-
           {/* هل يوجد فاتورة؟ */}
           <div style={{marginBottom:20}}>
             <label style={lbl}>🧾 هل يوجد فاتورة؟</label>
@@ -214,14 +192,12 @@ export default function PurchasesPage() {
               }}>❌ لا يوجد فاتورة</button>
             </div>
           </div>
-
           {/* رفع صورة الفاتورة */}
           {hasInvoice === true && (
             <div style={{marginBottom:20}}>
               <label style={lbl}>📸 صورة الفاتورة</label>
               <input ref={fileRef} type="file" accept="image/*" capture="environment"
                 onChange={handleImageChange} style={{display:'none'}} />
-
               {!invoiceImg ? (
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
                   <button type="button" onClick={() => {
@@ -262,7 +238,6 @@ export default function PurchasesPage() {
               )}
             </div>
           )}
-
           {/* ملخص */}
           {amount > 0 && (
             <div style={{background:'#f8faff',border:'2px solid #e0e7ff',borderRadius:14,padding:18,marginBottom:20}}>
@@ -282,7 +257,6 @@ export default function PurchasesPage() {
               </div>
             </div>
           )}
-
           <button type="submit" disabled={loading} style={{
             width:'100%', padding:'16px', background:'linear-gradient(135deg,#10b981,#059669)',
             color:'white', border:'none', borderRadius:14, fontSize:16, fontWeight:900, cursor:'pointer'
