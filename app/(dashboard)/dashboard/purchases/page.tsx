@@ -267,4 +267,4 @@ export default function PurchasesPage() {
       </div>
     </div>
   )
-}export const dynamic = 'force-dynamic'
+}
