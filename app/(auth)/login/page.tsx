@@ -212,7 +212,7 @@ export default function LoginPage() {
           <form onSubmit={handleRegister}>
             <div style={{marginBottom:16}}>
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>
-                🏪 اسم المؤسسة / المعل
+                🏪 اسم المؤسسة / الشعار
               </label>
               <input type="text" placeholder="مثال:  ستاربكس كنتاكي..." required
                 value={orgName} onChange={e => setOrgName(e.target.value)}
