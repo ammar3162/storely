@@ -214,7 +214,7 @@ export default function LoginPage() {
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>
                 🏪 اسم المؤسسة / المعل
               </label>
-              <input type="text" placeholder="مثال: كوفي نصيف، مطعم الوليد..." required
+              <input type="text" placeholder="مثال:  ستاربكس كنتاكي..." required
                 value={orgName} onChange={e => setOrgName(e.target.value)}
                 style={{...inp,border:'2px solid #c7d2fe',background:'#eef2ff'}} />
               <div style={{fontSize:11,color:'#6366f1',marginTop:4,fontWeight:600}}>
