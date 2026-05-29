@@ -36,15 +36,19 @@ export default function LoginPage() {
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) { setError(error.message); setLoading(false); return }
 
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      setError('هذا البريد الإلكتروني مسجل مسبقاً — جرب تسجيل الدخول')
+      setLoading(false)
+      return
+    }
+
     if (data.user) {
-      // إنشاء المؤسسة
       const { data: org } = await supabase.from('organizations').insert({
         name: orgName.trim(),
         plan: 'basic',
         plan_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
       }).select().single()
 
-      // ربط المستخدم بالمؤسسة
       if (org) {
         await supabase.from('profiles').upsert({
           id: data.user.id,
@@ -157,7 +161,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Mode Title */}
+        {/* Mode Title للصفحات الأخرى */}
         {mode !== 'login' && mode !== 'register' && (
           <div style={{textAlign:'center',marginBottom:24}}>
             <div style={{fontSize:32,marginBottom:8}}>
@@ -212,9 +216,9 @@ export default function LoginPage() {
           <form onSubmit={handleRegister}>
             <div style={{marginBottom:16}}>
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>
-                🏪 اسم المؤسسة / الشعار
+                🏪 اسم المؤسسة / المعل
               </label>
-              <input type="text" placeholder="مثال:  ستاربكس كنتاكي..." required
+              <input type="text" placeholder="مثال: كوفي نصيف، مطعم الوليد..." required
                 value={orgName} onChange={e => setOrgName(e.target.value)}
                 style={{...inp,border:'2px solid #c7d2fe',background:'#eef2ff'}} />
               <div style={{fontSize:11,color:'#6366f1',marginTop:4,fontWeight:600}}>
