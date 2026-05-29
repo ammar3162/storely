@@ -12,7 +12,7 @@ export default function PurchasesPage() {
   const [invoiceImg, setInvoiceImg]     = useState<string|null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
-    product_name:'', new_product_name:'', employee_name:'', qty:'', unit_price:'',
+    product_name:'', new_product_name:'', employee_name:'', qty:'', total_amount:'',
     payment_method:'نقد', supplier:'', has_vat:false, notes:''
   })
   const supabase = createClient()
@@ -36,14 +36,14 @@ export default function PurchasesPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const productName = isNewProduct ? form.new_product_name : form.product_name
-    if (!productName || !form.qty || !form.unit_price) return
+    if (!productName || !form.qty || !form.total_amount) return
     setLoading(true)
 
     const qty          = Number(form.qty)
-    const unitPrice    = Number(form.unit_price)
-    const amountNoVat  = +(unitPrice * qty).toFixed(2)
-    const vatAmount    = form.has_vat ? +(amountNoVat * 0.15).toFixed(2) : 0
-    const totalInclVat = +(amountNoVat + vatAmount).toFixed(2)
+    const totalAmount  = Number(form.total_amount)  // المبلغ الإجمالي الذي أدخله المستخدم
+    const vatAmount    = form.has_vat ? +(totalAmount * 0.15).toFixed(2) : 0
+    const totalInclVat = +(totalAmount + vatAmount).toFixed(2)
+    const unitPrice    = qty > 0 ? +(totalAmount / qty).toFixed(4) : totalAmount
 
     const { data: { user } } = await supabase.auth.getUser()
     const { data: profile }  = await supabase.from('profiles').select('org_id').eq('id', user!.id).single()
@@ -56,12 +56,16 @@ export default function PurchasesPage() {
           unit: 'قطعة', qty, reorder_point: 0, cost_price: unitPrice, category: 'أخرى'
         })
       } else {
-        await supabase.from('products').update({ qty: existing.qty + qty, cost_price: unitPrice }).eq('id', existing.id)
+        await supabase.from('products').update({
+          qty: existing.qty + qty, cost_price: unitPrice
+        }).eq('id', existing.id)
       }
     } else {
       const product = products.find(p => p.name === productName)
       if (product) {
-        await supabase.from('products').update({ qty: product.qty + qty, cost_price: unitPrice }).eq('id', product.id)
+        await supabase.from('products').update({
+          qty: product.qty + qty, cost_price: unitPrice
+        }).eq('id', product.id)
       }
     }
 
@@ -75,7 +79,7 @@ export default function PurchasesPage() {
     })
 
     setSuccess(`✅ تم التسجيل — الإجمالي: ${totalInclVat} ريال`)
-    setForm({ product_name:'', new_product_name:'', employee_name:'', qty:'', unit_price:'',
+    setForm({ product_name:'', new_product_name:'', employee_name:'', qty:'', total_amount:'',
       payment_method:'نقد', supplier:'', has_vat:false, notes:'' })
     setIsNewProduct(false)
     setHasInvoice(null)
@@ -85,7 +89,7 @@ export default function PurchasesPage() {
     setTimeout(() => setSuccess(''), 4000)
   }
 
-  const amount = Number(form.unit_price) * Number(form.qty) || 0
+  const amount = Number(form.total_amount) || 0
   const vat    = form.has_vat ? +(amount * 0.15).toFixed(2) : 0
   const total  = +(amount + vat).toFixed(2)
 
@@ -100,8 +104,8 @@ export default function PurchasesPage() {
       <style>{`
         @media(max-width:640px){
           .grid-2{grid-template-columns:1fr !important}
+          .grid-4{grid-template-columns:1fr 1fr !important}
           .page-pad{padding:16px !important}
-          .page-title{font-size:20px !important}
         }
         input:focus,select:focus,textarea:focus{
           border-color:#6366f1 !important;
@@ -109,20 +113,13 @@ export default function PurchasesPage() {
         }
       `}</style>
 
-      {/* Header */}
       <div style={{marginBottom:24}}>
-        <h1 className="page-title" style={{fontSize:26,fontWeight:900,color:'#0f172a',marginBottom:4,letterSpacing:'-0.5px'}}>
-          🛒 تسجيل مشتريات
-        </h1>
+        <h1 style={{fontSize:26,fontWeight:900,color:'#0f172a',marginBottom:4}}>🛒 تسجيل مشتريات</h1>
         <p style={{fontSize:14,color:'#64748b'}}>أضف مشتريات جديدة وحدّث المخزون تلقائياً</p>
       </div>
 
       {success && (
-        <div style={{
-          background:'#ecfdf5',border:'2px solid #10b981',borderRadius:14,
-          padding:'14px 18px',marginBottom:20,fontSize:14,fontWeight:700,
-          color:'#059669',display:'flex',alignItems:'center',gap:10
-        }}>
+        <div style={{background:'#ecfdf5',border:'2px solid #10b981',borderRadius:14,padding:'14px 18px',marginBottom:20,fontSize:14,fontWeight:700,color:'#059669',display:'flex',alignItems:'center',gap:10}}>
           {success}
         </div>
       )}
@@ -132,9 +129,7 @@ export default function PurchasesPage() {
 
           {/* المنتج */}
           <div style={{marginBottom:20}}>
-            <label style={{fontSize:13,fontWeight:700,color:'#374151',display:'block',marginBottom:7}}>
-              📦 المنتج
-            </label>
+            <label style={{fontSize:13,fontWeight:700,color:'#374151',display:'block',marginBottom:7}}>📦 المنتج</label>
             <select value={isNewProduct ? 'new' : form.product_name}
               onChange={e => {
                 if (e.target.value === 'new') { setIsNewProduct(true); setForm({...form,product_name:''}) }
@@ -147,20 +142,13 @@ export default function PurchasesPage() {
           </div>
 
           {isNewProduct && (
-            <div style={{
-              marginBottom:20,background:'#eff6ff',border:'2px solid #93c5fd',
-              borderRadius:14,padding:16
-            }}>
-              <label style={{fontSize:13,fontWeight:700,color:'#1d4ed8',display:'block',marginBottom:7}}>
-                ✏️ اسم المنتج الجديد
-              </label>
+            <div style={{marginBottom:20,background:'#eff6ff',border:'2px solid #93c5fd',borderRadius:14,padding:16}}>
+              <label style={{fontSize:13,fontWeight:700,color:'#1d4ed8',display:'block',marginBottom:7}}>✏️ اسم المنتج الجديد</label>
               <input type="text" placeholder="مثال: بن إثيوبي، حليب فريش..." required
                 value={form.new_product_name}
                 onChange={e => setForm({...form,new_product_name:e.target.value})}
                 style={{...inp,border:'2px solid #93c5fd'}} />
-              <div style={{fontSize:12,color:'#3b82f6',marginTop:6,fontWeight:600}}>
-                ℹ️ سيُضاف تلقائياً إلى قائمة المخزون
-              </div>
+              <div style={{fontSize:12,color:'#3b82f6',marginTop:6,fontWeight:600}}>ℹ️ سيُضاف تلقائياً إلى قائمة المخزون</div>
             </div>
           )}
 
@@ -178,13 +166,20 @@ export default function PurchasesPage() {
             </div>
           </div>
 
-          {/* المبلغ والمورد */}
+          {/* المبلغ الكلي والمورد */}
           <div className="grid-2" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:20}}>
             <div>
-              <label style={{fontSize:13,fontWeight:700,color:'#374151',display:'block',marginBottom:7}}>💰 المبلغ (ريال)</label>
+              <label style={{fontSize:13,fontWeight:700,color:'#374151',display:'block',marginBottom:7}}>
+                💰 المبلغ الكلي (ريال)
+              </label>
               <input type="number" placeholder="0.00" step="0.01" min="0" required
-                value={form.unit_price} onChange={e => setForm({...form,unit_price:e.target.value})}
+                value={form.total_amount} onChange={e => setForm({...form,total_amount:e.target.value})}
                 style={{...inp,fontSize:20,fontWeight:800,textAlign:'center'}} />
+              {form.qty && form.total_amount && (
+                <div style={{fontSize:11,color:'#94a3b8',marginTop:4,textAlign:'center'}}>
+                  سعر الوحدة: {(Number(form.total_amount)/Number(form.qty)).toFixed(2)} ريال
+                </div>
+              )}
             </div>
             <div>
               <label style={{fontSize:13,fontWeight:700,color:'#374151',display:'block',marginBottom:7}}>🏭 المورد</label>
@@ -196,7 +191,7 @@ export default function PurchasesPage() {
           {/* طريقة الدفع */}
           <div style={{marginBottom:20}}>
             <label style={{fontSize:13,fontWeight:700,color:'#374151',display:'block',marginBottom:7}}>💳 طريقة الدفع</label>
-            <div className="grid-2" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
+            <div className="grid-4" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
               {[
                 {val:'نقد',icon:'💵'},
                 {val:'تحويل بنكي',icon:'🏦'},
@@ -210,7 +205,7 @@ export default function PurchasesPage() {
                     border:`2px solid ${form.payment_method===opt.val?'#6366f1':'#e2e8f0'}`,
                     background: form.payment_method===opt.val ? '#eef2ff' : 'white',
                     color: form.payment_method===opt.val ? '#6366f1' : '#64748b',
-                    fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'system-ui',
+                    fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'system-ui',
                     display:'flex',flexDirection:'column',alignItems:'center',gap:4
                   }}>
                   <span style={{fontSize:20}}>{opt.icon}</span>
@@ -224,8 +219,7 @@ export default function PurchasesPage() {
           <div style={{marginBottom:20}}>
             <label style={{
               display:'flex',alignItems:'center',gap:14,cursor:'pointer',
-              padding:'14px 16px',background:'#f8fafc',borderRadius:12,
-              border:'2px solid #e2e8f0',transition:'border-color 0.2s'
+              padding:'14px 16px',background:'#f8fafc',borderRadius:12,border:'2px solid #e2e8f0'
             }}>
               <input type="checkbox" checked={form.has_vat}
                 onChange={e => setForm({...form,has_vat:e.target.checked})}
@@ -275,22 +269,12 @@ export default function PurchasesPage() {
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
                   <button type="button" onClick={() => {
                     if (fileRef.current) { fileRef.current.setAttribute('capture','environment'); fileRef.current.click() }
-                  }} style={{
-                    padding:'20px',borderRadius:14,border:'2px dashed #93c5fd',
-                    background:'#eff6ff',color:'#1d4ed8',fontSize:13,fontWeight:700,
-                    cursor:'pointer',fontFamily:'system-ui',
-                    display:'flex',flexDirection:'column',alignItems:'center',gap:8
-                  }}>
+                  }} style={{padding:'20px',borderRadius:14,border:'2px dashed #93c5fd',background:'#eff6ff',color:'#1d4ed8',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'system-ui',display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
                     <span style={{fontSize:32}}>📷</span>التقاط صورة
                   </button>
                   <button type="button" onClick={() => {
                     if (fileRef.current) { fileRef.current.removeAttribute('capture'); fileRef.current.click() }
-                  }} style={{
-                    padding:'20px',borderRadius:14,border:'2px dashed #a78bfa',
-                    background:'#f5f3ff',color:'#6d28d9',fontSize:13,fontWeight:700,
-                    cursor:'pointer',fontFamily:'system-ui',
-                    display:'flex',flexDirection:'column',alignItems:'center',gap:8
-                  }}>
+                  }} style={{padding:'20px',borderRadius:14,border:'2px dashed #a78bfa',background:'#f5f3ff',color:'#6d28d9',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'system-ui',display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
                     <span style={{fontSize:32}}>🖼️</span>من المعرض
                   </button>
                 </div>
@@ -299,11 +283,7 @@ export default function PurchasesPage() {
                   <img src={invoiceImg} alt="فاتورة" style={{width:'100%',maxHeight:200,objectFit:'cover',display:'block'}} />
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'#ecfdf5',padding:'8px 14px'}}>
                     <span style={{fontSize:12,fontWeight:700,color:'#059669'}}>✅ تم رفع الفاتورة</span>
-                    <button type="button" onClick={() => setInvoiceImg(null)} style={{
-                      background:'#fef2f2',color:'#ef4444',border:'none',
-                      borderRadius:8,padding:'4px 10px',cursor:'pointer',
-                      fontSize:12,fontWeight:700,fontFamily:'system-ui'
-                    }}>حذف ✕</button>
+                    <button type="button" onClick={() => setInvoiceImg(null)} style={{background:'#fef2f2',color:'#ef4444',border:'none',borderRadius:8,padding:'4px 10px',cursor:'pointer',fontSize:12,fontWeight:700,fontFamily:'system-ui'}}>حذف ✕</button>
                   </div>
                 </div>
               )}
@@ -320,12 +300,9 @@ export default function PurchasesPage() {
 
           {/* ملخص */}
           {amount > 0 && (
-            <div style={{
-              background:'linear-gradient(135deg,#f8faff,#eef2ff)',
-              border:'2px solid #c7d2fe',borderRadius:14,padding:18,marginBottom:20
-            }}>
+            <div style={{background:'linear-gradient(135deg,#f8faff,#eef2ff)',border:'2px solid #c7d2fe',borderRadius:14,padding:18,marginBottom:20}}>
               <div style={{display:'flex',justifyContent:'space-between',marginBottom:10,fontSize:14}}>
-                <span style={{color:'#64748b',fontWeight:600}}>قبل الضريبة</span>
+                <span style={{color:'#64748b',fontWeight:600}}>المبلغ قبل الضريبة</span>
                 <span style={{fontWeight:800,color:'#1e293b'}}>{amount.toFixed(2)} ريال</span>
               </div>
               {form.has_vat && (
@@ -334,24 +311,19 @@ export default function PurchasesPage() {
                   <span style={{fontWeight:800,color:'#d97706'}}>{vat.toFixed(2)} ريال</span>
                 </div>
               )}
-              <div style={{
-                display:'flex',justifyContent:'space-between',
-                paddingTop:12,borderTop:'2px solid #c7d2fe',fontSize:18
-              }}>
-                <span style={{fontWeight:900,color:'#1e293b'}}>الإجمالي</span>
+              <div style={{display:'flex',justifyContent:'space-between',paddingTop:12,borderTop:'2px solid #c7d2fe',fontSize:18}}>
+                <span style={{fontWeight:900,color:'#1e293b'}}>الإجمالي النهائي</span>
                 <span style={{fontWeight:900,color:'#6366f1',fontSize:22}}>{total.toFixed(2)} ﷼</span>
               </div>
             </div>
           )}
 
-          {/* زر الحفظ */}
           <button type="submit" disabled={loading} style={{
             width:'100%',padding:'16px',
             background: loading ? '#94a3b8' : 'linear-gradient(135deg,#10b981,#059669)',
             color:'white',border:'none',borderRadius:14,fontSize:16,fontWeight:900,
             cursor: loading ? 'not-allowed' : 'pointer',fontFamily:'system-ui',
-            boxShadow: loading ? 'none' : '0 4px 14px rgba(16,185,129,0.35)',
-            transition:'all 0.2s'
+            boxShadow: loading ? 'none' : '0 4px 14px rgba(16,185,129,0.35)',transition:'all 0.2s'
           }}>
             {loading ? '⏳ جاري الحفظ...' : '✅ حفظ في المشتريات وتحديث المخزون'}
           </button>
