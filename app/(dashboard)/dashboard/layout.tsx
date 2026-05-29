@@ -13,13 +13,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push('/login')
   }
 
-  const links = [
-    { href: '/dashboard',                label: 'الرئيسية',          icon: '📊' },
-    { href: '/dashboard/inventory',      label: 'المخزون',           icon: '📦' },
-    { href: '/dashboard/purchases',      label: 'تسجيل مشتريات',    icon: '🛒' },
-    { href: '/dashboard/dispenses',      label: 'تسجيل صرف',        icon: '📤' },
-    { href: '/dashboard/reports',        label: 'تقرير المشتريات',   icon: '📈' },
-  ]
+const links = [
+  { href: '/dashboard',                  label: 'الرئيسية',          icon: '📊' },
+  { href: '/dashboard/inventory',        label: 'المخزون',           icon: '📦' },
+  { href: '/dashboard/purchases',        label: 'تسجيل مشتريات',    icon: '🛒' },
+  { href: '/dashboard/dispenses',        label: 'تسجيل صرف',        icon: '📤' },
+  { href: '/dashboard/reports',          label: 'تقرير المشتريات',   icon: '📈' },
+  { href: '/dashboard/dispense-reports', label: 'تقرير الصرف',       icon: '📉' },
+]
 
   return (
     <div style={{display:'flex',minHeight:'100vh',fontFamily:'system-ui',direction:'rtl'}}>
