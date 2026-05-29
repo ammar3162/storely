@@ -8,7 +8,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router   = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
-  const [sidebarOpen, setSidebarOpen]   = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [reportsOpen, setReportsOpen]   = useState(
     pathname.includes('/reports') || pathname.includes('/dispense-reports')
   )

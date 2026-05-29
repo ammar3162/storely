@@ -128,18 +128,40 @@ export default function PurchasesPage() {
         <form onSubmit={handleSubmit}>
 
           {/* المنتج */}
-          <div style={{marginBottom:20}}>
-            <label style={{fontSize:13,fontWeight:700,color:'#374151',display:'block',marginBottom:7}}>📦 المنتج</label>
-            <select value={isNewProduct ? 'new' : form.product_name}
-              onChange={e => {
-                if (e.target.value === 'new') { setIsNewProduct(true); setForm({...form,product_name:''}) }
-                else { setIsNewProduct(false); setForm({...form,product_name:e.target.value}) }
-              }} style={inp} required>
-              <option value="">— اختر المنتج —</option>
-              {products.map(p => <option key={p.id} value={p.name}>{p.name} (متاح: {p.qty})</option>)}
-              <option value="new">➕ منتج جديد غير موجود في القائمة</option>
-            </select>
-          </div>
+          <div style={{display:'flex',gap:10,alignItems:'flex-start'}}>
+  <div style={{flex:1}}>
+    <select
+      value={isNewProduct ? '' : form.product_name}
+      onChange={e => {
+        setIsNewProduct(false)
+        setForm({...form, product_name: e.target.value})
+      }}
+      style={{...inp, opacity: isNewProduct ? 0.4 : 1}}
+      disabled={isNewProduct}
+      required={!isNewProduct}
+    >
+      <option value="">— اختر منتجاً موجوداً —</option>
+      {products.map(p => (
+        <option key={p.id} value={p.name}>{p.name} (متاح: {p.qty})</option>
+      ))}
+    </select>
+  </div>
+
+  <button type="button" onClick={() => {
+    setIsNewProduct(!isNewProduct)
+    setForm({...form, product_name:'', new_product_name:''})
+  }} style={{
+    padding:'12px 14px', borderRadius:12, flexShrink:0,
+    border:`2px solid ${isNewProduct ? '#6366f1' : '#e2e8f0'}`,
+    background: isNewProduct ? '#eef2ff' : 'white',
+    color: isNewProduct ? '#6366f1' : '#64748b',
+    fontSize:13, fontWeight:700, cursor:'pointer',
+    fontFamily:'system-ui', whiteSpace:'nowrap',
+    display:'flex', alignItems:'center', gap:6
+  }}>
+    {isNewProduct ? '✕ إلغاء' : '➕ منتج جديد'}
+  </button>
+</div>
 
           {isNewProduct && (
             <div style={{marginBottom:20,background:'#eff6ff',border:'2px solid #93c5fd',borderRadius:14,padding:16}}>
