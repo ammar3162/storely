@@ -83,7 +83,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {mainLinks.map(link => {
               const isActive = pathname === link.href
               return (
-                <Link key={link.href} href={link.href} style={{
+                <Link key={link.href} href={link.href} onClick={() => setSidebarOpen(false)} style={{
                   display:'flex',alignItems:'center',gap:10,
                   padding:'11px 12px',borderRadius:10,marginBottom:2,
                   color: isActive ? 'white' : 'rgba(255,255,255,0.55)',
@@ -124,7 +124,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {reportLinks.map(link => {
                     const isActive = pathname === link.href
                     return (
-                      <Link key={link.href} href={link.href} style={{
+                      <Link key={link.href} href={link.href} onClick={() => setSidebarOpen(false)} style={{
                         display:'flex',alignItems:'center',gap:8,
                         padding:'9px 10px',borderRadius:8,marginBottom:2,
                         color: isActive ? '#a5b4fc' : 'rgba(255,255,255,0.5)',
