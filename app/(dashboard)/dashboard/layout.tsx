@@ -2,25 +2,34 @@
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
+  const [reportsOpen, setReportsOpen] = useState(
+    pathname.includes('/reports') || pathname.includes('/dispense-reports')
+  )
 
   async function handleLogout() {
     await supabase.auth.signOut()
     router.push('/login')
   }
 
-const links = [
-  { href: '/dashboard',                  label: 'الرئيسية',          icon: '📊' },
-  { href: '/dashboard/inventory',        label: 'المخزون',           icon: '📦' },
-  { href: '/dashboard/purchases',        label: 'تسجيل مشتريات',    icon: '🛒' },
-  { href: '/dashboard/dispenses',        label: 'تسجيل صرف',        icon: '📤' },
-  { href: '/dashboard/reports',          label: 'تقرير المشتريات',   icon: '📈' },
-  { href: '/dashboard/dispense-reports', label: 'تقرير الصرف',       icon: '📉' },
-]
+  const mainLinks = [
+    { href: '/dashboard',           label: 'الرئيسية',       icon: '📊' },
+    { href: '/dashboard/inventory', label: 'المخزون',        icon: '📦' },
+    { href: '/dashboard/purchases', label: 'تسجيل مشتريات', icon: '🛒' },
+    { href: '/dashboard/dispenses', label: 'تسجيل صرف',     icon: '📤' },
+  ]
+
+  const reportLinks = [
+    { href: '/dashboard/reports',          label: 'تقرير المشتريات', icon: '📈' },
+    { href: '/dashboard/dispense-reports', label: 'تقرير الصرف',     icon: '📉' },
+  ]
+
+  const isReportActive = reportLinks.some(r => pathname === r.href)
 
   return (
     <div style={{display:'flex',minHeight:'100vh',fontFamily:'system-ui',direction:'rtl'}}>
@@ -43,10 +52,12 @@ const links = [
 
         {/* Nav */}
         <nav style={{flex:1,padding:'12px 10px',overflowY:'auto'}}>
+
+          {/* Main Links */}
           <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.3)',padding:'8px 10px',letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:4}}>
             القائمة الرئيسية
           </div>
-          {links.map(link => {
+          {mainLinks.map(link => {
             const isActive = pathname === link.href
             return (
               <Link key={link.href} href={link.href} style={{
@@ -60,21 +71,73 @@ const links = [
               }}>
                 <span style={{fontSize:17}}>{link.icon}</span>
                 {link.label}
-                {isActive && <span style={{marginRight:'auto',width:6,height:6,borderRadius:'50%',background:'#818cf8'}} />}
               </Link>
             )
           })}
+
+          {/* Reports Section */}
+          <div style={{marginTop:8}}>
+            <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.3)',padding:'8px 10px',letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:4}}>
+              التقارير
+            </div>
+
+            {/* Reports Toggle */}
+            <button onClick={() => setReportsOpen(!reportsOpen)} style={{
+              display:'flex', alignItems:'center', gap:10, justifyContent:'space-between',
+              padding:'11px 12px', borderRadius:10, marginBottom:2,
+              color: isReportActive ? 'white' : 'rgba(255,255,255,0.55)',
+              background: isReportActive ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.05)',
+              border:'none', width:'100%', textAlign:'right',
+              fontWeight: isReportActive ? 700 : 500, fontSize:14,
+              cursor:'pointer', fontFamily:'system-ui', transition:'all 0.15s',
+              borderRight: isReportActive ? '3px solid #818cf8' : '3px solid transparent'
+            }}>
+              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                <span style={{fontSize:17}}>📊</span>
+                التقارير
+              </div>
+              <span style={{
+                fontSize:10, transition:'transform 0.2s',
+                transform: reportsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                display:'inline-block'
+              }}>▼</span>
+            </button>
+
+            {/* Report Sub-links */}
+            {reportsOpen && (
+              <div style={{
+                marginRight:12, borderRight:'2px solid rgba(99,102,241,0.3)',
+                paddingRight:8, marginBottom:4
+              }}>
+                {reportLinks.map(link => {
+                  const isActive = pathname === link.href
+                  return (
+                    <Link key={link.href} href={link.href} style={{
+                      display:'flex', alignItems:'center', gap:8,
+                      padding:'9px 10px', borderRadius:8, marginBottom:2,
+                      color: isActive ? '#a5b4fc' : 'rgba(255,255,255,0.5)',
+                      background: isActive ? 'rgba(99,102,241,0.2)' : 'transparent',
+                      textDecoration:'none', fontWeight: isActive ? 700 : 400,
+                      fontSize:13, transition:'all 0.15s'
+                    }}>
+                      <span style={{fontSize:15}}>{link.icon}</span>
+                      {link.label}
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </nav>
 
-        {/* User + Logout */}
+        {/* Logout */}
         <div style={{padding:'12px 10px',borderTop:'1px solid rgba(255,255,255,0.08)'}}>
           <button onClick={handleLogout} style={{
             width:'100%', padding:'11px 14px', borderRadius:10,
             background:'rgba(239,68,68,0.12)', color:'#f87171',
             border:'1px solid rgba(239,68,68,0.2)', cursor:'pointer',
             fontSize:13, fontWeight:700, fontFamily:'system-ui',
-            display:'flex', alignItems:'center', gap:8, justifyContent:'center',
-            transition:'all 0.2s'
+            display:'flex', alignItems:'center', gap:8, justifyContent:'center'
           }}>
             🚪 تسجيل الخروج
           </button>
@@ -96,11 +159,7 @@ const links = [
             {new Date().toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
           </div>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <div style={{
-              width:8,height:8,borderRadius:'50%',background:'#10b981',
-              boxShadow:'0 0 0 3px rgba(16,185,129,0.2)',
-              animation:'pulse 2s ease-in-out infinite'
-            }} />
+            <div style={{width:8,height:8,borderRadius:'50%',background:'#10b981',boxShadow:'0 0 0 3px rgba(16,185,129,0.2)'}} />
             <span style={{fontSize:12,color:'#64748b',fontWeight:600}}>متصل</span>
           </div>
         </div>
@@ -110,13 +169,6 @@ const links = [
           {children}
         </div>
       </div>
-
-      <style>{`
-        @keyframes pulse {
-          0%,100% { opacity:1; transform:scale(1); }
-          50% { opacity:0.5; transform:scale(0.8); }
-        }
-      `}</style>
     </div>
   )
 }
