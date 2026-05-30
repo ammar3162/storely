@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [orgName, setOrgName]   = useState('')
+  const [phone, setPhone]       = useState('')
   const [newPass, setNewPass]   = useState('')
   const [otp, setOtp]           = useState('')
   const [loading, setLoading]   = useState(false)
@@ -30,6 +31,7 @@ export default function LoginPage() {
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
     if (!orgName.trim()) { setError('أدخل اسم المؤسسة'); return }
+    if (!phone.trim()) { setError('أدخل رقم الجوال'); return }
     if (password.length < 6) { setError('كلمة المرور 6 أحرف على الأقل'); return }
     setLoading(true); setError('')
 
@@ -54,7 +56,8 @@ export default function LoginPage() {
           id: data.user.id,
           org_id: org.id,
           full_name: orgName.trim(),
-          role: 'owner'
+          role: 'owner',
+          phone: phone.trim()
         })
       }
     }
@@ -66,8 +69,7 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true); setError('')
     const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: false }
+      email, options: { shouldCreateUser: false }
     })
     if (error) { setError(error.message); setLoading(false); return }
     setSuccess('تم إرسال كود التحقق لبريدك الإلكتروني')
@@ -78,9 +80,7 @@ export default function LoginPage() {
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true); setError('')
-    const { error } = await supabase.auth.verifyOtp({
-      email, token: otp, type: 'email'
-    })
+    const { error } = await supabase.auth.verifyOtp({ email, token: otp, type: 'email' })
     if (error) { setError('الكود غير صحيح أو منتهي الصلاحية'); setLoading(false); return }
     setMode('newpass')
     setLoading(false)
@@ -161,7 +161,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Mode Title للصفحات الأخرى */}
+        {/* Mode Title */}
         {mode !== 'login' && mode !== 'register' && (
           <div style={{textAlign:'center',marginBottom:24}}>
             <div style={{fontSize:32,marginBottom:8}}>
@@ -228,6 +228,16 @@ export default function LoginPage() {
             <div style={{marginBottom:16}}>
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني</label>
               <input type="email" placeholder="example@email.com" required value={email} onChange={e => setEmail(e.target.value)} style={inp} />
+            </div>
+            <div style={{marginBottom:16}}>
+              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>
+                📱 رقم الجوال
+              </label>
+              <input type="tel" placeholder="مثال: 0561234567" required
+                value={phone} onChange={e => setPhone(e.target.value)} style={inp} />
+              <div style={{fontSize:11,color:'#10b981',marginTop:4,fontWeight:600}}>
+                📲 سيُستخدم لإشعارات واتساب عند نقص المخزون
+              </div>
             </div>
             <div style={{marginBottom:24}}>
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>كلمة المرور</label>
