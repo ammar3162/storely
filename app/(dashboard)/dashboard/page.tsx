@@ -5,14 +5,16 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
 export default function DashboardPage() {
-  const [products, setProducts]   = useState<any[]>([])
-  const [purchases, setPurchases] = useState<any[]>([])
-  const [dispenses, setDispenses] = useState<any[]>([])
+  const [products, setProducts]         = useState<any[]>([])
+  const [purchases, setPurchases]       = useState<any[]>([])
+  const [dispenses, setDispenses]       = useState<any[]>([])
   const [allPurchases, setAllPurchases] = useState<any[]>([])
   const [allDispenses, setAllDispenses] = useState<any[]>([])
-  const [loading, setLoading]     = useState(true)
-  const [time, setTime]           = useState(new Date())
-  const [orgName, setOrgName]     = useState('')
+  const [loading, setLoading]           = useState(true)
+  const [time, setTime]                 = useState(new Date())
+  const [orgName, setOrgName]           = useState('')
+  const [notifySent, setNotifySent]     = useState(false)
+  const [notifyLoading, setNotifyLoading] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -46,12 +48,38 @@ export default function DashboardPage() {
     setLoading(false)
   }
 
-  const totalValue = products.reduce((s, p) => s + (p.qty * p.cost_price), 0)
-  const lowStock   = products.filter(p => p.qty <= p.reorder_point)
-  const totalSpent = allPurchases.reduce((s, p) => s + (Number(p.total_incl_vat)||0), 0)
-  const okStock    = products.length - lowStock.length
-  const hour       = time.getHours()
-  const greeting   = hour < 12 ? 'صباح الخير' : hour < 17 ? 'مساء الخير' : 'مساء النور'
+  async function sendLowStockAlert() {
+    if (lowStock.length === 0) return
+    setNotifyLoading(true)
+    try {
+      const res = await fetch('/api/notify-low-stock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          products: lowStock,
+          orgName,
+          phone: '+966561161448'
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setNotifySent(true)
+        setTimeout(() => setNotifySent(false), 5000)
+      } else {
+        alert('فشل الإرسال: ' + (data.error || 'خطأ غير معروف'))
+      }
+    } catch {
+      alert('فشل الاتصال بالخادم')
+    }
+    setNotifyLoading(false)
+  }
+
+  const totalValue   = products.reduce((s, p) => s + (p.qty * p.cost_price), 0)
+  const lowStock     = products.filter(p => p.qty <= p.reorder_point)
+  const totalSpent   = allPurchases.reduce((s, p) => s + (Number(p.total_incl_vat)||0), 0)
+  const okStock      = products.length - lowStock.length
+  const hour         = time.getHours()
+  const greeting     = hour < 12 ? 'صباح الخير' : hour < 17 ? 'مساء الخير' : 'مساء النور'
   const greetingFull = orgName ? `${greeting}، ${orgName} 👋` : `${greeting} 👋`
 
   // آخر 7 أيام
@@ -62,7 +90,7 @@ export default function DashboardPage() {
   })
 
   const chartData = last7Days.map(day => {
-    const dayStr = day.toISOString().split('T')[0]
+    const dayStr  = day.toISOString().split('T')[0]
     const puTotal = allPurchases
       .filter(p => p.created_at?.startsWith(dayStr))
       .reduce((s,p) => s + (Number(p.total_incl_vat)||0), 0)
@@ -78,12 +106,12 @@ export default function DashboardPage() {
 
   const maxPurchase = Math.max(...chartData.map(d => d.purchases), 1)
 
-  // أعلى 5 منتجات مشتراة
+  // أعلى 5 منتجات
   const productMap: Record<string,number> = {}
   allPurchases.forEach(p => {
     productMap[p.product_name] = (productMap[p.product_name]||0) + (Number(p.total_incl_vat)||0)
   })
-  const top5 = Object.entries(productMap).sort((a,b) => b[1]-a[1]).slice(0,5)
+  const top5    = Object.entries(productMap).sort((a,b) => b[1]-a[1]).slice(0,5)
   const maxTop5 = Math.max(...top5.map(t => t[1]), 1)
 
   if (loading) return (
@@ -103,6 +131,7 @@ export default function DashboardPage() {
           .recent-grid{grid-template-columns:1fr !important}
           .charts-grid{grid-template-columns:1fr !important}
           .header-greeting{font-size:20px !important}
+          .alert-btns{flex-direction:column !important}
         }
       `}</style>
 
@@ -122,17 +151,26 @@ export default function DashboardPage() {
           </h1>
           <p style={{fontSize:13,color:'rgba(255,255,255,0.75)',margin:'4px 0 0'}}>نظرة عامة على مخزونك اليوم</p>
         </div>
-        <button onClick={loadAll} style={{padding:'10px 18px',background:'rgba(255,255,255,0.15)',color:'white',border:'1.5px solid rgba(255,255,255,0.3)',borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'system-ui'}}>
-          🔄 تحديث
-        </button>
+        <button onClick={loadAll} style={{
+          padding:'10px 18px',background:'rgba(255,255,255,0.15)',color:'white',
+          border:'1.5px solid rgba(255,255,255,0.3)',borderRadius:12,
+          fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'system-ui'
+        }}>🔄 تحديث</button>
       </div>
 
       {/* Low stock alert */}
       {lowStock.length > 0 && (
-        <div style={{background:'linear-gradient(135deg,#fffbeb,#fef3c7)',border:'2px solid #fcd34d',borderRadius:14,padding:'14px 20px',marginBottom:20,display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+        <div style={{
+          background:'linear-gradient(135deg,#fffbeb,#fef3c7)',
+          border:'2px solid #fcd34d',borderRadius:14,
+          padding:'14px 20px',marginBottom:20,
+          display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'
+        }}>
           <div style={{width:40,height:40,background:'#f59e0b',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🔔</div>
           <div style={{flex:1,minWidth:150}}>
-            <div style={{fontWeight:800,color:'#92400e',fontSize:14,marginBottom:4}}>تنبيه: {lowStock.length} صنف وصل للحد الأدنى!</div>
+            <div style={{fontWeight:800,color:'#92400e',fontSize:14,marginBottom:4}}>
+              تنبيه: {lowStock.length} صنف وصل للحد الأدنى!
+            </div>
             <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
               {lowStock.map(p => (
                 <span key={p.id} style={{background:'rgba(245,158,11,0.15)',padding:'2px 10px',borderRadius:50,fontSize:11,fontWeight:600,color:'#b45309'}}>
@@ -141,9 +179,22 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-          <Link href="/dashboard/inventory" style={{padding:'8px 16px',background:'#f59e0b',color:'white',borderRadius:10,fontSize:12,fontWeight:700,textDecoration:'none',flexShrink:0}}>
-            طلب الآن
-          </Link>
+          <div className="alert-btns" style={{display:'flex',gap:8,flexShrink:0}}>
+            <button onClick={sendLowStockAlert} disabled={notifyLoading || notifySent} style={{
+              padding:'8px 14px',borderRadius:10,fontSize:12,fontWeight:700,
+              cursor: notifySent ? 'default' : 'pointer',fontFamily:'system-ui',
+              background: notifySent ? '#10b981' : 'white',
+              color: notifySent ? 'white' : '#25d366',
+              border: `2px solid ${notifySent ? '#10b981' : '#25d366'}`,
+              transition:'all 0.2s'
+            }}>
+              {notifyLoading ? '⏳ جاري...' : notifySent ? '✅ تم الإرسال' : '📱 إشعار واتساب'}
+            </button>
+            <Link href="/dashboard/inventory" style={{
+              padding:'8px 16px',background:'#f59e0b',color:'white',
+              borderRadius:10,fontSize:12,fontWeight:700,textDecoration:'none'
+            }}>طلب الآن</Link>
+          </div>
         </div>
       )}
 
@@ -167,7 +218,7 @@ export default function DashboardPage() {
       {/* Charts */}
       <div className="charts-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,marginBottom:24}}>
 
-        {/* Bar Chart - آخر 7 أيام */}
+        {/* Bar Chart */}
         <div style={{background:'white',borderRadius:18,padding:20,boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}>
           <div style={{marginBottom:16}}>
             <h3 style={{fontSize:15,fontWeight:800,color:'#0f172a',margin:0}}>📊 المشتريات — آخر 7 أيام</h3>
@@ -182,14 +233,10 @@ export default function DashboardPage() {
                 <div style={{
                   width:'100%',
                   height: d.purchases > 0 ? `${Math.max((d.purchases/maxPurchase)*100,4)}%` : '4%',
-                  background: d.purchases > 0
-                    ? 'linear-gradient(180deg,#6366f1,#8b5cf6)'
-                    : '#f1f5f9',
+                  background: d.purchases > 0 ? 'linear-gradient(180deg,#6366f1,#8b5cf6)' : '#f1f5f9',
                   borderRadius:'6px 6px 0 0',
                   transition:'height 0.5s ease',
-                  minHeight:4,
-                  position:'relative',
-                  cursor:'default'
+                  minHeight:4
                 }} />
                 <div style={{fontSize:9,color:'#64748b',fontWeight:600,textAlign:'center'}}>{d.day}</div>
               </div>
@@ -201,7 +248,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Top 5 Products */}
+        {/* Top 5 */}
         <div style={{background:'white',borderRadius:18,padding:20,boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}>
           <div style={{marginBottom:16}}>
             <h3 style={{fontSize:15,fontWeight:800,color:'#0f172a',margin:0}}>🏆 أعلى 5 منتجات مشتراة</h3>
@@ -215,7 +262,7 @@ export default function DashboardPage() {
           ) : (
             <div style={{display:'flex',flexDirection:'column',gap:12}}>
               {top5.map(([name,val],i) => {
-                const pct = Math.round((val/maxTop5)*100)
+                const pct    = Math.round((val/maxTop5)*100)
                 const colors = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6']
                 const medals = ['🥇','🥈','🥉','4️⃣','5️⃣']
                 return (
@@ -236,7 +283,6 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-
       </div>
 
       {/* Quick Actions */}
