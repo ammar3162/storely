@@ -23,6 +23,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: '/dashboard/inventory', label: 'المخزون',        icon: '📦' },
     { href: '/dashboard/purchases', label: 'تسجيل مشتريات', icon: '🛒' },
     { href: '/dashboard/dispenses', label: 'تسجيل صرف',     icon: '📤' },
+    { href: '/dashboard/settings', label: 'الإعدادات', icon: '⚙️' },
   ]
 
   const reportLinks = [

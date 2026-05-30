@@ -6,6 +6,84 @@ import { createClient } from '@/lib/supabase/client'
 const UNITS = ['كيلو','لتر','علبة','كرتون','أسطوانة','قطعة','كيس','زجاجة','باكيت','درزن']
 const CATEGORIES = ['ألبان','قهوة','مشروبات','أدوات','مواد أساسية','إضافات','تنظيف','أخرى']
 
+const inp: React.CSSProperties = {
+  width:'100%', padding:'11px 14px', border:'1.5px solid #e2e8f0',
+  borderRadius:10, fontSize:14, outline:'none', boxSizing:'border-box',
+  background:'white', color:'#1e293b', fontFamily:'system-ui', fontWeight:500
+}
+
+function Modal({ title, sub, onClose, onSubmit, data, setData }: any) {
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.65)',zIndex:999,display:'flex',alignItems:'center',justifyContent:'center',padding:16,backdropFilter:'blur(6px)'}}>
+      <div style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:540,boxShadow:'0 25px 60px rgba(0,0,0,0.25)',maxHeight:'90vh',overflowY:'auto'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+          <div>
+            <h3 style={{fontWeight:900,fontSize:17,color:'#0f172a',margin:0}}>{title}</h3>
+            <p style={{fontSize:12,color:'#94a3b8',marginTop:3,margin:0}}>{sub}</p>
+          </div>
+          <button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:10,width:34,height:34,cursor:'pointer',fontSize:16,color:'#64748b',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+        </div>
+        <form onSubmit={onSubmit}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:18}}>
+            <div style={{gridColumn:'1/-1'}}>
+              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:5}}>اسم الصنف *</label>
+              <input type="text" placeholder="مثال: حليب فريش" required
+                value={data.name}
+                onChange={e => setData((prev: any) => ({...prev, name: e.target.value}))}
+                style={inp} />
+            </div>
+            <div>
+              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:5}}>الكمية الحالية</label>
+              <input type="number" placeholder="0" min="0"
+                value={data.qty}
+                onChange={e => setData((prev: any) => ({...prev, qty: e.target.value}))}
+                style={inp} />
+            </div>
+            <div>
+              <label style={{fontSize:12,fontWeight:700,color:'#f59e0b',display:'block',marginBottom:5}}>⚠️ الحد الأدنى</label>
+              <input type="number" placeholder="0" min="0"
+                value={data.reorder_point}
+                onChange={e => setData((prev: any) => ({...prev, reorder_point: e.target.value}))}
+                style={{...inp,border:'2px solid #fcd34d',background:'#fffbeb'}} />
+            </div>
+            <div>
+              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:5}}>سعر التكلفة (ريال)</label>
+              <input type="number" placeholder="0.00" min="0" step="0.01"
+                value={data.cost_price}
+                onChange={e => setData((prev: any) => ({...prev, cost_price: e.target.value}))}
+                style={inp} />
+            </div>
+            <div>
+              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:5}}>الوحدة</label>
+              <select value={data.unit}
+                onChange={e => setData((prev: any) => ({...prev, unit: e.target.value}))}
+                style={inp}>
+                {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:5}}>الفئة</label>
+              <select value={data.category}
+                onChange={e => setData((prev: any) => ({...prev, category: e.target.value}))}
+                style={inp}>
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{display:'flex',gap:10}}>
+            <button type="submit" style={{flex:1,padding:'13px',background:'linear-gradient(135deg,#6366f1,#8b5cf6)',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'system-ui',boxShadow:'0 4px 12px rgba(99,102,241,0.3)'}}>
+              💾 حفظ
+            </button>
+            <button type="button" onClick={onClose} style={{padding:'13px 20px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
+              إلغاء
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function InventoryPage() {
   const [products, setProducts]         = useState<any[]>([])
   const [search, setSearch]             = useState('')
@@ -75,87 +153,19 @@ export default function InventoryPage() {
     return matchSearch && matchStatus && matchCategory
   })
 
-  const inp: React.CSSProperties = {
-    width:'100%', padding:'11px 14px', border:'1.5px solid #e2e8f0',
-    borderRadius:10, fontSize:14, outline:'none', boxSizing:'border-box',
-    background:'white', color:'#1e293b', fontFamily:'system-ui', fontWeight:500
-  }
-
-  const Modal = ({ title, sub, onClose, onSubmit, data, setData }: any) => (
-    <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.65)',zIndex:999,display:'flex',alignItems:'center',justifyContent:'center',padding:16,backdropFilter:'blur(6px)'}}>
-      <div style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:540,boxShadow:'0 25px 60px rgba(0,0,0,0.25)',maxHeight:'90vh',overflowY:'auto'}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
-          <div>
-            <h3 style={{fontWeight:900,fontSize:17,color:'#0f172a',margin:0}}>{title}</h3>
-            <p style={{fontSize:12,color:'#94a3b8',marginTop:3,margin:0}}>{sub}</p>
-          </div>
-          <button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:10,width:34,height:34,cursor:'pointer',fontSize:16,color:'#64748b',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
-        </div>
-        <form onSubmit={onSubmit}>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:18}}>
-            <div style={{gridColumn:'1/-1'}}>
-              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:5}}>اسم الصنف *</label>
-              <input type="text" placeholder="مثال: حليب فريش" required value={data.name}
-                onChange={e => setData({...data,name:e.target.value})} style={inp} />
-            </div>
-            <div>
-              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:5}}>الكمية الحالية</label>
-              <input type="number" placeholder="0" min="0" value={data.qty}
-                onChange={e => setData({...data,qty:e.target.value})} style={inp} />
-            </div>
-            <div>
-              <label style={{fontSize:12,fontWeight:700,color:'#f59e0b',display:'block',marginBottom:5}}>⚠️ الحد الأدنى</label>
-              <input type="number" placeholder="0" min="0" value={data.reorder_point}
-                onChange={e => setData({...data,reorder_point:e.target.value})}
-                style={{...inp,border:'2px solid #fcd34d',background:'#fffbeb'}} />
-            </div>
-            <div>
-              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:5}}>سعر التكلفة (ريال)</label>
-              <input type="number" placeholder="0.00" min="0" step="0.01" value={data.cost_price}
-                onChange={e => setData({...data,cost_price:e.target.value})} style={inp} />
-            </div>
-            <div>
-              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:5}}>الوحدة</label>
-              <select value={data.unit} onChange={e => setData({...data,unit:e.target.value})} style={inp}>
-                {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:5}}>الفئة</label>
-              <select value={data.category} onChange={e => setData({...data,category:e.target.value})} style={inp}>
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-          </div>
-          <div style={{display:'flex',gap:10}}>
-            <button type="submit" style={{flex:1,padding:'13px',background:'linear-gradient(135deg,#6366f1,#8b5cf6)',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'system-ui',boxShadow:'0 4px 12px rgba(99,102,241,0.3)'}}>
-              💾 حفظ
-            </button>
-            <button type="button" onClick={onClose} style={{padding:'13px 20px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
-              إلغاء
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-
   return (
     <div style={{direction:'rtl',fontFamily:'system-ui'}}>
       <style>{`
         @media(max-width:768px){
-  .stats-grid{grid-template-columns:1fr 1fr !important}
-  .toolbar{flex-direction:column !important}
-  .toolbar > *{width:100% !important;min-width:unset !important}
-  .header-row{flex-direction:column !important;align-items:flex-start !important}
-  .header-btns{width:100% !important;justify-content:space-between !important}
-  .hide-mobile{display:none !important}
-  .tab-group{width:100% !important;justify-content:space-between !important}
-}
-@media(max-width:480px){
-  .stats-grid{grid-template-columns:1fr 1fr !important}
-  .header-btns{flex-wrap:wrap !important}
-}
+          .stats-grid{grid-template-columns:1fr 1fr !important}
+          .toolbar{flex-direction:column !important}
+          .toolbar > *{width:100% !important;min-width:unset !important}
+          .header-row{flex-direction:column !important;align-items:flex-start !important}
+          .header-btns{width:100% !important;justify-content:space-between !important}
+        }
+        @media(max-width:480px){
+          .header-btns{flex-wrap:wrap !important}
+        }
         .prod-row:hover{background:#f8faff !important}
         .action-btn:hover{opacity:0.85;transform:translateY(-1px)}
         @keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
@@ -168,7 +178,6 @@ export default function InventoryPage() {
           <p style={{fontSize:13,color:'#64748b',margin:0}}>{products.length} صنف • آخر تحديث {new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'})}</p>
         </div>
         <div className="header-btns" style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-          {/* View Toggle */}
           <div style={{display:'flex',background:'#f1f5f9',borderRadius:10,padding:3,gap:3}}>
             <button onClick={() => setViewMode('table')} style={{padding:'7px 12px',borderRadius:8,border:'none',cursor:'pointer',background:viewMode==='table'?'white':'transparent',color:viewMode==='table'?'#6366f1':'#64748b',fontWeight:700,fontSize:12,fontFamily:'system-ui',boxShadow:viewMode==='table'?'0 1px 4px rgba(0,0,0,0.1)':'none'}}>جدول</button>
             <button onClick={() => setViewMode('cards')} style={{padding:'7px 12px',borderRadius:8,border:'none',cursor:'pointer',background:viewMode==='cards'?'white':'transparent',color:viewMode==='cards'?'#6366f1':'#64748b',fontWeight:700,fontSize:12,fontFamily:'system-ui',boxShadow:viewMode==='cards'?'0 1px 4px rgba(0,0,0,0.1)':'none'}}>بطاقات</button>
@@ -234,7 +243,7 @@ export default function InventoryPage() {
           <option value="">كل الفئات</option>
           {categories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <div className="tab-group" style={{display:'flex',background:'#f1f5f9',borderRadius:10,padding:3,gap:3}}>
+        <div style={{display:'flex',background:'#f1f5f9',borderRadius:10,padding:3,gap:3}}>
           {[
             {key:'all',label:`الكل (${products.length})`},
             {key:'low',label:`⚠️ ناقص (${lowStock.length})`},
@@ -265,17 +274,14 @@ export default function InventoryPage() {
           <div style={{fontSize:13,color:'#94a3b8'}}>جرب تغيير الفلتر أو البحث</div>
         </div>
       ) : viewMode === 'cards' ? (
-        /* Cards View */
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:14}}>
-          {filtered.map((p,idx) => {
+          {filtered.map((p) => {
             const isLow = p.qty <= p.reorder_point
             const ratio = p.reorder_point > 0 ? Math.min((p.qty/p.reorder_point)*100,100) : 100
             const barClr = ratio < 50 ? '#ef4444' : ratio < 80 ? '#f59e0b' : '#10b981'
             return (
               <div key={p.id} style={{background:'white',borderRadius:16,padding:18,boxShadow:'0 2px 12px rgba(0,0,0,0.06)',border:`1.5px solid ${isLow?'#fecaca':'#f1f5f9'}`,position:'relative'}}>
-                {isLow && (
-                  <div style={{position:'absolute',top:12,left:12,background:'#fef2f2',color:'#ef4444',padding:'2px 8px',borderRadius:50,fontSize:10,fontWeight:700}}>⚠️ اطلب الآن</div>
-                )}
+                {isLow && <div style={{position:'absolute',top:12,left:12,background:'#fef2f2',color:'#ef4444',padding:'2px 8px',borderRadius:50,fontSize:10,fontWeight:700}}>⚠️ اطلب الآن</div>}
                 <div style={{marginBottom:12}}>
                   <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:4}}>{p.name}</div>
                   <span style={{background:'#f1f5f9',color:'#475569',padding:'2px 8px',borderRadius:50,fontSize:11,fontWeight:600}}>{p.category}</span>
@@ -292,8 +298,7 @@ export default function InventoryPage() {
                 </div>
                 <div style={{marginBottom:12}}>
                   <div style={{display:'flex',justifyContent:'space-between',marginBottom:4,fontSize:11,color:'#94a3b8'}}>
-                    <span>مستوى المخزون</span>
-                    <span>{Math.round(ratio)}%</span>
+                    <span>مستوى المخزون</span><span>{Math.round(ratio)}%</span>
                   </div>
                   <div style={{height:6,background:'#f1f5f9',borderRadius:99,overflow:'hidden'}}>
                     <div style={{height:'100%',width:`${ratio}%`,background:barClr,borderRadius:99,transition:'width 0.5s'}} />
@@ -308,7 +313,6 @@ export default function InventoryPage() {
           })}
         </div>
       ) : (
-        /* Table View */
         <div style={{background:'white',borderRadius:16,boxShadow:'0 2px 12px rgba(0,0,0,0.06)',overflow:'hidden'}}>
           <div style={{overflowX:'auto'}}>
             <table style={{width:'100%',borderCollapse:'collapse',minWidth:700}}>
@@ -327,16 +331,10 @@ export default function InventoryPage() {
                   return (
                     <tr key={p.id} className="prod-row" style={{borderBottom:'1px solid #f1f5f9',background:isLow?'#fff8f8':idx%2===0?'white':'#fafafa',transition:'background 0.15s'}}>
                       <td style={{padding:'13px 12px',textAlign:'center',color:'#94a3b8',fontSize:12,fontWeight:600}}>{idx+1}</td>
-                      <td style={{padding:'13px 14px',textAlign:'right'}}>
-                        <div style={{fontWeight:700,fontSize:14,color:'#0f172a'}}>{p.name}</div>
-                      </td>
-                      <td style={{padding:'13px 12px',textAlign:'center'}}>
-                        <span style={{background:'#f1f5f9',color:'#475569',padding:'3px 10px',borderRadius:50,fontSize:11,fontWeight:600,whiteSpace:'nowrap' as const}}>{p.category||'—'}</span>
-                      </td>
+                      <td style={{padding:'13px 14px',textAlign:'right'}}><div style={{fontWeight:700,fontSize:14,color:'#0f172a'}}>{p.name}</div></td>
+                      <td style={{padding:'13px 12px',textAlign:'center'}}><span style={{background:'#f1f5f9',color:'#475569',padding:'3px 10px',borderRadius:50,fontSize:11,fontWeight:600,whiteSpace:'nowrap' as const}}>{p.category||'—'}</span></td>
                       <td style={{padding:'13px 12px',textAlign:'center',color:'#64748b',fontWeight:600,fontSize:13}}>{p.unit}</td>
-                      <td style={{padding:'13px 12px',textAlign:'center'}}>
-                        <span style={{background:isLow?'#fee2e2':'#dcfce7',color:isLow?'#dc2626':'#16a34a',padding:'5px 14px',borderRadius:50,fontWeight:900,fontSize:15}}>{p.qty}</span>
-                      </td>
+                      <td style={{padding:'13px 12px',textAlign:'center'}}><span style={{background:isLow?'#fee2e2':'#dcfce7',color:isLow?'#dc2626':'#16a34a',padding:'5px 14px',borderRadius:50,fontWeight:900,fontSize:15}}>{p.qty}</span></td>
                       <td style={{padding:'13px 12px',textAlign:'center',fontWeight:700,color:'#f59e0b',fontSize:14}}>{p.reorder_point}</td>
                       <td style={{padding:'13px 12px',textAlign:'center',fontWeight:700,color:'#0f172a',fontSize:13,whiteSpace:'nowrap' as const}}>{Number(p.cost_price).toFixed(2)} ﷼</td>
                       <td style={{padding:'13px 12px',textAlign:'center'}}>
@@ -347,11 +345,7 @@ export default function InventoryPage() {
                           <span style={{fontSize:10,color:'#94a3b8',fontWeight:600}}>{Math.round(ratio)}%</span>
                         </div>
                       </td>
-                      <td style={{padding:'13px 12px',textAlign:'center'}}>
-                        <span style={{background:isLow?'#fee2e2':'#dcfce7',color:isLow?'#dc2626':'#16a34a',padding:'4px 10px',borderRadius:50,fontSize:11,fontWeight:800,whiteSpace:'nowrap' as const}}>
-                          {isLow?'⚠️ اطلب':'✅ متوفر'}
-                        </span>
-                      </td>
+                      <td style={{padding:'13px 12px',textAlign:'center'}}><span style={{background:isLow?'#fee2e2':'#dcfce7',color:isLow?'#dc2626':'#16a34a',padding:'4px 10px',borderRadius:50,fontSize:11,fontWeight:800,whiteSpace:'nowrap' as const}}>{isLow?'⚠️ اطلب':'✅ متوفر'}</span></td>
                       <td style={{padding:'13px 12px',textAlign:'center'}}>
                         <div style={{display:'flex',gap:6,justifyContent:'center'}}>
                           <button className="action-btn" onClick={() => setEditProduct({...p})} style={{padding:'6px 12px',background:'#eff6ff',color:'#2563eb',border:'1.5px solid #bfdbfe',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'system-ui',transition:'all 0.2s'}}>✏️</button>
@@ -364,14 +358,8 @@ export default function InventoryPage() {
               </tbody>
               <tfoot>
                 <tr style={{background:'linear-gradient(135deg,#eef2ff,#e0e7ff)',borderTop:'2px solid #c7d2fe'}}>
-                  <td colSpan={6} style={{padding:'13px 14px',fontWeight:700,fontSize:13,color:'#475569',textAlign:'right'}}>
-                    الإجمالي ({filtered.length} صنف)
-                  </td>
-                  <td style={{padding:'13px',textAlign:'center'}}>
-                    <span style={{background:'#6366f1',color:'white',padding:'5px 14px',borderRadius:50,fontWeight:800,fontSize:13}}>
-                      {filtered.reduce((s,p)=>s+(p.qty*p.cost_price),0).toLocaleString('ar-SA',{maximumFractionDigits:0})} ﷼
-                    </span>
-                  </td>
+                  <td colSpan={6} style={{padding:'13px 14px',fontWeight:700,fontSize:13,color:'#475569',textAlign:'right'}}>الإجمالي ({filtered.length} صنف)</td>
+                  <td style={{padding:'13px',textAlign:'center'}}><span style={{background:'#6366f1',color:'white',padding:'5px 14px',borderRadius:50,fontWeight:800,fontSize:13}}>{filtered.reduce((s,p)=>s+(p.qty*p.cost_price),0).toLocaleString('ar-SA',{maximumFractionDigits:0})} ﷼</span></td>
                   <td colSpan={3} />
                 </tr>
               </tfoot>
@@ -380,7 +368,6 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* Add Modal */}
       {showAdd && (
         <Modal
           title="➕ إضافة صنف جديد"
@@ -392,7 +379,6 @@ export default function InventoryPage() {
         />
       )}
 
-      {/* Edit Modal */}
       {editProduct && (
         <Modal
           title="✏️ تعديل الصنف"
