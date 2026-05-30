@@ -237,18 +237,30 @@ export default function PurchasesPage() {
           )}
 
           {/* الكمية والموظف */}
-          <div className="grid-2" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:20}}>
-            <div>
-              <label style={{fontSize:13,fontWeight:700,color:'#374151',display:'block',marginBottom:7}}>🔢 الكمية</label>
-              <input type="number" placeholder="0" min="1" required
-                value={form.qty} onChange={e => setForm({...form,qty:e.target.value})} style={inp} />
-            </div>
-            <div>
-              <label style={{fontSize:13,fontWeight:700,color:'#374151',display:'block',marginBottom:7}}>👤 الموظف</label>
-              <input type="text" placeholder="اسم الموظف"
-                value={form.employee_name} onChange={e => setForm({...form,employee_name:e.target.value})} style={inp} />
-            </div>
-          </div>
+          {/* الكمية والموظف */}
+<div style={{marginBottom:20}}>
+  {form.purchase_type === 'inventory' && (
+    <div className="grid-2" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:14}}>
+      <div>
+        <label style={{fontSize:13,fontWeight:700,color:'#374151',display:'block',marginBottom:7}}>🔢 الكمية</label>
+        <input type="number" placeholder="0" min="1" required
+          value={form.qty} onChange={e => setForm({...form,qty:e.target.value})} style={inp} />
+      </div>
+      <div>
+        <label style={{fontSize:13,fontWeight:700,color:'#374151',display:'block',marginBottom:7}}>👤 الموظف</label>
+        <input type="text" placeholder="اسم الموظف"
+          value={form.employee_name} onChange={e => setForm({...form,employee_name:e.target.value})} style={inp} />
+      </div>
+    </div>
+  )}
+  {form.purchase_type === 'expense' && (
+    <div>
+      <label style={{fontSize:13,fontWeight:700,color:'#374151',display:'block',marginBottom:7}}>👤 الموظف</label>
+      <input type="text" placeholder="اسم الموظف"
+        value={form.employee_name} onChange={e => setForm({...form,employee_name:e.target.value})} style={inp} />
+    </div>
+  )}
+    </div>
 
           {/* المبلغ الكلي والمورد */}
           <div className="grid-2" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:20}}>
