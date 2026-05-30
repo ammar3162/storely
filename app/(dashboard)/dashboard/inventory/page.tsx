@@ -144,17 +144,18 @@ export default function InventoryPage() {
     <div style={{direction:'rtl',fontFamily:'system-ui'}}>
       <style>{`
         @media(max-width:768px){
-          .stats-grid{grid-template-columns:1fr 1fr !important}
-          .toolbar{flex-direction:column !important}
-          .toolbar > *{width:100% !important}
-          .hide-mobile{display:none !important}
-          .header-row{flex-direction:column !important;align-items:flex-start !important}
-          .header-btns{width:100% !important;justify-content:space-between !important}
-        }
-        @media(max-width:480px){
-          .stats-grid{grid-template-columns:1fr 1fr !important}
-          .tab-group{overflow-x:auto !important}
-        }
+  .stats-grid{grid-template-columns:1fr 1fr !important}
+  .toolbar{flex-direction:column !important}
+  .toolbar > *{width:100% !important;min-width:unset !important}
+  .header-row{flex-direction:column !important;align-items:flex-start !important}
+  .header-btns{width:100% !important;justify-content:space-between !important}
+  .hide-mobile{display:none !important}
+  .tab-group{width:100% !important;justify-content:space-between !important}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:1fr 1fr !important}
+  .header-btns{flex-wrap:wrap !important}
+}
         .prod-row:hover{background:#f8faff !important}
         .action-btn:hover{opacity:0.85;transform:translateY(-1px)}
         @keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
