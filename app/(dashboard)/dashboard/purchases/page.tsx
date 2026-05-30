@@ -183,7 +183,7 @@ export default function PurchasesPage() {
               <label style={{fontSize:13,fontWeight:700,color:'#374151',display:'block',marginBottom:7}}>
                 📝 وصف المصروف
               </label>
-              <input type="text" placeholder="مثال: أدوات صيانة، قرطاسية، إيجار..." required
+              <input type="text" placeholder="مثال: أدوات صيانة، مشتريات اخرئ ..." required
                 value={form.product_name}
                 onChange={e => setForm({...form,product_name:e.target.value})}
                 style={inp} />
