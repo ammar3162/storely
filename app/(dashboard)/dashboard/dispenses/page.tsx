@@ -1,6 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const REASONS = ['استهلاك يومي','طلب فرع','تلف','نقص مخزون','هدية','أخرى']
@@ -10,9 +10,11 @@ export default function DispensesPage() {
   const [history, setHistory]   = useState<any[]>([])
   const [loading, setLoading]   = useState(false)
   const [success, setSuccess]   = useState('')
-  const [form, setForm] = useState({
-    product_name:'', employee_name:'', qty:'', reason:'استهلاك يومي', notes:''
-  })
+  const [productName, setProductName]     = useState('')
+  const [employeeName, setEmployeeName]   = useState('')
+  const [qty, setQty]                     = useState('')
+  const [reason, setReason]               = useState('استهلاك يومي')
+  const [notes, setNotes]                 = useState('')
   const supabase = createClient()
 
   useEffect(() => { loadProducts(); loadHistory() }, [])
@@ -27,13 +29,13 @@ export default function DispensesPage() {
     setHistory(data || [])
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.product_name || !form.qty) return
+    if (!productName || !qty) return
     setLoading(true)
-    const qty = Number(form.qty)
-    const product = products.find(p => p.name === form.product_name)
-    if (product && product.qty < qty) {
+    const qtyNum = Number(qty)
+    const product = products.find(p => p.name === productName)
+    if (product && product.qty < qtyNum) {
       alert('الكمية المطلوبة أكبر من المتاح!')
       setLoading(false)
       return
@@ -42,22 +44,30 @@ export default function DispensesPage() {
     const { data: profile }  = await supabase.from('profiles').select('org_id').eq('id', user!.id).single()
     await supabase.from('dispenses').insert({
       org_id: profile?.org_id,
-      product_name: form.product_name, employee_name: form.employee_name,
-      qty, reason: form.reason, notes: form.notes
+      product_name: productName,
+      employee_name: employeeName,
+      qty: qtyNum,
+      reason,
+      notes
     })
     if (product) {
-      await supabase.from('products').update({ qty: product.qty - qty }).eq('id', product.id)
+      await supabase.from('products').update({ qty: product.qty - qtyNum }).eq('id', product.id)
     }
-    setSuccess(`✅ تم صرف ${qty} ${product?.unit||''} من ${form.product_name}`)
-    setForm({ product_name:'', employee_name:'', qty:'', reason:'استهلاك يومي', notes:'' })
+    setSuccess(`✅ تم صرف ${qtyNum} ${product?.unit||''} من ${productName}`)
+    setProductName('')
+    setEmployeeName('')
+    setQty('')
+    setReason('استهلاك يومي')
+    setNotes('')
     setLoading(false)
     loadProducts()
     loadHistory()
     setTimeout(() => setSuccess(''), 4000)
-  }
+  }, [productName, employeeName, qty, reason, notes, products])
 
-  const selectedProduct = products.find(p => p.name === form.product_name)
-  const isLow = selectedProduct && selectedProduct.qty <= selectedProduct.reorder_point
+  const selectedProduct = products.find(p => p.name === productName) ?? null
+  const isLow      = selectedProduct ? selectedProduct.qty <= selectedProduct.reorder_point : false
+  const remaining  = selectedProduct && qty ? selectedProduct.qty - Number(qty) : null
 
   const inp: React.CSSProperties = {
     width:'100%', padding:'12px 14px', border:'2px solid #e2e8f0',
@@ -76,7 +86,6 @@ export default function DispensesPage() {
           border-color:#ef4444 !important;
           box-shadow:0 0 0 3px rgba(239,68,68,0.12) !important;
         }
-        .reason-btn:hover{opacity:0.85}
       `}</style>
 
       {/* Header */}
@@ -110,7 +119,12 @@ export default function DispensesPage() {
             {/* المنتج */}
             <div style={{marginBottom:16}}>
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>📦 المنتج</label>
-              <select value={form.product_name} onChange={e => setForm({...form,product_name:e.target.value})} style={inp} required>
+              <select
+                value={productName}
+                onChange={e => setProductName(e.target.value)}
+                style={inp}
+                required
+              >
                 <option value="">— اختر المنتج —</option>
                 {products.map(p => (
                   <option key={p.id} value={p.name}>{p.name} (متاح: {p.qty} {p.unit})</option>
@@ -140,32 +154,49 @@ export default function DispensesPage() {
             <div className="qty-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16}}>
               <div>
                 <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>🔢 الكمية</label>
-                <input type="number" placeholder="0" min="1" required
-                  value={form.qty} onChange={e => setForm({...form,qty:e.target.value})} style={inp} />
+                <input
+                  type="number"
+                  placeholder="0"
+                  min="1"
+                  required
+                  autoComplete="off"
+                  value={qty}
+                  onChange={e => setQty(e.target.value)}
+                  style={inp}
+                />
               </div>
               <div>
                 <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>👤 الموظف</label>
-                <input type="text" placeholder="اسم الموظف"
-                  value={form.employee_name} onChange={e => setForm({...form,employee_name:e.target.value})} style={inp} />
+                <input
+                  type="text"
+                  placeholder="اسم الموظف"
+                  autoComplete="off"
+                  value={employeeName}
+                  onChange={e => setEmployeeName(e.target.value)}
+                  style={inp}
+                />
               </div>
             </div>
 
-            {/* السبب — أزرار */}
+            {/* السبب */}
             <div style={{marginBottom:16}}>
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:8}}>📋 سبب الصرف</label>
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
                 {REASONS.map(r => (
-                  <button key={r} type="button" className="reason-btn"
-                    onClick={() => setForm({...form,reason:r})}
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setReason(r)}
                     style={{
                       padding:'10px 6px',borderRadius:10,
-                      border:`2px solid ${form.reason===r?'#ef4444':'#e2e8f0'}`,
-                      background:form.reason===r?'#fef2f2':'white',
-                      color:form.reason===r?'#ef4444':'#64748b',
+                      border:`2px solid ${reason===r?'#ef4444':'#e2e8f0'}`,
+                      background:reason===r?'#fef2f2':'white',
+                      color:reason===r?'#ef4444':'#64748b',
                       fontSize:12,fontWeight:700,cursor:'pointer',
                       fontFamily:'system-ui',transition:'all 0.2s',
-                      textAlign:'center'
-                    }}>{r}</button>
+                      textAlign:'center' as const
+                    }}
+                  >{r}</button>
                 ))}
               </div>
             </div>
@@ -173,23 +204,26 @@ export default function DispensesPage() {
             {/* ملاحظات */}
             <div style={{marginBottom:20}}>
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>📝 ملاحظات (اختياري)</label>
-              <textarea placeholder="أي تفاصيل إضافية..."
-                value={form.notes} onChange={e => setForm({...form,notes:e.target.value})}
-                style={{...inp,minHeight:72,resize:'none'}} />
+              <textarea
+                placeholder="أي تفاصيل إضافية..."
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                style={{...inp,minHeight:72,resize:'none'}}
+              />
             </div>
 
             {/* ملخص */}
-            {form.product_name && form.qty && (
+            {productName && qty && (
               <div style={{background:'linear-gradient(135deg,#fef2f2,#fee2e2)',border:'2px solid #fecaca',borderRadius:12,padding:14,marginBottom:16}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                  <span style={{fontSize:13,fontWeight:700,color:'#0f172a'}}>{form.product_name}</span>
+                  <span style={{fontSize:13,fontWeight:700,color:'#0f172a'}}>{productName}</span>
                   <span style={{background:'#ef4444',color:'white',padding:'4px 12px',borderRadius:50,fontWeight:900,fontSize:14}}>
-                    -{form.qty} {selectedProduct?.unit||''}
+                    -{qty} {selectedProduct?.unit||''}
                   </span>
                 </div>
-                {selectedProduct && (
-                  <div style={{fontSize:12,color:'#94a3b8',marginTop:6}}>
-                    المتبقي بعد الصرف: {selectedProduct.qty - Number(form.qty)} {selectedProduct.unit}
+                {remaining !== null && (
+                  <div style={{fontSize:12,color: remaining < 0 ? '#ef4444' : '#94a3b8',marginTop:6,fontWeight: remaining < 0 ? 700 : 400}}>
+                    {remaining < 0 ? '⚠️ الكمية تتجاوز المتاح!' : `المتبقي بعد الصرف: ${remaining} ${selectedProduct?.unit||''}`}
                   </div>
                 )}
               </div>
@@ -230,7 +264,7 @@ export default function DispensesPage() {
               <div style={{fontSize:14,fontWeight:600}}>لا توجد عمليات صرف بعد</div>
             </div>
           ) : (
-            <div style={{display:'flex',flexDirection:'column',gap:0,maxHeight:520,overflowY:'auto'}}>
+            <div style={{display:'flex',flexDirection:'column',maxHeight:520,overflowY:'auto'}}>
               {history.map((h,i) => (
                 <div key={i} style={{
                   display:'flex',justifyContent:'space-between',alignItems:'center',
