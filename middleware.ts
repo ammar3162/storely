@@ -8,6 +8,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
+  if (!isLoggedIn && request.nextUrl.pathname.startsWith('/admin')) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
   if (isLoggedIn && request.nextUrl.pathname === '/login') {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
@@ -16,5 +20,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login'],
+  matcher: ['/dashboard/:path*', '/admin/:path*', '/login'],
 }
