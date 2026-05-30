@@ -58,6 +58,7 @@ export default function DispensesPage() {
 
   const selectedProduct = products.find(p => p.name === form.product_name)
   const isLow = selectedProduct && selectedProduct.qty <= selectedProduct.reorder_point
+
   const inp: React.CSSProperties = {
     width:'100%', padding:'12px 14px', border:'2px solid #e2e8f0',
     borderRadius:10, fontSize:14, outline:'none', boxSizing:'border-box',
@@ -66,6 +67,17 @@ export default function DispensesPage() {
 
   return (
     <div style={{direction:'rtl',fontFamily:'system-ui'}}>
+      <style>{`
+        @media(max-width:768px){
+          .dispense-grid{grid-template-columns:1fr !important}
+          .qty-grid{grid-template-columns:1fr !important}
+        }
+        input:focus,select:focus,textarea:focus{
+          border-color:#ef4444 !important;
+          box-shadow:0 0 0 3px rgba(239,68,68,0.12) !important;
+        }
+        .reason-btn:hover{opacity:0.85}
+      `}</style>
 
       {/* Header */}
       <div style={{marginBottom:24}}>
@@ -81,14 +93,14 @@ export default function DispensesPage() {
         </div>
       )}
 
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:24,alignItems:'start'}}>
+      <div className="dispense-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,alignItems:'start'}}>
 
         {/* Form */}
-        <div style={{background:'white',borderRadius:20,padding:28,boxShadow:'0 4px 24px rgba(0,0,0,0.07)'}}>
-          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:24}}>
-            <div style={{width:40,height:40,background:'linear-gradient(135deg,#ef4444,#dc2626)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>📤</div>
+        <div style={{background:'white',borderRadius:20,padding:24,boxShadow:'0 4px 24px rgba(0,0,0,0.07)'}}>
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20,paddingBottom:16,borderBottom:'1px solid #f1f5f9'}}>
+            <div style={{width:40,height:40,background:'linear-gradient(135deg,#ef4444,#dc2626)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>📤</div>
             <div>
-              <h3 style={{fontWeight:800,fontSize:16,color:'#0f172a',margin:0}}>بيانات الصرف</h3>
+              <h3 style={{fontWeight:800,fontSize:15,color:'#0f172a',margin:0}}>بيانات الصرف</h3>
               <p style={{fontSize:12,color:'#94a3b8',margin:0}}>أدخل تفاصيل عملية الصرف</p>
             </div>
           </div>
@@ -101,9 +113,7 @@ export default function DispensesPage() {
               <select value={form.product_name} onChange={e => setForm({...form,product_name:e.target.value})} style={inp} required>
                 <option value="">— اختر المنتج —</option>
                 {products.map(p => (
-                  <option key={p.id} value={p.name}>
-                    {p.name} (متاح: {p.qty} {p.unit})
-                  </option>
+                  <option key={p.id} value={p.name}>{p.name} (متاح: {p.qty} {p.unit})</option>
                 ))}
               </select>
             </div>
@@ -121,17 +131,13 @@ export default function DispensesPage() {
                   <div style={{fontSize:13,fontWeight:700,color: isLow ? '#ef4444' : '#10b981'}}>
                     الكمية المتاحة: {selectedProduct.qty} {selectedProduct.unit}
                   </div>
-                  {isLow && (
-                    <div style={{fontSize:11,color:'#f87171',marginTop:2}}>
-                      هذا الصنف وصل للحد الأدنى
-                    </div>
-                  )}
+                  {isLow && <div style={{fontSize:11,color:'#f87171',marginTop:2}}>هذا الصنف وصل للحد الأدنى</div>}
                 </div>
               </div>
             )}
 
             {/* الكمية والموظف */}
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16}}>
+            <div className="qty-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16}}>
               <div>
                 <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>🔢 الكمية</label>
                 <input type="number" placeholder="0" min="1" required
@@ -144,28 +150,58 @@ export default function DispensesPage() {
               </div>
             </div>
 
-            {/* السبب */}
+            {/* السبب — أزرار */}
             <div style={{marginBottom:16}}>
-              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>📋 سبب الصرف</label>
-              <select value={form.reason} onChange={e => setForm({...form,reason:e.target.value})} style={inp}>
-                {REASONS.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
+              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:8}}>📋 سبب الصرف</label>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+                {REASONS.map(r => (
+                  <button key={r} type="button" className="reason-btn"
+                    onClick={() => setForm({...form,reason:r})}
+                    style={{
+                      padding:'10px 6px',borderRadius:10,
+                      border:`2px solid ${form.reason===r?'#ef4444':'#e2e8f0'}`,
+                      background:form.reason===r?'#fef2f2':'white',
+                      color:form.reason===r?'#ef4444':'#64748b',
+                      fontSize:12,fontWeight:700,cursor:'pointer',
+                      fontFamily:'system-ui',transition:'all 0.2s',
+                      textAlign:'center'
+                    }}>{r}</button>
+                ))}
+              </div>
             </div>
 
             {/* ملاحظات */}
-            <div style={{marginBottom:24}}>
+            <div style={{marginBottom:20}}>
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>📝 ملاحظات (اختياري)</label>
               <textarea placeholder="أي تفاصيل إضافية..."
                 value={form.notes} onChange={e => setForm({...form,notes:e.target.value})}
-                style={{...inp,minHeight:80,resize:'none'}} />
+                style={{...inp,minHeight:72,resize:'none'}} />
             </div>
 
+            {/* ملخص */}
+            {form.product_name && form.qty && (
+              <div style={{background:'linear-gradient(135deg,#fef2f2,#fee2e2)',border:'2px solid #fecaca',borderRadius:12,padding:14,marginBottom:16}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <span style={{fontSize:13,fontWeight:700,color:'#0f172a'}}>{form.product_name}</span>
+                  <span style={{background:'#ef4444',color:'white',padding:'4px 12px',borderRadius:50,fontWeight:900,fontSize:14}}>
+                    -{form.qty} {selectedProduct?.unit||''}
+                  </span>
+                </div>
+                {selectedProduct && (
+                  <div style={{fontSize:12,color:'#94a3b8',marginTop:6}}>
+                    المتبقي بعد الصرف: {selectedProduct.qty - Number(form.qty)} {selectedProduct.unit}
+                  </div>
+                )}
+              </div>
+            )}
+
             <button type="submit" disabled={loading} style={{
-              width:'100%', padding:'15px',
+              width:'100%', padding:'14px',
               background: loading ? '#94a3b8' : 'linear-gradient(135deg,#ef4444,#dc2626)',
               color:'white', border:'none', borderRadius:12,
               fontSize:15, fontWeight:800, cursor: loading ? 'not-allowed' : 'pointer',
-              fontFamily:'system-ui', boxShadow:'0 4px 14px rgba(239,68,68,0.35)'
+              fontFamily:'system-ui', boxShadow:'0 4px 14px rgba(239,68,68,0.3)',
+              transition:'all 0.2s'
             }}>
               {loading ? '⏳ جاري الحفظ...' : '📤 تسجيل الصرف'}
             </button>
@@ -173,19 +209,19 @@ export default function DispensesPage() {
         </div>
 
         {/* History */}
-        <div style={{background:'white',borderRadius:20,padding:28,boxShadow:'0 4px 24px rgba(0,0,0,0.07)'}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
+        <div style={{background:'white',borderRadius:20,padding:24,boxShadow:'0 4px 24px rgba(0,0,0,0.07)'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,paddingBottom:16,borderBottom:'1px solid #f1f5f9'}}>
             <div style={{display:'flex',alignItems:'center',gap:10}}>
               <div style={{width:40,height:40,background:'linear-gradient(135deg,#f1f5f9,#e2e8f0)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>🕐</div>
               <div>
-                <h3 style={{fontWeight:800,fontSize:16,color:'#0f172a',margin:0}}>آخر العمليات</h3>
+                <h3 style={{fontWeight:800,fontSize:15,color:'#0f172a',margin:0}}>آخر العمليات</h3>
                 <p style={{fontSize:12,color:'#94a3b8',margin:0}}>{history.length} عملية مسجلة</p>
               </div>
             </div>
             <button onClick={loadHistory} style={{
-              padding:'7px 14px',background:'#f8fafc',border:'1.5px solid #e2e8f0',
+              padding:'7px 12px',background:'#f8fafc',border:'1.5px solid #e2e8f0',
               borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer',color:'#475569',fontFamily:'system-ui'
-            }}>🔄 تحديث</button>
+            }}>🔄</button>
           </div>
 
           {history.length === 0 ? (
@@ -194,17 +230,18 @@ export default function DispensesPage() {
               <div style={{fontSize:14,fontWeight:600}}>لا توجد عمليات صرف بعد</div>
             </div>
           ) : (
-            <div style={{display:'flex',flexDirection:'column',gap:0}}>
+            <div style={{display:'flex',flexDirection:'column',gap:0,maxHeight:520,overflowY:'auto'}}>
               {history.map((h,i) => (
                 <div key={i} style={{
-                  display:'flex', justifyContent:'space-between', alignItems:'center',
-                  padding:'14px 0',
+                  display:'flex',justifyContent:'space-between',alignItems:'center',
+                  padding:'13px 0',
                   borderBottom: i < history.length-1 ? '1px solid #f1f5f9' : 'none',
-                  transition:'background 0.15s'
                 }}>
-                  <div style={{flex:1}}>
-                    <div style={{fontWeight:700,fontSize:14,color:'#0f172a',marginBottom:4}}>{h.product_name}</div>
-                    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontWeight:700,fontSize:14,color:'#0f172a',marginBottom:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>
+                      {h.product_name}
+                    </div>
+                    <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
                       <span style={{background:'#f1f5f9',color:'#475569',padding:'2px 8px',borderRadius:50,fontSize:11,fontWeight:600}}>
                         {h.reason||'—'}
                       </span>
@@ -220,8 +257,8 @@ export default function DispensesPage() {
                   </div>
                   <span style={{
                     background:'linear-gradient(135deg,#fef2f2,#fee2e2)',
-                    color:'#ef4444', padding:'6px 16px', borderRadius:50,
-                    fontWeight:900, fontSize:15, flexShrink:0,
+                    color:'#ef4444',padding:'5px 14px',borderRadius:50,
+                    fontWeight:900,fontSize:14,flexShrink:0,marginRight:8,
                     border:'1.5px solid #fecaca'
                   }}>-{h.qty}</span>
                 </div>
