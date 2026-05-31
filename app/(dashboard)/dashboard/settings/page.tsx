@@ -212,7 +212,6 @@ export default function SettingsPage() {
                 fontWeight: activeTab===tab.key ? 800 : 500,
                 fontSize:13,fontFamily:'system-ui',
                 boxShadow: activeTab===tab.key ? '0 4px 15px rgba(99,102,241,0.3),inset 0 1px 0 rgba(255,255,255,0.1)' : 'none',
-                border: activeTab===tab.key ? '1px solid rgba(99,102,241,0.3)' : '1px solid transparent',transition:'all 0.2s'
               }}>
               <span style={{marginLeft:6}}>{tab.icon}</span>{tab.label}
             </button>
