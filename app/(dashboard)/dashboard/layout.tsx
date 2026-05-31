@@ -2,16 +2,27 @@
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
-  const [sidebarOpen, setSidebarOpen]   = useState(false)
-  const [reportsOpen, setReportsOpen]   = useState(
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [orgName, setOrgName]         = useState('')
+  const [reportsOpen, setReportsOpen] = useState(
     pathname.includes('/reports') || pathname.includes('/dispense-reports')
   )
+
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('profiles').select('organizations(name)').eq('id', user.id).single()
+      if (data?.organizations) setOrgName((data.organizations as any).name || '')
+    }
+    load()
+  }, [])
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -19,231 +30,219 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const mainLinks = [
-    { href: '/dashboard',           label: 'الرئيسية',       icon: '📊', color: '#6366f1' },
-    { href: '/dashboard/inventory', label: 'المخزون',        icon: '📦', color: '#0891b2' },
-    { href: '/dashboard/purchases', label: 'تسجيل مشتريات', icon: '🛒', color: '#10b981' },
-    { href: '/dashboard/dispenses', label: 'تسجيل صرف',     icon: '📤', color: '#ef4444' },
-    { href: '/dashboard/settings',  label: 'الإعدادات',     icon: '⚙️', color: '#8b5cf6' },
+    { href:'/dashboard',           label:'الرئيسية',       icon:'⊞',  active: pathname === '/dashboard' },
+    { href:'/dashboard/inventory', label:'المخزون',        icon:'▦',  active: pathname === '/dashboard/inventory' },
+    { href:'/dashboard/purchases', label:'المشتريات',      icon:'↓',  active: pathname === '/dashboard/purchases' },
+    { href:'/dashboard/dispenses', label:'الصرف',          icon:'↑',  active: pathname === '/dashboard/dispenses' },
+    { href:'/dashboard/settings',  label:'الإعدادات',      icon:'◎',  active: pathname === '/dashboard/settings' },
   ]
 
   const reportLinks = [
-    { href: '/dashboard/reports',          label: 'تقرير المشتريات', icon: '📈', color: '#f59e0b' },
-    { href: '/dashboard/dispense-reports', label: 'تقرير الصرف',     icon: '📉', color: '#ec4899' },
+    { href:'/dashboard/reports',          label:'تقرير المشتريات', active: pathname === '/dashboard/reports' },
+    { href:'/dashboard/dispense-reports', label:'تقرير الصرف',     active: pathname === '/dashboard/dispense-reports' },
   ]
 
-  const isReportActive = reportLinks.some(r => pathname === r.href)
+  const isReportActive = reportLinks.some(r => r.active)
 
   return (
-    <div style={{display:'flex',minHeight:'100vh',fontFamily:'system-ui',direction:'rtl',background:'linear-gradient(135deg,#0f0c29,#302b63,#24243e)'}}>
+    <div style={{display:'flex',minHeight:'100vh',fontFamily:'"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',direction:'rtl',background:'#f7f8fa'}}>
       <style>{`
-        @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        @keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
-        .nav-link:hover{background:rgba(255,255,255,0.08) !important;transform:translateX(-4px)}
-        .nav-link{transition:all 0.2s ease}
-        .logout-btn:hover{background:rgba(239,68,68,0.2) !important;border-color:rgba(239,68,68,0.4) !important}
-        .hamburger:hover{background:rgba(255,255,255,0.1) !important}
-        ::-webkit-scrollbar{width:4px}
+        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+
+        .nav-item{
+          display:flex;align-items:center;gap:10px;
+          padding:9px 12px;border-radius:8px;margin-bottom:1px;
+          color:#6b7280;text-decoration:none;font-size:14px;font-weight:500;
+          transition:all 0.15s ease;cursor:pointer;border:none;background:transparent;
+          width:100%;text-align:right;font-family:inherit;
+        }
+        .nav-item:hover{background:#f3f4f6;color:#111827}
+        .nav-item.active{background:#eff6ff;color:#1d4ed8;font-weight:600}
+        .nav-icon{
+          width:32px;height:32px;border-radius:7px;
+          display:flex;align-items:center;justify-content:center;
+          font-size:14px;flex-shrink:0;transition:all 0.15s;
+        }
+        .nav-item.active .nav-icon{background:#dbeafe;color:#1d4ed8}
+        .nav-item:hover .nav-icon{background:#f3f4f6}
+
+        .top-bar-btn{
+          padding:7px 12px;border-radius:8px;border:1px solid #e5e7eb;
+          background:white;color:#374151;font-size:13px;font-weight:500;
+          cursor:pointer;font-family:inherit;transition:all 0.15s;
+          display:flex;align-items:center;gap:6px;
+        }
+        .top-bar-btn:hover{background:#f9fafb;border-color:#d1d5db}
+
+        .hamburger{
+          width:36px;height:36px;border-radius:8px;border:1px solid #e5e7eb;
+          background:white;cursor:pointer;
+          display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+          transition:all 0.15s;
+        }
+        .hamburger:hover{background:#f9fafb}
+        .hamburger-line{width:14px;height:1.5px;background:#6b7280;border-radius:99px;transition:all 0.2s}
+
+        ::-webkit-scrollbar{width:3px}
         ::-webkit-scrollbar-track{background:transparent}
-        ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:99px}
+        ::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:99px}
+        ::-webkit-scrollbar-thumb:hover{background:#d1d5db}
+
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.25);z-index:40;animation:fadeIn 0.2s ease;backdrop-filter:blur(2px)}
+
+        @media(max-width:768px){
+          .sidebar-desktop{display:none !important}
+          .main-content{margin-right:0 !important}
+        }
       `}</style>
 
-      {/* Overlay */}
-      {sidebarOpen && (
-        <div onClick={() => setSidebarOpen(false)} style={{
-          position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',
-          zIndex:40,backdropFilter:'blur(4px)',animation:'fadeIn 0.2s ease'
-        }} />
-      )}
+      {/* Mobile Overlay */}
+      {sidebarOpen && <div className="overlay" onClick={() => setSidebarOpen(false)} />}
 
       {/* Sidebar */}
       {sidebarOpen && (
         <div style={{
-          width:260,
-          background:'rgba(15,12,41,0.95)',
-          backdropFilter:'blur(20px)',
-          borderLeft:'1px solid rgba(255,255,255,0.08)',
-          color:'white',display:'flex',flexDirection:'column',
+          width:248,background:'white',
+          borderLeft:'1px solid #e5e7eb',
+          display:'flex',flexDirection:'column',
           position:'fixed',height:'100vh',right:0,zIndex:50,
-          animation:'slideIn 0.25s ease forwards',
-          boxShadow:'-8px 0 40px rgba(0,0,0,0.4)'
+          animation:'slideIn 0.2s ease',
+          boxShadow:'-4px 0 24px rgba(0,0,0,0.08)'
         }}>
-
-          {/* Logo */}
-          <div style={{padding:'20px 18px',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-            <div style={{display:'flex',alignItems:'center',gap:12}}>
-              <div style={{
-                width:38,height:38,
-                background:'linear-gradient(135deg,#6366f1,#8b5cf6)',
-                borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,
-                boxShadow:'0 4px 16px rgba(99,102,241,0.4)',
-                border:'1px solid rgba(255,255,255,0.15)'
-              }}>🏪</div>
-              <div>
-                <div style={{fontSize:15,fontWeight:800,color:'white',letterSpacing:'-0.3px'}}>Storely</div>
-                <div style={{fontSize:10,color:'rgba(255,255,255,0.35)',fontWeight:500}}>نظام المخزون</div>
+          {/* Sidebar Header */}
+          <div style={{padding:'16px 16px 12px',borderBottom:'1px solid #f3f4f6'}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+              <button onClick={() => setSidebarOpen(false)} style={{
+                width:28,height:28,border:'1px solid #e5e7eb',borderRadius:6,
+                background:'white',cursor:'pointer',color:'#6b7280',
+                display:'flex',alignItems:'center',justifyContent:'center',fontSize:12
+              }}>✕</button>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <div style={{
+                  width:28,height:28,background:'#1d4ed8',borderRadius:7,
+                  display:'flex',alignItems:'center',justifyContent:'center',fontSize:13
+                }}>🏪</div>
+                <span style={{fontSize:14,fontWeight:700,color:'#111827'}}>Storely</span>
               </div>
             </div>
-            <button onClick={() => setSidebarOpen(false)} style={{
-              background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',
-              borderRadius:8,width:28,height:28,cursor:'pointer',color:'rgba(255,255,255,0.5)',
-              display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,
-              transition:'all 0.2s'
-            }}>✕</button>
+
+            {/* Org Badge */}
+            <div style={{
+              background:'#f8faff',border:'1px solid #e0e7ff',
+              borderRadius:8,padding:'8px 12px',
+              display:'flex',alignItems:'center',gap:8
+            }}>
+              <div style={{width:24,height:24,background:'linear-gradient(135deg,#6366f1,#8b5cf6)',borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,flexShrink:0}}>
+                {orgName?.[0] || '🏪'}
+              </div>
+              <div style={{minWidth:0}}>
+                <div style={{fontSize:12,fontWeight:600,color:'#1e293b',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName || 'مؤسستك'}</div>
+                <div style={{fontSize:10,color:'#6366f1',fontWeight:500}}>الباقة الأساسية</div>
+              </div>
+            </div>
           </div>
 
           {/* Nav */}
-          <nav style={{flex:1,padding:'12px 10px',overflowY:'auto'}}>
-            <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.25)',padding:'8px 10px 6px',letterSpacing:'0.12em',textTransform:'uppercase'}}>
-              القائمة الرئيسية
+          <nav style={{flex:1,padding:'8px',overflowY:'auto'}}>
+            <div style={{fontSize:10,fontWeight:600,color:'#9ca3af',padding:'8px 12px 4px',letterSpacing:'0.08em',textTransform:'uppercase'}}>
+              القائمة
             </div>
 
-            {mainLinks.map(link => {
-              const isActive = pathname === link.href
-              return (
-                <Link key={link.href} href={link.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className="nav-link"
-                  style={{
-                    display:'flex',alignItems:'center',gap:10,
-                    padding:'11px 12px',borderRadius:12,marginBottom:3,
-                    color: isActive ? 'white' : 'rgba(255,255,255,0.5)',
-                    background: isActive ? `linear-gradient(135deg,${link.color}33,${link.color}22)` : 'transparent',
-                    textDecoration:'none',fontWeight: isActive ? 700 : 400,
-                    fontSize:14,
-                    borderRight: isActive ? `3px solid ${link.color}` : '3px solid transparent',
-                    boxShadow: isActive ? `inset 0 1px 0 rgba(255,255,255,0.05)` : 'none'
-                  }}>
-                  <span style={{
-                    width:30,height:30,borderRadius:8,
-                    background: isActive ? `${link.color}33` : 'rgba(255,255,255,0.05)',
-                    display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,
-                    flexShrink:0
-                  }}>{link.icon}</span>
-                  {link.label}
-                  {isActive && <span style={{marginRight:'auto',width:6,height:6,borderRadius:'50%',background:link.color,boxShadow:`0 0 8px ${link.color}`}} />}
-                </Link>
-              )
-            })}
+            {mainLinks.map(link => (
+              <Link key={link.href} href={link.href}
+                onClick={() => setSidebarOpen(false)}
+                className={`nav-item ${link.active ? 'active' : ''}`}>
+                <span className="nav-icon">{link.icon}</span>
+                {link.label}
+                {link.active && <span style={{marginRight:'auto',width:5,height:5,borderRadius:'50%',background:'#1d4ed8'}} />}
+              </Link>
+            ))}
 
-            {/* Reports */}
-            <div style={{marginTop:8}}>
-              <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.25)',padding:'8px 10px 6px',letterSpacing:'0.12em',textTransform:'uppercase'}}>
-                التقارير
+            <div style={{height:'1px',background:'#f3f4f6',margin:'8px 12px'}} />
+
+            <div style={{fontSize:10,fontWeight:600,color:'#9ca3af',padding:'4px 12px',letterSpacing:'0.08em',textTransform:'uppercase'}}>
+              التقارير
+            </div>
+
+            <button
+              onClick={() => setReportsOpen(!reportsOpen)}
+              className={`nav-item ${isReportActive ? 'active' : ''}`}>
+              <span className="nav-icon">📊</span>
+              التقارير
+              <span style={{marginRight:'auto',fontSize:10,color:'#9ca3af',transform:reportsOpen?'rotate(180deg)':'none',transition:'transform 0.2s'}}>▾</span>
+            </button>
+
+            {reportsOpen && (
+              <div style={{paddingRight:12,borderRight:'2px solid #e5e7eb',marginRight:20,marginBottom:4}}>
+                {reportLinks.map(link => (
+                  <Link key={link.href} href={link.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`nav-item ${link.active ? 'active' : ''}`}
+                    style={{paddingRight:8,fontSize:13}}>
+                    {link.label}
+                  </Link>
+                ))}
               </div>
-              <button onClick={() => setReportsOpen(!reportsOpen)} style={{
-                display:'flex',alignItems:'center',gap:10,justifyContent:'space-between',
-                padding:'11px 12px',borderRadius:12,marginBottom:3,
-                color: isReportActive ? 'white' : 'rgba(255,255,255,0.5)',
-                background: isReportActive ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.03)',
-                border: isReportActive ? '1px solid rgba(245,158,11,0.2)' : '1px solid rgba(255,255,255,0.04)',
-                width:'100%',textAlign:'right',
-                fontWeight: isReportActive ? 700 : 400,fontSize:14,
-                cursor:'pointer',fontFamily:'system-ui',transition:'all 0.2s',
-                borderRight: isReportActive ? '3px solid #f59e0b' : '3px solid transparent'
-              }}>
-                <div style={{display:'flex',alignItems:'center',gap:10}}>
-                  <span style={{width:30,height:30,borderRadius:8,background:isReportActive?'rgba(245,158,11,0.2)':'rgba(255,255,255,0.05)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>📊</span>
-                  التقارير
-                </div>
-                <span style={{fontSize:9,transition:'transform 0.2s',transform:reportsOpen?'rotate(180deg)':'rotate(0)',color:'rgba(255,255,255,0.3)'}}>▼</span>
-              </button>
-
-              {reportsOpen && (
-                <div style={{marginRight:14,borderRight:'1px solid rgba(255,255,255,0.06)',paddingRight:8,marginBottom:4}}>
-                  {reportLinks.map(link => {
-                    const isActive = pathname === link.href
-                    return (
-                      <Link key={link.href} href={link.href}
-                        onClick={() => setSidebarOpen(false)}
-                        className="nav-link"
-                        style={{
-                          display:'flex',alignItems:'center',gap:8,
-                          padding:'9px 10px',borderRadius:10,marginBottom:2,
-                          color: isActive ? link.color : 'rgba(255,255,255,0.4)',
-                          background: isActive ? `${link.color}15` : 'transparent',
-                          textDecoration:'none',fontWeight: isActive ? 700 : 400,
-                          fontSize:13,transition:'all 0.15s'
-                        }}>
-                        <span style={{fontSize:14}}>{link.icon}</span>
-                        {link.label}
-                      </Link>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
+            )}
           </nav>
 
-          {/* Logout */}
-          <div style={{padding:'12px 10px',borderTop:'1px solid rgba(255,255,255,0.06)'}}>
-            <button onClick={handleLogout} className="logout-btn" style={{
-              width:'100%',padding:'11px 14px',borderRadius:12,
-              background:'rgba(239,68,68,0.08)',color:'rgba(239,68,68,0.7)',
-              border:'1px solid rgba(239,68,68,0.15)',cursor:'pointer',
-              fontSize:13,fontWeight:600,fontFamily:'system-ui',
-              display:'flex',alignItems:'center',gap:8,justifyContent:'center',
-              transition:'all 0.2s'
-            }}>🚪 تسجيل الخروج</button>
+          {/* Bottom */}
+          <div style={{padding:'8px',borderTop:'1px solid #f3f4f6'}}>
+            <button onClick={handleLogout} className="nav-item" style={{color:'#ef4444',width:'100%'}}>
+              <span className="nav-icon" style={{background:'#fef2f2'}}>🚪</span>
+              تسجيل الخروج
+            </button>
           </div>
         </div>
       )}
 
       {/* Main */}
-      <div style={{flex:1,minHeight:'100vh',transition:'margin-right 0.25s ease'}}>
+      <div style={{flex:1,minHeight:'100vh',display:'flex',flexDirection:'column'}}>
 
         {/* Top Bar */}
-        <div style={{
-          background:'rgba(15,12,41,0.8)',
-          backdropFilter:'blur(20px)',
-          borderBottom:'1px solid rgba(255,255,255,0.06)',
-          padding:'12px 20px',
+        <header style={{
+          background:'white',
+          borderBottom:'1px solid #e5e7eb',
+          padding:'0 20px',height:52,
           display:'flex',alignItems:'center',justifyContent:'space-between',
           position:'sticky',top:0,zIndex:40,
-          boxShadow:'0 4px 24px rgba(0,0,0,0.2)'
+          boxShadow:'0 1px 3px rgba(0,0,0,0.04)'
         }}>
-          <div style={{display:'flex',alignItems:'center',gap:12}}>
-            {/* Hamburger */}
-            <button className="hamburger" onClick={() => setSidebarOpen(!sidebarOpen)} style={{
-              background:'rgba(255,255,255,0.05)',
-              border:'1px solid rgba(255,255,255,0.08)',
-              borderRadius:10,width:38,height:38,cursor:'pointer',
-              display:'flex',flexDirection:'column',alignItems:'center',
-              justifyContent:'center',gap:4,padding:10,
-              transition:'all 0.2s'
-            }}>
-              {[0,1,2].map(i => (
-                <div key={i} style={{
-                  width: i===1 ? 12 : 16,height:2,
-                  background:sidebarOpen?'#6366f1':'rgba(255,255,255,0.5)',
-                  borderRadius:99,transition:'all 0.2s'
-                }} />
-              ))}
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <button className="hamburger" onClick={() => setSidebarOpen(!sidebarOpen)}>
+              <div className="hamburger-line" />
+              <div className="hamburger-line" style={{width:10}} />
+              <div className="hamburger-line" />
             </button>
-            <div style={{fontSize:12,color:'rgba(255,255,255,0.3)',fontWeight:500}}>
+            <div style={{height:20,width:1,background:'#e5e7eb'}} />
+            <span style={{fontSize:12,color:'#9ca3af',fontWeight:400}}>
               {new Date().toLocaleDateString('ar-SA',{weekday:'long',month:'long',day:'numeric'})}
-            </div>
+            </span>
           </div>
 
-          <div style={{display:'flex',alignItems:'center',gap:10}}>
-            {/* Logo small */}
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <div style={{display:'flex',alignItems:'center',gap:6,padding:'4px 10px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:6}}>
+              <div style={{width:5,height:5,borderRadius:'50%',background:'#10b981'}} />
+              <span style={{fontSize:11,color:'#059669',fontWeight:600}}>متصل</span>
+            </div>
             <div style={{
               width:28,height:28,background:'linear-gradient(135deg,#6366f1,#8b5cf6)',
-              borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',
-              fontSize:14,boxShadow:'0 2px 10px rgba(99,102,241,0.4)'
-            }}>🏪</div>
-            <span style={{fontSize:13,fontWeight:700,color:'rgba(255,255,255,0.7)'}}>Storely</span>
-            <div style={{display:'flex',alignItems:'center',gap:6,background:'rgba(16,185,129,0.1)',border:'1px solid rgba(16,185,129,0.2)',borderRadius:50,padding:'4px 10px'}}>
-              <div style={{width:6,height:6,borderRadius:'50%',background:'#10b981',boxShadow:'0 0 8px rgba(16,185,129,0.6)',animation:'pulse 2s infinite'}} />
-              <span style={{fontSize:11,color:'#6ee7b7',fontWeight:600}}>متصل</span>
+              borderRadius:7,display:'flex',alignItems:'center',justifyContent:'center',
+              fontSize:12,color:'white',fontWeight:700,cursor:'pointer'
+            }}>
+              {orgName?.[0] || 'S'}
             </div>
           </div>
-        </div>
+        </header>
 
-        {/* Page */}
-        <div style={{padding:'24px',minHeight:'calc(100vh - 62px)'}}>
+        {/* Page Content */}
+        <main style={{flex:1,padding:'24px',maxWidth:1200,width:'100%',margin:'0 auto'}}>
           {children}
-        </div>
+        </main>
       </div>
     </div>
   )
