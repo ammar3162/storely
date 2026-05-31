@@ -47,14 +47,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [lang])
 
   useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const { data } = await supabase.from('profiles').select('organizations(name)').eq('id', user.id).single()
-      if (data?.organizations) setOrgName((data.organizations as any).name || '')
+  async function load() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push('/login'); return }
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('organizations(name, status)')
+      .eq('id', user.id)
+      .single()
+
+    if (data?.organizations) {
+      const org = data.organizations as any
+      setOrgName(org.name || '')
+
+      // إذا الحساب موقوف أو pending يطلعه
+      if (org.status === 'blocked') {
+        await supabase.auth.signOut()
+        router.push('/login?reason=blocked')
+        return
+      }
+      if (org.status === 'pending') {
+        router.push('/pending')
+        return
+      }
     }
-    load()
-  }, [])
+  }
+  load()
+}, [])
 
   async function handleLogout() {
     await supabase.auth.signOut()

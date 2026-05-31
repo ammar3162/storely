@@ -11,6 +11,7 @@ export default function LandingPage() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+  
 
   useEffect(() => {
     const timer = setInterval(() => {

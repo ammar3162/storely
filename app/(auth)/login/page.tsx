@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 
 type Mode = 'login' | 'register' | 'forgot' | 'verify' | 'newpass'
 
@@ -18,6 +19,15 @@ export default function LoginPage() {
   const [success, setSuccess]   = useState('')
   const router   = useRouter()
   const supabase = createClient()
+  const searchParams = useSearchParams()
+  const reason = searchParams?.get('reason')
+
+// وفي قسم الـ alerts أضف:
+{reason === 'blocked' && (
+  <div style={{background:'#fef2f2',border:'1.5px solid #fecaca',borderRadius:12,padding:'12px 16px',marginBottom:16,fontSize:13,fontWeight:600,color:'#dc2626'}}>
+    🚫 تم إيقاف حسابك — تواصل مع الدعم
+  </div>
+)}
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
