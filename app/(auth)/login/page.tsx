@@ -1,12 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import { useSearchParams } from 'next/navigation'
-
+import { useRouter, useSearchParams } from 'next/navigation'
 type Mode = 'login' | 'register' | 'forgot' | 'verify' | 'newpass'
 
-export default function LoginPage() {
+function LoginPage() {
   const [mode, setMode]         = useState<Mode>('login')
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
