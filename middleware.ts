@@ -1,18 +1,33 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  const token = request.cookies.get('sb-nzhczszgryexiilsughk-auth-token')
+  const { pathname } = request.nextUrl
+
+  // اسمح لهذه الصفحات دون فحص
+  if (
+    pathname.startsWith('/pending') ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/landing') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.includes('.')
+  ) {
+    return NextResponse.next()
+  }
+
+  const token =
+    request.cookies.get('sb-nzhczszgryexiilsughk-auth-token') ||
+    request.cookies.get('sb-access-token')
+
   const isLoggedIn = !!token
 
-  if (!isLoggedIn && request.nextUrl.pathname.startsWith('/dashboard')) {
+  // غير مسجل يريد الداشبورد
+  if (!isLoggedIn && pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (!isLoggedIn && request.nextUrl.pathname.startsWith('/admin')) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  if (isLoggedIn && request.nextUrl.pathname === '/login') {
+  // مسجل يريد الـ login — حوّله للداشبورد
+  if (isLoggedIn && pathname === '/login') {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
@@ -20,5 +35,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/admin/:path*', '/login'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
