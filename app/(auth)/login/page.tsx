@@ -2,6 +2,7 @@
 import { useState, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
+
 type Mode = 'login' | 'register' | 'forgot' | 'verify' | 'newpass'
 
 function LoginPage() {
@@ -15,17 +16,10 @@ function LoginPage() {
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
   const [success, setSuccess]   = useState('')
-  const router   = useRouter()
-  const supabase = createClient()
+  const router       = useRouter()
+  const supabase     = createClient()
   const searchParams = useSearchParams()
-  const reason = searchParams?.get('reason')
-
-// وفي قسم الـ alerts أضف:
-{reason === 'blocked' && (
-  <div style={{background:'#fef2f2',border:'1.5px solid #fecaca',borderRadius:12,padding:'12px 16px',marginBottom:16,fontSize:13,fontWeight:600,color:'#dc2626'}}>
-    🚫 تم إيقاف حسابك — تواصل مع الدعم
-  </div>
-)}
+  const reason       = searchParams?.get('reason')
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -42,47 +36,34 @@ function LoginPage() {
     if (!phone.trim()) { setError('أدخل رقم الجوال'); return }
     if (password.length < 6) { setError('كلمة المرور 6 أحرف على الأقل'); return }
     setLoading(true); setError('')
-
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) { setError(error.message); setLoading(false); return }
-
     if (data.user && data.user.identities && data.user.identities.length === 0) {
       setError('هذا البريد الإلكتروني مسجل مسبقاً — جرب تسجيل الدخول')
-      setLoading(false)
-      return
+      setLoading(false); return
     }
-
     if (data.user) {
       const { data: org } = await supabase.from('organizations').insert({
-        name: orgName.trim(),
-        plan: 'basic',
+        name: orgName.trim(), plan: 'basic',
         plan_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
       }).select().single()
-
       if (org) {
         await supabase.from('profiles').upsert({
-          id: data.user.id,
-          org_id: org.id,
-          full_name: orgName.trim(),
-          role: 'owner',
-          phone: phone.trim()
+          id: data.user.id, org_id: org.id,
+          full_name: orgName.trim(), role: 'owner', phone: phone.trim()
         })
       }
     }
-
-    router.push('/dashboard')
+    router.push('/pending')
   }
 
   async function handleForgot(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true); setError('')
-    const { error } = await supabase.auth.signInWithOtp({
-      email, options: { shouldCreateUser: false }
-    })
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } })
     if (error) { setError(error.message); setLoading(false); return }
     setSuccess('تم إرسال كود التحقق لبريدك الإلكتروني')
-    setLoading(false)
-    setMode('verify')
+    setLoading(false); setMode('verify')
   }
 
   async function handleVerify(e: React.FormEvent) {
@@ -90,8 +71,7 @@ function LoginPage() {
     setLoading(true); setError('')
     const { error } = await supabase.auth.verifyOtp({ email, token: otp, type: 'email' })
     if (error) { setError('الكود غير صحيح أو منتهي الصلاحية'); setLoading(false); return }
-    setMode('newpass')
-    setLoading(false)
+    setMode('newpass'); setLoading(false)
   }
 
   async function handleNewPass(e: React.FormEvent) {
@@ -185,6 +165,11 @@ function LoginPage() {
         )}
 
         {/* Alerts */}
+        {reason === 'blocked' && (
+          <div style={{background:'#fef2f2',border:'1.5px solid #fecaca',borderRadius:12,padding:'12px 16px',marginBottom:16,fontSize:13,fontWeight:600,color:'#dc2626'}}>
+            🚫 تم إيقاف حسابك — تواصل مع الدعم
+          </div>
+        )}
         {error && (
           <div style={{background:'#fef2f2',border:'1.5px solid #fecaca',borderRadius:12,padding:'12px 16px',marginBottom:16,fontSize:13,fontWeight:600,color:'#dc2626'}}>
             ⚠️ {error}
@@ -223,29 +208,21 @@ function LoginPage() {
         {mode === 'register' && (
           <form onSubmit={handleRegister}>
             <div style={{marginBottom:16}}>
-              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>
-                🏪 اسم المؤسسة / المعل
-              </label>
+              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>🏪 اسم المؤسسة / المعل</label>
               <input type="text" placeholder="مثال: كوفي نصيف، مطعم الوليد..." required
                 value={orgName} onChange={e => setOrgName(e.target.value)}
                 style={{...inp,border:'2px solid #c7d2fe',background:'#eef2ff'}} />
-              <div style={{fontSize:11,color:'#6366f1',marginTop:4,fontWeight:600}}>
-                ℹ️ سيظهر هذا الاسم في لوحة التحكم
-              </div>
+              <div style={{fontSize:11,color:'#6366f1',marginTop:4,fontWeight:600}}>ℹ️ سيظهر هذا الاسم في لوحة التحكم</div>
             </div>
             <div style={{marginBottom:16}}>
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني</label>
               <input type="email" placeholder="example@email.com" required value={email} onChange={e => setEmail(e.target.value)} style={inp} />
             </div>
             <div style={{marginBottom:16}}>
-              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>
-                📱 رقم الجوال
-              </label>
+              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>📱 رقم الجوال</label>
               <input type="tel" placeholder="مثال: 0561234567" required
                 value={phone} onChange={e => setPhone(e.target.value)} style={inp} />
-              <div style={{fontSize:11,color:'#10b981',marginTop:4,fontWeight:600}}>
-                📲 سيُستخدم لإشعارات واتساب عند نقص المخزون
-              </div>
+              <div style={{fontSize:11,color:'#10b981',marginTop:4,fontWeight:600}}>📲 سيُستخدم لإشعارات واتساب عند نقص المخزون</div>
             </div>
             <div style={{marginBottom:24}}>
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>كلمة المرور</label>
@@ -309,5 +286,13 @@ function LoginPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function LoginPageWrapper() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPage />
+    </Suspense>
   )
 }
