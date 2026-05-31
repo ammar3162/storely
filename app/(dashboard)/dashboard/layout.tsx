@@ -61,12 +61,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const org = data.organizations as any
       setOrgName(org.name || '')
 
-      // إذا الحساب موقوف أو pending يطلعه
-      if (org.status === 'blocked') {
-        await supabase.auth.signOut()
-        router.push('/login?reason=blocked')
-        return
-      }
+      if (data?.organizations) {
+  const org = data.organizations as any
+  setOrgName(org.name || '')
+}
       if (org.status === 'pending') {
         router.push('/pending')
         return
