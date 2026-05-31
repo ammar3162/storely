@@ -8,7 +8,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router   = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen]   = useState(false)
   const [reportsOpen, setReportsOpen]   = useState(
     pathname.includes('/reports') || pathname.includes('/dispense-reports')
   )
@@ -19,121 +19,153 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const mainLinks = [
-    { href: '/dashboard',           label: 'الرئيسية',       icon: '📊' },
-    { href: '/dashboard/inventory', label: 'المخزون',        icon: '📦' },
-    { href: '/dashboard/purchases', label: 'تسجيل مشتريات', icon: '🛒' },
-    { href: '/dashboard/dispenses', label: 'تسجيل صرف',     icon: '📤' },
-    { href: '/dashboard/settings', label: 'الإعدادات', icon: '⚙️' },
+    { href: '/dashboard',           label: 'الرئيسية',       icon: '📊', color: '#6366f1' },
+    { href: '/dashboard/inventory', label: 'المخزون',        icon: '📦', color: '#0891b2' },
+    { href: '/dashboard/purchases', label: 'تسجيل مشتريات', icon: '🛒', color: '#10b981' },
+    { href: '/dashboard/dispenses', label: 'تسجيل صرف',     icon: '📤', color: '#ef4444' },
+    { href: '/dashboard/settings',  label: 'الإعدادات',     icon: '⚙️', color: '#8b5cf6' },
   ]
 
   const reportLinks = [
-    { href: '/dashboard/reports',          label: 'تقرير المشتريات', icon: '📈' },
-    { href: '/dashboard/dispense-reports', label: 'تقرير الصرف',     icon: '📉' },
+    { href: '/dashboard/reports',          label: 'تقرير المشتريات', icon: '📈', color: '#f59e0b' },
+    { href: '/dashboard/dispense-reports', label: 'تقرير الصرف',     icon: '📉', color: '#ec4899' },
   ]
 
   const isReportActive = reportLinks.some(r => pathname === r.href)
 
   return (
-    <div style={{display:'flex',minHeight:'100vh',fontFamily:'system-ui',direction:'rtl'}}>
+    <div style={{display:'flex',minHeight:'100vh',fontFamily:'system-ui',direction:'rtl',background:'linear-gradient(135deg,#0f0c29,#302b63,#24243e)'}}>
       <style>{`
-        @keyframes slideIn  { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
-        @keyframes slideOut { from{transform:translateX(0);opacity:1} to{transform:translateX(100%);opacity:0} }
-        .sidebar-open  { animation: slideIn  0.25s ease forwards; }
-        .sidebar-close { animation: slideOut 0.25s ease forwards; }
+        @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+        .nav-link:hover{background:rgba(255,255,255,0.08) !important;transform:translateX(-4px)}
+        .nav-link{transition:all 0.2s ease}
+        .logout-btn:hover{background:rgba(239,68,68,0.2) !important;border-color:rgba(239,68,68,0.4) !important}
+        .hamburger:hover{background:rgba(255,255,255,0.1) !important}
+        ::-webkit-scrollbar{width:4px}
+        ::-webkit-scrollbar-track{background:transparent}
+        ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:99px}
       `}</style>
 
-      {/* Overlay عند الإغلاق على الجوال */}
+      {/* Overlay */}
       {sidebarOpen && (
         <div onClick={() => setSidebarOpen(false)} style={{
-          position:'fixed',inset:0,background:'rgba(0,0,0,0.3)',
-          zIndex:40,display:'none'
+          position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',
+          zIndex:40,backdropFilter:'blur(4px)',animation:'fadeIn 0.2s ease'
         }} />
       )}
 
       {/* Sidebar */}
       {sidebarOpen && (
         <div style={{
-          width:240,background:'#0f172a',color:'white',
-          display:'flex',flexDirection:'column',
+          width:260,
+          background:'rgba(15,12,41,0.95)',
+          backdropFilter:'blur(20px)',
+          borderLeft:'1px solid rgba(255,255,255,0.08)',
+          color:'white',display:'flex',flexDirection:'column',
           position:'fixed',height:'100vh',right:0,zIndex:50,
-          boxShadow:'-4px 0 24px rgba(0,0,0,0.2)',
-          animation:'slideIn 0.25s ease forwards'
+          animation:'slideIn 0.25s ease forwards',
+          boxShadow:'-8px 0 40px rgba(0,0,0,0.4)'
         }}>
 
-          {/* Logo + Close */}
-          <div style={{padding:'20px 16px',borderBottom:'1px solid rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-            <div style={{display:'flex',alignItems:'center',gap:10}}>
-              <div style={{width:36,height:36,background:'linear-gradient(135deg,#6366f1,#8b5cf6)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>🏪</div>
+          {/* Logo */}
+          <div style={{padding:'20px 18px',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <div style={{display:'flex',alignItems:'center',gap:12}}>
+              <div style={{
+                width:38,height:38,
+                background:'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,
+                boxShadow:'0 4px 16px rgba(99,102,241,0.4)',
+                border:'1px solid rgba(255,255,255,0.15)'
+              }}>🏪</div>
               <div>
-                <div style={{fontSize:15,fontWeight:800,color:'white'}}>Storely</div>
-                <div style={{fontSize:11,color:'rgba(255,255,255,0.4)'}}>نظام المخزون</div>
+                <div style={{fontSize:15,fontWeight:800,color:'white',letterSpacing:'-0.3px'}}>Storely</div>
+                <div style={{fontSize:10,color:'rgba(255,255,255,0.35)',fontWeight:500}}>نظام المخزون</div>
               </div>
             </div>
             <button onClick={() => setSidebarOpen(false)} style={{
-              background:'rgba(255,255,255,0.08)',border:'none',color:'rgba(255,255,255,0.6)',
-              width:30,height:30,borderRadius:8,cursor:'pointer',fontSize:16,
-              display:'flex',alignItems:'center',justifyContent:'center'
+              background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',
+              borderRadius:8,width:28,height:28,cursor:'pointer',color:'rgba(255,255,255,0.5)',
+              display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,
+              transition:'all 0.2s'
             }}>✕</button>
           </div>
 
           {/* Nav */}
           <nav style={{flex:1,padding:'12px 10px',overflowY:'auto'}}>
-            <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.3)',padding:'8px 10px',letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:4}}>
+            <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.25)',padding:'8px 10px 6px',letterSpacing:'0.12em',textTransform:'uppercase'}}>
               القائمة الرئيسية
             </div>
+
             {mainLinks.map(link => {
               const isActive = pathname === link.href
               return (
-                <Link key={link.href} href={link.href} onClick={() => setSidebarOpen(false)} style={{
-                  display:'flex',alignItems:'center',gap:10,
-                  padding:'11px 12px',borderRadius:10,marginBottom:2,
-                  color: isActive ? 'white' : 'rgba(255,255,255,0.55)',
-                  background: isActive ? 'rgba(99,102,241,0.25)' : 'transparent',
-                  textDecoration:'none',fontWeight: isActive ? 700 : 500,
-                  fontSize:14,transition:'all 0.15s',
-                  borderRight: isActive ? '3px solid #818cf8' : '3px solid transparent'
-                }}>
-                  <span style={{fontSize:17}}>{link.icon}</span>
+                <Link key={link.href} href={link.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className="nav-link"
+                  style={{
+                    display:'flex',alignItems:'center',gap:10,
+                    padding:'11px 12px',borderRadius:12,marginBottom:3,
+                    color: isActive ? 'white' : 'rgba(255,255,255,0.5)',
+                    background: isActive ? `linear-gradient(135deg,${link.color}33,${link.color}22)` : 'transparent',
+                    textDecoration:'none',fontWeight: isActive ? 700 : 400,
+                    fontSize:14,
+                    borderRight: isActive ? `3px solid ${link.color}` : '3px solid transparent',
+                    boxShadow: isActive ? `inset 0 1px 0 rgba(255,255,255,0.05)` : 'none'
+                  }}>
+                  <span style={{
+                    width:30,height:30,borderRadius:8,
+                    background: isActive ? `${link.color}33` : 'rgba(255,255,255,0.05)',
+                    display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,
+                    flexShrink:0
+                  }}>{link.icon}</span>
                   {link.label}
+                  {isActive && <span style={{marginRight:'auto',width:6,height:6,borderRadius:'50%',background:link.color,boxShadow:`0 0 8px ${link.color}`}} />}
                 </Link>
               )
             })}
 
             {/* Reports */}
             <div style={{marginTop:8}}>
-              <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.3)',padding:'8px 10px',letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:4}}>
+              <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.25)',padding:'8px 10px 6px',letterSpacing:'0.12em',textTransform:'uppercase'}}>
                 التقارير
               </div>
               <button onClick={() => setReportsOpen(!reportsOpen)} style={{
                 display:'flex',alignItems:'center',gap:10,justifyContent:'space-between',
-                padding:'11px 12px',borderRadius:10,marginBottom:2,
-                color: isReportActive ? 'white' : 'rgba(255,255,255,0.55)',
-                background: isReportActive ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.05)',
-                border:'none',width:'100%',textAlign:'right',
-                fontWeight: isReportActive ? 700 : 500,fontSize:14,
-                cursor:'pointer',fontFamily:'system-ui',transition:'all 0.15s',
-                borderRight: isReportActive ? '3px solid #818cf8' : '3px solid transparent'
+                padding:'11px 12px',borderRadius:12,marginBottom:3,
+                color: isReportActive ? 'white' : 'rgba(255,255,255,0.5)',
+                background: isReportActive ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.03)',
+                border: isReportActive ? '1px solid rgba(245,158,11,0.2)' : '1px solid rgba(255,255,255,0.04)',
+                width:'100%',textAlign:'right',
+                fontWeight: isReportActive ? 700 : 400,fontSize:14,
+                cursor:'pointer',fontFamily:'system-ui',transition:'all 0.2s',
+                borderRight: isReportActive ? '3px solid #f59e0b' : '3px solid transparent'
               }}>
                 <div style={{display:'flex',alignItems:'center',gap:10}}>
-                  <span style={{fontSize:17}}>📊</span>التقارير
+                  <span style={{width:30,height:30,borderRadius:8,background:isReportActive?'rgba(245,158,11,0.2)':'rgba(255,255,255,0.05)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>📊</span>
+                  التقارير
                 </div>
-                <span style={{fontSize:10,transition:'transform 0.2s',transform:reportsOpen?'rotate(180deg)':'rotate(0)',display:'inline-block'}}>▼</span>
+                <span style={{fontSize:9,transition:'transform 0.2s',transform:reportsOpen?'rotate(180deg)':'rotate(0)',color:'rgba(255,255,255,0.3)'}}>▼</span>
               </button>
 
               {reportsOpen && (
-                <div style={{marginRight:12,borderRight:'2px solid rgba(99,102,241,0.3)',paddingRight:8,marginBottom:4}}>
+                <div style={{marginRight:14,borderRight:'1px solid rgba(255,255,255,0.06)',paddingRight:8,marginBottom:4}}>
                   {reportLinks.map(link => {
                     const isActive = pathname === link.href
                     return (
-                      <Link key={link.href} href={link.href} onClick={() => setSidebarOpen(false)} style={{
-                        display:'flex',alignItems:'center',gap:8,
-                        padding:'9px 10px',borderRadius:8,marginBottom:2,
-                        color: isActive ? '#a5b4fc' : 'rgba(255,255,255,0.5)',
-                        background: isActive ? 'rgba(99,102,241,0.2)' : 'transparent',
-                        textDecoration:'none',fontWeight: isActive ? 700 : 400,
-                        fontSize:13,transition:'all 0.15s'
-                      }}>
-                        <span style={{fontSize:15}}>{link.icon}</span>
+                      <Link key={link.href} href={link.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className="nav-link"
+                        style={{
+                          display:'flex',alignItems:'center',gap:8,
+                          padding:'9px 10px',borderRadius:10,marginBottom:2,
+                          color: isActive ? link.color : 'rgba(255,255,255,0.4)',
+                          background: isActive ? `${link.color}15` : 'transparent',
+                          textDecoration:'none',fontWeight: isActive ? 700 : 400,
+                          fontSize:13,transition:'all 0.15s'
+                        }}>
+                        <span style={{fontSize:14}}>{link.icon}</span>
                         {link.label}
                       </Link>
                     )
@@ -144,58 +176,72 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </nav>
 
           {/* Logout */}
-          <div style={{padding:'12px 10px',borderTop:'1px solid rgba(255,255,255,0.08)'}}>
-            <button onClick={handleLogout} style={{
-              width:'100%',padding:'11px 14px',borderRadius:10,
-              background:'rgba(239,68,68,0.12)',color:'#f87171',
-              border:'1px solid rgba(239,68,68,0.2)',cursor:'pointer',
-              fontSize:13,fontWeight:700,fontFamily:'system-ui',
-              display:'flex',alignItems:'center',gap:8,justifyContent:'center'
+          <div style={{padding:'12px 10px',borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+            <button onClick={handleLogout} className="logout-btn" style={{
+              width:'100%',padding:'11px 14px',borderRadius:12,
+              background:'rgba(239,68,68,0.08)',color:'rgba(239,68,68,0.7)',
+              border:'1px solid rgba(239,68,68,0.15)',cursor:'pointer',
+              fontSize:13,fontWeight:600,fontFamily:'system-ui',
+              display:'flex',alignItems:'center',gap:8,justifyContent:'center',
+              transition:'all 0.2s'
             }}>🚪 تسجيل الخروج</button>
           </div>
         </div>
       )}
 
-      {/* Main Content */}
-      <div style={{
-        flex:1,
-        marginRight: sidebarOpen ? 240 : 0,
-        background:'#f8fafc',minHeight:'100vh',
-        transition:'margin-right 0.25s ease'
-      }}>
+      {/* Main */}
+      <div style={{flex:1,minHeight:'100vh',transition:'margin-right 0.25s ease'}}>
 
         {/* Top Bar */}
         <div style={{
-          background:'white',padding:'14px 20px',
-          borderBottom:'1px solid #e2e8f0',
+          background:'rgba(15,12,41,0.8)',
+          backdropFilter:'blur(20px)',
+          borderBottom:'1px solid rgba(255,255,255,0.06)',
+          padding:'12px 20px',
           display:'flex',alignItems:'center',justifyContent:'space-between',
           position:'sticky',top:0,zIndex:40,
-          boxShadow:'0 1px 4px rgba(0,0,0,0.04)'
+          boxShadow:'0 4px 24px rgba(0,0,0,0.2)'
         }}>
           <div style={{display:'flex',alignItems:'center',gap:12}}>
             {/* Hamburger */}
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{
-              background:'#f1f5f9',border:'1.5px solid #e2e8f0',
+            <button className="hamburger" onClick={() => setSidebarOpen(!sidebarOpen)} style={{
+              background:'rgba(255,255,255,0.05)',
+              border:'1px solid rgba(255,255,255,0.08)',
               borderRadius:10,width:38,height:38,cursor:'pointer',
               display:'flex',flexDirection:'column',alignItems:'center',
-              justifyContent:'center',gap:5,padding:10,transition:'all 0.2s'
+              justifyContent:'center',gap:4,padding:10,
+              transition:'all 0.2s'
             }}>
-              <div style={{width:16,height:2,background:sidebarOpen?'#6366f1':'#475569',borderRadius:99,transition:'all 0.2s'}} />
-              <div style={{width:16,height:2,background:sidebarOpen?'#6366f1':'#475569',borderRadius:99,transition:'all 0.2s'}} />
-              <div style={{width:16,height:2,background:sidebarOpen?'#6366f1':'#475569',borderRadius:99,transition:'all 0.2s'}} />
+              {[0,1,2].map(i => (
+                <div key={i} style={{
+                  width: i===1 ? 12 : 16,height:2,
+                  background:sidebarOpen?'#6366f1':'rgba(255,255,255,0.5)',
+                  borderRadius:99,transition:'all 0.2s'
+                }} />
+              ))}
             </button>
-            <div style={{fontSize:13,color:'#64748b',fontWeight:600}}>
-              {new Date().toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
+            <div style={{fontSize:12,color:'rgba(255,255,255,0.3)',fontWeight:500}}>
+              {new Date().toLocaleDateString('ar-SA',{weekday:'long',month:'long',day:'numeric'})}
             </div>
           </div>
-          <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <div style={{width:8,height:8,borderRadius:'50%',background:'#10b981',boxShadow:'0 0 0 3px rgba(16,185,129,0.2)'}} />
-            <span style={{fontSize:12,color:'#64748b',fontWeight:600}}>متصل</span>
+
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            {/* Logo small */}
+            <div style={{
+              width:28,height:28,background:'linear-gradient(135deg,#6366f1,#8b5cf6)',
+              borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',
+              fontSize:14,boxShadow:'0 2px 10px rgba(99,102,241,0.4)'
+            }}>🏪</div>
+            <span style={{fontSize:13,fontWeight:700,color:'rgba(255,255,255,0.7)'}}>Storely</span>
+            <div style={{display:'flex',alignItems:'center',gap:6,background:'rgba(16,185,129,0.1)',border:'1px solid rgba(16,185,129,0.2)',borderRadius:50,padding:'4px 10px'}}>
+              <div style={{width:6,height:6,borderRadius:'50%',background:'#10b981',boxShadow:'0 0 8px rgba(16,185,129,0.6)',animation:'pulse 2s infinite'}} />
+              <span style={{fontSize:11,color:'#6ee7b7',fontWeight:600}}>متصل</span>
+            </div>
           </div>
         </div>
 
         {/* Page */}
-        <div style={{padding:'28px'}}>
+        <div style={{padding:'24px',minHeight:'calc(100vh - 62px)'}}>
           {children}
         </div>
       </div>
