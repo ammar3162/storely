@@ -18,6 +18,7 @@ export default function SettingsPage() {
   const [showPass, setShowPass]   = useState(false)
   const supabase = createClient()
   const router   = useRouter()
+  const [lang, setLang] = useState<'ar'|'en'>('ar')
 
   useEffect(() => { loadData() }, [])
 
@@ -141,7 +142,7 @@ export default function SettingsPage() {
 
           <div style={{flex:1}}>
             <div style={{fontSize:22,fontWeight:900,color:'white',marginBottom:4,letterSpacing:'-0.3px'}}>
-              {orgName || 'مؤسستك'}
+              {orgName || 'جاري التحميل...'}
             </div>
             <div style={{fontSize:13,color:'rgba(255,255,255,0.5)',marginBottom:8}}>{profile?.email}</div>
             <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
@@ -467,6 +468,34 @@ export default function SettingsPage() {
                 {saving ? '⏳ جاري الحفظ...' : '🔐 تغيير كلمة المرور'}
               </button>
             </div>
+            {/* اللغة */}
+<div>
+  <label style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.5)',display:'block',marginBottom:8,textTransform:'uppercase',letterSpacing:'0.08em'}}>
+    🌐 اللغة / Language
+  </label>
+  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+    <button type="button" onClick={() => setLang('ar')} style={{
+      padding:'12px',borderRadius:12,cursor:'pointer',fontFamily:'system-ui',
+      border:`2px solid ${lang==='ar'?'rgba(99,102,241,0.6)':'rgba(255,255,255,0.1)'}`,
+      background:lang==='ar'?'rgba(99,102,241,0.2)':'rgba(255,255,255,0.05)',
+      color:lang==='ar'?'white':'rgba(255,255,255,0.4)',
+      fontSize:14,fontWeight:700,
+      display:'flex',alignItems:'center',justifyContent:'center',gap:8
+    }}>
+      🇸🇦 العربية
+    </button>
+    <button type="button" onClick={() => setLang('en')} style={{
+      padding:'12px',borderRadius:12,cursor:'pointer',fontFamily:'system-ui',
+      border:`2px solid ${lang==='en'?'rgba(99,102,241,0.6)':'rgba(255,255,255,0.1)'}`,
+      background:lang==='en'?'rgba(99,102,241,0.2)':'rgba(255,255,255,0.05)',
+      color:lang==='en'?'white':'rgba(255,255,255,0.4)',
+      fontSize:14,fontWeight:700,
+      display:'flex',alignItems:'center',justifyContent:'center',gap:8
+    }}>
+      🇺🇸 English
+    </button>
+  </div>
+</div>
 
             {/* Danger Zone */}
             <div className="card-3d" style={{
