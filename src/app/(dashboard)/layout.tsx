@@ -4,10 +4,12 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 
 const NAV = [
-  { href:'/inventory', label:'المخزون',  icon:'📦' },
-  { href:'/dispense',  label:'صرف',      icon:'📤' },
-  { href:'/reports',   label:'التقارير', icon:'📊' },
-  { href:'/settings',  label:'الإعدادات',icon:'⚙️' },
+  { href:'/dashboard', label:'الرئيسية',  icon:'🏠' },
+  { href:'/inventory',  label:'المخزون',   icon:'📦' },
+  { href:'/purchases',  label:'المشتريات', icon:'🛒' },
+  { href:'/dispense',   label:'الصرف',     icon:'📤' },
+  { href:'/reports',    label:'التقارير',  icon:'📊' },
+  { href:'/settings',   label:'الإعدادات', icon:'⚙️' },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -22,9 +24,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const { data: profile } = await supabase
         .from('profiles').select('org_id, organizations(name)')
         .eq('id', user.id).single()
-      if (profile?.organizations) {
-        setOrgName((profile.organizations as any).name)
-      }
+      if (profile?.organizations) setOrgName((profile.organizations as any).name)
     })
   }, [])
 
@@ -35,7 +35,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div style={{minHeight:'100vh',background:'#f1f5f9',fontFamily:'system-ui',direction:'rtl'}}>
-      {/* Header */}
       <header style={{background:'white',borderBottom:'1px solid #e2e8f0',padding:'0 24px',height:60,display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:100,boxShadow:'0 1px 8px rgba(0,0,0,0.06)'}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           <div style={{width:36,height:36,background:'linear-gradient(135deg,#667eea,#764ba2)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>🏪</div>
@@ -44,21 +43,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {orgName && <div style={{fontSize:11,color:'#94a3b8',fontWeight:500}}>{orgName}</div>}
           </div>
         </div>
-        <button onClick={handleLogout} style={{padding:'7px 16px',background:'#fef2f2',color:'#ef4444',border:'1.5px solid #fecaca',borderRadius:8,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'system-ui'}}>
-          خروج
-        </button>
+        <button onClick={handleLogout} style={{padding:'7px 16px',background:'#fef2f2',color:'#ef4444',border:'1.5px solid #fecaca',borderRadius:8,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'system-ui'}}>خروج</button>
       </header>
-
-      {/* Nav */}
-      <nav style={{background:'white',borderBottom:'1px solid #e2e8f0',padding:'0 24px',display:'flex',gap:4}}>
+      <nav style={{background:'white',borderBottom:'1px solid #e2e8f0',padding:'0 16px',display:'flex',gap:2,overflowX:'auto'}}>
         {NAV.map(n => (
-          <a key={n.href} href={n.href} style={{display:'flex',alignItems:'center',gap:6,padding:'14px 16px',fontSize:14,fontWeight:pathname===n.href?800:500,color:pathname===n.href?'#667eea':'#64748b',borderBottom:pathname===n.href?'2px solid #667eea':'2px solid transparent',textDecoration:'none',transition:'all 0.2s'}}>
+          <a key={n.href} href={n.href} style={{display:'flex',alignItems:'center',gap:6,padding:'14px 14px',fontSize:13,fontWeight:pathname===n.href?800:500,color:pathname===n.href?'#667eea':'#64748b',borderBottom:pathname===n.href?'2px solid #667eea':'2px solid transparent',textDecoration:'none',whiteSpace:'nowrap' as const,transition:'all 0.2s'}}>
             <span>{n.icon}</span>{n.label}
           </a>
         ))}
       </nav>
-
-      {/* Content */}
       <main style={{maxWidth:1200,margin:'0 auto',padding:'28px 24px'}}>
         {children}
       </main>
