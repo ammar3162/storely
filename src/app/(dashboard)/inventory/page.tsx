@@ -10,10 +10,19 @@ export default function InventoryPage() {
   const [showAdd, setShowAdd]   = useState(false)
   const [editItem, setEditItem] = useState<any>(null)
   const [saving, setSaving]     = useState(false)
+  const [orgId, setOrgId]       = useState<string | null>(null)
   const [form, setForm] = useState({ name:'', sku:'', unit:'قطعة', qty:0, reorder_point:5, category:'' })
   const supabase = createClient()
 
-  useEffect(() => { loadProducts() }, [])
+  useEffect(() => { init() }, [])
+
+  async function init() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data: profile } = await supabase.from('profiles').select('org_id').eq('id', user.id).single()
+    if (profile?.org_id) setOrgId(profile.org_id)
+    loadProducts()
+  }
 
   async function loadProducts() {
     setLoading(true)
@@ -22,14 +31,9 @@ export default function InventoryPage() {
     setLoading(false)
   }
 
-  async function getOrgId() {
-    const { data: { user } } = await supabase.auth.getUser()
-    const { data: profile }  = await supabase.from('profiles').select('org_id').eq('id', user!.id).single()
-    return profile?.org_id
-  }
-
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
+    if (!orgId) { alert('لا يوجد org_id'); return }
     setSaving(true)
     if (editItem) {
       await supabase.from('products').update({
@@ -37,11 +41,12 @@ export default function InventoryPage() {
         reorder_point: Number(form.reorder_point), category: form.category,
       }).eq('id', editItem.id)
     } else {
-      const org_id = await getOrgId()
-      await supabase.from('products').insert({
-        ...form, qty: Number(form.qty),
-        reorder_point: Number(form.reorder_point), org_id,
+      const { error } = await supabase.from('products').insert({
+        name: form.name, sku: form.sku, unit: form.unit,
+        qty: Number(form.qty), reorder_point: Number(form.reorder_point),
+        category: form.category, org_id: orgId,
       })
+      if (error) { alert('خطأ: ' + error.message); setSaving(false); return }
     }
     setSaving(false); setShowAdd(false); setEditItem(null)
     setForm({ name:'', sku:'', unit:'قطعة', qty:0, reorder_point:5, category:'' })
@@ -68,11 +73,10 @@ export default function InventoryPage() {
 
   return (
     <div style={{direction:'rtl',fontFamily:'system-ui'}}>
-      {/* Header */}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,flexWrap:'wrap',gap:12}}>
         <div>
-          <h1 style={{fontSize:24,fontWeight:900,color:'#0f172a',marginBottom:4}}>📦 المخزون</h1>
-          <p style={{fontSize:13,color:'#64748b'}}>{totalItems} صنف — {lowStock > 0 ? `⚠️ ${lowStock} ناقص` : '✅ المخزون سليم'}</p>
+          <h1 style={{fontSize:24,fontWeight:900,color:'#0f172a',marginBottom:4}}>المخزون</h1>
+          <p style={{fontSize:13,color:'#64748b'}}>{totalItems} صنف — {lowStock > 0 ? lowStock + ' ناقص' : 'المخزون سليم'}</p>
         </div>
         <button onClick={() => { setShowAdd(true); setEditItem(null); setForm({ name:'', sku:'', unit:'قطعة', qty:0, reorder_point:5, category:'' }) }}
           style={{padding:'11px 20px',background:'linear-gradient(135deg,#667eea,#764ba2)',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'system-ui'}}>
@@ -80,34 +84,27 @@ export default function InventoryPage() {
         </button>
       </div>
 
-      {/* Stats */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:14,marginBottom:24}}>
         {[
-          { label:'إجمالي الأصناف', value:totalItems,                        color:'#667eea', bg:'#eef2ff', border:'#c7d2fe' },
-          { label:'مخزون ناقص',     value:lowStock,                          color:'#ef4444', bg:'#fef2f2', border:'#fecaca' },
-          { label:'مخزون كافي',     value:totalItems - lowStock,             color:'#10b981', bg:'#f0fdf4', border:'#bbf7d0' },
+          { label:'إجمالي الأصناف', value:totalItems, color:'#667eea', bg:'#eef2ff', border:'#c7d2fe' },
+          { label:'مخزون ناقص', value:lowStock, color:'#ef4444', bg:'#fef2f2', border:'#fecaca' },
+          { label:'مخزون كافي', value:totalItems-lowStock, color:'#10b981', bg:'#f0fdf4', border:'#bbf7d0' },
           { label:'إجمالي الكميات', value:products.reduce((s,p)=>s+p.qty,0), color:'#f59e0b', bg:'#fffbeb', border:'#fde68a' },
         ].map((s,i) => (
-          <div key={i} style={{background:s.bg,border:`1.5px solid ${s.border}`,borderRadius:14,padding:'16px 18px'}}>
+          <div key={i} style={{background:s.bg,border:'1.5px solid '+s.border,borderRadius:14,padding:'16px 18px'}}>
             <div style={{fontSize:10,fontWeight:700,color:'#64748b',marginBottom:6,textTransform:'uppercase' as const,letterSpacing:'0.05em'}}>{s.label}</div>
             <div style={{fontSize:26,fontWeight:900,color:s.color}}>{s.value}</div>
           </div>
         ))}
       </div>
 
-      {/* Search */}
       <div style={{background:'white',borderRadius:12,padding:'12px 16px',marginBottom:16,boxShadow:'0 1px 4px rgba(0,0,0,0.06)'}}>
-        <input type="text" placeholder="🔍 ابحث بالاسم أو الفئة أو الرمز..." value={search} onChange={e=>setSearch(e.target.value)}
-          style={{...inp,border:'1.5px solid #e2e8f0'}} />
+        <input type="text" placeholder="ابحث بالاسم أو الفئة..." value={search} onChange={e=>setSearch(e.target.value)} style={{...inp,border:'1.5px solid #e2e8f0'}} />
       </div>
 
-      {/* Table */}
       <div style={{background:'white',borderRadius:16,boxShadow:'0 2px 12px rgba(0,0,0,0.06)',overflow:'hidden'}}>
         {loading ? (
-          <div style={{padding:60,textAlign:'center',color:'#94a3b8'}}>
-            <div style={{fontSize:36,marginBottom:12}}>⏳</div>
-            <div style={{fontSize:14,fontWeight:600}}>جاري التحميل...</div>
-          </div>
+          <div style={{padding:60,textAlign:'center',color:'#94a3b8',fontSize:14,fontWeight:600}}>جاري التحميل...</div>
         ) : filtered.length === 0 ? (
           <div style={{padding:60,textAlign:'center',color:'#94a3b8'}}>
             <div style={{fontSize:40,marginBottom:12}}>📭</div>
@@ -141,8 +138,8 @@ export default function InventoryPage() {
                       </td>
                       <td style={{padding:'13px 14px',color:'#64748b',fontSize:13}}>{p.reorder_point} {p.unit}</td>
                       <td style={{padding:'13px 14px'}}>
-                        <span style={{background:isLow?'#fef2f2':'#f0fdf4',color:isLow?'#ef4444':'#10b981',padding:'4px 12px',borderRadius:50,fontSize:12,fontWeight:700,border:`1px solid ${isLow?'#fecaca':'#bbf7d0'}`}}>
-                          {isLow ? '⚠️ ناقص' : '✅ كافي'}
+                        <span style={{background:isLow?'#fef2f2':'#f0fdf4',color:isLow?'#ef4444':'#10b981',padding:'4px 12px',borderRadius:50,fontSize:12,fontWeight:700,border:'1px solid '+(isLow?'#fecaca':'#bbf7d0')}}>
+                          {isLow ? 'ناقص' : 'كافي'}
                         </span>
                       </td>
                       <td style={{padding:'13px 14px'}}>
@@ -160,12 +157,11 @@ export default function InventoryPage() {
         )}
       </div>
 
-      {/* Modal */}
       {showAdd && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:20}}>
           <div style={{background:'white',borderRadius:20,padding:28,width:'100%',maxWidth:480,boxShadow:'0 25px 60px rgba(0,0,0,0.25)'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
-              <h2 style={{fontSize:18,fontWeight:800,color:'#0f172a',margin:0}}>{editItem ? '✏️ تعديل المنتج' : '➕ منتج جديد'}</h2>
+              <h2 style={{fontSize:18,fontWeight:800,color:'#0f172a',margin:0}}>{editItem ? 'تعديل المنتج' : 'منتج جديد'}</h2>
               <button onClick={() => { setShowAdd(false); setEditItem(null) }} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:32,height:32,cursor:'pointer',fontSize:16}}>✕</button>
             </div>
             <form onSubmit={handleSave}>
@@ -199,7 +195,7 @@ export default function InventoryPage() {
               </div>
               <div style={{display:'flex',gap:10,marginTop:4}}>
                 <button type="submit" disabled={saving} style={{flex:1,padding:'13px',background:'linear-gradient(135deg,#667eea,#764ba2)',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'system-ui'}}>
-                  {saving ? '⏳ جاري الحفظ...' : editItem ? '💾 حفظ التعديلات' : '➕ إضافة'}
+                  {saving ? 'جاري الحفظ...' : editItem ? 'حفظ التعديلات' : 'إضافة'}
                 </button>
                 <button type="button" onClick={() => { setShowAdd(false); setEditItem(null) }} style={{padding:'13px 20px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>إلغاء</button>
               </div>
