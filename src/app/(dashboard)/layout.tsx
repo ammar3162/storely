@@ -3,15 +3,20 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 
-const NAV = [
-  { href:'/dashboard', label:'لوحة التحكم', section:'main', icon:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-  { href:'/inventory',  label:'المخزون',    section:'main', icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
-  { href:'/purchases',  label:'المشتريات',  section:'main', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
-  { href:'/dispense',   label:'الصرف',      section:'main', icon:'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4' },
-  { href:'/reports',         label:'تقرير الصرف',      section:'reports', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-  { href:'/purchase-report', label:'تقرير المشتريات',  section:'reports', icon:'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-  { href:'/settings',   label:'الإعدادات',  section:'system', icon:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
+const NAV_MAIN = [
+  { href:'/dashboard', label:'لوحة التحكم', icon:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+  { href:'/inventory',  label:'المخزون',    icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
+  { href:'/purchases',  label:'المشتريات',  icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
+  { href:'/dispense',   label:'الصرف',      icon:'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4' },
 ]
+const NAV_REPORTS = [
+  { href:'/reports',         label:'تقرير الصرف',     icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+  { href:'/purchase-report', label:'تقرير المشتريات', icon:'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+]
+const NAV_SYSTEM = [
+  { href:'/settings', label:'الإعدادات', icon:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
+]
+const NAV = [...NAV_MAIN, ...NAV_REPORTS, ...NAV_SYSTEM]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [orgName, setOrgName]   = useState('')
@@ -36,12 +41,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   async function logout() { await supabase.auth.signOut(); router.replace('/login') }
 
   const sw = collapsed ? 64 : 220
-
-  const sections = [
-    { key:'main',    label:'الرئيسية' },
-    { key:'reports', label:'التقارير' },
-    { key:'system',  label:'النظام' },
-  ]
 
   return (
     <div style={{display:'flex',minHeight:'100vh',background:'#f0f2f5',fontFamily:"'Segoe UI',system-ui,sans-serif",direction:'rtl'}}>
@@ -80,24 +79,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Nav */}
         <div style={{flex:1,padding:'8px',overflowY:'auto',overflowX:'hidden'}}>
-          {sections.map(sec => {
-            const items = NAV.filter(n => n.section === sec.key)
-            return (
-              <div key={sec.key}>
-                {!collapsed && <div className="ng">{sec.label}</div>}
-                {collapsed && sec.key !== 'main' && <div className="sep"/>}
-                {items.map(n => (
-                  <a key={n.href} href={n.href} className={'ni'+(pathname===n.href?' on':'')} title={collapsed?n.label:undefined}>
-                    <svg width="17" height="17" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                      {n.icon.split(' M').map((d,j)=><path key={j} d={(j===0?'':' M')+d}/>)}
-                    </svg>
-                    {!collapsed && <span className="ni-t">{n.label}</span>}
-                    {!collapsed && n.href==='/inventory' && lowCount>0 && <span className="ni-b">{lowCount}</span>}
-                  </a>
-                ))}
-              </div>
-            )
-          })}
+          {[
+            {label:'الرئيسية', items:NAV_MAIN},
+            {label:'التقارير', items:NAV_REPORTS},
+            {label:'النظام',   items:NAV_SYSTEM},
+          ].map((sec,si) => (
+            <div key={si}>
+              {si>0 && <div className="sep"/>}
+              {!collapsed && <div className="ng">{sec.label}</div>}
+              {sec.items.map(n => (
+                <a key={n.href} href={n.href} className={'ni'+(pathname===n.href?' on':'')} title={collapsed?n.label:undefined}>
+                  <svg width="17" height="17" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                    {n.icon.split(' M').map((d,j)=><path key={j} d={(j===0?'':' M')+d}/>)}
+                  </svg>
+                  {!collapsed && <span className="ni-t">{n.label}</span>}
+                  {!collapsed && n.href==='/inventory' && lowCount>0 && <span className="ni-b">{lowCount}</span>}
+                </a>
+              ))}
+            </div>
+          ))}
         </div>
 
         {/* Bottom */}
