@@ -10,19 +10,10 @@ export default function InventoryPage() {
   const [showAdd, setShowAdd]   = useState(false)
   const [editItem, setEditItem] = useState<any>(null)
   const [saving, setSaving]     = useState(false)
-  const [orgId, setOrgId]       = useState<string | null>(null)
   const [form, setForm] = useState({ name:'', sku:'', unit:'قطعة', qty:0, reorder_point:5, category:'' })
   const supabase = createClient()
 
-  useEffect(() => { init() }, [])
-
-  async function init() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { data: profile } = await supabase.from('profiles').select('org_id').eq('id', user.id).single()
-    if (profile?.org_id) setOrgId(profile.org_id)
-    loadProducts()
-  }
+  useEffect(() => { loadProducts() }, [])
 
   async function loadProducts() {
     setLoading(true)
@@ -33,21 +24,33 @@ export default function InventoryPage() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    if (!orgId) { alert('لا يوجد org_id'); return }
     setSaving(true)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { alert('غير مسجل دخول'); setSaving(false); return }
+
+    const { data: profile } = await supabase
+      .from('profiles').select('org_id').eq('id', user.id).single()
+
+    if (!profile?.org_id) { alert('لا يوجد org_id للمستخدم: ' + user.email); setSaving(false); return }
+
+    const orgId = profile.org_id
+
     if (editItem) {
-      await supabase.from('products').update({
+      const { error } = await supabase.from('products').update({
         name: form.name, sku: form.sku, unit: form.unit,
         reorder_point: Number(form.reorder_point), category: form.category,
       }).eq('id', editItem.id)
+      if (error) alert('خطأ تعديل: ' + error.message)
     } else {
       const { error } = await supabase.from('products').insert({
         name: form.name, sku: form.sku, unit: form.unit,
         qty: Number(form.qty), reorder_point: Number(form.reorder_point),
         category: form.category, org_id: orgId,
       })
-      if (error) { alert('خطأ: ' + error.message); setSaving(false); return }
+      if (error) alert('خطأ إضافة: ' + error.message)
     }
+
     setSaving(false); setShowAdd(false); setEditItem(null)
     setForm({ name:'', sku:'', unit:'قطعة', qty:0, reorder_point:5, category:'' })
     loadProducts()
