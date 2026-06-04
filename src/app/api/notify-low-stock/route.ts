@@ -1,80 +1,84 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 
-export async function POST() {
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+export async function POST(req: Request) {
   try {
-    const supabase = await createClient()
+    const authHeader = req.headers.get('authorization')
+    const isManual = authHeader === 'Bearer ' + process.env.CRON_SECRET
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ success:false, error:'غير مصرح' }, { status:401 })
+    const { data: orgs } = await supabase.from('organizations').select('id, name, whatsapp_number')
+    if (!orgs || orgs.length === 0) return NextResponse.json({ success: false, message: 'لا توجد مؤسسات' })
 
-    const { data: profile } = await supabase
-      .from('profiles').select('org_id').eq('id', user.id).single()
-    if (!profile) return NextResponse.json({ success:false, error:'لا يوجد ملف شخصي' }, { status:400 })
+    let totalSent = 0
 
-    const { data: org } = await supabase
-      .from('organizations').select('*').eq('id', profile.org_id).single()
-    if (!org) return NextResponse.json({ success:false, error:'لا توجد مؤسسة' }, { status:400 })
+    for (const org of orgs) {
+      const { data: lowItems } = await supabase
+        .from('products')
+        .select('name, qty, unit, reorder_point')
+        .eq('org_id', org.id)
+        .eq('is_active', true)
+        .lte('qty', supabase.rpc as any)
 
-    const { data: lowItems } = await supabase
-      .from('products')
-      .select('name, qty, unit, reorder_point')
-      .eq('org_id', profile.org_id)
-      .lte('qty', 'reorder_point')
-      .eq('is_active', true)
+      const { data: products } = await supabase
+        .from('products')
+        .select('name, qty, unit, reorder_point')
+        .eq('org_id', org.id)
+        .eq('is_active', true)
 
-    if (!lowItems || lowItems.length === 0) {
-      return NextResponse.json({ success:true, message:'لا توجد منتجات ناقصة' })
-    }
+      const low = (products || []).filter(p => p.qty <= p.reorder_point)
+      if (low.length === 0) continue
 
-    const productList = lowItems
-      .map(p => '• ' + p.name + ': ' + p.qty + ' ' + p.unit + ' (الحد الادنى: ' + p.reorder_point + ')')
-      .join('\n')
+      const productList = low.map(p =>
+        '• ' + p.name + ': ' + p.qty + ' ' + p.unit + ' (الحد الأدنى: ' + p.reorder_point + ')'
+      ).join('\n')
 
-    const message =
-      'تنبيه مخزون — ' + org.name + '\n\n' +
-      'الاصناف التالية وصلت للحد الادنى:\n\n' +
-      productList + '\n\n' +
-      'يرجى اعادة الطلب في اقرب وقت\n\n' +
-      'Storely — نظام ادارة المخزون'
+      const message =
+        '🔔 *تنبيه مخزون — ' + org.name + '*\n\n' +
+        'الأصناف التالية وصلت للحد الأدنى:\n\n' +
+        productList + '\n\n' +
+        '⚡ يرجى إعادة الطلب في أقرب وقت\n\n' +
+        '_Storely — نظام إدارة المخزون_'
 
-    const accountSid = process.env.TWILIO_ACCOUNT_SID!
-    const authToken  = process.env.TWILIO_AUTH_TOKEN!
-    const from       = process.env.TWILIO_WHATSAPP_FROM!
-    const to         = 'whatsapp:' + org.whatsapp_number
+      const accountSid = process.env.TWILIO_ACCOUNT_SID!
+      const authToken  = process.env.TWILIO_AUTH_TOKEN!
+      const from       = process.env.TWILIO_WHATSAPP_FROM!
+      const to         = 'whatsapp:' + org.whatsapp_number
 
-    const response = await fetch(
-      'https://api.twilio.com/2010-04-01/Accounts/' + accountSid + '/Messages.json',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Basic ' + Buffer.from(accountSid + ':' + authToken).toString('base64'),
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({ From: from, To: to, Body: message }).toString(),
-      }
-    )
+      const response = await fetch(
+        'https://api.twilio.com/2010-04-01/Accounts/' + accountSid + '/Messages.json',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Basic ' + Buffer.from(accountSid + ':' + authToken).toString('base64'),
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({ From: from, To: to, Body: message }).toString(),
+        }
+      )
 
-    const result = await response.json()
+      const result = await response.json()
 
-    if (response.ok) {
       await supabase.from('whatsapp_logs').insert({
-        org_id: profile.org_id,
+        org_id: org.id,
         phone: org.whatsapp_number,
         message,
-        status: 'sent',
+        status: response.ok ? 'sent' : 'failed',
       })
-      return NextResponse.json({ success:true, sid: result.sid })
-    } else {
-      await supabase.from('whatsapp_logs').insert({
-        org_id: profile.org_id,
-        phone: org.whatsapp_number,
-        message,
-        status: 'failed',
-      })
-      return NextResponse.json({ success:false, error: result.message }, { status:400 })
+
+      if (response.ok) totalSent++
     }
+
+    return NextResponse.json({ success: true, sent: totalSent })
   } catch (err: any) {
-    return NextResponse.json({ success:false, error: err.message }, { status:500 })
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 })
   }
+}
+
+export async function GET(req: Request) {
+  return POST(req)
 }
