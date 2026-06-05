@@ -129,6 +129,9 @@ export default function PurchaseReportPage() {
                     <td style={{ padding:'11px 14px', fontSize:13, color:'#f59e0b', fontWeight:600 }}>{Number(p.vat_amount||0).toFixed(2)} ر.س</td>
                     <td style={{ padding:'11px 14px', fontSize:13, fontWeight:700, color:'#10b981' }}>{Number(p.total_amount||0).toFixed(2)} ر.س</td>
                     <td style={{ padding:'11px 14px', fontSize:12, color:'#94a3b8' }}>{p.supplier||'—'}</td>
+                    <td style={{ padding:'11px 14px', textAlign:'center' }}>
+                      {p.invoice_image ? <a href={p.invoice_image} target='_blank' rel='noreferrer' style={{color:'#3b82f6',fontSize:12,fontWeight:600,textDecoration:'none'}}>📎 عرض</a> : <span style={{color:'#cbd5e1'}}>—</span>}
+                    </td>
                   </tr>
                 ))}
               </tbody>
