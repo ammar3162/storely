@@ -20,9 +20,9 @@ function LoginPage() {
     background:'white', color:'#1e293b', fontFamily:'system-ui', fontWeight:500,
   }
   const btnPrimary: React.CSSProperties = {
-    width:'100%', padding:'14px', background:'linear-gradient(135deg,#667eea,#764ba2)',
+    width:'100%', padding:'14px', background:'#2d7a4f',
     color:'white', border:'none', borderRadius:12, fontSize:15, fontWeight:800,
-    cursor:'pointer', fontFamily:'system-ui', boxShadow:'0 4px 14px rgba(102,126,234,0.4)',
+    cursor:'pointer', fontFamily:'system-ui', boxShadow:'0 4px 14px rgba(26,71,49,0.4)',
   }
 
   async function handleLogin(e: React.FormEvent) {
@@ -66,10 +66,10 @@ function LoginPage() {
   }
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',fontFamily:'system-ui',direction:'rtl',padding:20}}>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(160deg,#1a4731 0%,#0d2818 100%)',fontFamily:'system-ui',direction:'rtl',padding:20}}>
       <div style={{background:'white',borderRadius:24,padding:'40px 36px',width:'100%',maxWidth:440,boxShadow:'0 25px 60px rgba(0,0,0,0.25)'}}>
         <div style={{textAlign:'center',marginBottom:28}}>
-          <div style={{width:64,height:64,background:'linear-gradient(135deg,#667eea,#764ba2)',borderRadius:18,display:'flex',alignItems:'center',justifyContent:'center',fontSize:30,margin:'0 auto 14px'}}>🏪</div>
+          <div style={{width:64,height:64,background:'#2d7a4f',borderRadius:18,display:'flex',alignItems:'center',justifyContent:'center',fontSize:30,margin:'0 auto 14px'}}>🏪</div>
           <h1 style={{fontSize:26,fontWeight:900,color:'#0f172a',margin:'0 0 4px'}}>Storely</h1>
           <p style={{fontSize:13,color:'#94a3b8',fontWeight:500}}>نظام إدارة المخزون</p>
         </div>
