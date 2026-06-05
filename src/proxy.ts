@@ -27,7 +27,8 @@ export async function proxy(request: NextRequest) {
   const isLogin   = path.startsWith('/login')
   const isPending = path.startsWith('/pending')
   const isApi     = path.startsWith('/api')
-  const isPublic  = isLogin || isPending || isApi
+  const isAdminPanel = path.startsWith('/storely-admin')
+  const isPublic  = isLogin || isPending || isApi || isAdminPanel
 
   if (!user && !isPublic) {
     return NextResponse.redirect(new URL('/login', request.url))
