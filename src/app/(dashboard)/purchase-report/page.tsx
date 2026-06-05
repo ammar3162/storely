@@ -112,7 +112,7 @@ export default function PurchaseReportPage() {
             <table style={{ width:'100%', borderCollapse:'collapse', minWidth:700 }}>
               <thead>
                 <tr style={{ background:'#f8fafc' }}>
-                  {['التاريخ','الصنف','النوع','بدون ضريبة','ضريبة 15%','الإجمالي','المورد'].map((h,i) => (
+                  {['التاريخ','الصنف','النوع','بدون ضريبة','ضريبة 15%','الإجمالي','المورد','فاتورة'].map((h,i) => (
                     <th key={i} style={{ padding:'10px 14px', color:'#94a3b8', fontSize:10, fontWeight:700, textAlign:'right', borderBottom:'1px solid #e2e8f0', textTransform:'uppercase' as const, letterSpacing:'0.04em' }}>{h}</th>
                   ))}
                 </tr>
