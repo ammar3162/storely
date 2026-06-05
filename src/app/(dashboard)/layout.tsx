@@ -55,6 +55,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     router.push(href)
   }
 
+  useEffect(() => {
+    const all = [...NAV_MAIN, ...NAV_REPORTS, ...NAV_SYSTEM]
+    all.forEach(n => router.prefetch(n.href))
+  }, [])
+
   const Icon = ({ path }: { path: string }) => (
     <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true">
       {path.split(' M').map((d,j) => <path key={j} d={(j===0?'':' M')+d}/>)}
