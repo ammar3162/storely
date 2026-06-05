@@ -92,8 +92,14 @@ export default function PurchaseReportPage() {
             <option value="صيانة">صيانة</option>
             <option value="أخرى">أخرى</option>
           </select>
+          <div style={{display:"flex",flexDirection:"column",gap:3}}>
+            <label style={{fontSize:10,fontWeight:600,color:"#94a3b8"}}>من تاريخ</label>
           <input type="date" style={inp} value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:3}}>
+            <label style={{fontSize:10,fontWeight:600,color:"#94a3b8"}}>إلى تاريخ</label>
           <input type="date" style={inp} value={dateTo}   onChange={e => setDateTo(e.target.value)} />
+          </div>
           {(search||filterCat||dateFrom||dateTo) && (
             <button onClick={() => { setSearch(''); setFilterCat(''); setDateFrom(''); setDateTo('') }}
               style={{ ...inp, background:'#fef2f2', color:'#ef4444', border:'1.5px solid #fecaca', cursor:'pointer', fontWeight:700 }}>✕ مسح</button>
