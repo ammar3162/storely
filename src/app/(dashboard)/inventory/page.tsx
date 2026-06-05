@@ -38,13 +38,13 @@ export default function InventoryPage() {
 
     if (editItem) {
       const { error } = await supabase.from('products').update({
-        name: form.name, sku: form.sku, unit: form.unit,
+        name: form.name, sku: form.sku||null, unit: form.unit,
         reorder_point: Number(form.reorder_point), category: form.category,
       }).eq('id', editItem.id)
       if (error) alert('خطأ تعديل: ' + error.message)
     } else {
       const { error } = await supabase.from('products').insert({
-        name: form.name, sku: form.sku, unit: form.unit,
+        name: form.name, sku: form.sku||null, unit: form.unit,
         qty: Number(form.qty), reorder_point: Number(form.reorder_point),
         category: form.category, org_id: orgId,
       })
