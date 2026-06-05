@@ -3,45 +3,37 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-const CATEGORIES = ['مخزون', 'صيانة', 'أخرى']
+const CATS = ['مخزون','صيانة','أخرى']
+const CAT_ICONS: Record<string,string> = { 'مخزون':'📦', 'صيانة':'🔧', 'أخرى':'📋' }
 
 export default function PurchasesPage() {
-  const [history, setHistory]     = useState<any[]>([])
-  const [loading, setLoading]     = useState(false)
-  const [success, setSuccess]     = useState('')
-  const [uploading, setUploading] = useState(false)
+  const [history, setHistory]       = useState<any[]>([])
+  const [loading, setLoading]       = useState(false)
+  const [success, setSuccess]       = useState('')
+  const [uploading, setUploading]   = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
-    category: 'مخزون',
-    name: '',
-    qty: '',
-    unit: 'قطعة',
-    reorder_point: '5',
-    total_amount: '',
-    supplier: '',
-    note: '',
-    invoice_image: '',
+    category:'مخزون', name:'', qty:'', unit:'قطعة',
+    reorder_point:'5', total_amount:'', supplier:'', note:'', invoice_image:'',
   })
-  const supabase = createClient()
+  const sb = createClient()
 
   useEffect(() => { loadHistory() }, [])
 
   async function loadHistory() {
-    const { data } = await supabase
-      .from('purchases').select('*')
-      .order('created_at', { ascending: false }).limit(30)
-    setHistory(data || [])
+    const { data } = await sb.from('purchases').select('*').order('created_at',{ascending:false}).limit(20)
+    setHistory(data||[])
   }
 
-  async function handleImageUpload(file: File) {
+  async function handleImage(file: File) {
     setUploading(true)
     const ext  = file.name.split('.').pop()
-    const path = 'invoice-' + Date.now() + '.' + ext
-    const { error } = await supabase.storage.from('invoices').upload(path, file)
+    const path = 'invoice-'+Date.now()+'.'+ext
+    const { error } = await sb.storage.from('invoices').upload(path, file)
     if (error) { alert('فشل رفع الصورة'); setUploading(false); return }
-    const { data: { publicUrl } } = supabase.storage.from('invoices').getPublicUrl(path)
-    setForm(f => ({ ...f, invoice_image: publicUrl }))
+    const { data:{ publicUrl } } = sb.storage.from('invoices').getPublicUrl(path)
+    setForm(f=>({...f,invoice_image:publicUrl}))
     setPreviewUrl(publicUrl)
     setUploading(false)
   }
@@ -50,177 +42,147 @@ export default function PurchasesPage() {
     e.preventDefault()
     if (!form.total_amount) return
     setLoading(true)
-
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data:{ user } } = await sb.auth.getUser()
     if (!user) { setLoading(false); return }
-    const { data: profile } = await supabase.from('profiles').select('org_id').eq('id', user.id).single()
+    const { data: profile } = await sb.from('profiles').select('org_id').eq('id',user.id).single()
     if (!profile?.org_id) { alert('لا يوجد org_id'); setLoading(false); return }
 
-    const totalAmount = Number(form.total_amount)
-    const amount      = parseFloat((totalAmount / 1.15).toFixed(2))
-    const vatAmount   = parseFloat((totalAmount - amount).toFixed(2))
+    const total  = Number(form.total_amount)
+    const amount = parseFloat((total/1.15).toFixed(2))
 
-    const { error: purchaseErr } = await supabase.from('purchases').insert({
-      org_id:        profile.org_id,
-      profile_id:    user.id,
-      category:      form.category,
-      name:          form.name,
-      qty:           form.qty ? Number(form.qty) : null,
-      unit:          form.unit || null,
-      reorder_point: form.reorder_point ? Number(form.reorder_point) : 5,
-      amount,
-      supplier:      form.supplier || null,
-      note:          form.note || null,
-      invoice_image: form.invoice_image || null,
+    await sb.from('purchases').insert({
+      org_id: profile.org_id, profile_id: user.id,
+      category: form.category, name: form.name,
+      qty: form.qty ? Number(form.qty) : null,
+      unit: form.unit||null, reorder_point: Number(form.reorder_point)||5,
+      amount, supplier: form.supplier||null,
+      note: form.note||null, invoice_image: form.invoice_image||null,
     })
 
-    if (purchaseErr) { alert('خطأ: ' + purchaseErr.message); setLoading(false); return }
-
-    if (form.category === 'مخزون' && form.name) {
+    if (form.category==='مخزون' && form.name) {
       const qty = form.qty ? Number(form.qty) : 0
-      const { data: existing } = await supabase.from('products')
-        .select('id,qty').eq('org_id', profile.org_id).eq('name', form.name).single()
-
+      const { data: existing } = await sb.from('products').select('id,qty').eq('org_id',profile.org_id).eq('name',form.name).single()
       if (existing) {
-        if (qty > 0) {
-          await supabase.from('stock_movements').insert({
-            product_id: existing.id, profile_id: user.id,
-            type: 'in', qty_change: qty,
-            note: 'شراء: ' + (form.supplier || ''),
-          })
-        }
+        if (qty>0) await sb.from('stock_movements').insert({ product_id:existing.id, profile_id:user.id, type:'in', qty_change:qty, note:'شراء: '+(form.supplier||'') })
       } else {
-        const { data: newProduct } = await supabase.from('products').insert({
-          org_id: profile.org_id, name: form.name,
-          unit: form.unit || 'قطعة', qty,
-          reorder_point: form.reorder_point ? Number(form.reorder_point) : 5,
-          category: 'مشتريات',
-        }).select().single()
-
-        if (newProduct && qty > 0) {
-          await supabase.from('stock_movements').insert({
-            product_id: newProduct.id, profile_id: user.id,
-            type: 'in', qty_change: qty,
-            note: 'شراء جديد: ' + (form.supplier || ''),
-          })
-        }
+        const { data: np } = await sb.from('products').insert({ org_id:profile.org_id, name:form.name, unit:form.unit||'قطعة', qty, reorder_point:Number(form.reorder_point)||5, category:'مشتريات' }).select().single()
+        if (np && qty>0) await sb.from('stock_movements').insert({ product_id:np.id, profile_id:user.id, type:'in', qty_change:qty, note:'شراء جديد: '+(form.supplier||'') })
       }
     }
 
-    setSuccess('تم تسجيل الشراء' + (form.category === 'مخزون' ? ' وتحديث المخزون تلقائياً ✅' : ' ✅'))
-    setForm({ category:'مخزون', name:'', qty:'', unit:'قطعة', reorder_point:'5', total_amount:'', supplier:'', note:'', invoice_image:'' })
+    setSuccess('تم تسجيل الشراء'+(form.category==='مخزون'?' وتحديث المخزون ✅':' ✅'))
+    setForm({category:'مخزون',name:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:''})
     setPreviewUrl(null)
     setLoading(false)
     loadHistory()
-    setTimeout(() => setSuccess(''), 5000)
+    setTimeout(()=>setSuccess(''),5000)
   }
 
-  const totalAmount = Number(form.total_amount) || 0
-  const amount      = totalAmount > 0 ? parseFloat((totalAmount / 1.15).toFixed(2)) : 0
-  const vatAmount   = totalAmount > 0 ? parseFloat((totalAmount - amount).toFixed(2)) : 0
+  const total   = Number(form.total_amount)||0
+  const amount  = total>0 ? (total/1.15).toFixed(2) : '0.00'
+  const vat     = total>0 ? (total-Number(amount)).toFixed(2) : '0.00'
 
-  const inp: React.CSSProperties = {
-    width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0',
-    borderRadius:8, fontSize:13, outline:'none', boxSizing:'border-box',
-    background:'white', color:'#1e293b', fontFamily:'inherit',
-  }
+  const totalSpent = history.reduce((s,p)=>s+Number(p.total_amount||0),0)
+  const totalVat   = history.reduce((s,p)=>s+Number(p.vat_amount||0),0)
+  const totalNet   = history.reduce((s,p)=>s+Number(p.amount||0),0)
+
+  const inp: React.CSSProperties = { width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box', background:'white', color:'#1e293b', fontFamily:'inherit', transition:'border 0.15s' }
 
   return (
-    <div style={{direction:'rtl', fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
+    <div style={{fontFamily:"'Segoe UI',system-ui,sans-serif",direction:'rtl',maxWidth:1100,margin:'0 auto'}}>
+      <style>{`
+        .p-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+        .s-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+        .q-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        @media(max-width:768px){.p-grid{grid-template-columns:1fr}.s-grid{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:480px){.s-grid{grid-template-columns:repeat(2,1fr)}}
+        input:focus,select:focus,textarea:focus{border-color:#1a4731!important;box-shadow:0 0 0 3px rgba(26,71,49,0.08)!important}
+        .cat-btn{padding:10px 8px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;border:1.5px solid #e2e8f0;background:white;color:#64748b;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px}
+        .cat-btn.active{border-color:#1a4731;background:#e8f7ee;color:#1a4731}
+      `}</style>
+
       <div style={{marginBottom:20}}>
         <h1 style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:3}}>المشتريات</h1>
-        <p style={{fontSize:12,color:'#64748b'}}>تسجيل المشتريات — فئة مخزون تُحدّث المخزون تلقائياً</p>
+        <p style={{fontSize:12,color:'#64748b'}}>فئة مخزون تُحدّث المخزون تلقائياً</p>
       </div>
 
       {/* Stats */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:20}}>
+      <div className="s-grid">
         {[
-          { label:'إجمالي الفواتير',      value:history.length,                                                          color:'#1a4731', bg:'#e8f7ee' },
-          { label:'إجمالي بدون ضريبة',    value:history.reduce((s,p)=>s+Number(p.amount||0),0).toFixed(2)+' ر.س',       color:'#1e40af', bg:'#dbeafe' },
-          { label:'ضريبة 15%',            value:(history.reduce((s,p)=>s+Number(p.vat_amount||0),0)).toFixed(2)+' ر.س', color:'#92400e', bg:'#fef3c7' },
-          { label:'الإجمالي مع الضريبة',  value:history.reduce((s,p)=>s+Number(p.total_amount||0),0).toFixed(2)+' ر.س', color:'#10b981', bg:'#dcfce7' },
-        ].map((s,i) => (
-          <div key={i} style={{background:s.bg,borderRadius:10,padding:'14px 16px',border:'1px solid '+s.bg}}>
+          {label:'إجمالي الفواتير', value:String(history.length), color:'#1a4731', bg:'#e8f7ee'},
+          {label:'بدون ضريبة',      value:totalNet.toFixed(2)+' ر.س', color:'#1e40af', bg:'#dbeafe'},
+          {label:'ضريبة 15%',       value:totalVat.toFixed(2)+' ر.س', color:'#92400e', bg:'#fef3c7'},
+          {label:'الإجمالي',        value:totalSpent.toFixed(2)+' ر.س', color:'#166534', bg:'#dcfce7'},
+        ].map((s,i)=>(
+          <div key={i} style={{background:s.bg,borderRadius:10,padding:'14px',border:'none'}}>
             <div style={{fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase' as const,letterSpacing:'0.05em',marginBottom:6}}>{s.label}</div>
-            <div style={{fontSize:18,fontWeight:800,color:s.color}}>{s.value}</div>
+            <div style={{fontSize:16,fontWeight:800,color:s.color}}>{s.value}</div>
           </div>
         ))}
       </div>
 
-      {success && (
-        <div style={{background:'#ecfdf5',border:'2px solid #10b981',borderRadius:10,padding:'12px 16px',marginBottom:16,fontSize:13,fontWeight:700,color:'#059669'}}>
-          {success}
-        </div>
-      )}
+      {success && <div style={{background:'#ecfdf5',border:'1.5px solid #10b981',borderRadius:10,padding:'12px 16px',marginBottom:16,fontSize:13,fontWeight:700,color:'#059669'}}>{success}</div>}
 
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,alignItems:'start'}}>
+      <div className="p-grid">
         {/* Form */}
-        <div style={{background:'white',borderRadius:12,padding:20,border:'1px solid #e2e8f0'}}>
-          <div style={{fontSize:14,fontWeight:700,color:'#0f172a',marginBottom:16}}>تسجيل شراء جديد</div>
+        <div style={{background:'white',borderRadius:12,padding:20,border:'1px solid #e8ecf0',boxShadow:'0 1px 4px rgba(0,0,0,0.04)'}}>
+          <div style={{fontSize:15,fontWeight:700,color:'#0f172a',marginBottom:16}}>تسجيل شراء جديد</div>
           <form onSubmit={handleSubmit}>
 
-            {/* Category */}
             <div style={{marginBottom:14}}>
               <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:6}}>نوع الشراء</label>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
-                {CATEGORIES.map(c => (
-                  <button key={c} type="button" onClick={() => setForm({...form, category:c})}
-                    style={{padding:'9px',borderRadius:8,border:'1.5px solid '+(form.category===c?'#1a4731':'#e2e8f0'),background:form.category===c?'#e8f7ee':'white',color:form.category===c?'#1a4731':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                    {c==='مخزون'?'📦 ':c==='صيانة'?'🔧 ':'📋 '}{c}
+              <div className="q-grid" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
+                {CATS.map(c=>(
+                  <button key={c} type="button" className={'cat-btn'+(form.category===c?' active':'')} onClick={()=>setForm({...form,category:c})}>
+                    <span style={{fontSize:20}}>{CAT_ICONS[c]}</span>
+                    <span>{c}</span>
                   </button>
                 ))}
               </div>
-              {form.category === 'مخزون' && (
-                <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:7,padding:'7px 10px',marginTop:7,fontSize:11,color:'#1e40af',fontWeight:600}}>
-                  سيتم إضافة هذا الصنف للمخزون تلقائياً
+              {form.category==='مخزون' && (
+                <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:7,padding:'7px 10px',marginTop:8,fontSize:11,color:'#1e40af',fontWeight:600}}>
+                  ✓ سيتم إضافة هذا الصنف للمخزون تلقائياً
                 </div>
               )}
             </div>
 
-            {/* Name */}
             <div style={{marginBottom:12}}>
               <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>اسم الصنف / الخدمة *</label>
               <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp} placeholder="مثال: قهوة عربية / صيانة مكيف"/>
             </div>
 
-            {/* Amount */}
             <div style={{marginBottom:12}}>
               <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>المبلغ الإجمالي (شامل الضريبة) *</label>
               <input type="number" min="0" step="0.01" required value={form.total_amount} onChange={e=>setForm({...form,total_amount:e.target.value})} style={inp} placeholder="0.00"/>
-              {totalAmount > 0 && (
+              {total>0 && (
                 <div style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:8,padding:'10px 12px',marginTop:8}}>
                   <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:'#64748b',marginBottom:4}}>
-                    <span>بدون ضريبة (÷ 1.15)</span>
-                    <span style={{fontWeight:600,color:'#334155'}}>{amount.toFixed(2)} ر.س</span>
+                    <span>بدون ضريبة (÷ 1.15)</span><span style={{fontWeight:600,color:'#334155'}}>{amount} ر.س</span>
                   </div>
                   <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:'#64748b',marginBottom:6}}>
-                    <span>ضريبة القيمة المضافة 15%</span>
-                    <span style={{fontWeight:600,color:'#f59e0b'}}>{vatAmount.toFixed(2)} ر.س</span>
+                    <span>ضريبة 15%</span><span style={{fontWeight:600,color:'#f59e0b'}}>{vat} ر.س</span>
                   </div>
-                  <div style={{display:'flex',justifyContent:'space-between',fontSize:13,fontWeight:800,borderTop:'1px solid #e2e8f0',paddingTop:6}}>
-                    <span style={{color:'#0f172a'}}>الإجمالي</span>
-                    <span style={{color:'#10b981'}}>{totalAmount.toFixed(2)} ر.س</span>
+                  <div style={{display:'flex',justifyContent:'space-between',fontSize:13,fontWeight:800,borderTop:'1px solid #e2e8f0',paddingTop:7}}>
+                    <span>الإجمالي</span><span style={{color:'#10b981'}}>{total.toFixed(2)} ر.س</span>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Supplier */}
             <div style={{marginBottom:12}}>
               <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>المورد (اختياري)</label>
               <input value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})} style={inp} placeholder="اسم المورد"/>
             </div>
 
-            {/* Qty - only for مخزون and optional */}
-            {form.category === 'مخزون' && (
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:12}}>
+            {form.category==='مخزون' && (
+              <div className="q-grid" style={{marginBottom:12}}>
                 <div>
                   <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>الكمية (اختياري)</label>
                   <input type="number" min="0" value={form.qty} onChange={e=>setForm({...form,qty:e.target.value})} style={inp} placeholder="0"/>
                 </div>
                 <div>
                   <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>الوحدة</label>
-                  <input value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})} style={inp} placeholder="كيلو"/>
+                  <input value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})} style={inp} placeholder="كيلو / لتر"/>
                 </div>
                 <div>
                   <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>الحد الأدنى</label>
@@ -229,63 +191,66 @@ export default function PurchasesPage() {
               </div>
             )}
 
-            {/* Invoice Image */}
             <div style={{marginBottom:12}}>
               <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>صورة الفاتورة (اختياري)</label>
-              <input ref={fileRef} type="file" accept="image/*,.pdf" style={{display:'none'}}
-                onChange={e => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]) }}/>
-              <button type="button" onClick={() => fileRef.current?.click()}
-                style={{width:'100%',padding:'10px',border:'1.5px dashed #cbd5e1',borderRadius:8,background:'#f8fafc',color:'#64748b',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',transition:'all 0.15s'}}>
-                {uploading ? '⏳ جاري الرفع...' : previewUrl ? '✅ تم رفع الفاتورة — اضغط لتغييرها' : '📎 اضغط لرفع صورة الفاتورة'}
+              <input ref={fileRef} type="file" accept="image/*,.pdf" style={{display:'none'}} onChange={e=>{if(e.target.files?.[0]) handleImage(e.target.files[0])}}/>
+              <button type="button" onClick={()=>fileRef.current?.click()}
+                style={{width:'100%',padding:'10px',border:'1.5px dashed #cbd5e1',borderRadius:8,background:previewUrl?'#f0fdf4':'#f8fafc',color:previewUrl?'#166534':'#64748b',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                {uploading?'⏳ جاري الرفع...':previewUrl?'✅ تم رفع الفاتورة — اضغط لتغييرها':'📎 اضغط لرفع صورة الفاتورة'}
               </button>
               {previewUrl && previewUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) && (
-                <div style={{marginTop:8,borderRadius:8,overflow:'hidden',border:'1px solid #e2e8f0',maxHeight:120}}>
-                  <img src={previewUrl} alt="فاتورة" style={{width:'100%',objectFit:'cover',maxHeight:120}}/>
+                <div style={{marginTop:8,borderRadius:8,overflow:'hidden',border:'1px solid #e2e8f0',maxHeight:100}}>
+                  <img src={previewUrl} alt="فاتورة" style={{width:'100%',objectFit:'cover',maxHeight:100}}/>
                 </div>
               )}
             </div>
 
-            {/* Note */}
             <div style={{marginBottom:16}}>
               <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>ملاحظات (اختياري)</label>
               <textarea value={form.note} onChange={e=>setForm({...form,note:e.target.value})} style={{...inp,minHeight:60,resize:'none'}} placeholder="أي تفاصيل إضافية..."/>
             </div>
 
             <button type="submit" disabled={loading||uploading}
-              style={{width:'100%',padding:'12px',background:loading?'#94a3b8':'linear-gradient(135deg,#1a4731,#2d7a4f)',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit'}}>
-              {loading ? 'جاري الحفظ...' : 'تسجيل الشراء'}
+              style={{width:'100%',padding:'13px',background:loading?'#94a3b8':'#1a4731',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',transition:'background 0.15s'}}>
+              {loading?'جاري الحفظ...':'تسجيل الشراء ←'}
             </button>
           </form>
         </div>
 
         {/* History */}
-        <div style={{background:'white',borderRadius:12,border:'1px solid #e2e8f0',overflow:'hidden'}}>
-          <div style={{padding:'14px 16px',borderBottom:'1px solid #f1f5f9',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-            <div style={{fontSize:14,fontWeight:700,color:'#0f172a'}}>آخر المشتريات</div>
-            <span style={{fontSize:11,color:'#94a3b8'}}>{history.length} فاتورة</span>
+        <div style={{background:'white',borderRadius:12,border:'1px solid #e8ecf0',overflow:'hidden',boxShadow:'0 1px 4px rgba(0,0,0,0.04)'}}>
+          <div style={{padding:'14px 18px',borderBottom:'1px solid #f1f5f9',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <div style={{fontSize:15,fontWeight:700,color:'#0f172a'}}>آخر المشتريات</div>
+            <span style={{fontSize:11,color:'#94a3b8',background:'#f1f5f9',padding:'2px 8px',borderRadius:10}}>{history.length} فاتورة</span>
           </div>
-          <div style={{maxHeight:580,overflowY:'auto'}}>
-            {history.length === 0 ? (
-              <div style={{padding:'40px',textAlign:'center',color:'#94a3b8'}}>
-                <div style={{fontSize:32,marginBottom:8}}>🛒</div>
+          <div style={{maxHeight:600,overflowY:'auto'}}>
+            {history.length===0 ? (
+              <div style={{padding:'48px 20px',textAlign:'center',color:'#94a3b8'}}>
+                <div style={{fontSize:36,marginBottom:10}}>🛒</div>
                 <div style={{fontSize:13,fontWeight:600,color:'#475569'}}>لا توجد مشتريات بعد</div>
               </div>
-            ) : history.map((p,i) => (
-              <div key={p.id} style={{padding:'12px 16px',borderBottom:i<history.length-1?'1px solid #f8fafc':'none',display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10}}>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
-                    <span style={{background:p.category==='مخزون'?'#e8f7ee':p.category==='صيانة'?'#fef3c7':'#f1f5f9',color:p.category==='مخزون'?'#1a4731':p.category==='صيانة'?'#92400e':'#64748b',padding:'2px 8px',borderRadius:20,fontSize:10,fontWeight:700}}>{p.category}</span>
-                    {p.invoice_image && <span style={{fontSize:10,color:'#3b82f6'}}>📎 فاتورة</span>}
+            ) : history.map((p,i)=>(
+              <div key={p.id} style={{padding:'14px 18px',borderBottom:i<history.length-1?'1px solid #f8fafc':'none'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:5,flexWrap:'wrap' as const}}>
+                      <span style={{background:p.category==='مخزون'?'#e8f7ee':p.category==='صيانة'?'#fef3c7':'#f1f5f9',color:p.category==='مخزون'?'#1a4731':p.category==='صيانة'?'#92400e':'#64748b',padding:'2px 8px',borderRadius:20,fontSize:10,fontWeight:700}}>
+                        {CAT_ICONS[p.category]} {p.category}
+                      </span>
+                      {p.invoice_image && (
+                        <a href={p.invoice_image} target="_blank" rel="noreferrer" style={{color:'#3b82f6',fontSize:10,fontWeight:600,textDecoration:'none',background:'#eff6ff',padding:'2px 8px',borderRadius:20}}>📎 فاتورة</a>
+                      )}
+                    </div>
+                    <div style={{fontSize:14,fontWeight:700,color:'#0f172a',marginBottom:2}}>{p.name}</div>
+                    <div style={{fontSize:11,color:'#94a3b8'}}>
+                      {p.supplier&&<span>{p.supplier} · </span>}
+                      {new Date(p.created_at).toLocaleDateString('ar-SA')}
+                    </div>
                   </div>
-                  <div style={{fontSize:13,fontWeight:600,color:'#0f172a',marginBottom:2}}>{p.name}</div>
-                  <div style={{fontSize:11,color:'#94a3b8'}}>
-                    {p.supplier && p.supplier + ' · '}
-                    {new Date(p.created_at).toLocaleDateString('ar-SA')}
+                  <div style={{textAlign:'left' as const,flexShrink:0}}>
+                    <div style={{fontSize:15,fontWeight:800,color:'#10b981'}}>{Number(p.total_amount||0).toFixed(2)}</div>
+                    <div style={{fontSize:10,color:'#94a3b8',textAlign:'left' as const}}>ر.س شامل الضريبة</div>
                   </div>
-                </div>
-                <div style={{textAlign:'left' as const,flexShrink:0}}>
-                  <div style={{fontSize:13,fontWeight:800,color:'#10b981'}}>{Number(p.total_amount||0).toFixed(2)} ر.س</div>
-                  <div style={{fontSize:10,color:'#94a3b8'}}>شامل الضريبة</div>
                 </div>
               </div>
             ))}
