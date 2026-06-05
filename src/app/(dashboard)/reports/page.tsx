@@ -132,8 +132,14 @@ export default function ReportsPage() {
             <svg style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}} width="13" height="13" fill="none" stroke="#94a3b8" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             <input type="text" placeholder="ابحث بالمنتج أو الملاحظة..." value={search} onChange={e=>setSearch(e.target.value)} style={{...inp,paddingRight:32}}/>
           </div>
+          <div style={{display:"flex",flexDirection:"column",gap:3}}>
+            <label style={{fontSize:10,fontWeight:600,color:"#94a3b8"}}>من تاريخ</label>
           <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} style={{...inp,width:'auto',minWidth:130}}/>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:3}}>
+            <label style={{fontSize:10,fontWeight:600,color:"#94a3b8"}}>إلى تاريخ</label>
           <input type="date" value={dateTo}   onChange={e=>setDateTo(e.target.value)}   style={{...inp,width:'auto',minWidth:130}}/>
+          </div>
           {(search||dateFrom||dateTo) && (
             <button onClick={()=>{setSearch('');setDateFrom('');setDateTo('')}}
               style={{padding:'9px 14px',background:'#fef2f2',color:'#ef4444',border:'1.5px solid #fecaca',borderRadius:8,cursor:'pointer',fontSize:12,fontWeight:700,fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
