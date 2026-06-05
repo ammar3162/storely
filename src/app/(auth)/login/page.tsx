@@ -113,7 +113,7 @@ function LoginPage() {
             </div>
             <div style={{marginBottom:16}}>
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>رقم الجوال</label>
-              <input type="tel" required value={phone} onChange={e=>setPhone(e.target.value)} style={inp} placeholder="00966501234567"/>
+              <input type="tel" required value={phone} onChange={e=>setPhone(e.target.value)} style={inp} placeholder="0561234567"/>
             </div>
             <div style={{marginBottom:24}}>
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>كلمة المرور</label>
