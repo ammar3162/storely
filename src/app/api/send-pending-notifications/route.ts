@@ -1,18 +1,16 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const sb = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-
 export async function POST() {
   try {
+    const url  = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key  = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (!url || !key) return NextResponse.json({ success:false, error:'missing env' }, { status:500 })
+
+    const sb = createClient(url, key)
+
     const { data: pending } = await sb
-      .from('whatsapp_logs')
-      .select('*')
-      .eq('status', 'pending')
-      .limit(20)
+      .from('whatsapp_logs').select('*').eq('status','pending').limit(20)
 
     if (!pending || pending.length === 0)
       return NextResponse.json({ success:true, sent:0 })
@@ -52,4 +50,3 @@ export async function POST() {
 }
 
 export async function GET() { return POST() }
-
