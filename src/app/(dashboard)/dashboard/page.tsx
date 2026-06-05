@@ -11,6 +11,8 @@ export default function DashboardPage() {
   const [orgName, setOrgName]         = useState('')
   const [userName, setUserName]       = useState('')
   const [loading, setLoading]         = useState(true)
+  const [subAlert, setSubAlert]        = useState<string|null>(null)
+  const [showAlert, setShowAlert]      = useState(true)
   const supabase = createClient()
   const router   = useRouter()
 
@@ -19,10 +21,16 @@ export default function DashboardPage() {
   async function load() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { data: profile } = await supabase.from('profiles').select('full_name,org_id,organizations(name)').eq('id', user.id).single()
+    const { data: profile } = await supabase.from('profiles').select('full_name,org_id,subscription_ends_at,organizations(name)').eq('id', user.id).single()
     if (profile) {
       setUserName(profile.full_name || '')
       setOrgName((profile.organizations as any)?.name || '')
+      const endsAt = (profile as any).subscription_ends_at
+      if (endsAt) {
+        const days = Math.ceil((new Date(endsAt).getTime() - Date.now()) / (1000*60*60*24))
+        if (days <= 0) setSubAlert('expired')
+        else if (days <= 7) setSubAlert(`ينتهي اشتراكك بعد ${days} أيام — يرجى التجديد قبل الانتهاء`)
+      }
     }
     const [{ data: products }, { data: purchases }, { data: movements }] = await Promise.all([
       supabase.from('products').select('id,name,qty,reorder_point,unit'),
@@ -73,6 +81,14 @@ export default function DashboardPage() {
         <div style={{fontSize:12,color:'#94a3b8',marginTop:3}}>{orgName} — {new Date().toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
       </div>
 
+      {/* Subscription Alert */}
+      {subAlert && showAlert && subAlert !== 'expired' && (
+        <div style={{background:'#fff7ed',border:'1.5px solid #fed7aa',borderRadius:10,padding:'12px 16px',display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
+          <span style={{fontSize:18}}>⏰</span>
+          <div style={{flex:1,fontSize:13,fontWeight:600,color:'#92400e'}}>{subAlert}</div>
+          <button onClick={()=>setShowAlert(false)} style={{background:'none',border:'none',cursor:'pointer',color:'#f59e0b',fontSize:16,fontWeight:700,padding:'0 4px'}}>✕</button>
+        </div>
+      )}
       {/* Alert */}
       {stats.lowStock > 0 && (
         <button onClick={() => router.push('/inventory')} style={{width:'100%',background:'#fffbeb',border:'1.5px solid #fcd34d',borderRadius:10,padding:'12px 16px',display:'flex',alignItems:'center',gap:12,cursor:'pointer',marginBottom:20,textAlign:'right' as const,transition:'background 0.15s'}}>
