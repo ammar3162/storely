@@ -23,16 +23,44 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const isAuth      = request.nextUrl.pathname.startsWith('/login')
-  const isApi       = request.nextUrl.pathname.startsWith('/api')
-  const isDashboard = !isAuth && !isApi
+  const path      = request.nextUrl.pathname
+  const isLogin   = path.startsWith('/login')
+  const isPending = path.startsWith('/pending')
+  const isApi     = path.startsWith('/api')
+  const isPublic  = isLogin || isPending || isApi
 
-  if (!user && isDashboard) {
+  if (!user && !isPublic) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (user && isAuth) {
-    return NextResponse.redirect(new URL('/inventory', request.url))
+  if (user && isLogin) {
+    const { data: profile } = await supabase
+      .from('profiles').select('status').eq('id', user.id).single()
+
+    if (profile?.status === 'pending') {
+      return NextResponse.redirect(new URL('/pending', request.url))
+    }
+    if (profile?.status === 'suspended') {
+      return NextResponse.redirect(new URL('/login?reason=suspended', request.url))
+    }
+    if (profile?.status === 'deleted') {
+      return NextResponse.redirect(new URL('/login?reason=deleted', request.url))
+    }
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  if (user && !isPublic) {
+    const { data: profile } = await supabase
+      .from('profiles').select('status').eq('id', user.id).single()
+
+    if (profile?.status === 'pending') {
+      return NextResponse.redirect(new URL('/pending', request.url))
+    }
+    if (profile?.status === 'suspended' || profile?.status === 'deleted') {
+      await supabase.auth.signOut()
+      const reason = profile.status === 'suspended' ? 'suspended' : 'deleted'
+      return NextResponse.redirect(new URL('/login?reason='+reason, request.url))
+    }
   }
 
   return supabaseResponse
