@@ -46,8 +46,8 @@ export default function DispensePage() {
       note: reason+(note?' — '+note:''),
     })
     setSuccess('تم صرف '+qtyNum+' '+product.unit+' من '+product.name+' ✅')
-    // أرسل إشعارات واتساب للرسائل الـ pending
-    fetch('/api/send-pending-notifications', { method:'POST' }).catch(()=>{})
+    // أرسل إشعار واتساب مباشرة إذا وصل للحد الأدنى
+    fetch('/api/notify-low-stock', { method:'POST' }).catch(()=>{})
     setProductId(''); setQty(''); setNote(''); setReason('استهلاك يومي')
     setLoading(false)
     loadProducts(); loadHistory()
