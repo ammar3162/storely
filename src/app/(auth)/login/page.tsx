@@ -59,7 +59,7 @@ function LoginPage() {
         })
       }
       setError('')
-      alert('تم إنشاء الحساب! تحقق من بريدك للتأكيد ثم سجل دخول')
+      setSuccess('تم إنشاء حسابك بنجاح! حسابك بانتظار التفعيل من الإدارة. سنتواصل معك قريباً.')
       setMode('login')
     }
     setLoading(false)
