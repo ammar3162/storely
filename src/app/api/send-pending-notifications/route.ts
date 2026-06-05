@@ -39,6 +39,7 @@ export async function POST() {
 
       await sb.from('whatsapp_logs').update({
         status: res.ok ? 'sent' : 'failed',
+        sent_at: new Date().toISOString(),
       }).eq('id', log.id)
 
       if (res.ok) sent++
