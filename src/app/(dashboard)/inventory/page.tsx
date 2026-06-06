@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
+const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 import { createClient } from '@/lib/supabase/client'
 
 export default function InventoryPage() {
@@ -8,6 +9,8 @@ export default function InventoryPage() {
   const [loading, setLoading]   = useState(true)
   const [search, setSearch]     = useState('')
   const [showAdd, setShowAdd]   = useState(false)
+  const [showScan, setShowScan]  = useState(false)
+  const [scanTarget, setScanTarget] = useState<'sku'|'search'>('sku')
   const [editItem, setEditItem] = useState<any>(null)
   const [saving, setSaving]     = useState(false)
   const [form, setForm] = useState({ name:'', sku:'', unit:'قطعة', qty:0, reorder_point:5, category:'' })

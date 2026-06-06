@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
+const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 import { createClient } from '@/lib/supabase/client'
 
 const REASONS = ['استهلاك يومي','طلب فرع','تلف','هدية','أخرى']
@@ -93,8 +94,27 @@ export default function DispensePage() {
           <div style={{fontSize:15,fontWeight:700,color:'#0f172a',marginBottom:16}}>بيانات الصرف</div>
           <form onSubmit={handleSubmit}>
 
+            {showScan && (
+              <Suspense fallback={null}>
+                <BarcodeScanner
+                  onScan={code => {
+                    setShowScan(false)
+                    const found = products.find(p => p.sku === code)
+                    if (found) setProductId(found.id)
+                    else alert('المنتج غير موجود — تأكد من تسجيل الباركود عند إضافة المنتج')
+                  }}
+                  onClose={() => setShowScan(false)}
+                />
+              </Suspense>
+            )}
             <div style={{marginBottom:14}}>
               <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:6}}>المنتج</label>
+              <div style={{display:'flex',gap:8,marginBottom:8}}>
+                <button type="button" onClick={()=>setShowScan(true)}
+                  style={{width:'100%',padding:'11px',background:'#f0fdf4',color:'#166534',border:'1.5px solid #86efac',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                  📷 مسح باركود المنتج
+                </button>
+              </div>
               <select value={productId} onChange={e=>setProductId(e.target.value)} style={inp} required>
                 <option value="">— اختر المنتج —</option>
                 {products.map(p=>(

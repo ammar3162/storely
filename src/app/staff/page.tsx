@@ -1,5 +1,6 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
+const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 import { createClient } from '@/lib/supabase/client'
 
 export default function StaffPage() {
@@ -12,6 +13,7 @@ export default function StaffPage() {
   const [reason, setReason]     = useState('استهلاك يومي')
   const [note, setNote]         = useState('')
   const [success, setSuccess]   = useState('')
+  const [showScan, setShowScan] = useState(false)
   const [email, setEmail]       = useState('')
   const [pass, setPass]         = useState('')
   const [loginErr, setLoginErr] = useState('')
@@ -129,8 +131,27 @@ export default function StaffPage() {
         <div style={{background:'white',borderRadius:12,padding:20,border:'1px solid #e8ecf0',marginBottom:16,boxShadow:'0 1px 4px rgba(0,0,0,0.04)'}}>
           <div style={{fontSize:15,fontWeight:700,color:'#0f172a',marginBottom:16}}>تسجيل صرف جديد</div>
           <form onSubmit={handleDispense}>
+            {showScan && (
+              <Suspense fallback={null}>
+                <BarcodeScanner
+                  onScan={code => {
+                    setShowScan(false)
+                    const found = products.find((p:any) => p.sku === code)
+                    if (found) setProductId(found.id)
+                    else alert('المنتج غير موجود — تأكد من تسجيل الباركود')
+                  }}
+                  onClose={() => setShowScan(false)}
+                />
+              </Suspense>
+            )}
             <div style={{marginBottom:14}}>
               <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:6}}>المنتج</label>
+              <div style={{display:'flex',gap:8,marginBottom:8}}>
+                <button type="button" onClick={()=>setShowScan(true)}
+                  style={{width:'100%',padding:'11px',background:'#f0fdf4',color:'#166534',border:'1.5px solid #86efac',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                  📷 مسح باركود المنتج
+                </button>
+              </div>
               <select value={productId} onChange={e=>setProductId(e.target.value)} style={inp} required>
                 <option value="">— اختر المنتج —</option>
                 {products.map(p=>(
