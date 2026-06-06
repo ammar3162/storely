@@ -15,6 +15,7 @@ export default function DispensePage() {
   const [qty, setQty]           = useState('')
   const [reason, setReason]     = useState('استهلاك يومي')
   const [note, setNote]         = useState('')
+  const [showScan, setShowScan] = useState(false)
   const sb = createClient()
 
   useEffect(() => { loadProducts(); loadHistory() }, [])
