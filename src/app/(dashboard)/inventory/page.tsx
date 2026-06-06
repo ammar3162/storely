@@ -242,12 +242,10 @@ export default function InventoryPage() {
                     <option value="أخرى">أخرى</option>
                   </select>
                 </div>
-                {!editItem && (
-                  <div>
-                    <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>الكمية الابتدائية</label>
-                    <input type="number" min="0" value={form.qty} onChange={e=>setForm({...form,qty:Number(e.target.value)})} style={inp}/>
-                  </div>
-                )}
+                <div>
+                  <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>{editItem ? 'الكمية الحالية' : 'الكمية الابتدائية'}</label>
+                  <input type="number" min="0" value={form.qty} onChange={e=>setForm({...form,qty:Number(e.target.value)})} style={{...inp,fontSize:16,fontWeight:700}} placeholder="0"/>
+                </div>
                 <div>
                   <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>الحد الأدنى للتنبيه</label>
                   <input type="number" min="0" value={form.reorder_point} onChange={e=>setForm({...form,reorder_point:Number(e.target.value)})} style={inp}/>
