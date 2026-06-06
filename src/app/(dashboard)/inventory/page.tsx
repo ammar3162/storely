@@ -78,9 +78,28 @@ export default function InventoryPage() {
 
   const inp: React.CSSProperties = { width:'100%', padding:'11px 14px', border:'2px solid #e2e8f0', borderRadius:10, fontSize:14, outline:'none', boxSizing:'border-box', background:'white', color:'#1e293b', fontFamily:'system-ui', fontWeight:500 }
 
-  function handleScan(code: string) {
+  async function handleScan(code: string) {
     setShowScan(false)
-    setForm(f => ({...f, sku: code}))
+    // ابحث عن المنتج في قاعدة البيانات
+    const { data: existing } = await supabase
+      .from('products').select('*').eq('sku', code).maybeSingle()
+    if (existing) {
+      // المنتج موجود — اعرضه للتعديل
+      setEditItem(existing)
+      setForm({
+        name: existing.name,
+        sku: existing.sku || '',
+        unit: existing.unit,
+        qty: existing.qty,
+        reorder_point: existing.reorder_point,
+        category: existing.category || '',
+      })
+      setShowAdd(true)
+    } else {
+      // منتج جديد — اعبئ الباركود فقط
+      setForm(f => ({...f, sku: code}))
+      setShowAdd(true)
+    }
   }
 
 
