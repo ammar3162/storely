@@ -78,8 +78,15 @@ export default function InventoryPage() {
 
   const inp: React.CSSProperties = { width:'100%', padding:'11px 14px', border:'2px solid #e2e8f0', borderRadius:10, fontSize:14, outline:'none', boxSizing:'border-box', background:'white', color:'#1e293b', fontFamily:'system-ui', fontWeight:500 }
 
+  function handleScan(code: string) {
+    setShowScan(false)
+    setForm(f => ({...f, sku: code}))
+  }
+
+
   return (
     <div style={{direction:'rtl',fontFamily:'system-ui'}}>
+      {showScan && <BarcodeScanner onScan={handleScan} onClose={()=>setShowScan(false)}/>}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,flexWrap:'wrap',gap:12}}>
         <div>
           <h1 style={{fontSize:24,fontWeight:900,color:'#0f172a',marginBottom:4}}>المخزون</h1>
