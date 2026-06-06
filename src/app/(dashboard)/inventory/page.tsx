@@ -166,7 +166,7 @@ export default function InventoryPage() {
                   <div style={{background:'#f0fdf4',border:'1.5px solid #86efac',borderRadius:10,padding:'14px 16px'}}>
                     <div style={{fontSize:12,color:'#64748b',marginBottom:8}}>الكمية الحالية: <span style={{fontWeight:800,color:'#1a4731',fontSize:16}}>{editItem.qty} {form.unit}</span></div>
                     <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>أضف كمية جديدة</label>
-                    <input type="number" min="0" value={addQty||''} onChange={e=>setAddQty(Number(e.target.value))} style={{...inp,fontSize:18,fontWeight:800,textAlign:'center' as const}} placeholder="0"/>
+                    <input type="number" min="0" value={addQty===0?'':addQty} onChange={e=>{ const v=e.target.value; setAddQty(v===''?0:Number(v)) }} style={{...inp,fontSize:18,fontWeight:800,textAlign:'center' as const}} placeholder="0"/>
                     {addQty > 0 && <div style={{fontSize:12,color:'#166534',marginTop:6,fontWeight:600}}>✓ الكمية بعد الإضافة: {editItem.qty + addQty} {form.unit}</div>}
                   </div>
                 ) : (
