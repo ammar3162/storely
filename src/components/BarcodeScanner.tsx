@@ -12,8 +12,12 @@ export default function BarcodeScanner({ onScan, onClose }: Props) {
   const [ready, setReady] = useState(false)
   const streamRef = useRef<MediaStream|null>(null)
   const readerRef = useRef<any>(null)
+  const doneRef = useRef(false)
 
-  useEffect(() => { startScan(); return () => stop() }, [])
+  useEffect(() => {
+    startScan()
+    return () => { forceStop() }
+  }, [])
 
   async function startScan() {
     try {
@@ -30,7 +34,11 @@ export default function BarcodeScanner({ onScan, onClose }: Props) {
       const reader = new BrowserMultiFormatReader()
       readerRef.current = reader
       reader.decodeFromStream(stream, videoRef.current!, (result) => {
-        if (result) { stop(); onScan(result.getText()) }
+        if (result && !doneRef.current) {
+          doneRef.current = true
+          forceStop()
+          setTimeout(() => onScan(result.getText()), 200)
+        }
       })
     } catch (e: any) {
       if (e.name === 'NotAllowedError') setError('يرجى السماح باستخدام الكاميرا')
@@ -38,20 +46,31 @@ export default function BarcodeScanner({ onScan, onClose }: Props) {
     }
   }
 
-  function stop() {
+  function forceStop() {
     try {
-      streamRef.current?.getTracks().forEach(t => t.stop())
-      streamRef.current = null
-      if (videoRef.current) { videoRef.current.srcObject = null }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => { t.stop(); t.enabled = false })
+        streamRef.current = null
+      }
+      if (videoRef.current) {
+        videoRef.current.pause()
+        videoRef.current.srcObject = null
+      }
     } catch {}
   }
 
+  function handleClose() {
+    doneRef.current = true
+    forceStop()
+    setTimeout(onClose, 100)
+  }
+
   return (
-    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.92)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',direction:'rtl',fontFamily:"'Segoe UI',system-ui,sans-serif",padding:16}}>
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.95)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',direction:'rtl',fontFamily:"'Segoe UI',system-ui,sans-serif",padding:16}}>
       <div style={{background:'white',borderRadius:16,padding:20,width:'100%',maxWidth:420}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
           <div style={{fontSize:15,fontWeight:700,color:'#0f172a'}}>📷 مسح الباركود</div>
-          <button type='button' onClick={()=>{stop();setTimeout(onClose,100)}} style={{width:32,height:32,borderRadius:8,border:'1px solid #e2e8f0',background:'#f8fafc',cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+          <button type="button" onClick={handleClose} style={{width:32,height:32,borderRadius:8,border:'1px solid #e2e8f0',background:'#f8fafc',cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
         </div>
         {error ? (
           <div style={{background:'#fef2f2',border:'1.5px solid #fecaca',borderRadius:9,padding:'12px',fontSize:13,color:'#dc2626',fontWeight:600,textAlign:'center',marginBottom:12}}>⚠️ {error}</div>
@@ -68,7 +87,7 @@ export default function BarcodeScanner({ onScan, onClose }: Props) {
             </div>
           )}
         </div>
-        <button type='button' onClick={()=>{stop();setTimeout(onClose,100)}} style={{width:'100%',marginTop:14,padding:'11px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+        <button type="button" onClick={handleClose} style={{width:'100%',marginTop:14,padding:'11px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
       </div>
     </div>
   )
