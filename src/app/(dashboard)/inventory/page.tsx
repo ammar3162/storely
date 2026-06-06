@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import dynamic_import from 'next/dynamic'
 const BarcodeScanner = dynamic_import(() => import('@/components/BarcodeScanner'), { ssr: false })
+import ConfirmDialog from '@/components/ConfirmDialog'
 
 export default function InventoryPage() {
   const [products, setProducts] = useState<any[]>([])
@@ -12,6 +13,7 @@ export default function InventoryPage() {
   const [showAdd, setShowAdd]   = useState(false)
   const [showScan, setShowScan] = useState(false)
   const [saving, setSaving]     = useState(false)
+  const [confirm, setConfirm]   = useState<{id:string,name:string}|null>(null)
   const [editItem, setEditItem] = useState<any>(null)
   const [addQty, setAddQty]     = useState(0)
   const [form, setForm] = useState({
@@ -93,9 +95,14 @@ export default function InventoryPage() {
     loadProducts()
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('حذف هذا المنتج؟')) return
-    await supabase.from('products').update({ is_active:false }).eq('id', id)
+  async function handleDelete(id: string, name: string) {
+    setConfirm({id, name})
+  }
+
+  async function doDelete() {
+    if (!confirm) return
+    await supabase.from('products').update({ is_active:false }).eq('id', (confirm as any).id)
+    setConfirm(null)
     loadProducts()
   }
 
@@ -114,6 +121,7 @@ export default function InventoryPage() {
   return (
     <div style={{direction:'rtl',fontFamily:"'Segoe UI',system-ui,sans-serif",maxWidth:1100,margin:'0 auto'}}>
       {showScan && <BarcodeScanner onScan={handleScan} onClose={()=>{setShowScan(false)}}/>}
+      {confirm && <ConfirmDialog title='حذف المنتج' message={'هل تريد حذف "'+(confirm as any).name+'" من المخزون؟'} confirmText='حذف' type='danger' onConfirm={doDelete} onCancel={()=>setConfirm(null)}/>}
 
       {showAdd && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
@@ -266,7 +274,7 @@ export default function InventoryPage() {
                       <td style={{padding:'13px 14px'}}>
                         <div style={{display:'flex',gap:8}}>
                           <button onClick={()=>openEdit(p)} style={{padding:'6px 12px',background:'#eef2ff',color:'#667eea',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>تعديل</button>
-                          <button onClick={()=>handleDelete(p.id)} style={{padding:'6px 12px',background:'#fef2f2',color:'#ef4444',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>حذف</button>
+                          <button onClick={()=>handleDelete(p.id, p.name)} style={{padding:'6px 12px',background:'#fef2f2',color:'#ef4444',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>حذف</button>
                         </div>
                       </td>
                     </tr>

@@ -16,6 +16,7 @@ export default function DispensePage() {
   const [reason, setReason]     = useState('استهلاك يومي')
   const [note, setNote]         = useState('')
   const [showScan, setShowScan] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const sb = createClient()
 
   useEffect(() => { loadProducts(); loadHistory() }, [])
@@ -159,7 +160,7 @@ export default function DispensePage() {
             </div>
 
             <button type="submit" disabled={loading}
-              style={{width:'100%',padding:'13px',background:loading?'#94a3b8':'#ef4444',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',transition:'background 0.15s',boxShadow:'0 2px 8px rgba(239,68,68,0.25)'}}>
+              type='button' onClick={()=>setShowConfirm(true)} style={{width:'100%',padding:'13px',background:loading?'#94a3b8':'#ef4444',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',transition:'background 0.15s',boxShadow:'0 2px 8px rgba(239,68,68,0.25)'}}>
               {loading ? 'جاري الحفظ...' : 'تسجيل الصرف ←'}
             </button>
           </form>
@@ -197,5 +198,15 @@ export default function DispensePage() {
         </div>
       </div>
     </div>
+      {showConfirm && (
+        <ConfirmDialog
+          title='تأكيد الصرف'
+          message={'صرف '+qty+' '+((products.find((p:any)=>p.id===productId) as any)?.unit||'')+' من '+(products.find((p:any)=>p.id===productId) as any)?.name+'؟'}
+          confirmText='تسجيل الصرف'
+          type='warning'
+          onConfirm={()=>{ const form = document.querySelector('form'); form?.dispatchEvent(new Event('submit', {bubbles:true,cancelable:true})) }}
+          onCancel={()=>setShowConfirm(false)}
+        />
+      )}
   )
 }
