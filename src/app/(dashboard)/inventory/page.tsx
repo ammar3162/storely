@@ -1,7 +1,8 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, lazy, Suspense } from 'react'
-const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
+import dynamic_import from 'next/dynamic'
+const BarcodeScanner = dynamic_import(() => import('@/components/BarcodeScanner'), { ssr: false })
 import { createClient } from '@/lib/supabase/client'
 
 export default function InventoryPage() {
