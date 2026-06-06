@@ -177,8 +177,11 @@ export default function InventoryPage() {
                   <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp} placeholder="مثال: قهوة عربية"/>
                 </div>
                 <div>
-                  <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>رمز SKU</label>
-                  <input value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} style={inp} placeholder="SKU-001"/>
+                  <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>باركود المنتج (اختياري)</label>
+                  <div style={{display:'flex',gap:8}}>
+                    <input value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} style={{...inp,flex:1}} placeholder="امسح الباركود أو اتركه فارغاً"/>
+                    <button type="button" onClick={()=>setShowScan(true)} style={{padding:'10px 14px',background:'#1a4731',color:'white',border:'none',borderRadius:8,cursor:'pointer',fontSize:18,flexShrink:0}}>📷</button>
+                  </div>
                 </div>
                 <div>
                   <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>الفئة</label>
