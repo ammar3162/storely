@@ -61,7 +61,6 @@ export default function InventoryPage() {
       await supabase.from('products').update({
         name:form.name, sku:form.sku||null, unit:form.unit,
         reorder_point:Number(form.reorder_point), category:form.category||null,
-        qty: newQty,
       }).eq('id', editItem.id)
       if (addQty > 0) {
         await supabase.from('stock_movements').insert({
