@@ -39,7 +39,11 @@ export default function BarcodeScanner({ onScan, onClose }: Props) {
   }
 
   function stop() {
-    try { streamRef.current?.getTracks().forEach(t => t.stop()) } catch {}
+    try {
+      streamRef.current?.getTracks().forEach(t => t.stop())
+      streamRef.current = null
+      if (videoRef.current) { videoRef.current.srcObject = null }
+    } catch {}
   }
 
   return (

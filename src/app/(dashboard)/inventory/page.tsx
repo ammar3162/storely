@@ -35,6 +35,7 @@ export default function InventoryPage() {
 
   async function handleScan(code: string) {
     setShowScan(false)
+    await new Promise(r => setTimeout(r, 300)) // انتظر إغلاق الكاميرا
     const { data: existing } = await supabase.from('products').select('*').eq('sku', code).maybeSingle()
     if (existing) {
       setEditItem(existing)
