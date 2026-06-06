@@ -163,8 +163,7 @@ export default function DispensePage() {
               <textarea value={note} onChange={e=>setNote(e.target.value)} style={{...inp,minHeight:72,resize:'none'}} placeholder="أي تفاصيل إضافية..."/>
             </div>
 
-            <button type="submit" disabled={loading}
-              type='button' onClick={(e)=>{e.preventDefault();if(!productId||!qty)return;setShowConfirm(true)}} style={{width:'100%',padding:'13px',background:loading?'#94a3b8':'#ef4444',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',transition:'background 0.15s',boxShadow:'0 2px 8px rgba(239,68,68,0.25)'}}>
+              <button type="button" disabled={loading} onClick={(e)=>{e.preventDefault();if(!productId||!qty)return;setShowConfirm(true)}} style={{width:'100%',padding:'13px',background:loading?'#94a3b8':'#ef4444',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',transition:'background 0.15s',boxShadow:'0 2px 8px rgba(239,68,68,0.25)'}}>
               {loading ? 'جاري الحفظ...' : 'تسجيل الصرف ←'}
             </button>
           </form>
