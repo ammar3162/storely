@@ -43,7 +43,7 @@ export default function BarcodeScanner({ onScan, onClose }: Props) {
   }
 
   return (
-    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.92)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',direction:'rtl',fontFamily:"'Segoe UI',system-ui,sans-serif",padding:16}}>
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.92)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',direction:'rtl',fontFamily:"'Segoe UI',system-ui,sans-serif",padding:16}}>
       <div style={{background:'white',borderRadius:16,padding:20,width:'100%',maxWidth:420}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
           <div style={{fontSize:15,fontWeight:700,color:'#0f172a'}}>📷 مسح الباركود</div>
