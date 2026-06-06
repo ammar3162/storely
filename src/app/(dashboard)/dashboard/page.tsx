@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState({ products:0, lowStock:0, todayPurchases:0, totalAmount:0, todayDispenses:0 })
+  const [stats, setStats] = useState({ products:0, lowStock:0, outOfStock:0, todayPurchases:0, totalAmount:0, todayDispenses:0 })
+  const [outOfStockItems, setOutOfStockItems] = useState<any[]>([])
   const [lowItems, setLowItems]       = useState<any[]>([])
   const [recentActivity, setActivity] = useState<any[]>([])
   const [orgName, setOrgName]         = useState('')
@@ -39,14 +40,17 @@ export default function DashboardPage() {
     ])
     const today = new Date().toDateString()
     const low   = (products||[]).filter(p => p.qty <= p.reorder_point)
+    const outOfStock = (products||[]).filter(p => p.qty === 0)
     setStats({
       products:       (products||[]).length,
       lowStock:       low.length,
+      outOfStock:     outOfStock.length,
       todayPurchases: (purchases||[]).filter(p => new Date(p.created_at).toDateString()===today).length,
       totalAmount:    (purchases||[]).reduce((s,p)=>s+Number(p.amount||0),0),
       todayDispenses: (movements||[]).filter(m=>m.type==='out'&&new Date(m.created_at).toDateString()===today).length,
     })
     setLowItems(low.slice(0,5))
+    setOutOfStockItems((products||[]).filter(p => p.qty === 0).slice(0,5))
     setActivity((movements||[]).slice(0,5))
     setLoading(false)
   }
