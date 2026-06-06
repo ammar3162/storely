@@ -51,7 +51,7 @@ export default function BarcodeScanner({ onScan, onClose }: Props) {
       <div style={{background:'white',borderRadius:16,padding:20,width:'100%',maxWidth:420}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
           <div style={{fontSize:15,fontWeight:700,color:'#0f172a'}}>📷 مسح الباركود</div>
-          <button onClick={()=>{stop();onClose()}} style={{width:32,height:32,borderRadius:8,border:'1px solid #e2e8f0',background:'#f8fafc',cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+          <button type='button' onClick={()=>{stop();setTimeout(onClose,100)}} style={{width:32,height:32,borderRadius:8,border:'1px solid #e2e8f0',background:'#f8fafc',cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
         </div>
         {error ? (
           <div style={{background:'#fef2f2',border:'1.5px solid #fecaca',borderRadius:9,padding:'12px',fontSize:13,color:'#dc2626',fontWeight:600,textAlign:'center',marginBottom:12}}>⚠️ {error}</div>
@@ -68,7 +68,7 @@ export default function BarcodeScanner({ onScan, onClose }: Props) {
             </div>
           )}
         </div>
-        <button onClick={()=>{stop();onClose()}} style={{width:'100%',marginTop:14,padding:'11px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+        <button type='button' onClick={()=>{stop();setTimeout(onClose,100)}} style={{width:'100%',marginTop:14,padding:'11px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
       </div>
     </div>
   )

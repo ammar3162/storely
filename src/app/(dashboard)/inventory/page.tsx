@@ -113,7 +113,7 @@ export default function InventoryPage() {
 
   return (
     <div style={{direction:'rtl',fontFamily:"'Segoe UI',system-ui,sans-serif",maxWidth:1100,margin:'0 auto'}}>
-      {showScan && <BarcodeScanner onScan={handleScan} onClose={()=>setShowScan(false)}/>}
+      {showScan && <BarcodeScanner onScan={handleScan} onClose={()=>{setShowScan(false)}}/>}
 
       {showAdd && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
