@@ -4,108 +4,103 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function SettingsPage() {
-  const [org, setOrg]           = useState<any>(null)
   const [loading, setLoading]   = useState(true)
   const [saving, setSaving]     = useState(false)
-  const [notifying, setNotifying] = useState(false)
-  const [success, setSuccess]   = useState('')
-  const [error, setError]       = useState('')
-  const [form, setForm] = useState({ name:'', whatsapp_number:'', low_stock_threshold:5 })
-  const supabase = createClient()
+  const [success, setSuccess]   = useState(''  )
+  const [orgId, setOrgId]       = useState('')
+  const [form, setForm] = useState({
+    name: '',
+    whatsapp_number: '',
+    low_stock_threshold: 5,
+  })
+  const sb = createClient()
 
-  useEffect(() => { loadOrg() }, [])
+  useEffect(() => { load() }, [])
 
-  async function loadOrg() {
+  async function load() {
     setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    const { data: profile }  = await supabase.from('profiles').select('org_id').eq('id', user!.id).single()
+    const { data: { user } } = await sb.auth.getUser()
+    if (!user) return
+    const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
     if (!profile) return
-    const { data } = await supabase.from('organizations').select('*').eq('id', profile.org_id).single()
-    if (data) {
-      setOrg(data)
-      setForm({ name: data.name, whatsapp_number: data.whatsapp_number, low_stock_threshold: data.low_stock_threshold })
-    }
+    setOrgId(profile.org_id)
+    const { data: org } = await sb.from('organizations').select('*').eq('id', profile.org_id).single()
+    if (org) setForm({
+      name: org.name || '',
+      whatsapp_number: org.whatsapp_number || '',
+      low_stock_threshold: org.low_stock_threshold || 5,
+    })
     setLoading(false)
   }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    setSaving(true); setError(''); setSuccess('')
-    const { error } = await supabase.from('organizations').update({
+    setSaving(true)
+    await sb.from('organizations').update({
       name: form.name,
       whatsapp_number: form.whatsapp_number,
       low_stock_threshold: Number(form.low_stock_threshold),
-    }).eq('id', org.id)
-    if (error) setError('فشل الحفظ')
-    else setSuccess('تم الحفظ بنجاح')
+    }).eq('id', orgId)
+    setSuccess('✅ تم حفظ الإعدادات بنجاح')
     setSaving(false)
     setTimeout(() => setSuccess(''), 3000)
   }
 
-  async function sendWhatsAppAlert() {
-    setNotifying(true); setError('')
-    try {
-      const res  = await fetch('/api/notify-low-stock', { method:'POST' })
-      const data = await res.json()
-      if (data.success) setSuccess('تم إرسال التنبيه بنجاح')
-      else setError('فشل الإرسال: ' + (data.error || 'خطأ غير معروف'))
-    } catch {
-      setError('فشل الاتصال بالخادم')
-    }
-    setNotifying(false)
-    setTimeout(() => { setSuccess(''); setError('') }, 4000)
-  }
-
   const inp: React.CSSProperties = {
-    width:'100%', padding:'12px 14px', border:'2px solid #e2e8f0',
-    borderRadius:10, fontSize:14, outline:'none', boxSizing:'border-box',
-    background:'white', color:'#1e293b', fontFamily:'system-ui', fontWeight:500,
+    width: '100%', padding: '12px 14px', border: '1.5px solid #e2e8f0',
+    borderRadius: 9, fontSize: 14, outline: 'none', boxSizing: 'border-box' as const,
+    background: 'white', color: '#1e293b', fontFamily: 'inherit',
   }
 
-  if (loading) return <div style={{padding:60,textAlign:'center',color:'#94a3b8',fontFamily:'system-ui'}}>جاري التحميل...</div>
+  if (loading) return <div style={{padding:48,textAlign:'center',color:'#94a3b8'}}>جاري التحميل...</div>
 
   return (
-    <div style={{direction:'rtl',fontFamily:'system-ui',maxWidth:600}}>
+    <div style={{fontFamily:"'Segoe UI',system-ui,sans-serif",direction:'rtl',maxWidth:600,margin:'0 auto'}}>
       <div style={{marginBottom:24}}>
-        <h1 style={{fontSize:24,fontWeight:900,color:'#0f172a',marginBottom:4}}>الاعدادات</h1>
-        <p style={{fontSize:13,color:'#64748b'}}>إعدادات المؤسسة وتنبيهات واتساب</p>
+        <h1 style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:3}}>إعدادات المؤسسة</h1>
+        <p style={{fontSize:12,color:'#64748b'}}>تعديل بيانات المؤسسة وإعدادات التنبيهات</p>
       </div>
 
-      {success && <div style={{background:'#f0fdf4',border:'1.5px solid #bbf7d0',borderRadius:12,padding:'12px 16px',marginBottom:16,fontSize:13,fontWeight:600,color:'#16a34a'}}>{success}</div>}
-      {error   && <div style={{background:'#fef2f2',border:'1.5px solid #fecaca',borderRadius:12,padding:'12px 16px',marginBottom:16,fontSize:13,fontWeight:600,color:'#dc2626'}}>{error}</div>}
+      {success && (
+        <div style={{background:'#f0fdf4',border:'1.5px solid #86efac',borderRadius:10,padding:'12px 16px',marginBottom:16,fontSize:13,fontWeight:600,color:'#166534'}}>
+          {success}
+        </div>
+      )}
 
-      <div style={{background:'white',borderRadius:20,padding:24,boxShadow:'0 4px 24px rgba(0,0,0,0.07)',marginBottom:20}}>
-        <h2 style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:20,paddingBottom:16,borderBottom:'1px solid #f1f5f9'}}>
-          بيانات المؤسسة
-        </h2>
-        <form onSubmit={handleSave}>
-          <div style={{marginBottom:16}}>
-            <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>اسم المؤسسة</label>
-            <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp} required/>
+      <form onSubmit={handleSave}>
+        <div style={{background:'white',borderRadius:12,border:'1px solid #e8ecf0',padding:24,marginBottom:16}}>
+          <div style={{fontSize:14,fontWeight:700,color:'#0f172a',marginBottom:16,paddingBottom:12,borderBottom:'1px solid #f1f5f9'}}>
+            🏢 بيانات المؤسسة
           </div>
-          <div style={{marginBottom:16}}>
-            <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>رقم واتساب التنبيهات</label>
-            <input value={form.whatsapp_number} onChange={e=>setForm({...form,whatsapp_number:e.target.value})} style={inp} placeholder="00966501234567" required/>
-            <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>هذا الرقم يستقبل تنبيهات نقص المخزون</div>
+          <div style={{display:'flex',flexDirection:'column' as const,gap:14}}>
+            <div>
+              <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>اسم المؤسسة</label>
+              <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp} placeholder="مثال: مطعم الأصيل"/>
+            </div>
+            <div>
+              <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>رقم الواتساب للتنبيهات</label>
+              <input value={form.whatsapp_number} onChange={e=>setForm({...form,whatsapp_number:e.target.value})} style={inp} placeholder="+966500000000"/>
+              <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>يُستخدم لإرسال تنبيهات نقص المخزون</div>
+            </div>
           </div>
-          <div style={{marginBottom:20}}>
-            <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>الحد الادنى الافتراضي للتنبيه</label>
-            <input type="number" min="1" value={form.low_stock_threshold} onChange={e=>setForm({...form,low_stock_threshold:Number(e.target.value)})} style={inp}/>
-          </div>
-          <button type="submit" disabled={saving} style={{width:'100%',padding:'13px',background:'linear-gradient(135deg,#667eea,#764ba2)',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'system-ui'}}>
-            {saving ? 'جاري الحفظ...' : 'حفظ الاعدادات'}
-          </button>
-        </form>
-      </div>
+        </div>
 
-      <div style={{background:'white',borderRadius:20,padding:24,boxShadow:'0 4px 24px rgba(0,0,0,0.07)'}}>
-        <h2 style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:8}}>تنبيه واتساب</h2>
-        <p style={{fontSize:13,color:'#64748b',marginBottom:20}}>إرسال قائمة المنتجات الناقصة الآن عبر واتساب</p>
-        <button onClick={sendWhatsAppAlert} disabled={notifying}
-          style={{width:'100%',padding:'14px',background:notifying?'#94a3b8':'linear-gradient(135deg,#25d366,#128c7e)',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:800,cursor:notifying?'not-allowed':'pointer',fontFamily:'system-ui',boxShadow:'0 4px 14px rgba(37,211,102,0.3)'}}>
-          {notifying ? 'جاري الإرسال...' : 'ارسال تنبيه الان'}
+        <div style={{background:'white',borderRadius:12,border:'1px solid #e8ecf0',padding:24,marginBottom:16}}>
+          <div style={{fontSize:14,fontWeight:700,color:'#0f172a',marginBottom:16,paddingBottom:12,borderBottom:'1px solid #f1f5f9'}}>
+            ⚠️ إعدادات التنبيهات
+          </div>
+          <div>
+            <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>الحد الأدنى الافتراضي للمخزون</label>
+            <input type="number" min="1" value={form.low_stock_threshold} onChange={e=>setForm({...form,low_stock_threshold:Number(e.target.value)})} style={{...inp,width:120}} />
+            <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>يُطبَّق على المنتجات الجديدة تلقائياً</div>
+          </div>
+        </div>
+
+        <button type="submit" disabled={saving}
+          style={{width:'100%',padding:'13px',background:saving?'#94a3b8':'#1a4731',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:saving?'not-allowed':'pointer',fontFamily:'inherit'}}>
+          {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
         </button>
-      </div>
+      </form>
     </div>
   )
 }
