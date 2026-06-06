@@ -211,12 +211,36 @@ export default function InventoryPage() {
                   </div>
                 </div>
                 <div>
-                  <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>الفئة</label>
-                  <input value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inp} placeholder="مشروبات"/>
+                  <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>الفئة (اختياري)</label>
+                  <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inp}>
+                    <option value="">— اختر الفئة —</option>
+                    <option value="مشروبات">مشروبات</option>
+                    <option value="قهوة وشاي">قهوة وشاي</option>
+                    <option value="مواد غذائية">مواد غذائية</option>
+                    <option value="ألبان وبيض">ألبان وبيض</option>
+                    <option value="ورقيات">ورقيات</option>
+                    <option value="تغليف">تغليف</option>
+                    <option value="نظافة">نظافة</option>
+                    <option value="توابل وبهارات">توابل وبهارات</option>
+                    <option value="مواد جافة">مواد جافة</option>
+                    <option value="أخرى">أخرى</option>
+                  </select>
                 </div>
                 <div>
-                  <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>وحدة القياس</label>
-                  <input value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})} style={inp} placeholder="كيلو / لتر / قطعة"/>
+                  <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>وحدة القياس</label>
+                  <select value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})} style={inp}>
+                    <option value="قطعة">قطعة</option>
+                    <option value="كيلو">كيلو</option>
+                    <option value="كيس">كيس</option>
+                    <option value="كرتون">كرتون</option>
+                    <option value="لتر">لتر</option>
+                    <option value="علبة">علبة</option>
+                    <option value="باكيت">باكيت</option>
+                    <option value="درزن">درزن</option>
+                    <option value="رول">رول</option>
+                    <option value="غرام">غرام</option>
+                    <option value="أخرى">أخرى</option>
+                  </select>
                 </div>
                 {!editItem && (
                   <div>
