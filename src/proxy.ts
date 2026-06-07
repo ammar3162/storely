@@ -27,9 +27,10 @@ export async function proxy(request: NextRequest) {
   const isLogin   = path.startsWith('/login')
   const isPending = path.startsWith('/pending')
   const isApi     = path.startsWith('/api')
+  const isStatic  = path.startsWith('/_next') || path.startsWith('/favicon') || path.includes('.')
   const isAdminPanel = path.startsWith('/storely-admin')
   const isStaff = path.startsWith('/staff')
-  const isPublic  = isLogin || isPending || isApi || isAdminPanel || isStaff
+  const isPublic  = isLogin || isPending || isApi || isAdminPanel || isStaff || isStatic
 
   if (!user && !isPublic) {
     return NextResponse.redirect(new URL('/login', request.url))
@@ -53,7 +54,7 @@ export async function proxy(request: NextRequest) {
 
   if (user && !isPublic) {
     const { data: profile } = await supabase
-      .from('profiles').select('status').eq('id', user.id).single()
+      .from('profiles').select('status,subscription_type,subscription_ends_at,role').eq('id', user.id).single()
 
     if (profile?.status === 'pending') {
       return NextResponse.redirect(new URL('/pending', request.url))
@@ -62,6 +63,14 @@ export async function proxy(request: NextRequest) {
       await supabase.auth.signOut()
       const reason = profile.status === 'suspended' ? 'suspended' : 'deleted'
       return NextResponse.redirect(new URL('/login?reason='+reason, request.url))
+    }
+
+    if (profile?.subscription_type === 'paid' && profile?.subscription_ends_at) {
+      const expired = new Date(profile.subscription_ends_at).getTime() < Date.now()
+      if (expired) {
+        await supabase.auth.signOut()
+        return NextResponse.redirect(new URL('/login?reason=expired', request.url))
+      }
     }
   }
 
