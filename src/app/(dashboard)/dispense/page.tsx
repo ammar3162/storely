@@ -1,6 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import ConfirmDialog from '@/components/ConfirmDialog'
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 import { createClient } from '@/lib/supabase/client'
@@ -19,50 +19,45 @@ export default function DispensePage() {
   const [note, setNote]         = useState('')
   const [showScan, setShowScan] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  const [orgId, setOrgId]       = useState<string|null>(null)
-  const [profileId, setProfileId] = useState<string|null>(null)
+
+  // refs للقيم الحرجة — متاحة فوراً بدون انتظار re-render
+  const orgIdRef     = useRef<string|null>(null)
+  const profileIdRef = useRef<string|null>(null)
+
   const sb = createClient()
 
   useEffect(() => { init() }, [])
 
   async function init() {
     setLoading(true)
-
-    // تحقق من sessionStorage أولاً
-    const cachedOrg = sessionStorage.getItem('s_org_id')
+    const cachedOrg     = sessionStorage.getItem('s_org_id')
     const cachedProfile = sessionStorage.getItem('s_profile_id')
 
     if (cachedOrg && cachedProfile) {
-      setOrgId(cachedOrg)
-      setProfileId(cachedProfile)
-      await Promise.all([
-        loadProducts(cachedOrg),
-        loadHistory(cachedOrg)
-      ])
+      orgIdRef.current     = cachedOrg
+      profileIdRef.current = cachedProfile
+      await Promise.all([loadProducts(cachedOrg), loadHistory(cachedOrg)])
       setLoading(false)
       return
     }
 
-    // إذا ما في cache، اجلب من Supabase
     const { data:{ user } } = await sb.auth.getUser()
     if (!user) return
-    const { data: profile } = await sb.from('profiles').select('id, org_id').eq('id', user.id).single()
+    const { data: profile } = await sb.from('profiles').select('id,org_id').eq('id', user.id).single()
     if (!profile?.org_id) return
 
     sessionStorage.setItem('s_org_id', profile.org_id)
     sessionStorage.setItem('s_profile_id', profile.id)
-    setOrgId(profile.org_id)
-    setProfileId(profile.id)
+    orgIdRef.current     = profile.org_id
+    profileIdRef.current = profile.id
 
-    await Promise.all([
-      loadProducts(profile.org_id),
-      loadHistory(profile.org_id)
-    ])
+    await Promise.all([loadProducts(profile.org_id), loadHistory(profile.org_id)])
     setLoading(false)
   }
 
   async function loadProducts(oid: string) {
-    const { data } = await sb.from('products').select('id,name,sku,unit,qty,reorder_point')
+    const { data } = await sb.from('products')
+      .select('id,name,sku,unit,qty,reorder_point')
       .eq('org_id', oid).eq('is_active', true).order('name')
     setProducts(data||[])
   }
@@ -70,37 +65,50 @@ export default function DispensePage() {
   async function loadHistory(oid: string) {
     const { data } = await sb.from('stock_movements')
       .select('id,qty_change,note,created_at,products!inner(name,unit,org_id)')
-      .eq('type','out')
-      .eq('products.org_id', oid)
+      .eq('type','out').eq('products.org_id', oid)
       .order('created_at',{ascending:false}).limit(10)
     setHistory(data||[])
   }
 
-  async function handleDispenseConfirm() {
-    setShowConfirm(false)
-    await handleDispense()
-  }
-
   async function handleDispense() {
-    if (!productId||!qty||!orgId||!profileId) return
+    const oid = orgIdRef.current
+    const pid = profileIdRef.current
+    if (!productId||!qty||!oid||!pid) return
     setSaving(true)
+
     const qtyNum  = Number(qty)
     const product = products.find(p=>p.id===productId)
     if (!product) { setSaving(false); return }
-    if (product.qty < qtyNum) { alert('الكمية المطلوبة أكبر من المتاح!'); setSaving(false); return }
+    if (product.qty < qtyNum) {
+      alert('الكمية المطلوبة أكبر من المتاح!')
+      setSaving(false)
+      return
+    }
 
-    await sb.from('stock_movements').insert({
-      product_id: productId, profile_id: profileId,
-      type:'out', qty_change:-qtyNum,
+    const { error } = await sb.from('stock_movements').insert({
+      product_id: productId,
+      profile_id: pid,
+      type: 'out',
+      qty_change: -qtyNum,
       note: reason+(note?' — '+note:''),
     })
 
+    if (error) {
+      alert('حدث خطأ أثناء الحفظ')
+      setSaving(false)
+      return
+    }
+
     setSuccess('تم صرف '+qtyNum+' '+product.unit+' من '+product.name+' ✅')
     fetch('/api/send-pending-notifications', { method:'POST' }).catch(()=>{})
-    setProductId(''); setQty(''); setNote(''); setReason('استهلاك يومي')
+    setProductId('')
+    setQty('')
+    setNote('')
+    setReason('استهلاك يومي')
     setSaving(false)
-    loadProducts(orgId); loadHistory(orgId)
-    setTimeout(()=>setSuccess(''),4000)
+    loadProducts(oid)
+    loadHistory(oid)
+    setTimeout(()=>setSuccess(''), 4000)
   }
 
   const selected  = products.find(p=>p.id===productId)??null
@@ -115,15 +123,16 @@ export default function DispensePage() {
 
   if (loading) return (
     <div style={{fontFamily:"'Segoe UI',system-ui,sans-serif",direction:'rtl',maxWidth:1100,margin:'0 auto'}}>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}.sk{animation:pulse 1.5s infinite}`}</style>
       <div style={{marginBottom:20}}>
-        <div style={{height:24,width:140,background:'#e2e8f0',borderRadius:6,marginBottom:8}}/>
-        <div style={{height:14,width:200,background:'#f1f5f9',borderRadius:6}}/>
+        <div className="sk" style={{height:24,width:140,background:'#e2e8f0',borderRadius:6,marginBottom:8}}/>
+        <div className="sk" style={{height:14,width:200,background:'#f1f5f9',borderRadius:6}}/>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
         {[1,2].map(i=>(
           <div key={i} style={{background:'white',borderRadius:12,padding:20,border:'1px solid #e8ecf0'}}>
             {[80,60,100,60,40].map((w,j)=>(
-              <div key={j} style={{height:14,width:w+'%',background:'#f1f5f9',borderRadius:6,marginBottom:14}}/>
+              <div key={j} className="sk" style={{height:14,width:w+'%',background:'#f1f5f9',borderRadius:6,marginBottom:14}}/>
             ))}
           </div>
         ))}
@@ -155,85 +164,87 @@ export default function DispensePage() {
       )}
 
       <div className="d-grid">
+        {/* Form */}
         <div style={{background:'white',borderRadius:12,padding:20,border:'1px solid #e8ecf0',boxShadow:'0 1px 4px rgba(0,0,0,0.04)'}}>
           <div style={{fontSize:15,fontWeight:700,color:'#0f172a',marginBottom:16}}>بيانات الصرف</div>
-          <form onSubmit={e=>{e.preventDefault()}}>
 
-            {showScan && (
-              <Suspense fallback={null}>
-                <BarcodeScanner
-                  onScan={code => {
-                    setShowScan(false)
-                    const found = products.find(p => p.sku === code)
-                    if (found) setProductId(found.id)
-                    else alert('المنتج غير موجود')
-                  }}
-                  onClose={() => setShowScan(false)}
-                />
-              </Suspense>
-            )}
+          {showScan && (
+            <Suspense fallback={null}>
+              <BarcodeScanner
+                onScan={code => {
+                  setShowScan(false)
+                  const found = products.find(p => p.sku === code)
+                  if (found) setProductId(found.id)
+                  else alert('المنتج غير موجود')
+                }}
+                onClose={() => setShowScan(false)}
+              />
+            </Suspense>
+          )}
 
-            <div style={{marginBottom:14}}>
-              <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:6}}>المنتج</label>
-              <div style={{display:'flex',gap:8,marginBottom:8}}>
-                <button type="button" onClick={()=>setShowScan(true)}
-                  style={{width:'100%',padding:'11px',background:'#f0fdf4',color:'#166534',border:'1.5px solid #86efac',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-                  📷 مسح باركود المنتج
-                </button>
-              </div>
-              <select value={productId} onChange={e=>setProductId(e.target.value)} style={inp} required>
-                <option value="">— اختر المنتج —</option>
-                {products.map(p=>(
-                  <option key={p.id} value={p.id}>{p.name} (متاح: {p.qty} {p.unit})</option>
-                ))}
-              </select>
-            </div>
-
-            {selected && (
-              <div style={{background:isLow?'#fff5f5':'#f0fdf4',border:'1.5px solid '+(isLow?'#fca5a5':'#86efac'),borderRadius:9,padding:'10px 14px',marginBottom:14,display:'flex',alignItems:'center',gap:10}}>
-                <div style={{width:8,height:8,borderRadius:'50%',background:isLow?'#ef4444':'#10b981',flexShrink:0}}/>
-                <div>
-                  <div style={{fontSize:13,fontWeight:700,color:isLow?'#ef4444':'#10b981'}}>المتاح: {selected.qty} {selected.unit}</div>
-                  {isLow && <div style={{fontSize:11,color:'#f87171',marginTop:1}}>وصل للحد الأدنى</div>}
-                </div>
-              </div>
-            )}
-
-            <div style={{marginBottom:14}}>
-              <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:6}}>الكمية</label>
-              <input type="number" min="1" required value={qty} onChange={e=>setQty(e.target.value)} style={inp} placeholder="0" inputMode="numeric"/>
-              {remaining!==null && (
-                <div style={{marginTop:6,fontSize:12,color:remaining<0?'#ef4444':'#64748b',fontWeight:remaining<0?700:400,padding:'6px 10px',background:remaining<0?'#fef2f2':'#f8fafc',borderRadius:7}}>
-                  {remaining<0 ? '⚠️ الكمية تتجاوز المتاح!' : 'المتبقي بعد الصرف: '+remaining+' '+selected?.unit}
-                </div>
-              )}
-            </div>
-
-            <div style={{marginBottom:14}}>
-              <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:8}}>سبب الصرف</label>
-              <div className="r-grid">
-                {REASONS.map(r=>(
-                  <button key={r} type="button" className={'r-btn'+(reason===r?' active':'')} onClick={()=>setReason(r)}>{r}</button>
-                ))}
-              </div>
-            </div>
-
-            <div style={{marginBottom:18}}>
-              <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:6}}>ملاحظات (اختياري)</label>
-              <textarea value={note} onChange={e=>setNote(e.target.value)} style={{...inp,minHeight:72,resize:'none'}} placeholder="أي تفاصيل إضافية..."/>
-            </div>
-
-            <button type="button" disabled={saving} onClick={()=>{if(!productId||!qty)return;setShowConfirm(true)}}
-              style={{width:'100%',padding:'13px',background:saving?'#94a3b8':'#ef4444',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:saving?'not-allowed':'pointer',fontFamily:'inherit',transition:'background 0.15s',boxShadow:'0 2px 8px rgba(239,68,68,0.25)'}}>
-              {saving ? 'جاري الحفظ...' : 'تسجيل الصرف ←'}
+          <div style={{marginBottom:14}}>
+            <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:6}}>المنتج</label>
+            <button type="button" onClick={()=>setShowScan(true)}
+              style={{width:'100%',padding:'11px',background:'#f0fdf4',color:'#166534',border:'1.5px solid #86efac',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginBottom:8}}>
+              📷 مسح باركود المنتج
             </button>
-          </form>
+            <select value={productId} onChange={e=>setProductId(e.target.value)} style={inp}>
+              <option value="">— اختر المنتج —</option>
+              {products.map(p=>(
+                <option key={p.id} value={p.id}>{p.name} (متاح: {p.qty} {p.unit})</option>
+              ))}
+            </select>
+          </div>
+
+          {selected && (
+            <div style={{background:isLow?'#fff5f5':'#f0fdf4',border:'1.5px solid '+(isLow?'#fca5a5':'#86efac'),borderRadius:9,padding:'10px 14px',marginBottom:14,display:'flex',alignItems:'center',gap:10}}>
+              <div style={{width:8,height:8,borderRadius:'50%',background:isLow?'#ef4444':'#10b981',flexShrink:0}}/>
+              <div>
+                <div style={{fontSize:13,fontWeight:700,color:isLow?'#ef4444':'#10b981'}}>المتاح: {selected.qty} {selected.unit}</div>
+                {isLow && <div style={{fontSize:11,color:'#f87171',marginTop:1}}>⚠️ وصل للحد الأدنى</div>}
+              </div>
+            </div>
+          )}
+
+          <div style={{marginBottom:14}}>
+            <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:6}}>الكمية</label>
+            <input type="number" min="1" value={qty} onChange={e=>setQty(e.target.value)} style={inp} placeholder="0" inputMode="numeric"/>
+            {remaining!==null && (
+              <div style={{marginTop:6,fontSize:12,color:remaining<0?'#ef4444':'#64748b',fontWeight:remaining<0?700:400,padding:'6px 10px',background:remaining<0?'#fef2f2':'#f8fafc',borderRadius:7}}>
+                {remaining<0 ? '⚠️ الكمية تتجاوز المتاح!' : 'المتبقي بعد الصرف: '+remaining+' '+selected?.unit}
+              </div>
+            )}
+          </div>
+
+          <div style={{marginBottom:14}}>
+            <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:8}}>سبب الصرف</label>
+            <div className="r-grid">
+              {REASONS.map(r=>(
+                <button key={r} type="button" className={'r-btn'+(reason===r?' active':'')} onClick={()=>setReason(r)}>{r}</button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{marginBottom:18}}>
+            <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:6}}>ملاحظات (اختياري)</label>
+            <textarea value={note} onChange={e=>setNote(e.target.value)} style={{...inp,minHeight:72,resize:'none'}} placeholder="أي تفاصيل إضافية..."/>
+          </div>
+
+          <button
+            type="button"
+            disabled={saving || !productId || !qty}
+            onClick={()=>{ if(!productId||!qty) return; setShowConfirm(true) }}
+            style={{width:'100%',padding:'13px',background:(saving||!productId||!qty)?'#94a3b8':'#ef4444',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:(saving||!productId||!qty)?'not-allowed':'pointer',fontFamily:'inherit',transition:'background 0.15s',boxShadow:'0 2px 8px rgba(239,68,68,0.25)'}}>
+            {saving ? '⏳ جاري الحفظ...' : 'تسجيل الصرف ←'}
+          </button>
         </div>
 
+        {/* History */}
         <div style={{background:'white',borderRadius:12,border:'1px solid #e8ecf0',overflow:'hidden',boxShadow:'0 1px 4px rgba(0,0,0,0.04)'}}>
           <div style={{padding:'14px 18px',borderBottom:'1px solid #f1f5f9',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <div style={{fontSize:15,fontWeight:700,color:'#0f172a'}}>آخر عمليات الصرف</div>
-            <button onClick={()=>orgId&&loadHistory(orgId)} style={{width:30,height:30,borderRadius:7,border:'1px solid #e2e8f0',background:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#64748b'}}>
+            <button onClick={()=>orgIdRef.current&&loadHistory(orgIdRef.current)}
+              style={{width:30,height:30,borderRadius:7,border:'1px solid #e2e8f0',background:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#64748b'}}>
               <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
             </button>
           </div>
@@ -253,7 +264,7 @@ export default function DispensePage() {
                   </div>
                 </div>
                 <span style={{background:'#fef2f2',color:'#ef4444',padding:'5px 12px',borderRadius:20,fontWeight:800,fontSize:13,border:'1px solid #fecaca',flexShrink:0}}>
-                  {h.qty_change} {(h.products as any)?.unit}
+                  {Math.abs(h.qty_change)} {(h.products as any)?.unit}
                 </span>
               </div>
             ))}
@@ -264,10 +275,10 @@ export default function DispensePage() {
       {showConfirm && (
         <ConfirmDialog
           title='تأكيد الصرف'
-          message={'هل تريد تسجيل الصرف؟'}
-          confirmText='تسجيل'
+          message={`هل تريد صرف ${qty} ${selected?.unit} من ${selected?.name}؟`}
+          confirmText='تسجيل الصرف'
           type='warning'
-          onConfirm={handleDispenseConfirm}
+          onConfirm={async()=>{ setShowConfirm(false); await handleDispense() }}
           onCancel={()=>setShowConfirm(false)}
         />
       )}
