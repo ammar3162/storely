@@ -3,11 +3,11 @@ import { createClient } from '@supabase/supabase-js'
 
 function formatPhone(raw: string): string {
   const clean = raw?.replace(/\s/g, '') || ''
-  if (clean.startsWith('+966')) return clean.slice(1) + '@s.whatsapp.net'
-  if (clean.startsWith('966')) return clean + '@s.whatsapp.net'
-  if (clean.startsWith('05')) return '966' + clean.slice(1) + '@s.whatsapp.net'
-  if (clean.startsWith('5')) return '966' + clean + '@s.whatsapp.net'
-  return '966' + clean + '@s.whatsapp.net'
+  if (clean.startsWith('+966')) return clean
+  if (clean.startsWith('966')) return '+' + clean
+  if (clean.startsWith('05')) return '+966' + clean.slice(1)
+  if (clean.startsWith('5')) return '+966' + clean
+  return '+966' + clean
 }
 
 async function sendForOrg(supabase: any, org: any) {
@@ -25,19 +25,19 @@ async function sendForOrg(supabase: any, org: any) {
     list + '\n\n' +
     '⚡ يرجى إعادة الطلب في أقرب وقت\n\n' +
     '_Storely — نظام إدارة المخزون_'
+
   const phone = formatPhone(org.whatsapp_number)
-  const whapiUrl = process.env.WHAPI_URL!
-  const whapiToken = process.env.WHAPI_TOKEN!
-  const res = await fetch(`${whapiUrl}/messages/text`, {
+  const instance = process.env.ULTRAMSG_INSTANCE!
+  const token = process.env.ULTRAMSG_TOKEN!
+
+  const res = await fetch(`https://api.ultramsg.com/${instance}/messages/chat`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${whapiToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ to: phone, body: msg }),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ token, to: phone, body: msg, priority: '10' }).toString(),
   })
+
   await supabase.from('whatsapp_logs').insert({
-    org_id: org.id, phone: org.whatsapp_number, message: msg,
+    org_id: org.id, phone, message: msg,
     status: res.ok ? 'sent' : 'failed',
   })
   return { sent: res.ok ? 1 : 0 }
