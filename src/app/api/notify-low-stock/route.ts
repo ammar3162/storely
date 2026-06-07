@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+function formatPhone(raw: string): string {
+  const clean = raw?.replace(/\s/g, '') || ''
+  if (clean.startsWith('+966')) return clean
+  if (clean.startsWith('966')) return '+' + clean
+  if (clean.startsWith('05')) return '+966' + clean.slice(1)
+  if (clean.startsWith('5')) return '+966' + clean
+  return '+966' + clean
+}
+
 async function sendForOrg(supabase: any, org: any) {
   const { data: products } = await supabase
     .from('products').select('name,qty,unit,reorder_point')
@@ -20,9 +29,7 @@ async function sendForOrg(supabase: any, org: any) {
     '⚡ يرجى إعادة الطلب في أقرب وقت\n\n' +
     '_Storely — نظام إدارة المخزون_'
 
-  const phone = org.whatsapp_number?.startsWith('+')
-    ? org.whatsapp_number
-    : '+966' + org.whatsapp_number?.replace(/^0/, '')
+  const phone = formatPhone(org.whatsapp_number)
 
   const sid  = process.env.TWILIO_ACCOUNT_SID!
   const auth = process.env.TWILIO_AUTH_TOKEN!
@@ -58,7 +65,6 @@ export async function POST(req: Request) {
     let body: any = {}
     try { body = await req.json() } catch {}
 
-    // إذا جاء org_id → أرسل لمؤسسة واحدة فقط
     if (body.org_id) {
       const { data: org } = await supabase.from('organizations').select('*').eq('id', body.org_id).single()
       if (!org) return NextResponse.json({ success:false, message:'المؤسسة غير موجودة' })
@@ -66,7 +72,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ success:true, ...result })
     }
 
-    // Cron job → أرسل لكل المؤسسات
     const { data: orgs } = await supabase.from('organizations').select('*')
     if (!orgs || orgs.length === 0)
       return NextResponse.json({ success:true, message:'لا توجد مؤسسات' })

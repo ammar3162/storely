@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+function formatPhone(raw: string): string {
+  const clean = raw?.replace(/\s/g, '') || ''
+  if (clean.startsWith('+966')) return clean
+  if (clean.startsWith('966')) return '+' + clean
+  if (clean.startsWith('05')) return '+966' + clean.slice(1)
+  if (clean.startsWith('5')) return '+966' + clean
+  return '+966' + clean
+}
+
 export async function POST() {
   try {
     const url  = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -17,8 +26,7 @@ export async function POST() {
 
     let sent = 0
     for (const log of pending) {
-      const raw   = log.phone?.replace(/\s/g,'') || ''
-      const phone = raw.startsWith('+') ? raw : raw.startsWith('05') ? '+966'+raw.slice(1) : '+'+raw
+      const phone = formatPhone(log.phone || '')
       const sid   = process.env.TWILIO_ACCOUNT_SID!
       const auth  = process.env.TWILIO_AUTH_TOKEN!
       const from  = process.env.TWILIO_WHATSAPP_FROM!
