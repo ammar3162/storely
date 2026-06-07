@@ -94,7 +94,7 @@ export default function DispensePage() {
     })
 
     if (error) {
-      alert('حدث خطأ أثناء الحفظ')
+      alert('خطأ: ' + error.message)
       setSaving(false)
       return
     }
