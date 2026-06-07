@@ -18,18 +18,32 @@ export default function DispensePage() {
   const [note, setNote]         = useState('')
   const [showScan, setShowScan] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [orgId, setOrgId]       = useState<string|null>(null)
   const sb = createClient()
 
-  useEffect(() => { loadProducts(); loadHistory() }, [])
+  useEffect(() => { init() }, [])
 
-  async function loadProducts() {
-    const { data } = await sb.from('products').select('*').order('name')
+  async function init() {
+    const { data:{ user } } = await sb.auth.getUser()
+    if (!user) return
+    const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
+    if (!profile?.org_id) return
+    setOrgId(profile.org_id)
+    loadProducts(profile.org_id)
+    loadHistory(profile.org_id)
+  }
+
+  async function loadProducts(oid: string) {
+    const { data } = await sb.from('products').select('*')
+      .eq('org_id', oid).eq('is_active', true).order('name')
     setProducts(data||[])
   }
 
-  async function loadHistory() {
+  async function loadHistory(oid: string) {
     const { data } = await sb.from('stock_movements')
-      .select('*, products(name,unit)').eq('type','out')
+      .select('*, products!inner(name,unit,org_id)')
+      .eq('type','out')
+      .eq('products.org_id', oid)
       .order('created_at',{ascending:false}).limit(15)
     setHistory(data||[])
   }
@@ -40,7 +54,7 @@ export default function DispensePage() {
   }
 
   async function handleDispense() {
-    if (!productId||!qty) return
+    if (!productId||!qty||!orgId) return
     setLoading(true)
     const qtyNum  = Number(qty)
     const product = products.find(p=>p.id===productId)
@@ -54,11 +68,10 @@ export default function DispensePage() {
       note: reason+(note?' — '+note:''),
     })
     setSuccess('تم صرف '+qtyNum+' '+product.unit+' من '+product.name+' ✅')
-    // أرسل إشعار واتساب مباشرة إذا وصل للحد الأدنى
     fetch('/api/send-pending-notifications', { method:'POST' }).catch(()=>{})
     setProductId(''); setQty(''); setNote(''); setReason('استهلاك يومي')
     setLoading(false)
-    loadProducts(); loadHistory()
+    loadProducts(orgId); loadHistory(orgId)
     setTimeout(()=>setSuccess(''),4000)
   }
 
@@ -142,7 +155,7 @@ export default function DispensePage() {
 
             <div style={{marginBottom:14}}>
               <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:6}}>الكمية</label>
-              <input type="number" min="1" required value={qty} onChange={e=>setQty(e.target.value)} style={inp} placeholder="0"/>
+              <input type="number" min="1" required value={qty} onChange={e=>setQty(e.target.value)} style={inp} placeholder="0" inputMode="numeric"/>
               {remaining!==null && (
                 <div style={{marginTop:6,fontSize:12,color:remaining<0?'#ef4444':'#64748b',fontWeight:remaining<0?700:400,padding:'6px 10px',background:remaining<0?'#fef2f2':'#f8fafc',borderRadius:7}}>
                   {remaining<0 ? '⚠️ الكمية تتجاوز المتاح!' : 'المتبقي بعد الصرف: '+remaining+' '+selected?.unit}
@@ -164,7 +177,7 @@ export default function DispensePage() {
               <textarea value={note} onChange={e=>setNote(e.target.value)} style={{...inp,minHeight:72,resize:'none'}} placeholder="أي تفاصيل إضافية..."/>
             </div>
 
-              <button type="button" disabled={loading} onClick={(e)=>{e.preventDefault();if(!productId||!qty)return;setShowConfirm(true)}} style={{width:'100%',padding:'13px',background:loading?'#94a3b8':'#ef4444',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',transition:'background 0.15s',boxShadow:'0 2px 8px rgba(239,68,68,0.25)'}}>
+            <button type="button" disabled={loading} onClick={(e)=>{e.preventDefault();if(!productId||!qty)return;setShowConfirm(true)}} style={{width:'100%',padding:'13px',background:loading?'#94a3b8':'#ef4444',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',transition:'background 0.15s',boxShadow:'0 2px 8px rgba(239,68,68,0.25)'}}>
               {loading ? 'جاري الحفظ...' : 'تسجيل الصرف ←'}
             </button>
           </form>
@@ -174,7 +187,7 @@ export default function DispensePage() {
         <div style={{background:'white',borderRadius:12,border:'1px solid #e8ecf0',overflow:'hidden',boxShadow:'0 1px 4px rgba(0,0,0,0.04)'}}>
           <div style={{padding:'14px 18px',borderBottom:'1px solid #f1f5f9',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <div style={{fontSize:15,fontWeight:700,color:'#0f172a'}}>آخر عمليات الصرف</div>
-            <button onClick={loadHistory} style={{width:30,height:30,borderRadius:7,border:'1px solid #e2e8f0',background:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#64748b'}}>
+            <button onClick={()=>orgId&&loadHistory(orgId)} style={{width:30,height:30,borderRadius:7,border:'1px solid #e2e8f0',background:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#64748b'}}>
               <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
             </button>
           </div>
