@@ -9,6 +9,7 @@ type User = {
   role: string
   status: string
   created_at: string
+  org_id: string
   org_name: string
   subscription_type: string
   subscription_ends_at: string | null
@@ -39,6 +40,7 @@ export default function StorelyAdminPage() {
     if (data) setUsers(data.map((p:any) => ({
       id: p.id, full_name: p.full_name||'—', phone: p.phone||'—',
       role: p.role, status: p.status||'pending', created_at: p.created_at,
+      org_id: p.org_id,
       org_name: p.organizations?.name||'—',
       subscription_type: p.subscription_type||'trial',
       subscription_ends_at: p.subscription_ends_at||null,
@@ -61,9 +63,20 @@ export default function StorelyAdminPage() {
     setSaving(null)
   }
 
-  async function remove(userId: string) {
+  async function remove(userId: string, orgId: string) {
     setSaving(userId)
-    await sb.from('profiles').update({ status:'deleted' }).eq('id',userId)
+    // احذف كل بيانات المؤسسة
+    const { data: products } = await sb.from('products').select('id').eq('org_id', orgId)
+    const productIds = (products||[]).map((p:any) => p.id)
+    if (productIds.length > 0) {
+      await sb.from('stock_movements').delete().in('product_id', productIds)
+    }
+    await sb.from('products').delete().eq('org_id', orgId)
+    await sb.from('whatsapp_logs').delete().eq('org_id', orgId)
+    await sb.from('notifications').delete().eq('org_id', orgId)
+    await sb.from('purchases').delete().eq('org_id', orgId)
+    await sb.from('profiles').delete().eq('org_id', orgId)
+    await sb.from('organizations').delete().eq('id', orgId)
     await loadUsers()
     setSaving(null)
   }
@@ -221,7 +234,7 @@ export default function StorelyAdminPage() {
                               <button className="ab" disabled={!!isSaving} onClick={()=>activate(u.id,u.subscription_type as any)} style={{background:'#dcfce7',color:'#166534'}}>{isSaving?'...':'▶ تفعيل'}</button>
                             )}
                             {u.status!=='deleted' && (
-                              <button className="ab" disabled={!!isSaving} onClick={()=>{if(confirm('حذف؟')) remove(u.id)}} style={{background:'#fee2e2',color:'#991b1b'}}>{isSaving?'...':'✕'}</button>
+                              <button className="ab" disabled={!!isSaving} onClick={()=>{if(confirm('حذف المؤسسة وكل بياناتها نهائياً؟')) remove(u.id, u.org_id)}} style={{background:'#fee2e2',color:'#991b1b'}}>{isSaving?'...':'✕'}</button>
                             )}
                           </div>
                         </td>
