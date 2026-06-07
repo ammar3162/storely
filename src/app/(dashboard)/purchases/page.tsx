@@ -223,11 +223,6 @@ export default function PurchasesPage() {
 
               <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp}
                 placeholder={form.category==='مخزون'?'مثال: مواد خام، مستلزمات، بضاعة...':form.category==='صيانة'?'مثال: صيانة جهاز، تصليح معدات...':'مثال: إيجار، فاتورة، خدمة...'}/>
-
-              {/* أمثلة سريعة */}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* المبلغ */}
