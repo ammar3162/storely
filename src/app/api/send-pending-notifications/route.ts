@@ -3,45 +3,37 @@ import { createClient } from '@supabase/supabase-js'
 
 function formatPhone(raw: string): string {
   const clean = raw?.replace(/\s/g, '') || ''
-  if (clean.startsWith('+966')) return clean
-  if (clean.startsWith('966')) return '+' + clean
-  if (clean.startsWith('05')) return '+966' + clean.slice(1)
-  if (clean.startsWith('5')) return '+966' + clean
-  return '+966' + clean
+  if (clean.startsWith('+966')) return clean.slice(1) + '@s.whatsapp.net'
+  if (clean.startsWith('966')) return clean + '@s.whatsapp.net'
+  if (clean.startsWith('05')) return '966' + clean.slice(1) + '@s.whatsapp.net'
+  if (clean.startsWith('5')) return '966' + clean + '@s.whatsapp.net'
+  return '966' + clean + '@s.whatsapp.net'
 }
 
 export async function POST() {
   try {
-    const url  = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const key  = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     if (!url || !key) return NextResponse.json({ success:false, error:'missing env' }, { status:500 })
 
     const sb = createClient(url, key)
+    const { data: pending } = await sb.from('whatsapp_logs').select('*').eq('status','pending').limit(20)
+    if (!pending || pending.length === 0) return NextResponse.json({ success:true, sent:0 })
 
-    const { data: pending } = await sb
-      .from('whatsapp_logs').select('*').eq('status','pending').limit(20)
-
-    if (!pending || pending.length === 0)
-      return NextResponse.json({ success:true, sent:0 })
-
+    const whapiUrl = process.env.WHAPI_URL!
+    const whapiToken = process.env.WHAPI_TOKEN!
     let sent = 0
+
     for (const log of pending) {
       const phone = formatPhone(log.phone || '')
-      const sid   = process.env.TWILIO_ACCOUNT_SID!
-      const auth  = process.env.TWILIO_AUTH_TOKEN!
-      const from  = process.env.TWILIO_WHATSAPP_FROM!
-
-      const res = await fetch(
-        'https://api.twilio.com/2010-04-01/Accounts/'+sid+'/Messages.json',
-        {
-          method:'POST',
-          headers:{
-            'Authorization':'Basic '+Buffer.from(sid+':'+auth).toString('base64'),
-            'Content-Type':'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({ From:from, To:'whatsapp:'+phone, Body:log.message }).toString(),
-        }
-      )
+      const res = await fetch(`${whapiUrl}/messages/text`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${whapiToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ to: phone, body: log.message }),
+      })
 
       await sb.from('whatsapp_logs').update({
         status: res.ok ? 'sent' : 'failed',
