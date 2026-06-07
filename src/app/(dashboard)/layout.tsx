@@ -180,7 +180,25 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Content */}
-        <div className="content">{children}</div>
+        <div className="content" id="main-content">
+          {children}
+        </div>
+        <script dangerouslySetInnerHTML={{__html: `
+          let startY = 0;
+          let pulling = false;
+          const content = document.getElementById('main-content');
+          if (content) {
+            content.addEventListener('touchstart', e => {
+              startY = e.touches[0].clientY;
+            }, {passive: true});
+            content.addEventListener('touchend', e => {
+              const diff = e.changedTouches[0].clientY - startY;
+              if (diff > 80 && content.scrollTop === 0) {
+                window.location.reload();
+              }
+            }, {passive: true});
+          }
+        `}}/>
       </div>
     </div>
   )
