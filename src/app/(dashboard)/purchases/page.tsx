@@ -36,16 +36,14 @@ export default function PurchasesPage() {
 
   async function init() {
     const cachedOrg = sessionStorage.getItem('s_org_id')
-    if (cachedOrg) {
+    if (cachedOrg === profile.org_id) {
       setOrgId(cachedOrg)
       await Promise.all([loadHistory(cachedOrg), loadProducts(cachedOrg)])
       return
     }
-    const { data:{ user } } = await sb.auth.getUser()
-    if (!user) return
-    const { data: profile } = await sb.from('profiles').select('org_id').eq('id',user.id).single()
-    if (!profile?.org_id) return
+    // مؤسسة مختلفة — حدّث الـ cache
     sessionStorage.setItem('s_org_id', profile.org_id)
+    sessionStorage.setItem('s_profile_id', profile.id)
     setOrgId(profile.org_id)
     await Promise.all([loadHistory(profile.org_id), loadProducts(profile.org_id)])
   }

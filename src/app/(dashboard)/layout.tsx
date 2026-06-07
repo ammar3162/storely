@@ -40,12 +40,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     sb.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.replace('/login'); return }
-      const { data: p } = await sb.from('profiles').select('full_name,org_id,organizations(name)').eq('id', user.id).single()
+      const { data: p } = await sb.from('profiles').select('id,full_name,org_id,organizations(name)').eq('id', user.id).single()
       if (p?.organizations) setOrg((p.organizations as any).name)
       if (p?.full_name) setInit(p.full_name[0])
-      const { data: profile3 } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
-      const { data: pr } = await sb.from('products').select('qty,reorder_point').eq('org_id', profile3?.org_id||'').eq('is_active', true)
-      if (pr) setLow(pr.filter((x:any) => x.qty <= x.reorder_point && x.is_active !== false).length)
+
+      // تحديث sessionStorage دائماً بالمستخدم الحالي
+      if (p?.org_id) {
+        sessionStorage.setItem('s_org_id', p.org_id)
+        sessionStorage.setItem('s_profile_id', p.id)
+      }
+
+      const { data: pr } = await sb.from('products').select('qty,reorder_point').eq('org_id', p?.org_id||'').eq('is_active', true)
+      if (pr) setLow(pr.filter((x:any) => x.qty <= x.reorder_point).length)
     })
   }, [])
 
