@@ -6,22 +6,22 @@ const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 
 const CATS = ['مخزون','صيانة','أخرى']
 const CAT_ICONS: Record<string,string> = { 'مخزون':'📦', 'صيانة':'🔧', 'أخرى':'📋' }
-
 const UNITS = ['قطعة','كيلو','كيس','كرتون','لتر','علبة','باكيت','درزن','رول','غرام','أخرى']
 
 export default function PurchasesPage() {
-  const [history, setHistory]       = useState<any[]>([])
-  const [loading, setLoading]       = useState(false)
-  const [success, setSuccess]       = useState('')
-  const [uploading, setUploading]   = useState(false)
+  const [history, setHistory]     = useState<any[]>([])
+  const [loading, setLoading]     = useState(false)
+  const [success, setSuccess]     = useState('')
+  const [uploading, setUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
-  const [showScan, setShowScan]     = useState(false)
-  const [orgId, setOrgId]           = useState<string|null>(null)
-  const [products, setProducts]     = useState<any[]>([])
+  const [showScan, setShowScan]   = useState(false)
+  const [orgId, setOrgId]         = useState<string|null>(null)
+  const [products, setProducts]   = useState<any[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
     category:'مخزون', name:'', qty:'', unit:'قطعة',
-    reorder_point:'5', total_amount:'', supplier:'', note:'', invoice_image:'', hasVat:'',
+    reorder_point:'5', total_amount:'', supplier:'', note:'',
+    invoice_image:'', hasVat:'',
   })
   const sb = createClient()
 
@@ -30,7 +30,7 @@ export default function PurchasesPage() {
     const interval = setInterval(() => {
       const oid = sessionStorage.getItem('s_org_id')
       if (oid) loadHistory(oid)
-    }, 3 * 60 * 1000) // كل 3 دقائق
+    }, 3 * 60 * 1000)
     return () => clearInterval(interval)
   }, [])
 
@@ -87,13 +87,17 @@ export default function PurchasesPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.total_amount || !orgId) return
+    if (!form.hasVat) { alert('يرجى تحديد هل الفاتورة تشمل الضريبة أم لا'); return }
+    if (form.hasVat==='yes' && !form.invoice_image) { alert('يرجى رفع صورة الفاتورة — مطلوبة عند وجود ضريبة'); return }
+    if (!form.supplier.trim()) { alert('يرجى إدخال اسم المورد'); return }
+
     setLoading(true)
     const { data:{ user } } = await sb.auth.getUser()
     if (!user) { setLoading(false); return }
 
-    const total  = Number(form.total_amount)
-    const amount = parseFloat((total/1.15).toFixed(2))
-    const vat_amount = parseFloat((total - amount).toFixed(2))
+    const total = Number(form.total_amount)
+    const amount = form.hasVat==='yes' ? parseFloat((total/1.15).toFixed(2)) : total
+    const vat_amount = form.hasVat==='yes' ? parseFloat((total - amount).toFixed(2)) : 0
 
     await sb.from('purchases').insert({
       org_id: orgId, profile_id: user.id,
@@ -101,7 +105,7 @@ export default function PurchasesPage() {
       qty: form.qty ? Number(form.qty) : null,
       unit: form.unit||null, reorder_point: Number(form.reorder_point)||5,
       amount, vat_amount, total_amount: total,
-      supplier: form.supplier||null,
+      supplier: form.supplier,
       note: form.note||null, invoice_image: form.invoice_image||null,
     })
 
@@ -112,7 +116,7 @@ export default function PurchasesPage() {
       if (existing) {
         if (qty>0) await sb.from('stock_movements').insert({
           product_id:existing.id, profile_id:user.id,
-          type:'in', qty_change:qty, note:'شراء: '+(form.supplier||'')
+          type:'in', qty_change:qty, note:'شراء: '+form.supplier
         })
       } else {
         const { data: np } = await sb.from('products').insert({
@@ -121,7 +125,7 @@ export default function PurchasesPage() {
         }).select().single()
         if (np && qty>0) await sb.from('stock_movements').insert({
           product_id:np.id, profile_id:user.id,
-          type:'in', qty_change:qty, note:'شراء جديد: '+(form.supplier||'')
+          type:'in', qty_change:qty, note:'شراء جديد: '+form.supplier
         })
       }
       await loadProducts(orgId)
@@ -135,9 +139,9 @@ export default function PurchasesPage() {
     setTimeout(()=>setSuccess(''),5000)
   }
 
-  const total   = Number(form.total_amount)||0
-  const amount  = total>0 ? (total/1.15).toFixed(2) : '0.00'
-  const vat     = total>0 ? (total-Number(amount)).toFixed(2) : '0.00'
+  const total  = Number(form.total_amount)||0
+  const amount = form.hasVat==='yes' && total>0 ? (total/1.15).toFixed(2) : total.toFixed(2)
+  const vat    = form.hasVat==='yes' && total>0 ? (total-Number(amount)).toFixed(2) : '0.00'
 
   const totalSpent = history.reduce((s,p)=>s+Number(p.total_amount||0),0)
   const totalVat   = history.reduce((s,p)=>s+Number(p.vat_amount||0),0)
@@ -154,13 +158,11 @@ export default function PurchasesPage() {
       <style>{`
         .p-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
         .s-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-        .q-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
         @media(max-width:768px){.p-grid{grid-template-columns:1fr}.s-grid{grid-template-columns:repeat(2,1fr)}}
         input:focus,select:focus,textarea:focus{border-color:#1a4731!important;box-shadow:0 0 0 3px rgba(26,71,49,0.08)!important}
         .cat-btn{padding:10px 8px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;border:1.5px solid #e2e8f0;background:white;color:#64748b;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px}
         .cat-btn.active{border-color:#1a4731;background:#e8f7ee;color:#1a4731}
-        .ex-chip{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;white-space:nowrap;transition:all 0.15s}
-        .ex-chip:hover{border-color:#1a4731;background:#e8f7ee;color:#1a4731}
+        .vat-btn{padding:12px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;border:1.5px solid #e2e8f0;background:white;color:#64748b;font-family:inherit;width:100%}
       `}</style>
 
       {showScan && (
@@ -174,7 +176,6 @@ export default function PurchasesPage() {
         <p style={{fontSize:12,color:'#64748b'}}>فئة مخزون تُحدّث المخزون تلقائياً</p>
       </div>
 
-      {/* Stats */}
       <div className="s-grid">
         {[
           {label:'إجمالي الفواتير', value:String(history.length),       color:'#1a4731', bg:'#e8f7ee'},
@@ -192,7 +193,6 @@ export default function PurchasesPage() {
       {success && <div style={{background:'#ecfdf5',border:'1.5px solid #10b981',borderRadius:10,padding:'12px 16px',marginBottom:16,fontSize:13,fontWeight:700,color:'#059669'}}>{success}</div>}
 
       <div className="p-grid">
-        {/* Form */}
         <div style={{background:'white',borderRadius:12,padding:20,border:'1px solid #e8ecf0',boxShadow:'0 1px 4px rgba(0,0,0,0.04)'}}>
           <div style={{fontSize:15,fontWeight:700,color:'#0f172a',marginBottom:16}}>تسجيل شراء جديد</div>
           <form onSubmit={handleSubmit}>
@@ -219,25 +219,22 @@ export default function PurchasesPage() {
             {/* اسم الصنف */}
             <div style={{marginBottom:12}}>
               <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>اسم الصنف / الخدمة *</label>
-
-              {/* زر الباركود — فقط في مخزون */}
               {form.category==='مخزون' && (
                 <button type="button" onClick={()=>setShowScan(true)}
                   style={{width:'100%',padding:'10px',background:'#f0fdf4',color:'#166534',border:'1.5px solid #86efac',borderRadius:8,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginBottom:8}}>
                   📷 مسح باركود المنتج
                 </button>
               )}
-
               <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp}
-                placeholder={form.category==='مخزون'?'مثال: مواد خام، مستلزمات، بضاعة...':form.category==='صيانة'?'مثال: صيانة جهاز، تصليح معدات...':'مثال: إيجار، فاتورة، خدمة...'}/>
+                placeholder={form.category==='مخزون'?'مثال: مواد خام، مستلزمات...':form.category==='صيانة'?'مثال: صيانة جهاز...':'مثال: إيجار، فاتورة...'}/>
             </div>
 
             {/* المبلغ */}
             <div style={{marginBottom:12}}>
-              <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>المبلغ الإجمالي (شامل الضريبة) *</label>
+              <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>المبلغ الإجمالي *</label>
               <input type="number" min="0" step="0.01" required value={form.total_amount}
                 onChange={e=>setForm({...form,total_amount:e.target.value})} style={inp} placeholder="0.00" inputMode="decimal"/>
-              {total>0 && (
+              {total>0 && form.hasVat==='yes' && (
                 <div style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:8,padding:'10px 12px',marginTop:8}}>
                   <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:'#64748b',marginBottom:4}}>
                     <span>بدون ضريبة (÷ 1.15)</span><span style={{fontWeight:600,color:'#334155'}}>{amount} ر.س</span>
@@ -252,14 +249,14 @@ export default function PurchasesPage() {
               )}
             </div>
 
-            {/* المورد */}
+            {/* المورد — اجباري */}
             <div style={{marginBottom:12}}>
-              <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>المورد (اختياري)</label>
-              <input value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})} style={inp}
-                placeholder="مثال: شركة الأغذية، سوبر ماركت الرياض..."/>
+              <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>المورد *</label>
+              <input required value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})} style={inp}
+                placeholder="مثال: شركة الأغذية، سوبر ماركت..."/>
             </div>
 
-            {/* كمية ووحدة — فقط في مخزون */}
+            {/* كمية — فقط مخزون */}
             {form.category==='مخزون' && (
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:12}}>
                 <div>
@@ -281,14 +278,33 @@ export default function PurchasesPage() {
               </div>
             )}
 
+            {/* سؤال الضريبة */}
+            <div style={{marginBottom:12}}>
+              <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:8}}>هل الفاتورة تشمل ضريبة القيمة المضافة؟ *</label>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                <button type="button" className="vat-btn"
+                  onClick={()=>setForm({...form,hasVat:'no',invoice_image:''})}
+                  style={{border:'1.5px solid '+(form.hasVat==='no'?'#10b981':'#e2e8f0'),background:form.hasVat==='no'?'#f0fdf4':'white',color:form.hasVat==='no'?'#166534':'#64748b'}}>
+                  ❌ لا ضريبة
+                </button>
+                <button type="button" className="vat-btn"
+                  onClick={()=>setForm({...form,hasVat:'yes'})}
+                  style={{border:'1.5px solid '+(form.hasVat==='yes'?'#f59e0b':'#e2e8f0'),background:form.hasVat==='yes'?'#fef3c7':'white',color:form.hasVat==='yes'?'#92400e':'#64748b'}}>
+                  ✅ شاملة ضريبة 15%
+                </button>
+              </div>
+            </div>
+
             {/* صورة الفاتورة */}
             <div style={{marginBottom:12}}>
-              <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>صورة الفاتورة (اختياري)</label>
+              <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>
+                صورة الفاتورة {form.hasVat==='yes'?'*':'(اختياري)'}
+              </label>
               <input ref={fileRef} type="file" accept="image/*,.pdf" style={{display:'none'}}
                 onChange={e=>{if(e.target.files?.[0]) handleImage(e.target.files[0])}}/>
               <button type="button" onClick={()=>fileRef.current?.click()}
-                required={form.hasVat==='yes'} style={{width:'100%',padding:'10px',border:'1.5px dashed #cbd5e1',borderRadius:8,background:previewUrl?'#f0fdf4':'#f8fafc',color:previewUrl?'#166534':'#64748b',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
-                {uploading?'⏳ جاري الرفع...':previewUrl?'✅ تم رفع الفاتورة — اضغط لتغييرها':'📎 رفع صورة الفاتورة'}
+                style={{width:'100%',padding:'10px',border:'1.5px dashed '+(form.hasVat==='yes'&&!previewUrl?'#fca5a5':'#cbd5e1'),borderRadius:8,background:previewUrl?'#f0fdf4':form.hasVat==='yes'&&!previewUrl?'#fef2f2':'#f8fafc',color:previewUrl?'#166534':form.hasVat==='yes'&&!previewUrl?'#ef4444':'#64748b',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                {uploading?'⏳ جاري الرفع...':previewUrl?'✅ تم رفع الفاتورة — اضغط لتغييرها':form.hasVat==='yes'?'📎 رفع صورة الفاتورة (مطلوب)':'📎 رفع صورة الفاتورة'}
               </button>
               {previewUrl && previewUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) && (
                 <img src={previewUrl} alt="فاتورة" style={{width:'100%',objectFit:'cover',maxHeight:100,borderRadius:8,marginTop:8,border:'1px solid #e2e8f0'}}/>
@@ -344,7 +360,7 @@ export default function PurchasesPage() {
                   </div>
                   <div style={{textAlign:'left' as const,flexShrink:0}}>
                     <div style={{fontSize:15,fontWeight:800,color:'#10b981'}}>{Number(p.total_amount||0).toFixed(2)}</div>
-                    <div style={{fontSize:10,color:'#94a3b8'}}>ر.س شامل الضريبة</div>
+                    <div style={{fontSize:10,color:'#94a3b8'}}>ر.س</div>
                   </div>
                 </div>
               </div>
