@@ -40,10 +40,14 @@ export default function SettingsPage() {
     setSending(true)
     setSendMsg('')
     try {
-      const res = await fetch('/api/notify-low-stock', { method:'POST' })
+      const res = await fetch('/api/notify-low-stock', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ org_id: orgId })
+      })
       const data = await res.json()
       if (data.success) setSendMsg('✅ تم إرسال إشعار المخزون الناقص بنجاح')
-      else setSendMsg('❌ فشل الإرسال')
+      else setSendMsg('❌ ' + (data.message || 'فشل الإرسال'))
     } catch { setSendMsg('❌ خطأ في الاتصال') }
     setSending(false)
     setTimeout(() => setSendMsg(''), 5000)
