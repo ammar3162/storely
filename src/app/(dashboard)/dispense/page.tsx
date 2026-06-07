@@ -27,12 +27,33 @@ export default function DispensePage() {
 
   async function init() {
     setLoading(true)
+
+    // تحقق من sessionStorage أولاً
+    const cachedOrg = sessionStorage.getItem('s_org_id')
+    const cachedProfile = sessionStorage.getItem('s_profile_id')
+
+    if (cachedOrg && cachedProfile) {
+      setOrgId(cachedOrg)
+      setProfileId(cachedProfile)
+      await Promise.all([
+        loadProducts(cachedOrg),
+        loadHistory(cachedOrg)
+      ])
+      setLoading(false)
+      return
+    }
+
+    // إذا ما في cache، اجلب من Supabase
     const { data:{ user } } = await sb.auth.getUser()
     if (!user) return
     const { data: profile } = await sb.from('profiles').select('id, org_id').eq('id', user.id).single()
     if (!profile?.org_id) return
+
+    sessionStorage.setItem('s_org_id', profile.org_id)
+    sessionStorage.setItem('s_profile_id', profile.id)
     setOrgId(profile.org_id)
     setProfileId(profile.id)
+
     await Promise.all([
       loadProducts(profile.org_id),
       loadHistory(profile.org_id)
@@ -41,17 +62,17 @@ export default function DispensePage() {
   }
 
   async function loadProducts(oid: string) {
-    const { data } = await sb.from('products').select('*')
+    const { data } = await sb.from('products').select('id,name,sku,unit,qty,reorder_point')
       .eq('org_id', oid).eq('is_active', true).order('name')
     setProducts(data||[])
   }
 
   async function loadHistory(oid: string) {
     const { data } = await sb.from('stock_movements')
-      .select('*, products!inner(name,unit,org_id)')
+      .select('id,qty_change,note,created_at,products!inner(name,unit,org_id)')
       .eq('type','out')
       .eq('products.org_id', oid)
-      .order('created_at',{ascending:false}).limit(15)
+      .order('created_at',{ascending:false}).limit(10)
     setHistory(data||[])
   }
 
@@ -93,8 +114,20 @@ export default function DispensePage() {
   }
 
   if (loading) return (
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:300,color:'#94a3b8',fontSize:14}}>
-      جاري التحميل...
+    <div style={{fontFamily:"'Segoe UI',system-ui,sans-serif",direction:'rtl',maxWidth:1100,margin:'0 auto'}}>
+      <div style={{marginBottom:20}}>
+        <div style={{height:24,width:140,background:'#e2e8f0',borderRadius:6,marginBottom:8}}/>
+        <div style={{height:14,width:200,background:'#f1f5f9',borderRadius:6}}/>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+        {[1,2].map(i=>(
+          <div key={i} style={{background:'white',borderRadius:12,padding:20,border:'1px solid #e8ecf0'}}>
+            {[80,60,100,60,40].map((w,j)=>(
+              <div key={j} style={{height:14,width:w+'%',background:'#f1f5f9',borderRadius:6,marginBottom:14}}/>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   )
 
