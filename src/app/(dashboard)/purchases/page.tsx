@@ -21,7 +21,7 @@ export default function PurchasesPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
     category:'مخزون', name:'', qty:'', unit:'قطعة',
-    reorder_point:'5', total_amount:'', supplier:'', note:'', invoice_image:'',
+    reorder_point:'5', total_amount:'', supplier:'', note:'', invoice_image:'', hasVat:'',
   })
   const sb = createClient()
 
@@ -121,7 +121,7 @@ export default function PurchasesPage() {
     }
 
     setSuccess('تم تسجيل الشراء'+(form.category==='مخزون'?' وتحديث المخزون ✅':' ✅'))
-    setForm({category:'مخزون',name:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:''})
+    setForm({category:'مخزون',name:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:''})
     setPreviewUrl(null)
     setLoading(false)
     loadHistory(orgId)
@@ -280,7 +280,7 @@ export default function PurchasesPage() {
               <input ref={fileRef} type="file" accept="image/*,.pdf" style={{display:'none'}}
                 onChange={e=>{if(e.target.files?.[0]) handleImage(e.target.files[0])}}/>
               <button type="button" onClick={()=>fileRef.current?.click()}
-                style={{width:'100%',padding:'10px',border:'1.5px dashed #cbd5e1',borderRadius:8,background:previewUrl?'#f0fdf4':'#f8fafc',color:previewUrl?'#166534':'#64748b',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                required={form.hasVat==='yes'} style={{width:'100%',padding:'10px',border:'1.5px dashed #cbd5e1',borderRadius:8,background:previewUrl?'#f0fdf4':'#f8fafc',color:previewUrl?'#166534':'#64748b',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                 {uploading?'⏳ جاري الرفع...':previewUrl?'✅ تم رفع الفاتورة — اضغط لتغييرها':'📎 رفع صورة الفاتورة'}
               </button>
               {previewUrl && previewUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) && (
