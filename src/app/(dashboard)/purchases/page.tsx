@@ -25,7 +25,14 @@ export default function PurchasesPage() {
   })
   const sb = createClient()
 
-  useEffect(() => { init() }, [])
+  useEffect(() => {
+    init()
+    const interval = setInterval(() => {
+      const oid = sessionStorage.getItem('s_org_id')
+      if (oid) loadHistory(oid)
+    }, 3 * 60 * 1000) // كل 3 دقائق
+    return () => clearInterval(interval)
+  }, [])
 
   async function init() {
     const cachedOrg = sessionStorage.getItem('s_org_id')
