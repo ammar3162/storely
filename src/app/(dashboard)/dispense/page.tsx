@@ -10,7 +10,8 @@ const REASONS = ['استهلاك يومي','طلب فرع','تلف','هدية','
 export default function DispensePage() {
   const [products, setProducts] = useState<any[]>([])
   const [history, setHistory]   = useState<any[]>([])
-  const [loading, setLoading]   = useState(false)
+  const [loading, setLoading]   = useState(true)
+  const [saving, setSaving]     = useState(false)
   const [success, setSuccess]   = useState('')
   const [productId, setProductId] = useState('')
   const [qty, setQty]           = useState('')
@@ -19,18 +20,24 @@ export default function DispensePage() {
   const [showScan, setShowScan] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [orgId, setOrgId]       = useState<string|null>(null)
+  const [profileId, setProfileId] = useState<string|null>(null)
   const sb = createClient()
 
   useEffect(() => { init() }, [])
 
   async function init() {
+    setLoading(true)
     const { data:{ user } } = await sb.auth.getUser()
     if (!user) return
-    const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
+    const { data: profile } = await sb.from('profiles').select('id, org_id').eq('id', user.id).single()
     if (!profile?.org_id) return
     setOrgId(profile.org_id)
-    loadProducts(profile.org_id)
-    loadHistory(profile.org_id)
+    setProfileId(profile.id)
+    await Promise.all([
+      loadProducts(profile.org_id),
+      loadHistory(profile.org_id)
+    ])
+    setLoading(false)
   }
 
   async function loadProducts(oid: string) {
@@ -54,23 +61,23 @@ export default function DispensePage() {
   }
 
   async function handleDispense() {
-    if (!productId||!qty||!orgId) return
-    setLoading(true)
+    if (!productId||!qty||!orgId||!profileId) return
+    setSaving(true)
     const qtyNum  = Number(qty)
     const product = products.find(p=>p.id===productId)
-    if (!product) { setLoading(false); return }
-    if (product.qty < qtyNum) { alert('الكمية المطلوبة أكبر من المتاح!'); setLoading(false); return }
-    const { data:{ user } } = await sb.auth.getUser()
-    const { data: profile }  = await sb.from('profiles').select('id').eq('id',user!.id).single()
+    if (!product) { setSaving(false); return }
+    if (product.qty < qtyNum) { alert('الكمية المطلوبة أكبر من المتاح!'); setSaving(false); return }
+
     await sb.from('stock_movements').insert({
-      product_id: productId, profile_id: profile?.id,
+      product_id: productId, profile_id: profileId,
       type:'out', qty_change:-qtyNum,
       note: reason+(note?' — '+note:''),
     })
+
     setSuccess('تم صرف '+qtyNum+' '+product.unit+' من '+product.name+' ✅')
     fetch('/api/send-pending-notifications', { method:'POST' }).catch(()=>{})
     setProductId(''); setQty(''); setNote(''); setReason('استهلاك يومي')
-    setLoading(false)
+    setSaving(false)
     loadProducts(orgId); loadHistory(orgId)
     setTimeout(()=>setSuccess(''),4000)
   }
@@ -84,6 +91,12 @@ export default function DispensePage() {
     borderRadius:9, fontSize:14, outline:'none', boxSizing:'border-box',
     background:'white', color:'#1e293b', fontFamily:'inherit', transition:'border 0.15s',
   }
+
+  if (loading) return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:300,color:'#94a3b8',fontSize:14}}>
+      جاري التحميل...
+    </div>
+  )
 
   return (
     <div style={{fontFamily:"'Segoe UI',system-ui,sans-serif",direction:'rtl',maxWidth:1100,margin:'0 auto'}}>
@@ -109,7 +122,6 @@ export default function DispensePage() {
       )}
 
       <div className="d-grid">
-        {/* Form */}
         <div style={{background:'white',borderRadius:12,padding:20,border:'1px solid #e8ecf0',boxShadow:'0 1px 4px rgba(0,0,0,0.04)'}}>
           <div style={{fontSize:15,fontWeight:700,color:'#0f172a',marginBottom:16}}>بيانات الصرف</div>
           <form onSubmit={e=>{e.preventDefault()}}>
@@ -121,12 +133,13 @@ export default function DispensePage() {
                     setShowScan(false)
                     const found = products.find(p => p.sku === code)
                     if (found) setProductId(found.id)
-                    else alert('المنتج غير موجود — تأكد من تسجيل الباركود عند إضافة المنتج')
+                    else alert('المنتج غير موجود')
                   }}
                   onClose={() => setShowScan(false)}
                 />
               </Suspense>
             )}
+
             <div style={{marginBottom:14}}>
               <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:6}}>المنتج</label>
               <div style={{display:'flex',gap:8,marginBottom:8}}>
@@ -177,13 +190,13 @@ export default function DispensePage() {
               <textarea value={note} onChange={e=>setNote(e.target.value)} style={{...inp,minHeight:72,resize:'none'}} placeholder="أي تفاصيل إضافية..."/>
             </div>
 
-            <button type="button" disabled={loading} onClick={(e)=>{e.preventDefault();if(!productId||!qty)return;setShowConfirm(true)}} style={{width:'100%',padding:'13px',background:loading?'#94a3b8':'#ef4444',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',transition:'background 0.15s',boxShadow:'0 2px 8px rgba(239,68,68,0.25)'}}>
-              {loading ? 'جاري الحفظ...' : 'تسجيل الصرف ←'}
+            <button type="button" disabled={saving} onClick={()=>{if(!productId||!qty)return;setShowConfirm(true)}}
+              style={{width:'100%',padding:'13px',background:saving?'#94a3b8':'#ef4444',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:saving?'not-allowed':'pointer',fontFamily:'inherit',transition:'background 0.15s',boxShadow:'0 2px 8px rgba(239,68,68,0.25)'}}>
+              {saving ? 'جاري الحفظ...' : 'تسجيل الصرف ←'}
             </button>
           </form>
         </div>
 
-        {/* History */}
         <div style={{background:'white',borderRadius:12,border:'1px solid #e8ecf0',overflow:'hidden',boxShadow:'0 1px 4px rgba(0,0,0,0.04)'}}>
           <div style={{padding:'14px 18px',borderBottom:'1px solid #f1f5f9',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <div style={{fontSize:15,fontWeight:700,color:'#0f172a'}}>آخر عمليات الصرف</div>
@@ -214,6 +227,7 @@ export default function DispensePage() {
           </div>
         </div>
       </div>
+
       {showConfirm && (
         <ConfirmDialog
           title='تأكيد الصرف'
