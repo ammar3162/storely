@@ -9,12 +9,6 @@ const CAT_ICONS: Record<string,string> = { 'مخزون':'📦', 'صيانة':'�
 
 const UNITS = ['قطعة','كيلو','كيس','كرتون','لتر','علبة','باكيت','درزن','رول','غرام','أخرى']
 
-const NAME_EXAMPLES: Record<string,string[]> = {
-  'مخزون': ['زيت طعام','أرز','دقيق','سكر','ملح','بهارات','قهوة','شاي','حليب','بيض','خضروات','لحم','دجاج','مناديل','أكياس','عبوات تغليف'],
-  'صيانة': ['صيانة مكيف','صيانة ثلاجة','صيانة طابعة','تصليح كهرباء','سباكة','دهان','تنظيف مكثف'],
-  'أخرى':  ['إيجار','فاتورة كهرباء','فاتورة ماء','اشتراك إنترنت','مستلزمات مكتبية','أدوات نظافة'],
-}
-
 export default function PurchasesPage() {
   const [history, setHistory]       = useState<any[]>([])
   const [loading, setLoading]       = useState(false)
@@ -142,8 +136,6 @@ export default function PurchasesPage() {
   const totalVat   = history.reduce((s,p)=>s+Number(p.vat_amount||0),0)
   const totalNet   = history.reduce((s,p)=>s+Number(p.amount||0),0)
 
-  const examples = NAME_EXAMPLES[form.category]||[]
-
   const inp: React.CSSProperties = {
     width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0',
     borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box',
@@ -233,16 +225,6 @@ export default function PurchasesPage() {
                 placeholder={form.category==='مخزون'?'مثال: مواد خام، مستلزمات، بضاعة...':form.category==='صيانة'?'مثال: صيانة جهاز، تصليح معدات...':'مثال: إيجار، فاتورة، خدمة...'}/>
 
               {/* أمثلة سريعة */}
-              {examples.length>0 && (
-                <div style={{marginTop:8}}>
-                  <div style={{fontSize:10,color:'#94a3b8',marginBottom:5,fontWeight:600}}>أمثلة سريعة:</div>
-                  <div style={{display:'flex',gap:6,flexWrap:'wrap' as const}}>
-                    {examples.map(ex=>(
-                      <button key={ex} type="button" className="ex-chip"
-                        onClick={()=>setForm({...form,name:ex})}>
-                        {ex}
-                      </button>
-                    ))}
                   </div>
                 </div>
               )}
