@@ -18,7 +18,18 @@ export default function PurchaseReportPage() {
 
   async function load() {
     setLoading(true)
-    const { data } = await supabase.from('purchases').select('*').order('created_at', { ascending: false })
+    const cachedOrg = sessionStorage.getItem('s_org_id')
+    let orgId = cachedOrg
+    if (!orgId) {
+      const { data:{ user } } = await supabase.auth.getUser()
+      if (!user) { setLoading(false); return }
+      const { data: profile } = await supabase.from('profiles').select('org_id').eq('id', user.id).single()
+      if (!profile?.org_id) { setLoading(false); return }
+      orgId = profile.org_id
+      sessionStorage.setItem('s_org_id', orgId)
+    }
+    const { data } = await supabase.from('purchases').select('*')
+      .eq('org_id', orgId).order('created_at', { ascending: false })
     setPurchases(data || [])
     setLoading(false)
   }
