@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/toast'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -80,7 +81,7 @@ export default function DispensePage() {
     const product = products.find(p=>p.id===productId)
     if (!product) { setSaving(false); return }
     if (product.qty < qtyNum) {
-      alert('الكمية المطلوبة أكبر من المتاح!')
+      toast('الكمية المطلوبة أكبر من المتاح!', 'warning')
       setSaving(false)
       return
     }
@@ -94,7 +95,7 @@ export default function DispensePage() {
     })
 
     if (error) {
-      alert('خطأ: ' + error.message)
+      toast('خطأ في تسجيل الصرف', 'error')
       setSaving(false)
       return
     }
@@ -175,7 +176,7 @@ export default function DispensePage() {
                   setShowScan(false)
                   const found = products.find(p => p.sku === code)
                   if (found) setProductId(found.id)
-                  else alert('المنتج غير موجود')
+                  else toast('المنتج غير موجود في المخزون', 'warning')
                 }}
                 onClose={() => setShowScan(false)}
               />

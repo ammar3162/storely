@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/toast'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -72,7 +73,7 @@ export default function InventoryPage() {
         })
       }
     } else {
-      if (Number(form.qty) === 0) { alert('يرجى إدخال كمية أكبر من صفر'); setSaving(false); return }
+      if (Number(form.qty) === 0) { toast('يرجى إدخال كمية أكبر من صفر', 'warning'); setSaving(false); return }
       const { data: newProduct } = await supabase.from('products').insert({
         org_id:profile.org_id, name:form.name, sku:form.sku||null,
         unit:form.unit, qty:Number(form.qty),

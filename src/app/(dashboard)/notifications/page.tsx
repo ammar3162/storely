@@ -12,12 +12,17 @@ export default function NotificationsPage() {
 
   async function load() {
     setLoading(true)
-    const { data: { user } } = await sb.auth.getUser()
-    if (!user) return
-    const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
-    if (!profile) return
+    let orgId = sessionStorage.getItem('s_org_id')
+    if (!orgId) {
+      const { data:{ user } } = await sb.auth.getUser()
+      if (!user) return
+      const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
+      if (!profile) return
+      orgId = profile.org_id
+      sessionStorage.setItem('s_org_id', orgId!)
+    }
     const { data } = await sb.from('notifications')
-      .select('*').eq('org_id', profile.org_id)
+      .select('*').eq('org_id', orgId)
       .order('created_at', { ascending: false })
     setNotifications(data || [])
     setLoading(false)

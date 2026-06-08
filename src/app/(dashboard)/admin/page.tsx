@@ -222,7 +222,7 @@ export default function AdminPage() {
                           )}
                           {u.status!=='deleted' && (
                             <button className="action-btn" disabled={isSaving}
-                              onClick={()=>{ if(confirm('حذف هذا المستخدم نهائياً؟')) updateStatus(u.id,'deleted') }}
+                              onClick={()=>{ if(window.confirm('حذف هذا المستخدم نهائياً؟')) updateStatus(u.id,'deleted') }}
                               style={{background:'#fee2e2',color:'#991b1b'}}>
                               {isSaving?'...':'✕ حذف'}
                             </button>
