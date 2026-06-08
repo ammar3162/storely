@@ -23,14 +23,24 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const path      = request.nextUrl.pathname
-  const isLogin   = path.startsWith('/login')
-  const isPending = path.startsWith('/pending')
-  const isApi     = path.startsWith('/api')
-  const isStatic  = path.startsWith('/_next') || path.startsWith('/favicon') || path.includes('.')
+  const path       = request.nextUrl.pathname
+  const isLogin    = path.startsWith('/login')
+  const isPending  = path.startsWith('/pending')
+  const isApi      = path.startsWith('/api')
+  const isStatic   = path.startsWith('/_next') || path.startsWith('/favicon') || path.includes('.')
   const isAdminPanel = path.startsWith('/storely-admin')
-  const isStaff = path.startsWith('/staff')
-  const isPublic  = isLogin || isPending || isApi || isAdminPanel || isStaff || isStatic
+  const isStaff    = path.startsWith('/staff')
+  const isPublic   = isLogin || isPending || isApi || isStaff || isStatic
+
+  if (isAdminPanel) {
+    const adminToken   = request.cookies.get('storely_admin_token')?.value
+    const correctToken = process.env.ADMIN_PASSWORD || 'storely@2026'
+    const isAdminRoot  = path === '/storely-admin' || path === '/storely-admin/'
+    if (!isAdminRoot && adminToken !== correctToken) {
+      return NextResponse.redirect(new URL('/storely-admin', request.url))
+    }
+    return supabaseResponse
+  }
 
   if (!user && !isPublic) {
     return NextResponse.redirect(new URL('/login', request.url))
@@ -39,35 +49,22 @@ export async function middleware(request: NextRequest) {
   if (user && isLogin) {
     const { data: profile } = await supabase
       .from('profiles').select('status').eq('id', user.id).single()
-
-    if (profile?.status === 'pending') {
-      return NextResponse.redirect(new URL('/pending', request.url))
-    }
-    if (profile?.status === 'suspended') {
-      return NextResponse.redirect(new URL('/login?reason=suspended', request.url))
-    }
-    if (profile?.status === 'deleted') {
-      return NextResponse.redirect(new URL('/login?reason=deleted', request.url))
-    }
+    if (profile?.status === 'pending') return NextResponse.redirect(new URL('/pending', request.url))
+    if (profile?.status === 'suspended') return NextResponse.redirect(new URL('/login?reason=suspended', request.url))
+    if (profile?.status === 'deleted') return NextResponse.redirect(new URL('/login?reason=deleted', request.url))
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   if (user && !isPublic) {
     const { data: profile } = await supabase
       .from('profiles').select('status,subscription_type,subscription_ends_at,role').eq('id', user.id).single()
-
-    if (profile?.status === 'pending') {
-      return NextResponse.redirect(new URL('/pending', request.url))
-    }
+    if (profile?.status === 'pending') return NextResponse.redirect(new URL('/pending', request.url))
     if (profile?.status === 'suspended' || profile?.status === 'deleted') {
       await supabase.auth.signOut()
-      const reason = profile.status === 'suspended' ? 'suspended' : 'deleted'
-      return NextResponse.redirect(new URL('/login?reason='+reason, request.url))
+      return NextResponse.redirect(new URL('/login?reason='+(profile.status === 'suspended' ? 'suspended' : 'deleted'), request.url))
     }
-
     if (profile?.subscription_type === 'paid' && profile?.subscription_ends_at) {
-      const expired = new Date(profile.subscription_ends_at).getTime() < Date.now()
-      if (expired) {
+      if (new Date(profile.subscription_ends_at).getTime() < Date.now()) {
         await supabase.auth.signOut()
         return NextResponse.redirect(new URL('/login?reason=expired', request.url))
       }
