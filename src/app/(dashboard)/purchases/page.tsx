@@ -42,13 +42,14 @@ export default function PurchasesPage() {
       sessionStorage.setItem('s_profile_id', uid!)
     }
     setOrgId(oid!); setUserId(uid!)
-    loadHistory(oid!)
+    await loadHistory(oid!)
   }
 
   async function loadHistory(oid: string) {
     const { data } = await sb.from('purchases').select('*')
       .eq('org_id', oid).order('created_at',{ascending:false}).limit(25)
     setHistory(data||[])
+    setHistoryLoaded(true)
   }
 
   async function handleImage(file: File) {
@@ -133,6 +134,7 @@ export default function PurchasesPage() {
   const total  = Number(form.total_amount)||0
   const amount = form.hasVat==='yes' && total>0 ? (total/1.15).toFixed(2) : total.toFixed(2)
   const vat    = form.hasVat==='yes' && total>0 ? (total-Number(amount)).toFixed(2) : '0.00'
+  const [historyLoaded, setHistoryLoaded] = useState(false)
   const totalSpent = history.reduce((s,p)=>s+Number(p.total_amount||0),0)
   const totalVat   = history.reduce((s,p)=>s+Number(p.vat_amount||0),0)
   const totalNet   = history.reduce((s,p)=>s+Number(p.amount||0),0)
