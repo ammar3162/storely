@@ -33,8 +33,11 @@ export default function DashboardPage() {
         else if (days <= 7) setSubAlert(`ينتهي اشتراكك بعد ${days} أيام — يرجى التجديد قبل الانتهاء`)
       }
     }
-    const { data: profile2 } = await supabase.from('profiles').select('org_id').eq('id', user.id).single()
-    const orgId = profile2?.org_id
+    const orgId = profile?.org_id
+    if (orgId) {
+      sessionStorage.setItem('s_org_id', orgId)
+      sessionStorage.setItem('s_profile_id', user.id)
+    }
     const [{ data: products }, { data: purchases }, { data: movements }] = await Promise.all([
       supabase.from('products').select('id,name,qty,reorder_point,unit').eq('org_id', orgId).eq('is_active', true),
       supabase.from('purchases').select('amount,created_at').eq('org_id', orgId),

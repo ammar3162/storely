@@ -2,7 +2,6 @@
 import { toast } from '@/components/toast'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
-import ConfirmDialog from '@/components/ConfirmDialog'
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 import { createClient } from '@/lib/supabase/client'
 
@@ -274,14 +273,20 @@ export default function DispensePage() {
       </div>
 
       {showConfirm && (
-        <ConfirmDialog
-          title='تأكيد الصرف'
-          message={`هل تريد صرف ${qty} ${selected?.unit} من ${selected?.name}؟`}
-          confirmText='تسجيل الصرف'
-          type='warning'
-          onConfirm={async()=>{ setShowConfirm(false); await handleDispense() }}
-          onCancel={()=>setShowConfirm(false)}
-        />
+        <div style={{position:'fixed',inset:0,zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.5)',backdropFilter:'blur(4px)'}} onClick={()=>setShowConfirm(false)}/>
+          <div style={{background:'white',borderRadius:16,padding:28,width:'100%',maxWidth:340,position:'relative',boxShadow:'0 24px 64px rgba(0,0,0,.3)',direction:'rtl',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif"}}>
+            <div style={{width:48,height:48,borderRadius:13,background:'#fffbeb',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',border:'1.5px solid #fde68a',fontSize:22}}>⚠️</div>
+            <h3 style={{fontSize:15,fontWeight:800,color:'#0f172a',textAlign:'center',marginBottom:8}}>تأكيد الصرف</h3>
+            <p style={{fontSize:13,color:'#64748b',textAlign:'center',marginBottom:20,lineHeight:1.6}}>
+              هل تريد صرف <b>{qty}</b> {selected?.unit} من <b>{selected?.name}</b>؟
+            </p>
+            <div style={{display:'flex',gap:10}}>
+              <button onClick={()=>setShowConfirm(false)} style={{flex:1,padding:'11px',background:'#f8fafc',color:'#64748b',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+              <button onClick={async()=>{ setShowConfirm(false); await handleDispense() }} style={{flex:2,padding:'11px',background:'#f59e0b',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>تسجيل الصرف</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
