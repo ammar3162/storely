@@ -80,7 +80,7 @@ export default function PurchasesPage() {
       org_id:orgId, profile_id:userId,
       category:form.category, name:form.name,
       qty:form.qty ? Number(form.qty) : null,
-      unit:form.unit||null, reorder_point:Number(form.reorder_point)||5,
+      unit:form.unit||null,
       amount, vat_amount:vat, total_amount:total,
       supplier:form.supplier, note:form.note||null,
       invoice_image:form.invoice_image||null,
