@@ -8,23 +8,28 @@ import { colors, radius, font, card, btnPrimary, btnSecondary, inp, tag, pageTit
 function Tab({ label, icon, active, onClick }: { label:string; icon:string; active:boolean; onClick:()=>void }) {
   return (
     <button onClick={onClick} style={{
-      display:'flex', alignItems:'center', gap:8, padding:'14px 24px',
+      display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'14px 16px',
       background: active ? '#fff' : 'transparent', border: 'none',
-      borderBottom: active ? `2px solid ${colors.primary}` : '2px solid transparent',
+      borderBottom: active ? `3px solid ${colors.primary}` : '3px solid transparent',
       color: active ? colors.primary : colors.text3,
-      fontSize: '13px', fontWeight: active ? 700 : 600,
+      fontSize: '13px', fontWeight: active ? 700 : 600, flex: 1,
       cursor: 'pointer', fontFamily: font.family, transition: 'all .2s ease', whiteSpace: 'nowrap' as const,
     }}>
-      <span style={{fontSize:16}}>{icon}</span>{label}
+      <span style={{fontSize:16}}>{icon}</span>
+      <span>{label}</span>
     </button>
   )
 }
 
 function StatCard({ label, value, color, bg, border }: any) {
   return (
-    <div style={{background:bg, borderRadius:radius.lg, padding:'20px 16px', border:`1px solid ${border}`, textAlign:'center' as const, boxShadow:'0 2px 4px rgba(0,0,0,0.02)', transition:'transform 0.2s', cursor:'default'}}>
-      <div style={{fontSize:'24px', fontWeight:900, color, letterSpacing:'-0.5px', lineHeight:1.2}}>{value}</div>
-      <div style={{fontSize:'12px', color:colors.text3, marginTop:6, fontWeight:600}}>{label}</div>
+    <div style={{
+      background:bg, borderRadius:radius.md, padding:'16px 12px', border:`1px solid ${border}`, 
+      textAlign:'center' as const, minWidth:'120px', flex:'1 1 0px',
+      boxShadow:'0 2px 4px rgba(0,0,0,0.01)'
+    }}>
+      <div style={{fontSize:'18px', fontWeight:900, color, lineHeight:1.2, whiteSpace:'nowrap' as const}}>{value}</div>
+      <div style={{fontSize:'11px', color:colors.text3, marginTop:4, fontWeight:600, whiteSpace:'nowrap' as const}}>{label}</div>
     </div>
   )
 }
@@ -71,29 +76,30 @@ function DispenseReport() {
   const totalQty = filtered.reduce((s,m)=>s+Math.abs(m.qty_change),0)
   const productMap: Record<string,number> = {}
   filtered.forEach(m=>{ const n=(m.products as any)?.name||'غير معروف'; productMap[n]=(productMap[n]||0)+Math.abs(m.qty_change) })
-  const topProducts = Object.entries(productMap).sort((a,b)=>b[1]-a[1]).slice(0,5)
-  const barColors = [colors.primary, colors.info, '#8b5cf6', colors.warning, colors.danger]
+  const topProducts = Object.entries(productMap).sort((a,b)=>b[1]-a[1]).slice(0,3)
+  const barColors = [colors.primary, colors.info, '#8b5cf6']
   const hasFilter = !!(search||dateFrom||dateTo)
 
   return (
     <div>
-      <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(240px, 1fr))', gap:14, marginBottom:20}}>
-        <StatCard label="إجمالي الكميات المصروفة"  value={totalQty}                       color={colors.danger}  bg={colors.dangerLight}  border={colors.dangerBorder}/>
-        <StatCard label="عدد عمليات الصرف"  value={filtered.length}                color={colors.info}    bg={colors.infoLight}    border={colors.infoBorder}/>
-        <StatCard label="إجمالي الأصناف المختلفة"  value={Object.keys(productMap).length} color='#8b5cf6'        bg='#f5f3ff'             border='#ddd6fe'/>
+      {/* هيدر الإحصائيات سريع التمرير على الجوال */}
+      <div style={{display:'flex', gap:10, marginBottom:16, overflowX:'auto', paddingBottom:4, msOverflowStyle:'none', scrollbarWidth:'none'}}>
+        <StatCard label="المصروف"  value={totalQty} color={colors.danger}  bg={colors.dangerLight}  border={colors.dangerBorder}/>
+        <StatCard label="العمليات"  value={filtered.length} color={colors.info}    bg={colors.infoLight}    border={colors.infoBorder}/>
+        <StatCard label="الأصناف"  value={Object.keys(productMap).length} color='#8b5cf6' bg='#f5f3ff' border='#ddd6fe'/>
       </div>
 
       {topProducts.length>0&&(
-        <div style={{...card, padding:20, marginBottom:20, border:`1px solid ${colors.border}`}}>
-          <div style={{fontSize:'14px', fontWeight:700, color:colors.text, marginBottom:16, display:'flex', alignItems:'center', gap:6}}>🏆 الأصناف الأكثر صرفاً</div>
-          <div style={{display:'flex', flexDirection:'column', gap:14}}>
+        <div style={{...card, padding:14, marginBottom:16, border:`1px solid ${colors.border}`}}>
+          <div style={{fontSize:'12px', fontWeight:700, color:colors.text, marginBottom:12}}>🏆 الأكثر صرفاً</div>
+          <div style={{display:'flex', flexDirection:'column', gap:10}}>
             {topProducts.map(([name,qty],i)=>{
               const pct=Math.round((qty/topProducts[0][1])*100)
-              return (<div key={i} style={{display:'flex', alignItems:'center', gap:12}}>
-                <div style={{width:28, height:28, borderRadius:radius.md, background:barColors[i]+'15', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}><span style={{fontSize:12, fontWeight:800, color:barColors[i]}}>{i+1}</span></div>
+              return (<div key={i} style={{display:'flex', alignItems:'center', gap:10}}>
+                <div style={{width:24, height:24, borderRadius:radius.sm, background:barColors[i]+'15', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}><span style={{fontSize:11, fontWeight:800, color:barColors[i]}}>{i+1}</span></div>
                 <div style={{flex:1, minWidth:0}}>
-                  <div style={{display:'flex', justifyContent:'space-between', marginBottom:6}}><span style={{fontSize:'13px', fontWeight:600, color:colors.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const}}>{name}</span><span style={{fontSize:'13px', fontWeight:800, color:barColors[i], flexShrink:0, marginRight:8}}>{qty}</span></div>
-                  <div style={{height:6, background:colors.bg, borderRadius:99}}><div style={{height:'100%', width:pct+'%', background:barColors[i], borderRadius:99, transition:'width .5s ease'}}/></div>
+                  <div style={{display:'flex', justifyContent:'space-between', marginBottom:4}}><span style={{fontSize:'12px', fontWeight:600, color:colors.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const}}>{name}</span><span style={{fontSize:'12px', fontWeight:800, color:barColors[i]}}>{qty}</span></div>
+                  <div style={{height:4, background:colors.bg, borderRadius:99}}><div style={{height:'100%', width:pct+'%', background:barColors[i], borderRadius:99}}/></div>
                 </div>
               </div>)
             })}
@@ -101,40 +107,54 @@ function DispenseReport() {
         </div>
       )}
 
-      <div style={{...card, overflow:'hidden', border:`1px solid ${colors.border}`}}>
-        <div style={{padding:'14px 16px', borderBottom:`1px solid ${colors.border}`, background:'#fcfcfd', display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' as const}}>
-          <div style={{position:'relative', flex:1, minWidth:200}}>
-            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث عن منتج أو ملاحظة..." style={{...inp(), paddingRight:12}}/>
-          </div>
-          <button onClick={()=>setShowFilter(!showFilter)} style={{...btnSecondary, padding:'10px 16px', fontSize:'12px', height:'38px', background:showFilter?colors.primaryLight:colors.surface, borderColor:showFilter?colors.primaryBorder:colors.border2, color:showFilter?colors.primary:colors.text3}}>📅 تصفية بالتاريخ</button>
-          <button onClick={exportCSV} style={{...btnPrimary, padding:'10px 20px', fontSize:'12px', height:'38px'}}>📥 تصدير Excel</button>
-          {hasFilter&&<button onClick={()=>{setSearch('');setDateFrom('');setDateTo('');setShowFilter(false)}} style={{...btnSecondary, padding:'10px 14px', height:'38px', color:colors.danger, borderColor:colors.dangerBorder}}>✕ تهيئة</button>}
+      {/* شريط الفلاتر متوافق مع شاشات الجوال الصغيرة */}
+      <div style={{display:'flex', flexDirection:'column', gap:10, marginBottom:14}}>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث عن منتج أو ملاحظة..." style={{...inp(), width:'100%', height:'42px'}}/>
+        <div style={{display:'flex', gap:8}}>
+          <button onClick={()=>setShowFilter(!showFilter)} style={{...btnSecondary, flex:1, fontSize:'12px', height:'40px', justifyContent:'center', background:showFilter?colors.primaryLight:colors.surface, borderColor:showFilter?colors.primaryBorder:colors.border2, color:showFilter?colors.primary:colors.text3}}>📅 الفلترة بالتاريخ</button>
+          <button onClick={exportCSV} style={{...btnPrimary, flex:1, fontSize:'12px', height:'40px', justifyContent:'center'}}>📥 تصدير ملف Excel</button>
+          {hasFilter&&<button onClick={()=>{setSearch('');setDateFrom('');setDateTo('');setShowFilter(false)}} style={{...btnSecondary, width:'40px', height:'40px', padding:0, justifyContent:'center', color:colors.danger, borderColor:colors.dangerBorder}}>✕</button>}
         </div>
-        
-        {showFilter&&(
-          <div style={{padding:'16px', borderBottom:`1px solid ${colors.border}`, background:colors.bg, display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:12}}>
-            <div><label style={{fontSize:'12px', fontWeight:700, color:colors.text3, display:'block', marginBottom:6}}>من تاريخ</label><input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} style={inp()}/></div>
-            <div><label style={{fontSize:'12px', fontWeight:700, color:colors.text3, display:'block', marginBottom:6}}>إلى تاريخ</label><input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} style={inp()}/></div>
-          </div>
-        )}
-
-        {loading?(<div style={{padding:60, textAlign:'center'}}><div style={{width:36, height:36, border:`3px solid ${colors.border}`, borderTopColor:colors.primary, borderRadius:'50%', animation:'spin .7s linear infinite', margin:'0 auto 16px'}}/><div style={{fontSize:'13px', color:colors.text4}}>جاري تحميل البيانات...</div></div>
-        ):filtered.length===0?(<div style={{padding:64, textAlign:'center'}}><div style={{fontSize:44, marginBottom:12}}>📭</div><div style={{fontSize:'14px', fontWeight:600, color:colors.text3}}>لا توجد عمليات صرف مطابقة للبحث</div></div>
-        ):(
-          <>
-            <div style={{overflowX:'auto'}}>
-              <table style={{width:'100%', borderCollapse:'collapse' as const, minWidth:600}}>
-                <thead><tr style={{background:colors.bg, borderBottom:`1px solid ${colors.border}`}}>{['التاريخ','المنتج','الكمية المصروفة','الملاحظات'].map((h,i)=>(<th key={i} style={{padding:'12px 16px', color:colors.text3, fontSize:'12px', fontWeight:700, textAlign:'right' as const}}>{h}</th>))}</tr></thead>
-                <tbody>{filtered.map((m,i)=>(<tr key={m.id} style={{borderBottom:`1px solid ${colors.border}`, background:i%2===0?colors.surface:colors.bg, transition:'background 0.15s'}}><td style={{padding:'12px 16px', fontSize:'12px', color:colors.text3, whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA')}</td><td style={{padding:'12px 16px', fontSize:'13px', fontWeight:700, color:colors.text}}>{(m.products as any)?.name}</td><td style={{padding:'12px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder), fontSize:'12px', padding:'4px 12px', fontWeight:600}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td><td style={{padding:'12px 16px', fontSize:'12px', color:colors.text4}}>{m.note||'—'}</td></tr>))}</tbody>
-              </table>
-            </div>
-            <div style={{padding:'14px 16px', background:colors.primaryLight, borderTop:`1px solid ${colors.primaryBorder}`, display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-              <span style={{fontSize:'13px', fontWeight:700, color:colors.primary}}>{filtered.length} عملية صرف</span>
-              <span style={{fontSize:'13px', fontWeight:800, color:colors.primary}}>{totalQty} وحدة إجمالية</span>
-            </div>
-          </>
-        )}
       </div>
+        
+      {showFilter&&(
+        <div style={{padding:'12px', borderRadius:radius.md, marginBottom:14, background:colors.bg, border:`1px solid ${colors.border}`, display:'grid', gridTemplateColumns:'1fr 1fr', gap:8}}>
+          <div><label style={{fontSize:'11px', fontWeight:700, color:colors.text3, display:'block', marginBottom:4}}>من تاريخ</label><input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} style={{...inp(), height:'36px', fontSize:'11px'}}/></div>
+          <div><label style={{fontSize:'11px', fontWeight:700, color:colors.text3, display:'block', marginBottom:4}}>إلى تاريخ</label><input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} style={{...inp(), height:'36px', fontSize:'11px'}}/></div>
+        </div>
+      )}
+
+      {loading?(
+        <div style={{padding:40, textAlign:'center'}}><div style={{width:32, height:32, border:`3px solid ${colors.border}`, borderTopColor:colors.primary, borderRadius:'50%', animation:'spin .7s linear infinite', margin:'0 auto 12px'}}/></div>
+      ):filtered.length===0?(
+        <div style={{...card, padding:40, textAlign:'center', border:`1px solid ${colors.border}`}}><div style={{fontSize:36, marginBottom:8}}>📭</div><div style={{fontSize:'13px', fontWeight:600, color:colors.text3}}>لا توجد عمليات صرف</div></div>
+      ):(
+        <div style={{display:'flex', flexDirection:'column', gap:10}}>
+          {/* تحويل الجدول إلى بطاقات (Cards Layout) مناسبة لتطبيقات الجوال */}
+          {filtered.map((m)=>(
+            <div key={m.id} style={{...card, padding:12, border:`1px solid ${colors.border}`, display:'flex', flexDirection:'column', gap:8}}>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+                <div>
+                  <div style={{fontSize:'14px', fontWeight:700, color:colors.text}}>{(m.products as any)?.name}</div>
+                  <div style={{fontSize:'11px', color:colors.text4, marginTop:2}}>{new Date(m.created_at).toLocaleDateString('ar-SA')}</div>
+                </div>
+                <span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder), fontSize:'11px', padding:'4px 8px', fontWeight:700, borderRadius:radius.sm}}>
+                  ▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}
+                </span>
+              </div>
+              {m.note && (
+                <div style={{fontSize:'11px', color:colors.text3, background:colors.bg, padding:'6px 10px', borderRadius:radius.sm, borderLeft:`2px solid ${colors.border2}`}}>
+                  💬 {m.note}
+                </div>
+              )}
+            </div>
+          ))}
+          <div style={{padding:'12px', borderRadius:radius.md, background:colors.primaryLight, border:`1px solid ${colors.primaryBorder}`, display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:4}}>
+            <span style={{fontSize:'12px', fontWeight:700, color:colors.primary}}>{filtered.length} عملية</span>
+            <span style={{fontSize:'12px', fontWeight:800, color:colors.primary}}>{totalQty} وحدة مصروفة</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -183,38 +203,84 @@ function PurchaseReport() {
 
   return (
     <div>
-      <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:12, marginBottom:20}}>
-        <StatCard label="المجموع (بدون ضريبة)"   value={totalAmount.toFixed(2)+' ر.س'}    color={colors.text2}   bg={colors.bg}           border={colors.border2}/>
-        <StatCard label="ضريبة القيمة المضافة"    value={totalVat.toFixed(2)+' ر.س'}       color={colors.warning} bg={colors.warningLight} border={colors.warningBorder}/>
-        <StatCard label="الإجمالي شامل الضريبة" value={totalWithVat.toFixed(2)+' ر.س'}  color={colors.primary} bg={colors.primaryLight} border={colors.primaryBorder}/>
-        <StatCard label="إجمالي الفواتير"          value={filtered.length}                   color={colors.info}    bg={colors.infoLight}    border={colors.infoBorder}/>
+      {/* كروت الإحصائيات المالية سريعة التمرير العرضي */}
+      <div style={{display:'flex', gap:10, marginBottom:16, overflowX:'auto', paddingBottom:4, msOverflowStyle:'none', scrollbarWidth:'none'}}>
+        <StatCard label="الصافي" value={totalAmount.toFixed(0)+' ر.س'} color={colors.text2} bg={colors.bg} border={colors.border2}/>
+        <StatCard label="الضريبة" value={totalVat.toFixed(0)+' ر.س'} color={colors.warning} bg={colors.warningLight} border={colors.warningBorder}/>
+        <StatCard label="الإجمالي" value={totalWithVat.toFixed(0)+' ر.س'} color={colors.primary} bg={colors.primaryLight} border={colors.primaryBorder}/>
+        <StatCard label="الفواتير" value={filtered.length} color={colors.info} bg={colors.infoLight} border={colors.infoBorder}/>
       </div>
 
-      <div style={{...card, overflow:'hidden', border:`1px solid ${colors.border}`}}>
-        <div style={{padding:'14px 16px', borderBottom:`1px solid ${colors.border}`, background:'#fcfcfd', display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' as const}}>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث باسم الصنف أو المورد..." style={{...inp(), flex:1, minWidth:180}}/>
-          <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{...inp(), width:'auto', minWidth:'120px'}}><option value="">كل الفئات</option><option value="مخزون">مخزون</option><option value="صيانة">صيانة</option><option value="أخرى">أخرى</option></select>
-          <div style={{display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' as const}}>
-            <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} style={{...inp(), width:'auto'}}/>
-            <span style={{fontSize:11, color:colors.text4}}>إلى</span>
-            <input type="date" value={dateTo}   onChange={e=>setDateTo(e.target.value)}   style={{...inp(), width:'auto'}}/>
-          </div>
-          <button onClick={exportCSV} style={{...btnPrimary, padding:'10px 18px', fontSize:'12px', height:'38px'}}>📥 تصدير Excel</button>
-          {hasFilter&&<button onClick={()=>{setSearch('');setFilterCat('');setDateFrom('');setDateTo('')}} style={{...btnSecondary, padding:'10px 14px', height:'38px', color:colors.danger, borderColor:colors.dangerBorder}}>✕</button>}
+      {/* عناصر التحكم والتصفية على الموبايل */}
+      <div style={{display:'flex', flexDirection:'column', gap:10, marginBottom:14}}>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث باسم الصنف أو المورد..." style={{...inp(), width:'100%', height:'42px'}}/>
+        <div style={{display:'flex', gap:8}}>
+          <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{...inp(), flex:1, height:'40px', fontSize:'12px', padding:'0 8px'}}><option value="">كل الفئات</option><option value="مخزون">مخزون</option><option value="صيانة">صيانة</option><option value="أخرى">أخرى</option></select>
+          <button onClick={exportCSV} style={{...btnPrimary, flex:1, fontSize:'12px', height:'40px', justifyContent:'center'}}>📥 تصدير Excel</button>
         </div>
-
-        {loading?(<div style={{padding:60, textAlign:'center'}}><div style={{width:36, height:36, border:`3px solid ${colors.border}`, borderTopColor:colors.primary, borderRadius:'50%', animation:'spin .7s linear infinite', margin:'0 auto 12px'}}/></div>
-        ):filtered.length===0?(<div style={{padding:64, textAlign:'center'}}><div style={{fontSize:44, marginBottom:12}}>🧾</div><div style={{fontSize:'14px', fontWeight:600, color:colors.text3}}>لا توجد فواتير مشتريات مطابقة للبحث</div></div>
-        ):(
-          <div style={{overflowX:'auto'}}>
-            <table style={{width:'100%', borderCollapse:'collapse' as const, minWidth:750}}>
-              <thead><tr style={{background:colors.bg, borderBottom:`1px solid ${colors.border}`}}>{['التاريخ','الصنف','الفئة','الصافي','الضريبة','الإجمالي','المورد','المرفق'].map((h,i)=>(<th key={i} style={{padding:'12px 14px', color:colors.text3, fontSize:'12px', fontWeight:700, textAlign:'right' as const}}>{h}</th>))}</tr></thead>
-              <tbody>{filtered.map((p,i)=>(<tr key={p.id} style={{borderBottom:`1px solid ${colors.border}`, background:i%2===0?colors.surface:colors.bg}}><td style={{padding:'12px 14px', fontSize:'12px', color:colors.text3, whiteSpace:'nowrap' as const}}>{new Date(p.created_at).toLocaleDateString('ar-SA')}</td><td style={{padding:'12px 14px', fontSize:'13px', fontWeight:700, color:colors.text}}>{p.name}</td><td style={{padding:'12px 14px'}}><span style={catTag(p.category)}>{p.category}</span></td><td style={{padding:'12px 14px', fontSize:'13px', color:colors.text2}}>{Number(p.amount||0).toFixed(2)} ر.س</td><td style={{padding:'12px 14px', fontSize:'13px', color:colors.warning, fontWeight:600}}>{Number(p.vat_amount||0).toFixed(2)} ر.س</td><td style={{padding:'12px 14px', fontSize:'13px', fontWeight:700, color:colors.primary}}>{Number(p.total_amount||0).toFixed(2)} ر.س</td><td style={{padding:'12px 14px', fontSize:'12px', color:colors.text4}}>{p.supplier||'—'}</td><td style={{padding:'12px 14px', textAlign:'center' as const}}>{p.invoice_image?<a href={p.invoice_image} target="_blank" rel="noreferrer" style={{color:colors.info, fontSize:'12px', fontWeight:600, textDecoration:'none', borderBottom:`1px dashed ${colors.info}`}}>📎 المرفق</a>:<span style={{color:'#cbd5e1'}}>—</span>}</td></tr>))}</tbody>
-              <tfoot><tr style={{background:colors.primaryLight, borderTop:`2px solid ${colors.primaryBorder}`}}><td colSpan={3} style={{padding:'14px 14px', fontWeight:800, fontSize:'13px', color:colors.text}}>الإجمالي الكلي ({filtered.length} فاتورة)</td><td style={{padding:'14px 14px', fontWeight:700, fontSize:'13px', color:colors.text}}>{totalAmount.toFixed(2)} ر.س</td><td style={{padding:'14px 14px', fontWeight:700, fontSize:'13px', color:colors.warning}}>{totalVat.toFixed(2)} ر.س</td><td style={{padding:'14px 14px', fontWeight:900, fontSize:'14px', color:colors.primary}}>{totalWithVat.toFixed(2)} ر.س</td><td/><td/></tr></tfoot>
-            </table>
-          </div>
-        )}
+        <div style={{display:'flex', gap:6, alignItems:'center'}}>
+          <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} style={{...inp(), flex:1, height:'36px', fontSize:'11px', padding:'0 6px'}}/>
+          <span style={{fontSize:11, color:colors.text4}}>إلى</span>
+          <input type="date" value={dateTo}   onChange={e=>setDateTo(e.target.value)}   style={{...inp(), flex:1, height:'36px', fontSize:'11px', padding:'0 6px'}}/>
+          {hasFilter&&<button onClick={()=>{setSearch('');setFilterCat('');setDateFrom('');setDateTo('')}} style={{...btnSecondary, width:'36px', height:'36px', padding:0, justifyContent:'center', color:colors.danger, borderColor:colors.dangerBorder}}>✕</button>}
+        </div>
       </div>
+
+      {loading?(
+        <div style={{padding:40, textAlign:'center'}}><div style={{width:32, height:32, border:`3px solid ${colors.border}`, borderTopColor:colors.primary, borderRadius:'50%', animation:'spin .7s linear infinite', margin:'0 auto 12px'}}/></div>
+      ):filtered.length===0?(
+        <div style={{...card, padding:40, textAlign:'center', border:`1px solid ${colors.border}`}}><div style={{fontSize:36, marginBottom:8}}>🧾</div><div style={{fontSize:'13px', fontWeight:600, color:colors.text3}}>لا توجد فواتير</div></div>
+      ):(
+        <div style={{display:'flex', flexDirection:'column', gap:10}}>
+          {/* واجهة عرض كروت الفواتير المحسنة بالكامل لتطبيق جوال أصيل */}
+          {filtered.map((p)=>(
+            <div key={p.id} style={{...card, padding:14, border:`1px solid ${colors.border}`, display:'flex', flexDirection:'column', gap:10}}>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <div>
+                  <div style={{fontSize:'14px', fontWeight:700, color:colors.text}}>{p.name}</div>
+                  <div style={{fontSize:'11px', color:colors.text4, marginTop:2}}>{new Date(p.created_at).toLocaleDateString('ar-SA')}</div>
+                </div>
+                <span style={{...catTag(p.category), fontSize:'11px', padding:'3px 8px', borderRadius:radius.sm}}>{p.category}</span>
+              </div>
+              
+              <div style={{display:'flex', justifyContent:'space-between', background:colors.bg, padding:'8px 12px', borderRadius:radius.sm, border:`1px solid ${colors.border2}`}}>
+                <div style={{textAlign:'center'}}>
+                  <div style={{fontSize:'10px', color:colors.text4}}>الصافي</div>
+                  <div style={{fontSize:'12px', fontWeight:600, color:colors.text2}}>{Number(p.amount||0).toFixed(1)}</div>
+                </div>
+                <div style={{textAlign:'center', borderLeft:`1px dashed ${colors.border2}`, borderRight:`1px dashed ${colors.border2}`, padding:'0 14px'}}>
+                  <div style={{fontSize:'10px', color:colors.text4}}>الضريبة</div>
+                  <div style={{fontSize:'12px', fontWeight:600, color:colors.warning}}>{Number(p.vat_amount||0).toFixed(1)}</div>
+                </div>
+                <div style={{textAlign:'center'}}>
+                  <div style={{fontSize:'10px', color:colors.text4}}>الإجمالي</div>
+                  <div style={{fontSize:'13px', fontWeight:800, color:colors.primary}}>{Number(p.total_amount||0).toFixed(1)} ر.س</div>
+                </div>
+              </div>
+
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:'11px', color:colors.text3, borderTop:`1px solid ${colors.bg}`, paddingTop:8}}>
+                <div>🏢 المورد: <span style={{fontWeight:600, color:colors.text}}>{p.supplier||'—'}</span></div>
+                {p.invoice_image ? (
+                  <a href={p.invoice_image} target="_blank" rel="noreferrer" style={{color:colors.info, fontWeight:700, textDecoration:'none', display:'flex', alignItems:'center', gap:3}}>📎 عرض المرفق</a>
+                ) : (
+                  <span style={{color:'#cbd5e1'}}>بدون مرفق</span>
+                )}
+              </div>
+            </div>
+          ))}
+          
+          <div style={{padding:'12px', borderRadius:radius.md, background:colors.primaryLight, border:`1px solid ${colors.primaryBorder}`, display:'flex', flexDirection:'column', gap:4, marginTop:4}}>
+            <div style={{display:'flex', justifyContent:'space-between', fontSize:'12px', color:colors.text3}}>
+              <span>عدد الفواتير الكلي:</span>
+              <span style={{fontWeight:700}}>{filtered.length} فاتورة</span>
+            </div>
+            <div style={{display:'flex', justifyContent:'space-between', fontSize:'14px', fontWeight:800, color:colors.primary, borderTop:`1px dashed ${colors.primaryBorder}`, paddingTop:4}}>
+              <span>إجمالي المشتريات:</span>
+              <span>{totalWithVat.toFixed(2)} ر.س</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -222,18 +288,18 @@ function PurchaseReport() {
 export default function ReportsPage() {
   const [tab, setTab] = useState<'dispense'|'purchase'>('dispense')
   return (
-    <div style={{fontFamily:font.family, direction:'rtl', maxWidth:1050, margin:'0 auto', padding:'10px'}}>
+    <div style={{fontFamily:font.family, direction:'rtl', maxWidth:500, margin:'0 auto', padding:'12px'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <div style={{marginBottom:24}}>
-        <h1 style={{...pageTitle, fontSize:'24px', fontWeight:800, color:colors.text}}>{tab === 'dispense' ? 'تقارير حركة الصرف' : 'تقارير المشتريات والفوترة'}</h1>
-        <p style={{...pageSub, marginTop:4, color:colors.text4}}>إدارة مخرجات المخزن والتحليلات المالية في لوحة واحدة</p>
+      <div style={{marginBottom:16, padding:'0 4px'}}>
+        <h1 style={{...pageTitle, fontSize:'20px', fontWeight:800, color:colors.text}}>مركز التقارير</h1>
+        <p style={{...pageSub, marginTop:2, fontSize:'12px', color:colors.text4}}>حركة مخرجات المخزن والتحليلات المالية والمشتريات</p>
       </div>
-      <div style={{...card, padding:0, marginBottom:20, overflow:'hidden', border:`1px solid ${colors.border}`, boxShadow:'0 4px 6px -1px rgba(0,0,0,0.05)'}}>
+      <div style={{...card, padding:0, marginBottom:16, overflow:'hidden', border:`1px solid ${colors.border}`, boxShadow:'0 2px 8px rgba(0,0,0,0.04)'}}>
         <div style={{display:'flex', borderBottom:`1px solid ${colors.border}`, background:'#f8fafc'}}>
-          <Tab label="إحصائيات وحركة الصرف" icon="📤" active={tab==='dispense'} onClick={()=>setTab('dispense')}/>
-          <Tab label="المشتريات والضرائب"  icon="🧾" active={tab==='purchase'} onClick={()=>setTab('purchase')}/>
+          <Tab label="حركة الصرف" icon="📤" active={tab==='dispense'} onClick={()=>setTab('dispense')}/>
+          <Tab label="المشتريات والضريبة" icon="🧾" active={tab==='purchase'} onClick={()=>setTab('purchase')}/>
         </div>
-        <div style={{padding:'20px'}}>
+        <div style={{padding:'12px'}}>
           {tab==='dispense' && <DispenseReport/>}
           {tab==='purchase' && <PurchaseReport/>}
         </div>
