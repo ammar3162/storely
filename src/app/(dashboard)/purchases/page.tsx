@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
+const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/components/toast'
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh'
@@ -15,6 +16,7 @@ export default function PurchasesPage() {
   const [userId, setUserId]         = useState('')
   const [loading, setLoading]       = useState(false)
   const [uploading, setUploading]   = useState(false)
+  const [showScan, setShowScan]       = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
@@ -143,6 +145,15 @@ export default function PurchasesPage() {
         }
       `}</style>
 
+      {showScan && (
+        <Suspense fallback={null}>
+          <BarcodeScanner onScan={(code: string) => {
+            setShowScan(false)
+            setForm(f=>({...f, name:code}))
+          }} onClose={()=>setShowScan(false)}/>
+        </Suspense>
+      )}
+
       <div className="ru" style={{marginBottom:20}}>
         <h1 style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:3}}>المشتريات</h1>
         <p style={{fontSize:12,color:'#94a3b8'}}>فئة <b style={{color:'#16a34a'}}>مخزون</b> تُضيف المنتج للمخزون تلقائياً</p>
@@ -188,6 +199,12 @@ export default function PurchasesPage() {
               <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>
                 {form.category==='مخزون'?'اسم الصنف *':'اسم الخدمة / الفاتورة *'}
               </label>
+              {form.category==='مخزون' && (
+                <button type="button" onClick={()=>setShowScan(true)}
+                  style={{width:'100%',padding:'10px',background:'#f0fdf4',color:'#16a34a',border:'1.5px solid #86efac',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginBottom:8}}>
+                  📷 مسح باركود المنتج
+                </button>
+              )}
               <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp}
                 placeholder={form.category==='مخزون'?'مثال: قهوة، سكر...':form.category==='مشتريات'?'مثال: مستلزمات مكتبية...':'مثال: إيجار، كهرباء...'}/>
             </div>
