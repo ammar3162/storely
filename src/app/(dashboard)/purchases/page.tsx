@@ -18,6 +18,7 @@ export default function PurchasesPage() {
   const [uploading, setUploading]   = useState(false)
   const [showScan, setShowScan]       = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
+  const [historyLoaded, setHistoryLoaded] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
     category:'مخزون', name:'', qty:'', unit:'قطعة',
@@ -134,7 +135,6 @@ export default function PurchasesPage() {
   const total  = Number(form.total_amount)||0
   const amount = form.hasVat==='yes' && total>0 ? (total/1.15).toFixed(2) : total.toFixed(2)
   const vat    = form.hasVat==='yes' && total>0 ? (total-Number(amount)).toFixed(2) : '0.00'
-  const [historyLoaded, setHistoryLoaded] = useState(false)
   const totalSpent = history.reduce((s,p)=>s+Number(p.total_amount||0),0)
   const totalVat   = history.reduce((s,p)=>s+Number(p.vat_amount||0),0)
   const totalNet   = history.reduce((s,p)=>s+Number(p.amount||0),0)
