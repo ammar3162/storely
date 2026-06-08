@@ -333,7 +333,7 @@ export default function InventoryPage() {
                           {p.sku&&<div style={{fontSize:11,color:C.text3,marginTop:1}}>{p.sku}</div>}
                         </td>
                         <td className="hide-mob" style={{padding:'13px 16px'}}>
-                          {p.category?<span style={{background:'#f8fafc',color:'#475569',padding:'3px 10px',borderRadius:20,fontSize:11,fontWeight:600}}>{p.category}</span>:<span style={{color:C.text5}}>—</span>}
+                          {p.category?<span style={{background:'#f8fafc',color:'#475569',padding:'3px 10px',borderRadius:20,fontSize:11,fontWeight:600}}>{p.category}</span>:<span style={{color:C.text3}}>—</span>}
                         </td>
                         <td style={{padding:'13px 16px',whiteSpace:'nowrap' as const}}>
                           <span style={{fontWeight:900,fontSize:16,color:isLow?C.red:C.text}}>{p.qty}</span>
