@@ -82,7 +82,7 @@ export default function PurchasesPage() {
       qty:form.qty ? Number(form.qty) : null,
       unit:form.unit||null,
       reorder_point:Number(form.reorder_point)||5,
-      amount, vat_amount:vat, total_amount:total,
+      amount, total_amount:total,
       supplier:form.supplier, note:form.note||null,
       invoice_image:form.invoice_image||null,
     }
