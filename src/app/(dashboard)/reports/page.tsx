@@ -3,8 +3,33 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh'
+import { colors, radius, font, card, btnPrimary, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
 
-export default function ReportsPage() {
+function Tab({ label, icon, active, onClick }: { label:string; icon:string; active:boolean; onClick:()=>void }) {
+  return (
+    <button onClick={onClick} style={{
+      display:'flex', alignItems:'center', gap:8, padding:'12px 20px',
+      background: active ? '#fff' : 'transparent', border: 'none',
+      borderBottom: active ? `2px solid ${colors.primary}` : '2px solid transparent',
+      color: active ? colors.primary : colors.text3,
+      fontSize: '12px', fontWeight: active ? 700 : 600,
+      cursor: 'pointer', fontFamily: font.family, transition: 'all .15s', whiteSpace: 'nowrap' as const,
+    }}>
+      <span style={{fontSize:16}}>{icon}</span>{label}
+    </button>
+  )
+}
+
+function StatCard({ label, value, color, bg, border }: any) {
+  return (
+    <div style={{background:bg,borderRadius:radius.lg,padding:'16px',border:`1.5px solid ${border}`,textAlign:'center' as const}}>
+      <div style={{fontSize:'22px',fontWeight:900,color,letterSpacing:'-1px',lineHeight:1}}>{value}</div>
+      <div style={{fontSize:'11px',color:colors.text3,marginTop:5,fontWeight:600}}>{label}</div>
+    </div>
+  )
+}
+
+function DispenseReport() {
   const [movements, setMovements] = useState<any[]>([])
   const [filtered, setFiltered]   = useState<any[]>([])
   const [loading, setLoading]     = useState(true)
@@ -38,219 +63,169 @@ export default function ReportsPage() {
     setFiltered(r)
   }
 
-  function clearFilter() { setSearch(''); setDateFrom(''); setDateTo(''); setShowFilter(false) }
-
   function exportCSV() {
-    const csv = '\ufeff' + [
-      ['التاريخ','المنتج','الكمية','الوحدة','الملاحظة'],
-      ...filtered.map(m=>[
-        new Date(m.created_at).toLocaleDateString('ar-SA'),
-        (m.products as any)?.name||'',
-        Math.abs(m.qty_change),
-        (m.products as any)?.unit||'',
-        m.note||''
-      ])
-    ].map(r=>r.map(c=>'"'+c+'"').join(',')).join('\n')
-    Object.assign(document.createElement('a'),{
-      href:URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})),
-      download:'تقرير_الصرف.csv'
-    }).click()
+    const csv = '\ufeff' + [['التاريخ','المنتج','الكمية','الوحدة','الملاحظة'],...filtered.map(m=>[new Date(m.created_at).toLocaleDateString('ar-SA'),(m.products as any)?.name||'',Math.abs(m.qty_change),(m.products as any)?.unit||'',m.note||''])].map(r=>r.map(c=>'"'+c+'"').join(',')).join('\n')
+    Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})),download:'تقرير_الصرف.csv'}).click()
   }
 
   const totalQty = filtered.reduce((s,m)=>s+Math.abs(m.qty_change),0)
   const productMap: Record<string,number> = {}
   filtered.forEach(m=>{ const n=(m.products as any)?.name||'غير معروف'; productMap[n]=(productMap[n]||0)+Math.abs(m.qty_change) })
   const topProducts = Object.entries(productMap).sort((a,b)=>b[1]-a[1]).slice(0,5)
+  const barColors = [colors.primary, colors.info, '#8b5cf6', colors.warning, colors.danger]
   const hasFilter = !!(search||dateFrom||dateTo)
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',maxWidth:800,margin:'0 auto'}}>
-      <style>{`
-        @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
-        .ru{animation:fadeUp .25s ease both}
-        .trow{transition:background .1s}
-        .trow:hover td{background:#fafafa}
-        input:focus{outline:none!important;border-color:#16a34a!important;box-shadow:0 0 0 3px rgba(22,163,74,.1)!important}
-      `}</style>
-
-      {/* Header */}
-      <div className="ru" style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20,gap:12,flexWrap:'wrap'}}>
-        <div>
-          <h1 style={{fontSize:22,fontWeight:800,color:'#0f172a',letterSpacing:'-0.5px'}}>تقرير الصرف</h1>
-          <p style={{fontSize:13,color:'#94a3b8',marginTop:2}}>تحليل عمليات الصرف من المخزون</p>
-        </div>
-        <button onClick={exportCSV} style={{display:'flex',alignItems:'center',gap:7,padding:'10px 18px',background:'linear-gradient(135deg,#16a34a,#15803d)',color:'white',border:'none',borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 14px rgba(22,163,74,.25)'}}>
-          <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-          تحميل
-        </button>
+    <div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:16}}>
+        <StatCard label="كميات مصروفة"  value={totalQty}                       color={colors.danger}  bg={colors.dangerLight}  border={colors.dangerBorder}/>
+        <StatCard label="عمليات الصرف"  value={filtered.length}                color={colors.info}    bg={colors.infoLight}    border={colors.infoBorder}/>
+        <StatCard label="أصناف مختلفة"  value={Object.keys(productMap).length} color='#8b5cf6'        bg='#f5f3ff'             border='#ddd6fe'/>
       </div>
-
-      {/* Stats */}
-      <div className="ru" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16}}>
-        {[
-          {label:'كميات مصروفة', value:totalQty,                       unit:'وحدة',  color:'#ef4444', bg:'#fef2f2', border:'#fecaca'},
-          {label:'عمليات الصرف', value:filtered.length,                unit:'عملية', color:'#3b82f6', bg:'#eff6ff', border:'#bfdbfe'},
-          {label:'أصناف مختلفة', value:Object.keys(productMap).length, unit:'صنف',   color:'#8b5cf6', bg:'#f5f3ff', border:'#ddd6fe'},
-        ].map((s,i)=>(
-          <div key={i} style={{background:s.bg,borderRadius:14,padding:'14px',border:`1.5px solid ${s.border}`,textAlign:'center'}}>
-            <div style={{fontSize:26,fontWeight:900,color:s.color,letterSpacing:'-1px',lineHeight:1}}>{s.value}</div>
-            <div style={{fontSize:11,color:'#64748b',marginTop:4,fontWeight:600}}>{s.label}</div>
-            <div style={{fontSize:10,color:s.color,fontWeight:700,marginTop:1}}>{s.unit}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Top Products */}
-      {topProducts.length>0 && (
-        <div className="ru" style={{background:'white',borderRadius:16,padding:'16px',marginBottom:14,border:'1px solid #f1f5f9',boxShadow:'0 1px 3px rgba(0,0,0,.05)'}}>
-          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14}}>
-            <span style={{fontSize:18}}>🏆</span>
-            <span style={{fontSize:14,fontWeight:700,color:'#0f172a'}}>الأكثر صرفاً</span>
-          </div>
+      {topProducts.length>0&&(
+        <div style={{...card,padding:18,marginBottom:14}}>
+          <div style={{fontSize:'13px',fontWeight:700,color:colors.text,marginBottom:14}}>🏆 الأكثر صرفاً</div>
           {topProducts.map(([name,qty],i)=>{
-            const colors=['#16a34a','#3b82f6','#8b5cf6','#f59e0b','#ef4444']
             const pct=Math.round((qty/topProducts[0][1])*100)
-            return (
-              <div key={i} style={{display:'flex',alignItems:'center',gap:10,marginBottom:i<topProducts.length-1?12:0}}>
-                <div style={{width:26,height:26,borderRadius:8,background:colors[i]+'18',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                  <span style={{fontSize:11,fontWeight:800,color:colors[i]}}>{i+1}</span>
-                </div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:5}}>
-                    <span style={{fontSize:13,fontWeight:600,color:'#0f172a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{name}</span>
-                    <span style={{fontSize:12,fontWeight:800,color:colors[i],flexShrink:0,marginRight:8}}>{qty}</span>
-                  </div>
-                  <div style={{height:5,background:'#f1f5f9',borderRadius:99}}>
-                    <div style={{height:'100%',width:pct+'%',background:colors[i],borderRadius:99,transition:'width .5s ease'}}/>
-                  </div>
-                </div>
+            return (<div key={i} style={{display:'flex',alignItems:'center',gap:10,marginBottom:i<topProducts.length-1?12:0}}>
+              <div style={{width:26,height:26,borderRadius:radius.sm,background:barColors[i]+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><span style={{fontSize:11,fontWeight:800,color:barColors[i]}}>{i+1}</span></div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:5}}><span style={{fontSize:'13px',fontWeight:600,color:colors.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{name}</span><span style={{fontSize:'12px',fontWeight:800,color:barColors[i],flexShrink:0,marginRight:8}}>{qty}</span></div>
+                <div style={{height:5,background:colors.border,borderRadius:99}}><div style={{height:'100%',width:pct+'%',background:barColors[i],borderRadius:99,transition:'width .5s ease'}}/></div>
               </div>
-            )
+            </div>)
           })}
         </div>
       )}
-
-      {/* Filter */}
-      <div className="ru" style={{background:'white',borderRadius:16,marginBottom:14,border:'1px solid #f1f5f9',boxShadow:'0 1px 3px rgba(0,0,0,.05)',overflow:'hidden'}}>
-        <div style={{padding:'12px 14px',display:'flex',gap:8,alignItems:'center'}}>
-          <div style={{position:'relative',flex:1}}>
-            <svg style={{position:'absolute',right:11,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}} width="14" height="14" fill="none" stroke="#94a3b8" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث..."
-              style={{width:'100%',padding:'10px 36px 10px 10px',border:'1.5px solid #f1f5f9',borderRadius:11,fontSize:13,background:'#fafafa',color:'#0f172a',fontFamily:'inherit'}}/>
+      <div style={{...card,overflow:'hidden'}}>
+        <div style={{padding:'12px 16px',borderBottom:`1px solid ${colors.border}`,display:'flex',gap:8,alignItems:'center',flexWrap:'wrap' as const}}>
+          <div style={{position:'relative',flex:1,minWidth:160}}>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث عن منتج أو ملاحظة..." style={{...inp(),paddingRight:36}}/>
           </div>
-          <button onClick={()=>setShowFilter(!showFilter)} style={{
-            display:'flex',alignItems:'center',gap:5,padding:'10px 14px',flexShrink:0,
-            background:showFilter?'#f0fdf4':'#fafafa',
-            border:`1.5px solid ${showFilter?'#86efac':'#f1f5f9'}`,
-            borderRadius:11,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',
-            color:showFilter?'#16a34a':'#64748b',
-          }}>
-            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54z"/></svg>
-            تاريخ
-            {(dateFrom||dateTo)&&<span style={{width:7,height:7,borderRadius:'50%',background:'#ef4444',display:'block'}}/>}
-          </button>
-          {hasFilter&&<button onClick={clearFilter} style={{padding:'10px 12px',background:'#fef2f2',color:'#ef4444',border:'1.5px solid #fecaca',borderRadius:11,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>✕</button>}
+          <button onClick={()=>setShowFilter(!showFilter)} style={{...btnSecondary,padding:'10px 14px',fontSize:'11px',background:showFilter?colors.primaryLight:colors.surface,borderColor:showFilter?colors.primaryBorder:colors.border2,color:showFilter?colors.primary:colors.text3}}>📅 تاريخ</button>
+          <button onClick={exportCSV} style={{...btnPrimary,padding:'10px 16px',fontSize:'11px'}}>📥 تصدير</button>
+          {hasFilter&&<button onClick={()=>{setSearch('');setDateFrom('');setDateTo('');setShowFilter(false)}} style={{...btnSecondary,padding:'10px 12px',fontSize:'11px',color:colors.danger,borderColor:colors.dangerBorder}}>✕</button>}
         </div>
-
         {showFilter&&(
-          <div style={{padding:'0 14px 14px',borderTop:'1px solid #f8fafc',paddingTop:12,animation:'slideDown .2s ease'}}>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-              <div>
-                <label style={{fontSize:11,fontWeight:700,color:'#94a3b8',display:'block',marginBottom:5}}>من تاريخ</label>
-                <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)}
-                  style={{width:'100%',padding:'10px 12px',border:'1.5px solid #f1f5f9',borderRadius:11,fontSize:13,background:'#fafafa',color:'#0f172a',fontFamily:'inherit'}}/>
-              </div>
-              <div>
-                <label style={{fontSize:11,fontWeight:700,color:'#94a3b8',display:'block',marginBottom:5}}>إلى تاريخ</label>
-                <input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)}
-                  style={{width:'100%',padding:'10px 12px',border:'1.5px solid #f1f5f9',borderRadius:11,fontSize:13,background:'#fafafa',color:'#0f172a',fontFamily:'inherit'}}/>
-              </div>
-            </div>
-            {hasFilter&&<div style={{marginTop:10,padding:'8px 12px',background:'#f0fdf4',borderRadius:9,fontSize:12,color:'#16a34a',fontWeight:600,display:'flex',justifyContent:'space-between'}}>
-              <span>{filtered.length} نتيجة من {movements.length}</span>
-              <button onClick={clearFilter} style={{background:'none',border:'none',color:'#ef4444',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>مسح</button>
-            </div>}
+          <div style={{padding:'12px 16px',borderBottom:`1px solid ${colors.border}`,background:colors.bg,display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            <div><label style={{fontSize:'11px',fontWeight:700,color:colors.text4,display:'block',marginBottom:5}}>من تاريخ</label><input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} style={inp()}/></div>
+            <div><label style={{fontSize:'11px',fontWeight:700,color:colors.text4,display:'block',marginBottom:5}}>إلى تاريخ</label><input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} style={inp()}/></div>
           </div>
         )}
-      </div>
-
-      {/* List */}
-      <div className="ru" style={{background:'white',borderRadius:16,border:'1px solid #f1f5f9',overflow:'hidden',boxShadow:'0 1px 3px rgba(0,0,0,.05)'}}>
-        {loading ? (
-          <div style={{padding:56,textAlign:'center'}}>
-            <div style={{width:36,height:36,border:'3px solid #f1f5f9',borderTopColor:'#16a34a',borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto 12px'}}/>
-            <div style={{fontSize:13,color:'#94a3b8'}}>جاري التحميل...</div>
-          </div>
-        ) : filtered.length===0 ? (
-          <div style={{padding:56,textAlign:'center'}}>
-            <div style={{fontSize:48,marginBottom:10}}>📭</div>
-            <div style={{fontSize:15,fontWeight:700,color:'#475569',marginBottom:4}}>لا توجد نتائج</div>
-            <div style={{fontSize:12,color:'#94a3b8'}}>جرب تغيير معايير البحث</div>
-          </div>
-        ) : (
+        {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto 12px'}}/><div style={{fontSize:'13px',color:colors.text4}}>جاري التحميل...</div></div>
+        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{fontSize:40,marginBottom:10}}>📭</div><div style={{fontSize:'14px',fontWeight:600,color:colors.text2}}>لا توجد نتائج</div></div>
+        ):(
           <>
-            {/* Mobile Cards */}
-            <div style={{display:'block'}} className="mob-list">
-              <style>{`@media(min-width:640px){.mob-list{display:none!important}.desk-table{display:block!important}}`}</style>
-              {filtered.map((m,i)=>(
-                <div key={m.id} style={{padding:'14px 16px',borderBottom:i<filtered.length-1?'1px solid #f8fafc':'none',display:'flex',alignItems:'center',gap:12}}>
-                  <div style={{width:42,height:42,borderRadius:12,background:'#fef2f2',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:'1px solid #fecaca'}}>
-                    <span style={{fontSize:11,fontWeight:800,color:'#ef4444'}}>▼{Math.abs(m.qty_change)}</span>
-                  </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:14,fontWeight:700,color:'#0f172a'}}>{(m.products as any)?.name}</div>
-                    <div style={{fontSize:11,color:'#94a3b8',marginTop:2,display:'flex',gap:8}}>
-                      <span>{new Date(m.created_at).toLocaleDateString('ar-SA')}</span>
-                      {m.note&&<span>· {m.note}</span>}
-                    </div>
-                  </div>
-                  <div style={{textAlign:'left' as const,flexShrink:0}}>
-                    <div style={{fontSize:15,fontWeight:800,color:'#ef4444'}}>{Math.abs(m.qty_change)}</div>
-                    <div style={{fontSize:10,color:'#94a3b8'}}>{(m.products as any)?.unit}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Desktop Table */}
-            <div className="desk-table" style={{display:'none',overflowX:'auto'}}>
+            <div style={{overflowX:'auto'}}>
               <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:400}}>
-                <thead>
-                  <tr style={{background:'#fafafa',borderBottom:'1px solid #f1f5f9'}}>
-                    {['التاريخ','المنتج','الكمية','الملاحظة'].map((h,i)=>(
-                      <th key={i} style={{padding:'11px 16px',color:'#94a3b8',fontSize:11,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map(m=>(
-                    <tr key={m.id} className="trow" style={{borderBottom:'1px solid #f8fafc'}}>
-                      <td style={{padding:'12px 16px',fontSize:12,color:'#64748b',whiteSpace:'nowrap' as const}}>
-                        {new Date(m.created_at).toLocaleDateString('ar-SA')}
-                        <div style={{fontSize:10,color:'#94a3b8'}}>{new Date(m.created_at).toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'})}</div>
-                      </td>
-                      <td style={{padding:'12px 16px',fontSize:13,fontWeight:700,color:'#0f172a'}}>{(m.products as any)?.name}</td>
-                      <td style={{padding:'12px 16px'}}>
-                        <span style={{background:'#fef2f2',color:'#ef4444',padding:'4px 10px',borderRadius:20,fontSize:12,fontWeight:800,border:'1px solid #fecaca'}}>
-                          ▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}
-                        </span>
-                      </td>
-                      <td style={{padding:'12px 16px',fontSize:12,color:'#94a3b8'}}>{m.note||'—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
+                <thead><tr style={{background:colors.bg,borderBottom:`1px solid ${colors.border}`}}>{['التاريخ','المنتج','الكمية','الملاحظة'].map((h,i)=>(<th key={i} style={{padding:'10px 16px',color:colors.text4,fontSize:'11px',fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>))}</tr></thead>
+                <tbody>{filtered.map((m,i)=>(<tr key={m.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}><td style={{padding:'11px 16px',fontSize:'11px',color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA')}</td><td style={{padding:'11px 16px',fontSize:'13px',fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td><td style={{padding:'11px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontSize:'12px',padding:'4px 10px'}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td><td style={{padding:'11px 16px',fontSize:'11px',color:colors.text4}}>{m.note||'—'}</td></tr>))}</tbody>
               </table>
             </div>
-
-            {/* Footer */}
-            <div style={{padding:'12px 16px',background:'linear-gradient(135deg,#f0fdf4,#dcfce7)',borderTop:'1px solid #bbf7d0',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <span style={{fontSize:13,fontWeight:700,color:'#15803d'}}>{filtered.length} عملية</span>
-              <span style={{background:'#16a34a',color:'white',padding:'5px 14px',borderRadius:20,fontSize:13,fontWeight:800}}>{totalQty} وحدة</span>
+            <div style={{padding:'12px 16px',background:colors.primaryLight,borderTop:`1px solid ${colors.primaryBorder}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <span style={{fontSize:'13px',fontWeight:700,color:colors.primary}}>{filtered.length} عملية</span>
+              <span style={{fontSize:'13px',fontWeight:800,color:colors.primary}}>{totalQty} وحدة مصروفة</span>
             </div>
           </>
         )}
+      </div>
+    </div>
+  )
+}
+
+function PurchaseReport() {
+  const [purchases, setPurchases] = useState<any[]>([])
+  const [filtered, setFiltered]   = useState<any[]>([])
+  const [loading, setLoading]     = useState(true)
+  const [search, setSearch]       = useState('')
+  const [filterCat, setFilterCat] = useState('')
+  const [dateFrom, setDateFrom]   = useState('')
+  const [dateTo, setDateTo]       = useState('')
+  const sb = createClient()
+
+  useEffect(() => { load() }, [])
+  useEffect(() => { applyFilter() }, [purchases, search, filterCat, dateFrom, dateTo])
+
+  async function load() {
+    setLoading(true)
+    const orgId = sessionStorage.getItem('s_org_id')
+    if (!orgId) { setLoading(false); return }
+    const { data } = await sb.from('purchases').select('*').eq('org_id', orgId).order('created_at', { ascending: false })
+    setPurchases(data || [])
+    setLoading(false)
+  }
+
+  function applyFilter() {
+    let r = [...purchases]
+    if (search)    r = r.filter(p => p.name?.includes(search) || p.supplier?.includes(search))
+    if (filterCat) r = r.filter(p => p.category === filterCat)
+    if (dateFrom)  r = r.filter(p => new Date(p.created_at) >= new Date(dateFrom))
+    if (dateTo)    r = r.filter(p => new Date(p.created_at) <= new Date(dateTo + 'T23:59:59'))
+    setFiltered(r)
+  }
+
+  function exportCSV() {
+    const csv = '\ufeff' + [['التاريخ','الصنف','النوع','بدون ضريبة','الضريبة','الإجمالي','المورد'],...filtered.map(p=>[new Date(p.created_at).toLocaleDateString('ar-SA'),p.name||'',p.category||'',Number(p.amount||0).toFixed(2),Number(p.vat_amount||0).toFixed(2),Number(p.total_amount||0).toFixed(2),p.supplier||''])].map(r=>r.map(c=>'"'+c+'"').join(',')).join('\n')
+    Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})),download:'تقرير_المشتريات.csv'}).click()
+  }
+
+  const totalAmount  = filtered.reduce((s,p)=>s+Number(p.amount||0),0)
+  const totalVat     = filtered.reduce((s,p)=>s+Number(p.vat_amount||0),0)
+  const totalWithVat = filtered.reduce((s,p)=>s+Number(p.total_amount||0),0)
+  const hasFilter    = !!(search||filterCat||dateFrom||dateTo)
+  const catTag = (c:string) => c==='مخزون'?tag(colors.primary,colors.primaryLight,colors.primaryBorder):c==='صيانة'?tag(colors.warning,colors.warningLight,colors.warningBorder):tag(colors.text3,colors.bg,colors.border2)
+
+  return (
+    <div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:16}}>
+        <StatCard label="بدون ضريبة"           value={totalAmount.toFixed(2)+' ر.س'}    color={colors.text2}   bg={colors.bg}           border={colors.border2}/>
+        <StatCard label="ضريبة 15%"             value={totalVat.toFixed(2)+' ر.س'}       color={colors.warning} bg={colors.warningLight} border={colors.warningBorder}/>
+        <StatCard label="الإجمالي شامل الضريبة" value={totalWithVat.toFixed(2)+' ر.س'}  color={colors.primary} bg={colors.primaryLight} border={colors.primaryBorder}/>
+        <StatCard label="عدد الفواتير"          value={filtered.length}                   color={colors.info}    bg={colors.infoLight}    border={colors.infoBorder}/>
+      </div>
+      <div style={{...card,overflow:'hidden'}}>
+        <div style={{padding:'12px 16px',borderBottom:`1px solid ${colors.border}`,display:'flex',gap:8,alignItems:'center',flexWrap:'wrap' as const}}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث باسم الصنف أو المورد..." style={{...inp(),flex:1,minWidth:160}}/>
+          <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{...inp(),width:'auto'}}><option value="">كل الأنواع</option><option value="مخزون">مخزون</option><option value="صيانة">صيانة</option><option value="أخرى">أخرى</option></select>
+          <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} style={{...inp(),width:'auto'}}/>
+          <input type="date" value={dateTo}   onChange={e=>setDateTo(e.target.value)}   style={{...inp(),width:'auto'}}/>
+          <button onClick={exportCSV} style={{...btnPrimary,padding:'10px 16px',fontSize:'11px'}}>📥 تصدير</button>
+          {hasFilter&&<button onClick={()=>{setSearch('');setFilterCat('');setDateFrom('');setDateTo('')}} style={{...btnSecondary,padding:'10px 12px',fontSize:'11px',color:colors.danger,borderColor:colors.dangerBorder}}>✕</button>}
+        </div>
+        {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto 12px'}}/></div>
+        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{fontSize:40,marginBottom:10}}>🧾</div><div style={{fontSize:'14px',fontWeight:600,color:colors.text2}}>لا توجد نتائج</div></div>
+        ):(
+          <div style={{overflowX:'auto'}}>
+            <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:700}}>
+              <thead><tr style={{background:colors.bg,borderBottom:`1px solid ${colors.border}`}}>{['التاريخ','الصنف','النوع','بدون ضريبة','ضريبة 15%','الإجمالي','المورد','فاتورة'].map((h,i)=>(<th key={i} style={{padding:'10px 14px',color:colors.text4,fontSize:'11px',fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.04em'}}>{h}</th>))}</tr></thead>
+              <tbody>{filtered.map((p,i)=>(<tr key={p.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}><td style={{padding:'11px 14px',fontSize:'11px',color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(p.created_at).toLocaleDateString('ar-SA')}</td><td style={{padding:'11px 14px',fontSize:'13px',fontWeight:700,color:colors.text}}>{p.name}</td><td style={{padding:'11px 14px'}}><span style={catTag(p.category)}>{p.category}</span></td><td style={{padding:'11px 14px',fontSize:'13px',color:colors.text2}}>{Number(p.amount||0).toFixed(2)} ر.س</td><td style={{padding:'11px 14px',fontSize:'13px',color:colors.warning,fontWeight:600}}>{Number(p.vat_amount||0).toFixed(2)} ر.س</td><td style={{padding:'11px 14px',fontSize:'13px',fontWeight:700,color:colors.primary}}>{Number(p.total_amount||0).toFixed(2)} ر.س</td><td style={{padding:'11px 14px',fontSize:'11px',color:colors.text4}}>{p.supplier||'—'}</td><td style={{padding:'11px 14px',textAlign:'center' as const}}>{p.invoice_image?<a href={p.invoice_image} target="_blank" rel="noreferrer" style={{color:colors.info,fontSize:'11px',fontWeight:600,textDecoration:'none'}}>📎 عرض</a>:<span style={{color:'#cbd5e1'}}>—</span>}</td></tr>))}</tbody>
+              <tfoot><tr style={{background:colors.primaryLight,borderTop:`2px solid ${colors.primaryBorder}`}}><td colSpan={3} style={{padding:'12px 14px',fontWeight:800,fontSize:'13px',color:colors.text}}>الإجمالي ({filtered.length} فاتورة)</td><td style={{padding:'12px 14px',fontWeight:700,fontSize:'13px'}}>{totalAmount.toFixed(2)} ر.س</td><td style={{padding:'12px 14px',fontWeight:700,fontSize:'13px',color:colors.warning}}>{totalVat.toFixed(2)} ر.س</td><td style={{padding:'12px 14px',fontWeight:900,fontSize:'14px',color:colors.primary}}>{totalWithVat.toFixed(2)} ر.س</td><td/><td/></tr></tfoot>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default function ReportsPage() {
+  const [tab, setTab] = useState<'dispense'|'purchase'>('dispense')
+  return (
+    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div style={{marginBottom:20}}>
+        <h1 style={{...pageTitle}}>التقارير</h1>
+        <p style={{...pageSub}}>تقارير الصرف والمشتريات في مكان واحد</p>
+      </div>
+      <div style={{...card,padding:0,marginBottom:20,overflow:'hidden'}}>
+        <div style={{display:'flex',borderBottom:`1px solid ${colors.border}`,background:colors.bg}}>
+          <Tab label="تقرير الصرف"      icon="📤" active={tab==='dispense'} onClick={()=>setTab('dispense')}/>
+          <Tab label="تقرير المشتريات" icon="🧾" active={tab==='purchase'} onClick={()=>setTab('purchase')}/>
+        </div>
+        <div style={{padding:20}}>
+          {tab==='dispense' && <DispenseReport/>}
+          {tab==='purchase' && <PurchaseReport/>}
+        </div>
       </div>
     </div>
   )
