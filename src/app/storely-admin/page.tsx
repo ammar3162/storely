@@ -32,7 +32,7 @@ export default function AdminPage() {
   async function login(e: React.FormEvent) {
     e.preventDefault()
     const res = await fetch('/api/admin/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass})})
-    if (res.ok) { setAuthed(true); loadUsers() }
+    if (res.ok) { document.cookie = 'storely_admin_token='+pass+';path=/;max-age=86400;SameSite=Strict'; setAuthed(true); loadUsers() }
     else { setPassErr(true); setTimeout(()=>setPassErr(false),2000) }
   }
 
