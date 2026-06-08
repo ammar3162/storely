@@ -18,7 +18,6 @@ export default function PurchasesPage() {
   const [uploading, setUploading]   = useState(false)
   const [showScan, setShowScan]       = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
-  const [historyLoaded, setHistoryLoaded] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
     category:'مخزون', name:'', qty:'', unit:'قطعة',
@@ -43,14 +42,13 @@ export default function PurchasesPage() {
       sessionStorage.setItem('s_profile_id', uid!)
     }
     setOrgId(oid!); setUserId(uid!)
-    await loadHistory(oid!)
+    loadHistory(oid!)
   }
 
   async function loadHistory(oid: string) {
     const { data } = await sb.from('purchases').select('*')
       .eq('org_id', oid).order('created_at',{ascending:false}).limit(25)
     setHistory(data||[])
-    setHistoryLoaded(true)
   }
 
   async function handleImage(file: File) {
@@ -78,7 +76,7 @@ export default function PurchasesPage() {
     const amount = form.hasVat==='yes' ? parseFloat((total/1.15).toFixed(2)) : total
     const vat    = form.hasVat==='yes' ? parseFloat((total-amount).toFixed(2)) : 0
 
-    const { error: purchaseErr } = await sb.from('purchases').insert({
+    await sb.from('purchases').insert({
       org_id:orgId, profile_id:userId,
       category:form.category, name:form.name,
       qty:form.qty ? Number(form.qty) : null,
@@ -87,41 +85,27 @@ export default function PurchasesPage() {
       supplier:form.supplier, note:form.note||null,
       invoice_image:form.invoice_image||null,
     })
-    if (purchaseErr) { toast('خطأ في حفظ الفاتورة: ' + purchaseErr.message, 'error'); setLoading(false); return }
 
     if (form.category==='مخزون' && form.name) {
       const qty = form.qty ? Number(form.qty) : 0
       const { data: existing } = await sb.from('products').select('id,qty')
         .eq('org_id', orgId).eq('name', form.name).maybeSingle()
       if (existing) {
-        if (qty > 0) {
-          const { error: mvErr } = await sb.from('stock_movements').insert({
-            product_id:existing.id, profile_id:userId,
-            type:'in', qty_change:qty, note:`شراء من: ${form.supplier}`
-          })
-          if (mvErr) toast('تحذير: الفاتورة حُفظت لكن المخزون لم يتحدث: ' + mvErr.message, 'warning')
-          else toast('✅ تم تسجيل الشراء وتحديث المخزون')
-        } else {
-          toast('✅ تم تسجيل الشراء')
-        }
+        if (qty > 0) await sb.from('stock_movements').insert({
+          product_id:existing.id, profile_id:userId,
+          type:'in', qty_change:qty, note:`شراء من: ${form.supplier}`
+        })
+        toast(`✅ تم تسجيل الشراء وتحديث المخزون`)
       } else {
-        const { data: np, error: prodErr } = await sb.from('products').insert({
+        const { data: np } = await sb.from('products').insert({
           org_id:orgId, name:form.name, unit:form.unit||'قطعة',
           qty, reorder_point:Number(form.reorder_point)||5, is_active:true,
         }).select().single()
-        if (prodErr) { toast('تحذير: الفاتورة حُفظت لكن فشل إنشاء المنتج: ' + prodErr.message, 'warning') }
-        else {
-          if (np && qty > 0) {
-            const { error: mvErr2 } = await sb.from('stock_movements').insert({
-              product_id:np.id, profile_id:userId,
-              type:'in', qty_change:qty, note:`شراء جديد من: ${form.supplier}`
-            })
-            if (mvErr2) toast('تحذير: المنتج أُنشئ لكن حركة المخزون فشلت', 'warning')
-            else toast(`✅ تم إضافة "${form.name}" للمخزون`)
-          } else {
-            toast(`✅ تم إضافة "${form.name}" للمخزون`)
-          }
-        }
+        if (np && qty > 0) await sb.from('stock_movements').insert({
+          product_id:np.id, profile_id:userId,
+          type:'in', qty_change:qty, note:`شراء جديد من: ${form.supplier}`
+        })
+        toast(`✅ تم إضافة "${form.name}" للمخزون`)
       }
     } else {
       toast('✅ تم تسجيل الشراء')
