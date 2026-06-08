@@ -18,16 +18,18 @@ export default function PurchaseReportPage() {
 
   async function load() {
     setLoading(true)
-    const cachedOrg = sessionStorage.getItem('s_org_id')
-    let orgId = cachedOrg
-    if (!orgId) {
+    const getOrgId = async (): Promise<string|null> => {
+      const cached = sessionStorage.getItem('s_org_id')
+      if (cached) return cached
       const { data:{ user } } = await supabase.auth.getUser()
-      if (!user) { setLoading(false); return }
+      if (!user) return null
       const { data: profile } = await supabase.from('profiles').select('org_id').eq('id', user.id).single()
-      if (!profile?.org_id) { setLoading(false); return }
-      orgId = profile.org_id
-      sessionStorage.setItem('s_org_id', orgId)
+      if (!profile?.org_id) return null
+      sessionStorage.setItem('s_org_id', profile.org_id)
+      return profile.org_id
     }
+    const orgId = await getOrgId()
+    if (!orgId) { setLoading(false); return }
     const { data } = await supabase.from('purchases').select('*')
       .eq('org_id', orgId).order('created_at', { ascending: false })
     setPurchases(data || [])
