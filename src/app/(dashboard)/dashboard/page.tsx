@@ -102,7 +102,8 @@ export default function DashboardPage() {
       }
     }
     const orgId = profile?.org_id
-    if (orgId) { sessionStorage.setItem('s_org_id', orgId); sessionStorage.setItem('s_profile_id', user.id) }
+    if (!orgId) return
+    sessionStorage.setItem("s_org_id", orgId); sessionStorage.setItem("s_profile_id", user.id)
 
     const [{ data:products },{ data:purchases },{ data:movements }] = await Promise.all([
       supabase.from('products').select('id,name,qty,reorder_point,unit').eq('org_id',orgId).eq('is_active',true),

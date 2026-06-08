@@ -7,9 +7,10 @@ import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh'
 import Pagination from '@/components/pagination'
 
 interface Product {
-  id:string; name:string; sku:string; unit:string
-  qty:number; reorder_point:number; category:string
+  id:string; name:string; sku:string|null; unit:string
+  qty:number; reorder_point:number; category:string|null
   org_id:string; is_active:boolean
+  created_at:string; updated_at:string
 }
 
 const UNITS = ['قطعة','كيلو','كيس','كرتون','لتر','علبة','باكيت','درزن','رول','غرام','أخرى']
