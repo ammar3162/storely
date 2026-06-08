@@ -76,7 +76,7 @@ export default function PurchasesPage() {
     const amount = form.hasVat==='yes' ? parseFloat((total/1.15).toFixed(2)) : total
     const vat    = form.hasVat==='yes' ? parseFloat((total-amount).toFixed(2)) : 0
 
-    await sb.from('purchases').insert({
+    const insertPayload = {
       org_id:orgId, profile_id:userId,
       category:form.category, name:form.name,
       qty:form.qty ? Number(form.qty) : null,
@@ -85,7 +85,10 @@ export default function PurchasesPage() {
       amount, vat_amount:vat, total_amount:total,
       supplier:form.supplier, note:form.note||null,
       invoice_image:form.invoice_image||null,
-    })
+    }
+    console.log('PAYLOAD:', JSON.stringify(insertPayload))
+    const { error: insErr } = await sb.from('purchases').insert(insertPayload)
+    if (insErr) { console.error('ERR:', insErr.message, insErr.details, insErr.hint); toast('خطأ: ' + insErr.message, 'error'); setLoading(false); return }
 
     if (form.category==='مخزون' && form.name) {
       const qty = form.qty ? Number(form.qty) : 0
