@@ -164,7 +164,14 @@ export default function PurchasesPage() {
         .cat-btn.active{border-color:#16a34a;background:#f0fdf4;color:#16a34a}
         .vat-btn{padding:12px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;border:1.5px solid #e2e8f0;background:white;color:#64748b;font-family:inherit;width:100%}
         .row-hover:hover{background:#f8fafc!important}
-        @media(max-width:768px){.p-grid{grid-template-columns:1fr!important}.s-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px!important}}
+        .trow:hover td{background:#f8fafc!important}
+        @media(max-width:768px){
+          .p-grid{grid-template-columns:1fr!important}
+          .s-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px!important}
+          .mob-hide{display:none!important}
+          .header-row{flex-direction:column!important;gap:10px!important}
+          .header-btns{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;width:100%!important}
+        }
       `}</style>
 
       {showScan && (
