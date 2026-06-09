@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام الكاشير - مطعمنا</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🍽️ نظام إدارة الطلبات</h1>
+            <div class="stats">
+                <div class="stat-box">
+                    <span class="stat-number" id="pendingCount">0</span>
+                    <span class="stat-label">قيد الانتظار</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" id="receivedCount">0</span>
+                    <span class="stat-label">تم الاستلام</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" id="readyCount">0</span>
+                    <span class="stat-label">جاهز للتسليم</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Order Details Modal -->
+        <div id="orderModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>📋 تفاصيل الطلب</h2>
+                <div id="orderDetails"></div>
+            </div>
+        </div>
+
+        <!-- Orders List -->
+        <main class="orders-container">
+            <h2>📦 الطلبات الواردة</h2>
+            <div id="ordersList" class="orders-list">
+                <!-- Orders will be loaded here -->
+                <p class="no-orders">لا توجد طلبات حالياً...</p>
+            </div>
+        </main>
+
+        <!-- Auto Refresh Toggle -->
+        <div class="refresh-control">
+            <label>
+                <input type="checkbox" id="autoRefresh" checked>
+                تحديث تلقائي (كل 5 ثواني)
+            </label>
+            <button onclick="loadOrders()" class="btn-refresh">🔄 تحديث الآن</button>
+        </div>
+    </div>
+
+    <script src="js/cashier.js"></script>
+</body>
+</html>
