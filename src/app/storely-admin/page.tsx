@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 type User = {
-  id: string; full_name: string; phone: string; email: string; role: string
+  id: string; full_name: string; phone: string; role: string
   status: string; created_at: string; org_id: string; org_name: string
   subscription_type: string; subscription_ends_at: string|null
 }
@@ -39,10 +39,10 @@ export default function AdminPage() {
   async function loadUsers() {
     setLoading(true)
     const { data } = await sb.from('profiles')
-      .select('id,full_name,phone,email,role,status,created_at,org_id,subscription_type,subscription_ends_at,organizations(name)')
+      .select('id,full_name,phone,role,status,created_at,org_id,subscription_type,subscription_ends_at,organizations(name)')
       .order('created_at',{ascending:false})
     if (data) setUsers(data.map((p:any)=>({
-      id:p.id, full_name:p.full_name||'—', phone:p.phone||'—', email:p.email||'—',
+      id:p.id, full_name:p.full_name||'—', phone:p.phone||'—',
       role:p.role, status:p.status||'pending', created_at:p.created_at,
       org_id:p.org_id, org_name:p.organizations?.name||'—',
       subscription_type:p.subscription_type||'trial',
@@ -182,7 +182,6 @@ export default function AdminPage() {
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
                 {[
                   {label:'الجوال',      value:selected.phone},
-                  {label:'البريد الإلكتروني', value:selected.email},
                   {label:'تاريخ التسجيل', value:new Date(selected.created_at).toLocaleDateString('ar-SA')},
                   {label:'نوع الاشتراك', value:selected.subscription_type==='paid'?'مدفوع':'تجربة'},
                   {label:'الحالة',       value:STATUS[selected.status]?.label||selected.status},
