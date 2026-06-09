@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { colors, radius, shadow, font, card, btnPrimary, btnDanger, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 
-const REASONS = ['استهلاك يومي','طلب فرع','تلف','هدية','أخرى']
+const REASONS = ['استهلاك يومي','طلب فرع','أخرى']
 const lbl: React.CSSProperties = { fontSize: font.xs, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }
 
 export default function DispensePage() {
