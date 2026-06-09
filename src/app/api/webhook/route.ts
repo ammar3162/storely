@@ -40,7 +40,8 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    // تجاهل test events
+    // Log للتشخيص
+    console.log('WEBHOOK BODY:', JSON.stringify(body, null, 2))
     if (body?.data?.test === true) return NextResponse.json({ ok: true })
 
     // WasenderAPI payload formats
