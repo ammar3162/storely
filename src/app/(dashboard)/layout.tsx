@@ -84,6 +84,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const bl=bList||[]
     setBranches(bl)
 
+    // إذا تغير عدد الفروع امسح الاختيار القديم
+    const savedBranchCount = sessionStorage.getItem('s_branch_count')
+    if(savedBranchCount && Number(savedBranchCount) !== bl.length) {
+      sessionStorage.removeItem('s_branch_id')
+      sessionStorage.removeItem('s_branch_name')
+    }
+    sessionStorage.setItem('s_branch_count', String(bl.length))
+
     if(bl.length<=1){
       const b=bl[0]||null
       if(b){sessionStorage.setItem('s_branch_id',b.id);sessionStorage.setItem('s_branch_name',b.name);setBranchName(b.name)}
