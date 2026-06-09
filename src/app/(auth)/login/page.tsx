@@ -12,6 +12,7 @@ function LoginPage() {
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
   const [successData, setSuccessData] = useState({name:'',phone:''})
+  const [branchCount, setBranchCount] = useState<number|null>(null)
   const router   = useRouter()
   const supabase = createClient()
 
@@ -58,7 +59,7 @@ function LoginPage() {
         await supabase.from('profiles').upsert({
           id: data.user.id, org_id: org.id,
           full_name: orgName.trim(), role: 'owner', phone: phone.trim(),
-          status: 'pending',
+          status: 'pending', branch_count: branchCount||1 as any,
         }, { onConflict: 'id', ignoreDuplicates: false })
       }
       setError('')
