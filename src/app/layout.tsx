@@ -1,5 +1,6 @@
 import { ToastContainer } from '@/components/toast'
 import PWAInstall from '@/components/PWAInstall'
+import PullToRefresh from '@/components/PullToRefresh'
 import type { Metadata } from "next"
 import "./globals.css"
 
@@ -15,6 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ar" dir="rtl">
       <head>
         <meta name="theme-color" content="#0d2818"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
         <meta name="mobile-web-app-capable" content="yes"/>
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
         <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
@@ -29,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ToastContainer/>
         <PWAInstall/>
+        <PullToRefresh/>
         {children}
       </body>
     </html>
