@@ -1,4 +1,5 @@
 import { ToastContainer } from '@/components/toast'
+import PWAInstall from '@/components/PWAInstall'
 import type { Metadata } from "next"
 import "./globals.css"
 
@@ -13,6 +14,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ar" dir="rtl">
       <head>
+        <meta name="theme-color" content="#0d2818"/>
+        <meta name="mobile-web-app-capable" content="yes"/>
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
         <link rel="preconnect" href="https://fonts.googleapis.com"/>
         <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
         <style dangerouslySetInnerHTML={{__html:`
@@ -23,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ToastContainer/>
+        <PWAInstall/>
         {children}
       </body>
     </html>
