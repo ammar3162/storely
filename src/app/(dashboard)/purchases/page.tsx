@@ -176,7 +176,15 @@ export default function PurchasesPage() {
 
       {showScan && (
         <Suspense fallback={null}>
-          <BarcodeScanner onScan={(code:string)=>{setShowScan(false);setForm(f=>({...f,name:code}))}} onClose={()=>setShowScan(false)}/>
+          <BarcodeScanner onScan={async(code:string)=>{
+            setShowScan(false)
+            const orgId = sessionStorage.getItem("s_org_id")
+            if (orgId) {
+              const { data: found } = await sb.from("products").select("name,unit").eq("org_id",orgId).eq("sku",code).maybeSingle()
+              if (found) { setForm(f=>({...f,name:found.name,unit:found.unit||f.unit})); return }
+            }
+            toast("لم يعثر على منتج بهذا الباركود — أدخل الاسم يدوياً", "warning")
+          }} onClose={()=>setShowScan(false)}/>
         </Suspense>
       )}
 
