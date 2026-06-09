@@ -14,6 +14,21 @@ function Section({ title, icon, children }: { title:string; icon:string; childre
         <div style={{fontSize:font.md,fontWeight:700,color:colors.text}}>{title}</div>
       </div>
       {children}
+      <Section title="النسخ الاحتياطي" icon="💾">
+        {lastBackup&&(<div style={{fontSize:font.xs,color:colors.text4,marginBottom:12,display:'flex',alignItems:'center',gap:6}}><span>آخر نسخة:</span><span style={{fontWeight:600,color:colors.text2}}>{new Date(lastBackup).toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</span></div>)}
+        {backupMsg&&(<div style={{background:backupMsg.ok?colors.primaryLight:colors.dangerLight,border:`1.5px solid ${backupMsg.ok?colors.primaryBorder:colors.dangerBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:14,fontSize:font.sm,fontWeight:600,color:backupMsg.ok?colors.primary:colors.danger,display:'flex',alignItems:'center',gap:8}}>{backupMsg.ok?'✅':'❌'} {backupMsg.text}</div>)}
+        <p style={{fontSize:font.sm,color:colors.text3,marginBottom:14,lineHeight:1.7}}>يتم إنشاء نسخة احتياطية تلقائياً كل أسبوع. يمكنك أيضاً إنشاء نسخة يدوياً وتحميلها.</p>
+        <button type="button" onClick={runBackup} disabled={backupLoading} style={{...btnPrimary,width:'100%',padding:'13px',marginBottom:backups.length>0?16:0,opacity:backupLoading?0.7:1,cursor:backupLoading?'not-allowed':'pointer'}}>
+          {backupLoading?'⏳ جاري إنشاء النسخة...':'💾 إنشاء نسخة احتياطية الآن'}
+        </button>
+        {backups.length===0&&!backupLoading&&(<button type="button" onClick={loadBackups} style={{...btnSecondary,width:'100%',padding:'11px',fontSize:font.sm,marginTop:10}}>📋 عرض النسخ السابقة</button>)}
+        {backups.length>0&&(
+          <div style={{...card,overflow:'hidden',marginTop:14}}>
+            <div style={{padding:'10px 14px',borderBottom:`1px solid ${colors.border}`,fontSize:font.xs,fontWeight:700,color:colors.text4}}>النسخ الاحتياطية ({backups.length})</div>
+            {backups.map((b,i)=>(<div key={i} style={{padding:'12px 14px',borderBottom:i<backups.length-1?`1px solid ${colors.border}`:'none',display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}}><div><div style={{fontSize:font.sm,fontWeight:600,color:colors.text}}>{b.name?.replace('_backup.json','')}</div><div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>{Math.round((b.size||0)/1024)} KB</div></div>{b.url&&(<a href={b.url} download style={{...btnPrimary,padding:'7px 14px',fontSize:font.xs,textDecoration:'none'}}>⬇ تحميل</a>)}</div>))}
+          </div>
+        )}
+      </Section>
     </div>
   )
 }
@@ -50,6 +65,7 @@ export default function SettingsPage() {
     if(org) {
       setForm({ name:org.name||'', whatsapp_number:org.whatsapp_number||'', notify_schedule:org.notify_schedule||'daily', notify_time:org.notify_time||'08:00', notify_days:org.notify_days||['0'] })
       setLastSent(org.last_notified_at||null)
+      setLastBackup((org as any).last_backup_at||null)
     }
     setLoading(false)
   }
@@ -71,6 +87,20 @@ export default function SettingsPage() {
     setSending(false); setTimeout(()=>setSendMsg(null),6000)
   }
 
+  async function loadBackups() {
+    const res=await fetch('/api/backup/list',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId})})
+    const data=await res.json(); if(data.success) setBackups(data.backups||[])
+  }
+  async function runBackup() {
+    setBackupLoading(true); setBackupMsg(null)
+    try {
+      const res=await fetch('/api/backup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId})})
+      const data=await res.json()
+      if(data.success){setBackupMsg({ok:true,text:'تم إنشاء نسخة احتياطية بنجاح'});setLastBackup(new Date().toISOString());loadBackups()}
+      else setBackupMsg({ok:false,text:'فشل إنشاء النسخة الاحتياطية'})
+    } catch{setBackupMsg({ok:false,text:'خطأ في الاتصال'})}
+    setBackupLoading(false); setTimeout(()=>setBackupMsg(null),5000)
+  }
   function toggleDay(day:string) {
     const days=form.notify_days.includes(day)?form.notify_days.filter(d=>d!==day):[...form.notify_days,day]
     if(days.length===0) return
@@ -176,6 +206,21 @@ export default function SettingsPage() {
           style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,width:'100%',padding:'13px',background:sending?colors.text4:'#25d366',color:'white',border:'none',borderRadius:radius.md,fontSize:font.base,fontWeight:700,cursor:sending?'not-allowed':'pointer',fontFamily:font.family,transition:'all .15s',boxShadow:sending?'none':'0 4px 14px rgba(37,211,102,.3)'}}>
           {sending?'⏳ جاري الإرسال...':'📲 إرسال إشعار الآن'}
         </button>
+      </Section>
+      <Section title="النسخ الاحتياطي" icon="💾">
+        {lastBackup&&(<div style={{fontSize:font.xs,color:colors.text4,marginBottom:12,display:'flex',alignItems:'center',gap:6}}><span>آخر نسخة:</span><span style={{fontWeight:600,color:colors.text2}}>{new Date(lastBackup).toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</span></div>)}
+        {backupMsg&&(<div style={{background:backupMsg.ok?colors.primaryLight:colors.dangerLight,border:`1.5px solid ${backupMsg.ok?colors.primaryBorder:colors.dangerBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:14,fontSize:font.sm,fontWeight:600,color:backupMsg.ok?colors.primary:colors.danger,display:'flex',alignItems:'center',gap:8}}>{backupMsg.ok?'✅':'❌'} {backupMsg.text}</div>)}
+        <p style={{fontSize:font.sm,color:colors.text3,marginBottom:14,lineHeight:1.7}}>يتم إنشاء نسخة احتياطية تلقائياً كل أسبوع. يمكنك أيضاً إنشاء نسخة يدوياً وتحميلها.</p>
+        <button type="button" onClick={runBackup} disabled={backupLoading} style={{...btnPrimary,width:'100%',padding:'13px',marginBottom:backups.length>0?16:0,opacity:backupLoading?0.7:1,cursor:backupLoading?'not-allowed':'pointer'}}>
+          {backupLoading?'⏳ جاري إنشاء النسخة...':'💾 إنشاء نسخة احتياطية الآن'}
+        </button>
+        {backups.length===0&&!backupLoading&&(<button type="button" onClick={loadBackups} style={{...btnSecondary,width:'100%',padding:'11px',fontSize:font.sm,marginTop:10}}>📋 عرض النسخ السابقة</button>)}
+        {backups.length>0&&(
+          <div style={{...card,overflow:'hidden',marginTop:14}}>
+            <div style={{padding:'10px 14px',borderBottom:`1px solid ${colors.border}`,fontSize:font.xs,fontWeight:700,color:colors.text4}}>النسخ الاحتياطية ({backups.length})</div>
+            {backups.map((b,i)=>(<div key={i} style={{padding:'12px 14px',borderBottom:i<backups.length-1?`1px solid ${colors.border}`:'none',display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}}><div><div style={{fontSize:font.sm,fontWeight:600,color:colors.text}}>{b.name?.replace('_backup.json','')}</div><div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>{Math.round((b.size||0)/1024)} KB</div></div>{b.url&&(<a href={b.url} download style={{...btnPrimary,padding:'7px 14px',fontSize:font.xs,textDecoration:'none'}}>⬇ تحميل</a>)}</div>))}
+          </div>
+        )}
       </Section>
     </div>
   )
