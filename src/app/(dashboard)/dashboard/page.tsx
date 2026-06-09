@@ -106,8 +106,8 @@ export default function DashboardPage() {
     sessionStorage.setItem("s_org_id", orgId); sessionStorage.setItem("s_profile_id", user.id)
 
     const [{ data:products },{ data:purchases },{ data:movements }] = await Promise.all([
-      supabase.from('products').select('id,name,qty,reorder_point,unit').eq('org_id',orgId).eq('is_active',true),
-      supabase.from('purchases').select('amount,created_at').eq('org_id',orgId),
+      (()=>{ let q=supabase.from('products').select('id,name,qty,reorder_point,unit').eq('org_id',orgId).eq('is_active',true); const bid=sessionStorage.getItem('s_branch_id'); if(bid) q=(q as any).eq('branch_id',bid); return q })(),
+      (()=>{ let q=supabase.from('purchases').select('amount,created_at').eq('org_id',orgId); const bid=sessionStorage.getItem('s_branch_id'); if(bid) q=(q as any).eq('branch_id',bid); return q })(),
       supabase.from('stock_movements').select('qty_change,type,created_at,products!inner(name,unit,org_id)').eq('products.org_id',orgId).order('created_at',{ascending:false}).limit(20),
     ])
 
