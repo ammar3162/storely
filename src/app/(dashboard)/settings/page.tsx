@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { colors, radius, font, card, btnPrimary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
+import { colors, radius, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 
 const lbl: React.CSSProperties = { fontSize: font.xs, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }
 
@@ -14,21 +14,6 @@ function Section({ title, icon, children }: { title:string; icon:string; childre
         <div style={{fontSize:font.md,fontWeight:700,color:colors.text}}>{title}</div>
       </div>
       {children}
-      <Section title="النسخ الاحتياطي" icon="💾">
-        {lastBackup&&(<div style={{fontSize:font.xs,color:colors.text4,marginBottom:12,display:'flex',alignItems:'center',gap:6}}><span>آخر نسخة:</span><span style={{fontWeight:600,color:colors.text2}}>{new Date(lastBackup).toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</span></div>)}
-        {backupMsg&&(<div style={{background:backupMsg.ok?colors.primaryLight:colors.dangerLight,border:`1.5px solid ${backupMsg.ok?colors.primaryBorder:colors.dangerBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:14,fontSize:font.sm,fontWeight:600,color:backupMsg.ok?colors.primary:colors.danger,display:'flex',alignItems:'center',gap:8}}>{backupMsg.ok?'✅':'❌'} {backupMsg.text}</div>)}
-        <p style={{fontSize:font.sm,color:colors.text3,marginBottom:14,lineHeight:1.7}}>يتم إنشاء نسخة احتياطية تلقائياً كل أسبوع. يمكنك أيضاً إنشاء نسخة يدوياً وتحميلها.</p>
-        <button type="button" onClick={runBackup} disabled={backupLoading} style={{...btnPrimary,width:'100%',padding:'13px',marginBottom:backups.length>0?16:0,opacity:backupLoading?0.7:1,cursor:backupLoading?'not-allowed':'pointer'}}>
-          {backupLoading?'⏳ جاري إنشاء النسخة...':'💾 إنشاء نسخة احتياطية الآن'}
-        </button>
-        {backups.length===0&&!backupLoading&&(<button type="button" onClick={loadBackups} style={{...btnSecondary,width:'100%',padding:'11px',fontSize:font.sm,marginTop:10}}>📋 عرض النسخ السابقة</button>)}
-        {backups.length>0&&(
-          <div style={{...card,overflow:'hidden',marginTop:14}}>
-            <div style={{padding:'10px 14px',borderBottom:`1px solid ${colors.border}`,fontSize:font.xs,fontWeight:700,color:colors.text4}}>النسخ الاحتياطية ({backups.length})</div>
-            {backups.map((b,i)=>(<div key={i} style={{padding:'12px 14px',borderBottom:i<backups.length-1?`1px solid ${colors.border}`:'none',display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}}><div><div style={{fontSize:font.sm,fontWeight:600,color:colors.text}}>{b.name?.replace('_backup.json','')}</div><div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>{Math.round((b.size||0)/1024)} KB</div></div>{b.url&&(<a href={b.url} download style={{...btnPrimary,padding:'7px 14px',fontSize:font.xs,textDecoration:'none'}}>⬇ تحميل</a>)}</div>))}
-          </div>
-        )}
-      </Section>
     </div>
   )
 }
@@ -39,13 +24,17 @@ const DAYS = [
 ]
 
 export default function SettingsPage() {
-  const [loading, setLoading]   = useState(true)
-  const [saving, setSaving]     = useState(false)
-  const [sending, setSending]   = useState(false)
-  const [saveOk, setSaveOk]     = useState(false)
-  const [sendMsg, setSendMsg]   = useState<{ok:boolean;text:string}|null>(null)
-  const [orgId, setOrgId]       = useState('')
-  const [lastSent, setLastSent] = useState<string|null>(null)
+  const [loading, setLoading]           = useState(true)
+  const [saving, setSaving]             = useState(false)
+  const [sending, setSending]           = useState(false)
+  const [saveOk, setSaveOk]             = useState(false)
+  const [sendMsg, setSendMsg]           = useState<{ok:boolean;text:string}|null>(null)
+  const [orgId, setOrgId]               = useState('')
+  const [lastSent, setLastSent]         = useState<string|null>(null)
+  const [lastBackup, setLastBackup]     = useState<string|null>(null)
+  const [backups, setBackups]           = useState<any[]>([])
+  const [backupLoading, setBackupLoading] = useState(false)
+  const [backupMsg, setBackupMsg]       = useState<{ok:boolean;text:string}|null>(null)
   const [form, setForm] = useState({
     name:'', whatsapp_number:'',
     notify_schedule:'daily',
@@ -61,11 +50,12 @@ export default function SettingsPage() {
     const{data:{user}}=await sb.auth.getUser(); if(!user) return
     const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single(); if(!profile) return
     setOrgId(profile.org_id)
-    const{data:orgRaw}=await sb.from('organizations').select('*').eq('id',profile.org_id).single(); const org=orgRaw as any
-    if(org) {
+    const{data:orgRaw}=await sb.from('organizations').select('*').eq('id',profile.org_id).single()
+    const org=orgRaw as any
+    if(org){
       setForm({ name:org.name||'', whatsapp_number:org.whatsapp_number||'', notify_schedule:org.notify_schedule||'daily', notify_time:org.notify_time||'08:00', notify_days:org.notify_days||['0'] })
       setLastSent(org.last_notified_at||null)
-      setLastBackup((org as any).last_backup_at||null)
+      setLastBackup(org.last_backup_at||null)
     }
     setLoading(false)
   }
@@ -91,6 +81,7 @@ export default function SettingsPage() {
     const res=await fetch('/api/backup/list',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId})})
     const data=await res.json(); if(data.success) setBackups(data.backups||[])
   }
+
   async function runBackup() {
     setBackupLoading(true); setBackupMsg(null)
     try {
@@ -101,6 +92,7 @@ export default function SettingsPage() {
     } catch{setBackupMsg({ok:false,text:'خطأ في الاتصال'})}
     setBackupLoading(false); setTimeout(()=>setBackupMsg(null),5000)
   }
+
   function toggleDay(day:string) {
     const days=form.notify_days.includes(day)?form.notify_days.filter(d=>d!==day):[...form.notify_days,day]
     if(days.length===0) return
@@ -125,7 +117,7 @@ export default function SettingsPage() {
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:620,margin:'0 auto'}}>
       <div style={{marginBottom:22}}>
         <h1 style={{...pageTitle}}>الإعدادات</h1>
-        <p style={{...pageSub}}>إعدادات المؤسسة وجدولة تنبيهات واتساب</p>
+        <p style={{...pageSub}}>إعدادات المؤسسة وجدولة تنبيهات واتساب والنسخ الاحتياطي</p>
       </div>
 
       {saveOk&&(<div style={{background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16,fontSize:font.sm,fontWeight:600,color:colors.primary,display:'flex',alignItems:'center',gap:8}}>✅ تم حفظ الإعدادات بنجاح</div>)}
@@ -157,21 +149,14 @@ export default function SettingsPage() {
               ))}
             </div>
           </div>
-
           {form.notify_schedule==='weekly'&&(
             <div style={{marginBottom:18}}>
               <label style={lbl}>أيام الإرسال</label>
               <div style={{display:'flex',gap:6,flexWrap:'wrap' as const}}>
-                {DAYS.map(d=>(
-                  <button key={d.key} type="button" onClick={()=>toggleDay(d.key)}
-                    style={{padding:'7px 12px',borderRadius:radius.md,cursor:'pointer',border:`1.5px solid ${form.notify_days.includes(d.key)?colors.primary:colors.border2}`,background:form.notify_days.includes(d.key)?colors.primaryLight:colors.surface,color:form.notify_days.includes(d.key)?colors.primary:colors.text3,fontSize:font.xs,fontWeight:700,fontFamily:font.family,transition:'all .15s'}}>
-                    {d.label}
-                  </button>
-                ))}
+                {DAYS.map(d=>(<button key={d.key} type="button" onClick={()=>toggleDay(d.key)} style={{padding:'7px 12px',borderRadius:radius.md,cursor:'pointer',border:`1.5px solid ${form.notify_days.includes(d.key)?colors.primary:colors.border2}`,background:form.notify_days.includes(d.key)?colors.primaryLight:colors.surface,color:form.notify_days.includes(d.key)?colors.primary:colors.text3,fontSize:font.xs,fontWeight:700,fontFamily:font.family,transition:'all .15s'}}>{d.label}</button>))}
               </div>
             </div>
           )}
-
           {form.notify_schedule!=='manual'&&(
             <div style={{marginBottom:18}}>
               <label style={lbl}>وقت الإرسال</label>
@@ -179,19 +164,16 @@ export default function SettingsPage() {
               <div style={{fontSize:11,color:colors.text4,marginTop:6}}>توقيت الرياض (UTC+3)</div>
             </div>
           )}
-
           {form.notify_schedule!=='manual'&&(
             <div style={{background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:18,fontSize:font.sm,color:colors.primary,fontWeight:600,display:'flex',alignItems:'center',gap:8}}>
               <span style={{fontSize:16}}>🔔</span> سيتم إرسال الإشعار {scheduleLabel()}
             </div>
           )}
-
           {form.notify_schedule==='manual'&&(
             <div style={{background:colors.warningLight,border:`1px solid ${colors.warningBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:18,fontSize:font.sm,color:colors.warning,fontWeight:600,display:'flex',alignItems:'center',gap:8}}>
               <span style={{fontSize:16}}>👆</span> الإرسال يدوياً فقط عند الضغط على الزر أدناه
             </div>
           )}
-
           <button type="submit" disabled={saving} style={{...btnPrimary,width:'100%',padding:'13px',opacity:saving?0.7:1,cursor:saving?'not-allowed':'pointer'}}>
             {saving?'جاري الحفظ...':'💾 حفظ الإعدادات'}
           </button>
@@ -207,16 +189,18 @@ export default function SettingsPage() {
           {sending?'⏳ جاري الإرسال...':'📲 إرسال إشعار الآن'}
         </button>
       </Section>
+
       <Section title="النسخ الاحتياطي" icon="💾">
         {lastBackup&&(<div style={{fontSize:font.xs,color:colors.text4,marginBottom:12,display:'flex',alignItems:'center',gap:6}}><span>آخر نسخة:</span><span style={{fontWeight:600,color:colors.text2}}>{new Date(lastBackup).toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</span></div>)}
         {backupMsg&&(<div style={{background:backupMsg.ok?colors.primaryLight:colors.dangerLight,border:`1.5px solid ${backupMsg.ok?colors.primaryBorder:colors.dangerBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:14,fontSize:font.sm,fontWeight:600,color:backupMsg.ok?colors.primary:colors.danger,display:'flex',alignItems:'center',gap:8}}>{backupMsg.ok?'✅':'❌'} {backupMsg.text}</div>)}
         <p style={{fontSize:font.sm,color:colors.text3,marginBottom:14,lineHeight:1.7}}>يتم إنشاء نسخة احتياطية تلقائياً كل أسبوع. يمكنك أيضاً إنشاء نسخة يدوياً وتحميلها.</p>
-        <button type="button" onClick={runBackup} disabled={backupLoading} style={{...btnPrimary,width:'100%',padding:'13px',marginBottom:backups.length>0?16:0,opacity:backupLoading?0.7:1,cursor:backupLoading?'not-allowed':'pointer'}}>
+        <button type="button" onClick={runBackup} disabled={backupLoading}
+          style={{...btnPrimary,width:'100%',padding:'13px',marginBottom:12,opacity:backupLoading?0.7:1,cursor:backupLoading?'not-allowed':'pointer'}}>
           {backupLoading?'⏳ جاري إنشاء النسخة...':'💾 إنشاء نسخة احتياطية الآن'}
         </button>
-        {backups.length===0&&!backupLoading&&(<button type="button" onClick={loadBackups} style={{...btnSecondary,width:'100%',padding:'11px',fontSize:font.sm,marginTop:10}}>📋 عرض النسخ السابقة</button>)}
+        {backups.length===0&&(<button type="button" onClick={loadBackups} style={{...btnSecondary,width:'100%',padding:'11px',fontSize:font.sm}}>📋 عرض النسخ السابقة</button>)}
         {backups.length>0&&(
-          <div style={{...card,overflow:'hidden',marginTop:14}}>
+          <div style={{...card,overflow:'hidden'}}>
             <div style={{padding:'10px 14px',borderBottom:`1px solid ${colors.border}`,fontSize:font.xs,fontWeight:700,color:colors.text4}}>النسخ الاحتياطية ({backups.length})</div>
             {backups.map((b,i)=>(<div key={i} style={{padding:'12px 14px',borderBottom:i<backups.length-1?`1px solid ${colors.border}`:'none',display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}}><div><div style={{fontSize:font.sm,fontWeight:600,color:colors.text}}>{b.name?.replace('_backup.json','')}</div><div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>{Math.round((b.size||0)/1024)} KB</div></div>{b.url&&(<a href={b.url} download style={{...btnPrimary,padding:'7px 14px',fontSize:font.xs,textDecoration:'none'}}>⬇ تحميل</a>)}</div>))}
           </div>
