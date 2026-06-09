@@ -56,11 +56,13 @@ function LoginPage() {
         .select().single()
       if (org) {
         setSuccessData({name:orgName.trim(),phone:phone.trim()})
+        // Update branch_count separately
+        if (branchCount) await supabase.from('profiles').update({branch_count:branchCount} as any).eq('id',data.user.id)
         await supabase.from('profiles').upsert({
           id: data.user.id, org_id: org.id,
           full_name: orgName.trim(), role: 'owner', phone: phone.trim(),
-          status: 'pending', branch_count: branchCount||1 as any,
-        }, { onConflict: 'id', ignoreDuplicates: false })
+          status: 'pending',
+        } as any, { onConflict: 'id', ignoreDuplicates: false })
       }
       setError('')
       setMode('success')
