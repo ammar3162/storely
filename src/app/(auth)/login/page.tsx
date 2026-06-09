@@ -143,6 +143,22 @@ function LoginPage() {
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>كلمة المرور</label>
               <input type="password" required value={password} onChange={e=>setPassword(e.target.value)} style={inp} placeholder="6 أحرف على الأقل"/>
             </div>
+            <div>
+              <label style={{fontSize:13,fontWeight:700,color:'#374151',display:'block',marginBottom:10}}>عدد الفروع المطلوبة</label>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:8}}>
+                {[{v:1,l:'1'},{v:2,l:'2'},{v:3,l:'3'},{v:4,l:'4'},{v:5,l:'5+'}].map(b=>(
+                  <button key={b.v} type="button" onClick={()=>setBranchCount(b.v)}
+                    style={{padding:'12px 0',borderRadius:10,border:`2px solid ${branchCount===b.v?'#2d7a4f':'#e2e8f0'}`,background:branchCount===b.v?'#f0fdf4':'white',color:branchCount===b.v?'#2d7a4f':'#6b7280',fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'system-ui',transition:'all .15s'}}>
+                    {b.l}
+                  </button>
+                ))}
+              </div>
+              {branchCount&&(
+                <div style={{marginTop:8,padding:'8px 12px',background:'#f0fdf4',borderRadius:8,fontSize:12,color:'#2d7a4f',fontWeight:600}}>
+                  {branchCount===1?'الباقة الأساسية — 99 ر.س/شهر':branchCount<=3?'الباقة المتوسطة — 199 ر.س/شهر':'الباقة المتقدمة — 349 ر.س/شهر'}
+                </div>
+              )}
+            </div>
             <button type="submit" disabled={loading} style={btnPrimary}>
               {loading ? 'جاري الإنشاء...' : 'إنشاء الحساب'}
             </button>
