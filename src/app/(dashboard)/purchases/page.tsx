@@ -363,7 +363,7 @@ export default function PurchasesPage() {
                       {p.qty&&<div style={{fontSize:11,color:'#94a3b8',marginBottom:1}}>{p.qty} {p.unit}</div>}
                       <div style={{fontSize:11,color:'#94a3b8',display:'flex',gap:8,flexWrap:'wrap' as const}}>
                         {p.supplier&&<span>🏪 {p.supplier}</span>}
-                        <span>📅 {new Date(p.created_at).toLocaleDateString('ar-SA')}</span>
+                        <span>📅 {new Date(p.created_at).toLocaleDateString('en-GB')}</span>
                       </div>
                     </div>
                     <div style={{textAlign:'left' as const,flexShrink:0}}>

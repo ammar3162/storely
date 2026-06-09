@@ -101,7 +101,7 @@ export default function NotificationsPage() {
                     {!n.read && <span style={{...tag('white',c.color,c.color),fontSize:10,flexShrink:0}}>جديد</span>}
                   </div>
                   <div style={{fontSize:font.xs,color:n.read?colors.text4:colors.text3,marginBottom:6,lineHeight:1.6}}>{n.message}</div>
-                  <div style={{fontSize:10,color:colors.text4}}>{new Date(n.created_at).toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
+                  <div style={{fontSize:10,color:colors.text4}}>{new Date(n.created_at).toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
                 </div>
                 <button onClick={e=>{e.stopPropagation();del(n.id)}} style={{width:28,height:28,borderRadius:radius.sm,border:`1px solid ${colors.border2}`,background:colors.surface,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:colors.text4,flexShrink:0,fontSize:12}}>✕</button>
               </div>

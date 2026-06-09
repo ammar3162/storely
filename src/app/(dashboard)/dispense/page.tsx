@@ -174,7 +174,7 @@ export default function DispensePage() {
                   <div style={{fontSize:font.sm,fontWeight:700,color:colors.text,marginBottom:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{(h.products as any)?.name}</div>
                   <div style={{display:'flex',gap:6,alignItems:'center'}}>
                     <span style={{...tag(colors.text3,colors.bg,colors.border2)}}>{h.note||'—'}</span>
-                    <span style={{fontSize:10,color:colors.text4}}>{new Date(h.created_at).toLocaleDateString('ar-SA')}</span>
+                    <span style={{fontSize:10,color:colors.text4}}>{new Date(h.created_at).toLocaleDateString('en-GB')}</span>
                   </div>
                 </div>
                 <span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontSize:font.sm,padding:'4px 12px'}}>{Math.abs(h.qty_change)} {(h.products as any)?.unit}</span>

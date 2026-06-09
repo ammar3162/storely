@@ -198,7 +198,7 @@ export default function SettingsPage() {
       </form>
 
       <Section title="إرسال فوري" icon="📲">
-        {lastSent&&(<div style={{fontSize:font.xs,color:colors.text4,marginBottom:12,display:'flex',alignItems:'center',gap:6}}><span>آخر إرسال:</span><span style={{fontWeight:600,color:colors.text2}}>{new Date(lastSent).toLocaleDateString('ar-SA',{weekday:'long',hour:'2-digit',minute:'2-digit'})}</span></div>)}
+        {lastSent&&(<div style={{fontSize:font.xs,color:colors.text4,marginBottom:12,display:'flex',alignItems:'center',gap:6}}><span>آخر إرسال:</span><span style={{fontWeight:600,color:colors.text2}}>{new Date(lastSent).toLocaleDateString('en-GB',{weekday:'long',hour:'2-digit',minute:'2-digit'})}</span></div>)}
         {sendMsg&&(<div style={{background:sendMsg.ok?colors.primaryLight:colors.dangerLight,border:`1.5px solid ${sendMsg.ok?colors.primaryBorder:colors.dangerBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:14,fontSize:font.sm,fontWeight:600,color:sendMsg.ok?colors.primary:colors.danger,display:'flex',alignItems:'center',gap:8}}>{sendMsg.ok?'✅':'❌'} {sendMsg.text}</div>)}
         <p style={{fontSize:font.sm,color:colors.text3,marginBottom:14,lineHeight:1.7}}>إرسال إشعار فوري الآن بقائمة المنتجات التي وصلت للحد الأدنى.</p>
         <button type="button" onClick={sendNow} disabled={sending}
@@ -220,7 +220,7 @@ export default function SettingsPage() {
       </Section>
 
       <Section title="النسخ الاحتياطي" icon="💾">
-        {lastBackup&&(<div style={{fontSize:font.xs,color:colors.text4,marginBottom:12,display:'flex',alignItems:'center',gap:6}}><span>آخر نسخة:</span><span style={{fontWeight:600,color:colors.text2}}>{new Date(lastBackup).toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</span></div>)}
+        {lastBackup&&(<div style={{fontSize:font.xs,color:colors.text4,marginBottom:12,display:'flex',alignItems:'center',gap:6}}><span>آخر نسخة:</span><span style={{fontWeight:600,color:colors.text2}}>{new Date(lastBackup).toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</span></div>)}
         {backupMsg&&(<div style={{background:backupMsg.ok?colors.primaryLight:colors.dangerLight,border:`1.5px solid ${backupMsg.ok?colors.primaryBorder:colors.dangerBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:14,fontSize:font.sm,fontWeight:600,color:backupMsg.ok?colors.primary:colors.danger,display:'flex',alignItems:'center',gap:8}}>{backupMsg.ok?'✅':'❌'} {backupMsg.text}</div>)}
         <p style={{fontSize:font.sm,color:colors.text3,marginBottom:14,lineHeight:1.7}}>يتم إنشاء نسخة احتياطية تلقائياً كل أسبوع. يمكنك أيضاً إنشاء نسخة يدوياً وتحميلها.</p>
         <button type="button" onClick={runBackup} disabled={backupLoading}

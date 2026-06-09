@@ -160,7 +160,7 @@ export default function DashboardPage() {
 
       <div style={{marginBottom:22}}>
         <div style={{fontSize:font.xl,fontWeight:800,color:colors.text,letterSpacing:'-0.5px'}}>{greeting}، {userName||'مرحباً'} 👋</div>
-        <div style={{fontSize:font.sm,color:colors.text4,marginTop:3}}>{orgName} — {new Date().toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
+        <div style={{fontSize:font.sm,color:colors.text4,marginTop:3}}>{orgName} — {new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
       </div>
 
       {subAlert&&showAlert&&subAlert!=='expired'&&(
@@ -188,7 +188,7 @@ export default function DashboardPage() {
         <StatCard label="إجمالي الأصناف" value={stats.products} sub="صنف في المخزون" color={colors.primary} bg={colors.primaryLight} icon="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" onClick={()=>router.push('/inventory')}/>
         <StatCard label="مخزون ناقص" value={stats.lowStock} sub="يحتاج إعادة طلب" color={colors.danger} bg={colors.dangerLight} icon="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" onClick={()=>router.push('/inventory')}/>
         <StatCard label="مشتريات اليوم" value={stats.todayPurchases} sub="فاتورة اليوم" color={colors.info} bg={colors.infoLight} icon="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" onClick={()=>router.push('/purchases')}/>
-        <StatCard label="إجمالي المشتريات" value={stats.totalAmount.toLocaleString('ar-SA',{maximumFractionDigits:0})+' ر.س'} sub="كل الوقت" color={colors.warning} bg={colors.warningLight} icon="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" onClick={()=>router.push('/purchase-report')}/>
+        <StatCard label="إجمالي المشتريات" value={stats.totalAmount.toLocaleString('en-GB',{maximumFractionDigits:0})+' ر.س'} sub="كل الوقت" color={colors.warning} bg={colors.warningLight} icon="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" onClick={()=>router.push('/purchase-report')}/>
       </div>
 
       <div className="dc3">
@@ -261,7 +261,7 @@ export default function DashboardPage() {
                 </div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:font.xs,fontWeight:600,color:colors.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{(m.products as any)?.name||'—'}</div>
-                  <div style={{fontSize:10,color:colors.text4}}>{new Date(m.created_at).toLocaleDateString('ar-SA')}</div>
+                  <div style={{fontSize:10,color:colors.text4}}>{new Date(m.created_at).toLocaleDateString('en-GB')}</div>
                 </div>
                 <span style={{...tag(m.type==='out'?colors.danger:colors.primary,m.type==='out'?colors.dangerLight:colors.primaryLight,m.type==='out'?colors.dangerBorder:colors.primaryBorder),fontSize:font.xs}}>
                   {m.qty_change>0?'+':''}{m.qty_change} {(m.products as any)?.unit}

@@ -194,7 +194,7 @@ export default function AdminPage() {
                       </td>
                       <td style={{fontWeight:500}}>{u.org_name}</td>
                       <td style={{color:'#64748b',fontSize:12}}>{u.phone}</td>
-                      <td style={{color:'#94a3b8',fontSize:11}}>{new Date(u.created_at).toLocaleDateString('ar-SA')}</td>
+                      <td style={{color:'#94a3b8',fontSize:11}}>{new Date(u.created_at).toLocaleDateString('en-GB')}</td>
                       <td>
                         <span style={{background:cfg.bg,color:cfg.color,padding:'3px 10px',borderRadius:20,fontSize:11,fontWeight:600,border:'1px solid '+cfg.border,whiteSpace:'nowrap' as const}}>
                           {cfg.label}

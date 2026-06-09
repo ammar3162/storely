@@ -48,7 +48,7 @@ export default function PurchaseReportPage() {
   function exportCSV() {
     const headers = ['التاريخ','الصنف','النوع','المبلغ بدون ضريبة','الضريبة 15%','الإجمالي','المورد']
     const rows = filtered.map(p => [
-      new Date(p.created_at).toLocaleDateString('ar-SA'),
+      new Date(p.created_at).toLocaleDateString('en-GB'),
       p.name||'', p.category||'',
       Number(p.amount||0).toFixed(2),
       Number(p.vat_amount||0).toFixed(2),
@@ -139,7 +139,7 @@ export default function PurchaseReportPage() {
               <tbody>
                 {filtered.map((p,i) => (
                   <tr key={p.id} style={{ borderBottom:'1px solid #f1f5f9', background: i%2===0 ? 'white' : '#fafafa' }}>
-                    <td style={{ padding:'11px 14px', color:'#94a3b8', fontSize:11 }}>{new Date(p.created_at).toLocaleDateString('ar-SA')}</td>
+                    <td style={{ padding:'11px 14px', color:'#94a3b8', fontSize:11 }}>{new Date(p.created_at).toLocaleDateString('en-GB')}</td>
                     <td style={{ padding:'11px 14px', fontWeight:600, fontSize:13, color:'#0f172a' }}>{p.name}</td>
                     <td style={{ padding:'11px 14px' }}>
                       <span style={{ background: p.category==='مخزون' ? '#e8f7ee' : p.category==='صيانة' ? '#fef3c7' : '#f1f5f9', color: p.category==='مخزون' ? '#166534' : p.category==='صيانة' ? '#92400e' : '#64748b', padding:'2px 10px', borderRadius:20, fontSize:11, fontWeight:600 }}>{p.category}</span>
