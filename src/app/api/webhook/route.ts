@@ -1,104 +1,91 @@
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-const MENU = `🏪 *Storely - نظام إدارة المتجر*
-━━━━━━━━━━━━━━━
-
-مرحباً! كيف أساعدك؟
-
-1️⃣ *حالة المخزون*
-2️⃣ *المنتجات المنخفضة*
-3️⃣ *آخر الطلبات*
-4️⃣ *إحصائيات اليوم*
-5️⃣ *تواصل مع الدعم*
-
-💡 *اكتب رقم الخيار أو اسمه*
-
-───────────────
-_Storely © 2026_`
-
-const REPLIES: Record<string, string> = {
-  '1': '📦 *حالة المخزون*\n\nجاري جلب البيانات...',
-  '2': '⚠️ *المنتجات المنخفضة*\n\nجاري التحقق...',
-  '3': '🛒 *آخر الطلبات*\n\nجاري التحميل...',
-  '4': '📊 *إحصائيات اليوم*\n\nجاري التحضير...',
-  '5': '📞 *تواصل مع الدعم*\n\nواتساب: +966594351667',
-  
-  'حالة المخزون': '📦 *حالة المخزون*\n\nجاري جلب البيانات...',
-  'منتجات منخفضة': '⚠️ *المنتجات المنخفضة*\n\nجاري التحقق...',
-  'طلبات': '🛒 *آخر الطلبات*\n\nجاري التحميل...',
-  'إحصائيات': '📊 *إحصائيات اليوم*\n\nجاري التحضير...',
-  'دعم': '📞 *تواصل مع الدعم*\n\nواتساب: +966594351667',
-}
+const API_KEY      = process.env.WASENDER_API_KEY!
+const SESSION      = process.env.WASENDER_SESSION_ID!
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 async function send(to: string, text: string) {
-  const apiKey = process.env.WASENDER_API_KEY!
-  const sessionId = process.env.WASENDER_SESSION_ID!
-  
   try {
-    const res = await fetch(`https://www.wasenderapi.com/api/send-message`, {
+    await fetch('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'X-Session-Id': sessionId,
-      },
+      headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${API_KEY}`, 'X-Session-Id':SESSION },
       body: JSON.stringify({ to, text }),
     })
-    console.log('WhatsApp send result:', await res.json())
-  } catch (err) {
-    console.error('Send error:', err)
-  }
+  } catch {}
+}
+
+const MAIN_MENU = `مرحباً بك في *Storely* 🏪\n\nنظام إدارة المخزون الذكي\n\n1️⃣ الاشتراكات والباقات\n2️⃣ طريقة الاستخدام\n3️⃣ الدعم الفني\n4️⃣ التواصل مع الفريق\n\n👇 أرسل رقم الخيار`
+const USER_MENU  = `أهلاً بك في *Storely* 🏪\n\n1️⃣ حالة المخزون\n2️⃣ المنتجات الناقصة\n3️⃣ الاشتراكات والباقات\n4️⃣ التواصل مع الفريق\n\n👇 أرسل رقم الخيار`
+
+const V: Record<string,string> = {
+  '1': `🏷️ *الاشتراكات والباقات*\n\n🌱 الأساسية: فرع واحد — 99 ر.س/شهر\n🏪 المتوسطة: 2-3 فروع — 199 ر.س/شهر\n🚀 المتقدمة: 4+ فروع — 349 ر.س/شهر\n\nللاشتراك اكتب 4\nاكتب 0 للقائمة`,
+  '2': `📱 *طريقة الاستخدام*\n\n✅ سجّل حسابك\n✅ أضف منتجاتك\n✅ سجّل المشتريات والصرف\n✅ استقبل تنبيهات تلقائية\n\n🔗 storely-delta.vercel.app\n\nاكتب 0 للقائمة`,
+  '3': `🛠️ *الدعم الفني*\n\n⏰ السبت-الخميس: 9ص-10م\nللتواصل اكتب 4\nاكتب 0 للقائمة`,
+  '4': `👋 *التواصل*\n\n📱 +966594351667\nhttps://wa.me/966594351667\n\nاكتب 0 للقائمة`,
+}
+
+async function findUser(phone: string) {
+  try {
+    const sb = createClient(SUPABASE_URL, SERVICE_KEY)
+    const clean = phone.replace(/^\+/,'')
+    for (const p of [clean, '0'+clean.slice(3), '+'+clean]) {
+      const { data } = await sb.from('profiles').select('id,full_name,org_id,status').eq('phone',p).maybeSingle()
+      if (data) return data
+    }
+  } catch {}
+  return null
+}
+
+async function getProducts(orgId: string) {
+  try {
+    const { data } = await createClient(SUPABASE_URL,SERVICE_KEY).from('products').select('name,qty,unit,reorder_point').eq('org_id',orgId).eq('is_active',true)
+    return data||[]
+  } catch { return [] }
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    
-    // Log للتشخيص
-    console.log('WEBHOOK BODY:', JSON.stringify(body, null, 2))
-    
-    // تجاهل test events
-    if (body?.data?.test === true) return NextResponse.json({ ok: true })
-    
-    // استخراج الرسائل من Payload الجديد (WasenderAPI format)
+    if (body?.data?.test===true) return NextResponse.json({ok:true})
     const messages = body?.data?.messages
-    
-    // messages يمكن يكون array أو object واحد
-    const msgArray = Array.isArray(messages) ? messages : (messages ? [messages] : [])
-    
-    if (msgArray.length === 0) return NextResponse.json({ ok: true })
-    
-    for (const msg of msgArray) {
-      // تجاهل الرسائل المرسلة من البوت نفسه
-      if (msg?.key?.fromMe === true) continue
-      
-      // استخراج رقم المرسل
-      let to = msg?.key?.cleanedSenderPn || 
-               msg?.key?.remoteJid?.replace('@s.whatsapp.net', '')?.replace('@c.us', '')?.replace('@lid', '') || ''
-      
-      // استخراج نص الرسالة
-      const text = (msg?.messageBody || 
-                   msg?.message?.conversation || 
-                   '').trim().toLowerCase()
-      
-      if (!to || !text) continue
-      
-      console.log(`Processing message from ${to}: ${text}`)
-      
-      // تحديد الرد
-      const reply = REPLIES[text] || REPLIES[text.toLowerCase()] || MENU
-      
-      // إرسال الرد
-      await send(to, reply)
+    const msgs = Array.isArray(messages)?messages:(messages?[messages]:[])
+    if (!msgs.length) return NextResponse.json({ok:true})
+    for (const msg of msgs) {
+      if (msg?.key?.fromMe===true) continue
+      const to   = (msg?.key?.cleanedSenderPn||msg?.key?.remoteJid?.replace('@s.whatsapp.net','')?.replace('@c.us','')||'')
+      const text = (msg?.messageBody||msg?.message?.conversation||'').trim()
+      if (!to||!text) continue
+      const user = await findUser(to)
+      const t = text.toLowerCase()
+      if (user?.status==='active') {
+        if (t==='0'||t==='قائمة') { await send(to,USER_MENU); continue }
+        if (t==='1'||t==='مخزون'||t==='حالة المخزون') {
+          const p = await getProducts(user.org_id)
+          if (!p.length) { await send(to,'📦 المخزون فارغ\n\nاكتب 0 للقائمة'); continue }
+          const low=p.filter((x:any)=>x.qty<=x.reorder_point).length
+          const list=p.slice(0,10).map((x:any)=>`${x.qty<=x.reorder_point?'🔴':'🟢'} ${x.name}: ${x.qty} ${x.unit}`).join('\n')
+          await send(to,`📦 *حالة المخزون*\n\n${list}${p.length>10?`\n...و${p.length-10} أخرى`:''}\n\n📊 ${p.length} صنف | ⚠️ ناقص: ${low}\n\nاكتب 0 للقائمة`)
+          continue
+        }
+        if (t==='2'||t==='ناقص') {
+          const p = await getProducts(user.org_id)
+          const low=p.filter((x:any)=>x.qty<=x.reorder_point)
+          if (!low.length) { await send(to,'✅ جميع المنتجات كافية\n\nاكتب 0 للقائمة'); continue }
+          const list=low.map((x:any)=>`⚠️ ${x.name}: ${x.qty}/${x.reorder_point} ${x.unit}`).join('\n')
+          await send(to,`⚠️ *الناقص (${low.length})*\n\n${list}\n\nاكتب 0 للقائمة`)
+          continue
+        }
+        if (t==='3') { await send(to,V['1']); continue }
+        if (t==='4') { await send(to,V['4']); continue }
+        await send(to,USER_MENU)
+      } else {
+        await send(to, V[text]||V[t]||MAIN_MENU)
+      }
     }
-    
-    return NextResponse.json({ ok: true })
-  } catch (err: any) {
-    console.error('Webhook error:', err?.message)
-    return NextResponse.json({ ok: true })
-  }
+    return NextResponse.json({ok:true})
+  } catch(err:any) { return NextResponse.json({ok:true}) }
 }
 
-export async function GET() {
-  return NextResponse.json({ status: 'Storely WhatsApp Bot ✅' })
-}
+export async function GET() { return NextResponse.json({status:'Storely Bot ✅'}) }
