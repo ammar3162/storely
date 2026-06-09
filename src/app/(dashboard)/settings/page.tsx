@@ -46,7 +46,7 @@ export default function SettingsPage() {
     const{data:{user}}=await sb.auth.getUser(); if(!user) return
     const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single(); if(!profile) return
     setOrgId(profile.org_id)
-    const{data:org}=await sb.from('organizations').select('*').eq('id',profile.org_id).single()
+    const{data:orgRaw}=await sb.from('organizations').select('*').eq('id',profile.org_id).single(); const org=orgRaw as any
     if(org) {
       setForm({ name:org.name||'', whatsapp_number:org.whatsapp_number||'', notify_schedule:org.notify_schedule||'daily', notify_time:org.notify_time||'08:00', notify_days:org.notify_days||['0'] })
       setLastSent(org.last_notified_at||null)
