@@ -55,7 +55,10 @@ export default function DispensePage() {
   }
 
   async function loadHistory(oid: string) {
-    const { data } = await sb.from('stock_movements').select('id,qty_change,note,created_at,products!inner(name,unit,org_id)').eq('type','out').eq('products.org_id', oid).order('created_at',{ascending:false}).limit(12)
+    const bid2 = sessionStorage.getItem('s_branch_id')
+    let mq = sb.from('stock_movements').select('id,qty_change,note,created_at,products!inner(name,unit,org_id)').eq('type','out').eq('products.org_id', oid).order('created_at',{ascending:false}).limit(12)
+    if(bid2) mq = (mq as any).eq('branch_id', bid2)
+    const { data } = await mq
     setHistory(data||[])
   }
 

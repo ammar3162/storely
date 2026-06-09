@@ -47,8 +47,10 @@ export default function PurchasesPage() {
   }
 
   async function loadHistory(oid: string) {
-    const { data } = await sb.from('purchases').select('*')
-      .eq('org_id', oid).order('created_at',{ascending:false}).limit(25)
+    const bid = sessionStorage.getItem('s_branch_id')
+    let q = sb.from('purchases').select('*').eq('org_id', oid).order('created_at',{ascending:false}).limit(25)
+    if(bid) q = (q as any).eq('branch_id', bid)
+    const { data } = await q
     setHistory(data||[])
   }
 
