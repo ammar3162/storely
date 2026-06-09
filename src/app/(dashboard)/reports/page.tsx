@@ -128,7 +128,30 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
           </div>
         ))}
       </div>
-      {topProducts.length>0&&(<div style={{...card,padding:14,marginBottom:14}}><div style={{fontSize:font.sm,fontWeight:700,color:colors.text,marginBottom:10}}>🏆 الأكثر صرفاً</div>{topProducts.map(([name,qty],i)=>{const pct=Math.round((qty/topProducts[0][1])*100);return(<div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:i<topProducts.length-1?8:0}}><div style={{width:22,height:22,borderRadius:radius.sm,background:barColors[i]+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><span style={{fontSize:10,fontWeight:800,color:barColors[i]}}>{i+1}</span></div><div style={{flex:1,minWidth:0}}><div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}><span style={{fontSize:font.sm,fontWeight:600,color:colors.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{name}</span><span style={{fontSize:font.sm,fontWeight:800,color:barColors[i],marginRight:4}}>{qty}</span></div><div style={{height:4,background:colors.border,borderRadius:99}}><div style={{height:'100%',width:pct+'%',background:barColors[i],borderRadius:99}}/></div></div></div>)})}}</div>)}
+      {topProducts.length>0&&(
+        <div style={{...card,padding:14,marginBottom:14}}>
+          <div style={{fontSize:font.sm,fontWeight:700,color:colors.text,marginBottom:10}}>🏆 الأكثر صرفاً</div>
+          {topProducts.map(([name,qty],i)=>{
+            const pct=Math.round((qty/topProducts[0][1])*100)
+            return(
+              <div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:i<topProducts.length-1?8:0}}>
+                <div style={{width:22,height:22,borderRadius:radius.sm,background:barColors[i]+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  <span style={{fontSize:10,fontWeight:800,color:barColors[i]}}>{i+1}</span>
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
+                    <span style={{fontSize:font.sm,fontWeight:600,color:colors.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{name}</span>
+                    <span style={{fontSize:font.sm,fontWeight:800,color:barColors[i],marginRight:4}}>{qty}</span>
+                  </div>
+                  <div style={{height:4,background:colors.border,borderRadius:99}}>
+                    <div style={{height:'100%',width:pct+'%',background:barColors[i],borderRadius:99}}/>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
       <div style={{...card,overflow:'hidden'}}>
         <div style={{padding:'10px 14px',borderBottom:`1px solid ${colors.border}`,display:'flex',gap:8}}>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث..." style={{...inp(),flex:1}}/>
