@@ -30,10 +30,16 @@ async function sendForOrg(supabase: any, org: any) {
   const instance = process.env.ULTRAMSG_INSTANCE!
   const token = process.env.ULTRAMSG_TOKEN!
 
-  const res = await fetch(`https://api.ultramsg.com/${instance}/messages/chat`, {
+  const apiKey = process.env.WASENDER_API_KEY!
+  const sessionId = process.env.WASENDER_SESSION_ID!
+  const res = await fetch(`https://www.wasenderapi.com/api/send-message`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ token, to: phone, body: msg, priority: '10' }).toString(),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'X-Session-Id': sessionId,
+    },
+    body: JSON.stringify({ to: phone, text: msg }),
   })
 
   await supabase.from('whatsapp_logs').insert({
