@@ -20,7 +20,7 @@ export default function PurchasesPage() {
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
-    category:'مخزون', name:'', qty:'', unit:'قطعة',
+    category:'مخزون', name:'', sku:'', qty:'', unit:'قطعة',
     reorder_point:'5', total_amount:'', supplier:'',
     note:'', invoice_image:'', hasVat:'',
   })
@@ -112,30 +112,27 @@ export default function PurchasesPage() {
 
     if (form.category==='مخزون' && form.name) {
       const qty = form.qty ? Number(form.qty) : 0
-      const { data: existing } = await sb.from('products').select('id,qty')
-        .eq('org_id', orgId).eq('name', form.name).maybeSingle()
+      let existing: any = null
+      const { data: byName } = await sb.from('products').select('id,qty,sku').eq('org_id',orgId).eq('name',form.name).maybeSingle()
+      if (byName) { existing = byName }
+      else if (form.sku) {
+        const { data: bySku } = await sb.from('products').select('id,qty,sku,name').eq('org_id',orgId).eq('sku',form.sku).maybeSingle()
+        if (bySku) existing = bySku
+      }
       if (existing) {
-        if (qty > 0) await sb.from('stock_movements').insert({
-          product_id:existing.id, profile_id:userId,
-          type:'in', qty_change:qty, note:`شراء من: ${form.supplier}`
-        })
-        toast('✅ تم تسجيل الشراء وتحديث المخزون')
+        if (form.sku && !existing.sku) await sb.from('products').update({sku:form.sku}).eq('id',existing.id)
+        if (qty > 0) await sb.from('stock_movements').insert({product_id:existing.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء من: ${form.supplier}`})
+        toast(`✅ المنتج موجود — تم تحديث المخزون (+${qty})`, 'success')
       } else {
-        const { data: np } = await sb.from('products').insert({
-          org_id:orgId, name:form.name, unit:form.unit||'قطعة',
-          qty, reorder_point:Number(form.reorder_point)||5, is_active:true,
-        }).select().single()
-        if (np && qty > 0) await sb.from('stock_movements').insert({
-          product_id:np.id, profile_id:userId,
-          type:'in', qty_change:qty, note:`شراء جديد من: ${form.supplier}`
-        })
-        toast(`✅ تم إضافة "${form.name}" للمخزون`)
+        const { data: np } = await sb.from('products').insert({org_id:orgId,name:form.name,sku:form.sku||null,unit:form.unit||'قطعة',qty,reorder_point:Number(form.reorder_point)||5,is_active:true}).select().single()
+        if (np && qty > 0) await sb.from('stock_movements').insert({product_id:np.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء جديد من: ${form.supplier}`})
+        toast(`✅ تم إضافة "${form.name}" للمخزون كصنف جديد`)
       }
     } else {
       toast('✅ تم تسجيل الشراء')
     }
 
-    setForm({category:'مخزون',name:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:''})
+    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:''})
     setPreviewUrl(null); setLoading(false)
     loadHistory(orgId)
   }
@@ -216,7 +213,7 @@ export default function PurchasesPage() {
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
                 {CATS.map(c=>(
                   <button key={c} type="button" className={'cat-btn'+(form.category===c?' active':'')}
-                    onClick={()=>setForm({...form,category:c,name:'',unit:'قطعة'})}>
+                    onClick={()=>setForm({...form,category:c,name:'',sku:'',unit:'قطعة'})}>
                     <span style={{fontSize:22}}>{CAT_ICONS[c]}</span>
                     <span>{c}</span>
                   </button>
@@ -227,14 +224,19 @@ export default function PurchasesPage() {
 
             <div style={{marginBottom:12}}>
               <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>{form.category==='مخزون'?'اسم الصنف *':'اسم الخدمة / الفاتورة *'}</label>
-              {form.category==='مخزون'&&(
-                <button type="button" onClick={()=>setShowScan(true)} style={{width:'100%',padding:'10px',background:'#f0fdf4',color:'#16a34a',border:'1.5px solid #86efac',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginBottom:8}}>
-                  📷 مسح باركود المنتج
-                </button>
-              )}
               <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp}
                 placeholder={form.category==='مخزون'?'مثال: قهوة، سكر...':form.category==='مشتريات'?'مثال: مستلزمات مكتبية...':'مثال: إيجار، كهرباء...'}/>
             </div>
+            {form.category==='مخزون'&&(
+              <div style={{marginBottom:12}}>
+                <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>باركود الصنف (اختياري)</label>
+                <div style={{display:'flex',gap:6}}>
+                  <input value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} style={{...inp,flex:1}} placeholder="امسح أو أدخل يدوياً"/>
+                  <button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 12px',background:'#f0fdf4',color:'#16a34a',border:'1.5px solid #86efac',borderRadius:9,fontSize:16,cursor:'pointer',flexShrink:0}}>📷</button>
+                </div>
+                {form.sku&&<div style={{fontSize:11,color:'#16a34a',marginTop:4,fontWeight:600}}>✓ {form.sku}</div>}
+              </div>
+            )}
 
             {form.category==='مخزون'&&(
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:12}}>
