@@ -56,6 +56,7 @@ function LoginPage() {
         await supabase.from('profiles').upsert({
           id: data.user.id, org_id: org.id,
           full_name: orgName.trim(), role: 'owner', phone: phone.trim(),
+          status: 'pending',
         })
       }
       setError('')
