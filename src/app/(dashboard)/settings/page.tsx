@@ -56,7 +56,7 @@ export default function SettingsPage() {
 
   async function handleSave(e:React.FormEvent) {
     e.preventDefault(); setSaving(true)
-    await sb.from('organizations').update({ name:form.name, whatsapp_number:form.whatsapp_number, notify_schedule:form.notify_schedule, notify_time:form.notify_time, notify_days:form.notify_days }).eq('id',orgId)
+    await sb.from('organizations').update({ name:form.name, whatsapp_number:form.whatsapp_number, notify_schedule:form.notify_schedule, notify_time:form.notify_time, notify_days:form.notify_days } as any).eq('id',orgId)
     setSaveOk(true); setSaving(false); setTimeout(()=>setSaveOk(false),3000)
   }
 
