@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 import { createClient } from '@/lib/supabase/client'
+import { colors, font, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh'
 
@@ -180,9 +181,9 @@ export default function PurchasesPage() {
         </Suspense>
       )}
 
-      <div className="ru" style={{marginBottom:20}}>
-        <h1 style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:3}}>المشتريات</h1>
-        <p style={{fontSize:12,color:'#94a3b8'}}>فئة <b style={{color:'#16a34a'}}>مخزون</b> تُضيف المنتج للمخزون تلقائياً</p>
+      <div style={{marginBottom:20}}>
+        <h1 style={{...pageTitle}}>المشتريات</h1>
+        <p style={{...pageSub}}>فئة <b style={{color:colors.primary}}>مخزون</b> تُضيف المنتج للمخزون تلقائياً</p>
       </div>
 
       <div className="s-grid ru" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:20}}>
