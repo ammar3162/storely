@@ -1,10 +1,11 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/components/toast'
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh'
 import Pagination from '@/components/pagination'
+const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 
 interface Product {
   id:string; name:string; sku:string|null; unit:string
@@ -28,6 +29,7 @@ export default function InventoryPage() {
   const [addQty, setAddQty]     = useState(0)
   const [confirm, setConfirm]   = useState<{id:string,name:string}|null>(null)
   const [form, setForm]         = useState({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:''})
+  const [showScan, setShowScan] = useState(false)
   const sb = createClient()
 
   useEffect(()=>{ load() },[])
@@ -161,6 +163,15 @@ export default function InventoryPage() {
         </div>
       )}
 
+      {showScan && (
+        <Suspense fallback={null}>
+          <BarcodeScanner
+            onScan={(code:string)=>{ setForm(f=>({...f,sku:code})); setShowScan(false) }}
+            onClose={()=>setShowScan(false)}
+          />
+        </Suspense>
+      )}
+
       {/* Add/Edit Modal */}
       {showAdd && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.45)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:16,backdropFilter:'blur(4px)'}}>
@@ -193,7 +204,7 @@ export default function InventoryPage() {
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
                   <div>
                     <label style={{fontSize:11,fontWeight:700,color:C.text3,display:'block',marginBottom:5}}>باركود</label>
-                    <input value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} style={inp} placeholder="اختياري"/>
+                    <div style={{display:'flex',gap:6}}><input value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} style={{...inp,flex:1}} placeholder="امسح أو أدخل يدوياً"/><button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 10px',background:'#f0fdf4',color:'#16a34a',border:'1.5px solid #86efac',borderRadius:9,fontSize:16,cursor:'pointer'}} title="مسح باركود">📷</button></div>
                   </div>
                   <div>
                     <label style={{fontSize:11,fontWeight:700,color:C.text3,display:'block',marginBottom:5}}>الحد الأدنى</label>
