@@ -55,7 +55,7 @@ function LoginPage() {
         .select().single()
       if (org) {
         setSuccessData({name:orgName.trim(),phone:phone.trim()})
-        await supabase.from('profiles').upsert({
+        await supabase.from('profiles').insert({
           id: data.user.id, org_id: org.id,
           full_name: orgName.trim(), role: 'owner', phone: phone.trim(),
           status: 'pending',
