@@ -55,11 +55,11 @@ function LoginPage() {
         .select().single()
       if (org) {
         setSuccessData({name:orgName.trim(),phone:phone.trim()})
-        await supabase.from('profiles').insert({
+        await supabase.from('profiles').upsert({
           id: data.user.id, org_id: org.id,
           full_name: orgName.trim(), role: 'owner', phone: phone.trim(),
           status: 'pending',
-        })
+        }, { onConflict: 'id', ignoreDuplicates: true })
       }
       setError('')
       setMode('success')
