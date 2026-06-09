@@ -34,7 +34,7 @@ export async function proxy(request: NextRequest) {
 
   if (isAdminPanel) {
     const adminToken   = request.cookies.get('storely_admin_token')?.value
-    const correctToken = process.env.ADMIN_PASSWORD || 'storely@2026'
+    const correctToken = process.env.ADMIN_PASSWORD || '900@'
     const isAdminRoot  = path === '/storely-admin' || path === '/storely-admin/'
     if (!isAdminRoot && adminToken !== correctToken) {
       return NextResponse.redirect(new URL('/storely-admin', request.url))
