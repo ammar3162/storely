@@ -1,85 +1,97 @@
 import { NextResponse } from 'next/server'
 
-const API_KEY = process.env.WASENDER_API_KEY!
-const SESSION_ID = process.env.WASENDER_SESSION_ID!
+const MENU = `🏪 *Storely - نظام إدارة المتجر*
+━━━━━━━━━━━━━━━
 
-async function send(to: string, text: string) {
-  await fetch('https://www.wasenderapi.com/api/send-message', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${API_KEY}`,
-      'X-Session-Id': SESSION_ID,
-    },
-    body: JSON.stringify({ to, text }),
-  })
-}
+مرحباً! كيف أساعدك؟
 
-const MENU = `مرحباً بك في *Storely* 🏪
+1️⃣ *حالة المخزون*
+2️⃣ *المنتجات المنخفضة*
+3️⃣ *آخر الطلبات*
+4️⃣ *إحصائيات اليوم*
+5️⃣ *تواصل مع الدعم*
 
-نظام إدارة المخزون الذكي
+💡 *اكتب رقم الخيار أو اسمه*
 
-اختر من القائمة:
-
-1️⃣ الاشتراكات والباقات
-2️⃣ طريقة الاستخدام
-3️⃣ الدعم الفني
-4️⃣ التواصل مع الفريق
-
-👇 أرسل رقم الخيار`
+───────────────
+_Storely © 2026_`
 
 const REPLIES: Record<string, string> = {
-  '1': `🏷️ *الاشتراكات والباقات*\n\n🌱 *الباقة الأساسية*\n• فرع واحد\n• 99 ر.س / شهر\n• 990 ر.س / سنة\n\n🏪 *الباقة المتوسطة*\n• 2-3 فروع\n• 199 ر.س / شهر\n\n🚀 *الباقة المتقدمة*\n• 4+ فروع\n• 349 ر.س / شهر\n\n✅ جميع الباقات تشمل:\n• مخزون غير محدود\n• تنبيهات واتساب تلقائية\n• نسخ احتياطي أسبوعي\n\nللاشتراك اكتب 4\nاكتب 0 للقائمة الرئيسية`,
-  '2': `📱 *طريقة الاستخدام*\n\n✅ سجّل حسابك\n✅ أضف منتجاتك للمخزون\n✅ سجّل المشتريات والصرف\n✅ استقبل تنبيهات المخزون تلقائياً\n\n🔗 جرّب الآن:\nstorely-hm1u.vercel.app\n\nاكتب 0 للقائمة الرئيسية`,
-  '3': `🛠️ *الدعم الفني*\n\nنحن هنا لمساعدتك!\n⏰ السبت - الخميس: 9ص - 10م\n\nللتواصل المباشر اكتب 4\nاكتب 0 للقائمة الرئيسية`,
-  '4': `👋 *التواصل مع الفريق*\n\n📱 واتساب: +966594351667\n⏰ السبت - الخميس 9ص - 10م\n\nhttps://wa.me/966594351667\n\nاكتب 0 للقائمة الرئيسية`,
-  'اشتراك': `للاشتراك تواصل معنا:\n📱 +966594351667\n\nأو سجّل مجاناً:\nstorely-hm1u.vercel.app`,
+  '1': '📦 *حالة المخزون*\n\nجاري جلب البيانات...',
+  '2': '⚠️ *المنتجات المنخفضة*\n\nجاري التحقق...',
+  '3': '🛒 *آخر الطلبات*\n\nجاري التحميل...',
+  '4': '📊 *إحصائيات اليوم*\n\nجاري التحضير...',
+  '5': '📞 *تواصل مع الدعم*\n\nواتساب: +966594351667',
+  
+  'حالة المخزون': '📦 *حالة المخزون*\n\nجاري جلب البيانات...',
+  'منتجات منخفضة': '⚠️ *المنتجات المنخفضة*\n\nجاري التحقق...',
+  'طلبات': '🛒 *آخر الطلبات*\n\nجاري التحميل...',
+  'إحصائيات': '📊 *إحصائيات اليوم*\n\nجاري التحضير...',
+  'دعم': '📞 *تواصل مع الدعم*\n\nواتساب: +966594351667',
+}
+
+async function send(to: string, text: string) {
+  const apiKey = process.env.WASENDER_API_KEY!
+  const sessionId = process.env.WASENDER_SESSION_ID!
+  
+  try {
+    const res = await fetch(`https://www.wasenderapi.com/api/send-message`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'X-Session-Id': sessionId,
+      },
+      body: JSON.stringify({ to, text }),
+    })
+    console.log('WhatsApp send result:', await res.json())
+  } catch (err) {
+    console.error('Send error:', err)
+  }
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-
+    
     // Log للتشخيص
     console.log('WEBHOOK BODY:', JSON.stringify(body, null, 2))
+    
+    // تجاهل test events
     if (body?.data?.test === true) return NextResponse.json({ ok: true })
-
-    // WasenderAPI payload formats
-    const event = body?.event || ''
-    if (!event.includes('message')) return NextResponse.json({ ok: true })
-
-    // استخراج بيانات الرسالة
-    const data = body?.data || {}
-    const messages = data?.messages || data?.message || data
-
-    // محاولة استخراج الرسالة من formats مختلفة
-    const fromMe = messages?.key?.fromMe || data?.key?.fromMe || false
-    if (fromMe) return NextResponse.json({ ok: true })
-
-    const remoteJid = messages?.key?.remoteJid || data?.key?.remoteJid || data?.from || ''
-    const text = (
-      messages?.messageBody ||
-      messages?.body ||
-      data?.messageBody ||
-      data?.body ||
-      data?.text ||
-      ''
-    ).trim()
-
-    if (!remoteJid || !text) return NextResponse.json({ ok: true })
-
-    // تنظيف رقم الهاتف
-    const to = remoteJid
-      .replace('@s.whatsapp.net', '')
-      .replace('@c.us', '')
-      .replace('@lid', '')
-
-    if (!to) return NextResponse.json({ ok: true })
-
-    // تحديد الرد
-    const reply = REPLIES[text] || REPLIES[text.toLowerCase()] || MENU
-    await send(to, reply)
-
+    
+    // استخراج الرسائل من Payload الجديد (WasenderAPI format)
+    const messages = body?.data?.messages
+    
+    // messages يمكن يكون array أو object واحد
+    const msgArray = Array.isArray(messages) ? messages : (messages ? [messages] : [])
+    
+    if (msgArray.length === 0) return NextResponse.json({ ok: true })
+    
+    for (const msg of msgArray) {
+      // تجاهل الرسائل المرسلة من البوت نفسه
+      if (msg?.key?.fromMe === true) continue
+      
+      // استخراج رقم المرسل
+      let to = msg?.key?.cleanedSenderPn || 
+               msg?.key?.remoteJid?.replace('@s.whatsapp.net', '')?.replace('@c.us', '')?.replace('@lid', '') || ''
+      
+      // استخراج نص الرسالة
+      const text = (msg?.messageBody || 
+                   msg?.message?.conversation || 
+                   '').trim().toLowerCase()
+      
+      if (!to || !text) continue
+      
+      console.log(`Processing message from ${to}: ${text}`)
+      
+      // تحديد الرد
+      const reply = REPLIES[text] || REPLIES[text.toLowerCase()] || MENU
+      
+      // إرسال الرد
+      await send(to, reply)
+    }
+    
     return NextResponse.json({ ok: true })
   } catch (err: any) {
     console.error('Webhook error:', err?.message)
