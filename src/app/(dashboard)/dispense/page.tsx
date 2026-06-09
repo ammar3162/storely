@@ -47,7 +47,10 @@ export default function DispensePage() {
   }
 
   async function loadProducts(oid: string) {
-    const { data } = await sb.from('products').select('id,name,sku,unit,qty,reorder_point').eq('org_id', oid).eq('is_active', true).order('name')
+    const bid=sessionStorage.getItem('s_branch_id')
+    let dq=sb.from('products').select('id,name,sku,unit,qty,reorder_point').eq('org_id',oid).eq('is_active',true).order('name')
+    if(bid) dq=(dq as any).eq('branch_id',bid)
+    const{data}=await dq
     setProducts(data||[])
   }
 

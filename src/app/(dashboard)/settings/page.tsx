@@ -35,6 +35,9 @@ export default function SettingsPage() {
   const [backups, setBackups]           = useState<any[]>([])
   const [backupLoading, setBackupLoading] = useState(false)
   const [backupMsg, setBackupMsg]       = useState<{ok:boolean;text:string}|null>(null)
+  const [branches, setBranches]         = useState<any[]>([])
+  const [newBranch, setNewBranch]       = useState({name:'',location:''})
+  const [branchSaving, setBranchSaving] = useState(false)
   const [form, setForm] = useState({
     name:'', whatsapp_number:'',
     notify_schedule:'daily',
@@ -56,6 +59,8 @@ export default function SettingsPage() {
       setForm({ name:org.name||'', whatsapp_number:org.whatsapp_number||'', notify_schedule:org.notify_schedule||'daily', notify_time:org.notify_time||'08:00', notify_days:org.notify_days||['0'] })
       setLastSent(org.last_notified_at||null)
       setLastBackup(org.last_backup_at||null)
+    const{data:bList}=await sb.from('branches').select('*').eq('org_id',profile.org_id).eq('is_active',true).order('created_at')
+    setBranches(bList||[])
     }
     setLoading(false)
   }
@@ -93,6 +98,18 @@ export default function SettingsPage() {
     setBackupLoading(false); setTimeout(()=>setBackupMsg(null),5000)
   }
 
+  async function addBranch() {
+    if(!newBranch.name.trim()) return
+    setBranchSaving(true)
+    await sb.from('branches').insert({ org_id:orgId, name:newBranch.name.trim(), location:newBranch.location.trim()||null })
+    const{data:bList}=await sb.from('branches').select('*').eq('org_id',orgId).eq('is_active',true).order('created_at')
+    setBranches(bList||[]); setNewBranch({name:'',location:''}); setBranchSaving(false)
+  }
+  async function deleteBranch(id:string) {
+    if(branches.length<=1){alert('لا يمكن حذف الفرع الوحيد');return}
+    await sb.from('branches').update({is_active:false}).eq('id',id)
+    setBranches(prev=>prev.filter((b:any)=>b.id!==id))
+  }
   function toggleDay(day:string) {
     const days=form.notify_days.includes(day)?form.notify_days.filter(d=>d!==day):[...form.notify_days,day]
     if(days.length===0) return
@@ -187,6 +204,18 @@ export default function SettingsPage() {
         <button type="button" onClick={sendNow} disabled={sending}
           style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,width:'100%',padding:'13px',background:sending?colors.text4:'#25d366',color:'white',border:'none',borderRadius:radius.md,fontSize:font.base,fontWeight:700,cursor:sending?'not-allowed':'pointer',fontFamily:font.family,transition:'all .15s',boxShadow:sending?'none':'0 4px 14px rgba(37,211,102,.3)'}}>
           {sending?'⏳ جاري الإرسال...':'📲 إرسال إشعار الآن'}
+        </button>
+      </Section>
+
+      <Section title="إدارة الفروع" icon="🏪">
+        <p style={{fontSize:font.sm,color:colors.text3,marginBottom:14,lineHeight:1.7}}>أضف فروع لمؤسستك — كل فرع له مخزونه المستقل.</p>
+        {branches.length>0&&(<div style={{...card,overflow:'hidden',marginBottom:16}}>{branches.map((b:any,i:number)=>(<div key={b.id} style={{padding:'12px 14px',borderBottom:i<branches.length-1?`1px solid ${colors.border}`:'none',display:'flex',alignItems:'center',gap:10}}><div style={{width:32,height:32,borderRadius:radius.md,background:colors.primaryLight,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>{i===0?'🏠':'🏪'}</div><div style={{flex:1}}><div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{b.name}</div>{b.location&&<div style={{fontSize:font.xs,color:colors.text4}}>{b.location}</div>}</div>{i>0&&(<button onClick={()=>deleteBranch(b.id)} style={{background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:radius.sm,padding:'5px 10px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>حذف</button>)}{i===0&&<span style={{fontSize:font.xs,color:colors.text4,padding:'4px 8px',background:colors.bg,borderRadius:radius.sm,border:`1px solid ${colors.border2}`}}>رئيسي</span>}</div>))}</div>)}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+          <div><label style={lbl}>اسم الفرع *</label><input value={newBranch.name} onChange={e=>setNewBranch({...newBranch,name:e.target.value})} style={inp()} placeholder="مثال: فرع الرياض"/></div>
+          <div><label style={lbl}>الموقع (اختياري)</label><input value={newBranch.location} onChange={e=>setNewBranch({...newBranch,location:e.target.value})} style={inp()} placeholder="مثال: حي النزهة"/></div>
+        </div>
+        <button type="button" onClick={addBranch} disabled={branchSaving||!newBranch.name.trim()} style={{...btnPrimary,width:'100%',padding:'12px',opacity:(branchSaving||!newBranch.name.trim())?0.6:1,cursor:(branchSaving||!newBranch.name.trim())?'not-allowed':'pointer'}}>
+          {branchSaving?'جاري الإضافة...':'+ إضافة فرع جديد'}
         </button>
       </Section>
 

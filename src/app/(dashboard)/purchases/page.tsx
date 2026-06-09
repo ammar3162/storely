@@ -94,7 +94,7 @@ export default function PurchasesPage() {
     const amount = parseFloat((inputTotal / 1.15).toFixed(2))
 
     const { error: insErr } = await sb.from('purchases').insert({
-      org_id:orgId, profile_id:userId,
+      org_id:orgId, profile_id:userId, branch_id:sessionStorage.getItem('s_branch_id')||null,
       category:form.category, name:form.name,
       qty:form.qty ? Number(form.qty) : null,
       unit:form.unit||null,
