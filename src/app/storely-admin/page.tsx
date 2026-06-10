@@ -67,20 +67,11 @@ export default function AdminPage() {
 
   async function doDelete(u: User) {
     setSaving(u.id)
-    if (u.org_id) {
-      const {data:prods} = await sb.from('products').select('id').eq('org_id',u.org_id)
-      const pids = (prods||[]).map((p:any)=>p.id)
-      if (pids.length>0) await sb.from('stock_movements').delete().in('product_id',pids)
-      await Promise.all([
-        sb.from('products').delete().eq('org_id',u.org_id),
-        sb.from('notifications').delete().eq('org_id',u.org_id),
-        sb.from('purchases').delete().eq('org_id',u.org_id),
-      ])
-      await sb.from('profiles').delete().eq('org_id',u.org_id)
-      await sb.from('organizations').delete().eq('id',u.org_id)
-    } else {
-      await sb.from('profiles').delete().eq('id',u.id)
-    }
+    await fetch('/api/admin/delete-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: u.id, orgId: u.org_id || null })
+    })
     await loadUsers(); setSaving(null); setConfirmDel(null); setSelected(null)
   }
 
