@@ -178,6 +178,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
           <div style={{flex:1,fontSize:font.base,fontWeight:700,color:C.text,textAlign:'center' as const}}>{orgName}</div>
           {branchName&&branches.length>1&&<button onClick={()=>setShowBranchSel(true)} style={{fontSize:font.xs,color:colors.primary,background:'none',border:'none',cursor:'pointer',fontFamily:font.family}}>{branchName} ▼</button>}
+          <button onClick={async()=>{await sb.auth.signOut();_cache=null;sessionStorage.clear();router.replace('/login')}}
+            style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.3)',borderRadius:8,padding:'6px 12px',cursor:'pointer',color:'#ef4444',fontSize:12,fontWeight:700,fontFamily:'inherit',flexShrink:0,marginRight:4}}>
+            خروج
+          </button>
         </header>
 
         {/* Drawer */}
