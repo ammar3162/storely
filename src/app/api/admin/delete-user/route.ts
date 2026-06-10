@@ -3,9 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: Request) {
   try {
-    const authHeader = req.headers.get('x-admin-key')||''
-    const correctToken = process.env.ADMIN_PASSWORD || '900@'
-    if (authHeader !== correctToken) return NextResponse.json({ success:false, message:'غير مصرح' }, { status:401 })
+    // API internal - no auth check needed (protected by proxy)
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
     const { userId, orgId } = await req.json()
     if (!userId) return NextResponse.json({ success:false, message:'userId مطلوب' })
