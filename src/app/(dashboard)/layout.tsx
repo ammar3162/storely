@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
+import Link from 'next/link'
 import { colors, radius, shadow, font, card } from '@/lib/ds'
 
 const NAV = [
