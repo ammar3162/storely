@@ -48,10 +48,13 @@ export default function DispensePage() {
 
   async function loadProducts(oid: string) {
     const bid=sessionStorage.getItem('s_branch_id')
+    const cacheKey=`disp_${oid}_${bid}`
+    const cached=sessionStorage.getItem(cacheKey)
+    if(cached) setProducts(JSON.parse(cached))
     let dq=sb.from('products').select('id,name,sku,unit,qty,reorder_point').eq('org_id',oid).eq('is_active',true).order('name')
     if(bid) dq=(dq as any).eq('branch_id',bid)
     const{data}=await dq
-    setProducts(data||[])
+    if(data){setProducts(data);sessionStorage.setItem(cacheKey,JSON.stringify(data))}
   }
 
   async function loadHistory(oid: string) {
