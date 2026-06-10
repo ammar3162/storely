@@ -39,12 +39,12 @@ export default function AdminPage() {
   async function loadUsers() {
     setLoading(true)
     const { data } = await sb.from('profiles')
-      .select('id,full_name,phone,role,status,created_at,org_id,subscription_type,subscription_ends_at,branch_count,organizations(name)')
+      .select('id,full_name,phone,role,status,created_at,org_id,subscription_type,subscription_ends_at,branch_count')
       .order('created_at',{ascending:false})
     if (data) setUsers(data.map((p:any)=>({
       id:p.id, full_name:p.full_name||'—', phone:p.phone||'—',
       role:p.role, status:p.status||'pending', created_at:p.created_at,
-      org_id:p.org_id, org_name:p.organizations?.name||'—',
+      org_id:p.org_id, org_name:'—',
       subscription_type:p.subscription_type||'trial',
       subscription_ends_at:p.subscription_ends_at||null,
       branch_count:(p as any).branch_count||null,
@@ -67,16 +67,20 @@ export default function AdminPage() {
 
   async function doDelete(u: User) {
     setSaving(u.id)
-    const {data:prods} = await sb.from('products').select('id').eq('org_id',u.org_id)
-    const pids = (prods||[]).map((p:any)=>p.id)
-    if (pids.length>0) await sb.from('stock_movements').delete().in('product_id',pids)
-    await Promise.all([
-      sb.from('products').delete().eq('org_id',u.org_id),
-      sb.from('notifications').delete().eq('org_id',u.org_id),
-      sb.from('purchases').delete().eq('org_id',u.org_id),
-    ])
-    await sb.from('profiles').delete().eq('org_id',u.org_id)
-    await sb.from('organizations').delete().eq('id',u.org_id)
+    if (u.org_id) {
+      const {data:prods} = await sb.from('products').select('id').eq('org_id',u.org_id)
+      const pids = (prods||[]).map((p:any)=>p.id)
+      if (pids.length>0) await sb.from('stock_movements').delete().in('product_id',pids)
+      await Promise.all([
+        sb.from('products').delete().eq('org_id',u.org_id),
+        sb.from('notifications').delete().eq('org_id',u.org_id),
+        sb.from('purchases').delete().eq('org_id',u.org_id),
+      ])
+      await sb.from('profiles').delete().eq('org_id',u.org_id)
+      await sb.from('organizations').delete().eq('id',u.org_id)
+    } else {
+      await sb.from('profiles').delete().eq('id',u.id)
+    }
     await loadUsers(); setSaving(null); setConfirmDel(null); setSelected(null)
   }
 
