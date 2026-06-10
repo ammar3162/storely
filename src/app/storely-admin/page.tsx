@@ -69,6 +69,7 @@ export default function AdminPage() {
     setSaving(u.id)
     await fetch('/api/admin/delete-user', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: u.id, orgId: u.org_id || null })
     })
