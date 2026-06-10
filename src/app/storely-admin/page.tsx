@@ -257,6 +257,7 @@ export default function AdminPage() {
       </div>
 
       <div style={{padding:'20px',maxWidth:1200,margin:'0 auto'}}>
+        <div style={{marginBottom:16}}><a href='/storely-admin/monitoring' style={{padding:'8px 16px',background:'#1e293b',color:'#94a3b8',border:'1px solid #334155',borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none'}}>📊 مراقبة النظام</a></div>
 
         {counts.pending > 0 && (
           <div style={{background:'#fffbeb',border:'2px solid #fcd34d',borderRadius:14,padding:'14px 18px',marginBottom:16,display:'flex',alignItems:'center',gap:14,cursor:'pointer'}}
