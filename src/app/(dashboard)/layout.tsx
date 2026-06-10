@@ -57,7 +57,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [lowCount, setLowCount]       = useState(_cache?.lowCount||0)
   const [unread, setUnread]           = useState(_cache?.unread||0)
   const [drawer, setDrawer]           = useState(false)
-  const [branches, setBranches]       = useState<any[]>([])
+  const [branches, setBranches]       = useState<any[]>(typeof window!=='undefined'&&sessionStorage.getItem('s_branches')?JSON.parse(sessionStorage.getItem('s_branches')||'[]'):[])
   const [showBranchSel, setShowBranchSel] = useState(false)
   const [ready, setReady]             = useState(false)
   const router   = useRouter()
@@ -91,6 +91,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       sessionStorage.removeItem('s_branch_name')
     }
     sessionStorage.setItem('s_branch_count', String(bl.length))
+    sessionStorage.setItem('s_branches', JSON.stringify(bl))
 
     if(bl.length<=1){
       const b=bl[0]||null
