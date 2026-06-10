@@ -3,6 +3,10 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: Request) {
   try {
+    const cookie = req.headers.get('cookie')||''
+    const adminToken = cookie.split(';').find((c:string)=>c.trim().startsWith('storely_admin_token='))?.split('=')[1]
+    const correctToken = process.env.ADMIN_PASSWORD || '900@'
+    if (adminToken !== correctToken) return NextResponse.json({ success:false, message:'غير مصرح' }, { status:401 })
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
     const { userId, orgId } = await req.json()
     if (!userId) return NextResponse.json({ success:false, message:'userId مطلوب' })
