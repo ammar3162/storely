@@ -34,7 +34,16 @@ export default function InventoryPage() {
   const [showScan, setShowScan] = useState(false)
   const sb = createClient()
 
-  useEffect(()=>{ load() },[])
+  useEffect(()=>{
+    let attempts = 0
+    const check = setInterval(()=>{
+      attempts++
+      const bid = sessionStorage.getItem('s_branch_id')
+      const oid = sessionStorage.getItem('s_org_id')
+      if((bid && oid) || attempts > 20){ clearInterval(check); load() }
+    }, 100)
+    return ()=>clearInterval(check)
+  },[])
   useVisibilityRefresh(load, 20*60*1000)
 
   async function load() {
