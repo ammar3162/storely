@@ -2,12 +2,11 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 function formatPhone(raw: string): string {
-  const clean = raw?.replace(/\s/g, '') || ''
-  if (clean.startsWith('+966')) return clean
-  if (clean.startsWith('966')) return '+' + clean
-  if (clean.startsWith('05')) return '+966' + clean.slice(1)
-  if (clean.startsWith('5')) return '+966' + clean
-  return '+966' + clean
+  const clean = raw?.replace(/\s/g, '').replace(/^\+/, '') || ''
+  if (clean.startsWith('966')) return clean
+  if (clean.startsWith('05')) return '966' + clean.slice(1)
+  if (clean.startsWith('5')) return '966' + clean
+  return '966' + clean
 }
 
 export async function POST() {
@@ -18,15 +17,19 @@ export async function POST() {
     const sb = createClient(url, key)
     const { data: pending } = await sb.from('whatsapp_logs').select('*').eq('status','pending').limit(20)
     if (!pending || pending.length === 0) return NextResponse.json({ success:true, sent:0 })
-    const instance = process.env.ULTRAMSG_INSTANCE!
-    const token = process.env.ULTRAMSG_TOKEN!
+    const apiKey = process.env.WASENDER_API_KEY!
+    const sessionId = process.env.WASENDER_SESSION_ID!
     let sent = 0
     for (const log of pending) {
       const phone = formatPhone(log.phone || '')
-      const res = await fetch(`https://api.ultramsg.com/${instance}/messages/chat`, {
+      const res = await fetch('https://www.wasenderapi.com/api/send-message', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ token, to: phone, body: log.message, priority: '10' }).toString(),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+          'X-Session-Id': sessionId,
+        },
+        body: JSON.stringify({ to: phone, text: log.message }),
       })
       await sb.from('whatsapp_logs').update({
         status: res.ok ? 'sent' : 'failed',
