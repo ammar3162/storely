@@ -75,6 +75,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if(!user){router.replace('/login');return}
     const{data:p}=await sb.from('profiles').select('id,full_name,org_id,organizations(name)').eq('id',user.id).single()
     if(!p){router.replace('/login');return}
+    if(!p.org_id){router.replace('/pending');return}
     const orgN=(p.organizations as any)?.name||''
     const userN=p.full_name||''
     setOrgName(orgN); setUserName(userN); setUserInit(userN[0]||'م')
