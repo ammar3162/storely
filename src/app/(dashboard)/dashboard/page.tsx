@@ -86,9 +86,18 @@ export default function DashboardPage() {
   const router   = useRouter()
 
   useEffect(() => {
-    // انتظر 600ms حتى يتحدد s_branch_id من الـ layout
-    const t = setTimeout(() => load(), 600)
-    return () => clearTimeout(t)
+    // ننتظر حتى يتحدد s_branch_id
+    let attempts = 0
+    const check = setInterval(() => {
+      attempts++
+      const bid = sessionStorage.getItem('s_branch_id')
+      const oid = sessionStorage.getItem('s_org_id')
+      if ((bid && oid) || attempts > 20) {
+        clearInterval(check)
+        load()
+      }
+    }, 100)
+    return () => clearInterval(check)
   }, [])
 
   async function load() {
