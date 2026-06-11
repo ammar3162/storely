@@ -103,10 +103,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     setLoading(true)
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setLoading(false);return}
     const {start,end}=getRange(period,from,to)
-    const bid=sessionStorage.getItem('s_branch_id')
-    let mq=sb.from('stock_movements').select('*,products!inner(name,unit,org_id)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString()).order('created_at',{ascending:false})
-    if(bid) mq=(mq as any).eq('branch_id',bid)
-    const{data}=await mq
+    const{data}=await sb.from('stock_movements').select('*,products!inner(name,unit,org_id)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString()).order('created_at',{ascending:false})
     setMovements(data||[]); setLoading(false)
   }
   function exportCSV(){
@@ -179,10 +176,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     setLoading(true)
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setLoading(false);return}
     const{start,end}=getRange(period,from,to)
-    const bid=sessionStorage.getItem('s_branch_id')
-    let pq=sb.from('purchases').select('*').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString()).order('created_at',{ascending:false})
-    if(bid) pq=(pq as any).eq('branch_id',bid)
-    const{data}=await pq
+    const{data}=await sb.from('purchases').select('*').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString()).order('created_at',{ascending:false})
     setPurchases(data||[]); setLoading(false)
   }
   function exportCSV(){
@@ -237,8 +231,8 @@ export default function ReportsPage() {
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setSL(false);return}
     const{start,end}=getRange(period,from,to)
     const[{data:mv},{data:pu}]=await Promise.all([
-      (()=>{ const bid=sessionStorage.getItem('s_branch_id'); let q=sb.from('stock_movements').select('qty_change,products!inner(name,org_id)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString()); if(bid) q=(q as any).eq('branch_id',bid); return q })(),
-      (()=>{ const bid=sessionStorage.getItem('s_branch_id'); let q=sb.from('purchases').select('amount,total_amount,vat_amount').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString()); if(bid) q=(q as any).eq('branch_id',bid); return q })(),
+      sb.from('stock_movements').select('qty_change,products!inner(name,org_id)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString()),
+      sb.from('purchases').select('amount,total_amount,vat_amount').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString()),
     ])
     const items=new Set((mv||[]).map((m:any)=>m.products?.name)).size
     setDS({ops:(mv||[]).length,qty:(mv||[]).reduce((s:number,m:any)=>s+Math.abs(m.qty_change),0),items})
