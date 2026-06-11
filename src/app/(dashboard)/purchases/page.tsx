@@ -43,7 +43,7 @@ export default function PurchasesPage() {
       sessionStorage.setItem('s_profile_id', uid!)
     }
     setOrgId(oid!); setUserId(uid!)
-    loadHistory(oid!)
+    setTimeout(()=>loadHistory(oid!), 300)
   }
 
   async function loadHistory(oid: string) {
