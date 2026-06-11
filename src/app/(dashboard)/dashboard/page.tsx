@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, Component } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { colors, radius, shadow, font, card, btnSecondary, tag, pageTitle } from '@/lib/ds'
 
 class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|null}> {
@@ -86,16 +86,14 @@ export default function DashboardPage() {
   const router   = useRouter()
 
   useEffect(() => {
-    // ننتظر حتى يتحدد s_branch_id
+    // انتظر حتى يتحدد branch_id (max 2 ثانية)
     let attempts = 0
     const check = setInterval(() => {
       attempts++
       const bid = sessionStorage.getItem('s_branch_id')
       const oid = sessionStorage.getItem('s_org_id')
-      if ((bid && oid) || attempts > 20) {
-        clearInterval(check)
-        load()
-      }
+      if (bid && oid) { clearInterval(check); load() }
+      else if (attempts > 20) { clearInterval(check); load() }
     }, 100)
     return () => clearInterval(check)
   }, [])
