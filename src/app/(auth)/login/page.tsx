@@ -48,7 +48,14 @@ function LoginPage() {
     if (password.length < 6) { setError('كلمة المرور 6 أحرف على الأقل'); return }
     setLoading(true); setError('')
     const { data, error } = await supabase.auth.signUp({ email, password })
-    if (error) { setError(error.message); setLoading(false); return }
+    if (error) {
+      if (error.message.includes('already registered') || error.message.includes('already been registered')) {
+        setError('هذا البريد الإلكتروني مسجل مسبقاً — جرب تسجيل الدخول أو تواصل معنا')
+      } else {
+        setError(error.message)
+      }
+      setLoading(false); return
+    }
     if (data.user) {
       const { data: org, error: orgErr } = await supabase
         .from('organizations')
