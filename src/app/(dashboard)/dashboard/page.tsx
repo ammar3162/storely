@@ -85,7 +85,11 @@ export default function DashboardPage() {
   const supabase = createClient()
   const router   = useRouter()
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    // انتظر 600ms حتى يتحدد s_branch_id من الـ layout
+    const t = setTimeout(() => load(), 600)
+    return () => clearTimeout(t)
+  }, [])
 
   async function load() {
     const { data:{ user } } = await supabase.auth.getUser()
