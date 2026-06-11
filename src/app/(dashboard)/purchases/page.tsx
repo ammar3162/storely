@@ -27,7 +27,9 @@ export default function PurchasesPage() {
   })
   const sb = createClient()
 
-  useEffect(() => { init() }, [])
+  useEffect(()=>{
+    let a=0; const c=setInterval(()=>{a++;const b=sessionStorage.getItem('s_branch_id'),o=sessionStorage.getItem('s_org_id');if((b&&o)||a>20){clearInterval(c);init()}},100); return()=>clearInterval(c)
+  },[])
   useVisibilityRefresh(() => { if (orgId) loadHistory(orgId) }, 20*60*1000)
 
   async function init() {
