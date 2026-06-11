@@ -121,7 +121,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     sessionStorage.setItem('s_branch_id',b.id)
     sessionStorage.setItem('s_branch_name',b.name)
     setBranchName(b.name); setShowBranchSel(false); setReady(true)
-    setTimeout(()=>window.location.reload(), 100)
+    Object.keys(sessionStorage).filter(k=>k.startsWith('inv_')||k.startsWith('disp_')).forEach(k=>sessionStorage.removeItem(k))
+    window.location.reload()
   }
 
   const C={bg:'#0f172a',bg2:'#1e293b',border:'rgba(255,255,255,.08)',text:'rgba(255,255,255,.9)',text2:'rgba(255,255,255,.5)'}
