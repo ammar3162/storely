@@ -74,7 +74,7 @@ export default async function middleware(request: NextRequest) {
   return supabaseResponse
 }
 
-// config = {
+const _config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
 
