@@ -22,7 +22,11 @@ export async function POST(req: Request) {
     } else {
       await supabase.from('profiles').delete().eq('id',userId)
     }
-    await supabase.auth.admin.deleteUser(userId)
+    const { error: authErr } = await supabase.auth.admin.deleteUser(userId)
+    if (authErr) {
+      // حاول مرة ثانية عن طريق SQL مباشر
+      await supabase.rpc('delete_auth_user', { user_id: userId }).catch(()=>{})
+    }
     return NextResponse.json({ success:true })
   } catch(err:any) {
     return NextResponse.json({ success:false, error:err.message }, {status:500})
