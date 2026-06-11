@@ -34,30 +34,24 @@ export default function InventoryPage() {
   const [showScan, setShowScan] = useState(false)
   const sb = createClient()
 
-  useEffect(()=>{
-    let attempts = 0
-    const check = setInterval(()=>{
-      attempts++
-      const bid = sessionStorage.getItem('s_branch_id')
-      const oid = sessionStorage.getItem('s_org_id')
-      if((bid && oid) || attempts > 20){ clearInterval(check); load() }
-    }, 100)
-    return ()=>clearInterval(check)
-  },[])
+  useEffect(()=>{ load() },[])
   useVisibilityRefresh(load, 20*60*1000)
 
   async function load() {
-    const oid = sessionStorage.getItem('s_org_id')
+    setLoading(true)
+    let oid = sessionStorage.getItem('s_org_id')
+    if (!oid) {
+      const{data:{user}}=await sb.auth.getUser()
+      if(!user){setLoading(false);return}
+      const{data:p}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
+      if(!p){setLoading(false);return}
+      oid=p.org_id; sessionStorage.setItem('s_org_id',oid!)
+    }
     const bid = sessionStorage.getItem('s_branch_id')
-    const cacheKey = `inv_${oid}_${bid}`
-    const cached = sessionStorage.getItem(cacheKey)
-    if(cached){setProducts(JSON.parse(cached));setLoading(false)}
-    else setLoading(true)
-    if(!oid) return
     let q=sb.from('products').select('*').eq('org_id',oid).eq('is_active',true).order('name')
     if(bid) q=(q as any).eq('branch_id',bid)
     const{data}=await q
-    if(data){setProducts(data);sessionStorage.setItem(cacheKey,JSON.stringify(data))}
+    setProducts(data||[])
     setLoading(false)
   }
 
