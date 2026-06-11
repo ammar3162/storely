@@ -26,6 +26,7 @@ export async function POST(req: Request) {
     if (authErr) {
       // حاول مرة ثانية عن طريق SQL مباشر
       await supabase.rpc('delete_auth_user', { user_id: userId }).catch(()=>{})
+    await supabase.rpc('delete_auth_identity', { user_id: userId }).catch(()=>{})
     }
     return NextResponse.json({ success:true })
   } catch(err:any) {
