@@ -16,6 +16,7 @@ export default function PurchasesPage() {
   const [orgId, setOrgId]           = useState('')
   const [userId, setUserId]         = useState('')
   const [loading, setLoading]       = useState(false)
+  const submitting = useRef(false)
   const [uploading, setUploading]   = useState(false)
   const [showScan, setShowScan]     = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
@@ -75,6 +76,8 @@ export default function PurchasesPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.total_amount || !orgId) return
+    if (submitting.current) return
+    submitting.current = true
     if (!form.hasVat) { toast('حدد هل الفاتورة تشمل الضريبة', 'warning'); return }
     if (form.hasVat==='yes' && !form.invoice_image) { toast('يرجى رفع صورة الفاتورة', 'warning'); return }
     if (!form.supplier.trim()) { toast('يرجى إدخال اسم المورد', 'warning'); return }
@@ -149,6 +152,7 @@ export default function PurchasesPage() {
 
     setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:''})
     setPreviewUrl(null); setLoading(false)
+    submitting.current = false
     loadHistory(orgId)
   }
 
