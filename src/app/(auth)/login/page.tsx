@@ -50,10 +50,11 @@ function LoginPage() {
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) { setError(error.message); setLoading(false); return }
     if (data.user) {
-      const { data: org } = await supabase
+      const { data: org, error: orgErr } = await supabase
         .from('organizations')
         .insert({ name: orgName.trim(), whatsapp_number: phone.trim(), low_stock_threshold: 5 })
         .select().single()
+      if (orgErr) { setError('خطأ في إنشاء المؤسسة: ' + orgErr.message); setLoading(false); return }
       if (org) {
         setSuccessData({name:orgName.trim(),phone:phone.trim()})
         console.log('User created:', data.user.id)
