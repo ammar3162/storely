@@ -56,6 +56,7 @@ function LoginPage() {
         .select().single()
       if (org) {
         setSuccessData({name:orgName.trim(),phone:phone.trim()})
+        console.log('User created:', data.user.id)
         // Update branch_count separately
         if (branchCount) await supabase.from('profiles').update({branch_count:branchCount} as any).eq('id',data.user.id)
         await supabase.from('profiles').upsert({
