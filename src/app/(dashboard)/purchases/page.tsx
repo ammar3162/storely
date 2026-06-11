@@ -137,7 +137,9 @@ export default function PurchasesPage() {
         if (qty > 0) await sb.from('stock_movements').insert({product_id:existing.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء من: ${form.supplier}`})
         toast(`✅ المنتج موجود — تم تحديث المخزون (+${qty})`, 'success')
       } else {
-        const { data: np } = await sb.from('products').insert({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id')||null,name:form.name,sku:form.sku||null,unit:form.unit||'قطعة',qty,reorder_point:Number(form.reorder_point)||5,is_active:true}).select().single()
+        const branchId = sessionStorage.getItem('s_branch_id') || 
+          (await sb.from('branches').select('id').eq('org_id',orgId).eq('is_active',true).order('created_at').limit(1).single()).data?.id || null
+        const { data: np } = await sb.from('products').insert({org_id:orgId,branch_id:branchId,name:form.name,sku:form.sku||null,unit:form.unit||'قطعة',qty,reorder_point:Number(form.reorder_point)||5,is_active:true}).select().single()
         if (np && qty > 0) await sb.from('stock_movements').insert({product_id:np.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء جديد من: ${form.supplier}`})
         toast(`✅ تم إضافة "${form.name}" للمخزون كصنف جديد`)
       }
