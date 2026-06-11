@@ -101,7 +101,14 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
   useEffect(()=>{ load() },[period,from,to])
   async function load() {
     setLoading(true)
-    const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setLoading(false);return}
+    let orgId=sessionStorage.getItem('s_org_id')
+    if(!orgId){
+      const{data:{user}}=await sb.auth.getUser()
+      if(!user){setLoading(false);return}
+      const{data:p}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
+      if(!p){setLoading(false);return}
+      orgId=p.org_id; sessionStorage.setItem('s_org_id',orgId!)
+    }
     const {start,end}=getRange(period,from,to)
     const{data}=await sb.from('stock_movements').select('*,products!inner(name,unit,org_id)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString()).order('created_at',{ascending:false})
     setMovements(data||[]); setLoading(false)
