@@ -63,7 +63,7 @@ export async function POST(req: Request) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({ session_id: session, to: phone, text: msg }),
+      body: JSON.stringify({ session_id: session, phone_number: phone, message: msg }),
     })
 
     await supabase.from('whatsapp_logs').insert({

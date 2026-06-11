@@ -39,15 +39,15 @@ export default function AdminPage() {
   async function loadUsers() {
     setLoading(true)
     const { data } = await sb.from('profiles')
-      .select('id,full_name,phone,role,status,created_at,org_id,subscription_type,subscription_ends_at,organizations(name),branches(id)')
+      .select('id,full_name,phone,role,status,created_at,org_id,subscription_type,subscription_ends_at,branch_count')
       .order('created_at',{ascending:false})
     if (data) setUsers(data.map((p:any)=>({
       id:p.id, full_name:p.full_name||'—', phone:p.phone||'—',
       role:p.role, status:p.status||'pending', created_at:p.created_at,
-      org_id:p.org_id, org_name:p.organizations?.name||'—',
+      org_id:p.org_id, org_name:'—',
       subscription_type:p.subscription_type||'trial',
       subscription_ends_at:p.subscription_ends_at||null,
-      branch_count:Array.isArray(p.branches)?p.branches.length:0,
+      branch_count:(p as any).branch_count||null,
     })))
     setLoading(false)
   }
@@ -99,10 +99,7 @@ export default function AdminPage() {
     suspended:users.filter(u=>u.status==='suspended').length,
   }
 
-  const totalRevenue = users.filter(u=>u.subscription_type==='paid'&&u.status==='active').reduce((sum,u)=>{
-    const b = u.branch_count||1
-    return sum + (b>=4?349:b>=2?199:99)
-  },0)
+  const totalRevenue = users.filter(u=>u.subscription_type==='paid'&&u.status==='active').length * 99
 
   // ── Login Screen ──
   if (!authed) return (

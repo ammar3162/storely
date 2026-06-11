@@ -50,7 +50,7 @@ async function sendForOrg(supabase: any, org: any) {
 
   try {
     await supabase.from('whatsapp_logs').insert({
-      org_id: org.id, phone, text: msg,
+      org_id: org.id, phone, message: msg,
       status: res.ok ? 'sent' : 'failed',
     })
     if (res.ok) {
