@@ -13,6 +13,8 @@ const UNITS = ['قطعة','كيلو','كيس','كرتون','لتر','علبة','
 
 export default function PurchasesPage() {
   const [history, setHistory]       = useState<any[]>([])
+  const [products, setProducts]     = useState<any[]>([])
+  const [isExisting, setIsExisting] = useState<boolean|null>(null)
   const [orgId, setOrgId]           = useState('')
   const [userId, setUserId]         = useState('')
   const [loading, setLoading]       = useState(false)
@@ -46,7 +48,16 @@ export default function PurchasesPage() {
       sessionStorage.setItem('s_profile_id', uid!)
     }
     setOrgId(oid!); setUserId(uid!)
+    loadProducts(oid!)
     setTimeout(()=>loadHistory(oid!), 300)
+  }
+
+  async function loadProducts(oid: string) {
+    const bid = sessionStorage.getItem('s_branch_id')
+    let q = sb.from('products').select('id,name,unit,qty').eq('org_id',oid).eq('is_active',true).order('name')
+    if(bid) q = (q as any).eq('branch_id',bid)
+    const { data } = await q
+    setProducts(data||[])
   }
 
   async function loadHistory(oid: string) {
@@ -236,10 +247,32 @@ export default function PurchasesPage() {
               {form.category==='مخزون'&&<div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:8,padding:'8px 12px',marginTop:8,fontSize:11,color:'#16a34a',fontWeight:600}}>✅ سيتم إضافة هذا الصنف للمخزون تلقائياً</div>}
             </div>
 
+            {form.category==='مخزون' && (
+              <div style={{display:'flex',gap:8,marginBottom:12}}>
+                <button type="button" onClick={()=>setIsExisting(true)}
+                  style={{flex:1,padding:'10px',borderRadius:10,border:`2px solid ${isExisting===true?'#2d7a4f':'#e2e8f0'}`,background:isExisting===true?'#f0fdf4':'white',color:isExisting===true?'#2d7a4f':'#64748b',fontWeight:700,cursor:'pointer',fontFamily:'system-ui',fontSize:13}}>
+                  📦 صنف موجود
+                </button>
+                <button type="button" onClick={()=>setIsExisting(false)}
+                  style={{flex:1,padding:'10px',borderRadius:10,border:`2px solid ${isExisting===false?'#2d7a4f':'#e2e8f0'}`,background:isExisting===false?'#f0fdf4':'white',color:isExisting===false?'#2d7a4f':'#64748b',fontWeight:700,cursor:'pointer',fontFamily:'system-ui',fontSize:13}}>
+                  ➕ صنف جديد
+                </button>
+              </div>
+            )}
+
             <div style={{marginBottom:12}}>
               <label style={{fontSize:11,fontWeight:700,color:'#64748b',display:'block',marginBottom:5}}>{form.category==='مخزون'?'اسم الصنف *':'اسم الخدمة / الفاتورة *'}</label>
-              <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp}
-                placeholder={form.category==='مخزون'?'مثال: قهوة، سكر...':form.category==='مشتريات'?'مثال: مستلزمات مكتبية...':'مثال: إيجار، كهرباء...'}/>
+              {form.category==='مخزون' && isExisting===true ? (
+                <select required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={{...inp,cursor:'pointer'}}>
+                  <option value="">اختر صنف من المخزون...</option>
+                  {products.map((p:any)=>(
+                    <option key={p.id} value={p.name}>{p.name} — {p.qty} {p.unit}</option>
+                  ))}
+                </select>
+              ) : (
+                <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp}
+                  placeholder={form.category==='مخزون'?'مثال: قهوة، سكر...':form.category==='مشتريات'?'مثال: مستلزمات مكتبية...':'مثال: إيجار، كهرباء...'}/>
+              )}
             </div>
             {form.category==='مخزون'&&(
               <div style={{marginBottom:12}}>
