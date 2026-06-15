@@ -53,10 +53,7 @@ export default function PurchasesPage() {
   }
 
   async function loadProducts(oid: string) {
-    const bid = sessionStorage.getItem('s_branch_id')
-    let q = sb.from('products').select('id,name,unit,qty').eq('org_id',oid).eq('is_active',true).order('name')
-    if(bid) q = (q as any).eq('branch_id',bid)
-    const { data } = await q
+    const { data } = await sb.from('products').select('id,name,unit,qty').eq('org_id',oid).eq('is_active',true).order('name')
     setProducts(data||[])
   }
 
