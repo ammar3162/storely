@@ -20,6 +20,7 @@ export default function DispensePage() {
   const [note, setNote]           = useState('')
   const [showScan, setShowScan]   = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [search, setSearch]           = useState('')
   const orgIdRef     = useRef<string|null>(null)
   const profileIdRef = useRef<string|null>(null)
   const sb = createClient()
@@ -118,10 +119,23 @@ export default function DispensePage() {
           <div style={{marginBottom:14}}>
             <label style={lbl}>المنتج</label>
             <button type="button" onClick={()=>setShowScan(true)} style={{width:'100%',padding:'10px',background:colors.primaryLight,color:colors.primary,border:`1.5px solid ${colors.primaryBorder}`,borderRadius:radius.md,fontSize:font.sm,fontWeight:700,cursor:'pointer',fontFamily:font.family,display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginBottom:8}}>📷 مسح باركود المنتج</button>
-            <select value={productId} onChange={e=>setProductId(e.target.value)} style={inp()}>
-              <option value="">— اختر المنتج —</option>
-              {products.map(p=>(<option key={p.id} value={p.id}>{p.name} (متاح: {p.qty} {p.unit})</option>))}
-            </select>
+            <input value={search} onChange={e=>setSearch(e.target.value)} style={inp()}
+              placeholder="🔍 ابحث عن منتج..." autoComplete="off"/>
+            {search && (
+              <div style={{border:'2px solid #e2e8f0',borderRadius:10,marginTop:4,maxHeight:200,overflowY:'auto',background:'white',boxShadow:'0 4px 12px rgba(0,0,0,.1)'}}>
+                {products.filter(p=>p.name.toLowerCase().includes(search.toLowerCase())).length===0 ? (
+                  <div style={{padding:'12px 14px',fontSize:13,color:'#94a3b8',textAlign:'center'}}>لا توجد نتائج</div>
+                ) : products.filter(p=>p.name.toLowerCase().includes(search.toLowerCase())).map(p=>(
+                  <div key={p.id} onClick={()=>{ setProductId(p.id); setSearch(p.name) }}
+                    style={{padding:'10px 14px',cursor:'pointer',fontSize:13,fontWeight:600,color:'#1e293b',borderBottom:'1px solid #f1f5f9',display:'flex',justifyContent:'space-between',alignItems:'center'}}
+                    onMouseEnter={e=>(e.currentTarget.style.background='#f0fdf4')}
+                    onMouseLeave={e=>(e.currentTarget.style.background='white')}>
+                    <span>{p.name}</span>
+                    <span style={{fontSize:11,color:'#64748b',fontWeight:500}}>متاح: {p.qty} {p.unit}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {selected && (
