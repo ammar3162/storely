@@ -71,7 +71,7 @@ export default function DispensePage() {
     if (error) { toast('خطأ في تسجيل الصرف', 'error'); setSaving(false); return }
     toast('تم صرف '+qtyNum+' '+product.unit+' من '+product.name, 'success')
     fetch('/api/send-pending-notifications', { method:'POST' }).catch(()=>{})
-    setProductId(''); setQty(''); setNote(''); setReason('استهلاك يومي')
+    setProductId(''); setQty(''); setNote(''); setReason('استهلاك يومي'); setSearch('')
     setSaving(false); loadProducts(oid); loadHistory(oid)
   }
 
