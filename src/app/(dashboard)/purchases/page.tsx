@@ -132,11 +132,11 @@ export default function PurchasesPage() {
     if (form.category==='مخزون' && form.name) {
       const qty = form.qty ? Number(form.qty) : 0
       let existing: any = null
-      const { data: byName } = await sb.from('products').select('id,qty,sku').eq('org_id',orgId).eq('name',form.name).maybeSingle()
-      if (byName) { existing = byName }
+      const { data: byNameArr } = await sb.from('products').select('id,qty,sku').eq('org_id',orgId).eq('name',form.name).order('created_at',{ascending:false}).limit(1)
+      if (byNameArr && byNameArr.length>0) { existing = byNameArr[0] }
       else if (form.sku) {
-        const { data: bySku } = await sb.from('products').select('id,qty,sku,name').eq('org_id',orgId).eq('sku',form.sku).maybeSingle()
-        if (bySku) existing = bySku
+        const { data: bySkuArr } = await sb.from('products').select('id,qty,sku,name').eq('org_id',orgId).eq('sku',form.sku).order('created_at',{ascending:false}).limit(1)
+        if (bySkuArr && bySkuArr.length>0) existing = bySkuArr[0]
       }
       if (existing) {
         if (form.sku && !existing.sku) await sb.from('products').update({sku:form.sku}).eq('id',existing.id)
