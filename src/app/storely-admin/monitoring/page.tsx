@@ -48,7 +48,7 @@ export default function MonitoringPage() {
       <div style={{background:C.card,borderRadius:14,padding:20,border:`1px solid ${C.border}`}}>
         <div style={{fontSize:15,fontWeight:700,color:C.text,marginBottom:14}}>⚡ إجراءات سريعة</div>
         <div style={{display:'flex',gap:10,flexWrap:'wrap' as const}}>
-          {[{label:'📲 إرسال إشعار الآن',href:'/settings',color:'#22c55e'},{label:'💾 نسخة احتياطية',href:'/settings',color:'#3b82f6'},{label:'👥 إدارة المستخدمين',href:'/storely-admin',color:'#a855f7'}].map((a,i)=>(
+          {[{label:'📲 إرسال إشعار الآن',href:'/settings',color:'#22c55e'},{label:'💾 عرض النسخ الاحتياطية',href:'/storely-admin/backups',color:'#3b82f6'},{label:'👥 إدارة المستخدمين',href:'/storely-admin',color:'#a855f7'}].map((a,i)=>(
             <a key={i} href={a.href} style={{padding:'10px 18px',background:a.color+'22',color:a.color,border:`1px solid ${a.color}44`,borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none'}}>{a.label}</a>
           ))}
         </div>
