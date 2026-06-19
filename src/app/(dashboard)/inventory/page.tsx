@@ -25,6 +25,7 @@ export default function InventoryPage() {
   const PER = 15
   const [loading, setLoading]   = useState(true)
   const [search, setSearch]     = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all'|'low'|'ok'>('all')
   const [showAdd, setShowAdd]   = useState(false)
   const [saving, setSaving]     = useState(false)
   const [editItem, setEditItem] = useState<Product|null>(null)
@@ -64,7 +65,12 @@ export default function InventoryPage() {
       toast('تم حفظ التعديلات ✓')
     } else {
       if (!form.qty) { toast('أدخل كمية أكبر من صفر','warning'); setSaving(false); return }
-      const {data:np} = await sb.from('products').insert({ org_id:oid, name:form.name, sku:form.sku||null, unit:form.unit, qty:Number(form.qty), reorder_point:Number(form.reorder_point), category:form.category||null, is_active:true }).select().single()
+      let branchId = sessionStorage.getItem('s_branch_id')
+      if (!branchId) {
+        const { data: defBranch } = await sb.from('branches').select('id').eq('org_id',oid).eq('is_active',true).order('created_at').limit(1).single()
+        branchId = defBranch?.id || null
+      }
+      const {data:np} = await sb.from('products').insert({ org_id:oid, branch_id:branchId, name:form.name, sku:form.sku||null, unit:form.unit, qty:Number(form.qty), reorder_point:Number(form.reorder_point), category:form.category||null, is_active:true }).select().single()
       if (np) await sb.from('stock_movements').insert({ product_id:np.id, profile_id:user.id, type:'in', qty_change:Number(form.qty), note:'إضافة أولية' })
       toast('تم إضافة المنتج ✓')
     }
@@ -90,7 +96,13 @@ export default function InventoryPage() {
     Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})),download:'المخزون.csv'}).click()
   }
 
-  const filtered  = products.filter(p=>p.name?.includes(search)||p.category?.includes(search)||p.sku?.includes(search))
+  const filtered  = products
+    .filter(p=>p.name?.includes(search)||p.category?.includes(search)||p.sku?.includes(search))
+    .filter(p=>{
+      if(statusFilter==='low') return p.qty<=p.reorder_point
+      if(statusFilter==='ok')  return p.qty>p.reorder_point
+      return true
+    })
   const paginated = filtered.slice((page-1)*PER, page*PER)
   const lowCount  = products.filter(p=>p.qty<=p.reorder_point).length
 
@@ -221,15 +233,16 @@ export default function InventoryPage() {
 
       <div className="inv-stats" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:18}}>
         {[
-          {label:'الأصناف', value:products.length,             color:colors.info,    bg:colors.infoLight,    border:colors.infoBorder},
-          {label:'ناقص',    value:lowCount,                    color:colors.danger,  bg:colors.dangerLight,  border:colors.dangerBorder},
-          {label:'كافي',    value:products.length-lowCount,    color:colors.primary, bg:colors.primaryLight, border:colors.primaryBorder},
-          {label:'الكميات', value:products.reduce((s,p)=>s+p.qty,0), color:colors.warning, bg:colors.warningLight, border:colors.warningBorder},
+          {label:'الأصناف', value:products.length,             color:colors.info,    bg:colors.infoLight,    border:colors.infoBorder, key:'all' as const},
+          {label:'ناقص',    value:lowCount,                    color:colors.danger,  bg:colors.dangerLight,  border:colors.dangerBorder, key:'low' as const},
+          {label:'كافي',    value:products.length-lowCount,    color:colors.primary, bg:colors.primaryLight, border:colors.primaryBorder, key:'ok' as const},
+          {label:'الكميات', value:products.reduce((s,p)=>s+p.qty,0), color:colors.warning, bg:colors.warningLight, border:colors.warningBorder, key:'all' as const},
         ].map((s,i)=>(
-          <div key={i} style={{background:s.bg,borderRadius:radius.lg,padding:'14px',border:`1.5px solid ${s.border}`,textAlign:'center' as const}}>
+          <button key={i} onClick={()=>{setStatusFilter(s.key); setPage(1)}}
+            style={{background:s.bg,borderRadius:radius.lg,padding:'14px',border:`1.5px solid ${statusFilter===s.key && s.key!=='all'?s.color:s.border}`,textAlign:'center' as const,cursor:'pointer',fontFamily:font.family,boxShadow:statusFilter===s.key && s.key!=='all'?`0 0 0 2px ${s.color}33`:'none',transition:'all .15s'}}>
             <div style={{fontSize:font.xl,fontWeight:900,color:s.color,letterSpacing:'-0.5px'}}>{s.value}</div>
             <div style={{fontSize:font.xs,color:colors.text3,marginTop:3,fontWeight:600}}>{s.label}</div>
-          </div>
+          </button>
         ))}
       </div>
 
