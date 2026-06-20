@@ -79,8 +79,16 @@ export default function StaffDispensePage() {
     loadProducts(s)
 
     const savedLang = sessionStorage.getItem('staff_lang')
-    if (savedLang) setLang(savedLang)
+    if (savedLang && savedLang !== 'ar') {
+      setLang(savedLang)
+    }
   }, [])
+
+  useEffect(() => {
+    if (session && products.length > 0 && lang !== 'ar' && !translations[lang]) {
+      fetchTranslation(session, lang)
+    }
+  }, [session, products])
 
   async function loadProducts(s: StaffSession) {
     setLoading(true)
@@ -91,33 +99,30 @@ export default function StaffDispensePage() {
     setLoading(false)
   }
 
+  async function fetchTranslation(s: StaffSession, targetLang: string) {
+    setTranslating(true)
+    try {
+      const res = await fetch('/api/translate-products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orgId: s.org_id, branchId: s.branch_id, targetLang }),
+      })
+      const data = await res.json()
+      setTranslations(prev => ({ ...prev, [targetLang]: data.translations || {} }))
+    } catch {
+      showToast(t('errorTryAgain', lang))
+    }
+    setTranslating(false)
+  }
+
   async function handleLangChange(newLang: string) {
     setLang(newLang)
     sessionStorage.setItem('staff_lang', newLang)
 
-    if (newLang === 'ar' || products.length === 0) return
+    if (newLang === 'ar' || !session) return
     if (translations[newLang] && Object.keys(translations[newLang]).length > 0) return
 
-    setTranslating(true)
-    try {
-      const catSet = new Set(products.map(p => p.category?.trim() || OTHER_CATEGORY))
-      const allTerms = Array.from(new Set([...products.map(p => (p.name || '').trim()), ...Array.from(catSet)]))
-
-      const res = await fetch('/api/translate-products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productNames: allTerms, targetLang: newLang }),
-      })
-      const data = await res.json()
-      const fresh = data.translations || {}
-      console.log('TRANSLATIONS RECEIVED:', fresh)
-      setTranslations(prev => ({ ...prev, [newLang]: fresh }))
-    } catch (err) {
-      console.log('TRANSLATION ERROR:', err)
-      showToast(t('errorTryAgain', lang))
-    } finally {
-      setTranslating(false)
-    }
+    await fetchTranslation(session, newLang)
   }
 
   function logout() {
