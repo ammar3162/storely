@@ -95,7 +95,8 @@ export default function StaffDispensePage() {
     setLang(newLang)
     sessionStorage.setItem('staff_lang', newLang)
 
-    if (newLang === 'ar' || translations[newLang] || products.length === 0) return
+    if (newLang === 'ar' || products.length === 0) return
+    if (translations[newLang] && Object.keys(translations[newLang]).length > 0) return
 
     setTranslating(true)
     try {
@@ -108,11 +109,15 @@ export default function StaffDispensePage() {
         body: JSON.stringify({ productNames: allTerms, targetLang: newLang }),
       })
       const data = await res.json()
-      setTranslations(prev => ({ ...prev, [newLang]: data.translations || {} }))
-    } catch {
+      const fresh = data.translations || {}
+      console.log('TRANSLATIONS RECEIVED:', fresh)
+      setTranslations(prev => ({ ...prev, [newLang]: fresh }))
+    } catch (err) {
+      console.log('TRANSLATION ERROR:', err)
       showToast(t('errorTryAgain', lang))
+    } finally {
+      setTranslating(false)
     }
-    setTranslating(false)
   }
 
   function logout() {
