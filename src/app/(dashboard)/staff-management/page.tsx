@@ -117,6 +117,21 @@ export default function StaffManagementPage() {
               <div style={{ fontSize: font.xl, fontWeight: 900, color: colors.primary, letterSpacing: 4 }}>{revealedPin.pin}</div>
             </div>
           </div>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: font.xs, color: colors.text3, marginBottom: 4 }}>رابط دخول الموظف</div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div style={{ fontSize: font.sm, color: colors.text, background: 'white', padding: '8px 12px', borderRadius: 8, border: `1px solid ${colors.primaryBorder}`, flex: 1, direction: 'ltr', textAlign: 'left', overflowX: 'auto', whiteSpace: 'nowrap' }}>https://storely-hm1u.vercel.app/staff</div>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`رابط دخول الموظف: https://storely-hm1u.vercel.app/staff\nرقم الجوال: ${revealedPin.phone}\nرمز PIN: ${revealedPin.pin}`)
+                  toast('تم نسخ الرابط وبيانات الدخول')
+                }}
+                style={{ background: colors.primary, color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: font.xs, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' }}
+              >
+                نسخ الكل
+              </button>
+            </div>
+          </div>
           <button onClick={() => setRevealedPin(null)} style={{ ...btnSecondary, padding: '8px 16px', fontSize: font.xs }}>تم، إخفاء</button>
         </div>
       )}
