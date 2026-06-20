@@ -18,6 +18,16 @@ const CATEGORY_COLORS = [
 ]
 const OTHER_CATEGORY = 'أخرى'
 
+const LANGUAGES = [
+  { code: 'ar', label: 'العربية' },
+  { code: 'en', label: 'English' },
+  { code: 'ur', label: 'اردو' },
+  { code: 'hi', label: 'हिन्दी' },
+  { code: 'tl', label: 'Tagalog' },
+  { code: 'bn', label: 'বাংলা' },
+  { code: 'fr', label: 'Français' },
+]
+
 function colorFor(category: string, allCategories: string[]) {
   const idx = allCategories.indexOf(category)
   return CATEGORY_COLORS[idx % CATEGORY_COLORS.length]
@@ -26,7 +36,9 @@ function colorFor(category: string, allCategories: string[]) {
 export default function StaffDispensePage() {
   const [session, setSession] = useState<StaffSession | null>(null)
   const [products, setProducts] = useState<any[]>([])
-  const [view, setView] = useState<'categories' | 'products'>('categories')
+  const [translations, setTranslations] = useState<Record<string, Record<string, string>>>({})
+  const [lang, setLang] = useState('ar')
+  const [translating, setTranslating] = useState(false)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<any>(null)
@@ -43,6 +55,9 @@ export default function StaffDispensePage() {
     const s = JSON.parse(saved) as StaffSession
     setSession(s)
     loadProducts(s)
+
+    const savedLang = sessionStorage.getItem('staff_lang')
+    if (savedLang) setLang(savedLang)
   }, [])
 
   async function loadProducts(s: StaffSession) {
@@ -54,6 +69,30 @@ export default function StaffDispensePage() {
     setLoading(false)
   }
 
+  async function handleLangChange(newLang: string) {
+    setLang(newLang)
+    sessionStorage.setItem('staff_lang', newLang)
+
+    if (newLang === 'ar' || translations[newLang] || products.length === 0) return
+
+    setTranslating(true)
+    try {
+      const catSet = new Set(products.map(p => p.category?.trim() || OTHER_CATEGORY))
+      const allTerms = [...products.map(p => p.name), ...Array.from(catSet)]
+
+      const res = await fetch('/api/translate-products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productNames: allTerms, targetLang: newLang }),
+      })
+      const data = await res.json()
+      setTranslations(prev => ({ ...prev, [newLang]: data.translations || {} }))
+    } catch {
+      showToast('تعذّر تحميل الترجمة، سيظهر النص بالعربي')
+    }
+    setTranslating(false)
+  }
+
   function logout() {
     sessionStorage.removeItem('staff_session')
     router.push('/staff')
@@ -62,6 +101,11 @@ export default function StaffDispensePage() {
   function showToast(msg: string) {
     setToastMsg(msg)
     setTimeout(() => setToastMsg(''), 2500)
+  }
+
+  function translate(text: string): string {
+    if (lang === 'ar') return text
+    return translations[lang]?.[text] || text
   }
 
   async function handleDispense() {
@@ -90,7 +134,7 @@ export default function StaffDispensePage() {
     fetch('/api/send-pending-notifications', { method: 'POST' }).catch(() => {})
     fetch('/api/notify-supplier', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: session.org_id }) }).catch(() => {})
 
-    showToast(`✅ تم صرف ${dispenseQty} ${selected.unit} من ${selected.name}`)
+    showToast(`✅ ${translate('تم الصرف بنجاح')}`)
     setSelected(null)
     setQty('')
     setSubmitting(false)
@@ -107,7 +151,9 @@ export default function StaffDispensePage() {
     return categoriesMap[b] - categoriesMap[a]
   })
 
-  const searchResults = search.trim() ? products.filter(p => p.name?.includes(search.trim())) : []
+  const searchResults = search.trim()
+    ? products.filter(p => p.name?.includes(search.trim()) || translate(p.name).toLowerCase().includes(search.trim().toLowerCase()))
+    : []
   const categoryProducts = activeCategory
     ? products.filter(p => (p.category?.trim() || OTHER_CATEGORY) === activeCategory)
     : []
@@ -130,15 +176,41 @@ export default function StaffDispensePage() {
           </div>
           <button onClick={logout} style={{ background: '#fef2f2', color: '#ef4444', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>خروج</button>
         </div>
+
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 10, marginBottom: 4 }}>
+          {LANGUAGES.map(l => (
+            <button
+              key={l.code}
+              onClick={() => handleLangChange(l.code)}
+              disabled={translating}
+              style={{
+                padding: '6px 14px', borderRadius: 20, border: 'none', fontSize: 12, fontWeight: 700,
+                cursor: translating ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+                background: lang === l.code ? '#16a34a' : '#f1f5f9',
+                color: lang === l.code ? 'white' : '#64748b',
+                flexShrink: 0,
+              }}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
+
         <input
           value={search}
-          onChange={e => { setSearch(e.target.value); setView('categories'); setActiveCategory(null) }}
+          onChange={e => { setSearch(e.target.value); setActiveCategory(null) }}
           style={inp}
-          placeholder="🔍 أو ابحث بالاسم مباشرة..."
+          placeholder={lang === 'ar' ? '🔍 أو ابحث بالاسم مباشرة...' : '🔍 Search...'}
         />
       </div>
 
       <div style={{ padding: 20, maxWidth: 520, margin: '0 auto' }}>
+        {translating && (
+          <div style={{ background: '#eff6ff', color: '#3b82f6', padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 700, marginBottom: 16, textAlign: 'center' }}>
+            ⏳ جاري تجهيز الترجمة لأول مرة...
+          </div>
+        )}
+
         {toast && (
           <div style={{ background: toast.startsWith('✅') ? '#f0fdf4' : '#fef2f2', color: toast.startsWith('✅') ? '#16a34a' : '#ef4444', padding: '12px 16px', borderRadius: 12, fontSize: 14, fontWeight: 700, marginBottom: 16, textAlign: 'center' }}>
             {toast}
@@ -152,7 +224,7 @@ export default function StaffDispensePage() {
             {searchResults.length === 0 ? (
               <div style={{ background: 'white', borderRadius: 16, padding: 32, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>لا توجد نتائج</div>
             ) : searchResults.map(p => (
-              <ProductCard key={p.id} p={p} onClick={() => setSelected(p)} />
+              <ProductCard key={p.id} p={p} displayName={translate(p.name)} showOriginal={lang !== 'ar'} onClick={() => setSelected(p)} />
             ))}
           </div>
         ) : !activeCategory ? (
@@ -160,7 +232,7 @@ export default function StaffDispensePage() {
             {categories.map(cat => (
               <button
                 key={cat}
-                onClick={() => { setActiveCategory(cat); setView('products') }}
+                onClick={() => setActiveCategory(cat)}
                 style={{
                   background: colorFor(cat, categories), color: 'white', border: 'none',
                   borderRadius: 18, padding: '24px 16px', cursor: 'pointer', fontFamily: 'inherit',
@@ -168,8 +240,9 @@ export default function StaffDispensePage() {
                   boxShadow: '0 4px 14px rgba(0,0,0,.1)', minHeight: 110,
                 }}
               >
-                <div style={{ fontSize: 17, fontWeight: 800 }}>{cat}</div>
-                <div style={{ fontSize: 12, opacity: .85, fontWeight: 600 }}>{categoriesMap[cat]} صنف</div>
+                <div style={{ fontSize: 17, fontWeight: 800 }}>{translate(cat)}</div>
+                {lang !== 'ar' && <div style={{ fontSize: 11, opacity: .7 }}>{cat}</div>}
+                <div style={{ fontSize: 12, opacity: .85, fontWeight: 600 }}>{categoriesMap[cat]} {lang === 'ar' ? 'صنف' : 'items'}</div>
               </button>
             ))}
           </div>
@@ -179,12 +252,15 @@ export default function StaffDispensePage() {
               onClick={() => setActiveCategory(null)}
               style={{ background: 'none', border: 'none', color: '#16a34a', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 14, padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}
             >
-              ← رجوع للفئات
+              ← {lang === 'ar' ? 'رجوع للفئات' : 'Back'}
             </button>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 12 }}>{activeCategory}</div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>{translate(activeCategory)}</div>
+              {lang !== 'ar' && <div style={{ fontSize: 12, color: '#94a3b8' }}>{activeCategory}</div>}
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {categoryProducts.map(p => (
-                <ProductCard key={p.id} p={p} onClick={() => setSelected(p)} />
+                <ProductCard key={p.id} p={p} displayName={translate(p.name)} showOriginal={lang !== 'ar'} onClick={() => setSelected(p)} />
               ))}
             </div>
           </div>
@@ -195,12 +271,13 @@ export default function StaffDispensePage() {
             <div style={{ background: 'white', borderRadius: '20px 20px 0 0', padding: 24, width: '100%', maxWidth: 480 }} onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
                 <div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>{selected.name}</div>
-                  <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>المتاح: {selected.qty} {selected.unit}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>{translate(selected.name)}</div>
+                  {lang !== 'ar' && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 1 }}>{selected.name}</div>}
+                  <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>{lang === 'ar' ? 'المتاح' : 'Available'}: {selected.qty} {selected.unit}</div>
                 </div>
                 <button onClick={() => { setSelected(null); setQty('') }} style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: 32, height: 32, color: '#64748b', fontSize: 16, cursor: 'pointer' }}>✕</button>
               </div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', marginBottom: 8 }}>الكمية المراد صرفها</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', marginBottom: 8 }}>{lang === 'ar' ? 'الكمية المراد صرفها' : 'Quantity to dispense'}</div>
               <input
                 value={qty}
                 onChange={e => setQty(e.target.value.replace(/[^0-9.]/g, ''))}
@@ -218,7 +295,7 @@ export default function StaffDispensePage() {
                   cursor: (!qty || submitting) ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                 }}
               >
-                {submitting ? 'جاري الحفظ...' : '✓ تسجيل الصرف'}
+                {submitting ? '...' : lang === 'ar' ? '✓ تسجيل الصرف' : '✓ Confirm'}
               </button>
             </div>
           </div>
@@ -228,7 +305,7 @@ export default function StaffDispensePage() {
   )
 }
 
-function ProductCard({ p, onClick }: { p: any; onClick: () => void }) {
+function ProductCard({ p, displayName, showOriginal, onClick }: { p: any; displayName: string; showOriginal: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
@@ -238,7 +315,10 @@ function ProductCard({ p, onClick }: { p: any; onClick: () => void }) {
         boxShadow: '0 1px 3px rgba(0,0,0,.06)', fontFamily: 'inherit', textAlign: 'right', width: '100%',
       }}
     >
-      <span style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{p.name}</span>
+      <div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{displayName}</div>
+        {showOriginal && <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>{p.name}</div>}
+      </div>
       <span style={{ fontSize: 13, fontWeight: 700, color: '#16a34a', background: '#f0fdf4', padding: '4px 10px', borderRadius: 8 }}>{p.qty} {p.unit}</span>
     </button>
   )
