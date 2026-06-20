@@ -19,6 +19,7 @@ export default function StaffManagementPage() {
   const [newPhone, setNewPhone] = useState('')
   const [newBranch, setNewBranch] = useState('')
   const [revealedPin, setRevealedPin] = useState<{name:string,phone:string,pin:string}|null>(null)
+  const [expandedId, setExpandedId] = useState<string|null>(null)
   const sb = createClient()
 
   useEffect(() => { init() }, [])
@@ -163,19 +164,51 @@ export default function StaffManagementPage() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {staff.map((s: any) => (
-            <div key={s.id} style={{ ...card, padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: font.md, fontWeight: 700, color: colors.text, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {s.name}
-                  {!s.is_active && <span style={{ fontSize: font.xs, color: colors.danger, background: colors.dangerLight, padding: '2px 8px', borderRadius: 6, fontWeight: 700 }}>موقوف</span>}
+            <div key={s.id} style={{ ...card, padding: '14px 18px' }}>
+              <div onClick={() => setExpandedId(expandedId === s.id ? null : s.id)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+                <div>
+                  <div style={{ fontSize: font.md, fontWeight: 700, color: colors.text, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {s.name}
+                    {!s.is_active && <span style={{ fontSize: font.xs, color: colors.danger, background: colors.dangerLight, padding: '2px 8px', borderRadius: 6, fontWeight: 700 }}>موقوف</span>}
+                  </div>
+                  <div style={{ fontSize: font.xs, color: colors.text3, marginTop: 2 }}>{s.phone} {s.branches?.name ? `· ${s.branches.name}` : ''}</div>
                 </div>
-                <div style={{ fontSize: font.xs, color: colors.text3, marginTop: 2 }}>{s.phone} {s.branches?.name ? `· ${s.branches.name}` : ''}</div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <button onClick={(e) => { e.stopPropagation(); regeneratePin(s.id, s.name, s.phone) }} style={{ background: colors.infoLight, color: colors.info, border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: font.xs, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>توليد PIN جديد</button>
+                  <button onClick={(e) => { e.stopPropagation(); toggleActive(s.id, s.is_active) }} style={{ background: colors.bg, color: colors.text2, border: `1.5px solid ${colors.border2}`, borderRadius: 8, padding: '6px 12px', fontSize: font.xs, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>{s.is_active ? 'إيقاف' : 'تفعيل'}</button>
+                  <button onClick={(e) => { e.stopPropagation(); deleteStaff(s.id) }} style={{ background: colors.dangerLight, color: colors.danger, border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: font.xs, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>حذف</button>
+                  <span style={{ color: colors.text3, fontSize: 12, marginRight: 4 }}>{expandedId === s.id ? '▲' : '▼'}</span>
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => regeneratePin(s.id, s.name, s.phone)} style={{ background: colors.infoLight, color: colors.info, border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: font.xs, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>توليد PIN جديد</button>
-                <button onClick={() => toggleActive(s.id, s.is_active)} style={{ background: colors.bg, color: colors.text2, border: `1.5px solid ${colors.border2}`, borderRadius: 8, padding: '6px 12px', fontSize: font.xs, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>{s.is_active ? 'إيقاف' : 'تفعيل'}</button>
-                <button onClick={() => deleteStaff(s.id)} style={{ background: colors.dangerLight, color: colors.danger, border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: font.xs, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>حذف</button>
-              </div>
+              {expandedId === s.id && (
+                <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${colors.border2}` }}>
+                  <div style={{ display: 'flex', gap: 24, alignItems: 'center', marginBottom: 12 }}>
+                    <div>
+                      <div style={{ fontSize: font.xs, color: colors.text3, marginBottom: 4 }}>رقم الجوال</div>
+                      <div style={{ fontSize: font.lg, fontWeight: 800, color: colors.text }}>{s.phone}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: font.xs, color: colors.text3, marginBottom: 4 }}>رمز PIN الحالي</div>
+                      <div style={{ fontSize: font.xl, fontWeight: 900, color: colors.primary, letterSpacing: 4 }}>{s.pin}</div>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: font.xs, color: colors.text3, marginBottom: 4 }}>رابط دخول الموظف</div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <div style={{ fontSize: font.sm, color: colors.text, background: colors.bg, padding: '8px 12px', borderRadius: 8, border: `1px solid ${colors.border2}`, flex: 1, direction: 'ltr', textAlign: 'left', overflowX: 'auto', whiteSpace: 'nowrap' }}>https://storely-hm1u.vercel.app/staff</div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(`رابط دخول الموظف: https://storely-hm1u.vercel.app/staff\nرقم الجوال: ${s.phone}\nرمز PIN: ${s.pin}`)
+                          toast('تم نسخ الرابط وبيانات الدخول')
+                        }}
+                        style={{ background: colors.primary, color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: font.xs, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' }}
+                      >
+                        نسخ الكل
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
