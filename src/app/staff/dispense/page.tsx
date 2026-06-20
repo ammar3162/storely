@@ -85,10 +85,10 @@ export default function StaffDispensePage() {
   }, [])
 
   useEffect(() => {
-    if (session && products.length > 0 && lang !== 'ar' && !translations[lang]) {
+    if (session && products.length > 0 && lang !== 'ar') {
       fetchTranslation(session, lang)
     }
-  }, [session, products])
+  }, [session, products, lang])
 
   async function loadProducts(s: StaffSession) {
     setLoading(true)
@@ -120,8 +120,9 @@ export default function StaffDispensePage() {
     sessionStorage.setItem('staff_lang', newLang)
 
     if (newLang === 'ar' || !session) return
-    if (translations[newLang] && Object.keys(translations[newLang]).length > 0) return
 
+    // نطلب من الـ API دائماً — هو نفسه يتحقق من قاعدة البيانات
+    // ويترجم فقط المنتجات الجديدة الناقصة (سريع لو كله محفوظ مسبقاً)
     await fetchTranslation(session, newLang)
   }
 
