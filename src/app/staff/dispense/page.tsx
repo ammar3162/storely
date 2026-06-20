@@ -101,7 +101,7 @@ export default function StaffDispensePage() {
     setTranslating(true)
     try {
       const catSet = new Set(products.map(p => p.category?.trim() || OTHER_CATEGORY))
-      const allTerms = Array.from(new Set([...products.map(p => p.name), ...Array.from(catSet)]))
+      const allTerms = Array.from(new Set([...products.map(p => (p.name || '').trim()), ...Array.from(catSet)]))
 
       const res = await fetch('/api/translate-products', {
         method: 'POST',
@@ -132,7 +132,8 @@ export default function StaffDispensePage() {
 
   function translateName(text: string): string {
     if (lang === 'ar') return text
-    return translations[lang]?.[text] || text
+    const clean = (text || '').trim()
+    return translations[lang]?.[clean] || translations[lang]?.[text] || text
   }
 
   async function handleDispense() {
