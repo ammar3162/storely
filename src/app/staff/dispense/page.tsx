@@ -28,6 +28,28 @@ const LANGUAGES = [
   { code: 'fr', label: 'Français' },
 ]
 
+const UI = {
+  logout:        { ar: 'خروج',                       en: 'Logout',                  ur: 'لاگ آؤٹ',                 hi: 'लॉगआउट',              tl: 'Lumabas',           bn: 'লগআউট',              fr: 'Déconnexion' },
+  search:        { ar: 'ابحث بالاسم مباشرة...',       en: 'Search by name...',       ur: 'نام سے تلاش کریں...',     hi: 'नाम से खोजें...',     tl: 'Maghanap...',       bn: 'নাম দিয়ে খুঁজুন...',  fr: 'Rechercher...' },
+  back:          { ar: 'رجوع للفئات',                 en: 'Back to categories',      ur: 'زمروں پر واپس',           hi: 'श्रेणियों पर वापस',   tl: 'Bumalik',           bn: 'বিভাগে ফিরে যান',     fr: 'Retour aux catégories' },
+  itemsCount:    { ar: 'صنف',                         en: 'items',                   ur: 'اشیاء',                    hi: 'आइटम',                tl: 'mga item',          bn: 'আইটেম',              fr: 'articles' },
+  noResults:     { ar: 'لا توجد نتائج',                en: 'No results',              ur: 'کوئی نتیجہ نہیں',         hi: 'कोई परिणाम नहीं',     tl: 'Walang resulta',    bn: 'কোনো ফলাফল নেই',     fr: 'Aucun résultat' },
+  loading:       { ar: 'جاري التحميل...',              en: 'Loading...',              ur: 'لوڈ ہو رہا ہے...',        hi: 'लोड हो रहा है...',    tl: 'Naglo-load...',     bn: 'লোড হচ্ছে...',       fr: 'Chargement...' },
+  available:     { ar: 'المتاح',                       en: 'Available',               ur: 'دستیاب',                  hi: 'उपलब्ध',              tl: 'Available',         bn: 'উপলব্ধ',             fr: 'Disponible' },
+  qtyToDispense: { ar: 'الكمية المراد صرفها',          en: 'Quantity to dispense',    ur: 'تقسیم کی مقدار',          hi: 'वितरित करने की मात्रा', tl: 'Dami na ibibigay', bn: 'বিতরণের পরিমাণ',     fr: 'Quantité à distribuer' },
+  confirm:       { ar: '✓ تسجيل الصرف',                en: '✓ Confirm',               ur: '✓ تصدیق کریں',            hi: '✓ पुष्टि करें',       tl: '✓ Kumpirmahin',     bn: '✓ নিশ্চিত করুন',     fr: '✓ Confirmer' },
+  saving:        { ar: 'جاري الحفظ...',                en: 'Saving...',               ur: 'محفوظ ہو رہا ہے...',      hi: 'सहेजा जा रहा है...',  tl: 'Sine-save...',      bn: 'সংরক্ষণ হচ্ছে...',   fr: 'Enregistrement...' },
+  success:       { ar: 'تم الصرف بنجاح',               en: 'Dispensed successfully',  ur: 'کامیابی سے تقسیم ہوا',    hi: 'सफलतापूर्वक वितरित',  tl: 'Matagumpay',        bn: 'সফলভাবে বিতরণ হয়েছে', fr: 'Distribué avec succès' },
+  selectValid:   { ar: 'اختر المنتج وأدخل كمية صحيحة', en: 'Select item and valid qty', ur: 'آئٹم اور درست مقدار منتخب کریں', hi: 'आइटम चुनें और सही मात्रा डालें', tl: 'Pumili at maglagay ng tamang dami', bn: 'আইটেম নির্বাচন করুন', fr: 'Sélectionnez un article' },
+  tooMuch:       { ar: 'الكمية المطلوبة أكبر من المتاح', en: 'Quantity exceeds available', ur: 'مقدار دستیاب سے زیادہ ہے', hi: 'मात्रा उपलब्ध से अधिक है', tl: 'Lumampas sa available', bn: 'পরিমাণ উপলব্ধের চেয়ে বেশি', fr: 'Quantité dépassée' },
+  errorTryAgain: { ar: 'حدث خطأ، حاول مرة أخرى',       en: 'Error, please try again', ur: 'خرابی، دوبارہ کوشش کریں', hi: 'त्रुटि, फिर से प्रयास करें', tl: 'May error, subukan ulit', bn: 'ত্রুটি, আবার চেষ্টা করুন', fr: 'Erreur, réessayez' },
+  preparingTranslation: { ar: '⏳ جاري تجهيز الترجمة لأول مرة...', en: '⏳ Preparing translation...', ur: '⏳ ترجمہ تیار ہو رہا ہے...', hi: '⏳ अनुवाद तैयार हो रहा है...', tl: '⏳ Inihahanda ang pagsasalin...', bn: '⏳ অনুবাদ প্রস্তুত হচ্ছে...', fr: '⏳ Préparation de la traduction...' },
+}
+
+function t(key: keyof typeof UI, lang: string): string {
+  return (UI[key] as any)[lang] || UI[key].ar
+}
+
 function colorFor(category: string, allCategories: string[]) {
   const idx = allCategories.indexOf(category)
   return CATEGORY_COLORS[idx % CATEGORY_COLORS.length]
@@ -78,7 +100,7 @@ export default function StaffDispensePage() {
     setTranslating(true)
     try {
       const catSet = new Set(products.map(p => p.category?.trim() || OTHER_CATEGORY))
-      const allTerms = [...products.map(p => p.name), ...Array.from(catSet)]
+      const allTerms = Array.from(new Set([...products.map(p => p.name), ...Array.from(catSet)]))
 
       const res = await fetch('/api/translate-products', {
         method: 'POST',
@@ -88,7 +110,7 @@ export default function StaffDispensePage() {
       const data = await res.json()
       setTranslations(prev => ({ ...prev, [newLang]: data.translations || {} }))
     } catch {
-      showToast('تعذّر تحميل الترجمة، سيظهر النص بالعربي')
+      showToast(t('errorTryAgain', lang))
     }
     setTranslating(false)
   }
@@ -103,18 +125,18 @@ export default function StaffDispensePage() {
     setTimeout(() => setToastMsg(''), 2500)
   }
 
-  function translate(text: string): string {
+  function translateName(text: string): string {
     if (lang === 'ar') return text
     return translations[lang]?.[text] || text
   }
 
   async function handleDispense() {
     if (!session || !selected || !qty || Number(qty) <= 0) {
-      showToast('اختر المنتج وأدخل كمية صحيحة')
+      showToast(t('selectValid', lang))
       return
     }
     if (Number(qty) > selected.qty) {
-      showToast('الكمية المطلوبة أكبر من المتاح')
+      showToast(t('tooMuch', lang))
       return
     }
     setSubmitting(true)
@@ -127,16 +149,17 @@ export default function StaffDispensePage() {
       note: `صرف بواسطة الموظف: ${session.name}`,
     })
 
-    if (mErr) { showToast('حدث خطأ، حاول مرة أخرى'); setSubmitting(false); return }
+    if (mErr) { showToast(t('errorTryAgain', lang)); setSubmitting(false); return }
 
     await sb.from('products').update({ qty: selected.qty - dispenseQty }).eq('id', selected.id)
 
     fetch('/api/send-pending-notifications', { method: 'POST' }).catch(() => {})
     fetch('/api/notify-supplier', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: session.org_id }) }).catch(() => {})
 
-    showToast(`✅ ${translate('تم الصرف بنجاح')}`)
+    showToast(`✅ ${t('success', lang)}`)
     setSelected(null)
     setQty('')
+    loadProducts(session)
     setSubmitting(false)
   }
 
@@ -152,7 +175,7 @@ export default function StaffDispensePage() {
   })
 
   const searchResults = search.trim()
-    ? products.filter(p => p.name?.includes(search.trim()) || translate(p.name).toLowerCase().includes(search.trim().toLowerCase()))
+    ? products.filter(p => p.name?.includes(search.trim()) || translateName(p.name).toLowerCase().includes(search.trim().toLowerCase()))
     : []
   const categoryProducts = activeCategory
     ? products.filter(p => (p.category?.trim() || OTHER_CATEGORY) === activeCategory)
@@ -167,14 +190,14 @@ export default function StaffDispensePage() {
   if (!session) return null
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f7fa', fontFamily: "'IBM Plex Sans Arabic', system-ui, sans-serif", direction: 'rtl' }}>
+    <div style={{ minHeight: '100vh', background: '#f5f7fa', fontFamily: "'IBM Plex Sans Arabic', system-ui, sans-serif", direction: lang === 'ar' || lang === 'ur' ? 'rtl' : 'ltr' }}>
       <div style={{ background: 'white', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a' }}>{session.name}</div>
             <div style={{ fontSize: 12, color: '#64748b', marginTop: 1 }}>{session.org_name} {session.branch_name ? `· ${session.branch_name}` : ''}</div>
           </div>
-          <button onClick={logout} style={{ background: '#fef2f2', color: '#ef4444', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>خروج</button>
+          <button onClick={logout} style={{ background: '#fef2f2', color: '#ef4444', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{t('logout', lang)}</button>
         </div>
 
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 10, marginBottom: 4 }}>
@@ -200,14 +223,14 @@ export default function StaffDispensePage() {
           value={search}
           onChange={e => { setSearch(e.target.value); setActiveCategory(null) }}
           style={inp}
-          placeholder={lang === 'ar' ? '🔍 أو ابحث بالاسم مباشرة...' : '🔍 Search...'}
+          placeholder={`🔍 ${t('search', lang)}`}
         />
       </div>
 
       <div style={{ padding: 20, maxWidth: 520, margin: '0 auto' }}>
         {translating && (
           <div style={{ background: '#eff6ff', color: '#3b82f6', padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 700, marginBottom: 16, textAlign: 'center' }}>
-            ⏳ جاري تجهيز الترجمة لأول مرة...
+            {t('preparingTranslation', lang)}
           </div>
         )}
 
@@ -218,13 +241,13 @@ export default function StaffDispensePage() {
         )}
 
         {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>جاري التحميل...</div>
+          <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>{t('loading', lang)}</div>
         ) : search.trim() ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {searchResults.length === 0 ? (
-              <div style={{ background: 'white', borderRadius: 16, padding: 32, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>لا توجد نتائج</div>
+              <div style={{ background: 'white', borderRadius: 16, padding: 32, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>{t('noResults', lang)}</div>
             ) : searchResults.map(p => (
-              <ProductCard key={p.id} p={p} displayName={translate(p.name)} showOriginal={lang !== 'ar'} onClick={() => setSelected(p)} />
+              <ProductCard key={p.id} p={p} displayName={translateName(p.name)} showOriginal={lang !== 'ar'} onClick={() => setSelected(p)} />
             ))}
           </div>
         ) : !activeCategory ? (
@@ -240,9 +263,9 @@ export default function StaffDispensePage() {
                   boxShadow: '0 4px 14px rgba(0,0,0,.1)', minHeight: 110,
                 }}
               >
-                <div style={{ fontSize: 17, fontWeight: 800 }}>{translate(cat)}</div>
+                <div style={{ fontSize: 17, fontWeight: 800 }}>{translateName(cat)}</div>
                 {lang !== 'ar' && <div style={{ fontSize: 11, opacity: .7 }}>{cat}</div>}
-                <div style={{ fontSize: 12, opacity: .85, fontWeight: 600 }}>{categoriesMap[cat]} {lang === 'ar' ? 'صنف' : 'items'}</div>
+                <div style={{ fontSize: 12, opacity: .85, fontWeight: 600 }}>{categoriesMap[cat]} {t('itemsCount', lang)}</div>
               </button>
             ))}
           </div>
@@ -252,15 +275,15 @@ export default function StaffDispensePage() {
               onClick={() => setActiveCategory(null)}
               style={{ background: 'none', border: 'none', color: '#16a34a', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 14, padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}
             >
-              ← {lang === 'ar' ? 'رجوع للفئات' : 'Back'}
+              ← {t('back', lang)}
             </button>
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>{translate(activeCategory)}</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>{translateName(activeCategory)}</div>
               {lang !== 'ar' && <div style={{ fontSize: 12, color: '#94a3b8' }}>{activeCategory}</div>}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {categoryProducts.map(p => (
-                <ProductCard key={p.id} p={p} displayName={translate(p.name)} showOriginal={lang !== 'ar'} onClick={() => setSelected(p)} />
+                <ProductCard key={p.id} p={p} displayName={translateName(p.name)} showOriginal={lang !== 'ar'} onClick={() => setSelected(p)} />
               ))}
             </div>
           </div>
@@ -271,13 +294,13 @@ export default function StaffDispensePage() {
             <div style={{ background: 'white', borderRadius: '20px 20px 0 0', padding: 24, width: '100%', maxWidth: 480 }} onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
                 <div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>{translate(selected.name)}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>{translateName(selected.name)}</div>
                   {lang !== 'ar' && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 1 }}>{selected.name}</div>}
-                  <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>{lang === 'ar' ? 'المتاح' : 'Available'}: {selected.qty} {selected.unit}</div>
+                  <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>{t('available', lang)}: {selected.qty} {selected.unit}</div>
                 </div>
                 <button onClick={() => { setSelected(null); setQty('') }} style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: 32, height: 32, color: '#64748b', fontSize: 16, cursor: 'pointer' }}>✕</button>
               </div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', marginBottom: 8 }}>{lang === 'ar' ? 'الكمية المراد صرفها' : 'Quantity to dispense'}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', marginBottom: 8 }}>{t('qtyToDispense', lang)}</div>
               <input
                 value={qty}
                 onChange={e => setQty(e.target.value.replace(/[^0-9.]/g, ''))}
@@ -295,7 +318,7 @@ export default function StaffDispensePage() {
                   cursor: (!qty || submitting) ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                 }}
               >
-                {submitting ? '...' : lang === 'ar' ? '✓ تسجيل الصرف' : '✓ Confirm'}
+                {submitting ? t('saving', lang) : t('confirm', lang)}
               </button>
             </div>
           </div>
