@@ -60,7 +60,7 @@ export default function InventoryPage() {
     const oid = sessionStorage.getItem('s_org_id')
     if (!oid) { setSaving(false); return }
     if (editItem) {
-      await sb.from('products').update({ name:form.name, sku:form.sku||null, unit:form.unit, reorder_point:Number(form.reorder_point), category:form.category||null }).eq('id',editItem.id)
+      await sb.from('products').update({ name:form.name.trim(), sku:form.sku||null, unit:form.unit, reorder_point:Number(form.reorder_point), category:form.category?.trim()||null }).eq('id',editItem.id)
       if (addQty>0) await sb.from('stock_movements').insert({ product_id:editItem.id, profile_id:user.id, type:'in', qty_change:addQty, note:'إضافة مخزون' })
       toast('تم حفظ التعديلات ✓')
     } else {
@@ -70,7 +70,7 @@ export default function InventoryPage() {
         const { data: defBranch } = await sb.from('branches').select('id').eq('org_id',oid).eq('is_active',true).order('created_at').limit(1).single()
         branchId = defBranch?.id || null
       }
-      const {data:np} = await sb.from('products').insert({ org_id:oid, branch_id:branchId, name:form.name, sku:form.sku||null, unit:form.unit, qty:Number(form.qty), reorder_point:Number(form.reorder_point), category:form.category||null, is_active:true }).select().single()
+      const {data:np} = await sb.from('products').insert({ org_id:oid, branch_id:branchId, name:form.name.trim(), sku:form.sku||null, unit:form.unit, qty:Number(form.qty), reorder_point:Number(form.reorder_point), category:form.category?.trim()||null, is_active:true }).select().single()
       if (np) await sb.from('stock_movements').insert({ product_id:np.id, profile_id:user.id, type:'in', qty_change:Number(form.qty), note:'إضافة أولية' })
       toast('تم إضافة المنتج ✓')
     }
