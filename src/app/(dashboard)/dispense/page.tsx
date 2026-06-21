@@ -50,12 +50,18 @@ export default function DispensePage() {
   }
 
   async function loadProducts(oid: string) {
-    const{data}=await sb.from('products').select('id,name,sku,unit,qty,reorder_point').eq('org_id',oid).eq('is_active',true).order('name')
+    const branchId = sessionStorage.getItem('s_branch_id')
+    let pq = sb.from('products').select('id,name,sku,unit,qty,reorder_point').eq('org_id',oid).eq('is_active',true)
+    if (branchId) pq = pq.eq('branch_id', branchId)
+    const{data}=await pq.order('name')
     if(data) setProducts(data)
   }
 
   async function loadHistory(oid: string) {
-    const { data } = await sb.from('stock_movements').select('id,qty_change,note,created_at,products!inner(name,unit,org_id)').eq('type','out').eq('products.org_id', oid).order('created_at',{ascending:false}).limit(12)
+    const branchId2 = sessionStorage.getItem('s_branch_id')
+    let mq = sb.from('stock_movements').select('id,qty_change,note,created_at,products!inner(name,unit,org_id,branch_id)').eq('type','out').eq('products.org_id', oid)
+    if (branchId2) mq = mq.eq('products.branch_id', branchId2)
+    const { data } = await mq.order('created_at',{ascending:false}).limit(12)
     setHistory(data||[])
   }
 

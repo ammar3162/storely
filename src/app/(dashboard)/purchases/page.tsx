@@ -53,7 +53,10 @@ export default function PurchasesPage() {
   }
 
   async function loadProducts(oid: string) {
-    const { data } = await sb.from('products').select('id,name,unit,qty').eq('org_id',oid).eq('is_active',true).order('name')
+    const branchId = sessionStorage.getItem('s_branch_id')
+    let pq = sb.from('products').select('id,name,unit,qty').eq('org_id',oid).eq('is_active',true)
+    if (branchId) pq = pq.eq('branch_id', branchId)
+    const { data } = await pq.order('name')
     setProducts(data||[])
   }
 

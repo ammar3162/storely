@@ -48,7 +48,10 @@ export default function InventoryPage() {
       if(!p){setLoading(false);return}
       oid=p.org_id; sessionStorage.setItem('s_org_id',oid!)
     }
-    const{data}=await sb.from('products').select('*').eq('org_id',oid).eq('is_active',true).order('name')
+    const branchId = sessionStorage.getItem('s_branch_id')
+    let q = sb.from('products').select('*').eq('org_id',oid).eq('is_active',true)
+    if (branchId) q = q.eq('branch_id', branchId)
+    const{data}=await q.order('name')
     setProducts(data||[])
     setLoading(false)
   }

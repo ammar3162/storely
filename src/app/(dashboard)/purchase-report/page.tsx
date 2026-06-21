@@ -30,8 +30,10 @@ export default function PurchaseReportPage() {
     }
     const orgId = await getOrgId()
     if (!orgId) { setLoading(false); return }
-    const { data } = await supabase.from('purchases').select('*')
-      .eq('org_id', orgId).order('created_at', { ascending: false })
+    const _bid = sessionStorage.getItem('s_branch_id')
+    let _pq = supabase.from('purchases').select('*').eq('org_id', orgId)
+    if (_bid) _pq = _pq.eq('branch_id', _bid)
+    const { data } = await _pq.order('created_at', { ascending: false })
     setPurchases(data || [])
     setLoading(false)
   }
