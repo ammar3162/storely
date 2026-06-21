@@ -36,6 +36,7 @@ export default function SettingsPage() {
   const [backupLoading, setBackupLoading] = useState(false)
   const [backupMsg, setBackupMsg]       = useState<{ok:boolean;text:string}|null>(null)
   const [branches, setBranches]         = useState<any[]>([])
+  const [maxBranches, setMaxBranches]   = useState<number>(1)
   const [newBranch, setNewBranch]       = useState({name:'',location:''})
   const [branchSaving, setBranchSaving] = useState(false)
   const [form, setForm] = useState({
@@ -59,6 +60,7 @@ export default function SettingsPage() {
       setForm({ name:org.name||'', whatsapp_number:org.whatsapp_number||'', notify_schedule:org.notify_schedule||'daily', notify_time:org.notify_time||'08:00', notify_days:org.notify_days||['0'] })
       setLastSent(org.last_notified_at||null)
       setLastBackup(org.last_backup_at||null)
+      setMaxBranches(org.max_branches||1)
     const{data:bList}=await sb.from('branches').select('*').eq('org_id',profile.org_id).eq('is_active',true).order('created_at')
     setBranches(bList||[])
     }
@@ -210,13 +212,22 @@ export default function SettingsPage() {
       <Section title="إدارة الفروع" icon="🏪">
         <p style={{fontSize:font.sm,color:colors.text3,marginBottom:14,lineHeight:1.7}}>أضف فروع لمؤسستك — كل فرع له مخزونه المستقل.</p>
         {branches.length>0&&(<div style={{...card,overflow:'hidden',marginBottom:16}}>{branches.map((b:any,i:number)=>(<div key={b.id} style={{padding:'12px 14px',borderBottom:i<branches.length-1?`1px solid ${colors.border}`:'none',display:'flex',alignItems:'center',gap:10}}><div style={{width:32,height:32,borderRadius:radius.md,background:colors.primaryLight,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>{i===0?'🏠':'🏪'}</div><div style={{flex:1}}><div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{b.name}</div>{b.location&&<div style={{fontSize:font.xs,color:colors.text4}}>{b.location}</div>}</div>{i>0&&(<button onClick={()=>deleteBranch(b.id)} style={{background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:radius.sm,padding:'5px 10px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>حذف</button>)}{i===0&&<span style={{fontSize:font.xs,color:colors.text4,padding:'4px 8px',background:colors.bg,borderRadius:radius.sm,border:`1px solid ${colors.border2}`}}>رئيسي</span>}</div>))}</div>)}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
-          <div><label style={lbl}>اسم الفرع *</label><input value={newBranch.name} onChange={e=>setNewBranch({...newBranch,name:e.target.value})} style={inp()} placeholder="مثال: فرع الرياض"/></div>
-          <div><label style={lbl}>الموقع (اختياري)</label><input value={newBranch.location} onChange={e=>setNewBranch({...newBranch,location:e.target.value})} style={inp()} placeholder="مثال: حي النزهة"/></div>
-        </div>
-        <button type="button" onClick={addBranch} disabled={branchSaving||!newBranch.name.trim()} style={{...btnPrimary,width:'100%',padding:'12px',opacity:(branchSaving||!newBranch.name.trim())?0.6:1,cursor:(branchSaving||!newBranch.name.trim())?'not-allowed':'pointer'}}>
-          {branchSaving?'جاري الإضافة...':'+ إضافة فرع جديد'}
-        </button>
+        {branches.length < maxBranches ? (
+          <>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+              <div><label style={lbl}>اسم الفرع *</label><input value={newBranch.name} onChange={e=>setNewBranch({...newBranch,name:e.target.value})} style={inp()} placeholder="مثال: فرع الرياض"/></div>
+              <div><label style={lbl}>الموقع (اختياري)</label><input value={newBranch.location} onChange={e=>setNewBranch({...newBranch,location:e.target.value})} style={inp()} placeholder="مثال: حي النزهة"/></div>
+            </div>
+            <button type="button" onClick={addBranch} disabled={branchSaving||!newBranch.name.trim()} style={{...btnPrimary,width:'100%',padding:'12px',opacity:(branchSaving||!newBranch.name.trim())?0.6:1,cursor:(branchSaving||!newBranch.name.trim())?'not-allowed':'pointer'}}>
+              {branchSaving?'جاري الإضافة...':'+ إضافة فرع جديد'}
+            </button>
+          </>
+        ) : (
+          <div style={{...card,padding:'14px 16px',background:colors.bg,border:`1px dashed ${colors.border2}`,textAlign:'center'}}>
+            <div style={{fontSize:font.sm,color:colors.text2,fontWeight:600,marginBottom:4}}>وصلت للحد الأقصى من الفروع المسموح بباقتك الحالية</div>
+            <div style={{fontSize:font.xs,color:colors.text3}}>للترقية وإضافة فروع أكثر، تواصل معنا</div>
+          </div>
+        )}
       </Section>
 
       <Section title="النسخ الاحتياطي" icon="💾">
