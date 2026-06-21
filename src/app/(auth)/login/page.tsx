@@ -76,7 +76,7 @@ function LoginPage() {
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(160deg,#1a4731 0%,#0d2818 100%)',fontFamily:'system-ui',direction:'rtl',padding:20}}>
       <div style={{background:'white',borderRadius:24,padding:'40px 36px',width:'100%',maxWidth:440,boxShadow:'0 25px 60px rgba(0,0,0,0.25)'}}>
         <div style={{textAlign:'center',marginBottom:28}}>
-          <div style={{width:64,height:64,background:'#2d7a4f',borderRadius:18,display:'flex',alignItems:'center',justifyContent:'center',fontSize:30,margin:'0 auto 14px'}}>🏪</div>
+          <img src="/storely-logo.png" alt="Storely" style={{width:64,height:64,borderRadius:18,margin:'0 auto 14px',display:'block',objectFit:'cover'}}/>
           <h1 style={{fontSize:26,fontWeight:900,color:'#0f172a',margin:'0 0 4px'}}>Storely</h1>
           <p style={{fontSize:13,color:'#94a3b8',fontWeight:500}}>نظام إدارة المخزون</p>
         </div>

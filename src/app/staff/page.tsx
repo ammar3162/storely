@@ -45,7 +45,7 @@ export default function StaffLoginPage() {
     <div style={{ minHeight: '100vh', background: '#f5f7fa', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, fontFamily: "'IBM Plex Sans Arabic', system-ui, sans-serif", direction: 'rtl' }}>
       <div style={{ width: '100%', maxWidth: 380, background: 'white', borderRadius: 20, padding: 32, boxShadow: '0 8px 32px rgba(0,0,0,.08)' }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ fontSize: 36, marginBottom: 8 }}>👋</div>
+          <img src="/storely-logo.png" alt="Storely" style={{ width: 56, height: 56, borderRadius: 16, margin: '0 auto 8px', display: 'block', objectFit: 'cover' }}/>
           <div style={{ fontSize: 20, fontWeight: 800, color: '#0f172a' }}>دخول الموظف</div>
           <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>أدخل رقم جوالك ورمز PIN الخاص بك</div>
         </div>

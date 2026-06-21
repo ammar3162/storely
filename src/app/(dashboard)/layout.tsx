@@ -156,7 +156,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <aside className="desk-side" style={{width:220,background:C.bg,display:'flex',flexDirection:'column' as const,position:'fixed',top:0,right:0,bottom:0,zIndex:100}}>
           <div style={{padding:'20px 16px 16px',borderBottom:`1px solid ${C.border}`}}>
             <div style={{display:'flex',alignItems:'center',gap:10}}>
-              <div style={{width:36,height:36,borderRadius:radius.md,background:colors.primary,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>🏪</div>
+              <img src="/storely-logo.png" alt="Storely" style={{width:36,height:36,borderRadius:radius.md,flexShrink:0,objectFit:'cover'}}/>
               <div style={{minWidth:0}}>
                 <div style={{fontSize:font.sm,fontWeight:800,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{orgName||'Storely'}</div>
                 {branchName&&<button onClick={()=>branches.length>1&&setShowBranchSel(true)} style={{fontSize:font.xs,color:colors.primary,background:'none',border:'none',cursor:branches.length>1?'pointer':'default',padding:0,fontFamily:font.family}}>{branchName}{branches.length>1?' ▼':''}</button>}
@@ -182,7 +182,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button onClick={()=>setDrawer(true)} style={{background:'none',border:'none',cursor:'pointer',color:C.text,padding:4}}>
             <svg width={22} height={22} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
           </button>
-          <div style={{flex:1,fontSize:font.base,fontWeight:700,color:C.text,textAlign:'center' as const}}>{orgName}</div>
+          <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+            <img src="/storely-logo.png" alt="Storely" style={{width:24,height:24,borderRadius:6,objectFit:'cover'}}/>
+            <span style={{fontSize:font.base,fontWeight:700,color:C.text}}>{orgName}</span>
+          </div>
           {branchName&&branches.length>1&&<button onClick={()=>setShowBranchSel(true)} style={{fontSize:font.xs,color:colors.primary,background:'none',border:'none',cursor:'pointer',fontFamily:font.family}}>{branchName} ▼</button>}
           <button onClick={async()=>{await sb.auth.signOut();_cache=null;sessionStorage.clear();router.replace('/login')}}
             style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.3)',borderRadius:8,padding:'6px 12px',cursor:'pointer',color:'#ef4444',fontSize:12,fontWeight:700,fontFamily:'inherit',flexShrink:0,marginRight:4}}>
