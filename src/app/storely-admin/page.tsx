@@ -6,6 +6,7 @@ type User = {
   id: string; full_name: string; phone: string; role: string
   status: string; created_at: string; org_id: string; org_name: string
   subscription_type: string; subscription_ends_at: string|null; branch_count: number|null
+  max_branches: number
 }
 
 const STATUS: Record<string,{label:string;color:string;bg:string;border:string}> = {
@@ -47,6 +48,7 @@ export default function AdminPage() {
       subscription_type:p.subscription_type||'trial',
       subscription_ends_at:p.subscription_ends_at||null,
       branch_count:(p as any).branch_count||null,
+      max_branches:p.organizations?.max_branches||1,
     })))
     setLoading(false)
   }
@@ -69,6 +71,14 @@ export default function AdminPage() {
     setSaving(userId)
     await sb.from('profiles').update({status:'suspended'}).eq('id',userId)
     await loadUsers(); setSaving(null); setSelected(null)
+  }
+
+  async function updateMaxBranches(orgId: string, value: number) {
+    setSaving(orgId)
+    await sb.from('organizations').update({max_branches:value} as any).eq('id',orgId)
+    setUsers(prev => prev.map(u => u.org_id===orgId ? {...u, max_branches:value} : u))
+    setSelected(prev => prev && prev.org_id===orgId ? {...prev, max_branches:value} : prev)
+    setSaving(null)
   }
 
   async function doDelete(u: User) {
@@ -218,6 +228,19 @@ export default function AdminPage() {
                   </div>
                 </div>
               )}
+
+              {/* Branch Limit */}
+              <div style={{background:'#eff6ff',border:'1.5px solid #bfdbfe',borderRadius:12,padding:'14px',marginBottom:14}}>
+                <div style={{fontSize:12,fontWeight:700,color:'#1d4ed8',marginBottom:10}}>🏪 حد عدد الفروع المسموح (الباقة)</div>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
+                  {[{v:1,l:'فرع واحد'},{v:3,l:'2-3 فروع'},{v:4,l:'4+ فروع'}].map(opt=>(
+                    <button key={opt.v} onClick={()=>updateMaxBranches(selected.org_id,opt.v)} disabled={!!saving || !selected.org_id} style={{padding:'10px 4px',borderRadius:9,border:`1.5px solid ${selected.max_branches===opt.v?'#2563eb':'#e2e8f0'}`,background:selected.max_branches===opt.v?'#2563eb':'white',color:selected.max_branches===opt.v?'white':'#64748b',fontSize:12,fontWeight:700,cursor:(!selected.org_id||!!saving)?'not-allowed':'pointer',fontFamily:'inherit',opacity:!selected.org_id?0.5:1}}>
+                      {opt.l}
+                    </button>
+                  ))}
+                </div>
+                {!selected.org_id && <div style={{fontSize:11,color:'#94a3b8',marginTop:8}}>لا توجد مؤسسة مرتبطة بهذا المستخدم بعد</div>}
+              </div>
 
               <div style={{display:'flex',gap:8}}>
                 {selected.status==='active' && (

@@ -15,7 +15,7 @@ export async function GET(req: Request) {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id,full_name,phone,role,status,created_at,org_id,subscription_type,subscription_ends_at,branch_count,organizations(name)')
+    .select('id,full_name,phone,role,status,created_at,org_id,subscription_type,subscription_ends_at,branch_count,organizations(name,max_branches)')
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
