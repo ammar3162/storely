@@ -92,10 +92,17 @@ export default function StaffDispensePage() {
 
   async function loadProducts(s: StaffSession) {
     setLoading(true)
-    let q = sb.from('products').select('id,name,unit,qty,category').eq('org_id', s.org_id).eq('is_active', true)
-    if (s.branch_id) q = q.eq('branch_id', s.branch_id)
-    const { data } = await q.order('name')
-    setProducts(data || [])
+    try {
+      const res = await fetch('/api/staff-products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orgId: s.org_id, branchId: s.branch_id }),
+      })
+      const data = await res.json()
+      setProducts(data.products || [])
+    } catch {
+      setProducts([])
+    }
     setLoading(false)
   }
 
