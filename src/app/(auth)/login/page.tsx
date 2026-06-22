@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 function LoginPage() {
-  const [mode, setMode]         = useState<'login' | 'register' | 'success'>('login')
+  const [mode, setMode]         = useState<'login' | 'register' | 'success' | 'forgot' | 'forgot-sent'>('login')
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [orgName, setOrgName]   = useState('')
@@ -39,6 +39,20 @@ function LoginPage() {
     if (data.session) {
       window.location.href = '/inventory'
     }
+  }
+
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true); setError('')
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://storely-hm1u.vercel.app/reset-password',
+    })
+    setLoading(false)
+    if (error) {
+      setError('حدث خطأ، تأكد من صحة البريد الإلكتروني')
+      return
+    }
+    setMode('forgot-sent')
   }
 
   async function handleRegister(e: React.FormEvent) {
@@ -105,7 +119,39 @@ function LoginPage() {
             <button type="submit" disabled={loading} style={btnPrimary}>
               {loading ? 'جاري الدخول...' : 'دخول'}
             </button>
+            <div style={{textAlign:'center',marginTop:14}}>
+              <button type="button" onClick={()=>{setMode('forgot');setError('')}} style={{background:'none',border:'none',color:'#16a34a',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                نسيت كلمة المرور؟
+              </button>
+            </div>
           </form>
+        )}
+
+        {mode==='forgot' && (
+          <form onSubmit={handleForgotPassword}>
+            <p style={{fontSize:13,color:'#64748b',lineHeight:1.7,marginBottom:18}}>أدخل بريدك الإلكتروني المسجل، وسنرسل لك رابط لإعادة تعيين كلمة المرور.</p>
+            <div style={{marginBottom:20}}>
+              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني</label>
+              <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} style={inp} placeholder="example@email.com"/>
+            </div>
+            <button type="submit" disabled={loading} style={btnPrimary}>
+              {loading ? 'جاري الإرسال...' : 'إرسال رابط الاستعادة'}
+            </button>
+            <div style={{textAlign:'center',marginTop:14}}>
+              <button type="button" onClick={()=>{setMode('login');setError('')}} style={{background:'none',border:'none',color:'#64748b',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                ← رجوع لتسجيل الدخول
+              </button>
+            </div>
+          </form>
+        )}
+
+        {mode==='forgot-sent' && (
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:56,marginBottom:16}}>📧</div>
+            <h2 style={{fontSize:20,fontWeight:900,color:'#0f172a',marginBottom:8}}>تم إرسال الرابط!</h2>
+            <p style={{fontSize:14,color:'#64748b',lineHeight:1.7,marginBottom:24}}>تحقق من بريدك الإلكتروني ({email}) واضغط على الرابط لإعادة تعيين كلمة المرور.</p>
+            <button onClick={()=>{setMode('login');setError('')}} style={btnPrimary}>رجوع لتسجيل الدخول</button>
+          </div>
         )}
 
         {mode==='success' && (
