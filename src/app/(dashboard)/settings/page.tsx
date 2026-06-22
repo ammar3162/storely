@@ -6,21 +6,17 @@ import { colors, radius, font, card, btnPrimary, btnSecondary, inp, pageTitle, p
 
 const lbl: React.CSSProperties = { fontSize: font.xs, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }
 
-function Section({ title, icon, children }: { title:string; icon:string; children:React.ReactNode }) {
-  return (
-    <div style={{...card,padding:24,marginBottom:16}}>
-      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20,paddingBottom:14,borderBottom:`1px solid ${colors.border}`}}>
-        <div style={{width:34,height:34,borderRadius:radius.md,background:colors.primaryLight,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>{icon}</div>
-        <div style={{fontSize:font.md,fontWeight:700,color:colors.text}}>{title}</div>
-      </div>
-      {children}
-    </div>
-  )
-}
-
 const DAYS = [
-  {key:'0',label:'الأحد'},{key:'1',label:'الإثنين'},{key:'2',label:'الثلاثاء'},
-  {key:'3',label:'الأربعاء'},{key:'4',label:'الخميس'},{key:'5',label:'الجمعة'},{key:'6',label:'السبت'},
+  {key:'0',label:'أحد'},{key:'1',label:'إثن'},{key:'2',label:'ثلث'},
+  {key:'3',label:'أرب'},{key:'4',label:'خمس'},{key:'5',label:'جمع'},{key:'6',label:'سبت'},
+]
+
+const TABS = [
+  {key:'org',    label:'المؤسسة',    icon:'🏢'},
+  {key:'notify', label:'الإشعارات',  icon:'🔔'},
+  {key:'branches',label:'الفروع',   icon:'🏪'},
+  {key:'backup', label:'النسخ الاحتياطي', icon:'💾'},
+  {key:'security',label:'الأمان',   icon:'🔐'},
 ]
 
 export default function SettingsPage() {
@@ -42,6 +38,8 @@ export default function SettingsPage() {
   const [pwForm, setPwForm]             = useState({current:'',newPw:'',confirm:''})
   const [pwSaving, setPwSaving]         = useState(false)
   const [pwMsg, setPwMsg]               = useState<{ok:boolean;text:string}|null>(null)
+  const [activeTab, setActiveTab]       = useState('org')
+  const [visible, setVisible]           = useState(false)
   const [form, setForm] = useState({
     name:'', whatsapp_number:'',
     notify_schedule:'daily',
@@ -53,13 +51,11 @@ export default function SettingsPage() {
   useEffect(()=>{ load() },[])
 
   async function changePassword(e:React.FormEvent) {
-    e.preventDefault()
-    setPwMsg(null)
+    e.preventDefault(); setPwMsg(null)
     if (pwForm.newPw.length < 6) { setPwMsg({ok:false,text:'كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل'}); return }
     if (pwForm.newPw !== pwForm.confirm) { setPwMsg({ok:false,text:'كلمتا المرور غير متطابقتين'}); return }
     setPwSaving(true)
     const sb2 = createClient()
-    // نتحقق من كلمة المرور الحالية أولاً
     const { data:{user} } = await sb2.auth.getUser()
     if (!user?.email) { setPwMsg({ok:false,text:'حدث خطأ، حاول مرة أخرى'}); setPwSaving(false); return }
     const { error: signErr } = await sb2.auth.signInWithPassword({ email: user.email, password: pwForm.current })
@@ -83,10 +79,11 @@ export default function SettingsPage() {
       setLastSent(org.last_notified_at||null)
       setLastBackup(org.last_backup_at||null)
       setMaxBranches(org.max_branches||1)
-    const{data:bList}=await sb.from('branches').select('*').eq('org_id',profile.org_id).eq('is_active',true).order('created_at')
-    setBranches(bList||[])
+      const{data:bList}=await sb.from('branches').select('*').eq('org_id',profile.org_id).eq('is_active',true).order('created_at')
+      setBranches(bList||[])
     }
     setLoading(false)
+    setTimeout(()=>setVisible(true),50)
   }
 
   async function handleSave(e:React.FormEvent) {
@@ -129,11 +126,13 @@ export default function SettingsPage() {
     const{data:bList}=await sb.from('branches').select('*').eq('org_id',orgId).eq('is_active',true).order('created_at')
     setBranches(bList||[]); setNewBranch({name:'',location:''}); setBranchSaving(false)
   }
+
   async function deleteBranch(id:string) {
     if(branches.length<=1){alert('لا يمكن حذف الفرع الوحيد');return}
     await sb.from('branches').update({is_active:false}).eq('id',id)
     setBranches(prev=>prev.filter((b:any)=>b.id!==id))
   }
+
   function toggleDay(day:string) {
     const days=form.notify_days.includes(day)?form.notify_days.filter(d=>d!==day):[...form.notify_days,day]
     if(days.length===0) return
@@ -147,150 +146,285 @@ export default function SettingsPage() {
     return `أسبوعياً (${dayLabels}) الساعة ${form.notify_time}`
   }
 
+  const planLabel = maxBranches===1?'الباقة الأساسية — 99 ر.س/شهر':maxBranches<=3?'الباقة المتوسطة — 199 ر.س/شهر':'الباقة المتقدمة — 349 ر.س/شهر'
+
   if(loading) return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:620,margin:'0 auto'}}>
-      <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.4}}.sk{animation:sk 1.4s infinite}`}</style>
-      {[1,2,3].map(i=>(<div key={i} style={{...card,padding:24,marginBottom:16}}>{[60,100,80].map((w,j)=>(<div key={j} className="sk" style={{height:12,width:w+'%',background:colors.border,borderRadius:6,marginBottom:16}}/>))}</div>))}
+    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:640,margin:'0 auto'}}>
+      <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.6s ease-in-out infinite}`}</style>
+      <div className="sk" style={{height:20,width:120,background:colors.border2,borderRadius:6,marginBottom:8}}/>
+      <div className="sk" style={{height:12,width:200,background:colors.border,borderRadius:6,marginBottom:24}}/>
+      <div className="sk" style={{height:52,borderRadius:radius.lg,background:colors.border,marginBottom:16}}/>
+      {[1,2,3].map(i=>(<div key={i} className="sk" style={{height:160,borderRadius:radius.lg,background:colors.border,marginBottom:12}}/>))}
     </div>
   )
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:620,margin:'0 auto'}}>
-      <div style={{marginBottom:22}}>
+    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:640,margin:'0 auto',opacity:visible?1:0,transition:'opacity .4s ease'}}>
+      <style>{`
+        @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+        .su{animation:slideUp .4s ease both}
+        input:focus,select:focus,textarea:focus{border-color:${colors.primary}!important;box-shadow:0 0 0 3px ${colors.primaryLight}!important}
+        .tab-btn{padding:10px 0;border:none;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;border-bottom:2.5px solid transparent}
+        .tab-btn.active{border-bottom-color:${colors.primary}}
+        .day-btn{padding:8px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid ${colors.border};background:${colors.surface};color:${colors.text3};font-family:inherit;transition:all .15s}
+        .day-btn.active{border-color:${colors.primary};background:${colors.primaryLight};color:${colors.primary}}
+        .sched-btn{padding:14px 8px;border-radius:${radius.md};cursor:pointer;border:1.5px solid ${colors.border};background:${colors.surface};color:${colors.text3};font-size:${font.sm};font-weight:700;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;transition:all .2s}
+        .sched-btn:hover{border-color:${colors.primary};transform:translateY(-1px)}
+        .sched-btn.active{border-color:${colors.primary};background:${colors.primaryLight};color:${colors.primary};box-shadow:0 4px 12px ${colors.primary}22}
+      `}</style>
+
+      {/* Header */}
+      <div style={{marginBottom:20}} className="su">
         <h1 style={{...pageTitle}}>الإعدادات</h1>
-        <p style={{...pageSub}}>إعدادات المؤسسة وجدولة تنبيهات واتساب والنسخ الاحتياطي</p>
+        <p style={{...pageSub}}>إعدادات المؤسسة وجدولة التنبيهات والنسخ الاحتياطي</p>
       </div>
 
-      {saveOk&&(<div style={{background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16,fontSize:font.sm,fontWeight:600,color:colors.primary,display:'flex',alignItems:'center',gap:8}}>✅ تم حفظ الإعدادات بنجاح</div>)}
+      {/* Plan badge */}
+      <div className="su" style={{...card,padding:'14px 18px',marginBottom:16,display:'flex',alignItems:'center',gap:12,animationDelay:'.05s',background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`}}>
+        <div style={{width:40,height:40,borderRadius:12,background:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0,boxShadow:`0 2px 8px ${colors.primary}22`}}>⭐</div>
+        <div>
+          <div style={{fontSize:font.sm,fontWeight:800,color:colors.primary}}>{planLabel}</div>
+          <div style={{fontSize:font.xs,color:colors.primary,opacity:.7,marginTop:1}}>الفروع: {branches.length} / {maxBranches} مسموح</div>
+        </div>
+      </div>
 
-      <form onSubmit={handleSave}>
-        <Section title="بيانات المؤسسة" icon="🏢">
-          <div style={{display:'flex',flexDirection:'column' as const,gap:16}}>
-            <div>
-              <label style={lbl}>اسم المؤسسة</label>
-              <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp()} placeholder="مثال: مطعم الأصيل"/>
-            </div>
-            <div>
-              <label style={lbl}>رقم واتساب التنبيهات</label>
-              <input value={form.whatsapp_number} onChange={e=>setForm({...form,whatsapp_number:e.target.value})} style={inp()} placeholder="+966500000000" dir="ltr"/>
-              <div style={{fontSize:11,color:colors.text4,marginTop:6}}>يُستخدم لإرسال تنبيهات نقص المخزون</div>
-            </div>
-          </div>
-        </Section>
+      {/* Save success */}
+      {saveOk&&(
+        <div className="su" style={{background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16,fontSize:font.sm,fontWeight:700,color:colors.primary,display:'flex',alignItems:'center',gap:8}}>
+          ✅ تم حفظ الإعدادات بنجاح
+        </div>
+      )}
 
-        <Section title="جدولة الإشعارات التلقائية" icon="⏰">
-          <div style={{marginBottom:18}}>
-            <label style={lbl}>نوع الجدولة</label>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
-              {[{key:'daily',label:'يومي',icon:'📅'},{key:'weekly',label:'أسبوعي',icon:'📆'},{key:'manual',label:'يدوي',icon:'👆'}].map(s=>(
-                <button key={s.key} type="button" onClick={()=>setForm({...form,notify_schedule:s.key})}
-                  style={{padding:'12px 8px',borderRadius:radius.md,cursor:'pointer',border:`1.5px solid ${form.notify_schedule===s.key?colors.primary:colors.border2}`,background:form.notify_schedule===s.key?colors.primaryLight:colors.surface,color:form.notify_schedule===s.key?colors.primary:colors.text3,fontSize:font.sm,fontWeight:700,fontFamily:font.family,display:'flex',flexDirection:'column' as const,alignItems:'center',gap:4,transition:'all .15s'}}>
-                  <span style={{fontSize:20}}>{s.icon}</span><span>{s.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-          {form.notify_schedule==='weekly'&&(
-            <div style={{marginBottom:18}}>
-              <label style={lbl}>أيام الإرسال</label>
-              <div style={{display:'flex',gap:6,flexWrap:'wrap' as const}}>
-                {DAYS.map(d=>(<button key={d.key} type="button" onClick={()=>toggleDay(d.key)} style={{padding:'7px 12px',borderRadius:radius.md,cursor:'pointer',border:`1.5px solid ${form.notify_days.includes(d.key)?colors.primary:colors.border2}`,background:form.notify_days.includes(d.key)?colors.primaryLight:colors.surface,color:form.notify_days.includes(d.key)?colors.primary:colors.text3,fontSize:font.xs,fontWeight:700,fontFamily:font.family,transition:'all .15s'}}>{d.label}</button>))}
-              </div>
-            </div>
-          )}
-          {form.notify_schedule!=='manual'&&(
-            <div style={{marginBottom:18}}>
-              <label style={lbl}>وقت الإرسال</label>
-              <input type="time" value={form.notify_time} onChange={e=>setForm({...form,notify_time:e.target.value})} style={{...inp(),width:'auto',direction:'ltr' as const}}/>
-              <div style={{fontSize:11,color:colors.text4,marginTop:6}}>توقيت الرياض (UTC+3)</div>
-            </div>
-          )}
-          {form.notify_schedule!=='manual'&&(
-            <div style={{background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:18,fontSize:font.sm,color:colors.primary,fontWeight:600,display:'flex',alignItems:'center',gap:8}}>
-              <span style={{fontSize:16}}>🔔</span> سيتم إرسال الإشعار {scheduleLabel()}
-            </div>
-          )}
-          {form.notify_schedule==='manual'&&(
-            <div style={{background:colors.warningLight,border:`1px solid ${colors.warningBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:18,fontSize:font.sm,color:colors.warning,fontWeight:600,display:'flex',alignItems:'center',gap:8}}>
-              <span style={{fontSize:16}}>👆</span> الإرسال يدوياً فقط عند الضغط على الزر أدناه
-            </div>
-          )}
-          <button type="submit" disabled={saving} style={{...btnPrimary,width:'100%',padding:'13px',opacity:saving?0.7:1,cursor:saving?'not-allowed':'pointer'}}>
-            {saving?'جاري الحفظ...':'💾 حفظ الإعدادات'}
-          </button>
-        </Section>
-      </form>
-
-      <Section title="إرسال فوري" icon="📲">
-        {lastSent&&(<div style={{fontSize:font.xs,color:colors.text4,marginBottom:12,display:'flex',alignItems:'center',gap:6}}><span>آخر إرسال:</span><span style={{fontWeight:600,color:colors.text2}}>{new Date(lastSent).toLocaleDateString('en-GB',{weekday:'long',hour:'2-digit',minute:'2-digit'})}</span></div>)}
-        {sendMsg&&(<div style={{background:sendMsg.ok?colors.primaryLight:colors.dangerLight,border:`1.5px solid ${sendMsg.ok?colors.primaryBorder:colors.dangerBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:14,fontSize:font.sm,fontWeight:600,color:sendMsg.ok?colors.primary:colors.danger,display:'flex',alignItems:'center',gap:8}}>{sendMsg.ok?'✅':'❌'} {sendMsg.text}</div>)}
-        <p style={{fontSize:font.sm,color:colors.text3,marginBottom:14,lineHeight:1.7}}>إرسال إشعار فوري الآن بقائمة المنتجات التي وصلت للحد الأدنى.</p>
-        <button type="button" onClick={sendNow} disabled={sending}
-          style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,width:'100%',padding:'13px',background:sending?colors.text4:'#25d366',color:'white',border:'none',borderRadius:radius.md,fontSize:font.base,fontWeight:700,cursor:sending?'not-allowed':'pointer',fontFamily:font.family,transition:'all .15s',boxShadow:sending?'none':'0 4px 14px rgba(37,211,102,.3)'}}>
-          {sending?'⏳ جاري الإرسال...':'📲 إرسال إشعار الآن'}
-        </button>
-      </Section>
-
-      <Section title="إدارة الفروع" icon="🏪">
-        <p style={{fontSize:font.sm,color:colors.text3,marginBottom:14,lineHeight:1.7}}>أضف فروع لمؤسستك — كل فرع له مخزونه المستقل.</p>
-        {branches.length>0&&(<div style={{...card,overflow:'hidden',marginBottom:16}}>{branches.map((b:any,i:number)=>(<div key={b.id} style={{padding:'12px 14px',borderBottom:i<branches.length-1?`1px solid ${colors.border}`:'none',display:'flex',alignItems:'center',gap:10}}><div style={{width:32,height:32,borderRadius:radius.md,background:colors.primaryLight,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>{i===0?'🏠':'🏪'}</div><div style={{flex:1}}><div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{b.name}</div>{b.location&&<div style={{fontSize:font.xs,color:colors.text4}}>{b.location}</div>}</div>{i>0&&(<button onClick={()=>deleteBranch(b.id)} style={{background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:radius.sm,padding:'5px 10px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>حذف</button>)}{i===0&&<span style={{fontSize:font.xs,color:colors.text4,padding:'4px 8px',background:colors.bg,borderRadius:radius.sm,border:`1px solid ${colors.border2}`}}>رئيسي</span>}</div>))}</div>)}
-        {branches.length < maxBranches ? (
-          <>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
-              <div><label style={lbl}>اسم الفرع *</label><input value={newBranch.name} onChange={e=>setNewBranch({...newBranch,name:e.target.value})} style={inp()} placeholder="مثال: فرع الرياض"/></div>
-              <div><label style={lbl}>الموقع (اختياري)</label><input value={newBranch.location} onChange={e=>setNewBranch({...newBranch,location:e.target.value})} style={inp()} placeholder="مثال: حي النزهة"/></div>
-            </div>
-            <button type="button" onClick={addBranch} disabled={branchSaving||!newBranch.name.trim()} style={{...btnPrimary,width:'100%',padding:'12px',opacity:(branchSaving||!newBranch.name.trim())?0.6:1,cursor:(branchSaving||!newBranch.name.trim())?'not-allowed':'pointer'}}>
-              {branchSaving?'جاري الإضافة...':'+ إضافة فرع جديد'}
+      {/* Tabs */}
+      <div className="su" style={{...card,overflow:'hidden',marginBottom:16,animationDelay:'.1s'}}>
+        <div style={{display:'flex',borderBottom:`1px solid ${colors.border}`,overflowX:'auto',scrollbarWidth:'none'}}>
+          {TABS.map(t=>(
+            <button key={t.key} className={`tab-btn${activeTab===t.key?' active':''}`}
+              onClick={()=>setActiveTab(t.key)}
+              style={{background:'none',color:activeTab===t.key?colors.primary:colors.text3}}>
+              <span style={{fontSize:18}}>{t.icon}</span>
+              <span style={{fontSize:10,fontWeight:700}}>{t.label}</span>
             </button>
-          </>
-        ) : (
-          <div style={{...card,padding:'14px 16px',background:colors.bg,border:`1px dashed ${colors.border2}`,textAlign:'center'}}>
-            <div style={{fontSize:font.sm,color:colors.text2,fontWeight:600,marginBottom:4}}>وصلت للحد الأقصى من الفروع المسموح بباقتك الحالية</div>
-            <div style={{fontSize:font.xs,color:colors.text3}}>للترقية وإضافة فروع أكثر، تواصل معنا</div>
-          </div>
-        )}
-      </Section>
+          ))}
+        </div>
 
-      <Section title="النسخ الاحتياطي" icon="💾">
-        {lastBackup&&(<div style={{fontSize:font.xs,color:colors.text4,marginBottom:12,display:'flex',alignItems:'center',gap:6}}><span>آخر نسخة:</span><span style={{fontWeight:600,color:colors.text2}}>{new Date(lastBackup).toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</span></div>)}
-        {backupMsg&&(<div style={{background:backupMsg.ok?colors.primaryLight:colors.dangerLight,border:`1.5px solid ${backupMsg.ok?colors.primaryBorder:colors.dangerBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:14,fontSize:font.sm,fontWeight:600,color:backupMsg.ok?colors.primary:colors.danger,display:'flex',alignItems:'center',gap:8}}>{backupMsg.ok?'✅':'❌'} {backupMsg.text}</div>)}
-        <p style={{fontSize:font.sm,color:colors.text3,marginBottom:14,lineHeight:1.7}}>يتم إنشاء نسخة احتياطية تلقائياً كل أسبوع. يمكنك أيضاً إنشاء نسخة يدوياً وتحميلها.</p>
-        <button type="button" onClick={runBackup} disabled={backupLoading}
-          style={{...btnPrimary,width:'100%',padding:'13px',marginBottom:12,opacity:backupLoading?0.7:1,cursor:backupLoading?'not-allowed':'pointer'}}>
-          {backupLoading?'⏳ جاري إنشاء النسخة...':'💾 إنشاء نسخة احتياطية الآن'}
-        </button>
-        {backups.length===0&&(<button type="button" onClick={loadBackups} style={{...btnSecondary,width:'100%',padding:'11px',fontSize:font.sm}}>📋 عرض النسخ السابقة</button>)}
-        {backups.length>0&&(
-          <div style={{...card,overflow:'hidden'}}>
-            <div style={{padding:'10px 14px',borderBottom:`1px solid ${colors.border}`,fontSize:font.xs,fontWeight:700,color:colors.text4}}>النسخ الاحتياطية ({backups.length})</div>
-            {backups.map((b,i)=>(<div key={i} style={{padding:'12px 14px',borderBottom:i<backups.length-1?`1px solid ${colors.border}`:'none',display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}}><div><div style={{fontSize:font.sm,fontWeight:600,color:colors.text}}>{b.name?.replace('_backup.json','')}</div><div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>{Math.round((b.size||0)/1024)} KB</div></div>{b.url&&(<a href={b.url} download style={{...btnPrimary,padding:'7px 14px',fontSize:font.xs,textDecoration:'none'}}>⬇ تحميل</a>)}</div>))}
-          </div>
-        )}
-      </Section>
+        <div style={{padding:22}}>
 
-      <Section title="🔐 تغيير كلمة المرور" icon="">
-        {pwMsg&&(<div style={{background:pwMsg.ok?colors.primaryLight:colors.dangerLight,border:`1.5px solid ${pwMsg.ok?colors.primaryBorder:colors.dangerBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:14,fontSize:font.sm,fontWeight:600,color:pwMsg.ok?colors.primary:colors.danger}}>{pwMsg.text}</div>)}
-        <form onSubmit={changePassword}>
-          <div style={{display:'grid',gap:12,marginBottom:14}}>
+          {/* ORG TAB */}
+          {activeTab==='org'&&(
+            <form onSubmit={handleSave}>
+              <div style={{display:'flex',flexDirection:'column' as const,gap:18}}>
+                <div>
+                  <label style={lbl}>اسم المؤسسة</label>
+                  <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp()} placeholder="مثال: مطعم الأصيل"/>
+                </div>
+                <div>
+                  <label style={lbl}>رقم واتساب التنبيهات</label>
+                  <input value={form.whatsapp_number} onChange={e=>setForm({...form,whatsapp_number:e.target.value})} style={inp()} placeholder="+966500000000" dir="ltr"/>
+                  <div style={{fontSize:11,color:colors.text4,marginTop:6,display:'flex',alignItems:'center',gap:4}}><span>💡</span> يُستخدم لإرسال تنبيهات نقص المخزون</div>
+                </div>
+              </div>
+              <button type="submit" disabled={saving} style={{...btnPrimary,width:'100%',padding:'13px',marginTop:20,opacity:saving?0.7:1,cursor:saving?'not-allowed':'pointer'}}>
+                {saving?'⏳ جاري الحفظ...':'💾 حفظ البيانات'}
+              </button>
+            </form>
+          )}
+
+          {/* NOTIFY TAB */}
+          {activeTab==='notify'&&(
+            <form onSubmit={handleSave}>
+              <div style={{marginBottom:20}}>
+                <label style={lbl}>نوع الجدولة</label>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+                  {[{key:'daily',label:'يومي',icon:'📅'},{key:'weekly',label:'أسبوعي',icon:'📆'},{key:'manual',label:'يدوي',icon:'👆'}].map(s=>(
+                    <button key={s.key} type="button" className={`sched-btn${form.notify_schedule===s.key?' active':''}`}
+                      onClick={()=>setForm({...form,notify_schedule:s.key})}>
+                      <span style={{fontSize:22}}>{s.icon}</span>
+                      <span>{s.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {form.notify_schedule==='weekly'&&(
+                <div style={{marginBottom:18}}>
+                  <label style={lbl}>أيام الإرسال</label>
+                  <div style={{display:'flex',gap:6,flexWrap:'wrap' as const}}>
+                    {DAYS.map(d=>(
+                      <button key={d.key} type="button" className={`day-btn${form.notify_days.includes(d.key)?' active':''}`}
+                        onClick={()=>toggleDay(d.key)}>{d.label}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {form.notify_schedule!=='manual'&&(
+                <div style={{marginBottom:18}}>
+                  <label style={lbl}>وقت الإرسال</label>
+                  <input type="time" value={form.notify_time} onChange={e=>setForm({...form,notify_time:e.target.value})} style={{...inp(),width:'auto',direction:'ltr' as const}}/>
+                  <div style={{fontSize:11,color:colors.text4,marginTop:6}}>توقيت الرياض (UTC+3)</div>
+                </div>
+              )}
+
+              <div style={{
+                background:form.notify_schedule==='manual'?colors.warningLight:colors.primaryLight,
+                border:`1.5px solid ${form.notify_schedule==='manual'?colors.warningBorder:colors.primaryBorder}`,
+                borderRadius:radius.md,padding:'12px 14px',marginBottom:20,
+                fontSize:font.sm,color:form.notify_schedule==='manual'?colors.warning:colors.primary,
+                fontWeight:600,display:'flex',alignItems:'center',gap:8
+              }}>
+                <span style={{fontSize:18}}>{form.notify_schedule==='manual'?'👆':'🔔'}</span>
+                {form.notify_schedule==='manual'?'الإرسال يدوياً فقط عند الضغط على الزر':scheduleLabel()}
+              </div>
+
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
+                <button type="submit" disabled={saving} style={{...btnPrimary,padding:'13px',opacity:saving?0.7:1,cursor:saving?'not-allowed':'pointer'}}>
+                  {saving?'⏳ حفظ...':'💾 حفظ الجدولة'}
+                </button>
+                <button type="button" onClick={sendNow} disabled={sending}
+                  style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'13px',background:sending?colors.text4:'#25d366',color:'white',border:'none',borderRadius:radius.md,fontSize:font.sm,fontWeight:700,cursor:sending?'not-allowed':'pointer',fontFamily:font.family,transition:'all .15s',boxShadow:sending?'none':'0 4px 14px rgba(37,211,102,.3)'}}>
+                  {sending?'⏳ إرسال...':'📲 إرسال الآن'}
+                </button>
+              </div>
+
+              {sendMsg&&(
+                <div style={{background:sendMsg.ok?colors.primaryLight:colors.dangerLight,border:`1.5px solid ${sendMsg.ok?colors.primaryBorder:colors.dangerBorder}`,borderRadius:radius.md,padding:'10px 14px',fontSize:font.sm,fontWeight:600,color:sendMsg.ok?colors.primary:colors.danger,display:'flex',alignItems:'center',gap:8}}>
+                  {sendMsg.ok?'✅':'❌'} {sendMsg.text}
+                </div>
+              )}
+              {lastSent&&(
+                <div style={{fontSize:font.xs,color:colors.text4,marginTop:10,display:'flex',alignItems:'center',gap:4}}>
+                  <span>📅</span> آخر إرسال: <span style={{fontWeight:600,color:colors.text2}}>{new Date(lastSent).toLocaleDateString('ar-SA',{weekday:'long',hour:'2-digit',minute:'2-digit'})}</span>
+                </div>
+              )}
+            </form>
+          )}
+
+          {/* BRANCHES TAB */}
+          {activeTab==='branches'&&(
             <div>
-              <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:4}}>كلمة المرور الحالية</label>
-              <input type="password" value={pwForm.current} onChange={e=>setPwForm({...pwForm,current:e.target.value})} style={{...inp(),width:'100%'}} placeholder="••••••••" required/>
+              <p style={{fontSize:font.sm,color:colors.text3,marginBottom:16,lineHeight:1.8}}>كل فرع له مخزونه المستقل. الباقة الحالية تسمح بـ <b style={{color:colors.primary}}>{maxBranches} فرع</b>.</p>
+
+              {branches.length>0&&(
+                <div style={{...card,overflow:'hidden',marginBottom:16}}>
+                  {branches.map((b:any,i:number)=>(
+                    <div key={b.id} style={{padding:'14px 16px',borderBottom:i<branches.length-1?`1px solid ${colors.border}`:'none',display:'flex',alignItems:'center',gap:12}}>
+                      <div style={{width:36,height:36,borderRadius:10,background:i===0?colors.primaryLight:colors.bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0,border:`1px solid ${i===0?colors.primaryBorder:colors.border}`}}>
+                        {i===0?'🏠':'🏪'}
+                      </div>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{b.name}</div>
+                        {b.location&&<div style={{fontSize:font.xs,color:colors.text4,marginTop:1}}>📍 {b.location}</div>}
+                      </div>
+                      {i===0
+                        ? <span style={{fontSize:font.xs,color:colors.primary,padding:'4px 10px',background:colors.primaryLight,borderRadius:20,border:`1px solid ${colors.primaryBorder}`,fontWeight:700}}>رئيسي</span>
+                        : <button onClick={()=>deleteBranch(b.id)} style={{background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:radius.sm,padding:'6px 12px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>حذف</button>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {branches.length < maxBranches ? (
+                <div style={{...card,padding:'18px',background:colors.bg}}>
+                  <div style={{fontSize:font.sm,fontWeight:700,color:colors.text,marginBottom:14}}>➕ إضافة فرع جديد</div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}}>
+                    <div><label style={lbl}>اسم الفرع *</label><input value={newBranch.name} onChange={e=>setNewBranch({...newBranch,name:e.target.value})} style={inp()} placeholder="مثال: فرع الرياض"/></div>
+                    <div><label style={lbl}>الموقع (اختياري)</label><input value={newBranch.location} onChange={e=>setNewBranch({...newBranch,location:e.target.value})} style={inp()} placeholder="مثال: حي النزهة"/></div>
+                  </div>
+                  <button type="button" onClick={addBranch} disabled={branchSaving||!newBranch.name.trim()} style={{...btnPrimary,width:'100%',padding:'12px',opacity:(branchSaving||!newBranch.name.trim())?0.6:1,cursor:(branchSaving||!newBranch.name.trim())?'not-allowed':'pointer'}}>
+                    {branchSaving?'⏳ جاري الإضافة...':'+ إضافة فرع'}
+                  </button>
+                </div>
+              ) : (
+                <div style={{...card,padding:'20px',background:colors.warningLight,border:`1.5px solid ${colors.warningBorder}`,textAlign:'center'}}>
+                  <div style={{fontSize:24,marginBottom:10}}>🔒</div>
+                  <div style={{fontSize:font.sm,color:'#92400e',fontWeight:700,marginBottom:4}}>وصلت للحد الأقصى من الفروع</div>
+                  <div style={{fontSize:font.xs,color:'#b45309'}}>للترقية وإضافة فروع أكثر، تواصل معنا عبر واتساب</div>
+                </div>
+              )}
             </div>
+          )}
+
+          {/* BACKUP TAB */}
+          {activeTab==='backup'&&(
             <div>
-              <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:4}}>كلمة المرور الجديدة</label>
-              <input type="password" value={pwForm.newPw} onChange={e=>setPwForm({...pwForm,newPw:e.target.value})} style={{...inp(),width:'100%'}} placeholder="6 أحرف على الأقل" required/>
+              {lastBackup&&(
+                <div style={{...card,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',gap:10,background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`}}>
+                  <span style={{fontSize:18}}>💾</span>
+                  <div>
+                    <div style={{fontSize:font.xs,color:colors.primary,fontWeight:700}}>آخر نسخة احتياطية</div>
+                    <div style={{fontSize:font.xs,color:colors.primary,opacity:.8,marginTop:1}}>{new Date(lastBackup).toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
+                  </div>
+                </div>
+              )}
+              {backupMsg&&(
+                <div style={{background:backupMsg.ok?colors.primaryLight:colors.dangerLight,border:`1.5px solid ${backupMsg.ok?colors.primaryBorder:colors.dangerBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:14,fontSize:font.sm,fontWeight:600,color:backupMsg.ok?colors.primary:colors.danger,display:'flex',alignItems:'center',gap:8}}>
+                  {backupMsg.ok?'✅':'❌'} {backupMsg.text}
+                </div>
+              )}
+              <p style={{fontSize:font.sm,color:colors.text3,marginBottom:18,lineHeight:1.8}}>يتم إنشاء نسخة احتياطية تلقائياً كل أسبوع. يمكنك إنشاء نسخة يدوياً وتحميلها في أي وقت.</p>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}}>
+                <button type="button" onClick={runBackup} disabled={backupLoading}
+                  style={{...btnPrimary,padding:'13px',opacity:backupLoading?0.7:1,cursor:backupLoading?'not-allowed':'pointer'}}>
+                  {backupLoading?'⏳ جاري الإنشاء...':'💾 نسخة احتياطية الآن'}
+                </button>
+                <button type="button" onClick={loadBackups} style={{...btnSecondary,padding:'13px',fontSize:font.sm}}>
+                  📋 عرض النسخ السابقة
+                </button>
+              </div>
+              {backups.length>0&&(
+                <div style={{...card,overflow:'hidden'}}>
+                  <div style={{padding:'10px 16px',borderBottom:`1px solid ${colors.border}`,fontSize:font.xs,fontWeight:700,color:colors.text4}}>النسخ الاحتياطية ({backups.length})</div>
+                  {backups.map((b,i)=>(
+                    <div key={i} style={{padding:'12px 16px',borderBottom:i<backups.length-1?`1px solid ${colors.border}`:'none',display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}}>
+                      <div>
+                        <div style={{fontSize:font.sm,fontWeight:600,color:colors.text}}>{b.name?.replace('_backup.json','')}</div>
+                        <div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>{Math.round((b.size||0)/1024)} KB</div>
+                      </div>
+                      {b.url&&(<a href={b.url} download style={{...btnPrimary,padding:'7px 14px',fontSize:font.xs,textDecoration:'none'}}>⬇ تحميل</a>)}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+          )}
+
+          {/* SECURITY TAB */}
+          {activeTab==='security'&&(
             <div>
-              <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:4}}>تأكيد كلمة المرور الجديدة</label>
-              <input type="password" value={pwForm.confirm} onChange={e=>setPwForm({...pwForm,confirm:e.target.value})} style={{...inp(),width:'100%'}} placeholder="أعد إدخال كلمة المرور الجديدة" required/>
+              <div style={{...card,padding:'16px',marginBottom:20,background:colors.infoLight,border:`1.5px solid ${colors.infoBorder}`,display:'flex',alignItems:'flex-start',gap:12}}>
+                <span style={{fontSize:20,flexShrink:0}}>ℹ️</span>
+                <div style={{fontSize:font.sm,color:colors.info,lineHeight:1.7}}>تغيير كلمة المرور يتطلب إدخال كلمة المرور الحالية أولاً للتحقق من هويتك. تأكد من اختيار كلمة مرور قوية لا تقل عن 6 أحرف.</div>
+              </div>
+
+              {pwMsg&&(
+                <div style={{background:pwMsg.ok?colors.primaryLight:colors.dangerLight,border:`1.5px solid ${pwMsg.ok?colors.primaryBorder:colors.dangerBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16,fontSize:font.sm,fontWeight:700,color:pwMsg.ok?colors.primary:colors.danger,display:'flex',alignItems:'center',gap:8}}>
+                  {pwMsg.ok?'✅':'❌'} {pwMsg.text}
+                </div>
+              )}
+
+              <form onSubmit={changePassword}>
+                <div style={{display:'grid',gap:14,marginBottom:20}}>
+                  {[
+                    {label:'كلمة المرور الحالية', key:'current', placeholder:'••••••••'},
+                    {label:'كلمة المرور الجديدة', key:'newPw',   placeholder:'6 أحرف على الأقل'},
+                    {label:'تأكيد كلمة المرور',  key:'confirm', placeholder:'أعد الإدخال'},
+                  ].map(f=>(
+                    <div key={f.key}>
+                      <label style={lbl}>{f.label}</label>
+                      <input type="password" value={(pwForm as any)[f.key]} onChange={e=>setPwForm({...pwForm,[f.key]:e.target.value})} style={{...inp(),width:'100%'}} placeholder={f.placeholder} required/>
+                    </div>
+                  ))}
+                </div>
+                <button type="submit" disabled={pwSaving} style={{...btnPrimary,width:'100%',padding:'14px',opacity:pwSaving?0.7:1,cursor:pwSaving?'not-allowed':'pointer',fontSize:font.base}}>
+                  {pwSaving?'⏳ جاري التحقق والحفظ...':'🔐 تغيير كلمة المرور'}
+                </button>
+              </form>
             </div>
-          </div>
-          <button type="submit" disabled={pwSaving} style={{...btnPrimary,width:'100%',padding:'13px',opacity:pwSaving?0.7:1,cursor:pwSaving?'not-allowed':'pointer'}}>
-            {pwSaving?'جاري الحفظ...':'🔐 تغيير كلمة المرور'}
-          </button>
-        </form>
-      </Section>
+          )}
+
+        </div>
+      </div>
     </div>
   )
 }
