@@ -1,5 +1,5 @@
 'use client'
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -15,6 +15,13 @@ function LoginPage() {
   const [branchCount, setBranchCount] = useState<number|null>(null)
   const router   = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash && hash.includes('type=recovery') && hash.includes('access_token')) {
+      window.location.href = '/reset-password' + hash
+    }
+  }, [])
 
   const inp: React.CSSProperties = {
     width:'100%', padding:'13px 16px', border:'2px solid #e2e8f0',
