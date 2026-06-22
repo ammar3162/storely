@@ -10,7 +10,7 @@ export default function StaffLoginPage() {
   const router = useRouter()
 
   useEffect(() => {
-    const saved = sessionStorage.getItem('staff_session')
+    const saved = localStorage.getItem('staff_session')
     if (saved) router.push('/staff/dispense')
   }, [])
 
@@ -26,7 +26,7 @@ export default function StaffLoginPage() {
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'حدث خطأ'); setLoading(false); return }
-      sessionStorage.setItem('staff_session', JSON.stringify(data.staff))
+      localStorage.setItem('staff_session', JSON.stringify(data.staff))
       router.push('/staff/dispense')
     } catch {
       setError('حدث خطأ، تأكد من الاتصال بالإنترنت')

@@ -72,13 +72,13 @@ export default function StaffDispensePage() {
   const sb = createClient()
 
   useEffect(() => {
-    const saved = sessionStorage.getItem('staff_session')
+    const saved = localStorage.getItem('staff_session')
     if (!saved) { router.push('/staff'); return }
     const s = JSON.parse(saved) as StaffSession
     setSession(s)
     loadProducts(s)
 
-    const savedLang = sessionStorage.getItem('staff_lang')
+    const savedLang = localStorage.getItem('staff_lang')
     if (savedLang && savedLang !== 'ar') {
       setLang(savedLang)
     }
@@ -117,7 +117,7 @@ export default function StaffDispensePage() {
 
   async function handleLangChange(newLang: string) {
     setLang(newLang)
-    sessionStorage.setItem('staff_lang', newLang)
+    localStorage.setItem('staff_lang', newLang)
 
     if (newLang === 'ar' || !session) return
 
@@ -127,7 +127,7 @@ export default function StaffDispensePage() {
   }
 
   function logout() {
-    sessionStorage.removeItem('staff_session')
+    localStorage.removeItem('staff_session')
     router.push('/staff')
   }
 
