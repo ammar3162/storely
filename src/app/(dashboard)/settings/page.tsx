@@ -39,6 +39,9 @@ export default function SettingsPage() {
   const [maxBranches, setMaxBranches]   = useState<number>(1)
   const [newBranch, setNewBranch]       = useState({name:'',location:''})
   const [branchSaving, setBranchSaving] = useState(false)
+  const [pwForm, setPwForm]             = useState({current:'',newPw:'',confirm:''})
+  const [pwSaving, setPwSaving]         = useState(false)
+  const [pwMsg, setPwMsg]               = useState<{ok:boolean;text:string}|null>(null)
   const [form, setForm] = useState({
     name:'', whatsapp_number:'',
     notify_schedule:'daily',
@@ -48,6 +51,25 @@ export default function SettingsPage() {
   const sb = createClient()
 
   useEffect(()=>{ load() },[])
+
+  async function changePassword(e:React.FormEvent) {
+    e.preventDefault()
+    setPwMsg(null)
+    if (pwForm.newPw.length < 6) { setPwMsg({ok:false,text:'كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل'}); return }
+    if (pwForm.newPw !== pwForm.confirm) { setPwMsg({ok:false,text:'كلمتا المرور غير متطابقتين'}); return }
+    setPwSaving(true)
+    const sb2 = createClient()
+    // نتحقق من كلمة المرور الحالية أولاً
+    const { data:{user} } = await sb2.auth.getUser()
+    if (!user?.email) { setPwMsg({ok:false,text:'حدث خطأ، حاول مرة أخرى'}); setPwSaving(false); return }
+    const { error: signErr } = await sb2.auth.signInWithPassword({ email: user.email, password: pwForm.current })
+    if (signErr) { setPwMsg({ok:false,text:'كلمة المرور الحالية غير صحيحة'}); setPwSaving(false); return }
+    const { error } = await sb2.auth.updateUser({ password: pwForm.newPw })
+    setPwSaving(false)
+    if (error) { setPwMsg({ok:false,text:'حدث خطأ في تغيير كلمة المرور'}); return }
+    setPwMsg({ok:true,text:'تم تغيير كلمة المرور بنجاح ✅'})
+    setPwForm({current:'',newPw:'',confirm:''})
+  }
 
   async function load() {
     setLoading(true)
@@ -245,6 +267,29 @@ export default function SettingsPage() {
             {backups.map((b,i)=>(<div key={i} style={{padding:'12px 14px',borderBottom:i<backups.length-1?`1px solid ${colors.border}`:'none',display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}}><div><div style={{fontSize:font.sm,fontWeight:600,color:colors.text}}>{b.name?.replace('_backup.json','')}</div><div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>{Math.round((b.size||0)/1024)} KB</div></div>{b.url&&(<a href={b.url} download style={{...btnPrimary,padding:'7px 14px',fontSize:font.xs,textDecoration:'none'}}>⬇ تحميل</a>)}</div>))}
           </div>
         )}
+      </Section>
+
+      <Section title="🔐 تغيير كلمة المرور" icon="">
+        {pwMsg&&(<div style={{background:pwMsg.ok?colors.primaryLight:colors.dangerLight,border:`1.5px solid ${pwMsg.ok?colors.primaryBorder:colors.dangerBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:14,fontSize:font.sm,fontWeight:600,color:pwMsg.ok?colors.primary:colors.danger}}>{pwMsg.text}</div>)}
+        <form onSubmit={changePassword}>
+          <div style={{display:'grid',gap:12,marginBottom:14}}>
+            <div>
+              <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:4}}>كلمة المرور الحالية</label>
+              <input type="password" value={pwForm.current} onChange={e=>setPwForm({...pwForm,current:e.target.value})} style={{...inp(),width:'100%'}} placeholder="••••••••" required/>
+            </div>
+            <div>
+              <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:4}}>كلمة المرور الجديدة</label>
+              <input type="password" value={pwForm.newPw} onChange={e=>setPwForm({...pwForm,newPw:e.target.value})} style={{...inp(),width:'100%'}} placeholder="6 أحرف على الأقل" required/>
+            </div>
+            <div>
+              <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:4}}>تأكيد كلمة المرور الجديدة</label>
+              <input type="password" value={pwForm.confirm} onChange={e=>setPwForm({...pwForm,confirm:e.target.value})} style={{...inp(),width:'100%'}} placeholder="أعد إدخال كلمة المرور الجديدة" required/>
+            </div>
+          </div>
+          <button type="submit" disabled={pwSaving} style={{...btnPrimary,width:'100%',padding:'13px',opacity:pwSaving?0.7:1,cursor:pwSaving?'not-allowed':'pointer'}}>
+            {pwSaving?'جاري الحفظ...':'🔐 تغيير كلمة المرور'}
+          </button>
+        </form>
       </Section>
     </div>
   )
