@@ -18,7 +18,7 @@ function getRange(period: FilterPeriod, from: string, to: string) {
 function formatRange(period: FilterPeriod, from: string, to: string) {
   if (period==='today') return 'اليوم'
   if (period==='week')  return 'آخر 7 أيام'
-  if (period==='month') return new Date().toLocaleDateString('en-GB',{month:'long',year:'numeric'})
+  if (period==='month') return new Date().toLocaleDateString('ar-SA',{month:'long',year:'numeric'})
   if (period==='year')  return new Date().getFullYear().toString()
   if (from&&to) return `${from} — ${to}`
   if (from) return `من ${from}`
@@ -27,13 +27,28 @@ function formatRange(period: FilterPeriod, from: string, to: string) {
 }
 
 function FilterBar({ period, setPeriod, from, setFrom, to, setTo }: any) {
-  const PERIODS = [{key:'today',label:'اليوم'},{key:'week',label:'الأسبوع'},{key:'month',label:'هذا الشهر'},{key:'year',label:'هذه السنة'},{key:'custom',label:'تخصيص'}]
+  const PERIODS = [
+    {key:'today',label:'اليوم',icon:'☀️'},
+    {key:'week',label:'الأسبوع',icon:'📅'},
+    {key:'month',label:'هذا الشهر',icon:'🗓️'},
+    {key:'year',label:'هذه السنة',icon:'📆'},
+    {key:'custom',label:'تخصيص',icon:'🔧'},
+  ]
   return (
-    <div style={{...card,padding:16,marginBottom:20}}>
-      <div style={{display:'flex',gap:6,flexWrap:'wrap' as const,marginBottom:period==='custom'?12:0}}>
+    <div style={{...card,padding:'16px 18px',marginBottom:20}}>
+      <div style={{fontSize:font.xs,fontWeight:700,color:colors.text4,marginBottom:10,textTransform:'uppercase' as const,letterSpacing:'.06em'}}>الفترة الزمنية</div>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap' as const,marginBottom:period==='custom'?14:0}}>
         {PERIODS.map(p=>(
-          <button key={p.key} onClick={()=>setPeriod(p.key as FilterPeriod)} style={{padding:'8px 14px',borderRadius:radius.md,border:'none',background:period===p.key?colors.primary:colors.bg,color:period===p.key?'white':colors.text3,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family,transition:'all .15s'}}>
-            {p.label}
+          <button key={p.key} onClick={()=>setPeriod(p.key as FilterPeriod)}
+            style={{
+              padding:'8px 14px',borderRadius:20,border:'none',fontFamily:font.family,
+              background:period===p.key?colors.primary:colors.bg,
+              color:period===p.key?'white':colors.text3,
+              fontSize:font.xs,fontWeight:700,cursor:'pointer',
+              boxShadow:period===p.key?`0 4px 12px ${colors.primary}33`:'none',
+              transition:'all .2s',transform:period===p.key?'translateY(-1px)':'none',
+            }}>
+            {p.icon} {p.label}
           </button>
         ))}
       </div>
@@ -47,29 +62,66 @@ function FilterBar({ period, setPeriod, from, setFrom, to, setTo }: any) {
   )
 }
 
-function ReportCard({ title, subtitle, icon, color, bg, border, stats, onClick, loading }: any) {
+function MiniChart({ data, color }: { data:number[]; color:string }) {
+  const max = Math.max(...data, 1)
+  return (
+    <div style={{display:'flex',alignItems:'flex-end',gap:3,height:36}}>
+      {data.map((v,i)=>(
+        <div key={i} style={{flex:1,background:colors.border,borderRadius:'3px 3px 0 0',height:32,display:'flex',alignItems:'flex-end',overflow:'hidden'}}>
+          <div style={{width:'100%',background:i===data.length-1?color:color+'55',height:`${Math.max((v/max)*100,4)}%`,borderRadius:'3px 3px 0 0',transition:'height .6s'}}/>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ReportCard({ title, subtitle, icon, color, bg, border, stats, onClick, loading, chartData }: any) {
   const [hov, setHov] = useState(false)
   return (
     <button onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{width:'100%',textAlign:'right' as const,border:'none',cursor:'pointer',fontFamily:font.family,padding:0,background:'transparent'}}>
-      <div style={{background:hov?bg:colors.surface,borderRadius:radius.xl,border:`2px solid ${hov?color:colors.border2}`,boxShadow:hov?`0 8px 32px ${color}22`:shadow.sm,padding:'24px 24px 20px',transition:'all .2s cubic-bezier(.4,0,.2,1)',transform:hov?'translateY(-3px)':'none'}}>
-        <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:16}}>
+      <div style={{
+        background:colors.surface,borderRadius:radius.xl,
+        border:`1.5px solid ${hov?color:colors.border}`,
+        boxShadow:hov?`0 12px 36px ${color}22`:shadow.sm,
+        padding:'22px 24px',transition:'all .25s cubic-bezier(.4,0,.2,1)',
+        transform:hov?'translateY(-4px)':'none',
+      }}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:18}}>
           <div>
-            <div style={{fontSize:font.xl,fontWeight:900,color:colors.text,letterSpacing:'-0.5px',marginBottom:3}}>{title}</div>
-            <div style={{fontSize:font.sm,color:colors.text3}}>{subtitle}</div>
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:4}}>
+              <div style={{width:42,height:42,borderRadius:12,background:bg,border:`1.5px solid ${border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>{icon}</div>
+              <div>
+                <div style={{fontSize:font.md,fontWeight:900,color:colors.text}}>{title}</div>
+                <div style={{fontSize:font.xs,color:colors.text3,marginTop:1}}>{subtitle}</div>
+              </div>
+            </div>
           </div>
-          <div style={{width:52,height:52,borderRadius:radius.lg,background:bg,border:`1.5px solid ${border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,flexShrink:0}}>{icon}</div>
-        </div>
-        <div style={{display:'grid',gridTemplateColumns:`repeat(${stats.length},1fr)`,gap:8,background:colors.bg,borderRadius:radius.md,padding:'12px 14px',marginBottom:16}}>
-          {loading?[...Array(stats.length)].map((_,i)=>(<div key={i} style={{textAlign:'center' as const}}><div style={{height:22,background:colors.border2,borderRadius:6,marginBottom:4,animation:'sk 1.4s infinite'}}/><div style={{height:10,background:colors.border,borderRadius:4,animation:'sk 1.4s infinite'}}/></div>))
-          :stats.map((s:any,i:number)=>(<div key={i} style={{textAlign:'center' as const}}><div style={{fontSize:font.lg,fontWeight:900,color:s.color,letterSpacing:'-0.5px'}}>{s.value}</div><div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>{s.label}</div></div>))}
-        </div>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-          <span style={{fontSize:font.sm,fontWeight:700,color:hov?color:colors.text3,transition:'color .2s'}}>اضغط لعرض التفاصيل</span>
-          <div style={{width:32,height:32,borderRadius:radius.md,background:hov?color:colors.border,display:'flex',alignItems:'center',justifyContent:'center',transition:'all .2s'}}>
-            <svg width={14} height={14} fill="none" stroke={hov?'white':colors.text3} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+          <div style={{display:'flex',alignItems:'center',gap:6,background:hov?color:colors.bg,borderRadius:20,padding:'6px 12px',border:`1px solid ${hov?color:colors.border}`,transition:'all .2s'}}>
+            <span style={{fontSize:font.xs,fontWeight:700,color:hov?'white':colors.text3}}>التفاصيل</span>
+            <svg width={12} height={12} fill="none" stroke={hov?'white':colors.text3} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
           </div>
         </div>
+
+        <div style={{display:'grid',gridTemplateColumns:`repeat(${stats.length},1fr)`,gap:10,marginBottom:chartData?16:0}}>
+          {loading?[...Array(stats.length)].map((_,i)=>(
+            <div key={i} style={{background:colors.bg,borderRadius:radius.md,padding:'12px',textAlign:'center' as const}}>
+              <div style={{height:22,background:colors.border2,borderRadius:6,marginBottom:6,animation:'sk 1.4s infinite'}}/>
+              <div style={{height:10,background:colors.border,borderRadius:4,animation:'sk 1.4s infinite'}}/>
+            </div>
+          )):stats.map((s:any,i:number)=>(
+            <div key={i} style={{background:s.highlight?bg:colors.bg,borderRadius:radius.md,padding:'12px 10px',textAlign:'center' as const,border:`1px solid ${s.highlight?border:colors.border}`}}>
+              <div style={{fontSize:18,fontWeight:900,color:s.color,letterSpacing:'-0.5px'}}>{s.value}</div>
+              <div style={{fontSize:10,color:colors.text4,marginTop:3,fontWeight:600}}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {chartData && chartData.length > 0 && (
+          <div style={{marginTop:4}}>
+            <MiniChart data={chartData} color={color}/>
+          </div>
+        )}
       </div>
     </button>
   )
@@ -86,9 +138,9 @@ function BackBtn({ onClick }: { onClick:()=>void }) {
 
 function PeriodBadge({ period, from, to }: any) {
   return (
-    <div style={{...card,padding:'10px 16px',marginBottom:16,display:'flex',alignItems:'center',gap:8}}>
+    <div style={{...card,padding:'10px 16px',marginBottom:16,display:'flex',alignItems:'center',gap:8,background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`}}>
       <span style={{fontSize:16}}>📅</span>
-      <span style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{formatRange(period,from,to)}</span>
+      <span style={{fontSize:font.sm,fontWeight:700,color:colors.primary}}>{formatRange(period,from,to)}</span>
     </div>
   )
 }
@@ -109,7 +161,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
       if(!p){setLoading(false);return}
       orgId=p.org_id; sessionStorage.setItem('s_org_id',orgId!)
     }
-    const {start,end}=getRange(period,from,to)
+    const{start,end}=getRange(period,from,to)
     const _bid1 = sessionStorage.getItem('s_branch_id')
     let _mq1 = sb.from('stock_movements').select('*,products!inner(name,unit,org_id,branch_id)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
     if (_bid1) _mq1 = _mq1.eq('products.branch_id', _bid1)
@@ -130,31 +182,35 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     <div>
       <BackBtn onClick={onBack}/>
       <PeriodBadge period={period} from={from} to={to}/>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:14}}>
-        {[{label:'كميات مصروفة',value:totalQty,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},{label:'عمليات الصرف',value:filtered.length,color:colors.info,bg:colors.infoLight,border:colors.infoBorder},{label:'أصناف مختلفة',value:Object.keys(productMap).length,color:'#8b5cf6',bg:'#f5f3ff',border:'#ddd6fe'}].map((s,i)=>(
-          <div key={i} style={{...card,padding:'12px',textAlign:'center' as const,borderColor:s.border,background:s.bg}}>
-            <div style={{fontSize:font.xl,fontWeight:900,color:s.color,lineHeight:1}}>{s.value}</div>
-            <div style={{fontSize:font.xs,color:colors.text3,marginTop:3,fontWeight:600}}>{s.label}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16}}>
+        {[
+          {label:'كميات مصروفة',value:totalQty,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
+          {label:'عمليات الصرف',value:filtered.length,color:colors.info,bg:colors.infoLight,border:colors.infoBorder},
+          {label:'أصناف مختلفة',value:Object.keys(productMap).length,color:'#7c3aed',bg:'#f5f3ff',border:'#ddd6fe'},
+        ].map((s,i)=>(
+          <div key={i} style={{...card,padding:'16px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
+            <div style={{fontSize:28,fontWeight:900,color:s.color,letterSpacing:'-1px'}}>{s.value}</div>
+            <div style={{fontSize:font.xs,color:s.color,marginTop:4,fontWeight:700,opacity:.8}}>{s.label}</div>
           </div>
         ))}
       </div>
       {topProducts.length>0&&(
-        <div style={{...card,padding:14,marginBottom:14}}>
-          <div style={{fontSize:font.sm,fontWeight:700,color:colors.text,marginBottom:10}}>🏆 الأكثر صرفاً</div>
+        <div style={{...card,padding:'16px 18px',marginBottom:16}}>
+          <div style={{fontSize:font.base,fontWeight:800,color:colors.text,marginBottom:14}}>🏆 الأكثر صرفاً</div>
           {topProducts.map(([name,qty],i)=>{
             const pct=Math.round((qty/topProducts[0][1])*100)
             return(
-              <div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:i<topProducts.length-1?8:0}}>
-                <div style={{width:22,height:22,borderRadius:radius.sm,background:barColors[i]+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                  <span style={{fontSize:10,fontWeight:800,color:barColors[i]}}>{i+1}</span>
+              <div key={i} style={{display:'flex',alignItems:'center',gap:10,marginBottom:i<topProducts.length-1?12:0}}>
+                <div style={{width:26,height:26,borderRadius:8,background:barColors[i]+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:`1px solid ${barColors[i]}44`}}>
+                  <span style={{fontSize:11,fontWeight:900,color:barColors[i]}}>{i+1}</span>
                 </div>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
-                    <span style={{fontSize:font.sm,fontWeight:600,color:colors.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{name}</span>
-                    <span style={{fontSize:font.sm,fontWeight:800,color:barColors[i],marginRight:4}}>{qty}</span>
+                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:5}}>
+                    <span style={{fontSize:font.sm,fontWeight:700,color:colors.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const,maxWidth:200}}>{name}</span>
+                    <span style={{fontSize:font.sm,fontWeight:900,color:barColors[i]}}>{qty}</span>
                   </div>
-                  <div style={{height:4,background:colors.border,borderRadius:99}}>
-                    <div style={{height:'100%',width:pct+'%',background:barColors[i],borderRadius:99}}/>
+                  <div style={{height:5,background:colors.border,borderRadius:99}}>
+                    <div style={{height:'100%',width:pct+'%',background:barColors[i],borderRadius:99,transition:'width .6s'}}/>
                   </div>
                 </div>
               </div>
@@ -163,13 +219,44 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
         </div>
       )}
       <div style={{...card,overflow:'hidden'}}>
-        <div style={{padding:'10px 14px',borderBottom:`1px solid ${colors.border}`,display:'flex',gap:8}}>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث..." style={{...inp(),flex:1}}/>
-          <button onClick={exportCSV} style={{...btnPrimary,padding:'9px 14px',fontSize:font.xs}}>📥 تصدير</button>
+        <div style={{padding:'12px 16px',borderBottom:`1px solid ${colors.border}`,display:'flex',gap:8}}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث بالمنتج أو الملاحظة..." style={{...inp(),flex:1}}/>
+          <button onClick={exportCSV} style={{...btnPrimary,padding:'9px 14px',fontSize:font.xs,display:'flex',alignItems:'center',gap:6}}>
+            <svg width="12" height="12" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            تصدير
+          </button>
         </div>
-        {loading?(<div style={{padding:40,textAlign:'center'}}><div style={{width:28,height:28,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
-        ):filtered.length===0?(<div style={{padding:48,textAlign:'center'}}><div style={{fontSize:36,marginBottom:8}}>📭</div><div style={{fontSize:font.sm,fontWeight:600,color:colors.text2}}>لا توجد نتائج</div></div>
-        ):(<><div style={{overflowX:'auto'}}><table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:400}}><thead><tr style={{background:colors.bg,borderBottom:`1px solid ${colors.border}`}}>{['التاريخ','المنتج','الكمية','الملاحظة'].map((h,i)=>(<th key={i} style={{padding:'9px 14px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const}}>{h}</th>))}</tr></thead><tbody>{filtered.map((m,i)=>(<tr key={m.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}><td style={{padding:'10px 14px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('en-GB')}</td><td style={{padding:'10px 14px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td><td style={{padding:'10px 14px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder)}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td><td style={{padding:'10px 14px',fontSize:font.xs,color:colors.text4}}>{m.note||'—'}</td></tr>))}</tbody></table></div><div style={{padding:'10px 14px',background:colors.primaryLight,borderTop:`1px solid ${colors.primaryBorder}`,display:'flex',justifyContent:'space-between'}}><span style={{fontSize:font.sm,fontWeight:700,color:colors.primary}}>{filtered.length} عملية</span><span style={{fontSize:font.sm,fontWeight:800,color:colors.primary}}>{totalQty} وحدة</span></div></>)}
+        {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
+        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{fontSize:44,marginBottom:10}}>📭</div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
+        ):(
+          <>
+          <div style={{overflowX:'auto'}}>
+            <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:400}}>
+              <thead>
+                <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
+                  {['التاريخ','المنتج','الكمية','الملاحظة'].map((h,i)=>(
+                    <th key={i} style={{padding:'10px 16px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((m,i)=>(
+                  <tr key={m.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}>
+                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA',{month:'short',day:'numeric'})}</td>
+                    <td style={{padding:'11px 16px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td>
+                    <td style={{padding:'11px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:900}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
+                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text4}}>{m.note||'—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{padding:'12px 16px',background:colors.dangerLight,borderTop:`1.5px solid ${colors.dangerBorder}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <span style={{fontSize:font.sm,fontWeight:700,color:colors.danger}}>{filtered.length} عملية</span>
+            <span style={{fontSize:font.base,fontWeight:900,color:colors.danger}}>{totalQty} وحدة مصروفة</span>
+          </div>
+          </>
+        )}
       </div>
     </div>
   )
@@ -197,28 +284,77 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
   const totalAmount=filtered.reduce((s,p)=>s+Number(p.amount||0),0)
   const totalVat=filtered.reduce((s,p)=>s+Number(p.vat_amount||0),0)
   const totalWithVat=filtered.reduce((s,p)=>s+Number(p.total_amount||0),0)
-  const catTag=(c:string)=>c==='مخزون'?tag(colors.primary,colors.primaryLight,colors.primaryBorder):c==='صيانة'?tag(colors.warning,colors.warningLight,colors.warningBorder):tag(colors.text3,colors.bg,colors.border2)
+  const catTag=(c:string)=>c==='مخزون'?tag(colors.primary,colors.primaryLight,colors.primaryBorder):c==='مشتريات'?tag(colors.info,colors.infoLight,colors.infoBorder):tag(colors.text3,colors.bg,colors.border2)
   return (
     <div>
       <BackBtn onClick={onBack}/>
       <PeriodBadge period={period} from={from} to={to}/>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:14}}>
-        {[{label:'بدون ضريبة',value:totalAmount.toFixed(0)+' ر.س',color:colors.text2,bg:colors.bg,border:colors.border2},{label:'ضريبة 15%',value:totalVat.toFixed(0)+' ر.س',color:colors.warning,bg:colors.warningLight,border:colors.warningBorder},{label:'الإجمالي',value:totalWithVat.toFixed(0)+' ر.س',color:colors.primary,bg:colors.primaryLight,border:colors.primaryBorder},{label:'الفواتير',value:filtered.length,color:colors.info,bg:colors.infoLight,border:colors.infoBorder}].map((s,i)=>(
-          <div key={i} style={{...card,padding:'12px',textAlign:'center' as const,borderColor:s.border,background:s.bg}}>
-            <div style={{fontSize:font.md,fontWeight:900,color:s.color,lineHeight:1}}>{s.value}</div>
-            <div style={{fontSize:font.xs,color:colors.text3,marginTop:3,fontWeight:600}}>{s.label}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16}}>
+        {[
+          {label:'بدون ضريبة',value:totalAmount.toFixed(0)+' ر.س',color:colors.text2,bg:colors.bg,border:colors.border2},
+          {label:'ضريبة 15%',value:totalVat.toFixed(0)+' ر.س',color:colors.warning,bg:colors.warningLight,border:colors.warningBorder},
+          {label:'الإجمالي',value:totalWithVat.toFixed(0)+' ر.س',color:colors.primary,bg:colors.primaryLight,border:colors.primaryBorder},
+          {label:'الفواتير',value:String(filtered.length),color:colors.info,bg:colors.infoLight,border:colors.infoBorder},
+        ].map((s,i)=>(
+          <div key={i} style={{...card,padding:'14px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
+            <div style={{fontSize:i===2?20:16,fontWeight:900,color:s.color,letterSpacing:'-0.5px'}}>{s.value}</div>
+            <div style={{fontSize:font.xs,color:s.color,marginTop:4,fontWeight:600,opacity:.8}}>{s.label}</div>
           </div>
         ))}
       </div>
       <div style={{...card,overflow:'hidden'}}>
-        <div style={{padding:'10px 14px',borderBottom:`1px solid ${colors.border}`,display:'flex',gap:8,flexWrap:'wrap' as const,alignItems:'center'}}>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث..." style={{...inp(),flex:1,minWidth:120}}/>
-          <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{...inp(),width:'auto'}}><option value="">الكل</option><option value="مخزون">مخزون</option><option value="صيانة">صيانة</option><option value="أخرى">أخرى</option></select>
-          <button onClick={exportCSV} style={{...btnPrimary,padding:'9px 14px',fontSize:font.xs}}>📥 تصدير</button>
+        <div style={{padding:'12px 16px',borderBottom:`1px solid ${colors.border}`,display:'flex',gap:8,flexWrap:'wrap' as const,alignItems:'center'}}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث بالاسم أو المورد..." style={{...inp(),flex:1,minWidth:120}}/>
+          <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{...inp(),width:'auto'}}>
+            <option value="">الكل</option>
+            <option value="مخزون">مخزون</option>
+            <option value="مشتريات">مشتريات</option>
+            <option value="أخرى">أخرى</option>
+          </select>
+          <button onClick={exportCSV} style={{...btnPrimary,padding:'9px 14px',fontSize:font.xs,display:'flex',alignItems:'center',gap:6}}>
+            <svg width="12" height="12" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            تصدير
+          </button>
         </div>
-        {loading?(<div style={{padding:40,textAlign:'center'}}><div style={{width:28,height:28,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
-        ):filtered.length===0?(<div style={{padding:48,textAlign:'center'}}><div style={{fontSize:36,marginBottom:8}}>🧾</div><div style={{fontSize:font.sm,fontWeight:600,color:colors.text2}}>لا توجد نتائج</div></div>
-        ):(<><div style={{overflowX:'auto'}}><table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}><thead><tr style={{background:colors.bg,borderBottom:`1px solid ${colors.border}`}}>{['التاريخ','الصنف','النوع','بدون ضريبة','ضريبة','الإجمالي','المورد'].map((h,i)=>(<th key={i} style={{padding:'9px 12px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const}}>{h}</th>))}</tr></thead><tbody>{filtered.map((p,i)=>(<tr key={p.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}><td style={{padding:'10px 12px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(p.created_at).toLocaleDateString('en-GB')}</td><td style={{padding:'10px 12px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{p.name}</td><td style={{padding:'10px 12px'}}><span style={catTag(p.category)}>{p.category}</span></td><td style={{padding:'10px 12px',fontSize:font.sm}}>{Number(p.amount||0).toFixed(2)} ر.س</td><td style={{padding:'10px 12px',fontSize:font.sm,color:colors.warning,fontWeight:600}}>{Number(p.vat_amount||0).toFixed(2)} ر.س</td><td style={{padding:'10px 12px',fontSize:font.sm,fontWeight:700,color:colors.primary}}>{Number(p.total_amount||0).toFixed(2)} ر.س</td><td style={{padding:'10px 12px',fontSize:font.xs,color:colors.text4}}>{p.supplier||'—'}</td></tr>))}</tbody><tfoot><tr style={{background:colors.primaryLight,borderTop:`2px solid ${colors.primaryBorder}`}}><td colSpan={3} style={{padding:'10px 12px',fontWeight:800,fontSize:font.sm,color:colors.text}}>الإجمالي ({filtered.length} فاتورة)</td><td style={{padding:'10px 12px',fontWeight:700,fontSize:font.sm}}>{totalAmount.toFixed(2)} ر.س</td><td style={{padding:'10px 12px',fontWeight:700,fontSize:font.sm,color:colors.warning}}>{totalVat.toFixed(2)} ر.س</td><td style={{padding:'10px 12px',fontWeight:900,fontSize:font.md,color:colors.primary}}>{totalWithVat.toFixed(2)} ر.س</td><td/></tr></tfoot></table></div></>)}
+        {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
+        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{fontSize:44,marginBottom:10}}>🧾</div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
+        ):(
+          <>
+          <div style={{overflowX:'auto'}}>
+            <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
+              <thead>
+                <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
+                  {['التاريخ','الصنف','النوع','بدون ضريبة','ضريبة','الإجمالي','المورد'].map((h,i)=>(
+                    <th key={i} style={{padding:'10px 12px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((p,i)=>(
+                  <tr key={p.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}>
+                    <td style={{padding:'11px 12px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(p.created_at).toLocaleDateString('ar-SA',{month:'short',day:'numeric'})}</td>
+                    <td style={{padding:'11px 12px',fontSize:font.sm,fontWeight:700,color:colors.text,maxWidth:140,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.name}</td>
+                    <td style={{padding:'11px 12px'}}><span style={catTag(p.category)}>{p.category}</span></td>
+                    <td style={{padding:'11px 12px',fontSize:font.sm}}>{Number(p.amount||0).toFixed(0)} ر.س</td>
+                    <td style={{padding:'11px 12px',fontSize:font.sm,color:colors.warning,fontWeight:600}}>{Number(p.vat_amount||0).toFixed(0)} ر.س</td>
+                    <td style={{padding:'11px 12px',fontSize:font.sm,fontWeight:700,color:colors.primary}}>{Number(p.total_amount||0).toFixed(0)} ر.س</td>
+                    <td style={{padding:'11px 12px',fontSize:font.xs,color:colors.text4,maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.supplier||'—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr style={{background:colors.primaryLight,borderTop:`2px solid ${colors.primaryBorder}`}}>
+                  <td colSpan={3} style={{padding:'11px 12px',fontWeight:800,fontSize:font.sm,color:colors.text}}>الإجمالي ({filtered.length} فاتورة)</td>
+                  <td style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm}}>{totalAmount.toFixed(0)} ر.س</td>
+                  <td style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm,color:colors.warning}}>{totalVat.toFixed(0)} ر.س</td>
+                  <td style={{padding:'11px 12px',fontWeight:900,fontSize:font.md,color:colors.primary}}>{totalWithVat.toFixed(0)} ر.س</td>
+                  <td/>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          </>
+        )}
       </div>
     </div>
   )
@@ -232,6 +368,9 @@ export default function ReportsPage() {
   const [dispenseStats, setDS]    = useState({ops:0,qty:0,items:0})
   const [purchaseStats, setPS]    = useState({invoices:0,total:0,vat:0})
   const [statsLoading, setSL]     = useState(true)
+  const [weeklyD, setWD]          = useState<number[]>([])
+  const [weeklyP, setWP]          = useState<number[]>([])
+  const [visible, setVisible]     = useState(false)
   const sb = createClient()
 
   useEffect(()=>{ loadStats() },[period,from,to])
@@ -241,13 +380,22 @@ export default function ReportsPage() {
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setSL(false);return}
     const{start,end}=getRange(period,from,to)
     const[{data:mv},{data:pu}]=await Promise.all([
-      (()=>{const _bid2=sessionStorage.getItem('s_branch_id');let _mq2=sb.from('stock_movements').select('qty_change,products!inner(name,org_id,branch_id)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bid2)_mq2=_mq2.eq('products.branch_id',_bid2);return _mq2})(),
-      sb.from('purchases').select('amount,total_amount,vat_amount').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString()),
+      (()=>{const _bid2=sessionStorage.getItem('s_branch_id');let _mq2=sb.from('stock_movements').select('qty_change,created_at,products!inner(name,org_id,branch_id)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bid2)_mq2=_mq2.eq('products.branch_id',_bid2);return _mq2})(),
+      sb.from('purchases').select('amount,total_amount,vat_amount,created_at').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString()),
     ])
     const items=new Set((mv||[]).map((m:any)=>m.products?.name)).size
     setDS({ops:(mv||[]).length,qty:(mv||[]).reduce((s:number,m:any)=>s+Math.abs(m.qty_change),0),items})
     setPS({invoices:(pu||[]).length,total:(pu||[]).reduce((s:number,p:any)=>s+Number(p.total_amount||0),0),vat:(pu||[]).reduce((s:number,p:any)=>s+Number(p.vat_amount||0),0)})
+    // weekly chart
+    const wd:number[]=[], wp:number[]=[]
+    for(let i=6;i>=0;i--){
+      const d=new Date(); d.setDate(d.getDate()-i); const ds=d.toDateString()
+      wd.push((mv||[]).filter((m:any)=>new Date(m.created_at).toDateString()===ds).length)
+      wp.push((pu||[]).filter((p:any)=>new Date(p.created_at).toDateString()===ds).length)
+    }
+    setWD(wd); setWP(wp)
     setSL(false)
+    setTimeout(()=>setVisible(true),50)
   }
 
   if (view==='dispense') return (
@@ -267,20 +415,60 @@ export default function ReportsPage() {
   )
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:680,margin:'0 auto'}}>
-      <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.4}}.sk{animation:sk 1.4s infinite}@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <div style={{marginBottom:20}}>
+    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:680,margin:'0 auto',opacity:visible?1:0,transition:'opacity .4s ease'}}>
+      <style>{`
+        @keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.6s ease-in-out infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+        .su{animation:slideUp .4s ease both}
+      `}</style>
+
+      <div style={{marginBottom:20}} className="su">
         <h1 style={{...pageTitle}}>التقارير</h1>
-        <p style={{...pageSub}}>اختر الفترة ثم اضغط على التقرير</p>
+        <p style={{...pageSub}}>اختر الفترة ثم اضغط على التقرير لعرض التفاصيل</p>
       </div>
-      <FilterBar period={period} setPeriod={setPeriod} from={from} setFrom={setFrom} to={to} setTo={setTo}/>
+
+      <div className="su" style={{animationDelay:'.05s'}}>
+        <FilterBar period={period} setPeriod={setPeriod} from={from} setFrom={setFrom} to={to} setTo={setTo}/>
+      </div>
+
       <div style={{display:'flex',flexDirection:'column' as const,gap:14}}>
-        <ReportCard title="تقرير الصرف" subtitle="عمليات الصرف من المخزون" icon="📤" color={colors.danger} bg={colors.dangerLight} border={colors.dangerBorder} loading={statsLoading}
-          stats={[{label:'عمليات الصرف',value:dispenseStats.ops,color:colors.danger},{label:'وحدات مصروفة',value:dispenseStats.qty,color:colors.danger},{label:'أصناف مختلفة',value:dispenseStats.items,color:colors.danger}]}
-          onClick={()=>setView('dispense')}/>
-        <ReportCard title="تقرير المشتريات" subtitle="فواتير المشتريات مع الضريبة 15%" icon="🧾" color={colors.primary} bg={colors.primaryLight} border={colors.primaryBorder} loading={statsLoading}
-          stats={[{label:'عدد الفواتير',value:purchaseStats.invoices,color:colors.primary},{label:'إجمالي شامل الضريبة',value:purchaseStats.total.toLocaleString('en-GB',{maximumFractionDigits:0})+' ر.س',color:colors.primary},{label:'ضريبة القيمة المضافة',value:purchaseStats.vat.toLocaleString('en-GB',{maximumFractionDigits:0})+' ر.س',color:colors.warning}]}
-          onClick={()=>setView('purchase')}/>
+        <div className="su" style={{animationDelay:'.1s'}}>
+          <ReportCard
+            title="تقرير الصرف"
+            subtitle="عمليات الصرف من المخزون"
+            icon="📤"
+            color={colors.danger}
+            bg={colors.dangerLight}
+            border={colors.dangerBorder}
+            loading={statsLoading}
+            chartData={weeklyD}
+            stats={[
+              {label:'عمليات الصرف',value:dispenseStats.ops,color:colors.danger,highlight:true},
+              {label:'وحدات مصروفة',value:dispenseStats.qty,color:colors.danger},
+              {label:'أصناف مختلفة',value:dispenseStats.items,color:colors.danger},
+            ]}
+            onClick={()=>setView('dispense')}
+          />
+        </div>
+        <div className="su" style={{animationDelay:'.15s'}}>
+          <ReportCard
+            title="تقرير المشتريات"
+            subtitle="فواتير المشتريات مع الضريبة 15%"
+            icon="🧾"
+            color={colors.primary}
+            bg={colors.primaryLight}
+            border={colors.primaryBorder}
+            loading={statsLoading}
+            chartData={weeklyP}
+            stats={[
+              {label:'عدد الفواتير',value:purchaseStats.invoices,color:colors.primary,highlight:true},
+              {label:'إجمالي شامل',value:purchaseStats.total.toFixed(0)+' ر.س',color:colors.primary},
+              {label:'ضريبة القيمة',value:purchaseStats.vat.toFixed(0)+' ر.س',color:colors.warning},
+            ]}
+            onClick={()=>setView('purchase')}
+          />
+        </div>
       </div>
     </div>
   )
