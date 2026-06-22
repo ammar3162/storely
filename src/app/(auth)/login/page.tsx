@@ -126,11 +126,11 @@ function LoginPage() {
             <button type="submit" disabled={loading} style={btnPrimary}>
               {loading ? 'جاري الدخول...' : 'دخول'}
             </button>
-            <div style={{textAlign:'center',marginTop:14}}>
+            {/* <div style={{textAlign:'center',marginTop:14}}>
               <button type="button" onClick={()=>{setMode('forgot');setError('')}} style={{background:'none',border:'none',color:'#16a34a',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                 نسيت كلمة المرور؟
               </button>
-            </div>
+            </div> */}
           </form>
         )}
 
