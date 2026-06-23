@@ -336,9 +336,10 @@ export default function InventoryPage() {
           </div>
         ) : (
           <>
-            {/* Mobile cards */}
-            <div className="mob-cards">
-              <style>{`@media(min-width:640px){.mob-cards{display:none!important}.desk-table{display:block!important}}`}</style>
+            {/* Mobile cards grid */}
+            <div className="mob-cards" style={{padding:'10px'}}>
+              <style>{`@media(min-width:640px){.mob-cards{display:none!important}.desk-table{display:block!important}}.mob-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}`}</style>
+              <div className="mob-grid">
               {paginated.map((p,i)=>{
                 const isLow=p.qty<=p.reorder_point
                 const isOut=p.qty===0
@@ -347,24 +348,21 @@ export default function InventoryPage() {
                 const statusBorder = isOut ? colors.dangerBorder : isLow ? colors.warningBorder : colors.primaryBorder
                 const statusLabel = isOut ? 'نفد' : isLow ? 'ناقص' : 'كافٍ'
                 return (
-                  <div key={p.id} className="prod-card" style={{padding:'14px 16px',borderBottom:i<paginated.length-1?`1px solid ${colors.border}`:'none',cursor:'pointer'}} onClick={()=>openEdit(p)}>
-                    <div style={{display:'flex',alignItems:'center',gap:12}}>
-                      <div style={{width:46,height:46,borderRadius:radius.md,background:statusBg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:`1.5px solid ${statusBorder}`}}>
-                        <span style={{fontSize:15,fontWeight:900,color:statusColor}}>{p.qty}</span>
+                  <div key={p.id} onClick={()=>openEdit(p)} style={{background:colors.surface,border:`1.5px solid ${statusBorder}`,borderRadius:radius.lg,padding:'12px',cursor:'pointer',transition:'all .2s'}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
+                      <div style={{width:36,height:36,borderRadius:10,background:statusBg,display:'flex',alignItems:'center',justifyContent:'center',border:`1px solid ${statusBorder}`,flexShrink:0}}>
+                        <span style={{fontSize:13,fontWeight:900,color:statusColor}}>{p.qty}</span>
                       </div>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:font.base,fontWeight:700,color:colors.text,marginBottom:2}}>{p.name}</div>
-                        <div style={{fontSize:font.xs,color:colors.text3,display:'flex',gap:8,flexWrap:'wrap'as const}}>
-                          {p.category&&<span>{CAT_ICONS[p.category]||'📦'} {p.category}</span>}
-                          <span>الحد: {p.reorder_point} {p.unit}</span>
-                        </div>
-                        <StockBar qty={p.qty} reorder={p.reorder_point}/>
-                      </div>
-                      <span style={{...tag(statusColor,statusBg,statusBorder),flexShrink:0}}>{statusLabel}</span>
+                      <span style={{fontSize:10,fontWeight:700,color:statusColor,background:statusBg,padding:'2px 8px',borderRadius:20,border:`1px solid ${statusBorder}`}}>{statusLabel}</span>
                     </div>
+                    <div style={{fontSize:13,fontWeight:700,color:colors.text,marginBottom:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'as const}}>{p.name}</div>
+                    <div style={{fontSize:10,color:colors.text4,marginBottom:6}}>{CAT_ICONS[p.category]||'📦'} {p.category||'—'}</div>
+                    <StockBar qty={p.qty} reorder={p.reorder_point}/>
+                    <div style={{fontSize:10,color:colors.text4,marginTop:4}}>الحد: {p.reorder_point} {p.unit}</div>
                   </div>
                 )
               })}
+              </div>
             </div>
 
             {/* Desktop table */}
