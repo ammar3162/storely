@@ -360,8 +360,136 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
   )
 }
 
+
+function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; from:string; to:string; onBack:()=>void }) {
+  const [products, setProducts] = useState<any[]>([])
+  const [movements, setMovements] = useState<any[]>([])
+  const [purchases, setPurchases] = useState<any[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [search, setSearch]     = useState('')
+  const [filter, setFilter]     = useState<'all'|'low'|'out'>('all')
+  const sb = createClient()
+
+  useEffect(()=>{ load() },[period,from,to])
+
+  async function load() {
+    setLoading(true)
+    const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setLoading(false);return}
+    const branchId=sessionStorage.getItem('s_branch_id')
+    const {start,end}=getRange(period,from,to)
+
+    // products
+    let pq=sb.from('products').select('id,name,unit,qty,reorder_point,category').eq('org_id',orgId).eq('is_active',true)
+    if(branchId) pq=pq.eq('branch_id',branchId)
+    const{data:prods}=await pq.order('name')
+
+    // movements in period
+    let mq=sb.from('stock_movements').select('qty_change,type,products!inner(name,org_id,branch_id)').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
+    if(branchId) mq=mq.eq('products.branch_id',branchId)
+    const{data:mvs}=await mq
+
+    // purchases in period
+    let puq=sb.from('purchases').select('name,qty,unit,category').eq('org_id',orgId).eq('category','مخزون').gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
+    const{data:pus}=await puq
+
+    setProducts(prods||[])
+    setMovements(mvs||[])
+    setPurchases(pus||[])
+    setLoading(false)
+  }
+
+  function exportCSV() {
+    const csv='\ufeff'+[['الصنف','الفئة','الكمية المتبقية','الوحدة','الحد الأدنى','الحالة'],...filtered.map(p=>[p.name,p.category||'—',p.qty,p.unit,p.reorder_point,p.qty===0?'نفد':p.qty<=p.reorder_point?'ناقص':'كافٍ'])].map(r=>r.map((cc:any)=>'"'+cc+'"').join(',')).join('\n')
+    Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})),download:'تقرير_الجرد.csv'}).click()
+  }
+
+  // dispensed map
+  const dispensedMap:Record<string,number>={}
+  movements.filter(m=>m.type==='out').forEach(m=>{const n=(m.products as any)?.name||'—';dispensedMap[n]=(dispensedMap[n]||0)+Math.abs(m.qty_change)})
+
+  // purchased map
+  const purchasedMap:Record<string,number>={}
+  purchases.forEach(p=>{if(p.name&&p.qty) purchasedMap[p.name]=(purchasedMap[p.name]||0)+Number(p.qty)})
+
+  const filtered=products
+    .filter(p=>!search||p.name?.includes(search)||p.category?.includes(search))
+    .filter(p=>filter==='all'||(filter==='out'?p.qty===0:p.qty<=p.reorder_point))
+
+  const lowCount=products.filter(p=>p.qty>0&&p.qty<=p.reorder_point).length
+  const outCount=products.filter(p=>p.qty===0).length
+  const totalDispensed=Object.values(dispensedMap).reduce((s,v)=>s+v,0)
+  const totalPurchased=Object.values(purchasedMap).reduce((s,v)=>s+v,0)
+
+  return (
+    <div>
+      <BackBtn onClick={onBack}/>
+      <PeriodBadge period={period} from={from} to={to}/>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16}}>
+        {[
+          {label:'إجمالي الأصناف',value:products.length,color:'#7c3aed',bg:'#f5f3ff',border:'#ddd6fe'},
+          {label:'وحدات مصروفة',value:totalDispensed,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
+          {label:'وحدات مشتراة',value:totalPurchased,color:colors.primary,bg:colors.primaryLight,border:colors.primaryBorder},
+          {label:'أصناف ناقصة',value:lowCount+outCount,color:colors.warning,bg:colors.warningLight,border:colors.warningBorder},
+        ].map((s,i)=>(
+          <div key={i} style={{...card,padding:'14px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
+            <div style={{fontSize:24,fontWeight:900,color:s.color}}>{s.value}</div>
+            <div style={{fontSize:font.xs,color:s.color,marginTop:4,fontWeight:600,opacity:.8}}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{...card,overflow:'hidden'}}>
+        <div style={{padding:'12px 16px',borderBottom:`1px solid ${colors.border}`,display:'flex',gap:8,flexWrap:'wrap' as const,alignItems:'center'}}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث بالاسم أو الفئة..." style={{...inp(),flex:1,minWidth:120}}/>
+          <div style={{display:'flex',gap:6}}>
+            {(['all','low','out'] as const).map(f=>(
+              <button key={f} onClick={()=>setFilter(f)} style={{padding:'7px 12px',borderRadius:20,border:`1.5px solid ${filter===f?colors.primary:colors.border}`,background:filter===f?colors.primaryLight:colors.surface,color:filter===f?colors.primary:colors.text3,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family,transition:'all .15s'}}>
+                {f==='all'?'الكل':f==='low'?'ناقص':'نفد'}
+              </button>
+            ))}
+          </div>
+          <button onClick={exportCSV} style={{...btnPrimary,padding:'9px 14px',fontSize:font.xs}}>📥 تصدير</button>
+        </div>
+        {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
+        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{fontSize:44,marginBottom:10}}>📋</div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
+        ):(
+          <div style={{overflowX:'auto'}}>
+            <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
+              <thead>
+                <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
+                  {['الصنف','الفئة','مصروف','مشترى','المتبقي','الحالة'].map((h,i)=>(
+                    <th key={i} style={{padding:'10px 14px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((p,i)=>{
+                  const isOut=p.qty===0; const isLow=p.qty<=p.reorder_point&&p.qty>0
+                  const statusColor=isOut?colors.danger:isLow?colors.warning:colors.primary
+                  const statusLabel=isOut?'نفد':isLow?'ناقص':'كافٍ'
+                  const dispensed=dispensedMap[p.name]||0
+                  const purchased=purchasedMap[p.name]||0
+                  return (
+                    <tr key={p.id} style={{borderBottom:`1px solid ${colors.border}`,background:isOut?colors.dangerLight:isLow?colors.warningLight:i%2===0?colors.surface:colors.bg}}>
+                      <td style={{padding:'11px 14px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{p.name}</td>
+                      <td style={{padding:'11px 14px',fontSize:font.xs,color:colors.text3}}>{p.category||'—'}</td>
+                      <td style={{padding:'11px 14px'}}>{dispensed>0?<span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder)}}>▼ {dispensed}</span>:<span style={{color:colors.text4}}>—</span>}</td>
+                      <td style={{padding:'11px 14px'}}>{purchased>0?<span style={{...tag(colors.primary,colors.primaryLight,colors.primaryBorder)}}>▲ {purchased}</span>:<span style={{color:colors.text4}}>—</span>}</td>
+                      <td style={{padding:'11px 14px',fontWeight:900,fontSize:18,color:statusColor}}>{p.qty} <span style={{fontSize:font.xs,fontWeight:400,color:colors.text4}}>{p.unit}</span></td>
+                      <td style={{padding:'11px 14px'}}><span style={{...tag(statusColor,isOut?colors.dangerLight:isLow?colors.warningLight:colors.primaryLight,isOut?colors.dangerBorder:isLow?colors.warningBorder:colors.primaryBorder)}}>{statusLabel}</span></td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function ReportsPage() {
-  const [view, setView]           = useState<'home'|'dispense'|'purchase'>('home')
+  const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'>('home')
   const [period, setPeriod]       = useState<FilterPeriod>('month')
   const [from, setFrom]           = useState('')
   const [to, setTo]               = useState('')
@@ -369,6 +497,7 @@ export default function ReportsPage() {
   const [purchaseStats, setPS]    = useState({invoices:0,total:0,vat:0})
   const [statsLoading, setSL]     = useState(true)
   const [weeklyD, setWD]          = useState<number[]>([])
+  const [inventoryStats, setIS]   = useState({low:0,out:0,total:0})
   const [weeklyP, setWP]          = useState<number[]>([])
   const [visible, setVisible]     = useState(false)
   const sb = createClient()
@@ -394,9 +523,20 @@ export default function ReportsPage() {
       wp.push((pu||[]).filter((p:any)=>new Date(p.created_at).toDateString()===ds).length)
     }
     setWD(wd); setWP(wp)
+    const{data:inv}=await sb.from('products').select('qty,reorder_point').eq('org_id',orgId).eq('is_active',true)
+    const invData=inv||[]
+    setIS({total:invData.length,low:invData.filter((p:any)=>p.qty>0&&p.qty<=p.reorder_point).length,out:invData.filter((p:any)=>p.qty===0).length})
     setSL(false)
     setTimeout(()=>setVisible(true),50)
   }
+
+  if (view==='inventory') return (
+    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <h1 style={{...pageTitle,marginBottom:16}}>تقرير الجرد اليومي</h1>
+      <InventoryDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
+    </div>
+  )
 
   if (view==='dispense') return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
@@ -467,6 +607,24 @@ export default function ReportsPage() {
               {label:'ضريبة القيمة',value:purchaseStats.vat.toFixed(0)+' ر.س',color:colors.warning},
             ]}
             onClick={()=>setView('purchase')}
+          />
+        </div>
+        <div className="su" style={{animationDelay:'.2s'}}>
+          <ReportCard
+            title="تقرير الجرد اليومي"
+            subtitle="ملخص المخزون الحالي والأصناف الناقصة"
+            icon="📋"
+            color={'#7c3aed'}
+            bg={'#f5f3ff'}
+            border={'#ddd6fe'}
+            loading={statsLoading}
+            chartData={[]}
+            stats={[
+              {label:'إجمالي الأصناف',value:inventoryStats.total,color:'#7c3aed',highlight:true},
+              {label:'مخزون ناقص',value:inventoryStats.low,color:colors.warning},
+              {label:'نفد المخزون',value:inventoryStats.out,color:colors.danger},
+            ]}
+            onClick={()=>setView('inventory')}
           />
         </div>
       </div>
