@@ -9,6 +9,7 @@ export default function PWAInstall() {
 
   useEffect(() => {
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(console.error)
+    if (localStorage.getItem('pwa_dismissed')) return
     const handler = (e: any) => { e.preventDefault(); setPrompt(e); setShowBanner(true) }
     window.addEventListener('beforeinstallprompt', handler)
     if (window.matchMedia('(display-mode: standalone)').matches) setInstalled(true)
@@ -33,7 +34,7 @@ export default function PWAInstall() {
         <div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>للوصول السريع بدون متصفح</div>
       </div>
       <div style={{display:'flex',gap:8,flexShrink:0}}>
-        <button onClick={()=>setShowBanner(false)} style={{padding:'7px 12px',background:colors.bg,color:colors.text3,border:`1px solid ${colors.border2}`,borderRadius:radius.sm,fontSize:font.xs,fontWeight:600,cursor:'pointer',fontFamily:font.family}}>لاحقاً</button>
+        <button onClick={()=>{ setShowBanner(false); localStorage.setItem('pwa_dismissed','1') }} style={{padding:'7px 12px',background:colors.bg,color:colors.text3,border:`1px solid ${colors.border2}`,borderRadius:radius.sm,fontSize:font.xs,fontWeight:600,cursor:'pointer',fontFamily:font.family}}>لاحقاً</button>
         <button onClick={install} style={{padding:'7px 14px',background:colors.primary,color:'white',border:'none',borderRadius:radius.sm,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>تثبيت</button>
       </div>
     </div>
