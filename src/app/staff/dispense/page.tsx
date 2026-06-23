@@ -161,24 +161,25 @@ export default function StaffDispensePage() {
     setSubmitting(true)
     const dispenseQty = Number(qty)
 
-    const { error: mErr } = await sb.from('stock_movements').insert({
-      product_id: selected.id,
-      type: 'out',
-      qty_change: -dispenseQty,
-      note: `صرف بواسطة الموظف: ${session.name}`,
-    })
+    try {
+      const res = await fetch('/api/staff-dispense', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: selected.id, qty: dispenseQty, staffName: session.name, orgId: session.org_id }),
+      })
+      const data = await res.json()
+      if (!res.ok) { showToast(t('errorTryAgain', lang)); setSubmitting(false); return }
 
-    if (mErr) { showToast(t('errorTryAgain', lang)); setSubmitting(false); return }
+      fetch('/api/send-pending-notifications', { method: 'POST' }).catch(() => {})
+      fetch('/api/notify-supplier', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: session.org_id }) }).catch(() => {})
 
-    await sb.from('products').update({ qty: selected.qty - dispenseQty }).eq('id', selected.id)
-
-    fetch('/api/send-pending-notifications', { method: 'POST' }).catch(() => {})
-    fetch('/api/notify-supplier', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: session.org_id }) }).catch(() => {})
-
-    showToast(`✅ ${t('success', lang)}`)
-    setSelected(null)
-    setQty('')
-    loadProducts(session)
+      showToast(`✅ ${t('success', lang)}`)
+      setSelected(null)
+      setQty('')
+      loadProducts(session)
+    } catch {
+      showToast(t('errorTryAgain', lang))
+    }
     setSubmitting(false)
   }
 
