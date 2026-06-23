@@ -12,6 +12,7 @@ function LoginPage() {
   const [error, setError]       = useState('')
   const [successData, setSuccessData] = useState({name:'',phone:''})
   const [branchCount, setBranchCount] = useState<number|null>(null)
+  const [businessType, setBusinessType] = useState<string>('')
   const [mounted, setMounted]   = useState(false)
   const supabase = createClient()
 
@@ -53,7 +54,7 @@ function LoginPage() {
     if (data.user) {
       const { data: org, error: orgErr } = await supabase
         .from('organizations')
-        .insert({ name: orgName.trim(), whatsapp_number: phone.trim(), low_stock_threshold: 5 })
+        .insert({ name: orgName.trim(), whatsapp_number: phone.trim(), low_stock_threshold: 5, business_type: businessType||'مطعم' } as any)
         .select().single()
       if (orgErr) { setError('خطأ في إنشاء المؤسسة: ' + orgErr.message); setLoading(false); return }
       if (org) {
@@ -205,6 +206,24 @@ function LoginPage() {
               <div style={{marginBottom:14}}>
                 <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>اسم المؤسسة</label>
                 <input type="text" required value={orgName} onChange={e=>setOrgName(e.target.value)} className="inp-field" placeholder="مثال: مستودع النجمة" style={{background:'#f8fafc',color:'#1e293b',border:'1.5px solid #e2e8f0'}}/>
+              </div>
+              <div style={{marginBottom:14}}>
+                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:8}}>نوع النشاط</label>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+                  {[
+                    {v:'مطعم',icon:'🍔'},{v:'كوفي',icon:'☕'},{v:'مخبز',icon:'🥖'},
+                    {v:'بقالة',icon:'🛒'},{v:'صيدلية',icon:'💊'},{v:'مستودع',icon:'🏭'},
+                    {v:'متجر إلكتروني',icon:'🛍️'},{v:'أخرى',icon:'🏢'},
+                  ].map(b=>(
+                    <button key={b.v} type="button" onClick={()=>setBusinessType(b.v)}
+                      style={{padding:'10px 6px',borderRadius:10,border:`2px solid ${businessType===b.v?'#16a34a':'#e2e8f0'}`,background:businessType===b.v?'#f0fdf4':'white',color:businessType===b.v?'#16a34a':'#6b7280',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:4,transition:'all .15s'}}>
+                      <span style={{fontSize:20}}>{b.icon}</span>
+                      <span>{b.v}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{display:'none'}}>
               </div>
               <div style={{marginBottom:14}}>
                 <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني</label>
