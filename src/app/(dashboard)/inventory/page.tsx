@@ -356,7 +356,7 @@ export default function InventoryPage() {
                       <span style={{fontSize:10,fontWeight:700,color:statusColor,background:statusBg,padding:'2px 8px',borderRadius:20,border:`1px solid ${statusBorder}`}}>{statusLabel}</span>
                     </div>
                     <div style={{fontSize:13,fontWeight:700,color:colors.text,marginBottom:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'as const}}>{p.name}</div>
-                    <div style={{fontSize:10,color:colors.text4,marginBottom:6}}>{CAT_ICONS[p.category]||'📦'} {p.category||'—'}</div>
+                    <div style={{fontSize:10,color:colors.text4,marginBottom:6}}>{CAT_ICONS[p.category||'']||'📦'} {p.category||'—'}</div>
                     <StockBar qty={p.qty} reorder={p.reorder_point}/>
                     <div style={{fontSize:10,color:colors.text4,marginTop:4}}>الحد: {p.reorder_point} {p.unit}</div>
                   </div>
