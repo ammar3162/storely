@@ -113,8 +113,12 @@ export default function DispensePage() {
         .qty-btn:hover{background:${colors.primaryLight};border-color:${colors.primary};color:${colors.primary}}
         .hist-row{transition:background .12s}
         .hist-row:hover{background:${colors.bg}}
+        @media(max-width:1024px){.main-grid{grid-template-columns:1fr!important}}
         @media(max-width:900px){.main-grid{grid-template-columns:1fr!important}}
+        @media(max-width:768px){.prod-grid{grid-template-columns:repeat(3,1fr)!important}}
+        @media(max-width:480px){.prod-grid{grid-template-columns:repeat(2,1fr)!important}.prod-card{padding:10px 8px!important;font-size:12px!important}}
         @media(max-width:640px){.prod-grid{grid-template-columns:repeat(2,1fr)!important}}
+        @media(max-width:400px){.prod-grid{grid-template-columns:repeat(2,1fr)!important}.prod-card{padding:12px 8px!important}.main-grid{gap:10px!important}}
       `}</style>
 
       {/* Header */}
@@ -156,7 +160,7 @@ export default function DispensePage() {
               <div style={{fontSize:font.sm,color:colors.text4}}>{search?'جرب كلمة بحث أخرى':'لا يوجد منتجات في هذه الفئة'}</div>
             </div>
           ) : (
-            <div className="prod-grid su" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,animationDelay:'.12s'}}>
+            <div className="prod-grid su" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,animationDelay:'.12s'}}>
               {displayProducts.map(p=>{
                 const isLow=p.qty<=p.reorder_point
                 const isOut=p.qty===0

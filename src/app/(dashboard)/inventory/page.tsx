@@ -159,6 +159,7 @@ export default function InventoryPage() {
         .prod-card{transition:all .2s cubic-bezier(.4,0,.2,1)}
         .prod-card:hover{transform:translateY(-2px);box-shadow:${shadow.md}!important}
         @media(max-width:640px){.inv-stats{grid-template-columns:1fr 1fr!important}.hide-mob{display:none!important}.inv-header{flex-direction:column!important}.inv-btns{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;width:100%!important}}
+        @media(max-width:400px){.inv-stats{grid-template-columns:1fr 1fr!important;gap:6px!important}.cat-btn{padding:5px 10px!important;font-size:11px!important}}
       `}</style>
 
       {/* Confirm delete modal */}
