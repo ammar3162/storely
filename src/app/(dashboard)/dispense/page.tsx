@@ -162,26 +162,37 @@ export default function DispensePage() {
           ) : (
             <div className="prod-grid su" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,animationDelay:'.12s'}}>
               {displayProducts.map(p=>{
-                const isLow=p.qty<=p.reorder_point
+                const isLow=p.qty<=p.reorder_point&&p.qty>0
                 const isOut=p.qty===0
+                const statusColor=isOut?colors.danger:isLow?colors.warning:colors.primary
+                const statusBg=isOut?colors.dangerLight:isLow?colors.warningLight:colors.primaryLight
+                const statusBorder=isOut?colors.dangerBorder:isLow?colors.warningBorder:colors.primaryBorder
+                const statusLabel=isOut?'نفد':isLow?'ناقص':'كافٍ'
                 const catColor=colorFor(p.category?.trim()||OTHER)
+                const pct=Math.min((p.qty/Math.max(p.reorder_point*2,p.qty,1))*100,100)
                 return (
                   <button key={p.id} className={`prod-card${isOut?' out':''}`}
                     onClick={()=>{ if(isOut) return; setSelected(p); setQty('1') }}
-                    style={{borderColor:selected?.id===p.id?colors.primary:isOut?colors.dangerBorder:colors.border,background:selected?.id===p.id?colors.primaryLight:colors.surface}}>
-                    <div style={{width:36,height:36,borderRadius:10,background:catColor+'22',border:`1px solid ${catColor}44`,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:10,fontSize:18}}>
-                      📦
+                    style={{
+                      borderColor:selected?.id===p.id?colors.primary:statusBorder,
+                      background:selected?.id===p.id?colors.primaryLight:colors.surface,
+                      boxShadow:selected?.id===p.id?`0 4px 14px ${colors.primary}33`:'none',
+                    }}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
+                      <div style={{width:36,height:36,borderRadius:10,background:statusBg,border:`1.5px solid ${statusBorder}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                        <span style={{fontSize:13,fontWeight:900,color:statusColor}}>{p.qty}</span>
+                      </div>
+                      <span style={{fontSize:10,fontWeight:700,color:statusColor,background:statusBg,padding:'2px 7px',borderRadius:20,border:`1px solid ${statusBorder}`}}>{statusLabel}</span>
                     </div>
-                    <div style={{fontSize:font.sm,fontWeight:700,color:colors.text,marginBottom:6,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.name}</div>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                      <span style={{fontSize:13,fontWeight:900,color:isOut?colors.danger:isLow?colors.warning:colors.primary}}>{p.qty}</span>
-                      <span style={{fontSize:10,color:colors.text4}}>{p.unit}</span>
+                    <div style={{fontSize:font.sm,fontWeight:700,color:colors.text,marginBottom:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.name}</div>
+                    <div style={{fontSize:10,color:colors.text4,marginBottom:6}}>{p.category||'—'} · {p.unit}</div>
+                    <div style={{height:4,background:colors.border,borderRadius:99,overflow:'hidden'}}>
+                      <div style={{height:'100%',width:pct+'%',background:statusColor,borderRadius:99,transition:'width .4s'}}/>
                     </div>
-                    <div style={{height:3,background:colors.border,borderRadius:99,marginTop:6,overflow:'hidden'}}>
-                      <div style={{height:'100%',width:Math.min((p.qty/Math.max(p.reorder_point*2,p.qty,1))*100,100)+'%',background:isOut?colors.danger:isLow?colors.warning:catColor,borderRadius:99}}/>
+                    <div style={{display:'flex',justifyContent:'space-between',marginTop:5}}>
+                      <span style={{fontSize:9,color:colors.text4}}>الحد: {p.reorder_point}</span>
+                      {!isOut&&<span style={{fontSize:9,color:statusColor,fontWeight:700}}>اضغط للصرف</span>}
                     </div>
-                    {isOut&&<div style={{fontSize:9,color:colors.danger,fontWeight:700,marginTop:4}}>نفد المخزون</div>}
-                    {isLow&&!isOut&&<div style={{fontSize:9,color:colors.warning,fontWeight:700,marginTop:4}}>مخزون ناقص</div>}
                   </button>
                 )
               })}
