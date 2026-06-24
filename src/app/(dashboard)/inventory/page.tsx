@@ -16,7 +16,17 @@ interface Product {
 }
 
 const UNITS = ['قطعة','كيلو','كيس','كرتون','لتر','علبة','باكيت','درزن','رول','غرام','أخرى']
-const CATS  = ['مشروبات','قهوة وشاي','مواد غذائية','ألبان وبيض','ورقيات','تغليف','نظافة','توابل','مواد جافة','أخرى']
+const CATS_BY_TYPE: Record<string,string[]> = {
+  'مطعم':          ['مواد غذائية','لحوم ودواجن','خضار وفواكه','توابل وصلصات','تغليف','مشروبات','ورقيات','نظافة','أخرى'],
+  'كوفي':          ['قهوة وشاي','حليب وكريمة','سكر ومحليات','أكواب وأغطية','حلويات ومعجنات','مشروبات','ورقيات','نظافة','أخرى'],
+  'مخبز':          ['دقيق وسكر','زبدة وزيوت','بيض وألبان','مكسرات','تغليف','ورقيات','نظافة','أخرى'],
+  'بقالة':         ['مواد غذائية','مشروبات','ألبان وأجبان','منظفات','ورقيات','معلبات','وجبات خفيفة','أخرى'],
+  'صيدلية':        ['أدوية','مستلزمات طبية','عناية شخصية','مكملات غذائية','تجميل','أخرى'],
+  'مستودع':        ['مواد خام','تغليف','قطع غيار','أدوات','كيميائيات','نظافة','أخرى'],
+  'متجر إلكتروني': ['منتجات للبيع','تغليف وشحن','مواد حماية','ملصقات وطباعة','إكسسوار','أخرى'],
+  'أخرى':          ['مواد غذائية','مشروبات','ورقيات','تغليف','نظافة','أخرى'],
+}
+const DEFAULT_CATS = ['مواد غذائية','مشروبات','ورقيات','تغليف','نظافة','توابل','أخرى']
 const CAT_ICONS: Record<string,string> = {
   'مشروبات':'🥤','قهوة وشاي':'☕','مواد غذائية':'🍽️','ألبان وبيض':'🥛',
   'ورقيات':'🧻','تغليف':'📦','نظافة':'🧼','توابل':'🧂','مواد جافة':'🌾','أخرى':'🏷️'
@@ -54,6 +64,7 @@ export default function InventoryPage() {
   const [form, setForm]                 = useState({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:''})
   const [showScan, setShowScan]         = useState(false)
   const [visible, setVisible]           = useState(false)
+  const [businessType, setBusinessType]   = useState('')
   const sb = createClient()
 
   useEffect(()=>{ load() },[])
@@ -74,6 +85,9 @@ export default function InventoryPage() {
     if (branchId) q = q.eq('branch_id', branchId)
     const{data}=await q.order('name')
     setProducts(data||[])
+    // load business type
+    const{data:orgData}=await sb.from('organizations').select('business_type').eq('id',oid).single()
+    if(orgData?.business_type) setBusinessType((orgData as any).business_type)
     setLoading(false)
     setTimeout(()=>setVisible(true),50)
   }
@@ -207,7 +221,7 @@ export default function InventoryPage() {
                     <label style={lbl}>الفئة</label>
                     <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inp()}>
                       <option value="">— اختر —</option>
-                      {CATS.map(c=><option key={c}>{c}</option>)}
+                      {(CATS_BY_TYPE[businessType]||DEFAULT_CATS).map(c=><option key={c}>{c}</option>)}
                     </select>
                   </div>
                   <div>
