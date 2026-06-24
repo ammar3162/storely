@@ -1,5 +1,6 @@
 import { ToastContainer } from '@/components/toast'
 import PWAInstall from '@/components/PWAInstall'
+import FeatureAnnouncement from '@/components/FeatureAnnouncement'
 import PullToRefresh from '@/components/PullToRefresh'
 import type { Metadata } from "next"
 import "./globals.css"
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ToastContainer/>
         <PWAInstall/>
+        <FeatureAnnouncement/>
         <PullToRefresh/>
         {children}
       </body>
