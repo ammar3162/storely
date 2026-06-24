@@ -86,8 +86,8 @@ export default function InventoryPage() {
     const{data}=await q.order('name')
     setProducts(data||[])
     // load business type
-    const{data:orgData}=await sb.from('organizations').select('business_type').eq('id',oid).single()
-    if(orgData?.business_type) setBusinessType((orgData as any).business_type)
+    const{data:orgData}=await (sb.from('organizations') as any).select('business_type').eq('id',oid).single()
+    if((orgData as any)?.business_type) setBusinessType((orgData as any).business_type)
     setLoading(false)
     setTimeout(()=>setVisible(true),50)
   }
