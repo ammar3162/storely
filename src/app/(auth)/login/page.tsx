@@ -58,7 +58,7 @@ function LoginPage() {
         .select().single()
       if (orgErr) { setError('خطأ في إنشاء المؤسسة: ' + orgErr.message); setLoading(false); return }
       if (org) {
-        setSuccessData({name:orgName.trim(),phone:phone.trim()})
+        setSuccessData({name:orgName.trim(),phone:phone.trim()}); setTimeout(()=>window.location.href='/onboarding',1500)
         if (branchCount) await supabase.from('profiles').update({branch_count:branchCount} as any).eq('id',data.user.id)
         await supabase.from('profiles').upsert({
           id: data.user.id, org_id: org.id,
