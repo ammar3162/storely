@@ -91,7 +91,6 @@ export default function FeatureAnnouncement() {
   }
 
   async function goToPage(page:string) {
-    await dismissWelcome()
     router.push(page)
   }
 
@@ -109,7 +108,7 @@ export default function FeatureAnnouncement() {
       {/* ===== WELCOME MODAL ===== */}
       {welcomeModal && (
         <div style={{position:'fixed',inset:0,zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.65)',backdropFilter:'blur(10px)'}} onClick={dismissWelcome}/>
+          <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.65)',backdropFilter:'blur(10px)'}}/>
           <div style={{
             background:colors.surface,borderRadius:24,width:'100%',maxWidth:540,
             position:'relative',boxShadow:shadow.lg,overflow:'hidden',
@@ -183,7 +182,7 @@ export default function FeatureAnnouncement() {
                       ← السابق
                     </button>
                     {isLastTour ? (
-                      <button onClick={()=>goToPage(currentTour.page)}
+                      <button onClick={dismissWelcome}
                         style={{flex:2,padding:'12px',background:`linear-gradient(135deg,${colors.primary},#15803d)`,color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:font.family,boxShadow:`0 4px 14px ${colors.primary}33`}}>
                         ابدأ الاستخدام 🚀
                       </button>
