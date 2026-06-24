@@ -29,7 +29,17 @@ function LoginPage() {
     setLoading(true); setError('')
     const { error, data } = await supabase.auth.signInWithPassword({ email, password })
     if (error) { setError('البريد أو كلمة المرور غير صحيحة'); setLoading(false); return }
-    if (data.session) window.location.href = '/inventory'
+    if (data.session) {
+      // تحقق من onboarding
+      const { data: profile } = await supabase.from('profiles').select('org_id').eq('id', data.session.user.id).single()
+      if (profile?.org_id) {
+        const { data: org } = await (supabase.from('organizations') as any).select('onboarding_done').eq('id', profile.org_id).single()
+        if (org && !org.onboarding_done) {
+          window.location.href = '/onboarding'; return
+        }
+      }
+      window.location.href = '/dashboard'
+    }
   }
 
   async function handleForgotPassword(e: React.FormEvent) {
