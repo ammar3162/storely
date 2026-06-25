@@ -68,7 +68,11 @@ function LoginPage() {
         .select().single()
       if (orgErr) { setError('خطأ في إنشاء المؤسسة: ' + orgErr.message); setLoading(false); return }
       if (org) {
-        if (branchCount) await supabase.from('profiles').update({branch_count:branchCount} as any).eq('id',data.user.id)
+        if (branchCount) {
+          await supabase.from('profiles').update({branch_count:branchCount} as any).eq('id',data.user.id)
+          const maxB = branchCount===1?1:branchCount<=3?3:10
+          await supabase.from('organizations').update({max_branches:maxB} as any).eq('id',org.id)
+        }
         await supabase.from('profiles').upsert({
           id: data.user.id, org_id: org.id,
           full_name: orgName.trim(), role: 'owner', phone: phone.trim(), status: 'pending',
