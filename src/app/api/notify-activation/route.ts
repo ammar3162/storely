@@ -54,7 +54,7 @@ export async function POST(req: Request) {
       `📦 *المؤسسة:* ${org?.name || '—'}\n` +
       `🏷️ *نوع الاشتراك:* ${isPaid ? 'مدفوع 💳' : 'تجريبي 🎁'}\n` +
       `📅 *ينتهي في:* ${endsDate}\n\n` +
-      `🔗 storely-hm1u.vercel.app\n\n` +
+      `🔗 storely.dev\n\n` +
       `_Storely — نظام إدارة المخزون_`
 
     const res = await fetch('https://www.wasenderapi.com/api/send-message', {

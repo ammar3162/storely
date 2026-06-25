@@ -46,7 +46,7 @@ function LoginPage() {
     e.preventDefault()
     setLoading(true); setError('')
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://storely-hm1u.vercel.app/reset-password',
+      redirectTo: 'https://storely.dev/reset-password',
     })
     setLoading(false)
     if (error) { setError('حدث خطأ، تأكد من صحة البريد الإلكتروني'); return }
