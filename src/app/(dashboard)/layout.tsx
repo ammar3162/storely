@@ -107,7 +107,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const b=bl.find((x:any)=>x.id===saved)
         setBranchName(b?.name||''); setReady(true)
       } else {
-        setShowBranchSel(true)
+        // اختر الفرع الرئيسي تلقائياً (أول فرع)
+        const defaultBranch=bl[0]
+        if(defaultBranch){
+          sessionStorage.setItem('s_branch_id',defaultBranch.id)
+          sessionStorage.setItem('s_branch_name',defaultBranch.name)
+          setBranchName(defaultBranch.name)
+        }
+        setReady(true)
       }
     }
 
