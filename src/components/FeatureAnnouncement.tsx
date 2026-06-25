@@ -154,7 +154,7 @@ export default function FeatureAnnouncement() {
                     style={{width:'100%',padding:'14px',background:`linear-gradient(135deg,${colors.primary},#15803d)`,color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:font.family,boxShadow:`0 6px 20px ${colors.primary}33`,marginBottom:10}}>
                     ابدأ الجولة التفاعلية ←
                   </button>
-                  <button onClick={dismissWelcome}
+                  <button onClick={async()=>{ await dismissWelcome(); router.push('/dashboard') }}
                     style={{width:'100%',padding:'10px',background:'none',color:colors.text4,border:'none',fontSize:13,cursor:'pointer',fontFamily:font.family,fontWeight:600}}>
                     تخطي — سأستكشف بنفسي
                   </button>
