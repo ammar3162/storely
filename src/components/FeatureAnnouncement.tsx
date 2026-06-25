@@ -182,7 +182,7 @@ export default function FeatureAnnouncement() {
                       ← السابق
                     </button>
                     {isLastTour ? (
-                      <button onClick={dismissWelcome}
+                      <button onClick={async()=>{ await dismissWelcome(); router.push('/dashboard') }}
                         style={{flex:2,padding:'12px',background:`linear-gradient(135deg,${colors.primary},#15803d)`,color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:font.family,boxShadow:`0 4px 14px ${colors.primary}33`}}>
                         ابدأ الاستخدام 🚀
                       </button>
