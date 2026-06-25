@@ -21,6 +21,10 @@ const TABS = [
 
 export default function SettingsPage() {
   const [loading, setLoading]           = useState(true)
+  const [showDelete, setShowDelete]       = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [deleting, setDeleting]           = useState(false)
+  const [deleteMsg, setDeleteMsg]         = useState<{ok:boolean;text:string}|null>(null)
   const [saving, setSaving]             = useState(false)
   const [sending, setSending]           = useState(false)
   const [saveOk, setSaveOk]             = useState(false)
@@ -146,6 +150,26 @@ export default function SettingsPage() {
     return `أسبوعياً (${dayLabels}) الساعة ${form.notify_time}`
   }
 
+  async function deleteAccount() {
+    if(deleteConfirm !== form.name) { setDeleteMsg({ok:false,text:'اسم المنشأة غير صحيح'}); return }
+    setDeleting(true)
+    try {
+      const{data:{user}}=await sb.auth.getUser(); if(!user){setDeleting(false);return}
+      const res=await fetch('/api/delete-account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,user_id:user.id})})
+      const data=await res.json()
+      if(data.success){
+        await sb.auth.signOut()
+        window.location.href='/login?deleted=1'
+      } else {
+        setDeleteMsg({ok:false,text:'حدث خطأ أثناء الحذف — تواصل معنا'})
+        setDeleting(false)
+      }
+    } catch {
+      setDeleteMsg({ok:false,text:'خطأ في الاتصال'})
+      setDeleting(false)
+    }
+  }
+
   const planLabel = maxBranches===1?'الباقة الأساسية — 99 ر.س/شهر':maxBranches<=3?'الباقة المتوسطة — 199 ر.س/شهر':'الباقة المتقدمة — 349 ر.س/شهر'
 
   if(loading) return (
@@ -159,7 +183,7 @@ export default function SettingsPage() {
   )
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:640,margin:'0 auto',opacity:visible?1:0,transition:'opacity .4s ease'}}>
+    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:640,margin:'0 auto',opacity:visible?1:0,transition:'opacity .4s ease',position:'relative'}}>
       <style>{`
         @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
         .su{animation:slideUp .4s ease both}
@@ -420,11 +444,54 @@ export default function SettingsPage() {
                   {pwSaving?'⏳ جاري التحقق والحفظ...':'🔐 تغيير كلمة المرور'}
                 </button>
               </form>
+
+              {/* Delete account */}
+              <div style={{marginTop:28,paddingTop:24,borderTop:`1px solid ${colors.dangerBorder}`}}>
+                <div style={{background:colors.dangerLight,border:`1.5px solid ${colors.dangerBorder}`,borderRadius:radius.md,padding:'16px'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
+                    <span style={{fontSize:20}}>🗑️</span>
+                    <div>
+                      <div style={{fontSize:font.sm,fontWeight:800,color:colors.danger}}>حذف الحساب نهائياً</div>
+                      <div style={{fontSize:font.xs,color:colors.danger,opacity:.8}}>لا يمكن التراجع عن هذا الإجراء</div>
+                    </div>
+                  </div>
+                  <p style={{fontSize:font.xs,color:colors.danger,opacity:.85,marginBottom:14,lineHeight:1.7}}>سيتم حذف جميع بياناتك — المخزون، المشتريات، الموظفين، والتقارير — بشكل نهائي.</p>
+                  <button onClick={()=>setShowDelete(true)}
+                    style={{width:'100%',padding:'11px',background:colors.danger,color:'white',border:'none',borderRadius:radius.md,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
+                    حذف حسابي نهائياً
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
         </div>
       </div>
+
+    {showDelete&&(
+      <div style={{position:'fixed',inset:0,zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.6)',backdropFilter:'blur(6px)'}} onClick={()=>{setShowDelete(false);setDeleteConfirm('');setDeleteMsg(null)}}/>
+        <div style={{background:colors.surface,borderRadius:radius.xl,padding:28,width:'100%',maxWidth:420,position:'relative',boxShadow:'0 20px 60px rgba(0,0,0,.3)',fontFamily:font.family,direction:'rtl'}}>
+          <div style={{textAlign:'center',marginBottom:20}}>
+            <div style={{fontSize:44,marginBottom:10}}>⚠️</div>
+            <div style={{fontSize:font.lg,fontWeight:900,color:colors.text,marginBottom:8}}>تأكيد حذف الحساب</div>
+            <p style={{fontSize:font.sm,color:colors.text3,lineHeight:1.7}}>هذا الإجراء <b style={{color:colors.danger}}>لا يمكن التراجع عنه</b>. سيتم حذف جميع بياناتك نهائياً.</p>
+          </div>
+          {deleteMsg&&<div style={{background:colors.dangerLight,border:`1px solid ${colors.dangerBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:14,fontSize:font.sm,color:colors.danger,fontWeight:600}}>{deleteMsg.text}</div>}
+          <div style={{marginBottom:18}}>
+            <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:6}}>اكتب اسم المنشأة للتأكيد: <b style={{color:colors.danger}}>{form.name}</b></label>
+            <input value={deleteConfirm} onChange={e=>setDeleteConfirm(e.target.value)} style={{...inp(),borderColor:colors.dangerBorder}} placeholder={form.name}/>
+          </div>
+          <div style={{display:'flex',gap:10}}>
+            <button onClick={()=>{setShowDelete(false);setDeleteConfirm('');setDeleteMsg(null)}} style={{...btnSecondary,flex:1,padding:'12px',fontSize:font.sm}}>إلغاء</button>
+            <button onClick={deleteAccount} disabled={deleting||deleteConfirm!==form.name}
+              style={{flex:2,padding:'12px',background:deleteConfirm===form.name?colors.danger:'#94a3b8',color:'white',border:'none',borderRadius:radius.md,fontSize:font.sm,fontWeight:700,cursor:deleteConfirm===form.name?'pointer':'not-allowed',fontFamily:font.family}}>
+              {deleting?'⏳ جاري الحذف...':'🗑️ حذف نهائياً'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </div>
   )
 }
