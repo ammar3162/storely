@@ -30,7 +30,8 @@ export async function proxy(request: NextRequest) {
   const isStatic   = path.startsWith('/_next') || path.startsWith('/favicon') || path.includes('.')
   const isAdminPanel = path.startsWith('/storely-admin')
   const isStaff    = path.startsWith('/staff')
-  const isPublic   = isLogin || isPending || isApi || isStaff || isStatic
+  const isLanding  = path === '/'
+  const isPublic   = isLogin || isPending || isApi || isStaff || isStatic || isLanding
 
   if (isAdminPanel) {
     const adminToken   = request.cookies.get('storely_admin_token')?.value
