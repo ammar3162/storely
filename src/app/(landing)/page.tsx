@@ -120,7 +120,7 @@ export default function LandingPage() {
       {/* ===== NAVBAR ===== */}
       <nav style={{ position: 'fixed', top: 0, right: 0, left: 0, zIndex: 1000, padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: scrolled ? 'rgba(255,255,255,.97)' : 'transparent', backdropFilter: scrolled ? 'blur(12px)' : 'none', borderBottom: scrolled ? '1px solid #f1f5f9' : 'none', transition: 'all .3s', boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,.06)' : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg,#16a34a,#15803d)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900, color: 'white' }}>S</div>
+          <img src="/storely-logo.png" alt="Storely" style={{ width: 38, height: 38, borderRadius: 10, objectFit: 'cover' }}/>
           <span style={{ fontSize: 20, fontWeight: 900, color: scrolled ? '#0f172a' : 'white' }}>Storely</span>
         </div>
         <div className="nav-desktop" style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
