@@ -212,6 +212,10 @@ function LoginPage() {
                   </span>
                 ) : 'دخول ←'}
               </button>
+              <button type="button" onClick={()=>{setMode('forgot');setError('')}}
+                style={{width:'100%',marginTop:12,padding:'10px',background:'none',color:'#64748b',border:'none',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                نسيت كلمة المرور؟
+              </button>
             </form>
           )}
 
