@@ -12,23 +12,36 @@ export default function ResetPasswordPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    // التقط الـ token من الـ URL hash عند فتح رابط الاستعادة من الإيميل
-    const hash = window.location.hash
-    if (hash && hash.includes('access_token')) {
-      const params = new URLSearchParams(hash.replace('#', '?'))
-      const access_token = params.get('access_token')
-      const refresh_token = params.get('refresh_token') || ''
-      const type = params.get('type')
-      if (access_token && type === 'recovery') {
-        supabase.auth.setSession({ access_token, refresh_token }).then(({ data }) => {
-          setReady(!!data.session)
-        })
-        return
+    async function checkToken() {
+      // محاولة 1: hash fragment
+      const hash = window.location.hash
+      if (hash && hash.includes('access_token')) {
+        const params = new URLSearchParams(hash.substring(1))
+        const access_token = params.get('access_token')
+        const refresh_token = params.get('refresh_token') || ''
+        const type = params.get('type')
+        if (access_token && (type === 'recovery' || type === 'magiclink')) {
+          const { data } = await supabase.auth.setSession({ access_token, refresh_token })
+          if (data.session) { setReady(true); return }
+        }
       }
+      // محاولة 2: query params (PKCE flow)
+      const params = new URLSearchParams(window.location.search)
+      const code = params.get('code')
+      if (code) {
+        const { data } = await supabase.auth.exchangeCodeForSession(code)
+        if (data.session) { setReady(true); return }
+      }
+      // محاولة 3: session موجودة
+      const { data } = await supabase.auth.getSession()
+      if (data.session) { setReady(true); return }
+      // انتظر ثانية وتحقق مجدداً
+      setTimeout(async () => {
+        const { data: d2 } = await supabase.auth.getSession()
+        setReady(!!d2.session)
+      }, 1000)
     }
-    supabase.auth.getSession().then(({ data }) => {
-      setReady(!!data.session)
-    })
+    checkToken()
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
