@@ -43,6 +43,16 @@ const PLANS = [
 
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    // لو المستخدم مسجل دخول وجّهه للداشبورد
+    import('@/lib/supabase/client').then(({ createClient }) => {
+      const sb = createClient()
+      sb.auth.getSession().then(({ data: { session } }) => {
+        if (session) router.replace('/dashboard')
+      })
+    })
+  }, [])
   const [activeBiz, setActiveBiz] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set())
