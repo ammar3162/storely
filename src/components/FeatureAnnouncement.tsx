@@ -56,7 +56,7 @@ export default function FeatureAnnouncement() {
     }
 
     // check welcome
-    if(!profile.seen_welcome && pathname==='/dashboard'){
+    if(profile.seen_welcome === false && pathname==='/dashboard'){
       setWelcomeModal(true)
       return
     }
