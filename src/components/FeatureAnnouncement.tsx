@@ -56,11 +56,11 @@ export default function FeatureAnnouncement() {
     setAnnouncements(unseen)
   }
 
-  async function dismiss() {
-    if(!profileId) return
-    await (sb as any).from('profiles').update({seen_welcome:true}).eq('id',profileId)
-    await (sb as any).from('user_seen_features').insert({profile_id:profileId,feature_version:'1.0.0'}).catch(()=>{})
+  function dismiss() {
     setShow(false)
+    if(!profileId) return
+    ;(sb as any).from('profiles').update({seen_welcome:true}).eq('id',profileId).then(()=>{})
+    ;(sb as any).from('user_seen_features').insert({profile_id:profileId,feature_version:'1.0.0'}).catch(()=>{})
   }
 
   async function markSeen(version:string) {
