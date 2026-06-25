@@ -31,7 +31,8 @@ export async function proxy(request: NextRequest) {
   const isAdminPanel = path.startsWith('/storely-admin')
   const isStaff    = path.startsWith('/staff')
   const isLanding  = path === '/'
-  const isPublic   = isLogin || isPending || isApi || isStaff || isStatic || isLanding
+  const isReset    = path.startsWith('/reset-password')
+  const isPublic   = isLogin || isPending || isApi || isStaff || isStatic || isLanding || isReset
 
   if (isAdminPanel) {
     const adminToken   = request.cookies.get('storely_admin_token')?.value
