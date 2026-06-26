@@ -25,12 +25,14 @@ async function sendWhatsApp(phone: string, text: string) {
   return res.ok
 }
 
-function buildOrderMessage(orgName: string, items: { name: string; qty: number; unit: string; orderQty: number }[]) {
+function buildOrderMessage(orgName: string, items: { name: string; unit: string; orderQty: number }[], notes?: string) {
   const itemsList = items
-    .map((it, i) => `${i + 1}. *${it.name}*\n   الكمية الحالية: ${it.qty} ${it.unit}\n   الكمية المطلوب توريدها: ${it.orderQty} ${it.unit}`)
-    .join('\n\n')
+    .map((it, i) => `${i + 1}. *${it.name}* — ${it.orderQty} ${it.unit}`)
+    .join('\n')
 
-  return `📦 *طلب توريد جديد*\n\nمرحباً،\n\nنفيدكم بأن المخزون التالي وصل للحد الذي يستوجب إعادة التوريد من *${orgName}*:\n\n${itemsList}\n\nنرجو التكرم بتزويدنا بأسرع وقت ممكن.\n\nشكراً لتعاونكم 🙏\n_رسالة آلية من نظام Storely_`
+  const notesSection = notes ? `\n\n📝 *ملاحظات:* ${notes}` : ''
+
+  return `📦 *طلب توريد — ${orgName}*\n\nمرحباً،\n\nنحتاج توريد المواد التالية:\n\n${itemsList}${notesSection}\n\nنرجو التوريد في أقرب وقت. شكراً 🙏\n_Storely — نظام إدارة المخزون_`
 }
 
 export async function POST(req: Request) {
@@ -78,18 +80,17 @@ export async function POST(req: Request) {
 
     for (const supplierId of Object.keys(bySupplier)) {
       const items = bySupplier[supplierId]
-      const { data: supplier } = await supabase.from('suppliers').select('name, phone').eq('id', supplierId).single()
+      const { data: supplier } = await supabase.from('suppliers').select('name, phone, notes').eq('id', supplierId).single()
       if (!supplier?.phone) continue
 
       const orgName = (items[0] as any).organizations?.name || 'المتجر'
       const messageItems = items.map((p: any) => ({
         name: p.name,
-        qty: p.qty,
         unit: p.unit || 'قطعة',
         orderQty: p.supplier_order_qty || p.supplier_reorder_point || 0,
       }))
 
-      const text = buildOrderMessage(orgName, messageItems)
+      const text = buildOrderMessage(orgName, messageItems, supplier.notes)
       const ok = await sendWhatsApp(formatPhone(supplier.phone), text)
 
       for (const p of items) {

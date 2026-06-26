@@ -35,6 +35,7 @@ export default function SuppliersPage() {
   const [showAdd, setShowAdd]     = useState(false)
   const [newName, setNewName]     = useState('')
   const [newPhone, setNewPhone]   = useState('')
+  const [newNotes, setNewNotes]   = useState('')
   const [expanded, setExpanded]   = useState<string|null>(null)
   const sb = createClient()
 
@@ -77,10 +78,10 @@ export default function SuppliersPage() {
   async function addSupplier() {
     if(suppliers.length>=maxSuppliers){alert(`باقتك تسمح بـ ${maxSuppliers} موردين فقط — يرجى الترقية`);return}
     if (!newName.trim() || !newPhone.trim()) { toast('أدخل اسم المورد ورقم جواله', 'warning'); return }
-    const { error } = await (sb.from('suppliers' as any) as any).insert({ org_id: orgId, name: newName.trim(), phone: newPhone.trim() })
+    const { error } = await (sb.from('suppliers' as any) as any).insert({ org_id: orgId, name: newName.trim(), phone: newPhone.trim(), notes: newNotes.trim() })
     if (error) { toast('خطأ: ' + error.message, 'error'); return }
     toast('✅ تم إضافة المورد')
-    setNewName(''); setNewPhone(''); setShowAdd(false)
+    setNewName(''); setNewPhone(''); setNewNotes(''); setShowAdd(false)
     loadSuppliers(orgId)
   }
 
@@ -128,6 +129,7 @@ export default function SuppliersPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
             <input value={newName} onChange={e => setNewName(e.target.value)} style={inp()} placeholder="اسم المورد" />
             <input value={newPhone} onChange={e => setNewPhone(e.target.value)} style={inp()} placeholder="رقم جوال المورد (05xxxxxxxx)" />
+            <input value={newNotes} onChange={e => setNewNotes(e.target.value)} style={inp()} placeholder="ملاحظات للمورد (اختياري) — مثال: يرجى التوريد صباحاً" />
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={addSupplier} style={{ ...btnPrimary, padding: '10px 20px', fontSize: font.sm }}>حفظ</button>
@@ -152,6 +154,7 @@ export default function SuppliersPage() {
                   <div>
                     <div style={{ fontSize: font.md, fontWeight: 700, color: colors.text }}>{s.name}</div>
                     <div style={{ fontSize: font.xs, color: colors.text3, marginTop: 2 }}>{s.phone} · {linkedProducts.length} منتج مرتبط</div>
+                    {s.notes && <div style={{ fontSize: font.xs, color: colors.text3, marginTop: 4, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '3px 8px', display: 'inline-block' }}>📝 {s.notes}</div>}
                   </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <button onClick={(e) => { e.stopPropagation(); deleteSupplier(s.id) }} style={{ background: colors.dangerLight, color: colors.danger, border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: font.xs, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>حذف</button>
