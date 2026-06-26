@@ -382,17 +382,52 @@ export default function LandingPage() {
       </a>
 
       {/* ===== FOOTER ===== */}
-      <footer style={{ background: '#020c05', padding: '40px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 30, height: 30, borderRadius: 8, background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, color: 'white' }}>S</div>
-          <span style={{ fontSize: 16, fontWeight: 800, color: 'white' }}>Storely</span>
-        </div>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,.25)' }}>© {new Date().getFullYear()} Storely — نظام إدارة المخزون السعودي</div>
-        <div style={{ display: 'flex', gap: 24 }}>
-          {[['دخول', '/login'], ['تسجيل', '/login'], ['سياسة الخصوصية', '/privacy'], ['الشروط والأحكام', '/terms']].map(([l, h]) => (
-            <a key={l} href={h} style={{ color: 'rgba(255,255,255,.35)', textDecoration: 'none', fontSize: 13, transition: 'color .2s' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'white')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,.35)')}>{l}</a>
-          ))}
+      <footer style={{ background: '#020c05', padding: '48px 32px 32px' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 32, marginBottom: 40 }}>
+            {/* Brand */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                <img src="/storely-logo.png" alt="Storely" style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'cover' }}/>
+                <span style={{ fontSize: 20, fontWeight: 800, color: 'white' }}>Storely</span>
+              </div>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,.4)', lineHeight: 1.7, maxWidth: 240 }}>منصة إدارة المخزون الذكية للمنشآت السعودية</p>
+            </div>
+            {/* Links */}
+            <div style={{ display: 'flex', gap: 48, flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#4ade80', marginBottom: 14, letterSpacing: '.08em' }}>المنصة</div>
+                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+                  {[['تسجيل الدخول', '/login'], ['إنشاء حساب', '/login'], ['الأسعار', '#pricing']].map(([l, h]) => (
+                    <a key={l} href={h} style={{ color: 'rgba(255,255,255,.4)', textDecoration: 'none', fontSize: 13, transition: 'color .2s' }}
+                      onMouseEnter={e => (e.currentTarget.style.color = 'white')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,.4)')}>{l}</a>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#4ade80', marginBottom: 14, letterSpacing: '.08em' }}>قانوني</div>
+                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+                  {[['سياسة الخصوصية', '/privacy'], ['الشروط والأحكام', '/terms']].map(([l, h]) => (
+                    <a key={l} href={h} style={{ color: 'rgba(255,255,255,.4)', textDecoration: 'none', fontSize: 13, transition: 'color .2s' }}
+                      onMouseEnter={e => (e.currentTarget.style.color = 'white')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,.4)')}>{l}</a>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#4ade80', marginBottom: 14, letterSpacing: '.08em' }}>تواصل معنا</div>
+                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+                  <a href="https://wa.me/966594351667" target="_blank" rel="noreferrer" style={{ color: 'rgba(255,255,255,.4)', textDecoration: 'none', fontSize: 13, transition: 'color .2s' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'white')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,.4)')}>واتساب</a>
+                  <a href="mailto:support@storely.dev" style={{ color: 'rgba(255,255,255,.4)', textDecoration: 'none', fontSize: 13, transition: 'color .2s' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'white')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,.4)')}>support@storely.dev</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,.08)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.2)' }}>© {new Date().getFullYear()} Storely — جميع الحقوق محفوظة</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.2)' }}>storely.dev</div>
+          </div>
         </div>
       </footer>
     </div>
