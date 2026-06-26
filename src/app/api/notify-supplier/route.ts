@@ -111,5 +111,5 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
-  return NextResponse.json({ status: 'Supplier Notify ✅' })
+  return POST(new Request('http://localhost', { method: 'POST', body: '{}' }))
 }

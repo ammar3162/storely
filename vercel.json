@@ -3,6 +3,10 @@
     {
       "path": "/api/notify-low-stock",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/notify-supplier",
+      "schedule": "0 8 * * *"
     }
   ]
 }
