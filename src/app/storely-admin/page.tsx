@@ -33,13 +33,13 @@ export default function AdminPage() {
   async function login(e: React.FormEvent) {
     e.preventDefault()
     const res = await fetch('/api/admin/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass})})
-    if (res.ok) { document.cookie = 'storely_admin_token='+pass+';path=/;max-age=86400;SameSite=Strict'; setAuthed(true); loadUsers() }
+    if (res.ok) { const token = crypto.randomUUID(); document.cookie = 'storely_admin_token='+token+';path=/;max-age=86400;SameSite=Strict;Secure'; sessionStorage.setItem('storely_admin_pass', pass); setAuthed(true); loadUsers() }
     else { setPassErr(true); setTimeout(()=>setPassErr(false),2000) }
   }
 
   async function loadUsers() {
     setLoading(true)
-    const res = await fetch('/api/admin/list-users', { headers: { 'x-admin-key': pass } })
+    const res = await fetch('/api/admin/list-users', { headers: { 'x-admin-key': sessionStorage.getItem('storely_admin_pass') || '' } })
     const { users: data } = await res.json()
     if (data) setUsers(data.map((p:any)=>({
       id:p.id, full_name:p.full_name||'—', phone:p.phone||'—',
@@ -60,7 +60,7 @@ export default function AdminPage() {
     try {
       await fetch('/api/notify-activation', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': pass },
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': sessionStorage.getItem('storely_admin_pass') || '' },
         body: JSON.stringify({ userId, subscriptionType: type, subscriptionEndsAt: ends })
       })
     } catch(e) { console.error('WhatsApp failed:', e) }
@@ -93,7 +93,7 @@ export default function AdminPage() {
     setSaving(u.id)
     await fetch('/api/admin/delete-user', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-admin-key': pass },
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': sessionStorage.getItem('storely_admin_pass') || '' },
       body: JSON.stringify({ userId: u.id, orgId: u.org_id || null })
     })
     await loadUsers(); setSaving(null); setConfirmDel(null); setSelected(null)
