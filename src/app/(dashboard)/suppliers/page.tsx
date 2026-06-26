@@ -93,12 +93,13 @@ export default function SuppliersPage() {
     loadSuppliers(orgId); loadProducts(orgId)
   }
 
-  async function linkProduct(productId: string, supplierId: string, reorderPoint: string, orderQty: string) {
+  async function linkProduct(productId: string, supplierId: string, reorderPoint: string, orderQty: string, notes: string) {
     if (!reorderPoint || Number(reorderPoint) < 0) { toast('أدخل حد أدنى صحيح', 'warning'); return }
     const { error } = await (sb.from('products') as any).update({
       supplier_id: supplierId,
       supplier_reorder_point: Number(reorderPoint),
       supplier_order_qty: Number(orderQty) || Number(reorderPoint),
+      supplier_notes: notes.trim() || null,
     }).eq('id', productId)
     if (error) { toast('خطأ: ' + error.message, 'error'); return }
     toast('✅ تم ربط المنتج بالمورد')
@@ -185,6 +186,7 @@ function SupplierProductLinker({ supplierId, products, onLink, onUnlink }: any) 
   const [selectedProduct, setSelectedProduct] = useState('')
   const [reorderPoint, setReorderPoint]       = useState('')
   const [orderQty, setOrderQty]               = useState('')
+  const [supplierNotes, setSupplierNotes]     = useState('')
 
   const linked   = products.filter((p: any) => p.supplier_id === supplierId)
   const unlinked = products.filter((p: any) => p.supplier_id !== supplierId)
@@ -199,6 +201,7 @@ function SupplierProductLinker({ supplierId, products, onLink, onUnlink }: any) 
               <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: colors.bg, borderRadius: 10 }}>
                 <div>
                   <div style={{ fontSize: font.sm, fontWeight: 700, color: colors.text }}>{p.name}</div>
+                  {p.supplier_notes && <div style={{ fontSize: font.xs, color: '#16a34a', marginTop: 2 }}>📝 {p.supplier_notes}</div>}
                   <div style={{ fontSize: font.xs, color: colors.text3, marginTop: 2 }}>
                     المتاح: {p.qty} {p.unit} · يُطلب عند: {p.supplier_reorder_point} · كمية الطلب: {p.supplier_order_qty}
                   </div>
@@ -226,10 +229,11 @@ function SupplierProductLinker({ supplierId, products, onLink, onUnlink }: any) 
         <div>
           <label style={{ fontSize: font.xs, color: colors.text3, display: 'block', marginBottom: 5 }}>كمية الطلب</label>
           <input type="number" value={orderQty} onChange={e => setOrderQty(e.target.value)} style={inp()} placeholder="مثال: 20" />
+          <input value={supplierNotes} onChange={e => setSupplierNotes(e.target.value)} style={inp()} placeholder="ملاحظات للمورد (اختياري) — مثال: يرجى التوريد صباحاً" />
         </div>
         <button
           disabled={!selectedProduct}
-          onClick={() => { onLink(selectedProduct, supplierId, reorderPoint, orderQty); setSelectedProduct(''); setReorderPoint(''); setOrderQty('') }}
+          onClick={() => { onLink(selectedProduct, supplierId, reorderPoint, orderQty, supplierNotes); setSelectedProduct(''); setReorderPoint(''); setOrderQty(''); setSupplierNotes('') }}
           style={{ ...btnPrimary, padding: '11px 16px', fontSize: font.sm, opacity: !selectedProduct ? 0.5 : 1, cursor: !selectedProduct ? 'not-allowed' : 'pointer' }}>
           ربط
         </button>

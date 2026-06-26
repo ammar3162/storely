@@ -25,9 +25,9 @@ async function sendWhatsApp(phone: string, text: string) {
   return res.ok
 }
 
-function buildOrderMessage(orgName: string, items: { name: string; unit: string; orderQty: number }[], notes?: string) {
+function buildOrderMessage(orgName: string, items: { name: string; unit: string; orderQty: number; notes?: string }[], notes?: string) {
   const itemsList = items
-    .map((it, i) => `${i + 1}. *${it.name}* — ${it.orderQty} ${it.unit}`)
+    .map((it, i) => `${i + 1}. *${it.name}* — ${it.orderQty} ${it.unit}${it.notes ? '\n   📝 ' + it.notes : ''}`)
     .join('\n')
 
   const notesSection = notes ? `\n\n📝 *ملاحظات:* ${notes}` : ''
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
 
     let query = supabase
       .from('products')
-      .select('id, name, qty, unit, supplier_id, supplier_reorder_point, supplier_order_qty, org_id, organizations(name)')
+      .select('id, name, qty, unit, supplier_id, supplier_reorder_point, supplier_order_qty, supplier_notes, org_id, organizations(name)')
       .not('supplier_id', 'is', null)
       .not('supplier_reorder_point', 'is', null)
       .eq('is_active', true)
@@ -88,6 +88,7 @@ export async function POST(req: Request) {
         name: p.name,
         unit: p.unit || 'قطعة',
         orderQty: p.supplier_order_qty || p.supplier_reorder_point || 0,
+        notes: p.supplier_notes || '',
       }))
 
       const text = buildOrderMessage(orgName, messageItems, supplier.notes)
