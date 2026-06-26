@@ -30,7 +30,7 @@ export async function proxy(request: NextRequest) {
   const isStatic   = path.startsWith('/_next') || path.startsWith('/favicon') || path.includes('.')
   const isAdminPanel = path.startsWith('/storely-admin')
   const isStaff    = path.startsWith('/staff')
-  const isLanding  = path === '/'
+  const isLanding  = path === '/' || path.startsWith('/privacy') || path.startsWith('/terms')
   const isReset    = path.startsWith('/reset-password')
   const isPublic   = isLogin || isPending || isApi || isStaff || isStatic || isLanding || isReset
 
