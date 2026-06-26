@@ -41,11 +41,15 @@ export default function SuppliersPage() {
   useEffect(()=>{ 
     const p = sessionStorage.getItem('s_plan') || 'basic'
     setPlan(p)
-    const{data:profile2}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
-    if(profile2?.org_id){
-      const{data:orgLimits}=await (sb as any).from('organizations').select('max_suppliers').eq('id',profile2.org_id).single()
-      setMaxSuppliers((orgLimits as any)?.max_suppliers||3)
+    async function loadLimits(){
+      const{data:{user}}=await sb.auth.getUser(); if(!user) return
+      const{data:profile2}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
+      if(profile2?.org_id){
+        const{data:orgLimits}=await (sb as any).from('organizations').select('max_suppliers').eq('id',profile2.org_id).single()
+        setMaxSuppliers((orgLimits as any)?.max_suppliers||3)
+      }
     }
+    loadLimits()
   },[])
   useEffect(() => { init() }, [])
 
