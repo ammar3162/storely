@@ -86,10 +86,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     sessionStorage.setItem('s_profile_id',p.id)
     const{data:orgData}=await (sb as any).from('organizations').select('plan,max_staff,max_suppliers').eq('id',p.org_id).single()
     const orgPlan=(orgData as any)?.plan||'basic'
+    const orgMaxStaff=(orgData as any)?.max_staff||1
+    const orgMaxSuppliers=(orgData as any)?.max_suppliers||1
     setPlan(orgPlan)
+    // Always update from DB to ensure fresh data
     sessionStorage.setItem('s_plan',orgPlan)
-    sessionStorage.setItem('s_max_staff',String((orgData as any)?.max_staff||1))
-    sessionStorage.setItem('s_max_suppliers',String((orgData as any)?.max_suppliers||1))
+    sessionStorage.setItem('s_max_staff',String(orgMaxStaff))
+    sessionStorage.setItem('s_max_suppliers',String(orgMaxSuppliers))
 
     const{data:bList}=await sb.from('branches').select('*').eq('org_id',p.org_id).eq('is_active',true).order('created_at')
     const bl=bList||[]
