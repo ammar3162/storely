@@ -3,28 +3,36 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: Request) {
   try {
-    // API internal - no auth check needed (protected by proxy)
+    // تحقق من مفتاح الأدمن
+    const adminKey = req.headers.get('x-admin-key')
+    const correct  = process.env.ADMIN_PASSWORD
+    if (!adminKey || adminKey !== correct) {
+      return NextResponse.json({ success: false, error: 'unauthorized' }, { status: 401 })
+    }
+
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
     const { userId, orgId } = await req.json()
-    if (!userId) return NextResponse.json({ success:false, message:'userId مطلوب' })
+    if (!userId) return NextResponse.json({ success: false, message: 'userId مطلوب' })
+
     if (orgId) {
-      const{data:prods}=await supabase.from('products').select('id').eq('org_id',orgId)
-      const pids=(prods||[]).map((p:any)=>p.id)
-      if(pids.length>0) await supabase.from('stock_movements').delete().in('product_id',pids)
+      const { data: prods } = await supabase.from('products').select('id').eq('org_id', orgId)
+      const pids = (prods || []).map((p: any) => p.id)
+      if (pids.length > 0) await supabase.from('stock_movements').delete().in('product_id', pids)
       await Promise.all([
-        supabase.from('products').delete().eq('org_id',orgId),
-        supabase.from('notifications').delete().eq('org_id',orgId),
-        supabase.from('purchases').delete().eq('org_id',orgId),
-        supabase.from('branches').delete().eq('org_id',orgId),
+        supabase.from('products').delete().eq('org_id', orgId),
+        supabase.from('notifications').delete().eq('org_id', orgId),
+        supabase.from('purchases').delete().eq('org_id', orgId),
+        supabase.from('branches').delete().eq('org_id', orgId),
       ])
-      await supabase.from('profiles').delete().eq('org_id',orgId)
-      await supabase.from('organizations').delete().eq('id',orgId)
+      await supabase.from('profiles').delete().eq('org_id', orgId)
+      await supabase.from('organizations').delete().eq('id', orgId)
     } else {
-      await supabase.from('profiles').delete().eq('id',userId)
+      await supabase.from('profiles').delete().eq('id', userId)
     }
+
     await supabase.auth.admin.deleteUser(userId)
-    return NextResponse.json({ success:true })
-  } catch(err:any) {
-    return NextResponse.json({ success:false, error:err.message }, {status:500})
+    return NextResponse.json({ success: true })
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 })
   }
 }
