@@ -75,7 +75,13 @@ export default function AdminPage() {
 
   async function updateMaxBranches(orgId: string, value: number) {
     setSaving(orgId)
-    await sb.from('organizations').update({max_branches:value} as any).eq('id',orgId)
+    const planName = value===1?'basic':value<=3?'pro':'advanced'
+    const maxStaff = value===1?1:999
+    await (sb.from('organizations') as any).update({
+      max_branches:value,
+      plan:planName,
+      max_staff:maxStaff
+    }).eq('id',orgId)
     setUsers(prev => prev.map(u => u.org_id===orgId ? {...u, max_branches:value} : u))
     setSelected(prev => prev && prev.org_id===orgId ? {...prev, max_branches:value} : prev)
     setSaving(null)
@@ -229,17 +235,26 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {/* Branch Limit */}
+              {/* Plan Selection */}
               <div style={{background:'#eff6ff',border:'1.5px solid #bfdbfe',borderRadius:12,padding:'14px',marginBottom:14}}>
-                <div style={{fontSize:12,fontWeight:700,color:'#1d4ed8',marginBottom:10}}>🏪 حد عدد الفروع المسموح (الباقة)</div>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
-                  {[{v:1,l:'فرع واحد'},{v:3,l:'2-3 فروع'},{v:4,l:'4+ فروع'}].map(opt=>(
-                    <button key={opt.v} onClick={()=>updateMaxBranches(selected.org_id,opt.v)} disabled={!!saving || !selected.org_id} style={{padding:'10px 4px',borderRadius:9,border:`1.5px solid ${selected.max_branches===opt.v?'#2563eb':'#e2e8f0'}`,background:selected.max_branches===opt.v?'#2563eb':'white',color:selected.max_branches===opt.v?'white':'#64748b',fontSize:12,fontWeight:700,cursor:(!selected.org_id||!!saving)?'not-allowed':'pointer',fontFamily:'inherit',opacity:!selected.org_id?0.5:1}}>
-                      {opt.l}
+                <div style={{fontSize:12,fontWeight:700,color:'#1d4ed8',marginBottom:10}}>📦 الباقة المشتركة</div>
+                <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                  {[
+                    {v:1, plan:'basic',    label:'الأساسية',  price:'149 ر.س', desc:'فرع — موظف واحد',          color:'#16a34a', maxStaff:1},
+                    {v:3, plan:'pro',      label:'المتوسطة',  price:'249 ر.س', desc:'3 فروع — موظفون غير محدودين', color:'#2563eb', maxStaff:999},
+                    {v:10,plan:'advanced', label:'المتقدمة',  price:'399 ر.س', desc:'فروع غير محدودة',           color:'#7c3aed', maxStaff:999},
+                  ].map(opt=>(
+                    <button key={opt.v} onClick={()=>updateMaxBranches(selected.org_id,opt.v)} disabled={!!saving||!selected.org_id}
+                      style={{padding:'10px 12px',borderRadius:10,border:`1.5px solid ${selected.max_branches===opt.v?opt.color:'#e2e8f0'}`,background:selected.max_branches===opt.v?opt.color+'12':'white',cursor:(!selected.org_id||!!saving)?'not-allowed':'pointer',fontFamily:'inherit',display:'flex',justifyContent:'space-between',alignItems:'center',opacity:!selected.org_id?0.5:1}}>
+                      <div style={{textAlign:'right' as const}}>
+                        <div style={{fontSize:13,fontWeight:800,color:selected.max_branches===opt.v?opt.color:'#0f172a'}}>{opt.label}</div>
+                        <div style={{fontSize:11,color:'#64748b'}}>{opt.desc}</div>
+                      </div>
+                      <div style={{fontSize:13,fontWeight:800,color:selected.max_branches===opt.v?opt.color:'#64748b'}}>{opt.price}</div>
                     </button>
                   ))}
                 </div>
-                {!selected.org_id && <div style={{fontSize:11,color:'#94a3b8',marginTop:8}}>لا توجد مؤسسة مرتبطة بهذا المستخدم بعد</div>}
+                {!selected.org_id && <div style={{fontSize:11,color:'#94a3b8',marginTop:8}}>لا توجد مؤسسة مرتبطة بعد</div>}
               </div>
 
               <div style={{display:'flex',gap:8}}>

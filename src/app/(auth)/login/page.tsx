@@ -71,7 +71,13 @@ function LoginPage() {
         if (branchCount) {
           await supabase.from('profiles').update({branch_count:branchCount} as any).eq('id',data.user.id)
           const maxB = branchCount===1?1:branchCount<=3?3:10
-          await supabase.from('organizations').update({max_branches:maxB} as any).eq('id',org.id)
+          const planName = branchCount===1?'basic':branchCount<=3?'pro':'advanced'
+          const maxStaff = branchCount===1?1:999
+          await (supabase.from('organizations') as any).update({
+            max_branches:maxB,
+            plan:planName,
+            max_staff:maxStaff
+          }).eq('id',org.id)
         }
         await supabase.from('profiles').upsert({
           id: data.user.id, org_id: org.id,
@@ -257,18 +263,26 @@ function LoginPage() {
                 <input type="password" required value={password} onChange={e=>setPassword(e.target.value)} className="inp-field" placeholder="6 أحرف على الأقل" style={{background:'#f8fafc',color:'#1e293b',border:'1.5px solid #e2e8f0'}}/>
               </div>
               <div style={{marginBottom:24}}>
-                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:10}}>عدد الفروع</label>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:8}}>
-                  {[{v:1,l:'1'},{v:2,l:'2'},{v:3,l:'3'},{v:4,l:'4'},{v:5,l:'5+'}].map(b=>(
-                    <button key={b.v} type="button" className="branch-btn" onClick={()=>setBranchCount(b.v)}
-                      style={{border:`2px solid ${branchCount===b.v?'#16a34a':'#e2e8f0'}`,background:branchCount===b.v?'#f0fdf4':'white',color:branchCount===b.v?'#16a34a':'#6b7280'}}>
-                      {b.l}
+                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:10}}>اختر باقتك</label>
+                <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
+                  {[
+                    {v:1, plan:'basic',    label:'الأساسية',  price:'149 ر.س/شهر', desc:'فرع واحد — موظف واحد',       color:'#16a34a'},
+                    {v:3, plan:'pro',      label:'المتوسطة',  price:'249 ر.س/شهر', desc:'حتى 3 فروع — موظفون غير محدودين', color:'#2563eb'},
+                    {v:10,plan:'advanced', label:'المتقدمة',  price:'399 ر.س/شهر', desc:'فروع غير محدودة — كل المميزات',  color:'#7c3aed'},
+                  ].map(b=>(
+                    <button key={b.v} type="button" onClick={()=>setBranchCount(b.v)}
+                      style={{padding:'14px 16px',borderRadius:14,border:`2px solid ${branchCount===b.v?b.color:'#e2e8f0'}`,background:branchCount===b.v?b.color+'10':'white',cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,transition:'all .2s',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                      <div>
+                        <div style={{fontSize:14,fontWeight:800,color:branchCount===b.v?b.color:'#0f172a'}}>{b.label}</div>
+                        <div style={{fontSize:12,color:'#64748b',marginTop:2}}>{b.desc}</div>
+                      </div>
+                      <div style={{fontSize:14,fontWeight:800,color:branchCount===b.v?b.color:'#64748b',flexShrink:0,marginRight:8}}>{b.price}</div>
                     </button>
                   ))}
                 </div>
                 {branchCount && (
-                  <div className="fade-in" style={{marginTop:10,padding:'10px 14px',background:'#f0fdf4',borderRadius:10,fontSize:12,color:'#16a34a',fontWeight:700,border:'1px solid #bbf7d0'}}>
-                    ✓ {branchCount===1?'الباقة الأساسية — 99 ر.س/شهر':branchCount<=3?'الباقة المتوسطة — 199 ر.س/شهر':'الباقة المتقدمة — 349 ر.س/شهر'}
+                  <div style={{marginTop:10,padding:'10px 14px',background:'#f0fdf4',borderRadius:10,fontSize:12,color:'#16a34a',fontWeight:700,border:'1px solid #bbf7d0'}}>
+                    ✓ سيتم التواصل معك لإتمام الدفع وتفعيل الحساب
                   </div>
                 )}
               </div>
