@@ -144,5 +144,5 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
-  return POST(new Request('http://localhost', { method: 'POST', body: '{}' }))
+  return POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ manual: true }) }))
 }
