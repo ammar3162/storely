@@ -37,6 +37,10 @@ export default function SuppliersPage() {
   const [newPhone, setNewPhone]   = useState('')
   const [newNotes, setNewNotes]   = useState('')
   const [expanded, setExpanded]   = useState<string|null>(null)
+  const [notifyMode, setNotifyMode] = useState<'instant'|'daily'|'weekly'>('daily')
+  const [notifyTime, setNotifyTime] = useState('08:00')
+  const [notifyDay, setNotifyDay]   = useState('0')
+  const [savingNotify, setSavingNotify] = useState(false)
   const sb = createClient()
 
   useEffect(()=>{ 
@@ -61,8 +65,34 @@ export default function SuppliersPage() {
     const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
     if (!profile?.org_id) return
     setOrgId(profile.org_id)
+    const { data: orgData } = await (sb as any).from('organizations').select('supplier_notify_mode,supplier_notify_time,supplier_notify_day').eq('id', profile.org_id).single()
+    if (orgData) {
+      if (orgData.supplier_notify_mode) setNotifyMode(orgData.supplier_notify_mode)
+      if (orgData.supplier_notify_time) setNotifyTime(orgData.supplier_notify_time)
+      if (orgData.supplier_notify_day !== null && orgData.supplier_notify_day !== undefined) setNotifyDay(String(orgData.supplier_notify_day))
+    }
     await Promise.all([loadSuppliers(profile.org_id), loadProducts(profile.org_id)])
     setLoading(false)
+  }
+
+  async function saveNotifySettings() {
+    setSavingNotify(true)
+    await (sb as any).from('organizations').update({
+      supplier_notify_mode: notifyMode,
+      supplier_notify_time: notifyTime,
+      supplier_notify_day: Number(notifyDay),
+    }).eq('id', orgId)
+    setSavingNotify(false)
+    toast('✅ تم حفظ إعدادات الإشعارات')
+  }
+
+  async function sendNow() {
+    setSavingNotify(true)
+    const res = await fetch('/api/notify-supplier', { method: 'GET' })
+    const data = await res.json()
+    setSavingNotify(false)
+    if (data.sent > 0) toast(`✅ تم إرسال ${data.sent} طلب توريد`)
+    else toast('لا توجد منتجات تحتاج طلب توريد الآن', 'warning')
   }
 
   async function loadSuppliers(oid: string) {
@@ -122,6 +152,62 @@ export default function SuppliersPage() {
           <p style={pageSub}>اربط منتجاتك بموردين، وعند وصول المخزون للحد الأدنى سيُرسل طلب توريد تلقائي عبر واتساب</p>
         </div>
         <button onClick={() => setShowAdd(true)} style={{ ...btnPrimary, padding: '10px 18px', fontSize: font.sm }}>+ مورد جديد</button>
+      </div>
+
+      {/* إعدادات الإشعارات */}
+      <div style={{ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: 16, padding: '20px 24px', marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>🔔 إعدادات إشعارات الموردين</div>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 3 }}>متى يُرسل طلب التوريد تلقائياً للمورد؟</div>
+          </div>
+          <button onClick={sendNow} disabled={savingNotify}
+            style={{ background: '#f0fdf4', color: '#16a34a', border: '1.5px solid #bbf7d0', borderRadius: 10, padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
+            {savingNotify ? '...' : '📤 إرسال الآن'}
+          </button>
+        </div>
+
+        {/* اختيار النوع */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
+          {([
+            { id: 'instant', icon: '⚡', title: 'فوري', desc: 'عند كل عملية صرف' },
+            { id: 'daily',   icon: '📅', title: 'يومي', desc: 'مرة يومياً في وقت محدد' },
+            { id: 'weekly',  icon: '📆', title: 'أسبوعي', desc: 'مرة أسبوعياً في يوم محدد' },
+          ] as const).map(opt => (
+            <div key={opt.id} onClick={() => setNotifyMode(opt.id)}
+              style={{ border: `2px solid ${notifyMode === opt.id ? '#16a34a' : '#e2e8f0'}`, background: notifyMode === opt.id ? '#f0fdf4' : 'white', borderRadius: 12, padding: '14px 16px', cursor: 'pointer', transition: 'all .2s' }}>
+              <div style={{ fontSize: 22, marginBottom: 6 }}>{opt.icon}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: notifyMode === opt.id ? '#16a34a' : '#0f172a' }}>{opt.title}</div>
+              <div style={{ fontSize: 11, color: '#64748b', marginTop: 3 }}>{opt.desc}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* الوقت */}
+        {notifyMode !== 'instant' && (
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' as const }}>
+            {notifyMode === 'weekly' && (
+              <div>
+                <label style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 5 }}>اليوم</label>
+                <select value={notifyDay} onChange={e => setNotifyDay(e.target.value)} style={{ ...inp(), minWidth: 130 }}>
+                  {['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'].map((d,i) => (
+                    <option key={i} value={i}>{d}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div>
+              <label style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 5 }}>الوقت</label>
+              <input type="time" value={notifyTime} onChange={e => setNotifyTime(e.target.value)}
+                style={{ ...inp(), minWidth: 120 }} />
+            </div>
+          </div>
+        )}
+
+        <button onClick={saveNotifySettings} disabled={savingNotify}
+          style={{ ...btnPrimary, padding: '10px 24px', fontSize: 13 }}>
+          {savingNotify ? 'جاري الحفظ...' : '💾 حفظ الإعدادات'}
+        </button>
       </div>
 
       {showAdd && (
