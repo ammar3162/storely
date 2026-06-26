@@ -66,7 +66,13 @@ export default function DispensePage() {
     if(error){ toast('خطأ في تسجيل الصرف','error'); setSaving(false); return }
     toast(`✅ تم صرف ${qtyNum} ${selected.unit} من ${selected.name}`,'success')
     fetch('/api/send-pending-notifications',{method:'POST'}).catch(()=>{})
-    fetch('/api/notify-supplier',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid})}).catch(()=>{})
+    // أرسل للمورد فقط إذا كان الوضع "فوري"
+    try {
+      const { data: orgSettings } = await sb.from('organizations').select('supplier_notify_mode').eq('id', oid).single()
+      if ((orgSettings as any)?.supplier_notify_mode === 'instant') {
+        fetch('/api/notify-supplier',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid})}).catch(()=>{})
+      }
+    } catch {}
     setSelected(null); setQty('')
     setSaving(false); loadProducts(oid); loadHistory(oid)
   }

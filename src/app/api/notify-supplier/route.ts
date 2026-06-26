@@ -42,14 +42,40 @@ export async function POST(req: Request) {
 
     const supabase = sb()
 
+    // جلب المؤسسات التي حان وقت إرسالها
+    let orgsQuery = supabase.from('organizations').select('id,name,supplier_notify_mode,supplier_notify_time,supplier_notify_day')
+    if (orgId) orgsQuery = orgsQuery.eq('id', orgId)
+    const { data: orgs } = await orgsQuery
+
+    const now = new Date()
+    const currentHour = now.getUTCHours() + 3 // توقيت السعودية
+    const currentDay = now.getDay()
+    const currentMinute = now.getMinutes()
+
+    const eligibleOrgIds: string[] = []
+    for (const org of orgs || []) {
+      const mode = org.supplier_notify_mode || 'daily'
+      if (orgId) { eligibleOrgIds.push(org.id); continue } // يدوي
+      if (mode === 'instant') continue // يشتغل من صفحة الصرف
+      if (mode === 'daily') {
+        const [h, m] = (org.supplier_notify_time || '08:00').split(':').map(Number)
+        if (currentHour === h && currentMinute < 30) eligibleOrgIds.push(org.id)
+      }
+      if (mode === 'weekly') {
+        const [h, m] = (org.supplier_notify_time || '08:00').split(':').map(Number)
+        if (currentDay === (org.supplier_notify_day || 0) && currentHour === h && currentMinute < 30) eligibleOrgIds.push(org.id)
+      }
+    }
+
+    if (!eligibleOrgIds.length && !orgId) return NextResponse.json({ success: true, sent: 0, message: 'لا توجد مؤسسات في وقت الإرسال' })
+
     let query = supabase
       .from('products')
       .select('id, name, qty, unit, supplier_id, supplier_reorder_point, supplier_order_qty, supplier_notes, org_id, organizations(name)')
       .not('supplier_id', 'is', null)
       .not('supplier_reorder_point', 'is', null)
       .eq('is_active', true)
-
-    if (orgId) query = query.eq('org_id', orgId)
+      .in('org_id', eligibleOrgIds)
 
     const { data: products, error } = await query
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
