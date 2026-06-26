@@ -76,11 +76,13 @@ export default function AdminPage() {
   async function updateMaxBranches(orgId: string, value: number) {
     setSaving(orgId)
     const planName = value===1?'basic':value<=3?'pro':'advanced'
-    const maxStaff = value===1?1:999
+    const maxStaff = value===1?1:value<=3?5:999
+    const maxSuppliers = value===1?1:value<=3?5:999
     await (sb.from('organizations') as any).update({
       max_branches:value,
       plan:planName,
-      max_staff:maxStaff
+      max_staff:maxStaff,
+      max_suppliers:maxSuppliers
     }).eq('id',orgId)
     setUsers(prev => prev.map(u => u.org_id===orgId ? {...u, max_branches:value} : u))
     setSelected(prev => prev && prev.org_id===orgId ? {...prev, max_branches:value} : prev)

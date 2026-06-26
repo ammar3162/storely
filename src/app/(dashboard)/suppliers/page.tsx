@@ -27,6 +27,7 @@ function UpgradeBlock() {
 
 export default function SuppliersPage() {
   const [plan, setPlan]           = useState<string>('')
+  const [maxSuppliers, setMaxSuppliers] = useState<number>(999)
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [products, setProducts]   = useState<any[]>([])
   const [orgId, setOrgId]         = useState('')
@@ -40,6 +41,8 @@ export default function SuppliersPage() {
   useEffect(()=>{ 
     const p = sessionStorage.getItem('s_plan') || 'basic'
     setPlan(p)
+    const ms = p==='basic'?1:p==='pro'?5:999
+    setMaxSuppliers(ms)
   },[])
   useEffect(() => { init() }, [])
 
@@ -65,6 +68,7 @@ export default function SuppliersPage() {
   }
 
   async function addSupplier() {
+    if(suppliers.length>=maxSuppliers){alert(`باقتك تسمح بـ ${maxSuppliers} موردين فقط — يرجى الترقية`);return}
     if (!newName.trim() || !newPhone.trim()) { toast('أدخل اسم المورد ورقم جواله', 'warning'); return }
     const { error } = await (sb.from('suppliers' as any) as any).insert({ org_id: orgId, name: newName.trim(), phone: newPhone.trim() })
     if (error) { toast('خطأ: ' + error.message, 'error'); return }
