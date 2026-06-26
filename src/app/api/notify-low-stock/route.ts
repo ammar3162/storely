@@ -98,4 +98,10 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET() { return POST(new Request('http://localhost', { method:'POST', body:'{}' })) }
+export async function GET() { 
+  return POST(new Request('http://localhost', { 
+    method:'POST', 
+    body:'{}',
+    headers: { 'x-cron-secret': process.env.ADMIN_PASSWORD || '' }
+  })) 
+}
