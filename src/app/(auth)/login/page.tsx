@@ -64,7 +64,7 @@ function LoginPage() {
     if (data.user) {
       const { data: org, error: orgErr } = await supabase
         .from('organizations')
-        .insert({ name: orgName.trim(), whatsapp_number: phone.trim(), low_stock_threshold: 5, business_type: businessType||'مطعم' } as any)
+        .insert({ name: orgName.trim(), whatsapp_number: phone.trim(), low_stock_threshold: 5, business_type: businessType||'مطعم', requested_plan: branchCount===1?'basic':branchCount&&branchCount<=3?'pro':'advanced' } as any)
         .select().single()
       if (orgErr) { setError('خطأ في إنشاء المؤسسة: ' + orgErr.message); setLoading(false); return }
       if (org) {

@@ -7,6 +7,7 @@ type User = {
   status: string; created_at: string; org_id: string; org_name: string
   subscription_type: string; subscription_ends_at: string|null; branch_count: number|null
   max_branches: number
+  requested_plan: string
 }
 
 const STATUS: Record<string,{label:string;color:string;bg:string;border:string}> = {
@@ -49,6 +50,7 @@ export default function AdminPage() {
       subscription_ends_at:p.subscription_ends_at||null,
       branch_count:(p as any).branch_count||null,
       max_branches:p.organizations?.max_branches||1,
+      requested_plan:p.organizations?.requested_plan||'—',
     })))
     setLoading(false)
   }
@@ -207,6 +209,7 @@ export default function AdminPage() {
                   {label:'الحالة',       value:STATUS[selected.status]?.label||selected.status},
                   {label:'org_id',       value:selected.org_id?.slice(0,12)+'...'},
                   {label:'انتهاء الاشتراك', value:selected.subscription_ends_at?new Date(selected.subscription_ends_at).toLocaleDateString('ar-SA'):'—'},
+                  {label:'الباقة المطلوبة', value:selected.requested_plan==='basic'?'🟢 الأساسية':selected.requested_plan==='pro'?'🔵 المتوسطة':selected.requested_plan==='advanced'?'🟣 المتقدمة':selected.requested_plan},
                 ].map((item,i)=>(
                   <div key={i} style={{background:'#f8fafc',borderRadius:10,padding:'10px 12px',border:'1px solid #f1f5f9'}}>
                     <div style={{fontSize:10,fontWeight:700,color:'#94a3b8',marginBottom:4}}>{item.label}</div>
