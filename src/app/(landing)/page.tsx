@@ -389,7 +389,7 @@ export default function LandingPage() {
         </div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,.25)' }}>© {new Date().getFullYear()} Storely — نظام إدارة المخزون السعودي</div>
         <div style={{ display: 'flex', gap: 24 }}>
-          {[['دخول', '/login'], ['تسجيل', '/login'], ['الأسعار', '#pricing']].map(([l, h]) => (
+          {[['دخول', '/login'], ['تسجيل', '/login'], ['سياسة الخصوصية', '/privacy'], ['الشروط والأحكام', '/terms']].map(([l, h]) => (
             <a key={l} href={h} style={{ color: 'rgba(255,255,255,.35)', textDecoration: 'none', fontSize: 13, transition: 'color .2s' }}
               onMouseEnter={e => (e.currentTarget.style.color = 'white')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,.35)')}>{l}</a>
           ))}
