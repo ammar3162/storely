@@ -41,8 +41,8 @@ export default function SuppliersPage() {
   useEffect(()=>{ 
     const p = sessionStorage.getItem('s_plan') || 'basic'
     setPlan(p)
-    const ms = p==='basic'?1:p==='pro'?5:999
-    setMaxSuppliers(ms)
+    const ms = parseInt(sessionStorage.getItem('s_max_suppliers')||'1')
+    setMaxSuppliers(isNaN(ms)?1:ms)
   },[])
   useEffect(() => { init() }, [])
 
