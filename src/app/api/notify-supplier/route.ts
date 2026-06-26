@@ -19,8 +19,8 @@ function formatPhone(raw: string): string {
 async function sendWhatsApp(phone: string, text: string) {
   const res = await fetch('https://www.wasenderapi.com/api/send-message', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
-    body: JSON.stringify({ session_id: SESSION, to: phone, text }),
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}`, 'X-Session-Id': SESSION },
+    body: JSON.stringify({ to: phone, text }),
   })
   return res.ok
 }
