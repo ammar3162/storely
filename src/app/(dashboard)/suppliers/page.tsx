@@ -1,11 +1,32 @@
 'use client'
-export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { colors, font, pageTitle, pageSub, card, btnPrimary, btnSecondary, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
+export const dynamic = 'force-dynamic'
+
+function UpgradeBlock() {
+  const router = useRouter()
+  return (
+    <div style={{minHeight:'60vh',display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
+      <div style={{textAlign:'center',maxWidth:400}}>
+        <div style={{fontSize:64,marginBottom:16}}>🔒</div>
+        <h2 style={{fontSize:22,fontWeight:900,color:'#0f172a',marginBottom:8}}>هذه الميزة غير متاحة في باقتك</h2>
+        <p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:24}}>
+          إدارة الموردين متاحة في الباقة المتوسطة وما فوق.<br/>ترقّ الآن واستفد من جميع المميزات.
+        </p>
+        <button onClick={()=>router.push('/settings')}
+          style={{padding:'14px 32px',background:'linear-gradient(135deg,#16a34a,#15803d)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 6px 20px rgba(22,163,74,.3)'}}>
+          ترقية الباقة ←
+        </button>
+      </div>
+    </div>
+  )
+}
 
 export default function SuppliersPage() {
+  const [plan, setPlan]           = useState<string>('')
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [products, setProducts]   = useState<any[]>([])
   const [orgId, setOrgId]         = useState('')
@@ -16,6 +37,10 @@ export default function SuppliersPage() {
   const [expanded, setExpanded]   = useState<string|null>(null)
   const sb = createClient()
 
+  useEffect(()=>{ 
+    const p = sessionStorage.getItem('s_plan') || 'basic'
+    setPlan(p)
+  },[])
   useEffect(() => { init() }, [])
 
   async function init() {
