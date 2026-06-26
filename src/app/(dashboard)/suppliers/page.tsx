@@ -41,8 +41,11 @@ export default function SuppliersPage() {
   useEffect(()=>{ 
     const p = sessionStorage.getItem('s_plan') || 'basic'
     setPlan(p)
-    const ms = parseInt(sessionStorage.getItem('s_max_suppliers')||'1')
-    setMaxSuppliers(isNaN(ms)?1:ms)
+    const{data:profile2}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
+    if(profile2?.org_id){
+      const{data:orgLimits}=await (sb as any).from('organizations').select('max_suppliers').eq('id',profile2.org_id).single()
+      setMaxSuppliers((orgLimits as any)?.max_suppliers||3)
+    }
   },[])
   useEffect(() => { init() }, [])
 

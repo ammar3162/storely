@@ -44,8 +44,8 @@ export default function StaffManagementPage() {
     const{data:{user}}=await sb.auth.getUser(); if(!user) return
     const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single(); if(!profile?.org_id) return
     setOrgId(profile.org_id)
-    const ms = parseInt(sessionStorage.getItem('s_max_staff')||'1')
-    setMaxStaff(isNaN(ms)?1:ms)
+    const{data:orgLimits}=await (sb as any).from('organizations').select('max_staff').eq('id',profile.org_id).single()
+    setMaxStaff((orgLimits as any)?.max_staff||1)
     await Promise.all([loadStaff(profile.org_id),loadBranches(profile.org_id)])
     setLoading(false); setTimeout(()=>setVisible(true),50)
   }
