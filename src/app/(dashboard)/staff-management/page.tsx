@@ -34,6 +34,7 @@ export default function StaffManagementPage() {
   const [revealedPin, setRevealedPin] = useState<{name:string,phone:string,pin:string}|null>(null)
   const [expandedId, setExpandedId] = useState<string|null>(null)
   const [visible, setVisible]       = useState(false)
+  const [maxStaff, setMaxStaff]     = useState(999)
   const sb = createClient()
 
   useEffect(() => { init() }, [])
@@ -43,6 +44,8 @@ export default function StaffManagementPage() {
     const{data:{user}}=await sb.auth.getUser(); if(!user) return
     const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single(); if(!profile?.org_id) return
     setOrgId(profile.org_id)
+    const{data:org}=await sb.from('organizations').select('max_staff').eq('id',profile.org_id).single()
+    if(org?.max_staff) setMaxStaff(org.max_staff)
     await Promise.all([loadStaff(profile.org_id),loadBranches(profile.org_id)])
     setLoading(false); setTimeout(()=>setVisible(true),50)
   }
@@ -60,6 +63,7 @@ export default function StaffManagementPage() {
 
   async function addStaff() {
     if(!newName.trim()||!newPhone.trim()){toast('أدخل اسم الموظف ورقم جواله','warning');return}
+    if(staff.length>=maxStaff){toast(`باقتك تسمح بـ ${maxStaff} موظف فقط — يرجى الترقية`,'error');return}
     const cleanPhone=newPhone.trim().replace(/\s/g,'')
     const pin=generatePin()
     const{error}=await (sb.from('staff_members' as any) as any).insert({org_id:orgId,branch_id:newBranch||null,name:newName.trim(),phone:cleanPhone,pin})
