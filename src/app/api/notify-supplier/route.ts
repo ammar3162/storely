@@ -67,7 +67,12 @@ export async function POST(req: Request) {
       }
     }
 
-    if (!eligibleOrgIds.length && !orgId) return NextResponse.json({ success: true, sent: 0, message: 'لا توجد مؤسسات في وقت الإرسال' })
+    if (!eligibleOrgIds.length && !orgId) { 
+      // إذا كان طلب يدوي أضف كل المؤسسات
+      const isManual = body?.manual === true
+      if (!isManual) return NextResponse.json({ success: true, sent: 0, message: 'لا توجد مؤسسات في وقت الإرسال' })
+      for (const org of orgs || []) eligibleOrgIds.push(org.id)
+    }
 
     let query = supabase
       .from('products')

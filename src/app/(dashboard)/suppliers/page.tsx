@@ -75,7 +75,7 @@ function SupplierCard({ s, products, orgId, onRefresh }: any) {
     const res = await fetch('/api/notify-supplier', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, supplier_id: s.id })
+      body: JSON.stringify({ org_id: orgId, supplier_id: s.id, manual: true })
     })
     const data = await res.json()
     setSending(false)
