@@ -6,6 +6,14 @@ import { colors, font, pageTitle, pageSub, card, btnPrimary, btnSecondary, inp }
 import { toast } from '@/components/toast'
 export const dynamic = 'force-dynamic'
 
+const DAYS = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت']
+
+const NOTIFY_OPTS = [
+  { id:'instant', icon:'⚡', label:'فوري',    desc:'عند كل صرف مباشرة' },
+  { id:'daily',   icon:'📅', label:'يومي',    desc:'مرة يومياً' },
+  { id:'weekly',  icon:'📆', label:'أسبوعي',  desc:'مرة أسبوعياً' },
+]
+
 function UpgradeBlock() {
   const router = useRouter()
   return (
@@ -14,10 +22,10 @@ function UpgradeBlock() {
         <div style={{fontSize:64,marginBottom:16}}>🔒</div>
         <h2 style={{fontSize:22,fontWeight:900,color:'#0f172a',marginBottom:8}}>هذه الميزة غير متاحة في باقتك</h2>
         <p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:24}}>
-          إدارة الموردين متاحة في الباقة المتوسطة وما فوق.<br/>ترقّ الآن واستفد من جميع المميزات.
+          إدارة الموردين متاحة في الباقة المتوسطة وما فوق.
         </p>
         <button onClick={()=>router.push('/settings')}
-          style={{padding:'14px 32px',background:'linear-gradient(135deg,#16a34a,#15803d)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 6px 20px rgba(22,163,74,.3)'}}>
+          style={{padding:'14px 32px',background:'linear-gradient(135deg,#16a34a,#15803d)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
           ترقية الباقة ←
         </button>
       </div>
@@ -25,8 +33,245 @@ function UpgradeBlock() {
   )
 }
 
+function NotifyBadge({ mode, time, day }: { mode:string; time:string; day:number }) {
+  const opt = NOTIFY_OPTS.find(o=>o.id===mode)
+  if (mode==='instant') return <span style={{fontSize:11,background:'#fef3c7',color:'#92400e',border:'1px solid #fcd34d',borderRadius:20,padding:'2px 8px',fontWeight:700}}>⚡ فوري</span>
+  if (mode==='daily') return <span style={{fontSize:11,background:'#eff6ff',color:'#1d4ed8',border:'1px solid #bfdbfe',borderRadius:20,padding:'2px 8px',fontWeight:700}}>📅 يومي {time}</span>
+  return <span style={{fontSize:11,background:'#f5f3ff',color:'#6d28d9',border:'1px solid #ddd6fe',borderRadius:20,padding:'2px 8px',fontWeight:700}}>📆 {DAYS[day]} {time}</span>
+}
+
+function SupplierCard({ s, products, orgId, onRefresh }: any) {
+  const [open, setOpen]           = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [mode, setMode]           = useState(s.notify_mode || 'daily')
+  const [time, setTime]           = useState(s.notify_time || '08:00')
+  const [day, setDay]             = useState(String(s.notify_day ?? 0))
+  const [saving, setSaving]       = useState(false)
+  const [sending, setSending]     = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState('')
+  const [reorderPoint, setReorderPoint]       = useState('')
+  const [orderQty, setOrderQty]               = useState('')
+  const [supplierNotes, setSupplierNotes]     = useState('')
+  const sb = createClient()
+
+  const linked   = products.filter((p:any) => p.supplier_id === s.id)
+  const unlinked = products.filter((p:any) => p.supplier_id !== s.id)
+
+  async function saveSettings() {
+    setSaving(true)
+    await (sb as any).from('suppliers').update({
+      notify_mode: mode,
+      notify_time: time,
+      notify_day: Number(day),
+    }).eq('id', s.id)
+    setSaving(false)
+    setSettingsOpen(false)
+    toast('✅ تم حفظ إعدادات المورد')
+    onRefresh()
+  }
+
+  async function sendNow() {
+    setSending(true)
+    const res = await fetch('/api/notify-supplier', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ org_id: orgId, supplier_id: s.id })
+    })
+    const data = await res.json()
+    setSending(false)
+    if (data.sent > 0) toast(`✅ تم إرسال طلب توريد للمورد ${s.name}`)
+    else toast('لا توجد منتجات تحتاج طلب توريد الآن', 'warning')
+  }
+
+  async function linkProduct() {
+    if (!selectedProduct || !reorderPoint) { toast('اختر منتج وأدخل الحد الأدنى', 'warning'); return }
+    await (sb as any).from('products').update({
+      supplier_id: s.id,
+      supplier_reorder_point: Number(reorderPoint),
+      supplier_order_qty: Number(orderQty) || Number(reorderPoint),
+      supplier_notes: supplierNotes.trim() || null,
+    }).eq('id', selectedProduct)
+    toast('✅ تم ربط المنتج')
+    setSelectedProduct(''); setReorderPoint(''); setOrderQty(''); setSupplierNotes('')
+    onRefresh()
+  }
+
+  async function unlinkProduct(pid: string) {
+    await (sb as any).from('products').update({ supplier_id: null, supplier_reorder_point: null, supplier_order_qty: 0, supplier_notes: null }).eq('id', pid)
+    toast('تم فك الارتباط')
+    onRefresh()
+  }
+
+  async function deleteSupplier() {
+    if (!confirm(`حذف المورد "${s.name}"؟`)) return
+    await (sb as any).from('products').update({ supplier_id: null, supplier_reorder_point: null, supplier_order_qty: 0 }).eq('supplier_id', s.id)
+    await (sb as any).from('suppliers').delete().eq('id', s.id)
+    toast('تم الحذف')
+    onRefresh()
+  }
+
+  return (
+    <div style={{ background:'white', border:'1.5px solid #e2e8f0', borderRadius:16, overflow:'hidden', transition:'box-shadow .2s' }}>
+      {/* Header */}
+      <div style={{ padding:'16px 20px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12, cursor:'pointer', flex:1 }} onClick={()=>setOpen(o=>!o)}>
+          <div style={{ width:44, height:44, borderRadius:12, background:'linear-gradient(135deg,#0f172a,#1e293b)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:800, color:'white', flexShrink:0 }}>
+            {s.name[0]}
+          </div>
+          <div>
+            <div style={{ fontSize:15, fontWeight:700, color:'#0f172a' }}>{s.name}</div>
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:3, flexWrap:'wrap' as const }}>
+              <span style={{ fontSize:12, color:'#64748b' }}>{s.phone}</span>
+              <span style={{ fontSize:12, color:'#94a3b8' }}>·</span>
+              <span style={{ fontSize:12, color:'#64748b' }}>{linked.length} منتج</span>
+              <NotifyBadge mode={s.notify_mode||'daily'} time={s.notify_time||'08:00'} day={s.notify_day??0} />
+            </div>
+          </div>
+        </div>
+        <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
+          <button onClick={sendNow} disabled={sending}
+            style={{ background:'#f0fdf4', color:'#16a34a', border:'1.5px solid #bbf7d0', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+            {sending ? '...' : '📤'}
+          </button>
+          <button onClick={()=>setSettingsOpen(o=>!o)}
+            style={{ background: settingsOpen?'#0f172a':'#f8fafc', color:settingsOpen?'white':'#475569', border:'1.5px solid #e2e8f0', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+            ⚙️
+          </button>
+          <button onClick={deleteSupplier}
+            style={{ background:'#fef2f2', color:'#ef4444', border:'1.5px solid #fecaca', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+            🗑️
+          </button>
+          <span style={{ color:'#94a3b8', fontSize:16, transform:open?'rotate(180deg)':'none', transition:'transform .2s', cursor:'pointer' }} onClick={()=>setOpen(o=>!o)}>⌄</span>
+        </div>
+      </div>
+
+      {/* إعدادات الإشعارات */}
+      {settingsOpen && (
+        <div style={{ borderTop:'1.5px solid #f1f5f9', padding:'18px 20px', background:'#fafafa' }}>
+          <div style={{ fontSize:13, fontWeight:700, color:'#0f172a', marginBottom:14 }}>🔔 إعدادات الإشعار لهذا المورد</div>
+          
+          {/* اختيار النوع */}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:14 }}>
+            {NOTIFY_OPTS.map(opt=>(
+              <div key={opt.id} onClick={()=>setMode(opt.id)}
+                style={{ border:`2px solid ${mode===opt.id?'#0f172a':'#e2e8f0'}`, background:mode===opt.id?'#0f172a':'white', borderRadius:10, padding:'12px', cursor:'pointer', textAlign:'center' as const, transition:'all .15s' }}>
+                <div style={{ fontSize:20, marginBottom:4 }}>{opt.icon}</div>
+                <div style={{ fontSize:13, fontWeight:700, color:mode===opt.id?'white':'#0f172a' }}>{opt.label}</div>
+                <div style={{ fontSize:10, color:mode===opt.id?'rgba(255,255,255,.6)':'#94a3b8', marginTop:2 }}>{opt.desc}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* الوقت */}
+          {mode !== 'instant' && (
+            <div style={{ display:'flex', gap:10, marginBottom:14, flexWrap:'wrap' as const }}>
+              {mode === 'weekly' && (
+                <div style={{ flex:1 }}>
+                  <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:5, fontWeight:600 }}>اليوم</label>
+                  <select value={day} onChange={e=>setDay(e.target.value)}
+                    style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', background:'white', color:'#0f172a', outline:'none' }}>
+                    {DAYS.map((d,i)=><option key={i} value={i}>{d}</option>)}
+                  </select>
+                </div>
+              )}
+              <div style={{ flex:1 }}>
+                <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:5, fontWeight:600 }}>الوقت</label>
+                <input type="time" value={time} onChange={e=>setTime(e.target.value)}
+                  style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', background:'white', color:'#0f172a', outline:'none' }} />
+              </div>
+            </div>
+          )}
+
+          <div style={{ display:'flex', gap:8 }}>
+            <button onClick={saveSettings} disabled={saving}
+              style={{ ...btnPrimary, padding:'10px 20px', fontSize:13 }}>
+              {saving ? 'جاري الحفظ...' : '💾 حفظ'}
+            </button>
+            <button onClick={()=>setSettingsOpen(false)}
+              style={{ ...btnSecondary, padding:'10px 20px', fontSize:13 }}>
+              إلغاء
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* المنتجات */}
+      {open && (
+        <div style={{ borderTop:'1.5px solid #f1f5f9', padding:'16px 20px' }}>
+          
+          {/* المنتجات المرتبطة */}
+          {linked.length > 0 && (
+            <div style={{ marginBottom:18 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:'#94a3b8', marginBottom:10, textTransform:'uppercase' as const, letterSpacing:'.06em' }}>المنتجات المرتبطة</div>
+              <div style={{ display:'flex', flexDirection:'column' as const, gap:8 }}>
+                {linked.map((p:any)=>(
+                  <div key={p.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 14px', background:'#f8fafc', borderRadius:10, border:'1px solid #f1f5f9' }}>
+                    <div style={{ flex:1 }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                        <span style={{ fontSize:13, fontWeight:700, color:'#0f172a' }}>{p.name}</span>
+                        {p.qty <= p.supplier_reorder_point && (
+                          <span style={{ fontSize:10, background:'#fef2f2', color:'#ef4444', border:'1px solid #fecaca', borderRadius:20, padding:'1px 7px', fontWeight:700 }}>⚠️ ناقص</span>
+                        )}
+                      </div>
+                      {p.supplier_notes && <div style={{ fontSize:11, color:'#16a34a', marginTop:3 }}>📝 {p.supplier_notes}</div>}
+                      <div style={{ fontSize:11, color:'#94a3b8', marginTop:3 }}>
+                        المتاح: <b style={{color:'#0f172a'}}>{p.qty} {p.unit}</b> · يُطلب عند: <b style={{color:'#0f172a'}}>{p.supplier_reorder_point}</b> · كمية الطلب: <b style={{color:'#16a34a'}}>{p.supplier_order_qty}</b>
+                      </div>
+                    </div>
+                    <button onClick={()=>unlinkProduct(p.id)}
+                      style={{ background:'none', border:'1.5px solid #e2e8f0', color:'#94a3b8', borderRadius:8, padding:'5px 10px', fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginRight:8 }}>
+                      فك
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ربط منتج جديد */}
+          {unlinked.length > 0 && (
+            <div>
+              <div style={{ fontSize:11, fontWeight:700, color:'#94a3b8', marginBottom:10, textTransform:'uppercase' as const, letterSpacing:'.06em' }}>ربط منتج جديد</div>
+              <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:8, marginBottom:8 }}>
+                <div>
+                  <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:4 }}>المنتج</label>
+                  <select value={selectedProduct} onChange={e=>setSelectedProduct(e.target.value)}
+                    style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', background:'white', color:'#0f172a', outline:'none' }}>
+                    <option value="">— اختر —</option>
+                    {unlinked.map((p:any)=><option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:4 }}>يُطلب عند</label>
+                  <input type="number" value={reorderPoint} onChange={e=>setReorderPoint(e.target.value)}
+                    style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box' as const }} placeholder="5" />
+                </div>
+                <div>
+                  <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:4 }}>كمية الطلب</label>
+                  <input type="number" value={orderQty} onChange={e=>setOrderQty(e.target.value)}
+                    style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box' as const }} placeholder="20" />
+                </div>
+              </div>
+              <input value={supplierNotes} onChange={e=>setSupplierNotes(e.target.value)}
+                style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', outline:'none', marginBottom:8, boxSizing:'border-box' as const }} 
+                placeholder="📝 ملاحظات لهذا المنتج — مثال: يرجى التوريد مبرداً (اختياري)" />
+              <button onClick={linkProduct} disabled={!selectedProduct}
+                style={{ ...btnPrimary, padding:'10px 20px', fontSize:13, opacity:!selectedProduct?.5:1, cursor:!selectedProduct?'not-allowed':'pointer' }}>
+                ربط المنتج
+              </button>
+            </div>
+          )}
+
+          {unlinked.length === 0 && linked.length === 0 && (
+            <div style={{ textAlign:'center', padding:'24px', color:'#94a3b8', fontSize:13 }}>لا توجد منتجات متاحة للربط</div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function SuppliersPage() {
-  const [plan, setPlan]           = useState<string>('')
   const [maxSuppliers, setMaxSuppliers] = useState<number>(999)
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [products, setProducts]   = useState<any[]>([])
@@ -36,26 +281,8 @@ export default function SuppliersPage() {
   const [newName, setNewName]     = useState('')
   const [newPhone, setNewPhone]   = useState('')
   const [newNotes, setNewNotes]   = useState('')
-  const [expanded, setExpanded]   = useState<string|null>(null)
-  const [notifyMode, setNotifyMode] = useState<'instant'|'daily'|'weekly'>('daily')
-  const [notifyTime, setNotifyTime] = useState('08:00')
-  const [notifyDay, setNotifyDay]   = useState('0')
-  const [savingNotify, setSavingNotify] = useState(false)
   const sb = createClient()
 
-  useEffect(()=>{ 
-    const p = sessionStorage.getItem('s_plan') || 'basic'
-    setPlan(p)
-    async function loadLimits(){
-      const{data:{user}}=await sb.auth.getUser(); if(!user) return
-      const{data:profile2}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
-      if(profile2?.org_id){
-        const{data:orgLimits}=await (sb as any).from('organizations').select('max_suppliers').eq('id',profile2.org_id).single()
-        setMaxSuppliers((orgLimits as any)?.max_suppliers||3)
-      }
-    }
-    loadLimits()
-  },[])
   useEffect(() => { init() }, [])
 
   async function init() {
@@ -65,265 +292,78 @@ export default function SuppliersPage() {
     const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
     if (!profile?.org_id) return
     setOrgId(profile.org_id)
-    const { data: orgData } = await (sb as any).from('organizations').select('supplier_notify_mode,supplier_notify_time,supplier_notify_day').eq('id', profile.org_id).single()
-    if (orgData) {
-      if (orgData.supplier_notify_mode) setNotifyMode(orgData.supplier_notify_mode)
-      if (orgData.supplier_notify_time) setNotifyTime(orgData.supplier_notify_time)
-      if (orgData.supplier_notify_day !== null && orgData.supplier_notify_day !== undefined) setNotifyDay(String(orgData.supplier_notify_day))
-    }
+    const { data: orgLimits } = await (sb as any).from('organizations').select('max_suppliers').eq('id', profile.org_id).single()
+    setMaxSuppliers((orgLimits as any)?.max_suppliers || 999)
     await Promise.all([loadSuppliers(profile.org_id), loadProducts(profile.org_id)])
     setLoading(false)
   }
 
-  async function saveNotifySettings() {
-    setSavingNotify(true)
-    await (sb as any).from('organizations').update({
-      supplier_notify_mode: notifyMode,
-      supplier_notify_time: notifyTime,
-      supplier_notify_day: Number(notifyDay),
-    }).eq('id', orgId)
-    setSavingNotify(false)
-    toast('✅ تم حفظ إعدادات الإشعارات')
-  }
-
-  async function sendNow() {
-    setSavingNotify(true)
-    const res = await fetch('/api/notify-supplier', { method: 'GET' })
-    const data = await res.json()
-    setSavingNotify(false)
-    if (data.sent > 0) toast(`✅ تم إرسال ${data.sent} طلب توريد`)
-    else toast('لا توجد منتجات تحتاج طلب توريد الآن', 'warning')
-  }
-
   async function loadSuppliers(oid: string) {
-    const { data } = await (sb.from('suppliers' as any) as any).select('*').eq('org_id', oid).order('created_at', { ascending: false })
+    const { data } = await (sb as any).from('suppliers').select('*').eq('org_id', oid).order('created_at', { ascending: false })
     setSuppliers(data || [])
   }
 
   async function loadProducts(oid: string) {
-    const { data } = await (sb.from('products') as any).select('id,name,unit,qty,supplier_id,supplier_reorder_point,supplier_order_qty').eq('org_id', oid).eq('is_active', true).order('name')
+    const { data } = await (sb as any).from('products').select('id,name,unit,qty,supplier_id,supplier_reorder_point,supplier_order_qty,supplier_notes').eq('org_id', oid).eq('is_active', true).order('name')
     setProducts(data || [])
   }
 
   async function addSupplier() {
-    if(suppliers.length>=maxSuppliers){alert(`باقتك تسمح بـ ${maxSuppliers} موردين فقط — يرجى الترقية`);return}
-    if (!newName.trim() || !newPhone.trim()) { toast('أدخل اسم المورد ورقم جواله', 'warning'); return }
-    const { error } = await (sb.from('suppliers' as any) as any).insert({ org_id: orgId, name: newName.trim(), phone: newPhone.trim(), notes: newNotes.trim() })
+    if (suppliers.length >= maxSuppliers) { toast(`باقتك تسمح بـ ${maxSuppliers} موردين فقط`, 'warning'); return }
+    if (!newName.trim() || !newPhone.trim()) { toast('أدخل اسم المورد ورقمه', 'warning'); return }
+    const { error } = await (sb as any).from('suppliers').insert({ org_id: orgId, name: newName.trim(), phone: newPhone.trim(), notes: newNotes.trim() })
     if (error) { toast('خطأ: ' + error.message, 'error'); return }
     toast('✅ تم إضافة المورد')
     setNewName(''); setNewPhone(''); setNewNotes(''); setShowAdd(false)
     loadSuppliers(orgId)
   }
 
-  async function deleteSupplier(id: string) {
-    if (!confirm('حذف هذا المورد؟ سيتم فك ارتباطه بالمنتجات.')) return
-    await (sb.from('products') as any).update({ supplier_id: null, supplier_reorder_point: null, supplier_order_qty: 0 }).eq('supplier_id', id)
-    await (sb.from('suppliers' as any) as any).delete().eq('id', id)
-    toast('تم الحذف')
-    loadSuppliers(orgId); loadProducts(orgId)
-  }
+  const refresh = () => { loadSuppliers(orgId); loadProducts(orgId) }
 
-  async function linkProduct(productId: string, supplierId: string, reorderPoint: string, orderQty: string, notes: string) {
-    if (!reorderPoint || Number(reorderPoint) < 0) { toast('أدخل حد أدنى صحيح', 'warning'); return }
-    const { error } = await (sb.from('products') as any).update({
-      supplier_id: supplierId,
-      supplier_reorder_point: Number(reorderPoint),
-      supplier_order_qty: Number(orderQty) || Number(reorderPoint),
-      supplier_notes: notes.trim() || null,
-    }).eq('id', productId)
-    if (error) { toast('خطأ: ' + error.message, 'error'); return }
-    toast('✅ تم ربط المنتج بالمورد')
-    loadProducts(orgId)
-  }
-
-  async function unlinkProduct(productId: string) {
-    await (sb.from('products') as any).update({ supplier_id: null, supplier_reorder_point: null, supplier_order_qty: 0 }).eq('id', productId)
-    toast('تم فك الارتباط')
-    loadProducts(orgId)
-  }
-
-  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: colors.text3, fontFamily: font.family }}>جاري التحميل...</div>
+  if (loading) return <div style={{ padding:40, textAlign:'center', color:colors.text3, fontFamily:font.family }}>جاري التحميل...</div>
 
   return (
-    <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 1000, margin: '0 auto' }}>
-      <div style={{ marginBottom: 22, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <div style={{ fontFamily:font.family, direction:'rtl', maxWidth:900, margin:'0 auto' }}>
+      <style>{`@media(max-width:640px){.add-grid{grid-template-columns:1fr!important}}`}</style>
+      
+      <div style={{ marginBottom:22, display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
         <div>
           <h1 style={pageTitle}>الموردين</h1>
-          <p style={pageSub}>اربط منتجاتك بموردين، وعند وصول المخزون للحد الأدنى سيُرسل طلب توريد تلقائي عبر واتساب</p>
+          <p style={pageSub}>اربط منتجاتك بموردين وحدد توقيت الإشعار لكل مورد</p>
         </div>
-        <button onClick={() => setShowAdd(true)} style={{ ...btnPrimary, padding: '10px 18px', fontSize: font.sm }}>+ مورد جديد</button>
+        <button onClick={()=>setShowAdd(true)} style={{ ...btnPrimary, padding:'10px 18px', fontSize:font.sm }}>+ مورد جديد</button>
       </div>
 
-      {/* إعدادات الإشعارات */}
-      <div style={{ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: 16, padding: '20px 24px', marginBottom: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>🔔 إعدادات إشعارات الموردين</div>
-            <div style={{ fontSize: 12, color: '#64748b', marginTop: 3 }}>متى يُرسل طلب التوريد تلقائياً للمورد؟</div>
-          </div>
-          <button onClick={sendNow} disabled={savingNotify}
-            style={{ background: '#f0fdf4', color: '#16a34a', border: '1.5px solid #bbf7d0', borderRadius: 10, padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
-            {savingNotify ? '...' : '📤 إرسال الآن'}
-          </button>
-        </div>
-
-        {/* اختيار النوع */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
-          {([
-            { id: 'instant', icon: '⚡', title: 'فوري', desc: 'عند كل عملية صرف' },
-            { id: 'daily',   icon: '📅', title: 'يومي', desc: 'مرة يومياً في وقت محدد' },
-            { id: 'weekly',  icon: '📆', title: 'أسبوعي', desc: 'مرة أسبوعياً في يوم محدد' },
-          ] as const).map(opt => (
-            <div key={opt.id} onClick={() => setNotifyMode(opt.id)}
-              style={{ border: `2px solid ${notifyMode === opt.id ? '#16a34a' : '#e2e8f0'}`, background: notifyMode === opt.id ? '#f0fdf4' : 'white', borderRadius: 12, padding: '14px 16px', cursor: 'pointer', transition: 'all .2s' }}>
-              <div style={{ fontSize: 22, marginBottom: 6 }}>{opt.icon}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: notifyMode === opt.id ? '#16a34a' : '#0f172a' }}>{opt.title}</div>
-              <div style={{ fontSize: 11, color: '#64748b', marginTop: 3 }}>{opt.desc}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* الوقت */}
-        {notifyMode !== 'instant' && (
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' as const }}>
-            {notifyMode === 'weekly' && (
-              <div>
-                <label style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 5 }}>اليوم</label>
-                <select value={notifyDay} onChange={e => setNotifyDay(e.target.value)} style={{ ...inp(), minWidth: 130 }}>
-                  {['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'].map((d,i) => (
-                    <option key={i} value={i}>{d}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-            <div>
-              <label style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 5 }}>الوقت</label>
-              <input type="time" value={notifyTime} onChange={e => setNotifyTime(e.target.value)}
-                style={{ ...inp(), minWidth: 120 }} />
-            </div>
-          </div>
-        )}
-
-        <button onClick={saveNotifySettings} disabled={savingNotify}
-          style={{ ...btnPrimary, padding: '10px 24px', fontSize: 13 }}>
-          {savingNotify ? 'جاري الحفظ...' : '💾 حفظ الإعدادات'}
-        </button>
-      </div>
-
+      {/* إضافة مورد */}
       {showAdd && (
-        <div style={{ ...card, padding: 20, marginBottom: 18 }}>
-          <div style={{ fontSize: font.md, fontWeight: 700, color: colors.text, marginBottom: 14 }}>إضافة مورد جديد</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-            <input value={newName} onChange={e => setNewName(e.target.value)} style={inp()} placeholder="اسم المورد" />
-            <input value={newPhone} onChange={e => setNewPhone(e.target.value)} style={inp()} placeholder="رقم جوال المورد (05xxxxxxxx)" />
-            <input value={newNotes} onChange={e => setNewNotes(e.target.value)} style={inp()} placeholder="ملاحظات للمورد (اختياري) — مثال: يرجى التوريد صباحاً" />
+        <div style={{ background:'white', border:'1.5px solid #e2e8f0', borderRadius:16, padding:20, marginBottom:18 }}>
+          <div style={{ fontSize:14, fontWeight:700, color:'#0f172a', marginBottom:14 }}>إضافة مورد جديد</div>
+          <div className="add-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
+            <input value={newName} onChange={e=>setNewName(e.target.value)} style={inp()} placeholder="اسم المورد *" />
+            <input value={newPhone} onChange={e=>setNewPhone(e.target.value)} style={inp()} placeholder="رقم الجوال * (05xxxxxxxx)" />
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button onClick={addSupplier} style={{ ...btnPrimary, padding: '10px 20px', fontSize: font.sm }}>حفظ</button>
-            <button onClick={() => setShowAdd(false)} style={{ ...btnSecondary, padding: '10px 20px', fontSize: font.sm }}>إلغاء</button>
+          <input value={newNotes} onChange={e=>setNewNotes(e.target.value)} style={{...inp(), width:'100%', marginBottom:14, boxSizing:'border-box' as const}} placeholder="ملاحظات عامة للمورد (اختياري)" />
+          <div style={{ display:'flex', gap:8 }}>
+            <button onClick={addSupplier} style={{ ...btnPrimary, padding:'10px 20px', fontSize:13 }}>حفظ المورد</button>
+            <button onClick={()=>setShowAdd(false)} style={{ ...btnSecondary, padding:'10px 20px', fontSize:13 }}>إلغاء</button>
           </div>
         </div>
       )}
 
+      {/* قائمة الموردين */}
       {suppliers.length === 0 ? (
-        <div style={{ ...card, padding: 48, textAlign: 'center' }}>
-          <div style={{ fontSize: 36, marginBottom: 10 }}>🚚</div>
-          <div style={{ fontSize: font.sm, fontWeight: 600, color: colors.text2 }}>لا يوجد موردين بعد، أضف أول مورد لك</div>
+        <div style={{ background:'white', border:'1.5px solid #e2e8f0', borderRadius:16, padding:48, textAlign:'center' }}>
+          <div style={{ fontSize:48, marginBottom:12 }}>🚚</div>
+          <div style={{ fontSize:15, fontWeight:700, color:'#475569', marginBottom:6 }}>لا يوجد موردين بعد</div>
+          <div style={{ fontSize:13, color:'#94a3b8' }}>أضف أول مورد وابدأ بتتبع طلبات التوريد تلقائياً</div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {suppliers.map(s => {
-            const linkedProducts = products.filter(p => p.supplier_id === s.id)
-            const isOpen = expanded === s.id
-            return (
-              <div key={s.id} style={card}>
-                <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => setExpanded(isOpen ? null : s.id)}>
-                  <div>
-                    <div style={{ fontSize: font.md, fontWeight: 700, color: colors.text }}>{s.name}</div>
-                    <div style={{ fontSize: font.xs, color: colors.text3, marginTop: 2 }}>{s.phone} · {linkedProducts.length} منتج مرتبط</div>
-                    {s.notes && <div style={{ fontSize: font.xs, color: colors.text3, marginTop: 4, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '3px 8px', display: 'inline-block' }}>📝 {s.notes}</div>}
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <button onClick={(e) => { e.stopPropagation(); deleteSupplier(s.id) }} style={{ background: colors.dangerLight, color: colors.danger, border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: font.xs, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>حذف</button>
-                    <span style={{ color: colors.text3, fontSize: 18, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>⌄</span>
-                  </div>
-                </div>
-
-                {isOpen && (
-                  <div style={{ borderTop: `1px solid ${colors.border}`, padding: 18 }}>
-                    <SupplierProductLinker
-                      supplierId={s.id}
-                      products={products}
-                      onLink={linkProduct}
-                      onUnlink={unlinkProduct}
-                    />
-                  </div>
-                )}
-              </div>
-            )
-          })}
+        <div style={{ display:'flex', flexDirection:'column' as const, gap:12 }}>
+          {suppliers.map(s => (
+            <SupplierCard key={s.id} s={s} products={products} orgId={orgId} onRefresh={refresh} />
+          ))}
         </div>
       )}
-    </div>
-  )
-}
-
-function SupplierProductLinker({ supplierId, products, onLink, onUnlink }: any) {
-  const [selectedProduct, setSelectedProduct] = useState('')
-  const [reorderPoint, setReorderPoint]       = useState('')
-  const [orderQty, setOrderQty]               = useState('')
-  const [supplierNotes, setSupplierNotes]     = useState('')
-
-  const linked   = products.filter((p: any) => p.supplier_id === supplierId)
-  const unlinked = products.filter((p: any) => p.supplier_id !== supplierId)
-
-  return (
-    <div>
-      {linked.length > 0 && (
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ fontSize: font.xs, fontWeight: 700, color: colors.text3, marginBottom: 8, textTransform: 'uppercase' }}>المنتجات المرتبطة</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {linked.map((p: any) => (
-              <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: colors.bg, borderRadius: 10 }}>
-                <div>
-                  <div style={{ fontSize: font.sm, fontWeight: 700, color: colors.text }}>{p.name}</div>
-                  {p.supplier_notes && <div style={{ fontSize: font.xs, color: '#16a34a', marginTop: 2 }}>📝 {p.supplier_notes}</div>}
-                  <div style={{ fontSize: font.xs, color: colors.text3, marginTop: 2 }}>
-                    المتاح: {p.qty} {p.unit} · يُطلب عند: {p.supplier_reorder_point} · كمية الطلب: {p.supplier_order_qty}
-                  </div>
-                </div>
-                <button onClick={() => onUnlink(p.id)} style={{ background: 'none', border: `1.5px solid ${colors.border2}`, color: colors.text3, borderRadius: 8, padding: '5px 10px', fontSize: font.xs, fontWeight: 600, cursor: 'pointer', fontFamily: font.family }}>فك الارتباط</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div style={{ fontSize: font.xs, fontWeight: 700, color: colors.text3, marginBottom: 8, textTransform: 'uppercase' }}>ربط منتج جديد بهذا المورد</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: 8, alignItems: 'end' }}>
-        <div>
-          <label style={{ fontSize: font.xs, color: colors.text3, display: 'block', marginBottom: 5 }}>المنتج</label>
-          <select value={selectedProduct} onChange={e => setSelectedProduct(e.target.value)} style={inp()}>
-            <option value="">— اختر —</option>
-            {unlinked.map((p: any) => (<option key={p.id} value={p.id}>{p.name}</option>))}
-          </select>
-        </div>
-        <div>
-          <label style={{ fontSize: font.xs, color: colors.text3, display: 'block', marginBottom: 5 }}>يُطلب عند</label>
-          <input type="number" value={reorderPoint} onChange={e => setReorderPoint(e.target.value)} style={inp()} placeholder="مثال: 5" />
-        </div>
-        <div>
-          <label style={{ fontSize: font.xs, color: colors.text3, display: 'block', marginBottom: 5 }}>كمية الطلب</label>
-          <input type="number" value={orderQty} onChange={e => setOrderQty(e.target.value)} style={inp()} placeholder="مثال: 20" />
-          <input value={supplierNotes} onChange={e => setSupplierNotes(e.target.value)} style={inp()} placeholder="ملاحظات للمورد (اختياري) — مثال: يرجى التوريد صباحاً" />
-        </div>
-        <button
-          disabled={!selectedProduct}
-          onClick={() => { onLink(selectedProduct, supplierId, reorderPoint, orderQty, supplierNotes); setSelectedProduct(''); setReorderPoint(''); setOrderQty(''); setSupplierNotes('') }}
-          style={{ ...btnPrimary, padding: '11px 16px', fontSize: font.sm, opacity: !selectedProduct ? 0.5 : 1, cursor: !selectedProduct ? 'not-allowed' : 'pointer' }}>
-          ربط
-        </button>
-      </div>
     </div>
   )
 }
