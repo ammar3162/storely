@@ -13,36 +13,40 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     async function checkToken() {
-      console.log('URL:', window.location.href)
-      console.log('Hash:', window.location.hash)
-      console.log('Search:', window.location.search)
-      // محاولة 1: hash fragment
-      const hash = window.location.hash
-      if (hash && hash.includes('access_token')) {
-        const params = new URLSearchParams(hash.substring(1))
-        const access_token = params.get('access_token')
-        const refresh_token = params.get('refresh_token') || ''
-        const type = params.get('type')
-        if (access_token && (type === 'recovery' || type === 'magiclink')) {
-          const { data } = await supabase.auth.setSession({ access_token, refresh_token })
-          if (data.session) { setReady(true); return }
-        }
-      }
-      // محاولة 2: query params (PKCE flow)
       const params = new URLSearchParams(window.location.search)
+      const token_hash = params.get('token_hash')
+      const type = params.get('type')
       const code = params.get('code')
+      const hash = window.location.hash
+
+      // محاولة 1: token_hash (الطريقة الجديدة)
+      if (token_hash && type) {
+        const { data, error } = await supabase.auth.verifyOtp({ token_hash, type: type as any })
+        if (data?.session) { setReady(true); return }
+      }
+
+      // محاولة 2: code (PKCE)
       if (code) {
         const { data } = await supabase.auth.exchangeCodeForSession(code)
-        if (data.session) { setReady(true); return }
+        if (data?.session) { setReady(true); return }
       }
-      // محاولة 3: session موجودة
+
+      // محاولة 3: access_token في hash
+      if (hash && hash.includes('access_token')) {
+        const hashParams = new URLSearchParams(hash.substring(1))
+        const access_token = hashParams.get('access_token')
+        const refresh_token = hashParams.get('refresh_token') || ''
+        if (access_token) {
+          const { data } = await supabase.auth.setSession({ access_token, refresh_token })
+          if (data?.session) { setReady(true); return }
+        }
+      }
+
+      // محاولة 4: session موجودة
       const { data } = await supabase.auth.getSession()
-      if (data.session) { setReady(true); return }
-      // انتظر ثانية وتحقق مجدداً
-      setTimeout(async () => {
-        const { data: d2 } = await supabase.auth.getSession()
-        setReady(!!d2.session)
-      }, 1000)
+      if (data?.session) { setReady(true); return }
+
+      setReady(false)
     }
     checkToken()
   }, [])
