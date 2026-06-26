@@ -183,10 +183,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <nav style={{flex:1,padding:'12px 8px',overflowY:'auto'}}>
             {NAV.map(item=><NavBtn key={item.href} item={item} badge={item.href==='/inventory'?lowCount:undefined}/>)}
             <div style={{height:1,background:C.border,margin:'8px 0'}}/>
-            {EXTRA.filter(item=>{
-              if(item.href==='/suppliers' && plan==='basic') return false
-              return true
-            }).map(item=><NavBtn key={item.href} item={item} badge={item.href==='/notifications'?unread:undefined}/>)}
+            {EXTRA.map(item=><NavBtn key={item.href} item={item} badge={item.href==='/notifications'?unread:undefined}/>)}
           </nav>
           <div style={{padding:'12px 16px',borderTop:`1px solid ${C.border}`,display:'flex',alignItems:'center',gap:10}}>
             <div style={{width:34,height:34,borderRadius:'50%',background:colors.primary,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:800,color:'white',flexShrink:0}}>{userInit}</div>
@@ -222,10 +219,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div style={{fontSize:font.base,fontWeight:800,color:C.text}}>{orgName}</div>
                 {branchName&&<div style={{fontSize:font.xs,color:colors.primary}}>{branchName}</div>}
               </div>
-              {[...NAV,...EXTRA].filter(item=>{
-                if(item.href==='/suppliers' && plan==='basic') return false
-                return true
-              }).map(item=>(
+              {[...NAV,...EXTRA].map(item=>(
                 <button key={item.href} onClick={()=>{router.push(item.href);setDrawer(false)}} style={{display:'flex',alignItems:'center',gap:10,padding:'12px 12px',borderRadius:radius.md,border:'none',cursor:'pointer',fontFamily:font.family,marginBottom:2,background:isActive(item.href)?colors.primary+'22':'transparent',color:isActive(item.href)?colors.primary:C.text2,textAlign:'right' as const}}>
                   <svg width={18} height={18} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">{item.icon.split(' M').map((d:string,j:number)=><path key={j} d={(j===0?'':' M')+d}/>)}</svg>
                   <span style={{fontSize:font.sm}}>{item.label}</span>
