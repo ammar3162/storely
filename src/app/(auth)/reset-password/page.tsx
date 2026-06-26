@@ -13,6 +13,9 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     async function checkToken() {
+      console.log('URL:', window.location.href)
+      console.log('Hash:', window.location.hash)
+      console.log('Search:', window.location.search)
       // محاولة 1: hash fragment
       const hash = window.location.hash
       if (hash && hash.includes('access_token')) {
