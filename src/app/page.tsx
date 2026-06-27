@@ -95,7 +95,7 @@ export default function LandingPage() {
       {/* NAVBAR */}
       <nav style={{position:'fixed',top:0,right:0,left:0,zIndex:1000,background:scrolled?'rgba(255,255,255,.97)':'white',borderBottom:scrolled?'1px solid #f3f4f6':'1px solid transparent',backdropFilter:scrolled?'blur(10px)':'none',transition:'all .3s',padding:'0 40px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <div style={{width:34,height:34,borderRadius:9,background:'#16a34a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:17}}>🏪</div>
+          <img src="/storely-icon.svg" alt="Storely" style={{width:34,height:34,borderRadius:9}}/>
           <span style={{fontSize:18,fontWeight:800,color:'#111827',letterSpacing:'-0.3px'}}>Storely</span>
         </div>
         <div className="desk-nav" style={{display:'flex',gap:28,alignItems:'center'}}>
@@ -317,7 +317,7 @@ export default function LandingPage() {
           <div className="footer-grid" style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr',gap:40,marginBottom:48}}>
             <div>
               <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
-                <div style={{width:32,height:32,borderRadius:8,background:'#16a34a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>🏪</div>
+                <img src="/storely-icon.svg" alt="Storely" style={{width:32,height:32,borderRadius:8}}/>
                 <span style={{fontSize:18,fontWeight:800,color:'white'}}>Storely</span>
               </div>
               <p style={{fontSize:13,color:'#6b7280',lineHeight:1.7,maxWidth:220}}>منصة إدارة المخزون الذكية للمنشآت السعودية والخليجية</p>
