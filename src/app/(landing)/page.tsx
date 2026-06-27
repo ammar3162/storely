@@ -357,7 +357,6 @@ export default function LandingPage() {
                     <span style={{ fontSize:48,fontWeight:900,color:p.popular?'white':'#0f172a' }}>{p.price}</span>
                     <span style={{ fontSize:15,color:p.popular?'rgba(255,255,255,.5)':'#94a3b8' }}>ر.س / شهر</span>
                   </div>
-                  <div style={{ display:'inline-block',background:p.color+'22',color:p.color,padding:'4px 14px',borderRadius:99,fontSize:13,fontWeight:700,border:'1px solid '+p.color+'33' }}>{p.branches}</div>
                 </div>
                 <div style={{ display:'flex',flexDirection:'column' as const,gap:10,marginBottom:28 }}>
                   {p.features.map((f,j)=>(
