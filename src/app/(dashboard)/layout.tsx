@@ -185,7 +185,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         `}</style>
 
         {/* Sidebar */}
-        <aside className="desk-side" style={{width:sidebarCollapsed?64:220,background:C.bg,display:'flex',flexDirection:'column' as const,position:'fixed',top:0,right:0,bottom:0,zIndex:100,transition:'width .25s ease',overflow:'hidden'}}>
+        <aside className="desk-side" style={{width:sidebarCollapsed?0:220,background:C.bg,display:'flex',flexDirection:'column' as const,position:'fixed',top:0,right:0,bottom:0,zIndex:100,transition:'width .25s ease',overflow:'hidden'}}>
           <div style={{padding:'20px 16px 16px',borderBottom:`1px solid ${C.border}`,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
             <button onClick={()=>setSidebarCollapsed(c=>!c)} style={{background:'none',border:'none',cursor:'pointer',color:C.text2,padding:4,flexShrink:0,marginLeft:4,borderRadius:6}} title={sidebarCollapsed?'توسيع':'طي'}>
               <svg width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" viewBox="0 0 24 24">
@@ -216,6 +216,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
           </div>
         </aside>
+
+        {/* Sidebar Toggle Button — Desktop */}
+        {sidebarCollapsed && (
+          <button onClick={()=>setSidebarCollapsed(false)}
+            style={{position:'fixed',top:14,right:12,zIndex:200,background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:C.text2}}>
+            <svg width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        )}
 
         {/* Mobile Header */}
         <header className="mob-header" style={{position:'fixed',top:0,right:0,left:0,zIndex:100,background:C.bg,padding:'12px 16px',borderBottom:`1px solid ${C.border}`,alignItems:'center',gap:12}}>
@@ -257,7 +265,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* Main */}
-        <main className="main-pad" style={{flex:1,marginRight:sidebarCollapsed?64:220,minHeight:'100vh',padding:24,transition:'margin-right .25s ease'}}>
+        <main className="main-pad" style={{flex:1,marginRight:sidebarCollapsed?0:220,minHeight:'100vh',padding:24,transition:'margin-right .25s ease'}}>
           {ready?children:(
             <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'60vh',flexDirection:'column' as const,gap:12}}>
               <div style={{width:36,height:36,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
