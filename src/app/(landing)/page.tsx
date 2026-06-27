@@ -95,7 +95,8 @@ export default function LandingPage() {
       {/* NAVBAR */}
       <nav style={{position:'fixed',top:0,right:0,left:0,zIndex:1000,background:scrolled?'rgba(255,255,255,.97)':'white',borderBottom:scrolled?'1px solid #f3f4f6':'1px solid transparent',backdropFilter:scrolled?'blur(10px)':'none',transition:'all .3s',padding:'0 40px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <img src="/storely-logo.png" alt="Storely" style={{height:36,objectFit:'contain'}}/>
+          <img src="/storely-logo.png" alt="Storely" style={{width:38,height:38,borderRadius:10,objectFit:'cover'}}/>
+          <span style={{fontSize:18,fontWeight:800,color:'#111827',letterSpacing:'-0.3px'}}>Storely</span>
         </div>
         <div className="desk-nav" style={{display:'flex',gap:28,alignItems:'center'}}>
           {[['المميزات','#features'],['الأسعار','#pricing'],['آراء العملاء','#testimonials'],['الأسئلة','#faq']].map(([l,h])=>(
