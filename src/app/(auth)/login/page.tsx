@@ -276,15 +276,16 @@ function LoginPage() {
               </div>
               <div style={{marginBottom:14}}>
                 <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>رقم الجوال</label>
-                <div style={{display:'flex',gap:8}}>
+                <div style={{display:'flex',borderRadius:12,overflow:'hidden',border:'1.5px solid #e2e8f0',background:'#f8fafc'}}>
                   <select value={countryCode} onChange={e=>setCountryCode(e.target.value)}
-                    className="inp-field" style={{background:'#f8fafc',color:'#1e293b',border:'1.5px solid #e2e8f0',width:150,flexShrink:0,direction:'ltr',padding:'10px 8px'}}>
+                    style={{background:'transparent',color:'#1e293b',border:'none',borderLeft:'1.5px solid #e2e8f0',padding:'12px 8px',fontSize:13,fontFamily:'inherit',outline:'none',flexShrink:0,cursor:'pointer',direction:'ltr',minWidth:130}}>
                     {COUNTRY_CODES.map(c=>(
-                      <option key={c.code} value={c.code}>{c.flag} {c.code} {c.name}</option>
+                      <option key={c.code} value={c.code}>{c.flag} {c.code} — {c.name}</option>
                     ))}
                   </select>
                   <input type="tel" required value={phone} onChange={e=>setPhone(e.target.value)}
-                    className="inp-field" placeholder="5xxxxxxxx" style={{background:'#f8fafc',color:'#1e293b',border:'1.5px solid #e2e8f0',flex:1}} dir="ltr"/>
+                    placeholder="5xxxxxxxx" dir="ltr"
+                    style={{background:'transparent',border:'none',padding:'12px',fontSize:14,color:'#1e293b',flex:1,outline:'none',fontFamily:'inherit'}}/>
                 </div>
               </div>
               <div style={{marginBottom:20}}>
