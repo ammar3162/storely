@@ -58,11 +58,18 @@ export default function AdminPage() {
   async function activate(userId: string, type: string, days: number) {
     setSaving(userId)
     const ends = new Date(Date.now() + days*24*60*60*1000).toISOString()
-    await sb.from('profiles').update({status:'active',subscription_type:type,subscription_ends_at:ends}).eq('id',userId)
+    const adminPass = sessionStorage.getItem('storely_admin_pass') || ''
+    const res = await fetch('/api/admin/activate-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': adminPass },
+      body: JSON.stringify({ userId, type, ends })
+    })
+    const data = await res.json()
+    if (!data.success) { alert('خطأ في التفعيل: ' + (data.error || 'unknown')); setSaving(null); return }
     try {
       await fetch('/api/notify-activation', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': sessionStorage.getItem('storely_admin_pass') || '' },
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminPass },
         body: JSON.stringify({ userId, subscriptionType: type, subscriptionEndsAt: ends })
       })
     } catch(e) { console.error('WhatsApp failed:', e) }
