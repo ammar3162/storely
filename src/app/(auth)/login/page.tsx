@@ -280,7 +280,7 @@ function LoginPage() {
                   <select value={countryCode} onChange={e=>setCountryCode(e.target.value)}
                     style={{background:'transparent',color:'#1e293b',border:'none',borderLeft:'1.5px solid #e2e8f0',padding:'12px 8px',fontSize:13,fontFamily:'inherit',outline:'none',flexShrink:0,cursor:'pointer',direction:'ltr',minWidth:130}}>
                     {COUNTRY_CODES.map(c=>(
-                      <option key={c.code} value={c.code}>{c.flag} {c.code} — {c.name}</option>
+                      <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
                     ))}
                   </select>
                   <input type="tel" required value={phone} onChange={e=>setPhone(e.target.value)}
