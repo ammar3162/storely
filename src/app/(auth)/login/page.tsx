@@ -37,6 +37,13 @@ function LoginPage() {
   const supabase = createClient()
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('mode') === 'register') setMode('register')
+    }
+  }, [])
+
+  useEffect(() => {
     setMounted(true)
     const hash = window.location.hash
     if (hash && hash.includes('type=recovery') && hash.includes('access_token')) {
