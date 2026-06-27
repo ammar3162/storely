@@ -364,7 +364,7 @@ export default function InventoryPage() {
           <>
             {/* Mobile cards grid */}
             <div className="mob-cards" style={{padding:'10px'}}>
-              <style>{`@media(min-width:640px){.mob-cards{display:none!important}.desk-table{display:block!important}}.mob-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}`}</style>
+              <style>{`@media(min-width:640px){.mob-cards{display:none!important}.desk-table{display:block!important}}@media(max-width:639px){.desk-table{display:none!important}}.mob-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}`}</style>
               <div className="mob-grid">
               {paginated.map((p,i)=>{
                 const isLow=p.qty<=p.reorder_point
