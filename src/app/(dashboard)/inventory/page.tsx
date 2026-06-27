@@ -172,8 +172,20 @@ export default function InventoryPage() {
         .cat-btn:hover{transform:translateY(-1px)}
         .prod-card{transition:all .2s cubic-bezier(.4,0,.2,1)}
         .prod-card:hover{transform:translateY(-2px);box-shadow:${shadow.md}!important}
-        @media(max-width:640px){.inv-stats{grid-template-columns:1fr 1fr!important}.hide-mob{display:none!important}.inv-header{flex-direction:column!important}.inv-btns{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;width:100%!important}}
-        @media(max-width:400px){.inv-stats{grid-template-columns:1fr 1fr!important;gap:6px!important}.cat-btn{padding:5px 10px!important;font-size:11px!important}}
+        @media(max-width:640px){
+          .inv-stats{grid-template-columns:1fr 1fr!important;gap:8px!important}
+          .hide-mob{display:none!important}
+          .inv-header{flex-direction:row!important;align-items:center!important}
+          .inv-btns{display:flex!important;gap:6px!important}
+          .inv-btns button{padding:8px 12px!important;font-size:12px!important}
+          .cat-btn{padding:6px 10px!important;font-size:11px!important}
+          .mob-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px!important}
+          .page-wrap{padding:0 12px!important}
+        }
+        @media(max-width:400px){
+          .inv-stats{grid-template-columns:1fr 1fr!important;gap:6px!important}
+          .mob-grid{grid-template-columns:1fr 1fr!important;gap:6px!important}
+        }
       `}</style>
 
       {/* Confirm delete modal */}
@@ -300,14 +312,14 @@ export default function InventoryPage() {
           <button key={i} onClick={()=>{setStatusFilter(s.key);setCatFilter('all');setPage(1)}}
             style={{
               background: statusFilter===s.key && s.key!=='all' ? s.bg : colors.surface,
-              borderRadius:radius.lg, padding:'16px 14px',
+              borderRadius:radius.lg, padding:'12px 10px',
               border: `1.5px solid ${statusFilter===s.key && s.key!=='all' ? s.color : colors.border}`,
               textAlign:'center' as const, cursor:'pointer', fontFamily:font.family,
               boxShadow: statusFilter===s.key && s.key!=='all' ? `0 4px 14px ${s.color}22` : 'none',
-              transition:'all .2s', transform: statusFilter===s.key && s.key!=='all' ? 'translateY(-2px)' : 'none',
+              transition:'all .2s',
             }}>
-            <div style={{fontSize:24,fontWeight:900,color:s.color,letterSpacing:'-0.5px'}}>{s.value.toLocaleString()}</div>
-            <div style={{fontSize:font.xs,color:colors.text3,marginTop:4,fontWeight:600}}>{s.label}</div>
+            <div style={{fontSize:20,fontWeight:900,color:s.color,letterSpacing:'-0.5px'}}>{s.value.toLocaleString()}</div>
+            <div style={{fontSize:10,color:colors.text3,marginTop:3,fontWeight:600}}>{s.label}</div>
           </button>
         ))}
       </div>
@@ -362,17 +374,16 @@ export default function InventoryPage() {
                 const statusBorder = isOut ? colors.dangerBorder : isLow ? colors.warningBorder : colors.primaryBorder
                 const statusLabel = isOut ? 'نفد' : isLow ? 'ناقص' : 'كافٍ'
                 return (
-                  <div key={p.id} onClick={()=>openEdit(p)} style={{background:colors.surface,border:`1.5px solid ${statusBorder}`,borderRadius:radius.lg,padding:'12px',cursor:'pointer',transition:'all .2s'}}>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
-                      <div style={{width:36,height:36,borderRadius:10,background:statusBg,display:'flex',alignItems:'center',justifyContent:'center',border:`1px solid ${statusBorder}`,flexShrink:0}}>
-                        <span style={{fontSize:13,fontWeight:900,color:statusColor}}>{p.qty}</span>
+                  <div key={p.id} onClick={()=>openEdit(p)} style={{background:colors.surface,border:`1.5px solid ${statusBorder}`,borderRadius:12,padding:'10px',cursor:'pointer',transition:'all .2s',boxShadow:`0 1px 4px ${statusColor}10`}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                      <div style={{width:32,height:32,borderRadius:8,background:statusBg,display:'flex',alignItems:'center',justifyContent:'center',border:`1px solid ${statusBorder}`,flexShrink:0}}>
+                        <span style={{fontSize:12,fontWeight:900,color:statusColor}}>{p.qty}</span>
                       </div>
-                      <span style={{fontSize:10,fontWeight:700,color:statusColor,background:statusBg,padding:'2px 8px',borderRadius:20,border:`1px solid ${statusBorder}`}}>{statusLabel}</span>
+                      <span style={{fontSize:9,fontWeight:700,color:statusColor,background:statusBg,padding:'2px 6px',borderRadius:20,border:`1px solid ${statusBorder}`}}>{statusLabel}</span>
                     </div>
-                    <div style={{fontSize:13,fontWeight:700,color:colors.text,marginBottom:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'as const}}>{p.name}</div>
-                    <div style={{fontSize:10,color:colors.text4,marginBottom:6}}>{CAT_ICONS[p.category||'']||'📦'} {p.category||'—'}</div>
+                    <div style={{fontSize:12,fontWeight:700,color:colors.text,marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'as const}}>{p.name}</div>
+                    <div style={{fontSize:9,color:colors.text4,marginBottom:4}}>{p.unit}</div>
                     <StockBar qty={p.qty} reorder={p.reorder_point}/>
-                    <div style={{fontSize:10,color:colors.text4,marginTop:4}}>الحد: {p.reorder_point} {p.unit}</div>
                   </div>
                 )
               })}
