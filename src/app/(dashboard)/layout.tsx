@@ -60,6 +60,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [lowCount, setLowCount]       = useState(_cache?.lowCount||0)
   const [unread, setUnread]           = useState(_cache?.unread||0)
   const [drawer, setDrawer]           = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [branches, setBranches]       = useState<any[]>(typeof window!=='undefined'&&sessionStorage.getItem('s_branches')?JSON.parse(sessionStorage.getItem('s_branches')||'[]'):[])
   const [showBranchSel, setShowBranchSel] = useState(false)
   const [plan, setPlan] = useState('basic')
@@ -184,11 +185,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         `}</style>
 
         {/* Sidebar */}
-        <aside className="desk-side" style={{width:220,background:C.bg,display:'flex',flexDirection:'column' as const,position:'fixed',top:0,right:0,bottom:0,zIndex:100}}>
-          <div style={{padding:'20px 16px 16px',borderBottom:`1px solid ${C.border}`}}>
-            <div style={{display:'flex',alignItems:'center',gap:10}}>
+        <aside className="desk-side" style={{width:sidebarCollapsed?64:220,background:C.bg,display:'flex',flexDirection:'column' as const,position:'fixed',top:0,right:0,bottom:0,zIndex:100,transition:'width .25s ease',overflow:'hidden'}}>
+          <div style={{padding:'20px 16px 16px',borderBottom:`1px solid ${C.border}`,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <button onClick={()=>setSidebarCollapsed(c=>!c)} style={{background:'none',border:'none',cursor:'pointer',color:C.text2,padding:4,flexShrink:0,marginLeft:4,borderRadius:6}} title={sidebarCollapsed?'توسيع':'طي'}>
+              <svg width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" viewBox="0 0 24 24">
+                {sidebarCollapsed?<path d="M9 18l6-6-6-6"/>:<path d="M15 18l-6-6 6-6"/>}
+              </svg>
+            </button>
+          <div style={{display:'flex',alignItems:'center',gap:10,overflow:'hidden',minWidth:0}}>
               <img src="/storely-logo.png" alt="Storely" style={{width:36,height:36,borderRadius:radius.md,flexShrink:0,objectFit:'cover'}}/>
-              <div style={{minWidth:0}}>
+              <div style={{minWidth:0,opacity:sidebarCollapsed?0:1,transition:'opacity .2s'}}>
                 <div style={{fontSize:font.sm,fontWeight:800,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{orgName||'Storely'}</div>
                 {branchName&&<button onClick={()=>branches.length>1&&setShowBranchSel(true)} style={{fontSize:font.xs,color:colors.primary,background:'none',border:'none',cursor:branches.length>1?'pointer':'default',padding:0,fontFamily:font.family}}>{branchName}{branches.length>1?' ▼':''}</button>}
               </div>
@@ -251,7 +257,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* Main */}
-        <main className="main-pad" style={{flex:1,marginRight:220,minHeight:'100vh',padding:24}}>
+        <main className="main-pad" style={{flex:1,marginRight:sidebarCollapsed?64:220,minHeight:'100vh',padding:24,transition:'margin-right .25s ease'}}>
           {ready?children:(
             <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'60vh',flexDirection:'column' as const,gap:12}}>
               <div style={{width:36,height:36,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
