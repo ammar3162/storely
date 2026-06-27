@@ -34,7 +34,7 @@ export default function AdminPage() {
   async function login(e: React.FormEvent) {
     e.preventDefault()
     const res = await fetch('/api/admin/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass})})
-    if (res.ok) { const token = crypto.randomUUID(); document.cookie = 'storely_admin_token='+token+';path=/;max-age=86400;SameSite=Strict;Secure'; sessionStorage.setItem('storely_admin_pass', pass); setAuthed(true); loadUsers() }
+    if (res.ok) { const token = crypto.randomUUID(); document.cookie = 'storely_admin_token='+token+';path=/;max-age=86400;SameSite=Strict;Secure'; document.cookie = 'storely_admin_auth=true;path=/;max-age=86400;SameSite=Strict;Secure'; sessionStorage.setItem('storely_admin_pass', pass); setAuthed(true); loadUsers() }
     else { setPassErr(true); setTimeout(()=>setPassErr(false),2000) }
   }
 

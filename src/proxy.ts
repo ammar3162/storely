@@ -35,10 +35,11 @@ export async function proxy(request: NextRequest) {
   const isPublic   = isLogin || isPending || isApi || isStaff || isStatic || isLanding || isReset
 
   if (isAdminPanel) {
-    const adminToken   = request.cookies.get('storely_admin_token')?.value
-    const correctToken = process.env.ADMIN_PASSWORD || 'storely@2026'
-    const isAdminRoot  = path === '/storely-admin' || path === '/storely-admin/'
-    if (!isAdminRoot && adminToken !== correctToken) {
+    const adminToken  = request.cookies.get('storely_admin_token')?.value
+    const adminAuth   = request.cookies.get('storely_admin_auth')?.value
+    const isAdminRoot = path === '/storely-admin' || path === '/storely-admin/'
+    const isAuthed    = adminAuth === 'true' && !!adminToken
+    if (!isAdminRoot && !isAuthed) {
       return NextResponse.redirect(new URL('/storely-admin', request.url))
     }
     return supabaseResponse
