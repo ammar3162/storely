@@ -85,8 +85,8 @@ export default function AdminPage() {
   async function updateMaxBranches(orgId: string, value: number) {
     setSaving(orgId)
     const planName = value===1?'basic':value<=3?'pro':'advanced'
-    const maxStaff = value===1?1:value<=3?5:999
-    const maxSuppliers = value===1?1:value<=3?5:999
+    const maxStaff = value===1?2:value<=3?10:999
+    const maxSuppliers = value===1?3:value<=3?10:999
     await (sb.from('organizations') as any).update({
       max_branches:value,
       plan:planName,
@@ -258,9 +258,9 @@ export default function AdminPage() {
                 <div style={{fontSize:12,fontWeight:700,color:'#1d4ed8',marginBottom:10}}>📦 الباقة المشتركة</div>
                 <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
                   {[
-                    {v:1, plan:'basic',    label:'الأساسية',  price:'149 ر.س', desc:'فرع — موظف واحد',          color:'#16a34a', maxStaff:1},
-                    {v:3, plan:'pro',      label:'المتوسطة',  price:'249 ر.س', desc:'3 فروع — موظفون غير محدودين', color:'#2563eb', maxStaff:999},
-                    {v:10,plan:'advanced', label:'المتقدمة',  price:'399 ر.س', desc:'فروع غير محدودة',           color:'#7c3aed', maxStaff:999},
+                    {v:1, plan:'basic',    label:'الأساسية',  price:'149 ر.س', desc:'فرع · 2 موظف · 3 موردين',              color:'#16a34a', maxStaff:2,   maxSup:3},
+                    {v:3, plan:'pro',      label:'المتوسطة',  price:'249 ر.س', desc:'3 فروع · 10 موظفين · 10 موردين',       color:'#2563eb', maxStaff:10,  maxSup:10},
+                    {v:10,plan:'advanced', label:'المتقدمة',  price:'399 ر.س', desc:'فروع غير محدودة · موظفون وموردون غير محدودين', color:'#7c3aed', maxStaff:999, maxSup:999},
                   ].map(opt=>(
                     <button key={opt.v} onClick={()=>updateMaxBranches(selected.org_id,opt.v)} disabled={!!saving||!selected.org_id}
                       style={{padding:'10px 12px',borderRadius:10,border:`1.5px solid ${selected.max_branches===opt.v?opt.color:'#e2e8f0'}`,background:selected.max_branches===opt.v?opt.color+'12':'white',cursor:(!selected.org_id||!!saving)?'not-allowed':'pointer',fontFamily:'inherit',display:'flex',justifyContent:'space-between',alignItems:'center',opacity:!selected.org_id?0.5:1}}>

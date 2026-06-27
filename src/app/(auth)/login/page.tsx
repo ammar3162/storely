@@ -34,9 +34,9 @@ const BUSINESS_TYPES = [
 ]
 
 const PLANS = [
-  {v:1,  label:'الأساسية', price:'149', desc:'فرع واحد · موظف واحد',           color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0'},
-  {v:3,  label:'المتوسطة', price:'249', desc:'3 فروع · موظفون غير محدودين',    color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe'},
-  {v:10, label:'المتقدمة', price:'399', desc:'فروع غير محدودة · كل المميزات', color:'#7c3aed', bg:'#f5f3ff', border:'#ddd6fe'},
+  {v:1,  label:'الأساسية', price:'149', desc:'فرع · 2 موظف · 3 موردين',              color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0'},
+  {v:3,  label:'المتوسطة', price:'249', desc:'3 فروع · 10 موظفين · 10 موردين',       color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe'},
+  {v:10, label:'المتقدمة', price:'399', desc:'فروع غير محدودة · موظفون وموردون غير محدودين', color:'#7c3aed', bg:'#f5f3ff', border:'#ddd6fe'},
 ]
 
 function LoginPage() {
