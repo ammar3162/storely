@@ -75,7 +75,6 @@ export default function LandingPage() {
         .btn-outline:hover{border-color:#16a34a;color:#16a34a}
         .feat-card{background:white;border:1px solid #f3f4f6;border-radius:16px;padding:28px;transition:all .25s}
         .feat-card:hover{border-color:#e5e7eb;box-shadow:0 4px 20px rgba(0,0,0,.06)}
-        .testi-card{background:#f9fafb;border-radius:16px;padding:28px}
         .plan-card{border:1.5px solid #e5e7eb;border-radius:16px;padding:28px;transition:all .2s;background:white}
         .plan-card:hover{border-color:#16a34a}
         .plan-card.popular{border-color:#16a34a;border-width:2px}
@@ -86,7 +85,6 @@ export default function LandingPage() {
           .hero-btns{flex-direction:column!important}
           .feat-grid{grid-template-columns:1fr!important}
           .plan-grid{grid-template-columns:1fr!important}
-          .testi-grid{grid-template-columns:1fr!important}
           .stats-row{flex-wrap:wrap!important;gap:20px!important}
           .footer-grid{grid-template-columns:1fr!important}
           .section-pad{padding:60px 20px!important}
