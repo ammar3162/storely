@@ -19,6 +19,39 @@ const TABS = [
   {key:'security',label:'الأمان',   icon:'🔐'},
 ]
 
+const COUNTRY_CODES = [
+  { code: '+966', flag: '🇸🇦', name: 'السعودية' },
+  { code: '+971', flag: '🇦🇪', name: 'الإمارات' },
+  { code: '+965', flag: '🇰🇼', name: 'الكويت' },
+  { code: '+973', flag: '🇧🇭', name: 'البحرين' },
+  { code: '+974', flag: '🇶🇦', name: 'قطر' },
+  { code: '+968', flag: '🇴🇲', name: 'عُمان' },
+  { code: '+967', flag: '🇾🇪', name: 'اليمن' },
+  { code: '+20', flag: '🇪🇬', name: 'مصر' },
+  { code: '+962', flag: '🇯🇴', name: 'الأردن' },
+  { code: '+961', flag: '🇱🇧', name: 'لبنان' },
+  { code: '+963', flag: '🇸🇾', name: 'سوريا' },
+  { code: '+964', flag: '🇮🇶', name: 'العراق' },
+  { code: '+212', flag: '🇲🇦', name: 'المغرب' },
+  { code: '+213', flag: '🇩🇿', name: 'الجزائر' },
+  { code: '+216', flag: '🇹🇳', name: 'تونس' },
+  { code: '+249', flag: '🇸🇩', name: 'السودان' },
+  { code: '+1', flag: '🇺🇸', name: 'أمريكا' },
+  { code: '+44', flag: '🇬🇧', name: 'بريطانيا' },
+  { code: '+91', flag: '🇮🇳', name: 'الهند' },
+  { code: '+92', flag: '🇵🇰', name: 'باكستان' },
+  { code: '+880', flag: '🇧🇩', name: 'بنغلاديش' },
+  { code: '+63', flag: '🇵🇭', name: 'الفلبين' },
+]
+
+function parsePhone(full: string) {
+  for (const c of COUNTRY_CODES) {
+    if (full.startsWith(c.code)) return { countryCode: c.code, number: full.slice(c.code.length) }
+  }
+  if (full.startsWith('05') || full.startsWith('5')) return { countryCode: '+966', number: full.startsWith('05') ? full.slice(1) : full }
+  return { countryCode: '+966', number: full }
+}
+
 export default function SettingsPage() {
   const [loading, setLoading]           = useState(true)
   const [showDelete, setShowDelete]       = useState(false)
@@ -44,6 +77,7 @@ export default function SettingsPage() {
   const [pwMsg, setPwMsg]               = useState<{ok:boolean;text:string}|null>(null)
   const [activeTab, setActiveTab]       = useState('org')
   const [visible, setVisible]           = useState(false)
+  const [countryCode, setCountryCode]   = useState('+966')
   const [form, setForm] = useState({
     name:'', whatsapp_number:'',
     notify_schedule:'daily',
@@ -79,7 +113,9 @@ export default function SettingsPage() {
     const{data:orgRaw}=await sb.from('organizations').select('*').eq('id',profile.org_id).single()
     const org=orgRaw as any
     if(org){
-      setForm({ name:org.name||'', whatsapp_number:org.whatsapp_number||'', notify_schedule:org.notify_schedule||'daily', notify_time:org.notify_time||'08:00', notify_days:org.notify_days||['0'] })
+      const parsed = parsePhone(org.whatsapp_number||'')
+      setCountryCode(parsed.countryCode)
+      setForm({ name:org.name||'', whatsapp_number:parsed.number||'', notify_schedule:org.notify_schedule||'daily', notify_time:org.notify_time||'08:00', notify_days:org.notify_days||['0'] })
       setLastSent(org.last_notified_at||null)
       setLastBackup(org.last_backup_at||null)
       setMaxBranches(org.max_branches||1)
@@ -92,7 +128,8 @@ export default function SettingsPage() {
 
   async function handleSave(e:React.FormEvent) {
     e.preventDefault(); setSaving(true)
-    await sb.from('organizations').update({ name:form.name, whatsapp_number:form.whatsapp_number, notify_schedule:form.notify_schedule, notify_time:form.notify_time, notify_days:form.notify_days } as any).eq('id',orgId)
+    const fullPhone = countryCode + form.whatsapp_number.replace(/^0+/, '')
+    await sb.from('organizations').update({ name:form.name, whatsapp_number:fullPhone, notify_schedule:form.notify_schedule, notify_time:form.notify_time, notify_days:form.notify_days } as any).eq('id',orgId)
     setSaveOk(true); setSaving(false); setTimeout(()=>setSaveOk(false),3000)
   }
 
@@ -244,7 +281,16 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <label style={lbl}>رقم واتساب التنبيهات</label>
-                  <input value={form.whatsapp_number} onChange={e=>setForm({...form,whatsapp_number:e.target.value})} style={inp()} placeholder="+966500000000" dir="ltr"/>
+                  <div style={{display:'flex',gap:8}}>
+                    <select value={countryCode} onChange={e=>setCountryCode(e.target.value)}
+                      style={{...inp(),width:150,flexShrink:0,direction:'ltr'}}>
+                      {COUNTRY_CODES.map(c=>(
+                        <option key={c.code} value={c.code}>{c.flag} {c.code} {c.name}</option>
+                      ))}
+                    </select>
+                    <input value={form.whatsapp_number} onChange={e=>setForm({...form,whatsapp_number:e.target.value})}
+                      style={{...inp(),flex:1}} placeholder="5xxxxxxxx" dir="ltr"/>
+                  </div>
                   <div style={{fontSize:11,color:colors.text4,marginTop:6,display:'flex',alignItems:'center',gap:4}}><span>💡</span> يُستخدم لإرسال تنبيهات نقص المخزون</div>
                 </div>
               </div>

@@ -2,6 +2,25 @@
 import { useState, useEffect, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+const COUNTRY_CODES = [
+  { code: '+966', flag: '🇸🇦', name: 'السعودية' },
+  { code: '+971', flag: '🇦🇪', name: 'الإمارات' },
+  { code: '+965', flag: '🇰🇼', name: 'الكويت' },
+  { code: '+973', flag: '🇧🇭', name: 'البحرين' },
+  { code: '+974', flag: '🇶🇦', name: 'قطر' },
+  { code: '+968', flag: '🇴🇲', name: 'عُمان' },
+  { code: '+20', flag: '🇪🇬', name: 'مصر' },
+  { code: '+962', flag: '🇯🇴', name: 'الأردن' },
+  { code: '+961', flag: '🇱🇧', name: 'لبنان' },
+  { code: '+212', flag: '🇲🇦', name: 'المغرب' },
+  { code: '+1', flag: '🇺🇸', name: 'أمريكا' },
+  { code: '+44', flag: '🇬🇧', name: 'بريطانيا' },
+  { code: '+91', flag: '🇮🇳', name: 'الهند' },
+  { code: '+92', flag: '🇵🇰', name: 'باكستان' },
+  { code: '+880', flag: '🇧🇩', name: 'بنغلاديش' },
+  { code: '+63', flag: '🇵🇭', name: 'الفلبين' },
+]
+
 function LoginPage() {
   const [mode, setMode]         = useState<'login' | 'register' | 'success' | 'forgot' | 'forgot-sent'>('login')
   const [email, setEmail]       = useState('')
@@ -12,6 +31,7 @@ function LoginPage() {
   const [error, setError]       = useState('')
   const [successData, setSuccessData] = useState({name:'',phone:''})
   const [branchCount, setBranchCount] = useState<number|null>(null)
+  const [countryCode, setCountryCode] = useState('+966')
   const [businessType, setBusinessType] = useState<string>('')
   const [mounted, setMounted]   = useState(false)
   const supabase = createClient()
@@ -64,7 +84,7 @@ function LoginPage() {
     if (data.user) {
       const { data: org, error: orgErr } = await supabase
         .from('organizations')
-        .insert({ name: orgName.trim(), whatsapp_number: phone.trim(), low_stock_threshold: 5, business_type: businessType||'مطعم', requested_plan: branchCount===1?'basic':branchCount&&branchCount<=3?'pro':'advanced' } as any)
+        .insert({ name: orgName.trim(), whatsapp_number: countryCode + phone.trim().replace(/^0+/, ''), low_stock_threshold: 5, business_type: businessType||'مطعم', requested_plan: branchCount===1?'basic':branchCount&&branchCount<=3?'pro':'advanced' } as any)
         .select().single()
       if (orgErr) { setError('خطأ في إنشاء المؤسسة: ' + orgErr.message); setLoading(false); return }
       if (org) {
@@ -256,7 +276,16 @@ function LoginPage() {
               </div>
               <div style={{marginBottom:14}}>
                 <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>رقم الجوال</label>
-                <input type="tel" required value={phone} onChange={e=>setPhone(e.target.value)} className="inp-field" placeholder="0561234567" style={{background:'#f8fafc',color:'#1e293b',border:'1.5px solid #e2e8f0'}}/>
+                <div style={{display:'flex',gap:8}}>
+                  <select value={countryCode} onChange={e=>setCountryCode(e.target.value)}
+                    className="inp-field" style={{background:'#f8fafc',color:'#1e293b',border:'1.5px solid #e2e8f0',width:150,flexShrink:0,direction:'ltr',padding:'10px 8px'}}>
+                    {COUNTRY_CODES.map(c=>(
+                      <option key={c.code} value={c.code}>{c.flag} {c.code} {c.name}</option>
+                    ))}
+                  </select>
+                  <input type="tel" required value={phone} onChange={e=>setPhone(e.target.value)}
+                    className="inp-field" placeholder="5xxxxxxxx" style={{background:'#f8fafc',color:'#1e293b',border:'1.5px solid #e2e8f0',flex:1}} dir="ltr"/>
+                </div>
               </div>
               <div style={{marginBottom:20}}>
                 <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>كلمة المرور</label>
