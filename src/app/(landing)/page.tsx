@@ -36,9 +36,36 @@ const STEPS = [
 ]
 
 const PLANS = [
-  { name: 'الأساسية', price: '149', branches: 'فرع واحد', color: '#16a34a', features: ['فرع واحد', '2 موظفين', '3 موردين', 'تنبيهات واتساب', 'التقارير الأساسية'] },
-  { name: 'المتوسطة', price: '249', branches: '3 فروع', color: '#2563eb', popular: true, features: ['3 فروع', '10 موظفين', '10 موردين', 'تقارير موسّعة', 'دعم ذو أولوية'] },
-  { name: 'المتقدمة', price: '399', branches: 'غير محدود', color: '#7c3aed', features: ['فروع غير محدودة', 'موظفون غير محدودين', 'موردون غير محدودين', 'تقارير مخصصة', 'دعم 24/7'] },
+  { name: 'الأساسية', price: '149', color: '#16a34a', popular: false, badge: '', features: [
+    { label: 'الفروع',           value: '1 فرع',           included: true },
+    { label: 'الموظفون',         value: '2 موظفين',        included: true },
+    { label: 'الموردون',         value: '3 موردين',        included: true },
+    { label: 'تنبيهات واتساب',   value: '✓',               included: true },
+    { label: 'تقارير أساسية',    value: '✓',               included: true },
+    { label: 'تقارير متقدمة',    value: '—',               included: false },
+    { label: 'دعم ذو أولوية',    value: '—',               included: false },
+    { label: 'دعم 24/7',         value: '—',               included: false },
+  ]},
+  { name: 'المتوسطة', price: '249', color: '#2563eb', popular: true, badge: 'الأكثر طلباً', features: [
+    { label: 'الفروع',           value: '3 فروع',          included: true },
+    { label: 'الموظفون',         value: '10 موظفين',       included: true },
+    { label: 'الموردون',         value: '10 موردين',       included: true },
+    { label: 'تنبيهات واتساب',   value: '✓',               included: true },
+    { label: 'تقارير أساسية',    value: '✓',               included: true },
+    { label: 'تقارير متقدمة',    value: '✓',               included: true },
+    { label: 'دعم ذو أولوية',    value: '✓',               included: true },
+    { label: 'دعم 24/7',         value: '—',               included: false },
+  ]},
+  { name: 'المتقدمة', price: '399', color: '#7c3aed', popular: false, badge: 'الأفضل للسلاسل', features: [
+    { label: 'الفروع',           value: 'غير محدودة',      included: true },
+    { label: 'الموظفون',         value: 'غير محدودين',     included: true },
+    { label: 'الموردون',         value: 'غير محدودين',     included: true },
+    { label: 'تنبيهات واتساب',   value: '✓',               included: true },
+    { label: 'تقارير أساسية',    value: '✓',               included: true },
+    { label: 'تقارير متقدمة',    value: '✓',               included: true },
+    { label: 'دعم ذو أولوية',    value: '✓',               included: true },
+    { label: 'دعم 24/7',         value: '✓',               included: true },
+  ]},
 ]
 
 const TESTIMONIALS = [
