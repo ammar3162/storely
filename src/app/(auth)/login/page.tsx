@@ -106,6 +106,12 @@ function LoginPage() {
         await (supabase.from('organizations') as any).update({ max_branches:maxB, plan:planName, max_staff:branchCount===1?1:999 }).eq('id',org.id)
         const trialEnds = new Date(Date.now() + 7*24*60*60*1000).toISOString()
         await supabase.from('profiles').upsert({ id:data.user.id, org_id:org.id, full_name:orgName.trim(), role:'owner', phone:phone.trim(), status:'active', subscription_type:'trial', subscription_ends_at:trialEnds } as any, { onConflict:'id' })
+        // رسالة ترحيب
+        fetch('/api/notify-welcome', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: orgName.trim(), phone: countryCode + phone.trim().replace(/^0+/, '') })
+        }).catch(()=>{})
         setSuccessData({name:orgName.trim(),phone:phone.trim()})
         window.location.href = '/onboarding'
       }
