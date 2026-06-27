@@ -324,7 +324,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
             <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
-                  {['التاريخ','الصنف','النوع','بدون ضريبة','ضريبة','الإجمالي','المورد'].map((h,i)=>(
+                  {['التاريخ','الصنف','النوع','بدون ضريبة','ضريبة','الإجمالي','المورد','فاتورة'].map((h,i)=>(
                     <th key={i} style={{padding:'10px 12px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
                   ))}
                 </tr>
@@ -339,6 +339,11 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
                     <td style={{padding:'11px 12px',fontSize:font.sm,color:colors.warning,fontWeight:600}}>{Number(p.vat_amount||0).toFixed(0)} ر.س</td>
                     <td style={{padding:'11px 12px',fontSize:font.sm,fontWeight:700,color:colors.primary}}>{Number(p.total_amount||0).toFixed(0)} ر.س</td>
                     <td style={{padding:'11px 12px',fontSize:font.xs,color:colors.text4,maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.supplier||'—'}</td>
+                    <td style={{padding:'11px 12px',textAlign:'center' as const}}>
+                      {p.invoice_image
+                        ? <a href={p.invoice_image} target="_blank" rel="noreferrer" style={{background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap' as const}}>📎 عرض</a>
+                        : <span style={{color:colors.border2}}>—</span>}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -348,7 +353,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
                   <td style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm}}>{totalAmount.toFixed(0)} ر.س</td>
                   <td style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm,color:colors.warning}}>{totalVat.toFixed(0)} ر.س</td>
                   <td style={{padding:'11px 12px',fontWeight:900,fontSize:font.md,color:colors.primary}}>{totalWithVat.toFixed(0)} ر.س</td>
-                  <td/>
+                  <td/><td/>
                 </tr>
               </tfoot>
             </table>
