@@ -8,10 +8,24 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
-    const { orgId, branchId } = await req.json()
+    const { orgId, branchId, staffId } = await req.json()
     if (!orgId) return NextResponse.json({ products: [] })
+
+    // جلب assigned_products للموظف
+    let assignedProducts: string[] = []
+    if (staffId) {
+      const { data: staffData } = await sb().from('staff_members').select('assigned_products').eq('id', staffId).single()
+      assignedProducts = (staffData as any)?.assigned_products || []
+    }
+
     let q = sb().from('products').select('id,name,unit,qty,category').eq('org_id', orgId).eq('is_active', true)
     if (branchId) q = q.eq('branch_id', branchId)
+
+    // فلتر حسب المنتجات المخصصة إذا وجدت
+    if (assignedProducts.length > 0) {
+      q = q.in('id', assignedProducts)
+    }
+
     const { data } = await q.order('name')
     return NextResponse.json({ products: data || [] })
   } catch {

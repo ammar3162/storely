@@ -96,7 +96,7 @@ export default function StaffDispensePage() {
       const res = await fetch('/api/staff-products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orgId: s.org_id, branchId: s.branch_id }),
+        body: JSON.stringify({ orgId: s.org_id, branchId: s.branch_id, staffId: s.id }),
       })
       const data = await res.json()
       setProducts(data.products || [])
