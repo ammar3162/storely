@@ -125,7 +125,13 @@ export default function AdminPage() {
     suspended:users.filter(u=>u.status==='suspended').length,
   }
 
-  const totalRevenue = users.filter(u=>u.subscription_type==='paid'&&u.status==='active').length * 99
+  const totalRevenue = users.filter(u=>u.subscription_type==='paid'&&u.status==='active').length * 149
+  const trialUsers = users.filter(u=>u.subscription_type==='trial'&&u.status==='active').length
+  const expiredUsers = users.filter(u=>{
+    if(u.status!=='active'&&u.status!=='suspended') return false
+    if(!u.subscription_ends_at) return false
+    return new Date(u.subscription_ends_at).getTime() < Date.now() && u.subscription_type==='trial'
+  }).length
 
   // ── Login Screen ──
   if (!authed) return (
@@ -329,6 +335,7 @@ export default function AdminPage() {
             {label:'بانتظار التفعيل',   value:counts.pending,   sub:'طلب جديد',  color:'#d97706', bg:'#fffbeb', border:'#fde68a'},
             {label:'مفعّلون',           value:counts.active,    sub:'مستخدم نشط', color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0'},
             {label:'الإيرادات التقديرية', value:totalRevenue+'﷼', sub:'شهرياً',  color:'#7c3aed', bg:'#f5f3ff', border:'#ddd6fe'},
+            {label:'في التجربة المجانية', value:trialUsers, sub:'مستخدم', color:'#d97706', bg:'#fffbeb', border:'#fde68a'},
           ].map((s,i)=>(
             <div key={i} style={{background:'white',borderRadius:16,padding:'16px',border:`1.5px solid ${s.border}`,boxShadow:'0 2px 8px rgba(0,0,0,.04)'}}>
               <div style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase' as const,letterSpacing:'.07em',marginBottom:8}}>{s.label}</div>
@@ -409,7 +416,7 @@ export default function AdminPage() {
                               padding:'3px 9px',borderRadius:20,fontSize:11,fontWeight:700,
                               border:`1px solid ${u.subscription_type==='paid'?'#bfdbfe':'#ddd6fe'}`,
                             }}>
-                              {u.subscription_type==='paid'?'مدفوع':'تجربة'}
+                              {u.subscription_type==='paid'?'💳 مدفوع':u.subscription_type==='trial'?'🎁 تجربة':'—'}
                             </span>
                             {days!==null&&(
                               <div style={{fontSize:10,marginTop:4,fontWeight:700,color:isExp?'#ef4444':isWarn?'#f59e0b':'#94a3b8'}}>
