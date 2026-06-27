@@ -63,3 +63,18 @@ input:focus, select:focus, textarea:focus {
 /* Button press */
 button:active { transform: scale(.97); }
 a:active { opacity: .8; }
+
+/* ── Dark Mode ── */
+[data-theme="dark"] {
+  --bg:      #0f172a;
+  --surface: #1e293b;
+  --border:  #1e293b;
+  --text:    #f1f5f9;
+  --text-2:  #94a3b8;
+  --text-3:  #475569;
+  --green-light:  rgba(22,163,74,.15);
+  --green-border: rgba(22,163,74,.3);
+  --shadow:    0 1px 3px rgba(0,0,0,.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.4);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.5);
+}

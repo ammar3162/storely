@@ -64,6 +64,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showBranchSel, setShowBranchSel] = useState(false)
   const [plan, setPlan] = useState('basic')
   const [ready, setReady]             = useState(false)
+  const [theme, setTheme]             = useState<'light'|'dark'>('light')
+
+  useEffect(()=>{
+    const saved = localStorage.getItem('storely_theme') as 'light'|'dark' || 'light'
+    setTheme(saved)
+    document.documentElement.setAttribute('data-theme', saved)
+  },[])
+
+  function toggleTheme() {
+    const next = theme==='light'?'dark':'light'
+    setTheme(next)
+    localStorage.setItem('storely_theme', next)
+    document.documentElement.setAttribute('data-theme', next)
+  }
   const router   = useRouter()
   const pathname = usePathname()
   const sb = createClient()
@@ -188,6 +202,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div style={{padding:'12px 16px',borderTop:`1px solid ${C.border}`,display:'flex',alignItems:'center',gap:10}}>
             <div style={{width:34,height:34,borderRadius:'50%',background:colors.primary,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:800,color:'white',flexShrink:0}}>{userInit}</div>
             <div style={{flex:1,minWidth:0}}><div style={{fontSize:font.xs,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{userName}</div></div>
+            <button onClick={toggleTheme} style={{background:'none',border:'none',cursor:'pointer',color:C.text2,padding:4,fontSize:14}}>
+              {theme==='light'?'🌙':'☀️'}
+            </button>
             <button onClick={async()=>{await sb.auth.signOut();_cache=null;sessionStorage.clear();router.replace('/login')}} style={{background:'none',border:'none',cursor:'pointer',color:C.text2,padding:4}}>
               <svg width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
             </button>
@@ -204,8 +221,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span style={{fontSize:font.base,fontWeight:700,color:C.text}}>{orgName}</span>
           </div>
           {branchName&&branches.length>1&&<button onClick={()=>setShowBranchSel(true)} style={{fontSize:font.xs,color:colors.primary,background:'none',border:'none',cursor:'pointer',fontFamily:font.family}}>{branchName} ▼</button>}
+          <button onClick={toggleTheme}
+            style={{background:'none',border:'1px solid rgba(255,255,255,.15)',borderRadius:8,padding:'6px 10px',cursor:'pointer',fontSize:14,flexShrink:0}}>
+            {theme==='light'?'🌙':'☀️'}
+          </button>
           <button onClick={async()=>{await sb.auth.signOut();_cache=null;sessionStorage.clear();router.replace('/login')}}
-            style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.3)',borderRadius:8,padding:'6px 12px',cursor:'pointer',color:'#ef4444',fontSize:12,fontWeight:700,fontFamily:'inherit',flexShrink:0,marginRight:4}}>
+            style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.3)',borderRadius:8,padding:'6px 12px',cursor:'pointer',color:'#ef4444',fontSize:12,fontWeight:700,fontFamily:'inherit',flexShrink:0}}>
             خروج
           </button>
         </header>
