@@ -282,20 +282,20 @@ export default function InventoryPage() {
       )}
 
       {/* Header */}
-      <div className="inv-header" style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,gap:12}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,gap:8,flexWrap:'wrap'}}>
         <div>
           <h1 style={{...pageTitle}}>المخزون</h1>
           <p style={{...pageSub}}>{products.length} صنف {lowCount>0?`· `:''}
             {lowCount>0&&<span style={{color:colors.danger,fontWeight:700}}>{lowCount} ناقص</span>}
           </p>
         </div>
-        <div className="inv-btns" style={{display:'flex',gap:8}}>
-          <button onClick={exportCSV} style={{...btnSecondary,padding:'10px 16px',fontSize:font.sm,display:'flex',alignItems:'center',gap:6}}>
-            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-            CSV
+        <div style={{display:'flex',gap:8,flexShrink:0}}>
+          <button onClick={exportCSV} style={{...btnSecondary,padding:'9px 12px',fontSize:font.sm,display:'flex',alignItems:'center',gap:5}}>
+            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            <span className="hide-mob">CSV</span>
           </button>
-          <button onClick={()=>{setEditItem(null);setAddQty(0);setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:''});setShowAdd(true)}} style={{...btnPrimary,padding:'10px 18px',fontSize:font.sm,display:'flex',alignItems:'center',gap:6}}>
-            <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+          <button onClick={()=>{setEditItem(null);setAddQty(0);setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:''});setShowAdd(true)}} style={{...btnPrimary,padding:'9px 16px',fontSize:font.sm,display:'flex',alignItems:'center',gap:5}}>
+            <svg width="13" height="13" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
             إضافة
           </button>
         </div>
