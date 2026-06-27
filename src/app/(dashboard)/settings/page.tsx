@@ -281,15 +281,16 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <label style={lbl}>رقم واتساب التنبيهات</label>
-                  <div style={{display:'flex',gap:8}}>
+                  <div style={{display:'flex',borderRadius:12,overflow:'hidden',border:'1.5px solid #e2e8f0',background:'#f8fafc'}}>
                     <select value={countryCode} onChange={e=>setCountryCode(e.target.value)}
-                      style={{...inp(),width:150,flexShrink:0,direction:'ltr'}}>
+                      style={{background:'transparent',color:'#1e293b',border:'none',borderLeft:'1.5px solid #e2e8f0',padding:'12px 8px',fontSize:13,fontFamily:'inherit',outline:'none',flexShrink:0,cursor:'pointer',direction:'ltr',minWidth:130}}>
                       {COUNTRY_CODES.map(c=>(
-                        <option key={c.code} value={c.code}>{c.flag} {c.code} {c.name}</option>
+                        <option key={c.code} value={c.code}>{c.flag} {c.code} — {c.name}</option>
                       ))}
                     </select>
                     <input value={form.whatsapp_number} onChange={e=>setForm({...form,whatsapp_number:e.target.value})}
-                      style={{...inp(),flex:1}} placeholder="5xxxxxxxx" dir="ltr"/>
+                      placeholder="5xxxxxxxx" dir="ltr"
+                      style={{background:'transparent',border:'none',padding:'12px',fontSize:14,color:'#1e293b',flex:1,outline:'none',fontFamily:'inherit'}}/>
                   </div>
                   <div style={{fontSize:11,color:colors.text4,marginTop:6,display:'flex',alignItems:'center',gap:4}}><span>💡</span> يُستخدم لإرسال تنبيهات نقص المخزون</div>
                 </div>
