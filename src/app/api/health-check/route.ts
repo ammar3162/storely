@@ -133,9 +133,45 @@ function buildAlertMessage(issues: Issue[]) {
   return msg
 }
 
+async function autoFix(supabase: any) {
+  // إصلاح 1: مؤسسات بدون فرع — أنشئ فرع افتراضي
+  const { data: orgs } = await supabase.from('organizations').select('id, name')
+  for (const org of orgs || []) {
+    const { count } = await supabase.from('branches').select('id', { count: 'exact', head: true }).eq('org_id', org.id).eq('is_active', true)
+    if (!count || count === 0) {
+      const { data: branch } = await supabase.from('branches').insert({ org_id: org.id, name: 'الفرع الرئيسي', is_active: true }).select().single()
+      if (branch) {
+        // إصلاح 2: ربط منتجات هذه المؤسسة بالفرع الجديد
+        await supabase.from('products').update({ branch_id: branch.id }).eq('org_id', org.id).is('branch_id', null)
+      }
+    }
+  }
+
+  // إصلاح 3: منتجات بدون فرع — ربطها بالفرع الأول
+  const { data: prodsNoBranch } = await supabase.from('products').select('id, org_id').is('branch_id', null).eq('is_active', true)
+  for (const prod of prodsNoBranch || []) {
+    const { data: branch } = await supabase.from('branches').select('id').eq('org_id', prod.org_id).eq('is_active', true).limit(1).single()
+    if (branch) await supabase.from('products').update({ branch_id: branch.id }).eq('id', prod.id)
+  }
+
+  // إصلاح 4: منتجات مكررة — احتفظ بالأحدث واحذف القديمة
+  const { data: allProds } = await supabase.from('products').select('id, org_id, name, created_at').eq('is_active', true).order('created_at', { ascending: false })
+  const seen: Record<string, string> = {}
+  for (const p of allProds || []) {
+    const key = `${p.org_id}::${p.name}`
+    if (seen[key]) {
+      await supabase.from('products').update({ is_active: false }).eq('id', p.id)
+    } else {
+      seen[key] = p.id
+    }
+  }
+}
+
 export async function GET(req: Request) {
   try {
     const supabase = sb()
+
+    await autoFix(supabase)
 
     const checks = await Promise.all([
       checkProductsWithoutBranch(supabase),
