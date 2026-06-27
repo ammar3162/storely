@@ -65,7 +65,6 @@ export default function DispensePage() {
     const{error}=await sb.from('stock_movements').insert({product_id:selected.id,profile_id:pid,type:'out',qty_change:-qtyNum,note:'استهلاك يومي'})
     if(error){ toast('خطأ في تسجيل الصرف','error'); setSaving(false); return }
     toast(`✅ تم صرف ${qtyNum} ${selected.unit} من ${selected.name}`,'success')
-    fetch('/api/send-pending-notifications',{method:'POST'}).catch(()=>{})
     fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid})}).catch(()=>{})
     // أرسل للمورد فقط إذا كان الوضع "فوري"
     try {
