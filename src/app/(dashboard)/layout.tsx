@@ -240,17 +240,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
 
         {/* Bottom Nav Mobile */}
-        <nav className="mob-nav" style={{position:'fixed',bottom:0,right:0,left:0,zIndex:100,background:C.bg,borderTop:`1px solid ${C.border}`,padding:'8px 0',justifyContent:'space-around'}}>
-          {NAV.map(item=>{
+        <nav className="mob-nav" style={{position:'fixed',bottom:0,right:0,left:0,zIndex:100,background:C.bg,borderTop:`1px solid ${C.border}`,paddingBottom:'env(safe-area-inset-bottom)',justifyContent:'space-around',alignItems:'stretch'}}>
+          {[
+            {href:'/dashboard', label:'الرئيسية', icon:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'},
+            {href:'/inventory',  label:'المخزون',  icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'},
+            {href:'/purchases',  label:'مشتريات', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z'},
+          ].map(item=>{
             const active=isActive(item.href)
             return(
-              <button key={item.href} onClick={()=>router.push(item.href)} style={{display:'flex',flexDirection:'column' as const,alignItems:'center',gap:3,padding:'4px 8px',background:'none',border:'none',cursor:'pointer',fontFamily:font.family,color:active?colors.primary:C.text2,position:'relative' as const}}>
-                <svg width={22} height={22} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">{item.icon.split(' M').map((d:string,j:number)=><path key={j} d={(j===0?'':' M')+d}/>)}</svg>
-                <span style={{fontSize:9,fontWeight:active?700:400}}>{item.label}</span>
-                {item.href==='/inventory'&&lowCount>0&&<span style={{position:'absolute' as const,top:0,right:4,background:colors.danger,color:'white',fontSize:8,fontWeight:700,padding:'1px 4px',borderRadius:99}}>{lowCount}</span>}
+              <button key={item.href} onClick={()=>router.push(item.href)}
+                style={{flex:1,display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',gap:3,padding:'10px 4px',background:'none',border:'none',cursor:'pointer',fontFamily:font.family,color:active?colors.primary:C.text2,position:'relative' as const,transition:'color .15s'}}>
+                {active&&<div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:32,height:2,borderRadius:99,background:colors.primary}}/>}
+                <svg width={22} height={22} fill="none" stroke="currentColor" strokeWidth={active?2.5:2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">{item.icon.split(' M').map((d:string,j:number)=><path key={j} d={(j===0?'':' M')+d}/>)}</svg>
+                <span style={{fontSize:10,fontWeight:active?700:400}}>{item.label}</span>
+                {item.href==='/inventory'&&lowCount>0&&<span style={{position:'absolute' as const,top:6,right:'calc(50% - 18px)',background:colors.danger,color:'white',fontSize:8,fontWeight:700,padding:'1px 5px',borderRadius:99,minWidth:16,textAlign:'center'}}>{lowCount}</span>}
               </button>
             )
           })}
+          {/* زر القائمة */}
+          <button onClick={()=>setDrawer(true)}
+            style={{flex:1,display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',gap:3,padding:'10px 4px',background:'none',border:'none',cursor:'pointer',fontFamily:font.family,color:drawer?colors.primary:C.text2,position:'relative' as const,transition:'color .15s'}}>
+            <div style={{position:'relative'}}>
+              <svg width={22} height={22} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+              {(unread>0||lowCount>0)&&<span style={{position:'absolute',top:-4,left:-4,width:8,height:8,borderRadius:'50%',background:colors.danger,border:`1.5px solid ${C.bg}`}}/>}
+            </div>
+            <span style={{fontSize:10,fontWeight:400}}>القائمة</span>
+          </button>
         </nav>
       </div>
     </>
