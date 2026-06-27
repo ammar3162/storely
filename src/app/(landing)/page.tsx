@@ -203,26 +203,33 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section id="testimonials" className="section-pad" style={{padding:'80px 40px',maxWidth:1000,margin:'0 auto'}}>
-        <div style={{textAlign:'center',marginBottom:56}}>
-          <p style={{fontSize:13,fontWeight:700,color:'#16a34a',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>آراء العملاء</p>
-          <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>ماذا يقول عملاؤنا؟</h2>
-        </div>
-        <div className="testi-grid" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
-          {TESTIMONIALS.map((t,i)=>(
-            <div key={i} className="testi-card">
-              <div style={{color:'#16a34a',fontSize:14,letterSpacing:2,marginBottom:14}}>★★★★★</div>
-              <p style={{fontSize:14,color:'#374151',lineHeight:1.8,marginBottom:20}}>"{t.text}"</p>
-              <div style={{display:'flex',alignItems:'center',gap:10}}>
-                <div style={{width:40,height:40,borderRadius:10,background:'#16a34a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:800,color:'white',flexShrink:0}}>{t.name[0]}</div>
-                <div>
-                  <div style={{fontSize:14,fontWeight:700,color:'#111827'}}>{t.name}</div>
-                  <div style={{fontSize:12,color:'#9ca3af',marginTop:1}}>{t.role}</div>
-                </div>
+      {/* IMPACT NUMBERS */}
+      <section id="testimonials" style={{background:'#f9fafb',padding:'80px 40px',borderTop:'1px solid #f3f4f6',borderBottom:'1px solid #f3f4f6'}}>
+        <div style={{maxWidth:1000,margin:'0 auto'}}>
+          <div style={{textAlign:'center',marginBottom:56}}>
+            <p style={{fontSize:13,fontWeight:700,color:'#16a34a',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>التأثير الحقيقي</p>
+            <h2 style={{fontSize:38,fontWeight:900,color:'#111827',marginBottom:12,letterSpacing:'-1px'}}>أرقام تتكلم عن نفسها</h2>
+            <p style={{fontSize:16,color:'#6b7280'}}>ما يحققه أصحاب المنشآت بعد استخدام Storely</p>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
+            {[
+              {num:'3 ساعات',label:'توفير يومي',desc:'بدل المتابعة اليدوية للمخزون والجرد اليومي',icon:'⏱️'},
+              {num:'40%',label:'تقليل الهدر',desc:'بفضل التنبيهات المبكرة قبل نفاد أي صنف',icon:'📉'},
+              {num:'صفر',label:'مفاجآت نقص',desc:'تنبيه واتساب فوري قبل أن تنتهي أي مادة',icon:'🔔'},
+              {num:'100%',label:'تحكم من الجوال',desc:'راقب كل فرع ومورد وموظف من أي مكان',icon:'📱'},
+              {num:'7 لغات',label:'لكل موظف',desc:'لا حاجة لتدريب — كل موظف يعمل بلغته',icon:'🌍'},
+              {num:'24 ساعة',label:'تفعيل سريع',desc:'من التسجيل لأول تنبيه في أقل من يوم واحد',icon:'⚡'},
+            ].map((s,i)=>(
+              <div key={i} style={{background:'white',border:'1px solid #e5e7eb',borderRadius:16,padding:'28px 24px',transition:'all .2s'}}
+                onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.borderColor='#16a34a';(e.currentTarget as HTMLElement).style.boxShadow='0 4px 20px rgba(22,163,74,.08)'}}
+                onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.borderColor='#e5e7eb';(e.currentTarget as HTMLElement).style.boxShadow='none'}}>
+                <div style={{fontSize:28,marginBottom:14}}>{s.icon}</div>
+                <div style={{fontSize:36,fontWeight:900,color:'#16a34a',letterSpacing:'-1px',marginBottom:6}}>{s.num}</div>
+                <div style={{fontSize:15,fontWeight:700,color:'#111827',marginBottom:8}}>{s.label}</div>
+                <p style={{fontSize:13,color:'#6b7280',lineHeight:1.7}}>{s.desc}</p>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
