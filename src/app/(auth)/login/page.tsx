@@ -22,7 +22,13 @@ const COUNTRY_CODES = [
 ]
 
 function LoginPage() {
-  const [mode, setMode]         = useState<'login' | 'register' | 'success' | 'forgot' | 'forgot-sent'>('login')
+  const [mode, setMode]         = useState<'login' | 'register' | 'success' | 'forgot' | 'forgot-sent'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('mode') === 'register') return 'register'
+    }
+    return 'login'
+  })
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [orgName, setOrgName]   = useState('')
