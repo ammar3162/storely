@@ -291,7 +291,7 @@ function LoginPage() {
                     ))}
                   </select>
                   <input type="tel" required value={phone} onChange={e=>setPhone(e.target.value)}
-                    placeholder="5xxxxxxxx" dir="ltr"
+                    placeholder={countryCode==='+966'?'5xxxxxxxx':countryCode==='+20'?'1xxxxxxxxx':'xxxxxxxxxx'} dir="ltr"
                     style={{background:'transparent',border:'none',padding:'12px',fontSize:14,color:'#1e293b',flex:1,outline:'none',fontFamily:'inherit'}}/>
                 </div>
               </div>
