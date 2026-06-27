@@ -9,11 +9,13 @@ const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const sb = () => createClient(SUPABASE_URL, SERVICE_KEY)
 
 function formatPhone(raw: string): string {
-  const clean = (raw || '').replace(/\s/g, '').replace(/^\+/, '')
+  const clean = (raw || '').replace(/\s/g, '')
+  if (clean.startsWith('+')) return clean.slice(1)
+  if (clean.startsWith('00')) return clean.slice(2)
   if (clean.startsWith('966')) return clean
-  if (clean.startsWith('05'))  return '966' + clean.slice(1)
-  if (clean.startsWith('5'))   return '966' + clean
-  return '966' + clean
+  if (clean.startsWith('05')) return '966' + clean.slice(1)
+  if (clean.startsWith('5')) return '966' + clean
+  return clean
 }
 
 async function sendWhatsApp(phone: string, text: string) {

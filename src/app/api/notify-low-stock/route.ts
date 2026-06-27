@@ -2,11 +2,13 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 function formatPhone(raw: string): string {
-  const clean = (raw || '').replace(/\s/g, '').replace(/^\+/, '')
+  const clean = (raw || '').replace(/\s/g, '')
+  if (clean.startsWith('+')) return clean.slice(1)
+  if (clean.startsWith('00')) return clean.slice(2)
   if (clean.startsWith('966')) return clean
-  if (clean.startsWith('05'))  return '966' + clean.slice(1)
-  if (clean.startsWith('5'))   return '966' + clean
-  return '966' + clean
+  if (clean.startsWith('05')) return '966' + clean.slice(1)
+  if (clean.startsWith('5')) return '966' + clean
+  return clean
 }
 
 async function sendForOrg(supabase: any, org: any) {
