@@ -358,16 +358,19 @@ export default function LandingPage() {
                     <span style={{ fontSize:15,color:p.popular?'rgba(255,255,255,.5)':'#94a3b8' }}>ر.س / شهر</span>
                   </div>
                 </div>
-                <div style={{ display:'flex',flexDirection:'column' as const,gap:10,marginBottom:28 }}>
+                <div style={{ display:'flex',flexDirection:'column' as const,gap:12,marginBottom:28 }}>
                   {p.features.map((f,j)=>(
-                    <div key={j} style={{ display:'flex',alignItems:'center',gap:10,fontSize:14,color:p.popular?'rgba(255,255,255,.85)':'#475569' }}>
-                      <span style={{ color:p.popular?'#4ade80':'#16a34a',flexShrink:0 }}>✓</span>{f}
+                    <div key={j} style={{ display:'flex',justifyContent:'space-between',alignItems:'center',gap:8 }}>
+                      <span style={{ fontSize:13,color:p.popular?f.included?'rgba(255,255,255,.8)':'rgba(255,255,255,.25)':f.included?'#374151':'#d1d5db' }}>{f.label}</span>
+                      <span style={{ fontSize:13,fontWeight:700,color:f.included?(p.popular?'#4ade80':p.color):(p.popular?'rgba(255,255,255,.2)':'#e5e7eb'),flexShrink:0 }}>{f.value}</span>
                     </div>
                   ))}
                 </div>
-                <button onClick={()=>router.push('/login?mode=register')} style={{ width:'100%',padding:'14px',background:p.popular?'#16a34a':'white',color:p.popular?'white':'#16a34a',border:p.popular?'none':'2px solid #16a34a',borderRadius:14,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'inherit',transition:'all .2s',boxShadow:p.popular?'0 6px 20px rgba(22,163,74,.4)':'none' }}>
-                  ابدأ الآن
+                <button onClick={()=>router.push('/login?mode=register')}
+                  style={{ width:'100%',padding:'14px',background:p.popular?p.color:'white',color:p.popular?'white':p.color,border:p.popular?'none':`2px solid ${p.color}`,borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',transition:'all .2s',boxShadow:p.popular?`0 6px 20px ${p.color}40`:'none' }}>
+                  ابدأ تجربتك المجانية ←
                 </button>
+                <div style={{ textAlign:'center',fontSize:11,color:p.popular?'rgba(255,255,255,.3)':'#94a3b8',marginTop:10 }}>7 أيام مجاناً — لا يتطلب بطاقة</div>
               </div>
             ))}
           </div>
