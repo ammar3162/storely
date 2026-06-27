@@ -158,7 +158,7 @@ function LoginPage() {
       {/* Navbar */}
       <nav style={{padding:'0 40px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #f3f4f6'}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <div style={{width:34,height:34,borderRadius:9,background:'#16a34a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:17}}>🏪</div>
+          <img src="/storely-logo.png" alt="Storely" style={{width:38,height:38,borderRadius:10,objectFit:'cover'}}/>
           <span style={{fontSize:18,fontWeight:800,color:'#111827',letterSpacing:'-0.3px'}}>Storely</span>
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
