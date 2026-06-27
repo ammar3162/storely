@@ -210,7 +210,7 @@ export default function LandingPage() {
             </a>
           </div>
           <div style={{ display:'flex',gap:48,justifyContent:'center',marginTop:64,flexWrap:'wrap' }}>
-            {[['149 ر.س','يبدأ من'],['7','لغات مدعومة'],['24/7','تنبيهات تلقائية']].map(([n,l])=>(
+            {[['149 ر.س / شهر','يبدأ من'],['7','لغات مدعومة'],['24/7','تنبيهات تلقائية']].map(([n,l])=>(
               <div key={l} style={{ textAlign:'center' }}>
                 <div style={{ fontSize:30,fontWeight:900,color:'#4ade80' }}>{n}</div>
                 <div style={{ fontSize:13,color:'rgba(255,255,255,.4)',marginTop:4 }}>{l}</div>
