@@ -35,6 +35,9 @@ export default function StaffManagementPage() {
   const [expandedId, setExpandedId] = useState<string|null>(null)
   const [visible, setVisible]       = useState(false)
   const [maxStaff, setMaxStaff]     = useState(999)
+  const [products, setProducts]     = useState<any[]>([])
+  const [assigningId, setAssigningId] = useState<string|null>(null)
+  const [selectedProds, setSelectedProds] = useState<string[]>([])
   const sb = createClient()
 
   useEffect(() => { init() }, [])
@@ -46,13 +49,30 @@ export default function StaffManagementPage() {
     setOrgId(profile.org_id)
     const{data:orgLimits}=await (sb as any).from('organizations').select('max_staff').eq('id',profile.org_id).single()
     setMaxStaff((orgLimits as any)?.max_staff||1)
-    await Promise.all([loadStaff(profile.org_id),loadBranches(profile.org_id)])
+    await Promise.all([loadStaff(profile.org_id),loadBranches(profile.org_id),loadProducts(profile.org_id)])
     setLoading(false); setTimeout(()=>setVisible(true),50)
   }
 
   async function loadStaff(oid:string) {
     const{data}=await (sb.from('staff_members' as any) as any).select('*,branches(name)').eq('org_id',oid).order('created_at',{ascending:false})
     setStaff(data||[])
+  }
+
+  async function loadProducts(oid:string) {
+    const{data}=await sb.from('products').select('id,name,unit,category').eq('org_id',oid).eq('is_active',true).order('name')
+    setProducts(data||[])
+  }
+
+  async function openAssign(s:any) {
+    setAssigningId(s.id)
+    setSelectedProds(s.assigned_products||[])
+  }
+
+  async function saveAssigned() {
+    await (sb.from('staff_members' as any) as any).update({assigned_products:selectedProds}).eq('id',assigningId)
+    toast('✅ تم حفظ المنتجات المخصصة')
+    setAssigningId(null)
+    loadStaff(orgId)
   }
 
   async function loadBranches(oid:string) {
@@ -225,6 +245,60 @@ export default function StaffManagementPage() {
         </div>
       )}
 
+      {/* Assign Products Modal */}
+      {assigningId && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:600,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
+          <div style={{background:colors.surface,borderRadius:radius.xl,padding:26,width:'100%',maxWidth:480,maxHeight:'80vh',display:'flex',flexDirection:'column' as const,boxShadow:'0 32px 80px rgba(0,0,0,.3)'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+              <div>
+                <div style={{fontSize:font.md,fontWeight:800,color:colors.text}}>تخصيص المنتجات</div>
+                <div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>اختر المنتجات التي يراها هذا الموظف فقط</div>
+              </div>
+              <button onClick={()=>setAssigningId(null)} style={{width:32,height:32,borderRadius:radius.sm,border:`1.5px solid ${colors.border2}`,background:colors.bg,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',color:colors.text3}}>×</button>
+            </div>
+            
+            {/* اختيار الكل */}
+            <div style={{display:'flex',gap:8,marginBottom:12}}>
+              <button onClick={()=>setSelectedProds(products.map((p:any)=>p.id))}
+                style={{padding:'6px 14px',borderRadius:8,border:`1px solid ${colors.border2}`,background:colors.bg,color:colors.text2,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                اختيار الكل
+              </button>
+              <button onClick={()=>setSelectedProds([])}
+                style={{padding:'6px 14px',borderRadius:8,border:`1px solid ${colors.border2}`,background:colors.bg,color:colors.text2,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                إلغاء الكل
+              </button>
+              <span style={{fontSize:font.xs,color:colors.text4,alignSelf:'center',marginRight:'auto'}}>
+                {selectedProds.length===0?'كل المنتجات':`${selectedProds.length} منتج مختار`}
+              </span>
+            </div>
+
+            {/* قائمة المنتجات */}
+            <div style={{overflowY:'auto',flex:1,display:'flex',flexDirection:'column' as const,gap:6,marginBottom:16}}>
+              {products.map((p:any)=>{
+                const selected = selectedProds.includes(p.id)
+                return (
+                  <div key={p.id} onClick={()=>setSelectedProds(prev=>selected?prev.filter(id=>id!==p.id):[...prev,p.id])}
+                    style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${selected?colors.primary:colors.border}`,background:selected?colors.primaryLight:colors.bg,cursor:'pointer',transition:'all .15s'}}>
+                    <div style={{width:20,height:20,borderRadius:6,border:`2px solid ${selected?colors.primary:colors.border2}`,background:selected?colors.primary:'white',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'all .15s'}}>
+                      {selected&&<span style={{color:'white',fontSize:12,fontWeight:900}}>✓</span>}
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{p.name}</div>
+                      <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit}</div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div style={{display:'flex',gap:10}}>
+              <button onClick={()=>setAssigningId(null)} style={{...btnSecondary,flex:1,padding:'12px',fontSize:font.sm}}>إلغاء</button>
+              <button onClick={saveAssigned} style={{...btnPrimary,flex:2,padding:'12px',fontSize:font.sm}}>💾 حفظ التخصيص</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Staff list */}
       {staff.length===0 ? (
         <div style={{...card,padding:56,textAlign:'center'}} className="su">
@@ -251,6 +325,9 @@ export default function StaffManagementPage() {
                   </div>
                 </div>
                 <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                  <button onClick={e=>{e.stopPropagation();openAssign(s)}} className="act-btn" style={{background:colors.warningLight||'#fffbeb',color:colors.warning||'#d97706'}}>
+                    📦 {s.assigned_products?.length>0?`${s.assigned_products.length} منتج`:'كل المنتجات'}
+                  </button>
                   <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} className="act-btn" style={{background:colors.infoLight,color:colors.info}}>PIN جديد</button>
                   <button onClick={e=>{e.stopPropagation();toggleActive(s.id,s.is_active)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`}}>{s.is_active?'إيقاف':'تفعيل'}</button>
                   <button onClick={e=>{e.stopPropagation();deleteStaff(s.id)}} className="act-btn" style={{background:colors.dangerLight,color:colors.danger}}>حذف</button>
