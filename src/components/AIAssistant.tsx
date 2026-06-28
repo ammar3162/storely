@@ -408,7 +408,6 @@ export default function AIAssistant() {
                 </div>
               )}
 
-              </div>
           {/* Input */}
               <div style={{padding:'10px 12px',borderTop:`1px solid ${C.border}`,background:'white',display:'flex',gap:8,alignItems:'flex-end',flexShrink:0}}>
                 <input ref={inputRef} className="ai-input" value={input}
