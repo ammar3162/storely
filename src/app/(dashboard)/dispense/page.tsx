@@ -163,9 +163,9 @@ export default function DispensePage() {
         </div>
       </div>
 
-      <div className="layout">
+      <div className="layout" style={{height:'calc(100vh - 180px)',minHeight:400}}>
         {/* Products Section */}
-        <div className="prod-section">
+        <div className="prod-section" style={{display:'flex',flexDirection:'column',overflow:'hidden'}}>
           {/* Search */}
           <div className="fu" style={{position:'relative',marginBottom:10,animationDelay:'.06s'}}>
             <svg style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}} width="14" height="14" fill="none" stroke={C.text4} strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -190,6 +190,7 @@ export default function DispensePage() {
           </div>
 
           {/* Products Grid */}
+          <div style={{flex:1,overflowY:'auto',paddingBottom:8}}>
           {displayed.length===0 ? (
             <div className="fu" style={{background:'white',borderRadius:14,padding:'40px 24px',textAlign:'center',border:`1px solid ${C.border}`,animationDelay:'.1s'}}>
               <div style={{fontSize:36,marginBottom:10}}>📦</div>
@@ -233,6 +234,7 @@ export default function DispensePage() {
               })}
             </div>
           )}
+          </div>
         </div>
 
         {/* History — Desktop */}
