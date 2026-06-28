@@ -101,6 +101,13 @@ ${(products||[]).map((p:any) => {
   return `• ${p.name}: ${p.qty} ${p.unit} (حد أدنى: ${p.reorder_point}) | صرف شهري: ${stats?.monthly||0} ${p.unit}`
 }).join('\n')}
 
+═══ كشف الهدر ═══
+أصناف مشتراة بكثرة لكن صرفها قليل جداً (${wasteItems.length} صنف):
+${wasteItems.map((p:any)=>`• ${p.name}: كمية ${p.qty} ${p.unit} — صُرف فقط ${p.dispensed} ${p.unit} في 90 يوم`).join('\n')}
+
+أصناف لم تُصرف أبداً خلال 90 يوم (${neverDispensed.length} صنف):
+${neverDispensed.map((p:any)=>`• ${p.name}: كمية ${p.qty} ${p.unit}`).join('\n')}
+
 ═══ إحصائيات المشتريات ═══
 إجمالي المشتريات (90 يوم): ${totalSpent.toLocaleString()} ر.س
 مشتريات هذا الشهر: ${monthlySpent.toLocaleString()} ر.س
