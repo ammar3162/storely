@@ -303,7 +303,6 @@ export default function AIAssistant() {
           height: minimized ? 'auto' : '72vh',
           maxHeight: minimized ? 'auto' : 580,
           overflow:'hidden',
-          position:'relative',
           fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",
           direction:'rtl',
         }}>
@@ -409,7 +408,8 @@ export default function AIAssistant() {
                 </div>
               )}
 
-              {/* Input */}
+              </div>
+          {/* Input */}
               <div style={{padding:'10px 12px',borderTop:`1px solid ${C.border}`,background:'white',display:'flex',gap:8,alignItems:'flex-end',flexShrink:0}}>
                 <input ref={inputRef} className="ai-input" value={input}
                   onChange={e=>setInput(e.target.value)}
