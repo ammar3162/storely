@@ -227,6 +227,14 @@ export default function AIAssistant() {
     setMsgs(m=>[...m, userMsg])
     setLoading(true)
 
+    // كشف طلب التواصل مع الدعم
+    const supportKeywords = ['دعم','مساعدة بشرية','موظف','تواصل','اتصال','شكوى','مشكلة تقنية','واتساب']
+    if (supportKeywords.some(k => msg.includes(k))) {
+      setMsgs(m=>[...m, {role:'ai', text:'يسعدنا مساعدتك! 😊 يمكنك التواصل مع فريق دعم Storely مباشرة عبر واتساب من خلال الزر أدناه، وسيرد عليك أحد المختصين في أقرب وقت.', time:now()}])
+      setLoading(false)
+      return
+    }
+
     const org_id = sessionStorage.getItem('s_org_id')
     const branch_id = sessionStorage.getItem('s_branch_id')
 
