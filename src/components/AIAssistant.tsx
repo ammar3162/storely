@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 
 const C = {
   primary:'#16a34a', primaryD:'#15803d', primaryL:'#f0fdf4', primaryB:'#bbf7d0',
@@ -16,7 +16,7 @@ const QUICK = [
 
 interface Msg { role:'user'|'ai'; text:string; time:string }
 
-function renderText(text: string) {
+function renderText(text: string): React.ReactNode[] {
   const lines = text.split('\n')
   return lines.map((line, i) => {
     // H2
