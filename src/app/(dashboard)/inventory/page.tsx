@@ -364,7 +364,7 @@ export default function InventoryPage() {
           <>
             {/* Mobile cards grid */}
             <div className="mob-cards" style={{padding:'10px'}}>
-              <style>{`@media(min-width:640px){.mob-cards{display:none!important}.desk-table{display:block!important}}@media(max-width:639px){.desk-table{display:none!important}}.mob-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;align-items:start}`}</style>
+              <style>{`@media(min-width:640px){.mob-cards{display:none!important}.desk-table{display:block!important}}@media(max-width:639px){.desk-table{display:none!important}}.mob-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}`}</style>
               <div className="mob-grid">
               {paginated.map((p,i)=>{
                 const isLow=p.qty<=p.reorder_point
@@ -374,7 +374,7 @@ export default function InventoryPage() {
                 const statusBorder = isOut ? colors.dangerBorder : isLow ? colors.warningBorder : colors.primaryBorder
                 const statusLabel = isOut ? 'نفد' : isLow ? 'ناقص' : 'كافٍ'
                 return (
-                  <div key={p.id} onClick={()=>openEdit(p)} style={{background:colors.surface,border:`1px solid ${statusBorder}`,borderRadius:10,padding:'8px',cursor:'pointer',height:'fit-content'}}>
+                  <div key={p.id} onClick={()=>openEdit(p)} style={{background:colors.surface,border:`1.5px solid ${statusBorder}`,borderRadius:12,padding:'12px',cursor:'pointer'}}>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
                       <div style={{width:32,height:32,borderRadius:8,background:statusBg,display:'flex',alignItems:'center',justifyContent:'center',border:`1px solid ${statusBorder}`,flexShrink:0}}>
                         <span style={{fontSize:12,fontWeight:900,color:statusColor}}>{p.qty}</span>
