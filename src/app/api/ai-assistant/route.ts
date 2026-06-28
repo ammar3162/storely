@@ -76,6 +76,21 @@ export async function POST(req: NextRequest) {
     .filter((p:any) => new Date(p.created_at).getMonth() === thisMonth)
     .reduce((s:number, p:any) => s + Number(p.amount||0), 0)
 
+  // حساب الهدر
+  const dispenseMap90: Record<string, number> = {}
+  for (const m of (movements||[])) {
+    const p = m.products as any
+    if (!p) continue
+    dispenseMap90[p.name] = (dispenseMap90[p.name]||0) + Math.abs(m.qty_change)
+  }
+  const wasteItems = (products||[])
+    .map((p:any) => ({ ...p, dispensed: dispenseMap90[p.name]||0 }))
+    .filter((p:any) => p.qty > p.reorder_point * 3 && (dispenseMap90[p.name]||0) < p.reorder_point)
+    .slice(0, 5)
+  const neverDispensed = (products||[])
+    .filter((p:any) => p.qty > 0 && !dispenseMap90[p.name])
+    .slice(0, 5)
+
   const systemPrompt = `أنت محلل بيانات متخصص لنظام Storely لإدارة المخزون. مهمتك تحليل البيانات الحقيقية وتقديم إجابات دقيقة مبنية على الأرقام فقط.
 
 قواعد مهمة:
