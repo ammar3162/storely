@@ -16,6 +16,60 @@ const QUICK = [
 
 interface Msg { role:'user'|'ai'; text:string; time:string }
 
+function renderText(text: string) {
+  const lines = text.split('\n')
+  return lines.map((line, i) => {
+    // H2
+    if (line.startsWith('## ')) {
+      const t = line.replace(/^## /, '').replace(/\*\*(.*?)\*\*/g, '$1')
+      return <div key={i} style={{fontSize:13,fontWeight:800,color:'#111827',marginTop:i>0?12:4,marginBottom:4,paddingBottom:4,borderBottom:'1px solid #f0f0f0'}}>{t}</div>
+    }
+    // H3
+    if (line.startsWith('### ')) {
+      const t = line.replace(/^### /, '').replace(/\*\*(.*?)\*\*/g, '$1')
+      return <div key={i} style={{fontSize:12,fontWeight:700,color:'#374151',marginTop:8,marginBottom:2}}>{t}</div>
+    }
+    // HR
+    if (line.trim()==='---') {
+      return <div key={i} style={{height:1,background:'#f3f4f6',margin:'6px 0'}}/>
+    }
+    // numbered list
+    const numMatch = line.match(/^(\d+)\.\s(.+)/)
+    if (numMatch) {
+      const t = numMatch[2].replace(/\*\*(.*?)\*\*/g, '$1')
+      return (
+        <div key={i} style={{display:'flex',gap:6,marginBottom:3,fontSize:12}}>
+          <span style={{width:18,height:18,borderRadius:'50%',background:'#f0fdf4',border:'1px solid #bbf7d0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,color:'#16a34a',flexShrink:0,marginTop:1}}>{numMatch[1]}</span>
+          <span style={{color:'#374151',flex:1}}>{t}</span>
+        </div>
+      )
+    }
+    // bullet
+    if (line.startsWith('- ') || line.startsWith('• ')) {
+      const t = line.replace(/^[-•] /, '').replace(/\*\*(.*?)\*\*/g, (_,b)=>b)
+      // parse bold inline
+      const parts = line.replace(/^[-•] /, '').split(/\*\*(.*?)\*\*/)
+      return (
+        <div key={i} style={{display:'flex',gap:6,marginBottom:3,fontSize:12}}>
+          <span style={{color:'#16a34a',flexShrink:0,marginTop:2}}>•</span>
+          <span style={{color:'#374151',flex:1,lineHeight:1.5}}>
+            {parts.map((p,j)=>j%2===0?p:<b key={j} style={{color:'#111827'}}>{p}</b>)}
+          </span>
+        </div>
+      )
+    }
+    // empty line
+    if (line.trim()==='') return <div key={i} style={{height:4}}/>
+    // normal — parse bold
+    const parts = line.split(/\*\*(.*?)\*\*/)
+    return (
+      <div key={i} style={{fontSize:12,color:'#374151',lineHeight:1.6,marginBottom:2}}>
+        {parts.map((p,j)=>j%2===0?p:<b key={j} style={{color:'#111827'}}>{p}</b>)}
+      </div>
+    )
+  })
+}
+
 function TypingDots() {
   return (
     <div style={{display:'flex',gap:4,alignItems:'center',padding:'4px 2px'}}>
@@ -45,7 +99,7 @@ function MsgBubble({ msg }: { msg:Msg }) {
           boxShadow: isUser ? `0 4px 14px ${C.primary}30` : '0 2px 8px rgba(0,0,0,.06)',
           border: isUser ? 'none' : `1px solid ${C.border}`,
         }}>
-          {msg.text}
+          {renderText(msg.text)}
         </div>
       </div>
       <div style={{fontSize:9,color:C.text4,marginRight:isUser?0:38,marginLeft:isUser?0:0,paddingRight:isUser?4:0,paddingLeft:isUser?0:4}}>{msg.time}</div>
