@@ -167,6 +167,7 @@ export default function AIAssistant() {
   const [minimized, setMinimized] = useState(false)
   const [showTimeout, setShowTimeout] = useState(false)
   const [showCloseConfirm, setShowCloseConfirm] = useState(false)
+  const [showPeriodPicker, setShowPeriodPicker] = useState(false)
   const IDLE_MS = 3 * 60 * 1000
   const bottomRef  = useRef<HTMLDivElement>(null)
   const inputRef   = useRef<HTMLInputElement>(null)
