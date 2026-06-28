@@ -312,14 +312,14 @@ export default function InventoryPage() {
           <button key={i} onClick={()=>{setStatusFilter(s.key);setCatFilter('all');setPage(1)}}
             style={{
               background: statusFilter===s.key && s.key!=='all' ? s.bg : colors.surface,
-              borderRadius:radius.lg, padding:'12px 10px',
+              borderRadius:radius.lg, padding:'10px 4px',
               border: `1.5px solid ${statusFilter===s.key && s.key!=='all' ? s.color : colors.border}`,
               textAlign:'center' as const, cursor:'pointer', fontFamily:font.family,
               boxShadow: statusFilter===s.key && s.key!=='all' ? `0 4px 14px ${s.color}22` : 'none',
               transition:'all .2s',
             }}>
-            <div style={{fontSize:20,fontWeight:900,color:s.color,letterSpacing:'-0.5px'}}>{s.value.toLocaleString()}</div>
-            <div style={{fontSize:10,color:colors.text3,marginTop:3,fontWeight:600}}>{s.label}</div>
+            <div style={{fontSize:16,fontWeight:900,color:s.color,letterSpacing:'-0.5px'}}>{s.value.toLocaleString()}</div>
+            <div style={{fontSize:9,color:colors.text3,marginTop:2,fontWeight:600}}>{s.label}</div>
           </button>
         ))}
       </div>
