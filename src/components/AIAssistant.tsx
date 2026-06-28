@@ -166,6 +166,7 @@ export default function AIAssistant() {
   const [loading, setLoading] = useState(false)
   const [minimized, setMinimized] = useState(false)
   const [showTimeout, setShowTimeout] = useState(false)
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false)
   const IDLE_MS = 3 * 60 * 1000
   const bottomRef  = useRef<HTMLDivElement>(null)
   const inputRef   = useRef<HTMLInputElement>(null)
@@ -302,6 +303,7 @@ export default function AIAssistant() {
           height: minimized ? 'auto' : '72vh',
           maxHeight: minimized ? 'auto' : 580,
           overflow:'hidden',
+          position:'relative',
           fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",
           direction:'rtl',
         }}>
@@ -324,13 +326,41 @@ export default function AIAssistant() {
               <button onClick={()=>setMinimized(m=>!m)} style={{width:28,height:28,borderRadius:8,background:'rgba(255,255,255,.15)',border:'1px solid rgba(255,255,255,.2)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontSize:12}}>
                 {minimized?'▲':'▼'}
               </button>
-              <button onClick={()=>{setOpen(false);setMinimized(false)}} style={{width:28,height:28,borderRadius:8,background:'rgba(255,255,255,.15)',border:'1px solid rgba(255,255,255,.2)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontSize:14}}>✕</button>
+              <button onClick={()=>setShowCloseConfirm(true)} style={{width:28,height:28,borderRadius:8,background:'rgba(255,255,255,.15)',border:'1px solid rgba(255,255,255,.2)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontSize:14}}>✕</button>
             </div>
           </div>
 
           {!minimized && (
             <>
-              {/* Messages */}
+              {/* Close Confirm */}
+          {showCloseConfirm && (
+            <div style={{position:'absolute',inset:0,zIndex:10,background:'rgba(0,0,0,.5)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,borderRadius:'0 0 20px 20px'}}>
+              <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:280,textAlign:'center',fontFamily:'inherit',direction:'rtl'}}>
+                <div style={{fontSize:28,marginBottom:10}}>💬</div>
+                <div style={{fontSize:14,fontWeight:800,color:'#111827',marginBottom:6}}>إغلاق المحادثة؟</div>
+                <div style={{fontSize:12,color:'#6b7280',marginBottom:18,lineHeight:1.6}}>سيتم حذف المحادثة الحالية. المرة القادمة ستبدأ محادثة جديدة.</div>
+                <div style={{display:'flex',gap:8}}>
+                  <button onClick={()=>setShowCloseConfirm(false)}
+                    style={{flex:1,padding:'10px',background:'#f9fafb',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:'#374151'}}>
+                    إلغاء
+                  </button>
+                  <button onClick={()=>{
+                    setShowCloseConfirm(false)
+                    setOpen(false)
+                    setMinimized(false)
+                    setMsgs([])
+                    sessionStorage.removeItem('ai_msgs')
+                    if(timeoutRef.current) clearTimeout(timeoutRef.current)
+                  }}
+                    style={{flex:1,padding:'10px',background:'#ef4444',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                    إغلاق
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Messages */}
               <div style={{flex:1,overflowY:'auto',padding:'16px 14px',display:'flex',flexDirection:'column',gap:12,background:C.bg}}>
                 {msgs.map((m,i)=><MsgBubble key={i} msg={m}/>)}
                 {loading && (
