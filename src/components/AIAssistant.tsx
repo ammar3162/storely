@@ -165,8 +165,9 @@ export default function AIAssistant() {
   const [input, setInput]     = useState('')
   const [loading, setLoading] = useState(false)
   const [minimized, setMinimized] = useState(false)
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef  = useRef<HTMLInputElement>(null)
+  const bottomRef  = useRef<HTMLDivElement>(null)
+  const inputRef   = useRef<HTMLInputElement>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>|null>(null)
 
   const now = () => new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'})
 
