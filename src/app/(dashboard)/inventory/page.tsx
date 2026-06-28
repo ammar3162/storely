@@ -168,7 +168,7 @@ export default function InventoryPage() {
         .mob-card:active{transform:scale(.98)}
         @media(max-width:639px){
           .desk-only{display:none!important}
-          .mob-only{display:block!important}
+          .mob-only{display:grid!important;grid-template-columns:repeat(2,1fr)!important;gap:8px!important}
           .stats-grid{grid-template-columns:repeat(4,1fr)!important;gap:6px!important}
           .stat-pad{padding:8px 4px!important}
           .stat-num{font-size:16px!important}
@@ -345,7 +345,6 @@ export default function InventoryPage() {
         <>
           {/* Mobile Grid */}
           <div className="mob-only">
-            <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>
               {paginated.map(p=>{
                 const isOut=p.qty===0
                 const isLow=p.qty<=p.reorder_point
