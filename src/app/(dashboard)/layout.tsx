@@ -3,6 +3,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 
+import AIAssistant from '@/components/AIAssistant'
+
 const C = {
   primary: '#16a34a', primaryD: '#15803d', primaryL: '#f0fdf4', primaryB: '#bbf7d0',
   danger:  '#ef4444', dangerL:  '#fef2f2',
@@ -335,6 +337,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </main>
         </div>
       </div>
+      <AIAssistant/>
     </>
   )
 }
