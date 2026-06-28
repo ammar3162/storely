@@ -374,14 +374,14 @@ export default function InventoryPage() {
                 const statusBorder = isOut ? colors.dangerBorder : isLow ? colors.warningBorder : colors.primaryBorder
                 const statusLabel = isOut ? 'نفد' : isLow ? 'ناقص' : 'كافٍ'
                 return (
-                  <div key={p.id} onClick={()=>openEdit(p)} style={{background:colors.surface,border:`1px solid ${statusBorder}`,borderRadius:10,padding:'8px 6px',cursor:'pointer',transition:'all .2s'}}>
+                  <div key={p.id} onClick={()=>openEdit(p)} style={{background:colors.surface,border:`1px solid ${statusBorder}`,borderRadius:10,padding:'8px 6px',cursor:'pointer',aspectRatio:'1',display:'flex',flexDirection:'column' as const,overflow:'hidden'}}>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
                       <div style={{width:32,height:32,borderRadius:8,background:statusBg,display:'flex',alignItems:'center',justifyContent:'center',border:`1px solid ${statusBorder}`,flexShrink:0}}>
                         <span style={{fontSize:12,fontWeight:900,color:statusColor}}>{p.qty}</span>
                       </div>
                       <span style={{fontSize:9,fontWeight:700,color:statusColor,background:statusBg,padding:'2px 6px',borderRadius:20,border:`1px solid ${statusBorder}`}}>{statusLabel}</span>
                     </div>
-                    <div style={{fontSize:12,fontWeight:700,color:colors.text,marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'as const}}>{p.name}</div>
+                    <div style={{fontSize:10,fontWeight:700,color:colors.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'as const}}>{p.name}</div>
                     <div style={{fontSize:9,color:colors.text4,marginBottom:4}}>{p.unit}</div>
                     <StockBar qty={p.qty} reorder={p.reorder_point}/>
                   </div>
