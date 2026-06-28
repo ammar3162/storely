@@ -49,7 +49,10 @@ function renderText(text: string): React.ReactNode {
                     const isGood = cell.includes('آمن')
                     const isZero = cell==='0'
                     const color = isGood?'#16a34a':isZero?'#9ca3af':'#111827'
-                    return <td key={ci} style={{padding:'5px 8px',borderBottom:'1px solid #f3f4f6',textAlign:ci===0?'right':'center',color,fontWeight:ci===0?600:400,fontSize:10}}>{cell}</td>
+                    const cellParts = cell.replace(/\*\*(.*?)\*\*/g, '###BOLD###$1###BOLD###').split('###BOLD###')
+                    return <td key={ci} style={{padding:'5px 8px',borderBottom:'1px solid #f3f4f6',textAlign:ci===0?'right':'center',color,fontWeight:ci===0?600:400,fontSize:10}}>
+                      {cellParts.map((cp,cpi)=>cpi%2===0?cp:<b key={cpi} style={{color:isGood?'#16a34a':'#111827'}}>{cp}</b>)}
+                    </td>
                   })}
                 </tr>
               ))}
