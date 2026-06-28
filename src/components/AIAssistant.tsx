@@ -3,41 +3,86 @@ import { useState, useRef, useEffect } from 'react'
 
 const C = {
   primary:'#16a34a', primaryD:'#15803d', primaryL:'#f0fdf4', primaryB:'#bbf7d0',
-  text:'#111827', text3:'#6b7280', text4:'#9ca3af',
-  bg:'#f9fafb', border:'#f3f4f6', border2:'#e5e7eb',
+  text:'#111827', text2:'#374151', text3:'#6b7280', text4:'#9ca3af',
+  bg:'#f9fafb', surface:'#ffffff', border:'#f3f4f6', border2:'#e5e7eb',
 }
 
 const QUICK = [
-  'ما الأصناف الناقصة؟',
-  'ما أكثر صنف يُصرف؟',
-  'هل مخزوني بحالة جيدة؟',
-  'ما توصياتك لهذا الأسبوع؟',
+  { icon:'📦', text:'الأصناف الناقصة' },
+  { icon:'📊', text:'تحليل المخزون' },
+  { icon:'💡', text:'توصيات هذا الأسبوع' },
+  { icon:'📈', text:'أكثر الأصناف صرفاً' },
 ]
 
-interface Msg { role:'user'|'ai'; text:string }
+interface Msg { role:'user'|'ai'; text:string; time:string }
+
+function TypingDots() {
+  return (
+    <div style={{display:'flex',gap:4,alignItems:'center',padding:'4px 2px'}}>
+      {[0,1,2].map(i=>(
+        <div key={i} style={{width:7,height:7,borderRadius:'50%',background:C.primary,animation:`bounce 1.2s ease ${i*0.15}s infinite`}}/>
+      ))}
+    </div>
+  )
+}
+
+function MsgBubble({ msg }: { msg:Msg }) {
+  const isUser = msg.role==='user'
+  return (
+    <div style={{display:'flex',flexDirection:'column',alignItems:isUser?'flex-start':'flex-end',gap:4}}>
+      <div style={{display:'flex',alignItems:'flex-end',gap:8,flexDirection:isUser?'row':'row-reverse'}}>
+        {!isUser && (
+          <div style={{width:30,height:30,borderRadius:9,background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+          </div>
+        )}
+        <div style={{
+          maxWidth:'78%', padding:'11px 14px',
+          background: isUser ? `linear-gradient(135deg,${C.primary},${C.primaryD})` : 'white',
+          color: isUser ? 'white' : C.text,
+          borderRadius: isUser ? '18px 4px 18px 18px' : '4px 18px 18px 18px',
+          fontSize:13, lineHeight:1.65, wordBreak:'break-word',
+          boxShadow: isUser ? `0 4px 14px ${C.primary}30` : '0 2px 8px rgba(0,0,0,.06)',
+          border: isUser ? 'none' : `1px solid ${C.border}`,
+        }}>
+          {msg.text}
+        </div>
+      </div>
+      <div style={{fontSize:9,color:C.text4,marginRight:isUser?0:38,marginLeft:isUser?0:0,paddingRight:isUser?4:0,paddingLeft:isUser?0:4}}>{msg.time}</div>
+    </div>
+  )
+}
 
 export default function AIAssistant() {
   const [open, setOpen]       = useState(false)
   const [msgs, setMsgs]       = useState<Msg[]>([])
   const [input, setInput]     = useState('')
   const [loading, setLoading] = useState(false)
+  const [minimized, setMinimized] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const inputRef  = useRef<HTMLInputElement>(null)
+
+  const now = () => new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'})
 
   useEffect(()=>{
     if(open && msgs.length===0) {
-      setMsgs([{role:'ai', text:'مرحباً! 👋 أنا مساعدك الذكي في Storely. يمكنني مساعدتك في تحليل مخزونك وإعطائك توصيات. كيف يمكنني مساعدتك؟'}])
+      setMsgs([{role:'ai', text:'مرحباً! 👋 أنا مساعدك الذكي في Storely.\n\nيمكنني مساعدتك في:\n• تحليل مخزونك الحالي\n• معرفة الأصناف الناقصة\n• توصيات الشراء\n• إحصائيات الصرف\n\nكيف يمكنني مساعدتك اليوم؟', time:now()}])
     }
-  },[open])
+    if(open && !minimized) {
+      setTimeout(()=>inputRef.current?.focus(), 300)
+    }
+  },[open, minimized])
 
   useEffect(()=>{
-    bottomRef.current?.scrollIntoView({behavior:'smooth'})
-  },[msgs])
+    if(!minimized) bottomRef.current?.scrollIntoView({behavior:'smooth'})
+  },[msgs, minimized])
 
   async function send(text?:string) {
-    const msg = text || input.trim()
+    const msg = (text || input).trim()
     if(!msg || loading) return
     setInput('')
-    setMsgs(m=>[...m,{role:'user',text:msg}])
+    const userMsg:Msg = {role:'user', text:msg, time:now()}
+    setMsgs(m=>[...m, userMsg])
     setLoading(true)
 
     const org_id = sessionStorage.getItem('s_org_id')
@@ -50,111 +95,137 @@ export default function AIAssistant() {
         body: JSON.stringify({message:msg, org_id, branch_id})
       })
       const data = await res.json()
-      setMsgs(m=>[...m,{role:'ai',text:data.reply||'عذراً، حدث خطأ'}])
+      setMsgs(m=>[...m, {role:'ai', text:data.reply||'عذراً، حدث خطأ', time:now()}])
     } catch {
-      setMsgs(m=>[...m,{role:'ai',text:'عذراً، حدث خطأ في الاتصال'}])
+      setMsgs(m=>[...m, {role:'ai', text:'عذراً، حدث خطأ في الاتصال. تأكد من اتصالك بالإنترنت.', time:now()}])
     }
     setLoading(false)
+    setTimeout(()=>inputRef.current?.focus(), 100)
   }
+
+  const unreadCount = 0
 
   return (
     <>
       <style>{`
-        @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+        @keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
         @keyframes spin{to{transform:rotate(360deg)}}
-        .ai-btn{animation:pulse 3s ease-in-out infinite}
-        .ai-win{animation:fadeUp .3s ease}
-        .msg-bubble{max-width:85%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.6;word-break:break-word}
+        @keyframes glow{0%,100%{box-shadow:0 4px 20px ${C.primary}40}50%{box-shadow:0 4px 28px ${C.primary}70}}
+        .ai-fab{animation:glow 3s ease-in-out infinite;transition:transform .2s}
+        .ai-fab:active{transform:scale(.92)!important}
+        .ai-win{animation:fadeUp .3s cubic-bezier(.34,1.56,.64,1)}
+        .ai-input:focus{border-color:${C.primary}!important;box-shadow:0 0 0 3px ${C.primaryL}!important;outline:none!important}
+        .quick-btn{transition:all .15s}
+        .quick-btn:active{transform:scale(.95)}
+        .send-btn{transition:all .2s}
+        .send-btn:not(:disabled):active{transform:scale(.92)}
       `}</style>
 
-      {/* Floating Button */}
+      {/* FAB Button */}
       {!open && (
-        <button className="ai-btn" onClick={()=>setOpen(true)}
-          style={{position:'fixed',bottom:90,left:16,zIndex:999,width:52,height:52,borderRadius:'50%',background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:`0 4px 20px ${C.primary}50`,fontFamily:'inherit'}}>
-          <svg width="24" height="24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <button className="ai-fab" onClick={()=>setOpen(true)}
+          style={{position:'fixed',bottom:86,left:16,zIndex:999,width:54,height:54,borderRadius:'50%',background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+            <path d="M18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/>
           </svg>
+          {unreadCount>0&&<span style={{position:'absolute',top:-2,right:-2,width:16,height:16,borderRadius:'50%',background:'#ef4444',color:'white',fontSize:9,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid white'}}>{unreadCount}</span>}
         </button>
       )}
 
       {/* Chat Window */}
       {open && (
-        <div className="ai-win" style={{position:'fixed',bottom:90,left:12,right:12,zIndex:999,maxWidth:400,margin:'0 auto',background:'white',borderRadius:20,boxShadow:'0 20px 60px rgba(0,0,0,.15)',border:`1px solid ${C.border2}`,display:'flex',flexDirection:'column',maxHeight:'70vh',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+        <div className="ai-win" style={{
+          position:'fixed',
+          bottom: minimized ? 86 : 86,
+          left: 12, right: 12,
+          zIndex:999,
+          maxWidth:420,
+          margin:'0 auto',
+          background:'white',
+          borderRadius:20,
+          boxShadow:'0 24px 64px rgba(0,0,0,.18)',
+          border:`1px solid ${C.border}`,
+          display:'flex',
+          flexDirection:'column',
+          height: minimized ? 'auto' : '72vh',
+          maxHeight: minimized ? 'auto' : 580,
+          overflow:'hidden',
+          fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",
+          direction:'rtl',
+        }}>
 
           {/* Header */}
-          <div style={{padding:'14px 16px',borderBottom:`1px solid ${C.border}`,display:'flex',alignItems:'center',gap:10,background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,borderRadius:'20px 20px 0 0',flexShrink:0}}>
-            <div style={{width:36,height:36,borderRadius:10,background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-              <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <div style={{background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,padding:'14px 16px',display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
+            <div style={{width:38,height:38,borderRadius:11,background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:'1.5px solid rgba(255,255,255,.3)'}}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
               </svg>
             </div>
             <div style={{flex:1}}>
-              <div style={{fontSize:14,fontWeight:800,color:'white'}}>مساعد Storely الذكي</div>
-              <div style={{fontSize:10,color:'rgba(255,255,255,.7)'}}>يعرف مخزونك ويحلله</div>
+              <div style={{fontSize:14,fontWeight:800,color:'white',letterSpacing:'-0.2px'}}>مساعد Storely الذكي</div>
+              <div style={{display:'flex',alignItems:'center',gap:4,marginTop:1}}>
+                <div style={{width:6,height:6,borderRadius:'50%',background:'#86efac'}}/>
+                <span style={{fontSize:10,color:'rgba(255,255,255,.8)'}}>متصل دائماً</span>
+              </div>
             </div>
-            <button onClick={()=>setOpen(false)} style={{background:'rgba(255,255,255,.2)',border:'none',borderRadius:8,width:28,height:28,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontSize:14}}>✕</button>
+            <div style={{display:'flex',gap:6}}>
+              <button onClick={()=>setMinimized(m=>!m)} style={{width:28,height:28,borderRadius:8,background:'rgba(255,255,255,.15)',border:'1px solid rgba(255,255,255,.2)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontSize:12}}>
+                {minimized?'▲':'▼'}
+              </button>
+              <button onClick={()=>{setOpen(false);setMinimized(false)}} style={{width:28,height:28,borderRadius:8,background:'rgba(255,255,255,.15)',border:'1px solid rgba(255,255,255,.2)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontSize:14}}>✕</button>
+            </div>
           </div>
 
-          {/* Messages */}
-          <div style={{flex:1,overflowY:'auto',padding:'14px 12px',display:'flex',flexDirection:'column',gap:10}}>
-            {msgs.map((m,i)=>(
-              <div key={i} style={{display:'flex',justifyContent:m.role==='user'?'flex-start':'flex-end'}}>
-                {m.role==='ai'&&(
-                  <div style={{width:28,height:28,borderRadius:8,background:C.primaryL,border:`1px solid ${C.primaryB}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginLeft:6,alignSelf:'flex-end'}}>
-                    <svg width="13" height="13" fill="none" stroke={C.primary} strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+          {!minimized && (
+            <>
+              {/* Messages */}
+              <div style={{flex:1,overflowY:'auto',padding:'16px 14px',display:'flex',flexDirection:'column',gap:12,background:C.bg}}>
+                {msgs.map((m,i)=><MsgBubble key={i} msg={m}/>)}
+                {loading && (
+                  <div style={{display:'flex',alignItems:'flex-end',gap:8}}>
+                    <div style={{width:30,height:30,borderRadius:9,background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <div style={{width:12,height:12,border:'2px solid rgba(255,255,255,.4)',borderTopColor:'white',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
+                    </div>
+                    <div style={{background:'white',padding:'11px 14px',borderRadius:'4px 18px 18px 18px',border:`1px solid ${C.border}`,boxShadow:'0 2px 8px rgba(0,0,0,.06)'}}>
+                      <TypingDots/>
+                    </div>
                   </div>
                 )}
-                <div className="msg-bubble" style={{
-                  background: m.role==='user' ? C.bg : C.primaryL,
-                  color: m.role==='user' ? C.text : C.text,
-                  border: `1px solid ${m.role==='user'?C.border2:C.primaryB}`,
-                  borderRadius: m.role==='user' ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
-                }}>
-                  {m.text}
-                </div>
+                <div ref={bottomRef}/>
               </div>
-            ))}
-            {loading && (
-              <div style={{display:'flex',justifyContent:'flex-end',gap:6,alignItems:'center'}}>
-                <div style={{width:28,height:28,borderRadius:8,background:C.primaryL,border:`1px solid ${C.primaryB}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                  <div style={{width:12,height:12,border:`2px solid ${C.primaryB}`,borderTopColor:C.primary,borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
-                </div>
-                <div className="msg-bubble" style={{background:C.primaryL,border:`1px solid ${C.primaryB}`,borderRadius:'4px 16px 16px 16px'}}>
-                  <span style={{display:'inline-flex',gap:4}}>
-                    {[0,.2,.4].map(d=><span key={d} style={{width:6,height:6,borderRadius:'50%',background:C.primary,display:'inline-block',animation:`pulse 1.2s ease ${d}s infinite`}}/>)}
-                  </span>
-                </div>
-              </div>
-            )}
-            <div ref={bottomRef}/>
-          </div>
 
-          {/* Quick questions */}
-          {msgs.length<=1 && (
-            <div style={{padding:'0 12px 8px',display:'flex',gap:6,flexWrap:'wrap'}}>
-              {QUICK.map(q=>(
-                <button key={q} onClick={()=>send(q)}
-                  style={{padding:'5px 10px',background:C.bg,border:`1px solid ${C.border2}`,borderRadius:99,fontSize:11,fontWeight:600,color:C.text3,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
-                  {q}
+              {/* Quick suggestions */}
+              {msgs.length<=1 && (
+                <div style={{padding:'10px 14px 0',background:'white',borderTop:`1px solid ${C.border}`,flexShrink:0}}>
+                  <div style={{fontSize:10,fontWeight:700,color:C.text4,marginBottom:8,textTransform:'uppercase',letterSpacing:'.06em'}}>اقتراحات سريعة</div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:10}}>
+                    {QUICK.map(q=>(
+                      <button key={q.text} className="quick-btn" onClick={()=>send(q.text)}
+                        style={{display:'flex',alignItems:'center',gap:6,padding:'8px 10px',background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,fontSize:11,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
+                        <span style={{fontSize:14}}>{q.icon}</span>
+                        {q.text}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Input */}
+              <div style={{padding:'10px 12px',borderTop:`1px solid ${C.border}`,background:'white',display:'flex',gap:8,alignItems:'flex-end',flexShrink:0}}>
+                <input ref={inputRef} className="ai-input" value={input}
+                  onChange={e=>setInput(e.target.value)}
+                  onKeyDown={e=>e.key==='Enter'&&!e.shiftKey&&send()}
+                  placeholder="اسألني عن مخزونك..."
+                  style={{flex:1,padding:'10px 14px',border:`1.5px solid ${C.border2}`,borderRadius:12,fontSize:13,fontFamily:'inherit',color:C.text,background:C.bg,resize:'none',transition:'all .15s'}}/>
+                <button className="send-btn" onClick={()=>send()} disabled={!input.trim()||loading}
+                  style={{width:42,height:42,borderRadius:12,background:input.trim()&&!loading?`linear-gradient(135deg,${C.primary},${C.primaryD})`:'#e5e7eb',border:'none',cursor:input.trim()&&!loading?'pointer':'not-allowed',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:input.trim()&&!loading?`0 4px 14px ${C.primary}30`:'none'}}>
+                  <svg width="16" height="16" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
                 </button>
-              ))}
-            </div>
+              </div>
+            </>
           )}
-
-          {/* Input */}
-          <div style={{padding:'10px 12px',borderTop:`1px solid ${C.border}`,display:'flex',gap:8,flexShrink:0}}>
-            <input value={input} onChange={e=>setInput(e.target.value)}
-              onKeyDown={e=>e.key==='Enter'&&!e.shiftKey&&send()}
-              placeholder="اسألني عن مخزونك..."
-              style={{flex:1,padding:'10px 14px',border:`1.5px solid ${C.border2}`,borderRadius:12,fontSize:13,outline:'none',fontFamily:'inherit',color:C.text,background:C.bg,transition:'border .15s'}}
-              onFocus={e=>e.currentTarget.style.borderColor=C.primary}
-              onBlur={e=>e.currentTarget.style.borderColor=C.border2}/>
-            <button onClick={()=>send()} disabled={!input.trim()||loading}
-              style={{width:40,height:40,borderRadius:12,background:input.trim()&&!loading?C.primary:'#e5e7eb',border:'none',cursor:input.trim()&&!loading?'pointer':'not-allowed',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'background .15s'}}>
-              <svg width="16" height="16" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-            </button>
-          </div>
         </div>
       )}
     </>
