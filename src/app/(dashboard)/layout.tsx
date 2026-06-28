@@ -180,7 +180,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {showBranchSel&&<BranchSelector branches={branches} orgName={orgName} onSelect={selectBranch}/>}
       <div style={{display:'flex',minHeight:'100vh',background:colors.bg,fontFamily:font.family,direction:'rtl'}}>
         <style>{`
-          @media(max-width:768px){.desk-side{display:none!important}.mob-header{display:flex!important}.mob-nav{display:flex!important}.main-pad{margin-right:0!important;padding:72px 16px 80px!important}}
+          @media(max-width:768px){.desk-side{display:none!important}.mob-header{display:flex!important}.mob-nav{display:flex!important}.main-pad{margin-right:0!important;padding:64px 10px 72px!important}}
           .mob-header{display:none}.mob-nav{display:none}
         `}</style>
 
