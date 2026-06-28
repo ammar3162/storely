@@ -2,10 +2,15 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
-import Link from 'next/link'
-import { colors, radius, shadow, font, card } from '@/lib/ds'
 
-const NAV = [
+const C = {
+  primary: '#16a34a', primaryD: '#15803d', primaryL: '#f0fdf4', primaryB: '#bbf7d0',
+  danger:  '#ef4444', dangerL:  '#fef2f2',
+  text:    '#111827', text2: '#374151', text3: '#6b7280', text4: '#9ca3af',
+  bg:      '#f5f7fa', surface: '#ffffff', border: '#f0f0f0',
+}
+
+const NAV_MAIN = [
   { href:'/dashboard', label:'الرئيسية', icon:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
   { href:'/inventory',  label:'المخزون',  icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
   { href:'/purchases',  label:'مشتريات', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
@@ -13,64 +18,45 @@ const NAV = [
   { href:'/reports',    label:'التقارير', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
 ]
 
-const EXTRA = [
-  { href:'/suppliers',  label:'الموردين', icon:'M3 7h13l3 5v5h-3m-10 0H3v-7m13-3v10m-13 0a2 2 0 104 0m-4 0a2 2 0 114 0m9 0a2 2 0 104 0m-4 0a2 2 0 114 0' },
-  { href:'/staff-management',  label:'الموظفون', icon:'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8zm6 0a4 4 0 11-8 0' },
-  { href:'/notifications', label:'الإشعارات', icon:'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
-  { href:'/settings',      label:'الإعدادات', icon:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
+const NAV_MORE = [
+  { href:'/suppliers',        label:'الموردين',   icon:'M3 7h13l3 5v5h-3m-10 0H3v-7m13-3v10m-13 0a2 2 0 104 0m-4 0a2 2 0 114 0m9 0a2 2 0 104 0m-4 0a2 2 0 114 0' },
+  { href:'/staff-management', label:'الموظفون',   icon:'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8zm6 0a4 4 0 11-8 0' },
+  { href:'/notifications',    label:'الإشعارات',  icon:'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
+  { href:'/settings',         label:'الإعدادات',  icon:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
 ]
 
 let _cache: any = null
-const TTL = 5*60*1000
 
-function BranchSelector({ branches, orgName, onSelect }: { branches:any[]; orgName:string; onSelect:(b:any)=>void }) {
+function Icon({ d, size=20, stroke='currentColor', width=2 }: { d:string; size?:number; stroke?:string; width?:number }) {
   return (
-    <div style={{position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20,background:'rgba(0,0,0,.5)',backdropFilter:'blur(6px)',fontFamily:font.family,direction:'rtl'}}>
-      <div style={{...card,padding:28,width:'100%',maxWidth:420,boxShadow:shadow.lg}}>
-        <div style={{textAlign:'center' as const,marginBottom:24}}>
-          <div style={{width:56,height:56,borderRadius:radius.lg,background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,margin:'0 auto 12px'}}>🏪</div>
-          <div style={{fontSize:font.lg,fontWeight:800,color:colors.text}}>{orgName}</div>
-          <div style={{fontSize:font.sm,color:colors.text4,marginTop:4}}>اختر الفرع للمتابعة</div>
-        </div>
-        <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
-          {branches.map((b:any,i:number)=>(
-            <button key={b.id} onClick={()=>onSelect(b)}
-              style={{padding:'14px 18px',borderRadius:radius.md,border:`1.5px solid ${colors.border2}`,background:colors.surface,cursor:'pointer',fontFamily:font.family,display:'flex',alignItems:'center',gap:12,transition:'all .15s',textAlign:'right' as const}}
-              onMouseEnter={e=>{(e.currentTarget as HTMLButtonElement).style.borderColor=colors.primary;(e.currentTarget as HTMLButtonElement).style.background=colors.primaryLight}}
-              onMouseLeave={e=>{(e.currentTarget as HTMLButtonElement).style.borderColor=colors.border2;(e.currentTarget as HTMLButtonElement).style.background=colors.surface}}>
-              <div style={{width:40,height:40,borderRadius:radius.md,background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:18}}>{i===0?'🏠':'🏪'}</div>
-              <div style={{flex:1}}>
-                <div style={{fontSize:font.base,fontWeight:700,color:colors.text}}>{b.name}</div>
-                {b.location&&<div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>{b.location}</div>}
-              </div>
-              <svg width={16} height={16} fill="none" stroke={colors.text4} strokeWidth={2} viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
+    <svg width={size} height={size} fill="none" stroke={stroke} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+      {d.split(' M').map((p,i)=><path key={i} d={(i===0?'':' M')+p}/>)}
+    </svg>
   )
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [orgName, setOrgName]         = useState(_cache?.orgName||'')
-  const [branchName, setBranchName]   = useState(typeof window!=='undefined'?sessionStorage.getItem('s_branch_name')||'':'')
-  const [userName, setUserName]       = useState(_cache?.userName||'')
-  const [userInit, setUserInit]       = useState(_cache?.userInit||'م')
-  const [lowCount, setLowCount]       = useState(_cache?.lowCount||0)
-  const [unread, setUnread]           = useState(_cache?.unread||0)
-  const [drawer, setDrawer]           = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [branches, setBranches]       = useState<any[]>(typeof window!=='undefined'&&sessionStorage.getItem('s_branches')?JSON.parse(sessionStorage.getItem('s_branches')||'[]'):[])
-  const [showBranchSel, setShowBranchSel] = useState(false)
-  const [plan, setPlan] = useState('basic')
-  const [ready, setReady]             = useState(false)
-  const [theme, setTheme]             = useState<'light'|'dark'>('light')
+  const [orgName, setOrgName]       = useState('')
+  const [branchName, setBranchName] = useState('')
+  const [userName, setUserName]     = useState('')
+  const [userInit, setUserInit]     = useState('م')
+  const [lowCount, setLowCount]     = useState(0)
+  const [unread, setUnread]         = useState(0)
+  const [branches, setBranches]     = useState<any[]>([])
+  const [showMore, setShowMore]     = useState(false)
+  const [showBranch, setShowBranch] = useState(false)
+  const [ready, setReady]           = useState(false)
+  const [theme, setTheme]           = useState<'light'|'dark'>('light')
+  const router   = useRouter()
+  const pathname = usePathname()
+  const sb = createClient()
 
   useEffect(()=>{
     const saved = localStorage.getItem('storely_theme') as 'light'|'dark' || 'light'
     setTheme(saved)
     document.documentElement.setAttribute('data-theme', saved)
+    if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{})
+    load()
   },[])
 
   function toggleTheme() {
@@ -79,14 +65,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     localStorage.setItem('storely_theme', next)
     document.documentElement.setAttribute('data-theme', next)
   }
-  const router   = useRouter()
-  const pathname = usePathname()
-  const sb = createClient()
-
-  useEffect(()=>{
-    if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{})
-    load()
-  },[])
 
   const load = useCallback(async()=>{
     const{data:{user}}=await sb.auth.getUser()
@@ -101,48 +79,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     sessionStorage.setItem('s_profile_id',p.id)
     const{data:orgData}=await (sb as any).from('organizations').select('plan,max_staff,max_suppliers').eq('id',p.org_id).single()
     const orgPlan=(orgData as any)?.plan||'basic'
-    const orgMaxStaff=(orgData as any)?.max_staff||1
-    const orgMaxSuppliers=(orgData as any)?.max_suppliers||1
-    setPlan(orgPlan)
-    // Always update from DB to ensure fresh data
     sessionStorage.setItem('s_plan',orgPlan)
-    sessionStorage.setItem('s_max_staff',String(orgMaxStaff))
-    sessionStorage.setItem('s_max_suppliers',String(orgMaxSuppliers))
-
+    sessionStorage.setItem('s_max_staff',String((orgData as any)?.max_staff||1))
+    sessionStorage.setItem('s_max_suppliers',String((orgData as any)?.max_suppliers||1))
     const{data:bList}=await sb.from('branches').select('*').eq('org_id',p.org_id).eq('is_active',true).order('created_at')
     const bl=bList||[]
     setBranches(bl)
-
-    // إذا تغير عدد الفروع امسح الاختيار القديم
-    const savedBranchCount = sessionStorage.getItem('s_branch_count')
-    if(savedBranchCount && Number(savedBranchCount) !== bl.length) {
-      sessionStorage.removeItem('s_branch_id')
-      sessionStorage.removeItem('s_branch_name')
-    }
-    sessionStorage.setItem('s_branch_count', String(bl.length))
-    sessionStorage.setItem('s_branches', JSON.stringify(bl))
-
+    sessionStorage.setItem('s_branches',JSON.stringify(bl))
     if(bl.length<=1){
       const b=bl[0]||null
       if(b){sessionStorage.setItem('s_branch_id',b.id);sessionStorage.setItem('s_branch_name',b.name);setBranchName(b.name)}
-      setReady(true)
     } else {
       const saved=sessionStorage.getItem('s_branch_id')
       if(saved&&bl.find((x:any)=>x.id===saved)){
-        const b=bl.find((x:any)=>x.id===saved)
-        setBranchName(b?.name||''); setReady(true)
+        setBranchName(bl.find((x:any)=>x.id===saved)?.name||'')
       } else {
-        // اختر الفرع الرئيسي تلقائياً (أول فرع)
-        const defaultBranch=bl[0]
-        if(defaultBranch){
-          sessionStorage.setItem('s_branch_id',defaultBranch.id)
-          sessionStorage.setItem('s_branch_name',defaultBranch.name)
-          setBranchName(defaultBranch.name)
-        }
-        setReady(true)
+        const def=bl[0]
+        if(def){sessionStorage.setItem('s_branch_id',def.id);sessionStorage.setItem('s_branch_name',def.name);setBranchName(def.name)}
       }
     }
-
+    setReady(true)
     const[{data:prods},{data:notifs}]=await Promise.all([
       sb.from('products').select('qty,reorder_point').eq('org_id',p.org_id).eq('is_active',true),
       sb.from('notifications').select('id').eq('org_id',p.org_id).eq('read',false),
@@ -154,154 +110,230 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   function selectBranch(b:any){
     sessionStorage.setItem('s_branch_id',b.id)
     sessionStorage.setItem('s_branch_name',b.name)
-    setBranchName(b.name); setShowBranchSel(false); setReady(true)
-    Object.keys(sessionStorage).filter(k=>k.startsWith('inv_')||k.startsWith('disp_')).forEach(k=>sessionStorage.removeItem(k))
-    const url = new URL(window.location.href)
-    url.searchParams.set('_bid', b.id)
-    window.location.href = url.toString()
+    setBranchName(b.name); setShowBranch(false)
+    window.location.reload()
   }
 
-  const C={bg:'#0f172a',bg2:'#1e293b',border:'rgba(255,255,255,.08)',text:'rgba(255,255,255,.9)',text2:'rgba(255,255,255,.5)'}
   const isActive=(href:string)=>pathname===href||(href!=='/dashboard'&&pathname.startsWith(href))
 
-  function NavBtn({item,badge}:{item:any;badge?:number}){
-    const active=isActive(item.href)
-    return(
-      <button onClick={()=>router.push(item.href)} style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'10px 10px',borderRadius:radius.md,border:'none',cursor:'pointer',fontFamily:font.family,marginBottom:2,background:active?colors.primary+'22':'transparent',color:active?colors.primary:C.text2,transition:'all .15s',textAlign:'right' as const}}>
-        <svg width={18} height={18} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">{item.icon.split(' M').map((d:string,j:number)=><path key={j} d={(j===0?'':' M')+d}/>)}</svg>
-        <span style={{fontSize:font.sm,fontWeight:active?700:500}}>{item.label}</span>
-        {badge&&badge>0&&<span style={{marginRight:'auto',background:colors.danger,color:'white',fontSize:9,fontWeight:700,padding:'2px 6px',borderRadius:99}}>{badge}</span>}
-      </button>
-    )
-  }
+  // Bottom nav items
+  const BOT_NAV = [
+    { href:'/dashboard', label:'الرئيسية', icon:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+    { href:'/inventory',  label:'المخزون',  icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', badge:lowCount },
+    { href:'/dispense',   label:'الصرف',   icon:'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
+    { href:'/purchases',  label:'مشتريات', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
+  ]
 
   return (
     <>
-      {showBranchSel&&<BranchSelector branches={branches} orgName={orgName} onSelect={selectBranch}/>}
-      <div style={{display:'flex',minHeight:'100vh',background:colors.bg,fontFamily:font.family,direction:'rtl'}}>
+      {/* Branch selector */}
+      {showBranch && branches.length>1 && (
+        <div style={{position:'fixed',inset:0,zIndex:2000,background:'rgba(0,0,0,.5)',backdropFilter:'blur(6px)',display:'flex',alignItems:'flex-end',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+          <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxWidth:480,padding:24}}>
+            <div style={{width:36,height:4,borderRadius:99,background:'#e5e7eb',margin:'0 auto 20px'}}/>
+            <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:16}}>اختر الفرع</div>
+            {branches.map((b:any)=>(
+              <button key={b.id} onClick={()=>selectBranch(b)}
+                style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'14px 16px',borderRadius:12,border:`1.5px solid ${sessionStorage.getItem('s_branch_id')===b.id?C.primary:'#e5e7eb'}`,background:sessionStorage.getItem('s_branch_id')===b.id?C.primaryL:'white',marginBottom:8,cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
+                <div style={{width:36,height:36,borderRadius:10,background:C.primaryL,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>🏪</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:14,fontWeight:700,color:C.text}}>{b.name}</div>
+                  {b.location&&<div style={{fontSize:11,color:C.text3}}>{b.location}</div>}
+                </div>
+                {sessionStorage.getItem('s_branch_id')===b.id&&<span style={{fontSize:12,color:C.primary,fontWeight:700}}>✓</span>}
+              </button>
+            ))}
+            <button onClick={()=>setShowBranch(false)} style={{width:'100%',padding:'13px',background:'#f9fafb',border:'1.5px solid #e5e7eb',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:C.text2,marginTop:4}}>إلغاء</button>
+          </div>
+        </div>
+      )}
+
+      {/* More drawer — mobile */}
+      {showMore && (
+        <div style={{position:'fixed',inset:0,zIndex:1000,display:'flex',alignItems:'flex-end',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+          <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.4)',backdropFilter:'blur(4px)'}} onClick={()=>setShowMore(false)}/>
+          <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',padding:'12px 20px 32px',position:'relative',animation:'slideUp .3s ease'}}>
+            <style>{`@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}`}</style>
+            <div style={{width:36,height:4,borderRadius:99,background:'#e5e7eb',margin:'0 auto 20px'}}/>
+
+            {/* User info */}
+            <div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 16px',background:C.primaryL,borderRadius:14,marginBottom:16,border:`1px solid ${C.primaryB}`}}>
+              <div style={{width:44,height:44,borderRadius:12,background:C.primary,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:800,color:'white',flexShrink:0}}>{userInit}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:14,fontWeight:700,color:C.text}}>{userName}</div>
+                <div style={{fontSize:11,color:C.primary,fontWeight:600}}>{orgName}</div>
+                {branchName&&<div style={{fontSize:10,color:C.text3}}>{branchName}</div>}
+              </div>
+              {branches.length>1&&(
+                <button onClick={()=>{setShowMore(false);setShowBranch(true)}} style={{padding:'6px 12px',background:'white',border:`1px solid ${C.primaryB}`,borderRadius:8,fontSize:11,fontWeight:700,color:C.primary,cursor:'pointer',fontFamily:'inherit'}}>تغيير</button>
+              )}
+            </div>
+
+            {/* Nav items */}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
+              {[...NAV_MAIN,...NAV_MORE].map(item=>{
+                const active=isActive(item.href)
+                return (
+                  <button key={item.href} onClick={()=>{router.push(item.href);setShowMore(false)}}
+                    style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',borderRadius:12,border:`1.5px solid ${active?C.primary:'#e5e7eb'}`,background:active?C.primaryL:'#f9fafb',cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
+                    <div style={{width:32,height:32,borderRadius:9,background:active?C.primary:'#e5e7eb',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <Icon d={item.icon} size={15} stroke={active?'white':'#6b7280'} width={2}/>
+                    </div>
+                    <span style={{fontSize:12,fontWeight:active?700:600,color:active?C.primary:C.text2}}>{item.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Actions */}
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={toggleTheme} style={{flex:1,padding:'11px',background:'#f9fafb',border:'1.5px solid #e5e7eb',borderRadius:12,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:C.text2,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                {theme==='light'?'🌙 داكن':'☀️ فاتح'}
+              </button>
+              <button onClick={async()=>{await sb.auth.signOut();_cache=null;sessionStorage.clear();router.replace('/login')}}
+                style={{flex:1,padding:'11px',background:'#fef2f2',border:'1.5px solid #fecaca',borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',color:'#ef4444',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                <Icon d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" size={15} stroke="#ef4444" width={2.5}/>
+                خروج
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',minHeight:'100vh',background:C.bg}}>
         <style>{`
-          @media(max-width:768px){.desk-side{display:none!important}.mob-header{display:flex!important}.mob-nav{display:flex!important}.main-pad{margin-right:0!important;padding:64px 10px 72px!important}}
-          .mob-header{display:none}.mob-nav{display:none}
+          *{box-sizing:border-box}
+          @keyframes spin{to{transform:rotate(360deg)}}
+
+          /* Mobile — default */
+          .desk-layout{display:none}
+          .mob-layout{display:flex;flex-direction:column;min-height:100vh}
+          .mob-header{display:flex}
+          .mob-content{flex:1;padding:0 12px 80px;margin-top:70px}
+          .mob-bottom-nav{display:flex}
+          .desk-sidebar{display:none}
+
+          /* Desktop */
+          @media(min-width:768px){
+            .desk-layout{display:flex;min-height:100vh}
+            .mob-layout{display:none}
+            .desk-sidebar{display:flex;flex-direction:column;width:220px;position:fixed;top:0;right:0;bottom:0;background:#0f172a;z-index:100;border-left:1px solid rgba(255,255,255,.06)}
+            .desk-content{flex:1;margin-right:220px;padding:24px;min-height:100vh}
+          }
         `}</style>
 
-        {/* Sidebar */}
-        <aside className="desk-side" style={{width:sidebarCollapsed?0:220,background:C.bg,display:'flex',flexDirection:'column' as const,position:'fixed',top:0,right:0,bottom:0,zIndex:100,transition:'width .25s ease',overflow:'hidden'}}>
-          <div style={{padding:'20px 16px 16px',borderBottom:`1px solid ${C.border}`,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-            <button onClick={()=>setSidebarCollapsed(c=>!c)} style={{background:'none',border:'none',cursor:'pointer',color:C.text2,padding:4,flexShrink:0,marginLeft:4,borderRadius:6}} title={sidebarCollapsed?'توسيع':'طي'}>
-              <svg width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" viewBox="0 0 24 24">
-                {sidebarCollapsed?<path d="M9 18l6-6-6-6"/>:<path d="M15 18l-6-6 6-6"/>}
-              </svg>
-            </button>
-          <div style={{display:'flex',alignItems:'center',gap:10,overflow:'hidden',minWidth:0}}>
-              <img src="/storely-logo.png" alt="Storely" style={{width:36,height:36,borderRadius:radius.md,flexShrink:0,objectFit:'cover'}}/>
-              <div style={{minWidth:0,opacity:sidebarCollapsed?0:1,transition:'opacity .2s'}}>
-                <div style={{fontSize:font.sm,fontWeight:800,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{orgName||'Storely'}</div>
-                {branchName&&<button onClick={()=>branches.length>1&&setShowBranchSel(true)} style={{fontSize:font.xs,color:colors.primary,background:'none',border:'none',cursor:branches.length>1?'pointer':'default',padding:0,fontFamily:font.family}}>{branchName}{branches.length>1?' ▼':''}</button>}
+        {/* ═══ MOBILE LAYOUT ═══ */}
+        <div className="mob-layout">
+          {/* Mobile Header — Zid style */}
+          <header className="mob-header" style={{position:'fixed',top:0,right:0,left:0,zIndex:100,background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,padding:'12px 16px',alignItems:'center',gap:10}}>
+            <div style={{flex:1,display:'flex',alignItems:'center',gap:8,minWidth:0}}>
+              <img src="/storely-logo.png" alt="Storely" style={{width:30,height:30,borderRadius:8,objectFit:'cover',flexShrink:0,border:'2px solid rgba(255,255,255,.3)'}}/>
+              <div style={{minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:800,color:'white',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName||'Storely'}</div>
+                {branchName&&(
+                  <button onClick={()=>branches.length>1&&setShowBranch(true)}
+                    style={{fontSize:10,color:'rgba(255,255,255,.8)',background:'none',border:'none',cursor:branches.length>1?'pointer':'default',padding:0,fontFamily:'inherit',display:'flex',alignItems:'center',gap:2}}>
+                    {branchName}{branches.length>1&&' ▾'}
+                  </button>
+                )}
               </div>
             </div>
-          </div>
-          <nav style={{flex:1,padding:'12px 8px',overflowY:'auto'}}>
-            {NAV.map(item=><NavBtn key={item.href} item={item} badge={item.href==='/inventory'?lowCount:undefined}/>)}
-            <div style={{height:1,background:C.border,margin:'8px 0'}}/>
-            {EXTRA.map(item=><NavBtn key={item.href} item={item} badge={item.href==='/notifications'?unread:undefined}/>)}
-          </nav>
-          <div style={{padding:'12px 16px',borderTop:`1px solid ${C.border}`,display:'flex',alignItems:'center',gap:10}}>
-            <div style={{width:34,height:34,borderRadius:'50%',background:colors.primary,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:800,color:'white',flexShrink:0}}>{userInit}</div>
-            <div style={{flex:1,minWidth:0}}><div style={{fontSize:font.xs,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{userName}</div></div>
-            <button onClick={toggleTheme} style={{background:'none',border:'none',cursor:'pointer',color:C.text2,padding:4,fontSize:14}}>
-              {theme==='light'?'🌙':'☀️'}
-            </button>
-            <button onClick={async()=>{await sb.auth.signOut();_cache=null;sessionStorage.clear();router.replace('/login')}} style={{background:'none',border:'none',cursor:'pointer',color:C.text2,padding:4}}>
-              <svg width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-            </button>
-          </div>
-        </aside>
-
-        {/* Sidebar Toggle Button — Desktop */}
-        {sidebarCollapsed && (
-          <button onClick={()=>setSidebarCollapsed(false)}
-            style={{position:'fixed',top:14,right:12,zIndex:200,background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:C.text2}}>
-            <svg width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-          </button>
-        )}
-
-        {/* Mobile Header */}
-        <header className="mob-header" style={{position:'fixed',top:0,right:0,left:0,zIndex:100,background:C.bg,padding:'12px 16px',borderBottom:`1px solid ${C.border}`,alignItems:'center',gap:12}}>
-          <button onClick={()=>setDrawer(true)} style={{background:'none',border:'none',cursor:'pointer',color:C.text,padding:4}}>
-            <svg width={22} height={22} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-          </button>
-          <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-            <img src="/storely-logo.png" alt="Storely" style={{width:24,height:24,borderRadius:6,objectFit:'cover'}}/>
-            <span style={{fontSize:font.base,fontWeight:700,color:C.text}}>{orgName}</span>
-          </div>
-          {branchName&&branches.length>1&&<button onClick={()=>setShowBranchSel(true)} style={{fontSize:font.xs,color:colors.primary,background:'none',border:'none',cursor:'pointer',fontFamily:font.family}}>{branchName} ▼</button>}
-          <button onClick={toggleTheme}
-            style={{background:'none',border:'1px solid rgba(255,255,255,.15)',borderRadius:8,padding:'6px 10px',cursor:'pointer',fontSize:14,flexShrink:0}}>
-            {theme==='light'?'🌙':'☀️'}
-          </button>
-          <button onClick={async()=>{await sb.auth.signOut();_cache=null;sessionStorage.clear();router.replace('/login')}}
-            style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.3)',borderRadius:8,padding:'6px 12px',cursor:'pointer',color:'#ef4444',fontSize:12,fontWeight:700,fontFamily:'inherit',flexShrink:0}}>
-            خروج
-          </button>
-        </header>
-
-        {/* Drawer */}
-        {drawer&&(
-          <div style={{position:'fixed',inset:0,zIndex:200}}>
-            <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.5)'}} onClick={()=>setDrawer(false)}/>
-            <div style={{position:'absolute',top:0,right:0,bottom:0,width:260,background:C.bg,padding:'20px 8px',display:'flex',flexDirection:'column' as const}}>
-              <div style={{padding:'0 8px 16px',borderBottom:`1px solid ${C.border}`,marginBottom:8}}>
-                <div style={{fontSize:font.base,fontWeight:800,color:C.text}}>{orgName}</div>
-                {branchName&&<div style={{fontSize:font.xs,color:colors.primary}}>{branchName}</div>}
-              </div>
-              {[...NAV,...EXTRA].map(item=>(
-                <button key={item.href} onClick={()=>{router.push(item.href);setDrawer(false)}} style={{display:'flex',alignItems:'center',gap:10,padding:'12px 12px',borderRadius:radius.md,border:'none',cursor:'pointer',fontFamily:font.family,marginBottom:2,background:isActive(item.href)?colors.primary+'22':'transparent',color:isActive(item.href)?colors.primary:C.text2,textAlign:'right' as const}}>
-                  <svg width={18} height={18} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">{item.icon.split(' M').map((d:string,j:number)=><path key={j} d={(j===0?'':' M')+d}/>)}</svg>
-                  <span style={{fontSize:font.sm}}>{item.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Main */}
-        <main className="main-pad" style={{flex:1,marginRight:sidebarCollapsed?0:220,minHeight:'100vh',padding:24,transition:'margin-right .25s ease'}}>
-          {ready?children:(
-            <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'60vh',flexDirection:'column' as const,gap:12}}>
-              <div style={{width:36,height:36,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
-              <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-            </div>
-          )}
-        </main>
-
-        {/* Bottom Nav Mobile */}
-        <nav className="mob-nav" style={{position:'fixed',bottom:0,right:0,left:0,zIndex:100,background:C.bg,borderTop:`1px solid ${C.border}`,paddingBottom:'env(safe-area-inset-bottom)',justifyContent:'space-around',alignItems:'stretch'}}>
-          {[
-            {href:'/dashboard', label:'الرئيسية', icon:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'},
-            {href:'/inventory',  label:'المخزون',  icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'},
-            {href:'/purchases',  label:'مشتريات', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z'},
-          ].map(item=>{
-            const active=isActive(item.href)
-            return(
-              <button key={item.href} onClick={()=>router.push(item.href)}
-                style={{flex:1,display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',gap:3,padding:'10px 4px',background:'none',border:'none',cursor:'pointer',fontFamily:font.family,color:active?colors.primary:C.text2,position:'relative' as const,transition:'color .15s'}}>
-                {active&&<div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:32,height:2,borderRadius:99,background:colors.primary}}/>}
-                <svg width={22} height={22} fill="none" stroke="currentColor" strokeWidth={active?2.5:2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">{item.icon.split(' M').map((d:string,j:number)=><path key={j} d={(j===0?'':' M')+d}/>)}</svg>
-                <span style={{fontSize:10,fontWeight:active?700:400}}>{item.label}</span>
-                {item.href==='/inventory'&&lowCount>0&&<span style={{position:'absolute' as const,top:6,right:'calc(50% - 18px)',background:colors.danger,color:'white',fontSize:8,fontWeight:700,padding:'1px 5px',borderRadius:99,minWidth:16,textAlign:'center'}}>{lowCount}</span>}
+            {lowCount>0&&(
+              <button onClick={()=>router.push('/inventory')} style={{background:'rgba(255,255,255,.2)',border:'1px solid rgba(255,255,255,.3)',borderRadius:99,padding:'4px 10px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>
+                <span style={{width:6,height:6,borderRadius:'50%',background:'#fbbf24',display:'inline-block'}}/>
+                <span style={{fontSize:10,fontWeight:700,color:'white'}}>{lowCount} ناقص</span>
               </button>
-            )
-          })}
-          {/* زر القائمة */}
-          <button onClick={()=>setDrawer(true)}
-            style={{flex:1,display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',gap:3,padding:'10px 4px',background:'none',border:'none',cursor:'pointer',fontFamily:font.family,color:drawer?colors.primary:C.text2,position:'relative' as const,transition:'color .15s'}}>
-            <div style={{position:'relative'}}>
-              <svg width={22} height={22} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-              {(unread>0||lowCount>0)&&<span style={{position:'absolute',top:-4,left:-4,width:8,height:8,borderRadius:'50%',background:colors.danger,border:`1.5px solid ${C.bg}`}}/>}
+            )}
+            <div style={{width:36,height:36,borderRadius:10,background:'rgba(255,255,255,.2)',border:'1px solid rgba(255,255,255,.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:800,color:'white',cursor:'pointer',flexShrink:0}} onClick={()=>setShowMore(true)}>
+              {userInit}
             </div>
-            <span style={{fontSize:10,fontWeight:400}}>القائمة</span>
-          </button>
-        </nav>
+          </header>
+
+          {/* Mobile Content */}
+          <div className="mob-content">
+            {ready ? children : (
+              <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'60vh'}}>
+                <div style={{width:32,height:32,border:`3px solid #e5e7eb`,borderTopColor:C.primary,borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Bottom Nav — Zid style */}
+          <nav className="mob-bottom-nav" style={{position:'fixed',bottom:0,right:0,left:0,zIndex:100,background:'white',borderTop:'1px solid #f0f0f0',paddingBottom:'env(safe-area-inset-bottom)',justifyContent:'space-around',alignItems:'stretch',boxShadow:'0 -4px 20px rgba(0,0,0,.06)'}}>
+            {BOT_NAV.map(item=>{
+              const active=isActive(item.href)
+              return(
+                <button key={item.href} onClick={()=>router.push(item.href)}
+                  style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3,padding:'10px 4px 8px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',color:active?C.primary:'#9ca3af',position:'relative',transition:'color .15s'}}>
+                  {active&&<div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:28,height:3,borderRadius:99,background:C.primary}}/>}
+                  <div style={{position:'relative'}}>
+                    <Icon d={item.icon} size={22} stroke={active?C.primary:'#9ca3af'} width={active?2.5:1.8}/>
+                    {(item as any).badge>0&&<span style={{position:'absolute',top:-4,right:-6,background:'#ef4444',color:'white',fontSize:8,fontWeight:700,padding:'1px 4px',borderRadius:99,minWidth:14,textAlign:'center'}}>{(item as any).badge}</span>}
+                  </div>
+                  <span style={{fontSize:9,fontWeight:active?700:400}}>{item.label}</span>
+                </button>
+              )
+            })}
+            {/* More button */}
+            <button onClick={()=>setShowMore(true)}
+              style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3,padding:'10px 4px 8px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',color:'#9ca3af',position:'relative',transition:'color .15s'}}>
+              <div style={{position:'relative'}}>
+                <Icon d="M4 6h16M4 12h16M4 18h16" size={22} stroke="#9ca3af" width={1.8}/>
+                {(unread>0||lowCount>0)&&<span style={{position:'absolute',top:-3,right:-4,width:7,height:7,borderRadius:'50%',background:'#ef4444',border:'1.5px solid white'}}/>}
+              </div>
+              <span style={{fontSize:9,fontWeight:400}}>المزيد</span>
+            </button>
+          </nav>
+        </div>
+
+        {/* ═══ DESKTOP LAYOUT ═══ */}
+        <div className="desk-layout">
+          {/* Desktop Sidebar */}
+          <aside className="desk-sidebar">
+            <div style={{padding:'18px 16px',borderBottom:'1px solid rgba(255,255,255,.06)',display:'flex',alignItems:'center',gap:10}}>
+              <img src="/storely-logo.png" alt="Storely" style={{width:34,height:34,borderRadius:9,objectFit:'cover',flexShrink:0}}/>
+              <div style={{minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:800,color:'rgba(255,255,255,.9)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName||'Storely'}</div>
+                {branchName&&<button onClick={()=>branches.length>1&&setShowBranch(true)} style={{fontSize:10,color:C.primary,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit'}}>{branchName}{branches.length>1&&' ▾'}</button>}
+              </div>
+            </div>
+
+            <nav style={{flex:1,padding:'10px 8px',overflowY:'auto'}}>
+              {[...NAV_MAIN,...NAV_MORE].map(item=>{
+                const active=isActive(item.href)
+                const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
+                return(
+                  <button key={item.href} onClick={()=>router.push(item.href)}
+                    style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'9px 10px',borderRadius:9,border:'none',cursor:'pointer',fontFamily:'inherit',marginBottom:2,background:active?`${C.primary}22`:'transparent',color:active?C.primary:'rgba(255,255,255,.5)',transition:'all .15s',textAlign:'right'}}>
+                    <Icon d={item.icon} size={17} stroke={active?C.primary:'rgba(255,255,255,.5)'} width={active?2.5:2}/>
+                    <span style={{fontSize:12,fontWeight:active?700:500,flex:1}}>{item.label}</span>
+                    {badge>0&&<span style={{background:C.danger,color:'white',fontSize:9,fontWeight:700,padding:'2px 6px',borderRadius:99}}>{badge}</span>}
+                  </button>
+                )
+              })}
+            </nav>
+
+            <div style={{padding:'12px 14px',borderTop:'1px solid rgba(255,255,255,.06)',display:'flex',alignItems:'center',gap:8}}>
+              <div style={{width:32,height:32,borderRadius:'50%',background:C.primary,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'white',flexShrink:0}}>{userInit}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,.8)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{userName}</div>
+              </div>
+              <button onClick={toggleTheme} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,.5)',fontSize:14,padding:4}}>{theme==='light'?'🌙':'☀️'}</button>
+              <button onClick={async()=>{await sb.auth.signOut();_cache=null;sessionStorage.clear();router.replace('/login')}} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,.5)',padding:4}}>
+                <Icon d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" size={15} stroke="rgba(255,255,255,.5)" width={2}/>
+              </button>
+            </div>
+          </aside>
+
+          {/* Desktop Content */}
+          <main className="desk-content">
+            {ready ? children : (
+              <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'60vh'}}>
+                <div style={{width:32,height:32,border:`3px solid #e5e7eb`,borderTopColor:C.primary,borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
+              </div>
+            )}
+          </main>
+        </div>
       </div>
     </>
   )
