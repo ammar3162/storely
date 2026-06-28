@@ -170,9 +170,38 @@ export default function AIAssistant() {
 
   const now = () => new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'})
 
+  function resetTimer() {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    setShowTimeout(false)
+    timeoutRef.current = setTimeout(()=>{ setShowTimeout(true) }, IDLE_MS)
+  }
+
+  function continueChat() {
+    setShowTimeout(false)
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(()=>{ setShowTimeout(true) }, 5*60*1000)
+  }
+
+  function closeChat() {
+    setShowTimeout(false)
+    setOpen(false)
+    setMsgs([])
+    sessionStorage.removeItem('ai_msgs')
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+  }
+
   useEffect(()=>{
-    if(msgs.length>0) sessionStorage.setItem('ai_msgs', JSON.stringify(msgs))
+    if(msgs.length>0) {
+      sessionStorage.setItem('ai_msgs', JSON.stringify(msgs))
+      resetTimer()
+    }
   },[msgs])
+
+  useEffect(()=>{
+    if(open) resetTimer()
+    else { if(timeoutRef.current) clearTimeout(timeoutRef.current); setShowTimeout(false) }
+    return ()=>{ if(timeoutRef.current) clearTimeout(timeoutRef.current) }
+  },[open])
 
   useEffect(()=>{
     if(open && msgs.length===0) {
@@ -306,7 +335,24 @@ export default function AIAssistant() {
                 <div ref={bottomRef}/>
               </div>
 
-              {/* Quick suggestions */}
+              {/* Timeout message */}
+          {showTimeout && (
+            <div style={{margin:'8px 12px',background:'#fffbeb',border:'1px solid #fde68a',borderRadius:12,padding:'12px 14px',textAlign:'center'}}>
+              <div style={{fontSize:13,fontWeight:700,color:'#92400e',marginBottom:10}}>⏱️ هل تريد مواصلة المحادثة؟</div>
+              <div style={{display:'flex',gap:8,justifyContent:'center'}}>
+                <button onClick={continueChat}
+                  style={{padding:'7px 16px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                  مواصلة
+                </button>
+                <button onClick={closeChat}
+                  style={{padding:'7px 16px',background:'#fef2f2',color:'#ef4444',border:'1px solid #fecaca',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                  إغلاق
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Quick suggestions */}
               {msgs.length<=1 && (
                 <div style={{padding:'10px 14px 0',background:'white',borderTop:`1px solid ${C.border}`,flexShrink:0}}>
                   <div style={{fontSize:10,fontWeight:700,color:C.text4,marginBottom:8,textTransform:'uppercase',letterSpacing:'.06em'}}>اقتراحات سريعة</div>
