@@ -35,11 +35,11 @@ function renderText(text: string): React.ReactNode {
       const cols = tableLines[0].split('|').filter((_,j,a)=>j>0&&j<a.length-1).map(c=>c.trim())
       const rows = tableLines.slice(1).map(l=>l.split('|').filter((_,j,a)=>j>0&&j<a.length-1).map(c=>c.trim()))
       elements.push(
-        <div key={i} style={{overflowX:'auto',margin:'8px 0',borderRadius:10,border:'1px solid #e5e7eb'}}>
-          <table style={{width:'100%',borderCollapse:'collapse',fontSize:11,fontFamily:'inherit',direction:'rtl'}}>
+        <div key={i} style={{overflowX:'auto',margin:'8px 0',borderRadius:10,border:'1px solid #e5e7eb',WebkitOverflowScrolling:'touch'}}>
+          <table style={{borderCollapse:'collapse',fontSize:10,fontFamily:'inherit',direction:'rtl',minWidth:'100%'}}>
             <thead>
               <tr style={{background:'#f0fdf4'}}>
-                {cols.map((h,j)=><th key={j} style={{padding:'8px 10px',color:'#16a34a',fontWeight:700,textAlign:'right',borderBottom:'1.5px solid #bbf7d0',whiteSpace:'nowrap'}}>{h}</th>)}
+                {cols.map((h,j)=><th key={j} style={{padding:'6px 8px',color:'#16a34a',fontWeight:700,textAlign:'right',borderBottom:'1.5px solid #bbf7d0',whiteSpace:'nowrap',fontSize:10}}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -49,7 +49,7 @@ function renderText(text: string): React.ReactNode {
                     const isGood = cell.includes('آمن')
                     const isZero = cell==='0'
                     const color = isGood?'#16a34a':isZero?'#9ca3af':'#111827'
-                    return <td key={ci} style={{padding:'7px 10px',borderBottom:'1px solid #f3f4f6',textAlign:ci===0?'right':'center',color,fontWeight:ci===0?600:400,whiteSpace:'nowrap'}}>{cell}</td>
+                    return <td key={ci} style={{padding:'5px 8px',borderBottom:'1px solid #f3f4f6',textAlign:ci===0?'right':'center',color,fontWeight:ci===0?600:400,fontSize:10}}>{cell}</td>
                   })}
                 </tr>
               ))}
