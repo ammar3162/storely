@@ -16,59 +16,105 @@ const QUICK = [
 
 interface Msg { role:'user'|'ai'; text:string; time:string }
 
-function renderText(text: string): React.ReactNode[] {
+function renderText(text: string): React.ReactNode {
   const lines = text.split('\n')
-  return lines.map((line, i) => {
+  const elements: React.ReactNode[] = []
+  let i = 0
+
+  while (i < lines.length) {
+    const line = lines[i]
+    const next = lines[i+1] || ''
+
+    // جدول
+    if (line.includes('|') && next.includes('---')) {
+      const tableLines: string[] = [line]
+      i += 2 // skip separator
+      while (i < lines.length && lines[i].includes('|')) {
+        tableLines.push(lines[i]); i++
+      }
+      const cols = tableLines[0].split('|').filter((_,j,a)=>j>0&&j<a.length-1).map(c=>c.trim())
+      const rows = tableLines.slice(1).map(l=>l.split('|').filter((_,j,a)=>j>0&&j<a.length-1).map(c=>c.trim()))
+      elements.push(
+        <div key={i} style={{overflowX:'auto',margin:'8px 0',borderRadius:10,border:'1px solid #e5e7eb'}}>
+          <table style={{width:'100%',borderCollapse:'collapse',fontSize:11,fontFamily:'inherit',direction:'rtl'}}>
+            <thead>
+              <tr style={{background:'#f0fdf4'}}>
+                {cols.map((h,j)=><th key={j} style={{padding:'8px 10px',color:'#16a34a',fontWeight:700,textAlign:'right',borderBottom:'1.5px solid #bbf7d0',whiteSpace:'nowrap'}}>{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row,ri)=>(
+                <tr key={ri} style={{background:ri%2===0?'white':'#f9fafb'}}>
+                  {row.map((cell,ci)=>{
+                    const isGood = cell.includes('آمن')
+                    const isZero = cell==='0'
+                    const color = isGood?'#16a34a':isZero?'#9ca3af':'#111827'
+                    return <td key={ci} style={{padding:'7px 10px',borderBottom:'1px solid #f3f4f6',textAlign:ci===0?'right':'center',color,fontWeight:ci===0?600:400,whiteSpace:'nowrap'}}>{cell}</td>
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+      continue
+    }
+
     // H2
     if (line.startsWith('## ')) {
-      const t = line.replace(/^## /, '').replace(/\*\*(.*?)\*\*/g, '$1')
-      return <div key={i} style={{fontSize:13,fontWeight:800,color:'#111827',marginTop:i>0?12:4,marginBottom:4,paddingBottom:4,borderBottom:'1px solid #f0f0f0'}}>{t}</div>
+      const t = line.replace(/^## /,'').replace(/\*\*(.*?)\*\*/g,'$1')
+      elements.push(<div key={i} style={{fontSize:13,fontWeight:800,color:'#111827',marginTop:i>0?14:4,marginBottom:6,paddingBottom:5,borderBottom:'1.5px solid #f0fdf4'}}>{t}</div>)
+      i++; continue
     }
-    // H3
-    if (line.startsWith('### ')) {
-      const t = line.replace(/^### /, '').replace(/\*\*(.*?)\*\*/g, '$1')
-      return <div key={i} style={{fontSize:12,fontWeight:700,color:'#374151',marginTop:8,marginBottom:2}}>{t}</div>
-    }
+
     // HR
     if (line.trim()==='---') {
-      return <div key={i} style={{height:1,background:'#f3f4f6',margin:'6px 0'}}/>
+      elements.push(<div key={i} style={{height:1,background:'#f3f4f6',margin:'8px 0'}}/>)
+      i++; continue
     }
-    // numbered list
-    const numMatch = line.match(/^(\d+)\.\s(.+)/)
-    if (numMatch) {
-      const t = numMatch[2].replace(/\*\*(.*?)\*\*/g, '$1')
-      return (
-        <div key={i} style={{display:'flex',gap:6,marginBottom:3,fontSize:12}}>
-          <span style={{width:18,height:18,borderRadius:'50%',background:'#f0fdf4',border:'1px solid #bbf7d0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,color:'#16a34a',flexShrink:0,marginTop:1}}>{numMatch[1]}</span>
-          <span style={{color:'#374151',flex:1}}>{t}</span>
+
+    // numbered
+    const num = line.match(/^(\d+)\. (.+)/)
+    if (num) {
+      const parts = num[2].split(/\*\*(.*?)\*\*/)
+      elements.push(
+        <div key={i} style={{display:'flex',gap:6,marginBottom:4}}>
+          <span style={{width:18,height:18,borderRadius:'50%',background:'#f0fdf4',border:'1px solid #bbf7d0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,color:'#16a34a',flexShrink:0,marginTop:2}}>{num[1]}</span>
+          <span style={{fontSize:12,color:'#374151',lineHeight:1.6}}>{parts.map((p,j)=>j%2===0?p:<b key={j} style={{color:'#111827'}}>{p}</b>)}</span>
         </div>
       )
+      i++; continue
     }
+
     // bullet
-    if (line.startsWith('- ') || line.startsWith('• ')) {
-      const t = line.replace(/^[-•] /, '').replace(/\*\*(.*?)\*\*/g, (_,b)=>b)
-      // parse bold inline
-      const parts = line.replace(/^[-•] /, '').split(/\*\*(.*?)\*\*/)
-      return (
-        <div key={i} style={{display:'flex',gap:6,marginBottom:3,fontSize:12}}>
-          <span style={{color:'#16a34a',flexShrink:0,marginTop:2}}>•</span>
-          <span style={{color:'#374151',flex:1,lineHeight:1.5}}>
-            {parts.map((p,j)=>j%2===0?p:<b key={j} style={{color:'#111827'}}>{p}</b>)}
-          </span>
+    if (line.startsWith('- ')||line.startsWith('• ')) {
+      const txt = line.replace(/^[-•] /,'')
+      const parts = txt.split(/\*\*(.*?)\*\*/)
+      elements.push(
+        <div key={i} style={{display:'flex',gap:6,marginBottom:3}}>
+          <span style={{color:'#16a34a',flexShrink:0,marginTop:3,fontSize:10}}>•</span>
+          <span style={{fontSize:12,color:'#374151',lineHeight:1.6,flex:1}}>{parts.map((p,j)=>j%2===0?p:<b key={j} style={{color:'#111827'}}>{p}</b>)}</span>
         </div>
       )
+      i++; continue
     }
-    // empty line
-    if (line.trim()==='') return <div key={i} style={{height:4}}/>
-    // normal — parse bold
+
+    // empty
+    if (line.trim()==='') { elements.push(<div key={i} style={{height:5}}/>); i++; continue }
+
+    // normal
     const parts = line.split(/\*\*(.*?)\*\*/)
-    return (
-      <div key={i} style={{fontSize:12,color:'#374151',lineHeight:1.6,marginBottom:2}}>
+    elements.push(
+      <div key={i} style={{fontSize:12,color:'#374151',lineHeight:1.7,marginBottom:2}}>
         {parts.map((p,j)=>j%2===0?p:<b key={j} style={{color:'#111827'}}>{p}</b>)}
       </div>
     )
-  })
+    i++
+  }
+
+  return <>{elements}</>
 }
+
 
 function TypingDots() {
   return (
@@ -99,7 +145,7 @@ function MsgBubble({ msg }: { msg:Msg }) {
           boxShadow: isUser ? `0 4px 14px ${C.primary}30` : '0 2px 8px rgba(0,0,0,.06)',
           border: isUser ? 'none' : `1px solid ${C.border}`,
         }}>
-          {renderText(msg.text)}
+          <>{renderText(msg.text)}</>
         </div>
       </div>
       <div style={{fontSize:9,color:C.text4,marginRight:isUser?0:38,marginLeft:isUser?0:0,paddingRight:isUser?4:0,paddingLeft:isUser?0:4}}>{msg.time}</div>
