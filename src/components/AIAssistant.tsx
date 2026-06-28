@@ -55,7 +55,10 @@ function MsgBubble({ msg }: { msg:Msg }) {
 
 export default function AIAssistant() {
   const [open, setOpen]       = useState(false)
-  const [msgs, setMsgs]       = useState<Msg[]>([])
+  const [msgs, setMsgs]       = useState<Msg[]>(()=>{
+    if(typeof window==='undefined') return []
+    try { return JSON.parse(sessionStorage.getItem('ai_msgs')||'[]') } catch { return [] }
+  })
   const [input, setInput]     = useState('')
   const [loading, setLoading] = useState(false)
   const [minimized, setMinimized] = useState(false)
@@ -63,6 +66,10 @@ export default function AIAssistant() {
   const inputRef  = useRef<HTMLInputElement>(null)
 
   const now = () => new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'})
+
+  useEffect(()=>{
+    if(msgs.length>0) sessionStorage.setItem('ai_msgs', JSON.stringify(msgs))
+  },[msgs])
 
   useEffect(()=>{
     if(open && msgs.length===0) {
