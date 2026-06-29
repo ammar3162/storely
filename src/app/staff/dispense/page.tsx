@@ -172,6 +172,7 @@ export default function StaffDispensePage() {
 
       fetch('/api/send-pending-notifications', { method: 'POST' }).catch(() => {})
       fetch('/api/notify-supplier', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: session.org_id }) }).catch(() => {})
+      fetch('/api/notify-low-stock-instant', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: session.org_id, product_id: selected.id, new_qty: selected.qty - dispenseQty, reorder_point: selected.reorder_point }) }).catch(() => {})
 
       showToast(`✅ ${t('success', lang)}`)
       setSelected(null)
