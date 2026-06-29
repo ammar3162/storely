@@ -114,7 +114,7 @@ export default function DashboardPage() {
   const greeting=hour<12?'صباح الخير':hour<17?'مساء الخير':'مساء النور'
 
   if(loading) return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',maxWidth:860,margin:'0 auto'}}>
+    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',maxWidth:'100%'}}>
       <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.35}}.sk{animation:sk 1.4s ease infinite}`}</style>
       <div className="sk" style={{height:52,borderRadius:12,background:'#f0f0ee',marginBottom:20}}/>
       <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,marginBottom:16}}>
@@ -126,7 +126,7 @@ export default function DashboardPage() {
 
   return (
     <ErrorBoundary>
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',maxWidth:860,margin:'0 auto',opacity:visible?1:0,transition:'opacity .3s'}}>
+    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',maxWidth:'100%',opacity:visible?1:0,transition:'opacity .3s'}}>
       <style>{`
         *{box-sizing:border-box}
         @keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
