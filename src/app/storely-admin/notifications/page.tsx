@@ -51,7 +51,8 @@ export default function AdminNotificationsPage() {
     })
     if(error){toast('خطأ: '+error.message,'error');setSending(false);return}
     const inserts=targets.map(org_id=>({org_id,title:title.trim(),message:message.trim(),type,read:false}))
-    await (sb as any).from('notifications').insert(inserts)
+    const{error:nErr}=await (sb as any).from('notifications').insert(inserts)
+    if(nErr){toast('خطأ في الإشعارات: '+nErr.message,'error');setSending(false);return}
     toast(`تم الإرسال لـ ${targets.length} منشأة`)
     setTitle('');setMessage('');setSelected([]);setSending(false);load()
   }
