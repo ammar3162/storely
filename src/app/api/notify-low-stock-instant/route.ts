@@ -71,7 +71,7 @@ export async function POST(req: Request) {
       const token = (orderData as any)?.token || ''
       const confirmUrl = `https://storely.dev/confirm/${token}`
 
-      const supplierMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\nطلب توريد من *${(org as any).name}*\n\n• ${(product as any).name} — *${orderQty} ${(product as any).unit}*\n\nللتأكيد اضغط:\n${confirmUrl}`
+      const supplierMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\nطلب توريد من *${(org as any).name}*\n\n• ${(product as any).name} — *${orderQty} ${(product as any).unit}*\n\nللتأكيد رد بكلمة: *تم*`
         await sendWA((supplier as any).phone, supplierMsg)
         sentToSupplier = true
       }
