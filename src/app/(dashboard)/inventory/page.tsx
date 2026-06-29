@@ -9,11 +9,11 @@ const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 
 const C = {
   primary:'#16a34a', primaryD:'#15803d', primaryL:'#f0fdf4', primaryB:'#bbf7d0',
-  danger:'#ef4444',  dangerL:'#fef2f2',  dangerB:'#fecaca',
-  warning:'#f59e0b', warningL:'#fffbeb', warningB:'#fde68a',
-  info:'#3b82f6',    infoL:'#eff6ff',    infoB:'#bfdbfe',
-  text:'#111827', text2:'#374151', text3:'#6b7280', text4:'#9ca3af',
-  bg:'#f9fafb', surface:'#ffffff', border:'#f3f4f6', border2:'#e5e7eb',
+  danger:'#e24b4a',  dangerL:'#fef2f2',  dangerB:'#fecaca',
+  warning:'#ba7517', warningL:'#fffbeb', warningB:'#fde68a',
+  info:'#378add',    infoL:'#eff6ff',    infoB:'#bfdbfe',
+  text:'#1c1c1a', text2:'#3d3d3a', text3:'#5f5e5a', text4:'#888780',
+  bg:'#f5f5f4', surface:'#ffffff', border:'#ebebea', border2:'#e0e0dd',
 }
 
 interface Product {
@@ -25,35 +25,17 @@ interface Product {
 const UNITS = ['قطعة','كيلو','كيس','كرتون','لتر','علبة','باكيت','درزن','رول','غرام','أخرى']
 const CATS_BY_TYPE: Record<string,string[]> = {
   'مطعم':['مواد غذائية','لحوم ودواجن','خضار وفواكه','توابل وصلصات','تغليف','مشروبات','ورقيات','نظافة','أخرى'],
-  'كوفي':['قهوة وشاي','حليب وكريمة','سكر ومحليات','أكواب وأغطية','حلويات ومعجنات','مشروبات','ورقيات','نظافة','أخرى'],
+  'كوفي':['قهوة وشاي','حليب وكريمة','سكر ومحليات','أكواب وأغطية','حلويات','مشروبات','ورقيات','نظافة','أخرى'],
   'مخبز':['دقيق وسكر','زبدة وزيوت','بيض وألبان','مكسرات','تغليف','ورقيات','نظافة','أخرى'],
   'بقالة':['مواد غذائية','مشروبات','ألبان وأجبان','منظفات','ورقيات','معلبات','وجبات خفيفة','أخرى'],
-  'صيدلية':['أدوية','مستلزمات طبية','عناية شخصية','مكملات غذائية','تجميل','أخرى'],
-  'مستودع':['مواد خام','تغليف','قطع غيار','أدوات','كيميائيات','نظافة','أخرى'],
-  'متجر إلكتروني':['منتجات للبيع','تغليف وشحن','مواد حماية','ملصقات وطباعة','إكسسوار','أخرى'],
   'أخرى':['مواد غذائية','مشروبات','ورقيات','تغليف','نظافة','أخرى'],
 }
 const DEFAULT_CATS = ['مواد غذائية','مشروبات','ورقيات','تغليف','نظافة','توابل','أخرى']
-const CAT_ICONS: Record<string,string> = {
-  'مشروبات':'🥤','قهوة وشاي':'☕','مواد غذائية':'🍽️','ورقيات':'🧻',
-  'تغليف':'📦','نظافة':'🧼','توابل':'🧂','أخرى':'🏷️',
-}
-
-function StockBar({ qty, reorder }: { qty:number; reorder:number }) {
-  const max = Math.max(reorder*2,qty,1)
-  const pct = Math.min((qty/max)*100,100)
-  const color = qty===0?C.danger:qty<=reorder?C.warning:C.primary
-  return (
-    <div style={{height:3,background:C.border,borderRadius:99,overflow:'hidden',marginTop:6}}>
-      <div style={{height:'100%',width:pct+'%',background:color,borderRadius:99,transition:'width .5s ease'}}/>
-    </div>
-  )
-}
 
 export default function InventoryPage() {
   const [products, setProducts]   = useState<Product[]>([])
   const [page, setPage]           = useState(1)
-  const PER = 20
+  const PER = 25
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
   const [statusFilter, setStatusFilter] = useState<'all'|'low'|'ok'>('all')
@@ -143,103 +125,85 @@ export default function InventoryPage() {
     .filter(p=>catFilter==='all'||(p.category||'أخرى')===catFilter)
   const paginated=filtered.slice((page-1)*PER,page*PER)
   const lowCount=products.filter(p=>p.qty<=p.reorder_point).length
+  const totalQty=products.reduce((s,p)=>s+p.qty,0)
 
-  const lbl: React.CSSProperties = {fontSize:10,fontWeight:700,color:C.text3,display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}
-  const inp = (extra?:any): React.CSSProperties => ({width:'100%',padding:'11px 14px',border:`1.5px solid ${C.border2}`,borderRadius:10,fontSize:14,outline:'none',boxSizing:'border-box',background:'white',color:C.text,fontFamily:'inherit',transition:'border .15s',...extra})
+  const lbl: React.CSSProperties = {fontSize:10,fontWeight:700,color:C.text3,display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em'}
+  const inp = (extra?:any): React.CSSProperties => ({width:'100%',padding:'10px 12px',border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',background:'white',color:C.text,fontFamily:'inherit',...extra})
 
   if(loading) return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',maxWidth:'100%'}}>
+    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
       <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.4s ease infinite}`}</style>
-      <div style={{display:'flex',justifyContent:'space-between',marginBottom:14}}>
-        <div className="sk" style={{height:26,width:80,background:C.border2,borderRadius:8}}/>
-        <div className="sk" style={{height:36,width:90,background:C.border,borderRadius:8}}/>
+      <div style={{display:'flex',justifyContent:'space-between',marginBottom:16}}>
+        <div className="sk" style={{height:24,width:100,background:C.border2,borderRadius:6}}/>
+        <div className="sk" style={{height:34,width:80,background:C.border,borderRadius:8}}/>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,marginBottom:14}}>
-        {[1,2,3,4].map(i=><div key={i} className="sk" style={{height:80,borderRadius:12,background:C.border}}/>)}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:14}}>
+        {[1,2,3,4].map(i=><div key={i} className="sk" style={{height:72,borderRadius:10,background:C.border}}/>)}
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>
-        {[1,2,3,4,5,6].map(i=><div key={i} className="sk" style={{height:90,borderRadius:12,background:C.border}}/>)}
-      </div>
+      <div className="sk" style={{height:400,borderRadius:12,background:C.border}}/>
     </div>
   )
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',maxWidth:'100%',opacity:visible?1:0,transition:'opacity .3s ease'}}>
+    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',opacity:visible?1:0,transition:'opacity .3s'}}>
       <style>{`
-        @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-        @keyframes modalSlide{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
-        .fu{animation:fadeUp .35s ease both}
-        .tap{transition:all .15s;cursor:pointer}
-        .tap:active{transform:scale(.97)!important}
-        input:focus,select:focus{border-color:${C.primary}!important;box-shadow:0 0 0 3px ${C.primaryL}!important;outline:none!important}
-        .cat-chip{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:99px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border:1.5px solid;transition:all .15s;font-family:inherit;background:white}
-        .row:hover{background:${C.bg}}
-        .prod-card{background:white;border-radius:12px;border:1.5px solid;padding:12px;cursor:pointer;transition:all .15s}
-        .prod-card:active{transform:scale(.97)}
-
-        /* Stats — 4 col always */
-        .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
-
-        /* Products — 2 col mobile */
-        .prod-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-
-        /* Desktop table */
+        @keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+        @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+        .u{animation:up .3s ease both}
+        input:focus,select:focus{border-color:${C.primary}!important;outline:none!important;box-shadow:0 0 0 3px ${C.primaryL}!important}
+        .chip{padding:5px 12px;border-radius:99px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;border:1px solid;transition:all .15s;font-family:inherit}
+        .rh{transition:background .1s}
+        .rh:hover{background:#f9f9f8}
+        .tap{transition:all .12s;cursor:pointer}
+        .tap:active{transform:scale(.97)}
+        /* mobile grid */
+        .mgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+        .dtable{display:none}
         @media(min-width:640px){
-          .mob-grid{display:none!important}
-          .desk-table{display:block!important}
-          .stats{gap:12px}
-          .prod-grid{grid-template-columns:repeat(3,1fr);gap:10px}
+          .mgrid{display:none}
+          .dtable{display:block}
         }
-        @media(max-width:639px){
-          .desk-table{display:none!important}
-          .mob-grid{display:block!important}
+        @media(min-width:768px){
+          .s4{grid-template-columns:repeat(4,1fr)!important}
         }
       `}</style>
 
-      {/* Delete Modal */}
-      {confirm && (
-        <div style={{position:'fixed',inset:0,zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20,background:'rgba(0,0,0,.5)',backdropFilter:'blur(4px)'}}>
-          <div style={{background:'white',borderRadius:18,padding:24,width:'100%',maxWidth:320,animation:'modalSlide .2s ease',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-            <div style={{width:48,height:48,borderRadius:13,background:C.dangerL,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:20}}>🗑️</div>
-            <h3 style={{fontSize:16,fontWeight:800,color:C.text,textAlign:'center',marginBottom:6}}>حذف المنتج</h3>
-            <p style={{fontSize:13,color:C.text3,textAlign:'center',lineHeight:1.6,marginBottom:18}}>سيتم حذف <b style={{color:C.text}}>"{confirm.name}"</b> نهائياً</p>
+      {/* Delete confirm */}
+      {confirm&&(
+        <div style={{position:'fixed',inset:0,zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)'}}>
+          <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:300,fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',animation:'slideUp .2s ease'}}>
+            <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:6,textAlign:'center'}}>حذف "{confirm.name}"؟</div>
+            <div style={{fontSize:11,color:C.text3,textAlign:'center',marginBottom:16}}>لا يمكن التراجع عن هذا الإجراء</div>
             <div style={{display:'flex',gap:8}}>
-              <button onClick={()=>setConfirm(null)} style={{flex:1,padding:'11px',background:C.bg,color:C.text2,border:`1.5px solid ${C.border2}`,borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
-              <button onClick={doDelete} style={{flex:2,padding:'11px',background:C.danger,color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>حذف</button>
+              <button onClick={()=>setConfirm(null)} style={{flex:1,padding:'10px',background:C.bg,color:C.text2,border:`1px solid ${C.border2}`,borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+              <button onClick={doDelete} style={{flex:1,padding:'10px',background:C.danger,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>حذف</button>
             </div>
           </div>
         </div>
       )}
 
       {/* Barcode */}
-      {showScan && (
-        <Suspense fallback={null}>
-          <BarcodeScanner onScan={(code:string)=>{setForm(f=>({...f,sku:code}));setShowScan(false)}} onClose={()=>setShowScan(false)}/>
-        </Suspense>
-      )}
+      {showScan&&<Suspense fallback={null}><BarcodeScanner onScan={(code:string)=>{setForm(f=>({...f,sku:code}));setShowScan(false)}} onClose={()=>setShowScan(false)}/></Suspense>}
 
-      {/* Add/Edit — Bottom Sheet */}
-      {showAdd && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:500,display:'flex',alignItems:'flex-end',justifyContent:'center',backdropFilter:'blur(4px)'}}>
-          <div style={{background:'white',borderRadius:'20px 20px 0 0',padding:'0 0 env(safe-area-inset-bottom)',width:'100%',maxWidth:520,maxHeight:'94vh',display:'flex',flexDirection:'column',animation:'modalSlide .25s ease',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-            <div style={{padding:'12px 20px 0',flexShrink:0}}>
-              <div style={{width:36,height:4,borderRadius:99,background:C.border2,margin:'0 auto 16px'}}/>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-                <div>
-                  <div style={{fontSize:16,fontWeight:800,color:C.text}}>{editItem?'تعديل المنتج':'منتج جديد'}</div>
-                  <div style={{fontSize:11,color:C.text4,marginTop:2}}>{editItem?'عدّل بيانات المنتج':'أضف صنف جديد للمخزون'}</div>
-                </div>
-                <button onClick={()=>{setShowAdd(false);setEditItem(null)}} style={{width:32,height:32,borderRadius:9,border:`1.5px solid ${C.border2}`,background:C.bg,cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}}>×</button>
+      {/* Add/Edit Sheet */}
+      {showAdd&&(
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.45)',zIndex:500,display:'flex',alignItems:'flex-end',justifyContent:'center',backdropFilter:'blur(4px)'}}>
+          <div style={{background:'white',borderRadius:'18px 18px 0 0',padding:'0 0 env(safe-area-inset-bottom)',width:'100%',maxWidth:500,maxHeight:'92vh',display:'flex',flexDirection:'column',animation:'slideUp .25s ease',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
+            <div style={{padding:'10px 18px 0',flexShrink:0}}>
+              <div style={{width:32,height:3,borderRadius:99,background:C.border2,margin:'0 auto 14px'}}/>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                <div style={{fontSize:15,fontWeight:700,color:C.text}}>{editItem?'تعديل المنتج':'منتج جديد'}</div>
+                <button onClick={()=>{setShowAdd(false);setEditItem(null)}} style={{width:28,height:28,borderRadius:'50%',border:`1px solid ${C.border2}`,background:C.bg,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}}>✕</button>
               </div>
             </div>
-            <div style={{flex:1,overflowY:'auto',padding:'0 20px 20px'}}>
+            <div style={{flex:1,overflowY:'auto',padding:'0 18px 18px'}}>
               <form onSubmit={handleSave}>
-                <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                <div style={{display:'flex',flexDirection:'column',gap:12}}>
                   <div>
                     <label style={lbl}>اسم المنتج *</label>
                     <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp()} placeholder="مثال: قهوة عربية"/>
                   </div>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                     <div>
                       <label style={lbl}>الفئة</label>
                       <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inp()}>
@@ -254,12 +218,12 @@ export default function InventoryPage() {
                       </select>
                     </div>
                   </div>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                     <div>
                       <label style={lbl}>باركود</label>
-                      <div style={{display:'flex',gap:6}}>
+                      <div style={{display:'flex',gap:5}}>
                         <input value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} style={{...inp(),flex:1}} placeholder="اختياري"/>
-                        <button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 10px',background:C.primaryL,color:C.primary,border:`1.5px solid ${C.primaryB}`,borderRadius:9,fontSize:16,cursor:'pointer'}}>📷</button>
+                        <button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 10px',background:C.primaryL,color:C.primary,border:`1px solid ${C.primaryB}`,borderRadius:8,fontSize:14,cursor:'pointer'}}>📷</button>
                       </div>
                     </div>
                     <div>
@@ -267,24 +231,24 @@ export default function InventoryPage() {
                       <input type="number" min="0" value={form.reorder_point} onChange={e=>setForm({...form,reorder_point:Number(e.target.value)})} style={inp()}/>
                     </div>
                   </div>
-                  {editItem ? (
-                    <div style={{background:C.primaryL,border:`1.5px solid ${C.primaryB}`,borderRadius:12,padding:14}}>
-                      <div style={{fontSize:13,color:C.primary,marginBottom:10,fontWeight:700}}>الكمية الحالية: <span style={{fontSize:20,fontWeight:900}}>{editItem.qty} {form.unit}</span></div>
+                  {editItem?(
+                    <div style={{background:C.primaryL,border:`1px solid ${C.primaryB}`,borderRadius:10,padding:12}}>
+                      <div style={{fontSize:12,color:C.primary,marginBottom:8,fontWeight:600}}>الكمية الحالية: <b style={{fontSize:18}}>{editItem.qty} {form.unit}</b></div>
                       <label style={lbl}>كمية تضيفها</label>
-                      <input type="number" min="0" value={addQty||''} onChange={e=>setAddQty(Number(e.target.value)||0)} style={{...inp(),fontSize:22,fontWeight:800,textAlign:'center'}} placeholder="0"/>
-                      {addQty>0&&<div style={{fontSize:12,color:C.primary,marginTop:8,fontWeight:700}}>✓ الإجمالي: {editItem.qty+addQty} {form.unit}</div>}
+                      <input type="number" min="0" value={addQty||''} onChange={e=>setAddQty(Number(e.target.value)||0)} style={{...inp(),fontSize:20,fontWeight:700,textAlign:'center'}} placeholder="0"/>
+                      {addQty>0&&<div style={{fontSize:11,color:C.primary,marginTop:6,fontWeight:600}}>الإجمالي بعد الإضافة: {editItem.qty+addQty} {form.unit}</div>}
                     </div>
-                  ) : (
+                  ):(
                     <div>
                       <label style={lbl}>الكمية الابتدائية *</label>
-                      <input type="number" min="1" required value={form.qty||''} onChange={e=>setForm({...form,qty:Number(e.target.value)})} style={{...inp(),fontSize:22,fontWeight:800,textAlign:'center'}} placeholder="0"/>
+                      <input type="number" min="1" required value={form.qty||''} onChange={e=>setForm({...form,qty:Number(e.target.value)})} style={{...inp(),fontSize:20,fontWeight:700,textAlign:'center'}} placeholder="0"/>
                     </div>
                   )}
                 </div>
-                <div style={{display:'flex',gap:10,marginTop:18}}>
-                  <button type="button" onClick={()=>{setShowAdd(false);setEditItem(null)}} style={{flex:1,padding:'13px',background:C.bg,color:C.text2,border:`1.5px solid ${C.border2}`,borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
-                  <button type="submit" disabled={saving} style={{flex:2,padding:'13px',background:C.primary,color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:saving?.7:1}}>
-                    {saving?'جاري الحفظ...':editItem?'حفظ ✓':'إضافة ✓'}
+                <div style={{display:'flex',gap:8,marginTop:16}}>
+                  <button type="button" onClick={()=>{setShowAdd(false);setEditItem(null)}} style={{flex:1,padding:'11px',background:C.bg,color:C.text2,border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                  <button type="submit" disabled={saving} style={{flex:2,padding:'11px',background:C.primary,color:'white',border:'none',borderRadius:8,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:saving?.7:1}}>
+                    {saving?'جاري الحفظ...':editItem?'حفظ التعديلات':'إضافة المنتج'}
                   </button>
                 </div>
               </form>
@@ -294,103 +258,101 @@ export default function InventoryPage() {
       )}
 
       {/* Header */}
-      <div className="fu" style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,animationDelay:'.05s'}}>
+      <div className="u" style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
         <div>
-          <h1 style={{fontSize:20,fontWeight:800,color:C.text,letterSpacing:'-0.3px',margin:0}}>المخزون</h1>
-          <p style={{fontSize:11,color:C.text3,margin:'2px 0 0'}}>
-            {products.length} صنف{lowCount>0&&<span style={{color:C.danger,fontWeight:700}}> · {lowCount} ناقص</span>}
+          <h1 style={{fontSize:20,fontWeight:700,color:C.text,margin:0,letterSpacing:'-0.3px'}}>المخزون</h1>
+          <p style={{fontSize:11,color:C.text4,margin:'3px 0 0',fontVariantNumeric:'tabular-nums'}}>
+            {products.length} صنف
+            {lowCount>0&&<span style={{color:C.danger,fontWeight:600}}> · {lowCount} ناقص</span>}
           </p>
         </div>
-        <div style={{display:'flex',gap:6}}>
-          <button onClick={exportCSV} style={{padding:'8px 10px',background:'white',color:C.text2,border:`1.5px solid ${C.border2}`,borderRadius:9,fontSize:13,cursor:'pointer',display:'flex',alignItems:'center',gap:4,fontFamily:'inherit'}}>
-            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        <div style={{display:'flex',gap:6,alignItems:'center'}}>
+          <button onClick={exportCSV} title="تصدير CSV"
+            style={{width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',background:'white',border:`1px solid ${C.border2}`,borderRadius:8,cursor:'pointer',color:C.text3}}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
           </button>
           <button onClick={()=>{setEditItem(null);setAddQty(0);setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:''});setShowAdd(true)}}
-            style={{padding:'8px 16px',background:C.primary,color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:5}}>
-            <svg width="13" height="13" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
-            إضافة
+            style={{padding:'8px 16px',background:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:5}}>
+            <svg width="12" height="12" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+            إضافة منتج
           </button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="stats fu" style={{animationDelay:'.08s'}}>
+      <div className="u" style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,marginBottom:14,animationDelay:'.05s'}} >
+        <style>{`@media(min-width:640px){.sg{grid-template-columns:repeat(4,1fr)!important}}`}</style>
         {[
-          {label:'الأصناف',  value:products.length,              color:C.info,    bg:C.infoL,    key:'all' as const},
-          {label:'ناقص',     value:lowCount,                     color:C.danger,  bg:C.dangerL,  key:'low' as const},
-          {label:'كافٍ',     value:products.length-lowCount,     color:C.primary, bg:C.primaryL, key:'ok' as const},
-          {label:'الكميات',  value:products.reduce((s,p)=>s+p.qty,0), color:C.warning, bg:C.warningL, key:'all' as const},
+          {label:'إجمالي الأصناف', value:products.length,   color:C.info,    key:'all'  as const},
+          {label:'مخزون ناقص',     value:lowCount,           color:C.danger,  key:'low'  as const},
+          {label:'مخزون كافٍ',     value:products.length-lowCount, color:C.primary, key:'ok' as const},
+          {label:'إجمالي الكميات', value:totalQty,           color:C.warning, key:'all'  as const},
         ].map((s,i)=>(
-          <button key={i} onClick={()=>{setStatusFilter(s.key);setCatFilter('all');setPage(1)}} className="tap"
-            style={{background:statusFilter===s.key&&s.key!=='all'?s.bg:'white',borderRadius:12,padding:'12px 8px',border:`1.5px solid ${statusFilter===s.key&&s.key!=='all'?s.color:C.border}`,textAlign:'center',cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
-            <div style={{fontSize:20,fontWeight:900,color:s.color,letterSpacing:'-0.5px',lineHeight:1}}>{s.value.toLocaleString()}</div>
-            <div style={{fontSize:9,color:C.text3,marginTop:4,fontWeight:600}}>{s.label}</div>
+          <button key={i} onClick={()=>{if(s.key!=='all'||i===0){setStatusFilter(s.key);setCatFilter('all');setPage(1)}}}
+            className="tap"
+            style={{background:'white',borderRadius:10,padding:'12px 14px',border:`1px solid ${statusFilter===s.key&&i<3?s.color:C.border}`,textAlign:'right',cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
+            <div style={{fontSize:22,fontWeight:700,color:s.color,letterSpacing:'-0.5px',fontVariantNumeric:'tabular-nums'}}>{s.value.toLocaleString()}</div>
+            <div style={{fontSize:10,color:C.text4,marginTop:3,fontWeight:500}}>{s.label}</div>
           </button>
         ))}
       </div>
 
-      {/* Category chips */}
-      {allCats.length>2 && (
-        <div className="fu" style={{display:'flex',gap:6,overflowX:'auto',paddingBottom:6,marginBottom:10,scrollbarWidth:'none',animationDelay:'.1s'}}>
-          {allCats.map(cat=>{
-            const active=catFilter===cat
-            return (
-              <button key={cat} className="cat-chip" onClick={()=>{setCatFilter(cat);setPage(1)}}
-                style={{background:active?C.primary:'white',color:active?'white':C.text3,borderColor:active?C.primary:C.border2}}>
-                {cat==='all'?'الكل':`${CAT_ICONS[cat]||'📦'} ${cat}`}
-              </button>
-            )
-          })}
+      {/* Filters row */}
+      <div className="u" style={{display:'flex',gap:8,marginBottom:12,alignItems:'center',animationDelay:'.08s',flexWrap:'wrap'}}>
+        {/* Search */}
+        <div style={{position:'relative',flex:1,minWidth:160}}>
+          <svg style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}} width="13" height="13" fill="none" stroke={C.text4} strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}} placeholder="ابحث بالاسم أو الباركود..."
+            style={{width:'100%',padding:'8px 32px 8px 12px',border:`1px solid ${C.border2}`,borderRadius:8,fontSize:12,outline:'none',background:'white',color:C.text,fontFamily:'inherit',boxSizing:'border-box'}}/>
         </div>
-      )}
-
-      {/* Search */}
-      <div className="fu" style={{position:'relative',marginBottom:12,animationDelay:'.12s'}}>
-        <svg style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}} width="14" height="14" fill="none" stroke={C.text4} strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}} placeholder="ابحث بالاسم أو الفئة أو الباركود..."
-          style={{width:'100%',padding:'11px 38px 11px 14px',border:`1.5px solid ${C.border2}`,borderRadius:10,fontSize:13,outline:'none',background:'white',color:C.text,fontFamily:'inherit',transition:'border .15s',boxSizing:'border-box'}}/>
+        {/* Category chips */}
+        <div style={{display:'flex',gap:5,overflowX:'auto',scrollbarWidth:'none',flexShrink:0}}>
+          {allCats.map(cat=>(
+            <button key={cat} className="chip" onClick={()=>{setCatFilter(cat);setPage(1)}}
+              style={{background:catFilter===cat?C.primary:'white',color:catFilter===cat?'white':C.text3,borderColor:catFilter===cat?C.primary:C.border2,flexShrink:0}}>
+              {cat==='all'?'الكل':cat}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {filtered.length===0 ? (
-        <div className="fu" style={{background:'white',borderRadius:14,padding:'40px 24px',textAlign:'center',border:`1px solid ${C.border}`,animationDelay:'.14s'}}>
-          <div style={{fontSize:40,marginBottom:10}}>📦</div>
-          <div style={{fontSize:15,fontWeight:700,color:C.text2,marginBottom:6}}>{search||catFilter!=='all'?'لا توجد نتائج':'المخزون فارغ'}</div>
-          <div style={{fontSize:12,color:C.text4,marginBottom:14}}>{search||catFilter!=='all'?'جرب كلمة أو فئة أخرى':'ابدأ بإضافة منتجك الأول'}</div>
-          {(search||catFilter!=='all')&&<button onClick={()=>{setSearch('');setCatFilter('all');setStatusFilter('all')}} style={{padding:'8px 20px',background:C.bg,color:C.text2,border:`1.5px solid ${C.border2}`,borderRadius:9,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إزالة الفلاتر</button>}
+      {filtered.length===0?(
+        <div className="u" style={{background:'white',borderRadius:12,padding:'48px 24px',textAlign:'center',border:`1px solid ${C.border}`}}>
+          <div style={{fontSize:36,marginBottom:8}}>📦</div>
+          <div style={{fontSize:14,fontWeight:600,color:C.text2,marginBottom:4}}>{search||catFilter!=='all'?'لا توجد نتائج':'المخزون فارغ'}</div>
+          <div style={{fontSize:11,color:C.text4,marginBottom:12}}>{search||catFilter!=='all'?'جرب كلمة أو فئة أخرى':'ابدأ بإضافة أول منتج'}</div>
+          {(search||catFilter!=='all')&&<button onClick={()=>{setSearch('');setCatFilter('all');setStatusFilter('all')}} style={{padding:'7px 16px',background:C.bg,color:C.text2,border:`1px solid ${C.border2}`,borderRadius:7,fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إزالة الفلاتر</button>}
         </div>
-      ) : (
+      ):(
         <>
-          {/* Mobile Grid */}
-          <div className="mob-grid fu" style={{animationDelay:'.14s'}}>
-            <div className="prod-grid">
+          {/* Mobile grid */}
+          <div className="mgrid u" style={{animationDelay:'.1s'}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>
               {paginated.map(p=>{
                 const isOut=p.qty===0,isLow=p.qty<=p.reorder_point
                 const sc=isOut?C.danger:isLow?C.warning:C.primary
-                const sb2=isOut?C.dangerL:isLow?C.warningL:C.primaryL
-                const sbb=isOut?C.dangerB:isLow?C.warningB:C.primaryB
-                const sl=isOut?'نفد':isLow?'ناقص':'كافٍ'
                 return (
-                  <div key={p.id} className="prod-card" onClick={()=>openEdit(p)} style={{borderColor:sbb}}>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
-                      <div style={{fontSize:24,fontWeight:900,color:sc,lineHeight:1}}>{p.qty}</div>
-                      <span style={{fontSize:9,fontWeight:700,color:sc,background:sb2,padding:'2px 7px',borderRadius:99,border:`1px solid ${sbb}`,flexShrink:0,marginTop:2}}>{sl}</span>
+                  <div key={p.id} className="tap" onClick={()=>openEdit(p)}
+                    style={{background:'white',borderRadius:10,padding:'12px',border:`1px solid ${isOut?C.dangerB:isLow?C.warningB:C.border}`,cursor:'pointer'}}>
+                    <div style={{fontSize:22,fontWeight:700,color:sc,lineHeight:1,fontVariantNumeric:'tabular-nums',marginBottom:4}}>{p.qty}</div>
+                    <div style={{fontSize:11,fontWeight:600,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginBottom:2}}>{p.name}</div>
+                    <div style={{fontSize:9,color:C.text4}}>{p.unit} · حد {p.reorder_point}</div>
+                    <div style={{height:2,background:C.border,borderRadius:99,overflow:'hidden',marginTop:8}}>
+                      <div style={{height:'100%',width:Math.min((p.qty/Math.max(p.reorder_point*2,p.qty,1))*100,100)+'%',background:sc,borderRadius:99}}/>
                     </div>
-                    <div style={{fontSize:12,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginBottom:2}}>{p.name}</div>
-                    <div style={{fontSize:10,color:C.text4,marginBottom:4}}>{p.unit}</div>
-                    <StockBar qty={p.qty} reorder={p.reorder_point}/>
                   </div>
                 )
               })}
             </div>
           </div>
 
-          {/* Desktop Table */}
-          <div className="desk-table fu" style={{background:'white',borderRadius:14,border:`1px solid ${C.border}`,overflow:'hidden',animationDelay:'.14s'}}>
+          {/* Desktop table */}
+          <div className="dtable u" style={{background:'white',borderRadius:12,border:`1px solid ${C.border}`,overflow:'hidden',animationDelay:'.1s'}}>
             <table style={{width:'100%',borderCollapse:'collapse'}}>
               <thead>
-                <tr style={{background:C.bg,borderBottom:`1.5px solid ${C.border}`}}>
-                  {['المنتج','الفئة','المخزون','الحد','الحالة',''].map((h,i)=>(
-                    <th key={i} style={{padding:'11px 16px',color:C.text4,fontSize:10,fontWeight:700,textAlign:'right',textTransform:'uppercase',letterSpacing:'.06em',whiteSpace:'nowrap'}}>{h}</th>
+                <tr style={{background:C.bg,borderBottom:`1px solid ${C.border}`}}>
+                  {['المنتج','الفئة','المخزون','الحد الأدنى','الحالة',''].map((h,i)=>(
+                    <th key={i} style={{padding:'10px 16px',color:C.text4,fontSize:10,fontWeight:700,textAlign:i===5?'center':'right',textTransform:'uppercase',letterSpacing:'.06em',whiteSpace:'nowrap'}}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -400,29 +362,41 @@ export default function InventoryPage() {
                   const sc=isOut?C.danger:isLow?C.warning:C.primary
                   const sb2=isOut?C.dangerL:isLow?C.warningL:C.primaryL
                   const sbb=isOut?C.dangerB:isLow?C.warningB:C.primaryB
-                  const sl=isOut?'نفد':isLow?'ناقص':'كافٍ'
+                  const pct=Math.min((p.qty/Math.max(p.reorder_point*2,p.qty,1))*100,100)
                   return (
-                    <tr key={p.id} className="row" style={{borderBottom:`1px solid ${C.border}`,transition:'background .1s'}}>
-                      <td style={{padding:'13px 16px'}}>
-                        <div style={{fontWeight:700,fontSize:14,color:C.text}}>{p.name}</div>
-                        {p.sku&&<div style={{fontSize:11,color:C.text4,marginTop:1,fontFamily:'monospace'}}>#{p.sku}</div>}
-                        <StockBar qty={p.qty} reorder={p.reorder_point}/>
+                    <tr key={p.id} className="rh" style={{borderBottom:`1px solid ${C.border}`}}>
+                      <td style={{padding:'12px 16px',minWidth:180}}>
+                        <div style={{fontWeight:600,fontSize:13,color:C.text}}>{p.name}</div>
+                        {p.sku&&<div style={{fontSize:10,color:C.text4,marginTop:1,fontFamily:'monospace'}}>#{p.sku}</div>}
+                        <div style={{height:2,background:C.border,borderRadius:99,overflow:'hidden',marginTop:6,width:80}}>
+                          <div style={{height:'100%',width:pct+'%',background:sc,borderRadius:99}}/>
+                        </div>
                       </td>
-                      <td style={{padding:'13px 16px'}}>
-                        {p.category?<span style={{background:C.bg,color:C.text2,padding:'3px 10px',borderRadius:99,fontSize:11,fontWeight:600,border:`1px solid ${C.border2}`}}>{CAT_ICONS[p.category]||'📦'} {p.category}</span>:<span style={{color:C.text4}}>—</span>}
+                      <td style={{padding:'12px 16px'}}>
+                        {p.category
+                          ?<span style={{background:C.bg,color:C.text2,padding:'3px 9px',borderRadius:99,fontSize:11,fontWeight:500,border:`1px solid ${C.border2}`}}>{p.category}</span>
+                          :<span style={{color:C.text4,fontSize:12}}>—</span>}
                       </td>
-                      <td style={{padding:'13px 16px',whiteSpace:'nowrap'}}>
-                        <span style={{fontWeight:900,fontSize:20,color:sc}}>{p.qty}</span>
+                      <td style={{padding:'12px 16px',whiteSpace:'nowrap'}}>
+                        <span style={{fontWeight:700,fontSize:18,color:sc,fontVariantNumeric:'tabular-nums'}}>{p.qty}</span>
                         <span style={{fontSize:11,color:C.text4,marginRight:4}}>{p.unit}</span>
                       </td>
-                      <td style={{padding:'13px 16px',color:C.text3,fontSize:13}}>{p.reorder_point} {p.unit}</td>
-                      <td style={{padding:'13px 16px'}}>
-                        <span style={{background:sb2,color:sc,padding:'3px 10px',borderRadius:99,fontSize:11,fontWeight:700,border:`1px solid ${sbb}`}}>{sl}</span>
+                      <td style={{padding:'12px 16px',color:C.text3,fontSize:12,fontVariantNumeric:'tabular-nums'}}>{p.reorder_point} {p.unit}</td>
+                      <td style={{padding:'12px 16px'}}>
+                        <span style={{background:sb2,color:sc,padding:'3px 10px',borderRadius:99,fontSize:11,fontWeight:600,border:`1px solid ${sbb}`}}>
+                          {isOut?'نفد':isLow?'ناقص':'كافٍ'}
+                        </span>
                       </td>
-                      <td style={{padding:'13px 16px'}}>
-                        <div style={{display:'flex',gap:6}}>
-                          <button onClick={()=>openEdit(p)} style={{padding:'6px 10px',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',border:'none',background:C.infoL,color:C.info,fontFamily:'inherit'}}>تعديل</button>
-                          <button onClick={()=>setConfirm({id:p.id,name:p.name})} style={{padding:'6px 10px',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',border:'none',background:C.dangerL,color:C.danger,fontFamily:'inherit'}}>حذف</button>
+                      <td style={{padding:'12px 16px'}}>
+                        <div style={{display:'flex',gap:5,justifyContent:'center'}}>
+                          <button onClick={()=>openEdit(p)}
+                            style={{padding:'5px 12px',borderRadius:7,fontSize:11,fontWeight:600,cursor:'pointer',border:`1px solid ${C.border2}`,background:'white',color:C.text2,fontFamily:'inherit'}}>
+                            تعديل
+                          </button>
+                          <button onClick={()=>setConfirm({id:p.id,name:p.name})}
+                            style={{padding:'5px 10px',borderRadius:7,fontSize:11,fontWeight:600,cursor:'pointer',border:`1px solid ${C.dangerB}`,background:C.dangerL,color:C.danger,fontFamily:'inherit'}}>
+                            حذف
+                          </button>
                         </div>
                       </td>
                     </tr>
