@@ -18,10 +18,11 @@ export async function POST(req: Request) {
 
     // أرسل فقط إذا الصنف وصل للحد بالضبط الآن
     if (product_id !== undefined) {
-      // إذا الكمية الجديدة أكبر من الحد — لا ترسل
+      // لا ترسل إذا المخزون كافٍ
       if (new_qty > reorder_point) return NextResponse.json({ success: false, message: 'المخزون كافٍ' })
-      // إذا الكمية قبل الصرف كانت أقل من الحد — كان ناقص مسبقاً، لا ترسل مرة ثانية
-      if (new_qty < reorder_point - 1) return NextResponse.json({ success: false, message: 'كان ناقصاً مسبقاً' })
+      // لا ترسل إذا كان ناقصاً مسبقاً (الكمية قبل الصرف كانت أقل من الحد)
+      // new_qty = الكمية بعد الصرف, إذا new_qty+1 <= reorder_point كان ناقصاً قبل
+      if ((new_qty + 1) <= reorder_point && new_qty !== reorder_point) return NextResponse.json({ success: false, message: 'كان ناقصاً مسبقاً' })
     }
 
     const supabase = createClient(
