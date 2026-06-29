@@ -148,7 +148,7 @@ export default function InventoryPage() {
   const inp = (extra?:any): React.CSSProperties => ({width:'100%',padding:'11px 14px',border:`1.5px solid ${C.border2}`,borderRadius:10,fontSize:14,outline:'none',boxSizing:'border-box',background:'white',color:C.text,fontFamily:'inherit',transition:'border .15s',...extra})
 
   if(loading) return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',maxWidth:900,margin:'0 auto'}}>
+    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',maxWidth:'100%'}}>
       <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.4s ease infinite}`}</style>
       <div style={{display:'flex',justifyContent:'space-between',marginBottom:14}}>
         <div className="sk" style={{height:26,width:80,background:C.border2,borderRadius:8}}/>
@@ -164,7 +164,7 @@ export default function InventoryPage() {
   )
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',maxWidth:900,margin:'0 auto',opacity:visible?1:0,transition:'opacity .3s ease'}}>
+    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',maxWidth:'100%',opacity:visible?1:0,transition:'opacity .3s ease'}}>
       <style>{`
         @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
         @keyframes modalSlide{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
