@@ -146,8 +146,42 @@ export async function POST(req: Request) {
       const text = (msg?.messageBody||msg?.message?.conversation||'').trim()
       if (!to||!text) continue
 
-      const user = await findUser(to)
       const t = text.trim()
+
+      // كشف تأكيد المورد — كلمة "تم" أو "موافق" أو "تأكيد"
+      if (['تم','موافق','تأكيد','confirmed','ok','okay'].includes(t.toLowerCase())) {
+        // ابحث عن آخر طلب معلق لهذا الرقم
+        const cleanPhone = to.replace(/\D/g,'')
+        const { data: pendingOrder } = await sb().from('supplier_orders' as any)
+          .select('*')
+          .eq('supplier_phone', cleanPhone)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (pendingOrder) {
+          // تحديث حالة الطلب
+          await sb().from('supplier_orders' as any)
+            .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
+            .eq('id', (pendingOrder as any).id)
+
+          // إرسال إشعار للعميل
+          await fetch(process.env.NEXT_PUBLIC_APP_URL || 'https://storely.dev' + '/api/supplier-confirmed', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: (pendingOrder as any).token }),
+          }).catch(() => {})
+
+          await send(to, `🟢 *Storely*
+
+شكراً على تأكيدك ✅
+تم إبلاغ العميل بتأكيد الطلب`)
+          continue
+        }
+      }
+
+      const user = await findUser(to)
 
       if (user?.status==='active') {
         const state = await getState(to)
