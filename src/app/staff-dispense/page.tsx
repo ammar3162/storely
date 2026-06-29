@@ -56,7 +56,6 @@ export default function StaffDispensePage() {
     const { error } = await sb.from('stock_movements').insert({ product_id: productId, profile_id: pid, type: 'out', qty_change: -qtyNum, note: reason+(note?' — '+note:'') })
     if (error) { toast('خطأ في تسجيل الصرف', 'error'); setSaving(false); return }
     toast('تم صرف '+qtyNum+' '+product.unit+' من '+product.name, 'success')
-    fetch('/api/send-pending-notifications', { method:'POST' }).catch(()=>{})
     setProductId(''); setQty(''); setNote(''); setReason('استهلاك يومي')
     setSaving(false)
     await loadProducts(oid)
