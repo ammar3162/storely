@@ -121,7 +121,7 @@ export default function DispensePage() {
         .fu{animation:fadeUp .3s ease both}
         .chip{padding:6px 14px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;border:1.5px solid;transition:all .15s;font-family:inherit;display:inline-flex;align-items:center;gap:4px}
         .chip:active{transform:scale(.95)}
-        .pcard{border-radius:10px;padding:8px 12px;cursor:pointer;border:1.5px solid;background:white;transition:all .15s;text-align:right;font-family:inherit;width:100%;display:flex;align-items:center;gap:10px}
+        .pcard{border-radius:9px;padding:7px 10px;cursor:pointer;border:1px solid;background:white;transition:all .15s;text-align:right;font-family:inherit;width:100%;display:flex;align-items:center;gap:8px}
         .pcard:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
         .pcard:active{transform:scale(.98)}
         .qbtn{width:44px;height:44px;border-radius:11px;border:1.5px solid #e5e7eb;background:#f9fafb;color:#111827;font-size:20px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit}
@@ -132,8 +132,8 @@ export default function DispensePage() {
         /* Grid */
         .prod-grid{display:grid;gap:8px;grid-template-columns:1fr}
         @media(min-width:480px){.prod-grid{grid-template-columns:repeat(2,1fr)}}
-        @media(min-width:768px){.prod-grid{grid-template-columns:repeat(3,1fr);gap:8px}}
-        @media(min-width:1024px){.prod-grid{grid-template-columns:repeat(4,1fr);gap:8px}}
+        @media(min-width:768px){.prod-grid{grid-template-columns:repeat(3,1fr);gap:6px}}
+        @media(min-width:1024px){.prod-grid{grid-template-columns:repeat(5,1fr);gap:6px}}
         @media(min-width:960px){
           .page-layout{display:grid;grid-template-columns:1fr 280px;gap:16px;align-items:start}
           .hist-mob-btn{display:none!important}
@@ -216,14 +216,14 @@ export default function DispensePage() {
                       boxShadow:isSel?`0 0 0 2px ${C.primary}40`:'none',
                     }}>
                     {/* Qty circle */}
-                    <div style={{width:36,height:36,borderRadius:9,background:sb2,border:`1px solid ${sbb}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                      <span style={{fontSize:13,fontWeight:900,color:sc}}>{p.qty}</span>
+                    <div style={{width:30,height:30,borderRadius:7,background:sb2,border:`1px solid ${sbb}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <span style={{fontSize:12,fontWeight:900,color:sc}}>{p.qty}</span>
                     </div>
                     {/* Info */}
                     <div style={{flex:1,minWidth:0,textAlign:'right'}}>
                       <div style={{fontSize:11,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.name}</div>
                       <div style={{fontSize:9,color:C.text4,marginTop:1}}>{p.unit} · حد {p.reorder_point}</div>
-                      <div style={{height:3,background:C.border,borderRadius:99,overflow:'hidden',marginTop:5}}>
+                      <div style={{height:2,background:C.border,borderRadius:99,overflow:'hidden',marginTop:4}}>
                         <div style={{height:'100%',width:pct+'%',background:sc,borderRadius:99}}/>
                       </div>
                     </div>
