@@ -41,8 +41,8 @@ export async function POST(req: Request) {
     if (product_id) low = low.filter((p: any) => p.id === product_id || true).slice(0,1).filter((p:any)=>p.qty<=p.reorder_point)
     if (low.length === 0) return NextResponse.json({ success: true, sent: 0 })
 
-    const list = low.map((p: any) => `• ${p.name}: ${p.qty} ${p.unit} (الحد: ${p.reorder_point})`).join('\n')
-    const msg = `🔔 *تنبيه مخزون — ${org.name}*\n\nالأصناف التالية وصلت للحد الأدنى:\n\n${list}\n\n⚡ يرجى إعادة الطلب\n\n_Storely_`
+    const list = low.map((p: any) => `⚠️ *${p.name}* وصل للحد الأدنى\nالمتبقي: *${p.qty} ${p.unit}*`).join('\n\n')
+    const msg = `🟢 *Storely*\n\nمرحباً ${org.name}،\n\n${list}\n\nيرجى الطلب في أقرب وقت`
 
     const phone = formatPhone(org.whatsapp_number)
     const res = await fetch('https://www.wasenderapi.com/api/send-message', {

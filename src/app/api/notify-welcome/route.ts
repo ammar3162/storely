@@ -15,7 +15,14 @@ export async function POST(req: Request) {
     const { name, phone } = await req.json()
     if (!phone) return NextResponse.json({ success: false })
 
-    const msg = `🎉 *أهلاً بك في Storely!*\n\nمرحباً ${name}،\n\nتم إنشاء حسابك بنجاح 🎊\n\nلديك *7 أيام تجربة مجانية* كاملة لاستكشاف جميع المميزات:\n\n📦 تتبع المخزون لحظة بلحظة\n📲 تنبيهات واتساب تلقائية\n👥 إدارة الموظفين والفروع\n📊 تقارير احترافية\n\n🔗 ابدأ الآن: https://www.storely.dev/dashboard\n\nنحن هنا لمساعدتك في أي وقت 💚\n_فريق Storely_`
+    const msg = `🟢 *Storely*
+
+مرحباً ${name} 👋
+
+تم إنشاء حسابك بنجاح
+لديك *7 أيام تجربة مجانية*
+
+ابدأ الآن بإضافة مخزونك`
 
     const res = await fetch('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',
