@@ -166,9 +166,26 @@ export default function PurchasesPage() {
   const displayAmount = form.hasVat==='yes' && inputTotal>0 ? (inputTotal/1.15).toFixed(2) : inputTotal.toFixed(2)
   const displayVat    = form.hasVat==='yes' && inputTotal>0 ? (inputTotal - Number(displayAmount)).toFixed(2) : '0.00'
 
-  const totalSpent = history.reduce((s,p)=>s+Number(p.total_amount||0),0)
-  const totalVat   = history.reduce((s,p)=>s+Number(p.vat_amount||0),0)
-  const totalNet   = history.reduce((s,p)=>s+Number(p.amount||0),0)
+  const [filterCat, setFilterCat]     = useState('all')
+  const [filterPeriod, setFilterPeriod] = useState('all')
+  const [filterSupplier, setFilterSupplier] = useState('')
+
+  const filteredHistory = history.filter(p => {
+    if (filterCat !== 'all' && p.category !== filterCat) return false
+    if (filterSupplier && !p.supplier?.includes(filterSupplier)) return false
+    if (filterPeriod !== 'all') {
+      const d = new Date(p.created_at)
+      const now = new Date()
+      if (filterPeriod === 'today') return d.toDateString() === now.toDateString()
+      if (filterPeriod === 'week') return (now.getTime()-d.getTime()) <= 7*24*60*60*1000
+      if (filterPeriod === 'month') return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear()
+    }
+    return true
+  })
+
+  const totalSpent = filteredHistory.reduce((s,p)=>s+Number(p.total_amount||0),0)
+  const totalVat   = filteredHistory.reduce((s,p)=>s+Number(p.vat_amount||0),0)
+  const totalNet   = filteredHistory.reduce((s,p)=>s+Number(p.amount||0),0)
 
   const inp: React.CSSProperties = {
     width:'100%',padding:'10px 12px',border:'1.5px solid #e2e8f0',
@@ -375,18 +392,45 @@ export default function PurchasesPage() {
         </div>
 
         <div className="ru" style={{background:'white',borderRadius:13,border:'1px solid #f1f5f9',overflow:'hidden',boxShadow:'0 2px 8px rgba(0,0,0,.04)'}}>
-          <div style={{padding:'14px 18px',borderBottom:'1px solid #f1f5f9',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-            <div style={{fontSize:14,fontWeight:700,color:'#0f172a'}}>آخر المشتريات</div>
-            <span style={{background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',padding:'3px 10px',borderRadius:20,fontSize:11,fontWeight:700}}>{history.length} فاتورة</span>
+          <div style={{padding:'12px 16px',borderBottom:'1px solid #f1f5f9'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+              <div style={{fontSize:14,fontWeight:700,color:'#0f172a'}}>آخر المشتريات</div>
+              <span style={{background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',padding:'3px 10px',borderRadius:20,fontSize:11,fontWeight:700}}>{filteredHistory.length} فاتورة</span>
+            </div>
+            {/* فلاتر */}
+            <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+              {/* فلتر الفترة */}
+              <div style={{display:'flex',gap:4,background:'#f8fafc',borderRadius:8,padding:3,border:'1px solid #e2e8f0'}}>
+                {[{v:'all',l:'الكل'},{v:'today',l:'اليوم'},{v:'week',l:'أسبوع'},{v:'month',l:'شهر'}].map(p=>(
+                  <button key={p.v} onClick={()=>setFilterPeriod(p.v)}
+                    style={{padding:'4px 10px',borderRadius:6,border:'none',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',background:filterPeriod===p.v?'#16a34a':'transparent',color:filterPeriod===p.v?'white':'#64748b',transition:'all .15s'}}>
+                    {p.l}
+                  </button>
+                ))}
+              </div>
+              {/* فلتر النوع */}
+              <div style={{display:'flex',gap:4,background:'#f8fafc',borderRadius:8,padding:3,border:'1px solid #e2e8f0'}}>
+                {[{v:'all',l:'الكل'},{v:'مخزون',l:'📦'},{v:'مشتريات',l:'🛒'},{v:'أخرى',l:'📋'}].map(c=>(
+                  <button key={c.v} onClick={()=>setFilterCat(c.v)}
+                    style={{padding:'4px 10px',borderRadius:6,border:'none',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',background:filterCat===c.v?'#16a34a':'transparent',color:filterCat===c.v?'white':'#64748b',transition:'all .15s'}}>
+                    {c.l}
+                  </button>
+                ))}
+              </div>
+              {/* فلتر المورد */}
+              <input value={filterSupplier} onChange={e=>setFilterSupplier(e.target.value)}
+                placeholder="🔍 مورد..."
+                style={{flex:1,minWidth:80,padding:'4px 10px',border:'1px solid #e2e8f0',borderRadius:8,fontSize:11,fontFamily:'inherit',outline:'none',background:'white'}}/>
+            </div>
           </div>
           <div style={{maxHeight:580,overflowY:'auto'}}>
-            {history.length===0?(
+            {filteredHistory.length===0?(
               <div style={{padding:'48px 20px',textAlign:'center'}}>
                 <div style={{fontSize:40,marginBottom:10}}>🛒</div>
                 <div style={{fontSize:14,fontWeight:700,color:'#475569',marginBottom:4}}>لا توجد مشتريات بعد</div>
                 <div style={{fontSize:12,color:'#94a3b8'}}>سجّل أول فاتورة</div>
               </div>
-            ):history.map((p,i)=>{
+            ):filteredHistory.map((p,i)=>{
               const cc=p.category==='مخزون'?{bg:'#f0fdf4',color:'#16a34a',border:'#bbf7d0'}:p.category==='مشتريات'?{bg:'#eff6ff',color:'#2563eb',border:'#bfdbfe'}:{bg:'#f8fafc',color:'#64748b',border:'#e2e8f0'}
               return (
                 <div key={p.id} className="row-hover" style={{padding:'13px 18px',borderBottom:i<history.length-1?'1px solid #f8fafc':'none'}}>
@@ -407,7 +451,7 @@ export default function PurchasesPage() {
                       {p.qty&&<div style={{fontSize:11,color:'#94a3b8',marginBottom:1}}>{p.qty} {p.unit}</div>}
                       <div style={{fontSize:11,color:'#94a3b8',display:'flex',gap:8,flexWrap:'wrap' as const}}>
                         {p.supplier&&<span>🏪 {p.supplier}</span>}
-                        <span>📅 {new Date(p.created_at).toLocaleDateString('en-GB')}</span>
+                        <span>📅 {new Date(p.created_at).toLocaleDateString('ar-SA',{day:'numeric',month:'short'})}</span>
                       </div>
                     </div>
                     <div style={{textAlign:'left' as const,flexShrink:0}}>
