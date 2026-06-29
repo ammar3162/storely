@@ -184,7 +184,7 @@ export default function DashboardPage() {
         )
       })}
 
-      {/* ── Sub alert ── */}}
+      {/* ── Sub alert ── */}
       {subAlert&&(
         <div className="u r" style={{padding:'10px 14px',marginBottom:14,background:'#fffbeb',border:'1px solid #fac775',display:'flex',alignItems:'center',gap:10,animationDelay:'.06s'}}>
           <svg width={14} height={14} fill="none" stroke="#854f0b" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
