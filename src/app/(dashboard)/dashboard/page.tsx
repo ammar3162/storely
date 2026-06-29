@@ -53,6 +53,7 @@ export default function DashboardPage() {
   const [weeklyP, setWeeklyP]   = useState<{label:string;value:number}[]>([])
   const [weeklyD, setWeeklyD]   = useState<{label:string;value:number}[]>([])
   const [visible, setVisible]   = useState(false)
+  const [notifs, setNotifs]     = useState<any[]>([])
   const sb = createClient()
   const router = useRouter()
 
@@ -107,6 +108,9 @@ export default function DashboardPage() {
       wd.push({label:lbl,value:(movements||[]).filter((m:any)=>m.type==='out'&&new Date(m.created_at).toDateString()===ds).length})
     }
     setWeeklyP(wp);setWeeklyD(wd)
+    // جلب الإشعارات غير المقروءة
+    const{data:nData}=await (sb as any).from('notifications').select('*').eq('org_id',orgId).eq('is_read',false).order('created_at',{ascending:false}).limit(5)
+    setNotifs(nData||[])
     setLoading(false);setTimeout(()=>setVisible(true),50)
   }
 
@@ -157,7 +161,30 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Sub alert ── */}
+      {/* ── Notifications ── */}
+      {notifs.map((n:any,i:number)=>{
+        const tc:{[k:string]:{bg:string,border:string,color:string}} = {
+          info:    {bg:'#eff6ff',border:'#bfdbfe',color:'#378add'},
+          warning: {bg:'#fffbeb',border:'#fde68a',color:'#ba7517'},
+          success: {bg:'#f0fdf4',border:'#bbf7d0',color:'#16a34a'},
+          danger:  {bg:'#fef2f2',border:'#fecaca',color:'#e24b4a'},
+        }
+        const t=tc[n.type]||tc.info
+        return(
+          <div key={n.id} className="u" style={{background:t.bg,border:`1px solid ${t.border}`,borderRadius:10,padding:'11px 14px',display:'flex',alignItems:'flex-start',gap:10,animationDelay:`${i*.05}s`}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:12,fontWeight:700,color:t.color,marginBottom:2}}>{n.title}</div>
+              <div style={{fontSize:11,color:'#5f5e5a',lineHeight:1.5}}>{n.message}</div>
+            </div>
+            <button onClick={async()=>{
+              await (sb as any).from('notifications').update({is_read:true}).eq('id',n.id)
+              setNotifs(prev=>prev.filter(x=>x.id!==n.id))
+            }} style={{background:'none',border:'none',cursor:'pointer',color:'#888780',fontSize:16,padding:2,flexShrink:0}}>✕</button>
+          </div>
+        )
+      })}
+
+      {/* ── Sub alert ── */}}
       {subAlert&&(
         <div className="u r" style={{padding:'10px 14px',marginBottom:14,background:'#fffbeb',border:'1px solid #fac775',display:'flex',alignItems:'center',gap:10,animationDelay:'.06s'}}>
           <svg width={14} height={14} fill="none" stroke="#854f0b" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>

@@ -38,6 +38,7 @@ function Icon({ d, size=20, stroke='currentColor', width=2 }: { d:string; size?:
   )
 }
 
+// لا نضيف شيء هنا — الإشعار سيكون في الداشبورد مباشرة
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [orgName, setOrgName]       = useState('')
   const [branchName, setBranchName] = useState('')
