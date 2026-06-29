@@ -489,6 +489,39 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
           </div>
         )}
       </div>
+
+      {/* آخر العمليات */}
+      <div className="su" style={{marginTop:16,animationDelay:'.25s',background:'white',borderRadius:14,border:`1px solid ${colors.border}`,overflow:'hidden'}}>
+        <div style={{padding:'12px 16px',borderBottom:`1px solid ${colors.border}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div style={{fontSize:14,fontWeight:700,color:colors.text}}>آخر العمليات</div>
+          <span style={{fontSize:10,color:colors.text4,fontWeight:600}}>آخر 10 عمليات</span>
+        </div>
+        {recentOps.length===0?(
+          <div style={{padding:'28px',textAlign:'center',color:colors.text4,fontSize:12}}>لا توجد عمليات</div>
+        ):recentOps.map((m,i)=>{
+          const isOut=m.type==='out'
+          const color=isOut?colors.danger:colors.primary
+          const bg=isOut?colors.dangerLight:colors.primaryLight
+          const border=isOut?colors.dangerBorder:colors.primaryBorder
+          return (
+            <div key={m.id} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 16px',borderBottom:i<recentOps.length-1?`1px solid ${colors.border}`:'none'}}>
+              <div style={{width:32,height:32,borderRadius:9,background:bg,border:`1px solid ${border}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                <svg width="13" height="13" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  {isOut?<path d="M17 8l4 4m0 0l-4 4m4-4H3"/>:<path d="M7 16l-4-4m0 0l4-4m-4 4h18"/>}
+                </svg>
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:12,fontWeight:700,color:colors.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(m.products as any)?.name}</div>
+                <div style={{fontSize:10,color:colors.text4,marginTop:1}}>{new Date(m.created_at).toLocaleDateString('ar-SA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+              </div>
+              <div style={{textAlign:'left' as const,flexShrink:0}}>
+                <span style={{fontSize:13,fontWeight:800,color}}>{isOut?'-':'+'}{Math.abs(m.qty_change)}</span>
+                <span style={{fontSize:10,color:colors.text4,marginRight:2}}>{(m.products as any)?.unit}</span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -505,6 +538,7 @@ export default function ReportsPage() {
   const [inventoryStats, setIS]   = useState({low:0,out:0,total:0})
   const [weeklyP, setWP]          = useState<number[]>([])
   const [visible, setVisible]     = useState(false)
+  const [recentOps, setRecentOps] = useState<any[]>([])
   const sb = createClient()
 
   useEffect(()=>{ loadStats() },[period,from,to])
@@ -532,6 +566,13 @@ export default function ReportsPage() {
     const invData=inv||[]
     setIS({total:invData.length,low:invData.filter((p:any)=>p.qty>0&&p.qty<=p.reorder_point).length,out:invData.filter((p:any)=>p.qty===0).length})
     setSL(false)
+    // آخر العمليات
+    const{data:recent}=await sb.from('stock_movements')
+      .select('id,qty_change,type,created_at,products!inner(name,unit,org_id)')
+      .eq('products.org_id',orgId)
+      .order('created_at',{ascending:false})
+      .limit(10)
+    setRecentOps(recent||[])
     setTimeout(()=>setVisible(true),50)
   }
 
