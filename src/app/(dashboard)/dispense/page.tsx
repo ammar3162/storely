@@ -134,14 +134,7 @@ export default function DispensePage() {
         @media(min-width:480px){.prod-grid{grid-template-columns:repeat(2,1fr)}}
         @media(min-width:768px){.prod-grid{grid-template-columns:repeat(3,1fr);gap:6px}}
         @media(min-width:1024px){.prod-grid{grid-template-columns:repeat(5,1fr);gap:6px}}
-        @media(min-width:960px){
-          .page-layout{display:grid;grid-template-columns:1fr 280px;gap:16px;align-items:start}
-          .hist-mob-btn{display:none!important}
-          .hist-panel{display:block!important}
-        }
-        @media(max-width:959px){
-          .hist-panel{display:none!important}
-        }
+        .hist-panel{display:none!important}
       `}</style>
 
       {/* Header */}
@@ -154,8 +147,8 @@ export default function DispensePage() {
             {lowCount>0&&<span style={{color:C.warning,fontWeight:700}}> · {lowCount} ناقص</span>}
           </p>
         </div>
-        <button className="hist-mob-btn" onClick={()=>setShowHistory(true)}
-          style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'white',border:`1.5px solid ${C.border2}`,borderRadius:10,fontSize:12,fontWeight:700,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>
+        <button onClick={()=>setShowHistory(true)}
+          style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'white',border:`1.5px solid ${C.border2}`,borderRadius:10,fontSize:12,fontWeight:700,color:C.text2,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>
           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           السجل ({history.length})
         </button>
