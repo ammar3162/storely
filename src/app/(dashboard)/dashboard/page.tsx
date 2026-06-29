@@ -109,7 +109,7 @@ export default function DashboardPage() {
     }
     setWeeklyP(wp);setWeeklyD(wd)
     // جلب الإشعارات غير المقروءة
-    const{data:nData}=await (sb as any).from('notifications').select('*').eq('org_id',orgId).eq('is_read',false).order('created_at',{ascending:false}).limit(5)
+    const{data:nData}=await (sb as any).from('notifications').select('*').eq('org_id',orgId).eq('read',false).order('created_at',{ascending:false}).limit(5)
     setNotifs(nData||[])
     setLoading(false);setTimeout(()=>setVisible(true),50)
   }
@@ -177,7 +177,7 @@ export default function DashboardPage() {
               <div style={{fontSize:11,color:'#5f5e5a',lineHeight:1.5}}>{n.message}</div>
             </div>
             <button onClick={async()=>{
-              await (sb as any).from('notifications').update({is_read:true}).eq('id',n.id)
+              await (sb as any).from('notifications').update({read:true}).eq('id',n.id)
               setNotifs(prev=>prev.filter(x=>x.id!==n.id))
             }} style={{background:'none',border:'none',cursor:'pointer',color:'#888780',fontSize:16,padding:2,flexShrink:0}}>✕</button>
           </div>
