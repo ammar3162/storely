@@ -10,6 +10,13 @@ export const metadata: Metadata = {
   description: "نظام إدارة المخزون الاحترافي",
   manifest: "/manifest.json",
   appleWebApp: { capable:true, statusBarStyle:"default", title:"Storely" },
+  icons: {
+    icon: [
+      { url: '/storely-icon.svg', type: 'image/svg+xml' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
