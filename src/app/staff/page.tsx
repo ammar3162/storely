@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Head from 'next/head'
 
 export default function StaffLoginPage() {
   const [phone, setPhone] = useState('')
@@ -12,6 +13,12 @@ export default function StaffLoginPage() {
   useEffect(() => {
     const saved = localStorage.getItem('staff_session')
     if (saved) router.push('/staff/dispense')
+  }, [])
+
+  useEffect(() => {
+    // تغيير الـ manifest للموظف
+    const link = document.querySelector('link[rel="manifest"]') as HTMLLinkElement
+    if (link) link.href = '/staff-manifest.json'
   }, [])
 
   async function handleLogin(e: React.FormEvent) {
