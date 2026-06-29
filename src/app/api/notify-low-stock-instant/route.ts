@@ -59,7 +59,19 @@ export async function POST(req: Request) {
       const { data: supplier } = await (db as any).from('suppliers')
         .select('name,phone').eq('id', (product as any).supplier_id).single()
       if ((supplier as any)?.phone) {
-        const supplierMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\nطلب توريد من *${(org as any).name}*\n\n• ${(product as any).name} — *${orderQty} ${(product as any).unit}*\n\nيرجى التوريد في أقرب وقت`
+        // إنشاء طلب مع token
+      const orderItems = [{ name: (product as any).name, qty: orderQty, unit: (product as any).unit }]
+      const { data: orderData } = await (db as any).from('supplier_orders').insert({
+        org_id,
+        supplier_name: (supplier as any).name,
+        supplier_phone: (supplier as any).phone,
+        items: orderItems,
+        org_name: (org as any).name,
+      }).select('token').single()
+      const token = (orderData as any)?.token || ''
+      const confirmUrl = `https://storely.dev/confirm/${token}`
+
+      const supplierMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\nطلب توريد من *${(org as any).name}*\n\n• ${(product as any).name} — *${orderQty} ${(product as any).unit}*\n\nللتأكيد اضغط:\n${confirmUrl}`
         await sendWA((supplier as any).phone, supplierMsg)
         sentToSupplier = true
       }
