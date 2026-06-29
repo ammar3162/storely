@@ -11,52 +11,65 @@ function formatPhone(raw: string): string {
   return clean
 }
 
+async function sendWA(phone: string, text: string) {
+  return fetch('https://www.wasenderapi.com/api/send-message', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.WASENDER_API_KEY}`,
+      'X-Session-Id': process.env.WASENDER_SESSION_ID!,
+    },
+    body: JSON.stringify({ to: formatPhone(phone), text }),
+  })
+}
+
 export async function POST(req: Request) {
   try {
     const { org_id, product_id, new_qty, reorder_point } = await req.json()
-    if (!org_id) return NextResponse.json({ success: false, message: 'org_id مطلوب' })
+    if (!org_id || !product_id) return NextResponse.json({ success: false })
 
-    // أرسل فقط إذا الصنف وصل للحد بالضبط الآن
-    if (product_id !== undefined) {
-      // لا ترسل إذا المخزون كافٍ
-      if (new_qty > reorder_point) return NextResponse.json({ success: false, message: 'المخزون كافٍ' })
-      // لا ترسل إذا كان ناقصاً مسبقاً (الكمية قبل الصرف كانت أقل من الحد)
-      // new_qty = الكمية بعد الصرف, إذا new_qty+1 <= reorder_point كان ناقصاً قبل
-      if ((new_qty + 1) <= reorder_point && new_qty !== reorder_point) return NextResponse.json({ success: false, message: 'كان ناقصاً مسبقاً' })
-    }
+    // لا ترسل إذا المخزون لا يزال كافٍ
+    if (new_qty > reorder_point) return NextResponse.json({ success: false, message: 'كافٍ' })
 
-    const supabase = createClient(
+    // لا ترسل إذا كان ناقصاً مسبقاً — فقط عند الوصول للحد للمرة الأولى
+    if (new_qty < reorder_point) return NextResponse.json({ success: false, message: 'كان ناقصاً مسبقاً' })
+
+    const db = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    const { data: org } = await supabase.from('organizations').select('*').eq('id', org_id).single()
-    if (!org?.whatsapp_number) return NextResponse.json({ success: false, message: 'لا يوجد رقم واتساب' })
+    const { data: org } = await db.from('organizations').select('name,whatsapp_number').eq('id', org_id).single()
+    if (!org) return NextResponse.json({ success: false })
 
-    const { data: products } = await supabase
-      .from('products').select('name,qty,unit,reorder_point')
-      .eq('org_id', org_id).eq('is_active', true)
+    const { data: product } = await db.from('products')
+      .select('id,name,qty,unit,reorder_point,supplier_id,supplier_order_qty')
+      .eq('id', product_id).single()
+    if (!product) return NextResponse.json({ success: false })
 
-    let low = (products || []).filter((p: any) => p.qty <= p.reorder_point)
-    // إذا محدد صنف معين، أرسل فقط ذلك الصنف
-    if (product_id) low = low.filter((p: any) => p.id === product_id)
-    if (low.length === 0) return NextResponse.json({ success: true, sent: 0 })
+    const orderQty = (product as any).supplier_order_qty || (product as any).reorder_point
 
-    const list = low.map((p: any) => `⚠️ *${p.name}* وصل للحد الأدنى\nالمتبقي: *${p.qty} ${p.unit}*`).join('\n\n')
-    const msg = `🟢 *Storely*\n\nمرحباً ${org.name}،\n\n${list}\n\nيرجى الطلب في أقرب وقت`
+    // إرسال للمورد إذا موجود
+    let sentToSupplier = false
+    if ((product as any).supplier_id) {
+      const { data: supplier } = await (db as any).from('suppliers')
+        .select('name,phone').eq('id', (product as any).supplier_id).single()
+      if ((supplier as any)?.phone) {
+        const supplierMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\nطلب توريد من *${(org as any).name}*\n\n• ${(product as any).name} — *${orderQty} ${(product as any).unit}*\n\nيرجى التوريد في أقرب وقت`
+        await sendWA((supplier as any).phone, supplierMsg)
+        sentToSupplier = true
+      }
+    }
 
-    const phone = formatPhone(org.whatsapp_number)
-    const res = await fetch('https://www.wasenderapi.com/api/send-message', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.WASENDER_API_KEY}`,
-        'X-Session-Id': process.env.WASENDER_SESSION_ID!,
-      },
-      body: JSON.stringify({ to: phone, text: msg }),
-    })
+    // إرسال للمدير دائماً
+    if ((org as any).whatsapp_number) {
+      const adminMsg = sentToSupplier
+        ? `🟢 *Storely*\n\nمرحباً ${(org as any).name}،\n\n⚠️ *${(product as any).name}* وصل للحد الأدنى\nتم إرسال طلب توريد للمورد تلقائياً`
+        : `🟢 *Storely*\n\nمرحباً ${(org as any).name}،\n\n⚠️ *${(product as any).name}* وصل للحد الأدنى\nالمتبقي: *${new_qty} ${(product as any).unit}*\n\nيرجى الطلب في أقرب وقت`
+      await sendWA((org as any).whatsapp_number, adminMsg)
+    }
 
-    return NextResponse.json({ success: res.ok, sent: res.ok ? 1 : 0 })
+    return NextResponse.json({ success: true })
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 })
   }
