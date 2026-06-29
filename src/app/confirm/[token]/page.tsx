@@ -1,11 +1,15 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@supabase/supabase-js'
+
+const sb = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export default function ConfirmPage({ params }: { params: { token: string } }) {
   const [status, setStatus] = useState<'loading'|'confirm'|'done'|'error'>('loading')
   const [order, setOrder]   = useState<any>(null)
-  const sb = createClient()
 
   useEffect(()=>{ load() },[])
 
