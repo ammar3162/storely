@@ -39,18 +39,22 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
+    console.log('notify-instant called:', { org_id, product_id, new_qty, reorder_point })
     const { data: org } = await db.from('organizations').select('name,whatsapp_number').eq('id', org_id).single()
+    console.log('org:', org)
     if (!org) return NextResponse.json({ success: false })
 
     const { data: product } = await db.from('products')
       .select('id,name,qty,unit,reorder_point,supplier_id,supplier_order_qty')
       .eq('id', product_id).single()
+    console.log('product:', product)
     if (!product) return NextResponse.json({ success: false })
 
     const orderQty = (product as any).supplier_order_qty || (product as any).reorder_point
 
     // إرسال للمورد إذا موجود
     let sentToSupplier = false
+    console.log('supplier_id:', (product as any).supplier_id)
     if ((product as any).supplier_id) {
       const { data: supplier } = await (db as any).from('suppliers')
         .select('name,phone').eq('id', (product as any).supplier_id).single()
