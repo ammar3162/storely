@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Head from 'next/head'
 
 export default function StaffLoginPage() {
   const [phone, setPhone] = useState('')
