@@ -17,9 +17,15 @@ export default function StaffLoginPage() {
   const [shake, setShake] = useState(false)
   const router = useRouter()
 
+  const [isPWA, setIsPWA] = useState(false)
+
   useEffect(()=>{
     const saved = localStorage.getItem('staff_session')
     if(saved) router.push('/staff/dispense')
+
+    // كشف PWA
+    const pwa = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true
+    setIsPWA(pwa)
 
     // تغيير الـ manifest
     const link = document.querySelector('link[rel="manifest"]') as HTMLLinkElement
@@ -75,6 +81,31 @@ export default function StaffLoginPage() {
   useEffect(()=>{
     if(step==='pin'&&pin.length===4) handleLogin()
   },[pin])
+
+  // إذا مو PWA — أظهر نموذج بسيط
+  if(!isPWA) return (
+    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4',padding:20}}>
+      <div style={{background:'white',borderRadius:16,padding:28,width:'100%',maxWidth:360,border:'1px solid #ebebea'}}>
+        <div style={{fontSize:18,fontWeight:700,color:'#1c1c1a',marginBottom:4}}>دخول الموظف</div>
+        <div style={{fontSize:12,color:'#888780',marginBottom:20}}>أدخل رقم جوالك ورمز PIN</div>
+        <div style={{marginBottom:12}}>
+          <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:5}}>رقم الجوال</label>
+          <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="05xxxxxxxx"
+            style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0dd',borderRadius:8,fontSize:14,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr'}}/>
+        </div>
+        <div style={{marginBottom:16}}>
+          <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:5}}>رمز PIN</label>
+          <input type="password" value={pin} onChange={e=>setPin(e.target.value)} placeholder="••••"
+            style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0dd',borderRadius:8,fontSize:14,fontFamily:'inherit',outline:'none',boxSizing:'border-box'}}/>
+        </div>
+        {error&&<div style={{fontSize:12,color:'#e24b4a',marginBottom:10,fontWeight:600}}>{error}</div>}
+        <button onClick={handleLogin} disabled={loading}
+          style={{width:'100%',padding:'12px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+          {loading?'جاري التحقق...':'دخول'}
+        </button>
+      </div>
+    </div>
+  )
 
   const digits = ['1','2','3','4','5','6','7','8','9','','0','⌫']
   const display = step==='phone' ? phone : pin.replace(/./g,'●')
