@@ -106,22 +106,13 @@ export async function POST(req: NextRequest) {
 
       const org = await db.from('organizations').select('name').eq('id', org_id).single()
       const orgName = (org.data as any)?.name || 'العميل'
-      let msg = `🛒 *طلب شراء جديد*\n`
-      msg += `🏪 من: ${orgName}\n`
-      msg += `📅 ${date}\n`
-      msg += `${'─'.repeat(25)}\n\n`
-      msg += `*قائمة الطلب:*\n`
-
-      group.items.forEach((item, i) => {
-        msg += `${i+1}. ${item.name}\n`
-        msg += `   الكمية المطلوبة: *${item.suggested} ${item.unit}*\n`
-        msg += `   المتوفر حالياً: ${item.qty} ${item.unit}\n\n`
-      })
-
-      msg += `${'─'.repeat(25)}\n`
-      msg += `إجمالي الأصناف: ${group.items.length}\n`
-      msg += `_يرجى التأكيد والإخبار بتاريخ التوصيل_\n`
-      msg += `🔗 Storely — نظام إدارة المخزون`
+      // إنشاء طلب مع token
+      const orderItems = group.items.map((item:any) => ({name:item.name,qty:item.suggested,unit:item.unit}))
+      const{data:orderData}=await (db as any).from('supplier_orders').insert({org_id,supplier_name:group.supplier.name,supplier_phone:group.supplier.phone,items:orderItems,org_name:orgName}).select('token').single()
+      const token=(orderData as any)?.token||''
+      let msg=`🟢 *Storely*\n\nمرحباً، طلب توريد من *${orgName}*\n\n`
+      group.items.forEach((item:any)=>{msg+=`• ${item.name} — *${item.suggested} ${item.unit}*\n`})
+      msg+=`\nللتأكيد اضغط:\nhttps://storely.dev/confirm/${token}`
 
       const sent = await sendWhatsApp(group.supplier.phone, msg)
       results.push({ supplier: group.supplier.name, items: group.items.length, sent })
