@@ -107,7 +107,15 @@ export default function StaffLoginPage() {
     </div>
   )
 
-  const digits = ['1','2','3','4','5','6','7','8','9','','0','⌫']
+  const digits = ['3','2','1','6','5','4','9','8','7','⌫','0','']
+  const [time, setTime] = useState('')
+  useEffect(()=>{
+    const update = () => setTime(new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit',hour12:true}))
+    update()
+    const t = setInterval(update, 1000)
+    return () => clearInterval(t)
+  }, [])
+
   const display = step==='phone' ? phone : pin.replace(/./g,'●')
   const placeholder = step==='phone' ? '05xxxxxxxx' : '● ● ● ●'
   const progress = step==='phone' ? phone.length/10 : pin.length/4
@@ -134,6 +142,10 @@ export default function StaffLoginPage() {
         <div style={{fontSize:18,fontWeight:700,color:C.text}}>Storely</div>
         <div style={{fontSize:12,color:C.text4,marginTop:2}}>بوابة الموظف</div>
       </div>
+
+      {/* Time */}
+      <div style={{fontSize:42,fontWeight:300,color:C.text,letterSpacing:2,marginBottom:8,fontVariantNumeric:'tabular-nums'}}>{time}</div>
+      <div style={{fontSize:13,color:C.text4,marginBottom:24}}>{new Date().toLocaleDateString('ar-SA',{weekday:'long',day:'numeric',month:'long'})}</div>
 
       {/* Display */}
       <div className={shake?'shake':''} style={{width:260,marginBottom:8}}>
@@ -164,13 +176,13 @@ export default function StaffLoginPage() {
       </div>
 
       {/* Keypad */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,width:260}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,width:260,direction:'ltr'}}>
         {digits.map((d,i)=>(
           <button key={i} className="dkey"
             disabled={d===''||loading}
             onClick={()=>{
               if(d==='⌫') deleteDigit()
-              else if(d) addDigit(d)
+              else if(d&&d!=='⌫') addDigit(d)
             }}
             style={{
               margin:'0 auto',
