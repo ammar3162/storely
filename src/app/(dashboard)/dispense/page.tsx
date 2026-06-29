@@ -81,7 +81,7 @@ export default function DispensePage() {
     try{
       const{data:org}=await sb.from('organizations').select('supplier_notify_mode').eq('id',oid).single()
       if((org as any)?.supplier_notify_mode==='instant')
-        fetch('/api/notify-supplier',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid})}).catch(()=>{})
+
     }catch{}
     setSelected(null);setQty('')
     setSaving(false);loadProducts(oid);loadHistory(oid)
