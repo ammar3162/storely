@@ -79,9 +79,6 @@ export default function DispensePage() {
     toast(`✅ تم صرف ${qn} ${selected.unit} من ${selected.name}`)
     fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:selected.id,new_qty:selected.qty-qn,reorder_point:selected.reorder_point})}).catch(()=>{})
     try{
-      const{data:org}=await sb.from('organizations').select('supplier_notify_mode').eq('id',oid).single()
-      if((org as any)?.supplier_notify_mode==='instant')
-
     }catch{}
     setSelected(null);setQty('')
     setSaving(false);loadProducts(oid);loadHistory(oid)
