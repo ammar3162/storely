@@ -163,13 +163,13 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     }
     const{start,end}=getRange(period,from,to)
     const _bid1 = sessionStorage.getItem('s_branch_id')
-    let _mq1 = sb.from('stock_movements').select('*,products!inner(name,unit,org_id,branch_id)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
+    let _mq1 = sb.from('stock_movements').select('*,products!inner(name,unit,org_id,branch_id),profiles!profile_id(full_name)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
     if (_bid1) _mq1 = _mq1.eq('products.branch_id', _bid1)
     const{data}=await _mq1.order('created_at',{ascending:false})
     setMovements(data||[]); setLoading(false)
   }
   function exportCSV(){
-    const csv='\ufeff'+[['التاريخ','المنتج','الكمية','الوحدة','الملاحظة'],...filtered.map(m=>[new Date(m.created_at).toLocaleDateString('en-GB'),(m.products as any)?.name||'',Math.abs(m.qty_change),(m.products as any)?.unit||'',m.note||''])].map(r=>r.map(c=>'"'+c+'"').join(',')).join('\n')
+    const csv='\ufeff'+[['التاريخ','المنتج','الكمية','الوحدة','الموظف','الملاحظة'],...filtered.map(m=>[new Date(m.created_at).toLocaleDateString('en-GB'),(m.products as any)?.name||'',Math.abs(m.qty_change),(m.products as any)?.unit||'',(m.profiles as any)?.full_name||'—',m.note||''])].map(r=>r.map(c=>'"'+c+'"').join(',')).join('\n')
     Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})),download:'تقرير_الصرف.csv'}).click()
   }
   const filtered=movements.filter(m=>!search||(m.products as any)?.name?.includes(search)||m.note?.includes(search))
@@ -234,7 +234,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
             <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:400}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
-                  {['التاريخ','المنتج','الكمية','الملاحظة'].map((h,i)=>(
+                  {['التاريخ','المنتج','الكمية','الموظف','الملاحظة'].map((h,i)=>(
                     <th key={i} style={{padding:'10px 16px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
                   ))}
                 </tr>
@@ -245,6 +245,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
                     <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA',{month:'short',day:'numeric'})}</td>
                     <td style={{padding:'11px 16px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td>
                     <td style={{padding:'11px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:900}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
+                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f0fdf4',color:'#16a34a',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #bbf7d0'}}>{(m.profiles as any)?.full_name||'—'}</span></td>
                     <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text4}}>{m.note||'—'}</td>
                   </tr>
                 ))}
