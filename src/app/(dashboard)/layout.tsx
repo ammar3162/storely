@@ -221,7 +221,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             .desk-layout{display:flex;min-height:100vh}
             .mob-layout{display:none}
             .desk-sidebar{display:flex;flex-direction:column;width:220px;position:fixed;top:0;right:0;bottom:0;background:#0f172a;z-index:100;border-left:1px solid rgba(255,255,255,.06)}
-            .desk-content{flex:1;margin-right:220px;padding:24px;min-height:100vh}
+            .desk-content{flex:1;margin-right:220px;padding:20px 24px;min-height:100vh;max-width:calc(100vw - 220px)}
           }
         `}</style>
 
