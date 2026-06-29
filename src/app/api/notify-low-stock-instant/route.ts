@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
     let low = (products || []).filter((p: any) => p.qty <= p.reorder_point)
     // إذا محدد صنف معين، أرسل فقط ذلك الصنف
-    if (product_id) low = low.filter((p: any) => p.id === product_id || true).slice(0,1).filter((p:any)=>p.qty<=p.reorder_point)
+    if (product_id) low = low.filter((p: any) => p.id === product_id)
     if (low.length === 0) return NextResponse.json({ success: true, sent: 0 })
 
     const list = low.map((p: any) => `⚠️ *${p.name}* وصل للحد الأدنى\nالمتبقي: *${p.qty} ${p.unit}*`).join('\n\n')
