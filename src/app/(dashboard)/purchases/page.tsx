@@ -222,10 +222,22 @@ export default function PurchasesPage() {
             <div style={{marginBottom:10}}>
               <label style={lbl}>{form.category==='مخزون'?'اسم الصنف':'اسم الفاتورة'} *</label>
               {form.category==='مخزون'&&isExisting===true?(
-                <select required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp}>
-                  <option value="">اختر صنف...</option>
-                  {products.map((p:any)=><option key={p.id} value={p.name}>{p.name} — {p.qty} {p.unit}</option>)}
-                </select>
+                <div style={{position:'relative'}}>
+                  <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={{...inp,marginBottom:4}} placeholder="ابحث عن صنف..."/>
+                  {form.name===''||products.filter((p:any)=>p.name.includes(form.name)&&form.name!==p.name).length>0?(
+                    <div style={{position:'absolute',top:'100%',right:0,left:0,background:'white',border:`1px solid ${C.border2}`,borderRadius:8,zIndex:50,maxHeight:200,overflowY:'auto',boxShadow:'0 4px 12px rgba(0,0,0,.1)'}}>
+                      {products.filter((p:any)=>!form.name||p.name.includes(form.name)).slice(0,10).map((p:any)=>(
+                        <div key={p.id} onClick={()=>setForm({...form,name:p.name,unit:p.unit})}
+                          style={{padding:'9px 12px',cursor:'pointer',fontSize:12,color:C.text,borderBottom:`1px solid ${C.border}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}
+                          onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background=C.bg}
+                          onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background='white'}>
+                          <span style={{fontWeight:600}}>{p.name}</span>
+                          <span style={{color:C.text4,fontSize:11}}>{p.qty} {p.unit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ):null}
+                </div>
               ):(
                 <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp}
                   placeholder={form.category==='مخزون'?'قهوة، سكر...':form.category==='مشتريات'?'مستلزمات مكتبية...':'إيجار، كهرباء...'}/>
