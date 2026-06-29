@@ -106,8 +106,6 @@ export async function POST(req: NextRequest) {
 
       const org = await db.from('organizations').select('name').eq('id', org_id).single()
       const orgName = (org.data as any)?.name || 'العميل'
-      const date = new Date().toLocaleDateString('ar-SA', { weekday:'long', day:'numeric', month:'long' })
-
       let msg = `🛒 *طلب شراء جديد*\n`
       msg += `🏪 من: ${orgName}\n`
       msg += `📅 ${date}\n`
