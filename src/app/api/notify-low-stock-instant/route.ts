@@ -13,8 +13,16 @@ function formatPhone(raw: string): string {
 
 export async function POST(req: Request) {
   try {
-    const { org_id } = await req.json()
+    const { org_id, product_id, new_qty, reorder_point } = await req.json()
     if (!org_id) return NextResponse.json({ success: false, message: 'org_id مطلوب' })
+
+    // أرسل فقط إذا الصنف وصل للحد بالضبط الآن
+    if (product_id !== undefined) {
+      // إذا الكمية الجديدة أكبر من الحد — لا ترسل
+      if (new_qty > reorder_point) return NextResponse.json({ success: false, message: 'المخزون كافٍ' })
+      // إذا الكمية قبل الصرف كانت أقل من الحد — كان ناقص مسبقاً، لا ترسل مرة ثانية
+      if (new_qty < reorder_point - 1) return NextResponse.json({ success: false, message: 'كان ناقصاً مسبقاً' })
+    }
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,7 +36,9 @@ export async function POST(req: Request) {
       .from('products').select('name,qty,unit,reorder_point')
       .eq('org_id', org_id).eq('is_active', true)
 
-    const low = (products || []).filter((p: any) => p.qty <= p.reorder_point)
+    let low = (products || []).filter((p: any) => p.qty <= p.reorder_point)
+    // إذا محدد صنف معين، أرسل فقط ذلك الصنف
+    if (product_id) low = low.filter((p: any) => p.id === product_id || true).slice(0,1).filter((p:any)=>p.qty<=p.reorder_point)
     if (low.length === 0) return NextResponse.json({ success: true, sent: 0 })
 
     const list = low.map((p: any) => `• ${p.name}: ${p.qty} ${p.unit} (الحد: ${p.reorder_point})`).join('\n')

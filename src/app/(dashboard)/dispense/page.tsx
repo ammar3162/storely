@@ -77,7 +77,7 @@ export default function DispensePage() {
     const{error}=await sb.from('stock_movements').insert({product_id:selected.id,profile_id:pid,type:'out',qty_change:-qn,note:'استهلاك يومي'})
     if(error){toast('خطأ','error');setSaving(false);return}
     toast(`✅ تم صرف ${qn} ${selected.unit} من ${selected.name}`)
-    fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid})}).catch(()=>{})
+    fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:selected.id,new_qty:selected.qty-qn,reorder_point:selected.reorder_point})}).catch(()=>{})
     try{
       const{data:org}=await sb.from('organizations').select('supplier_notify_mode').eq('id',oid).single()
       if((org as any)?.supplier_notify_mode==='instant')
