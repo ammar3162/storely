@@ -50,7 +50,7 @@ export default function AdminNotificationsPage() {
       sent_to_count:targets.length,
     })
     if(error){toast('خطأ: '+error.message,'error');setSending(false);return}
-    const inserts=targets.map(org_id=>({org_id,title:title.trim(),message:message.trim(),type,read:false}))
+    const inserts=targets.map(org_id=>({org_id,title:title.trim(),message:message.trim(),type,is_read:false}))
     const{error:nErr}=await (sb as any).from('notifications').insert(inserts)
     if(nErr){toast('خطأ في الإشعارات: '+nErr.message,'error');setSending(false);return}
     toast(`تم الإرسال لـ ${targets.length} منشأة`)
