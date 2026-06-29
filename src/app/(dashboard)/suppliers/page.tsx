@@ -236,29 +236,21 @@ function SupplierCard({ s, products, orgId, onRefresh }: any) {
               <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:8, marginBottom:8 }}>
                 <div>
                   <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:4 }}>المنتج</label>
-                  <div style={{position:'relative'}}>
+                  <div style={{border:'1.5px solid #e2e8f0',borderRadius:10,overflow:'hidden',background:'white'}}>
                     <input
                       value={productSearch}
-                      onChange={e=>{setProductSearch(e.target.value);setSelectedProduct('')}}
-                      placeholder="ابحث عن منتج..."
-                      style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',background:'white',color:'#0f172a',outline:'none',boxSizing:'border-box'}}
+                      onChange={e=>setProductSearch(e.target.value)}
+                      placeholder="🔍 ابحث..."
+                      style={{width:'100%',padding:'8px 12px',border:'none',borderBottom:'1px solid #f1f5f9',fontSize:12,fontFamily:'inherit',outline:'none',boxSizing:'border-box',background:'#f8fafc'}}
                     />
-                    {productSearch&&!selectedProduct&&(
-                      <div style={{position:'absolute',top:'100%',right:0,left:0,background:'white',border:'1.5px solid #e2e8f0',borderRadius:10,zIndex:50,maxHeight:180,overflowY:'auto',boxShadow:'0 4px 12px rgba(0,0,0,.1)',marginTop:2}}>
-                        {unlinked.filter((p:any)=>p.name.includes(productSearch)).slice(0,8).map((p:any)=>(
-                          <div key={p.id} onClick={()=>{setSelectedProduct(p.id);setProductSearch(p.name)}}
-                            style={{padding:'9px 12px',cursor:'pointer',fontSize:12,color:'#0f172a',borderBottom:'1px solid #f1f5f9',display:'flex',justifyContent:'space-between'}}
-                            onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background='#f8fafc'}
-                            onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background='white'}>
-                            <span style={{fontWeight:600}}>{p.name}</span>
-                            <span style={{color:'#94a3b8',fontSize:11}}>{p.qty} {p.unit}</span>
-                          </div>
-                        ))}
-                        {unlinked.filter((p:any)=>p.name.includes(productSearch)).length===0&&(
-                          <div style={{padding:'12px',textAlign:'center',fontSize:12,color:'#94a3b8'}}>لا توجد نتائج</div>
-                        )}
-                      </div>
-                    )}
+                    <select value={selectedProduct} onChange={e=>setSelectedProduct(e.target.value)}
+                      size={5}
+                      style={{width:'100%',border:'none',fontSize:13,fontFamily:'inherit',background:'white',color:'#0f172a',outline:'none',padding:'4px 0'}}>
+                      <option value="">— اختر —</option>
+                      {unlinked.filter((p:any)=>!productSearch||p.name.includes(productSearch)).map((p:any)=>(
+                        <option key={p.id} value={p.id}>{p.name} ({p.qty} {p.unit})</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 <div>
