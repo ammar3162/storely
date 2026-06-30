@@ -67,7 +67,9 @@ export async function POST(req: Request) {
         supplier_phone: (supplier as any).phone,
         items: orderItems,
       }).select('token').single()
-      if (orderErr) console.log('supplier_orders insert error:', orderErr.message)
+      if (orderErr) {
+        return NextResponse.json({ success: false, debug: orderErr.message })
+      }
       const token = (orderData as any)?.token || ''
       const confirmUrl = `https://storely.dev/confirm/${token}`
 
