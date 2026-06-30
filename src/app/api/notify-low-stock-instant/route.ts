@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     if (!org) return NextResponse.json({ success: false })
 
     const { data: product } = await db.from('products')
-      .select('id,name,qty,unit,reorder_point,supplier_id,supplier_order_qty')
+      .select('id,name,qty,unit,reorder_point,supplier_id,supplier_order_qty,supplier_notes')
       .eq('id', product_id).single()
     console.log('product:', product)
     if (!product) return NextResponse.json({ success: false })
@@ -71,7 +71,8 @@ export async function POST(req: Request) {
       const token = (orderData as any)?.token || ''
       const confirmUrl = `https://storely.dev/confirm/${token}`
 
-      const supplierMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\nطلب توريد من *${(org as any).name}*\n\n• ${(product as any).name} — *${orderQty} ${(product as any).unit}*\n\nللتأكيد رد بكلمة: *تم*`
+      const notesLine = (product as any).supplier_notes ? `\n📝 ${(product as any).supplier_notes}\n` : ''
+      const supplierMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\nطلب توريد من *${(org as any).name}*\n\n• ${(product as any).name} — *${orderQty} ${(product as any).unit}*${notesLine}\nللتأكيد رد بكلمة: *تم*`
         await sendWA((supplier as any).phone, supplierMsg)
         sentToSupplier = true
       }
