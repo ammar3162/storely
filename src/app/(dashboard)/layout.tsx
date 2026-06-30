@@ -41,6 +41,7 @@ function Icon({ d, size=20, stroke='currentColor', width=2 }: { d:string; size?:
 // لا نضيف شيء هنا — الإشعار سيكون في الداشبورد مباشرة
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [orgName, setOrgName]       = useState('')
+  const [orgLogo, setOrgLogo]       = useState<string|null>(null)
   const [branchName, setBranchName] = useState('')
   const [userName, setUserName]     = useState('')
   const [userInit, setUserInit]     = useState('م')
@@ -73,12 +74,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const load = useCallback(async()=>{
     const{data:{user}}=await sb.auth.getUser()
     if(!user){router.replace('/login');return}
-    const{data:p}=await sb.from('profiles').select('id,full_name,org_id,organizations(name)').eq('id',user.id).single()
+    const{data:p}=await sb.from('profiles').select('id,full_name,org_id,organizations(name,logo_url)').eq('id',user.id).single()
     if(!p){router.replace('/login');return}
     if(!p.org_id){router.replace('/pending');return}
     const orgN=(p.organizations as any)?.name||''
+    const orgLogoUrl=(p.organizations as any)?.logo_url||null
     const userN=p.full_name||''
-    setOrgName(orgN); setUserName(userN); setUserInit(userN[0]||'م')
+    setOrgName(orgN); setUserName(userN); setUserInit(userN[0]||'م'); setOrgLogo(orgLogoUrl)
     sessionStorage.setItem('s_org_id',p.org_id)
     sessionStorage.setItem('s_profile_id',p.id)
     const{data:orgData}=await (sb as any).from('organizations').select('plan,max_staff,max_suppliers').eq('id',p.org_id).single()
@@ -231,7 +233,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Mobile Header — Zid style */}
           <header className="mob-header" style={{position:'fixed',top:0,right:0,left:0,zIndex:100,background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,padding:'12px 16px',alignItems:'center',gap:10}}>
             <div style={{flex:1,display:'flex',alignItems:'center',gap:8,minWidth:0}}>
-              <img src="/storely-logo.png" alt="Storely" style={{width:30,height:30,borderRadius:8,objectFit:'cover',flexShrink:0,border:'2px solid rgba(255,255,255,.3)'}}/>
+              <img src={orgLogo||"/storely-logo.png"} alt="Storely" style={{width:30,height:30,borderRadius:8,objectFit:'cover',flexShrink:0,border:'2px solid rgba(255,255,255,.3)'}}/>
               <div style={{minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:800,color:'white',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName||'Storely'}</div>
                 {branchName&&(
@@ -295,7 +297,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Desktop Sidebar */}
           <aside className="desk-sidebar">
             <div style={{padding:'18px 16px',borderBottom:'1px solid rgba(255,255,255,.06)',display:'flex',alignItems:'center',gap:10}}>
-              <img src="/storely-logo.png" alt="Storely" style={{width:34,height:34,borderRadius:9,objectFit:'cover',flexShrink:0}}/>
+              <img src={orgLogo||"/storely-logo.png"} alt="Storely" style={{width:34,height:34,borderRadius:9,objectFit:'cover',flexShrink:0}}/>
               <div style={{minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:800,color:'rgba(255,255,255,.9)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName||'Storely'}</div>
                 {branchName&&<button onClick={()=>branches.length>1&&setShowBranch(true)} style={{fontSize:10,color:C.primary,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit'}}>{branchName}{branches.length>1&&' ▾'}</button>}
