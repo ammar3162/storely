@@ -227,7 +227,7 @@ export default function SettingsPage() {
     }
   }
 
-  const planLabel = maxBranches===1?'الباقة الأساسية — 99 ر.س/شهر':maxBranches<=3?'الباقة المتوسطة — 199 ر.س/شهر':'الباقة المتقدمة — 349 ر.س/شهر'
+  const planLabel = maxBranches===1?'الباقة الأساسية — 149 ر.س/شهر':maxBranches<=3?'الباقة المتوسطة — 249 ر.س/شهر':'الباقة المتقدمة — 399 ر.س/شهر'
 
   if(loading) return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:640,margin:'0 auto'}}>
