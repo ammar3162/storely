@@ -2,7 +2,6 @@
   "name": "Storely — موظف",
   "short_name": "Storely Staff",
   "start_url": "/staff",
-  "scope": "/staff",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#16a34a",
