@@ -36,7 +36,7 @@ export default function StaffLoginPage() {
       manifestLink.rel = 'manifest'
       document.head.appendChild(manifestLink)
     }
-    manifestLink.href = '/staff-manifest.json'
+    manifestLink.href = '/staff-app-v2.json'
 
     // وسوم iOS الإلزامية لوضع standalone
     function setMeta(name: string, content: string) {

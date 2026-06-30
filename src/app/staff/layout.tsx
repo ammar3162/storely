@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 export function generateMetadata(): Metadata {
   return {
     title: 'Storely — موظف',
-    manifest: '/staff-manifest.json',
+    manifest: '/staff-app-v2.json',
     appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Storely Staff' },
     other: {
       'mobile-web-app-capable': 'yes',
