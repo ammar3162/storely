@@ -152,13 +152,16 @@ export async function POST(req: Request) {
       if (['تم','موافق','تأكيد','confirmed','ok','okay'].includes(t.toLowerCase())) {
         // ابحث عن آخر طلب معلق لهذا الرقم
         const cleanPhone = to.replace(/\D/g,'')
-        const { data: pendingOrder } = await sb().from('supplier_orders' as any)
+        // ابني آخر 9 أرقام للمقارنة (يتجاهل فرق الصيغة الدولية/المحلية)
+        const phoneLast9 = cleanPhone.slice(-9)
+        const { data: candidates } = await sb().from('supplier_orders' as any)
           .select('*')
-          .eq('supplier_phone', cleanPhone)
           .eq('status', 'pending')
           .order('created_at', { ascending: false })
-          .limit(1)
-          .single()
+          .limit(20)
+        const pendingOrder = (candidates || []).find((o: any) =>
+          (o.supplier_phone || '').replace(/\D/g, '').slice(-9) === phoneLast9
+        )
 
         if (pendingOrder) {
           // تحديث حالة الطلب
