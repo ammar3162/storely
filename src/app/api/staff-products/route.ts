@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       assignedProducts = (staffData as any)?.assigned_products || []
     }
 
-    let q = sb().from('products').select('id,name,unit,qty,category').eq('org_id', orgId).eq('is_active', true)
+    let q = sb().from('products').select('id,name,unit,qty,category,reorder_point').eq('org_id', orgId).eq('is_active', true)
     if (branchId) q = q.eq('branch_id', branchId)
 
     // فلتر حسب المنتجات المخصصة إذا وجدت
