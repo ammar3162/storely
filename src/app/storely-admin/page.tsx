@@ -350,6 +350,9 @@ export default function AdminPage() {
           <a href="/storely-admin/monitoring" style={{padding:'7px 14px',background:'#1e293b',color:'#94a3b8',border:'1px solid #334155',borderRadius:9,fontSize:12,fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:6}}>
             📊 مراقبة
           </a>
+          <a href="/storely-admin/notifications" style={{padding:'7px 14px',background:'#1e293b',color:'#94a3b8',border:'1px solid #334155',borderRadius:9,fontSize:12,fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:6}}>
+            🔔 الإشعارات
+          </a>
           <button onClick={loadUsers} style={{padding:'7px 14px',background:'#1e293b',color:'#94a3b8',border:'1px solid #334155',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6}}>
             ↺ تحديث
           </button>
