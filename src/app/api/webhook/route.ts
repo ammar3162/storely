@@ -167,7 +167,7 @@ export async function POST(req: Request) {
             .eq('id', (pendingOrder as any).id)
 
           // إرسال إشعار للعميل
-          await fetch(process.env.NEXT_PUBLIC_APP_URL || 'https://storely.dev' + '/api/supplier-confirmed', {
+          await fetch((process.env.NEXT_PUBLIC_APP_URL || 'https://storely.dev') + '/api/supplier-confirmed', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: (pendingOrder as any).token }),
