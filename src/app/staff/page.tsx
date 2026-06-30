@@ -27,9 +27,32 @@ export default function StaffLoginPage() {
     const pwa = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true
     setIsPWA(pwa)
 
-    // تغيير الـ manifest
-    const link = document.querySelector('link[rel="manifest"]') as HTMLLinkElement
-    if(link) link.href = '/staff-manifest.json'
+    document.title = 'Storely — موظف'
+
+    // manifest مخصص للموظف
+    let manifestLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement
+    if (!manifestLink) {
+      manifestLink = document.createElement('link')
+      manifestLink.rel = 'manifest'
+      document.head.appendChild(manifestLink)
+    }
+    manifestLink.href = '/staff-manifest.json'
+
+    // وسوم iOS الإلزامية لوضع standalone
+    function setMeta(name: string, content: string) {
+      let tag = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement
+      if (!tag) {
+        tag = document.createElement('meta')
+        tag.name = name
+        document.head.appendChild(tag)
+      }
+      tag.content = content
+    }
+    setMeta('apple-mobile-web-app-capable', 'yes')
+    setMeta('mobile-web-app-capable', 'yes')
+    setMeta('apple-mobile-web-app-title', 'Storely Staff')
+    setMeta('apple-mobile-web-app-status-bar-style', 'default')
+    setMeta('theme-color', '#16a34a')
   },[])
 
   function addDigit(d: string) {
