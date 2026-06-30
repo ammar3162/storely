@@ -53,6 +53,13 @@ export default function StaffLoginPage() {
     setMeta('apple-mobile-web-app-title', 'Storely Staff')
     setMeta('apple-mobile-web-app-status-bar-style', 'default')
     setMeta('theme-color', '#16a34a')
+
+    // إلغاء تسجيل أي service worker قديم يتحكم بهذا النطاق
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        regs.forEach(reg => reg.unregister())
+      })
+    }
   },[])
 
   function addDigit(d: string) {
