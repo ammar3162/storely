@@ -126,7 +126,7 @@ export default function LandingPage() {
       {/* HERO */}
       <section style={{paddingTop:120,paddingBottom:80,padding:'120px 40px 80px',textAlign:'center',maxWidth:900,margin:'0 auto'}}>
         <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:99,padding:'6px 16px',fontSize:13,fontWeight:600,color:'#16a34a',marginBottom:28}}>
-          ✓ تجربة مجانية 7 أيام — لا يتطلب بطاقة ائتمانية
+          ✓ تجربة مجانية 14 يوماً — لا يتطلب بطاقة ائتمانية
         </div>
         <h1 className="hero-h1" style={{fontSize:56,fontWeight:900,color:'#111827',lineHeight:1.1,marginBottom:20,letterSpacing:'-2px'}}>
           نظام إدارة المخزون<br/>
@@ -142,7 +142,7 @@ export default function LandingPage() {
           <a href="#features" className="btn-outline" style={{fontSize:16,padding:'14px 28px'}}>اكتشف المميزات</a>
         </div>
         <div className="stats-row" style={{display:'flex',justifyContent:'center',gap:48}}>
-          {[['149 ر.س','يبدأ من'],['7 أيام','مجاناً'],['7','لغات'],['24/7','تنبيهات']].map(([n,l])=>(
+          {[['149 ر.س','يبدأ من'],['14 يوم','مجاناً'],['7','لغات'],['24/7','تنبيهات']].map(([n,l])=>(
             <div key={l} style={{textAlign:'center'}}>
               <div style={{fontSize:26,fontWeight:900,color:'#111827'}}>{n}</div>
               <div style={{fontSize:12,color:'#9ca3af',marginTop:3}}>{l}</div>
@@ -237,7 +237,7 @@ export default function LandingPage() {
           <div style={{textAlign:'center',marginBottom:56}}>
             <p style={{fontSize:13,fontWeight:700,color:'#16a34a',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>الأسعار</p>
             <h2 style={{fontSize:38,fontWeight:900,color:'#111827',marginBottom:12,letterSpacing:'-1px'}}>باقات تناسب حجم عملك</h2>
-            <p style={{fontSize:16,color:'#6b7280'}}>7 أيام تجربة مجانية على كل الباقات</p>
+            <p style={{fontSize:16,color:'#6b7280'}}>14 يوماً تجربة مجانية على كل الباقات</p>
           </div>
           <div className="plan-grid" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
             {PLANS.map((p,i)=>(
@@ -267,7 +267,7 @@ export default function LandingPage() {
                   style={{width:'100%',padding:'13px',background:p.popular?'#16a34a':'white',color:p.popular?'white':'#16a34a',border:`1.5px solid #16a34a`,borderRadius:9,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',transition:'all .2s'}}>
                   ابدأ تجربتك المجانية
                 </button>
-                <p style={{textAlign:'center',fontSize:11,color:'#9ca3af',marginTop:10}}>7 أيام مجاناً · لا يتطلب بطاقة</p>
+                <p style={{textAlign:'center',fontSize:11,color:'#9ca3af',marginTop:10}}>14 يوماً مجاناً · لا يتطلب بطاقة</p>
               </div>
             ))}
           </div>
@@ -302,7 +302,7 @@ export default function LandingPage() {
           <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>عندك سؤال؟</h2>
         </div>
         {[
-          {q:'هل فيه تجربة مجانية؟',a:'نعم — 7 أيام مجانية كاملة بدون بطاقة ائتمانية. استكشف جميع المميزات من أول يوم.'},
+          {q:'هل فيه تجربة مجانية؟',a:'نعم — 14 يوماً مجانية كاملة بدون بطاقة ائتمانية. استكشف جميع المميزات من أول يوم.'},
           {q:'كيف يتم الدفع؟',a:'الدفع عبر تحويل بنكي. بعد التحويل يتم تفعيل حسابك خلال 24 ساعة.'},
           {q:'كم عدد الموردين في كل باقة؟',a:'الأساسية: 3 موردين، المتوسطة: 10 موردين، المتقدمة: غير محدود.'},
           {q:'هل يدعم متعدد الفروع؟',a:'نعم — الأساسية: فرع واحد، المتوسطة: 3 فروع، المتقدمة: فروع غير محدودة.'},

@@ -128,7 +128,7 @@ export default function AdminPage() {
     suspended: users.filter(u=>u.status==='suspended').length,
     trial: users.filter(u=>u.subscription_type==='trial'&&u.status==='active').length,
     paid: users.filter(u=>u.subscription_type==='paid'&&u.status==='active').length,
-    revenue: users.filter(u=>u.subscription_type==='paid'&&u.status==='active').length * 149,
+    revenue: users.filter(u=>u.subscription_type==='paid'&&u.status==='active').reduce((sum,u)=>sum+(u.max_branches===1?149:u.max_branches<=3?249:399),0),
     expiringSoon: users.filter(u=>{
       const d = daysLeft(u.subscription_ends_at)
       return d!==null && d>0 && d<=3 && u.status==='active'

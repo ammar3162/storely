@@ -103,7 +103,7 @@ function LoginPage() {
     if (error) { setError(error.message); setLoading(false); return }
     if (data.user) {
       const fullPhone = countryCode + phone.trim().replace(/^0+/, '')
-      const trialEnds = new Date(Date.now() + 7*24*60*60*1000).toISOString()
+      const trialEnds = new Date(Date.now() + 14*24*60*60*1000).toISOString()
       const { data: org, error: orgErr } = await supabase.from('organizations')
         .insert({ name: orgName.trim(), whatsapp_number: fullPhone, low_stock_threshold: 5,
           business_type: businessType||'مطعم',
@@ -390,7 +390,7 @@ function LoginPage() {
             </div>
             <div style={{marginTop:36,padding:'18px 20px',background:'white',borderRadius:12,border:'1px solid #e5e7eb'}}>
               <div style={{display:'flex',gap:24}}>
-                {[['149 ر.س','يبدأ من'],['7 أيام','تجربة مجانية'],['7','لغات مدعومة']].map(([n,l])=>(
+                {[['149 ر.س','يبدأ من'],['14 يوم','تجربة مجانية'],['7','لغات مدعومة']].map(([n,l])=>(
                   <div key={l}>
                     <div style={{fontSize:20,fontWeight:900,color:'#16a34a'}}>{n}</div>
                     <div style={{fontSize:11,color:'#9ca3af',marginTop:2}}>{l}</div>

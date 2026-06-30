@@ -124,7 +124,8 @@ export default function SettingsPage() {
       setLastBackup(org.last_backup_at||null)
       setMaxBranches(org.max_branches||1)
       setLogoUrl(org.logo_url||null)
-      setPlanName(org.plan||'')
+      const planMap: Record<string,string> = {'basic':'الأساسية','pro':'المتوسطة','advanced':'المتقدمة'}
+      setPlanName(planMap[org.plan||'']||org.plan||'')
       setSubEndsAt(org.subscription_ends_at||null)
       const{data:bList}=await sb.from('branches').select('*').eq('org_id',profile.org_id).eq('is_active',true).order('created_at')
       setBranches(bList||[])
@@ -227,7 +228,7 @@ export default function SettingsPage() {
     }
   }
 
-  const planLabel = maxBranches===1?'الباقة الأساسية — 149 ر.س/شهر':maxBranches<=3?'الباقة المتوسطة — 249 ر.س/شهر':'الباقة المتقدمة — 399 ر.س/شهر'
+  const planLabel = planName==='الأساسية'?'الباقة الأساسية — 149 ر.س/شهر':planName==='المتوسطة'?'الباقة المتوسطة — 249 ر.س/شهر':planName==='المتقدمة'?'الباقة المتقدمة — 399 ر.س/شهر':maxBranches===1?'الباقة الأساسية — 149 ر.س/شهر':maxBranches<=3?'الباقة المتوسطة — 249 ر.س/شهر':'الباقة المتقدمة — 399 ر.س/شهر'
 
   if(loading) return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:640,margin:'0 auto'}}>
