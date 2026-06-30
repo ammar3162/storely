@@ -54,6 +54,9 @@ export default function DashboardPage() {
   const [weeklyD, setWeeklyD]   = useState<{label:string;value:number}[]>([])
   const [visible, setVisible]   = useState(false)
   const [notifs, setNotifs]     = useState<any[]>([])
+  const [hasStaff, setHasStaff] = useState(false)
+  const [hasPurchase, setHasPurchase] = useState(false)
+  const [showChecklist, setShowChecklist] = useState(false)
   const sb = createClient()
   const router = useRouter()
 
@@ -111,6 +114,16 @@ export default function DashboardPage() {
     // جلب الإشعارات غير المقروءة
     const{data:nData}=await (sb as any).from('notifications').select('*').eq('org_id',orgId).eq('read',false).order('created_at',{ascending:false}).limit(5)
     setNotifs(nData||[])
+    // checklist data
+    const orgId2 = orgId
+    const[{data:staffData},{data:purchData}] = await Promise.all([
+      (sb as any).from('staff_members').select('id').eq('org_id',orgId2).eq('is_active',true).limit(1),
+      (sb as any).from('purchases').select('id').eq('org_id',orgId2).limit(1),
+    ])
+    setHasStaff((staffData||[]).length>0)
+    setHasPurchase((purchData||[]).length>0)
+    const dismissed = localStorage.getItem('storely_checklist_done')
+    if(!dismissed) setShowChecklist(true)
     setLoading(false);setTimeout(()=>setVisible(true),50)
   }
 
@@ -150,6 +163,39 @@ export default function DashboardPage() {
           .gq{grid-template-columns:repeat(4,1fr);gap:10px}
         }
       `}</style>
+
+      {/* ── Onboarding Checklist (inserted before header marker) ── */}
+      {/* ── Onboarding Checklist ── */}
+      {showChecklist && (
+        <div className="u s r" style={{padding:'16px 18px',marginBottom:16,border:'1.5px solid #bbf7d0',background:'#f0fdf4',animationDelay:'.06s'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+            <div style={{fontSize:14,fontWeight:800,color:'#15803d'}}>🚀 ابدأ مع Storely — 5 خطوات بسيطة</div>
+            <button onClick={()=>{setShowChecklist(false);localStorage.setItem('storely_checklist_done','1')}}
+              style={{background:'none',border:'none',color:'#86efac',cursor:'pointer',fontSize:18,padding:'0 4px',fontFamily:'inherit'}}>×</button>
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {[
+              {done:stats.products>0, label:'أضف أول منتج للمخزون', href:'/inventory', icon:'📦'},
+              {done:hasStaff,         label:'أضف موظف وامنحه رمز PIN', href:'/staff-management', icon:'👥'},
+              {done:hasPurchase,      label:'سجّل أول فاتورة مشتريات', href:'/purchases', icon:'🛒'},
+              {done:stats.todayDispenses>0, label:'جرّب صرف صنف من المخزون', href:'/dispense', icon:'📤'},
+              {done:false,            label:'اضبط رقم واتساب التنبيهات', href:'/settings', icon:'📲'},
+            ].map((step,i)=>(
+              <button key={i} onClick={()=>!step.done&&router.push(step.href)}
+                style={{display:'flex',alignItems:'center',gap:10,background:step.done?'transparent':'white',border:`1px solid ${step.done?'transparent':'#e5e7eb'}`,borderRadius:10,padding:'10px 12px',cursor:step.done?'default':'pointer',fontFamily:'inherit',textAlign:'right',transition:'all .15s',opacity:step.done?.6:1}}>
+                <div style={{width:22,height:22,borderRadius:'50%',background:step.done?'#16a34a':'#e5e7eb',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:11,color:'white',fontWeight:800}}>
+                  {step.done?'✓':i+1}
+                </div>
+                <span style={{fontSize:13,fontWeight:600,color:step.done?'#16a34a':'#374151',flex:1,textDecoration:step.done?'line-through':'none'}}>{step.icon} {step.label}</span>
+                {!step.done&&<span style={{fontSize:11,color:'#9ca3af'}}>←</span>}
+              </button>
+            ))}
+          </div>
+          <div style={{marginTop:10,fontSize:11,color:'#86efac',textAlign:'center'}}>
+            {[stats.products>0,hasStaff,hasPurchase,stats.todayDispenses>0].filter(Boolean).length} من 4 خطوات مكتملة
+          </div>
+        </div>
+      )}
 
       {/* ── Header ── */}
       <div className="u" style={{marginBottom:20,animationDelay:'.04s'}}>
