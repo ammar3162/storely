@@ -100,6 +100,7 @@ function LoginPage() {
     if (!branchCount) { setError('اختر الباقة المناسبة'); return }
     setLoading(true); setError('')
     const { data, error } = await supabase.auth.signUp({ email, password })
+    if (!error && data.user) { setMode('registered' as any); return }
     if (error) { setError(error.message); setLoading(false); return }
     if (data.user) {
       const fullPhone = countryCode + phone.trim().replace(/^0+/, '')
@@ -351,6 +352,23 @@ function LoginPage() {
             )}
 
             {/* Forgot Sent */}
+            {(mode as any)==='registered' && (
+              <div style={{textAlign:'center',padding:'40px 20px'}}>
+                <div style={{fontSize:56,marginBottom:16}}>📬</div>
+                <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8}}>تحقق من بريدك الإلكتروني</h2>
+                <p style={{fontSize:14,color:'#6b7280',lineHeight:1.8,marginBottom:8}}>
+                  أرسلنا رابط التفعيل إلى<br/>
+                  <b style={{color:'#111827'}}>{email}</b>
+                </p>
+                <p style={{fontSize:13,color:'#9ca3af',marginBottom:28,lineHeight:1.7}}>
+                  اضغط الرابط في البريد لتفعيل حسابك والدخول.<br/>
+                  تأكد من مجلد Spam إذا ما وصلك البريد.
+                </p>
+                <button onClick={()=>setMode('login')} style={{background:'#16a34a',color:'white',border:'none',borderRadius:12,padding:'13px 32px',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                  رجوع لتسجيل الدخول
+                </button>
+              </div>
+            )}
             {mode==='forgot-sent' && (
               <div style={{textAlign:'center',padding:'40px 0'}}>
                 <div style={{width:64,height:64,borderRadius:16,background:'#f0fdf4',border:'1px solid #bbf7d0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,margin:'0 auto 20px'}}>📧</div>
