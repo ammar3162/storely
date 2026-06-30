@@ -126,14 +126,13 @@ export async function POST(req: Request) {
 
       const orgIdForOrder = (items[0] as any).org_id
       const orderItems = messageItems.map(it => ({ name: it.name, qty: it.orderQty, unit: it.unit }))
-      const { data: orderData } = await (supabase as any).from('supplier_orders').insert({
+      const { error: orderErr } = await (supabase as any).from('supplier_orders').insert({
         org_id: orgIdForOrder,
         supplier_name: supplier.name,
         supplier_phone: supplier.phone,
         items: orderItems,
-        org_name: orgName,
-      }).select('token').single()
-      void orderData
+      })
+      if (orderErr) console.log('supplier_orders insert error:', orderErr.message)
 
       const text = buildOrderMessage(orgName, messageItems, supplier.notes) + '\n\nللتأكيد رد بكلمة: *تم*'
       const ok = await sendWhatsApp(formatPhone(supplier.phone), text)

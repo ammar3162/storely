@@ -61,13 +61,13 @@ export async function POST(req: Request) {
       if ((supplier as any)?.phone) {
         // إنشاء طلب مع token
       const orderItems = [{ name: (product as any).name, qty: orderQty, unit: (product as any).unit }]
-      const { data: orderData } = await (db as any).from('supplier_orders').insert({
+      const { data: orderData, error: orderErr } = await (db as any).from('supplier_orders').insert({
         org_id,
         supplier_name: (supplier as any).name,
         supplier_phone: (supplier as any).phone,
         items: orderItems,
-        org_name: (org as any).name,
       }).select('token').single()
+      if (orderErr) console.log('supplier_orders insert error:', orderErr.message)
       const token = (orderData as any)?.token || ''
       const confirmUrl = `https://storely.dev/confirm/${token}`
 
