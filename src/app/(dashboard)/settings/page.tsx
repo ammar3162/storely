@@ -78,6 +78,10 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab]       = useState('org')
   const [visible, setVisible]           = useState(false)
   const [countryCode, setCountryCode]   = useState('+966')
+  const [logoUrl, setLogoUrl]           = useState<string|null>(null)
+  const [logoUploading, setLogoUploading] = useState(false)
+  const [planName, setPlanName]         = useState('')
+  const [subEndsAt, setSubEndsAt]       = useState<string|null>(null)
   const [form, setForm] = useState({
     name:'', whatsapp_number:'',
     notify_schedule:'daily',
@@ -119,6 +123,9 @@ export default function SettingsPage() {
       setLastSent(org.last_notified_at||null)
       setLastBackup(org.last_backup_at||null)
       setMaxBranches(org.max_branches||1)
+      setLogoUrl(org.logo_url||null)
+      setPlanName(org.plan||'')
+      setSubEndsAt(org.subscription_ends_at||null)
       const{data:bList}=await sb.from('branches').select('*').eq('org_id',profile.org_id).eq('is_active',true).order('created_at')
       setBranches(bList||[])
     }
@@ -131,6 +138,19 @@ export default function SettingsPage() {
     const fullPhone = countryCode + form.whatsapp_number.replace(/^0+/, '')
     await sb.from('organizations').update({ name:form.name, whatsapp_number:fullPhone, notify_schedule:form.notify_schedule, notify_time:form.notify_time, notify_days:form.notify_days } as any).eq('id',orgId)
     setSaveOk(true); setSaving(false); setTimeout(()=>setSaveOk(false),3000)
+  }
+
+  async function uploadLogo(file: File) {
+    if (!orgId) return
+    setLogoUploading(true)
+    const ext = file.name.split('.').pop()
+    const path = `logos/${orgId}-${Date.now()}.${ext}`
+    const { error: upErr } = await sb.storage.from('invoices').upload(path, file, { upsert: true })
+    if (upErr) { setLogoUploading(false); return }
+    const { data: pub } = sb.storage.from('invoices').getPublicUrl(path)
+    await sb.from('organizations').update({ logo_url: pub.publicUrl } as any).eq('id', orgId)
+    setLogoUrl(pub.publicUrl)
+    setLogoUploading(false)
   }
 
   async function sendNow() {
@@ -275,6 +295,29 @@ export default function SettingsPage() {
           {activeTab==='org'&&(
             <form onSubmit={handleSave}>
               <div style={{display:'flex',flexDirection:'column' as const,gap:18}}>
+
+                {/* شعار المنشأة */}
+                <div>
+                  <label style={lbl}>شعار المنشأة</label>
+                  <div style={{display:'flex',alignItems:'center',gap:14}}>
+                    <div style={{width:64,height:64,borderRadius:14,background:colors.bg,border:`1.5px dashed ${colors.border2}`,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',flexShrink:0}}>
+                      {logoUrl ? (
+                        <img src={logoUrl} alt="شعار" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                      ) : (
+                        <span style={{fontSize:24}}>🏢</span>
+                      )}
+                    </div>
+                    <div style={{flex:1}}>
+                      <input type="file" accept="image/*" id="logoInput" style={{display:'none'}}
+                        onChange={e=>{ const f=e.target.files?.[0]; if(f) uploadLogo(f) }}/>
+                      <label htmlFor="logoInput" style={{...btnSecondary,display:'inline-block',padding:'9px 16px',fontSize:font.xs,cursor:'pointer'}}>
+                        {logoUploading ? '⏳ جاري الرفع...' : (logoUrl ? '🔄 تغيير الشعار' : '📤 رفع شعار')}
+                      </label>
+                      <div style={{fontSize:11,color:colors.text4,marginTop:6}}>PNG أو JPG، يُفضّل مربع الشكل</div>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label style={lbl}>اسم المؤسسة</label>
                   <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp()} placeholder="مثال: مطعم الأصيل"/>
@@ -294,6 +337,24 @@ export default function SettingsPage() {
                   </div>
                   <div style={{fontSize:11,color:colors.text4,marginTop:6,display:'flex',alignItems:'center',gap:4}}><span>💡</span> يُستخدم لإرسال تنبيهات نقص المخزون</div>
                 </div>
+
+                {/* تفاصيل الاشتراك */}
+                <div>
+                  <label style={lbl}>الاشتراك</label>
+                  <div style={{background:colors.bg,border:`1px solid ${colors.border}`,borderRadius:radius.md,padding:'14px 16px'}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:subEndsAt?10:0}}>
+                      <span style={{fontSize:font.sm,color:colors.text3}}>الباقة الحالية</span>
+                      <span style={{fontSize:font.sm,fontWeight:800,color:colors.primary}}>{planName||planLabel}</span>
+                    </div>
+                    {subEndsAt && (
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:10,borderTop:`1px solid ${colors.border}`}}>
+                        <span style={{fontSize:font.sm,color:colors.text3}}>ينتهي في</span>
+                        <span style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{new Date(subEndsAt).toLocaleDateString('ar-SA',{year:'numeric',month:'long',day:'numeric'})}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
               </div>
               <button type="submit" disabled={saving} style={{...btnPrimary,width:'100%',padding:'13px',marginTop:20,opacity:saving?0.7:1,cursor:saving?'not-allowed':'pointer'}}>
                 {saving?'⏳ جاري الحفظ...':'💾 حفظ البيانات'}
