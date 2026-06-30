@@ -57,6 +57,7 @@ function colorFor(category: string, allCategories: string[]) {
 
 export default function StaffDispensePage() {
   const [session, setSession] = useState<StaffSession | null>(null)
+  const [orgLogo, setOrgLogo] = useState<string | null>(null)
   const [products, setProducts] = useState<any[]>([])
   const [translations, setTranslations] = useState<Record<string, Record<string, string>>>({})
   const [lang, setLang] = useState('ar')
@@ -76,7 +77,9 @@ export default function StaffDispensePage() {
     if (!saved) { router.push('/staff'); return }
     const s = JSON.parse(saved) as StaffSession
     setSession(s)
-    loadProducts(s)
+    loadProducts(s);
+    (sb.from('organizations') as any).select('logo_url').eq('id', s.org_id).single()
+      .then(({ data }: any) => { if (data?.logo_url) setOrgLogo(data.logo_url) })
 
     const savedLang = localStorage.getItem('staff_lang')
     if (savedLang && savedLang !== 'ar') {
@@ -215,9 +218,14 @@ export default function StaffDispensePage() {
     <div style={{ minHeight: '100vh', background: '#f5f7fa', fontFamily: "'IBM Plex Sans Arabic', system-ui, sans-serif", direction: lang === 'ar' || lang === 'ur' ? 'rtl' : 'ltr' }}>
       <div style={{ background: 'white', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a' }}>{session.name}</div>
-            <div style={{ fontSize: 12, color: '#64748b', marginTop: 1 }}>{session.org_name} {session.branch_name ? `· ${session.branch_name}` : ''}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {orgLogo && (
+              <img src={orgLogo} alt={session.org_name} style={{ width: 36, height: 36, borderRadius: 9, objectFit: 'cover', flexShrink: 0, border: '1px solid #e2e8f0' }}/>
+            )}
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a' }}>{session.name}</div>
+              <div style={{ fontSize: 12, color: '#64748b', marginTop: 1 }}>{session.org_name} {session.branch_name ? `· ${session.branch_name}` : ''}</div>
+            </div>
           </div>
           <button onClick={logout} style={{ background: '#fef2f2', color: '#ef4444', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{t('logout', lang)}</button>
         </div>
