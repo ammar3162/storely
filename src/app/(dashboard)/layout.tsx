@@ -233,7 +233,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Mobile Header — Zid style */}
           <header className="mob-header" style={{position:'fixed',top:0,right:0,left:0,zIndex:100,background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,padding:'12px 16px',alignItems:'center',gap:10}}>
             <div style={{flex:1,display:'flex',alignItems:'center',gap:8,minWidth:0}}>
-              <img src={orgLogo||"/storely-logo.png"} alt="Storely" style={{width:30,height:30,borderRadius:8,objectFit:'cover',flexShrink:0,border:'2px solid rgba(255,255,255,.3)'}}/>
+              <div style={{width:36,height:36,borderRadius:9,background:'white',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:4}}><img src={orgLogo||"/storely-logo.png"} alt="Storely" style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain'}}/></div>
               <div style={{minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:800,color:'white',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName||'Storely'}</div>
                 {branchName&&(
@@ -297,7 +297,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Desktop Sidebar */}
           <aside className="desk-sidebar">
             <div style={{padding:'18px 16px',borderBottom:'1px solid rgba(255,255,255,.06)',display:'flex',alignItems:'center',gap:10}}>
-              <img src={orgLogo||"/storely-logo.png"} alt="Storely" style={{width:34,height:34,borderRadius:9,objectFit:'cover',flexShrink:0}}/>
+              <div style={{width:40,height:40,borderRadius:10,background:'white',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:4}}><img src={orgLogo||"/storely-logo.png"} alt="Storely" style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain'}}/></div>
               <div style={{minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:800,color:'rgba(255,255,255,.9)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName||'Storely'}</div>
                 {branchName&&<button onClick={()=>branches.length>1&&setShowBranch(true)} style={{fontSize:10,color:C.primary,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit'}}>{branchName}{branches.length>1&&' ▾'}</button>}
