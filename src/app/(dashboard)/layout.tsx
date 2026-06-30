@@ -181,7 +181,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {[...NAV_MAIN,...NAV_MORE].map(item=>{
                 const active=isActive(item.href)
                 return (
-                  <button key={item.href} onClick={()=>{router.push(item.href);setShowMore(false)}}
+                  <button key={item.href} onClick={()=>{router.push(item.href);setShowMore(false)}} onMouseEnter={()=>router.prefetch(item.href)}
                     style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',borderRadius:12,border:`1.5px solid ${active?C.primary:'#e5e7eb'}`,background:active?C.primaryL:'#f9fafb',cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
                     <div style={{width:32,height:32,borderRadius:9,background:active?C.primary:'#e5e7eb',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                       <Icon d={item.icon} size={15} stroke={active?'white':'#6b7280'} width={2}/>
@@ -270,7 +270,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {BOT_NAV.map(item=>{
               const active=isActive(item.href)
               return(
-                <button key={item.href} onClick={()=>router.push(item.href)}
+                <button key={item.href} onClick={()=>router.push(item.href)} onMouseEnter={()=>router.prefetch(item.href)}
                   style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3,padding:'10px 4px 8px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',color:active?C.primary:'#9ca3af',position:'relative',transition:'color .15s'}}>
                   {active&&<div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:28,height:3,borderRadius:99,background:C.primary}}/>}
                   <div style={{position:'relative'}}>
@@ -310,7 +310,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 const active=isActive(item.href)
                 const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
                 return(
-                  <button key={item.href} onClick={()=>router.push(item.href)}
+                  <button key={item.href} onClick={()=>router.push(item.href)} onMouseEnter={()=>router.prefetch(item.href)}
                     style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'9px 10px',borderRadius:9,border:'none',cursor:'pointer',fontFamily:'inherit',marginBottom:2,background:active?`${C.primary}22`:'transparent',color:active?C.primary:'rgba(255,255,255,.5)',transition:'all .15s',textAlign:'right'}}>
                     <Icon d={item.icon} size={17} stroke={active?C.primary:'rgba(255,255,255,.5)'} width={active?2.5:2}/>
                     <span style={{fontSize:12,fontWeight:active?700:500,flex:1}}>{item.label}</span>

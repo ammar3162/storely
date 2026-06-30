@@ -61,11 +61,13 @@ export default function DashboardPage() {
   const router = useRouter()
 
   useEffect(()=>{
+    const oid = sessionStorage.getItem('s_org_id')
+    if(oid){ load(); return }
     let a=0
     const c=setInterval(()=>{
       a++
-      if(sessionStorage.getItem('s_branch_id')||sessionStorage.getItem('s_org_id')||a>20){clearInterval(c);load()}
-    },100)
+      if(sessionStorage.getItem('s_branch_id')||sessionStorage.getItem('s_org_id')||a>15){clearInterval(c);load()}
+    },50)
     return()=>clearInterval(c)
   },[])
 

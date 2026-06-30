@@ -57,6 +57,7 @@ export default function InventoryPage() {
   async function load() {
     setLoading(true)
     let oid = sessionStorage.getItem('s_org_id')
+    // استخدم org_id من sessionStorage مباشرة بدون انتظار
     if (!oid) {
       const{data:{user}}=await sb.auth.getUser()
       if(!user){setLoading(false);return}
