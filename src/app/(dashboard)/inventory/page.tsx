@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { cache } from '@/lib/cache'
 import { toast } from '@/components/toast'
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh'
 import Pagination from '@/components/pagination'
@@ -57,7 +58,11 @@ export default function InventoryPage() {
   async function load() {
     setLoading(true)
     let oid = sessionStorage.getItem('s_org_id')
-    // استخدم org_id من sessionStorage مباشرة بدون انتظار
+    // عرض الكاش فوراً
+    if(oid){
+      const cached = cache.get('inventory:'+oid)
+      if(cached){ setProducts(cached); setLoading(false) }
+    }
     if (!oid) {
       const{data:{user}}=await sb.auth.getUser()
       if(!user){setLoading(false);return}
@@ -70,6 +75,7 @@ export default function InventoryPage() {
     if (bid) q = q.eq('branch_id',bid)
     const{data}=await q.order('name')
     setProducts(data||[])
+    if(oid) cache.set('inventory:'+oid, data||[])
     const{data:org}=await (sb.from('organizations') as any).select('business_type').eq('id',oid).single()
     if((org as any)?.business_type) setBusinessType((org as any).business_type)
     setLoading(false)

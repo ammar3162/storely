@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, Component } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { cache } from '@/lib/cache'
 import { useRouter } from 'next/navigation'
 
 class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|null}> {
@@ -72,6 +73,17 @@ export default function DashboardPage() {
   },[])
 
   async function load() {
+    // عرض الكاش فوراً إذا متوفر
+    const orgId_cached = sessionStorage.getItem('s_org_id')
+    if(orgId_cached){
+      const cached = cache.get('dashboard:'+orgId_cached)
+      if(cached){
+        setStats(cached.stats); setLowItems(cached.lowItems)
+        setActivity(cached.activity); setWeeklyP(cached.weeklyP)
+        setWeeklyD(cached.weeklyD); setNotifs(cached.notifs)
+        setLoading(false); setVisible(true)
+      }
+    }
     const{data:{user}}=await sb.auth.getUser(); if(!user)return
     const{data:profile}=await sb.from('profiles').select('full_name,org_id,subscription_ends_at,organizations(name)').eq('id',user.id).single()
     if(profile){
@@ -116,6 +128,14 @@ export default function DashboardPage() {
     // جلب الإشعارات غير المقروءة
     const{data:nData}=await (sb as any).from('notifications').select('*').eq('org_id',orgId).eq('read',false).order('created_at',{ascending:false}).limit(5)
     setNotifs(nData||[])
+    // خزّن في الكاش
+    if(orgId_cached){
+      cache.set('dashboard:'+orgId_cached, {
+        stats:{products:(products||[]).length,lowStock:low.length,outOfStock:(products||[]).filter((p:any)=>p.qty===0).length,todayPurchases:(purchases||[]).filter((p:any)=>new Date(p.created_at).toDateString()===today).length,todayDispenses:(movements||[]).filter((m:any)=>m.type==='out'&&new Date(m.created_at).toDateString()===today).length},
+        lowItems:low.slice(0,5), activity:(movements||[]).slice(0,5),
+        weeklyP:wp, weeklyD:wd, notifs:nData||[]
+      })
+    }
     // checklist data
     const orgId2 = orgId
     const[{data:staffData},{data:purchData}] = await Promise.all([
