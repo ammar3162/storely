@@ -7,5 +7,10 @@ export const metadata: Metadata = {
 }
 
 export default function StaffLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>
+  return (
+    <>
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+      {children}
+    </>
+  )
 }
