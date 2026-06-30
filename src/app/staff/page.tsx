@@ -141,7 +141,7 @@ export default function StaffLoginPage() {
     </div>
   )
 
-  const digits = ['3','2','1','6','5','4','9','8','7','del','0','']
+  const digits = ['1','2','3','4','5','6','7','8','9','del','0','']
   const display = step==='phone' ? phone : pin.replace(/./g,'●')
   const placeholder = step==='phone' ? '05xxxxxxxx' : '● ● ● ●'
   const progress = step==='phone' ? phone.length/10 : pin.length/4
