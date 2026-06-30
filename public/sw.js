@@ -1,6 +1,6 @@
-const CACHE = 'storely-v1'
+const CACHE = 'storely-v2'
 const OFFLINE_URL = '/offline.html'
-const STATIC = ['/', '/dashboard', '/manifest.json', '/icon-192.png', '/icon-512.png']
+const STATIC = ['/', '/dashboard', '/staff', '/manifest.json', '/staff-manifest.json', '/icon-192.png', '/icon-512.png']
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(STATIC)).then(() => self.skipWaiting()))
