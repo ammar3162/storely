@@ -25,7 +25,7 @@ async function sendWA(phone: string, text: string) {
 
 export async function POST(req: Request) {
   try {
-    const { org_id, product_id, new_qty, reorder_point } = await req.json()
+    const { org_id, product_id, new_qty, reorder_point, staff_name, qty_dispensed, product_name, product_unit } = await req.json()
     if (!org_id || !product_id) return NextResponse.json({ success: false })
 
     // لا ترسل إذا المخزون لا يزال كافٍ
@@ -77,11 +77,23 @@ export async function POST(req: Request) {
       }
     }
 
-    // إرسال للمدير دائماً
+    // رسالة المدير — وصل للحد الأدنى
     if ((org as any).whatsapp_number) {
       const adminMsg = sentToSupplier
-        ? `🟢 *Storely*\n\nمرحباً ${(org as any).name}،\n\n⚠️ *${(product as any).name}* وصل للحد الأدنى\nتم إرسال طلب توريد للمورد تلقائياً`
-        : `🟢 *Storely*\n\nمرحباً ${(org as any).name}،\n\n⚠️ *${(product as any).name}* وصل للحد الأدنى\nالمتبقي: *${new_qty} ${(product as any).unit}*\n\nيرجى الطلب في أقرب وقت`
+        ? `🟢 *Storely*
+
+مرحباً ${(org as any).name}،
+
+⚠️ *${(product as any).name}* وصل للحد الأدنى
+تم إرسال طلب توريد للمورد تلقائياً`
+        : `🟢 *Storely*
+
+مرحباً ${(org as any).name}،
+
+⚠️ *${(product as any).name}* وصل للحد الأدنى
+المتبقي: *${new_qty} ${(product as any).unit}*
+
+يرجى الطلب في أقرب وقت`
       await sendWA((org as any).whatsapp_number, adminMsg)
     }
 

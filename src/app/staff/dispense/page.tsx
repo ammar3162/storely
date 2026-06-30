@@ -170,6 +170,9 @@ export default function StaffDispensePage() {
       const data = await res.json()
       if (!res.ok) { showToast(t('errorTryAgain', lang)); setSubmitting(false); return }
 
+      // إشعار صرف الموظف للمدير
+      fetch('/api/notify-staff-dispense', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: session.org_id, staff_name: session.name, product_name: selected.name, qty: dispenseQty, unit: selected.unit }) }).catch(() => {})
+      // إشعار نقص المخزون فقط عند الوصول للحد
       fetch('/api/notify-low-stock-instant', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: session.org_id, product_id: selected.id, new_qty: selected.qty - dispenseQty, reorder_point: selected.reorder_point }) }).catch(() => {})
 
       showToast(`✅ ${t('success', lang)}`)
