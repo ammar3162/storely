@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+const getStripe = () => new Stripe(process.env.STRIPE_SECRET_KEY!)
 const getSb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
 const PLAN_LIMITS: Record<string,{max_branches:number,max_staff:number,max_suppliers:number}> = {
@@ -16,6 +16,7 @@ export async function POST(req: Request) {
   const sig  = req.headers.get('stripe-signature')!
 
   let event: Stripe.Event
+  const stripe = getStripe()
   try {
     event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
   } catch {

@@ -100,7 +100,6 @@ function LoginPage() {
     if (!branchCount) { setError('اختر الباقة المناسبة'); return }
     setLoading(true); setError('')
     const { data, error } = await supabase.auth.signUp({ email, password })
-    if (!error && data.user) { setMode('registered' as any); return }
     if (error) { setError(error.message); setLoading(false); return }
     if (data.user) {
       const fullPhone = countryCode + phone.trim().replace(/^0+/, '')
@@ -128,7 +127,7 @@ function LoginPage() {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ name: orgName.trim(), phone: fullPhone })
         }).catch(()=>{})
-        window.location.href = '/onboarding'
+        setMode('registered' as any)
       }
     }
     setLoading(false)
