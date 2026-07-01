@@ -58,6 +58,7 @@ function colorFor(category: string, allCategories: string[]) {
 
 export default function StaffDispensePage() {
   const [session, setSession] = useState<StaffSession | null>(null)
+  const [activeTab, setActiveTab] = useState<'dispense'|'inventory'|'purchases'|'reports'>('dispense')
   const [orgLogo, setOrgLogo] = useState<string | null>(null)
   const [products, setProducts] = useState<any[]>([])
   const [translations, setTranslations] = useState<Record<string, Record<string, string>>>({})
@@ -242,6 +243,34 @@ export default function StaffDispensePage() {
           <button onClick={logout} style={{ background: '#fef2f2', color: '#ef4444', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{t('logout', lang)}</button>
         </div>
 
+        {/* تبويبات الصلاحيات */}
+        {(session.permissions?.inventory || session.permissions?.purchases || session.permissions?.reports) && (
+          <div style={{display:'flex',gap:6,marginBottom:12,overflowX:'auto',paddingBottom:4}}>
+            <button onClick={()=>setActiveTab('dispense')}
+              style={{padding:'7px 16px',borderRadius:20,border:'none',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',flexShrink:0,background:activeTab==='dispense'?'#16a34a':'#f1f5f9',color:activeTab==='dispense'?'white':'#64748b'}}>
+              📤 الصرف
+            </button>
+            {session.permissions?.inventory && (
+              <button onClick={()=>setActiveTab('inventory')}
+                style={{padding:'7px 16px',borderRadius:20,border:'none',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',flexShrink:0,background:activeTab==='inventory'?'#16a34a':'#f1f5f9',color:activeTab==='inventory'?'white':'#64748b'}}>
+                📦 مخزون
+              </button>
+            )}
+            {session.permissions?.purchases && (
+              <button onClick={()=>setActiveTab('purchases')}
+                style={{padding:'7px 16px',borderRadius:20,border:'none',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',flexShrink:0,background:activeTab==='purchases'?'#16a34a':'#f1f5f9',color:activeTab==='purchases'?'white':'#64748b'}}>
+                🛒 مشتريات
+              </button>
+            )}
+            {session.permissions?.reports && (
+              <button onClick={()=>setActiveTab('reports')}
+                style={{padding:'7px 16px',borderRadius:20,border:'none',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',flexShrink:0,background:activeTab==='reports'?'#16a34a':'#f1f5f9',color:activeTab==='reports'?'white':'#64748b'}}>
+                📊 تقارير
+              </button>
+            )}
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 10, marginBottom: 4 }}>
           {LANGUAGES.map(l => (
             <button
@@ -366,6 +395,15 @@ export default function StaffDispensePage() {
           </div>
         )}
       </div>
+      {activeTab!=='dispense' && (
+        <div style={{padding:'60px 20px',textAlign:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
+          <div style={{fontSize:48,marginBottom:16}}>{activeTab==='inventory'?'📦':activeTab==='purchases'?'🛒':'📊'}</div>
+          <div style={{fontSize:16,fontWeight:700,color:'#0f172a',marginBottom:8}}>
+            {activeTab==='inventory'?'المخزون':activeTab==='purchases'?'المشتريات':'التقارير'}
+          </div>
+          <div style={{fontSize:13,color:'#64748b'}}>هذه الميزة ستكون متاحة قريباً</div>
+        </div>
+      )}
     </div>
   )
 }
