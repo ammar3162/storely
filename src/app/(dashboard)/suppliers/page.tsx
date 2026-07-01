@@ -292,7 +292,7 @@ export default function SuppliersPage() {
   const [showAdd, setShowAdd]     = useState(false)
   const [newName, setNewName]     = useState('')
   const [newPhone, setNewPhone]   = useState('')
-  const [supCountry, setSupCountry] = useState('+966')
+  const [supCountry, setSupCountry] = useState(()=>sessionStorage.getItem('s_country_code')||'+966')
   const [newNotes, setNewNotes]   = useState('')
   const sb = createClient()
 

@@ -8,7 +8,7 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
-    const { userId, orgName, fullPhone, businessType, branchCount, phone, trialEnds } = await req.json()
+    const { userId, orgName, fullPhone, businessType, branchCount, phone, trialEnds, countryCode } = await req.json()
     
     const supabase = sb()
     
@@ -20,7 +20,8 @@ export async function POST(req: Request) {
     const { data: org, error: orgErr } = await supabase
       .from('organizations')
       .insert({ 
-        name: orgName, 
+        name: orgName,
+        country_code: countryCode || '+966', 
         whatsapp_number: fullPhone, 
         low_stock_threshold: 5,
         business_type: businessType||'مطعم',
