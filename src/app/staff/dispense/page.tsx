@@ -62,6 +62,10 @@ export default function StaffDispensePage() {
   const [editingProduct, setEditingProduct] = useState<any|null>(null)
   const [editQty, setEditQty] = useState('')
   const [savingQty, setSavingQty] = useState(false)
+  const [invSearch, setInvSearch] = useState('')
+  const [showAddProduct, setShowAddProduct] = useState(false)
+  const [newProduct, setNewProduct] = useState({name:'',qty:'',unit:'قطعة',category:'',reorder_point:'5'})
+  const [savingProduct, setSavingProduct] = useState(false)
   const [orgLogo, setOrgLogo] = useState<string | null>(null)
   const [products, setProducts] = useState<any[]>([])
   const [translations, setTranslations] = useState<Record<string, Record<string, string>>>({})
@@ -132,6 +136,30 @@ export default function StaffDispensePage() {
       fetchTranslation(session, lang)
     }
   }, [session, products, lang])
+
+  async function addProduct() {
+    if(!newProduct.name.trim()||!newProduct.qty||!session) return
+    setSavingProduct(true)
+    const res = await fetch('/api/staff-purchase', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        org_id:session.org_id, branch_id:session.branch_id,
+        category:'مخزون', name:newProduct.name.trim(),
+        qty:Number(newProduct.qty), unit:newProduct.unit,
+        reorder_point:Number(newProduct.reorder_point)||5,
+        amount:0, supplier:'إضافة يدوية',
+        note:`إضافة منتج بواسطة: ${session.name}`,
+        staff_name:session.name, staff_id:session.id
+      })
+    })
+    if(res.ok){
+      setNewProduct({name:'',qty:'',unit:'قطعة',category:'',reorder_point:'5'})
+      setShowAddProduct(false)
+      if(session) loadProducts(session)
+    }
+    setSavingProduct(false)
+  }
 
   async function updateQty() {
     if (!editingProduct || !editQty) return
@@ -473,9 +501,18 @@ export default function StaffDispensePage() {
 
       {activeTab==='inventory' && (
         <div style={{padding:'16px 20px',maxWidth:520,margin:'0 auto'}}>
-          <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16,textAlign:'center'}}>📦 المخزون</div>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+            <div style={{fontSize:16,fontWeight:800,color:'#0f172a'}}>📦 المخزون</div>
+            <button onClick={()=>setShowAddProduct(true)}
+              style={{padding:'7px 14px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+              + إضافة منتج
+            </button>
+          </div>
+          <input value={invSearch} onChange={e=>setInvSearch(e.target.value)}
+            placeholder="🔍 ابحث عن منتج..."
+            style={{width:'100%',padding:'10px 14px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,outline:'none',fontFamily:'inherit',marginBottom:12,boxSizing:'border-box' as const}}/>
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            {products.map(p=>(
+            {products.filter(p=>!invSearch||p.name?.includes(invSearch)||translateName(p.name).toLowerCase().includes(invSearch.toLowerCase())).map(p=>(
               <div key={p.id} style={{background:'white',borderRadius:12,padding:'14px 16px',boxShadow:'0 1px 3px rgba(0,0,0,.06)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                 <div>
                   <div style={{fontSize:14,fontWeight:700,color:'#0f172a'}}>{translateName(p.name)}</div>
@@ -494,6 +531,37 @@ export default function StaffDispensePage() {
               </div>
             ))}
           </div>
+
+          {/* modal إضافة منتج */}
+          {showAddProduct && (
+            <div style={{position:'fixed' as const,inset:0,zIndex:2000,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'flex-end',justifyContent:'center'}} onClick={()=>setShowAddProduct(false)}>
+              <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxWidth:480,padding:24,fontFamily:"'IBM Plex Sans Arabic',system-ui"}} onClick={e=>e.stopPropagation()}>
+                <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>➕ إضافة منتج جديد</div>
+                <div style={{display:'flex',flexDirection:'column' as const,gap:10,marginBottom:16}}>
+                  <input value={newProduct.name} onChange={e=>setNewProduct(p=>({...p,name:e.target.value}))} placeholder="اسم المنتج *"
+                    style={{padding:'10px 14px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:14,outline:'none',fontFamily:'inherit'}}/>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                    <input type="number" value={newProduct.qty} onChange={e=>setNewProduct(p=>({...p,qty:e.target.value}))} placeholder="الكمية *"
+                      style={{padding:'10px 14px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:14,outline:'none',fontFamily:'inherit'}}/>
+                    <select value={newProduct.unit} onChange={e=>setNewProduct(p=>({...p,unit:e.target.value}))}
+                      style={{padding:'10px 14px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:14,outline:'none',fontFamily:'inherit',background:'white'}}>
+                      {['قطعة','كيلو','كيس','كرتون','لتر','علبة','باكيت','رول','غرام'].map(u=><option key={u}>{u}</option>)}
+                    </select>
+                  </div>
+                  <input value={newProduct.category} onChange={e=>setNewProduct(p=>({...p,category:e.target.value}))} placeholder="الفئة (اختياري)"
+                    style={{padding:'10px 14px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:14,outline:'none',fontFamily:'inherit'}}/>
+                </div>
+                <div style={{display:'flex',gap:8}}>
+                  <button onClick={addProduct} disabled={savingProduct||!newProduct.name||!newProduct.qty}
+                    style={{flex:2,padding:'13px',background:'#16a34a',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                    {savingProduct?'جاري الإضافة...':'✅ إضافة'}
+                  </button>
+                  <button onClick={()=>setShowAddProduct(false)}
+                    style={{flex:1,padding:'13px',background:'#f3f4f6',color:'#374151',border:'none',borderRadius:12,fontSize:14,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
       {activeTab==='purchases' && (
