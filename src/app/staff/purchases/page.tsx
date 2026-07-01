@@ -96,7 +96,8 @@ export default function StaffPurchasesPage() {
         supplier:form.supplier,
         note:form.note||null,
         invoice_image:form.invoice_image||null,
-        staff_name:session.name
+        staff_name:session.name,
+        staff_id:session.id
       })
     })
     const resData = await res.json()

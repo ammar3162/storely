@@ -41,6 +41,7 @@ export async function POST(req: Request) {
           qty_change: Number(qty),
           note: `شراء من: ${supplier} بواسطة: ${staff_name}`
         } as any)
+        if (staff_id) await addToAssignedProducts(supabase, staff_id, existing[0].id)
       } else {
         const { data: np } = await supabase.from('products').insert({
           org_id, branch_id: branch_id || null,
@@ -53,6 +54,7 @@ export async function POST(req: Request) {
             qty_change: Number(qty),
             note: `شراء جديد من: ${supplier} بواسطة: ${staff_name}`
           } as any)
+          if (staff_id) await addToAssignedProducts(supabase, staff_id, np.id)
         }
       }
     }
@@ -61,4 +63,15 @@ export async function POST(req: Request) {
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
+}
+
+// دالة مساعدة لإضافة منتج لـ assigned_products للموظف
+async function addToAssignedProducts(supabase: any, staffId: string, productId: string) {
+  try {
+    const { data: staff } = await supabase.from('staff_members').select('assigned_products').eq('id', staffId).single()
+    const assigned = staff?.assigned_products || []
+    if (!assigned.includes(productId)) {
+      await supabase.from('staff_members').update({ assigned_products: [...assigned, productId] }).eq('id', staffId)
+    }
+  } catch {}
 }
