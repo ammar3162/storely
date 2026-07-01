@@ -12,22 +12,47 @@ const C = {
   bg:      '#f5f7fa', surface: '#ffffff', border: '#f0f0f0',
 }
 
-const NAV_MAIN = [
-  { href:'/dashboard', label:'الرئيسية', icon:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-  { href:'/inventory',  label:'المخزون',  icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
-  { href:'/purchases',  label:'مشتريات', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
-  { href:'/dispense',   label:'الصرف',   icon:'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
-  { href:'/reports',    label:'التقارير', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-  { href:'/ai-tools', label:'أدوات الذكاء', icon:'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z' },
+const NAV_GROUPS = [
+  {
+    label: 'الرئيسية',
+    items: [
+      { href:'/dashboard', label:'الرئيسية', icon:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+    ]
+  },
+  {
+    label: 'المخزون',
+    items: [
+      { href:'/inventory',  label:'المخزون',  icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
+      { href:'/dispense',   label:'الصرف',   icon:'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
+      { href:'/purchases',  label:'مشتريات', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
+    ]
+  },
+  {
+    label: 'الإدارة',
+    items: [
+      { href:'/reports',    label:'التقارير', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+      { href:'/staff-management', label:'الموظفون', icon:'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8zm6 0a4 4 0 11-8 0' },
+      { href:'/suppliers',  label:'الموردين', icon:'M3 7h13l3 5v5h-3m-10 0H3v-7m13-3v10m-13 0a2 2 0 104 0m-4 0a2 2 0 114 0m9 0a2 2 0 104 0m-4 0a2 2 0 114 0' },
+    ]
+  },
+  {
+    label: 'الأدوات',
+    items: [
+      { href:'/ai-tools',   label:'أدوات الذكاء', icon:'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z' },
+      { href:'/notifications', label:'الإشعارات', icon:'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
+    ]
+  },
+  {
+    label: 'الإعدادات',
+    items: [
+      { href:'/settings',   label:'الإعدادات', icon:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
+      { href:'https://wa.me/966594351667?text=أحتاج مساعدة في Storely', label:'الدعم الفني', icon:'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347' },
+    ]
+  },
 ]
 
-const NAV_MORE = [
-  { href:'/suppliers',        label:'الموردين',   icon:'M3 7h13l3 5v5h-3m-10 0H3v-7m13-3v10m-13 0a2 2 0 104 0m-4 0a2 2 0 114 0m9 0a2 2 0 104 0m-4 0a2 2 0 114 0' },
-  { href:'/staff-management', label:'الموظفون',   icon:'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8zm6 0a4 4 0 11-8 0' },
-  { href:'/notifications',    label:'الإشعارات',  icon:'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
-  { href:'/settings',         label:'الإعدادات',  icon:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
-  { href:'https://wa.me/966594351667?text=أحتاج مساعدة في Storely', label:'الدعم الفني',  icon:'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347' },
-]
+const NAV_MAIN = NAV_GROUPS.flatMap(g=>g.items)
+const NAV_MORE: {href:string;label:string;icon:string}[] = []
 
 let _cache: any = null
 
@@ -318,19 +343,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             </div>
 
-            <nav style={{flex:1,padding:'10px 8px',overflowY:'auto'}}>
-              {[...NAV_MAIN,...NAV_MORE].map(item=>{
-                const active=isActive(item.href)
-                const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
-                return(
-                  <button key={item.href} onClick={()=>router.push(item.href)} onMouseEnter={()=>router.prefetch(item.href)}
-                    style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'9px 10px',borderRadius:9,border:'none',cursor:'pointer',fontFamily:'inherit',marginBottom:2,background:active?`${C.primary}22`:'transparent',color:active?C.primary:'rgba(255,255,255,.5)',transition:'all .15s',textAlign:'right'}}>
-                    <Icon d={item.icon} size={17} stroke={active?C.primary:'rgba(255,255,255,.5)'} width={active?2.5:2}/>
-                    <span style={{fontSize:12,fontWeight:active?700:500,flex:1}}>{item.label}</span>
-                    {badge>0&&<span style={{background:C.danger,color:'white',fontSize:9,fontWeight:700,padding:'2px 6px',borderRadius:99}}>{badge}</span>}
-                  </button>
-                )
-              })}
+            <nav style={{flex:1,padding:'8px 8px',overflowY:'auto'}}>
+              {NAV_GROUPS.map((group,gi)=>(
+                <div key={gi} style={{marginBottom:4}}>
+                  <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.25)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{group.label}</div>
+                  {group.items.map(item=>{
+                    const active=isActive(item.href)
+                    const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
+                    const isExternal=item.href.startsWith('http')
+                    return(
+                      <button key={item.href}
+                        onClick={()=>isExternal?window.open(item.href,'_blank'):router.push(item.href)}
+                        onMouseEnter={()=>!isExternal&&router.prefetch(item.href)}
+                        style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:9,border:'none',cursor:'pointer',fontFamily:'inherit',marginBottom:1,background:active?`${C.primary}22`:'transparent',color:active?C.primary:'rgba(255,255,255,.55)',transition:'all .15s',textAlign:'right'}}>
+                        <div style={{width:28,height:28,borderRadius:7,background:active?`${C.primary}33`:'rgba(255,255,255,.06)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                          <Icon d={item.icon} size={15} stroke={active?C.primary:'rgba(255,255,255,.55)'} width={active?2.5:2}/>
+                        </div>
+                        <span style={{fontSize:12,fontWeight:active?700:500,flex:1}}>{item.label}</span>
+                        {badge>0&&<span style={{background:C.danger,color:'white',fontSize:9,fontWeight:700,padding:'2px 6px',borderRadius:99,minWidth:18,textAlign:'center'}}>{badge}</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              ))}
             </nav>
 
             <div style={{padding:'12px 14px',borderTop:'1px solid rgba(255,255,255,.06)',display:'flex',alignItems:'center',gap:8}}>
