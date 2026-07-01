@@ -329,6 +329,7 @@ export default function SuppliersPage() {
       body: JSON.stringify({ org_id: orgId, name: newName.trim(), phone: newPhone.trim(), notes: newNotes.trim() })
     })
     const resData = await res.json()
+    console.log('ADD SUPPLIER RESPONSE:', res.status, resData)
     const error = !res.ok ? {message: resData.error} : null
     if (error) { toast('خطأ: ' + error.message, 'error'); return }
     toast('✅ تم إضافة المورد')
