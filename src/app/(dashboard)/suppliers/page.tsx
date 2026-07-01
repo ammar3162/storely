@@ -292,6 +292,7 @@ export default function SuppliersPage() {
   const [showAdd, setShowAdd]     = useState(false)
   const [newName, setNewName]     = useState('')
   const [newPhone, setNewPhone]   = useState('')
+  const [supCountry, setSupCountry] = useState('+966')
   const [newNotes, setNewNotes]   = useState('')
   const sb = createClient()
 
@@ -323,10 +324,14 @@ export default function SuppliersPage() {
   async function addSupplier() {
     if (suppliers.length >= maxSuppliers) { toast(`باقتك تسمح بـ ${maxSuppliers} موردين فقط`, 'warning'); return }
     if (!newName.trim() || !newPhone.trim()) { toast('أدخل اسم المورد ورقمه', 'warning'); return }
+    const phoneRules2: Record<string,number> = {'+966':9,'+971':9,'+965':8,'+973':8,'+974':8,'+968':8,'+20':10,'+962':9,'+1':10,'+44':10,'+91':10,'+92':10}
+    const reqLen2 = phoneRules2[supCountry] || 9
+    const cleanedPhone2 = newPhone.trim().replace(/^0+/,'')
+    if(cleanedPhone2.length !== reqLen2){toast(`رقم الجوال يجب أن يكون ${reqLen2} أرقام`,'warning');return}
     const res = await fetch('/api/add-supplier', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ org_id: orgId, name: newName.trim(), phone: newPhone.trim(), notes: newNotes.trim() })
+      body: JSON.stringify({ org_id: orgId, name: newName.trim(), phone: supCountry + newPhone.trim().replace(/^0+/,''), notes: newNotes.trim() })
     })
     const resData = await res.json()
     console.log('ADD SUPPLIER RESPONSE:', res.status, resData)
@@ -359,7 +364,15 @@ export default function SuppliersPage() {
           <div style={{ fontSize:14, fontWeight:700, color:'#0f172a', marginBottom:14 }}>إضافة مورد جديد</div>
           <div className="add-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
             <input value={newName} onChange={e=>setNewName(e.target.value)} style={inp()} placeholder="اسم المورد *" />
-            <input value={newPhone} onChange={e=>setNewPhone(e.target.value)} style={inp()} placeholder="رقم الجوال * (05xxxxxxxx)" />
+            <div style={{display:'flex',gap:8}}>
+              <select value={supCountry} onChange={e=>setSupCountry(e.target.value)}
+                style={{padding:'10px 8px',border:'1px solid #e2e8f0',borderRadius:8,fontFamily:'inherit',fontSize:12,background:'white',cursor:'pointer'}}>
+                {[['+966','🇸🇦'],['+971','🇦🇪'],['+965','🇰🇼'],['+973','🇧🇭'],['+974','🇶🇦'],['+968','🇴🇲'],['+20','🇪🇬'],['+962','🇯🇴'],['+1','🇺🇸'],['+44','🇬🇧'],['+91','🇮🇳'],['+92','🇵🇰']].map(([code,flag])=>(
+                <option key={code} value={code}>{flag} {code}</option>
+              ))}
+              </select>
+              <input value={newPhone} onChange={e=>setNewPhone(e.target.value)} style={{...inp(),flex:1,direction:'ltr'}} placeholder={supCountry==='+966'?'5xxxxxxxx':supCountry==='+20'?'1xxxxxxxxx':'xxxxxxxxxx'} />
+            </div>
           </div>
           <input value={newNotes} onChange={e=>setNewNotes(e.target.value)} style={{...inp(), width:'100%', marginBottom:14, boxSizing:'border-box' as const}} placeholder="ملاحظات عامة للمورد (اختياري)" />
           <div style={{ display:'flex', gap:8 }}>

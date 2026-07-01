@@ -30,6 +30,7 @@ export default function StaffManagementPage() {
   const [showAdd, setShowAdd]       = useState(false)
   const [newName, setNewName]       = useState('')
   const [newPhone, setNewPhone]     = useState('')
+  const [staffCountry, setStaffCountry] = useState('+966')
   const [newBranch, setNewBranch]   = useState('')
   const [revealedPin, setRevealedPin] = useState<{name:string,phone:string,pin:string}|null>(null)
   const [expandedId, setExpandedId] = useState<string|null>(null)
@@ -99,8 +100,12 @@ export default function StaffManagementPage() {
 
   async function addStaff() {
     if(!newName.trim()||!newPhone.trim()){toast('أدخل اسم الموظف ورقم جواله','warning');return}
+    const phoneRules: Record<string,number> = {'+966':9,'+971':9,'+965':8,'+973':8,'+974':8,'+968':8,'+20':10,'+962':9,'+1':10,'+44':10,'+91':10,'+92':10,'+880':10,'+63':10}
+    const reqLen = phoneRules[staffCountry] || 9
+    const cleanedPhone = newPhone.trim().replace(/^0+/,'')
+    if(cleanedPhone.length !== reqLen){toast(`رقم الجوال يجب أن يكون ${reqLen} أرقام`,'warning');return}
     if(staff.length>=maxStaff){toast(`باقتك تسمح بـ ${maxStaff} موظف فقط — يرجى الترقية`,'error');return}
-    const cleanPhone=newPhone.trim().replace(/\s/g,'')
+    const cleanPhone=staffCountry + newPhone.trim().replace(/^0+/,'').replace(/\s/g,'')
     const pin=generatePin()
     const res = await fetch('/api/add-staff', {
       method: 'POST',
@@ -248,7 +253,15 @@ export default function StaffManagementPage() {
               </div>
               <div>
                 <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>رقم الجوال *</label>
-                <input value={newPhone} onChange={e=>setNewPhone(e.target.value)} style={{...inp(),direction:'ltr' as const}} placeholder="05xxxxxxxx"/>
+                <div style={{display:'flex',gap:8}}>
+                  <select value={staffCountry} onChange={e=>setStaffCountry(e.target.value)}
+                    style={{padding:'10px 8px',border:`1px solid ${colors.border}`,borderRadius:8,fontFamily:'inherit',fontSize:12,color:colors.text,background:'white',cursor:'pointer'}}>
+                    {[['+966','🇸🇦'],['+971','🇦🇪'],['+965','🇰🇼'],['+973','🇧🇭'],['+974','🇶🇦'],['+968','🇴🇲'],['+20','🇪🇬'],['+962','🇯🇴'],['+1','🇺🇸'],['+44','🇬🇧'],['+91','🇮🇳'],['+92','🇵🇰']].map(([code,flag])=>(
+                      <option key={code} value={code}>{flag} {code}</option>
+                    ))}
+                  </select>
+                  <input value={newPhone} onChange={e=>setNewPhone(e.target.value)} style={{...inp(),direction:'ltr' as const,flex:1}} placeholder={staffCountry==='+966'?'5xxxxxxxx':staffCountry==='+20'?'1xxxxxxxxx':'xxxxxxxxxx'}/>
+                </div>
               </div>
               {branches.length>1&&(
                 <div>
