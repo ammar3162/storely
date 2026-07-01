@@ -78,6 +78,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const{data:p}=await sb.from('profiles').select('id,full_name,org_id,organizations(name,logo_url)').eq('id',user.id).single()
     if(!p){router.replace('/login');return}
     if(!p.org_id){router.replace('/pending');return}
+    // فحص انتهاء الاشتراك
+    const{data:subData}=await (sb as any).from('profiles').select('subscription_ends_at,subscription_type').eq('id',user.id).single()
+    if(subData?.subscription_ends_at){
+      const ends=new Date(subData.subscription_ends_at)
+      if(ends<new Date()&&subData.subscription_type!=='paid'){
+        router.replace('/expired');return
+      }
+    }
     const orgN=(p.organizations as any)?.name||''
     const orgLogoUrl=(p.organizations as any)?.logo_url||null
     const userN=p.full_name||''
