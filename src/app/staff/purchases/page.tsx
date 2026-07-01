@@ -82,14 +82,13 @@ export default function StaffPurchasesPage() {
     setLoading(true)
     const inputTotal = Number(form.total_amount)
     const amount = parseFloat((inputTotal/1.15).toFixed(2))
-    const vat_amount = form.hasVat==='yes'?(inputTotal-amount).toFixed(2):'0'
     const total_amount = inputTotal.toFixed(2)
 
     const{error:insErr}=await sb.from('purchases').insert({
       org_id:session.org_id, profile_id:null, branch_id:session.branch_id,
       category:form.category, name:form.name, qty:form.qty?Number(form.qty):null,
       unit:form.unit||null, reorder_point:Number(form.reorder_point)||5,
-      amount, vat_amount, total_amount,
+      amount, total_amount,
       supplier:form.supplier, note:(form.note||`تسجيل بواسطة الموظف: ${session.name}`),
       invoice_image:form.invoice_image||null,
     } as any)
