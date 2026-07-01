@@ -275,7 +275,7 @@ export default function StaffDispensePage() {
               📤 الصرف
             </button>
             {session.permissions?.inventory && (
-              <button onClick={()=>setActiveTab('inventory')}
+              <button onClick={()=>{setActiveTab('inventory');if(session)loadProducts(session)}}
                 style={{padding:'7px 16px',borderRadius:20,border:'none',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',flexShrink:0,background:activeTab==='inventory'?'#16a34a':'#f1f5f9',color:activeTab==='inventory'?'white':'#64748b'}}>
                 📦 مخزون
               </button>
