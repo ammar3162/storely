@@ -105,6 +105,8 @@ export default function StaffPurchasesPage() {
 
     setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:''})
     setPreviewUrl(null);setLoading(false);submitting.current=false
+    // بعد 2 ثانية ارجع لصفحة الموظف
+    setTimeout(()=>router.push('/staff/dispense'), 2000)
   }
 
   const inputTotal = Number(form.total_amount)||0
