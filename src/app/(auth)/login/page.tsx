@@ -109,7 +109,7 @@ function LoginPage() {
           business_type: businessType||'مطعم',
           requested_plan: branchCount===1?'basic':branchCount<=3?'pro':'advanced' } as any)
         .select().single()
-      if (orgErr) { setError('خطأ في إنشاء المؤسسة'); setLoading(false); return }
+      if (orgErr) { console.error('ORG ERROR:', orgErr); setError('خطأ: ' + orgErr.message); setLoading(false); return }
       if (org) {
         const maxB = branchCount===1?1:branchCount<=3?3:10
         const maxStaff = branchCount===1?2:branchCount<=3?10:999
