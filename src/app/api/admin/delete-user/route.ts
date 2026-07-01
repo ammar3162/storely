@@ -34,11 +34,7 @@ export async function POST(req: Request) {
       await supabase.from('profiles').delete().eq('id', userId)
     }
 
-    const { error: delErr } = await supabase.auth.admin.deleteUser(userId)
-    if (delErr) {
-      // محاولة ثانية بـ SQL مباشر
-      await supabase.rpc('delete_auth_user', { user_id: userId }).catch(()=>{})
-    }
+    await supabase.auth.admin.deleteUser(userId)
     return NextResponse.json({ success: true })
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 })

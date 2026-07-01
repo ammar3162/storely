@@ -123,7 +123,18 @@ function LoginPage() {
           business_type: businessType||'مطعم',
           requested_plan: branchCount===1?'basic':branchCount<=3?'pro':'advanced' } as any)
         .select().single()
-      if (orgErr) { console.error('ORG ERROR:', orgErr); setError('خطأ: ' + orgErr.message); setLoading(false); return }
+      if (orgErr) {
+        console.error('ORG ERROR:', orgErr)
+        // نحذف الحساب من Auth عشان يقدر يسجل مرة ثانية
+        await supabase.auth.admin?.deleteUser?.(data.user.id).catch(()=>{})
+        await fetch('/api/cleanup-failed-registration', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ userId: data.user.id })
+        }).catch(()=>{})
+        setError('حدث خطأ في إنشاء المنشأة — حاول مرة أخرى')
+        setLoading(false); return
+      }
       if (org) {
         const maxB = branchCount===1?1:branchCount<=3?3:10
         const maxStaff = branchCount===1?2:branchCount<=3?10:999
