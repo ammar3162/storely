@@ -81,6 +81,9 @@ export default function SettingsPage() {
   const [logoUrl, setLogoUrl]           = useState<string|null>(null)
   const [logoUploading, setLogoUploading] = useState(false)
   const [planName, setPlanName]         = useState('')
+  const [checkoutLoading, setCheckoutLoading] = useState<string|null>(null)
+  const [userEmail, setUserEmail]       = useState('')
+  const [userId, setUserId]             = useState('')
   const [subEndsAt, setSubEndsAt]       = useState<string|null>(null)
   const [form, setForm] = useState({
     name:'', whatsapp_number:'',
@@ -109,6 +112,22 @@ export default function SettingsPage() {
     setPwForm({current:'',newPw:'',confirm:''})
   }
 
+  async function handleUpgrade(plan: string) {
+    setCheckoutLoading(plan)
+    try {
+      const orgId = sessionStorage.getItem('s_org_id')
+      const res = await fetch('/api/stripe-checkout', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ plan, org_id: orgId, user_id: userId, email: userEmail })
+      })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+      else alert('حدث خطأ، حاول مرة أخرى')
+    } catch { alert('حدث خطأ، حاول مرة أخرى') }
+    setCheckoutLoading(null)
+  }
+
   async function load() {
     setLoading(true)
     const{data:{user}}=await sb.auth.getUser(); if(!user) return
@@ -123,6 +142,8 @@ export default function SettingsPage() {
       setLastSent(org.last_notified_at||null)
       setLastBackup(org.last_backup_at||null)
       setMaxBranches(org.max_branches||1)
+      const{data:{user}}=await sb.auth.getUser()
+      if(user){setUserEmail(user.email||'');setUserId(user.id)}
       setLogoUrl(org.logo_url||null)
       const planMap: Record<string,string> = {'basic':'الأساسية','pro':'المتوسطة','advanced':'المتقدمة'}
       setPlanName(planMap[org.plan||'']||org.plan||'')
@@ -353,6 +374,24 @@ export default function SettingsPage() {
                         <span style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{new Date(subEndsAt).toLocaleDateString('ar-SA',{year:'numeric',month:'long',day:'numeric'})}</span>
                       </div>
                     )}
+                  </div>
+
+                  {/* أزرار الترقية */}
+                  <div style={{marginTop:16,display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+                    {[
+                      {plan:'basic',    label:'الأساسية',  price:'149', color:'#16a34a'},
+                      {plan:'pro',      label:'المتوسطة',  price:'249', color:'#2563eb'},
+                      {plan:'advanced', label:'المتقدمة',  price:'399', color:'#7c3aed'},
+                    ].map(p=>(
+                      <button key={p.plan} onClick={()=>handleUpgrade(p.plan)}
+                        disabled={!!checkoutLoading}
+                        style={{padding:'10px 8px',background:checkoutLoading===p.plan?'#f3f4f6':'white',border:`1.5px solid ${p.color}`,borderRadius:10,cursor:checkoutLoading?'not-allowed':'pointer',fontFamily:'inherit',textAlign:'center',opacity:checkoutLoading&&checkoutLoading!==p.plan?.5:1,transition:'all .15s'}}>
+                        <div style={{fontSize:11,fontWeight:700,color:p.color,marginBottom:2}}>{p.label}</div>
+                        <div style={{fontSize:13,fontWeight:800,color:'#111827'}}>{p.price} ر.س</div>
+                        <div style={{fontSize:9,color:'#6b7280'}}>شهرياً</div>
+                        {checkoutLoading===p.plan&&<div style={{fontSize:9,color:p.color,marginTop:2}}>جاري التحويل...</div>}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
