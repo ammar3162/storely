@@ -47,6 +47,10 @@ function LoginPage() {
     return 'login'
   })
   const [step, setStep]               = useState(1)
+  const [otpSent, setOtpSent]         = useState(false)
+  const [otp, setOtp]                 = useState('')
+  const [otpVerified, setOtpVerified] = useState(false)
+  const [sendingOtp, setSendingOtp]   = useState(false)
   const [email, setEmail]             = useState('')
   const [password, setPassword]       = useState('')
   const [orgName, setOrgName]         = useState('')
@@ -95,8 +99,35 @@ function LoginPage() {
     setStep(2)
   }
 
+  async function sendOtp() {
+    if (!phone.trim()) { setError('أدخل رقم الجوال أولاً'); return }
+    setSendingOtp(true); setError('')
+    const res = await fetch('/api/send-otp', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ phone: phone.trim(), countryCode })
+    })
+    const data = await res.json()
+    if (!res.ok) { setError(data.error); setSendingOtp(false); return }
+    setOtpSent(true); setSendingOtp(false)
+  }
+
+  async function verifyOtp() {
+    if (!otp.trim()) { setError('أدخل رمز التحقق'); return }
+    setSendingOtp(true); setError('')
+    const res = await fetch('/api/verify-otp', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ phone: phone.trim(), countryCode, otp })
+    })
+    const data = await res.json()
+    if (!res.ok) { setError(data.error); setSendingOtp(false); return }
+    setOtpVerified(true); setSendingOtp(false); setError('')
+  }
+
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
+    if (!otpVerified) { setError('يجب التحقق من رقم الجوال أولاً'); return }
     if (!branchCount) { setError('اختر الباقة المناسبة'); return }
     setLoading(true); setError('')
     const { data, error } = await supabase.auth.signUp({ email, password })
@@ -279,10 +310,33 @@ function LoginPage() {
                         style={{background:'transparent',border:'none',borderLeft:'1.5px solid #e5e7eb',padding:'12px 8px',fontSize:13,fontFamily:'inherit',outline:'none',cursor:'pointer',direction:'ltr',color:'#111827',minWidth:100}}>
                         {COUNTRY_CODES.map(c=><option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}
                       </select>
-                      <input type="tel" required value={phone} onChange={e=>setPhone(e.target.value)}
+                      <input type="tel" required value={phone} onChange={e=>{setPhone(e.target.value);setOtpSent(false);setOtpVerified(false);setOtp('')}}
                         placeholder={phonePlaceholder} dir="ltr"
                         style={{background:'transparent',border:'none',padding:'12px 14px',fontSize:14,color:'#111827',flex:1,outline:'none',fontFamily:'inherit'}}/>
                     </div>
+                    {/* زر إرسال OTP */}
+                    {!otpVerified && (
+                      <button type="button" onClick={sendOtp} disabled={sendingOtp||!phone.trim()}
+                        style={{marginTop:8,width:'100%',padding:'10px',background:otpSent?'#f0fdf4':'#16a34a',color:otpSent?'#16a34a':'white',border:`1.5px solid #16a34a`,borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',transition:'all .2s'}}>
+                        {sendingOtp?'⏳ جاري الإرسال...':otpSent?'✅ تم الإرسال — أعد الإرسال':'📲 أرسل رمز التحقق عبر واتساب'}
+                      </button>
+                    )}
+                    {/* خانة OTP */}
+                    {otpSent && !otpVerified && (
+                      <div style={{marginTop:8,display:'flex',gap:8}}>
+                        <input type="number" value={otp} onChange={e=>setOtp(e.target.value)} placeholder="أدخل الرمز المكون من 6 أرقام"
+                          style={{flex:1,padding:'11px 14px',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:14,outline:'none',fontFamily:'inherit',direction:'ltr',textAlign:'center',letterSpacing:4}}/>
+                        <button type="button" onClick={verifyOtp} disabled={sendingOtp||!otp.trim()}
+                          style={{padding:'11px 16px',background:'#16a34a',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+                          {sendingOtp?'...':'تحقق ✓'}
+                        </button>
+                      </div>
+                    )}
+                    {otpVerified && (
+                      <div style={{marginTop:8,padding:'10px 14px',background:'#f0fdf4',border:'1.5px solid #bbf7d0',borderRadius:10,fontSize:13,fontWeight:700,color:'#16a34a',textAlign:'center'}}>
+                        ✅ تم التحقق من رقم الجوال
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>كلمة المرور *</label>
