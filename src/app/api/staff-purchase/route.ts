@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     const { org_id, branch_id, category, name, qty, unit, reorder_point,
             amount, supplier, note, invoice_image, staff_name, staff_id } = body
 
-    if (!org_id || !name || !amount) {
+    if (!org_id || !name) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
 
