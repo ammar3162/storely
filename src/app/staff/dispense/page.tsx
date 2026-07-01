@@ -77,6 +77,30 @@ export default function StaffDispensePage() {
   const router = useRouter()
   const sb = createClient()
 
+  useEffect(()=>{
+    const interval = setInterval(async()=>{
+      const saved = localStorage.getItem('staff_session')
+      if(!saved) return
+      const s = JSON.parse(saved)
+      try {
+        const res = await fetch('/api/staff-permissions',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({staff_id: s.id})
+        })
+        if(res.ok){
+          const data = await res.json()
+          if(data.permissions){
+            const updated = {...s, permissions: data.permissions}
+            localStorage.setItem('staff_session', JSON.stringify(updated))
+            setSession(prev=>prev?{...prev,permissions:data.permissions}:prev)
+          }
+        }
+      } catch {}
+    }, 30000)
+    return ()=>clearInterval(interval)
+  },[])
+
   useEffect(() => {
     const saved = localStorage.getItem('staff_session')
     if (!saved) { router.push('/staff'); return }
