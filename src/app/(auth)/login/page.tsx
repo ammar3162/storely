@@ -120,8 +120,19 @@ function LoginPage() {
     e.preventDefault(); setError('')
     if (!orgName.trim()) { setError('أدخل اسم المؤسسة'); return }
     if (!phone.trim())   { setError('أدخل رقم الجوال'); return }
+    const pwErr = validatePassword(password)
+    if (pwErr) { setError(pwErr); return }
     if (password.length < 6) { setError('كلمة المرور 6 أحرف على الأقل'); return }
     setStep(2)
+  }
+
+  function validatePassword(p: string): string|null {
+    if (p.length < 8) return 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'
+    if (!/[A-Z]/.test(p)) return 'يجب أن تحتوي على حرف كبير (A-Z)'
+    if (!/[a-z]/.test(p)) return 'يجب أن تحتوي على حرف صغير (a-z)'
+    if (!/[0-9]/.test(p)) return 'يجب أن تحتوي على رقم'
+    if (!/[@#$!%^&*()_+\-=\[\]{};':"\|,.<>\/?]/.test(p)) return 'يجب أن تحتوي على رمز خاص (@#$!...)'
+    return null
   }
 
   async function sendOtp() {
@@ -385,13 +396,18 @@ function LoginPage() {
                   </div>
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>كلمة المرور *</label>
-                    <input className="inp" type="password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="6 أحرف على الأقل"/>
+                    <input className="inp" type="password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="8+ أحرف، أرقام، رموز (@#$)"/>
                     {password.length>0 && (
                       <div style={{marginTop:6,display:'flex',alignItems:'center',gap:6}}>
-                        {[1,2,3].map(l=>(
-                          <div key={l} style={{flex:1,height:3,borderRadius:99,background:password.length>=l*3?(l===1?'#ef4444':l===2?'#f59e0b':'#16a34a'):'#e5e7eb',transition:'background .3s'}}/>
-                        ))}
-                        <span style={{fontSize:11,color:'#9ca3af',flexShrink:0}}>{password.length<4?'ضعيفة':password.length<7?'متوسطة':'قوية'}</span>
+                        {[1,2,3,4].map(l=>{
+                          const checks = [/[A-Z]/.test(password),/[a-z]/.test(password),/[0-9]/.test(password),/[@#$!%^&*]/.test(password)]
+                          const score = checks.filter(Boolean).length
+                          const colors = ['#ef4444','#f59e0b','#3b82f6','#16a34a']
+                          return <div key={l} style={{flex:1,height:3,borderRadius:99,background:score>=l?colors[score-1]:'#e5e7eb',transition:'background .3s'}}/>
+                        })}
+                        <span style={{fontSize:11,color:'#9ca3af',flexShrink:0}}>
+                          {(()=>{const c=[/[A-Z]/.test(password),/[a-z]/.test(password),/[0-9]/.test(password),/[@#$!%^&*]/.test(password)];const s=c.filter(Boolean).length;return s===0?'':s===1?'ضعيفة جداً':s===2?'ضعيفة':s===3?'متوسطة':'قوية'})()}
+                        </span>
                       </div>
                     )}
                   </div>
