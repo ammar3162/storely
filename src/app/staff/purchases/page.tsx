@@ -84,29 +84,24 @@ export default function StaffPurchasesPage() {
     const amount = parseFloat((inputTotal/1.15).toFixed(2))
     const total_amount = inputTotal.toFixed(2)
 
-    const{error:insErr}=await sb.from('purchases').insert({
-      org_id:session.org_id, profile_id:null, branch_id:session.branch_id,
-      category:form.category, name:form.name, qty:form.qty?Number(form.qty):null,
-      unit:form.unit||null, reorder_point:Number(form.reorder_point)||5,
-      amount, total_amount,
-      supplier:form.supplier, note:(form.note||`تسجيل بواسطة الموظف: ${session.name}`),
-      invoice_image:form.invoice_image||null,
-    } as any)
-
-    if(insErr){showToast('خطأ: '+insErr.message);setLoading(false);submitting.current=false;return}
-
-    if(form.category==='مخزون'&&form.name){
-      const qty=form.qty?Number(form.qty):0
-      const{data:byNameArr}=await sb.from('products').select('id,qty').eq('org_id',session.org_id).eq('name',form.name).limit(1)
-      if(byNameArr&&byNameArr.length>0){
-        if(qty>0) await (sb as any).from('stock_movements').insert({product_id:byNameArr[0].id,type:'in',qty_change:qty,note:`شراء من: ${form.supplier} بواسطة: ${session.name}`})
-        showToast(`✅ تم تحديث المخزون (+${qty})`)
-      } else {
-        const{data:np}=await sb.from('products').insert({org_id:session.org_id,branch_id:session.branch_id,name:form.name.trim(),unit:form.unit||'قطعة',qty:0,reorder_point:Number(form.reorder_point)||5,is_active:true} as any).select().single()
-        if(np&&qty>0) await (sb as any).from('stock_movements').insert({product_id:np.id,type:'in',qty_change:qty,note:`شراء جديد من: ${form.supplier} بواسطة: ${session.name}`})
-        showToast(`✅ تم إضافة "${form.name}" للمخزون`)
-      }
-    } else { showToast('✅ تم تسجيل الشراء') }
+    const res = await fetch('/api/staff-purchase', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        org_id:session.org_id, branch_id:session.branch_id,
+        category:form.category, name:form.name,
+        qty:form.qty?Number(form.qty):null,
+        unit:form.unit||null, reorder_point:Number(form.reorder_point)||5,
+        amount, total_amount,
+        supplier:form.supplier,
+        note:form.note||null,
+        invoice_image:form.invoice_image||null,
+        staff_name:session.name
+      })
+    })
+    const resData = await res.json()
+    if(!res.ok){showToast('خطأ: '+resData.error);setLoading(false);submitting.current=false;return}
+    showToast(form.category==='مخزون'?`✅ تم تحديث المخزون (+${form.qty||0})`:'✅ تم تسجيل الشراء')
 
     setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:''})
     setPreviewUrl(null);setLoading(false);submitting.current=false
