@@ -118,42 +118,35 @@ function LoginPage() {
         setLoading(false); return
       }
       const trialEnds = new Date(Date.now() + 14*24*60*60*1000).toISOString()
-      const { data: org, error: orgErr } = await supabase.from('organizations')
-        .insert({ name: orgName.trim(), whatsapp_number: fullPhone, low_stock_threshold: 5,
-          business_type: businessType||'مطعم',
-          requested_plan: branchCount===1?'basic':branchCount<=3?'pro':'advanced' } as any)
-        .select().single()
-      if (orgErr) {
-        console.error('ORG ERROR:', orgErr)
-        // نحذف الحساب من Auth عشان يقدر يسجل مرة ثانية
-        await supabase.auth.admin?.deleteUser?.(data.user.id).catch(()=>{})
+      // استخدم service role API لإنشاء المنشأة
+      const regRes = await fetch('/api/register-org', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          userId: data.user.id,
+          orgName: orgName.trim(),
+          fullPhone,
+          businessType: businessType||'مطعم',
+          branchCount,
+          phone: phone.trim(),
+          trialEnds
+        })
+      })
+      const regData = await regRes.json()
+      if (!regRes.ok) {
         await fetch('/api/cleanup-failed-registration', {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ userId: data.user.id })
         }).catch(()=>{})
-        setError('خطأ: ' + (orgErr?.message || orgErr?.code || JSON.stringify(orgErr)))
+        setError('خطأ في إنشاء المنشأة: ' + regData.error)
         setLoading(false); return
       }
-      if (org) {
-        const maxB = branchCount===1?1:branchCount<=3?3:10
-        const maxStaff = branchCount===1?2:branchCount<=3?10:999
-        const maxSup = branchCount===1?3:branchCount<=3?10:999
-        await (supabase.from('organizations') as any).update({
-          max_branches:maxB, plan:branchCount===1?'basic':branchCount<=3?'pro':'advanced',
-          max_staff:maxStaff, max_suppliers:maxSup
-        }).eq('id', org.id)
-        await supabase.from('profiles').upsert({
-          id:data.user.id, org_id:org.id, full_name:orgName.trim(),
-          role:'owner', phone:phone.trim(), status:'active',
-          subscription_type:'trial', subscription_ends_at:trialEnds
-        } as any, { onConflict:'id' })
-        fetch('/api/notify-welcome', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ name: orgName.trim(), phone: fullPhone })
-        }).catch(()=>{})
-        setMode('registered' as any)
-      }
+      fetch('/api/notify-welcome', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ name: orgName.trim(), phone: fullPhone })
+      }).catch(()=>{})
+      setMode('registered' as any)
     }
     setLoading(false)
   }
