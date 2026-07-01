@@ -171,7 +171,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     if(orgId) cache.set('report_movements:'+orgId, data||[])
   }
   function exportCSV(){
-    const csv='\ufeff'+[['التاريخ','المنتج','الكمية','الوحدة','الموظف','الملاحظة'],...filtered.map(m=>[new Date(m.created_at).toLocaleDateString('en-GB'),(m.products as any)?.name||'',Math.abs(m.qty_change),(m.products as any)?.unit||'',(m.profiles as any)?.full_name||'—',m.note||''])].map(r=>r.map(c=>'"'+c+'"').join(',')).join('\n')
+    const csv='\ufeff'+[['التاريخ','المنتج','الكمية','الوحدة','الموظف','الملاحظة'],...filtered.map(m=>[new Date(m.created_at).toLocaleDateString('en-GB'),(m.products as any)?.name||'',Math.abs(m.qty_change),(m.products as any)?.unit||'',(m.profiles as any)?.full_name||(m.note?.match(/بواسطة الموظف: (.+)/)?.[1])||'—',m.note||''])].map(r=>r.map(c=>'"'+c+'"').join(',')).join('\n')
     Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})),download:'تقرير_الصرف.csv'}).click()
   }
   const filtered=movements.filter(m=>!search||(m.products as any)?.name?.includes(search)||m.note?.includes(search))
@@ -248,7 +248,9 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
                     <td style={{padding:'11px 16px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td>
                     <td style={{padding:'11px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:900}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
                     <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f0fdf4',color:'#16a34a',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #bbf7d0'}}>{(m.profiles as any)?.full_name||'—'}</span></td>
-                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text4}}>{m.note||'—'}</td>
+                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text4}}>
+                      {(m.profiles as any)?.full_name || (m.note?.match(/بواسطة الموظف: (.+)/)?.[1]) || '—'}
+                    </td>
                   </tr>
                 ))}
               </tbody>
