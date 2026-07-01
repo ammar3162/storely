@@ -132,7 +132,7 @@ function LoginPage() {
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ userId: data.user.id })
         }).catch(()=>{})
-        setError('حدث خطأ في إنشاء المنشأة — حاول مرة أخرى')
+        setError('خطأ: ' + (orgErr?.message || orgErr?.code || JSON.stringify(orgErr)))
         setLoading(false); return
       }
       if (org) {
