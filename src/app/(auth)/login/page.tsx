@@ -100,9 +100,23 @@ function LoginPage() {
     if (!branchCount) { setError('اختر الباقة المناسبة'); return }
     setLoading(true); setError('')
     const { data, error } = await supabase.auth.signUp({ email, password })
-    if (error) { setError(error.message); setLoading(false); return }
+    if (error) {
+      if (error.message.includes('already registered') || error.message.includes('already been registered')) {
+        setError('📧 هذا البريد الإلكتروني مسجّل مسبقاً — سجّل الدخول أو استعد كلمة المرور')
+      } else {
+        setError(error.message)
+      }
+      setLoading(false); return
+    }
     if (data.user) {
       const fullPhone = countryCode + phone.trim().replace(/^0+/, '')
+      // تحقق من تكرار رقم الجوال
+      const { data: existingPhone } = await supabase.from('profiles').select('id').eq('phone', phone.trim()).maybeSingle()
+      if (existingPhone) {
+        await supabase.auth.admin?.deleteUser?.(data.user.id).catch(()=>{})
+        setError('رقم الجوال هذا مرتبط بحساب آخر — استخدم رقماً مختلفاً')
+        setLoading(false); return
+      }
       const trialEnds = new Date(Date.now() + 14*24*60*60*1000).toISOString()
       const { data: org, error: orgErr } = await supabase.from('organizations')
         .insert({ name: orgName.trim(), whatsapp_number: fullPhone, low_stock_threshold: 5,
