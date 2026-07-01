@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
+import { cache } from '@/lib/cache'
 import { createClient } from '@/lib/supabase/client'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
 
@@ -167,6 +168,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     if (_bid1) _mq1 = _mq1.eq('products.branch_id', _bid1)
     const{data}=await _mq1.order('created_at',{ascending:false})
     setMovements(data||[]); setLoading(false)
+    if(orgId) cache.set('report_movements:'+orgId, data||[])
   }
   function exportCSV(){
     const csv='\ufeff'+[['التاريخ','المنتج','الكمية','الوحدة','الموظف','الملاحظة'],...filtered.map(m=>[new Date(m.created_at).toLocaleDateString('en-GB'),(m.products as any)?.name||'',Math.abs(m.qty_change),(m.products as any)?.unit||'',(m.profiles as any)?.full_name||'—',m.note||''])].map(r=>r.map(c=>'"'+c+'"').join(',')).join('\n')
@@ -276,6 +278,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     const{start,end}=getRange(period,from,to)
     const{data}=await sb.from('purchases').select('*').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString()).order('created_at',{ascending:false})
     setPurchases(data||[]); setLoading(false)
+    if(orgId) cache.set('report_purchases:'+orgId, data||[])
   }
   function exportCSV(){
     const csv='\ufeff'+[['التاريخ','الصنف','النوع','بدون ضريبة','الضريبة','الإجمالي','المورد'],...filtered.map(p=>[new Date(p.created_at).toLocaleDateString('en-GB'),p.name||'',p.category||'',Number(p.amount||0).toFixed(2),Number(p.vat_amount||0).toFixed(2),Number(p.total_amount||0).toFixed(2),p.supplier||''])].map(r=>r.map(c=>'"'+c+'"').join(',')).join('\n')

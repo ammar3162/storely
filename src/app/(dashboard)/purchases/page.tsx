@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
+import { cache } from '@/lib/cache'
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/components/toast'
@@ -61,19 +62,23 @@ export default function PurchasesPage() {
   }
 
   async function loadProducts(oid:string) {
+    const cached = cache.get('products:'+oid)
+    if(cached){ setProducts(cached); }
     const bid=sessionStorage.getItem('s_branch_id')
     let pq=sb.from('products').select('id,name,unit,qty').eq('org_id',oid).eq('is_active',true)
     if(bid) pq=pq.eq('branch_id',bid)
-    const{data}=await pq.order('name');setProducts(data||[])
+    const{data}=await pq.order('name');setProducts(data||[]);cache.set('products:'+oid,data||[])
   }
 
   async function loadHistory(oid:string) {
+    const cachedH = cache.get('purchases:'+oid)
+    if(cachedH){ setHistory(cachedH) }
     const urlBid=new URLSearchParams(window.location.search).get('_b')
     if(urlBid){sessionStorage.setItem('s_branch_id',urlBid);window.history.replaceState({},'',window.location.pathname)}
     const bid=urlBid||sessionStorage.getItem('s_branch_id')
     let q=sb.from('purchases').select('*').eq('org_id',oid).order('created_at',{ascending:false}).limit(50)
     if(bid) q=(q as any).eq('branch_id',bid)
-    const{data}=await q;setHistory(data||[])
+    const{data}=await q;setHistory(data||[]);cache.set('purchases:'+oid,data||[])
   }
 
   async function handleImage(file:File) {
