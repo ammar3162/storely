@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
     const { org_id, branch_id, category, name, qty, unit, reorder_point,
-            amount, total_amount, supplier, note, invoice_image, staff_name } = body
+            amount, supplier, note, invoice_image, staff_name } = body
 
     if (!org_id || !name || !amount) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       org_id, branch_id: branch_id || null,
       category, name, qty: qty || null, unit: unit || null,
       reorder_point: reorder_point || 5,
-      amount, total_amount,
+      amount,
       supplier, note: note || `تسجيل بواسطة الموظف: ${staff_name}`,
       invoice_image: invoice_image || null,
       profile_id: null,
