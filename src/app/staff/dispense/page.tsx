@@ -305,10 +305,12 @@ export default function StaffDispensePage() {
         {/* تبويبات الصلاحيات */}
         {(session.permissions?.inventory || session.permissions?.purchases || session.permissions?.reports) && (
           <div style={{display:'flex',gap:6,marginBottom:12,overflowX:'auto',paddingBottom:4}}>
-            <button onClick={()=>setActiveTab('dispense')}
-              style={{padding:'7px 16px',borderRadius:20,border:'none',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',flexShrink:0,background:activeTab==='dispense'?'#16a34a':'#f1f5f9',color:activeTab==='dispense'?'white':'#64748b'}}>
-              📤 الصرف
-            </button>
+            {session.permissions?.dispense && (
+              <button onClick={()=>setActiveTab('dispense')}
+                style={{padding:'7px 16px',borderRadius:20,border:'none',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',flexShrink:0,background:activeTab==='dispense'?'#16a34a':'#f1f5f9',color:activeTab==='dispense'?'white':'#64748b'}}>
+                📤 الصرف
+              </button>
+            )}
             {session.permissions?.inventory && (
               <button onClick={()=>{setActiveTab('inventory');if(session)loadProducts(session)}}
                 style={{padding:'7px 16px',borderRadius:20,border:'none',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',flexShrink:0,background:activeTab==='inventory'?'#16a34a':'#f1f5f9',color:activeTab==='inventory'?'white':'#64748b'}}>
@@ -357,7 +359,7 @@ export default function StaffDispensePage() {
         />
       </div>
 
-      <div style={{ padding: 20, maxWidth: 520, margin: '0 auto', display: activeTab==='dispense' ? 'block' : 'none' }}>
+      <div style={{ padding: 20, maxWidth: 520, margin: '0 auto', display: activeTab==='dispense' && session.permissions?.dispense ? 'block' : 'none' }}>
         {translating && (
           <div style={{ background: '#eff6ff', color: '#3b82f6', padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 700, marginBottom: 16, textAlign: 'center' }}>
             {t('preparingTranslation', lang)}
