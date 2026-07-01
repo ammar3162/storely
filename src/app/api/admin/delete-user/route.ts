@@ -23,6 +23,10 @@ export async function POST(req: Request) {
         supabase.from('notifications').delete().eq('org_id', orgId),
         supabase.from('purchases').delete().eq('org_id', orgId),
         supabase.from('branches').delete().eq('org_id', orgId),
+        supabase.from('suppliers').delete().eq('org_id', orgId),
+        supabase.from('staff_members').delete().eq('org_id', orgId),
+        supabase.from('whatsapp_logs').delete().eq('org_id', orgId),
+        supabase.from('whatsapp_sessions').delete().eq('org_id', orgId),
       ])
       await supabase.from('profiles').delete().eq('org_id', orgId)
       await supabase.from('organizations').delete().eq('id', orgId)
