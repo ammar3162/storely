@@ -130,7 +130,9 @@ export default function PurchasesPage() {
       }
     } else { toast('✅ تم تسجيل الشراء') }
     setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:''})
-    setPreviewUrl(null);setLoading(false);submitting.current=false;loadHistory(orgId)
+    setPreviewUrl(null);setLoading(false);submitting.current=false
+    cache.invalidate('purchases:');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
+    loadHistory(orgId)
   }
 
   const inputTotal=Number(form.total_amount)||0

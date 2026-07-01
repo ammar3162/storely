@@ -105,13 +105,13 @@ export default function InventoryPage() {
     }
     setShowAdd(false);setEditItem(null);setAddQty(0)
     setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:''})
-    setSaving(false);load()
+    cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:');setSaving(false);load()
   }
 
   async function doDelete() {
     if(!confirm) return
     await sb.from('products').update({is_active:false}).eq('id',confirm.id)
-    toast('تم حذف المنتج');setConfirm(null);load()
+    toast('تم حذف المنتج');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:');setConfirm(null);load()
   }
 
   function openEdit(p:Product) {
