@@ -289,7 +289,7 @@ export default function StaffManagementPage() {
                 <div style={{fontSize:font.xs,fontWeight:700,color:colors.text3,marginBottom:10,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>صلاحيات الموظف</div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                   {[
-                    {key:'dispense',   label:'الصرف',      icon:'📤', locked:true},
+                    {key:'dispense',   label:'الصرف',      icon:'📤', locked:false},
                     {key:'inventory',  label:'المخزون',    icon:'📦', locked:false},
                     {key:'purchases',  label:'المشتريات',  icon:'🛒', locked:false},
                     {key:'reports',    label:'التقارير',   icon:'📊', locked:false},
@@ -373,7 +373,7 @@ export default function StaffManagementPage() {
             <div style={{fontSize:12,color:'#888780',marginBottom:20}}>{staff.find(s=>s.id===editingPerms)?.name}</div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
               {[
-                {key:'dispense',   label:'الصرف',      icon:'📤', locked:true},
+                {key:'dispense',   label:'الصرف',      icon:'📤', locked:false},
                 {key:'inventory',  label:'المخزون',    icon:'📦', locked:false},
                 {key:'purchases',  label:'المشتريات',  icon:'🛒', locked:false},
                 {key:'reports',    label:'التقارير',   icon:'📊', locked:false},

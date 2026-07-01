@@ -81,7 +81,18 @@ export default function StaffDispensePage() {
     const saved = localStorage.getItem('staff_session')
     if (!saved) { router.push('/staff'); return }
     const s = JSON.parse(saved) as StaffSession
+    // لو ما عنده أي صلاحية نحوله لتسجيل الدخول
+    if (s.permissions && !s.permissions.dispense && !s.permissions.inventory && !s.permissions.purchases && !s.permissions.reports) {
+      router.push('/staff')
+      return
+    }
     setSession(s)
+    // لو عنده صلاحيات أخرى بدون صرف، ابدأ بأول صلاحية متاحة
+    if (s.permissions && !s.permissions.dispense) {
+      if (s.permissions.inventory) setActiveTab('inventory')
+      else if (s.permissions.purchases) setActiveTab('purchases')
+      else if (s.permissions.reports) setActiveTab('reports')
+    }
     loadProducts(s);
     (sb.from('organizations') as any).select('logo_url').eq('id', s.org_id).single()
       .then(({ data }: any) => { if (data?.logo_url) setOrgLogo(data.logo_url) })
