@@ -469,12 +469,21 @@ export default function StaffDispensePage() {
           </div>
         </div>
       )}
-      {(activeTab==='purchases'||activeTab==='reports') && (
+      {activeTab==='purchases' && (
+        <div style={{padding:'40px 20px',textAlign:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
+          <div style={{fontSize:56,marginBottom:16}}>🛒</div>
+          <div style={{fontSize:16,fontWeight:700,color:'#0f172a',marginBottom:8}}>تسجيل المشتريات</div>
+          <div style={{fontSize:13,color:'#64748b',marginBottom:24}}>سجّل فواتير الشراء مع الضريبة وصور الفواتير</div>
+          <button onClick={()=>router.push('/staff/purchases')}
+            style={{padding:'14px 32px',background:'#16a34a',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>
+            📝 تسجيل شراء جديد
+          </button>
+        </div>
+      )}
+      {activeTab==='reports' && (
         <div style={{padding:'60px 20px',textAlign:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
-          <div style={{fontSize:48,marginBottom:16}}>{activeTab==='purchases'?'🛒':'📊'}</div>
-          <div style={{fontSize:16,fontWeight:700,color:'#0f172a',marginBottom:8}}>
-            {activeTab==='purchases'?'المشتريات':'التقارير'}
-          </div>
+          <div style={{fontSize:48,marginBottom:16}}>📊</div>
+          <div style={{fontSize:16,fontWeight:700,color:'#0f172a',marginBottom:8}}>التقارير</div>
           <div style={{fontSize:13,color:'#64748b'}}>هذه الميزة ستكون متاحة قريباً</div>
         </div>
       )}
