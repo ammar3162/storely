@@ -444,11 +444,36 @@ export default function StaffDispensePage() {
         </div>
       )}
 
-      {activeTab!=='dispense' && (
+      {activeTab==='inventory' && (
+        <div style={{padding:'16px 20px',maxWidth:520,margin:'0 auto'}}>
+          <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16,textAlign:'center'}}>📦 المخزون</div>
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {products.map(p=>(
+              <div key={p.id} style={{background:'white',borderRadius:12,padding:'14px 16px',boxShadow:'0 1px 3px rgba(0,0,0,.06)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div>
+                  <div style={{fontSize:14,fontWeight:700,color:'#0f172a'}}>{translateName(p.name)}</div>
+                  <div style={{fontSize:12,color:'#64748b',marginTop:2}}>{p.category||'—'}</div>
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:10}}>
+                  <div style={{textAlign:'center'}}>
+                    <div style={{fontSize:18,fontWeight:900,color:p.qty<=p.reorder_point?'#ef4444':'#16a34a'}}>{p.qty}</div>
+                    <div style={{fontSize:10,color:'#94a3b8'}}>{p.unit}</div>
+                  </div>
+                  <button onClick={()=>{setEditingProduct(p);setEditQty(String(p.qty))}}
+                    style={{padding:'6px 12px',background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                    تعديل
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {(activeTab==='purchases'||activeTab==='reports') && (
         <div style={{padding:'60px 20px',textAlign:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
-          <div style={{fontSize:48,marginBottom:16}}>{activeTab==='inventory'?'📦':activeTab==='purchases'?'🛒':'📊'}</div>
+          <div style={{fontSize:48,marginBottom:16}}>{activeTab==='purchases'?'🛒':'📊'}</div>
           <div style={{fontSize:16,fontWeight:700,color:'#0f172a',marginBottom:8}}>
-            {activeTab==='inventory'?'المخزون':activeTab==='purchases'?'المشتريات':'التقارير'}
+            {activeTab==='purchases'?'المشتريات':'التقارير'}
           </div>
           <div style={{fontSize:13,color:'#64748b'}}>هذه الميزة ستكون متاحة قريباً</div>
         </div>
