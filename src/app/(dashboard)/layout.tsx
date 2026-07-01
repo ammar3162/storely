@@ -340,12 +340,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </aside>
 
-          {/* جرس الإشعارات العائم */}
-          <button onClick={()=>router.push('/notifications')}
-            style={{position:'fixed',top:18,left:18,zIndex:200,width:42,height:42,borderRadius:'50%',background:'white',border:'1px solid #e5e7eb',boxShadow:'0 2px 10px rgba(0,0,0,.08)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            <Icon d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" size={18} stroke={C.text2} width={2}/>
-            {unread>0&&<span style={{position:'absolute',top:6,right:6,width:9,height:9,borderRadius:'50%',background:'#ef4444',border:'1.5px solid white'}}/>}
-          </button>
+
 
           {/* Desktop Content */}
           <main className="desk-content">
