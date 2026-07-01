@@ -259,6 +259,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span style={{fontSize:10,fontWeight:700,color:'white'}}>{lowCount} ناقص</span>
               </button>
             )}
+            <button onClick={()=>router.push('/notifications')}
+              style={{width:36,height:36,borderRadius:10,background:'rgba(255,255,255,.2)',border:'1px solid rgba(255,255,255,.3)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,position:'relative'}}>
+              <Icon d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" size={18} stroke="white" width={2}/>
+              {unread>0&&<span style={{position:'absolute',top:4,right:4,width:8,height:8,borderRadius:'50%',background:'#ef4444',border:'1.5px solid transparent'}}/>}
+            </button>
             <div style={{width:36,height:36,borderRadius:10,background:'rgba(255,255,255,.2)',border:'1px solid rgba(255,255,255,.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:800,color:'white',cursor:'pointer',flexShrink:0}} onClick={()=>setShowMore(true)}>
               {userInit}
             </div>
