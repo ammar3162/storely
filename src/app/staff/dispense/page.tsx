@@ -322,7 +322,7 @@ export default function StaffDispensePage() {
         />
       </div>
 
-      <div style={{ padding: 20, maxWidth: 520, margin: '0 auto' }}>
+      <div style={{ padding: 20, maxWidth: 520, margin: '0 auto', display: activeTab==='dispense' ? 'block' : 'none' }}>
         {translating && (
           <div style={{ background: '#eff6ff', color: '#3b82f6', padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 700, marginBottom: 16, textAlign: 'center' }}>
             {t('preparingTranslation', lang)}
