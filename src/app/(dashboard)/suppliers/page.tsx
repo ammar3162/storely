@@ -323,7 +323,13 @@ export default function SuppliersPage() {
   async function addSupplier() {
     if (suppliers.length >= maxSuppliers) { toast(`باقتك تسمح بـ ${maxSuppliers} موردين فقط`, 'warning'); return }
     if (!newName.trim() || !newPhone.trim()) { toast('أدخل اسم المورد ورقمه', 'warning'); return }
-    const { error } = await (sb as any).from('suppliers').insert({ org_id: orgId, name: newName.trim(), phone: newPhone.trim(), notes: newNotes.trim() })
+    const res = await fetch('/api/add-supplier', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ org_id: orgId, name: newName.trim(), phone: newPhone.trim(), notes: newNotes.trim() })
+    })
+    const resData = await res.json()
+    const error = !res.ok ? {message: resData.error} : null
     if (error) { toast('خطأ: ' + error.message, 'error'); return }
     toast('✅ تم إضافة المورد')
     setNewName(''); setNewPhone(''); setNewNotes(''); setShowAdd(false)

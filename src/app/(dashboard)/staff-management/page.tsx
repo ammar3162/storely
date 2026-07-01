@@ -102,10 +102,16 @@ export default function StaffManagementPage() {
     if(staff.length>=maxStaff){toast(`باقتك تسمح بـ ${maxStaff} موظف فقط — يرجى الترقية`,'error');return}
     const cleanPhone=newPhone.trim().replace(/\s/g,'')
     const pin=generatePin()
-    const{error}=await (sb.from('staff_members' as any) as any).insert({org_id:orgId,branch_id:newBranch||null,name:newName.trim(),phone:cleanPhone,pin})
+    const res = await fetch('/api/add-staff', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({org_id:orgId, branch_id:newBranch||null, name:newName.trim(), phone:cleanPhone, pin})
+    })
+    const resData = await res.json()
+    const error = !res.ok ? resData.error : null
     if(error){
-      if(error.code==='23505') toast('رقم الجوال هذا مسجّل لموظف آخر','error')
-      else toast('خطأ: '+error.message,'error')
+      if(res.status===409) toast('رقم الجوال هذا مسجّل لموظف آخر','error')
+      else toast('خطأ: '+error,'error')
       return
     }
     setRevealedPin({name:newName.trim(),phone:cleanPhone,pin})
