@@ -24,7 +24,10 @@ export async function POST(req: Request) {
     const { data: org } = await db.from('organizations').select('name,whatsapp_number').eq('id', org_id).single()
     if (!(org as any)?.whatsapp_number) return NextResponse.json({ success: false })
 
-    const msg = `🟢 *Storely*\n\nمرحباً ${(org as any).name}،\n\n👤 *${staff_name}* قام بصرف:\n• ${product_name} — *${qty} ${unit}*\n\n🕐 ${new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit',hour12:true})}`
+    const now = new Date()
+    const timeStr = now.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Riyadh'})
+    const dateStr = now.toLocaleDateString('ar-SA',{weekday:'long',day:'numeric',month:'long',timeZone:'Asia/Riyadh'})
+    const msg = `🟢 *Storely*\n\nمرحباً ${(org as any).name}،\n\n👤 *${staff_name}* قام بصرف:\n• ${product_name} — *${qty} ${unit}*\n\n🕐 ${timeStr} · ${dateStr}`
 
     await fetch('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',
