@@ -339,6 +339,11 @@ function LoginPage() {
                     <input className="inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
                   </div>
                   <div>
+                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>الدولة *</label>
+                    <select value={countryCode} onChange={e=>{setCountryCode(e.target.value);setOtpSent(false);setOtpVerified(false);setPhone('');setOtp('')}}
+                      style={{width:'100%',padding:'12px 14px',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:14,fontFamily:'inherit',outline:'none',background:'white',color:'#111827',marginBottom:12,cursor:'pointer'}}>
+                      {COUNTRY_CODES.map(c=><option key={c.code} value={c.code}>{c.flag} {c.name} ({c.code})</option>)}
+                    </select>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>رقم واتساب *</label>
                     <div style={{display:'flex',border:'1.5px solid #e5e7eb',borderRadius:10,overflow:'hidden',background:'white',transition:'border-color .2s'}}
                       onFocusCapture={e=>(e.currentTarget as HTMLElement).style.borderColor='#16a34a'}
