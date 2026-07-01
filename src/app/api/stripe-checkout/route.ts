@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+const getStripe = () => new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 const PRICE_MAP: Record<string,string> = {
   basic:    process.env.STRIPE_PRICE_BASIC!,
@@ -16,6 +15,7 @@ export async function POST(req: Request) {
     const { plan, org_id, user_id, email } = await req.json()
     if (!plan || !org_id || !user_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
+    const stripe = getStripe()
     const priceId = PRICE_MAP[plan]
     if (!priceId) return NextResponse.json({ error: 'باقة غير صحيحة' }, { status: 400 })
 
