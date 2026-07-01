@@ -10,6 +10,7 @@ interface StaffSession {
   branch_id: string | null
   org_name: string
   branch_name: string
+  permissions: {dispense:boolean,inventory:boolean,purchases:boolean,reports:boolean}
 }
 
 const CATEGORY_COLORS = [
@@ -226,6 +227,17 @@ export default function StaffDispensePage() {
               <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a' }}>{session.name}</div>
               <div style={{ fontSize: 12, color: '#64748b', marginTop: 1 }}>{session.org_name} {session.branch_name ? `· ${session.branch_name}` : ''}</div>
             </div>
+          </div>
+          <div style={{display:'flex',gap:6,alignItems:'center'}}>
+            {session.permissions?.inventory && (
+              <span style={{fontSize:11,background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',borderRadius:20,padding:'3px 8px',fontWeight:600}}>📦 مخزون</span>
+            )}
+            {session.permissions?.purchases && (
+              <span style={{fontSize:11,background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:20,padding:'3px 8px',fontWeight:600}}>🛒 مشتريات</span>
+            )}
+            {session.permissions?.reports && (
+              <span style={{fontSize:11,background:'#f5f3ff',color:'#7c3aed',border:'1px solid #ddd6fe',borderRadius:20,padding:'3px 8px',fontWeight:600}}>📊 تقارير</span>
+            )}
           </div>
           <button onClick={logout} style={{ background: '#fef2f2', color: '#ef4444', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{t('logout', lang)}</button>
         </div>

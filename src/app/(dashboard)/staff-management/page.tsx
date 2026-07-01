@@ -28,6 +28,9 @@ export default function StaffManagementPage() {
   const [orgId, setOrgId]           = useState('')
   const [loading, setLoading]       = useState(true)
   const [showAdd, setShowAdd]       = useState(false)
+  const [newPermissions, setNewPermissions] = useState({dispense:true,inventory:false,purchases:false,reports:false})
+  const [editingPerms, setEditingPerms] = useState<string|null>(null)
+  const [editPerms, setEditPerms] = useState({dispense:true,inventory:false,purchases:false,reports:false})
   const [newName, setNewName]       = useState('')
   const [newPhone, setNewPhone]     = useState('')
   const [staffCountry, setStaffCountry] = useState(()=>sessionStorage.getItem('s_country_code')||'+966')
@@ -110,7 +113,7 @@ export default function StaffManagementPage() {
     const res = await fetch('/api/add-staff', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({org_id:orgId, branch_id:newBranch||null, name:newName.trim(), phone:cleanPhone, pin})
+      body: JSON.stringify({org_id:orgId, branch_id:newBranch||null, name:newName.trim(), phone:cleanPhone, pin, permissions:newPermissions})
     })
     const resData = await res.json()
     const error = !res.ok ? resData.error : null
@@ -121,6 +124,13 @@ export default function StaffManagementPage() {
     }
     setRevealedPin({name:newName.trim(),phone:cleanPhone,pin})
     setNewName('');setNewPhone('');setShowAdd(false)
+    loadStaff(orgId)
+  }
+
+  async function savePermissions(id:string) {
+    await (sb.from('staff_members' as any) as any).update({permissions:editPerms}).eq('id',id)
+    toast('✅ تم حفظ الصلاحيات')
+    setEditingPerms(null)
     loadStaff(orgId)
   }
 
@@ -274,6 +284,26 @@ export default function StaffManagementPage() {
             </div>
             <div style={{display:'flex',gap:10}}>
               <button onClick={()=>setShowAdd(false)} style={{...btnSecondary,flex:1,padding:'12px',fontSize:font.sm}}>إلغاء</button>
+              {/* الصلاحيات */}
+              <div style={{background:colors.bg,borderRadius:radius.md,padding:'14px 16px',marginBottom:8}}>
+                <div style={{fontSize:font.xs,fontWeight:700,color:colors.text3,marginBottom:10,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>صلاحيات الموظف</div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                  {[
+                    {key:'dispense',   label:'الصرف',      icon:'📤', locked:true},
+                    {key:'inventory',  label:'المخزون',    icon:'📦', locked:false},
+                    {key:'purchases',  label:'المشتريات',  icon:'🛒', locked:false},
+                    {key:'reports',    label:'التقارير',   icon:'📊', locked:false},
+                  ].map(p=>(
+                    <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:'white',borderRadius:8,border:`1.5px solid ${(newPermissions as any)[p.key]?colors.primary:colors.border}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
+                      <input type="checkbox" checked={(newPermissions as any)[p.key]} disabled={p.locked}
+                        onChange={e=>!p.locked&&setNewPermissions(prev=>({...prev,[p.key]:e.target.checked}))}
+                        style={{accentColor:colors.primary,width:14,height:14}}/>
+                      <span style={{fontSize:12,fontWeight:600,color:(newPermissions as any)[p.key]?colors.primary:colors.text2}}>{p.icon} {p.label}</span>
+                      {p.locked&&<span style={{fontSize:9,color:colors.text4}}>(افتراضي)</span>}
+                    </label>
+                  ))}
+                </div>
+              </div>
               <button onClick={addStaff} style={{...btnPrimary,flex:2,padding:'12px',fontSize:font.sm}}>✓ إضافة وتوليد PIN</button>
             </div>
           </div>
@@ -335,6 +365,38 @@ export default function StaffManagementPage() {
       )}
 
       {/* Staff Report Modal */}
+      {/* modal صلاحيات */}
+      {editingPerms && (
+        <div style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={()=>setEditingPerms(null)}>
+          <div style={{background:'white',borderRadius:20,padding:28,width:'100%',maxWidth:400,fontFamily:'inherit'}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:16,fontWeight:800,color:'#1c1c1a',marginBottom:4}}>🔐 صلاحيات الموظف</div>
+            <div style={{fontSize:12,color:'#888780',marginBottom:20}}>{staff.find(s=>s.id===editingPerms)?.name}</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
+              {[
+                {key:'dispense',   label:'الصرف',      icon:'📤', locked:true},
+                {key:'inventory',  label:'المخزون',    icon:'📦', locked:false},
+                {key:'purchases',  label:'المشتريات',  icon:'🛒', locked:false},
+                {key:'reports',    label:'التقارير',   icon:'📊', locked:false},
+              ].map(p=>(
+                <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'12px',background:(editPerms as any)[p.key]?'#f0fdf4':'#f9fafb',borderRadius:10,border:`1.5px solid ${(editPerms as any)[p.key]?'#16a34a':'#e5e7eb'}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
+                  <input type="checkbox" checked={(editPerms as any)[p.key]} disabled={p.locked}
+                    onChange={e=>!p.locked&&setEditPerms(prev=>({...prev,[p.key]:e.target.checked}))}
+                    style={{accentColor:'#16a34a',width:16,height:16}}/>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:700,color:(editPerms as any)[p.key]?'#16a34a':'#374151'}}>{p.icon} {p.label}</div>
+                    {p.locked&&<div style={{fontSize:10,color:'#9ca3af'}}>افتراضي</div>}
+                  </div>
+                </label>
+              ))}
+            </div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>savePermissions(editingPerms)} style={{flex:2,padding:'12px',background:'#16a34a',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>💾 حفظ الصلاحيات</button>
+              <button onClick={()=>setEditingPerms(null)} style={{flex:1,padding:'12px',background:'#f3f4f6',color:'#374151',border:'none',borderRadius:10,fontSize:14,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {reportStaff && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
           <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:540,maxHeight:'85vh',display:'flex',flexDirection:'column',fontFamily:'inherit',direction:'rtl'}}>
@@ -413,6 +475,9 @@ export default function StaffManagementPage() {
                 <div style={{display:'flex',gap:6,alignItems:'center'}}>
                   <button onClick={e=>{e.stopPropagation();openReport(s)}} className="act-btn" style={{background:'#eff6ff',color:'#2563eb'}}>
                     📊 تقرير
+                  </button>
+                  <button onClick={e=>{e.stopPropagation();setEditingPerms(s.id);setEditPerms(s.permissions||{dispense:true,inventory:false,purchases:false,reports:false})}} className="act-btn" style={{background:'#f5f3ff',color:'#7c3aed'}}>
+                    🔐 صلاحيات
                   </button>
                   <button onClick={e=>{e.stopPropagation();openAssign(s)}} className="act-btn" style={{background:colors.warningLight||'#fffbeb',color:colors.warning||'#d97706'}}>
                     📦 {s.assigned_products?.length>0?`${s.assigned_products.length} منتج`:'كل المنتجات'}

@@ -44,7 +44,7 @@ export async function POST(req: Request) {
 
     const { data: staff, error } = await supabase
       .from('staff_members')
-      .select('id,name,org_id,branch_id,phone,pin,is_active,organizations(name),branches(name)')
+      .select('id,name,org_id,branch_id,phone,pin,is_active,permissions,organizations(name),branches(name)')
       .eq('phone', cleanPhone)
       .eq('pin', String(pin))
       .eq('is_active', true)
@@ -66,6 +66,7 @@ export async function POST(req: Request) {
         branch_id: staff.branch_id,
         org_name: (staff as any).organizations?.name || '',
         branch_name: (staff as any).branches?.name || '',
+        permissions: (staff as any).permissions || {dispense:true,inventory:false,purchases:false,reports:false},
       },
     })
   } catch (err: any) {
