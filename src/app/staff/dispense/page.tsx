@@ -59,6 +59,9 @@ function colorFor(category: string, allCategories: string[]) {
 export default function StaffDispensePage() {
   const [session, setSession] = useState<StaffSession | null>(null)
   const [activeTab, setActiveTab] = useState<'dispense'|'inventory'|'purchases'|'reports'>('dispense')
+  const [editingProduct, setEditingProduct] = useState<any|null>(null)
+  const [editQty, setEditQty] = useState('')
+  const [savingQty, setSavingQty] = useState(false)
   const [orgLogo, setOrgLogo] = useState<string | null>(null)
   const [products, setProducts] = useState<any[]>([])
   const [translations, setTranslations] = useState<Record<string, Record<string, string>>>({})
@@ -94,6 +97,27 @@ export default function StaffDispensePage() {
       fetchTranslation(session, lang)
     }
   }, [session, products, lang])
+
+  async function updateQty() {
+    if (!editingProduct || !editQty) return
+    setSavingQty(true)
+    const sb = (await import('@/lib/supabase/client')).createClient()
+    const newQty = Number(editQty)
+    const diff = newQty - editingProduct.qty
+    await (sb as any).from('products').update({ qty: newQty }).eq('id', editingProduct.id)
+    if (diff !== 0) {
+      await (sb as any).from('stock_movements').insert({
+        product_id: editingProduct.id,
+        type: diff > 0 ? 'in' : 'out',
+        qty_change: diff,
+        note: `تعديل يدوي بواسطة الموظف: ${session?.name}`,
+        profile_id: null
+      })
+    }
+    setSavingQty(false)
+    setEditingProduct(null)
+    if (session) loadProducts(session)
+  }
 
   async function loadProducts(s: StaffSession) {
     setLoading(true)
@@ -395,6 +419,31 @@ export default function StaffDispensePage() {
           </div>
         )}
       </div>
+      {/* modal تعديل الكمية */}
+      {editingProduct && (
+        <div style={{position:'fixed',inset:0,zIndex:2000,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'flex-end',justifyContent:'center'}} onClick={()=>setEditingProduct(null)}>
+          <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxWidth:480,padding:24,fontFamily:"'IBM Plex Sans Arabic',system-ui"}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:4}}>{editingProduct.name}</div>
+            <div style={{fontSize:12,color:'#64748b',marginBottom:20}}>الكمية الحالية: {editingProduct.qty} {editingProduct.unit}</div>
+            <div style={{marginBottom:16}}>
+              <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>الكمية الجديدة</label>
+              <input type="number" value={editQty} onChange={e=>setEditQty(e.target.value)} min="0"
+                style={{width:'100%',padding:'12px 16px',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:18,fontWeight:700,textAlign:'center',outline:'none',fontFamily:'inherit'}}/>
+            </div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={updateQty} disabled={savingQty}
+                style={{flex:2,padding:'13px',background:'#16a34a',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                {savingQty?'جاري الحفظ...':'✅ حفظ الكمية'}
+              </button>
+              <button onClick={()=>setEditingProduct(null)}
+                style={{flex:1,padding:'13px',background:'#f3f4f6',color:'#374151',border:'none',borderRadius:12,fontSize:14,cursor:'pointer',fontFamily:'inherit'}}>
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab!=='dispense' && (
         <div style={{padding:'60px 20px',textAlign:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
           <div style={{fontSize:48,marginBottom:16}}>{activeTab==='inventory'?'📦':activeTab==='purchases'?'🛒':'📊'}</div>
