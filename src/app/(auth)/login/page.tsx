@@ -146,7 +146,13 @@ function LoginPage() {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ name: orgName.trim(), phone: fullPhone })
       }).catch(()=>{})
-      setMode('registered' as any)
+      // حاول تسجيل الدخول مباشرة بعد التسجيل
+      const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password })
+      if (!signInErr) {
+        window.location.href = '/dashboard'
+      } else {
+        setMode('registered' as any)
+      }
     }
     setLoading(false)
   }
