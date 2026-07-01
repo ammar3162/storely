@@ -72,7 +72,7 @@ export default function StaffManagementPage() {
     setReportLoading(true)
     const{data}=await sb.from('stock_movements')
       .select('id,qty_change,created_at,note,products!inner(name,unit)')
-      .eq('profile_id',s.profile_id||s.id)
+      .like('note', `%${s.name}%`)
       .eq('type','out')
       .order('created_at',{ascending:false})
       .limit(50)
