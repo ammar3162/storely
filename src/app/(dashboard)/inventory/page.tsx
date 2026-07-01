@@ -265,23 +265,23 @@ export default function InventoryPage() {
       )}
 
       {/* Header */}
-      <div className="u" style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-        <div>
-          <h1 style={{fontSize:20,fontWeight:700,color:C.text,margin:0,letterSpacing:'-0.3px'}}>المخزون</h1>
-          <p style={{fontSize:11,color:C.text4,margin:'3px 0 0',fontVariantNumeric:'tabular-nums'}}>
+      <div className="u" style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,gap:8}}>
+        <div style={{minWidth:0}}>
+          <h1 style={{fontSize:18,fontWeight:700,color:C.text,margin:0,letterSpacing:'-0.3px',whiteSpace:'nowrap'}}>المخزون</h1>
+          <p style={{fontSize:11,color:C.text4,margin:'2px 0 0',fontVariantNumeric:'tabular-nums'}}>
             {products.length} صنف
             {lowCount>0&&<span style={{color:C.danger,fontWeight:600}}> · {lowCount} ناقص</span>}
           </p>
         </div>
-        <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        <div style={{display:'flex',gap:6,alignItems:'center',flexShrink:0}}>
           <button onClick={exportCSV} title="تصدير CSV"
-            style={{width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',background:'white',border:`1px solid ${C.border2}`,borderRadius:8,cursor:'pointer',color:C.text3}}>
-            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'white',border:`1px solid ${C.border2}`,borderRadius:8,cursor:'pointer',color:C.text3,flexShrink:0}}>
+            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
           </button>
           <button onClick={()=>{setEditItem(null);setAddQty(0);setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:''});setShowAdd(true)}}
-            style={{padding:'8px 16px',background:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:5}}>
-            <svg width="12" height="12" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
-            إضافة منتج
+            style={{height:32,padding:'0 12px',background:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4,flexShrink:0,whiteSpace:'nowrap'}}>
+            <svg width="11" height="11" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+            إضافة
           </button>
         </div>
       </div>
