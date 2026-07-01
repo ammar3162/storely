@@ -27,6 +27,31 @@ const COUNTRY_CODES = [
   { code: '+63',  flag: '🇵🇭', name: 'الفلبين' },
 ]
 
+const PHONE_RULES: Record<string,{length:number, prefix:string, placeholder:string}> = {
+  '+966': { length:9,  prefix:'5',  placeholder:'5xxxxxxxx'   },  // السعودية
+  '+971': { length:9,  prefix:'5',  placeholder:'5xxxxxxxx'   },  // الإمارات
+  '+965': { length:8,  prefix:'',   placeholder:'xxxxxxxx'    },  // الكويت
+  '+973': { length:8,  prefix:'',   placeholder:'xxxxxxxx'    },  // البحرين
+  '+974': { length:8,  prefix:'',   placeholder:'xxxxxxxx'    },  // قطر
+  '+968': { length:8,  prefix:'',   placeholder:'xxxxxxxx'    },  // عُمان
+  '+967': { length:9,  prefix:'7',  placeholder:'7xxxxxxxx'   },  // اليمن
+  '+20':  { length:10, prefix:'1',  placeholder:'1xxxxxxxxx'  },  // مصر
+  '+962': { length:9,  prefix:'7',  placeholder:'7xxxxxxxx'   },  // الأردن
+  '+961': { length:8,  prefix:'',   placeholder:'xxxxxxxx'    },  // لبنان
+  '+963': { length:9,  prefix:'9',  placeholder:'9xxxxxxxx'   },  // سوريا
+  '+964': { length:10, prefix:'7',  placeholder:'7xxxxxxxxx'  },  // العراق
+  '+212': { length:9,  prefix:'6',  placeholder:'6xxxxxxxx'   },  // المغرب
+  '+213': { length:9,  prefix:'5',  placeholder:'5xxxxxxxx'   },  // الجزائر
+  '+216': { length:8,  prefix:'',   placeholder:'xxxxxxxx'    },  // تونس
+  '+249': { length:9,  prefix:'9',  placeholder:'9xxxxxxxx'   },  // السودان
+  '+1':   { length:10, prefix:'',   placeholder:'xxxxxxxxxx'  },  // أمريكا
+  '+44':  { length:10, prefix:'7',  placeholder:'7xxxxxxxxx'  },  // بريطانيا
+  '+91':  { length:10, prefix:'',   placeholder:'xxxxxxxxxx'  },  // الهند
+  '+92':  { length:10, prefix:'3',  placeholder:'3xxxxxxxxx'  },  // باكستان
+  '+880': { length:10, prefix:'1',  placeholder:'1xxxxxxxxx'  },  // بنغلاديش
+  '+63':  { length:10, prefix:'9',  placeholder:'9xxxxxxxxx'  },  // الفلبين
+}
+
 const PLANS = [
   { v:1,  label:'الأساسية',  price:'149', desc:'فرع · 2 موظفين · 3 موردين',                    color:'#16a34a' },
   { v:3,  label:'المتوسطة',  price:'249', desc:'3 فروع · 10 موظفين · 10 موردين',               color:'#0d9488' },
@@ -101,6 +126,16 @@ function LoginPage() {
 
   async function sendOtp() {
     if (!phone.trim()) { setError('أدخل رقم الجوال أولاً'); return }
+    const rule = PHONE_RULES[countryCode] || { length:10, prefix:'', placeholder:'xxxxxxxxxx' }
+    const cleanPhone = phone.trim().replace(/^0+/, '')
+    if (cleanPhone.length !== rule.length) {
+      setError(`رقم الجوال يجب أن يكون ${rule.length} أرقام لهذه الدولة`)
+      return
+    }
+    if (rule.prefix && !cleanPhone.startsWith(rule.prefix)) {
+      setError(`رقم الجوال يجب أن يبدأ بـ ${rule.prefix} لهذه الدولة`)
+      return
+    }
     setSendingOtp(true); setError('')
     const res = await fetch('/api/send-otp', {
       method: 'POST',
@@ -188,7 +223,8 @@ function LoginPage() {
     setLoading(false)
   }
 
-  const phonePlaceholder = countryCode==='+966'?'5xxxxxxxx':countryCode==='+20'?'1xxxxxxxxx':'xxxxxxxxxx'
+  const phoneRule = PHONE_RULES[countryCode] || { length:10, prefix:'', placeholder:'xxxxxxxxxx' }
+  const phonePlaceholder = phoneRule.placeholder
 
   return (
     <div style={{minHeight:'100vh',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',background:'#ffffff',display:'flex',flexDirection:'column'}}>
@@ -313,6 +349,9 @@ function LoginPage() {
                       <input type="tel" required value={phone} onChange={e=>{setPhone(e.target.value);setOtpSent(false);setOtpVerified(false);setOtp('')}}
                         placeholder={phonePlaceholder} dir="ltr"
                         style={{background:'transparent',border:'none',padding:'12px 14px',fontSize:14,color:'#111827',flex:1,outline:'none',fontFamily:'inherit'}}/>
+                    </div>
+                    <div style={{fontSize:11,color:'#9ca3af',marginTop:4}}>
+                      {PHONE_RULES[countryCode] ? `${PHONE_RULES[countryCode].length} أرقام${PHONE_RULES[countryCode].prefix ? ` · يبدأ بـ ${PHONE_RULES[countryCode].prefix}` : ''}` : ''}
                     </div>
                     {/* زر إرسال OTP */}
                     {!otpVerified && (
