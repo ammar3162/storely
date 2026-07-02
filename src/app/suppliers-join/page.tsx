@@ -11,7 +11,7 @@ const BUSINESS_TYPES = [
 export default function SuppliersJoinPage() {
   const [form, setForm] = useState({
     company_name:'', contact_name:'', phone:'', email:'',
-    business_type:[] as string[], description:'', website:''
+    business_type:[] as string[], description:'', website:'', offer:''
   })
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)

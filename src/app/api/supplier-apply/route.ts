@@ -9,7 +9,7 @@ const sb = () => createClient(
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { company_name, contact_name, phone, email, business_type, description, website } = body
+    const { company_name, contact_name, phone, email, business_type, description, website, offer } = body
 
     if(!company_name||!contact_name||!phone) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
@@ -20,6 +20,7 @@ export async function POST(req: Request) {
       business_type: business_type||[],
       description: description||null,
       website: website||null,
+      offer: offer||null,
       status: 'pending'
     })
 
