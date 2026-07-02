@@ -593,7 +593,7 @@ export default function AdminPage() {
                       </>}
                       <button onClick={()=>deleteSupplierApp(s.id)}
                         style={{padding:'7px 12px',background:'rgba(239,68,68,.1)',color:'#fca5a5',border:'1px solid rgba(239,68,68,.2)',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                        🗑️
+                        حذف
                       </button>
                     </div>
                   </div>
