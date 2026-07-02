@@ -51,6 +51,12 @@ export default function AdminPage() {
     } else { setPassErr(true); setTimeout(()=>setPassErr(false),2000) }
   }
 
+  async function deleteSupplierApp(id: string) {
+    const sb = (await import('@/lib/supabase/client')).createClient()
+    await (sb as any).from('supplier_applications').delete().eq('id', id)
+    loadSupplierApps()
+  }
+
   async function loadSupplierApps() {
     setSuppLoading(true)
     const sb = createClient()
