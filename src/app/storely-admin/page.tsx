@@ -591,6 +591,10 @@ export default function AdminPage() {
                           ❌ رفض
                         </button>
                       </>}
+                      <button onClick={()=>deleteSupplierApp(s.id)}
+                        style={{padding:'7px 12px',background:'rgba(239,68,68,.1)',color:'#fca5a5',border:'1px solid rgba(239,68,68,.2)',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                        🗑️
+                      </button>
                     </div>
                   </div>
                   <div style={{fontSize:10,color:'#475569',marginTop:8}}>{new Date(s.created_at).toLocaleDateString('ar-SA',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
