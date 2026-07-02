@@ -64,6 +64,7 @@ export default function StaffPage() {
   const [showAddProduct, setShowAddProduct] = useState(false)
   const [newProduct, setNewProduct] = useState({name:'',qty:'',unit:'قطعة',category:''})
   const [savingProduct, setSavingProduct] = useState(false)
+  const [invCategory, setInvCategory] = useState<string|null>(null)
 
   const router = useRouter()
   const sb = createClient()
@@ -187,6 +188,9 @@ export default function StaffPage() {
   const searchResults = search.trim() ? products.filter(p=>p.name?.includes(search)||tx(p.name).toLowerCase().includes(search.toLowerCase())) : []
   const categoryProducts = activeCategory ? products.filter(p=>(p.category?.trim()||OTHER_CATEGORY)===activeCategory) : []
   const filteredInventory = products.filter(p=>!invSearch||p.name?.includes(invSearch)||tx(p.name).toLowerCase().includes(invSearch.toLowerCase()))
+  const invCategoriesMap: Record<string,number> = {}
+  products.forEach(p=>{ const c=p.category?.trim()||OTHER_CATEGORY; invCategoriesMap[c]=(invCategoriesMap[c]||0)+1 })
+  const invCategories = Object.keys(invCategoriesMap).sort((a,b)=>{ if(a===OTHER_CATEGORY)return 1; if(b===OTHER_CATEGORY)return -1; return invCategoriesMap[b]-invCategoriesMap[a] })
 
   if(!session) return null
 
