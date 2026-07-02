@@ -7,7 +7,7 @@ import "./globals.css"
 
 export const metadata: Metadata = {
   title: "Storely — نظام إدارة المخزون",
-  description: "نظام إدارة المخزون الاحترافي",
+  description: "نظام إدارة المخزون الاحترافي للمنشآت السعودية",
   manifest: "/manifest.json",
   appleWebApp: { capable:true, statusBarStyle:"default", title:"Storely" },
   icons: {
@@ -16,6 +16,21 @@ export const metadata: Metadata = {
       { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
     ],
     apple: '/apple-touch-icon.png',
+  },
+  openGraph: {
+    title: "Storely — نظام إدارة المخزون",
+    description: "نظام إدارة المخزون الاحترافي للمنشآت السعودية",
+    url: "https://www.storely.dev",
+    siteName: "Storely",
+    images: [{ url: "https://www.storely.dev/icon-192.png", width: 192, height: 192, alt: "Storely" }],
+    locale: "ar_SA",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Storely — نظام إدارة المخزون",
+    description: "نظام إدارة المخزون الاحترافي",
+    images: ["https://www.storely.dev/icon-192.png"],
   },
 }
 
