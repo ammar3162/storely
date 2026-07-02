@@ -376,22 +376,17 @@ export default function SettingsPage() {
                     )}
                   </div>
 
-                  {/* أزرار الترقية */}
-                  <div style={{marginTop:16,display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
-                    {[
-                      {plan:'basic',    label:'الأساسية',  price:'149', color:'#16a34a'},
-                      {plan:'pro',      label:'المتوسطة',  price:'249', color:'#2563eb'},
-                      {plan:'advanced', label:'المتقدمة',  price:'399', color:'#7c3aed'},
-                    ].map(p=>(
-                      <button key={p.plan} onClick={()=>handleUpgrade(p.plan)}
-                        disabled={!!checkoutLoading}
-                        style={{padding:'10px 8px',background:checkoutLoading===p.plan?'#f3f4f6':'white',border:`1.5px solid ${p.color}`,borderRadius:10,cursor:checkoutLoading?'not-allowed':'pointer',fontFamily:'inherit',textAlign:'center',opacity:checkoutLoading&&checkoutLoading!==p.plan?.5:1,transition:'all .15s'}}>
-                        <div style={{fontSize:11,fontWeight:700,color:p.color,marginBottom:2}}>{p.label}</div>
-                        <div style={{fontSize:13,fontWeight:800,color:'#111827'}}>{p.price} ر.س</div>
-                        <div style={{fontSize:9,color:'#6b7280'}}>شهرياً</div>
-                        {checkoutLoading===p.plan&&<div style={{fontSize:9,color:p.color,marginTop:2}}>جاري التحويل...</div>}
-                      </button>
-                    ))}
+                  {/* أزرار الترقية - مؤقتاً عبر واتساب */}
+                  <div style={{marginTop:16,background:'#fffbeb',border:'1.5px solid #fde68a',borderRadius:12,padding:'14px 16px',display:'flex',alignItems:'center',gap:12}}>
+                    <div style={{fontSize:22}}>📲</div>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:700,color:'#92400e',marginBottom:2}}>للترقية تواصل معنا عبر واتساب</div>
+                      <div style={{fontSize:11,color:'#b45309'}}>الأساسية 149 · المتوسطة 249 · المتقدمة 399 ريال/شهر</div>
+                    </div>
+                    <a href="https://wa.me/966594351667?text=أريد الترقية في Storely" target="_blank"
+                      style={{marginRight:'auto',padding:'8px 16px',background:'#16a34a',color:'white',borderRadius:8,fontSize:12,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap'}}>
+                      تواصل معنا
+                    </a>
                   </div>
                 </div>
 
