@@ -6,8 +6,7 @@ const BUSINESS_TYPES = [
   {v:'الكل',icon:'🌟'},
   {v:'مطاعم',icon:'🍔'},{v:'كوفي',icon:'☕'},{v:'مخابز',icon:'🥖'},
   {v:'بقالة',icon:'🛒'},{v:'صيدليات',icon:'💊'},{v:'مستودعات',icon:'🏭'},
-  {v:'متاجر إلكترونية',icon:'🛍️'},{v:'فنادق',icon:'🏨'},
-  {v:'عيادات',icon:'🏥'},{v:'مدارس',icon:'🏫'},
+  {v:'متاجر إلكترونية',icon:'🛍️'},
 ]
 
 export default function MarketplacePage() {
