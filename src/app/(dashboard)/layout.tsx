@@ -142,6 +142,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
     setReady(true)
     if(typeof window !== "undefined" && "serviceWorker" in navigator) {
+      // طلب إذن الإشعارات
+      if(Notification.permission === "default") {
+        Notification.requestPermission()
+      }
       try {
         const reg = await navigator.serviceWorker.register("/sw.js")
         const existing = await reg.pushManager.getSubscription()

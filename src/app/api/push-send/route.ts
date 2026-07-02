@@ -46,3 +46,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
+
+// دالة مساعدة لإرسال Push لمنشأة معينة
+export async function sendPushToOrg(org_id: string, title: string, body: string, url?: string) {
+  try {
+    await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/push-send`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ org_id, title, body, url })
+    })
+  } catch {}
+}
