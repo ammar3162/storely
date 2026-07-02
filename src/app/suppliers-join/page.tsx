@@ -64,12 +64,12 @@ export default function SuppliersJoinPage() {
           <p style={{fontSize:14,color:'rgba(255,255,255,.7)',lineHeight:1.8}}>وصول لآلاف المنشآت السعودية التي تستخدم Storely لإدارة مخزونها</p>
         </div>
 
-        {/* Stats */}
+        {/* Benefits */}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:32}}>
-          {[{n:'500+',l:'منشأة مسجلة'},{n:'14',l:'دولة عربية'},{n:'24/7',l:'دعم فني'}].map((s,i)=>(
+          {[{icon:'🎯',l:'وصول مباشر للعملاء'},{icon:'📦',l:'طلبات منتظمة'},{icon:'🤝',l:'شراكة طويلة الأمد'}].map((s,i)=>(
             <div key={i} style={{background:'rgba(255,255,255,.08)',borderRadius:14,padding:'16px 12px',textAlign:'center',border:'1px solid rgba(255,255,255,.1)'}}>
-              <div style={{fontSize:22,fontWeight:900,color:'#4abe7a'}}>{s.n}</div>
-              <div style={{fontSize:11,color:'rgba(255,255,255,.6)',marginTop:4}}>{s.l}</div>
+              <div style={{fontSize:24,marginBottom:6}}>{s.icon}</div>
+              <div style={{fontSize:11,color:'rgba(255,255,255,.8)',fontWeight:600}}>{s.l}</div>
             </div>
           ))}
         </div>
