@@ -34,7 +34,9 @@ export default function AdminPage() {
   const [selected, setSelected] = useState<User|null>(null)
   const [renewDays, setRenewDays] = useState(30)
   const [confirmDel, setConfirmDel] = useState<User|null>(null)
-  const [tab, setTab]           = useState<'users'|'stats'>('users')
+  const [tab, setTab]           = useState<'users'|'stats'|'suppliers'>('users')
+  const [supplierApps, setSupplierApps] = useState<any[]>([])
+  const [suppLoading, setSuppLoading] = useState(false)
   const sb = createClient()
 
   async function login(e: React.FormEvent) {
@@ -47,6 +49,20 @@ export default function AdminPage() {
       sessionStorage.setItem('storely_admin_pass', pass)
       setAuthed(true); loadUsers()
     } else { setPassErr(true); setTimeout(()=>setPassErr(false),2000) }
+  }
+
+  async function loadSupplierApps() {
+    setSuppLoading(true)
+    const sb = createClient()
+    const { data } = await sb.from('supplier_applications' as any).select('*').order('created_at', {ascending:false})
+    setSupplierApps(data || [])
+    setSuppLoading(false)
+  }
+
+  async function updateSupplierStatus(id: string, status: string) {
+    const sb = createClient()
+    await (sb as any).from('supplier_applications').update({status}).eq('id', id)
+    loadSupplierApps()
   }
 
   async function loadUsers() {
@@ -353,6 +369,9 @@ export default function AdminPage() {
           <a href="/storely-admin/notifications" style={{padding:'7px 14px',background:'#1e293b',color:'#94a3b8',border:'1px solid #334155',borderRadius:9,fontSize:12,fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:6}}>
             🔔 الإشعارات
           </a>
+          <button onClick={()=>{setTab('suppliers');loadSupplierApps()}} style={{padding:'7px 14px',background:tab==='suppliers'?'#16a34a':'#1e293b',color:tab==='suppliers'?'white':'#94a3b8',border:`1px solid ${tab==='suppliers'?'#16a34a':'#334155'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6}}>
+            🤝 طلبات الموردين {supplierApps.filter(s=>s.status==='pending').length>0&&<span style={{background:'#ef4444',color:'white',borderRadius:99,padding:'1px 6px',fontSize:10}}>{supplierApps.filter(s=>s.status==='pending').length}</span>}
+          </button>
           <button onClick={loadUsers} style={{padding:'7px 14px',background:'#1e293b',color:'#94a3b8',border:'1px solid #334155',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6}}>
             ↺ تحديث
           </button>
@@ -520,6 +539,68 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+      {/* ═══ Supplier Applications Tab ═══ */}
+      {tab==='suppliers' && (
+        <div style={{marginTop:20}}>
+          <div style={{fontSize:16,fontWeight:800,color:'white',marginBottom:16}}>🤝 طلبات الشراكة ({supplierApps.length})</div>
+          {suppLoading ? (
+            <div style={{textAlign:'center',padding:40,color:'#94a3b8'}}>جاري التحميل...</div>
+          ) : supplierApps.length===0 ? (
+            <div style={{background:'#1e293b',borderRadius:14,padding:40,textAlign:'center',color:'#64748b'}}>لا توجد طلبات بعد</div>
+          ) : (
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              {supplierApps.map(s=>(
+                <div key={s.id} style={{background:'#1e293b',borderRadius:14,padding:'18px 20px',border:'1px solid #334155'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12}}>
+                    <div style={{flex:1}}>
+                      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+                        <div style={{fontSize:15,fontWeight:800,color:'white'}}>{s.company_name}</div>
+                        <span style={{padding:'2px 10px',borderRadius:99,fontSize:11,fontWeight:700,
+                          background:s.status==='pending'?'rgba(245,158,11,.15)':s.status==='approved'?'rgba(22,163,74,.15)':'rgba(239,68,68,.15)',
+                          color:s.status==='pending'?'#fcd34d':s.status==='approved'?'#4abe7a':'#fca5a5'}}>
+                          {s.status==='pending'?'بانتظار':s.status==='approved'?'✅ موافق':'❌ مرفوض'}
+                        </span>
+                      </div>
+                      <div style={{display:'flex',gap:16,fontSize:12,color:'#94a3b8',marginBottom:8}}>
+                        <span>👤 {s.contact_name}</span>
+                        <span>📱 {s.phone}</span>
+                        {s.email&&<span>📧 {s.email}</span>}
+                        {s.website&&<a href={s.website} target="_blank" style={{color:'#60a5fa',textDecoration:'none'}}>🌐 الموقع</a>}
+                      </div>
+                      {s.business_type?.length>0&&(
+                        <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:8}}>
+                          {s.business_type.map((t:string)=>(
+                            <span key={t} style={{background:'rgba(255,255,255,.06)',padding:'2px 8px',borderRadius:6,fontSize:11,color:'#94a3b8'}}>{t}</span>
+                          ))}
+                        </div>
+                      )}
+                      {s.description&&<div style={{fontSize:12,color:'#64748b',marginTop:4}}>{s.description}</div>}
+                    </div>
+                    <div style={{display:'flex',gap:6,flexShrink:0}}>
+                      <a href={`https://wa.me/${s.phone.replace(/[^0-9]/g,'')}`} target="_blank"
+                        style={{padding:'7px 12px',background:'rgba(22,163,74,.15)',color:'#4abe7a',border:'1px solid rgba(22,163,74,.2)',borderRadius:8,fontSize:12,fontWeight:700,textDecoration:'none'}}>
+                        📲 واتساب
+                      </a>
+                      {s.status==='pending'&&<>
+                        <button onClick={()=>updateSupplierStatus(s.id,'approved')}
+                          style={{padding:'7px 12px',background:'rgba(22,163,74,.15)',color:'#4abe7a',border:'1px solid rgba(22,163,74,.2)',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                          ✅ موافقة
+                        </button>
+                        <button onClick={()=>updateSupplierStatus(s.id,'rejected')}
+                          style={{padding:'7px 12px',background:'rgba(239,68,68,.1)',color:'#fca5a5',border:'1px solid rgba(239,68,68,.2)',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                          ❌ رفض
+                        </button>
+                      </>}
+                    </div>
+                  </div>
+                  <div style={{fontSize:10,color:'#475569',marginTop:8}}>{new Date(s.created_at).toLocaleDateString('ar-SA',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
     </div>
   )
 }
