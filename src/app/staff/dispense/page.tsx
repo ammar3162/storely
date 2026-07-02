@@ -342,28 +342,24 @@ export default function StaffPage() {
           </div>
           <input value={invSearch} onChange={e=>setInvSearch(e.target.value)} placeholder="🔍 ابحث عن منتج..."
             style={{width:'100%',padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:14,background:'white',fontFamily:'inherit',marginBottom:14,boxSizing:'border-box' as const}}/>
-          <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            {filteredInventory.map(p=>(
-              <div key={p.id} className="card" style={{padding:'14px 16px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                <div>
-                  <div style={{fontSize:14,fontWeight:700,color:'#0f172a'}}>{tx(p.name)}</div>
-                  <div style={{fontSize:11,color:'#64748b',marginTop:2}}>{p.category||'—'}</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            {filteredInventory.length===0 ? (
+              <div className="card" style={{padding:40,textAlign:'center',color:'#94a3b8',gridColumn:'span 2'}}>لا توجد منتجات</div>
+            ) : filteredInventory.map(p=>(
+              <div key={p.id} className="card" style={{padding:'16px',display:'flex',flexDirection:'column' as const,gap:6}}>
+                <div style={{fontSize:14,fontWeight:700,color:'#0f172a',lineHeight:1.3}}>{tx(p.name)}</div>
+                <div style={{fontSize:11,color:'#64748b'}}>{p.category||'—'}</div>
+                <div style={{display:'flex',alignItems:'baseline',gap:4,margin:'4px 0'}}>
+                  <span style={{fontSize:30,fontWeight:900,color:p.qty<=p.reorder_point?'#ef4444':'#16a34a',lineHeight:1}}>{p.qty}</span>
+                  <span style={{fontSize:12,color:'#94a3b8'}}>{p.unit}</span>
                 </div>
-                <div style={{display:'flex',alignItems:'center',gap:10}}>
-                  <div style={{textAlign:'center'}}>
-                    <div style={{fontSize:20,fontWeight:900,color:p.qty<=p.reorder_point?'#ef4444':'#16a34a',lineHeight:1}}>{p.qty}</div>
-                    <div style={{fontSize:10,color:'#94a3b8'}}>{p.unit}</div>
-                  </div>
-                  <button onClick={()=>{setEditingProduct(p);setEditQty(String(p.qty))}}
-                    style={{padding:'7px 14px',background:'#f0fdf4',color:'#16a34a',border:'1.5px solid #bbf7d0',borderRadius:10,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                    تعديل
-                  </button>
-                </div>
+                {p.qty<=p.reorder_point && <div style={{fontSize:10,color:'#ef4444',fontWeight:700}}>⚠️ مخزون منخفض</div>}
+                <button onClick={()=>{setEditingProduct(p);setEditQty(String(p.qty))}}
+                  style={{width:'100%',padding:'8px',background:'#f0fdf4',color:'#16a34a',border:'1.5px solid #bbf7d0',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginTop:'auto'}}>
+                  ✏️ تعديل
+                </button>
               </div>
             ))}
-            {filteredInventory.length===0 && (
-              <div className="card" style={{padding:40,textAlign:'center',color:'#94a3b8'}}>لا توجد منتجات</div>
-            )}
           </div>
         </div>
       )}
