@@ -67,7 +67,12 @@ export default function AdminPage() {
 
   async function updateSupplierStatus(id: string, status: string) {
     const sb = createClient()
-    await (sb as any).from('supplier_applications').update({status}).eq('id', id)
+    if(status==='rejected') {
+      // عند الرفض احذفه مباشرة
+      await (sb as any).from('supplier_applications').delete().eq('id', id)
+    } else {
+      await (sb as any).from('supplier_applications').update({status}).eq('id', id)
+    }
     loadSupplierApps()
   }
 
