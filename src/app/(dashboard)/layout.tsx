@@ -142,11 +142,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
     setReady(true)
     // polling للإشعارات كل 30 ثانية
-    const notifInterval = setInterval(async()=>{
-      const{data:notifData}=await sb.from('notifications').select('id').eq('org_id',p.org_id).eq('read',false)
-      setUnread(notifData?.length||0)
-    }, 30000)
-    return ()=>clearInterval(notifInterval)
+    const orgId = p?.org_id
+    if(orgId){
+      const notifInterval = setInterval(async()=>{
+        const{data:notifData}=await sb.from('notifications').select('id').eq('org_id',orgId).eq('read',false)
+        setUnread(notifData?.length||0)
+      }, 30000)
+    }
     const[{data:prods},{data:notifs}]=await Promise.all([
       sb.from('products').select('qty,reorder_point').eq('org_id',p.org_id).eq('is_active',true),
       sb.from('notifications').select('id').eq('org_id',p.org_id).eq('read',false),
