@@ -258,7 +258,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           @media(min-width:768px){
             .desk-layout{display:flex;min-height:100vh}
             .mob-layout{display:none}
-            .desk-sidebar{display:flex;flex-direction:column;width:220px;position:fixed;top:0;right:0;bottom:0;background:#0d2818;z-index:100;border-left:1px solid rgba(255,255,255,.06)}
+            .desk-sidebar{display:flex;flex-direction:column;width:220px;position:fixed;top:0;right:0;bottom:0;background:#0d2818;z-index:100;border-left:1px solid rgba(255,255,255,.06)}.desk-topbar{display:flex}
             .desk-content{flex:1;margin-right:220px;padding:20px 20px;min-height:100vh;width:calc(100vw - 220px);max-width:calc(100vw - 220px)}
           }
         `}</style>
@@ -383,8 +383,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 
 
+          {/* Top bar */}
+          <div className="desk-topbar" style={{position:'fixed',top:0,right:220,left:0,zIndex:99,background:'white',borderBottom:'1px solid #f0f0ee',padding:'0 24px',height:52,alignItems:'center',justifyContent:'space-between'}}>
+            <div style={{fontSize:13,color:'#94a3b8',fontWeight:500}}>مرحباً، {userName} 👋</div>
+            <div style={{display:'flex',alignItems:'center',gap:4}}>
+              <button onClick={()=>router.push('/notifications')} style={{position:'relative',width:36,height:36,borderRadius:10,background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'background .15s'}}
+                onMouseEnter={e=>(e.currentTarget.style.background='#f5f5f4')} onMouseLeave={e=>(e.currentTarget.style.background='none')}>
+                <Icon d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" size={18} stroke="#64748b" width={2}/>
+                {unread>0&&<span style={{position:'absolute',top:5,right:5,width:7,height:7,background:'#ef4444',borderRadius:'50%',border:'2px solid white'}}/>}
+              </button>
+              <button onClick={()=>router.push('/settings')} style={{width:36,height:36,borderRadius:10,background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'background .15s'}}
+                onMouseEnter={e=>(e.currentTarget.style.background='#f5f5f4')} onMouseLeave={e=>(e.currentTarget.style.background='none')}>
+                <Icon d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" size={18} stroke="#64748b" width={2}/>
+              </button>
+              <button onClick={()=>window.open('https://wa.me/966500000000','_blank')} style={{width:36,height:36,borderRadius:10,background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'background .15s'}}
+                onMouseEnter={e=>(e.currentTarget.style.background='#f5f5f4')} onMouseLeave={e=>(e.currentTarget.style.background='none')}>
+                <Icon d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" size={18} stroke="#64748b" width={2}/>
+              </button>
+            </div>
+          </div>
+
           {/* Desktop Content */}
-          <main className="desk-content">
+          <main className="desk-content" style={{paddingTop:52}}>
             {ready ? children : (
               <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'60vh'}}>
                 <div style={{width:32,height:32,border:`3px solid #e5e7eb`,borderTopColor:C.primary,borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
