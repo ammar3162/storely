@@ -141,6 +141,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
     }
     setReady(true)
+    if(typeof window !== "undefined" && "serviceWorker" in navigator) {
+      try {
+        const reg = await navigator.serviceWorker.register("/sw.js")
+        const existing = await reg.pushManager.getSubscription()
+        if(!existing) {
+          const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+          })
+          await fetch("/api/push-subscribe", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ subscription: sub, org_id: p?.org_id })
+          })
+        }
+      } catch(e) { console.log("Push:", e) }
+    }
     // polling للإشعارات كل 30 ثانية
     const orgId = p?.org_id
     if(orgId){
