@@ -224,7 +224,7 @@ export default function StaffPage() {
       )}
 
       {/* Header */}
-      <div style={{background:'linear-gradient(135deg,#0d2818,#1a4731)',padding:'0',position:'sticky',top:0,zIndex:100,boxShadow:'0 4px 20px rgba(0,0,0,.2)'}}>
+      <div style={{background:'linear-gradient(135deg,#15803d,#16a34a)',padding:'0',position:'sticky',top:0,zIndex:100,boxShadow:'0 4px 20px rgba(0,0,0,.2)'}}>
         {/* Top bar */}
         <div style={{padding:'14px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
