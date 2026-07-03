@@ -51,7 +51,7 @@ export async function POST(req: Request) {
         return { name, unit, purchased: qty, dispensed, currentStock, ratio, risk }
       })
       .filter(p=>p.purchased>0 && p.ratio<30 && p.purchased>2)
-      .sort((a,b)=>({high:0,medium:1,low:2}[a.risk]-{high:0,medium:1,low:2}[b.risk]||a.ratio-b.ratio))
+      .sort((a,b)=>{ const r:Record<string,number>={high:0,medium:1,low:2}; return (r[a.risk]||0)-(r[b.risk]||0)||a.ratio-b.ratio })
       .slice(0,10)
 
     return NextResponse.json({ waste })
