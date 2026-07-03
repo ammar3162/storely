@@ -9,17 +9,25 @@ export async function POST(req: Request) {
     const db = sb()
     const since30 = new Date(Date.now() - 30*24*60*60*1000).toISOString()
 
-    const [{ data: purchases }, { data: movements }] = await Promise.all([
+    const [{ data: purchases }, { data: inMovements }, { data: movements }] = await Promise.all([
       db.from('purchases').select('name,qty,unit').eq('org_id',org_id).gte('created_at',since30).eq('category','مخزون'),
+      db.from('stock_movements').select('qty_change,products!inner(name,unit,org_id)').eq('products.org_id',org_id).eq('type','in').gte('created_at',since30),
       db.from('stock_movements').select('qty_change,products!inner(name,unit,org_id)').eq('products.org_id',org_id).eq('type','out').gte('created_at',since30)
     ])
 
-    // حساب ما تم شراؤه
+    // حساب ما تم شراؤه + الإضافة اليدوية
     const purchaseMap: Record<string,{qty:number,unit:string}> = {}
     for(const p of (purchases||[])) {
       if(!p.name) continue
       if(!purchaseMap[p.name]) purchaseMap[p.name] = {qty:0,unit:p.unit||''}
       purchaseMap[p.name].qty += Number(p.qty)||0
+    }
+    // أضف حركات الإدخال من stock_movements
+    for(const m of (inMovements||[])) {
+      const p = m.products as any
+      if(!p) continue
+      if(!purchaseMap[p.name]) purchaseMap[p.name] = {qty:0,unit:p.unit||''}
+      purchaseMap[p.name].qty += Math.abs(m.qty_change)
     }
 
     // حساب ما تم صرفه
