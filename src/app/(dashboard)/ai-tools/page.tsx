@@ -35,6 +35,8 @@ export default function AIToolsPage() {
   const [weeklyReport, setWeeklyReport] = useState<any>(null)
   const [wasteReport, setWasteReport] = useState<any[]>([])
   const [wasteLoading, setWasteLoading] = useState(false)
+  const [forecast, setForecast] = useState<any[]>([])
+  const [forecastLoading, setForecastLoading] = useState(false)
   const [reportLoading, setReportLoading] = useState(false)
   const router = useRouter()
   const [visible] = useState(true)
@@ -86,6 +88,74 @@ export default function AIToolsPage() {
             </button>
           </div>
         ))}
+      </div>
+
+      {/* توقع نفاد المخزون */}
+      <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <div>
+            <div style={{fontSize:14,fontWeight:800,color:C.text}}>🔮 توقع نفاد المخزون</div>
+            <div style={{fontSize:11,color:C.text3,marginTop:2}}>يحسب متى سينفد كل منتج بناءً على معدل الصرف</div>
+          </div>
+          <button onClick={async()=>{
+            const orgId=sessionStorage.getItem('s_org_id')
+            if(!orgId) return
+            setForecastLoading(true)
+            const res=await fetch('/api/stock-forecast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId})})
+            const data=await res.json()
+            setForecast(data.forecast||[])
+            setForecastLoading(false)
+          }} style={{padding:'8px 16px',background:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+            {forecastLoading?'⏳ جاري...':'تحليل المخزون'}
+          </button>
+        </div>
+
+        {forecast.length>0 && (
+          <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:12}}>
+            {forecast.map((p:any,i:number)=>(
+              <div key={i} style={{padding:'12px 14px',borderRadius:10,background:
+                p.status==='critical'?'#fef2f2':
+                p.status==='warning'?'#fffbeb':
+                p.status==='watch'?'#eff6ff':'#f0fdf4',
+                border:`1px solid ${
+                  p.status==='critical'?'#fecaca':
+                  p.status==='warning'?'#fde68a':
+                  p.status==='watch'?'#bfdbfe':'#bbf7d0'}`}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                  <div style={{fontSize:13,fontWeight:800,color:C.text}}>{p.name}</div>
+                  <span style={{fontSize:11,fontWeight:700,padding:'2px 10px',borderRadius:99,background:
+                    p.status==='critical'?'#fee2e2':
+                    p.status==='warning'?'#fde68a':
+                    p.status==='watch'?'#bfdbfe':'#bbf7d0',
+                    color:
+                    p.status==='critical'?'#dc2626':
+                    p.status==='warning'?'#d97706':
+                    p.status==='watch'?'#2563eb':'#16a34a'}}>
+                    {p.status==='critical'?'🔴 حرج':p.status==='warning'?'🟡 تحذير':p.status==='watch'?'🔵 مراقبة':'🟢 آمن'}
+                  </span>
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,textAlign:'center'}}>
+                  <div style={{background:'white',borderRadius:6,padding:'6px'}}>
+                    <div style={{fontSize:14,fontWeight:900,color:C.text}}>{p.currentQty} {p.unit}</div>
+                    <div style={{fontSize:9,color:C.text4}}>المخزون الحالي</div>
+                  </div>
+                  <div style={{background:'white',borderRadius:6,padding:'6px'}}>
+                    <div style={{fontSize:14,fontWeight:900,color:C.primary}}>{p.dailyRate} {p.unit}</div>
+                    <div style={{fontSize:9,color:C.text4}}>معدل الصرف/يوم</div>
+                  </div>
+                  <div style={{background:'white',borderRadius:6,padding:'6px'}}>
+                    <div style={{fontSize:14,fontWeight:900,color:
+                      p.status==='critical'?'#dc2626':
+                      p.status==='warning'?'#d97706':'#16a34a'}}>
+                      {p.daysLeft===null?'∞':p.daysLeft+' يوم'}
+                    </div>
+                    <div style={{fontSize:9,color:C.text4}}>وقت النفاد</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Coming soon */}
