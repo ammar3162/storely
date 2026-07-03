@@ -142,7 +142,7 @@ export default function AIToolsPage() {
               <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'#fffbeb',borderRadius:10,border:'1px solid #fde68a'}}>
                 <div>
                   <div style={{fontSize:13,fontWeight:700,color:'#92400e'}}>{p.name}</div>
-                  <div style={{fontSize:11,color:'#b45309',marginTop:2}}>اشتريت: {p.purchased} · صرفت: {p.dispensed} · {p.unit}</div>
+                  <div style={{fontSize:11,color:'#b45309',marginTop:2}}>أُضيف: {p.added} · صرفت: {p.dispensed} · {p.unit}</div>
                 </div>
                 <div style={{textAlign:'center'}}>
                   <div style={{fontSize:16,fontWeight:900,color:'#d97706'}}>{p.ratio}%</div>
