@@ -563,6 +563,7 @@ function RecentOpsSection({ recentOps, colors }: { recentOps:any[]; colors:any }
   )
 }
 
+
 export default function ReportsPage() {
   const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'>('home')
   const [period, setPeriod]       = useState<FilterPeriod>('month')
@@ -576,6 +577,7 @@ export default function ReportsPage() {
   const [weeklyP, setWP]          = useState<number[]>([])
   const [visible, setVisible]     = useState(false)
   const [recentOps, setRecentOps] = useState<any[]>([])
+  const [topMovements, setTopMovements] = useState<any[]>([])
   const sb = createClient()
 
   useEffect(()=>{ loadStats() },[period,from,to])
@@ -599,6 +601,7 @@ export default function ReportsPage() {
       wp.push((pu||[]).filter((p:any)=>new Date(p.created_at).toDateString()===ds).length)
     }
     setWD(wd); setWP(wp)
+    setTopMovements(mv||[])
     const{data:inv}=await sb.from('products').select('qty,reorder_point').eq('org_id',orgId).eq('is_active',true)
     const invData=inv||[]
     setIS({total:invData.length,low:invData.filter((p:any)=>p.qty>0&&p.qty<=p.reorder_point).length,out:invData.filter((p:any)=>p.qty===0).length})
@@ -711,6 +714,76 @@ export default function ReportsPage() {
           />
         </div>
       </div>
+
+      {/* أكثر المنتجات صرفاً */}
+
+
+      {/* أكثر المنتجات صرفاً ومقارنة الأشهر */}
+      {(()=>{
+        const productMap: Record<string,{name:string,qty:number,unit:string}> = {}
+        topMovements.filter((m:any)=>m.type==='out').forEach((m:any)=>{
+          const name = (m.products as any)?.name||'—'
+          const unit = (m.products as any)?.unit||''
+          if(!productMap[name]) productMap[name]={name,qty:0,unit}
+          productMap[name].qty += Math.abs(m.qty_change||0)
+        })
+        const top = Object.values(productMap).sort((a,b)=>b.qty-a.qty).slice(0,8)
+        const maxVal = Math.max(...top.map(p=>p.qty),1)
+        if(top.length===0) return null
+        return (
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20}}>
+            <div style={{...card,padding:'20px 24px'}}>
+              <div style={{fontSize:font.md,fontWeight:900,color:colors.text,marginBottom:4}}>🔥 أكثر المنتجات صرفاً</div>
+              <div style={{fontSize:font.xs,color:colors.text3,marginBottom:16}}>الفترة المحددة</div>
+              <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                {top.map((p,i)=>(
+                  <div key={i}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+                      <div style={{display:'flex',alignItems:'center',gap:8}}>
+                        <span style={{fontSize:11,fontWeight:800,color:i<3?colors.primary:colors.text4,width:18}}>{i+1}</span>
+                        <span style={{fontSize:12,fontWeight:700,color:colors.text}}>{p.name}</span>
+                      </div>
+                      <span style={{fontSize:12,fontWeight:800,color:colors.primary}}>{p.qty} {p.unit}</span>
+                    </div>
+                    <div style={{height:6,background:colors.border,borderRadius:99,overflow:'hidden'}}>
+                      <div style={{height:'100%',width:`${(p.qty/maxVal)*100}%`,background:i===0?colors.primary:i===1?'#2563eb':i===2?'#7c3aed':colors.border2,borderRadius:99}}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{...card,padding:'20px 24px'}}>
+              <div style={{fontSize:font.md,fontWeight:900,color:colors.text,marginBottom:4}}>📊 الصرف الشهري</div>
+              <div style={{fontSize:font.xs,color:colors.text3,marginBottom:16}}>توزيع الكميات</div>
+              <div style={{display:'flex',alignItems:'flex-end',gap:6,height:120}}>
+                {(()=>{
+                  const monthMap: Record<string,number> = {}
+                  topMovements.filter((m:any)=>m.type==='out').forEach((m:any)=>{
+                    const d=new Date(m.created_at)
+                    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
+                    monthMap[key]=(monthMap[key]||0)+Math.abs(m.qty_change||0)
+                  })
+                  const months=Object.entries(monthMap).sort((a,b)=>a[0].localeCompare(b[0])).slice(-6)
+                  const maxM=Math.max(...months.map(m=>m[1]),1)
+                  return months.map(([key,val],i)=>{
+                    const [y,m]=key.split('-')
+                    const mn=new Date(Number(y),Number(m)-1).toLocaleDateString('ar-SA',{month:'short'})
+                    return (
+                      <div key={key} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+                        <span style={{fontSize:9,color:colors.text4,fontWeight:700}}>{val}</span>
+                        <div style={{width:'100%',background:colors.border,borderRadius:'6px 6px 0 0',height:90,display:'flex',alignItems:'flex-end',overflow:'hidden'}}>
+                          <div style={{width:'100%',background:i===months.length-1?colors.primary:`${colors.primary}66`,height:`${Math.max((val/maxM)*100,4)}%`,borderRadius:'6px 6px 0 0'}}/>
+                        </div>
+                        <span style={{fontSize:9,color:colors.text4}}>{mn}</span>
+                      </div>
+                    )
+                  })
+                })()}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* آخر العمليات — 3 أقسام */}
       <RecentOpsSection recentOps={recentOps} colors={colors}/>
