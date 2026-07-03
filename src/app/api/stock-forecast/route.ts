@@ -16,55 +16,79 @@ export async function POST(req: Request) {
         .eq('products.org_id',org_id)
         .eq('type','out')
         .gte('created_at',since90)
+        .order('created_at',{ascending:true})
     ])
 
-    // احسب معدل الصرف بناءً على الأيام الفعلية
-    const dispMap: Record<string,{total:number,firstDate:Date,lastDate:Date}> = {}
+    // نجمع الحركات حسب المنتج مع التواريخ
+    const movMap: Record<string,{dates:Date[],qtys:number[]}> = {}
     for(const m of (movements||[])) {
       const name = (m.products as any)?.name
       if(!name) continue
-      const d = new Date(m.created_at)
-      if(!dispMap[name]) dispMap[name] = {total:0,firstDate:d,lastDate:d}
-      dispMap[name].total += Math.abs(m.qty_change)
-      if(d < dispMap[name].firstDate) dispMap[name].firstDate = d
-      if(d > dispMap[name].lastDate) dispMap[name].lastDate = d
+      if(!movMap[name]) movMap[name] = {dates:[],qtys:[]}
+      movMap[name].dates.push(new Date(m.created_at))
+      movMap[name].qtys.push(Math.abs(m.qty_change))
     }
 
-    const forecast = (products||[])
-      .map(p=>{
-        const data = dispMap[p.name]
-        if(!data) return null
-        // عدد الأيام الفعلية بين أول وآخر صرف (minimum 1 يوم)
-        const daysDiff = Math.max(
-          Math.ceil((data.lastDate.getTime()-data.firstDate.getTime())/(1000*60*60*24)),
-          1
-        )
-        const dailyRate = data.total/daysDiff
-        const daysLeft = dailyRate>0 ? Math.floor(p.qty/dailyRate) : null
-        const weeklyNeed = Math.ceil(dailyRate*7)
-        
-        let status = 'safe'
-        if(daysLeft !== null) {
-          if(daysLeft <= 3) status = 'critical'
-          else if(daysLeft <= 7) status = 'warning'
-          else if(daysLeft <= 14) status = 'watch'
-        }
+    const forecast = (products||[]).map(p=>{
+      const data = movMap[p.name]
+      if(!data || data.dates.length === 0) return null
 
-        return {
-          name: p.name,
-          unit: p.unit,
-          currentQty: p.qty,
-          dailyRate: parseFloat(dailyRate.toFixed(2)),
-          daysLeft,
-          weeklyNeed,
-          status
-        }
-      })
-      .filter(p=>p!==null && p.dailyRate>0)
-      .filter((p:any)=>p!==null).sort((a:any,b:any)=>{
-        const s:Record<string,number>={critical:0,warning:1,watch:2,safe:3}
-        return (s[a.status]||0)-(s[b.status]||0)||(a.daysLeft||999)-(b.daysLeft||999)
-      })
+      const totalQty = data.qtys.reduce((s,q)=>s+q,0)
+      const dispenseCount = data.dates.length // عدد مرات الصرف
+
+      // متوسط الكمية لكل مرة صرف
+      const avgQtyPerDispense = totalQty / dispenseCount
+
+      // متوسط الفترة بين كل صرفة (بالأيام)
+      let avgDaysBetween = 1
+      if(data.dates.length > 1) {
+        const firstDate = data.dates[0]
+        const lastDate = data.dates[data.dates.length-1]
+        const totalDays = (lastDate.getTime()-firstDate.getTime())/(1000*60*60*24)
+        avgDaysBetween = Math.max(totalDays/(data.dates.length-1), 0.5)
+      } else {
+        // صرفة واحدة فقط — نفترض نفس الفترة من آخر صرف لليوم
+        const daysSinceLast = (new Date().getTime()-data.dates[0].getTime())/(1000*60*60*24)
+        avgDaysBetween = Math.max(daysSinceLast, 1)
+      }
+
+      // معدل الصرف اليومي الحقيقي
+      const dailyRate = avgQtyPerDispense / avgDaysBetween
+
+      // عدد الأيام قبل النفاد
+      const daysLeft = dailyRate > 0 ? Math.floor(p.qty / dailyRate) : null
+
+      // عدد الصرفات المتبقية
+      const dispensesLeft = avgQtyPerDispense > 0 ? Math.floor(p.qty / avgQtyPerDispense) : null
+
+      // الحالة بناءً على الأيام المتبقية والنقطة الحرجة
+      let status = 'safe'
+      if(p.qty <= p.reorder_point) status = 'critical'
+      else if(daysLeft !== null && daysLeft <= 3) status = 'critical'
+      else if(p.qty <= p.reorder_point*2) status = 'warning'
+      else if(daysLeft !== null && daysLeft <= 7) status = 'warning'
+      else if(p.qty <= p.reorder_point*3) status = 'watch'
+      else if(daysLeft !== null && daysLeft <= 14) status = 'watch'
+
+      return {
+        name: p.name,
+        unit: p.unit,
+        currentQty: p.qty,
+        reorderPoint: p.reorder_point,
+        dailyRate: parseFloat(dailyRate.toFixed(2)),
+        avgQtyPerDispense: parseFloat(avgQtyPerDispense.toFixed(1)),
+        avgDaysBetween: parseFloat(avgDaysBetween.toFixed(1)),
+        daysLeft,
+        dispensesLeft,
+        dispenseCount,
+        status
+      }
+    })
+    .filter((p): p is NonNullable<typeof p> => p !== null && p.dailyRate > 0)
+    .sort((a,b)=>{
+      const s:Record<string,number>={critical:0,warning:1,watch:2,safe:3}
+      return (s[a.status]||0)-(s[b.status]||0)||(a.daysLeft||999)-(b.daysLeft||999)
+    })
 
     return NextResponse.json({ forecast })
   } catch(err:any) {

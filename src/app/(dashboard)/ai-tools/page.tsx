@@ -140,19 +140,21 @@ export default function AIToolsPage() {
                     {p.status==='critical'?'🔴 حرج':p.status==='warning'?'🟡 تحذير':p.status==='watch'?'🔵 مراقبة':'🟢 آمن'}
                   </span>
                 </div>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,textAlign:'center'}}>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,textAlign:'center'}}>
                   <div style={{background:'white',borderRadius:6,padding:'6px'}}>
-                    <div style={{fontSize:14,fontWeight:900,color:C.text}}>{p.currentQty} {p.unit}</div>
-                    <div style={{fontSize:9,color:C.text4}}>المخزون الحالي</div>
+                    <div style={{fontSize:13,fontWeight:900,color:C.text}}>{p.currentQty} {p.unit}</div>
+                    <div style={{fontSize:9,color:C.text4}}>المخزون</div>
                   </div>
                   <div style={{background:'white',borderRadius:6,padding:'6px'}}>
-                    <div style={{fontSize:14,fontWeight:900,color:C.primary}}>{p.dailyRate} {p.unit}</div>
-                    <div style={{fontSize:9,color:C.text4}}>متوسط الكمية/يوم</div>
+                    <div style={{fontSize:13,fontWeight:900,color:'#7c3aed'}}>{p.avgQtyPerDispense} {p.unit}</div>
+                    <div style={{fontSize:9,color:C.text4}}>كمية الصرفة</div>
                   </div>
                   <div style={{background:'white',borderRadius:6,padding:'6px'}}>
-                    <div style={{fontSize:14,fontWeight:900,color:
-                      p.status==='critical'?'#dc2626':
-                      p.status==='warning'?'#d97706':'#16a34a'}}>
+                    <div style={{fontSize:13,fontWeight:900,color:'#2563eb'}}>كل {p.avgDaysBetween} يوم</div>
+                    <div style={{fontSize:9,color:C.text4}}>تكرار الصرف</div>
+                  </div>
+                  <div style={{background:p.status==='critical'?'#fee2e2':p.status==='warning'?'#fef3c7':'#f0fdf4',borderRadius:6,padding:'6px'}}>
+                    <div style={{fontSize:13,fontWeight:900,color:p.status==='critical'?'#dc2626':p.status==='warning'?'#d97706':'#16a34a'}}>
                       {p.daysLeft===null?'∞':p.daysLeft+' يوم'}
                     </div>
                     <div style={{fontSize:9,color:C.text4}}>وقت النفاد</div>
