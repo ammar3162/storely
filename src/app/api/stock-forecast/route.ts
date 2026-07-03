@@ -61,7 +61,7 @@ export async function POST(req: Request) {
         }
       })
       .filter(p=>p!==null && p.dailyRate>0)
-      .sort((a,b)=>{
+      .filter((p:any)=>p!==null).sort((a:any,b:any)=>{
         const s:Record<string,number>={critical:0,warning:1,watch:2,safe:3}
         return (s[a.status]||0)-(s[b.status]||0)||(a.daysLeft||999)-(b.daysLeft||999)
       })
