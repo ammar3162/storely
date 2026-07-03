@@ -9,7 +9,6 @@ export async function POST(req: Request) {
     const db = sb()
     const since30 = new Date(Date.now() - 30*24*60*60*1000).toISOString()
 
-    // جيب كل حركات المخزون خلال 30 يوم
     const [{ data: allMov }, { data: products }] = await Promise.all([
       db.from('stock_movements')
         .select('qty_change,type,created_at,products!inner(id,name,unit,org_id)')
@@ -21,13 +20,11 @@ export async function POST(req: Request) {
         .eq('is_active', true),
     ])
 
-    // المخزون الحالي (آخر المدة)
     const currentStock: Record<string,{qty:number,unit:string}> = {}
     for(const p of (products||[])) {
       currentStock[p.name] = {qty:p.qty, unit:p.unit}
     }
 
-    // احسب الإضافات والصرف خلال 30 يوم
     const movMap: Record<string,{name:string,unit:string,added:number,dispensed:number}> = {}
     for(const m of (allMov||[])) {
       const p = m.products as any
@@ -37,37 +34,37 @@ export async function POST(req: Request) {
       if(m.type==='out') movMap[p.name].dispensed += Math.abs(m.qty_change)
     }
 
-    // المعادلة المحاسبية:
-    // مخزون أول المدة = مخزون الحالي - ما أُضيف + ما صُرف
-    // الهدر = مخزون أول المدة + ما أُضيف - ما صُرف - مخزون الحالي
     const waste = Object.entries(movMap)
       .map(([name,{unit,added,dispensed}])=>{
         const endStock = currentStock[name]?.qty || 0
-        const startStock = endStock - added + dispensed
-        const expectedEnd = startStock + added - dispensed
-        const waste_qty = endStock - expectedEnd // سالب = هدر
-        const theoretical = startStock + added
-        const wastePercent = theoretical > 0 ? Math.round((Math.abs(waste_qty)/theoretical)*100) : 0
+        const startStock = Math.max(endStock - added + dispensed, 0)
+        const usageRatio = added > 0 ? Math.round((dispensed/added)*100) : 0
         
-        // الهدر الحقيقي = ما يُفسر بالصرف أو الإضافة
-        const risk: string = wastePercent > 20 ? 'high' : wastePercent > 10 ? 'medium' : 'low'
+        // نوع الهدر
+        let wasteType = ''
+        let risk = 'low'
         
+        if(dispensed === 0 && added > 0) {
+          wasteType = 'مخزون ميت — لم يُصرف منه شيء'
+          risk = added > 20 ? 'high' : 'medium'
+        } else if(usageRatio < 20 && added > 5) {
+          wasteType = 'استخدام منخفض جداً'
+          risk = usageRatio < 10 ? 'high' : 'medium'
+        } else if(usageRatio < 40 && added > 10) {
+          wasteType = 'استخدام أقل من المتوقع'
+          risk = 'low'
+        }
+
         return {
-          name, unit,
-          startStock: Math.max(startStock, 0),
-          added,
-          dispensed,
-          endStock,
-          expectedEnd: Math.max(expectedEnd, 0),
-          waste_qty: Math.abs(Math.min(waste_qty, 0)),
-          wastePercent,
-          risk
+          name, unit, startStock, added, dispensed, endStock,
+          usageRatio, wasteType, risk,
+          wasteQty: added - dispensed
         }
       })
-      .filter(p=>(p.added > 0 || p.dispensed > 0) && p.waste_qty > 0 && p.wastePercent > 5)
+      .filter(p => p.wasteType !== '' && p.added > 2)
       .sort((a,b)=>{ 
         const r:Record<string,number>={high:0,medium:1,low:2}
-        return (r[a.risk]||0)-(r[b.risk]||0) || b.wastePercent-a.wastePercent 
+        return (r[a.risk]||0)-(r[b.risk]||0) || b.wasteQty-a.wasteQty
       })
       .slice(0,10)
 
