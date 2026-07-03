@@ -37,6 +37,8 @@ export default function AIToolsPage() {
   const [wasteLoading, setWasteLoading] = useState(false)
   const [forecast, setForecast] = useState<any[]>([])
   const [forecastLoading, setForecastLoading] = useState(false)
+  const [suggestions, setSuggestions] = useState<any[]>([])
+  const [suggestLoading, setSuggestLoading] = useState(false)
   const [reportLoading, setReportLoading] = useState(false)
   const router = useRouter()
   const [visible] = useState(true)
@@ -154,6 +156,57 @@ export default function AIToolsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* اقتراح كميات الشراء */}
+      <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <div>
+            <div style={{fontSize:14,fontWeight:800,color:C.text}}>🛒 اقتراح كميات الشراء</div>
+            <div style={{fontSize:11,color:C.text3,marginTop:2}}>بناءً على معدل الاستهلاك يقترح كم تشتري</div>
+          </div>
+          <button onClick={async()=>{
+            const orgId=sessionStorage.getItem('s_org_id')
+            if(!orgId) return
+            setSuggestLoading(true)
+            const res=await fetch('/api/purchase-suggestion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId})})
+            const data=await res.json()
+            setSuggestions(data.suggestions||[])
+            setSuggestLoading(false)
+          }} style={{padding:'8px 16px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+            {suggestLoading?'⏳ جاري...':'احسب الاحتياج'}
+          </button>
+        </div>
+
+        {suggestions.length>0 && (
+          <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:12}}>
+            <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr',gap:8,padding:'6px 12px'}}>
+              {['المنتج','المخزون','يومي','أسبوعي','اشترِ الآن'].map((h,i)=>(
+                <div key={i} style={{fontSize:10,fontWeight:700,color:C.text4,textAlign:i>0?'center':'right'}}>{h}</div>
+              ))}
+            </div>
+            {suggestions.map((p:any,i:number)=>(
+              <div key={i} style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr',gap:8,padding:'10px 12px',borderRadius:10,background:
+                p.urgency==='urgent'?'#fef2f2':p.urgency==='soon'?'#fffbeb':'#f8fafc',
+                border:`1px solid ${p.urgency==='urgent'?'#fecaca':p.urgency==='soon'?'#fde68a':'#e2e8f0'}`}}>
+                <div>
+                  <div style={{fontSize:12,fontWeight:700,color:C.text}}>{p.name}</div>
+                  <div style={{fontSize:10,color:C.text4}}>نقطة الطلب: {p.reorderPoint} {p.unit}</div>
+                </div>
+                <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:C.text}}>{p.currentQty} {p.unit}</div>
+                <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'#7c3aed'}}>{p.dailyRate}</div>
+                <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'#2563eb'}}>{p.weeklyNeed}</div>
+                <div style={{textAlign:'center',fontSize:14,fontWeight:900,color:
+                  p.urgency==='urgent'?'#dc2626':p.urgency==='soon'?'#d97706':'#16a34a'}}>
+                  {p.suggestedQty} {p.unit}
+                </div>
+              </div>
+            ))}
+            <div style={{fontSize:11,color:C.text4,textAlign:'center',marginTop:4}}>
+              * المقترح يكفي أسبوعين بناءً على معدل صرفك الشهري
+            </div>
           </div>
         )}
       </div>
