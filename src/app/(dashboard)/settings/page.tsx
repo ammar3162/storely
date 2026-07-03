@@ -173,6 +173,8 @@ export default function SettingsPage() {
     await sb.from('organizations').update({ logo_url: pub.publicUrl } as any).eq('id', orgId)
     setLogoUrl(pub.publicUrl)
     setLogoUploading(false)
+    // تحديث الـ sidebar تلقائياً
+    window.dispatchEvent(new CustomEvent('logo-updated', { detail: pub.publicUrl }))
   }
 
   async function sendNow() {

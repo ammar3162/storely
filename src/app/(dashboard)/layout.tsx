@@ -141,6 +141,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
     }
     setReady(true)
+    // استمع لتحديث اللوجو
+    window.addEventListener('logo-updated', (e:any)=>{
+      setOrgLogo(e.detail)
+    })
     if(typeof window !== "undefined" && "serviceWorker" in navigator) {
       // طلب إذن الإشعارات
       if(Notification.permission === "default") {
