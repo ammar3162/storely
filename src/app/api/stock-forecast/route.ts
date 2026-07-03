@@ -47,22 +47,16 @@ export async function POST(req: Request) {
       // متوسط الكمية لكل مرة صرف
       const avgQtyPerDispense = totalQty / dispenseCount
 
-      // متوسط الفترة بين كل صرفة (بالأيام)
-      let avgDaysBetween = 1
-      if(data.dates.length > 1) {
-        const firstDate = data.dates[0]
-        const lastDate = data.dates[data.dates.length-1]
-        const totalDays = (lastDate.getTime()-firstDate.getTime())/(1000*60*60*24)
-        avgDaysBetween = Math.max(totalDays/(data.dates.length-1), 0.5)
-      } else {
-        // صرفة واحدة فقط — نفترض نفس الفترة من آخر صرف لليوم
-        const daysSinceLast = (new Date().getTime()-data.dates[0].getTime())/(1000*60*60*24)
-        avgDaysBetween = Math.max(daysSinceLast, 1)
-      }
+      // متوسط الفترة بين كل صرفة من أول صرفة لليوم
+      const firstDate = data.dates[0]
+      const today = new Date()
+      const totalDays = Math.max((today.getTime()-firstDate.getTime())/(1000*60*60*24), 1)
+      const avgDaysBetween = data.dates.length > 1 
+        ? totalDays/(data.dates.length-1)
+        : totalDays
 
-      const r7 = recent7Map[p.name]||0
-      // معدل الصرف اليومي الحقيقي
-      const dailyRate = r7 > 0 ? r7/7 : avgQtyPerDispense / avgDaysBetween
+      // معدل الصرف اليومي بناءً على كل التاريخ
+      const dailyRate = avgQtyPerDispense / avgDaysBetween
 
       // عدد الأيام قبل النفاد
       const daysLeft = dailyRate > 0 ? Math.floor(p.qty / dailyRate) : null
