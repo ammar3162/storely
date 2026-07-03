@@ -139,14 +139,35 @@ export default function AIToolsPage() {
           <div style={{fontSize:11,color:'#b45309',marginBottom:16}}>هذه المنتجات تم شراؤها لكن صرفها قليل جداً خلال آخر 30 يوم</div>
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
             {wasteReport.map((p:any,i:number)=>(
-              <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'#fffbeb',borderRadius:10,border:'1px solid #fde68a'}}>
-                <div>
-                  <div style={{fontSize:13,fontWeight:700,color:'#92400e'}}>{p.name}</div>
-                  <div style={{fontSize:11,color:'#b45309',marginTop:2}}>أُضيف: {p.added} · صرفت: {p.dispensed} · {p.unit}</div>
+              <div key={i} style={{padding:'12px 14px',background:p.risk==='high'?'#fef2f2':'#fffbeb',borderRadius:10,border:`1px solid ${p.risk==='high'?'#fecaca':'#fde68a'}`}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                  <div style={{fontSize:13,fontWeight:800,color:p.risk==='high'?'#991b1b':'#92400e'}}>{p.name}</div>
+                  <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:99,background:p.risk==='high'?'#fee2e2':'#fde68a',color:p.risk==='high'?'#dc2626':'#d97706'}}>
+                    {p.risk==='high'?'خطر عالي':'خطر متوسط'}
+                  </span>
                 </div>
-                <div style={{textAlign:'center'}}>
-                  <div style={{fontSize:16,fontWeight:900,color:'#d97706'}}>{p.ratio}%</div>
-                  <div style={{fontSize:9,color:'#b45309'}}>نسبة الاستخدام</div>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,textAlign:'center'}}>
+                  <div style={{background:'white',borderRadius:6,padding:'6px 4px'}}>
+                    <div style={{fontSize:13,fontWeight:900,color:'#374151'}}>{p.startStock}</div>
+                    <div style={{fontSize:9,color:'#9ca3af'}}>أول المدة</div>
+                  </div>
+                  <div style={{background:'white',borderRadius:6,padding:'6px 4px'}}>
+                    <div style={{fontSize:13,fontWeight:900,color:'#16a34a'}}>+{p.added}</div>
+                    <div style={{fontSize:9,color:'#9ca3af'}}>أُضيف</div>
+                  </div>
+                  <div style={{background:'white',borderRadius:6,padding:'6px 4px'}}>
+                    <div style={{fontSize:13,fontWeight:900,color:'#2563eb'}}>-{p.dispensed}</div>
+                    <div style={{fontSize:9,color:'#9ca3af'}}>صُرف</div>
+                  </div>
+                  <div style={{background:p.risk==='high'?'#fee2e2':'#fef3c7',borderRadius:6,padding:'6px 4px'}}>
+                    <div style={{fontSize:13,fontWeight:900,color:p.risk==='high'?'#dc2626':'#d97706'}}>{p.waste_qty} {p.unit}</div>
+                    <div style={{fontSize:9,color:'#9ca3af'}}>هدر محتمل</div>
+                  </div>
+                </div>
+                <div style={{marginTop:8,display:'flex',justifyContent:'space-between',fontSize:11,color:'#9ca3af'}}>
+                  <span>المتوقع: {p.expectedEnd} {p.unit}</span>
+                  <span>الفعلي: {p.endStock} {p.unit}</span>
+                  <span style={{fontWeight:700,color:p.risk==='high'?'#dc2626':'#d97706'}}>نسبة الهدر: {p.wastePercent}%</span>
                 </div>
               </div>
             ))}

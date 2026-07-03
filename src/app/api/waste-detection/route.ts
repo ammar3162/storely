@@ -9,43 +9,66 @@ export async function POST(req: Request) {
     const db = sb()
     const since30 = new Date(Date.now() - 30*24*60*60*1000).toISOString()
 
-    const [{ data: inMov }, { data: outMov }, { data: products }] = await Promise.all([
-      db.from('stock_movements').select('qty_change,products!inner(name,unit,org_id)').eq('products.org_id',org_id).eq('type','in').gte('created_at',since30),
-      db.from('stock_movements').select('qty_change,products!inner(name,unit,org_id)').eq('products.org_id',org_id).eq('type','out').gte('created_at',since30),
-      db.from('products').select('name,qty,unit,reorder_point').eq('org_id',org_id).eq('is_active',true),
+    // جيب كل حركات المخزون خلال 30 يوم
+    const [{ data: allMov }, { data: products }] = await Promise.all([
+      db.from('stock_movements')
+        .select('qty_change,type,created_at,products!inner(id,name,unit,org_id)')
+        .eq('products.org_id', org_id)
+        .gte('created_at', since30),
+      db.from('products')
+        .select('id,name,qty,unit,reorder_point')
+        .eq('org_id', org_id)
+        .eq('is_active', true),
     ])
 
-    // ما أُضيف للمخزون
-    const addedMap: Record<string,{qty:number,unit:string}> = {}
-    for(const m of (inMov||[])) {
-      const p = m.products as any
-      if(!p) continue
-      if(!addedMap[p.name]) addedMap[p.name] = {qty:0,unit:p.unit||''}
-      addedMap[p.name].qty += Math.abs(m.qty_change)
+    // المخزون الحالي (آخر المدة)
+    const currentStock: Record<string,{qty:number,unit:string}> = {}
+    for(const p of (products||[])) {
+      currentStock[p.name] = {qty:p.qty, unit:p.unit}
     }
 
-    // ما صُرف
-    const dispMap: Record<string,number> = {}
-    for(const m of (outMov||[])) {
+    // احسب الإضافات والصرف خلال 30 يوم
+    const movMap: Record<string,{name:string,unit:string,added:number,dispensed:number}> = {}
+    for(const m of (allMov||[])) {
       const p = m.products as any
       if(!p) continue
-      dispMap[p.name] = (dispMap[p.name]||0) + Math.abs(m.qty_change)
+      if(!movMap[p.name]) movMap[p.name] = {name:p.name,unit:p.unit||'',added:0,dispensed:0}
+      if(m.type==='in') movMap[p.name].added += Math.abs(m.qty_change)
+      if(m.type==='out') movMap[p.name].dispensed += Math.abs(m.qty_change)
     }
 
-    // المخزون الحالي
-    const stockMap: Record<string,{qty:number,unit:string}> = {}
-    for(const p of (products||[])) stockMap[p.name] = {qty:p.qty,unit:p.unit}
-
-    const waste = Object.entries(addedMap)
-      .map(([name,{qty,unit}])=>{
-        const dispensed = dispMap[name]||0
-        const currentStock = stockMap[name]?.qty||0
-        const ratio = qty>0 ? Math.round((dispensed/qty)*100) : 0
-        const risk: string = ratio<10 && qty>5 ? 'high' : ratio<30 ? 'medium' : 'low'
-        return { name, unit, added: qty, dispensed, currentStock, ratio, risk }
+    // المعادلة المحاسبية:
+    // مخزون أول المدة = مخزون الحالي - ما أُضيف + ما صُرف
+    // الهدر = مخزون أول المدة + ما أُضيف - ما صُرف - مخزون الحالي
+    const waste = Object.entries(movMap)
+      .map(([name,{unit,added,dispensed}])=>{
+        const endStock = currentStock[name]?.qty || 0
+        const startStock = endStock - added + dispensed
+        const expectedEnd = startStock + added - dispensed
+        const waste_qty = endStock - expectedEnd // سالب = هدر
+        const theoretical = startStock + added
+        const wastePercent = theoretical > 0 ? Math.round((Math.abs(waste_qty)/theoretical)*100) : 0
+        
+        // الهدر الحقيقي = ما يُفسر بالصرف أو الإضافة
+        const risk: string = wastePercent > 20 ? 'high' : wastePercent > 10 ? 'medium' : 'low'
+        
+        return {
+          name, unit,
+          startStock: Math.max(startStock, 0),
+          added,
+          dispensed,
+          endStock,
+          expectedEnd: Math.max(expectedEnd, 0),
+          waste_qty: Math.abs(Math.min(waste_qty, 0)),
+          wastePercent,
+          risk
+        }
       })
-      .filter(p=>p.added>0 && p.ratio<30 && p.added>2)
-      .sort((a,b)=>{ const r:Record<string,number>={high:0,medium:1,low:2}; return (r[a.risk]||0)-(r[b.risk]||0)||a.ratio-b.ratio })
+      .filter(p=>(p.added > 0 || p.dispensed > 0) && p.waste_qty > 0 && p.wastePercent > 5)
+      .sort((a,b)=>{ 
+        const r:Record<string,number>={high:0,medium:1,low:2}
+        return (r[a.risk]||0)-(r[b.risk]||0) || b.wastePercent-a.wastePercent 
+      })
       .slice(0,10)
 
     return NextResponse.json({ waste })
