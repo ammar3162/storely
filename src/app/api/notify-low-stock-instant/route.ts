@@ -80,23 +80,43 @@ export async function POST(req: Request) {
       }
     }
 
+    // احسب معدل الصرف اليومي لتوقع النفاد
+    const since7 = new Date(Date.now() - 7*24*60*60*1000).toISOString()
+    const { data: recentMov } = await db.from('stock_movements')
+      .select('qty_change')
+      .eq('product_id', product_id)
+      .eq('type','out')
+      .gte('created_at', since7)
+    
+    const total7 = (recentMov||[]).reduce((s:number,m:any)=>s+Math.abs(m.qty_change),0)
+    const dailyRate = total7/7
+    const daysLeft = dailyRate>0 ? Math.floor(new_qty/dailyRate) : null
+
     // رسالة المدير — وصل للحد الأدنى
     if ((org as any).whatsapp_number) {
+      const daysMsg = daysLeft !== null 
+        ? `⏳ *المخزون سينفد خلال ${daysLeft} يوم* (بناءً على معدل صرفك ${dailyRate.toFixed(1)} ${(product as any).unit}/يوم)`
+        : ''
+      
       const adminMsg = sentToSupplier
         ? `🟢 *Storely*
 
 مرحباً ${(org as any).name}،
 
 ⚠️ *${(product as any).name}* وصل للحد الأدنى
-تم إرسال طلب توريد للمورد تلقائياً`
+المتبقي: *${new_qty} ${(product as any).unit}*
+${daysMsg}
+
+✅ تم إرسال طلب توريد للمورد تلقائياً`
         : `🟢 *Storely*
 
 مرحباً ${(org as any).name}،
 
 ⚠️ *${(product as any).name}* وصل للحد الأدنى
 المتبقي: *${new_qty} ${(product as any).unit}*
+${daysMsg}
 
-يرجى الطلب في أقرب وقت`
+يرجى الطلب في أقرب وقت 🛒`
       await sendWA((org as any).whatsapp_number, adminMsg)
     }
 
