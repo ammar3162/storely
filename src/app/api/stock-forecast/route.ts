@@ -8,17 +8,25 @@ export async function POST(req: Request) {
     const { org_id } = await req.json()
     const db = sb()
     const since90 = new Date(Date.now() - 90*24*60*60*1000).toISOString()
+    const since7 = new Date(Date.now() - 7*24*60*60*1000).toISOString()
 
-    const [{ data: products }, { data: movements }] = await Promise.all([
+    const [{ data: products }, { data: movements }, { data: recent7 }] = await Promise.all([
       db.from('products').select('id,name,qty,unit,reorder_point').eq('org_id',org_id).eq('is_active',true),
       db.from('stock_movements')
         .select('qty_change,created_at,products!inner(name,org_id)')
         .eq('products.org_id',org_id)
         .eq('type','out')
         .gte('created_at',since90)
-        .order('created_at',{ascending:true})
+        .order('created_at',{ascending:true}),
+      db.from('stock_movements').select('qty_change,products!inner(name,org_id)').eq('products.org_id',org_id).eq('type','out').gte('created_at',since7)
     ])
 
+    const recent7Map: Record<string,number> = {}
+    for(const m of (recent7||[])) {
+      const name = (m.products as any)?.name
+      if(!name) continue
+      recent7Map[name] = (recent7Map[name]||0) + Math.abs(m.qty_change)
+    }
     // نجمع الحركات حسب المنتج مع التواريخ
     const movMap: Record<string,{dates:Date[],qtys:number[]}> = {}
     for(const m of (movements||[])) {
@@ -52,8 +60,9 @@ export async function POST(req: Request) {
         avgDaysBetween = Math.max(daysSinceLast, 1)
       }
 
+      const r7 = recent7Map[p.name]||0
       // معدل الصرف اليومي الحقيقي
-      const dailyRate = avgQtyPerDispense / avgDaysBetween
+      const dailyRate = r7 > 0 ? r7/7 : avgQtyPerDispense / avgDaysBetween
 
       // عدد الأيام قبل النفاد
       const daysLeft = dailyRate > 0 ? Math.floor(p.qty / dailyRate) : null
