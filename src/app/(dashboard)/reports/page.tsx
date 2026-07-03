@@ -566,7 +566,7 @@ function RecentOpsSection({ recentOps, colors }: { recentOps:any[]; colors:any }
 
 export default function ReportsPage() {
   const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'>('home')
-  const [period, setPeriod]       = useState<FilterPeriod>('month')
+  const [period, setPeriod]       = useState<FilterPeriod>('today')
   const [from, setFrom]           = useState('')
   const [to, setTo]               = useState('')
   const [dispenseStats, setDS]    = useState({ops:0,qty:0,items:0})
