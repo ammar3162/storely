@@ -33,6 +33,8 @@ const TOOLS = [
 
 export default function AIToolsPage() {
   const [weeklyReport, setWeeklyReport] = useState<any>(null)
+  const [wasteReport, setWasteReport] = useState<any[]>([])
+  const [wasteLoading, setWasteLoading] = useState(false)
   const [reportLoading, setReportLoading] = useState(false)
   const router = useRouter()
   const [visible] = useState(true)
@@ -90,13 +92,23 @@ export default function AIToolsPage() {
       <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`,animationDelay:'.2s'}}>
         <div style={{fontSize:12,fontWeight:700,color:C.text3,marginBottom:10}}>🔜 قريباً</div>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
-          <div style={{display:'flex',alignItems:'center',gap:10,opacity:.6}}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
             <span style={{fontSize:18}}>♻️</span>
-            <div>
+            <div style={{flex:1}}>
               <div style={{fontSize:13,fontWeight:700,color:C.text}}>كشف الهدر</div>
               <div style={{fontSize:11,color:C.text3}}>يكتشف ما تشتريه ولا تصرفه</div>
             </div>
-            <span style={{marginRight:'auto',fontSize:10,fontWeight:700,color:C.text4,background:C.border,padding:'2px 8px',borderRadius:99}}>قريباً</span>
+            <button onClick={async()=>{
+              const orgId=sessionStorage.getItem('s_org_id')
+              if(!orgId) return
+              setWasteLoading(true)
+              const res=await fetch('/api/waste-detection',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId})})
+              const data=await res.json()
+              setWasteReport(data.waste||[])
+              setWasteLoading(false)
+            }} style={{padding:'6px 14px',background:'#f59e0b',color:'white',border:'none',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+              {wasteLoading?'⏳ جاري...':'كشف الهدر'}
+            </button>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <span style={{fontSize:18}}>📅</span>
@@ -119,6 +131,28 @@ export default function AIToolsPage() {
           </div>
         </div>
       </div>
+
+      {/* كشف الهدر */}
+      {wasteReport.length>0 && (
+        <div style={{marginTop:16,background:C.surface,borderRadius:14,padding:'20px',border:`1.5px solid #fde68a`}}>
+          <div style={{fontSize:14,fontWeight:800,color:'#92400e',marginBottom:4}}>♻️ منتجات قد تكون هدراً</div>
+          <div style={{fontSize:11,color:'#b45309',marginBottom:16}}>هذه المنتجات تم شراؤها لكن صرفها قليل جداً خلال آخر 30 يوم</div>
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {wasteReport.map((p:any,i:number)=>(
+              <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'#fffbeb',borderRadius:10,border:'1px solid #fde68a'}}>
+                <div>
+                  <div style={{fontSize:13,fontWeight:700,color:'#92400e'}}>{p.name}</div>
+                  <div style={{fontSize:11,color:'#b45309',marginTop:2}}>اشتريت: {p.purchased} · صرفت: {p.dispensed} · {p.unit}</div>
+                </div>
+                <div style={{textAlign:'center'}}>
+                  <div style={{fontSize:16,fontWeight:900,color:'#d97706'}}>{p.ratio}%</div>
+                  <div style={{fontSize:9,color:'#b45309'}}>نسبة الاستخدام</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* التقرير الأسبوعي */}
       {weeklyReport && (
