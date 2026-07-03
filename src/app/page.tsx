@@ -27,9 +27,7 @@ export default function LandingPage() {
       {/* Navbar */}
       <nav style={{position:'sticky',top:0,zIndex:100,background:'rgba(255,255,255,.95)',backdropFilter:'blur(12px)',borderBottom:'1px solid #f1f5f9',padding:'0 24px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <div style={{width:36,height:36,borderRadius:10,background:'linear-gradient(135deg,#0d2818,#16a34a)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <span style={{fontSize:18}}>📦</span>
-          </div>
+          <img src="/storely-logo.png" alt="Storely" style={{width:40,height:40,borderRadius:10,objectFit:'cover'}}/>
           <span style={{fontSize:20,fontWeight:900,color:'#0d2818'}}>Storely</span>
         </div>
         <div className="nav-links" style={{display:'flex',alignItems:'center',gap:32}}>
@@ -224,9 +222,7 @@ export default function LandingPage() {
       <footer style={{background:'#0d2818',padding:'40px 24px',borderTop:'1px solid rgba(255,255,255,.06)'}}>
         <div style={{maxWidth:1100,margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:16}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <div style={{width:32,height:32,borderRadius:8,background:'linear-gradient(135deg,#16a34a,#15803d)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <span style={{fontSize:16}}>📦</span>
-            </div>
+            <img src="/storely-logo.png" alt="Storely" style={{width:36,height:36,borderRadius:8,objectFit:'cover'}}/>
             <span style={{fontSize:16,fontWeight:900,color:'white'}}>Storely</span>
           </div>
           <div style={{display:'flex',gap:24,flexWrap:'wrap'}}>
