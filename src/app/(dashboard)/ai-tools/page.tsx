@@ -147,7 +147,7 @@ export default function AIToolsPage() {
                   </div>
                   <div style={{background:'white',borderRadius:6,padding:'6px'}}>
                     <div style={{fontSize:14,fontWeight:900,color:C.primary}}>{p.dailyRate} {p.unit}</div>
-                    <div style={{fontSize:9,color:C.text4}}>معدل الصرف/يوم</div>
+                    <div style={{fontSize:9,color:C.text4}}>متوسط الكمية/يوم</div>
                   </div>
                   <div style={{background:'white',borderRadius:6,padding:'6px'}}>
                     <div style={{fontSize:14,fontWeight:900,color:
