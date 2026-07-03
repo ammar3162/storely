@@ -318,26 +318,46 @@ export default function SettingsPage() {
             <form onSubmit={handleSave}>
               <div style={{display:'flex',flexDirection:'column' as const,gap:18}}>
 
-                {/* شعار المنشأة */}
+                {/* شعار المنشأة - احترافي */}
                 <div>
                   <label style={lbl}>شعار المنشأة</label>
-                  <div style={{display:'flex',alignItems:'center',gap:14}}>
-                    <div style={{width:64,height:64,borderRadius:14,background:colors.bg,border:`1.5px dashed ${colors.border2}`,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',flexShrink:0}}>
+                  <input type="file" accept="image/*" id="logoInput" style={{display:'none'}}
+                    onChange={e=>{ const f=e.target.files?.[0]; if(f) uploadLogo(f) }}/>
+                  <label htmlFor="logoInput" style={{display:'block',cursor:'pointer'}}>
+                    <div style={{position:'relative',width:'100%',height:140,borderRadius:16,overflow:'hidden',background:logoUrl?'transparent':'linear-gradient(135deg,#f0fdf4,#dcfce7)',border:`2px dashed ${logoUrl?'transparent':colors.primary}`,display:'flex',alignItems:'center',justifyContent:'center',transition:'all .2s'}}>
                       {logoUrl ? (
-                        <img src={logoUrl} alt="شعار" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                        <>
+                          <img src={logoUrl} alt="شعار" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                          <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0)',display:'flex',alignItems:'center',justifyContent:'center',transition:'background .2s'}}
+                            onMouseEnter={e=>(e.currentTarget.style.background='rgba(0,0,0,.4)')}
+                            onMouseLeave={e=>(e.currentTarget.style.background='rgba(0,0,0,0)')}>
+                            <div style={{color:'white',fontSize:13,fontWeight:700,opacity:0,transition:'opacity .2s'}}
+                              onMouseEnter={e=>(e.currentTarget.style.opacity='1')}
+                              onMouseLeave={e=>(e.currentTarget.style.opacity='0')}>
+                              🔄 تغيير الشعار
+                            </div>
+                          </div>
+                          {logoUploading && (
+                            <div style={{position:'absolute',inset:0,background:'rgba(255,255,255,.8)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:700,color:colors.primary}}>
+                              ⏳ جاري الرفع...
+                            </div>
+                          )}
+                        </>
                       ) : (
-                        <span style={{fontSize:24}}>🏢</span>
+                        <div style={{textAlign:'center'}}>
+                          {logoUploading ? (
+                            <div style={{fontSize:14,fontWeight:700,color:colors.primary}}>⏳ جاري الرفع...</div>
+                          ) : (
+                            <>
+                              <div style={{fontSize:36,marginBottom:8}}>🏢</div>
+                              <div style={{fontSize:13,fontWeight:700,color:colors.primary}}>اضغط لرفع الشعار</div>
+                              <div style={{fontSize:11,color:colors.text4,marginTop:4}}>PNG أو JPG · يُفضّل مربع الشكل</div>
+                            </>
+                          )}
+                        </div>
                       )}
                     </div>
-                    <div style={{flex:1}}>
-                      <input type="file" accept="image/*" id="logoInput" style={{display:'none'}}
-                        onChange={e=>{ const f=e.target.files?.[0]; if(f) uploadLogo(f) }}/>
-                      <label htmlFor="logoInput" style={{...btnSecondary,display:'inline-block',padding:'9px 16px',fontSize:font.xs,cursor:'pointer'}}>
-                        {logoUploading ? '⏳ جاري الرفع...' : (logoUrl ? '🔄 تغيير الشعار' : '📤 رفع شعار')}
-                      </label>
-                      <div style={{fontSize:11,color:colors.text4,marginTop:6}}>PNG أو JPG، يُفضّل مربع الشكل</div>
-                    </div>
-                  </div>
+                  </label>
                 </div>
 
                 <div>
