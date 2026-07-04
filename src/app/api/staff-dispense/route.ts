@@ -8,7 +8,7 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
-    const { productId, qty, staffName, orgId } = await req.json()
+    const { productId, qty, staffName, orgId, staffId } = await req.json()
     if (!productId || !qty || qty <= 0) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
     const supabase = sb()
@@ -22,7 +22,8 @@ export async function POST(req: Request) {
       type: 'out',
       qty_change: -qty,
       note: `صرف بواسطة الموظف: ${staffName}`,
-    })
+      staff_id: staffId || null,
+    } as any)
     if (mErr) return NextResponse.json({ error: mErr.message }, { status: 500 })
 
     await supabase.from('products').update({ qty: product.qty - qty }).eq('id', productId)

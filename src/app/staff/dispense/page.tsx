@@ -148,7 +148,7 @@ export default function StaffPage() {
     if(Number(dispenseQty)>selected.qty){showMsg(T('tooMuch',lang),'error');return}
     setSubmitting(true)
     try {
-      const res = await fetch('/api/staff-dispense',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId:selected.id,qty:Number(dispenseQty),staffName:session.name,orgId:session.org_id})})
+      const res = await fetch('/api/staff-dispense',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId:selected.id,qty:Number(dispenseQty),staffName:session.name,orgId:session.org_id,staffId:session.id})})
       if(!res.ok){showMsg(T('error',lang),'error');setSubmitting(false);return}
       fetch('/api/notify-staff-dispense',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:session.org_id,staff_name:session.name,product_name:selected.name,qty:Number(dispenseQty),unit:selected.unit})}).catch(()=>{})
       fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:session.org_id,product_id:selected.id,new_qty:selected.qty-Number(dispenseQty),reorder_point:selected.reorder_point})}).catch(()=>{})
