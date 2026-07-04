@@ -420,14 +420,14 @@ export default function AIToolsPage() {
                     <div style={{fontSize:9,color:'#9ca3af'}}>صُرف</div>
                   </div>
                   <div style={{background:p.risk==='high'?'#fee2e2':'#fef3c7',borderRadius:6,padding:'6px 4px'}}>
-                    <div style={{fontSize:13,fontWeight:900,color:p.risk==='high'?'#dc2626':'#d97706'}}>{p.waste_qty} {p.unit}</div>
+                    <div style={{fontSize:13,fontWeight:900,color:p.risk==='high'?'#dc2626':'#d97706'}}>{p.wasteQty} {p.unit}</div>
                     <div style={{fontSize:9,color:'#9ca3af'}}>هدر محتمل</div>
                   </div>
                 </div>
                 <div style={{marginTop:8,display:'flex',justifyContent:'space-between',fontSize:11,color:'#9ca3af'}}>
                   <span>المتوقع: {p.expectedEnd} {p.unit}</span>
                   <span>الفعلي: {p.endStock} {p.unit}</span>
-                  <span style={{fontWeight:700,color:p.risk==='high'?'#dc2626':'#d97706'}}>نسبة الهدر: {p.wastePercent}%</span>
+                  <span style={{fontWeight:700,color:p.risk==='high'?'#dc2626':'#d97706'}}>نسبة الاستخدام: {p.usageRatio}%</span>
                 </div>
               </div>
             ))}
