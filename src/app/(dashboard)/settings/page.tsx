@@ -180,7 +180,7 @@ export default function SettingsPage() {
   async function sendNow() {
     setSending(true); setSendMsg(null)
     try {
-      const res=await fetch('/api/notify-low-stock',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId})})
+      const res=await fetch('/api/notify-low-stock',{method:'POST',headers:{'Content-Type':'application/json','x-cron-secret':process.env.NEXT_PUBLIC_APP_URL||''},body:JSON.stringify({org_id:orgId})})
       const data=await res.json()
       if(data.success){setSendMsg({ok:true,text:data.message||'تم إرسال الإشعار بنجاح'});setLastSent(new Date().toISOString())}
       else setSendMsg({ok:false,text:data.message||'فشل الإرسال'})
