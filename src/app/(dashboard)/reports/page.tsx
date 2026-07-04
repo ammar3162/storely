@@ -164,7 +164,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     }
     const{start,end}=getRange(period,from,to)
     const _bid1 = sessionStorage.getItem('s_branch_id')
-    let _mq1 = sb.from('stock_movements').select('*,products!inner(name,unit,org_id,branch_id),profiles!profile_id(full_name)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
+    let _mq1 = sb.from('stock_movements').select('*,products!inner(name,unit,org_id,branch_id),profiles!profile_id(full_name),staff_members!staff_id(name)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
     if (_bid1) _mq1 = _mq1.eq('products.branch_id', _bid1)
     const{data}=await _mq1.order('created_at',{ascending:false})
     setMovements(data||[]); setLoading(false)
