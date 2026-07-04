@@ -425,7 +425,7 @@ export default function AIToolsPage() {
                   </div>
                 </div>
                 <div style={{marginTop:8,display:'flex',justifyContent:'space-between',fontSize:11,color:'#9ca3af'}}>
-                  <span>المتوقع: {p.expectedEnd} {p.unit}</span>
+                  <span>الهدر: {p.wasteQty} {p.unit}</span>
                   <span>الفعلي: {p.endStock} {p.unit}</span>
                   <span style={{fontWeight:700,color:p.risk==='high'?'#dc2626':'#d97706'}}>نسبة الاستخدام: {p.usageRatio}%</span>
                 </div>
