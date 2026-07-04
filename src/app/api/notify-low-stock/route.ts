@@ -21,15 +21,34 @@ async function sendForOrg(supabase: any, org: any) {
   console.log('low count:', low.length)
   if (low.length === 0) return { sent:0, message:'لا توجد منتجات ناقصة - total:' + (products||[]).length }
 
-  const list = low.map((p:any) =>
-    '• ' + p.name + ': ' + p.qty + ' ' + p.unit + ' (الحد الأدنى: ' + p.reorder_point + ')'
-  ).join('\n')
-
+  const now = new Date().toLocaleString('ar-SA',{timeZone:'Asia/Riyadh',hour:'2-digit',minute:'2-digit',hour12:true,weekday:'long'})
+  const outStock = low.filter((p:any)=>p.qty===0)
+  const lowStock = low.filter((p:any)=>p.qty>0)
+  let body = ''
+  if(outStock.length>0) {
+    body += '🔴 *نفد المخزون*
+'
+    body += outStock.map((p:any)=>'▸ ' + p.name + ' | 0/' + p.reorder_point + ' ' + p.unit).join('\n')
+    body += '\n\n'
+  }
+  if(lowStock.length>0) {
+    body += '🟡 *مخزون منخفض*
+'
+    body += lowStock.map((p:any)=>'▸ ' + p.name + ' | ' + p.qty + '/' + p.reorder_point + ' ' + p.unit).join('\n')
+    body += '\n\n'
+  }
   const msg =
-    '🔔 *تنبيه مخزون — ' + org.name + '*\n\n' +
-    'الأصناف التالية وصلت للحد الأدنى:\n\n' +
-    list + '\n\n' +
-    '⚡ يرجى إعادة الطلب في أقرب وقت\n\n' +
+    '╬══════════════════════╬\n' +
+    '   📦 Storely Alert\n' +
+    '╚══════════════════════╝\n\n' +
+    '🏢 *' + org.name + '*  |  🕐 ' + now + '\n\n' +
+    '━━━━━━━━━━━━━━━━━━━━━\n' +
+    '⚠️ *تنبيه نقص مخزون*\n' +
+    '━━━━━━━━━━━━━━━━━━━━━\n\n' +
+    body +
+    '━━━━━━━━━━━━━━━━━━━━━\n' +
+    '📊 الملخص: ' + outStock.length + ' نفد | ' + lowStock.length + ' منخفض\n' +
+    '━━━━━━━━━━━━━━━━━━━━━\n\n' +
     '_Storely — نظام إدارة المخزون_'
 
   if (!org.whatsapp_number) return { sent:0, message:'لا يوجد رقم واتساب' }
