@@ -68,9 +68,13 @@ async function sendForOrg(supabase: any, org: any) {
 export async function POST(req: Request) {
   const secret = req.headers.get('x-cron-secret')
   const validSecret = process.env.ADMIN_PASSWORD
-  if (secret !== validSecret) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-
+  
   try {
+    const bodyCheck = await req.clone().json().catch(()=>({}))
+    const isFromDashboard = !!bodyCheck.org_id
+    if (!isFromDashboard && secret !== validSecret) {
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+    }
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
