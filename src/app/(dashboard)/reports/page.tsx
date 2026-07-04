@@ -247,9 +247,11 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
                     <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA',{month:'short',day:'numeric'})}</td>
                     <td style={{padding:'11px 16px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td>
                     <td style={{padding:'11px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:900}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
-                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f0fdf4',color:'#16a34a',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #bbf7d0'}}>{(m.profiles as any)?.full_name||(m.staff_members as any)?.name||(m.note?.match(/بواسطة الموظف: (.+)/)?.[1])||'—'}</span></td>
+                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f0fdf4',color:'#16a34a',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #bbf7d0'}}>
+{(m.profiles as any)?.full_name||(m.staff_members as any)?.name||(m.note?.match(/بواسطة[^:]*:\s*(.+)/)?.[1])||'—'}
+</span></td>
                     <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text4}}>
-                      {(m.profiles as any)?.full_name || (m.note?.match(/بواسطة الموظف: (.+)/)?.[1]) || '—'}
+                      {m.note?.replace(/صرف بواسطة الموظف: .+/, '').trim() || m.note || '—'}
                     </td>
                   </tr>
                 ))}
