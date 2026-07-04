@@ -26,14 +26,12 @@ async function sendForOrg(supabase: any, org: any) {
   const lowStock = low.filter((p:any)=>p.qty>0)
   let body = ''
   if(outStock.length>0) {
-    body += '🔴 *نفد المخزون*
-'
+    body += '🔴 *نفد المخزون*\n'
     body += outStock.map((p:any)=>'▸ ' + p.name + ' | 0/' + p.reorder_point + ' ' + p.unit).join('\n')
     body += '\n\n'
   }
   if(lowStock.length>0) {
-    body += '🟡 *مخزون منخفض*
-'
+    body += '🟡 *مخزون منخفض*\n'
     body += lowStock.map((p:any)=>'▸ ' + p.name + ' | ' + p.qty + '/' + p.reorder_point + ' ' + p.unit).join('\n')
     body += '\n\n'
   }
