@@ -81,13 +81,41 @@ export default function PurchasesPage() {
     const{data}=await q;setHistory(data||[]);cache.set('purchases:'+oid,data||[])
   }
 
+  async function compressImage(file:File): Promise<Blob> {
+    return new Promise((resolve)=>{
+      const img = new Image()
+      const url = URL.createObjectURL(file)
+      img.onload = ()=>{
+        const canvas = document.createElement('canvas')
+        const MAX = 1200
+        let w = img.width, h = img.height
+        if(w>MAX){h=Math.round(h*MAX/w);w=MAX}
+        if(h>MAX){w=Math.round(w*MAX/h);h=MAX}
+        canvas.width=w; canvas.height=h
+        canvas.getContext('2d')!.drawImage(img,0,0,w,h)
+        URL.revokeObjectURL(url)
+        canvas.toBlob(b=>resolve(b!), 'image/jpeg', 0.75)
+      }
+      img.src = url
+    })
+  }
+
   async function handleImage(file:File) {
     setUploading(true)
-    const ext=file.name.split('.').pop(),path='invoice-'+Date.now()+'.'+ext
-    const{error}=await sb.storage.from('invoices').upload(path,file)
-    if(error){toast('فشل رفع الصورة','error');setUploading(false);return}
-    const{data:{publicUrl}}=sb.storage.from('invoices').getPublicUrl(path)
-    setForm(f=>({...f,invoice_image:publicUrl}));setPreviewUrl(publicUrl);setUploading(false);toast('تم رفع الفاتورة ✓')
+    try {
+      // ضغط الصورة لو كانت أكبر من 500KB
+      const compressed = file.type.startsWith('image/') && file.size > 500*1024
+        ? await compressImage(file)
+        : file
+      const ext = file.type.startsWith('image/') ? 'jpg' : file.name.split('.').pop()
+      const path = 'invoice-'+Date.now()+'.'+ext
+      const{error}=await sb.storage.from('invoices').upload(path, compressed)
+      if(error){toast('فشل رفع الصورة','error');setUploading(false);return}
+      const{data:{publicUrl}}=sb.storage.from('invoices').getPublicUrl(path)
+      setForm(f=>({...f,invoice_image:publicUrl}));setPreviewUrl(publicUrl)
+      toast('تم رفع الفاتورة ✓')
+    } catch { toast('فشل رفع الصورة','error') }
+    setUploading(false)
   }
 
   async function handleSubmit(e:React.FormEvent) {
