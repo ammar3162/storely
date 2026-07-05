@@ -31,9 +31,6 @@ export async function POST(req: Request) {
     // لا ترسل إذا المخزون لا يزال كافٍ
     if (new_qty > reorder_point) return NextResponse.json({ success: false, message: 'كافٍ' })
 
-    // لا ترسل إذا كان ناقصاً مسبقاً — فقط عند الوصول للحد للمرة الأولى
-    if (new_qty < reorder_point) return NextResponse.json({ success: false, message: 'كان ناقصاً مسبقاً' })
-
     const db = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
