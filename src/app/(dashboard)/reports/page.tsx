@@ -607,12 +607,12 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
         {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
         ):closings.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{fontSize:44,marginBottom:10}}>📭</div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد تقارير إقفال</div></div>
         ):(
-          <div style={{overflowX:'auto'}}>
+          <div style={{overflowX:'auto',overflowY:'auto',maxHeight:480}}>
             <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
               <thead>
-                <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
+                <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`,position:'sticky' as const,top:0,zIndex:2}}>
                   {['التاريخ','الكاشير','المبيعات','الشبكة','الكاش الفعلي','المسحوبات','الكاش بعد الخصم','النتيجة'].map((h,i)=>(
-                    <th key={i} style={{padding:'10px 16px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
+                    <th key={i} style={{padding:'10px 16px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em',background:colors.bg}}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -632,6 +632,17 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                   </tr>
                 ))}
               </tbody>
+              <tfoot style={{position:'sticky' as const,bottom:0,zIndex:2}}>
+                <tr style={{background:colors.primaryLight,borderTop:`2px solid ${colors.primaryBorder}`,boxShadow:'0 -2px 8px rgba(0,0,0,.06)'}}>
+                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}} colSpan={2}>الإجمالي ({closings.length})</td>
+                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_sales),0).toFixed(0)} ر.س</td>
+                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.network_amount),0).toFixed(0)} ر.س</td>
+                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.cash_amount),0).toFixed(0)} ر.س</td>
+                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0)>0?'−'+closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0).toFixed(0)+' ر.س':'—'}</td>
+                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount)-Number(c.total_purchases)),0).toFixed(0)} ر.س</td>
+                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.difference),0).toFixed(0)} ر.س</td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         )}
