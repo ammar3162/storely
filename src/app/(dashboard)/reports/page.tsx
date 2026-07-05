@@ -566,8 +566,80 @@ function RecentOpsSection({ recentOps, colors }: { recentOps:any[]; colors:any }
 }
 
 
+function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPeriod; from:string; to:string; onBack:()=>void }) {
+  const [closings, setClosings] = useState<any[]>([])
+  const [loading, setLoading]   = useState(true)
+  useEffect(()=>{ load() },[period,from,to])
+  async function load() {
+    setLoading(true)
+    const orgId=sessionStorage.getItem('s_org_id')
+    if(!orgId){setLoading(false);return}
+    const{start,end}=getRange(period,from,to)
+    try {
+      const res = await fetch(`/api/cashier-closing?org_id=${orgId}&from=${start.toISOString().slice(0,10)}&to=${end.toISOString().slice(0,10)}`)
+      const data = await res.json()
+      setClosings(data.closings||[])
+    } catch { setClosings([]) }
+    setLoading(false)
+  }
+  const totalDeficit = closings.filter(c=>c.status==='deficit').reduce((s,c)=>s+Math.abs(Number(c.difference)),0)
+  const totalSurplus = closings.filter(c=>c.status==='surplus').reduce((s,c)=>s+Number(c.difference),0)
+  const balancedCount = closings.filter(c=>c.status==='balanced').length
+  const statusLabel: Record<string,string> = {deficit:'عجز',surplus:'زيادة',balanced:'مطابق'}
+  const statusColor: Record<string,string> = {deficit:colors.danger,surplus:colors.info,balanced:colors.primary}
+  return (
+    <div>
+      <BackBtn onClick={onBack}/>
+      <PeriodBadge period={period} from={from} to={to}/>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16}}>
+        {[
+          {label:'إجمالي التقارير',value:closings.length,color:'#0891b2',bg:'#ecfeff',border:'#a5f3fc'},
+          {label:'إجمالي العجز',value:totalDeficit.toFixed(0)+' ر.س',color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
+          {label:'إجمالي الزيادة',value:totalSurplus.toFixed(0)+' ر.س',color:colors.info,bg:colors.infoLight,border:colors.infoBorder},
+        ].map((s,i)=>(
+          <div key={i} style={{...card,padding:'16px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
+            <div style={{fontSize:22,fontWeight:900,color:s.color,letterSpacing:'-1px'}}>{s.value}</div>
+            <div style={{fontSize:font.xs,color:s.color,marginTop:4,fontWeight:700,opacity:.8}}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{...card,overflow:'hidden'}}>
+        {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
+        ):closings.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{fontSize:44,marginBottom:10}}>📭</div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد تقارير إقفال</div></div>
+        ):(
+          <div style={{overflowX:'auto'}}>
+            <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
+              <thead>
+                <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
+                  {['التاريخ','الكاشير','المبيعات','الشبكة','الكاش الفعلي','النتيجة'].map((h,i)=>(
+                    <th key={i} style={{padding:'10px 16px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {closings.map((c:any)=>(
+                  <tr key={c.id} style={{borderBottom:`1px solid ${colors.border}`}}>
+                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{new Date(c.closing_date).toLocaleDateString('ar-SA')}</td>
+                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{c.staff_name}</td>
+                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.total_sales).toFixed(0)} ر.س</td>
+                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.network_amount).toFixed(0)} ر.س</td>
+                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.cash_amount).toFixed(0)} ر.س</td>
+                    <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:statusColor[c.status]}}>
+                      {statusLabel[c.status]}{c.status!=='balanced'?` (${Math.abs(Number(c.difference)).toFixed(0)} ر.س)`:''}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function ReportsPage() {
-  const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'>('home')
+  const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'|'cashier'>('home')
   const [period, setPeriod]       = useState<FilterPeriod>('today')
   const [from, setFrom]           = useState('')
   const [to, setTo]               = useState('')
@@ -579,6 +651,7 @@ export default function ReportsPage() {
   const [weeklyP, setWP]          = useState<number[]>([])
   const [visible, setVisible]     = useState(false)
   const [recentOps, setRecentOps] = useState<any[]>([])
+  const [cashierStats, setCS]     = useState({count:0,deficit:0,surplus:0})
   const [topMovements, setTopMovements] = useState<any[]>([])
   const sb = createClient()
 
@@ -607,6 +680,9 @@ export default function ReportsPage() {
     const{data:inv}=await sb.from('products').select('qty,reorder_point').eq('org_id',orgId).eq('is_active',true)
     const invData=inv||[]
     setIS({total:invData.length,low:invData.filter((p:any)=>p.qty>0&&p.qty<=p.reorder_point).length,out:invData.filter((p:any)=>p.qty===0).length})
+    const{data:closings}=await sb.from('cashier_closings' as any).select('status').eq('org_id',orgId).gte('closing_date',start.toISOString().slice(0,10)).lte('closing_date',end.toISOString().slice(0,10))
+    const closingsData=(closings||[]) as any[]
+    setCS({count:closingsData.length,deficit:closingsData.filter(c=>c.status==='deficit').length,surplus:closingsData.filter(c=>c.status==='surplus').length})
     setSL(false)
     // آخر العمليات
     const{data:recent}=await sb.from('stock_movements')
@@ -639,6 +715,14 @@ export default function ReportsPage() {
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}>تقرير المشتريات</h1>
       <PurchaseDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
+    </div>
+  )
+
+  if (view==='cashier') return (
+    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <h1 style={{...pageTitle,marginBottom:16}}>إقفال الكاشير اليومي</h1>
+      <CashierClosingDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
     </div>
   )
 
@@ -713,6 +797,24 @@ export default function ReportsPage() {
               {label:'نفد المخزون',value:inventoryStats.out,color:colors.danger},
             ]}
             onClick={()=>setView('inventory')}
+          />
+        </div>
+        <div className="su" style={{animationDelay:'.25s'}}>
+          <ReportCard
+            title="إقفال الكاشير اليومي"
+            subtitle="تقارير إقفال الكاشير والفروقات"
+            icon="💰"
+            color={'#0891b2'}
+            bg={'#ecfeff'}
+            border={'#a5f3fc'}
+            loading={statsLoading}
+            chartData={[]}
+            stats={[
+              {label:'عدد التقارير',value:cashierStats.count,color:'#0891b2',highlight:true},
+              {label:'حالات عجز',value:cashierStats.deficit,color:colors.danger},
+              {label:'حالات زيادة',value:cashierStats.surplus,color:colors.info},
+            ]}
+            onClick={()=>setView('cashier')}
           />
         </div>
       </div>
