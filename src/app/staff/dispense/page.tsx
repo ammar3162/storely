@@ -79,6 +79,11 @@ export default function StaffPage() {
         const res = await fetch('/api/staff-permissions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({staff_id:s.id})})
         if(res.ok){
           const data = await res.json()
+          if(data.deleted){
+            localStorage.removeItem('staff_session')
+            router.push('/staff')
+            return
+          }
           if(data.permissions){
             const updated = {...s,permissions:data.permissions}
             localStorage.setItem('staff_session',JSON.stringify(updated))

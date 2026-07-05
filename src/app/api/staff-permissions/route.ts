@@ -12,9 +12,13 @@ export async function POST(req: Request) {
     if (!staff_id) return NextResponse.json({ error: 'staff_id required' }, { status: 400 })
 
     const { data } = await sb().from('staff_members')
-      .select('permissions')
+      .select('permissions,is_active')
       .eq('id', staff_id)
-      .single()
+      .maybeSingle()
+
+    if (!data || (data as any).is_active === false) {
+      return NextResponse.json({ deleted: true })
+    }
 
     return NextResponse.json({ 
       permissions: (data as any)?.permissions || {dispense:true,inventory:false,purchases:false,reports:false}

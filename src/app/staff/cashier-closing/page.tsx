@@ -51,6 +51,27 @@ export default function CashierClosingPage() {
       .then(({data}:any)=>{ if(data?.logo_url) setOrgLogo(data.logo_url) })
   },[])
 
+  useEffect(()=>{
+    async function checkStillActive() {
+      const saved = localStorage.getItem('staff_session')
+      if(!saved) return
+      const s = JSON.parse(saved)
+      try {
+        const res = await fetch('/api/staff-permissions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({staff_id:s.id})})
+        if(res.ok){
+          const data = await res.json()
+          if(data.deleted){
+            localStorage.removeItem('staff_session')
+            router.push('/staff')
+          }
+        }
+      } catch {}
+    }
+    checkStillActive()
+    const interval = setInterval(checkStillActive, 5000)
+    return ()=>clearInterval(interval)
+  },[])
+
   function logout() { localStorage.removeItem('staff_session'); router.push('/staff') }
 
   function showToast(msg:string, type:'success'|'error'='success') {
