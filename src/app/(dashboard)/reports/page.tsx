@@ -611,7 +611,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
             <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`,position:'sticky' as const,top:0,zIndex:2}}>
-                  {['التاريخ','الكاشير','المبيعات','الشبكة','الكاش الفعلي','المسحوبات','الكاش بعد الخصم','النتيجة'].map((h,i)=>(
+                  {['التاريخ','الكاشير','المبيعات','الشبكة','الكاش الفعلي','المسحوبات','الكاش بعد الخصم','النتيجة','المرفقات'].map((h,i)=>(
                     <th key={i} style={{padding:'10px 16px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em',background:colors.bg}}>{h}</th>
                   ))}
                 </tr>
@@ -629,6 +629,19 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                     <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:statusColor[c.status]}}>
                       {statusLabel[c.status]}{c.status!=='balanced'?` (${Math.abs(Number(c.difference)).toFixed(0)} ر.س)`:''}
                     </td>
+                    <td style={{padding:'12px 16px'}}>
+                      <div style={{display:'flex',gap:6}}>
+                        {c.sales_image && (
+                          <a href={c.sales_image} target="_blank" rel="noopener noreferrer" title="صورة تقرير المبيعات" style={{width:28,height:28,borderRadius:7,background:colors.infoLight,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,textDecoration:'none'}}>📊</a>
+                        )}
+                        {c.network_image && (
+                          <a href={c.network_image} target="_blank" rel="noopener noreferrer" title="صورة موازنة الشبكة" style={{width:28,height:28,borderRadius:7,background:colors.primaryLight,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,textDecoration:'none'}}>💳</a>
+                        )}
+                        {!c.sales_image && !c.network_image && (
+                          <span style={{fontSize:11,color:colors.text4}}>—</span>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -641,6 +654,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0)>0?'−'+closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0).toFixed(0)+' ر.س':'—'}</td>
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount)-Number(c.total_purchases)),0).toFixed(0)} ر.س</td>
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.difference),0).toFixed(0)} ر.س</td>
+                  <td/>
                 </tr>
               </tfoot>
             </table>
