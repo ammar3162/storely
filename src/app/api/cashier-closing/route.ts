@@ -8,7 +8,7 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
-    const { org_id, branch_id, staff_id, staff_name, total_sales, network_amount, cash_amount, purchases } = await req.json()
+    const { org_id, branch_id, staff_id, staff_name, total_sales, network_amount, cash_amount, purchases, network_image, sales_image } = await req.json()
 
     if (!org_id || !staff_id || !staff_name) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
@@ -42,6 +42,8 @@ export async function POST(req: Request) {
         expected_cash: expectedCash,
         difference,
         status,
+        network_image: network_image || null,
+        sales_image: sales_image || null,
       })
       .select()
       .single()

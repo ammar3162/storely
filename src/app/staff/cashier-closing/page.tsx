@@ -35,6 +35,10 @@ export default function CashierClosingPage() {
   const [hasPurchases, setHasPurchases] = useState<'yes'|'no'|null>(null)
   const [purchases, setPurchases] = useState<Purchase[]>([{amount:'',reason:''}])
   const [result, setResult] = useState<{expectedCash:number,cashAfterWithdrawal:number,difference:number,status:string}|null>(null)
+  const [networkImage, setNetworkImage] = useState<string>('')
+  const [salesImage, setSalesImage] = useState<string>('')
+  const [uploadingNetwork, setUploadingNetwork] = useState(false)
+  const [uploadingSales, setUploadingSales] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [saved, setSaved] = useState(false)
   const [toast, setToast] = useState<{msg:string,type:'success'|'error'}|null>(null)
@@ -79,6 +83,20 @@ export default function CashierClosingPage() {
     setTimeout(()=>setToast(null),3000)
   }
 
+  async function uploadImage(file: File, kind: 'network'|'sales') {
+    if(!session) return
+    kind==='network'?setUploadingNetwork(true):setUploadingSales(true)
+    const ext = file.name.split('.').pop()
+    const path = `cashier-closings/${session.org_id}-${kind}-${Date.now()}.${ext}`
+    const { error } = await sb.storage.from('invoices').upload(path, file, { upsert: true })
+    if(error){ showToast('فشل رفع الصورة','error'); kind==='network'?setUploadingNetwork(false):setUploadingSales(false); return }
+    const { data: { publicUrl } } = sb.storage.from('invoices').getPublicUrl(path)
+    if(kind==='network') setNetworkImage(publicUrl)
+    else setSalesImage(publicUrl)
+    kind==='network'?setUploadingNetwork(false):setUploadingSales(false)
+    showToast('تم رفع الصورة ✓')
+  }
+
   function addPurchaseRow() { setPurchases(prev=>[...prev,{amount:'',reason:''}]) }
   function removePurchaseRow(idx:number) { setPurchases(prev=>prev.filter((_,i)=>i!==idx)) }
   function updatePurchase(idx:number, field:'amount'|'reason', value:string) {
@@ -91,6 +109,10 @@ export default function CashierClosingPage() {
   function calculate() {
     if(!totalSales || !networkAmount || !cashAmount){
       showToast('أدخل إجمالي المبيعات والشبكة والكاش أولاً','error')
+      return
+    }
+    if(!salesImage || !networkImage){
+      showToast('يرجى رفع صورة تقرير المبيعات وصورة موازنة الشبكة','error')
       return
     }
     const sales = Number(totalSales)||0
@@ -116,6 +138,7 @@ export default function CashierClosingPage() {
           staff_id: session.id, staff_name: session.name,
           total_sales: Number(totalSales), network_amount: Number(networkAmount),
           cash_amount: Number(cashAmount), purchases: validPurchases,
+          network_image: networkImage, sales_image: salesImage,
         })
       })
       if(!res.ok){ showToast('حدث خطأ أثناء الحفظ','error'); setSubmitting(false); return }
@@ -131,6 +154,7 @@ export default function CashierClosingPage() {
     setTotalSales(''); setNetworkAmount(''); setCashAmount('')
     setHasPurchases(null); setPurchases([{amount:'',reason:''}])
     setResult(null); setSaved(false)
+    setNetworkImage(''); setSalesImage('')
   }
 
   if(!session) return (
@@ -208,6 +232,44 @@ export default function CashierClosingPage() {
               <div>
                 <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>الكاش الفعلي بالدرج</label>
                 <MoneyInput value={cashAmount} onChange={setCashAmount} placeholder="0.00" icon="💵" iconBg="#fffbeb" iconColor="#d97706"/>
+              </div>
+            </div>
+
+            {/* صور الإثبات */}
+            <div className="fu" style={{background:'white',borderRadius:18,padding:22,marginBottom:16,boxShadow:'0 2px 16px rgba(0,0,0,.05)',border:'1px solid #eeeeeb'}}>
+              <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',marginBottom:16,display:'flex',alignItems:'center',gap:8}}>
+                <span style={{width:24,height:24,borderRadius:7,background:'#eff6ff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12}}>📸</span>
+                صور الإثبات (إلزامي)
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                <div>
+                  <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}}>صورة تقرير المبيعات</label>
+                  {salesImage ? (
+                    <div style={{position:'relative'}}>
+                      <img src={salesImage} alt="تقرير المبيعات" style={{width:'100%',height:110,borderRadius:10,objectFit:'cover'}}/>
+                      <button type="button" onClick={()=>setSalesImage('')} style={{position:'absolute',top:6,left:6,background:'rgba(0,0,0,.55)',color:'white',border:'none',borderRadius:'50%',width:24,height:24,cursor:'pointer',fontSize:14}}>×</button>
+                    </div>
+                  ):(
+                    <label style={{display:'flex',alignItems:'center',justifyContent:'center',height:110,border:'2px dashed #d4d3ce',borderRadius:10,cursor:'pointer',background:'#faf9f7',textAlign:'center' as const,padding:8}}>
+                      <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>e.target.files?.[0]&&uploadImage(e.target.files[0],'sales')}/>
+                      <span style={{fontSize:12,color:'#8b8a84',fontWeight:600}}>{uploadingSales?'⏳ جاري الرفع...':'📊 اضغط للرفع'}</span>
+                    </label>
+                  )}
+                </div>
+                <div>
+                  <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}}>صورة موازنة الشبكة</label>
+                  {networkImage ? (
+                    <div style={{position:'relative'}}>
+                      <img src={networkImage} alt="موازنة الشبكة" style={{width:'100%',height:110,borderRadius:10,objectFit:'cover'}}/>
+                      <button type="button" onClick={()=>setNetworkImage('')} style={{position:'absolute',top:6,left:6,background:'rgba(0,0,0,.55)',color:'white',border:'none',borderRadius:'50%',width:24,height:24,cursor:'pointer',fontSize:14}}>×</button>
+                    </div>
+                  ):(
+                    <label style={{display:'flex',alignItems:'center',justifyContent:'center',height:110,border:'2px dashed #d4d3ce',borderRadius:10,cursor:'pointer',background:'#faf9f7',textAlign:'center' as const,padding:8}}>
+                      <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>e.target.files?.[0]&&uploadImage(e.target.files[0],'network')}/>
+                      <span style={{fontSize:12,color:'#8b8a84',fontWeight:600}}>{uploadingNetwork?'⏳ جاري الرفع...':'💳 اضغط للرفع'}</span>
+                    </label>
+                  )}
+                </div>
               </div>
             </div>
 
