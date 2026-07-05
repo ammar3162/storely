@@ -9,7 +9,7 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
-    const { org_id, branch_id, name, phone, pin } = await req.json()
+    const { org_id, branch_id, name, phone, pin, permissions, role } = await req.json()
     if (!org_id || !name || !phone || !pin) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
 
     const { data: newStaff, error } = await supabase
       .from('staff_members')
-      .insert({ org_id, branch_id: branch_id || null, name, phone, pin, is_active: true })
+      .insert({ org_id, branch_id: branch_id || null, name, phone, pin, is_active: true, permissions: permissions || {dispense:true,inventory:false,purchases:false,reports:false}, role: role === 'cashier' ? 'cashier' : 'staff' })
       .select()
       .single()
 

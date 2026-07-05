@@ -35,6 +35,7 @@ export default function StaffManagementPage() {
   const [newPhone, setNewPhone]     = useState('')
   const [staffCountry, setStaffCountry] = useState(()=>sessionStorage.getItem('s_country_code')||'+966')
   const [newBranch, setNewBranch]   = useState('')
+  const [newRole, setNewRole]       = useState<'staff'|'cashier'>('staff')
   const [revealedPin, setRevealedPin] = useState<{name:string,phone:string,pin:string}|null>(null)
   const [visiblePins, setVisiblePins] = useState<Record<string,boolean>>({})
   const [expandedId, setExpandedId] = useState<string|null>(null)
@@ -114,7 +115,7 @@ export default function StaffManagementPage() {
     const res = await fetch('/api/add-staff', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({org_id:orgId, branch_id:newBranch||null, name:newName.trim(), phone:cleanPhone, pin, permissions:newPermissions})
+      body: JSON.stringify({org_id:orgId, branch_id:newBranch||null, name:newName.trim(), phone:cleanPhone, pin, permissions:newPermissions, role:newRole})
     })
     const resData = await res.json()
     const error = !res.ok ? resData.error : null
@@ -124,7 +125,7 @@ export default function StaffManagementPage() {
       return
     }
     setRevealedPin({name:newName.trim(),phone:cleanPhone,pin})
-    setNewName('');setNewPhone('');setShowAdd(false)
+    setNewName('');setNewPhone('');setNewRole('staff');setShowAdd(false)
     loadStaff(orgId)
   }
 
@@ -282,11 +283,24 @@ export default function StaffManagementPage() {
                   </select>
                 </div>
               )}
+              <div>
+                <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>نوع الموظف</label>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                  <button type="button" onClick={()=>setNewRole('staff')} style={{padding:'10px',borderRadius:8,border:`1.5px solid ${newRole==='staff'?colors.primary:colors.border}`,background:newRole==='staff'?colors.primaryLight:'white',color:newRole==='staff'?colors.primary:colors.text3,fontWeight:700,fontSize:font.sm,cursor:'pointer',fontFamily:'inherit'}}>
+                    👤 موظف عادي
+                  </button>
+                  <button type="button" onClick={()=>setNewRole('cashier')} style={{padding:'10px',borderRadius:8,border:`1.5px solid ${newRole==='cashier'?colors.primary:colors.border}`,background:newRole==='cashier'?colors.primaryLight:'white',color:newRole==='cashier'?colors.primary:colors.text3,fontWeight:700,fontSize:font.sm,cursor:'pointer',fontFamily:'inherit'}}>
+                    💰 كاشير
+                  </button>
+                </div>
+              </div>
             </div>
             <div style={{display:'flex',gap:10}}>
               <button onClick={()=>setShowAdd(false)} style={{...btnSecondary,flex:1,padding:'12px',fontSize:font.sm}}>إلغاء</button>
-              {/* الصلاحيات */}
-              <div style={{background:colors.bg,borderRadius:radius.md,padding:'14px 16px',marginBottom:8}}>
+              <button onClick={addStaff} style={{...btnPrimary,flex:2,padding:'12px',fontSize:font.sm}}>✓ إضافة وتوليد PIN</button>
+            </div>
+            {newRole==='staff' && (
+              <div style={{background:colors.bg,borderRadius:radius.md,padding:'14px 16px',marginTop:12}}>
                 <div style={{fontSize:font.xs,fontWeight:700,color:colors.text3,marginBottom:10,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>صلاحيات الموظف</div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                   {[
@@ -305,8 +319,7 @@ export default function StaffManagementPage() {
                   ))}
                 </div>
               </div>
-              <button onClick={addStaff} style={{...btnPrimary,flex:2,padding:'12px',fontSize:font.sm}}>✓ إضافة وتوليد PIN</button>
-            </div>
+            )}
           </div>
         </div>
       )}
