@@ -34,7 +34,7 @@ export default function CashierClosingPage() {
   const [cashAmount, setCashAmount] = useState('')
   const [hasPurchases, setHasPurchases] = useState<'yes'|'no'|null>(null)
   const [purchases, setPurchases] = useState<Purchase[]>([{amount:'',reason:''}])
-  const [result, setResult] = useState<{expectedCash:number,difference:number,status:string}|null>(null)
+  const [result, setResult] = useState<{expectedCash:number,cashAfterWithdrawal:number,difference:number,status:string}|null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [saved, setSaved] = useState(false)
   const [toast, setToast] = useState<{msg:string,type:'success'|'error'}|null>(null)
@@ -96,10 +96,11 @@ export default function CashierClosingPage() {
     const sales = Number(totalSales)||0
     const network = Number(networkAmount)||0
     const cash = Number(cashAmount)||0
-    const expectedCash = sales - network - totalPurchasesNow
-    const difference = cash - expectedCash
+    const expectedCash = sales - network
+    const cashAfterWithdrawal = cash - totalPurchasesNow
+    const difference = cashAfterWithdrawal - expectedCash
     const status = Math.abs(difference)<0.01 ? 'balanced' : (difference<0 ? 'deficit' : 'surplus')
-    setResult({expectedCash,difference,status})
+    setResult({expectedCash,cashAfterWithdrawal,difference,status})
   }
 
   async function saveClosing() {
@@ -266,20 +267,30 @@ export default function CashierClosingPage() {
                   {[
                     {label:'إجمالي المبيعات',value:sales,sign:''},
                     {label:'الشبكة',value:network,sign:'−'},
-                    ...(totalPurchasesNow>0?[{label:'المشتريات المسحوبة',value:totalPurchasesNow,sign:'−'}]:[]),
                   ].map((r,i)=>(
                     <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:13,borderBottom:'1px dashed #eeeeeb'}}>
                       <span style={{color:'#8b8a84',fontWeight:600}}>{r.label}</span>
                       <span style={{color:'#1c1c1a',fontWeight:700,direction:'ltr'}}>{r.sign}{r.value.toFixed(2)} ر.س</span>
                     </div>
                   ))}
-                  <div style={{display:'flex',justifyContent:'space-between',padding:'12px 0 6px',fontSize:14}}>
+                  <div style={{display:'flex',justifyContent:'space-between',padding:'12px 0 16px',fontSize:14}}>
                     <span style={{color:'#1c1c1a',fontWeight:800}}>= الكاش المتوقع</span>
                     <span style={{color:'#1c1c1a',fontWeight:900,direction:'ltr'}}>{result.expectedCash.toFixed(2)} ر.س</span>
                   </div>
-                  <div style={{display:'flex',justifyContent:'space-between',padding:'6px 0 16px',fontSize:14}}>
-                    <span style={{color:'#8b8a84',fontWeight:700}}>الكاش الفعلي بالدرج</span>
-                    <span style={{color:'#1c1c1a',fontWeight:900,direction:'ltr'}}>{Number(cashAmount).toFixed(2)} ر.س</span>
+                  <div style={{height:1,background:'#eeeeeb',margin:'4px 0 12px'}}/>
+                  <div style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:13,borderBottom:'1px dashed #eeeeeb'}}>
+                    <span style={{color:'#8b8a84',fontWeight:600}}>الكاش الفعلي (قبل خصم المسحوبات)</span>
+                    <span style={{color:'#1c1c1a',fontWeight:700,direction:'ltr'}}>{Number(cashAmount).toFixed(2)} ر.س</span>
+                  </div>
+                  {totalPurchasesNow>0 && (
+                    <div style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:13,borderBottom:'1px dashed #eeeeeb'}}>
+                      <span style={{color:'#8b8a84',fontWeight:600}}>المسحوبات (مصاريف)</span>
+                      <span style={{color:'#dc2626',fontWeight:700,direction:'ltr'}}>−{totalPurchasesNow.toFixed(2)} ر.س</span>
+                    </div>
+                  )}
+                  <div style={{display:'flex',justifyContent:'space-between',padding:'12px 0 16px',fontSize:14}}>
+                    <span style={{color:'#1c1c1a',fontWeight:800}}>= الكاش الفعلي بعد خصم المسحوبات</span>
+                    <span style={{color:'#1c1c1a',fontWeight:900,direction:'ltr'}}>{result.cashAfterWithdrawal.toFixed(2)} ر.س</span>
                   </div>
                   <div style={{
                     padding:'18px',borderRadius:14,textAlign:'center',

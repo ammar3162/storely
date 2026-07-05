@@ -20,8 +20,9 @@ export async function POST(req: Request) {
     const purchasesList = Array.isArray(purchases) ? purchases.filter((p: any) => p && Number(p.amount) > 0) : []
     const totalPurchases = purchasesList.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0)
 
-    const expectedCash = sales - network - totalPurchases
-    const difference = cash - expectedCash
+    const expectedCash = sales - network
+    const cashAfterWithdrawal = cash - totalPurchases
+    const difference = cashAfterWithdrawal - expectedCash
     const status = Math.abs(difference) < 0.01 ? 'balanced' : (difference < 0 ? 'deficit' : 'surplus')
 
     const supabase = sb()
