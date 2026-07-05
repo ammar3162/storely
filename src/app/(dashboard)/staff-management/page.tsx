@@ -500,7 +500,13 @@ export default function StaffManagementPage() {
                     </div>
                     <div style={{background:colors.primaryLight,borderRadius:radius.md,padding:'12px 14px',border:`1px solid ${colors.primaryBorder}`}}>
                       <div style={{fontSize:10,fontWeight:700,color:colors.primary,marginBottom:6,textTransform:'uppercase' as const}}>رمز PIN الحالي</div>
-                      <div style={{fontSize:28,fontWeight:900,color:colors.primary,letterSpacing:8}}>{s.pin}</div>
+                      <div style={{display:'flex',alignItems:'center',gap:10}}>
+                        <div style={{fontSize:28,fontWeight:900,color:colors.primary,letterSpacing:8}}>••••</div>
+                        <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} style={{fontSize:11,fontWeight:700,color:colors.primary,background:'transparent',border:`1px solid ${colors.primaryBorder}`,borderRadius:6,padding:'4px 8px',cursor:'pointer',fontFamily:'inherit'}}>
+                          إعادة توليد
+                        </button>
+                      </div>
+                      <div style={{fontSize:10,color:colors.text4,marginTop:4}}>لأسباب أمنية، لا يمكن عرض PIN القديم — فقط PIN جديد وقت التوليد</div>
                     </div>
                   </div>
                   <div>
