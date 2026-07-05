@@ -56,7 +56,7 @@ function SupplierCard({ s, products, orgId, onRefresh }: any) {
   const sb = createClient()
 
   const linked   = products.filter((p:any) => p.supplier_id === s.id)
-  const unlinked = products.filter((p:any) => p.supplier_id !== s.id)
+  const unlinked = products.filter((p:any) => p.supplier_id !== s.id && (!productSearch || p.name?.toLowerCase().includes(productSearch.toLowerCase())))
 
   async function saveSettings() {
     setSaving(true)
@@ -120,7 +120,11 @@ function SupplierCard({ s, products, orgId, onRefresh }: any) {
             {s.name[0]}
           </div>
           <div>
-            <div style={{ fontSize:15, fontWeight:700, color:'#0f172a' }}>{s.name}</div>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <div style={{ fontSize:15, fontWeight:700, color:'#0f172a' }}>{s.name}</div>
+              {linked.length>0 && <span style={{fontSize:11,fontWeight:700,background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',borderRadius:20,padding:'2px 8px'}}>{linked.length} منتج مرتبط</span>}
+              {linked.length===0 && <span style={{fontSize:11,fontWeight:700,background:'#fef3c7',color:'#92400e',border:'1px solid #fcd34d',borderRadius:20,padding:'2px 8px'}}>⚠️ لا منتجات مرتبطة</span>}
+            </div>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:3, flexWrap:'wrap' as const }}>
               <span style={{ fontSize:12, color:'#64748b' }}>{s.phone}</span>
               <span style={{ fontSize:12, color:'#94a3b8' }}>·</span>
@@ -205,7 +209,8 @@ function SupplierCard({ s, products, orgId, onRefresh }: any) {
             <div style={{ marginBottom:18 }}>
               <div style={{ fontSize:11, fontWeight:700, color:'#94a3b8', marginBottom:10, textTransform:'uppercase' as const, letterSpacing:'.06em' }}>المنتجات المرتبطة</div>
               <div style={{ display:'flex', flexDirection:'column' as const, gap:8 }}>
-                {linked.map((p:any)=>(
+                {linked.length===0 && <div style={{textAlign:'center',padding:'20px',color:'#94a3b8',fontSize:13}}>لا توجد منتجات مرتبطة — أضف منتجاً من الأسفل</div>}
+              {linked.map((p:any)=>(
                   <div key={p.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 14px', background:'#f8fafc', borderRadius:10, border:'1px solid #f1f5f9' }}>
                     <div style={{ flex:1 }}>
                       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
