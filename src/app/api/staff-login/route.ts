@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import bcrypt from 'bcryptjs'
 import { createClient } from '@supabase/supabase-js'
 
 const sb = () => createClient(
@@ -46,11 +47,21 @@ export async function POST(req: Request) {
       .from('staff_members')
       .select('id,name,org_id,branch_id,phone,pin,is_active,permissions,organizations(name),branches(name)')
       .eq('phone', cleanPhone)
-      .eq('pin', String(pin))
       .eq('is_active', true)
       .maybeSingle()
 
     if (error || !staff) {
+      return NextResponse.json({ error: 'رقم الجوال أو رمز PIN غير صحيح' }, { status: 401 })
+    }
+
+    // تحقق من الـ PIN مع دعم النصوص القديمة
+    const pinStr = String(pin)
+    const storedPin = String((staff as any).pin)
+    const pinValid = storedPin.startsWith('$2') 
+      ? await bcrypt.compare(pinStr, storedPin)
+      : storedPin === pinStr
+    
+    if (!pinValid) {
       return NextResponse.json({ error: 'رقم الجوال أو رمز PIN غير صحيح' }, { status: 401 })
     }
 

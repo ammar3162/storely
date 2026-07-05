@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import bcrypt from 'bcryptjs'
 import { createClient } from '@supabase/supabase-js'
 
 const sb = () => createClient(
