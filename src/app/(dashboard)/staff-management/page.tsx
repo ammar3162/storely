@@ -45,6 +45,7 @@ export default function StaffManagementPage() {
   const [assigningId, setAssigningId] = useState<string|null>(null)
   const [reportStaff, setReportStaff] = useState<any|null>(null)
   const [staffReport, setStaffReport] = useState<any[]>([])
+  const [staffClosings, setStaffClosings] = useState<any[]>([])
   const [reportLoading, setReportLoading] = useState(false)
   const [selectedProds, setSelectedProds] = useState<string[]>([])
   const sb = createClient()
@@ -75,6 +76,17 @@ export default function StaffManagementPage() {
   async function openReport(s:any) {
     setReportStaff(s)
     setReportLoading(true)
+    if(s.role==='cashier'){
+      const{data}=await sb.from('cashier_closings' as any)
+        .select('*')
+        .eq('staff_id',s.id)
+        .order('closing_date',{ascending:false})
+        .order('created_at',{ascending:false})
+        .limit(50)
+      setStaffClosings((data||[]) as any[])
+      setReportLoading(false)
+      return
+    }
     const{data}=await sb.from('stock_movements')
       .select('id,qty_change,created_at,note,products!inner(name,unit)')
       .ilike('note', `%صرف بواسطة الموظف: ${s.name}%`)
@@ -413,7 +425,61 @@ export default function StaffManagementPage() {
         </div>
       )}
 
-      {reportStaff && (
+      {reportStaff && reportStaff.role==='cashier' && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
+          <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:560,maxHeight:'85vh',display:'flex',flexDirection:'column',fontFamily:'inherit',direction:'rtl'}}>
+            <div style={{padding:'18px 20px',borderBottom:'1px solid #f0f0f0',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
+              <div>
+                <div style={{fontSize:15,fontWeight:700,color:'#1c1c1a'}}>تقارير إقفال {reportStaff.name}</div>
+                <div style={{fontSize:11,color:'#888780',marginTop:2}}>آخر 50 تقرير إقفال</div>
+              </div>
+              <button onClick={()=>setReportStaff(null)} style={{width:30,height:30,borderRadius:'50%',border:'1px solid #e0e0dd',background:'#f5f5f4',cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',color:'#5f5e5a'}}>✕</button>
+            </div>
+
+            {/* Stats */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,padding:'14px 20px',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
+              {[
+                {label:'عدد التقارير', value:staffClosings.length, color:'#0891b2'},
+                {label:'حالات عجز', value:staffClosings.filter((c:any)=>c.status==='deficit').length, color:'#e24b4a'},
+                {label:'حالات زيادة', value:staffClosings.filter((c:any)=>c.status==='surplus').length, color:'#378add'},
+              ].map((s,i)=>(
+                <div key={i} style={{background:'#f9f9f8',borderRadius:10,padding:'10px 12px',textAlign:'center'}}>
+                  <div style={{fontSize:20,fontWeight:700,color:s.color,fontVariantNumeric:'tabular-nums'}}>{s.value}</div>
+                  <div style={{fontSize:10,color:'#888780',marginTop:2}}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* List */}
+            <div style={{overflowY:'auto',flex:1}}>
+              {reportLoading?(
+                <div style={{padding:'40px',textAlign:'center',color:'#888780',fontSize:13}}>جاري التحميل...</div>
+              ):staffClosings.length===0?(
+                <div style={{padding:'40px',textAlign:'center',fontSize:13,color:'#888780'}}>لا توجد تقارير إقفال بعد</div>
+              ):staffClosings.map((c:any,i:number)=>{
+                const statusLabel:Record<string,string> = {deficit:'عجز',surplus:'زيادة',balanced:'مطابق'}
+                const statusColor:Record<string,string> = {deficit:'#e24b4a',surplus:'#378add',balanced:'#16a34a'}
+                return(
+                  <div key={c.id} style={{display:'flex',alignItems:'center',gap:12,padding:'11px 20px',borderBottom:i<staffClosings.length-1?'1px solid #f5f5f4':'none'}}>
+                    <div style={{width:36,height:36,borderRadius:10,background:statusColor[c.status]+'15',border:`1px solid ${statusColor[c.status]}44`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <span style={{fontSize:16}}>{c.status==='balanced'?'✅':c.status==='deficit'?'⚠️':'📈'}</span>
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:600,color:'#1c1c1a'}}>{new Date(c.closing_date).toLocaleDateString('ar-SA',{weekday:'short',month:'short',day:'numeric'})}</div>
+                      <div style={{fontSize:10,color:'#888780',marginTop:1}}>مبيعات {Number(c.total_sales).toFixed(0)} ر.س · شبكة {Number(c.network_amount).toFixed(0)} ر.س</div>
+                    </div>
+                    <div style={{fontSize:11,fontWeight:700,color:statusColor[c.status],flexShrink:0}}>
+                      {statusLabel[c.status]}{c.status!=='balanced'?` (${Math.abs(Number(c.difference)).toFixed(0)} ر.س)`:''}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reportStaff && reportStaff.role!=='cashier' && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
           <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:540,maxHeight:'85vh',display:'flex',flexDirection:'column',fontFamily:'inherit',direction:'rtl'}}>
             <div style={{padding:'18px 20px',borderBottom:'1px solid #f0f0f0',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
@@ -495,9 +561,11 @@ export default function StaffManagementPage() {
                   <button onClick={e=>{e.stopPropagation();setEditingPerms(s.id);setEditPerms(s.permissions||{dispense:true,inventory:false,purchases:false,reports:false})}} className="act-btn" style={{background:'#f5f3ff',color:'#7c3aed'}}>
                     🔐 صلاحيات
                   </button>
-                  <button onClick={e=>{e.stopPropagation();openAssign(s)}} className="act-btn" style={{background:colors.warningLight||'#fffbeb',color:colors.warning||'#d97706'}}>
-                    📦 {s.assigned_products?.length>0?`${s.assigned_products.length} منتج`:'كل المنتجات'}
-                  </button>
+                  {s.role!=='cashier' && (
+                    <button onClick={e=>{e.stopPropagation();openAssign(s)}} className="act-btn" style={{background:colors.warningLight||'#fffbeb',color:colors.warning||'#d97706'}}>
+                      📦 {s.assigned_products?.length>0?`${s.assigned_products.length} منتج`:'كل المنتجات'}
+                    </button>
+                  )}
                   <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} className="act-btn" style={{background:colors.infoLight,color:colors.info}}>PIN جديد</button>
                   <button onClick={e=>{e.stopPropagation();toggleActive(s.id,s.is_active)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`}}>{s.is_active?'إيقاف':'تفعيل'}</button>
                   <button onClick={e=>{e.stopPropagation();deleteStaff(s.id)}} className="act-btn" style={{background:colors.dangerLight,color:colors.danger}}>حذف</button>
