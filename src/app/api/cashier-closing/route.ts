@@ -6,16 +6,33 @@ const sb = () => createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+function formatPhone(raw: string): string {
+  const clean = (raw || '').replace(/\s/g, '')
+  if (clean.startsWith('+')) return clean.slice(1)
+  if (clean.startsWith('00')) return clean.slice(2)
+  if (clean.startsWith('966')) return clean
+  if (clean.startsWith('05')) return '966' + clean.slice(1)
+  if (clean.startsWith('5')) return '966' + clean
+  return clean
+}
+
 export async function POST(req: Request) {
   try {
-    const { org_id, branch_id, staff_id, staff_name, total_sales, network_amount, cash_amount, purchases, network_image, sales_image } = await req.json()
+    const {
+      org_id, branch_id, staff_id, staff_name, total_sales,
+      network_amount, mada_amount, visa_amount, mastercard_amount,
+      cash_amount, purchases, network_image, sales_image,
+    } = await req.json()
 
     if (!org_id || !staff_id || !staff_name) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
 
     const sales = Number(total_sales) || 0
-    const network = Number(network_amount) || 0
+    const mada = Number(mada_amount) || 0
+    const visa = Number(visa_amount) || 0
+    const mastercard = Number(mastercard_amount) || 0
+    const network = Number(network_amount) || (mada + visa + mastercard)
     const cash = Number(cash_amount) || 0
     const purchasesList = Array.isArray(purchases) ? purchases.filter((p: any) => p && Number(p.amount) > 0) : []
     const totalPurchases = purchasesList.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0)
@@ -36,6 +53,9 @@ export async function POST(req: Request) {
         closing_date: new Date().toISOString().slice(0, 10),
         total_sales: sales,
         network_amount: network,
+        mada_amount: mada,
+        visa_amount: visa,
+        mastercard_amount: mastercard,
         cash_amount: cash,
         purchases: purchasesList,
         total_purchases: totalPurchases,
@@ -51,6 +71,50 @@ export async function POST(req: Request) {
     if (error) {
       return NextResponse.json({ error: 'حدث خطأ أثناء حفظ التقرير' }, { status: 500 })
     }
+
+    // إرسال إشعار واتساب فوري للمالك
+    try {
+      const { data: org } = await supabase.from('organizations').select('name,whatsapp_number').eq('id', org_id).single()
+      const whatsappNumber = (org as any)?.whatsapp_number
+      if (whatsappNumber) {
+        const now = new Date()
+        const timeStr = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Riyadh' })
+        const dateStr = now.toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })
+
+        const statusLine = status === 'balanced'
+          ? '✅ *مطابق تماماً*'
+          : status === 'deficit'
+            ? `⚠️ *يوجد عجز: ${Math.abs(difference).toFixed(2)} ر.س*`
+            : `📈 *يوجد زيادة: ${Math.abs(difference).toFixed(2)} ر.س*`
+
+        let networkLines = ''
+        if (mada > 0) networkLines += `  • مدى: ${mada.toFixed(2)} ر.س\n`
+        if (visa > 0) networkLines += `  • فيزا: ${visa.toFixed(2)} ر.س\n`
+        if (mastercard > 0) networkLines += `  • ماستركارد: ${mastercard.toFixed(2)} ر.س\n`
+
+        let purchasesLine = ''
+        if (totalPurchases > 0) purchasesLine = `\n🧾 مسحوبات: *${totalPurchases.toFixed(2)} ر.س*`
+
+        const msg = `🟢 *Storely — إقفال كاشير*\n\n` +
+          `👤 الموظف: *${staff_name}*\n` +
+          `🕐 ${timeStr} · ${dateStr}\n\n` +
+          `📊 إجمالي المبيعات: *${sales.toFixed(2)} ر.س*\n\n` +
+          `💳 الشبكة:\n${networkLines}  إجمالي: *${network.toFixed(2)} ر.س*\n\n` +
+          `💵 الكاش الفعلي: *${cash.toFixed(2)} ر.س*` +
+          purchasesLine +
+          `\n\n${statusLine}`
+
+        await fetch('https://www.wasenderapi.com/api/send-message', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.WASENDER_API_KEY}`,
+            'X-Session-Id': process.env.WASENDER_SESSION_ID!,
+          },
+          body: JSON.stringify({ to: formatPhone(whatsappNumber), text: msg }),
+        })
+      }
+    } catch {}
 
     return NextResponse.json({ success: true, closing: data })
   } catch {
