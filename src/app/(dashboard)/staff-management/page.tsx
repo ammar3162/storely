@@ -36,6 +36,7 @@ export default function StaffManagementPage() {
   const [staffCountry, setStaffCountry] = useState(()=>sessionStorage.getItem('s_country_code')||'+966')
   const [newBranch, setNewBranch]   = useState('')
   const [revealedPin, setRevealedPin] = useState<{name:string,phone:string,pin:string}|null>(null)
+  const [visiblePins, setVisiblePins] = useState<Record<string,boolean>>({})
   const [expandedId, setExpandedId] = useState<string|null>(null)
   const [visible, setVisible]       = useState(false)
   const [maxStaff, setMaxStaff]     = useState(999)
@@ -500,13 +501,26 @@ export default function StaffManagementPage() {
                     </div>
                     <div style={{background:colors.primaryLight,borderRadius:radius.md,padding:'12px 14px',border:`1px solid ${colors.primaryBorder}`}}>
                       <div style={{fontSize:10,fontWeight:700,color:colors.primary,marginBottom:6,textTransform:'uppercase' as const}}>رمز PIN الحالي</div>
-                      <div style={{display:'flex',alignItems:'center',gap:10}}>
-                        <div style={{fontSize:28,fontWeight:900,color:colors.primary,letterSpacing:8}}>••••</div>
-                        <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} style={{fontSize:11,fontWeight:700,color:colors.primary,background:'transparent',border:`1px solid ${colors.primaryBorder}`,borderRadius:6,padding:'4px 8px',cursor:'pointer',fontFamily:'inherit'}}>
-                          إعادة توليد
-                        </button>
-                      </div>
-                      <div style={{fontSize:10,color:colors.text4,marginTop:4}}>لأسباب أمنية، لا يمكن عرض PIN القديم — فقط PIN جديد وقت التوليد</div>
+                      {String(s.pin||'').startsWith('$2') ? (
+                        <div>
+                          <div style={{fontSize:13,fontWeight:700,color:colors.danger||'#dc2626',marginBottom:6}}>PIN قديم — لا يمكن استرجاعه</div>
+                          <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} style={{fontSize:11,fontWeight:700,color:'white',background:colors.primary,border:'none',borderRadius:6,padding:'6px 12px',cursor:'pointer',fontFamily:'inherit'}}>
+                            🔄 إعادة توليد PIN جديد
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{display:'flex',alignItems:'center',gap:10}}>
+                          <div style={{fontSize:28,fontWeight:900,color:colors.primary,letterSpacing:8,minWidth:90}}>
+                            {visiblePins[s.id] ? s.pin : '••••'}
+                          </div>
+                          <button onClick={e=>{e.stopPropagation();setVisiblePins(v=>({...v,[s.id]:!v[s.id]}))}} style={{background:'transparent',border:'none',cursor:'pointer',fontSize:18,padding:4,lineHeight:1}} title={visiblePins[s.id]?'إخفاء':'إظهار'}>
+                            {visiblePins[s.id] ? '🙈' : '👁️'}
+                          </button>
+                          <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} style={{fontSize:11,fontWeight:700,color:colors.primary,background:'transparent',border:`1px solid ${colors.primaryBorder}`,borderRadius:6,padding:'4px 8px',cursor:'pointer',fontFamily:'inherit'}}>
+                            إعادة توليد
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div>
