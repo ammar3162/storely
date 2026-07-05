@@ -21,7 +21,14 @@ export default function StaffLoginPage() {
 
   useEffect(()=>{
     const saved = localStorage.getItem('staff_session')
-    if(saved) router.push('/staff/dispense')
+    if(saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        router.push(parsed.role === 'cashier' ? '/staff/cashier-closing' : '/staff/dispense')
+      } catch {
+        router.push('/staff/dispense')
+      }
+    }
 
     const pwa = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true
     setIsPWA(pwa)
@@ -106,7 +113,7 @@ export default function StaffLoginPage() {
         return
       }
       localStorage.setItem('staff_session',JSON.stringify(data.staff))
-      router.push('/staff/dispense')
+      router.push(data.staff.role === 'cashier' ? '/staff/cashier-closing' : '/staff/dispense')
     } catch {
       setError('حدث خطأ — حاول مرة أخرى')
       setLoading(false)
