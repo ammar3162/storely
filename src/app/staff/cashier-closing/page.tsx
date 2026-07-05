@@ -155,7 +155,7 @@ export default function CashierClosingPage() {
           <>
             <div style={{background:'white',borderRadius:16,padding:20,marginBottom:16,boxShadow:'0 2px 12px rgba(0,0,0,.06)'}}>
               <div style={{marginBottom:16}}>
-                <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}}>إجمالي المبيعات (فودك)</label>
+                <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}}>إجمالي المبيعات (النظام)</label>
                 <input type="number" value={totalSales} onChange={e=>setTotalSales(e.target.value)} placeholder="0.00" style={inputStyle}/>
               </div>
               <div style={{marginBottom:16}}>
