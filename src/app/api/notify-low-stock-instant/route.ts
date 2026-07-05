@@ -99,24 +99,29 @@ export async function POST(req: Request) {
         : ''
       
       const adminMsg = sentToSupplier
-        ? `🟢 *Storely*
+        ? `╔══════════════════════╗
+   📦 Storely Alert
+╚══════════════════════╝
 
-مرحباً ${(org as any).name}،
-
-⚠️ *${(product as any).name}* وصل للحد الأدنى
-المتبقي: *${new_qty} ${(product as any).unit}*
-${daysMsg}
-
-✅ تم إرسال طلب توريد للمورد تلقائياً`
-        : `🟢 *Storely*
-
-مرحباً ${(org as any).name}،
+🏢 *${(org as any).name}*
 
 ⚠️ *${(product as any).name}* وصل للحد الأدنى
-المتبقي: *${new_qty} ${(product as any).unit}*
+📊 المتبقي: *${new_qty} ${(product as any).unit}*
 ${daysMsg}
 
-يرجى الطلب في أقرب وقت 🛒`
+✅ *تم إرسال طلب توريد للمورد تلقائياً*
+سيتواصل معك المورد قريباً للتأكيد`
+        : `╔══════════════════════╗
+   📦 Storely Alert
+╚══════════════════════╝
+
+🏢 *${(org as any).name}*
+
+⚠️ *${(product as any).name}* وصل للحد الأدنى
+📊 المتبقي: *${new_qty} ${(product as any).unit}*
+${daysMsg}
+
+🛒 *يرجى الطلب في أقرب وقت*`
       await sendWA((org as any).whatsapp_number, adminMsg)
     }
 
