@@ -71,7 +71,9 @@ export default function CashierClosingPage() {
   const [orgLogo, setOrgLogo] = useState<string|null>(null)
   const [step, setStep] = useState(1)
   const [totalSales, setTotalSales] = useState('')
-  const [networkAmount, setNetworkAmount] = useState('')
+  const [madaAmount, setMadaAmount] = useState('')
+  const [visaAmount, setVisaAmount] = useState('')
+  const [mastercardAmount, setMastercardAmount] = useState('')
   const [cashAmount, setCashAmount] = useState('')
   const [hasPurchases, setHasPurchases] = useState<'yes'|'no'|null>(null)
   const [purchases, setPurchases] = useState<Purchase[]>([{amount:'',reason:''}])
@@ -145,9 +147,13 @@ export default function CashierClosingPage() {
 
   // حسابات مباشرة (معاينة حية)
   const sales = Number(totalSales)||0
-  const network = Number(networkAmount)||0
+  const mada = Number(madaAmount)||0
+  const visa = Number(visaAmount)||0
+  const mastercard = Number(mastercardAmount)||0
+  const network = mada + visa + mastercard
   const cash = Number(cashAmount)||0
-  const networkError = (totalSales && networkAmount && network > sales) ? 'الشبكة أكبر من إجمالي المبيعات — راجع الأرقام' : ''
+  const anyNetworkEntered = !!(madaAmount || visaAmount || mastercardAmount)
+  const networkError = (totalSales && anyNetworkEntered && network > sales) ? 'إجمالي الشبكة أكبر من إجمالي المبيعات — راجع الأرقام' : ''
   const validPurchasesNow = hasPurchases==='yes' ? purchases.filter(p=>Number(p.amount)>0) : []
   const totalPurchasesNow = validPurchasesNow.reduce((sum,p)=>sum+(Number(p.amount)||0),0)
   const expectedCash = sales - network
@@ -155,7 +161,7 @@ export default function CashierClosingPage() {
   const difference = cashAfterWithdrawal - expectedCash
   const status = Math.abs(difference)<0.01 ? 'balanced' : (difference<0 ? 'deficit' : 'surplus')
 
-  const step1Valid = !!totalSales && !!networkAmount && !!cashAmount && !networkError
+  const step1Valid = !!totalSales && !!cashAmount && anyNetworkEntered && !networkError
   const step2Valid = hasPurchases!==null
   const step3Valid = !!salesImage && !!networkImage
 
@@ -188,6 +194,7 @@ export default function CashierClosingPage() {
           org_id: session.org_id, branch_id: session.branch_id,
           staff_id: session.id, staff_name: session.name,
           total_sales: sales, network_amount: network,
+          mada_amount: mada, visa_amount: visa, mastercard_amount: mastercard,
           cash_amount: cash, purchases: validPurchases,
           network_image: networkImage, sales_image: salesImage,
         })
@@ -202,7 +209,7 @@ export default function CashierClosingPage() {
   }
 
   function resetForm() {
-    setTotalSales(''); setNetworkAmount(''); setCashAmount('')
+    setTotalSales(''); setMadaAmount(''); setVisaAmount(''); setMastercardAmount(''); setCashAmount('')
     setHasPurchases(null); setPurchases([{amount:'',reason:''}])
     setNetworkImage(''); setSalesImage('')
     setStep(1); setSaved(false)
@@ -277,14 +284,37 @@ export default function CashierClosingPage() {
                   <MoneyInput value={totalSales} onChange={setTotalSales} placeholder="0.00" icon="📊" iconBg="#f0fdf4" iconColor="#16a34a"/>
                 </div>
                 <div style={{marginBottom:16}}>
-                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>إجمالي الشبكة (مدى + فيزا)</label>
-                  <MoneyInput value={networkAmount} onChange={setNetworkAmount} placeholder="0.00" icon="💳" iconBg="#eff6ff" iconColor="#2563eb" error={networkError}/>
+                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>الشبكة — حسب تقرير جهاز مدى</label>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+                    <div>
+                      <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>مدى</div>
+                      <input type="number" value={madaAmount} onChange={e=>setMadaAmount(e.target.value)} placeholder="0.00"
+                        style={{width:'100%',padding:'11px 8px',border:`1.5px solid ${networkError?'#dc2626':'#e5e5e2'}`,borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'center' as const,background:networkError?'#fef7f7':'white'}}/>
+                    </div>
+                    <div>
+                      <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>فيزا</div>
+                      <input type="number" value={visaAmount} onChange={e=>setVisaAmount(e.target.value)} placeholder="0.00"
+                        style={{width:'100%',padding:'11px 8px',border:`1.5px solid ${networkError?'#dc2626':'#e5e5e2'}`,borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'center' as const,background:networkError?'#fef7f7':'white'}}/>
+                    </div>
+                    <div>
+                      <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>ماستركارد</div>
+                      <input type="number" value={mastercardAmount} onChange={e=>setMastercardAmount(e.target.value)} placeholder="0.00"
+                        style={{width:'100%',padding:'11px 8px',border:`1.5px solid ${networkError?'#dc2626':'#e5e5e2'}`,borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'center' as const,background:networkError?'#fef7f7':'white'}}/>
+                    </div>
+                  </div>
+                  {anyNetworkEntered && (
+                    <div style={{display:'flex',justifyContent:'space-between',marginTop:8,padding:'8px 10px',background:'#eff6ff',borderRadius:8,fontSize:11,fontWeight:700}}>
+                      <span style={{color:'#2563eb'}}>إجمالي الشبكة</span>
+                      <span style={{color:'#2563eb',direction:'ltr' as const}}>{fmt(network)} ر.س</span>
+                    </div>
+                  )}
+                  {networkError && <div style={{fontSize:11,color:'#dc2626',fontWeight:700,marginTop:6,display:'flex',alignItems:'center',gap:4}}>⚠️ {networkError}</div>}
                 </div>
-                <div style={{marginBottom: (totalSales && networkAmount && !networkError) ? 16 : 0}}>
+                <div style={{marginBottom: (totalSales && anyNetworkEntered && !networkError) ? 16 : 0}}>
                   <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>الكاش الفعلي بالدرج</label>
                   <MoneyInput value={cashAmount} onChange={setCashAmount} placeholder="0.00" icon="💵" iconBg="#fffbeb" iconColor="#d97706"/>
                 </div>
-                {totalSales && networkAmount && !networkError && (
+                {totalSales && anyNetworkEntered && !networkError && (
                   <div style={{display:'flex',justifyContent:'space-between',padding:'12px 14px',background:'#f7f7f5',borderRadius:10,fontSize:12,fontWeight:700}}>
                     <span style={{color:'#8b8a84'}}>الكاش المتوقع (معاينة)</span>
                     <span style={{color:'#1c1c1a',direction:'ltr' as const}}>{fmt(expectedCash)} ر.س</span>
@@ -386,7 +416,9 @@ export default function CashierClosingPage() {
                 <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>ملخص الاحتساب</div>
                 {[
                   {label:'إجمالي المبيعات',value:sales,sign:''},
-                  {label:'الشبكة',value:network,sign:'−'},
+                  ...(mada>0?[{label:'— مدى',value:mada,sign:'−'}]:[]),
+                  ...(visa>0?[{label:'— فيزا',value:visa,sign:'−'}]:[]),
+                  ...(mastercard>0?[{label:'— ماستركارد',value:mastercard,sign:'−'}]:[]),
                 ].map((r,i)=>(
                   <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:13,borderBottom:'1px dashed #eeeeeb'}}>
                     <span style={{color:'#8b8a84',fontWeight:600}}>{r.label}</span>
