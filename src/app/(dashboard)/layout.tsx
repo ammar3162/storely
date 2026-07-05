@@ -78,6 +78,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showMore, setShowMore]     = useState(false)
   const [showBranch, setShowBranch] = useState(false)
   const [ready, setReady]           = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [onboardingStep, setOnboardingStep] = useState(0)
   const [theme, setTheme]           = useState<'light'|'dark'>('light')
   const router   = useRouter()
   const pathname = usePathname()
