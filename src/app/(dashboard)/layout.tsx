@@ -300,7 +300,59 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* ═══ MOBILE LAYOUT ═══ */}
         <div className="mob-layout">
           {/* Mobile Header — Zid style */}
-          <header className="mob-header" style={{position:'fixed',top:0,right:0,left:0,zIndex:100,background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,padding:'12px 16px',alignItems:'center',gap:10}}>
+        {/* Onboarding Modal */}
+      {showOnboarding && (
+        <div style={{position:'fixed',inset:0,zIndex:9999,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(4px)'}}>
+          <div style={{background:'white',borderRadius:24,width:'100%',maxWidth:480,fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',overflow:'hidden',boxShadow:'0 24px 60px rgba(0,0,0,.3)'}}>
+            <div style={{background:'linear-gradient(135deg,#0d2818,#1a4731)',padding:'28px 28px 24px',textAlign:'center'}}>
+              <div style={{fontSize:48,marginBottom:12}}>{onboardingStep===0?'👋':onboardingStep===1?'📦':onboardingStep===2?'👥':onboardingStep===3?'🚚':'🎉'}</div>
+              <div style={{fontSize:18,fontWeight:800,color:'white',marginBottom:6}}>
+                {onboardingStep===0?'أهلاً بك في Storely!':onboardingStep===1?'أضف منتجاتك':onboardingStep===2?'أضف موظفيك':onboardingStep===3?'أضف موردينك':'أنت جاهز!'}
+              </div>
+              <div style={{fontSize:13,color:'rgba(255,255,255,.7)'}}>
+                {onboardingStep===0?'دليل سريع لتبدأ في 4 خطوات':onboardingStep===1?'أضف أصناف مخزونك وكمياتها':onboardingStep===2?'أعط موظفيك صلاحيات الصرف':onboardingStep===3?'ربط موردينك لطلبات أسرع':'يمكنك البدء الآن'}
+              </div>
+              <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:16}}>
+                {[0,1,2,3,4].map(i=>(
+                  <div key={i} style={{width:i===onboardingStep?20:6,height:6,borderRadius:99,background:i===onboardingStep?'#4abe7a':'rgba(255,255,255,.3)',transition:'all .3s'}}/>
+                ))}
+              </div>
+            </div>
+            <div style={{padding:'24px 28px'}}>
+              {onboardingStep===0 && (
+                <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
+                  {[
+                    {icon:'📦',title:'أضف منتجاتك',desc:'سجّل أصناف مخزونك وكمياتها والحد الأدنى'},
+                    {icon:'👥',title:'أضف موظفيك',desc:'أعط كل موظف PIN ليدخل ويصرف'},
+                    {icon:'🚚',title:'أضف موردينك',desc:'ربط المورد بالمنتج لطلبات تلقائية'},
+                    {icon:'📲',title:'فعّل الإشعارات',desc:'استقبل تنبيهات واتساب عند نقص المخزون'},
+                  ].map((s,i)=>(
+                    <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 12px',background:'#f8fafc',borderRadius:10}}>
+                      <span style={{fontSize:20,flexShrink:0}}>{s.icon}</span>
+                      <div>
+                        <div style={{fontSize:13,fontWeight:700,color:'#0f172a'}}>{s.title}</div>
+                        <div style={{fontSize:11,color:'#64748b',marginTop:2}}>{s.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {onboardingStep===1 && <div style={{textAlign:'center' as const}}><p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:16}}>من صفحة <b>المخزون</b> اضغط <b>"+ إضافة منتج"</b> وأدخل اسم المنتج والكمية وحد إعادة الطلب</p><button onClick={()=>router.push('/inventory')} style={{padding:'10px 20px',background:'#f0fdf4',color:'#16a34a',border:'1.5px solid #bbf7d0',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>اذهب للمخزون ←</button></div>}
+              {onboardingStep===2 && <div style={{textAlign:'center' as const}}><p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:16}}>من صفحة <b>الموظفون</b> اضغط <b>"+ موظف جديد"</b> وأدخل اسمه ورقم جواله</p><button onClick={()=>router.push('/staff-management')} style={{padding:'10px 20px',background:'#f0fdf4',color:'#16a34a',border:'1.5px solid #bbf7d0',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>اذهب للموظفين ←</button></div>}
+              {onboardingStep===3 && <div style={{textAlign:'center' as const}}><p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:16}}>من صفحة <b>الموردين</b> أضف موردينك لطلبات تلقائية عبر واتساب</p><button onClick={()=>router.push('/suppliers')} style={{padding:'10px 20px',background:'#f0fdf4',color:'#16a34a',border:'1.5px solid #bbf7d0',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>اذهب للموردين ←</button></div>}
+              {onboardingStep===4 && <div style={{textAlign:'center' as const}}><p style={{fontSize:14,color:'#64748b',lineHeight:1.8}}>كل شيء جاهز! ابدأ بإدارة مخزونك الآن 🚀</p></div>}
+            </div>
+            <div style={{padding:'0 28px 24px',display:'flex',gap:8}}>
+              {onboardingStep<4 ? <>
+                <button onClick={()=>{localStorage.setItem('onboarding_done','1');setShowOnboarding(false)}} style={{flex:1,padding:'11px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:10,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>تخطي</button>
+                <button onClick={()=>setOnboardingStep(s=>s+1)} style={{flex:2,padding:'11px',background:'#16a34a',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>التالي ←</button>
+              </> : <button onClick={()=>{localStorage.setItem('onboarding_done','1');setShowOnboarding(false)}} style={{flex:1,padding:'12px',background:'#16a34a',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>🚀 ابدأ الآن</button>}
+            </div>
+          </div>
+        </div>
+      )}
+
+        <header className="mob-header" style={{position:'fixed',top:0,right:0,left:0,zIndex:100,background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,padding:'12px 16px',alignItems:'center',gap:10}}>
             <div style={{flex:1,display:'flex',alignItems:'center',gap:8,minWidth:0}}>
               <img src={orgLogo||"/storely-logo.png"} alt="Storely" style={{maxWidth:40,maxHeight:40,height:'auto',width:'auto',flexShrink:0}}/>
               <div style={{minWidth:0}}>
