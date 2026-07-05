@@ -286,11 +286,13 @@ export default function StaffManagementPage() {
               <div>
                 <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>نوع الموظف</label>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                  <button type="button" onClick={()=>setNewRole('staff')} style={{padding:'10px',borderRadius:8,border:`1.5px solid ${newRole==='staff'?colors.primary:colors.border}`,background:newRole==='staff'?colors.primaryLight:'white',color:newRole==='staff'?colors.primary:colors.text3,fontWeight:700,fontSize:font.sm,cursor:'pointer',fontFamily:'inherit'}}>
-                    👤 موظف عادي
+                  <button type="button" onClick={()=>setNewRole('staff')} style={{padding:'12px 10px',borderRadius:10,border:`1.5px solid ${newRole==='staff'?colors.primary:colors.border}`,background:newRole==='staff'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='staff'?`0 2px 8px ${colors.primary}22`:'none'}}>
+                    <div style={{fontWeight:800,fontSize:font.sm,color:newRole==='staff'?colors.primary:colors.text2,marginBottom:3}}>👤 موظف عادي</div>
+                    <div style={{fontSize:10,color:newRole==='staff'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يستخدم نظام الصرف والمخزون</div>
                   </button>
-                  <button type="button" onClick={()=>setNewRole('cashier')} style={{padding:'10px',borderRadius:8,border:`1.5px solid ${newRole==='cashier'?colors.primary:colors.border}`,background:newRole==='cashier'?colors.primaryLight:'white',color:newRole==='cashier'?colors.primary:colors.text3,fontWeight:700,fontSize:font.sm,cursor:'pointer',fontFamily:'inherit'}}>
-                    💰 كاشير
+                  <button type="button" onClick={()=>setNewRole('cashier')} style={{padding:'12px 10px',borderRadius:10,border:`1.5px solid ${newRole==='cashier'?colors.primary:colors.border}`,background:newRole==='cashier'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='cashier'?`0 2px 8px ${colors.primary}22`:'none'}}>
+                    <div style={{fontWeight:800,fontSize:font.sm,color:newRole==='cashier'?colors.primary:colors.text2,marginBottom:3}}>💰 كاشير</div>
+                    <div style={{fontSize:10,color:newRole==='cashier'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يقفل الصندوق يومياً فقط</div>
                   </button>
                 </div>
               </div>
