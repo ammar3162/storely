@@ -18,6 +18,7 @@ const TOOLS = [
     bg:'#f0fdf4',
     border:'#bbf7d0',
     features:['حساب الكمية المثلى','إرسال للمورد واتساب','بناءً على 90 يوم صرف'],
+    minPlan:'pro',
   },
   {
     href:'/branch-compare',
@@ -28,8 +29,14 @@ const TOOLS = [
     bg:'#eff6ff',
     border:'#bfdbfe',
     features:['مقارنة الصرف','أفضل الأصناف لكل فرع','تحليل أسبوعي وشهري'],
+    minPlan:'advanced',
   },
 ]
+
+function planAllows(userPlan:string, minPlan:string){
+  const order = ['basic','pro','advanced']
+  return order.indexOf(userPlan) >= order.indexOf(minPlan)
+}
 
 export default function AIToolsPage() {
   const [weeklyReport, setWeeklyReport] = useState<any>(null)
@@ -46,6 +53,7 @@ export default function AIToolsPage() {
   const [reportLoading, setReportLoading] = useState(false)
   const router = useRouter()
   const [visible] = useState(true)
+  const plan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
 
   return (
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',maxWidth:700,margin:'0 auto',opacity:visible?1:0,transition:'opacity .3s'}}>
@@ -68,10 +76,15 @@ export default function AIToolsPage() {
       <div style={{display:'flex',flexDirection:'column',gap:12}}>
         {TOOLS.map((tool,i)=>(
           <div key={i} className="fu" style={{animationDelay:`${i*.08}s`}}>
-            <button onClick={()=>router.push(tool.href)}
-              style={{width:'100%',background:'white',border:`1.5px solid ${tool.border}`,borderRadius:16,padding:'20px',cursor:'pointer',fontFamily:'inherit',textAlign:'right',transition:'all .2s',boxShadow:`0 2px 8px ${tool.color}10`}}
+            <button onClick={()=>planAllows(plan,tool.minPlan)?router.push(tool.href):router.push('/settings')}
+              style={{width:'100%',background:'white',border:`1.5px solid ${tool.border}`,borderRadius:16,padding:'20px',cursor:'pointer',fontFamily:'inherit',textAlign:'right',transition:'all .2s',boxShadow:`0 2px 8px ${tool.color}10`,opacity:planAllows(plan,tool.minPlan)?1:.6,position:'relative'}}
               onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow=`0 8px 24px ${tool.color}20`}}
               onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='none';(e.currentTarget as HTMLElement).style.boxShadow=`0 2px 8px ${tool.color}10`}}>
+              {!planAllows(plan,tool.minPlan) && (
+                <div style={{position:'absolute',top:12,left:12,background:'#1c1c1a',color:'white',fontSize:10,fontWeight:700,padding:'4px 10px',borderRadius:99,display:'flex',alignItems:'center',gap:4,zIndex:1}}>
+                  🔒 {tool.minPlan==='advanced'?'المتقدمة':'المتوسطة'}
+                </div>
+              )}
               <div style={{display:'flex',alignItems:'flex-start',gap:14}}>
                 <div style={{width:52,height:52,borderRadius:14,background:tool.bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,flexShrink:0,border:`1px solid ${tool.border}`}}>
                   {tool.icon}

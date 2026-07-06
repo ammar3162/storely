@@ -18,7 +18,10 @@ export default function PurchaseSuggestionPage() {
   const [sent, setSent]       = useState(false)
   const [visible, setVisible] = useState(false)
 
-  useEffect(()=>{ load() },[])
+  const plan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
+  const allowed = plan==='pro' || plan==='advanced'
+
+  useEffect(()=>{ if(allowed) load() },[])
 
   async function load() {
     setLoading(true)
@@ -48,6 +51,15 @@ export default function PurchaseSuggestionPage() {
     setSending(false)
     setSent(true)
   }
+
+  if (!allowed) return (
+    <div style={{fontFamily:'inherit',direction:'rtl',maxWidth:600,margin:'60px auto',textAlign:'center' as const,padding:20}}>
+      <div style={{fontSize:48,marginBottom:16}}>🔒</div>
+      <div style={{fontSize:20,fontWeight:800,color:C.text,marginBottom:8}}>هذه الميزة تتطلب باقة أعلى</div>
+      <div style={{fontSize:14,color:C.text3,marginBottom:24,lineHeight:1.6}}>اقتراح الشراء الذكي متاح من الباقة المتوسطة فأعلى. ترقّى الآن للاستفادة من حساب الكمية المثلى وإرسالها للمورد تلقائياً.</div>
+      <a href="/settings" style={{display:'inline-block',padding:'12px 28px',background:C.primary,color:'white',borderRadius:10,fontSize:14,fontWeight:700,textDecoration:'none'}}>ترقية الباقة</a>
+    </div>
+  )
 
   if (loading) return (
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',maxWidth:900,margin:'0 auto'}}>

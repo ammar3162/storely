@@ -23,6 +23,7 @@ function Avatar({ name, active }: { name:string; active:boolean }) {
 }
 
 export default function StaffManagementPage() {
+  const orgPlan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
   const [staff, setStaff]           = useState<any[]>([])
   const [branches, setBranches]     = useState<any[]>([])
   const [orgId, setOrgId]           = useState('')
@@ -302,7 +303,13 @@ export default function StaffManagementPage() {
                     <div style={{fontWeight:800,fontSize:font.sm,color:newRole==='staff'?colors.primary:colors.text2,marginBottom:3}}>👤 موظف عادي</div>
                     <div style={{fontSize:10,color:newRole==='staff'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يستخدم نظام الصرف والمخزون</div>
                   </button>
-                  <button type="button" onClick={()=>setNewRole('cashier')} style={{padding:'12px 10px',borderRadius:10,border:`1.5px solid ${newRole==='cashier'?colors.primary:colors.border}`,background:newRole==='cashier'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='cashier'?`0 2px 8px ${colors.primary}22`:'none'}}>
+                  <button type="button" onClick={()=>{
+                      if(orgPlan==='basic'){toast('ميزة الكاشير تتطلب الباقة المتوسطة فأعلى — يرجى الترقية','warning');return}
+                      setNewRole('cashier')
+                    }} style={{padding:'12px 10px',borderRadius:10,border:`1.5px solid ${newRole==='cashier'?colors.primary:colors.border}`,background:newRole==='cashier'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='cashier'?`0 2px 8px ${colors.primary}22`:'none',opacity:orgPlan==='basic'?.55:1,position:'relative' as const}}>
+                    {orgPlan==='basic' && (
+                      <div style={{position:'absolute',top:-8,left:-6,background:'#1c1c1a',color:'white',fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:99}}>🔒 المتوسطة</div>
+                    )}
                     <div style={{fontWeight:800,fontSize:font.sm,color:newRole==='cashier'?colors.primary:colors.text2,marginBottom:3}}>💰 كاشير</div>
                     <div style={{fontSize:10,color:newRole==='cashier'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يقفل الصندوق يومياً فقط</div>
                   </button>

@@ -19,7 +19,10 @@ export default function BranchComparePage() {
   const [visible, setVisible] = useState(false)
   const [period, setPeriod]   = useState<'7'|'30'|'90'>('30')
 
-  useEffect(()=>{ load() },[period])
+  const plan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
+  const allowed = plan==='advanced'
+
+  useEffect(()=>{ if(allowed) load() },[period])
 
   async function load() {
     setLoading(true)
@@ -35,6 +38,15 @@ export default function BranchComparePage() {
     setLoading(false)
     setTimeout(()=>setVisible(true), 50)
   }
+
+  if (!allowed) return (
+    <div style={{fontFamily:'inherit',direction:'rtl',maxWidth:600,margin:'60px auto',textAlign:'center' as const,padding:20}}>
+      <div style={{fontSize:48,marginBottom:16}}>🔒</div>
+      <div style={{fontSize:20,fontWeight:800,color:C.text,marginBottom:8}}>هذه الميزة حصرية للباقة المتقدمة</div>
+      <div style={{fontSize:14,color:C.text3,marginBottom:24,lineHeight:1.6}}>مقارنة أداء الفروع متاحة فقط في الباقة المتقدمة. ترقّى الآن لمقارنة الصرف والمشتريات بين كل فروعك من مكان واحد.</div>
+      <a href="/settings" style={{display:'inline-block',padding:'12px 28px',background:C.primary,color:'white',borderRadius:10,fontSize:14,fontWeight:700,textDecoration:'none'}}>ترقية الباقة</a>
+    </div>
+  )
 
   if (loading) return (
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',maxWidth:900,margin:'0 auto'}}>

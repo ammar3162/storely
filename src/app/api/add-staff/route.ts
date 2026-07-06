@@ -19,11 +19,18 @@ export async function POST(req: Request) {
     // تحقق من حد الباقة server-side
     const { data: org } = await supabase
       .from('organizations')
-      .select('max_staff')
+      .select('max_staff,plan')
       .eq('id', org_id)
       .single()
 
     const maxStaff = (org as any)?.max_staff || 1
+    const orgPlan = (org as any)?.plan || 'basic'
+
+    if (role === 'cashier' && orgPlan === 'basic') {
+      return NextResponse.json({
+        error: 'ميزة الكاشير تتطلب الباقة المتوسطة فأعلى — يرجى ترقية الباقة'
+      }, { status: 403 })
+    }
 
     const { count } = await supabase
       .from('staff_members')
