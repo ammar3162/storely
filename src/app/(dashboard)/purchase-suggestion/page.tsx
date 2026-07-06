@@ -111,7 +111,7 @@ export default function PurchaseSuggestionPage() {
       <div className="fu" style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
         <div>
           <h1 style={{fontSize:20,fontWeight:800,color:C.text,margin:0}}>اقتراح الشراء الذكي</h1>
-          <p style={{fontSize:11,color:C.text3,marginTop:3}}>بناءً على معدل الصرف الفعلي خلال 90 يوم</p>
+          <p style={{fontSize:11,color:C.text3,marginTop:3}}>بناءً على معدل الصرف الفعلي خلال 30 يوم</p>
         </div>
         <button onClick={load} style={{padding:'8px 14px',background:'white',border:`1.5px solid ${C.border2}`,borderRadius:10,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:C.text2}}>
           ↺ تحديث
