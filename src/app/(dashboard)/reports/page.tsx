@@ -611,7 +611,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
             <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`,position:'sticky' as const,top:0,zIndex:2}}>
-                  {['التاريخ','الكاشير','المبيعات','الشبكة','الكاش الفعلي','المسحوبات','الكاش بعد الخصم','النتيجة','المرفقات'].map((h,i)=>(
+                  {['التاريخ','الكاشير','المبيعات','الشبكة','الكاش الفعلي','المسحوبات','الكاش بعد الخصم','الصافي','النتيجة','المرفقات'].map((h,i)=>(
                     <th key={i} style={{padding:'10px 16px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em',background:colors.bg}}>{h}</th>
                   ))}
                 </tr>
@@ -626,6 +626,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.cash_amount).toFixed(0)} ر.س</td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:Number(c.total_purchases)>0?colors.danger:colors.text4}}>{Number(c.total_purchases)>0?'−'+Number(c.total_purchases).toFixed(0)+' ر.س':'—'}</td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{(Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} ر.س</td>
+                    <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{(Number(c.network_amount)+Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} ر.س</td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:statusColor[c.status]}}>
                       {statusLabel[c.status]}{c.status!=='balanced'?` (${Math.abs(Number(c.difference)).toFixed(0)} ر.س)`:''}
                     </td>
@@ -653,6 +654,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.cash_amount),0).toFixed(0)} ر.س</td>
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0)>0?'−'+closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0).toFixed(0)+' ر.س':'—'}</td>
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount)-Number(c.total_purchases)),0).toFixed(0)} ر.س</td>
+                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{closings.reduce((s:number,c:any)=>s+Number(c.network_amount)+Number(c.cash_amount)-Number(c.total_purchases),0).toFixed(0)} ر.س</td>
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.difference),0).toFixed(0)} ر.س</td>
                   <td/>
                 </tr>
