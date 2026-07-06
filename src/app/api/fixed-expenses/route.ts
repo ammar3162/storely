@@ -34,7 +34,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { org_id, name, amount } = await req.json()
+    const { org_id, name, amount, month } = await req.json()
     if (!org_id || !name || amount === undefined) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
@@ -47,10 +47,10 @@ export async function POST(req: Request) {
 
     if (error) return NextResponse.json({ error: 'حدث خطأ أثناء الإضافة' }, { status: 500 })
 
-    // أضفه أيضاً للشهر الحالي مباشرة لو ما كان موجود
-    const month = currentMonthStart()
+    // أضفه أيضاً للشهر المعروض حالياً مباشرة لو ما كان موجود
+    const targetMonth = month || currentMonthStart()
     await supabase.from('monthly_fixed_expenses').upsert({
-      org_id, month, fixed_expense_id: (data as any).id,
+      org_id, month: targetMonth, fixed_expense_id: (data as any).id,
       name: (data as any).name, amount: (data as any).amount,
     }, { onConflict: 'org_id,month,fixed_expense_id' })
 
