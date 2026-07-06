@@ -282,7 +282,7 @@ export default function LandingPage() {
         <div style={{maxWidth:600,margin:'0 auto'}}>
           <h2 style={{fontSize:38,fontWeight:900,color:'white',marginBottom:14,letterSpacing:'-1px'}}>جاهز تبدأ؟</h2>
           <p style={{fontSize:17,color:'rgba(255,255,255,.8)',marginBottom:36,lineHeight:1.7}}>
-            سجّل الآن واستمتع بـ 7 أيام تجربة مجانية كاملة
+            سجّل الآن واستمتع بـ 14 يوم تجربة مجانية كاملة
           </p>
           <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'}}>
             <button onClick={()=>router.push('/login?mode=register')}

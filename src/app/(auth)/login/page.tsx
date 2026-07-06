@@ -326,7 +326,7 @@ function LoginPage() {
                     ))}
                   </div>
                   <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:6,letterSpacing:'-0.5px'}}>أنشئ حسابك مجاناً</h1>
-                  <p style={{fontSize:14,color:'#6b7280'}}>7 أيام تجربة مجانية — لا يتطلب بطاقة</p>
+                  <p style={{fontSize:14,color:'#6b7280'}}>14 يوم تجربة مجانية — لا يتطلب بطاقة</p>
                 </div>
                 {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
                 <form onSubmit={nextStep} style={{display:'flex',flexDirection:'column',gap:14}}>
@@ -456,7 +456,7 @@ function LoginPage() {
 
                   {branchCount && (
                     <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:8,padding:'11px 14px',fontSize:13,color:'#16a34a',fontWeight:600,display:'flex',alignItems:'center',gap:8}}>
-                      ✓ 7 أيام تجربة مجانية — سيتم التواصل معك لإتمام الدفع
+                      ✓ 14 يوم تجربة مجانية — سيتم التواصل معك لإتمام الدفع
                     </div>
                   )}
 
