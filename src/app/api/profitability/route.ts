@@ -46,6 +46,14 @@ export async function GET(req: Request) {
     const monthEndTs = new Date(year, monthNum - 1, lastDay, 23, 59, 59, 999).toISOString()
 
     const supabase = sb()
+
+    // قفل الميزة: متاحة فقط للباقة المتوسطة والمتقدمة
+    const { data: org } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
+    const plan = (org as any)?.plan
+    if (plan === 'basic') {
+      return NextResponse.json({ error: 'upgrade_required', message: 'ميزة الربحية متاحة فقط بالباقة المتوسطة أو المتقدمة' }, { status: 403 })
+    }
+
     await ensureGenerated(supabase, org_id, monthStart)
 
     // 1) الإيرادات من إقفالات الكاشير

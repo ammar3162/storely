@@ -43,6 +43,7 @@ export default function ProfitabilityPage() {
   const [newRecurring, setNewRecurring] = useState(true)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
+  const [upgradeRequired, setUpgradeRequired] = useState(false)
   const sb = createClient()
 
   useEffect(()=>{
@@ -71,6 +72,7 @@ export default function ProfitabilityPage() {
     try {
       const res = await fetch(`/api/profitability?org_id=${orgId}&month=${monthParam()}`)
       const json = await res.json()
+      if(res.status===403 && json.error==='upgrade_required'){ setUpgradeRequired(true); setLoading(false); return }
       if(res.ok) setData(json)
     } catch {}
     setLoading(false)
@@ -124,6 +126,15 @@ export default function ProfitabilityPage() {
 
   const monthLabel = `${MONTH_NAMES[monthDate.getMonth()]} ${monthDate.getFullYear()}`
   const isProfit = (data?.netProfit || 0) >= 0
+
+  if(upgradeRequired) return (
+    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:560,margin:'80px auto',textAlign:'center' as const}}>
+      <div style={{fontSize:52,marginBottom:16}}>🔒</div>
+      <h1 style={{...pageTitle,marginBottom:10}}>ميزة الربحية غير متاحة بباقتك الحالية</h1>
+      <p style={{...pageSub,marginBottom:28}}>هذي الميزة متوفرة بباقة المتوسطة أو المتقدمة فقط. رقّي باقتك عشان تشوف تقرير الأرباح والخسائر الشهري الكامل.</p>
+      <a href="/settings" style={{...btnPrimary,display:'inline-block',padding:'14px 32px',textDecoration:'none'}}>ترقية الباقة الآن</a>
+    </div>
+  )
 
   return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto'}}>
