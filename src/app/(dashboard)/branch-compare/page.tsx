@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 const C = {
   primary:'#16a34a', primaryD:'#15803d', primaryL:'#f0fdf4', primaryB:'#bbf7d0',
@@ -19,10 +20,33 @@ export default function BranchComparePage() {
   const [visible, setVisible] = useState(false)
   const [period, setPeriod]   = useState<'7'|'30'|'90'>('30')
 
-  const plan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
+  const [plan, setPlan] = useState<string|null>(null)
+  const [checkingPlan, setCheckingPlan] = useState(true)
+  const sb = createClient()
+
   const allowed = plan==='advanced'
 
-  useEffect(()=>{ if(allowed) load() },[period])
+  useEffect(()=>{
+    async function resolvePlan() {
+      let p = sessionStorage.getItem('s_plan')
+      if(!p){
+        const{data:{user}}=await sb.auth.getUser()
+        if(user){
+          const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
+          if(profile?.org_id){
+            const{data:org}=await (sb as any).from('organizations').select('plan').eq('id',(profile as any).org_id).single()
+            p = (org as any)?.plan || 'basic'
+            sessionStorage.setItem('s_plan', p!)
+          }
+        }
+      }
+      setPlan(p||'basic')
+      setCheckingPlan(false)
+    }
+    resolvePlan()
+  },[])
+
+  useEffect(()=>{ if(allowed) load() },[period, allowed])
 
   async function load() {
     setLoading(true)
@@ -38,6 +62,13 @@ export default function BranchComparePage() {
     setLoading(false)
     setTimeout(()=>setVisible(true), 50)
   }
+
+  if (checkingPlan) return (
+    <div style={{fontFamily:'inherit',direction:'rtl',display:'flex',justifyContent:'center',padding:'80px 20px'}}>
+      <div style={{width:32,height:32,border:'3px solid #f3f4f6',borderTopColor:C.primary,borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  )
 
   if (!allowed) return (
     <div style={{fontFamily:'inherit',direction:'rtl',maxWidth:600,margin:'60px auto',textAlign:'center' as const,padding:20}}>
