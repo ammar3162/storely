@@ -32,6 +32,9 @@ export async function POST(req: Request) {
     }
 
     const cleanPhone = String(phone).replace(/\s/g, '')
+    // نطابق آخر الأرقام بغض النظر عن رمز الدولة أو الصفر الأول
+    const digitsOnly = cleanPhone.replace(/\D/g, '')
+    const localDigits = digitsOnly.replace(/^0+/, '')
 
     // تحقق من Rate Limit
     if (!checkRateLimit(cleanPhone)) {
@@ -41,12 +44,16 @@ export async function POST(req: Request) {
       )
     }
 
+    if (localDigits.length < 7) {
+      return NextResponse.json({ error: 'رقم الجوال أو رمز PIN غير صحيح' }, { status: 401 })
+    }
+
     const supabase = sb()
 
     const { data: staff, error } = await supabase
       .from('staff_members')
       .select('id,name,org_id,branch_id,phone,pin,is_active,permissions,role,organizations(name),branches(name)')
-      .eq('phone', cleanPhone)
+      .ilike('phone', '%' + localDigits)
       .eq('is_active', true)
       .maybeSingle()
 

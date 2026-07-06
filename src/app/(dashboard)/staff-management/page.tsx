@@ -6,6 +6,13 @@ import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, page
 import { toast } from '@/components/toast'
 
 function generatePin() { return String(Math.floor(1000 + Math.random() * 9000)) }
+const COUNTRY_CODES = ['+966','+971','+965','+973','+974','+968','+20','+962','+1','+44','+91','+92','+880','+63']
+function toLocalPhone(phone: string) {
+  if (!phone) return phone
+  const code = COUNTRY_CODES.find(c => phone.startsWith(c))
+  if (!code) return phone
+  return '0' + phone.slice(code.length)
+}
 
 function Avatar({ name, active }: { name:string; active:boolean }) {
   const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
@@ -557,7 +564,7 @@ export default function StaffManagementPage() {
                       {!s.is_active&&<span style={{fontSize:10,color:colors.danger,background:colors.dangerLight,padding:'2px 8px',borderRadius:20,fontWeight:700,border:`1px solid ${colors.dangerBorder}`}}>موقوف</span>}
                     </div>
                     <div style={{fontSize:font.xs,color:colors.text4,marginTop:2,direction:'ltr',textAlign:'right' as const}}>
-                      {s.phone}{s.branches?.name?` · ${s.branches.name}`:''}
+                      {toLocalPhone(s.phone)}{s.branches?.name?` · ${s.branches.name}`:''}
                     </div>
                   </div>
                 </div>
@@ -587,7 +594,7 @@ export default function StaffManagementPage() {
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:14}}>
                     <div style={{background:colors.bg,borderRadius:radius.md,padding:'12px 14px',border:`1px solid ${colors.border}`}}>
                       <div style={{fontSize:10,fontWeight:700,color:colors.text4,marginBottom:6,textTransform:'uppercase' as const}}>رقم الجوال</div>
-                      <div style={{fontSize:font.base,fontWeight:800,color:colors.text,direction:'ltr',textAlign:'right' as const}}>{s.phone}</div>
+                      <div style={{fontSize:font.base,fontWeight:800,color:colors.text,direction:'ltr',textAlign:'right' as const}}>{toLocalPhone(s.phone)}</div>
                     </div>
                     <div style={{background:colors.primaryLight,borderRadius:radius.md,padding:'12px 14px',border:`1px solid ${colors.primaryBorder}`}}>
                       <div style={{fontSize:10,fontWeight:700,color:colors.primary,marginBottom:6,textTransform:'uppercase' as const}}>رمز PIN الحالي</div>
