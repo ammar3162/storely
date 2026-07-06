@@ -131,12 +131,12 @@ export default function StaffLoginPage() {
         <div style={{fontSize:12,color:'#888780',marginBottom:20}}>أدخل رقم جوالك ورمز PIN</div>
         <div style={{marginBottom:12}}>
           <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:5}}>رقم الجوال</label>
-          <input value={phone} onChange={function(e){ setPhone(e.target.value) }} placeholder="05xxxxxxxx"
+          <input value={phone} onChange={function(e){ setPhone(e.target.value.replace(/\D/g,'').slice(0,10)) }} inputMode="numeric" maxLength={10} placeholder="05xxxxxxxx"
             style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0dd',borderRadius:8,fontSize:14,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr'}}/>
         </div>
         <div style={{marginBottom:16}}>
           <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:5}}>رمز PIN</label>
-          <input type="password" value={pin} onChange={function(e){ setPin(e.target.value) }} placeholder="••••"
+          <input type="password" value={pin} onChange={function(e){ setPin(e.target.value.replace(/\D/g,'').slice(0,4)) }} inputMode="numeric" maxLength={4} placeholder="••••"
             style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0dd',borderRadius:8,fontSize:14,fontFamily:'inherit',outline:'none',boxSizing:'border-box'}}/>
         </div>
         {error&&<div style={{fontSize:12,color:'#e24b4a',marginBottom:10,fontWeight:600}}>{error}</div>}
