@@ -9,6 +9,9 @@ interface ProfitData {
   revenueExVat: number
   closingsCount: number
   inventoryCost: number
+  inventoryPurchases: number
+  openingInventoryValue: number
+  closingInventoryValue: number
   variableExpenses: number
   fixedExpensesTotal: number
   fixedExpensesList: any[]
@@ -176,10 +179,29 @@ export default function ProfitabilityPage() {
           <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:10,marginBottom:20}}>
             <StatCard label="الإيرادات (شامل الضريبة)" value={data.revenue} color={colors.primary} bg={colors.primaryLight} border={colors.primaryBorder} icon="📊"/>
             <StatCard label="الإيرادات (بدون ضريبة)" value={data.revenueExVat} color={colors.primary} bg={colors.primaryLight} border={colors.primaryBorder} icon="💵"/>
-            <StatCard label="تكلفة البضاعة (مخزون)" value={data.inventoryCost} color={colors.danger} bg={colors.dangerLight} border={colors.dangerBorder} icon="📦"/>
+            <StatCard label="تكلفة البضاعة المباعة" value={data.inventoryCost} color={colors.danger} bg={colors.dangerLight} border={colors.dangerBorder} icon="📦"/>
             <StatCard label="المصروفات المتغيرة" value={data.variableExpenses} color={colors.danger} bg={colors.dangerLight} border={colors.dangerBorder} icon="🧾"/>
             <StatCard label="المصروفات الثابتة" value={data.fixedExpensesTotal} color={colors.warning} bg={colors.warningLight} border={colors.warningBorder} icon="🏢"/>
             <StatCard label="صافي الضريبة المستحقة" value={data.netVatPayable} color={'#7c3aed'} bg={'#f5f3ff'} border={'#ddd6fe'} icon="🏛️"/>
+          </div>
+
+          <div style={{...card, padding:'16px 18px', marginBottom:20}}>
+            <div style={{fontSize:font.sm,fontWeight:800,color:colors.text,marginBottom:12}}>تفصيل تكلفة البضاعة المباعة</div>
+            <div style={{fontSize:11,color:colors.text4,marginBottom:10,lineHeight:1.6}}>نحسب بس تكلفة اللي فعلاً انباع/انصرف هذا الشهر — مو كل المشتريات، عشان المخزون اللي لسا موجود ما يُحتسب كمصروف قبل ما ينباع</div>
+            {[
+              {label:'مخزون أول الشهر (بالتكلفة)',value:data.openingInventoryValue,sign:''},
+              {label:'+ مشتريات مخزون هذا الشهر',value:data.inventoryPurchases,sign:'+'},
+              {label:'− مخزون آخر الشهر (بالتكلفة)',value:data.closingInventoryValue,sign:'−'},
+            ].map((r,i)=>(
+              <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:font.sm,borderBottom:`1px dashed ${colors.border}`}}>
+                <span style={{color:colors.text3}}>{r.label}</span>
+                <span style={{color:colors.text,fontWeight:700,direction:'ltr' as const}}>{r.sign==='+'?'':r.sign}{r.value.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} ر.س</span>
+              </div>
+            ))}
+            <div style={{display:'flex',justifyContent:'space-between',padding:'10px 0 0',fontSize:font.base,fontWeight:800}}>
+              <span style={{color:colors.text}}>= تكلفة البضاعة المباعة</span>
+              <span style={{color:colors.danger,direction:'ltr' as const}}>{data.inventoryCost.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} ر.س</span>
+            </div>
           </div>
 
           <div style={{...card, padding:'16px 18px', marginBottom:20}}>
