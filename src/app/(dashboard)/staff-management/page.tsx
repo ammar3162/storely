@@ -59,6 +59,8 @@ export default function StaffManagementPage() {
   const [staffClosings, setStaffClosings] = useState<any[]>([])
   const [reportLoading, setReportLoading] = useState(false)
   const [selectedProds, setSelectedProds] = useState<string[]>([])
+  const [shopOpenTime, setShopOpenTime] = useState('')
+  const [shopCloseTime, setShopCloseTime] = useState('')
   const sb = createClient()
 
   useEffect(() => { init() }, [])
@@ -68,8 +70,10 @@ export default function StaffManagementPage() {
     const{data:{user}}=await sb.auth.getUser(); if(!user) return
     const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single(); if(!profile?.org_id) return
     setOrgId(profile.org_id)
-    const{data:orgLimits}=await (sb as any).from('organizations').select('max_staff').eq('id',profile.org_id).single()
+    const{data:orgLimits}=await (sb as any).from('organizations').select('max_staff,shop_open_time,shop_close_time').eq('id',profile.org_id).single()
     setMaxStaff((orgLimits as any)?.max_staff||1)
+    setShopOpenTime(((orgLimits as any)?.shop_open_time||'').slice(0,5))
+    setShopCloseTime(((orgLimits as any)?.shop_close_time||'').slice(0,5))
     await Promise.all([loadStaff(profile.org_id),loadBranches(profile.org_id),loadProducts(profile.org_id)])
     setLoading(false); setTimeout(()=>setVisible(true),50)
   }
@@ -146,6 +150,9 @@ export default function StaffManagementPage() {
       if(res.status===409) toast('رقم الجوال هذا مسجّل لموظف آخر','error')
       else toast('خطأ: '+error,'error')
       return
+    }
+    if(newRole==='cashier' && shopOpenTime && shopCloseTime){
+      await (sb.from('organizations' as any) as any).update({shop_open_time:shopOpenTime, shop_close_time:shopCloseTime}).eq('id',orgId)
     }
     setRevealedPin({name:newName.trim(),phone:cleanPhone,pin})
     setNewName('');setNewPhone('');setNewRole('staff');setShowAdd(false)
@@ -335,6 +342,22 @@ export default function StaffManagementPage() {
                   </button>
                 </div>
               </div>
+              {newRole==='cashier' && (
+                <div style={{background:colors.bg,borderRadius:radius.md,padding:'12px 14px'}}>
+                  <div style={{fontSize:font.xs,fontWeight:700,color:colors.text3,marginBottom:4,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>ساعات عمل المحل</div>
+                  <div style={{fontSize:10,color:colors.text4,marginBottom:10,lineHeight:1.5}}>يستخدمها النظام ليحدد تاريخ يوم العمل الصحيح لو المحل يقفل بعد منتصف الليل</div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                    <div>
+                      <label style={{fontSize:10,fontWeight:700,color:colors.text3,display:'block',marginBottom:4}}>وقت الفتح</label>
+                      <input type="time" value={shopOpenTime} onChange={e=>setShopOpenTime(e.target.value)} style={inp()}/>
+                    </div>
+                    <div>
+                      <label style={{fontSize:10,fontWeight:700,color:colors.text3,display:'block',marginBottom:4}}>وقت الإغلاق</label>
+                      <input type="time" value={shopCloseTime} onChange={e=>setShopCloseTime(e.target.value)} style={inp()}/>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <div style={{display:'flex',gap:10}}>
               <button onClick={()=>setShowAdd(false)} style={{...btnSecondary,flex:1,padding:'12px',fontSize:font.sm}}>إلغاء</button>
