@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import StoreMascot from '@/components/StoreMascot'
 
 const COUNTRY_CODES = [
   { code: '+966', flag: '🇸🇦', name: 'السعودية' },
@@ -78,6 +79,8 @@ function LoginPage() {
   const [sendingOtp, setSendingOtp]   = useState(false)
   const [email, setEmail]             = useState('')
   const [password, setPassword]       = useState('')
+  const [mascotFocus, setMascotFocus] = useState<'email'|'password'|null>(null)
+  const [cursorRatio, setCursorRatio] = useState(0.5)
   const [orgName, setOrgName]         = useState('')
   const [phone, setPhone]             = useState('')
   const [countryCode, setCountryCode] = useState('+966')
@@ -283,7 +286,8 @@ function LoginPage() {
             {/* Login */}
             {mode==='login' && (
               <>
-                <div style={{marginBottom:32}}>
+                <StoreMascot focused={mascotFocus} cursorRatio={cursorRatio}/>
+                <div style={{marginBottom:32,textAlign:'center' as const}}>
                   <h1 style={{fontSize:28,fontWeight:800,color:'#111827',marginBottom:8,letterSpacing:'-0.5px'}}>أهلاً بعودتك</h1>
                   <p style={{fontSize:15,color:'#6b7280'}}>سجّل دخولك لإدارة مخزونك</p>
                 </div>
@@ -291,7 +295,10 @@ function LoginPage() {
                 <form onSubmit={handleLogin} style={{display:'flex',flexDirection:'column',gap:14}}>
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني</label>
-                    <input className="inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
+                    <input className="inp" type="email" required value={email}
+                      onChange={e=>{setEmail(e.target.value);const pos=e.target.selectionStart||e.target.value.length;setCursorRatio(e.target.value.length?Math.min(Math.max(pos/Math.max(e.target.value.length,8),0),1):0.5)}}
+                      onFocus={()=>setMascotFocus('email')} onBlur={()=>setMascotFocus(null)}
+                      placeholder="example@email.com"/>
                   </div>
                   <div>
                     <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
@@ -301,7 +308,9 @@ function LoginPage() {
                         نسيت كلمة المرور؟
                       </button>
                     </div>
-                    <input className="inp" type="password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••"/>
+                    <input className="inp" type="password" required value={password} onChange={e=>setPassword(e.target.value)}
+                      onFocus={()=>setMascotFocus('password')} onBlur={()=>setMascotFocus(null)}
+                      placeholder="••••••••"/>
                   </div>
                   <button type="submit" disabled={loading} className="btn-main" style={{marginTop:8}}>
                     {loading?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span style={{width:16,height:16,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block'}}/>جاري الدخول...</span>:'دخول'}
