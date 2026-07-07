@@ -5,32 +5,30 @@ import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, page
 
 interface ProfitData {
   month: string
-  revenue: number
-  revenueExVat: number
+  totalIn: number
   closingsCount: number
-  inventoryCost: number
   inventoryPurchases: number
-  openingInventoryValue: number
-  closingInventoryValue: number
-  variableExpenses: number
+  otherPurchases: number
+  totalPurchases: number
   fixedExpensesTotal: number
   fixedExpensesList: any[]
-  outputVat: number
-  inputVat: number
-  netVatPayable: number
+  totalOut: number
   netProfit: number
 }
 
 const MONTH_NAMES = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
 
-function StatCard({ label, value, color, bg, border, icon }: any) {
+function fmt(n: number) {
+  return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function BigCard({ label, value, color, bg, border, icon, sub }: any) {
   return (
-    <div style={{...card, padding:'18px', background:bg, border:`1.5px solid ${border}`}}>
-      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-        <span style={{fontSize:16}}>{icon}</span>
-        <span style={{fontSize:font.xs,fontWeight:700,color,opacity:.85}}>{label}</span>
-      </div>
-      <div style={{fontSize:22,fontWeight:900,color,letterSpacing:'-0.5px'}}>{value.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} <span style={{fontSize:13,fontWeight:700}}>ر.س</span></div>
+    <div style={{...card, padding:'20px', background:bg, border:`1.5px solid ${border}`, textAlign:'center' as const}}>
+      <div style={{fontSize:22,marginBottom:6}}>{icon}</div>
+      <div style={{fontSize:12,fontWeight:700,color,opacity:.85,marginBottom:6}}>{label}</div>
+      <div style={{fontSize:26,fontWeight:900,color,letterSpacing:'-0.5px'}}>{fmt(value)} <span style={{fontSize:13,fontWeight:700}}>ر.س</span></div>
+      {sub && <div style={{fontSize:10,color,opacity:.7,marginTop:4}}>{sub}</div>}
     </div>
   )
 }
@@ -40,13 +38,13 @@ export default function ProfitabilityPage() {
   const [monthDate, setMonthDate] = useState(() => { const d = new Date(); d.setDate(1); return d })
   const [data, setData] = useState<ProfitData|null>(null)
   const [loading, setLoading] = useState(true)
+  const [upgradeRequired, setUpgradeRequired] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
   const [newName, setNewName] = useState('')
   const [newAmount, setNewAmount] = useState('')
   const [newRecurring, setNewRecurring] = useState(true)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
-  const [upgradeRequired, setUpgradeRequired] = useState(false)
   const sb = createClient()
 
   useEffect(()=>{
@@ -134,13 +132,13 @@ export default function ProfitabilityPage() {
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:560,margin:'80px auto',textAlign:'center' as const}}>
       <div style={{fontSize:52,marginBottom:16}}>🔒</div>
       <h1 style={{...pageTitle,marginBottom:10}}>ميزة الربحية غير متاحة بباقتك الحالية</h1>
-      <p style={{...pageSub,marginBottom:28}}>هذي الميزة متوفرة بباقة المتوسطة أو المتقدمة فقط. رقّي باقتك عشان تشوف تقرير الأرباح والخسائر الشهري الكامل.</p>
+      <p style={{...pageSub,marginBottom:28}}>هذي الميزة متوفرة بباقة المتوسطة أو المتقدمة فقط. رقّي باقتك عشان تشوف تقرير الربحية الشهري الكامل.</p>
       <a href="/settings" style={{...btnPrimary,display:'inline-block',padding:'14px 32px',textDecoration:'none'}}>ترقية الباقة الآن</a>
     </div>
   )
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto'}}>
+    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:800,margin:'0 auto'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       {toast && (
@@ -149,7 +147,7 @@ export default function ProfitabilityPage() {
 
       <div style={{marginBottom:20}}>
         <h1 style={{...pageTitle}}>الربحية</h1>
-        <p style={{...pageSub}}>الإيرادات، المصروفات، والضريبة — صافي ربحك الشهري بالتفصيل</p>
+        <p style={{...pageSub}}>دخلت كم، طلع مني كم، والصافي — ببساطة</p>
       </div>
 
       <div style={{...card, padding:'14px 18px', marginBottom:20, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
@@ -162,65 +160,47 @@ export default function ProfitabilityPage() {
         <div style={{padding:60,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
       ) : data ? (
         <>
+          {/* الصافي - بطاقة كبيرة */}
           <div style={{
             ...card, padding:'28px', marginBottom:20, textAlign:'center' as const,
             background: isProfit ? '#f0fdf4' : '#fef2f2',
             border: `2px solid ${isProfit ? '#bbf7d0' : '#fecaca'}`,
           }}>
             <div style={{fontSize:font.sm,fontWeight:700,color:isProfit?colors.primary:colors.danger,marginBottom:8}}>
-              {isProfit ? '✅ صافي الربح هذا الشهر' : '⚠️ خسارة هذا الشهر'}
+              {isProfit ? '✅ الصافي هذا الشهر' : '⚠️ سالب هذا الشهر'}
             </div>
             <div style={{fontSize:40,fontWeight:900,color:isProfit?colors.primary:colors.danger,letterSpacing:'-1px'}}>
-              {Math.abs(data.netProfit).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} <span style={{fontSize:18}}>ر.س</span>
+              {fmt(Math.abs(data.netProfit))} <span style={{fontSize:18}}>ر.س</span>
             </div>
             <div style={{fontSize:font.xs,color:colors.text4,marginTop:6}}>بناءً على {data.closingsCount} تقرير إقفال كاشير هذا الشهر</div>
           </div>
 
-          <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:10,marginBottom:20}}>
-            <StatCard label="الإيرادات (شامل الضريبة)" value={data.revenue} color={colors.primary} bg={colors.primaryLight} border={colors.primaryBorder} icon="📊"/>
-            <StatCard label="الإيرادات (بدون ضريبة)" value={data.revenueExVat} color={colors.primary} bg={colors.primaryLight} border={colors.primaryBorder} icon="💵"/>
-            <StatCard label="تكلفة البضاعة المباعة" value={data.inventoryCost} color={colors.danger} bg={colors.dangerLight} border={colors.dangerBorder} icon="📦"/>
-            <StatCard label="المصروفات المتغيرة" value={data.variableExpenses} color={colors.danger} bg={colors.dangerLight} border={colors.dangerBorder} icon="🧾"/>
-            <StatCard label="المصروفات الثابتة" value={data.fixedExpensesTotal} color={colors.warning} bg={colors.warningLight} border={colors.warningBorder} icon="🏢"/>
-            <StatCard label="صافي الضريبة المستحقة" value={data.netVatPayable} color={'#7c3aed'} bg={'#f5f3ff'} border={'#ddd6fe'} icon="🏛️"/>
+          {/* دخلت / طلع مني */}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
+            <BigCard label="دخلت (الإيرادات)" value={data.totalIn} color={colors.primary} bg={colors.primaryLight} border={colors.primaryBorder} icon="📥"/>
+            <BigCard label="طلع مني (كل المصروفات)" value={data.totalOut} color={colors.danger} bg={colors.dangerLight} border={colors.dangerBorder} icon="📤"/>
           </div>
 
+          {/* تفصيل المصروفات */}
           <div style={{...card, padding:'16px 18px', marginBottom:20}}>
-            <div style={{fontSize:font.sm,fontWeight:800,color:colors.text,marginBottom:12}}>تفصيل تكلفة البضاعة المباعة</div>
-            <div style={{fontSize:11,color:colors.text4,marginBottom:10,lineHeight:1.6}}>نحسب بس تكلفة اللي فعلاً انباع/انصرف هذا الشهر — مو كل المشتريات، عشان المخزون اللي لسا موجود ما يُحتسب كمصروف قبل ما ينباع</div>
+            <div style={{fontSize:font.sm,fontWeight:800,color:colors.text,marginBottom:12}}>تفصيل "طلع مني"</div>
             {[
-              {label:'مخزون أول الشهر (بالتكلفة)',value:data.openingInventoryValue,sign:''},
-              {label:'+ مشتريات مخزون هذا الشهر',value:data.inventoryPurchases,sign:'+'},
-              {label:'− مخزون آخر الشهر (بالتكلفة)',value:data.closingInventoryValue,sign:'−'},
+              {label:'مشتريات مخزون',value:data.inventoryPurchases},
+              {label:'مشتريات ومصروفات أخرى',value:data.otherPurchases},
+              {label:'مصروفات ثابتة (رواتب، إيجار...)',value:data.fixedExpensesTotal},
             ].map((r,i)=>(
               <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:font.sm,borderBottom:`1px dashed ${colors.border}`}}>
                 <span style={{color:colors.text3}}>{r.label}</span>
-                <span style={{color:colors.text,fontWeight:700,direction:'ltr' as const}}>{r.sign==='+'?'':r.sign}{r.value.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} ر.س</span>
+                <span style={{color:colors.text,fontWeight:700,direction:'ltr' as const}}>{fmt(r.value)} ر.س</span>
               </div>
             ))}
             <div style={{display:'flex',justifyContent:'space-between',padding:'10px 0 0',fontSize:font.base,fontWeight:800}}>
-              <span style={{color:colors.text}}>= تكلفة البضاعة المباعة</span>
-              <span style={{color:colors.danger,direction:'ltr' as const}}>{data.inventoryCost.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} ر.س</span>
+              <span style={{color:colors.text}}>= إجمالي طلع مني</span>
+              <span style={{color:colors.danger,direction:'ltr' as const}}>{fmt(data.totalOut)} ر.س</span>
             </div>
           </div>
 
-          <div style={{...card, padding:'16px 18px', marginBottom:20}}>
-            <div style={{fontSize:font.sm,fontWeight:800,color:colors.text,marginBottom:12}}>تفصيل الضريبة</div>
-            {[
-              {label:'ضريبة المخرجات (على المبيعات)',value:data.outputVat},
-              {label:'ضريبة المدخلات (على المشتريات)',value:-data.inputVat},
-            ].map((r,i)=>(
-              <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:font.sm,borderBottom:`1px dashed ${colors.border}`}}>
-                <span style={{color:colors.text3}}>{r.label}</span>
-                <span style={{color:colors.text,fontWeight:700,direction:'ltr' as const}}>{r.value.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} ر.س</span>
-              </div>
-            ))}
-            <div style={{display:'flex',justifyContent:'space-between',padding:'10px 0 0',fontSize:font.base,fontWeight:800}}>
-              <span style={{color:colors.text}}>= صافي الضريبة المستحقة</span>
-              <span style={{color:'#7c3aed',direction:'ltr' as const}}>{data.netVatPayable.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} ر.س</span>
-            </div>
-          </div>
-
+          {/* المصروفات الثابتة - إدارة */}
           <div style={{...card, overflow:'hidden', marginBottom:30}}>
             <div style={{padding:'14px 18px', borderBottom:`1px solid ${colors.border}`, display:'flex', justifyContent:'space-between', alignItems:'center'}}>
               <div style={{fontSize:font.sm,fontWeight:800,color:colors.text}}>المصروفات الثابتة — {monthLabel}</div>
