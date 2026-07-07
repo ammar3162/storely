@@ -138,21 +138,26 @@ export default function PurchasesPage() {
     if(insErr){toast('خطأ: '+insErr.message,'error');setLoading(false);submitting.current=false;return}
     if(form.category==='مخزون'&&form.name){
       const qty=form.qty?Number(form.qty):0
+      const unitCost = qty>0 ? (amount||0)/qty : 0
       let existing:any=null
-      const{data:byNameArr}=await sb.from('products').select('id,qty,sku').eq('org_id',orgId).eq('name',form.name).order('created_at',{ascending:false}).limit(1)
+      const{data:byNameArr}=await (sb.from('products') as any).select('id,qty,sku,avg_cost').eq('org_id',orgId).eq('name',form.name).order('created_at',{ascending:false}).limit(1)
       if(byNameArr&&byNameArr.length>0){existing=byNameArr[0]}
       else if(form.sku){
-        const{data:bySkuArr}=await sb.from('products').select('id,qty,sku,name').eq('org_id',orgId).eq('sku',form.sku).order('created_at',{ascending:false}).limit(1)
+        const{data:bySkuArr}=await (sb.from('products') as any).select('id,qty,sku,name,avg_cost').eq('org_id',orgId).eq('sku',form.sku).order('created_at',{ascending:false}).limit(1)
         if(bySkuArr&&bySkuArr.length>0) existing=bySkuArr[0]
       }
       if(existing){
         if(form.sku&&!existing.sku) await sb.from('products').update({sku:form.sku}).eq('id',existing.id)
         if(qty>0) await sb.from('stock_movements').insert({product_id:existing.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء من: ${form.supplier}`})
+        const oldQty=Number(existing.qty)||0
+        const oldAvgCost=Number(existing.avg_cost)||0
+        const newAvgCost=(oldQty+qty)>0?((oldQty*oldAvgCost)+(qty*unitCost))/(oldQty+qty):0
+        await (sb.from('products') as any).update({avg_cost:newAvgCost}).eq('id',existing.id)
         toast(`✅ تم تحديث المخزون (+${qty})`,'success')
       } else {
         const branchId=sessionStorage.getItem('s_branch_id')||
           (await sb.from('branches').select('id').eq('org_id',orgId).eq('is_active',true).order('created_at').limit(1).single()).data?.id||null
-        const{data:np}=await sb.from('products').insert({org_id:orgId,branch_id:branchId,name:form.name.trim(),sku:form.sku||null,unit:form.unit||'قطعة',qty:0,reorder_point:Number(form.reorder_point)||5,is_active:true}).select().single()
+        const{data:np}=await (sb.from('products') as any).insert({org_id:orgId,branch_id:branchId,name:form.name.trim(),sku:form.sku||null,unit:form.unit||'قطعة',qty:0,reorder_point:Number(form.reorder_point)||5,is_active:true,avg_cost:unitCost}).select().single()
         if(np&&qty>0) await sb.from('stock_movements').insert({product_id:np.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء جديد من: ${form.supplier}`})
         toast(`✅ تم إضافة "${form.name}" للمخزون`)
       }
