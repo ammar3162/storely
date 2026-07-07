@@ -22,6 +22,7 @@ export async function POST(req: Request) {
       org_id, branch_id, staff_id, staff_name, total_sales,
       network_amount, mada_amount, visa_amount, mastercard_amount,
       cash_amount, purchases, network_image, sales_image,
+      closing_date, closing_time,
     } = await req.json()
 
     if (!org_id || !staff_id || !staff_name) {
@@ -50,7 +51,8 @@ export async function POST(req: Request) {
         branch_id: branch_id || null,
         staff_id,
         staff_name,
-        closing_date: new Date().toISOString().slice(0, 10),
+        closing_date: closing_date || new Date().toISOString().slice(0, 10),
+        closing_time: closing_time || null,
         total_sales: sales,
         network_amount: network,
         mada_amount: mada,
@@ -78,8 +80,9 @@ export async function POST(req: Request) {
       const whatsappNumber = (org as any)?.whatsapp_number
       if (whatsappNumber) {
         const now = new Date()
-        const timeStr = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Riyadh' })
-        const dateStr = now.toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })
+        const effectiveDate = closing_date ? new Date(`${closing_date}T${closing_time||'00:00'}:00+03:00`) : now
+        const timeStr = effectiveDate.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Riyadh' })
+        const dateStr = effectiveDate.toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })
 
         const statusLine = status === 'balanced'
           ? '✅ *مطابق تماماً*'
