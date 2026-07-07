@@ -38,10 +38,13 @@ export default function PurchasesPage() {
   const [filterPeriod, setFilterPeriod] = useState('all')
   const [filterSupplier, setFilterSupplier] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
+  function todayRiyadh() {
+    return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
+  }
   const [form, setForm] = useState({
     category:'مخزون', name:'', sku:'', qty:'', unit:'قطعة',
     reorder_point:'5', total_amount:'', supplier:'',
-    note:'', invoice_image:'', hasVat:'',
+    note:'', invoice_image:'', hasVat:'', invoice_date: todayRiyadh(),
   })
   const sb = createClient()
 
@@ -129,11 +132,13 @@ export default function PurchasesPage() {
     setLoading(true)
     const inputTotal=Number(form.total_amount)
     const amount=parseFloat((inputTotal/1.15).toFixed(2))
-    const{error:insErr}=await sb.from('purchases').insert({
+    const invoiceTs = `${form.invoice_date}T12:00:00+03:00`
+    const{error:insErr}=await (sb.from('purchases') as any).insert({
       org_id:orgId,profile_id:userId,branch_id:sessionStorage.getItem('s_branch_id')||null,
       category:form.category,name:form.name,qty:form.qty?Number(form.qty):null,
       unit:form.unit||null,reorder_point:Number(form.reorder_point)||5,
       amount,supplier:form.supplier,note:form.note||null,invoice_image:form.invoice_image||null,
+      created_at:invoiceTs,
     })
     if(insErr){toast('خطأ: '+insErr.message,'error');setLoading(false);submitting.current=false;return}
     if(form.category==='مخزون'&&form.name){
@@ -148,7 +153,7 @@ export default function PurchasesPage() {
       }
       if(existing){
         if(form.sku&&!existing.sku) await sb.from('products').update({sku:form.sku}).eq('id',existing.id)
-        if(qty>0) await sb.from('stock_movements').insert({product_id:existing.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء من: ${form.supplier}`})
+        if(qty>0) await (sb.from('stock_movements') as any).insert({product_id:existing.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء من: ${form.supplier}`,created_at:invoiceTs})
         const oldQty=Number(existing.qty)||0
         const oldAvgCost=Number(existing.avg_cost)||0
         const newAvgCost=(oldQty+qty)>0?((oldQty*oldAvgCost)+(qty*unitCost))/(oldQty+qty):0
@@ -158,11 +163,11 @@ export default function PurchasesPage() {
         const branchId=sessionStorage.getItem('s_branch_id')||
           (await sb.from('branches').select('id').eq('org_id',orgId).eq('is_active',true).order('created_at').limit(1).single()).data?.id||null
         const{data:np}=await (sb.from('products') as any).insert({org_id:orgId,branch_id:branchId,name:form.name.trim(),sku:form.sku||null,unit:form.unit||'قطعة',qty:0,reorder_point:Number(form.reorder_point)||5,is_active:true,avg_cost:unitCost}).select().single()
-        if(np&&qty>0) await sb.from('stock_movements').insert({product_id:np.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء جديد من: ${form.supplier}`})
+        if(np&&qty>0) await (sb.from('stock_movements') as any).insert({product_id:np.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء جديد من: ${form.supplier}`,created_at:invoiceTs})
         toast(`✅ تم إضافة "${form.name}" للمخزون`)
       }
     } else { toast('✅ تم تسجيل الشراء') }
-    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:''})
+    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh()})
     setPreviewUrl(null);setLoading(false);submitting.current=false
     cache.invalidate('purchases:');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
     loadHistory(orgId)
@@ -334,6 +339,12 @@ export default function PurchasesPage() {
             <div style={{marginBottom:10}}>
               <label style={lbl}>المورد *</label>
               <input required value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})} style={inp} placeholder="اسم المورد أو الشركة"/>
+            </div>
+
+            {/* Invoice Date */}
+            <div style={{marginBottom:10}}>
+              <label style={lbl}>تاريخ الفاتورة</label>
+              <input type="date" value={form.invoice_date} onChange={e=>setForm({...form,invoice_date:e.target.value})} style={inp}/>
             </div>
 
             {/* VAT */}
