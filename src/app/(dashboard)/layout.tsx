@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 
@@ -84,6 +84,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [theme, setTheme]           = useState<'light'|'dark'>('light')
   const router   = useRouter()
   const pathname = usePathname()
+  const navRef = useRef<HTMLElement>(null)
+  const [pillStyle, setPillStyle] = useState<{top:number,height:number,opacity:number}>({top:0,height:0,opacity:0})
+
+  useEffect(()=>{
+    const raf = requestAnimationFrame(()=>{
+      if(!navRef.current) return
+      const activeEl = navRef.current.querySelector('[data-active="true"]') as HTMLElement|null
+      if(!activeEl){ setPillStyle(s=>({...s,opacity:0})); return }
+      const navRect = navRef.current.getBoundingClientRect()
+      const itemRect = activeEl.getBoundingClientRect()
+      setPillStyle({
+        top: itemRect.top - navRect.top + navRef.current.scrollTop,
+        height: itemRect.height,
+        opacity: 1,
+      })
+    })
+    return ()=>cancelAnimationFrame(raf)
+  },[pathname])
   const sb = createClient()
 
   useEffect(()=>{
@@ -433,7 +451,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             </div>
 
-            <nav style={{flex:1,padding:'8px 8px',overflowY:'auto'}}>
+            <nav ref={navRef} style={{flex:1,padding:'8px 8px',overflowY:'auto',position:'relative' as const}}>
+              <div style={{
+                position:'absolute' as const, right:8, left:8,
+                top:pillStyle.top, height:pillStyle.height, opacity:pillStyle.opacity,
+                background:`${C.primary}22`, borderRadius:9,
+                transition:'top .38s cubic-bezier(0.34,1.56,0.64,1), height .3s cubic-bezier(0.34,1.56,0.64,1), opacity .2s ease',
+                pointerEvents:'none' as const, zIndex:0,
+              }}/>
               {NAV_GROUPS.map((group,gi)=>(
                 <div key={gi} style={{marginBottom:4}}>
                   <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.25)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{group.label}</div>
@@ -442,11 +467,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
                     const isExternal=item.href.startsWith('http')
                     return(
-                      <button key={item.href}
+                      <button key={item.href} data-active={active} data-navitem={item.href}
                         onClick={()=>isExternal?window.open(item.href,'_blank'):router.push(item.href)}
                         onMouseEnter={()=>!isExternal&&router.prefetch(item.href)}
-                        style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:9,border:'none',cursor:'pointer',fontFamily:'inherit',marginBottom:1,background:active?`${C.primary}22`:'transparent',color:active?C.primary:'rgba(255,255,255,.55)',transition:'all .15s',textAlign:'right'}}>
-                        <div style={{width:28,height:28,borderRadius:7,background:active?`${C.primary}33`:'rgba(255,255,255,.06)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                        style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:9,border:'none',cursor:'pointer',fontFamily:'inherit',marginBottom:1,background:'transparent',color:active?C.primary:'rgba(255,255,255,.55)',transition:'color .25s ease',textAlign:'right',position:'relative' as const,zIndex:1}}>
+                        <div style={{width:28,height:28,borderRadius:7,background:active?`${C.primary}33`:'rgba(255,255,255,.06)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'all .3s cubic-bezier(0.34,1.56,0.64,1)',transform:active?'scale(1.06)':'scale(1)'}}>
                           <Icon d={item.icon} size={15} stroke={active?C.primary:'rgba(255,255,255,.55)'} width={active?2.5:2}/>
                         </div>
                         <span style={{fontSize:12,fontWeight:active?700:500,flex:1}}>{item.label}</span>
