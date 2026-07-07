@@ -7,7 +7,7 @@ interface StoreMascotProps {
 
 export default function StoreMascot({ focused, cursorRatio = 0.5 }: StoreMascotProps) {
   const eyesOpen = focused !== 'password'
-  const offsetX = focused === 'email' ? (cursorRatio - 0.5) * 12 : 0
+  const offsetX = focused === 'email' ? (0.5 - cursorRatio) * 12 : 0
   const offsetY = focused === 'email' ? -3 : 0
 
   return (
