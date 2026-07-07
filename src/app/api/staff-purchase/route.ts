@@ -32,26 +32,37 @@ export async function POST(req: Request) {
 
     // تحديث المخزون لو مخزون
     if (category === 'مخزون' && name && qty) {
+      const purchasedQty = Number(qty)
+      const unitCost = purchasedQty > 0 ? (Number(amount) || 0) / purchasedQty : 0
+
       const { data: existing } = await supabase.from('products')
-        .select('id,qty').eq('org_id', org_id).eq('name', name).limit(1)
+        .select('id,qty,avg_cost').eq('org_id', org_id).eq('name', name).limit(1)
 
       if (existing && existing.length > 0) {
+        const oldQty = Number(existing[0].qty) || 0
+        const oldAvgCost = Number((existing[0] as any).avg_cost) || 0
+        const newAvgCost = (oldQty + purchasedQty) > 0
+          ? ((oldQty * oldAvgCost) + (purchasedQty * unitCost)) / (oldQty + purchasedQty)
+          : 0
+
         await supabase.from('stock_movements').insert({
           product_id: existing[0].id, type: 'in',
-          qty_change: Number(qty),
+          qty_change: purchasedQty,
           note: `شراء من: ${supplier} بواسطة: ${staff_name}`
         } as any)
+        await supabase.from('products').update({ avg_cost: newAvgCost }).eq('id', existing[0].id)
         if (staff_id) await addToAssignedProducts(supabase, staff_id, existing[0].id)
       } else {
         const { data: np } = await supabase.from('products').insert({
           org_id, branch_id: branch_id || null,
           name, unit: unit || 'قطعة', qty: 0,
-          reorder_point: reorder_point || 5, is_active: true
+          reorder_point: reorder_point || 5, is_active: true,
+          avg_cost: unitCost,
         } as any).select().single()
-        if (np && qty > 0) {
+        if (np && purchasedQty > 0) {
           await supabase.from('stock_movements').insert({
             product_id: np.id, type: 'in',
-            qty_change: Number(qty),
+            qty_change: purchasedQty,
             note: `شراء جديد من: ${supplier} بواسطة: ${staff_name}`
           } as any)
           if (staff_id) await addToAssignedProducts(supabase, staff_id, np.id)
