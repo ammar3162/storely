@@ -6,6 +6,27 @@ const sb = () => createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+function computeBusinessDate(openTime: string|null, closeTime: string|null): string {
+  const now = new Date()
+  const riyadhDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)
+  const riyadhHour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Riyadh', hour: '2-digit', hour12: false }).format(now))
+
+  if (!openTime || !closeTime) return riyadhDateStr
+
+  const openHour = Number(openTime.slice(0, 2))
+  const closeHour = Number(closeTime.slice(0, 2))
+
+  // محل يعمل حتى بعد منتصف الليل (وقت الإغلاق أصغر من وقت الفتح رقمياً)
+  const isOvernight = closeHour < openHour
+  if (isOvernight && riyadhHour < closeHour) {
+    const [y, m, d] = riyadhDateStr.split('-').map(Number)
+    const yesterday = new Date(Date.UTC(y, m - 1, d))
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1)
+    return yesterday.toISOString().slice(0, 10)
+  }
+  return riyadhDateStr
+}
+
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
   if (clean.startsWith('+')) return clean.slice(1)
@@ -44,6 +65,8 @@ export async function POST(req: Request) {
     const status = Math.abs(difference) < 0.01 ? 'balanced' : (difference < 0 ? 'deficit' : 'surplus')
 
     const supabase = sb()
+    const { data: orgHours } = await supabase.from('organizations').select('shop_open_time,shop_close_time').eq('id', org_id).single()
+    const businessDate = closing_date || computeBusinessDate((orgHours as any)?.shop_open_time || null, (orgHours as any)?.shop_close_time || null)
     const { data, error } = await supabase
       .from('cashier_closings')
       .insert({
@@ -51,7 +74,7 @@ export async function POST(req: Request) {
         branch_id: branch_id || null,
         staff_id,
         staff_name,
-        closing_date: closing_date || new Date().toISOString().slice(0, 10),
+        closing_date: businessDate,
         closing_time: closing_time || null,
         total_sales: sales,
         network_amount: network,
