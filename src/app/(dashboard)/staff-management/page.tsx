@@ -51,6 +51,9 @@ export default function StaffManagementPage() {
   const [maxStaff, setMaxStaff]     = useState(999)
   const [products, setProducts]     = useState<any[]>([])
   const [assigningId, setAssigningId] = useState<string|null>(null)
+  const [editingNameId, setEditingNameId] = useState<string|null>(null)
+  const [editNameValue, setEditNameValue] = useState('')
+  const [savingName, setSavingName] = useState(false)
   const [reportStaff, setReportStaff] = useState<any|null>(null)
   const [staffReport, setStaffReport] = useState<any[]>([])
   const [staffClosings, setStaffClosings] = useState<any[]>([])
@@ -153,6 +156,16 @@ export default function StaffManagementPage() {
     await (sb.from('staff_members' as any) as any).update({permissions:editPerms}).eq('id',id)
     toast('✅ تم حفظ الصلاحيات')
     setEditingPerms(null)
+    loadStaff(orgId)
+  }
+
+  async function saveName() {
+    if(!editingNameId || !editNameValue.trim()) return
+    setSavingName(true)
+    await (sb.from('staff_members' as any) as any).update({name:editNameValue.trim()}).eq('id',editingNameId)
+    toast('✅ تم تحديث اسم الموظف')
+    setEditingNameId(null)
+    setSavingName(false)
     loadStaff(orgId)
   }
 
@@ -408,6 +421,23 @@ export default function StaffManagementPage() {
 
       {/* Staff Report Modal */}
       {/* modal صلاحيات */}
+      {editingNameId && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
+          <div style={{background:colors.surface,borderRadius:radius.xl,padding:24,width:'100%',maxWidth:360,boxShadow:shadow.lg}}>
+            <div style={{fontSize:font.md,fontWeight:800,color:colors.text,marginBottom:16}}>تعديل اسم الموظف</div>
+            <div style={{marginBottom:18}}>
+              <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5}}>الاسم</label>
+              <input value={editNameValue} onChange={e=>setEditNameValue(e.target.value)} style={inp()} placeholder="اسم الموظف"
+                onKeyDown={e=>{if(e.key==='Enter')saveName()}}/>
+            </div>
+            <div style={{display:'flex',gap:10}}>
+              <button onClick={()=>setEditingNameId(null)} style={{...btnSecondary,flex:1,padding:'12px'}}>إلغاء</button>
+              <button onClick={saveName} disabled={savingName||!editNameValue.trim()} style={{...btnPrimary,flex:2,padding:'12px',opacity:savingName?.7:1}}>{savingName?'جاري الحفظ...':'✓ حفظ'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {editingPerms && (
         <div style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={()=>setEditingPerms(null)}>
           <div style={{background:'white',borderRadius:20,padding:28,width:'100%',maxWidth:400,fontFamily:'inherit'}} onClick={e=>e.stopPropagation()}>
@@ -561,6 +591,9 @@ export default function StaffManagementPage() {
                   <div>
                     <div style={{fontSize:font.base,fontWeight:700,color:colors.text,display:'flex',alignItems:'center',gap:8}}>
                       {s.name}
+                      <button onClick={e=>{e.stopPropagation();setEditingNameId(s.id);setEditNameValue(s.name)}} style={{background:'transparent',border:'none',cursor:'pointer',padding:2,display:'flex',alignItems:'center',color:colors.text4,opacity:.7}} title="تعديل الاسم">
+                        <svg width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </button>
                       {!s.is_active&&<span style={{fontSize:10,color:colors.danger,background:colors.dangerLight,padding:'2px 8px',borderRadius:20,fontWeight:700,border:`1px solid ${colors.dangerBorder}`}}>موقوف</span>}
                     </div>
                     <div style={{fontSize:font.xs,color:colors.text4,marginTop:2,direction:'ltr',textAlign:'right' as const}}>
