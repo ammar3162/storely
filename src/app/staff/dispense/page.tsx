@@ -41,6 +41,19 @@ function colorFor(cat: string, cats: string[]) {
   return CATEGORY_COLORS[cats.indexOf(cat) % CATEGORY_COLORS.length]
 }
 
+function iconFor(cat: string) {
+  const c = (cat||'').toLowerCase()
+  if(c.includes('غذائ')||c.includes('طعام')||c.includes('اكل')||c.includes('أكل')) return '🍞'
+  if(c.includes('لبن')||c.includes('حليب')||c.includes('بيض')||c.includes('ألبان')) return '🥛'
+  if(c.includes('نظاف')||c.includes('تنظيف')) return '🧴'
+  if(c.includes('مشروب')) return '🥤'
+  if(c.includes('لحم')||c.includes('دجاج')) return '🍗'
+  if(c.includes('خضار')||c.includes('فواكه')) return '🥦'
+  if(c.includes('ورق')||c.includes('مكتب')) return '📄'
+  if(c === 'أخرى' || c.includes('اخرى')) return '📦'
+  return '🏷️'
+}
+
 export default function StaffPage() {
   const [session, setSession] = useState<StaffSession|null>(null)
   const [tab, setTab] = useState<'dispense'|'inventory'|'purchases'|'reports'>('dispense')
@@ -52,6 +65,8 @@ export default function StaffPage() {
   const [orgLogo, setOrgLogo] = useState<string|null>(null)
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<string|null>(null)
+  const [mostUsed, setMostUsed] = useState<any[]>([])
+  const [todayCount, setTodayCount] = useState(0)
   const [selected, setSelected] = useState<any>(null)
   const [dispenseQty, setDispenseQty] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -108,6 +123,7 @@ export default function StaffPage() {
       else if(p.reports) setTab('reports')
     }
     loadProducts(s)
+    loadStats(s)
     sb.from('organizations' as any).select('logo_url').eq('id',s.org_id).single()
       .then(({data}:any)=>{ if(data?.logo_url) setOrgLogo(data.logo_url) })
     const savedLang = localStorage.getItem('staff_lang')
@@ -117,6 +133,15 @@ export default function StaffPage() {
   useEffect(()=>{
     if(session && products.length > 0 && lang !== 'ar') fetchTranslation(session, lang)
   },[session, products, lang])
+
+  async function loadStats(s: StaffSession) {
+    try {
+      const res = await fetch('/api/staff-dispense-stats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:s.org_id,branch_id:s.branch_id,staff_id:s.id})})
+      const d = await res.json()
+      setMostUsed(d.mostUsed||[])
+      setTodayCount(d.todayCount||0)
+    } catch {}
+  }
 
   async function loadProducts(s: StaffSession) {
     setLoading(true)
@@ -219,6 +244,12 @@ export default function StaffPage() {
         .prod-btn{background:white;border:none;border-radius:14px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-family:inherit;text-align:right;width:100%;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:all .15s}
         .prod-btn:active{transform:scale(.97);box-shadow:0 1px 4px rgba(0,0,0,.1)}
         input:focus,select:focus{border-color:#16a34a!important;outline:none!important;box-shadow:0 0 0 3px rgba(22,163,74,.1)!important}
+        @keyframes fadeUpStagger{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+        .cat-card{animation:fadeUpStagger .4s cubic-bezier(0.34,1.56,0.64,1) both;transition:transform .15s,box-shadow .15s}
+        .cat-card:active{transform:scale(.94)}
+        @media(hover:hover){.cat-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.16)}}
+        .mu-btn{animation:fadeUpStagger .35s ease both;transition:transform .15s}
+        .mu-btn:active{transform:scale(.95)}
       `}</style>
 
       {/* Toast */}
@@ -301,15 +332,37 @@ export default function StaffPage() {
             ))}
           </div>
         ) : !activeCategory ? (
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,animation:'fadeIn .3s'}}>
-            {categories.map(cat=>(
-              <button key={cat} onClick={()=>setActiveCategory(cat)}
-                style={{background:colorFor(cat,categories),color:'white',border:'none',borderRadius:20,padding:'28px 16px',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:8,boxShadow:`0 8px 24px ${colorFor(cat,categories)}44`,minHeight:120,transition:'transform .15s,box-shadow .15s'}}>
-                <div style={{fontSize:18,fontWeight:800}}>{tx(cat)}</div>
-                {lang!=='ar'&&<div style={{fontSize:11,opacity:.7}}>{cat}</div>}
-                <div style={{fontSize:12,opacity:.85,background:'rgba(255,255,255,.2)',padding:'3px 10px',borderRadius:20}}>{categoriesMap[cat]} {T('items',lang)}</div>
-              </button>
-            ))}
+          <div style={{animation:'fadeIn .3s'}}>
+            {todayCount>0 && (
+              <div style={{display:'flex',alignItems:'center',gap:8,background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:14,padding:'10px 16px',marginBottom:14}}>
+                <span style={{fontSize:18}}>✅</span>
+                <span style={{fontSize:13,fontWeight:700,color:'#15803d'}}>صرفت {todayCount} صنف اليوم — استمر!</span>
+              </div>
+            )}
+            {mostUsed.length>0 && (
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:12,fontWeight:700,color:'#64748b',marginBottom:8}}>⚡ الأكثر استخداماً</div>
+                <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}}>
+                  {mostUsed.map((p:any,i:number)=>(
+                    <button key={p.id} className="mu-btn" onClick={()=>setSelected(p)} style={{animationDelay:`${i*0.06}s`,flexShrink:0,background:'white',border:'1.5px solid #e2e8f0',borderRadius:14,padding:'10px 14px',cursor:'pointer',fontFamily:'inherit',minWidth:110,textAlign:'right' as const,boxShadow:'0 2px 6px rgba(0,0,0,.05)'}}>
+                      <div style={{fontSize:12,fontWeight:700,color:'#0f172a',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis',maxWidth:110}}>{tx(p.name)}</div>
+                      <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>{p.qty} {p.unit}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+              {categories.map((cat,i)=>(
+                <button key={cat} className="cat-card" onClick={()=>setActiveCategory(cat)}
+                  style={{animationDelay:`${i*0.06}s`,background:colorFor(cat,categories),color:'white',border:'none',borderRadius:20,padding:'28px 16px',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:8,boxShadow:`0 8px 24px ${colorFor(cat,categories)}44`,minHeight:120}}>
+                  <div style={{fontSize:30}}>{iconFor(cat)}</div>
+                  <div style={{fontSize:18,fontWeight:800}}>{tx(cat)}</div>
+                  {lang!=='ar'&&<div style={{fontSize:11,opacity:.7}}>{cat}</div>}
+                  <div style={{fontSize:12,opacity:.85,background:'rgba(255,255,255,.2)',padding:'3px 10px',borderRadius:20}}>{categoriesMap[cat]} {T('items',lang)}</div>
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           <div style={{animation:'fadeIn .3s'}}>
