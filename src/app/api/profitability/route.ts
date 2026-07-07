@@ -6,6 +6,33 @@ const sb = () => createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+async function computeCurrentInventoryValue(supabase: any, org_id: string) {
+  const { data: products } = await supabase
+    .from('products')
+    .select('qty,avg_cost')
+    .eq('org_id', org_id)
+    .eq('is_active', true)
+  return (products || []).reduce((s: number, p: any) => s + (Number(p.qty) || 0) * (Number(p.avg_cost) || 0), 0)
+}
+
+async function ensureSnapshot(supabase: any, org_id: string, dateStr: string) {
+  const { data: existing } = await supabase
+    .from('inventory_snapshots')
+    .select('total_value')
+    .eq('org_id', org_id)
+    .eq('snapshot_date', dateStr)
+    .maybeSingle()
+
+  if (existing) return Number(existing.total_value) || 0
+
+  const currentValue = await computeCurrentInventoryValue(supabase, org_id)
+  await supabase.from('inventory_snapshots').upsert(
+    { org_id, snapshot_date: dateStr, total_value: currentValue },
+    { onConflict: 'org_id,snapshot_date' }
+  )
+  return currentValue
+}
+
 async function ensureGenerated(supabase: any, org_id: string, month: string) {
   const { data: templates } = await supabase
     .from('fixed_expenses')
@@ -77,9 +104,16 @@ export async function GET(req: Request) {
       .lte('created_at', monthEndTs)
 
     const purchasesList = purchases || []
-    const inventoryCost = purchasesList.filter((p: any) => p.category === 'مخزون').reduce((s: number, p: any) => s + Number(p.amount || 0), 0)
+    const inventoryPurchases = purchasesList.filter((p: any) => p.category === 'مخزون').reduce((s: number, p: any) => s + Number(p.amount || 0), 0)
     const variableExpenses = purchasesList.filter((p: any) => p.category !== 'مخزون').reduce((s: number, p: any) => s + Number(p.amount || 0), 0)
     const inputVat = purchasesList.reduce((s: number, p: any) => s + Number(p.vat_amount || 0), 0)
+
+    // تكلفة البضاعة المباعة = مخزون أول الشهر + مشتريات الشهر − مخزون آخر الشهر
+    const nextMonthDate = new Date(year, monthNum, 1) // اليوم الأول من الشهر التالي
+    const nextMonthStart = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth()+1).padStart(2,'0')}-01`
+    const openingInventoryValue = await ensureSnapshot(supabase, org_id, monthStart)
+    const closingInventoryValue = await ensureSnapshot(supabase, org_id, nextMonthStart)
+    const inventoryCost = Math.max(openingInventoryValue + inventoryPurchases - closingInventoryValue, 0)
 
     // 3) المصروفات الثابتة لهذا الشهر
     const { data: fixedExpensesData } = await supabase
@@ -107,6 +141,9 @@ export async function GET(req: Request) {
       revenueExVat,
       closingsCount,
       inventoryCost,
+      inventoryPurchases,
+      openingInventoryValue,
+      closingInventoryValue,
       variableExpenses,
       fixedExpensesTotal,
       fixedExpensesList,
