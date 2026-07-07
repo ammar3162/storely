@@ -42,8 +42,9 @@ export async function GET(req: Request) {
     const monthStart = `${monthParam}-01`
     const lastDay = new Date(year, monthNum, 0).getDate()
     const monthEndDate = `${monthParam}-${String(lastDay).padStart(2, '0')}`
-    const monthStartTs = new Date(year, monthNum - 1, 1).toISOString()
-    const monthEndTs = new Date(year, monthNum - 1, lastDay, 23, 59, 59, 999).toISOString()
+    // نبني حدود الشهر صراحة بتوقيت الرياض (+03:00) بدل الاعتماد على توقيت السيرفر
+    const monthStartTs = `${monthParam}-01T00:00:00.000+03:00`
+    const monthEndTs = `${monthParam}-${String(lastDay).padStart(2,'0')}T23:59:59.999+03:00`
 
     const supabase = sb()
 
