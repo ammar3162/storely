@@ -70,15 +70,7 @@ export default function CashierClosingPage() {
   const [session, setSession] = useState<StaffSession|null>(null)
   const [orgLogo, setOrgLogo] = useState<string|null>(null)
   const [step, setStep] = useState(1)
-  function nowRiyadh() {
-    const now = new Date()
-    const parts = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit',day:'2-digit'}).format(now)
-    const timeParts = new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Riyadh',hour:'2-digit',minute:'2-digit',hour12:false}).format(now)
-    return { date: parts, time: timeParts }
-  }
-  const [closingDate, setClosingDate] = useState(() => nowRiyadh().date)
-  const [closingTime, setClosingTime] = useState(() => nowRiyadh().time)
-  const [totalSales, setTotalSales] = useState('')
+    const [totalSales, setTotalSales] = useState('')
   const [madaAmount, setMadaAmount] = useState('')
   const [visaAmount, setVisaAmount] = useState('')
   const [mastercardAmount, setMastercardAmount] = useState('')
@@ -205,7 +197,6 @@ export default function CashierClosingPage() {
           mada_amount: mada, visa_amount: visa, mastercard_amount: mastercard,
           cash_amount: cash, purchases: validPurchases,
           network_image: networkImage, sales_image: salesImage,
-          closing_date: closingDate, closing_time: closingTime,
         })
       })
       if(!res.ok){ showToast('حدث خطأ أثناء الحفظ','error'); setSubmitting(false); return }
@@ -287,18 +278,6 @@ export default function CashierClosingPage() {
                 <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',marginBottom:16,display:'flex',alignItems:'center',gap:8}}>
                   <span style={{width:24,height:24,borderRadius:7,background:'#f0fdf4',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12}}>📊</span>
                   بيانات اليوم
-                </div>
-                <div style={{marginBottom:16,display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-                  <div>
-                    <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>تاريخ الإقفال</label>
-                    <input type="date" value={closingDate} onChange={e=>setClosingDate(e.target.value)}
-                      style={{width:'100%',padding:'12px 10px',border:'1.5px solid #e5e5e2',borderRadius:12,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',color:'#1c1c1a'}}/>
-                  </div>
-                  <div>
-                    <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>وقت الإقفال</label>
-                    <input type="time" value={closingTime} onChange={e=>setClosingTime(e.target.value)}
-                      style={{width:'100%',padding:'12px 10px',border:'1.5px solid #e5e5e2',borderRadius:12,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',color:'#1c1c1a',direction:'ltr'}}/>
-                  </div>
                 </div>
                 <div style={{marginBottom:16}}>
                   <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>إجمالي المبيعات (النظام)</label>
@@ -435,10 +414,6 @@ export default function CashierClosingPage() {
             {step===4 && (
               <div className="fu" style={{background:'white',borderRadius:18,padding:22,marginBottom:16,boxShadow:'0 2px 16px rgba(0,0,0,.05)',border:'1px solid #eeeeeb'}}>
                 <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>ملخص الاحتساب</div>
-                <div style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:13,borderBottom:'1px dashed #eeeeeb',marginBottom:4}}>
-                  <span style={{color:'#8b8a84',fontWeight:600}}>تاريخ ووقت الإقفال</span>
-                  <span style={{color:'#1c1c1a',fontWeight:700,direction:'ltr' as const}}>{closingDate} — {closingTime}</span>
-                </div>
                 {[
                   {label:'إجمالي المبيعات',value:sales,sign:''},
                   ...(mada>0?[{label:'— مدى',value:mada,sign:'−'}]:[]),
