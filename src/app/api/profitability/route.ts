@@ -6,33 +6,6 @@ const sb = () => createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-async function computeCurrentInventoryValue(supabase: any, org_id: string) {
-  const { data: products } = await supabase
-    .from('products')
-    .select('qty,avg_cost')
-    .eq('org_id', org_id)
-    .eq('is_active', true)
-  return (products || []).reduce((s: number, p: any) => s + (Number(p.qty) || 0) * (Number(p.avg_cost) || 0), 0)
-}
-
-async function ensureSnapshot(supabase: any, org_id: string, dateStr: string) {
-  const { data: existing } = await supabase
-    .from('inventory_snapshots')
-    .select('total_value')
-    .eq('org_id', org_id)
-    .eq('snapshot_date', dateStr)
-    .maybeSingle()
-
-  if (existing) return Number(existing.total_value) || 0
-
-  const currentValue = await computeCurrentInventoryValue(supabase, org_id)
-  await supabase.from('inventory_snapshots').upsert(
-    { org_id, snapshot_date: dateStr, total_value: currentValue },
-    { onConflict: 'org_id,snapshot_date' }
-  )
-  return currentValue
-}
-
 async function ensureGenerated(supabase: any, org_id: string, month: string) {
   const { data: templates } = await supabase
     .from('fixed_expenses')
@@ -84,7 +57,7 @@ export async function GET(req: Request) {
 
     await ensureGenerated(supabase, org_id, monthStart)
 
-    // 1) الإيرادات من إقفالات الكاشير
+    // 1) دخلت — كل مبيعات إقفالات الكاشير هالشهر (شامل الضريبة، رقم حقيقي)
     const { data: closings } = await supabase
       .from('cashier_closings')
       .select('total_sales')
@@ -92,30 +65,23 @@ export async function GET(req: Request) {
       .gte('closing_date', monthStart)
       .lte('closing_date', monthEndDate)
 
-    const revenue = (closings || []).reduce((s: number, c: any) => s + Number(c.total_sales || 0), 0)
+    const totalIn = (closings || []).reduce((s: number, c: any) => s + Number(c.total_sales || 0), 0)
     const closingsCount = (closings || []).length
 
-    // 2) المشتريات (مخزون + مصروفات متغيرة) خلال الشهر
+    // 2) طلع مني — كل المشتريات (مخزون + غيرها) هالشهر (شامل الضريبة، رقم حقيقي)
     const { data: purchases } = await supabase
       .from('purchases')
-      .select('category,amount,vat_amount,total_amount')
+      .select('category,total_amount')
       .eq('org_id', org_id)
       .gte('created_at', monthStartTs)
       .lte('created_at', monthEndTs)
 
     const purchasesList = purchases || []
-    const inventoryPurchases = purchasesList.filter((p: any) => p.category === 'مخزون').reduce((s: number, p: any) => s + Number(p.amount || 0), 0)
-    const variableExpenses = purchasesList.filter((p: any) => p.category !== 'مخزون').reduce((s: number, p: any) => s + Number(p.amount || 0), 0)
-    const inputVat = purchasesList.reduce((s: number, p: any) => s + Number(p.vat_amount || 0), 0)
+    const inventoryPurchases = purchasesList.filter((p: any) => p.category === 'مخزون').reduce((s: number, p: any) => s + Number(p.total_amount || 0), 0)
+    const otherPurchases = purchasesList.filter((p: any) => p.category !== 'مخزون').reduce((s: number, p: any) => s + Number(p.total_amount || 0), 0)
+    const totalPurchases = inventoryPurchases + otherPurchases
 
-    // تكلفة البضاعة المباعة = مخزون أول الشهر + مشتريات الشهر − مخزون آخر الشهر
-    const nextMonthDate = new Date(year, monthNum, 1) // اليوم الأول من الشهر التالي
-    const nextMonthStart = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth()+1).padStart(2,'0')}-01`
-    const openingInventoryValue = await ensureSnapshot(supabase, org_id, monthStart)
-    const closingInventoryValue = await ensureSnapshot(supabase, org_id, nextMonthStart)
-    const inventoryCost = Math.max(openingInventoryValue + inventoryPurchases - closingInventoryValue, 0)
-
-    // 3) المصروفات الثابتة لهذا الشهر
+    // 3) المصروفات الثابتة لهذا الشهر (رواتب، إيجار...)
     const { data: fixedExpensesData } = await supabase
       .from('monthly_fixed_expenses')
       .select('*')
@@ -126,30 +92,23 @@ export async function GET(req: Request) {
     const fixedExpensesList = fixedExpensesData || []
     const fixedExpensesTotal = fixedExpensesList.reduce((s: number, e: any) => s + Number(e.amount || 0), 0)
 
-    // 4) حساب الضريبة
-    const revenueExVat = revenue / 1.15
-    const outputVat = revenue - revenueExVat
-    const netVatPayable = outputVat - inputVat
+    // 4) طلع مني (إجمالي) = المشتريات + المصروفات الثابتة
+    const totalOut = totalPurchases + fixedExpensesTotal
 
-    // 5) صافي الربح
-    const netProfit = revenueExVat - inventoryCost - variableExpenses - fixedExpensesTotal - netVatPayable
+    // 5) الصافي = دخلت − طلع مني
+    const netProfit = totalIn - totalOut
 
     return NextResponse.json({
       success: true,
       month: monthParam,
-      revenue,
-      revenueExVat,
+      totalIn,
       closingsCount,
-      inventoryCost,
       inventoryPurchases,
-      openingInventoryValue,
-      closingInventoryValue,
-      variableExpenses,
+      otherPurchases,
+      totalPurchases,
       fixedExpensesTotal,
       fixedExpensesList,
-      outputVat,
-      inputVat,
-      netVatPayable,
+      totalOut,
       netProfit,
     })
   } catch (err: any) {
