@@ -46,6 +46,27 @@ export default function MarketplacePage() {
     return `https://wa.me/${phone}?text=${msg}`
   }
 
+  // الصفحة مقفلة مؤقتاً لين يتجمع موردون معتمدون فعليون
+  const COMING_SOON = true
+  if (COMING_SOON) return (
+    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700;800&display=swap');*{box-sizing:border-box}`}</style>
+      <div style={{background:'linear-gradient(135deg,#0d2818,#1a4731)',padding:'32px 20px 24px'}}>
+        <div style={{maxWidth:900,margin:'0 auto'}}>
+          <button onClick={()=>window.history.back()} style={{background:'rgba(255,255,255,.1)',border:'none',color:'white',borderRadius:10,padding:'8px 14px',cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:700}}>← رجوع</button>
+        </div>
+      </div>
+      <div style={{maxWidth:600,margin:'80px auto',textAlign:'center' as const,padding:'0 20px'}}>
+        <div style={{fontSize:56,marginBottom:20}}>🤝</div>
+        <div style={{fontSize:22,fontWeight:900,color:'#0d2818',marginBottom:10}}>قريباً — موردونا المعتمدون</div>
+        <div style={{fontSize:14,color:'#5f6b66',lineHeight:1.8}}>
+          نشتغل حالياً على جمع أفضل الموردين المعتمدين ليكونوا في خدمتك بعروض وأولوية توصيل حصرية.<br/>
+          تابعنا قريباً — الميزة راح تكون متاحة بأقرب وقت.
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700;800&display=swap');*{box-sizing:border-box}`}</style>
