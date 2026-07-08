@@ -568,6 +568,7 @@ function RecentOpsSection({ recentOps, colors }: { recentOps:any[]; colors:any }
 
 function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPeriod; from:string; to:string; onBack:()=>void }) {
   const [closings, setClosings] = useState<any[]>([])
+  const [expandedReasons, setExpandedReasons] = useState<Record<string,boolean>>({})
   const [loading, setLoading]   = useState(true)
   useEffect(()=>{ load() },[period,from,to])
   async function load() {
@@ -626,9 +627,12 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.cash_amount).toFixed(0)} ر.س</td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:Number(c.total_purchases)>0?colors.danger:colors.text4}}>
                       {Number(c.total_purchases)>0 ? (
-                        <div>
-                          <div style={{fontWeight:700}}>−{Number(c.total_purchases).toFixed(0)} ر.س</div>
-                          {(c.purchases||[]).map((p:any,pi:number)=>(
+                        <div onClick={()=>setExpandedReasons(prev=>({...prev,[c.id]:!prev[c.id]}))} style={{cursor:'pointer'}}>
+                          <div style={{fontWeight:700,display:'flex',alignItems:'center',gap:4}}>
+                            −{Number(c.total_purchases).toFixed(0)} ر.س
+                            <span style={{fontSize:9,color:colors.text4}}>{expandedReasons[c.id]?'▲':'▼'}</span>
+                          </div>
+                          {expandedReasons[c.id] && (c.purchases||[]).map((p:any,pi:number)=>(
                             <div key={pi} style={{fontSize:10,color:colors.text4,fontWeight:500,marginTop:2}}>
                               {p.reason||'بدون سبب'} ({Number(p.amount).toFixed(0)} ر.س)
                             </div>
