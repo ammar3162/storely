@@ -184,6 +184,37 @@ export async function POST(req: Request) {
         }
       }
 
+      // كشف عدم توفر المنتج من المورد
+      if (t === '0' || t === 'غير متوفر' || t.toLowerCase() === 'unavailable') {
+        const cleanPhone2 = to.replace(/\D/g,'')
+        const phoneLast9b = cleanPhone2.slice(-9)
+        const { data: candidates2 } = await sb().from('supplier_orders' as any)
+          .select('*')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(20)
+        const pendingOrder2 = (candidates2 || []).find((o: any) =>
+          (o.supplier_phone || '').replace(/\D/g, '').slice(-9) === phoneLast9b
+        )
+
+        if (pendingOrder2) {
+          await sb().from('supplier_orders' as any)
+            .update({ status: 'unavailable' })
+            .eq('id', (pendingOrder2 as any).id)
+
+          const { data: org2 } = await sb().from('organizations').select('name,whatsapp_number').eq('id', (pendingOrder2 as any).org_id).single()
+          if ((org2 as any)?.whatsapp_number) {
+            const items2 = ((pendingOrder2 as any).items || []).map((i: any) => `• ${i.name}`).join('\n')
+            const ownerPhone = (org2 as any).whatsapp_number.replace(/\D/g,'').replace(/^0/,'966')
+            const ownerMsg = `🟢 *Storely*\n\n⚠️ المورد *${(pendingOrder2 as any).supplier_name}* أبلغ إن الصنف التالي غير متوفر حالياً:\n\n${items2}\n\nيرجى التواصل مع المورد أو البحث عن مورد بديل`
+            await send(ownerPhone, ownerMsg)
+          }
+
+          await send(to, `🟢 *Storely*\n\nشكراً لإبلاغنا 🙏\nتم إبلاغ العميل بعدم توفر الصنف حالياً`)
+          continue
+        }
+      }
+
       const user = await findUser(to)
 
       if (user?.status==='active') {
