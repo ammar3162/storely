@@ -125,8 +125,13 @@ export default function StaffLoginPage() {
   },[pin])
 
   if(!isPWA) return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4',padding:20}}>
-      <div style={{background:'white',borderRadius:16,padding:28,width:'100%',maxWidth:360,border:'1px solid #ebebea'}}>
+    <div style={{
+      fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',
+      display:'flex',alignItems:'center',justifyContent:'center',padding:20,
+      backgroundImage:'linear-gradient(rgba(13,40,24,.55),rgba(13,40,24,.55)),url(/images/staff-login-bg.jpg)',
+      backgroundSize:'cover',backgroundPosition:'center',
+    }}>
+      <div style={{background:'white',borderRadius:18,padding:28,width:'100%',maxWidth:360,boxShadow:'0 20px 60px rgba(0,0,0,.35)'}}>
         <div style={{fontSize:18,fontWeight:700,color:'#1c1c1a',marginBottom:4}}>دخول الموظف</div>
         <div style={{fontSize:12,color:'#888780',marginBottom:20}}>أدخل رقم جوالك ورمز PIN</div>
         <div style={{marginBottom:12}}>
