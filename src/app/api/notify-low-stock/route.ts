@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { isSubscriptionActive } from '@/lib/subscription'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -12,6 +13,9 @@ function formatPhone(raw: string): string {
 }
 
 async function sendForOrg(supabase: any, org: any) {
+  const subActive = await isSubscriptionActive(supabase, org.id)
+  if (!subActive) return { sent: 0, message: 'الاشتراك منتهي — لا يتم إرسال إشعارات' }
+
   const { data: products } = await supabase
     .from('products').select('name,qty,unit,reorder_point')
     .eq('org_id', org.id).eq('is_active', true)

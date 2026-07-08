@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { isSubscriptionActive } from '@/lib/subscription'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -40,6 +41,9 @@ export async function POST(req: Request) {
     const { data: org } = await db.from('organizations').select('name,whatsapp_number').eq('id', org_id).single()
     console.log('org:', org)
     if (!org) return NextResponse.json({ success: false })
+
+    const subActive = await isSubscriptionActive(db, org_id)
+    if (!subActive) return NextResponse.json({ success: false, message: 'الاشتراك منتهي — لا يتم إرسال إشعارات' })
 
     const { data: product } = await db.from('products')
       .select('id,name,qty,unit,reorder_point,supplier_id,supplier_order_qty,supplier_notes')
