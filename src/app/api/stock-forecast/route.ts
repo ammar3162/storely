@@ -54,6 +54,12 @@ export async function POST(req: Request) {
         smoothed = alpha * dailyValues[i] + (1-alpha) * smoothed
       }
 
+      // مزج مع المعدل طويل المدى عشان ما ننخدع بيوم واحد شاذ (صرف كمية كبيرة دفعة وحدة)
+      const firstDispenseDate = data.dates[0]
+      const daysSpan = Math.max((new Date().getTime()-firstDispenseDate.getTime())/(1000*60*60*24),1)
+      const longTermDailyAvg = totalQty / daysSpan
+      smoothed = smoothed*0.4 + longTermDailyAvg*0.6
+
       // معامل كل يوم من الأسبوع
       const dayFactors: Record<number,{total:number,count:number}> = {}
       data.dates.forEach((d,i)=>{
