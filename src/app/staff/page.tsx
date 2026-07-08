@@ -159,7 +159,13 @@ export default function StaffLoginPage() {
   const progress = step==='phone' ? phone.length/10 : pin.length/4
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',background:'#fff',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'0 0 env(safe-area-inset-bottom)'}}>
+    <div style={{
+      fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',
+      display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+      padding:'0 0 env(safe-area-inset-bottom)',
+      backgroundImage:'linear-gradient(rgba(255,255,255,.93),rgba(255,255,255,.93)),url(/images/staff-login-bg.jpg)',
+      backgroundSize:'cover',backgroundPosition:'center',
+    }}>
       <style>{'@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}.shake{animation:shake .5s ease}.dkey{width:72px;height:72px;border-radius:50%;border:none;background:#f5f5f4;font-size:24px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#1c1c1a;transition:all .1s;-webkit-tap-highlight-color:transparent;font-family:inherit}.dkey:active{background:#e0e0dd;transform:scale(.93)}.dkey:disabled{opacity:.3;cursor:default}'}</style>
 
       <div style={{marginBottom:32,textAlign:'center'}}>
