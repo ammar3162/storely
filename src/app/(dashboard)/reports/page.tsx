@@ -626,10 +626,14 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.cash_amount).toFixed(0)} ر.س</td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:Number(c.total_purchases)>0?colors.danger:colors.text4}}>
                       {Number(c.total_purchases)>0 ? (
-                        <span title={(c.purchases||[]).map((p:any)=>`${p.reason||'بدون سبب'}: ${Number(p.amount).toFixed(0)} ر.س`).join('\n')} style={{cursor:'help',borderBottom:'1px dotted',display:'inline-flex',alignItems:'center',gap:4}}>
-                          −{Number(c.total_purchases).toFixed(0)} ر.س
-                          <span style={{fontSize:10,opacity:.7}}>ℹ️</span>
-                        </span>
+                        <div>
+                          <div style={{fontWeight:700}}>−{Number(c.total_purchases).toFixed(0)} ر.س</div>
+                          {(c.purchases||[]).map((p:any,pi:number)=>(
+                            <div key={pi} style={{fontSize:10,color:colors.text4,fontWeight:500,marginTop:2}}>
+                              {p.reason||'بدون سبب'} ({Number(p.amount).toFixed(0)} ر.س)
+                            </div>
+                          ))}
+                        </div>
                       ) : '—'}
                     </td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{(Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} ر.س</td>
