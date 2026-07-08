@@ -61,6 +61,8 @@ export default function StaffManagementPage() {
   const [selectedProds, setSelectedProds] = useState<string[]>([])
   const [shopOpenTime, setShopOpenTime] = useState('')
   const [shopCloseTime, setShopCloseTime] = useState('')
+  const [showHoursModal, setShowHoursModal] = useState(false)
+  const [savingHours, setSavingHours] = useState(false)
   const sb = createClient()
 
   useEffect(() => { init() }, [])
@@ -174,6 +176,15 @@ export default function StaffManagementPage() {
     setEditingNameId(null)
     setSavingName(false)
     loadStaff(orgId)
+  }
+
+  async function saveShopHours() {
+    if(!shopOpenTime||!shopCloseTime){toast('حدد وقت الفتح والإغلاق','warning');return}
+    setSavingHours(true)
+    await (sb.from('organizations' as any) as any).update({shop_open_time:shopOpenTime, shop_close_time:shopCloseTime}).eq('id',orgId)
+    toast('✅ تم تحديث ساعات العمل')
+    setSavingHours(false)
+    setShowHoursModal(false)
   }
 
   async function toggleActive(id:string,current:boolean) {
@@ -461,6 +472,29 @@ export default function StaffManagementPage() {
         </div>
       )}
 
+      {showHoursModal && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
+          <div style={{background:colors.surface,borderRadius:radius.xl,padding:24,width:'100%',maxWidth:380,boxShadow:shadow.lg}}>
+            <div style={{fontSize:font.md,fontWeight:800,color:colors.text,marginBottom:6}}>ساعات عمل المحل</div>
+            <div style={{fontSize:11,color:colors.text4,marginBottom:16,lineHeight:1.5}}>يستخدمها النظام ليحدد تاريخ يوم العمل الصحيح لو المحل يقفل بعد منتصف الليل</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:18}}>
+              <div>
+                <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5}}>وقت الفتح</label>
+                <input type="time" value={shopOpenTime} onChange={e=>setShopOpenTime(e.target.value)} style={inp()}/>
+              </div>
+              <div>
+                <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5}}>وقت الإغلاق</label>
+                <input type="time" value={shopCloseTime} onChange={e=>setShopCloseTime(e.target.value)} style={inp()}/>
+              </div>
+            </div>
+            <div style={{display:'flex',gap:10}}>
+              <button onClick={()=>setShowHoursModal(false)} style={{...btnSecondary,flex:1,padding:'12px'}}>إلغاء</button>
+              <button onClick={saveShopHours} disabled={savingHours} style={{...btnPrimary,flex:2,padding:'12px'}}>{savingHours?'جاري الحفظ...':'✓ حفظ'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {editingPerms && (
         <div style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={()=>setEditingPerms(null)}>
           <div style={{background:'white',borderRadius:20,padding:28,width:'100%',maxWidth:400,fontFamily:'inherit'}} onClick={e=>e.stopPropagation()}>
@@ -634,6 +668,11 @@ export default function StaffManagementPage() {
                   {s.role!=='cashier' && (
                     <button onClick={e=>{e.stopPropagation();openAssign(s)}} className="act-btn" style={{background:colors.warningLight||'#fffbeb',color:colors.warning||'#d97706'}}>
                       📦 {s.assigned_products?.length>0?`${s.assigned_products.length} منتج`:'كل المنتجات'}
+                    </button>
+                  )}
+                  {s.role==='cashier' && (
+                    <button onClick={e=>{e.stopPropagation();setShowHoursModal(true)}} className="act-btn" style={{background:'#ecfeff',color:'#0891b2'}}>
+                      ⏰ ساعات العمل
                     </button>
                   )}
                   <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} className="act-btn" style={{background:colors.infoLight,color:colors.info}}>PIN جديد</button>
