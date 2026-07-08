@@ -60,24 +60,41 @@ export async function POST(req: Request) {
       const { data: supplier } = await (db as any).from('suppliers')
         .select('name,phone').eq('id', (product as any).supplier_id).single()
       if ((supplier as any)?.phone) {
-        // إنشاء طلب مع token
-      const orderItems = [{ name: (product as any).name, qty: orderQty, unit: (product as any).unit }]
-      const { data: orderData, error: orderErr } = await (db as any).from('supplier_orders').insert({
-        org_id,
-        supplier_name: (supplier as any).name,
-        supplier_phone: (supplier as any).phone,
-        items: orderItems,
-      }).select('token').single()
-      if (orderErr) {
-        return NextResponse.json({ success: false, debug: orderErr.message })
-      }
-      const token = (orderData as any)?.token || ''
-      const confirmUrl = `https://storely.dev/confirm/${token}`
+        const notesLine = (product as any).supplier_notes ? `\n📝 ${(product as any).supplier_notes}\n` : ''
 
-      const notesLine = (product as any).supplier_notes ? `\n📝 ${(product as any).supplier_notes}\n` : ''
-      const supplierMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\nطلب توريد من *${(org as any).name}*\n\n• ${(product as any).name} — *${orderQty} ${(product as any).unit}*${notesLine}\nللتأكيد رد بكلمة: *تم*`
-        await sendWA((supplier as any).phone, supplierMsg)
-        sentToSupplier = true
+        // تحقق: فيه طلب معلّق لنفس الصنف ونفس المورد؟ لو فيه، نرسل تذكير بس بدل طلب جديد مكرر
+        const { data: pendingExisting } = await (db as any).from('supplier_orders')
+          .select('*')
+          .eq('org_id', org_id)
+          .eq('product_id', product_id)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (pendingExisting) {
+          const items = (pendingExisting as any).items || []
+          const itemsText = items.map((i: any) => `• ${i.name} — *${i.qty} ${i.unit}*`).join('\n')
+          const reminderMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\n🔔 *تذكير بطلب سابق لسا ما تأكد*\n\n${itemsText}${notesLine}\nللتأكيد رد بكلمة: *تم*\nلو الصنف غير متوفر حالياً، رد بـ: *0*`
+          await sendWA((supplier as any).phone, reminderMsg)
+          sentToSupplier = true
+        } else {
+          const orderItems = [{ name: (product as any).name, qty: orderQty, unit: (product as any).unit }]
+          const { data: orderData, error: orderErr } = await (db as any).from('supplier_orders').insert({
+            org_id,
+            product_id,
+            supplier_name: (supplier as any).name,
+            supplier_phone: (supplier as any).phone,
+            items: orderItems,
+          }).select('token').single()
+          if (orderErr) {
+            return NextResponse.json({ success: false, debug: orderErr.message })
+          }
+
+          const supplierMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\nطلب توريد من *${(org as any).name}*\n\n• ${(product as any).name} — *${orderQty} ${(product as any).unit}*${notesLine}\nللتأكيد رد بكلمة: *تم*\nلو الصنف غير متوفر حالياً، رد بـ: *0*`
+          await sendWA((supplier as any).phone, supplierMsg)
+          sentToSupplier = true
+        }
       }
     }
 
