@@ -66,6 +66,14 @@ function ProgressBar({ step }: { step: number }) {
   )
 }
 
+const THANK_YOU_TEMPLATES = [
+  'شكراً لك {name} على مجهودك اليوم 🙏',
+  'يومك كان طويل يا {name}، تسلم على تعبك 💪',
+  'شكراً {name} — بدونك ما كان يمشي الشغل ✨',
+  '{name}، تسلم إيدك على جهدك اليوم 🌟',
+  'إنجاز تاني ليوم يا {name} — شكراً لك 🙌',
+]
+
 export default function CashierClosingPage() {
   const [session, setSession] = useState<StaffSession|null>(null)
   const [orgLogo, setOrgLogo] = useState<string|null>(null)
@@ -83,6 +91,7 @@ export default function CashierClosingPage() {
   const [uploadingSales, setUploadingSales] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [thankYouMsg, setThankYouMsg] = useState('')
   const [toast, setToast] = useState<{msg:string,type:'success'|'error'}|null>(null)
   const router = useRouter()
   const sb = createClient()
@@ -201,6 +210,8 @@ export default function CashierClosingPage() {
         })
       })
       if(!res.ok){ showToast('حدث خطأ أثناء الحفظ','error'); setSubmitting(false); return }
+      const template = THANK_YOU_TEMPLATES[Math.floor(Math.random()*THANK_YOU_TEMPLATES.length)]
+      setThankYouMsg(template.replace('{name}', session?.name || ''))
       setSaved(true)
       showToast('✅ تم حفظ تقرير الإقفال')
     } catch {
@@ -265,7 +276,10 @@ export default function CashierClosingPage() {
         {saved ? (
           <div className="fu" style={{background:'white',borderRadius:20,padding:36,textAlign:'center',boxShadow:'0 4px 24px rgba(0,0,0,.06)',border:'1px solid #eeeeeb'}}>
             <div style={{width:64,height:64,borderRadius:'50%',background:'#f0fdf4',display:'flex',alignItems:'center',justifyContent:'center',fontSize:30,margin:'0 auto 16px'}}>✅</div>
-            <div style={{fontSize:18,fontWeight:800,color:'#1c1c1a',marginBottom:6}}>تم حفظ تقرير الإقفال بنجاح</div>
+            <div style={{fontSize:18,fontWeight:800,color:'#1c1c1a',marginBottom:10}}>تم حفظ تقرير الإقفال بنجاح</div>
+            <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:12,padding:'12px 16px',marginBottom:14}}>
+              <div style={{fontSize:14,fontWeight:700,color:'#15803d'}}>{thankYouMsg}</div>
+            </div>
             <div style={{fontSize:13,color:'#8b8a84',marginBottom:24}}>يمكن للمالك مراجعة التقرير من صفحة التقارير</div>
             <button onClick={resetForm} style={{padding:'13px 28px',background:'#16a34a',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>
               إقفال جديد
