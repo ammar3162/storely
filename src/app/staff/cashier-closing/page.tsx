@@ -157,8 +157,9 @@ export default function CashierClosingPage() {
   const validPurchasesNow = hasPurchases==='yes' ? purchases.filter(p=>Number(p.amount)>0) : []
   const totalPurchasesNow = validPurchasesNow.reduce((sum,p)=>sum+(Number(p.amount)||0),0)
   const expectedCash = sales - network
+  // المسحوبات لا تؤثر على العجز/الزيادة — تُعرض للسجل فقط
   const cashAfterWithdrawal = cash - totalPurchasesNow
-  const difference = cashAfterWithdrawal - expectedCash
+  const difference = cash - expectedCash
   const status = Math.abs(difference)<0.01 ? 'balanced' : (difference<0 ? 'deficit' : 'surplus')
 
   const step1Valid = !!totalSales && !!cashAmount && anyNetworkEntered && !networkError
@@ -430,20 +431,19 @@ export default function CashierClosingPage() {
                   <span style={{color:'#1c1c1a',fontWeight:900,direction:'ltr' as const}}>{fmt(expectedCash)} ر.س</span>
                 </div>
                 <div style={{height:1,background:'#eeeeeb',margin:'4px 0 12px'}}/>
-                <div style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:13,borderBottom:'1px dashed #eeeeeb'}}>
-                  <span style={{color:'#8b8a84',fontWeight:600}}>الكاش الفعلي (قبل خصم المسحوبات)</span>
-                  <span style={{color:'#1c1c1a',fontWeight:700,direction:'ltr' as const}}>{fmt(cash)} ر.س</span>
+                <div style={{display:'flex',justifyContent:'space-between',padding:'12px 0 16px',fontSize:14}}>
+                  <span style={{color:'#1c1c1a',fontWeight:800}}>الكاش الفعلي بالدرج</span>
+                  <span style={{color:'#1c1c1a',fontWeight:900,direction:'ltr' as const}}>{fmt(cash)} ر.س</span>
                 </div>
                 {totalPurchasesNow>0 && (
-                  <div style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:13,borderBottom:'1px dashed #eeeeeb'}}>
-                    <span style={{color:'#8b8a84',fontWeight:600}}>المسحوبات (مصاريف)</span>
-                    <span style={{color:'#dc2626',fontWeight:700,direction:'ltr' as const}}>−{fmt(totalPurchasesNow)} ر.س</span>
+                  <div style={{background:'#faf9f7',borderRadius:10,padding:'10px 12px',marginBottom:16}}>
+                    <div style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
+                      <span style={{color:'#8b8a84',fontWeight:600}}>📌 مسحوبات مسجّلة (للسجل فقط)</span>
+                      <span style={{color:'#8b8a84',fontWeight:700,direction:'ltr' as const}}>{fmt(totalPurchasesNow)} ر.س</span>
+                    </div>
+                    <div style={{fontSize:10,color:'#a8a7a1',marginTop:4}}>ما تؤثر على حساب العجز/الزيادة — الكاش المُدخل مفروض أصلاً بعد خصمها</div>
                   </div>
                 )}
-                <div style={{display:'flex',justifyContent:'space-between',padding:'12px 0 16px',fontSize:14}}>
-                  <span style={{color:'#1c1c1a',fontWeight:800}}>= الكاش الفعلي بعد خصم المسحوبات</span>
-                  <span style={{color:'#1c1c1a',fontWeight:900,direction:'ltr' as const}}>{fmt(cashAfterWithdrawal)} ر.س</span>
-                </div>
                 <div style={{
                   padding:'18px',borderRadius:14,textAlign:'center',marginBottom:16,
                   background: status==='balanced' ? '#f0fdf4' : status==='deficit' ? '#fef2f2' : '#eff6ff',

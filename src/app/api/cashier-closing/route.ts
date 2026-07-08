@@ -60,8 +60,9 @@ export async function POST(req: Request) {
     const totalPurchases = purchasesList.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0)
 
     const expectedCash = sales - network
-    const cashAfterWithdrawal = cash - totalPurchases
-    const difference = cashAfterWithdrawal - expectedCash
+    // المسحوبات لا تؤثر على حساب العجز/الزيادة إطلاقاً — الكاشير عدّ الكاش الفعلي بعد ما سحب المبلغ أصلاً
+    const cashAfterWithdrawal = cash - totalPurchases // للعرض/التقرير فقط
+    const difference = cash - expectedCash
     const status = Math.abs(difference) < 0.01 ? 'balanced' : (difference < 0 ? 'deficit' : 'surplus')
 
     const supabase = sb()
