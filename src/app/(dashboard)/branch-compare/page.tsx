@@ -24,7 +24,7 @@ export default function BranchComparePage() {
   const [checkingPlan, setCheckingPlan] = useState(true)
   const sb = createClient()
 
-  const allowed = plan==='advanced'
+  const allowed = plan==='advanced'||plan==='pro'
 
   useEffect(()=>{
     async function resolvePlan() {

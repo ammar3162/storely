@@ -29,7 +29,7 @@ const TOOLS = [
     bg:'#eff6ff',
     border:'#bfdbfe',
     features:['مقارنة الصرف','أفضل الأصناف لكل فرع','تحليل أسبوعي وشهري'],
-    minPlan:'advanced',
+    minPlan:'pro',
   },
 ]
 
@@ -109,7 +109,7 @@ export default function AIToolsPage() {
         ))}
       </div>
 
-      {plan==='advanced' && (
+      {(plan==='advanced'||plan==='pro') && (
         <>
       {/* توقع نفاد المخزون */}
       <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
