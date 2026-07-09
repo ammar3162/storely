@@ -163,7 +163,10 @@ export default function PurchasesPage() {
         const branchId=sessionStorage.getItem('s_branch_id')||
           (await sb.from('branches').select('id').eq('org_id',orgId).eq('is_active',true).order('created_at').limit(1).single()).data?.id||null
         const{data:np}=await (sb.from('products') as any).insert({org_id:orgId,branch_id:branchId,name:form.name.trim(),sku:form.sku||null,unit:form.unit||'قطعة',qty:0,reorder_point:Number(form.reorder_point)||5,is_active:true,avg_cost:unitCost}).select().single()
-        if(np&&qty>0) await (sb.from('stock_movements') as any).insert({product_id:np.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء جديد من: ${form.supplier}`,created_at:invoiceTs})
+        if(np) {
+          if(qty>0) await (sb.from('stock_movements') as any).insert({product_id:np.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء جديد من: ${form.supplier}`,created_at:invoiceTs})
+          fetch('/api/sync-product-to-staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,product_id:np.id})}).catch(()=>{})
+        }
         toast(`✅ تم إضافة "${form.name}" للمخزون`)
       }
     } else { toast('✅ تم تسجيل الشراء') }

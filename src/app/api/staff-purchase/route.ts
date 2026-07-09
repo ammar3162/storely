@@ -66,6 +66,10 @@ export async function POST(req: Request) {
             note: `شراء جديد من: ${supplier} بواسطة: ${staff_name}`
           } as any)
           if (staff_id) await addToAssignedProducts(supabase, staff_id, np.id)
+          fetch((process.env.NEXT_PUBLIC_APP_URL || 'https://storely.dev') + '/api/sync-product-to-staff', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ org_id, product_id: np.id }),
+          }).catch(() => {})
         }
       }
     }

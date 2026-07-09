@@ -110,7 +110,10 @@ export default function InventoryPage() {
         bid=b?.id||null
       }
       const{data:np}=await sb.from('products').insert({org_id:oid,branch_id:bid,name:form.name.trim(),sku:form.sku||null,unit:form.unit,qty:Number(form.qty),reorder_point:Number(form.reorder_point),category:form.category?.trim()||null,is_active:true}).select().single()
-      if(np) await sb.from('stock_movements').insert({product_id:np.id,profile_id:user.id,type:'in',qty_change:Number(form.qty),note:'إضافة أولية'})
+      if(np) {
+        await sb.from('stock_movements').insert({product_id:np.id,profile_id:user.id,type:'in',qty_change:Number(form.qty),note:'إضافة أولية'})
+        fetch('/api/sync-product-to-staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:np.id})}).catch(()=>{})
+      }
       toast('تم إضافة المنتج ✓')
     }
     setShowAdd(false);setEditItem(null);setAddQty(0)
