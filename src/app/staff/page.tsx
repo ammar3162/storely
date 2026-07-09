@@ -113,7 +113,14 @@ export default function StaffLoginPage() {
         return
       }
       localStorage.setItem('staff_session',JSON.stringify(data.staff))
-      router.push(data.staff.role === 'cashier' && !data.staff.permissions?.dispense ? '/staff/cashier-closing' : '/staff/dispense')
+      // لو كاشير وعنده صلاحية الصرف → يختار
+      if(data.staff.role === 'cashier' && data.staff.permissions?.dispense) {
+        router.push('/staff/choose')
+      } else if(data.staff.role === 'cashier') {
+        router.push('/staff/cashier-closing')
+      } else {
+        router.push('/staff/dispense')
+      }
     } catch {
       setError('حدث خطأ — حاول مرة أخرى')
       setLoading(false)
