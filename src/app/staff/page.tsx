@@ -113,7 +113,7 @@ export default function StaffLoginPage() {
         return
       }
       localStorage.setItem('staff_session',JSON.stringify(data.staff))
-      router.push(data.staff.role === 'cashier' ? '/staff/cashier-closing' : '/staff/dispense')
+      router.push(data.staff.role === 'cashier' && !data.staff.permissions?.dispense ? '/staff/cashier-closing' : '/staff/dispense')
     } catch {
       setError('حدث خطأ — حاول مرة أخرى')
       setLoading(false)
