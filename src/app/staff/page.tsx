@@ -24,7 +24,7 @@ export default function StaffLoginPage() {
     if(saved) {
       try {
         const parsed = JSON.parse(saved)
-        router.push(parsed.role === 'cashier' ? '/staff/cashier-closing' : '/staff/dispense')
+        router.push(parsed.role === 'cashier' && !parsed.permissions?.dispense ? '/staff/cashier-closing' : '/staff/dispense')
       } catch {
         router.push('/staff/dispense')
       }
