@@ -111,6 +111,16 @@ export default function StaffPage() {
   },[])
 
   useEffect(()=>{
+    const productsInterval = setInterval(()=>{
+      const saved = localStorage.getItem('staff_session')
+      if(!saved) return
+      const s = JSON.parse(saved) as StaffSession
+      refreshProductsQuietly(s)
+    }, 30000)
+    return ()=>clearInterval(productsInterval)
+  },[])
+
+  useEffect(()=>{
     const saved = localStorage.getItem('staff_session')
     if(!saved){router.push('/staff');return}
     const s = JSON.parse(saved) as StaffSession
@@ -151,6 +161,14 @@ export default function StaffPage() {
       setProducts(data.products || [])
     } catch { setProducts([]) }
     setLoading(false)
+  }
+
+  async function refreshProductsQuietly(s: StaffSession) {
+    try {
+      const res = await fetch('/api/staff-products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orgId:s.org_id,branchId:s.branch_id,staffId:s.id})})
+      const data = await res.json()
+      setProducts(data.products || [])
+    } catch {}
   }
 
   async function fetchTranslation(s: StaffSession, targetLang: string) {
