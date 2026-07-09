@@ -685,7 +685,7 @@ export default function StaffManagementPage() {
                   <button onClick={e=>{e.stopPropagation();setEditingPerms(s.id);setEditPerms(s.permissions||{dispense:true,inventory:false,purchases:false,reports:false})}} className="act-btn" style={{background:'#f5f3ff',color:'#7c3aed'}}>
                     🔐 صلاحيات
                   </button>
-                  {s.role!=='cashier' && (
+                  {s.permissions?.dispense && (
                     <button onClick={e=>{e.stopPropagation();openAssign(s)}} className="act-btn" style={{background:colors.warningLight||'#fffbeb',color:colors.warning||'#d97706'}}>
                       📦 {s.assigned_products?.length>0?`${s.assigned_products.length} منتج`:'كل المنتجات'}
                     </button>
