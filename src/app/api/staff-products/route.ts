@@ -21,10 +21,11 @@ export async function POST(req: Request) {
     let q = sb().from('products').select('id,name,unit,qty,category,reorder_point').eq('org_id', orgId).eq('is_active', true)
     if (branchId) q = q.eq('branch_id', branchId)
 
-    // فلتر حسب المنتجات المخصصة إذا وجدت
+    // لو عنده منتجات مخصصة استخدمها، وإلا أظهر كل منتجات الفرع
     if (assignedProducts.length > 0) {
       q = q.in('id', assignedProducts)
     }
+    // لو assigned_products فارغة يظهر كل المنتجات تلقائياً
 
     const { data } = await q.order('name')
     return NextResponse.json({ products: data || [] })
