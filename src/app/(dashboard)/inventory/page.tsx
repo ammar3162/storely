@@ -79,11 +79,11 @@ export default function InventoryPage() {
     const { count } = await sb.from('products').select('*',{count:'exact',head:true}).eq('org_id',oid).eq('is_active',true)
     setTotalCount(count||0)
     
-    let q = sb.from('products').select('*').eq('org_id',oid).eq('is_active',true).range(0, PAGE_SIZE-1)
+    let q = sb.from('products').select('*').eq('org_id',oid).eq('is_active',true)
     if (bid) q = q.eq('branch_id',bid)
     const{data}=await q.order('name')
     setProducts(data||[])
-    setHasMore((data||[]).length === PAGE_SIZE)
+    setHasMore(false)
     setCurrentPage(0)
     if(oid) cache.set('inventory:'+oid, data||[])
     const{data:org}=await (sb.from('organizations') as any).select('business_type').eq('id',oid).single()
