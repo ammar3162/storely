@@ -45,6 +45,14 @@ export async function POST(req: Request) {
       const { error: profileErr } = await supabase.from('profiles').delete().eq('org_id', orgId)
       if (profileErr) deleteErrors.push(`profiles: ${profileErr.message}`)
 
+      // حذف ملفات النسخ الاحتياطي من التخزين (Storage) قبل حذف المؤسسة
+      try {
+        const { data: backupFiles } = await supabase.storage.from('backups').list(orgId)
+        if (backupFiles && backupFiles.length > 0) {
+          await supabase.storage.from('backups').remove(backupFiles.map((f: any) => `${orgId}/${f.name}`))
+        }
+      } catch (e: any) { deleteErrors.push(`backups storage: ${e.message}`) }
+
       const { error: orgErr } = await supabase.from('organizations').delete().eq('id', orgId)
       if (orgErr) deleteErrors.push(`organizations: ${orgErr.message}`)
     } else {
