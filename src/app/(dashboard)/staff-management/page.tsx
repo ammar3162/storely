@@ -59,6 +59,7 @@ export default function StaffManagementPage() {
   const [staffClosings, setStaffClosings] = useState<any[]>([])
   const [reportLoading, setReportLoading] = useState(false)
   const [selectedProds, setSelectedProds] = useState<string[]>([])
+  const [takenProducts, setTakenProducts] = useState<Record<string,string>>({})
   const [shopOpenTime, setShopOpenTime] = useState('')
   const [shopCloseTime, setShopCloseTime] = useState('')
   const [showHoursModal, setShowHoursModal] = useState(false)
@@ -117,6 +118,12 @@ export default function StaffManagementPage() {
   async function openAssign(s:any) {
     setAssigningId(s.id)
     setSelectedProds(s.assigned_products||[])
+    const taken: Record<string,string> = {}
+    staff.forEach((other:any)=>{
+      if(other.id===s.id) return
+      ;(other.assigned_products||[]).forEach((pid:string)=>{ taken[pid] = other.name })
+    })
+    setTakenProducts(taken)
   }
 
   async function saveAssigned() {
@@ -413,7 +420,7 @@ export default function StaffManagementPage() {
             
             {/* اختيار الكل */}
             <div style={{display:'flex',gap:8,marginBottom:12}}>
-              <button onClick={()=>setSelectedProds(products.map((p:any)=>p.id))}
+              <button onClick={()=>setSelectedProds(products.filter((p:any)=>!takenProducts[p.id]).map((p:any)=>p.id))}
                 style={{padding:'6px 14px',borderRadius:8,border:`1px solid ${colors.border2}`,background:colors.bg,color:colors.text2,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                 اختيار الكل
               </button>
@@ -430,6 +437,19 @@ export default function StaffManagementPage() {
             <div style={{overflowY:'auto',flex:1,display:'flex',flexDirection:'column' as const,gap:6,marginBottom:16}}>
               {products.map((p:any)=>{
                 const selected = selectedProds.includes(p.id)
+                const takenBy = takenProducts[p.id]
+                if(takenBy){
+                  return (
+                    <div key={p.id} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${colors.border}`,background:'#f5f5f4',opacity:.6,cursor:'not-allowed'}}>
+                      <div style={{width:20,height:20,borderRadius:6,border:`2px solid ${colors.border2}`,background:'white',flexShrink:0}}/>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:font.sm,fontWeight:700,color:colors.text3}}>{p.name}</div>
+                        <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit}</div>
+                      </div>
+                      <span style={{fontSize:9,fontWeight:700,color:colors.warning||'#d97706',background:colors.warningLight||'#fffbeb',padding:'3px 8px',borderRadius:20,whiteSpace:'nowrap' as const,flexShrink:0}}>🔒 {takenBy}</span>
+                    </div>
+                  )
+                }
                 return (
                   <div key={p.id} onClick={()=>setSelectedProds(prev=>selected?prev.filter(id=>id!==p.id):[...prev,p.id])}
                     style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${selected?colors.primary:colors.border}`,background:selected?colors.primaryLight:colors.bg,cursor:'pointer',transition:'all .15s'}}>
