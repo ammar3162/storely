@@ -37,6 +37,13 @@ export default function FeatureAnnouncement() {
     }
   },[announcements,profileId])
 
+  // auto-dismiss بعد 7 ثواني
+  useEffect(()=>{
+    if(!currentBanner) return
+    const t = setTimeout(()=>markSeen(currentBanner.version), 7000)
+    return ()=>clearTimeout(t)
+  },[currentBanner])
+
   async function init() {
     const{data:{user}}=await sb.auth.getUser(); if(!user) return
     setProfileId(user.id)
