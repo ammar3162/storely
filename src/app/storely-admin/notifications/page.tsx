@@ -19,6 +19,7 @@ export default function AdminNotificationsPage() {
   const [title, setTitle]       = useState('')
   const [message, setMessage]   = useState('')
   const [type, setType]         = useState<'info'|'warning'|'success'|'danger'>('info')
+  const [deliveryType, setDeliveryType] = useState<'internal'|'banner'>('internal')
   const [sending, setSending]   = useState(false)
   const [sent, setSent]         = useState<any[]>([])
   const [loading, setLoading]   = useState(true)
@@ -50,6 +51,15 @@ export default function AdminNotificationsPage() {
       sent_to_count:targets.length,
     })
     if(error){toast('خطأ: '+error.message,'error');setSending(false);return}
+    if(deliveryType==='banner') {
+      const version = 'admin-'+Date.now()
+      await fetch('/api/admin/feature-announcement',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-admin-key':sessionStorage.getItem('storely_admin_pass')||''},
+        body:JSON.stringify({version,title:title.trim(),description:message.trim(),type:'banner',color:type==='danger'?'#ef4444':type==='warning'?'#f59e0b':type==='success'?'#16a34a':'#7c3aed',target_orgs:targets})
+      })
+      toast('تم إرسال البانر'); setTitle(''); setMessage(''); setSending(false); return
+    }
     const inserts=targets.map((org_id:string)=>({org_id,title:title.trim(),message:message.trim(),type}))
     const{error:nErr}=await (sb as any).from('notifications').insert(inserts)
     if(nErr){toast('خطأ في الإشعارات: '+nErr.message,'error');setSending(false);return}
@@ -88,6 +98,17 @@ export default function AdminNotificationsPage() {
             <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:14}}>تفاصيل الإشعار</div>
 
             <div style={{marginBottom:12}}>
+              <div style={{marginBottom:14}}>
+                <label style={{fontSize:10,fontWeight:700,color:C.text3,display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>طريقة الإرسال</label>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                  <button onClick={()=>setDeliveryType('internal')} style={{padding:'10px',borderRadius:8,border:`1.5px solid ${deliveryType==='internal'?'#16a34a':'#e2e8f0'}`,background:deliveryType==='internal'?'#f0fdf4':'white',color:deliveryType==='internal'?'#16a34a':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
+                    🔔 إشعار داخلي<br/><span style={{fontSize:10,fontWeight:400}}>في جرس الإشعارات</span>
+                  </button>
+                  <button onClick={()=>setDeliveryType('banner')} style={{padding:'10px',borderRadius:8,border:`1.5px solid ${deliveryType==='banner'?'#7c3aed':'#e2e8f0'}`,background:deliveryType==='banner'?'#f5f3ff':'white',color:deliveryType==='banner'?'#7c3aed':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
+                    📢 بانر عام<br/><span style={{fontSize:10,fontWeight:400}}>شريط في الداشبورد</span>
+                  </button>
+                </div>
+              </div>
               <label style={{fontSize:10,fontWeight:700,color:C.text3,display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>النوع</label>
               <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:5}}>
                 {Object.entries(TC).map(([k,v])=>(
