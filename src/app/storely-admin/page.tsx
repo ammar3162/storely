@@ -687,7 +687,17 @@ export default function AdminPage() {
                   <div>🚚 {p.suppliers===999?'غير محدود':p.suppliers} موردين</div>
                 </div>
                 <div style={{marginTop:12,fontSize:12,fontWeight:700,color:p.color}}>
-                  {users.filter(u=>u.max_branches===(p.branches===999?u.max_branches:p.branches)&&u.subscription_type!=='trial').length} مستخدم
+                  {users.filter(u=>u.subscription_type==='paid'&&(
+                    p.name==='الأساسية'?u.max_branches<=1:
+                    p.name==='المتوسطة'?(u.max_branches>1&&u.max_branches<=3):
+                    u.max_branches>3
+                  )).length} مستخدم مدفوع
+                  {' · '}
+                  {users.filter(u=>u.subscription_type==='trial'&&(
+                    p.name==='الأساسية'?u.max_branches<=1:
+                    p.name==='المتوسطة'?(u.max_branches>1&&u.max_branches<=3):
+                    u.max_branches>3
+                  )).length} تجربة
                 </div>
               </div>
             ))}
