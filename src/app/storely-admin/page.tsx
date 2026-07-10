@@ -34,7 +34,9 @@ export default function AdminPage() {
   const [selected, setSelected] = useState<User|null>(null)
   const [renewDays, setRenewDays] = useState(30)
   const [confirmDel, setConfirmDel] = useState<User|null>(null)
-  const [tab, setTab]           = useState<'users'|'stats'|'suppliers'>('users')
+  const [tab, setTab]           = useState<'users'|'stats'|'suppliers'|'dashboard'|'packages'|'analytics'>('dashboard')
+  const [dashStats, setDashStats] = useState<any>({})
+  const [dashLoading, setDashLoading] = useState(false)
   const [supplierApps, setSupplierApps] = useState<any[]>([])
   const [suppLoading, setSuppLoading] = useState(false)
   const sb = createClient()
@@ -55,6 +57,30 @@ export default function AdminPage() {
     const sb = (await import('@/lib/supabase/client')).createClient()
     await (sb as any).from('supplier_applications').delete().eq('id', id)
     loadSupplierApps()
+  }
+
+  async function loadDashStats() {
+    setDashLoading(true)
+    const db = createClient()
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+    
+    const [
+      { count: totalUsers },
+      { count: newThisMonth },
+      { count: trialUsers },
+      { count: paidUsers },
+      { data: expiringSoon }
+    ] = await Promise.all([
+      db.from('profiles').select('*',{count:'exact',head:true}),
+      db.from('profiles').select('*',{count:'exact',head:true}).gte('created_at',startOfMonth),
+      db.from('profiles').select('*',{count:'exact',head:true}).eq('subscription_type','trial'),
+      db.from('profiles').select('*',{count:'exact',head:true}).eq('subscription_type','paid'),
+      db.from('profiles').select('full_name,subscription_ends_at,phone').lte('subscription_ends_at', new Date(Date.now()+7*24*60*60*1000).toISOString()).gte('subscription_ends_at', now.toISOString()).order('subscription_ends_at').limit(5)
+    ])
+
+    setDashStats({ totalUsers, newThisMonth, trialUsers, paidUsers, expiringSoon: expiringSoon||[] })
+    setDashLoading(false)
   }
 
   async function loadSupplierApps() {
@@ -380,8 +406,20 @@ export default function AdminPage() {
           <a href="/storely-admin/notifications" style={{padding:'7px 14px',background:'#1e293b',color:'#94a3b8',border:'1px solid #334155',borderRadius:9,fontSize:12,fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:6}}>
             🔔 الإشعارات
           </a>
+          <button onClick={()=>setTab('dashboard')} style={{padding:'7px 14px',background:tab==='dashboard'?'#2563eb':'#1e293b',color:tab==='dashboard'?'white':'#94a3b8',border:`1px solid ${tab==='dashboard'?'#2563eb':'#334155'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+            📊 Dashboard
+          </button>
+          <button onClick={()=>setTab('users')} style={{padding:'7px 14px',background:tab==='users'?'#7c3aed':'#1e293b',color:tab==='users'?'white':'#94a3b8',border:`1px solid ${tab==='users'?'#7c3aed':'#334155'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+            👥 المستخدمون
+          </button>
           <button onClick={()=>{setTab('suppliers');loadSupplierApps()}} style={{padding:'7px 14px',background:tab==='suppliers'?'#16a34a':'#1e293b',color:tab==='suppliers'?'white':'#94a3b8',border:`1px solid ${tab==='suppliers'?'#16a34a':'#334155'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6}}>
-            🤝 طلبات الموردين {supplierApps.filter(s=>s.status==='pending').length>0&&<span style={{background:'#ef4444',color:'white',borderRadius:99,padding:'1px 6px',fontSize:10}}>{supplierApps.filter(s=>s.status==='pending').length}</span>}
+            🤝 الموردون {supplierApps.filter(s=>s.status==='pending').length>0&&<span style={{background:'#ef4444',color:'white',borderRadius:99,padding:'1px 6px',fontSize:10}}>{supplierApps.filter(s=>s.status==='pending').length}</span>}
+          </button>
+          <button onClick={()=>{setTab('analytics');loadDashStats()}} style={{padding:'7px 14px',background:tab==='analytics'?'#0891b2':'#1e293b',color:tab==='analytics'?'white':'#94a3b8',border:`1px solid ${tab==='analytics'?'#0891b2':'#334155'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+            📈 التحليلات
+          </button>
+          <button onClick={()=>setTab('packages')} style={{padding:'7px 14px',background:tab==='packages'?'#f59e0b':'#1e293b',color:tab==='packages'?'white':'#94a3b8',border:`1px solid ${tab==='packages'?'#f59e0b':'#334155'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+            📦 الباقات
           </button>
           <button onClick={loadUsers} style={{padding:'7px 14px',background:'#1e293b',color:'#94a3b8',border:'1px solid #334155',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6}}>
             ↺ تحديث
@@ -550,6 +588,113 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+      {/* ═══ Dashboard Tab ═══ */}
+      {tab==='dashboard' && (
+        <div style={{marginTop:20}}>
+          <div style={{fontSize:16,fontWeight:800,color:'white',marginBottom:16}}>📊 Dashboard</div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:20}}>
+            {[
+              {label:'إجمالي المستخدمين',value:stats.total,icon:'👥',color:'#2563eb'},
+              {label:'مستخدمون جدد هذا الشهر',value:dashStats.newThisMonth||0,icon:'🆕',color:'#16a34a'},
+              {label:'في التجربة المجانية',value:dashStats.trialUsers||0,icon:'⏳',color:'#f59e0b'},
+              {label:'مشتركون مدفوعون',value:dashStats.paidUsers||0,icon:'💳',color:'#7c3aed'},
+            ].map((s,i)=>(
+              <div key={i} style={{background:'#1e293b',borderRadius:14,padding:'20px',border:'1px solid #334155'}}>
+                <div style={{fontSize:24,marginBottom:8}}>{s.icon}</div>
+                <div style={{fontSize:28,fontWeight:900,color:s.color}}>{s.value}</div>
+                <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* اشتراكات تنتهي قريباً */}
+          <div style={{background:'#1e293b',borderRadius:14,padding:'20px',border:'1px solid #334155',marginBottom:16}}>
+            <div style={{fontSize:14,fontWeight:800,color:'#fcd34d',marginBottom:12}}>⚠️ اشتراكات تنتهي خلال 7 أيام</div>
+            {dashStats.expiringSoon?.length===0 ? (
+              <div style={{color:'#475569',fontSize:13}}>لا توجد اشتراكات منتهية قريباً</div>
+            ) : (
+              <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                {(dashStats.expiringSoon||[]).map((u:any,i:number)=>(
+                  <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'rgba(245,158,11,.08)',borderRadius:10,border:'1px solid rgba(245,158,11,.2)'}}>
+                    <span style={{fontSize:13,fontWeight:700,color:'white'}}>{u.full_name}</span>
+                    <span style={{fontSize:12,color:'#fcd34d'}}>{new Date(u.subscription_ends_at).toLocaleDateString('ar-SA')}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button onClick={loadDashStats} disabled={dashLoading}
+            style={{padding:'10px 20px',background:'#2563eb',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+            {dashLoading?'⏳ جاري التحميل...':'🔄 تحديث'}
+          </button>
+        </div>
+      )}
+
+      {/* ═══ Analytics Tab ═══ */}
+      {tab==='analytics' && (
+        <div style={{marginTop:20}}>
+          <div style={{fontSize:16,fontWeight:800,color:'white',marginBottom:16}}>📈 التحليلات</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+            <div style={{background:'#1e293b',borderRadius:14,padding:'20px',border:'1px solid #334155'}}>
+              <div style={{fontSize:14,fontWeight:800,color:'white',marginBottom:12}}>🏆 أكثر المنشآت نشاطاً</div>
+              {users.slice(0,5).map((u,i)=>(
+                <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid #1e293b'}}>
+                  <span style={{fontSize:12,color:'#94a3b8'}}>{u.org_name}</span>
+                  <span style={{fontSize:11,color:'#16a34a',fontWeight:700}}>{u.subscription_type}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{background:'#1e293b',borderRadius:14,padding:'20px',border:'1px solid #334155'}}>
+              <div style={{fontSize:14,fontWeight:800,color:'white',marginBottom:12}}>📊 توزيع الباقات</div>
+              {[
+                {label:'الأساسية',count:users.filter(u=>u.max_branches===1).length,color:'#16a34a'},
+                {label:'المتوسطة',count:users.filter(u=>u.max_branches===3).length,color:'#2563eb'},
+                {label:'المتقدمة',count:users.filter(u=>u.max_branches>3).length,color:'#7c3aed'},
+                {label:'تجربة مجانية',count:users.filter(u=>u.subscription_type==='trial').length,color:'#f59e0b'},
+              ].map((p,i)=>(
+                <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+                  <span style={{fontSize:12,color:'#94a3b8'}}>{p.label}</span>
+                  <div style={{display:'flex',alignItems:'center',gap:8}}>
+                    <div style={{width:80,height:6,background:'#334155',borderRadius:99,overflow:'hidden'}}>
+                      <div style={{height:'100%',width:`${users.length>0?(p.count/users.length)*100:0}%`,background:p.color,borderRadius:99}}/>
+                    </div>
+                    <span style={{fontSize:12,fontWeight:700,color:p.color,width:20}}>{p.count}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Packages Tab ═══ */}
+      {tab==='packages' && (
+        <div style={{marginTop:20}}>
+          <div style={{fontSize:16,fontWeight:800,color:'white',marginBottom:16}}>📦 إدارة الباقات</div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
+            {[
+              {name:'الأساسية',price:'149',color:'#16a34a',branches:1,staff:2,suppliers:3},
+              {name:'المتوسطة',price:'249',color:'#2563eb',branches:3,staff:10,suppliers:10},
+              {name:'المتقدمة',price:'399',color:'#7c3aed',branches:999,staff:999,suppliers:999},
+            ].map((p,i)=>(
+              <div key={i} style={{background:'#1e293b',borderRadius:14,padding:'20px',border:`1px solid ${p.color}33`}}>
+                <div style={{fontSize:14,fontWeight:800,color:p.color,marginBottom:4}}>{p.name}</div>
+                <div style={{fontSize:28,fontWeight:900,color:'white',marginBottom:12}}>{p.price} ر.س</div>
+                <div style={{display:'flex',flexDirection:'column',gap:6,fontSize:12,color:'#94a3b8'}}>
+                  <div>🏪 {p.branches===999?'غير محدود':p.branches} فروع</div>
+                  <div>👥 {p.staff===999?'غير محدود':p.staff} موظفين</div>
+                  <div>🚚 {p.suppliers===999?'غير محدود':p.suppliers} موردين</div>
+                </div>
+                <div style={{marginTop:12,fontSize:12,fontWeight:700,color:p.color}}>
+                  {users.filter(u=>u.max_branches===(p.branches===999?u.max_branches:p.branches)&&u.subscription_type!=='trial').length} مستخدم
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ═══ Supplier Applications Tab ═══ */}
       {tab==='suppliers' && (
         <div style={{marginTop:20}}>
