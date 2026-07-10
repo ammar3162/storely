@@ -143,7 +143,7 @@ export default function DashboardPage() {
   const greeting=hour<12?'صباح الخير':hour<17?'مساء الخير':'مساء النور'
 
   if(loading) return (
-    <div className="p-4 space-y-4 max-w-5xl mx-auto">
+    <div className="p-4 space-y-4 max-w-none w-full">
       <div className="h-8 w-48 bg-slate-100 rounded-lg animate-pulse" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[1,2,3,4].map(i=><div key={i} className="h-28 bg-slate-100 rounded-2xl animate-pulse" />)}
