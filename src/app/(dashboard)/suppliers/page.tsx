@@ -40,6 +40,73 @@ function NotifyBadge({ mode, time, day }: { mode:string; time:string; day:number
   return <span style={{fontSize:11,background:'#f5f3ff',color:'#6d28d9',border:'1px solid #ddd6fe',borderRadius:20,padding:'2px 8px',fontWeight:700}}>📆 {DAYS[day]} {time}</span>
 }
 
+function EscalationChain({ productId, allSuppliers, primarySupplierId, refreshKey }: any) {
+  const [chain, setChain] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [adding, setAdding] = useState(false)
+  const [pickSupplier, setPickSupplier] = useState('')
+  const sb = createClient()
+
+  useEffect(()=>{ load() },[productId, refreshKey])
+
+  async function load() {
+    setLoading(true)
+    const { data } = await (sb as any).from('product_suppliers').select('id,supplier_id,priority,suppliers(name)').eq('product_id', productId).gt('priority', 1).order('priority')
+    setChain(data || [])
+    setLoading(false)
+  }
+
+  async function addBackup() {
+    if (!pickSupplier) return
+    const nextPriority = chain.length ? Math.max(...chain.map((c:any)=>c.priority)) + 1 : 2
+    await (sb as any).from('product_suppliers').insert({ product_id: productId, supplier_id: pickSupplier, priority: nextPriority })
+    setPickSupplier(''); setAdding(false)
+    load()
+  }
+
+  async function removeBackup(id: string) {
+    await (sb as any).from('product_suppliers').delete().eq('id', id)
+    load()
+  }
+
+  const usedIds = new Set([primarySupplierId, ...chain.map((c:any)=>c.supplier_id)])
+  const available = (allSuppliers||[]).filter((s:any)=>!usedIds.has(s.id))
+
+  if (loading) return null
+
+  return (
+    <div style={{ marginTop:8, paddingTop:8, borderTop:'1px dashed #e2e8f0' }}>
+      <div style={{ fontSize:10, fontWeight:700, color:'#94a3b8', marginBottom:6, textTransform:'uppercase' as const, letterSpacing:'.05em' }}>🔄 سلسلة التصعيد (لو المورد الأساسي "غير متوفر")</div>
+      {chain.length===0 && !adding && (
+        <div style={{ fontSize:11, color:'#94a3b8', marginBottom:6 }}>ما فيه موردين بديلين — يُرسل إشعار يدوي فقط عند عدم التوفر</div>
+      )}
+      {chain.map((c:any,i:number)=>(
+        <div key={c.id} style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
+          <span style={{ fontSize:10, background:'#eff6ff', color:'#2563eb', border:'1px solid #bfdbfe', borderRadius:20, padding:'1px 7px', fontWeight:700 }}>#{i+2}</span>
+          <span style={{ fontSize:12, color:'#0f172a', flex:1 }}>{(c.suppliers as any)?.name || 'مورد'}</span>
+          <button onClick={()=>removeBackup(c.id)} style={{ background:'none', border:'none', color:'#ef4444', fontSize:11, cursor:'pointer', fontFamily:'inherit' }}>حذف</button>
+        </div>
+      ))}
+      {adding ? (
+        <div style={{ display:'flex', gap:6, marginTop:6 }}>
+          <select value={pickSupplier} onChange={e=>setPickSupplier(e.target.value)}
+            style={{ flex:1, padding:'6px 8px', border:'1.5px solid #e2e8f0', borderRadius:8, fontSize:12, fontFamily:'inherit', background:'white', color:'#0f172a' }}>
+            <option value="">— اختر مورد —</option>
+            {available.map((sup:any)=><option key={sup.id} value={sup.id}>{sup.name}</option>)}
+          </select>
+          <button onClick={addBackup} disabled={!pickSupplier} style={{ padding:'6px 12px', background:'#16a34a', color:'white', border:'none', borderRadius:8, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>إضافة</button>
+          <button onClick={()=>setAdding(false)} style={{ padding:'6px 10px', background:'none', border:'1.5px solid #e2e8f0', borderRadius:8, fontSize:11, cursor:'pointer', fontFamily:'inherit', color:'#64748b' }}>إلغاء</button>
+        </div>
+      ) : (
+        <button onClick={()=>setAdding(true)} disabled={!available.length}
+          style={{ background:'none', border:'1.5px dashed #cbd5e1', color:'#64748b', borderRadius:8, padding:'4px 10px', fontSize:11, fontWeight:600, cursor:available.length?'pointer':'not-allowed', fontFamily:'inherit' }}>
+          + إضافة مورد بديل
+        </button>
+      )}
+    </div>
+  )
+}
+
 function SupplierCard({ s, products, orgId, onRefresh, allSuppliers }: any) {
   const [open, setOpen]           = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -53,7 +120,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers }: any) {
   const [reorderPoint, setReorderPoint]       = useState('')
   const [orderQty, setOrderQty]               = useState('')
   const [supplierNotes, setSupplierNotes]     = useState('')
-  const [backupSupplierId, setBackupSupplierId] = useState('')
+  const [chainRefreshKey, setChainRefreshKey] = useState(0)
   const sb = createClient()
 
   const linked   = products.filter((p:any) => p.supplier_id === s.id)
@@ -92,15 +159,24 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers }: any) {
       supplier_reorder_point: Number(reorderPoint),
       supplier_order_qty: Number(orderQty) || Number(reorderPoint),
       supplier_notes: supplierNotes.trim() || null,
-      backup_supplier_id: backupSupplierId || null,
     }).eq('id', selectedProduct)
+    // مزامنة الأولوية 1 بجدول سلسلة التصعيد
+    await (sb as any).from('product_suppliers').upsert({
+      product_id: selectedProduct,
+      supplier_id: s.id,
+      priority: 1,
+      reorder_point: Number(reorderPoint),
+      order_qty: Number(orderQty) || Number(reorderPoint),
+      notes: supplierNotes.trim() || null,
+    }, { onConflict: 'product_id,priority' })
     toast('✅ تم ربط المنتج')
-    setSelectedProduct(''); setReorderPoint(''); setOrderQty(''); setSupplierNotes(''); setBackupSupplierId('')
+    setSelectedProduct(''); setReorderPoint(''); setOrderQty(''); setSupplierNotes('')
     onRefresh()
   }
 
   async function unlinkProduct(pid: string) {
-    await (sb as any).from('products').update({ supplier_id: null, supplier_reorder_point: null, supplier_order_qty: 0, supplier_notes: null, backup_supplier_id: null }).eq('id', pid)
+    await (sb as any).from('products').update({ supplier_id: null, supplier_reorder_point: null, supplier_order_qty: 0, supplier_notes: null }).eq('id', pid)
+    await (sb as any).from('product_suppliers').delete().eq('product_id', pid)
     toast('تم فك الارتباط')
     onRefresh()
   }
@@ -225,6 +301,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers }: any) {
                       <div style={{ fontSize:11, color:'#94a3b8', marginTop:3 }}>
                         المتاح: <b style={{color:'#0f172a'}}>{p.qty} {p.unit}</b> · يُطلب عند: <b style={{color:'#0f172a'}}>{p.supplier_reorder_point}</b> · كمية الطلب: <b style={{color:'#16a34a'}}>{p.supplier_order_qty}</b>
                       </div>
+                      <EscalationChain productId={p.id} allSuppliers={allSuppliers} primarySupplierId={s.id} refreshKey={chainRefreshKey} />
                     </div>
                     <button onClick={()=>unlinkProduct(p.id)}
                       style={{ background:'none', border:'1.5px solid #e2e8f0', color:'#94a3b8', borderRadius:8, padding:'5px 10px', fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginRight:8 }}>
@@ -274,16 +351,6 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers }: any) {
               <input value={supplierNotes} onChange={e=>setSupplierNotes(e.target.value)}
                 style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', outline:'none', marginBottom:8, boxSizing:'border-box' as const }} 
                 placeholder="📝 ملاحظات لهذا المنتج — مثال: يرجى التوريد مبرداً (اختياري)" />
-              <div style={{ marginBottom:8 }}>
-                <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:4 }}>🔄 مورد بديل (اختياري) — يُرسل له تلقائياً لو هذا المورد قال "غير متوفر"</label>
-                <select value={backupSupplierId} onChange={e=>setBackupSupplierId(e.target.value)}
-                  style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', outline:'none', background:'white', color:'#0f172a' }}>
-                  <option value="">— بدون مورد بديل —</option>
-                  {(allSuppliers||[]).filter((sup:any)=>sup.id!==s.id).map((sup:any)=>(
-                    <option key={sup.id} value={sup.id}>{sup.name}</option>
-                  ))}
-                </select>
-              </div>
               <button onClick={linkProduct} disabled={!selectedProduct}
                 style={{ ...btnPrimary, padding:'10px 20px', fontSize:13, opacity:!selectedProduct?.5:1, cursor:!selectedProduct?'not-allowed':'pointer' }}>
                 ربط المنتج

@@ -27,68 +27,108 @@ async function sendWhatsApp(phone: string, text: string) {
   } catch { return false }
 }
 
+async function logPerformance(supplierId: string, orgId: string, orderId: string, eventType: 'confirmed'|'unavailable'|'timeout', responseMinutes: number | null) {
+  const db = sb()
+  await (db as any).from('supplier_performance_log').insert({
+    supplier_id: supplierId,
+    org_id: orgId,
+    order_id: orderId,
+    event_type: eventType,
+    response_minutes: responseMinutes,
+  }).catch(() => {})
+}
+
 /**
- * يحوّل طلب توريد تلقائياً لمورد بديل عند عدم توفر الصنف أو انتهاء مهلة الرد.
- * يُستخدم من مكانين: webhook.ts (فوري عند رد "غير متوفر") و escalate-supplier-orders (يومي عند انتهاء المهلة).
+ * يحوّل طلب توريد تلقائياً لأعلى مورد أولوية تالٍ (priority + 1) لكل صنف.
+ * لو صنف ما عنده مورد بأولوية أعلى، يتوقف السلسلة له (ما فيه بديل ثالث/رابع مثلاً).
  */
 export async function escalateOrder(order: any, reason: 'unavailable' | 'timeout') {
   const db = sb()
   const items: any[] = order.items || []
+  const currentPriority = order.current_priority || 1
+
+  // سجّل أداء المورد الحالي (رفض أو عدم رد)
+  const responseMinutes = reason === 'unavailable'
+    ? Math.round((Date.now() - new Date(order.created_at).getTime()) / 60000)
+    : null
+  await logPerformance(order.supplier_id, order.org_id, order.id, reason, responseMinutes)
+
   const productIds = items.map((i: any) => i.product_id).filter(Boolean)
   if (!productIds.length) return { escalated: false, reason: 'no_product_ids' as const }
 
-  const { data: products } = await db.from('products').select('id,name,unit,backup_supplier_id').in('id', productIds)
+  const { data: nextLinks } = await db
+    .from('product_suppliers')
+    .select('product_id, supplier_id, priority, order_qty')
+    .in('product_id', productIds)
+    .gt('priority', currentPriority)
+    .order('priority', { ascending: true })
 
-  const byBackup: Record<string, any[]> = {}
-  for (const item of items) {
-    const prod = (products || []).find((p: any) => p.id === item.product_id)
-    if (!prod?.backup_supplier_id) continue
-    if (!byBackup[prod.backup_supplier_id]) byBackup[prod.backup_supplier_id] = []
-    byBackup[prod.backup_supplier_id].push(item)
+  // لكل منتج، خذ أقرب أولوية تالية (أصغر priority أكبر من الحالي)
+  const nextForProduct: Record<string, { supplier_id: string; priority: number; order_qty?: number }> = {}
+  for (const link of nextLinks || []) {
+    const existing = nextForProduct[(link as any).product_id]
+    if (!existing || (link as any).priority < existing.priority) {
+      nextForProduct[(link as any).product_id] = link as any
+    }
   }
 
-  const backupIds = Object.keys(byBackup)
-  if (!backupIds.length) return { escalated: false, reason: 'no_backup' as const }
+  // جمّع الأصناف حسب المورد التالي + أولويته
+  const bySupplier: Record<string, { priority: number; items: any[] }> = {}
+  for (const item of items) {
+    const next = nextForProduct[item.product_id]
+    if (!next) continue
+    if (!bySupplier[next.supplier_id]) bySupplier[next.supplier_id] = { priority: next.priority, items: [] }
+    bySupplier[next.supplier_id].items.push({ ...item, qty: next.order_qty || item.qty })
+  }
+
+  const supplierIds = Object.keys(bySupplier)
+  if (!supplierIds.length) return { escalated: false, reason: 'no_backup' as const }
 
   const { data: org } = await db.from('organizations').select('name,whatsapp_number').eq('id', order.org_id).single()
   const escalatedNames: string[] = []
 
-  for (const backupId of backupIds) {
-    const { data: backupSupplier } = await db.from('suppliers').select('id,name,phone').eq('id', backupId).single()
-    if (!backupSupplier?.phone) continue
+  for (const supplierId of supplierIds) {
+    const { data: supplier } = await db.from('suppliers').select('id,name,phone').eq('id', supplierId).single()
+    if (!supplier?.phone) continue
 
-    const its = byBackup[backupId]
+    const { items: its, priority } = bySupplier[supplierId]
     const itemsList = its.map((it: any, i: number) => `${i + 1}. *${it.name}* — ${it.qty} ${it.unit}`).join('\n')
     const orgName = (org as any)?.name || 'المتجر'
     const reasonNote = reason === 'unavailable'
-      ? `⚠️ هذا الطلب مُحوّل تلقائياً لأن المورد الأساسي أبلغ بعدم توفر الصنف`
-      : `⚠️ هذا الطلب مُحوّل تلقائياً لأن المورد الأساسي لم يرد خلال 24 ساعة`
+      ? `⚠️ هذا الطلب مُحوّل تلقائياً لأن المورد السابق أبلغ بعدم توفر الصنف`
+      : `⚠️ هذا الطلب مُحوّل تلقائياً لأن المورد السابق لم يرد بالوقت المحدد`
 
     const msg = `📦 *طلب توريد — ${orgName}*\n\n${reasonNote}\n\nنحتاج توريد المواد التالية:\n\n${itemsList}\n\nنرجو التوريد في أقرب وقت. شكراً 🙏\n\nللتأكيد رد بكلمة: *تم*\nإن لم يتوفر الصنف، رد بكلمة: *غير متوفر*\n\n_Storely — نظام إدارة المخزون_`
 
     await (db as any).from('supplier_orders').insert({
       org_id: order.org_id,
-      supplier_id: backupId,
-      supplier_name: backupSupplier.name,
-      supplier_phone: backupSupplier.phone,
+      supplier_id: supplierId,
+      supplier_name: supplier.name,
+      supplier_phone: supplier.phone,
       items: its,
       status: 'pending',
+      current_priority: priority,
       escalated_from: order.id,
       escalated_at: new Date().toISOString(),
     })
 
-    await sendWhatsApp(formatPhone(backupSupplier.phone), msg)
-    escalatedNames.push(backupSupplier.name)
+    await sendWhatsApp(formatPhone(supplier.phone), msg)
+    escalatedNames.push(supplier.name)
   }
 
   await (db as any).from('supplier_orders').update({ status: 'escalated' }).eq('id', order.id)
 
   if ((org as any)?.whatsapp_number && escalatedNames.length) {
     const ownerPhone = (org as any).whatsapp_number.replace(/\D/g, '').replace(/^0/, '966')
-    const reasonText = reason === 'unavailable' ? 'أبلغ بعدم توفر الصنف' : 'لم يرد خلال 24 ساعة'
-    const ownerMsg = `🟢 *Storely*\n\n🔄 تم التحويل التلقائي\n\nالمورد *${order.supplier_name}* ${reasonText}، فتم إرسال الطلب تلقائياً إلى المورد البديل:\n${escalatedNames.map(n => `• ${n}`).join('\n')}\n\nبانتظار تأكيدهم`
+    const reasonText = reason === 'unavailable' ? 'أبلغ بعدم توفر الصنف' : 'لم يرد بالوقت المحدد'
+    const ownerMsg = `🟢 *Storely*\n\n🔄 تم التحويل التلقائي\n\nالمورد *${order.supplier_name}* ${reasonText}، فتم إرسال الطلب تلقائياً إلى المورد التالي بالأولوية:\n${escalatedNames.map(n => `• ${n}`).join('\n')}\n\nبانتظار تأكيدهم`
     await sendWhatsApp(ownerPhone, ownerMsg)
   }
 
   return { escalated: escalatedNames.length > 0, suppliers: escalatedNames }
+}
+
+export async function logConfirmation(order: any) {
+  const responseMinutes = Math.round((Date.now() - new Date(order.created_at).getTime()) / 60000)
+  await logPerformance(order.supplier_id, order.org_id, order.id, 'confirmed', responseMinutes)
 }

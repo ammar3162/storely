@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { escalateOrder } from '@/lib/escalateSupplierOrder'
+import { escalateOrder, logConfirmation } from '@/lib/escalateSupplierOrder'
 
 const API_KEY      = process.env.WASENDER_API_KEY!
 const SESSION      = process.env.WASENDER_SESSION_ID!
@@ -169,6 +169,8 @@ export async function POST(req: Request) {
           await sb().from('supplier_orders' as any)
             .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
             .eq('id', (pendingOrder as any).id)
+
+          await logConfirmation(pendingOrder)
 
           // إرسال إشعار للعميل
           await fetch((process.env.NEXT_PUBLIC_APP_URL || 'https://storely.dev') + '/api/supplier-confirmed', {

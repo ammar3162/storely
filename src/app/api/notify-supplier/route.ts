@@ -133,9 +133,12 @@ export async function POST(req: Request) {
       }))
       const { error: orderErr } = await (supabase as any).from('supplier_orders').insert({
         org_id: orgIdForOrder,
+        supplier_id: supplierId,
         supplier_name: supplier.name,
         supplier_phone: supplier.phone,
         items: orderItems,
+        status: 'pending',
+        current_priority: 1,
       })
       if (orderErr) console.log('supplier_orders insert error:', orderErr.message)
 
