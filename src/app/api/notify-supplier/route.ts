@@ -125,7 +125,12 @@ export async function POST(req: Request) {
       }))
 
       const orgIdForOrder = (items[0] as any).org_id
-      const orderItems = messageItems.map(it => ({ name: it.name, qty: it.orderQty, unit: it.unit }))
+      const orderItems = items.map((p: any, i: number) => ({
+        product_id: p.id,
+        name: messageItems[i].name,
+        qty: messageItems[i].orderQty,
+        unit: messageItems[i].unit,
+      }))
       const { error: orderErr } = await (supabase as any).from('supplier_orders').insert({
         org_id: orgIdForOrder,
         supplier_name: supplier.name,

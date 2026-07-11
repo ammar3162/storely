@@ -40,7 +40,7 @@ function NotifyBadge({ mode, time, day }: { mode:string; time:string; day:number
   return <span style={{fontSize:11,background:'#f5f3ff',color:'#6d28d9',border:'1px solid #ddd6fe',borderRadius:20,padding:'2px 8px',fontWeight:700}}>📆 {DAYS[day]} {time}</span>
 }
 
-function SupplierCard({ s, products, orgId, onRefresh }: any) {
+function SupplierCard({ s, products, orgId, onRefresh, allSuppliers }: any) {
   const [open, setOpen]           = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [mode, setMode]           = useState(s.notify_mode || 'daily')
@@ -53,6 +53,7 @@ function SupplierCard({ s, products, orgId, onRefresh }: any) {
   const [reorderPoint, setReorderPoint]       = useState('')
   const [orderQty, setOrderQty]               = useState('')
   const [supplierNotes, setSupplierNotes]     = useState('')
+  const [backupSupplierId, setBackupSupplierId] = useState('')
   const sb = createClient()
 
   const linked   = products.filter((p:any) => p.supplier_id === s.id)
@@ -91,14 +92,15 @@ function SupplierCard({ s, products, orgId, onRefresh }: any) {
       supplier_reorder_point: Number(reorderPoint),
       supplier_order_qty: Number(orderQty) || Number(reorderPoint),
       supplier_notes: supplierNotes.trim() || null,
+      backup_supplier_id: backupSupplierId || null,
     }).eq('id', selectedProduct)
     toast('✅ تم ربط المنتج')
-    setSelectedProduct(''); setReorderPoint(''); setOrderQty(''); setSupplierNotes('')
+    setSelectedProduct(''); setReorderPoint(''); setOrderQty(''); setSupplierNotes(''); setBackupSupplierId('')
     onRefresh()
   }
 
   async function unlinkProduct(pid: string) {
-    await (sb as any).from('products').update({ supplier_id: null, supplier_reorder_point: null, supplier_order_qty: 0, supplier_notes: null }).eq('id', pid)
+    await (sb as any).from('products').update({ supplier_id: null, supplier_reorder_point: null, supplier_order_qty: 0, supplier_notes: null, backup_supplier_id: null }).eq('id', pid)
     toast('تم فك الارتباط')
     onRefresh()
   }
@@ -272,6 +274,16 @@ function SupplierCard({ s, products, orgId, onRefresh }: any) {
               <input value={supplierNotes} onChange={e=>setSupplierNotes(e.target.value)}
                 style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', outline:'none', marginBottom:8, boxSizing:'border-box' as const }} 
                 placeholder="📝 ملاحظات لهذا المنتج — مثال: يرجى التوريد مبرداً (اختياري)" />
+              <div style={{ marginBottom:8 }}>
+                <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:4 }}>🔄 مورد بديل (اختياري) — يُرسل له تلقائياً لو هذا المورد قال "غير متوفر"</label>
+                <select value={backupSupplierId} onChange={e=>setBackupSupplierId(e.target.value)}
+                  style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', outline:'none', background:'white', color:'#0f172a' }}>
+                  <option value="">— بدون مورد بديل —</option>
+                  {(allSuppliers||[]).filter((sup:any)=>sup.id!==s.id).map((sup:any)=>(
+                    <option key={sup.id} value={sup.id}>{sup.name}</option>
+                  ))}
+                </select>
+              </div>
               <button onClick={linkProduct} disabled={!selectedProduct}
                 style={{ ...btnPrimary, padding:'10px 20px', fontSize:13, opacity:!selectedProduct?.5:1, cursor:!selectedProduct?'not-allowed':'pointer' }}>
                 ربط المنتج
@@ -322,7 +334,7 @@ export default function SuppliersPage() {
   }
 
   async function loadProducts(oid: string) {
-    const { data } = await (sb as any).from('products').select('id,name,unit,qty,supplier_id,supplier_reorder_point,supplier_order_qty,supplier_notes').eq('org_id', oid).eq('is_active', true).order('name')
+    const { data } = await (sb as any).from('products').select('id,name,unit,qty,supplier_id,supplier_reorder_point,supplier_order_qty,supplier_notes,backup_supplier_id').eq('org_id', oid).eq('is_active', true).order('name')
     setProducts(data || [])
   }
 
@@ -416,7 +428,7 @@ export default function SuppliersPage() {
       ) : (
         <div style={{ display:'flex', flexDirection:'column' as const, gap:12 }}>
           {suppliers.map(s => (
-            <SupplierCard key={s.id} s={s} products={products} orgId={orgId} onRefresh={refresh} />
+            <SupplierCard key={s.id} s={s} products={products} orgId={orgId} onRefresh={refresh} allSuppliers={suppliers} />
           ))}
         </div>
       )}

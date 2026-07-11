@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { escalateOrder } from '@/lib/escalateSupplierOrder'
 
 const API_KEY      = process.env.WASENDER_API_KEY!
 const SESSION      = process.env.WASENDER_SESSION_ID!
@@ -202,12 +203,17 @@ export async function POST(req: Request) {
             .update({ status: 'unavailable' })
             .eq('id', (pendingOrder2 as any).id)
 
-          const { data: org2 } = await sb().from('organizations').select('name,whatsapp_number').eq('id', (pendingOrder2 as any).org_id).single()
-          if ((org2 as any)?.whatsapp_number) {
-            const items2 = ((pendingOrder2 as any).items || []).map((i: any) => `• ${i.name}`).join('\n')
-            const ownerPhone = (org2 as any).whatsapp_number.replace(/\D/g,'').replace(/^0/,'966')
-            const ownerMsg = `🟢 *Storely*\n\n⚠️ المورد *${(pendingOrder2 as any).supplier_name}* أبلغ إن الصنف التالي غير متوفر حالياً:\n\n${items2}\n\nيرجى التواصل مع المورد أو البحث عن مورد بديل`
-            await send(ownerPhone, ownerMsg)
+          const result = await escalateOrder(pendingOrder2, 'unavailable')
+
+          if (!result.escalated) {
+            // ما فيه مورد بديل مرتبط — نفس السلوك القديم: إشعار يدوي بس
+            const { data: org2 } = await sb().from('organizations').select('name,whatsapp_number').eq('id', (pendingOrder2 as any).org_id).single()
+            if ((org2 as any)?.whatsapp_number) {
+              const items2 = ((pendingOrder2 as any).items || []).map((i: any) => `• ${i.name}`).join('\n')
+              const ownerPhone = (org2 as any).whatsapp_number.replace(/\D/g,'').replace(/^0/,'966')
+              const ownerMsg = `🟢 *Storely*\n\n⚠️ المورد *${(pendingOrder2 as any).supplier_name}* أبلغ إن الصنف التالي غير متوفر حالياً:\n\n${items2}\n\nيرجى التواصل مع المورد أو ربط مورد بديل من صفحة الموردين`
+              await send(ownerPhone, ownerMsg)
+            }
           }
 
           await send(to, `🟢 *Storely*\n\nشكراً لإبلاغنا 🙏\nتم إبلاغ العميل بعدم توفر الصنف حالياً`)
