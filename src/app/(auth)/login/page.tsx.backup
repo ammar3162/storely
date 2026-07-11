@@ -88,8 +88,6 @@ function LoginPage() {
   const [branchCount, setBranchCount] = useState<number|null>(null)
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState('')
-  const [isOAuthFlow, setIsOAuthFlow] = useState(false)
-  const [googleLoading, setGoogleLoading] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -97,22 +95,7 @@ function LoginPage() {
     if (hash?.includes('type=recovery') && hash.includes('access_token')) {
       window.location.href = '/reset-password' + hash
     }
-    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('oauth') === '1') {
-      setIsOAuthFlow(true)
-      supabase.auth.getUser().then(({ data }) => {
-        if (data.user?.email) setEmail(data.user.email)
-      })
-    }
   }, [])
-
-  async function handleGoogleAuth() {
-    setGoogleLoading(true); setError('')
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` }
-    })
-    if (error) { setError('تعذر الاتصال بجوجل — حاول مرة أخرى'); setGoogleLoading(false) }
-  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault(); setLoading(true); setError('')
@@ -140,11 +123,9 @@ function LoginPage() {
     e.preventDefault(); setError('')
     if (!orgName.trim()) { setError('أدخل اسم المؤسسة'); return }
     if (!phone.trim())   { setError('أدخل رقم الجوال'); return }
-    if (!isOAuthFlow) {
-      const pwErr = validatePassword(password)
-      if (pwErr) { setError(pwErr); return }
-      if (password.length < 6) { setError('كلمة المرور 6 أحرف على الأقل'); return }
-    }
+    const pwErr = validatePassword(password)
+    if (pwErr) { setError(pwErr); return }
+    if (password.length < 6) { setError('كلمة المرور 6 أحرف على الأقل'); return }
     setStep(2)
   }
 
@@ -198,39 +179,31 @@ function LoginPage() {
     if (!otpVerified) { setError('يجب التحقق من رقم الجوال أولاً'); return }
     if (!branchCount) { setError('اختر الباقة المناسبة'); return }
     setLoading(true); setError('')
-
-    let userId: string | null = null
-    if (isOAuthFlow) {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setError('انتهت الجلسة — سجّل الدخول بجوجل مرة أخرى'); setLoading(false); return }
-      userId = user.id
-    } else {
-      const { data, error } = await supabase.auth.signUp({ email, password })
-      if (error) {
-        if (error.message.includes('already registered') || error.message.includes('already been registered')) {
-          setError('📧 هذا البريد الإلكتروني مسجّل مسبقاً — سجّل الدخول أو استعد كلمة المرور')
-        } else {
-          setError(error.message)
-        }
-        setLoading(false); return
+    const { data, error } = await supabase.auth.signUp({ email, password })
+    if (error) {
+      if (error.message.includes('already registered') || error.message.includes('already been registered')) {
+        setError('📧 هذا البريد الإلكتروني مسجّل مسبقاً — سجّل الدخول أو استعد كلمة المرور')
+      } else {
+        setError(error.message)
       }
-      userId = data.user?.id || null
+      setLoading(false); return
     }
-
-    if (userId) {
+    if (data.user) {
       const fullPhone = countryCode + phone.trim().replace(/^0+/, '')
+      // تحقق من تكرار رقم الجوال
       const { data: existingPhone } = await supabase.from('profiles').select('id').eq('phone', phone.trim()).maybeSingle()
       if (existingPhone) {
-        if (!isOAuthFlow) await supabase.auth.admin?.deleteUser?.(userId).catch(()=>{})
+        await supabase.auth.admin?.deleteUser?.(data.user.id).catch(()=>{})
         setError('رقم الجوال هذا مرتبط بحساب آخر — استخدم رقماً مختلفاً')
         setLoading(false); return
       }
       const trialEnds = new Date(Date.now() + 14*24*60*60*1000).toISOString()
+      // استخدم service role API لإنشاء المنشأة
       const regRes = await fetch('/api/register-org', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
-          userId,
+          userId: data.user.id,
           orgName: orgName.trim(),
           fullPhone,
           businessType: businessType||'مطعم',
@@ -242,13 +215,11 @@ function LoginPage() {
       })
       const regData = await regRes.json()
       if (!regRes.ok) {
-        if (!isOAuthFlow) {
-          await fetch('/api/cleanup-failed-registration', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ userId })
-          }).catch(()=>{})
-        }
+        await fetch('/api/cleanup-failed-registration', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ userId: data.user.id })
+        }).catch(()=>{})
         setError('خطأ في إنشاء المنشأة: ' + regData.error)
         setLoading(false); return
       }
@@ -256,16 +227,12 @@ function LoginPage() {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ name: orgName.trim(), phone: fullPhone })
       }).catch(()=>{})
-
-      if (isOAuthFlow) {
+      // حاول تسجيل الدخول مباشرة بعد التسجيل
+      const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password })
+      if (!signInErr) {
         window.location.href = '/dashboard'
       } else {
-        const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password })
-        if (!signInErr) {
-          window.location.href = '/dashboard'
-        } else {
-          setMode('registered' as any)
-        }
+        setMode('registered' as any)
       }
     }
     setLoading(false)
@@ -349,16 +316,6 @@ function LoginPage() {
                     {loading?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span style={{width:16,height:16,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block'}}/>جاري الدخول...</span>:'دخول'}
                   </button>
                 </form>
-                <div style={{display:'flex',alignItems:'center',gap:10,margin:'20px 0'}}>
-                  <div style={{flex:1,height:1,background:'#e5e7eb'}}/>
-                  <span style={{fontSize:12,color:'#9ca3af'}}>أو</span>
-                  <div style={{flex:1,height:1,background:'#e5e7eb'}}/>
-                </div>
-                <button type="button" onClick={handleGoogleAuth} disabled={googleLoading}
-                  style={{width:'100%',padding:'12px',background:'white',color:'#374151',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
-                  <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.1 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.1 29.5 4 24 4c-7.7 0-14.3 4.4-17.7 10.7z"/><path fill="#4CAF50" d="M24 44c5.4 0 10.3-2.1 14-5.5l-6.5-5.5c-2 1.4-4.6 2.3-7.5 2.3-5.3 0-9.7-3.3-11.3-8l-6.6 5.1C9.6 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.5l6.5 5.5C41.2 35.9 44 30.4 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
-                  {googleLoading?'جاري التحويل...':'الدخول بحساب جوجل'}
-                </button>
                 <div style={{textAlign:'center',marginTop:24,fontSize:13,color:'#6b7280'}}>
                   ما عندك حساب؟{' '}
                   <button onClick={()=>{setMode('register');setError('');setStep(1)}} style={{background:'none',border:'none',color:'#16a34a',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
@@ -380,20 +337,6 @@ function LoginPage() {
                   <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:6,letterSpacing:'-0.5px'}}>أنشئ حسابك مجاناً</h1>
                   <p style={{fontSize:14,color:'#6b7280'}}>14 يوم تجربة مجانية — لا يتطلب بطاقة</p>
                 </div>
-                {!isOAuthFlow && (
-                  <>
-                    <button type="button" onClick={handleGoogleAuth} disabled={googleLoading}
-                      style={{width:'100%',padding:'12px',background:'white',color:'#374151',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10,marginBottom:16}}>
-                      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.1 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.1 29.5 4 24 4c-7.7 0-14.3 4.4-17.7 10.7z"/><path fill="#4CAF50" d="M24 44c5.4 0 10.3-2.1 14-5.5l-6.5-5.5c-2 1.4-4.6 2.3-7.5 2.3-5.3 0-9.7-3.3-11.3-8l-6.6 5.1C9.6 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.5l6.5 5.5C41.2 35.9 44 30.4 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
-                      {googleLoading?'جاري التحويل...':'التسجيل بحساب جوجل'}
-                    </button>
-                    <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}>
-                      <div style={{flex:1,height:1,background:'#e5e7eb'}}/>
-                      <span style={{fontSize:12,color:'#9ca3af'}}>أو</span>
-                      <div style={{flex:1,height:1,background:'#e5e7eb'}}/>
-                    </div>
-                  </>
-                )}
                 {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
                 <form onSubmit={nextStep} style={{display:'flex',flexDirection:'column',gap:14}}>
                   <div>
@@ -411,16 +354,10 @@ function LoginPage() {
                       ))}
                     </div>
                   </div>
-                  {isOAuthFlow ? (
-                    <div style={{background:'#f0fdf4',border:'1.5px solid #bbf7d0',borderRadius:10,padding:'12px 14px',fontSize:13,color:'#16a34a',fontWeight:600}}>
-                      ✅ سجّلت الدخول بحساب جوجل: {email}
-                    </div>
-                  ) : (
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني *</label>
                     <input className="inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
                   </div>
-                  )}
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>الدولة *</label>
                     <select value={countryCode} onChange={e=>{setCountryCode(e.target.value);setOtpSent(false);setOtpVerified(false);setPhone('');setOtp('')}}
@@ -466,7 +403,6 @@ function LoginPage() {
                       </div>
                     )}
                   </div>
-                  {!isOAuthFlow && (
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>كلمة المرور *</label>
                     <input className="inp" type="password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="8+ أحرف، أرقام، رموز (@#$)"/>
@@ -484,7 +420,6 @@ function LoginPage() {
                       </div>
                     )}
                   </div>
-                  )}
                   <button type="submit" className="btn-main" style={{marginTop:4}}>التالي — اختر الباقة →</button>
                 </form>
                 <div style={{textAlign:'center',marginTop:20,fontSize:13,color:'#6b7280'}}>
