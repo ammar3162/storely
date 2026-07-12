@@ -149,7 +149,14 @@ export default function AIToolsPage() {
         </div>
 
         {forecast.length>0 && (
-          <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:12}}>
+          <>
+            <div style={{display:'flex',justifyContent:'flex-end',marginTop:8}}>
+              <button onClick={()=>setForecast([])}
+                style={{background:'none',border:'1px solid #e5e7eb',color:'#6b7280',borderRadius:8,padding:'4px 10px',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>
+                ✕ إغلاق النتائج
+              </button>
+            </div>
+          <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:8}}>
             {forecast.map((p:any,i:number)=>(
               <div key={i} style={{padding:'12px 14px',borderRadius:10,background:
                 p.status==='critical'?'#fef2f2':
@@ -195,6 +202,7 @@ export default function AIToolsPage() {
               </div>
             ))}
           </div>
+          </>
         )}
       </div>
 
