@@ -1,6 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 const C = {
   primary:'#16a34a', primaryD:'#15803d', primaryL:'#f0fdf4', primaryB:'#bbf7d0',
@@ -44,6 +45,9 @@ export default function AIToolsPage() {
   const [wasteLoading, setWasteLoading] = useState(false)
   const [realWasteReport, setRealWasteReport] = useState<any>(null)
   const [realWasteLoading, setRealWasteLoading] = useState(false)
+  const [reorderSuggestions, setReorderSuggestions] = useState<any>(null)
+  const [reorderLoading, setReorderLoading] = useState(false)
+  const [applyingId, setApplyingId] = useState<string|null>(null)
   const [forecast, setForecast] = useState<any[]>([])
   const [forecastLoading, setForecastLoading] = useState(false)
   const [suggestions, setSuggestions] = useState<any[]>([])
@@ -54,6 +58,17 @@ export default function AIToolsPage() {
   const [branchLoading, setBranchLoading] = useState(false)
   const [reportLoading, setReportLoading] = useState(false)
   const router = useRouter()
+  const sb = createClient()
+
+  async function applyReorderSuggestion(productId: string, newReorderPoint: number) {
+    setApplyingId(productId)
+    await (sb as any).from('products').update({ reorder_point: newReorderPoint }).eq('id', productId)
+    setReorderSuggestions((prev: any) => ({
+      ...prev,
+      suggestions: prev.suggestions.filter((s: any) => s.id !== productId),
+    }))
+    setApplyingId(null)
+  }
   const [visible] = useState(true)
   const plan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
 
@@ -405,6 +420,24 @@ export default function AIToolsPage() {
             </button>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <span style={{fontSize:18}}>🎯</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.text}}>تحسين نقطة إعادة الطلب</div>
+              <div style={{fontSize:11,color:C.text3}}>يقترح حد إعادة طلب أدق بناءً على معدل الصرف ومدة التوريد</div>
+            </div>
+            <button onClick={async()=>{
+              const orgId=sessionStorage.getItem('s_org_id')
+              if(!orgId) return
+              setReorderLoading(true)
+              const res=await fetch('/api/reorder-optimizer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId})})
+              const data=await res.json()
+              setReorderSuggestions(data)
+              setReorderLoading(false)
+            }} style={{padding:'6px 14px',background:'#7c3aed',color:'white',border:'none',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+              {reorderLoading?'⏳ جاري...':'فحص الحدود'}
+            </button>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
             <span style={{fontSize:18}}>📅</span>
             <div style={{flex:1}}>
               <div style={{fontSize:13,fontWeight:700,color:C.text}}>التقرير الأسبوعي</div>
@@ -507,6 +540,51 @@ export default function AIToolsPage() {
                 ))}
               </div>
             </>
+          )}
+        </div>
+      )}
+
+      {/* تحسين نقطة إعادة الطلب */}
+      {reorderSuggestions && (
+        <div style={{marginTop:16,background:C.surface,borderRadius:14,padding:'20px',border:'1.5px solid #ddd6fe'}}>
+          <div style={{fontSize:14,fontWeight:800,color:'#5b21b6',marginBottom:4}}>🎯 تحسين نقطة إعادة الطلب</div>
+          <div style={{fontSize:11,color:'#7c3aed',marginBottom:16}}>مقارنة الحد الحالي بالحد المقترح بناءً على معدل الصرف ومدة توريد المورد</div>
+
+          {reorderSuggestions.suggestions?.length===0 ? (
+            <div style={{textAlign:'center',padding:'24px',color:'#9ca3af',fontSize:13}}>
+              ✅ كل حدود إعادة الطلب مضبوطة بشكل جيد ({reorderSuggestions.totalChecked} منتج تم فحصه)
+            </div>
+          ) : (
+            <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+              {(reorderSuggestions.suggestions||[]).map((s:any)=>(
+                <div key={s.id} style={{padding:'12px 14px',background:'#f5f3ff',borderRadius:10,border:'1px solid #ddd6fe'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                    <div style={{fontSize:13,fontWeight:800,color:'#4c1d95'}}>{s.name}</div>
+                    <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:99,background:s.status==='low'?'#fee2e2':'#fef3c7',color:s.status==='low'?'#dc2626':'#d97706'}}>
+                      {s.status==='low'?'⚠️ منخفض جداً':'📦 مرتفع زيادة'}
+                    </span>
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:8}}>
+                    <div>
+                      <div style={{fontSize:10,color:'#9ca3af'}}>الحالي</div>
+                      <div style={{fontSize:16,fontWeight:900,color:'#6b7280'}}>{s.currentReorderPoint} {s.unit}</div>
+                    </div>
+                    <span style={{fontSize:14,color:'#9ca3af'}}>←</span>
+                    <div>
+                      <div style={{fontSize:10,color:'#9ca3af'}}>المقترح</div>
+                      <div style={{fontSize:16,fontWeight:900,color:'#7c3aed'}}>{s.suggestedReorderPoint} {s.unit}</div>
+                    </div>
+                    <div style={{flex:1,textAlign:'left' as const,fontSize:10,color:'#9ca3af'}}>
+                      معدل الصرف: {s.dailyRate}/يوم · مدة التوريد: {s.leadTimeDays} يوم
+                    </div>
+                  </div>
+                  <button onClick={()=>applyReorderSuggestion(s.id, s.suggestedReorderPoint)} disabled={applyingId===s.id}
+                    style={{width:'100%',padding:'8px',background:'#7c3aed',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:applyingId===s.id?.6:1}}>
+                    {applyingId===s.id?'⏳ جاري التطبيق...':'✓ تطبيق الاقتراح'}
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}
