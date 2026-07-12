@@ -24,6 +24,8 @@ export default function DispensePage() {
   const [activeCat, setActiveCat] = useState('كل المنتجات')
   const [selected, setSelected]   = useState<any>(null)
   const [qty, setQty]             = useState('')
+  const [wasteMode, setWasteMode] = useState(false)
+  const [wasteReason, setWasteReason] = useState('')
   const [search, setSearch]       = useState('')
   const [visible, setVisible]     = useState(false)
   const [showHistory, setShowHistory] = useState(false)
@@ -83,9 +85,25 @@ export default function DispensePage() {
     fetch('/api/notify-staff-dispense',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,staff_name:sessionStorage.getItem('s_full_name')||'المالك',product_name:selected.name,qty:qn,unit:selected.unit})}).catch(()=>{})
     try{
     }catch{}
-    setSelected(null);setQty('')
+    setSelected(null);setQty('');setWasteMode(false);setWasteReason('')
     setSaving(false);loadProducts(oid);loadHistory(oid)
   }
+
+  async function handleWaste() {
+    const oid=orgRef.current,pid=profRef.current
+    if(!selected||!qty||!oid||!pid||!wasteReason)return
+    setSaving(true)
+    const qn=Number(qty)
+    if(selected.qty<qn){toast('الكمية أكبر من المتاح!','warning');setSaving(false);return}
+    const{error}=await (sb as any).from('stock_movements').insert({product_id:selected.id,profile_id:pid,type:'waste',qty_change:-qn,waste_reason:wasteReason,note:`هدر: ${wasteReason}`})
+    if(error){toast('خطأ','error');setSaving(false);return}
+    cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
+    toast(`🗑️ تم تسجيل هدر ${qn} ${selected.unit} من ${selected.name}`)
+    setSelected(null);setQty('');setWasteMode(false);setWasteReason('')
+    setSaving(false);loadProducts(oid);loadHistory(oid)
+  }
+
+  const WASTE_REASONS = ['تالف','منتهي الصلاحية','كسر','سرقة/فقدان','خطأ تحضير','أخرى']
 
   const catMap: Record<string,number>={}
   products.forEach(p=>{const c=p.category?.trim()||OTHER;catMap[c]=(catMap[c]||0)+1})
@@ -259,8 +277,33 @@ export default function DispensePage() {
                   <div style={{fontSize:16,fontWeight:800,color:C.text}}>{selected.name}</div>
                   <div style={{fontSize:11,color:C.text3,marginTop:2}}>متاح: <b style={{color:C.primary,fontSize:14}}>{selected.qty}</b> {selected.unit}</div>
                 </div>
-                <button onClick={()=>{setSelected(null);setQty('')}} style={{width:28,height:28,borderRadius:'50%',background:C.bg,border:`1px solid ${C.border2}`,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}}>✕</button>
+                <button onClick={()=>{setSelected(null);setQty('');setWasteMode(false);setWasteReason('')}} style={{width:28,height:28,borderRadius:'50%',background:C.bg,border:`1px solid ${C.border2}`,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}}>✕</button>
               </div>
+
+              <div style={{display:'flex',gap:6,marginBottom:14,background:C.bg,padding:4,borderRadius:12}}>
+                <button onClick={()=>{setWasteMode(false);setWasteReason('')}}
+                  style={{flex:1,padding:'9px',borderRadius:9,border:'none',background:!wasteMode?'white':'transparent',color:!wasteMode?C.danger:C.text3,fontWeight:800,fontSize:13,cursor:'pointer',fontFamily:'inherit',boxShadow:!wasteMode?'0 1px 4px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
+                  📤 صرف عادي
+                </button>
+                <button onClick={()=>setWasteMode(true)}
+                  style={{flex:1,padding:'9px',borderRadius:9,border:'none',background:wasteMode?'white':'transparent',color:wasteMode?'#b45309':C.text3,fontWeight:800,fontSize:13,cursor:'pointer',fontFamily:'inherit',boxShadow:wasteMode?'0 1px 4px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
+                  🗑️ تسجيل هدر
+                </button>
+              </div>
+
+              {wasteMode && (
+                <div style={{marginBottom:14}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.text3,marginBottom:6}}>سبب الهدر *</div>
+                  <div style={{display:'flex',flexWrap:'wrap' as const,gap:6}}>
+                    {WASTE_REASONS.map(r=>(
+                      <button key={r} onClick={()=>setWasteReason(r)}
+                        style={{padding:'6px 12px',borderRadius:99,border:`1.5px solid ${wasteReason===r?'#d97706':C.border2}`,background:wasteReason===r?'#fffbeb':'white',color:wasteReason===r?'#b45309':C.text3,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div style={{height:5,background:C.border,borderRadius:99,overflow:'hidden',marginBottom:18}}>
                 <div style={{height:'100%',width:Math.min((selected.qty/Math.max(selected.reorder_point*2,selected.qty,1))*100,100)+'%',background:selected.qty<=selected.reorder_point?C.warning:C.primary,borderRadius:99}}/>
@@ -291,10 +334,17 @@ export default function DispensePage() {
             </div>
 
             <div style={{padding:'8px 20px 16px'}}>
-              <button disabled={saving||!qty||Number(qty)<=0||Number(qty)>selected.qty} onClick={handleDispense}
-                style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?C.text4:C.danger,color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?.6:1,boxShadow:`0 6px 16px ${C.danger}30`,transition:'all .2s'}}>
-                {saving?'⏳ جاري الحفظ...':`✓ صرف ${qty||0} ${selected.unit} من ${selected.name}`}
-              </button>
+              {wasteMode ? (
+                <button disabled={saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason} onClick={handleWaste}
+                  style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason?C.text4:'#d97706',color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason?.6:1,boxShadow:'0 6px 16px #d9770630',transition:'all .2s'}}>
+                  {saving?'⏳ جاري الحفظ...':`🗑️ تسجيل هدر ${qty||0} ${selected.unit}`}
+                </button>
+              ) : (
+                <button disabled={saving||!qty||Number(qty)<=0||Number(qty)>selected.qty} onClick={handleDispense}
+                  style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?C.text4:C.danger,color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?.6:1,boxShadow:`0 6px 16px ${C.danger}30`,transition:'all .2s'}}>
+                  {saving?'⏳ جاري الحفظ...':`✓ صرف ${qty||0} ${selected.unit} من ${selected.name}`}
+                </button>
+              )}
             </div>
           </div>
         </div>

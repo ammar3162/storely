@@ -42,6 +42,8 @@ export default function AIToolsPage() {
   const [weeklyReport, setWeeklyReport] = useState<any>(null)
   const [wasteReport, setWasteReport] = useState<any[]>([])
   const [wasteLoading, setWasteLoading] = useState(false)
+  const [realWasteReport, setRealWasteReport] = useState<any>(null)
+  const [realWasteLoading, setRealWasteLoading] = useState(false)
   const [forecast, setForecast] = useState<any[]>([])
   const [forecastLoading, setForecastLoading] = useState(false)
   const [suggestions, setSuggestions] = useState<any[]>([])
@@ -367,10 +369,10 @@ export default function AIToolsPage() {
       <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`,animationDelay:'.2s'}}>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <span style={{fontSize:18}}>♻️</span>
+            <span style={{fontSize:18}}>🐌</span>
             <div style={{flex:1}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.text}}>كشف الهدر</div>
-              <div style={{fontSize:11,color:C.text3}}>يكتشف ما تشتريه ولا تصرفه</div>
+              <div style={{fontSize:13,fontWeight:700,color:C.text}}>المخزون الراكد</div>
+              <div style={{fontSize:11,color:C.text3}}>يكتشف ما تشتريه ولا تصرفه (بطيء الحركة)</div>
             </div>
             <button onClick={async()=>{
               const orgId=sessionStorage.getItem('s_org_id')
@@ -381,7 +383,25 @@ export default function AIToolsPage() {
               setWasteReport(data.waste||[])
               setWasteLoading(false)
             }} style={{padding:'6px 14px',background:'#f59e0b',color:'white',border:'none',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
-              {wasteLoading?'⏳ جاري...':'كشف الهدر'}
+              {wasteLoading?'⏳ جاري...':'فحص الراكد'}
+            </button>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <span style={{fontSize:18}}>🗑️</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.text}}>كشف الهدر الحقيقي</div>
+              <div style={{fontSize:11,color:C.text3}}>من عمليات الهدر المسجّلة فعلياً (تالف، منتهي، كسر...)</div>
+            </div>
+            <button onClick={async()=>{
+              const orgId=sessionStorage.getItem('s_org_id')
+              if(!orgId) return
+              setRealWasteLoading(true)
+              const res=await fetch('/api/waste-report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId})})
+              const data=await res.json()
+              setRealWasteReport(data)
+              setRealWasteLoading(false)
+            }} style={{padding:'6px 14px',background:'#dc2626',color:'white',border:'none',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+              {realWasteLoading?'⏳ جاري...':'كشف الهدر'}
             </button>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
@@ -409,8 +429,8 @@ export default function AIToolsPage() {
       {/* كشف الهدر */}
       {wasteReport.length>0 && (
         <div style={{marginTop:16,background:C.surface,borderRadius:14,padding:'20px',border:`1.5px solid #fde68a`}}>
-          <div style={{fontSize:14,fontWeight:800,color:'#92400e',marginBottom:4}}>♻️ منتجات قد تكون هدراً</div>
-          <div style={{fontSize:11,color:'#b45309',marginBottom:16}}>هذه المنتجات تم شراؤها لكن صرفها قليل جداً خلال آخر 30 يوم</div>
+          <div style={{fontSize:14,fontWeight:800,color:'#92400e',marginBottom:4}}>🐌 مخزون راكد بطيء الحركة</div>
+          <div style={{fontSize:11,color:'#b45309',marginBottom:16}}>هذه المنتجات تم شراؤها لكن صرفها قليل جداً خلال آخر 30 يوم — قد تكون هدراً أو مجرد صنف موسمي</div>
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
             {wasteReport.map((p:any,i:number)=>(
               <div key={i} style={{padding:'12px 14px',background:p.risk==='high'?'#fef2f2':'#fffbeb',borderRadius:10,border:`1px solid ${p.risk==='high'?'#fecaca':'#fde68a'}`}}>
@@ -446,6 +466,48 @@ export default function AIToolsPage() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* كشف الهدر الحقيقي */}
+      {realWasteReport && (
+        <div style={{marginTop:16,background:C.surface,borderRadius:14,padding:'20px',border:'1.5px solid #fecaca'}}>
+          <div style={{fontSize:14,fontWeight:800,color:'#991b1b',marginBottom:4}}>🗑️ تقرير الهدر الحقيقي (آخر 30 يوم)</div>
+          <div style={{fontSize:11,color:'#dc2626',marginBottom:16}}>من عمليات الهدر المسجّلة فعلياً من الموظفين (تالف، منتهي الصلاحية، كسر...)</div>
+
+          {!realWasteReport.hasData ? (
+            <div style={{textAlign:'center',padding:'24px',color:'#9ca3af',fontSize:13}}>
+              ما فيه أي هدر مسجّل خلال آخر 30 يوم 🎉<br/>
+              <span style={{fontSize:11}}>يقدر الموظفون يسجّلون الهدر من صفحة "الصرف" → وضع "🗑️ تسجيل هدر"</span>
+            </div>
+          ) : (
+            <>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
+                <div style={{background:'#fef2f2',borderRadius:10,padding:'12px',textAlign:'center' as const,border:'1px solid #fecaca'}}>
+                  <div style={{fontSize:20,fontWeight:900,color:'#dc2626'}}>{realWasteReport.totalEstimatedCost?.toLocaleString()||0} ر.س</div>
+                  <div style={{fontSize:10,color:'#991b1b',marginTop:2}}>القيمة التقديرية للهدر</div>
+                </div>
+                <div style={{background:'#fef2f2',borderRadius:10,padding:'12px',textAlign:'center' as const,border:'1px solid #fecaca'}}>
+                  <div style={{fontSize:20,fontWeight:900,color:'#dc2626'}}>{realWasteReport.totalWasteEntries}</div>
+                  <div style={{fontSize:10,color:'#991b1b',marginTop:2}}>عدد عمليات الهدر</div>
+                </div>
+              </div>
+              <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                {(realWasteReport.report||[]).map((r:any,i:number)=>(
+                  <div key={i} style={{padding:'12px 14px',background:'#fef2f2',borderRadius:10,border:'1px solid #fecaca'}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                      <div style={{fontSize:13,fontWeight:800,color:'#991b1b'}}>{r.name}</div>
+                      {r.estimatedCost!==null && <span style={{fontSize:12,fontWeight:800,color:'#dc2626'}}>{r.estimatedCost.toLocaleString()} ر.س</span>}
+                    </div>
+                    <div style={{fontSize:11,color:'#9ca3af',marginTop:4}}>
+                      الكمية: <b style={{color:'#374151'}}>{r.totalQty} {r.unit}</b>
+                      {r.topReason && <span> · السبب الأكثر: <b style={{color:'#dc2626'}}>{r.topReason}</b></span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
 
