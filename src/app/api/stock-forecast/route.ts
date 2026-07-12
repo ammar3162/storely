@@ -48,17 +48,27 @@ export async function POST(req: Request) {
         .sort((a,b)=>a[0].localeCompare(b[0]))
         .map(([,v])=>v)
 
-      // Exponential Smoothing
-      let smoothed = dailyValues[0]
-      for(let i=1;i<dailyValues.length;i++){
-        smoothed = alpha * dailyValues[i] + (1-alpha) * smoothed
-      }
-
-      // مزج مع المعدل طويل المدى عشان ما ننخدع بيوم واحد شاذ (صرف كمية كبيرة دفعة وحدة)
+      // نحتاج بيانات كافية (على الأقل 14 عملية صرف و14 يوم تغطية) عشان التنعيم الأسي
+      // والمعاملات الموسمية تكون موثوقة إحصائياً. أقل من كذا، منتج واحد صُرف
+      // مصادفة يعطي انطباع خاطئ بمعدل استهلاك مرتفع (وهذا كان يسبب تنبيهات "حرج" كاذبة).
       const firstDispenseDate = data.dates[0]
       const daysSpan = Math.max((new Date().getTime()-firstDispenseDate.getTime())/(1000*60*60*24),1)
       const longTermDailyAvg = totalQty / daysSpan
-      smoothed = smoothed*0.4 + longTermDailyAvg*0.6
+      const hasEnoughData = dispenseCount >= 14 && daysSpan >= 14
+
+      let smoothed: number
+      if (hasEnoughData) {
+        // Exponential Smoothing — موثوق فقط مع بيانات كافية
+        smoothed = dailyValues[0]
+        for(let i=1;i<dailyValues.length;i++){
+          smoothed = alpha * dailyValues[i] + (1-alpha) * smoothed
+        }
+        // مزج مع المعدل طويل المدى عشان ما ننخدع بيوم واحد شاذ (صرف كمية كبيرة دفعة وحدة)
+        smoothed = smoothed*0.4 + longTermDailyAvg*0.6
+      } else {
+        // بيانات قليلة — نعتمد على المعدل البسيط طويل المدى فقط، بدون تنعيم مبالغ فيه
+        smoothed = longTermDailyAvg
+      }
 
       // معامل كل يوم من الأسبوع
       const dayFactors: Record<number,{total:number,count:number}> = {}
@@ -71,9 +81,12 @@ export async function POST(req: Request) {
 
       const overallAvg = totalQty / dispenseCount
       const dayCoefficients: Record<number,number> = {}
-      for(const [d,{total,count}] of Object.entries(dayFactors)){
-        dayCoefficients[Number(d)] = overallAvg > 0 ? (total/count)/overallAvg : 1
+      if (hasEnoughData) {
+        for(const [d,{total,count}] of Object.entries(dayFactors)){
+          dayCoefficients[Number(d)] = overallAvg > 0 ? (total/count)/overallAvg : 1
+        }
       }
+      // لو البيانات غير كافية، dayCoefficients تبقى فاضية فتُستخدم القيمة الافتراضية 1 لكل يوم (بدون موسمية)
 
       // أيوم الذروة
       const peakDayNum = Object.entries(dayCoefficients).sort((a,b)=>Number(b[1])-Number(a[1]))[0]
