@@ -142,7 +142,7 @@ export async function POST(req: Request) {
       })
       if (orderErr) console.log('supplier_orders insert error:', orderErr.message)
 
-      const text = buildOrderMessage(orgName, messageItems, supplier.notes) + '\n\nللتأكيد رد بكلمة: *تم*'
+      const text = buildOrderMessage(orgName, messageItems, supplier.notes) + '\n\nللتأكيد رد بكلمة: *تم*\nإن لم يتوفر الصنف، رد بكلمة: *غير متوفر*'
       const ok = await sendWhatsApp(formatPhone(supplier.phone), text)
 
       for (const p of items) {
