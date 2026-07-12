@@ -327,7 +327,8 @@ export default function AIToolsPage() {
         )}
       </div>
 
-      {/* مقارنة الفروع */}
+      {/* مقارنة الفروع — حصري للباقة المتقدمة */}
+      {plan==='advanced' && (
       <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
           <div>
@@ -387,9 +388,11 @@ export default function AIToolsPage() {
           </div>
         )}
       </div>
+      )}
 
-      {/* Coming soon */}
-      <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`,animationDelay:'.2s'}}>
+      {/* أدوات الهدر — حصرية للباقة المتقدمة */}
+      {plan==='advanced' && (
+      <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <span style={{fontSize:18}}>🐌</span>
@@ -427,6 +430,13 @@ export default function AIToolsPage() {
               {realWasteLoading?'⏳ جاري...':'كشف الهدر'}
             </button>
           </div>
+        </div>
+      </div>
+      )}
+
+      {/* Coming soon — أدوات متاحة للمتوسطة والمتقدمة */}
+      <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`,animationDelay:'.2s'}}>
+        <div style={{display:'flex',flexDirection:'column',gap:8}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <span style={{fontSize:18}}>🎯</span>
             <div style={{flex:1}}>
@@ -655,12 +665,23 @@ export default function AIToolsPage() {
         </>
       )}
 
-      {plan!=='advanced' && (
+      {plan==='basic' && (
         <div className="fu" style={{marginTop:16,background:'linear-gradient(135deg,#0d2818,#1a4731)',borderRadius:16,padding:'28px 24px',textAlign:'center' as const}}>
           <div style={{fontSize:36,marginBottom:10}}>🔒✨</div>
-          <div style={{fontSize:16,fontWeight:800,color:'white',marginBottom:6}}>أدوات ذكاء اصطناعي إضافية بانتظارك</div>
+          <div style={{fontSize:16,fontWeight:800,color:'white',marginBottom:6}}>أدوات ذكاء اصطناعي بانتظارك</div>
           <div style={{fontSize:12,color:'rgba(255,255,255,.65)',marginBottom:18,lineHeight:1.7,maxWidth:420,marginLeft:'auto',marginRight:'auto'}}>
-            توقع نفاد المخزون، اقتراح كميات الشراء، تحليل الموسمية، مقارنة الفروع، كشف الهدر، والتقرير الأسبوعي التلقائي — كلها حصرية للباقة المتقدمة.
+            توقع نفاد المخزون، اقتراح كميات الشراء، تحليل الموسمية، تحسين نقطة إعادة الطلب، والتقرير الأسبوعي التلقائي — مع الباقة المتوسطة أو المتقدمة.
+          </div>
+          <a href="/settings" style={{display:'inline-block',padding:'12px 28px',background:'#16a34a',color:'white',borderRadius:10,fontSize:13,fontWeight:800,textDecoration:'none'}}>ترقية الباقة</a>
+        </div>
+      )}
+
+      {plan==='pro' && (
+        <div className="fu" style={{marginTop:16,background:'linear-gradient(135deg,#0d2818,#1a4731)',borderRadius:16,padding:'28px 24px',textAlign:'center' as const}}>
+          <div style={{fontSize:36,marginBottom:10}}>🔒✨</div>
+          <div style={{fontSize:16,fontWeight:800,color:'white',marginBottom:6}}>أدوات متقدمة بانتظارك</div>
+          <div style={{fontSize:12,color:'rgba(255,255,255,.65)',marginBottom:18,lineHeight:1.7,maxWidth:420,marginLeft:'auto',marginRight:'auto'}}>
+            مقارنة الفروع، المخزون الراكد، وكشف الهدر الحقيقي — حصرية للباقة المتقدمة.
           </div>
           <a href="/settings" style={{display:'inline-block',padding:'12px 28px',background:'#16a34a',color:'white',borderRadius:10,fontSize:13,fontWeight:800,textDecoration:'none'}}>ترقية للباقة المتقدمة</a>
         </div>
