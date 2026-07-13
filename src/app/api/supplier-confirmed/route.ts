@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     const { data: order } = await (db as any).from('supplier_orders').select('*').eq('token', token).single()
     if (!order) return NextResponse.json({ success: false })
 
-    await logConfirmation(order)
+    await logConfirmation(order).catch(()=>{})
 
     const { data: org } = await db.from('organizations').select('name,whatsapp_number').eq('id', order.org_id).single()
     if (!org?.whatsapp_number) return NextResponse.json({ success: false })

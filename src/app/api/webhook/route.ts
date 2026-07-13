@@ -170,7 +170,7 @@ export async function POST(req: Request) {
             .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
             .eq('id', (pendingOrder as any).id)
 
-          await logConfirmation(pendingOrder)
+          await logConfirmation(pendingOrder).catch(()=>{})
 
           // إرسال إشعار للعميل
           await fetch((process.env.NEXT_PUBLIC_APP_URL || 'https://storely.dev') + '/api/supplier-confirmed', {
@@ -205,7 +205,8 @@ export async function POST(req: Request) {
             .update({ status: 'unavailable' })
             .eq('id', (pendingOrder2 as any).id)
 
-          const result = await escalateOrder(pendingOrder2, 'unavailable')
+          let result: any = { escalated: false }
+          try { result = await escalateOrder(pendingOrder2, 'unavailable') } catch {}
 
           if (!result.escalated) {
             // ما فيه مورد بديل مرتبط — نفس السلوك القديم: إشعار يدوي بس
