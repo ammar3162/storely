@@ -86,6 +86,8 @@ export default function LandingPage() {
           .mob-menu-btn{display:flex!important}
           .hero-h1{font-size:36px!important}
           .hero-btns{flex-direction:column!important}
+          .hero-grid{grid-template-columns:1fr!important}
+          .hero-mockup{order:-1;margin-bottom:20px;transform:scale(.92)}
           .feat-grid{grid-template-columns:1fr!important}
           .plan-grid{grid-template-columns:1fr!important}
           .stats-row{flex-wrap:wrap!important;gap:20px!important}
@@ -127,30 +129,80 @@ export default function LandingPage() {
       )}
 
       {/* HERO */}
-      <section style={{paddingTop:120,paddingBottom:80,padding:'120px 40px 80px',textAlign:'center',maxWidth:900,margin:'0 auto'}}>
-        <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:99,padding:'6px 16px',fontSize:13,fontWeight:600,color:'#16a34a',marginBottom:28}}>
-          ✓ تجربة مجانية 14 يوماً — لا يتطلب بطاقة ائتمانية
-        </div>
-        <h1 className="hero-h1" style={{fontSize:56,fontWeight:900,color:'#111827',lineHeight:1.1,marginBottom:20,letterSpacing:'-2px'}}>
-          نظام إدارة المخزون<br/>
-          <span style={{color:'#16a34a'}}>الأذكى في المنطقة</span>
-        </h1>
-        <p style={{fontSize:18,color:'#6b7280',maxWidth:560,margin:'0 auto 36px',lineHeight:1.7}}>
-          تتبع مخزونك لحظة بلحظة، واستقبل تنبيهات واتساب عند نقص الأصناف، وأدر موظفيك وفروعك من مكان واحد
-        </p>
-        <div className="hero-btns" style={{display:'flex',gap:12,justifyContent:'center',marginBottom:56}}>
-          <button onClick={()=>router.push('/login?mode=register')} className="btn-primary" style={{fontSize:16,padding:'14px 32px'}}>
-            ابدأ تجربتك المجانية
-          </button>
-          <a href="#features" className="btn-outline" style={{fontSize:16,padding:'14px 28px'}}>اكتشف المميزات</a>
-        </div>
-        <div className="stats-row" style={{display:'flex',justifyContent:'center',gap:48}}>
-          {[['149 ر.س','يبدأ من'],['14 يوم','مجاناً'],['7','لغات'],['24/7','تنبيهات']].map(([n,l])=>(
-            <div key={l} style={{textAlign:'center'}}>
-              <div style={{fontSize:26,fontWeight:900,color:'#111827'}}>{n}</div>
-              <div style={{fontSize:12,color:'#9ca3af',marginTop:3}}>{l}</div>
+      <section style={{paddingTop:120,paddingBottom:80,padding:'120px 40px 60px',maxWidth:1240,margin:'0 auto'}}>
+        <div className="hero-grid" style={{display:'grid',gridTemplateColumns:'1.05fr 1fr',gap:48,alignItems:'center'}}>
+          <div>
+            <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:99,padding:'6px 16px',fontSize:13,fontWeight:600,color:'#16a34a',marginBottom:24}}>
+              ✓ تجربة مجانية 14 يوماً — لا يتطلب بطاقة ائتمانية
             </div>
-          ))}
+            <h1 className="hero-h1" style={{fontSize:52,fontWeight:900,color:'#111827',lineHeight:1.12,marginBottom:20,letterSpacing:'-2px'}}>
+              نظام إدارة المخزون<br/>
+              <span style={{color:'#16a34a'}}>الأذكى في المنطقة</span>
+            </h1>
+            <p style={{fontSize:18,color:'#6b7280',maxWidth:480,marginBottom:32,lineHeight:1.7}}>
+              تتبع مخزونك لحظة بلحظة، واستقبل تنبيهات واتساب عند نقص الأصناف، وأدر موظفيك وفروعك من مكان واحد
+            </p>
+            <div className="hero-btns" style={{display:'flex',gap:12,marginBottom:40}}>
+              <button onClick={()=>router.push('/login?mode=register')} className="btn-primary" style={{fontSize:16,padding:'14px 32px'}}>
+                ابدأ تجربتك المجانية
+              </button>
+              <a href="#features" className="btn-outline" style={{fontSize:16,padding:'14px 28px'}}>اكتشف المميزات</a>
+            </div>
+            <div className="stats-row" style={{display:'flex',gap:40}}>
+              {[['149 ر.س','يبدأ من'],['14 يوم','مجاناً'],['7','لغات'],['24/7','تنبيهات']].map(([n,l])=>(
+                <div key={l}>
+                  <div style={{fontSize:24,fontWeight:900,color:'#111827'}}>{n}</div>
+                  <div style={{fontSize:12,color:'#9ca3af',marginTop:3}}>{l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Dashboard preview mockup */}
+          <div className="hero-mockup" style={{position:'relative'}}>
+            <div style={{position:'absolute',top:'-40px',left:'-40px',width:280,height:280,background:'radial-gradient(circle,rgba(22,163,74,.10),transparent 70%)',borderRadius:'50%',pointerEvents:'none'}}/>
+            <div style={{position:'relative',background:'white',borderRadius:20,border:'1px solid #eef0f2',boxShadow:'0 24px 60px rgba(15,23,42,.12)',overflow:'hidden'}}>
+              <div style={{background:'linear-gradient(135deg,#16a34a,#15803d)',padding:'16px 20px',display:'flex',alignItems:'center',gap:10}}>
+                <div style={{width:28,height:28,borderRadius:8,background:'rgba(255,255,255,.9)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>📦</div>
+                <span style={{color:'white',fontSize:13,fontWeight:800}}>Storely</span>
+                <div style={{marginRight:'auto',display:'flex',gap:5}}>
+                  <span style={{width:6,height:6,borderRadius:'50%',background:'rgba(255,255,255,.5)'}}/>
+                  <span style={{width:6,height:6,borderRadius:'50%',background:'rgba(255,255,255,.5)'}}/>
+                  <span style={{width:6,height:6,borderRadius:'50%',background:'rgba(255,255,255,.5)'}}/>
+                </div>
+              </div>
+              <div style={{padding:20}}>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:14}}>
+                  {[['15','صرف اليوم','#16a34a'],['4','ناقص','#dc2626'],['72','بالمخزون','#2563eb']].map(([v,l,c2])=>(
+                    <div key={l as string} style={{background:'#f8fafc',borderRadius:10,padding:'10px 8px',textAlign:'center' as const}}>
+                      <div style={{fontSize:18,fontWeight:900,color:c2 as string}}>{v}</div>
+                      <div style={{fontSize:9,color:'#9ca3af',marginTop:2}}>{l}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:10,padding:'10px 12px',display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
+                  <span style={{fontSize:14}}>⚠️</span>
+                  <span style={{fontSize:11,color:'#92400e',fontWeight:700}}>4 أصناف وصلت للحد الأدنى</span>
+                </div>
+                <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
+                  {[['جبنة شيدر','−2','#dc2626'],['صوص باربكيو','−1','#dc2626'],['علبة مايونيز','+10','#16a34a']].map(([n,q,c3])=>(
+                    <div key={n as string} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'9px 12px',background:'#fafafa',borderRadius:8}}>
+                      <span style={{fontSize:12,color:'#374151',fontWeight:600}}>{n}</span>
+                      <span style={{fontSize:12,fontWeight:800,color:c3 as string}}>{q}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {/* شارة إشعار عائمة */}
+            <div style={{position:'absolute',bottom:-16,left:-16,background:'white',borderRadius:14,border:'1px solid #eef0f2',boxShadow:'0 12px 32px rgba(15,23,42,.14)',padding:'12px 16px',display:'flex',alignItems:'center',gap:10}}>
+              <div style={{width:32,height:32,borderRadius:9,background:'#25d366',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>📲</div>
+              <div>
+                <div style={{fontSize:11,fontWeight:800,color:'#111827'}}>تنبيه واتساب</div>
+                <div style={{fontSize:10,color:'#9ca3af'}}>وصل المخزون للحد الأدنى</div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
