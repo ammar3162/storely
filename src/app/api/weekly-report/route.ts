@@ -1,26 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-
-function formatPhone(phone: string): string {
-  let p = phone.replace(/\D/g, '')
-  if (p.startsWith('00')) p = p.slice(2)
-  if (p.startsWith('0')) p = '966' + p.slice(1)
-  if (!p.startsWith('9') && !p.startsWith('1') && !p.startsWith('2')) p = '966' + p
-  return p
-}
-
-async function sendWhatsApp(phone: string, message: string) {
-  const sessionId = process.env.WASENDER_SESSION_ID
-  const apiKey = process.env.WASENDER_API_KEY
-  if (!sessionId || !apiKey) return
-  await fetch(`https://api.wasender.app/api/send-message`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
-    body: JSON.stringify({ session_id: sessionId, to: formatPhone(phone) + '@c.us', message })
-  }).catch(() => {})
-}
 
 export async function GET() {
   const db = sb()
@@ -128,9 +110,9 @@ export async function GET() {
       report += `💡 _تقرير ذكي بناءً على بيانات مخزونك_\n`
       report += `🔗 storely.dev/dashboard`
 
-      await sendWhatsApp(org.whatsapp_number, report)
-      sent++
-      await new Promise(r => setTimeout(r, 1000))
+      const result = await sendWhatsAppMessage(formatPhone(org.whatsapp_number), report)
+      if (result.ok) sent++
+      await delay(600) // فاصل زمني يحمي من تجاوز حدود إرسال Wasender API
     } catch (err) {
       console.error(`Error for org ${org.id}:`, err)
     }

@@ -1,23 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendWhatsAppMessage } from '@/lib/whatsapp'
 
-const API_KEY      = process.env.WASENDER_API_KEY!
-const SESSION      = process.env.WASENDER_SESSION_ID!
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const ADMIN_PHONE  = process.env.ADMIN_ALERT_PHONE || '966594351667'
 
 const sb = () => createClient(SUPABASE_URL, SERVICE_KEY)
-
-async function sendWhatsApp(phone: string, text: string) {
-  try {
-    await fetch('https://www.wasenderapi.com/api/send-message', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
-      body: JSON.stringify({ session_id: SESSION, to: phone, text }),
-    })
-  } catch {}
-}
 
 type Issue = { type: string; severity: 'critical' | 'warning'; detail: string; count: number }
 
@@ -190,7 +179,7 @@ export async function GET(req: Request) {
     })
 
     if (issues.length > 0) {
-      await sendWhatsApp(ADMIN_PHONE, buildAlertMessage(issues))
+      await sendWhatsAppMessage(ADMIN_PHONE, buildAlertMessage(issues))
     }
 
     return NextResponse.json({ success: true, issues_count: issues.length, issues })

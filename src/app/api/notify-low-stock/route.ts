@@ -1,16 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { isSubscriptionActive } from '@/lib/subscription'
-
-function formatPhone(raw: string): string {
-  const clean = (raw || '').replace(/\s/g, '')
-  if (clean.startsWith('+')) return clean.slice(1)
-  if (clean.startsWith('00')) return clean.slice(2)
-  if (clean.startsWith('966')) return clean
-  if (clean.startsWith('05')) return '966' + clean.slice(1)
-  if (clean.startsWith('5')) return '966' + clean
-  return clean
-}
+import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 
 async function sendForOrg(supabase: any, org: any) {
   const subActive = await isSubscriptionActive(supabase, org.id)
@@ -55,35 +46,22 @@ async function sendForOrg(supabase: any, org: any) {
 
   if (!org.whatsapp_number) return { sent:0, message:'لا يوجد رقم واتساب' }
 
-  const phone   = formatPhone(org.whatsapp_number)
-  const apiKey  = process.env.WASENDER_API_KEY!
-  const session = process.env.WASENDER_SESSION_ID!
-
-  const res = await fetch('https://www.wasenderapi.com/api/send-message', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-      'X-Session-Id': session,
-    },
-    body: JSON.stringify({ to: phone, text: msg }),
-  })
-
-  const resData = await res.json().catch(()=>({}))
+  const phone = formatPhone(org.whatsapp_number)
+  const result = await sendWhatsAppMessage(phone, msg)
 
   try {
     await supabase.from('whatsapp_logs').insert({
       org_id: org.id, phone, message: msg,
-      status: res.ok ? 'sent' : 'failed',
+      status: result.ok ? 'sent' : 'failed',
     })
-    if (res.ok) {
+    if (result.ok) {
       await supabase.from('organizations')
         .update({ last_notified_at: new Date().toISOString() } as any)
         .eq('id', org.id)
     }
   } catch {}
 
-  return { sent: res.ok ? 1 : 0, low_count: low.length, message: res.ok ? `تم إرسال تنبيه لـ ${low.length} صنف` : 'فشل الإرسال: ' + JSON.stringify(resData) }
+  return { sent: result.ok ? 1 : 0, low_count: low.length, message: result.ok ? `تم إرسال تنبيه لـ ${low.length} صنف` : 'فشل الإرسال: ' + JSON.stringify(result.data) }
 }
 
 export async function POST(req: Request) {
@@ -118,6 +96,7 @@ export async function POST(req: Request) {
       const result = await sendForOrg(supabase, org)
       sent += result.sent
       results.push({ org: org.name, ...result })
+      await delay(600) // فاصل زمني يحمي من تجاوز حدود إرسال Wasender API
     }
     return NextResponse.json({ success:true, sent, results })
   } catch (err:any) {

@@ -1,29 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-
-function formatPhone(raw: string): string {
-  const clean = (raw || '').replace(/\s/g, '')
-  if (clean.startsWith('+')) return clean.slice(1)
-  if (clean.startsWith('00')) return clean.slice(2)
-  if (clean.startsWith('966')) return clean
-  if (clean.startsWith('05')) return '966' + clean.slice(1)
-  if (clean.startsWith('5')) return '966' + clean
-  return clean
-}
-
-async function sendWhatsApp(phone: string, text: string) {
-  await fetch('https://www.wasenderapi.com/api/send-message', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.WASENDER_API_KEY}`,
-      'X-Session-Id': process.env.WASENDER_SESSION_ID!,
-    },
-    body: JSON.stringify({ to: formatPhone(phone), text }),
-  })
-}
 
 export async function GET() {
   try {
@@ -44,9 +23,10 @@ export async function GET() {
     for (const user of expiringSoon || []) {
       const daysLeft = Math.ceil((new Date(user.subscription_ends_at).getTime() - now.getTime()) / (1000*60*60*24))
       if (user.phone) {
-        await sendWhatsApp(user.phone,
+        await sendWhatsAppMessage(user.phone,
           `⏰ *تنبيه — Storely*\n\nمرحباً ${user.full_name}،\n\nتجربتك المجانية ستنتهي بعد *${daysLeft} أيام*.\n\nللاستمرار في استخدام Storely اشترك الآن:\n👇\nhttps://wa.me/966594351667?text=أريد الاشتراك في Storely\n\n_فريق Storely_`
         )
+        await delay(600)
       }
     }
 
@@ -64,9 +44,10 @@ export async function GET() {
       
       // إشعار انتهاء التجربة
       if (user.phone) {
-        await sendWhatsApp(user.phone,
+        await sendWhatsAppMessage(user.phone,
           `🔴 *انتهت تجربتك المجانية — Storely*\n\nمرحباً ${user.full_name}،\n\nانتهت فترة التجربة المجانية.\n\nللاستمرار اشترك الآن وارجع لإدارة مخزونك:\n👇\nhttps://wa.me/966594351667?text=أريد الاشتراك في Storely\n\n_فريق Storely_`
         )
+        await delay(600)
       }
     }
 

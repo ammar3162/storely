@@ -1,17 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-
-function formatPhone(raw: string): string {
-  const clean = (raw || '').replace(/\s/g, '')
-  if (clean.startsWith('+')) return clean.slice(1)
-  if (clean.startsWith('00')) return clean.slice(2)
-  if (clean.startsWith('966')) return clean
-  if (clean.startsWith('05')) return '966' + clean.slice(1)
-  if (clean.startsWith('5')) return '966' + clean
-  return clean
-}
 
 export async function POST(req: Request) {
   try {
@@ -94,20 +85,9 @@ export async function POST(req: Request) {
         if (!g.phone) { results.push({ supplier: g.supplier, sent: false }); continue }
         const lines = g.items.map((i:any) => `• ${i.name} — ${i.suggested} ${i.unit}`).join('\n')
         const msg = `🟢 *Storely*\n\nطلب شراء جديد 🛒\n\n${lines}\n\nيرجى التواصل لتأكيد الطلب`
-        try {
-          const res = await fetch('https://www.wasenderapi.com/api/send-message', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${process.env.WASENDER_API_KEY}`,
-              'X-Session-Id': process.env.WASENDER_SESSION_ID!,
-            },
-            body: JSON.stringify({ to: formatPhone(g.phone), text: msg }),
-          })
-          results.push({ supplier: g.supplier, sent: res.ok })
-        } catch {
-          results.push({ supplier: g.supplier, sent: false })
-        }
+        const result = await sendWhatsAppMessage(formatPhone(g.phone), msg)
+        results.push({ supplier: g.supplier, sent: result.ok })
+        await delay(600) // فاصل زمني يحمي من تجاوز حدود إرسال Wasender API
       }
     }
 

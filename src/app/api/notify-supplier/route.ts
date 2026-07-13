@@ -1,31 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 
-const API_KEY      = process.env.WASENDER_API_KEY!
-const SESSION      = process.env.WASENDER_SESSION_ID!
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 const sb = () => createClient(SUPABASE_URL, SERVICE_KEY)
-
-function formatPhone(raw: string): string {
-  const clean = (raw || '').replace(/\s/g, '')
-  if (clean.startsWith('+')) return clean.slice(1)
-  if (clean.startsWith('00')) return clean.slice(2)
-  if (clean.startsWith('966')) return clean
-  if (clean.startsWith('05')) return '966' + clean.slice(1)
-  if (clean.startsWith('5')) return '966' + clean
-  return clean
-}
-
-async function sendWhatsApp(phone: string, text: string) {
-  const res = await fetch('https://www.wasenderapi.com/api/send-message', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}`, 'X-Session-Id': SESSION },
-    body: JSON.stringify({ to: phone, text }),
-  })
-  return res.ok
-}
 
 function buildOrderMessage(orgName: string, items: { name: string; unit: string; orderQty: number; notes?: string }[], notes?: string) {
   const itemsList = items
@@ -143,7 +123,8 @@ export async function POST(req: Request) {
       if (orderErr) console.log('supplier_orders insert error:', orderErr.message)
 
       const text = buildOrderMessage(orgName, messageItems, supplier.notes) + '\n\nللتأكيد رد بكلمة: *تم*\nإن لم يتوفر الصنف، رد بكلمة: *غير متوفر*'
-      const ok = await sendWhatsApp(formatPhone(supplier.phone), text)
+      const result = await sendWhatsAppMessage(formatPhone(supplier.phone), text)
+      const ok = result.ok
 
       for (const p of items) {
         await supabase.from('supplier_order_logs').insert({
@@ -155,6 +136,7 @@ export async function POST(req: Request) {
       }
 
       if (ok) totalSent += items.length
+      await delay(600) // فاصل زمني يحمي من تجاوز حدود إرسال Wasender API
     }
 
     return NextResponse.json({ success: true, sent: totalSent })
