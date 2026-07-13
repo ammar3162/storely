@@ -31,6 +31,29 @@ export async function POST(req: Request) {
         products_data: products
       } as any)
       done++
+
+      // ── نسخة احتياطية كاملة يومية (بيانات فقط، بدون أي واجهة استعادة بعد) ──
+      try {
+        const since30 = new Date(Date.now() - 30*24*60*60*1000).toISOString()
+        const [{ data: allProducts }, { data: purchases }, { data: movements }] = await Promise.all([
+          db.from('products').select('*').eq('org_id', org.id),
+          db.from('purchases').select('*').eq('org_id', org.id).gte('created_at', since30),
+          db.from('stock_movements').select('*,products!inner(org_id)').eq('products.org_id', org.id).gte('created_at', since30),
+        ])
+        await (db as any).from('data_backups').upsert({
+          org_id: org.id,
+          backup_date: today,
+          products_data: allProducts || [],
+          purchases_data: purchases || [],
+          movements_data: movements || [],
+        }, { onConflict: 'org_id,backup_date' })
+
+        // تنظيف: نحتفظ بآخر 30 يوم بس من النسخ الاحتياطية (يمسح فقط من data_backups، لا يمس البيانات الأصلية)
+        const cutoff = new Date(Date.now() - 30*24*60*60*1000).toISOString().slice(0,10)
+        await (db as any).from('data_backups').delete().eq('org_id', org.id).lt('backup_date', cutoff)
+      } catch (e) {
+        console.log('data_backups error for org', org.id, e)
+      }
     }
     return NextResponse.json({ done, date: today })
   } catch(err:any) {
