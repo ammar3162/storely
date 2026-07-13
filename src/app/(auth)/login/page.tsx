@@ -528,37 +528,64 @@ function LoginPage() {
         </div>
 
         {/* Right — Branding */}
-        <div className="right-panel" style={{width:'45%',background:'#f9fafb',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'60px 48px',borderRight:'1px solid #f3f4f6'}}>
-          <div style={{maxWidth:400}}>
-            <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:99,padding:'6px 14px',fontSize:12,fontWeight:700,color:'#16a34a',marginBottom:28}}>
+        <div className="right-panel" style={{width:'45%',background:'#f9fafb',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'48px 44px',borderRight:'1px solid #f3f4f6'}}>
+          <div style={{maxWidth:400,width:'100%'}}>
+            <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:99,padding:'6px 14px',fontSize:12,fontWeight:700,color:'#16a34a',marginBottom:20}}>
               ✓ نظام إدارة مخزون سعودي
             </div>
-            <h2 style={{fontSize:36,fontWeight:900,color:'#111827',lineHeight:1.2,marginBottom:16,letterSpacing:'-1px'}}>
+            <h2 style={{fontSize:30,fontWeight:900,color:'#111827',lineHeight:1.2,marginBottom:12,letterSpacing:'-1px'}}>
               أدر مخزونك<br/>
               <span style={{color:'#16a34a'}}>بذكاء وسهولة</span>
             </h2>
-            <p style={{fontSize:15,color:'#6b7280',lineHeight:1.8,marginBottom:36}}>
+            <p style={{fontSize:14,color:'#6b7280',lineHeight:1.75,marginBottom:24}}>
               تتبع مخزونك لحظة بلحظة، واستقبل تنبيهات واتساب عند نقص الأصناف، وأدر موظفيك وفروعك من مكان واحد
             </p>
-            <div style={{display:'flex',flexDirection:'column',gap:14}}>
+
+            {/* معاينة مصغّرة للوحة التحكم */}
+            <div style={{position:'relative',background:'white',borderRadius:16,border:'1px solid #eef0f2',boxShadow:'0 16px 40px rgba(15,23,42,.1)',overflow:'hidden',marginBottom:24}}>
+              <div style={{background:'linear-gradient(135deg,#16a34a,#15803d)',padding:'10px 14px',display:'flex',alignItems:'center',gap:8}}>
+                <div style={{width:20,height:20,borderRadius:6,background:'rgba(255,255,255,.9)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10}}>📦</div>
+                <span style={{color:'white',fontSize:11,fontWeight:800}}>Storely</span>
+              </div>
+              <div style={{padding:14}}>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,marginBottom:10}}>
+                  {[['15','صرف','#16a34a'],['4','ناقص','#dc2626'],['72','مخزون','#2563eb']].map(([v,l,c2])=>(
+                    <div key={l as string} style={{background:'#f8fafc',borderRadius:8,padding:'7px 6px',textAlign:'center' as const}}>
+                      <div style={{fontSize:14,fontWeight:900,color:c2 as string}}>{v}</div>
+                      <div style={{fontSize:8,color:'#9ca3af',marginTop:1}}>{l}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:8,padding:'7px 10px',display:'flex',alignItems:'center',gap:6}}>
+                  <span style={{fontSize:11}}>⚠️</span>
+                  <span style={{fontSize:10,color:'#92400e',fontWeight:700}}>4 أصناف وصلت للحد الأدنى</span>
+                </div>
+              </div>
+              <div style={{position:'absolute',bottom:-12,left:-10,background:'white',borderRadius:10,border:'1px solid #eef0f2',boxShadow:'0 8px 20px rgba(15,23,42,.12)',padding:'8px 10px',display:'flex',alignItems:'center',gap:7}}>
+                <div style={{width:22,height:22,borderRadius:6,background:'#25d366',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11}}>📲</div>
+                <span style={{fontSize:9,fontWeight:800,color:'#111827'}}>تنبيه واتساب فوري</span>
+              </div>
+            </div>
+
+            <div style={{display:'flex',flexDirection:'column',gap:11,marginTop:24}}>
               {[
                 {icon:'📦',text:'تتبع المخزون لحظة بلحظة'},
                 {icon:'📲',text:'تنبيهات واتساب تلقائية'},
                 {icon:'👥',text:'إدارة الموظفين والفروع'},
                 {icon:'📊',text:'تقارير وإحصائيات احترافية'},
               ].map((f,i)=>(
-                <div key={i} style={{display:'flex',alignItems:'center',gap:12}}>
-                  <div style={{width:36,height:36,borderRadius:9,background:'white',border:'1px solid #e5e7eb',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>{f.icon}</div>
-                  <span style={{fontSize:14,color:'#374151',fontWeight:500}}>{f.text}</span>
+                <div key={i} style={{display:'flex',alignItems:'center',gap:11}}>
+                  <div style={{width:32,height:32,borderRadius:9,background:'white',border:'1px solid #e5e7eb',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>{f.icon}</div>
+                  <span style={{fontSize:13,color:'#374151',fontWeight:500}}>{f.text}</span>
                 </div>
               ))}
             </div>
-            <div style={{marginTop:36,padding:'18px 20px',background:'white',borderRadius:12,border:'1px solid #e5e7eb'}}>
-              <div style={{display:'flex',gap:24}}>
+            <div style={{marginTop:24,padding:'16px 18px',background:'white',borderRadius:12,border:'1px solid #e5e7eb'}}>
+              <div style={{display:'flex',gap:22}}>
                 {[['149 ر.س','يبدأ من'],['14 يوم','تجربة مجانية'],['7','لغات مدعومة']].map(([n,l])=>(
                   <div key={l}>
-                    <div style={{fontSize:20,fontWeight:900,color:'#16a34a'}}>{n}</div>
-                    <div style={{fontSize:11,color:'#9ca3af',marginTop:2}}>{l}</div>
+                    <div style={{fontSize:18,fontWeight:900,color:'#16a34a'}}>{n}</div>
+                    <div style={{fontSize:10,color:'#9ca3af',marginTop:2}}>{l}</div>
                   </div>
                 ))}
               </div>
