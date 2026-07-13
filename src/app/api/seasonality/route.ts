@@ -5,15 +5,17 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 
 export async function POST(req: Request) {
   try {
-    const { org_id } = await req.json()
+    const { org_id, branch_id } = await req.json()
     const db = sb()
     const since90 = new Date(Date.now() - 90*24*60*60*1000).toISOString()
 
-    const { data: movements } = await db.from('stock_movements')
-      .select('qty_change,created_at,products!inner(name,org_id)')
+    let movementsQ3 = db.from('stock_movements')
+      .select('qty_change,created_at,products!inner(name,org_id,branch_id)')
       .eq('products.org_id', org_id)
       .eq('type','out')
       .gte('created_at', since90)
+    if (branch_id) movementsQ3 = movementsQ3.eq('products.branch_id', branch_id)
+    const { data: movements } = await movementsQ3
 
     // تحليل حسب اليوم
     const dayMap: Record<number,{total:number,count:number}> = {}

@@ -9,22 +9,25 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
  */
 export async function POST(req: Request) {
   try {
-    const { org_id } = await req.json()
+    const { org_id, branch_id } = await req.json()
     const db = sb()
     const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
-    const [{ data: wasteMoves }, { data: purchases }] = await Promise.all([
-      (db as any).from('stock_movements')
-        .select('qty_change,waste_reason,created_at,products!inner(id,name,unit,org_id)')
-        .eq('products.org_id', org_id)
-        .eq('type', 'waste')
-        .gte('created_at', since30),
-      db.from('purchases')
-        .select('name,qty,total_amount')
-        .eq('org_id', org_id)
-        .not('total_amount', 'is', null)
-        .not('qty', 'is', null),
-    ])
+    let wasteQ = (db as any).from('stock_movements')
+      .select('qty_change,waste_reason,created_at,products!inner(id,name,unit,org_id,branch_id)')
+      .eq('products.org_id', org_id)
+      .eq('type', 'waste')
+      .gte('created_at', since30)
+    if (branch_id) wasteQ = wasteQ.eq('products.branch_id', branch_id)
+
+    let purchasesQ5 = db.from('purchases')
+      .select('name,qty,total_amount')
+      .eq('org_id', org_id)
+      .not('total_amount', 'is', null)
+      .not('qty', 'is', null)
+    if (branch_id) purchasesQ5 = purchasesQ5.eq('branch_id', branch_id)
+
+    const [{ data: wasteMoves }, { data: purchases }] = await Promise.all([wasteQ, purchasesQ5])
 
     // متوسط سعر الوحدة لكل منتج من سجل المشتريات (لتقدير قيمة الهدر بالريال)
     const priceMap: Record<string, { total: number; qty: number }> = {}

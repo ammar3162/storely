@@ -6,20 +6,22 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 
 export async function POST(req: Request) {
   try {
-    const { org_id, send_to_suppliers } = await req.json()
+    const { org_id, branch_id, send_to_suppliers } = await req.json()
     if (!org_id) return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
 
     const db = sb()
     const since30 = new Date(Date.now() - 30*24*60*60*1000).toISOString()
 
-    const [{ data: products }, { data: movements }] = await Promise.all([
-      db.from('products').select('id,name,qty,unit,reorder_point,supplier_id').eq('org_id',org_id).eq('is_active',true),
-      db.from('stock_movements')
-        .select('product_id,qty_change,created_at,products!inner(org_id)')
-        .eq('products.org_id',org_id)
-        .eq('type','out')
-        .gte('created_at',since30)
-    ])
+    let productsQ2 = db.from('products').select('id,name,qty,unit,reorder_point,supplier_id').eq('org_id',org_id).eq('is_active',true)
+    if (branch_id) productsQ2 = productsQ2.eq('branch_id', branch_id)
+    let movementsQ2 = db.from('stock_movements')
+      .select('product_id,qty_change,created_at,products!inner(org_id,branch_id)')
+      .eq('products.org_id',org_id)
+      .eq('type','out')
+      .gte('created_at',since30)
+    if (branch_id) movementsQ2 = movementsQ2.eq('products.branch_id', branch_id)
+
+    const [{ data: products }, { data: movements }] = await Promise.all([productsQ2, movementsQ2])
 
     const dispMap: Record<string,number> = {}
     for (const m of (movements||[])) {

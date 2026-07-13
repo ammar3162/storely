@@ -11,17 +11,22 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
  */
 export async function POST(req: Request) {
   try {
-    const { org_id } = await req.json()
+    const { org_id, branch_id } = await req.json()
     const db = sb()
     const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
+    let prodQ6 = db.from('products').select('id,name,unit,qty,reorder_point,supplier_id').eq('org_id', org_id).eq('is_active', true)
+    if (branch_id) prodQ6 = prodQ6.eq('branch_id', branch_id)
+    let movQ6 = db.from('stock_movements')
+      .select('product_id,qty_change,products!inner(org_id,branch_id)')
+      .eq('products.org_id', org_id)
+      .eq('type', 'out')
+      .gte('created_at', since30)
+    if (branch_id) movQ6 = movQ6.eq('products.branch_id', branch_id)
+
     const [{ data: products }, { data: movements }, { data: productSuppliers }] = await Promise.all([
-      db.from('products').select('id,name,unit,qty,reorder_point,supplier_id').eq('org_id', org_id).eq('is_active', true),
-      db.from('stock_movements')
-        .select('product_id,qty_change,products!inner(org_id)')
-        .eq('products.org_id', org_id)
-        .eq('type', 'out')
-        .gte('created_at', since30),
+      prodQ6,
+      movQ6,
       (db as any).from('product_suppliers').select('product_id,supplier_id').eq('priority', 1),
     ])
 

@@ -5,16 +5,18 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 
 export async function POST(req: Request) {
   try {
-    const { org_id } = await req.json()
+    const { org_id, branch_id } = await req.json()
     if(!org_id) return NextResponse.json({error:'missing org_id'},{status:400})
     
     const db = sb()
     const since7 = new Date(Date.now() - 7*24*60*60*1000).toISOString()
 
-    const [{ data: products }, { data: movements }] = await Promise.all([
-      db.from('products').select('id,name,qty,reorder_point,unit,category').eq('org_id',org_id).eq('is_active',true),
-      db.from('stock_movements').select('qty_change,created_at,products!inner(name,unit,org_id)').eq('products.org_id',org_id).eq('type','out').gte('created_at',since7).limit(500)
-    ])
+    let prodQ7 = db.from('products').select('id,name,qty,reorder_point,unit,category').eq('org_id',org_id).eq('is_active',true)
+    if (branch_id) prodQ7 = prodQ7.eq('branch_id', branch_id)
+    let movQ7 = db.from('stock_movements').select('qty_change,created_at,products!inner(name,unit,org_id,branch_id)').eq('products.org_id',org_id).eq('type','out').gte('created_at',since7).limit(500)
+    if (branch_id) movQ7 = movQ7.eq('products.branch_id', branch_id)
+
+    const [{ data: products }, { data: movements }] = await Promise.all([prodQ7, movQ7])
 
     // أكثر المنتجات صرفاً
     const productMap: Record<string,{name:string,qty:number,unit:string}> = {}

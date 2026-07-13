@@ -139,7 +139,7 @@ export default function AIToolsPage() {
             const orgId=sessionStorage.getItem('s_org_id')
             if(!orgId) return
             setForecastLoading(true)
-            const res=await fetch('/api/stock-forecast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId})})
+            const res=await fetch('/api/stock-forecast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id')})})
             const data=await res.json()
             setForecast(data.forecast||[])
             setForecastLoading(false)
@@ -217,7 +217,7 @@ export default function AIToolsPage() {
             const orgId=sessionStorage.getItem('s_org_id')
             if(!orgId) return
             setSuggestLoading(true)
-            const res=await fetch('/api/purchase-suggestion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId})})
+            const res=await fetch('/api/purchase-suggestion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id')})})
             const data=await res.json()
             setSuggestions(data.suggestions||[])
             setSuggestLoading(false)
@@ -268,7 +268,7 @@ export default function AIToolsPage() {
             const orgId=sessionStorage.getItem('s_org_id')
             if(!orgId) return
             setSeasonLoading(true)
-            const res=await fetch('/api/seasonality',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId})})
+            const res=await fetch('/api/seasonality',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id')})})
             const data=await res.json()
             setSeasonality(data)
             setSeasonLoading(false)
@@ -404,7 +404,7 @@ export default function AIToolsPage() {
               const orgId=sessionStorage.getItem('s_org_id')
               if(!orgId) return
               setWasteLoading(true)
-              const res=await fetch('/api/waste-detection',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId})})
+              const res=await fetch('/api/waste-detection',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id')})})
               const data=await res.json()
               setWasteReport(data.waste||[])
               setWasteLoading(false)
@@ -422,7 +422,7 @@ export default function AIToolsPage() {
               const orgId=sessionStorage.getItem('s_org_id')
               if(!orgId) return
               setRealWasteLoading(true)
-              const res=await fetch('/api/waste-report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId})})
+              const res=await fetch('/api/waste-report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id')})})
               const data=await res.json()
               setRealWasteReport(data)
               setRealWasteLoading(false)
@@ -447,7 +447,7 @@ export default function AIToolsPage() {
               const orgId=sessionStorage.getItem('s_org_id')
               if(!orgId) return
               setReorderLoading(true)
-              const res=await fetch('/api/reorder-optimizer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId})})
+              const res=await fetch('/api/reorder-optimizer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id')})})
               const data=await res.json()
               setReorderSuggestions(data)
               setReorderLoading(false)
@@ -465,7 +465,7 @@ export default function AIToolsPage() {
               const orgId=sessionStorage.getItem('s_org_id')
               if(!orgId) return
               setReportLoading(true)
-              const res=await fetch('/api/weekly-report-data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId})})
+              const res=await fetch('/api/weekly-report-data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id')})})
               const data=await res.json()
               setWeeklyReport(data)
               setReportLoading(false)

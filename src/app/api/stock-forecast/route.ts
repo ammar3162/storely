@@ -5,17 +5,19 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 
 export async function POST(req: Request) {
   try {
-    const { org_id } = await req.json()
+    const { org_id, branch_id } = await req.json()
     const db = sb()
 
-    const [{ data: products }, { data: movements }] = await Promise.all([
-      db.from('products').select('id,name,qty,unit,reorder_point').eq('org_id',org_id).eq('is_active',true),
-      db.from('stock_movements')
-        .select('qty_change,created_at,products!inner(name,org_id)')
-        .eq('products.org_id',org_id)
-        .eq('type','out')
-        .order('created_at',{ascending:true})
-    ])
+    let productsQ = db.from('products').select('id,name,qty,unit,reorder_point').eq('org_id',org_id).eq('is_active',true)
+    if (branch_id) productsQ = productsQ.eq('branch_id', branch_id)
+    let movementsQ = db.from('stock_movements')
+      .select('qty_change,created_at,products!inner(name,org_id,branch_id)')
+      .eq('products.org_id',org_id)
+      .eq('type','out')
+      .order('created_at',{ascending:true})
+    if (branch_id) movementsQ = movementsQ.eq('products.branch_id', branch_id)
+
+    const [{ data: products }, { data: movements }] = await Promise.all([productsQ, movementsQ])
 
     // نجمع الحركات حسب المنتج
     const movMap: Record<string,{dates:Date[],qtys:number[]}> = {}

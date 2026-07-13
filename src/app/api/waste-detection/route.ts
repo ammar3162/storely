@@ -5,19 +5,24 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 
 export async function POST(req: Request) {
   try {
-    const { org_id } = await req.json()
+    const { org_id, branch_id } = await req.json()
     const db = sb()
     const since30 = new Date(Date.now() - 30*24*60*60*1000).toISOString()
 
+    let movQ4 = db.from('stock_movements')
+      .select('qty_change,type,created_at,products!inner(id,name,unit,org_id,branch_id)')
+      .eq('products.org_id', org_id)
+      .gte('created_at', since30)
+    if (branch_id) movQ4 = movQ4.eq('products.branch_id', branch_id)
+    let prodQ4 = db.from('products')
+      .select('id,name,qty,unit,reorder_point')
+      .eq('org_id', org_id)
+      .eq('is_active', true)
+    if (branch_id) prodQ4 = prodQ4.eq('branch_id', branch_id)
+
     const [{ data: allMov }, { data: products }] = await Promise.all([
-      db.from('stock_movements')
-        .select('qty_change,type,created_at,products!inner(id,name,unit,org_id)')
-        .eq('products.org_id', org_id)
-        .gte('created_at', since30),
-      db.from('products')
-        .select('id,name,qty,unit,reorder_point')
-        .eq('org_id', org_id)
-        .eq('is_active', true),
+      movQ4,
+      prodQ4,
     ])
 
     const currentStock: Record<string,{qty:number,unit:string}> = {}
