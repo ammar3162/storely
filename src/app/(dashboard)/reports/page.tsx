@@ -619,7 +619,18 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   const [closings, setClosings] = useState<any[]>([])
   const [expandedReasons, setExpandedReasons] = useState<Record<string,boolean>>({})
   const [loading, setLoading]   = useState(true)
+  const [editingDateId, setEditingDateId] = useState<string|null>(null)
+  const [editDateValue, setEditDateValue] = useState('')
+  const [savingDate, setSavingDate] = useState(false)
   useEffect(()=>{ load() },[period,from,to])
+
+  async function saveClosingDate(id: string) {
+    setSavingDate(true)
+    const sb = createClient()
+    await (sb as any).from('cashier_closings').update({ closing_date: editDateValue }).eq('id', id)
+    setClosings(prev => prev.map(c => c.id===id ? {...c, closing_date: editDateValue} : c))
+    setEditingDateId(null); setSavingDate(false)
+  }
   async function load() {
     setLoading(true)
     const orgId=sessionStorage.getItem('s_org_id')
@@ -669,7 +680,27 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
               <tbody>
                 {closings.map((c:any)=>(
                   <tr key={c.id} style={{borderBottom:`1px solid ${colors.border}`}}>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{new Date(c.closing_date).toLocaleDateString('ar-SA')}</td>
+                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>
+                      {editingDateId===c.id ? (
+                        <div style={{display:'flex',alignItems:'center',gap:6}}>
+                          <input type="date" value={editDateValue} onChange={e=>setEditDateValue(e.target.value)}
+                            style={{...inp(),padding:'4px 8px',fontSize:font.xs,width:140}}/>
+                          <button onClick={()=>saveClosingDate(c.id)} disabled={savingDate}
+                            style={{background:colors.primary,color:'white',border:'none',borderRadius:6,padding:'4px 8px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                            {savingDate?'...':'حفظ'}
+                          </button>
+                          <button onClick={()=>setEditingDateId(null)}
+                            style={{background:colors.bg,color:colors.text3,border:'none',borderRadius:6,padding:'4px 8px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                            إلغاء
+                          </button>
+                        </div>
+                      ) : (
+                        <div onClick={()=>{setEditingDateId(c.id);setEditDateValue(c.closing_date)}} style={{cursor:'pointer',display:'flex',alignItems:'center',gap:6}}>
+                          {new Date(c.closing_date).toLocaleDateString('ar-SA')}
+                          <span style={{fontSize:11,opacity:.4}}>✏️</span>
+                        </div>
+                      )}
+                    </td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{c.staff_name}</td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.total_sales).toFixed(0)} ر.س</td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.network_amount).toFixed(0)} ر.س</td>
