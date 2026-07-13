@@ -837,7 +837,7 @@ export default function ReportsPage() {
     const{start,end}=getRange(period,from,to)
     const[{data:mv},{data:pu}]=await Promise.all([
       (()=>{const _bid2=sessionStorage.getItem('s_branch_id');let _mq2=sb.from('stock_movements').select('qty_change,created_at,products!inner(name,org_id,branch_id)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bid2)_mq2=_mq2.eq('products.branch_id',_bid2);return _mq2})(),
-      sb.from('purchases').select('amount,total_amount,vat_amount,created_at').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString()),
+      (()=>{const _bidP=sessionStorage.getItem('s_branch_id');let _pq=sb.from('purchases').select('amount,total_amount,vat_amount,created_at,branch_id').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bidP)_pq=_pq.eq('branch_id',_bidP);return _pq})(),
     ])
     const items=new Set((mv||[]).map((m:any)=>m.products?.name)).size
     setDS({ops:(mv||[]).length,qty:(mv||[]).reduce((s:number,m:any)=>s+Math.abs(m.qty_change),0),items})
@@ -851,19 +851,28 @@ export default function ReportsPage() {
     }
     setWD(wd); setWP(wp)
     setTopMovements(mv||[])
-    const{data:inv}=await sb.from('products').select('qty,reorder_point').eq('org_id',orgId).eq('is_active',true)
+    const _bidI=sessionStorage.getItem('s_branch_id')
+    let _invQ=sb.from('products').select('qty,reorder_point').eq('org_id',orgId).eq('is_active',true)
+    if(_bidI)_invQ=_invQ.eq('branch_id',_bidI)
+    const{data:inv}=await _invQ
     const invData=inv||[]
     setIS({total:invData.length,low:invData.filter((p:any)=>p.qty>0&&p.qty<=p.reorder_point).length,out:invData.filter((p:any)=>p.qty===0).length})
-    const{data:closings}=await sb.from('cashier_closings' as any).select('status').eq('org_id',orgId).gte('closing_date',start.toISOString().slice(0,10)).lte('closing_date',end.toISOString().slice(0,10))
+    const _bidC=sessionStorage.getItem('s_branch_id')
+    let _closQ=sb.from('cashier_closings' as any).select('status').eq('org_id',orgId).gte('closing_date',start.toISOString().slice(0,10)).lte('closing_date',end.toISOString().slice(0,10))
+    if(_bidC)_closQ=(_closQ as any).eq('branch_id',_bidC)
+    const{data:closings}=await _closQ
     const closingsData=(closings||[]) as any[]
     setCS({count:closingsData.length,deficit:closingsData.filter(c=>c.status==='deficit').length,surplus:closingsData.filter(c=>c.status==='surplus').length})
     setSL(false)
     // آخر العمليات
-    const{data:recent}=await sb.from('stock_movements')
-      .select('id,qty_change,type,created_at,products!inner(name,unit,org_id)')
+    const _bidR=sessionStorage.getItem('s_branch_id')
+    let _recentQ=sb.from('stock_movements')
+      .select('id,qty_change,type,created_at,products!inner(name,unit,org_id,branch_id)')
       .eq('products.org_id',orgId)
       .order('created_at',{ascending:false})
       .limit(10)
+    if(_bidR)_recentQ=_recentQ.eq('products.branch_id',_bidR)
+    const{data:recent}=await _recentQ
     setRecentOps(recent||[])
     setTimeout(()=>setVisible(true),50)
   }
