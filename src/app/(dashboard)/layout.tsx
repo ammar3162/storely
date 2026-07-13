@@ -194,8 +194,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setUnread(notifData?.length||0)
       }, 30000)
     }
+    const _bidLayout = sessionStorage.getItem('s_branch_id')
+    let _prodsQ = sb.from('products').select('qty,reorder_point').eq('org_id',p.org_id).eq('is_active',true)
+    if (_bidLayout) _prodsQ = _prodsQ.eq('branch_id', _bidLayout)
     const[{data:prods},{data:notifs}]=await Promise.all([
-      sb.from('products').select('qty,reorder_point').eq('org_id',p.org_id).eq('is_active',true),
+      _prodsQ,
       sb.from('notifications').select('id').eq('org_id',p.org_id).eq('read',false),
     ])
     setLowCount((prods||[]).filter((x:any)=>x.qty<=x.reorder_point).length)
