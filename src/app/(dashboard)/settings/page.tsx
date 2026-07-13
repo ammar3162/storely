@@ -71,6 +71,16 @@ export default function SettingsPage() {
   const [branches, setBranches]         = useState<any[]>([])
   const [maxBranches, setMaxBranches]   = useState<number>(1)
   const [newBranch, setNewBranch]       = useState({name:'',location:''})
+  const [editingPhoneId, setEditingPhoneId] = useState<string|null>(null)
+  const [editPhoneValue, setEditPhoneValue] = useState('')
+  const [savingPhone, setSavingPhone]       = useState(false)
+
+  async function saveBranchPhone(id: string) {
+    setSavingPhone(true)
+    await (sb.from('branches' as any) as any).update({ whatsapp_number: editPhoneValue.trim() || null }).eq('id', id)
+    setBranches((prev:any[]) => prev.map(b => b.id===id ? {...b, whatsapp_number: editPhoneValue.trim() || null} : b))
+    setEditingPhoneId(null); setSavingPhone(false)
+  }
   const [branchSaving, setBranchSaving] = useState(false)
   const [pwForm, setPwForm]             = useState({current:'',newPw:'',confirm:''})
   const [pwSaving, setPwSaving]         = useState(false)
@@ -479,17 +489,41 @@ export default function SettingsPage() {
               {branches.length>0&&(
                 <div style={{...card,overflow:'hidden',marginBottom:16}}>
                   {branches.map((b:any,i:number)=>(
-                    <div key={b.id} style={{padding:'14px 16px',borderBottom:i<branches.length-1?`1px solid ${colors.border}`:'none',display:'flex',alignItems:'center',gap:12}}>
-                      <div style={{width:36,height:36,borderRadius:10,background:i===0?colors.primaryLight:colors.bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0,border:`1px solid ${i===0?colors.primaryBorder:colors.border}`}}>
-                        {i===0?'🏠':'🏪'}
+                    <div key={b.id} style={{padding:'14px 16px',borderBottom:i<branches.length-1?`1px solid ${colors.border}`:'none'}}>
+                      <div style={{display:'flex',alignItems:'center',gap:12}}>
+                        <div style={{width:36,height:36,borderRadius:10,background:i===0?colors.primaryLight:colors.bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0,border:`1px solid ${i===0?colors.primaryBorder:colors.border}`}}>
+                          {i===0?'🏠':'🏪'}
+                        </div>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{b.name}</div>
+                          {b.location&&<div style={{fontSize:font.xs,color:colors.text4,marginTop:1}}>📍 {b.location}</div>}
+                        </div>
+                        {i===0
+                          ? <span style={{fontSize:font.xs,color:colors.primary,padding:'4px 10px',background:colors.primaryLight,borderRadius:20,border:`1px solid ${colors.primaryBorder}`,fontWeight:700}}>رئيسي</span>
+                          : <button onClick={()=>deleteBranch(b.id)} style={{background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:radius.sm,padding:'6px 12px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>حذف</button>}
                       </div>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{b.name}</div>
-                        {b.location&&<div style={{fontSize:font.xs,color:colors.text4,marginTop:1}}>📍 {b.location}</div>}
+                      <div style={{marginTop:10,marginRight:48}}>
+                        {editingPhoneId===b.id ? (
+                          <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                            <input value={editPhoneValue} onChange={e=>setEditPhoneValue(e.target.value)} placeholder="5xxxxxxxx" dir="ltr"
+                              style={{...inp(),padding:'6px 10px',fontSize:font.xs,flex:1}}/>
+                            <button onClick={()=>saveBranchPhone(b.id)} disabled={savingPhone}
+                              style={{background:colors.primary,color:'white',border:'none',borderRadius:6,padding:'6px 12px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
+                              {savingPhone?'...':'حفظ'}
+                            </button>
+                            <button onClick={()=>setEditingPhoneId(null)}
+                              style={{background:colors.bg,color:colors.text3,border:'none',borderRadius:6,padding:'6px 12px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
+                              إلغاء
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={()=>{setEditingPhoneId(b.id);setEditPhoneValue(b.whatsapp_number||'')}}
+                            style={{background:'none',border:'none',color:colors.text4,fontSize:11,cursor:'pointer',fontFamily:font.family,padding:0,display:'flex',alignItems:'center',gap:4}}>
+                            📱 {b.whatsapp_number ? `رقم مخصص: ${b.whatsapp_number}` : 'استخدام رقم مخصص لهذا الفرع (اختياري)'}
+                            <span style={{textDecoration:'underline'}}>تعديل</span>
+                          </button>
+                        )}
                       </div>
-                      {i===0
-                        ? <span style={{fontSize:font.xs,color:colors.primary,padding:'4px 10px',background:colors.primaryLight,borderRadius:20,border:`1px solid ${colors.primaryBorder}`,fontWeight:700}}>رئيسي</span>
-                        : <button onClick={()=>deleteBranch(b.id)} style={{background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:radius.sm,padding:'6px 12px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>حذف</button>}
                     </div>
                   ))}
                 </div>

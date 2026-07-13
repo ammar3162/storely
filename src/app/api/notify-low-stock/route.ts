@@ -7,18 +7,41 @@ async function sendForOrg(supabase: any, org: any) {
   const subActive = await isSubscriptionActive(supabase, org.id)
   if (!subActive) return { sent: 0, message: 'الاشتراك منتهي — لا يتم إرسال إشعارات' }
 
-  const { data: products } = await supabase
-    .from('products').select('name,qty,unit,reorder_point')
+  const { data: branches } = await supabase
+    .from('branches').select('id,name,whatsapp_number')
     .eq('org_id', org.id).eq('is_active', true)
 
-  console.log('products count:', (products||[]).length, 'org:', org.id)
+  const { data: products } = await supabase
+    .from('products').select('name,qty,unit,reorder_point,branch_id')
+    .eq('org_id', org.id).eq('is_active', true)
+
   const low = (products||[]).filter((p:any) => p.qty <= p.reorder_point)
-  console.log('low count:', low.length)
-  if (low.length === 0) return { sent:0, message:'لا توجد منتجات ناقصة - total:' + (products||[]).length }
+  if (low.length === 0) return { sent:0, message:'لا توجد منتجات ناقصة' }
+
+  const byBranch: Record<string, { name: string; phone: string|null; items: any[] }> = {}
+  for (const p of low) {
+    const branch = (branches||[]).find((b:any) => b.id === (p as any).branch_id)
+    const key = (p as any).branch_id || 'none'
+    if (!byBranch[key]) {
+      byBranch[key] = {
+        name: branch?.name || org.name,
+        phone: branch?.whatsapp_number || org.whatsapp_number || null,
+        items: [],
+      }
+    }
+    byBranch[key].items.push(p)
+  }
+  const multiBranch = (branches||[]).length > 1
 
   const now = new Date().toLocaleString('ar-SA',{timeZone:'Asia/Riyadh',hour:'2-digit',minute:'2-digit',hour12:true,weekday:'long'})
-  const outStock = low.filter((p:any)=>p.qty===0)
-  const lowStock = low.filter((p:any)=>p.qty>0)
+  let totalSent = 0
+  const details: any[] = []
+
+  for (const key of Object.keys(byBranch)) {
+    const group = byBranch[key]
+    if (!group.phone) { details.push({ branch: group.name, sent: false }); continue }
+    const outStock = group.items.filter((p:any)=>p.qty===0)
+    const lowStock = group.items.filter((p:any)=>p.qty>0)
   let body = ''
   if(outStock.length>0) {
     body += '🔴 *نفد المخزون*\n'
@@ -34,7 +57,8 @@ async function sendForOrg(supabase: any, org: any) {
     '╬══════════════════════╬\n' +
     '   📦 Storely Alert\n' +
     '╚══════════════════════╝\n\n' +
-    '🏢 *' + org.name + '*  |  🕐 ' + now + '\n\n' +
+    '🏢 *' + org.name + '*  |  🕐 ' + now + '\n' +
+    (multiBranch ? ('🏪 *الفرع: ' + group.name + '*\n\n') : '\n') +
     '━━━━━━━━━━━━━━━━━━━━━\n' +
     '⚠️ *تنبيه نقص مخزون*\n' +
     '━━━━━━━━━━━━━━━━━━━━━\n\n' +
@@ -44,24 +68,30 @@ async function sendForOrg(supabase: any, org: any) {
     '━━━━━━━━━━━━━━━━━━━━━\n\n' +
     '_Storely — نظام إدارة المخزون_'
 
-  if (!org.whatsapp_number) return { sent:0, message:'لا يوجد رقم واتساب' }
+    const phone = formatPhone(group.phone)
+    const result = await sendWhatsAppMessage(phone, msg)
 
-  const phone = formatPhone(org.whatsapp_number)
-  const result = await sendWhatsAppMessage(phone, msg)
+    try {
+      await supabase.from('whatsapp_logs').insert({
+        org_id: org.id, phone, message: msg,
+        status: result.ok ? 'sent' : 'failed',
+      })
+    } catch {}
 
-  try {
-    await supabase.from('whatsapp_logs').insert({
-      org_id: org.id, phone, message: msg,
-      status: result.ok ? 'sent' : 'failed',
-    })
-    if (result.ok) {
+    if (result.ok) totalSent++
+    details.push({ branch: group.name, sent: result.ok })
+    await delay(600)
+  }
+
+  if (totalSent > 0) {
+    try {
       await supabase.from('organizations')
         .update({ last_notified_at: new Date().toISOString() } as any)
         .eq('id', org.id)
-    }
-  } catch {}
+    } catch {}
+  }
 
-  return { sent: result.ok ? 1 : 0, low_count: low.length, message: result.ok ? `تم إرسال تنبيه لـ ${low.length} صنف` : 'فشل الإرسال: ' + JSON.stringify(result.data) }
+  return { sent: totalSent, low_count: low.length, message: `تم إرسال ${totalSent} إشعار`, details }
 }
 
 export async function POST(req: Request) {
