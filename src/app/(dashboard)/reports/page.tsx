@@ -622,6 +622,10 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   const [editingDateId, setEditingDateId] = useState<string|null>(null)
   const [editDateValue, setEditDateValue] = useState('')
   const [savingDate, setSavingDate] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState<any|null>(null)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [deleteError, setDeleteError] = useState('')
+  const [deleting, setDeleting] = useState(false)
   useEffect(()=>{ load() },[period,from,to])
 
   async function saveClosingDate(id: string) {
@@ -630,6 +634,18 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
     await (sb as any).from('cashier_closings').update({ closing_date: editDateValue }).eq('id', id)
     setClosings(prev => prev.map(c => c.id===id ? {...c, closing_date: editDateValue} : c))
     setEditingDateId(null); setSavingDate(false)
+  }
+
+  async function confirmDeleteClosing() {
+    setDeleteError(''); setDeleting(true)
+    const sb = createClient()
+    const { data: { user } } = await sb.auth.getUser()
+    if (!user?.email) { setDeleteError('تعذر التحقق من الحساب'); setDeleting(false); return }
+    const { error } = await sb.auth.signInWithPassword({ email: user.email, password: deletePassword })
+    if (error) { setDeleteError('كلمة المرور غير صحيحة'); setDeleting(false); return }
+    await sb.from('cashier_closings' as any).delete().eq('id', confirmDelete.id)
+    setClosings(prev => prev.filter(c => c.id !== confirmDelete.id))
+    setConfirmDelete(null); setDeletePassword(''); setDeleting(false)
   }
   async function load() {
     setLoading(true)
@@ -672,7 +688,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
             <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`,position:'sticky' as const,top:0,zIndex:2}}>
-                  {['التاريخ','الكاشير','المبيعات','الشبكة','الكاش الفعلي','المسحوبات','الكاش بعد الخصم','الصافي','النتيجة','المرفقات'].map((h,i)=>(
+                  {['التاريخ','الكاشير','المبيعات','الشبكة','الكاش الفعلي','المسحوبات','الكاش بعد الخصم','الصافي','النتيجة','المرفقات','إجراء'].map((h,i)=>(
                     <th key={i} style={{padding:'10px 16px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em',background:colors.bg}}>{h}</th>
                   ))}
                 </tr>
@@ -738,6 +754,12 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                         )}
                       </div>
                     </td>
+                    <td style={{padding:'12px 16px'}}>
+                      <button onClick={()=>{setConfirmDelete(c);setDeletePassword('');setDeleteError('')}}
+                        style={{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
+                        🗑️ حذف
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -751,13 +773,41 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount)-Number(c.total_purchases)),0).toFixed(0)} ر.س</td>
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{closings.reduce((s:number,c:any)=>s+Number(c.network_amount)+Number(c.cash_amount)-Number(c.total_purchases),0).toFixed(0)} ر.س</td>
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.difference),0).toFixed(0)} ر.س</td>
-                  <td/>
+                  <td/><td/>
                 </tr>
               </tfoot>
             </table>
           </div>
         )}
       </div>
+
+      {confirmDelete && (
+        <div style={{position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div style={{position:'absolute',inset:0,background:'rgba(15,23,42,.4)',backdropFilter:'blur(6px)'}} onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}/>
+          <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:360,position:'relative',boxShadow:'0 24px 60px rgba(0,0,0,.2)'}}>
+            <div style={{width:48,height:48,borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:22}}>🔒</div>
+            <div style={{fontSize:15,fontWeight:800,color:colors.text,textAlign:'center',marginBottom:6}}>تأكيد حذف تقرير الإقفال</div>
+            <div style={{fontSize:12,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
+              سيتم حذف إقفال <b style={{color:colors.text}}>{confirmDelete.staff_name}</b> بتاريخ {confirmDelete?.closing_date ? new Date(confirmDelete.closing_date).toLocaleDateString('ar-SA') : ''} نهائياً.<br/>أدخل كلمة مرور حسابك للتأكيد
+            </div>
+            <input type="password" value={deletePassword} onChange={e=>setDeletePassword(e.target.value)}
+              onKeyDown={e=>{if(e.key==='Enter'&&deletePassword&&!deleting) confirmDeleteClosing()}}
+              placeholder="كلمة المرور" autoFocus
+              style={{...inp(),width:'100%',marginBottom:10,boxSizing:'border-box' as const}}/>
+            {deleteError && <div style={{fontSize:12,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const}}>⚠️ {deleteError}</div>}
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}
+                style={{flex:1,padding:'11px',background:colors.bg,color:colors.text3,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                إلغاء
+              </button>
+              <button onClick={confirmDeleteClosing} disabled={!deletePassword||deleting}
+                style={{flex:2,padding:'11px',background:!deletePassword||deleting?colors.border2:'#dc2626',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:!deletePassword||deleting?'not-allowed':'pointer',fontFamily:'inherit'}}>
+                {deleting?'جاري الحذف...':'تأكيد الحذف'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
