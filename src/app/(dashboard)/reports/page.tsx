@@ -274,8 +274,23 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
   const [filterCat, setFilterCat] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState<any|null>(null)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [deleteError, setDeleteError] = useState('')
+  const [deleting, setDeleting] = useState(false)
   const sb = createClient()
   useEffect(()=>{ load() },[period,from,to])
+
+  async function confirmDeletePurchase() {
+    setDeleteError(''); setDeleting(true)
+    const { data: { user } } = await sb.auth.getUser()
+    if (!user?.email) { setDeleteError('تعذر التحقق من الحساب'); setDeleting(false); return }
+    const { error } = await sb.auth.signInWithPassword({ email: user.email, password: deletePassword })
+    if (error) { setDeleteError('كلمة المرور غير صحيحة'); setDeleting(false); return }
+    await sb.from('purchases').delete().eq('id', confirmDelete.id)
+    setPurchases(prev => prev.filter(p => p.id !== confirmDelete.id))
+    setConfirmDelete(null); setDeletePassword(''); setDeleting(false)
+  }
   async function load() {
     setLoading(true)
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setLoading(false);return}
@@ -332,7 +347,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
             <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
-                  {['التاريخ','الصنف','النوع','بدون ضريبة','ضريبة','الإجمالي','المورد','فاتورة'].map((h,i)=>(
+                  {['التاريخ','الصنف','النوع','بدون ضريبة','ضريبة','الإجمالي','المورد','فاتورة','إجراء'].map((h,i)=>(
                     <th key={i} style={{padding:'10px 12px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
                   ))}
                 </tr>
@@ -352,6 +367,12 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
                         ? <a href={p.invoice_image} target="_blank" rel="noreferrer" style={{background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap' as const}}>📎 عرض</a>
                         : <span style={{color:colors.border2}}>—</span>}
                     </td>
+                    <td style={{padding:'11px 12px',textAlign:'center' as const}}>
+                      <button onClick={()=>{setConfirmDelete(p);setDeletePassword('');setDeleteError('')}}
+                        style={{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                        🗑️ حذف
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -361,7 +382,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
                   <td style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm}}>{totalAmount.toFixed(0)} ر.س</td>
                   <td style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm,color:colors.warning}}>{totalVat.toFixed(0)} ر.س</td>
                   <td style={{padding:'11px 12px',fontWeight:900,fontSize:font.md,color:colors.primary}}>{totalWithVat.toFixed(0)} ر.س</td>
-                  <td/><td/>
+                  <td/><td/><td/>
                 </tr>
               </tfoot>
             </table>
@@ -369,6 +390,34 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
           </>
         )}
       </div>
+
+      {confirmDelete && (
+        <div style={{position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div style={{position:'absolute',inset:0,background:'rgba(15,23,42,.4)',backdropFilter:'blur(6px)'}} onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}/>
+          <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:360,position:'relative',boxShadow:'0 24px 60px rgba(0,0,0,.2)'}}>
+            <div style={{width:48,height:48,borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:22}}>🔒</div>
+            <div style={{fontSize:15,fontWeight:800,color:colors.text,textAlign:'center',marginBottom:6}}>تأكيد حذف العملية</div>
+            <div style={{fontSize:12,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
+              سيتم حذف <b style={{color:colors.text}}>{confirmDelete.name}</b> ({Number(confirmDelete.total_amount||0).toFixed(0)} ر.س) نهائياً.<br/>أدخل كلمة مرور حسابك للتأكيد
+            </div>
+            <input type="password" value={deletePassword} onChange={e=>setDeletePassword(e.target.value)}
+              onKeyDown={e=>{if(e.key==='Enter'&&deletePassword&&!deleting) confirmDeletePurchase()}}
+              placeholder="كلمة المرور" autoFocus
+              style={{...inp(),width:'100%',marginBottom:10,boxSizing:'border-box' as const}}/>
+            {deleteError && <div style={{fontSize:12,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const}}>⚠️ {deleteError}</div>}
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}
+                style={{flex:1,padding:'11px',background:colors.bg,color:colors.text3,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                إلغاء
+              </button>
+              <button onClick={confirmDeletePurchase} disabled={!deletePassword||deleting}
+                style={{flex:2,padding:'11px',background:!deletePassword||deleting?colors.border2:'#dc2626',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:!deletePassword||deleting?'not-allowed':'pointer',fontFamily:'inherit'}}>
+                {deleting?'جاري الحذف...':'تأكيد الحذف'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
