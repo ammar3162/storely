@@ -120,7 +120,10 @@ export async function POST(req: Request) {
         if (mastercard > 0) networkLines += `  • ماستركارد: ${mastercard.toFixed(2)} ر.س\n`
 
         let purchasesLine = ''
-        if (totalPurchases > 0) purchasesLine = `\n🧾 مسحوبات: *${totalPurchases.toFixed(2)} ر.س*`
+        if (totalPurchases > 0) {
+          const itemsList = purchasesList.map((p: any) => `  • ${p.reason || 'بدون سبب'}: ${Number(p.amount).toFixed(2)} ر.س`).join('\n')
+          purchasesLine = `\n🧾 مسحوبات:\n${itemsList}\n  الإجمالي: *${totalPurchases.toFixed(2)} ر.س*`
+        }
 
         const msg = `🟢 *Storely — إقفال كاشير*\n\n` +
           `👤 الموظف: *${staff_name}*\n` +
