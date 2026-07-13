@@ -208,7 +208,6 @@ export default function CashierClosingPage() {
           mada_amount: mada, visa_amount: visa, mastercard_amount: mastercard,
           cash_amount: cash, purchases: validPurchases,
           network_image: networkImage, sales_image: salesImage,
-          closing_date: closingDate,
         })
       })
       if(!res.ok){ showToast('حدث خطأ أثناء الحفظ','error'); setSubmitting(false); return }
@@ -270,11 +269,7 @@ export default function CashierClosingPage() {
         {!saved && (
           <div className="fu" style={{marginBottom:6}}>
             <div style={{fontSize:22,fontWeight:800,color:'#1c1c1a',marginBottom:4}}>إقفال الكاشير اليومي</div>
-            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:22}}>
-              <span style={{fontSize:16}}>📅</span>
-              <input type="date" value={closingDate} onChange={e=>setClosingDate(e.target.value)}
-                style={{fontSize:13,color:'#1c1c1a',fontWeight:700,border:'1.5px solid #e5e5e2',borderRadius:8,padding:'6px 10px',fontFamily:'inherit',outline:'none',background:'white'}}/>
-            </div>
+            <div style={{fontSize:13,color:'#8b8a84',fontWeight:600,marginBottom:22}}>{new Date().toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
             <ProgressBar step={step}/>
           </div>
         )}
