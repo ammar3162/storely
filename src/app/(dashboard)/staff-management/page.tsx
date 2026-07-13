@@ -82,7 +82,10 @@ export default function StaffManagementPage() {
   }
 
   async function loadStaff(oid:string) {
-    const{data}=await (sb.from('staff_members' as any) as any).select('*,branches(name)').eq('org_id',oid).order('created_at',{ascending:false})
+    const bid = sessionStorage.getItem('s_branch_id')
+    let q = (sb.from('staff_members' as any) as any).select('*,branches(name)').eq('org_id',oid)
+    if (bid) q = q.eq('branch_id', bid)
+    const{data}=await q.order('created_at',{ascending:false})
     setStaff(data||[])
   }
 

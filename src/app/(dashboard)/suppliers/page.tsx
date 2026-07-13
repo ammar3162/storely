@@ -396,12 +396,18 @@ export default function SuppliersPage() {
   }
 
   async function loadSuppliers(oid: string) {
-    const { data } = await (sb as any).from('suppliers').select('*').eq('org_id', oid).order('created_at', { ascending: false })
+    const bid = sessionStorage.getItem('s_branch_id')
+    let q = (sb as any).from('suppliers').select('*').eq('org_id', oid)
+    if (bid) q = q.eq('branch_id', bid)
+    const { data } = await q.order('created_at', { ascending: false })
     setSuppliers(data || [])
   }
 
   async function loadProducts(oid: string) {
-    const { data } = await (sb as any).from('products').select('id,name,unit,qty,supplier_id,supplier_reorder_point,supplier_order_qty,supplier_notes,backup_supplier_id').eq('org_id', oid).eq('is_active', true).order('name')
+    const bid = sessionStorage.getItem('s_branch_id')
+    let q = (sb as any).from('products').select('id,name,unit,qty,supplier_id,supplier_reorder_point,supplier_order_qty,supplier_notes,backup_supplier_id').eq('org_id', oid).eq('is_active', true)
+    if (bid) q = q.eq('branch_id', bid)
+    const { data } = await q.order('name')
     setProducts(data || [])
   }
 
@@ -415,7 +421,7 @@ export default function SuppliersPage() {
     const res = await fetch('/api/add-supplier', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ org_id: orgId, name: newName.trim(), phone: supCountry + newPhone.trim().replace(/^0+/,''), notes: newNotes.trim() })
+      body: JSON.stringify({ org_id: orgId, branch_id: sessionStorage.getItem('s_branch_id') || null, name: newName.trim(), phone: supCountry + newPhone.trim().replace(/^0+/,''), notes: newNotes.trim() })
     })
     const resData = await res.json()
     console.log('ADD SUPPLIER RESPONSE:', res.status, resData)

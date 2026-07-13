@@ -97,10 +97,12 @@ export default function DashboardPage() {
     sessionStorage.setItem('s_profile_id',user.id)
     const bid=sessionStorage.getItem('s_branch_id')
     const ab=(q:any)=>bid?q.eq('branch_id',bid):q
+    let movementsQuery = sb.from('stock_movements').select('qty_change,type,created_at,products!inner(name,unit,org_id,branch_id)').eq('products.org_id',orgId).order('created_at',{ascending:false}).limit(50)
+    if (bid) movementsQuery = movementsQuery.eq('products.branch_id', bid)
     const[{data:products},{data:purchases},{data:movements}]=await Promise.all([
       ab(sb.from('products').select('id,name,qty,reorder_point,unit').eq('org_id',orgId).eq('is_active',true)),
       ab(sb.from('purchases').select('amount,created_at').eq('org_id',orgId)),
-      sb.from('stock_movements').select('qty_change,type,created_at,products!inner(name,unit,org_id,branch_id)').eq('products.org_id',orgId).order('created_at',{ascending:false}).limit(50),
+      movementsQuery,
     ])
     const today=new Date().toDateString()
     const low=(products||[]).filter((p:any)=>p.qty<=p.reorder_point)
