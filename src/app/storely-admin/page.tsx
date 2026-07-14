@@ -94,6 +94,57 @@ export default function AdminPage() {
     })
     loadAdmins()
   }
+
+  const [editingAdminId, setEditingAdminId] = useState<string|null>(null)
+  const [editAdminName, setEditAdminName] = useState('')
+  const [editAdminEmail, setEditAdminEmail] = useState('')
+  const [editAdminPerms, setEditAdminPerms] = useState<Record<string,boolean>>({})
+  const [editAdminNewPass, setEditAdminNewPass] = useState('')
+  const [editAdminError, setEditAdminError] = useState('')
+  const [editAdminSaving, setEditAdminSaving] = useState(false)
+  const [confirmDeleteAdmin, setConfirmDeleteAdmin] = useState<any|null>(null)
+  const [deleteAdminSaving, setDeleteAdminSaving] = useState(false)
+
+  function startEditAdmin(a: any) {
+    setEditingAdminId(a.id)
+    setEditAdminName(a.full_name)
+    setEditAdminEmail(a.email)
+    setEditAdminPerms(a.permissions || {})
+    setEditAdminNewPass('')
+    setEditAdminError('')
+  }
+
+  async function saveAdminEdit() {
+    setEditAdminError('')
+    setEditAdminSaving(true)
+    const res = await fetch('/api/admin/update-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': sessionStorage.getItem('storely_admin_pass') || '' },
+      body: JSON.stringify({
+        admin_id: editingAdminId,
+        full_name: editAdminName,
+        email: editAdminEmail,
+        permissions: editAdminPerms,
+        new_password: editAdminNewPass || undefined,
+      }),
+    })
+    const data = await res.json()
+    setEditAdminSaving(false)
+    if (!res.ok) { setEditAdminError(data.error || 'حدث خطأ'); return }
+    setEditingAdminId(null)
+    loadAdmins()
+  }
+
+  async function deleteAdminNow() {
+    setDeleteAdminSaving(true)
+    const res = await fetch('/api/admin/delete-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': sessionStorage.getItem('storely_admin_pass') || '' },
+      body: JSON.stringify({ admin_id: confirmDeleteAdmin.id }),
+    })
+    setDeleteAdminSaving(false)
+    if (res.ok) { setConfirmDeleteAdmin(null); loadAdmins() }
+  }
   const [dashStats, setDashStats] = useState<any>({})
   const [dashLoading, setDashLoading] = useState(false)
   const [supplierApps, setSupplierApps] = useState<any[]>([])
@@ -828,28 +879,91 @@ export default function AdminPage() {
           ) : (
             <div style={{display:'flex',flexDirection:'column',gap:10}}>
               {adminsList.map(a=>(
-                <div key={a.id} style={{background:'#ffffff',borderRadius:14,padding:'16px 20px',border:'1px solid #e5e7eb',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                  <div>
-                    <div style={{display:'flex',alignItems:'center',gap:8}}>
-                      <span style={{fontSize:14,fontWeight:800,color:'#0f172a'}}>{a.full_name}</span>
-                      {a.role==='super_admin' && <span style={{fontSize:10,fontWeight:700,background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',borderRadius:20,padding:'2px 8px'}}>مشرف كامل</span>}
-                      {!a.is_active && <span style={{fontSize:10,fontWeight:700,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:20,padding:'2px 8px'}}>معطّل</span>}
+                <div key={a.id} style={{background:'#ffffff',borderRadius:14,padding:'16px 20px',border:'1px solid #e5e7eb'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <div>
+                      <div style={{display:'flex',alignItems:'center',gap:8}}>
+                        <span style={{fontSize:14,fontWeight:800,color:'#0f172a'}}>{a.full_name}</span>
+                        {a.role==='super_admin' && <span style={{fontSize:10,fontWeight:700,background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',borderRadius:20,padding:'2px 8px'}}>مشرف كامل</span>}
+                        {!a.is_active && <span style={{fontSize:10,fontWeight:700,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:20,padding:'2px 8px'}}>معطّل</span>}
+                      </div>
+                      <div style={{fontSize:12,color:'#94a3b8',marginTop:3}} dir="ltr">{a.email}</div>
+                      {a.role!=='super_admin' && (
+                        <div style={{fontSize:11,color:'#64748b',marginTop:6}}>
+                          {Object.entries(a.permissions||{}).filter(([,v])=>v).map(([k])=>PERMISSION_LABELS[k]||k).join(' · ') || 'بدون صلاحيات محددة'}
+                        </div>
+                      )}
                     </div>
-                    <div style={{fontSize:12,color:'#94a3b8',marginTop:3}} dir="ltr">{a.email}</div>
                     {a.role!=='super_admin' && (
-                      <div style={{fontSize:11,color:'#64748b',marginTop:6}}>
-                        {Object.entries(a.permissions||{}).filter(([,v])=>v).map(([k])=>PERMISSION_LABELS[k]||k).join(' · ') || 'بدون صلاحيات محددة'}
+                      <div style={{display:'flex',gap:6}}>
+                        <button onClick={()=>editingAdminId===a.id?setEditingAdminId(null):startEditAdmin(a)}
+                          style={{padding:'6px 14px',background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                          {editingAdminId===a.id?'إغلاق':'تعديل'}
+                        </button>
+                        <button onClick={()=>toggleAdminActive(a.id, !a.is_active)}
+                          style={{padding:'6px 14px',background:a.is_active?'#fef2f2':'#f0fdf4',color:a.is_active?'#dc2626':'#16a34a',border:`1px solid ${a.is_active?'#fecaca':'#bbf7d0'}`,borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                          {a.is_active?'تعطيل':'تفعيل'}
+                        </button>
+                        <button onClick={()=>setConfirmDeleteAdmin(a)}
+                          style={{padding:'6px 14px',background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                          حذف
+                        </button>
                       </div>
                     )}
                   </div>
-                  {a.role!=='super_admin' && (
-                    <button onClick={()=>toggleAdminActive(a.id, !a.is_active)}
-                      style={{padding:'6px 14px',background:a.is_active?'#fef2f2':'#f0fdf4',color:a.is_active?'#dc2626':'#16a34a',border:`1px solid ${a.is_active?'#fecaca':'#bbf7d0'}`,borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                      {a.is_active?'تعطيل':'تفعيل'}
-                    </button>
+
+                  {editingAdminId===a.id && (
+                    <div style={{marginTop:16,paddingTop:16,borderTop:'1px solid #f1f5f9'}}>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                        <input value={editAdminName} onChange={e=>setEditAdminName(e.target.value)} placeholder="الاسم الكامل"
+                          style={{padding:'10px 12px',border:'1px solid #e2e8f0',borderRadius:8,fontSize:13,fontFamily:'inherit',outline:'none'}}/>
+                        <input value={editAdminEmail} onChange={e=>setEditAdminEmail(e.target.value)} placeholder="الإيميل" type="email" dir="ltr"
+                          style={{padding:'10px 12px',border:'1px solid #e2e8f0',borderRadius:8,fontSize:13,fontFamily:'inherit',outline:'none'}}/>
+                      </div>
+                      <input value={editAdminNewPass} onChange={e=>setEditAdminNewPass(e.target.value)} placeholder="كلمة مرور جديدة (اتركه فاضي لو ما تبي تغييرها)" type="password"
+                        style={{width:'100%',padding:'10px 12px',border:'1px solid #e2e8f0',borderRadius:8,fontSize:13,fontFamily:'inherit',outline:'none',marginBottom:14,boxSizing:'border-box'}}/>
+
+                      <div style={{fontSize:12,fontWeight:700,color:'#475569',marginBottom:8}}>الصلاحيات:</div>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
+                        {Object.entries(PERMISSION_LABELS).map(([key,label])=>(
+                          <label key={key} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:editAdminPerms[key]?'#f0fdf4':'#f8fafc',border:`1px solid ${editAdminPerms[key]?'#bbf7d0':'#e2e8f0'}`,borderRadius:8,cursor:'pointer',fontSize:12}}>
+                            <input type="checkbox" checked={!!editAdminPerms[key]} onChange={e=>setEditAdminPerms(prev=>({...prev,[key]:e.target.checked}))}/>
+                            {label}
+                          </label>
+                        ))}
+                      </div>
+
+                      {editAdminError && <div style={{fontSize:12,color:'#dc2626',fontWeight:600,marginBottom:12}}>⚠️ {editAdminError}</div>}
+                      <button onClick={saveAdminEdit} disabled={editAdminSaving}
+                        style={{width:'100%',padding:'11px',background:'#2563eb',color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                        {editAdminSaving?'⏳ جاري الحفظ...':'حفظ التعديلات'}
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {confirmDeleteAdmin && (
+            <div style={{position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+              <div style={{position:'absolute',inset:0,background:'rgba(15,23,42,.4)',backdropFilter:'blur(6px)'}} onClick={()=>!deleteAdminSaving&&setConfirmDeleteAdmin(null)}/>
+              <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:360,position:'relative',boxShadow:'0 24px 60px rgba(0,0,0,.2)'}}>
+                <div style={{fontSize:15,fontWeight:800,color:'#0f172a',marginBottom:8,textAlign:'center'}}>حذف حساب المشرف</div>
+                <div style={{fontSize:13,color:'#64748b',textAlign:'center',marginBottom:20,lineHeight:1.7}}>
+                  سيتم حذف <b style={{color:'#0f172a'}}>{confirmDeleteAdmin.full_name}</b> ({confirmDeleteAdmin.email}) نهائياً. هذا الإجراء لا يمكن التراجع عنه.
+                </div>
+                <div style={{display:'flex',gap:8}}>
+                  <button onClick={()=>setConfirmDeleteAdmin(null)} disabled={deleteAdminSaving}
+                    style={{flex:1,padding:'11px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                    إلغاء
+                  </button>
+                  <button onClick={deleteAdminNow} disabled={deleteAdminSaving}
+                    style={{flex:2,padding:'11px',background:'#dc2626',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                    {deleteAdminSaving?'جاري الحذف...':'تأكيد الحذف'}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
