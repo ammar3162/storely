@@ -16,6 +16,7 @@ const FEATURES = [
 interface Announcement {
   id:string; version:string; title:string; description:string
   type:'modal'|'banner'; page:string|null; icon:string; color:string
+  target_orgs?: string[]|null
 }
 
 export default function FeatureAnnouncement() {
@@ -59,7 +60,11 @@ export default function FeatureAnnouncement() {
     const{data:allAnn}=await (sb as any).from('feature_announcements').select('*').order('created_at')
     const{data:seenAnn}=await (sb as any).from('user_seen_features').select('feature_version').eq('profile_id',user.id)
     const seen=new Set((seenAnn||[]).map((s:any)=>s.feature_version))
-    const unseen=(allAnn||[]).filter((a:any)=>!seen.has(a.version)&&a.version!=='1.0.0')
+    // نطبّق التحديد المستهدف: لو target_orgs فاضية أو null، الإشعار للكل. غير كذا، بس للمؤسسات المحددة
+    const unseen=(allAnn||[]).filter((a:any)=>
+      !seen.has(a.version) && a.version!=='1.0.0' &&
+      (!a.target_orgs || a.target_orgs.length===0 || (profile.org_id && a.target_orgs.includes(profile.org_id)))
+    )
     setAnnouncements(unseen)
   }
 
