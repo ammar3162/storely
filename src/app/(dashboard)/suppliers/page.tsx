@@ -121,7 +121,20 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers }: any) {
   const [orderQty, setOrderQty]               = useState('')
   const [supplierNotes, setSupplierNotes]     = useState('')
   const [chainRefreshKey, setChainRefreshKey] = useState(0)
+  const [editingPhone, setEditingPhone] = useState(false)
+  const [editPhoneVal, setEditPhoneVal] = useState(s.phone || '')
+  const [savingPhone, setSavingPhone]   = useState(false)
   const sb = createClient()
+
+  async function savePhone() {
+    if (!editPhoneVal.trim()) { toast('أدخل رقم صحيح', 'warning'); return }
+    setSavingPhone(true)
+    await (sb as any).from('suppliers').update({ phone: editPhoneVal.trim() }).eq('id', s.id)
+    setSavingPhone(false)
+    setEditingPhone(false)
+    toast('✅ تم تحديث رقم المورد')
+    onRefresh()
+  }
 
   const linked   = products.filter((p:any) => p.supplier_id === s.id)
   const unlinked = products.filter((p:any) => p.supplier_id !== s.id && (!productSearch || p.name?.toLowerCase().includes(productSearch.toLowerCase())))
@@ -204,7 +217,18 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers }: any) {
               {linked.length===0 && <span style={{fontSize:11,fontWeight:700,background:'#fef3c7',color:'#92400e',border:'1px solid #fcd34d',borderRadius:20,padding:'2px 8px'}}>⚠️ لا منتجات مرتبطة</span>}
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:3, flexWrap:'wrap' as const }}>
-              <span style={{ fontSize:12, color:'#64748b' }}>{s.phone}</span>
+              {editingPhone ? (
+                <span onClick={e=>e.stopPropagation()} style={{display:'flex',alignItems:'center',gap:4}}>
+                  <input value={editPhoneVal} onChange={e=>setEditPhoneVal(e.target.value)} dir="ltr" autoFocus
+                    style={{fontSize:11,padding:'3px 6px',border:'1.5px solid #16a34a',borderRadius:5,width:110,fontFamily:'inherit'}}/>
+                  <button onClick={savePhone} disabled={savingPhone} style={{fontSize:10,fontWeight:700,color:'white',background:'#16a34a',border:'none',borderRadius:5,padding:'3px 8px',cursor:'pointer',fontFamily:'inherit'}}>{savingPhone?'...':'حفظ'}</button>
+                  <button onClick={()=>{setEditingPhone(false);setEditPhoneVal(s.phone||'')}} style={{fontSize:10,fontWeight:700,color:'#64748b',background:'#f1f5f9',border:'none',borderRadius:5,padding:'3px 8px',cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                </span>
+              ) : (
+                <span onClick={e=>{e.stopPropagation();setEditingPhone(true)}} style={{ fontSize:12, color:'#64748b', cursor:'pointer', display:'flex', alignItems:'center', gap:3 }}>
+                  {s.phone} <span style={{fontSize:10,opacity:.5}}>✏️</span>
+                </span>
+              )}
               <span style={{ fontSize:12, color:'#94a3b8' }}>·</span>
               <span style={{ fontSize:12, color:'#64748b' }}>{linked.length} منتج</span>
               <NotifyBadge mode={s.notify_mode||'daily'} time={s.notify_time||'08:00'} day={s.notify_day??0} />

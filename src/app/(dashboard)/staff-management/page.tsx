@@ -47,6 +47,19 @@ export default function StaffManagementPage() {
   const [revealedPin, setRevealedPin] = useState<{name:string,phone:string,pin:string}|null>(null)
   const [visiblePins, setVisiblePins] = useState<Record<string,boolean>>({})
   const [expandedId, setExpandedId] = useState<string|null>(null)
+  const [editingStaffPhoneId, setEditingStaffPhoneId] = useState<string|null>(null)
+  const [editStaffPhoneVal, setEditStaffPhoneVal] = useState('')
+  const [savingStaffPhone, setSavingStaffPhone] = useState(false)
+
+  async function saveStaffPhone(id: string) {
+    if (!editStaffPhoneVal.trim()) { toast('أدخل رقم صحيح', 'warning'); return }
+    setSavingStaffPhone(true)
+    await (sb.from('staff_members' as any) as any).update({ phone: editStaffPhoneVal.trim() }).eq('id', id)
+    setSavingStaffPhone(false)
+    setEditingStaffPhoneId(null)
+    toast('✅ تم تحديث رقم الموظف')
+    loadStaff(orgId)
+  }
   const [visible, setVisible]       = useState(false)
   const [maxStaff, setMaxStaff]     = useState(999)
   const [products, setProducts]     = useState<any[]>([])
@@ -712,7 +725,18 @@ export default function StaffManagementPage() {
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:14}}>
                     <div style={{background:colors.bg,borderRadius:radius.md,padding:'12px 14px',border:`1px solid ${colors.border}`}}>
                       <div style={{fontSize:10,fontWeight:700,color:colors.text4,marginBottom:6,textTransform:'uppercase' as const}}>رقم الجوال</div>
-                      <div style={{fontSize:font.base,fontWeight:800,color:colors.text,direction:'ltr',textAlign:'right' as const}}>{toLocalPhone(s.phone)}</div>
+                      {editingStaffPhoneId===s.id ? (
+                        <div onClick={e=>e.stopPropagation()} style={{display:'flex',alignItems:'center',gap:6}}>
+                          <input value={editStaffPhoneVal} onChange={e=>setEditStaffPhoneVal(e.target.value)} dir="ltr" autoFocus
+                            style={{fontSize:13,padding:'5px 8px',border:`1.5px solid ${colors.primary}`,borderRadius:6,width:120,fontFamily:'inherit'}}/>
+                          <button onClick={()=>saveStaffPhone(s.id)} disabled={savingStaffPhone} style={{fontSize:11,fontWeight:700,color:'white',background:colors.primary,border:'none',borderRadius:6,padding:'5px 10px',cursor:'pointer',fontFamily:'inherit'}}>{savingStaffPhone?'...':'حفظ'}</button>
+                          <button onClick={()=>setEditingStaffPhoneId(null)} style={{fontSize:11,fontWeight:700,color:colors.text3,background:colors.bg,border:'none',borderRadius:6,padding:'5px 10px',cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                        </div>
+                      ) : (
+                        <div onClick={e=>{e.stopPropagation();setEditingStaffPhoneId(s.id);setEditStaffPhoneVal(s.phone||'')}} style={{fontSize:font.base,fontWeight:800,color:colors.text,direction:'ltr',textAlign:'right' as const,cursor:'pointer',display:'flex',alignItems:'center',gap:6,justifyContent:'flex-end'}}>
+                          <span style={{fontSize:12,opacity:.5}}>✏️</span>{toLocalPhone(s.phone)}
+                        </div>
+                      )}
                     </div>
                     <div style={{background:colors.primaryLight,borderRadius:radius.md,padding:'12px 14px',border:`1px solid ${colors.primaryBorder}`}}>
                       <div style={{fontSize:10,fontWeight:700,color:colors.primary,marginBottom:6,textTransform:'uppercase' as const}}>رمز PIN الحالي</div>
