@@ -69,6 +69,22 @@ export default function SettingsPage() {
   const [backupLoading, setBackupLoading] = useState(false)
   const [backupMsg, setBackupMsg]       = useState<{ok:boolean;text:string}|null>(null)
   const [branches, setBranches]         = useState<any[]>([])
+  const [inactiveBranches, setInactiveBranches] = useState<any[]>([])
+  const [reactivatingId, setReactivatingId] = useState<string|null>(null)
+
+  async function loadInactiveBranches(oid:string) {
+    const{data}=await sb.from('branches').select('*').eq('org_id',oid).eq('is_active',false).order('created_at')
+    setInactiveBranches(data||[])
+  }
+
+  async function reactivateBranch(id:string) {
+    setReactivatingId(id)
+    await sb.from('branches').update({is_active:true} as any).eq('id',id)
+    const b = inactiveBranches.find((x:any)=>x.id===id)
+    setInactiveBranches(prev=>prev.filter((x:any)=>x.id!==id))
+    if (b) setBranches(prev=>[...prev, b])
+    setReactivatingId(null)
+  }
   const [maxBranches, setMaxBranches]   = useState<number>(1)
   const [newBranch, setNewBranch]       = useState({name:'',location:''})
   const [editingPhoneId, setEditingPhoneId] = useState<string|null>(null)
@@ -160,6 +176,7 @@ export default function SettingsPage() {
       setSubEndsAt(org.subscription_ends_at||null)
       const{data:bList}=await sb.from('branches').select('*').eq('org_id',profile.org_id).eq('is_active',true).order('created_at')
       setBranches(bList||[])
+      loadInactiveBranches(profile.org_id)
     }
     setLoading(false)
     setTimeout(()=>setVisible(true),50)
@@ -524,6 +541,25 @@ export default function SettingsPage() {
                           </button>
                         )}
                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {inactiveBranches.length>0&&(
+                <div style={{...card,overflow:'hidden',marginBottom:16,opacity:.8}}>
+                  <div style={{padding:'10px 16px',borderBottom:`1px solid ${colors.border}`,fontSize:font.xs,fontWeight:700,color:colors.text4}}>فروع موقوفة ({inactiveBranches.length})</div>
+                  {inactiveBranches.map((b:any,i:number)=>(
+                    <div key={b.id} style={{padding:'14px 16px',borderBottom:i<inactiveBranches.length-1?`1px solid ${colors.border}`:'none',display:'flex',alignItems:'center',gap:12}}>
+                      <div style={{width:36,height:36,borderRadius:10,background:colors.bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0,border:`1px solid ${colors.border}`}}>⏸</div>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:font.sm,fontWeight:700,color:colors.text3}}>{b.name}</div>
+                        {b.location&&<div style={{fontSize:font.xs,color:colors.text4,marginTop:1}}>📍 {b.location}</div>}
+                      </div>
+                      <button onClick={()=>reactivateBranch(b.id)} disabled={reactivatingId===b.id || branches.length>=maxBranches}
+                        style={{background:colors.primaryLight,color:colors.primary,border:`1px solid ${colors.primaryBorder}`,borderRadius:radius.sm,padding:'6px 12px',fontSize:font.xs,fontWeight:700,cursor:(reactivatingId===b.id||branches.length>=maxBranches)?'not-allowed':'pointer',fontFamily:font.family,opacity:branches.length>=maxBranches?.5:1}}>
+                        {reactivatingId===b.id?'...':branches.length>=maxBranches?'الباقة ممتلئة':'تفعيل'}
+                      </button>
                     </div>
                   ))}
                 </div>
