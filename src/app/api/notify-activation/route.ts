@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { isValidAdminKey } from '@/lib/adminAuth'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '').replace(/^\+/, '')
@@ -12,7 +13,7 @@ function formatPhone(raw: string): string {
 export async function POST(req: Request) {
   try {
     const adminKey = req.headers.get('x-admin-key')
-    if (adminKey !== process.env.ADMIN_PASSWORD) {
+    if (!(await isValidAdminKey(adminKey))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

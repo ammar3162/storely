@@ -50,3 +50,15 @@ export async function logAdminAction(
     })
   } catch {}
 }
+
+/**
+ * يتحقق من مفتاح الأدمن المُرسل بهيدر x-admin-key — يقبل الاثنين:
+ * كلمة مرور الأدمن القديمة الثابتة (للتوافق)، أو رمز جلسة صالح من نظام تسجيل الدخول الجديد.
+ */
+export async function isValidAdminKey(key: string | null): Promise<boolean> {
+  if (!key) return false
+  const legacyPassword = process.env.ADMIN_PASSWORD || 'storely@2026'
+  if (key === legacyPassword) return true
+  const session = await verifyAdminSession(key)
+  return !!session
+}

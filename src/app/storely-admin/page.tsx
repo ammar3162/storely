@@ -63,7 +63,7 @@ export default function AdminPage() {
     if (res.ok && data.success) {
       document.cookie = `storely_admin_token=${data.token};path=/;max-age=86400;SameSite=Strict;Secure`
       document.cookie = `storely_admin_auth=true;path=/;max-age=86400;SameSite=Strict;Secure`
-      sessionStorage.setItem('storely_admin_pass', pass) // للتوافق المؤقت مع الإجراءات القديمة
+      sessionStorage.setItem('storely_admin_pass', data.token) // رمز الجلسة الآمن، يُستخدم كمفتاح تحقق لكل الإجراءات
       sessionStorage.setItem('storely_admin_session_token', data.token)
       sessionStorage.setItem('storely_admin_info', JSON.stringify(data.admin))
       setCurrentAdmin(data.admin)

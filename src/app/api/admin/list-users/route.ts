@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { isValidAdminKey } from '@/lib/adminAuth'
 
 export async function GET(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
   const correct = process.env.ADMIN_PASSWORD || 'storely@2026'
-  if (adminKey !== correct) {
+  if (!(await isValidAdminKey(adminKey))) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
