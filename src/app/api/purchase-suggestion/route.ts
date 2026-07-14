@@ -35,6 +35,8 @@ export async function POST(req: Request) {
         const total30 = dispMap[p.id]||0
         const dailyRate = total30/30
         const suggested = Math.max(Math.ceil(dailyRate*14) - p.qty, 0)
+        const daysLeft = dailyRate > 0 ? p.qty / dailyRate : 999
+        const urgency = daysLeft <= 2 ? 'urgent' : daysLeft <= 5 ? 'soon' : 'normal'
         return {
           id: p.id,
           name: p.name,
@@ -44,13 +46,27 @@ export async function POST(req: Request) {
           supplier_id: p.supplier_id,
           monthly: total30,
           suggested,
+          dailyRate,
+          urgency,
         }
       })
       .filter((i:any) => i.suggested > 0 && i.monthly > 0)
       .sort((a:any,b:any) => b.suggested - a.suggested)
 
+    // الشكل اللي تحتاجه واجهة صفحة أدوات الذكاء (ai-tools)
+    const suggestions = items.map((i:any) => ({
+      name: i.name,
+      unit: i.unit,
+      currentQty: i.qty,
+      reorderPoint: i.reorder_point,
+      dailyRate: Math.round(i.dailyRate*10)/10,
+      weeklyNeed: Math.round(i.dailyRate*7),
+      suggestedQty: i.suggested,
+      urgency: i.urgency,
+    }))
+
     if (items.length === 0) {
-      return NextResponse.json({ message: '✅ كل شي تمام — لا يوجد أصناف تحتاج شراء حالياً بناءً على معدل الصرف الحالي' })
+      return NextResponse.json({ suggestions: [], message: '✅ كل شي تمام — لا يوجد أصناف تحتاج شراء حالياً بناءً على معدل الصرف الحالي' })
     }
 
     const withSupplier = items.filter((i:any)=>i.supplier_id)
@@ -93,7 +109,7 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ summary, supplierGroups, unassigned, results })
+    return NextResponse.json({ suggestions, summary, supplierGroups, unassigned, results })
   } catch (err:any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
