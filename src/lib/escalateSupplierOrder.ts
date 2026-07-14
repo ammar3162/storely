@@ -85,6 +85,9 @@ export async function escalateOrder(order: any, reason: 'unavailable' | 'timeout
   if (!supplierIds.length) return { escalated: false, reason: 'no_backup' as const }
 
   const { data: org } = await db.from('organizations').select('name,whatsapp_number').eq('id', order.org_id).single()
+  const { data: allBranches } = await db.from('branches').select('id,name').eq('org_id', order.org_id).eq('is_active', true)
+  const isMultiBranch = (allBranches || []).length > 1
+  const branchName = order.branch_id ? (allBranches || []).find((b: any) => b.id === order.branch_id)?.name : null
   const escalatedNames: string[] = []
 
   for (const supplierId of supplierIds) {
@@ -102,6 +105,7 @@ export async function escalateOrder(order: any, reason: 'unavailable' | 'timeout
 
     await (db as any).from('supplier_orders').insert({
       org_id: order.org_id,
+      branch_id: order.branch_id || null,
       supplier_id: supplierId,
       supplier_name: supplier.name,
       supplier_phone: supplier.phone,
@@ -121,7 +125,8 @@ export async function escalateOrder(order: any, reason: 'unavailable' | 'timeout
   if ((org as any)?.whatsapp_number && escalatedNames.length) {
     const ownerPhone = (org as any).whatsapp_number.replace(/\D/g, '').replace(/^0/, '966')
     const reasonText = reason === 'unavailable' ? 'أبلغ بعدم توفر الصنف' : 'لم يرد بالوقت المحدد'
-    const ownerMsg = `🟢 *Storely*\n\n🔄 تم التحويل التلقائي\n\nالمورد *${order.supplier_name}* ${reasonText}، فتم إرسال الطلب تلقائياً إلى المورد التالي بالأولوية:\n${escalatedNames.map(n => `• ${n}`).join('\n')}\n\nبانتظار تأكيدهم`
+    const branchLine = (isMultiBranch && branchName) ? `🏪 الفرع: *${branchName}*\n` : ''
+    const ownerMsg = `🟢 *Storely*\n\n🔄 تم التحويل التلقائي\n${branchLine}\nالمورد *${order.supplier_name}* ${reasonText}، فتم إرسال الطلب تلقائياً إلى المورد التالي بالأولوية:\n${escalatedNames.map(n => `• ${n}`).join('\n')}\n\nبانتظار تأكيدهم`
     await sendWhatsApp(ownerPhone, ownerMsg)
   }
 

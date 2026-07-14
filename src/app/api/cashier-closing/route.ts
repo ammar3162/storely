@@ -102,6 +102,9 @@ export async function POST(req: Request) {
     try {
       const { data: org } = await supabase.from('organizations').select('name,whatsapp_number').eq('id', org_id).single()
       const whatsappNumber = (org as any)?.whatsapp_number
+      const { data: allBranches } = await supabase.from('branches').select('id,name').eq('org_id', org_id).eq('is_active', true)
+      const isMultiBranch = (allBranches || []).length > 1
+      const branchName = branch_id ? (allBranches || []).find((b: any) => b.id === branch_id)?.name : null
       if (whatsappNumber) {
         const now = new Date()
         const effectiveDate = closing_date ? new Date(`${closing_date}T${closing_time||'00:00'}:00+03:00`) : now
@@ -125,8 +128,10 @@ export async function POST(req: Request) {
           purchasesLine = `\n🧾 مسحوبات:\n${itemsList}\n  الإجمالي: *${totalPurchases.toFixed(2)} ر.س*`
         }
 
+        const branchLine = (isMultiBranch && branchName) ? `🏪 الفرع: *${branchName}*\n` : ''
         const msg = `🟢 *Storely — إقفال كاشير*\n\n` +
           `👤 الموظف: *${staff_name}*\n` +
+          branchLine +
           `🕐 ${timeStr} · ${dateStr}\n\n` +
           `📊 إجمالي المبيعات: *${sales.toFixed(2)} ر.س*\n\n` +
           `💳 الشبكة:\n${networkLines}  إجمالي: *${network.toFixed(2)} ر.س*\n\n` +

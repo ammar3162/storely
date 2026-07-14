@@ -30,8 +30,13 @@ export async function POST(req: Request) {
     const { data: org } = await db.from('organizations').select('name,whatsapp_number').eq('id', order.org_id).single()
     if (!org?.whatsapp_number) return NextResponse.json({ success: false })
 
+    const { data: allBranches } = await db.from('branches').select('id,name').eq('org_id', order.org_id).eq('is_active', true)
+    const isMultiBranch = (allBranches || []).length > 1
+    const branchName = order.branch_id ? (allBranches || []).find((b: any) => b.id === order.branch_id)?.name : null
+    const branchLine = (isMultiBranch && branchName) ? `🏪 الفرع: *${branchName}*\n` : ''
+
     const items = (order.items || []).map((i: any) => `• ${i.name} — ${i.qty} ${i.unit}`).join('\n')
-    const msg = `🟢 *Storely*\n\nمرحباً ${(org as any).name}،\n\n✅ المورد *${order.supplier_name}* أكد طلبك\n\n${items}\n\nسيتم التوصيل قريباً`
+    const msg = `🟢 *Storely*\n\nمرحباً ${(org as any).name}،\n\n✅ المورد *${order.supplier_name}* أكد طلبك\n${branchLine}\n${items}\n\nسيتم التوصيل قريباً`
 
     const phone = formatPhone((org as any).whatsapp_number)
     await fetch('https://www.wasenderapi.com/api/send-message', {

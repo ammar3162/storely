@@ -58,7 +58,7 @@ export async function POST(req: Request) {
 
     let query = supabase
       .from('products')
-      .select('id, name, qty, unit, supplier_id, supplier_reorder_point, supplier_order_qty, supplier_notes, org_id, organizations(name)')
+      .select('id, name, qty, unit, supplier_id, supplier_reorder_point, supplier_order_qty, supplier_notes, org_id, branch_id, organizations(name)')
       .not('supplier_id', 'is', null)
       .not('supplier_reorder_point', 'is', null)
       .eq('is_active', true)
@@ -105,6 +105,7 @@ export async function POST(req: Request) {
       }))
 
       const orgIdForOrder = (items[0] as any).org_id
+      const branchIdForOrder = (items[0] as any).branch_id || null
       const orderItems = items.map((p: any, i: number) => ({
         product_id: p.id,
         name: messageItems[i].name,
@@ -113,6 +114,7 @@ export async function POST(req: Request) {
       }))
       const { error: orderErr } = await (supabase as any).from('supplier_orders').insert({
         org_id: orgIdForOrder,
+        branch_id: branchIdForOrder,
         supplier_id: supplierId,
         supplier_name: supplier.name,
         supplier_phone: supplier.phone,
