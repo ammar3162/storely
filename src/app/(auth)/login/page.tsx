@@ -66,7 +66,9 @@ const BUSINESS_TYPES = [
 ]
 
 function LoginPage() {
-  const [mode, setMode] = useState<'login'|'register'|'forgot'|'forgot-sent'>(() => {
+  const [forgotMethod, setForgotMethod] = useState<'email'|'whatsapp'>('email')
+  const [forgotPhone, setForgotPhone] = useState('')
+  const [mode, setMode] = useState<'login'|'register'|'forgot'|'forgot-sent'|'forgot-sent-wa'>(() => {
     if (typeof window !== 'undefined') {
       if (new URLSearchParams(window.location.search).get('mode') === 'register') return 'register'
     }
@@ -117,6 +119,18 @@ function LoginPage() {
     setLoading(false)
     if (error) { setError('تأكد من صحة البريد'); return }
     setMode('forgot-sent')
+  }
+
+  async function handleForgotWhatsapp(e: React.FormEvent) {
+    e.preventDefault(); setLoading(true); setError('')
+    const res = await fetch('/api/forgot-password-whatsapp', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ phone: forgotPhone }),
+    })
+    const data = await res.json()
+    setLoading(false)
+    if (!res.ok) { setError(data.error || 'حدث خطأ'); return }
+    setMode('forgot-sent-wa')
   }
 
   function nextStep(e: React.FormEvent) {
@@ -484,18 +498,53 @@ function LoginPage() {
                   ← رجوع
                 </button>
                 <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:8,letterSpacing:'-0.5px'}}>استعادة كلمة المرور</h1>
-                <p style={{fontSize:14,color:'#6b7280',marginBottom:28}}>سنرسل لك رابط الاستعادة على بريدك</p>
-                {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
-                <form onSubmit={handleForgot} style={{display:'flex',flexDirection:'column',gap:14}}>
-                  <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني</label>
-                    <input className="inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
-                  </div>
-                  <button type="submit" disabled={loading} className="btn-main">
-                    {loading?'جاري الإرسال...':'إرسال رابط الاستعادة'}
+                <p style={{fontSize:14,color:'#6b7280',marginBottom:20}}>اختر طريقة استلام رابط الاستعادة</p>
+
+                <div style={{display:'flex',gap:8,marginBottom:22,background:'#f3f4f6',borderRadius:10,padding:4}}>
+                  <button type="button" onClick={()=>{setForgotMethod('email');setError('')}}
+                    style={{flex:1,padding:'8px',border:'none',borderRadius:8,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',background:forgotMethod==='email'?'white':'transparent',color:forgotMethod==='email'?'#111827':'#6b7280',boxShadow:forgotMethod==='email'?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
+                    📧 البريد الإلكتروني
                   </button>
-                </form>
+                  <button type="button" onClick={()=>{setForgotMethod('whatsapp');setError('')}}
+                    style={{flex:1,padding:'8px',border:'none',borderRadius:8,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',background:forgotMethod==='whatsapp'?'white':'transparent',color:forgotMethod==='whatsapp'?'#111827':'#6b7280',boxShadow:forgotMethod==='whatsapp'?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
+                    📲 واتساب
+                  </button>
+                </div>
+
+                {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
+
+                {forgotMethod==='email' ? (
+                  <form onSubmit={handleForgot} style={{display:'flex',flexDirection:'column',gap:14}}>
+                    <div>
+                      <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني</label>
+                      <input className="inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
+                    </div>
+                    <button type="submit" disabled={loading} className="btn-main">
+                      {loading?'جاري الإرسال...':'إرسال رابط الاستعادة'}
+                    </button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleForgotWhatsapp} style={{display:'flex',flexDirection:'column',gap:14}}>
+                    <div>
+                      <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>رقم الجوال المسجّل بالحساب</label>
+                      <input className="inp" type="tel" required dir="ltr" value={forgotPhone} onChange={e=>setForgotPhone(e.target.value)} placeholder="05xxxxxxxx"/>
+                    </div>
+                    <button type="submit" disabled={loading} className="btn-main">
+                      {loading?'جاري الإرسال...':'إرسال رابط عبر واتساب'}
+                    </button>
+                  </form>
+                )}
               </>
+            )}
+
+            {mode==='forgot-sent-wa' && (
+              <div style={{textAlign:'center',padding:'40px 0'}}>
+                <div style={{width:64,height:64,borderRadius:16,background:'#f0fdf4',border:'1px solid #bbf7d0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,margin:'0 auto 20px'}}>📲</div>
+                <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8}}>تحقق من واتساب</h2>
+                <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:8}}>إذا كان الرقم مسجّل، وصلتك رسالة فيها رابط الاستعادة</p>
+                <p style={{fontSize:12,color:'#9ca3af',marginBottom:28}}>الرابط صالح لمدة ساعة واحدة فقط</p>
+                <button onClick={()=>{setMode('login');setError('')}} className="btn-main">رجوع لتسجيل الدخول</button>
+              </div>
             )}
 
             {/* Forgot Sent */}
