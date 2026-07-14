@@ -55,32 +55,52 @@ async function findUser(phone: string) {
   return null
 }
 
-async function getProducts(orgId: string) {
+async function getProducts(orgId: string, branchId?: string|null) {
   try {
-    const { data } = await sb().from('products').select('id,name,qty,unit,reorder_point').eq('org_id',orgId).eq('is_active',true).order('name')
+    let q = sb().from('products').select('id,name,qty,unit,reorder_point').eq('org_id',orgId).eq('is_active',true)
+    if (branchId) q = q.eq('branch_id', branchId)
+    const { data } = await q.order('name')
     return data||[]
   } catch { return [] }
 }
 
-async function getTodayDispense(orgId: string) {
+async function getTodayDispense(orgId: string, branchId?: string|null) {
   try {
     const today = new Date(); today.setHours(0,0,0,0)
-    const { data } = await sb().from('stock_movements')
-      .select('qty_change,note,created_at,products!inner(name,unit,org_id)')
+    let q = sb().from('stock_movements')
+      .select('qty_change,note,created_at,products!inner(name,unit,org_id,branch_id)')
       .eq('type','out').eq('products.org_id',orgId)
-      .gte('created_at',today.toISOString()).order('created_at',{ascending:false})
+      .gte('created_at',today.toISOString())
+    if (branchId) q = q.eq('products.branch_id', branchId)
+    const { data } = await q.order('created_at',{ascending:false})
     return data||[]
   } catch { return [] }
 }
 
-async function getTodayPurchases(orgId: string) {
+async function getTodayPurchases(orgId: string, branchId?: string|null) {
   try {
     const today = new Date(); today.setHours(0,0,0,0)
-    const { data } = await sb().from('purchases')
+    let q = sb().from('purchases')
       .select('name,qty,amount,supplier').eq('org_id',orgId)
-      .gte('created_at',today.toISOString()).order('created_at',{ascending:false})
+      .gte('created_at',today.toISOString())
+    if (branchId) q = q.eq('branch_id', branchId)
+    const { data } = await q.order('created_at',{ascending:false})
     return data||[]
   } catch { return [] }
+}
+
+// ── جلب/حفظ الفرع المختار بجلسة واتساب ──
+async function getSelectedBranch(phone: string): Promise<string|null> {
+  try {
+    const { data } = await sb().from('whatsapp_sessions').select('selected_branch_id').eq('phone', phone).maybeSingle()
+    return (data as any)?.selected_branch_id || null
+  } catch { return null }
+}
+
+async function setSelectedBranch(phone: string, branchId: string) {
+  try {
+    await (sb() as any).from('whatsapp_sessions').update({ selected_branch_id: branchId }).eq('phone', phone)
+  } catch {}
 }
 
 // ── 3. تسجيل صرف من واتساب ──
@@ -275,7 +295,16 @@ export async function POST(req: Request) {
 
         // ── القائمة الرئيسية ──
         if (state==='main') {
-          if (t==='1') { await setState(to,'stock'); await send(to,STOCK_MENU); continue }
+          if (t==='1') {
+            const { data: branches } = await sb().from('branches').select('id,name').eq('org_id',user.org_id).eq('is_active',true).order('created_at')
+            if (!branches || branches.length <= 1) {
+              await setState(to,'stock'); await send(to,STOCK_MENU); continue
+            }
+            const list = branches.map((b:any,i:number)=>`${i+1}️⃣ ${b.name}`).join('\n')
+            await send(to, `🏪 *اختر الفرع*\n\n${list}\n\nأرسل رقم الفرع`)
+            await setState(to,'select_branch')
+            continue
+          }
           if (t==='2') {
             const p = await getProducts(user.org_id)
             const low = p.filter((x:any)=>x.qty<=x.reorder_point)
@@ -294,38 +323,62 @@ export async function POST(req: Request) {
           await send(to, MAIN_MENU)
         }
 
+        // ── اختيار الفرع ──
+        else if (state==='select_branch') {
+          const { data: branches } = await sb().from('branches').select('id,name').eq('org_id',user.org_id).eq('is_active',true).order('created_at')
+          const idx = Number(t) - 1
+          if (!branches || isNaN(idx) || idx < 0 || idx >= branches.length) {
+            const list = (branches||[]).map((b:any,i:number)=>`${i+1}️⃣ ${b.name}`).join('\n')
+            await send(to, `⚠️ اختر رقم صحيح\n\n${list}`)
+            continue
+          }
+          await setSelectedBranch(to, branches[idx].id)
+          await setState(to,'stock')
+          await send(to, `✅ الفرع المختار: *${branches[idx].name}*\n\n${STOCK_MENU}`)
+          continue
+        }
+
         // ── قائمة المخزون ──
         else if (state==='stock') {
           if (t==='8') { await send(to,STOCK_MENU); continue }
+          if (t==='9') {
+            const { data: branches } = await sb().from('branches').select('id,name').eq('org_id',user.org_id).eq('is_active',true).order('created_at')
+            if (!branches || branches.length <= 1) { await send(to,'منشأتك فيها فرع واحد بس\n\nاكتب 0 للقائمة'); continue }
+            const list = branches.map((b:any,i:number)=>`${i+1}️⃣ ${b.name}`).join('\n')
+            await send(to, `🏪 *اختر الفرع*\n\n${list}\n\nأرسل رقم الفرع`)
+            await setState(to,'select_branch')
+            continue
+          }
+          const branchId = await getSelectedBranch(to)
           if (t==='1') {
-            const p = await getProducts(user.org_id)
+            const p = await getProducts(user.org_id, branchId)
             const low = p.filter((x:any)=>x.qty<=x.reorder_point)
             if (!low.length) { await send(to,'✅ لا توجد منتجات ناقصة\n\nاكتب 0 للقائمة'); continue }
             const list = low.slice(0,15).map((x:any)=>`🔴 ${x.name}: ${x.qty}/${x.reorder_point} ${x.unit}`).join('\n')
-            await send(to,`🔴 *الناقص (${low.length})*\n\n${list}\n\nاكتب 0 للقائمة | اكتب 8 لقائمة المخزون`)
+            await send(to,`🔴 *الناقص (${low.length})*\n\n${list}\n\nاكتب 0 للقائمة | اكتب 8 لقائمة المخزون | اكتب 9 لتغيير الفرع`)
             continue
           }
           if (t==='2') {
-            const p = await getProducts(user.org_id)
+            const p = await getProducts(user.org_id, branchId)
             if (!p.length) { await send(to,'📦 المخزون فارغ\n\nاكتب 0 للقائمة'); continue }
             const low = p.filter((x:any)=>x.qty<=x.reorder_point).length
             const list = p.slice(0,15).map((x:any)=>`${x.qty<=x.reorder_point?'🔴':'🟢'} ${x.name}: ${x.qty} ${x.unit}`).join('\n')
-            await send(to,`📦 *المخزون (${p.length} صنف)*\n\n${list}${p.length>15?`\n...و${p.length-15} أخرى`:''}\n\n⚠️ ناقص: ${low}\n\nاكتب 0 للقائمة | اكتب 8 للمخزون`)
+            await send(to,`📦 *المخزون (${p.length} صنف)*\n\n${list}${p.length>15?`\n...و${p.length-15} أخرى`:''}\n\n⚠️ ناقص: ${low}\n\nاكتب 0 للقائمة | اكتب 8 للمخزون | اكتب 9 لتغيير الفرع`)
             continue
           }
           if (t==='3') {
-            const moves = await getTodayDispense(user.org_id)
+            const moves = await getTodayDispense(user.org_id, branchId)
             if (!moves.length) { await send(to,'📭 لا توجد عمليات صرف اليوم\n\nاكتب 0 للقائمة'); continue }
             const list = moves.slice(0,10).map((x:any)=>`▪️ ${(x.products as any)?.name}: ${Math.abs(x.qty_change)} ${(x.products as any)?.unit}`).join('\n')
-            await send(to,`📤 *الصرف اليوم (${moves.length})*\n\n${list}\n\nاكتب 0 للقائمة | اكتب 8 للمخزون`)
+            await send(to,`📤 *الصرف اليوم (${moves.length})*\n\n${list}\n\nاكتب 0 للقائمة | اكتب 8 للمخزون | اكتب 9 لتغيير الفرع`)
             continue
           }
           if (t==='4') {
-            const purchases = await getTodayPurchases(user.org_id)
+            const purchases = await getTodayPurchases(user.org_id, branchId)
             if (!purchases.length) { await send(to,'📭 لا توجد مشتريات اليوم\n\nاكتب 0 للقائمة'); continue }
             const total = purchases.reduce((s:number,x:any)=>s+Number(x.amount||0),0)
             const list = purchases.slice(0,10).map((x:any)=>`▪️ ${x.name}: ${Number(x.amount).toFixed(0)} ر.س`).join('\n')
-            await send(to,`🛒 *مشتريات اليوم (${purchases.length})*\n\n${list}\n\n💰 الإجمالي: ${total.toFixed(2)} ر.س\n\nاكتب 0 للقائمة | اكتب 8 للمخزون`)
+            await send(to,`🛒 *مشتريات اليوم (${purchases.length})*\n\n${list}\n\n💰 الإجمالي: ${total.toFixed(2)} ر.س\n\nاكتب 0 للقائمة | اكتب 8 للمخزون | اكتب 9 لتغيير الفرع`)
             continue
           }
           await send(to, STOCK_MENU)
