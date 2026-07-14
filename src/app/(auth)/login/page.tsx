@@ -102,7 +102,20 @@ function LoginPage() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault(); setLoading(true); setError('')
     const { error, data } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) { setError('البريد أو كلمة المرور غير صحيحة'); setLoading(false); return }
+    if (error) {
+      try {
+        const res = await fetch('/api/check-email-exists', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email }) })
+        const checkData = await res.json()
+        if (checkData.exists === false) {
+          setError('هذا الحساب غير موجود — سجّل حساب جديد مجاناً')
+        } else {
+          setError('كلمة المرور غير صحيحة — تقدر تستخدم "نسيت كلمة المرور؟"')
+        }
+      } catch {
+        setError('البريد أو كلمة المرور غير صحيحة')
+      }
+      setLoading(false); return
+    }
     if (data.session) {
       const { data: profile } = await supabase.from('profiles').select('org_id').eq('id', data.session.user.id).single()
       if (profile?.org_id) {
