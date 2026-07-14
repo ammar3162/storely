@@ -31,7 +31,7 @@ const PLANS = [
 export default function AdminPage() {
   const [authed, setAuthed]     = useState(false)
   const [adminEmail, setAdminEmail] = useState('')
-  const [currentAdmin, setCurrentAdmin] = useState<{id:string;email:string;full_name:string;role?:string}|null>(null)
+  const [currentAdmin, setCurrentAdmin] = useState<{id:string;email:string;full_name:string;role?:string;permissions?:Record<string,boolean>}|null>(null)
   const [pass, setPass]         = useState('')
   const [passErr, setPassErr]   = useState(false)
   const [users, setUsers]       = useState<User[]>([])
@@ -169,6 +169,12 @@ export default function AdminPage() {
       sessionStorage.setItem('storely_admin_session_token', data.token)
       sessionStorage.setItem('storely_admin_info', JSON.stringify(data.admin))
       setCurrentAdmin(data.admin)
+      // نوجّهه لأول تبويب مسموح له فيه (لو ما عنده صلاحية Dashboard)
+      const perms = data.admin.permissions || {}
+      if (data.admin.role !== 'super_admin' && !perms.manage_users && !perms.view_analytics) {
+        if (perms.manage_suppliers) { setTab('suppliers'); loadSupplierApps() }
+        else if (perms.manage_packages) setTab('packages')
+      }
       setAuthed(true); loadUsers()
     } else { setPassErr(true); setTimeout(()=>setPassErr(false),2000) }
   }
@@ -522,27 +528,41 @@ export default function AdminPage() {
           </div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <a href="/storely-admin/monitoring" style={{padding:'7px 14px',background:'#ffffff',color:'#475569',border:'1px solid #e5e7eb',borderRadius:9,fontSize:12,fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:6}}>
-            📊 مراقبة
-          </a>
-          <a href="/storely-admin/notifications" style={{padding:'7px 14px',background:'#ffffff',color:'#475569',border:'1px solid #e5e7eb',borderRadius:9,fontSize:12,fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:6}}>
-            🔔 الإشعارات
-          </a>
-          <button onClick={()=>setTab('dashboard')} style={{padding:'7px 14px',background:tab==='dashboard'?'#2563eb':'#ffffff',color:tab==='dashboard'?'white':'#475569',border:`1px solid ${tab==='dashboard'?'#2563eb':'#e5e7eb'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-            📊 Dashboard
-          </button>
-          <button onClick={()=>setTab('users')} style={{padding:'7px 14px',background:tab==='users'?'#7c3aed':'#ffffff',color:tab==='users'?'white':'#475569',border:`1px solid ${tab==='users'?'#7c3aed':'#e5e7eb'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-            👥 المستخدمون
-          </button>
-          <button onClick={()=>{setTab('suppliers');loadSupplierApps()}} style={{padding:'7px 14px',background:tab==='suppliers'?'#16a34a':'#ffffff',color:tab==='suppliers'?'white':'#475569',border:`1px solid ${tab==='suppliers'?'#16a34a':'#e5e7eb'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6}}>
-            🤝 الموردون {supplierApps.filter(s=>s.status==='pending').length>0&&<span style={{background:'#ef4444',color:'white',borderRadius:99,padding:'1px 6px',fontSize:10}}>{supplierApps.filter(s=>s.status==='pending').length}</span>}
-          </button>
-          <button onClick={()=>{setTab('analytics');loadDashStats()}} style={{padding:'7px 14px',background:tab==='analytics'?'#0891b2':'#ffffff',color:tab==='analytics'?'white':'#475569',border:`1px solid ${tab==='analytics'?'#0891b2':'#e5e7eb'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-            📈 التحليلات
-          </button>
-          <button onClick={()=>setTab('packages')} style={{padding:'7px 14px',background:tab==='packages'?'#f59e0b':'#ffffff',color:tab==='packages'?'white':'#475569',border:`1px solid ${tab==='packages'?'#f59e0b':'#e5e7eb'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-            📦 الباقات
-          </button>
+          {currentAdmin?.role==='super_admin' && (
+            <a href="/storely-admin/monitoring" style={{padding:'7px 14px',background:'#ffffff',color:'#475569',border:'1px solid #e5e7eb',borderRadius:9,fontSize:12,fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:6}}>
+              📊 مراقبة
+            </a>
+          )}
+          {currentAdmin?.role==='super_admin' && (
+            <a href="/storely-admin/notifications" style={{padding:'7px 14px',background:'#ffffff',color:'#475569',border:'1px solid #e5e7eb',borderRadius:9,fontSize:12,fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:6}}>
+              🔔 الإشعارات
+            </a>
+          )}
+          {(currentAdmin?.role==='super_admin' || currentAdmin?.permissions?.manage_users || currentAdmin?.permissions?.view_analytics) && (
+            <button onClick={()=>setTab('dashboard')} style={{padding:'7px 14px',background:tab==='dashboard'?'#2563eb':'#ffffff',color:tab==='dashboard'?'white':'#475569',border:`1px solid ${tab==='dashboard'?'#2563eb':'#e5e7eb'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+              📊 Dashboard
+            </button>
+          )}
+          {(currentAdmin?.role==='super_admin' || currentAdmin?.permissions?.manage_users) && (
+            <button onClick={()=>setTab('users')} style={{padding:'7px 14px',background:tab==='users'?'#7c3aed':'#ffffff',color:tab==='users'?'white':'#475569',border:`1px solid ${tab==='users'?'#7c3aed':'#e5e7eb'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+              👥 المستخدمون
+            </button>
+          )}
+          {(currentAdmin?.role==='super_admin' || currentAdmin?.permissions?.manage_suppliers) && (
+            <button onClick={()=>{setTab('suppliers');loadSupplierApps()}} style={{padding:'7px 14px',background:tab==='suppliers'?'#16a34a':'#ffffff',color:tab==='suppliers'?'white':'#475569',border:`1px solid ${tab==='suppliers'?'#16a34a':'#e5e7eb'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6}}>
+              🤝 الموردون {supplierApps.filter(s=>s.status==='pending').length>0&&<span style={{background:'#ef4444',color:'white',borderRadius:99,padding:'1px 6px',fontSize:10}}>{supplierApps.filter(s=>s.status==='pending').length}</span>}
+            </button>
+          )}
+          {(currentAdmin?.role==='super_admin' || currentAdmin?.permissions?.view_analytics) && (
+            <button onClick={()=>{setTab('analytics');loadDashStats()}} style={{padding:'7px 14px',background:tab==='analytics'?'#0891b2':'#ffffff',color:tab==='analytics'?'white':'#475569',border:`1px solid ${tab==='analytics'?'#0891b2':'#e5e7eb'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+              📈 التحليلات
+            </button>
+          )}
+          {(currentAdmin?.role==='super_admin' || currentAdmin?.permissions?.manage_packages) && (
+            <button onClick={()=>setTab('packages')} style={{padding:'7px 14px',background:tab==='packages'?'#f59e0b':'#ffffff',color:tab==='packages'?'white':'#475569',border:`1px solid ${tab==='packages'?'#f59e0b':'#e5e7eb'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+              📦 الباقات
+            </button>
+          )}
           {currentAdmin?.role==='super_admin' && (
             <button onClick={()=>{setTab('admins');loadAdmins()}} style={{padding:'7px 14px',background:tab==='admins'?'#0f172a':'#ffffff',color:tab==='admins'?'white':'#475569',border:`1px solid ${tab==='admins'?'#0f172a':'#e5e7eb'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
               🛡️ المشرفين

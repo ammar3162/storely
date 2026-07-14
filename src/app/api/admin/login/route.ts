@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     const db = sb()
     const { data: admin } = await db
       .from('admin_users')
-      .select('id,email,password_hash,full_name,role,is_active')
+      .select('id,email,password_hash,full_name,role,is_active,permissions')
       .eq('email', String(email).trim().toLowerCase())
       .maybeSingle()
 
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       token,
-      admin: { id: admin.id, email: admin.email, full_name: admin.full_name, role: admin.role },
+      admin: { id: admin.id, email: admin.email, full_name: admin.full_name, role: admin.role, permissions: (admin as any).permissions || {} },
     })
   } catch (err: any) {
     return NextResponse.json({ error: 'حدث خطأ، حاول مرة أخرى' }, { status: 500 })
