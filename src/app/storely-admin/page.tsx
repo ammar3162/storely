@@ -31,7 +31,7 @@ const PLANS = [
 export default function AdminPage() {
   const [authed, setAuthed]     = useState(false)
   const [adminEmail, setAdminEmail] = useState('')
-  const [currentAdmin, setCurrentAdmin] = useState<{id:string;email:string;full_name:string}|null>(null)
+  const [currentAdmin, setCurrentAdmin] = useState<{id:string;email:string;full_name:string;role?:string}|null>(null)
   const [pass, setPass]         = useState('')
   const [passErr, setPassErr]   = useState(false)
   const [users, setUsers]       = useState<User[]>([])
@@ -42,7 +42,58 @@ export default function AdminPage() {
   const [selected, setSelected] = useState<User|null>(null)
   const [renewDays, setRenewDays] = useState(30)
   const [confirmDel, setConfirmDel] = useState<User|null>(null)
-  const [tab, setTab]           = useState<'users'|'stats'|'suppliers'|'dashboard'|'packages'|'analytics'>('dashboard')
+  const [tab, setTab]           = useState<'users'|'stats'|'suppliers'|'dashboard'|'packages'|'analytics'|'admins'>('dashboard')
+  const [adminsList, setAdminsList] = useState<any[]>([])
+  const [adminsLoading, setAdminsLoading] = useState(false)
+  const [showAddAdmin, setShowAddAdmin] = useState(false)
+  const [newAdminEmail, setNewAdminEmail] = useState('')
+  const [newAdminPass, setNewAdminPass] = useState('')
+  const [newAdminName, setNewAdminName] = useState('')
+  const [newAdminPerms, setNewAdminPerms] = useState<Record<string,boolean>>({})
+  const [addAdminSaving, setAddAdminSaving] = useState(false)
+  const [addAdminError, setAddAdminError] = useState('')
+
+  const PERMISSION_LABELS: Record<string,string> = {
+    manage_users: 'إدارة المستخدمين (تفعيل/إيقاف/حذف)',
+    manage_suppliers: 'إدارة طلبات الموردين',
+    view_analytics: 'عرض التحليلات',
+    manage_packages: 'إدارة الباقات',
+    manage_backups: 'إدارة النسخ الاحتياطية',
+    manage_admins: 'إدارة المشرفين',
+  }
+
+  async function loadAdmins() {
+    setAdminsLoading(true)
+    const res = await fetch('/api/admin/list-admins', { headers: { 'x-admin-key': sessionStorage.getItem('storely_admin_pass') || '' } })
+    const data = await res.json()
+    if (data.admins) setAdminsList(data.admins)
+    setAdminsLoading(false)
+  }
+
+  async function createAdmin() {
+    setAddAdminError('')
+    if (!newAdminEmail || !newAdminPass || !newAdminName) { setAddAdminError('أدخل كل البيانات'); return }
+    setAddAdminSaving(true)
+    const res = await fetch('/api/admin/create-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': sessionStorage.getItem('storely_admin_pass') || '' },
+      body: JSON.stringify({ email: newAdminEmail, password: newAdminPass, full_name: newAdminName, permissions: newAdminPerms }),
+    })
+    const data = await res.json()
+    setAddAdminSaving(false)
+    if (!res.ok) { setAddAdminError(data.error || 'حدث خطأ'); return }
+    setNewAdminEmail(''); setNewAdminPass(''); setNewAdminName(''); setNewAdminPerms({}); setShowAddAdmin(false)
+    loadAdmins()
+  }
+
+  async function toggleAdminActive(adminId: string, isActive: boolean) {
+    await fetch('/api/admin/update-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': sessionStorage.getItem('storely_admin_pass') || '' },
+      body: JSON.stringify({ admin_id: adminId, is_active: isActive }),
+    })
+    loadAdmins()
+  }
   const [dashStats, setDashStats] = useState<any>({})
   const [dashLoading, setDashLoading] = useState(false)
   const [supplierApps, setSupplierApps] = useState<any[]>([])
@@ -441,6 +492,11 @@ export default function AdminPage() {
           <button onClick={()=>setTab('packages')} style={{padding:'7px 14px',background:tab==='packages'?'#f59e0b':'#ffffff',color:tab==='packages'?'white':'#475569',border:`1px solid ${tab==='packages'?'#f59e0b':'#e5e7eb'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
             📦 الباقات
           </button>
+          {currentAdmin?.role==='super_admin' && (
+            <button onClick={()=>{setTab('admins');loadAdmins()}} style={{padding:'7px 14px',background:tab==='admins'?'#0f172a':'#ffffff',color:tab==='admins'?'white':'#475569',border:`1px solid ${tab==='admins'?'#0f172a':'#e5e7eb'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+              🛡️ المشرفين
+            </button>
+          )}
           <button onClick={loadUsers} style={{padding:'7px 14px',background:'#ffffff',color:'#475569',border:'1px solid #e5e7eb',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6}}>
             ↺ تحديث
           </button>
@@ -725,6 +781,77 @@ export default function AdminPage() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ═══ Admins Tab ═══ */}
+      {tab==='admins' && (
+        <div style={{padding:'0 24px 24px',maxWidth:900,margin:'0 auto'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+            <div style={{fontSize:16,fontWeight:800,color:'#0f172a'}}>🛡️ إدارة المشرفين</div>
+            <button onClick={()=>setShowAddAdmin(v=>!v)} style={{padding:'8px 16px',background:'#0f172a',color:'white',border:'none',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+              {showAddAdmin?'إلغاء':'+ إضافة مشرف'}
+            </button>
+          </div>
+
+          {showAddAdmin && (
+            <div style={{background:'#ffffff',borderRadius:14,padding:20,border:'1px solid #e5e7eb',marginBottom:16}}>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                <input value={newAdminName} onChange={e=>setNewAdminName(e.target.value)} placeholder="الاسم الكامل"
+                  style={{padding:'10px 12px',border:'1px solid #e2e8f0',borderRadius:8,fontSize:13,fontFamily:'inherit',outline:'none'}}/>
+                <input value={newAdminEmail} onChange={e=>setNewAdminEmail(e.target.value)} placeholder="الإيميل" type="email" dir="ltr"
+                  style={{padding:'10px 12px',border:'1px solid #e2e8f0',borderRadius:8,fontSize:13,fontFamily:'inherit',outline:'none'}}/>
+              </div>
+              <input value={newAdminPass} onChange={e=>setNewAdminPass(e.target.value)} placeholder="كلمة المرور (8 أحرف على الأقل)" type="password"
+                style={{width:'100%',padding:'10px 12px',border:'1px solid #e2e8f0',borderRadius:8,fontSize:13,fontFamily:'inherit',outline:'none',marginBottom:14,boxSizing:'border-box'}}/>
+
+              <div style={{fontSize:12,fontWeight:700,color:'#475569',marginBottom:8}}>الصلاحيات:</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
+                {Object.entries(PERMISSION_LABELS).map(([key,label])=>(
+                  <label key={key} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:newAdminPerms[key]?'#f0fdf4':'#f8fafc',border:`1px solid ${newAdminPerms[key]?'#bbf7d0':'#e2e8f0'}`,borderRadius:8,cursor:'pointer',fontSize:12}}>
+                    <input type="checkbox" checked={!!newAdminPerms[key]} onChange={e=>setNewAdminPerms(prev=>({...prev,[key]:e.target.checked}))}/>
+                    {label}
+                  </label>
+                ))}
+              </div>
+
+              {addAdminError && <div style={{fontSize:12,color:'#dc2626',fontWeight:600,marginBottom:12}}>⚠️ {addAdminError}</div>}
+              <button onClick={createAdmin} disabled={addAdminSaving}
+                style={{width:'100%',padding:'11px',background:'#16a34a',color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                {addAdminSaving?'⏳ جاري الإضافة...':'إضافة المشرف'}
+              </button>
+            </div>
+          )}
+
+          {adminsLoading ? (
+            <div style={{textAlign:'center',padding:40,color:'#94a3b8'}}>جاري التحميل...</div>
+          ) : (
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              {adminsList.map(a=>(
+                <div key={a.id} style={{background:'#ffffff',borderRadius:14,padding:'16px 20px',border:'1px solid #e5e7eb',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <div>
+                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                      <span style={{fontSize:14,fontWeight:800,color:'#0f172a'}}>{a.full_name}</span>
+                      {a.role==='super_admin' && <span style={{fontSize:10,fontWeight:700,background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',borderRadius:20,padding:'2px 8px'}}>مشرف كامل</span>}
+                      {!a.is_active && <span style={{fontSize:10,fontWeight:700,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:20,padding:'2px 8px'}}>معطّل</span>}
+                    </div>
+                    <div style={{fontSize:12,color:'#94a3b8',marginTop:3}} dir="ltr">{a.email}</div>
+                    {a.role!=='super_admin' && (
+                      <div style={{fontSize:11,color:'#64748b',marginTop:6}}>
+                        {Object.entries(a.permissions||{}).filter(([,v])=>v).map(([k])=>PERMISSION_LABELS[k]||k).join(' · ') || 'بدون صلاحيات محددة'}
+                      </div>
+                    )}
+                  </div>
+                  {a.role!=='super_admin' && (
+                    <button onClick={()=>toggleAdminActive(a.id, !a.is_active)}
+                      style={{padding:'6px 14px',background:a.is_active?'#fef2f2':'#f0fdf4',color:a.is_active?'#dc2626':'#16a34a',border:`1px solid ${a.is_active?'#fecaca':'#bbf7d0'}`,borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                      {a.is_active?'تعطيل':'تفعيل'}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
