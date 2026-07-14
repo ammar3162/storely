@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { isValidAdminKey } from '@/lib/adminAuth'
+import { requirePermission } from '@/lib/adminAuth'
 
 export async function POST(req: Request) {
   try {
     // تحقق من مفتاح الأدمن
     const adminKey = req.headers.get('x-admin-key')
     const correct  = process.env.ADMIN_PASSWORD
-    if (!(await isValidAdminKey(adminKey))) {
+    if (!(await requirePermission(adminKey, 'manage_users'))) {
       return NextResponse.json({ success: false, error: 'unauthorized' }, { status: 401 })
     }
 

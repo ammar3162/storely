@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { isValidAdminKey } from '@/lib/adminAuth'
+import { requirePermission } from '@/lib/adminAuth'
 
 export async function POST(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
-  if (!(await isValidAdminKey(adminKey))) {
+  if (!(await requirePermission(adminKey, 'manage_users'))) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 

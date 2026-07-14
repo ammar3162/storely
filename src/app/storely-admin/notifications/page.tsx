@@ -24,9 +24,21 @@ export default function AdminNotificationsPage() {
   const [sent, setSent]         = useState<any[]>([])
   const [loading, setLoading]   = useState(true)
   const [tab, setTab]           = useState<'send'|'history'>('send')
+  const [authChecked, setAuthChecked] = useState(false)
   const sb = createClient()
 
-  useEffect(()=>{ load() },[])
+  useEffect(() => {
+    const key = sessionStorage.getItem('storely_admin_pass') || ''
+    fetch('/api/admin/whoami', { headers: { 'x-admin-key': key } })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => {
+        if (!data.authenticated || data.admin?.role !== 'super_admin') { window.location.href = '/storely-admin'; return }
+        setAuthChecked(true)
+      })
+      .catch(() => { window.location.href = '/storely-admin' })
+  }, [])
+
+  useEffect(()=>{ if(authChecked) load() },[authChecked])
 
   async function load() {
     setLoading(true)

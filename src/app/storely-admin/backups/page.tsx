@@ -6,23 +6,29 @@ const C = { bg:'#0f172a', card:'#1e293b', border:'#334155', text:'#f1f5f9', text
 export default function BackupsPage() {
   const [backups, setBackups] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [pass, setPass]       = useState('')
-  const [authed, setAuthed]   = useState(false)
+  const [authChecked, setAuthChecked] = useState(false)
   const [error, setError]     = useState('')
 
   useEffect(() => {
-    const saved = document.cookie.split('; ').find(c=>c.startsWith('storely_admin_token='))
-    if (saved) { setPass(saved.split('=')[1]); setAuthed(true) }
+    const key = sessionStorage.getItem('storely_admin_pass') || ''
+    fetch('/api/admin/whoami', { headers: { 'x-admin-key': key } })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => {
+        if (!data.authenticated || (data.admin?.role !== 'super_admin' && !data.admin?.permissions?.manage_backups)) { window.location.href = '/storely-admin'; return }
+        setAuthChecked(true)
+      })
+      .catch(() => { window.location.href = '/storely-admin' })
   }, [])
 
-  useEffect(() => { if (authed) load() }, [authed])
+  useEffect(() => { if (authChecked) load() }, [authChecked])
 
   async function load() {
     setLoading(true); setError('')
     try {
-      const res = await fetch('/api/admin/list-backups', { headers: { 'x-admin-key': pass } })
+      const key = sessionStorage.getItem('storely_admin_pass') || ''
+      const res = await fetch('/api/admin/list-backups', { headers: { 'x-admin-key': key } })
       const data = await res.json()
-      if (!res.ok) { setError('كلمة مرور غير صحيحة'); setAuthed(false); setLoading(false); return }
+      if (!res.ok) { setError('حدث خطأ بالتحقق'); setLoading(false); return }
       setBackups(data.backups || [])
     } catch { setError('حدث خطأ') }
     setLoading(false)
@@ -30,14 +36,9 @@ export default function BackupsPage() {
 
   function fmtSize(bytes:number) { return bytes > 1024 ? (bytes/1024).toFixed(1)+' KB' : bytes+' B' }
 
-  if (!authed) return (
+  if (!authChecked) return (
     <div style={{minHeight:'100vh',background:C.bg,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{background:C.card,padding:32,borderRadius:16,width:320,border:`1px solid ${C.border}`}}>
-        <div style={{fontSize:18,fontWeight:800,color:C.text,marginBottom:16}}>🔒 دخول الأدمن</div>
-        <input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="كلمة المرور" style={{width:'100%',padding:'10px 14px',borderRadius:10,border:`1px solid ${C.border}`,background:'#0f172a',color:C.text,marginBottom:12,fontFamily:'inherit',boxSizing:'border-box'}}/>
-        {error && <div style={{color:'#ef4444',fontSize:13,marginBottom:12}}>{error}</div>}
-        <button onClick={()=>setAuthed(true)} style={{width:'100%',padding:'10px',background:C.blue,color:'white',border:'none',borderRadius:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>دخول</button>
-      </div>
+      <div style={{color:C.text2,fontSize:13}}>⏳ جاري التحقق...</div>
     </div>
   )
 

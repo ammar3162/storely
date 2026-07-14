@@ -10,8 +10,21 @@ export default function MonitoringPage() {
   const [checks, setChecks] = useState<Check[]>([])
   const [loading, setLoading] = useState(true)
   const [lastCheck, setLastCheck] = useState<Date|null>(null)
+  const [authChecked, setAuthChecked] = useState(false)
   const sb = createClient()
-  useEffect(()=>{ runChecks() },[])
+
+  useEffect(() => {
+    const key = sessionStorage.getItem('storely_admin_pass') || ''
+    fetch('/api/admin/whoami', { headers: { 'x-admin-key': key } })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => {
+        if (!data.authenticated || data.admin?.role !== 'super_admin') { window.location.href = '/storely-admin'; return }
+        setAuthChecked(true)
+      })
+      .catch(() => { window.location.href = '/storely-admin' })
+  }, [])
+
+  useEffect(()=>{ if(authChecked) runChecks() },[authChecked])
 
   async function runChecks() {
     setLoading(true); const r: Check[] = []
