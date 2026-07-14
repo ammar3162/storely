@@ -42,7 +42,7 @@ export default function SuppliersJoinPage() {
         <div style={{fontSize:64,marginBottom:16}}>🎉</div>
         <h2 style={{fontSize:22,fontWeight:800,color:'#0f172a',marginBottom:8}}>تم استلام طلبك!</h2>
         <p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:24}}>شكراً لاهتمامك بالشراكة مع Storely. سيتواصل معك فريقنا خلال 24-48 ساعة.</p>
-        <a href="https://wa.me/966594351667" target="_blank"
+        <a href="https://wa.me/966594351667" target="_blank" rel="noopener noreferrer"
           style={{display:'inline-flex',alignItems:'center',gap:8,padding:'12px 24px',background:'#16a34a',color:'white',borderRadius:12,fontSize:14,fontWeight:700,textDecoration:'none'}}>
           📲 تواصل معنا مباشرة
         </a>

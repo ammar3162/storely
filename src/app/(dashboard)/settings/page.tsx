@@ -397,7 +397,7 @@ export default function SettingsPage() {
                       <div style={{fontSize:13,fontWeight:700,color:'#92400e',marginBottom:2}}>للترقية تواصل معنا عبر واتساب</div>
                       <div style={{fontSize:11,color:'#b45309'}}>الأساسية 149 · المتوسطة 249 · المتقدمة 399 ريال/شهر</div>
                     </div>
-                    <a href="https://wa.me/966594351667?text=أريد الترقية في Storely" target="_blank"
+                    <a href="https://wa.me/966594351667?text=أريد الترقية في Storely" target="_blank" rel="noopener noreferrer"
                       style={{marginRight:'auto',padding:'8px 16px',background:'#16a34a',color:'white',borderRadius:8,fontSize:12,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap'}}>
                       تواصل معنا
                     </a>

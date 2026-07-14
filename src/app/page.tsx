@@ -308,7 +308,7 @@ export default function LandingPage() {
                     ))}
                   </div>
 
-                  <a href={`https://wa.me/966594351667?text=أريد الاشتراك في باقة ${p.name}`} target="_blank"
+                  <a href={`https://wa.me/966594351667?text=أريد الاشتراك في باقة ${p.name}`} target="_blank" rel="noopener noreferrer"
                     style={{ display: 'block', width: '100%', padding: '14px', background: p.popular ? '#16a34a' : 'white', color: p.popular ? 'white' : '#16a34a', border: '2px solid #16a34a', borderRadius: 14, fontSize: 15, fontWeight: 800, textDecoration: 'none', textAlign: 'center', transition: 'all 0.3s', boxShadow: p.popular ? '0 4px 15px rgba(22,163,74,.3)' : 'none' }}>
                     ابدأ الآن
                   </a>
@@ -347,7 +347,7 @@ export default function LandingPage() {
               const [text, href] = t.split(':')
               return <a key={href} href={href} style={{ fontSize: 13, color: 'rgba(255,255,255,.5)', textDecoration: 'none' }}>{text}</a>
             })}
-            <a href="https://wa.me/966594351667" target="_blank" style={{ fontSize: 13, color: 'rgba(255,255,255,.5)', textDecoration: 'none' }}>تواصل معنا</a>
+            <a href="https://wa.me/966594351667" target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: 'rgba(255,255,255,.5)', textDecoration: 'none' }}>تواصل معنا</a>
           </div>
           <p style={{ fontSize: 12, color: 'rgba(255,255,255,.3)' }}>© {new Date().getFullYear()} Storely. جميع الحقوق محفوظة</p>
         </div>

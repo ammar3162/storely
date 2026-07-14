@@ -2,6 +2,12 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+// حماية أمنية: يمنع عرض روابط خبيثة (javascript:, data:, إلخ) كرابط قابل للنقر
+function isSafeUrl(url?: string | null): boolean {
+  if (!url) return false
+  return /^https?:\/\//i.test(url.trim())
+}
+
 const BUSINESS_TYPES = [
   {v:'الكل',icon:'🌟'},
   {v:'مطاعم',icon:'🍔'},{v:'كوفي',icon:'☕'},{v:'مخابز',icon:'🥖'},
@@ -147,12 +153,12 @@ export default function MarketplacePage() {
                     <p style={{fontSize:12,color:'#64748b',lineHeight:1.7,margin:'0 0 12px'}}>{s.description}</p>
                   )}
                   <div style={{display:'flex',gap:8}}>
-                    <a href={getWhatsAppLink(s)} target="_blank"
+                    <a href={getWhatsAppLink(s)} target="_blank" rel="noopener noreferrer"
                       style={{flex:1,padding:'10px',background:'#16a34a',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none',textAlign:'center',display:'block'}}>
                       📲 تواصل للحصول على العرض
                     </a>
-                    {s.website && (
-                      <a href={s.website} target="_blank"
+                    {isSafeUrl(s.website) && (
+                      <a href={s.website} target="_blank" rel="noopener noreferrer"
                         style={{padding:'10px 14px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none'}}>
                         🌐
                       </a>

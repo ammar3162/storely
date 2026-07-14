@@ -15,11 +15,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
 
+    // حماية أمنية: نرفض أي قيمة لا تبدأ بـ http:// أو https:// (يمنع حقن روابط javascript: الخبيثة)
+    let safeWebsite: string | null = null
+    if (website) {
+      const trimmed = String(website).trim()
+      if (/^https?:\/\//i.test(trimmed)) safeWebsite = trimmed
+      else return NextResponse.json({ error: 'رابط الموقع يجب أن يبدأ بـ http:// أو https://' }, { status: 400 })
+    }
+
     const { error } = await sb().from('supplier_applications').insert({
       company_name, contact_name, phone, email: email||null,
       business_type: business_type||[],
       description: description||null,
-      website: website||null,
+      website: safeWebsite,
       offer: offer||null,
       status: 'pending'
     })

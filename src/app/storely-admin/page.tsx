@@ -2,6 +2,12 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+// حماية أمنية: يمنع عرض روابط خبيثة (javascript:, data:, إلخ) كرابط قابل للنقر
+function isSafeUrl(url?: string | null): boolean {
+  if (!url) return false
+  return /^https?:\/\//i.test(url.trim())
+}
+
 type User = {
   id:string; full_name:string; phone:string; role:string
   status:string; created_at:string; org_id:string; org_name:string
@@ -730,7 +736,7 @@ export default function AdminPage() {
                         <span>👤 {s.contact_name}</span>
                         <span>📱 {s.phone}</span>
                         {s.email&&<span>📧 {s.email}</span>}
-                        {s.website&&<a href={s.website} target="_blank" style={{color:'#2563eb',textDecoration:'none'}}>🌐 الموقع</a>}
+                        {isSafeUrl(s.website)&&<a href={s.website} target="_blank" rel="noopener noreferrer" style={{color:'#2563eb',textDecoration:'none'}}>🌐 الموقع</a>}
                       </div>
                       {s.business_type?.length>0&&(
                         <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:8}}>
@@ -742,7 +748,7 @@ export default function AdminPage() {
                       {s.description&&<div style={{fontSize:12,color:'#94a3b8',marginTop:4}}>{s.description}</div>}
                     </div>
                     <div style={{display:'flex',gap:6,flexShrink:0}}>
-                      <a href={`https://wa.me/${s.phone.replace(/[^0-9]/g,'')}`} target="_blank"
+                      <a href={`https://wa.me/${s.phone.replace(/[^0-9]/g,'')}`} target="_blank" rel="noopener noreferrer"
                         style={{padding:'7px 12px',background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',borderRadius:8,fontSize:12,fontWeight:700,textDecoration:'none'}}>
                         📲 واتساب
                       </a>
