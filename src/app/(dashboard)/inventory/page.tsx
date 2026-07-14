@@ -29,9 +29,42 @@ const CATS_BY_TYPE: Record<string,string[]> = {
   'كوفي':['قهوة وشاي','حليب وكريمة','سكر ومحليات','أكواب وأغطية','حلويات','مشروبات','ورقيات','نظافة','أخرى'],
   'مخبز':['دقيق وسكر','زبدة وزيوت','بيض وألبان','مكسرات','تغليف','ورقيات','نظافة','أخرى'],
   'بقالة':['مواد غذائية','مشروبات','ألبان وأجبان','منظفات','ورقيات','معلبات','وجبات خفيفة','أخرى'],
+  'صيدلية':['أدوية','مستلزمات طبية','مستحضرات تجميل','مكملات غذائية','عناية بالطفل','أخرى'],
+  'مستودع':['تغليف','مواد خام','قطع غيار','أدوات','أخرى'],
+  'متجر إلكتروني':['تغليف وشحن','ملصقات وطباعة','منتجات للبيع','أخرى'],
   'أخرى':['مواد غذائية','مشروبات','ورقيات','تغليف','نظافة','أخرى'],
 }
 const DEFAULT_CATS = ['مواد غذائية','مشروبات','ورقيات','تغليف','نظافة','توابل','أخرى']
+
+// منتجات مقترحة جاهزة حسب نوع النشاط — اختيارية بالكامل، تظهر بس لما يكون المخزون فارغ
+const STARTER_PRODUCTS: Record<string,{name:string;unit:string;category:string}[]> = {
+  'مطعم':[
+    {name:'دجاج',unit:'كجم',category:'لحوم ودواجن'},{name:'لحم بقري',unit:'كجم',category:'لحوم ودواجن'},
+    {name:'أرز',unit:'كيس',category:'مواد غذائية'},{name:'طماطم',unit:'كجم',category:'خضار وفواكه'},
+    {name:'بصل',unit:'كجم',category:'خضار وفواكه'},{name:'زيت طبخ',unit:'لتر',category:'مواد غذائية'},
+    {name:'صوص باربكيو',unit:'زجاجة',category:'توابل وصلصات'},{name:'خبز',unit:'كيس',category:'مواد غذائية'},
+    {name:'أكياس تغليف',unit:'كرتون',category:'تغليف'},{name:'مياه معدنية',unit:'كرتون',category:'مشروبات'},
+  ],
+  'كوفي':[
+    {name:'حبوب قهوة',unit:'كيس',category:'قهوة وشاي'},{name:'حليب كامل الدسم',unit:'لتر',category:'حليب وكريمة'},
+    {name:'شاي',unit:'علبة',category:'قهوة وشاي'},{name:'سكر',unit:'كيس',category:'سكر ومحليات'},
+    {name:'أكواب ورقية',unit:'كرتون',category:'أكواب وأغطية'},{name:'أغطية أكواب',unit:'كرتون',category:'أكواب وأغطية'},
+    {name:'شوكولاتة',unit:'كجم',category:'حلويات'},{name:'كريمة خفق',unit:'لتر',category:'حليب وكريمة'},
+  ],
+  'مخبز':[
+    {name:'دقيق',unit:'كيس',category:'دقيق وسكر'},{name:'سكر',unit:'كيس',category:'دقيق وسكر'},
+    {name:'زبدة',unit:'كجم',category:'زبدة وزيوت'},{name:'بيض',unit:'طبق',category:'بيض وألبان'},
+    {name:'خميرة',unit:'كيس',category:'دقيق وسكر'},{name:'حليب',unit:'لتر',category:'بيض وألبان'},
+    {name:'مكسرات مشكلة',unit:'كجم',category:'مكسرات'},{name:'أكياس تغليف',unit:'كرتون',category:'تغليف'},
+  ],
+  'صيدلية':[
+    {name:'باراسيتامول',unit:'علبة',category:'أدوية'},{name:'كمامات',unit:'كرتون',category:'مستلزمات طبية'},
+    {name:'قفازات طبية',unit:'كرتون',category:'مستلزمات طبية'},{name:'معقم يدين',unit:'زجاجة',category:'مستلزمات طبية'},
+    {name:'شاش طبي',unit:'علبة',category:'مستلزمات طبية'},{name:'فيتامينات',unit:'علبة',category:'مكملات غذائية'},
+  ],
+  // بقالة، مستودع، متجر إلكتروني، أخرى: أصنافها تعتمد كلياً على اختيار صاحب النشاط
+  // (منتجات متنوعة جداً بلا معيار موحّد) — نكتفي لهم بالفئات المقترحة بدون قائمة أصناف جاهزة
+}
 
 export default function InventoryPage() {
   const [products, setProducts]   = useState<Product[]>([])
@@ -54,7 +87,33 @@ export default function InventoryPage() {
   const [showScan, setShowScan]   = useState(false)
   const [visible, setVisible]     = useState(false)
   const [businessType, setBusinessType] = useState('')
+  const [selectedTemplate, setSelectedTemplate] = useState<Record<string,boolean>>({})
+  const [addingTemplate, setAddingTemplate] = useState(false)
+  const [templateDismissed, setTemplateDismissed] = useState(false)
   const sb = createClient()
+
+  async function addTemplateProducts() {
+    const items = (STARTER_PRODUCTS[businessType]||[]).filter(p=>selectedTemplate[p.name])
+    if(items.length===0) return
+    setAddingTemplate(true)
+    const oid = sessionStorage.getItem('s_org_id')
+    let bid: string|null = sessionStorage.getItem('s_branch_id')
+    if(!bid && oid){
+      const{data:b}=await sb.from('branches').select('id').eq('org_id',oid).eq('is_active',true).order('created_at').limit(1).single()
+      bid=b?.id||null
+    }
+    if(!oid){ setAddingTemplate(false); return }
+    for(const item of items){
+      const{data:np}=await sb.from('products').insert({org_id:oid,branch_id:bid,name:item.name,unit:item.unit,qty:0,reorder_point:5,category:item.category,is_active:true}).select().single()
+      if(np){
+        fetch('/api/sync-product-to-staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:np.id})}).catch(()=>{})
+      }
+    }
+    toast(`✅ تم إضافة ${items.length} صنف`)
+    setTemplateDismissed(true)
+    setAddingTemplate(false)
+    load()
+  }
 
   useEffect(()=>{ load() },[])
   useVisibilityRefresh(load, 20*60*1000)
@@ -336,7 +395,43 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {filtered.length===0?(
+      {filtered.length===0 && !search && catFilter==='all' && STARTER_PRODUCTS[businessType] && !templateDismissed ? (
+        <div className="u" style={{background:'white',borderRadius:14,padding:'28px 24px',border:`1.5px solid ${C.primaryB}`}}>
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
+            <div style={{fontSize:22}}>✨</div>
+            <div style={{fontSize:15,fontWeight:800,color:C.text}}>نقترح عليك هذي الأصناف الشائعة لـ{businessType}</div>
+          </div>
+          <div style={{fontSize:12,color:C.text4,marginBottom:18}}>اختر اللي يناسبك وراح نضيفها لمخزونك بضغطة وحدة — أو تجاهل وابدأ يدوياً</div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))',gap:8,marginBottom:18}}>
+            {(STARTER_PRODUCTS[businessType]||[]).map(item=>(
+              <label key={item.name} style={{display:'flex',alignItems:'center',gap:8,padding:'10px 12px',background:selectedTemplate[item.name]?(C.primaryL):C.bg,border:`1.5px solid ${selectedTemplate[item.name]?(C.primaryB):C.border}`,borderRadius:9,cursor:'pointer',transition:'all .15s'}}>
+                <input type="checkbox" checked={!!selectedTemplate[item.name]}
+                  onChange={e=>setSelectedTemplate(prev=>({...prev,[item.name]:e.target.checked}))}
+                  style={{width:16,height:16,accentColor:C.primary,flexShrink:0}}/>
+                <span style={{fontSize:12,fontWeight:600,color:C.text}}>{item.name}</span>
+              </label>
+            ))}
+          </div>
+          <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap' as const}}>
+            <button onClick={addTemplateProducts} disabled={addingTemplate||Object.values(selectedTemplate).every(v=>!v)}
+              style={{padding:'10px 20px',background:Object.values(selectedTemplate).every(v=>!v)?C.border2:(C.primary),color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:Object.values(selectedTemplate).every(v=>!v)?'not-allowed':'pointer',fontFamily:'inherit'}}>
+              {addingTemplate?'⏳ جاري الإضافة...':`✓ أضف المحدد (${Object.values(selectedTemplate).filter(Boolean).length})`}
+            </button>
+            <button onClick={()=>{
+                const all: Record<string,boolean> = {}
+                for(const p of (STARTER_PRODUCTS[businessType]||[])) all[p.name]=true
+                setSelectedTemplate(all)
+              }}
+              style={{padding:'10px 16px',background:'none',color:C.primary,border:`1.5px solid ${C.primaryB}`,borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+              تحديد الكل
+            </button>
+            <button onClick={()=>setTemplateDismissed(true)}
+              style={{padding:'10px 16px',background:'none',color:C.text4,border:'none',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',marginRight:'auto'}}>
+              تجاهل، أبدأ يدوياً
+            </button>
+          </div>
+        </div>
+      ) : filtered.length===0?(
         <div className="u" style={{background:'white',borderRadius:12,padding:'48px 24px',textAlign:'center',border:`1px solid ${C.border}`}}>
           <div style={{fontSize:36,marginBottom:8}}>📦</div>
           <div style={{fontSize:14,fontWeight:600,color:C.text2,marginBottom:4}}>{search||catFilter!=='all'?'لا توجد نتائج':'المخزون فارغ'}</div>
