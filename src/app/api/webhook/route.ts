@@ -89,6 +89,39 @@ async function getTodayPurchases(orgId: string, branchId?: string|null) {
   } catch { return [] }
 }
 
+async function getYesterdayDispenseTotal(orgId: string, branchId?: string|null) {
+  try {
+    const start = new Date(); start.setDate(start.getDate()-1); start.setHours(0,0,0,0)
+    const end = new Date(); end.setHours(0,0,0,0)
+    let q = sb().from('stock_movements')
+      .select('qty_change,products!inner(org_id,branch_id)')
+      .eq('type','out').eq('products.org_id',orgId)
+      .gte('created_at',start.toISOString()).lt('created_at',end.toISOString())
+    if (branchId) q = q.eq('products.branch_id', branchId)
+    const { data } = await q
+    return (data||[]).reduce((s:number,x:any)=>s+Math.abs(x.qty_change),0)
+  } catch { return 0 }
+}
+
+async function getYesterdayPurchasesTotal(orgId: string, branchId?: string|null) {
+  try {
+    const start = new Date(); start.setDate(start.getDate()-1); start.setHours(0,0,0,0)
+    const end = new Date(); end.setHours(0,0,0,0)
+    let q = sb().from('purchases').select('amount').eq('org_id',orgId)
+      .gte('created_at',start.toISOString()).lt('created_at',end.toISOString())
+    if (branchId) q = q.eq('branch_id', branchId)
+    const { data } = await q
+    return (data||[]).reduce((s:number,x:any)=>s+Number(x.amount||0),0)
+  } catch { return 0 }
+}
+
+function compareText(today: number, yesterday: number): string {
+  if (yesterday === 0) return today > 0 ? '(جديد اليوم)' : ''
+  const pct = Math.round(((today - yesterday) / yesterday) * 100)
+  if (pct === 0) return '(=مثل الأمس)'
+  return pct > 0 ? `(+${pct}% عن الأمس)` : `(${pct}% عن الأمس)`
+}
+
 // ── جلب/حفظ الفرع المختار بجلسة واتساب ──
 async function getSelectedBranch(phone: string): Promise<string|null> {
   try {
@@ -369,16 +402,33 @@ export async function POST(req: Request) {
           if (t==='3') {
             const moves = await getTodayDispense(user.org_id, branchId)
             if (!moves.length) { await send(to,'📭 لا توجد عمليات صرف اليوم\n\nاكتب 0 للقائمة'); continue }
+
+            // أكثر صنف مصروف اليوم
+            const byProduct: Record<string,{qty:number;unit:string}> = {}
+            for (const m of moves) {
+              const name = (m.products as any)?.name || '—'
+              const unit = (m.products as any)?.unit || ''
+              if (!byProduct[name]) byProduct[name] = { qty:0, unit }
+              byProduct[name].qty += Math.abs(m.qty_change)
+            }
+            const top = Object.entries(byProduct).sort((a,b)=>b[1].qty-a[1].qty)[0]
+
+            const todayTotal = moves.reduce((s:number,x:any)=>s+Math.abs(x.qty_change),0)
+            const yesterdayTotal = await getYesterdayDispenseTotal(user.org_id, branchId)
+            const cmp = compareText(todayTotal, yesterdayTotal)
+
             const list = moves.slice(0,10).map((x:any)=>`▪️ ${(x.products as any)?.name}: ${Math.abs(x.qty_change)} ${(x.products as any)?.unit}`).join('\n')
-            await send(to,`📤 *الصرف اليوم (${moves.length})*\n\n${list}\n\nاكتب 0 للقائمة | اكتب 8 للمخزون | اكتب 9 لتغيير الفرع`)
+            await send(to,`📤 *الصرف اليوم (${moves.length})*\n\n${list}\n\n📊 إجمالي الكمية: ${todayTotal} ${cmp}\n🏆 الأكثر طلباً: ${top[0]} (${top[1].qty} ${top[1].unit})\n\nاكتب 0 للقائمة | اكتب 8 للمخزون | اكتب 9 لتغيير الفرع`)
             continue
           }
           if (t==='4') {
             const purchases = await getTodayPurchases(user.org_id, branchId)
             if (!purchases.length) { await send(to,'📭 لا توجد مشتريات اليوم\n\nاكتب 0 للقائمة'); continue }
             const total = purchases.reduce((s:number,x:any)=>s+Number(x.amount||0),0)
+            const yesterdayTotal = await getYesterdayPurchasesTotal(user.org_id, branchId)
+            const cmp = compareText(total, yesterdayTotal)
             const list = purchases.slice(0,10).map((x:any)=>`▪️ ${x.name}: ${Number(x.amount).toFixed(0)} ر.س`).join('\n')
-            await send(to,`🛒 *مشتريات اليوم (${purchases.length})*\n\n${list}\n\n💰 الإجمالي: ${total.toFixed(2)} ر.س\n\nاكتب 0 للقائمة | اكتب 8 للمخزون | اكتب 9 لتغيير الفرع`)
+            await send(to,`🛒 *مشتريات اليوم (${purchases.length})*\n\n${list}\n\n💰 الإجمالي: ${total.toFixed(2)} ر.س ${cmp}\n\nاكتب 0 للقائمة | اكتب 8 للمخزون | اكتب 9 لتغيير الفرع`)
             continue
           }
           await send(to, STOCK_MENU)
