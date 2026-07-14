@@ -30,6 +30,8 @@ const PLANS = [
 
 export default function AdminPage() {
   const [authed, setAuthed]     = useState(false)
+  const [adminEmail, setAdminEmail] = useState('')
+  const [currentAdmin, setCurrentAdmin] = useState<{id:string;email:string;full_name:string}|null>(null)
   const [pass, setPass]         = useState('')
   const [passErr, setPassErr]   = useState(false)
   const [users, setUsers]       = useState<User[]>([])
@@ -47,14 +49,24 @@ export default function AdminPage() {
   const [suppLoading, setSuppLoading] = useState(false)
   const sb = createClient()
 
+  useEffect(() => {
+    const saved = sessionStorage.getItem('storely_admin_info')
+    if (saved) {
+      try { setCurrentAdmin(JSON.parse(saved)) } catch {}
+    }
+  }, [])
+
   async function login(e: React.FormEvent) {
     e.preventDefault()
-    const res = await fetch('/api/admin/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass})})
-    if (res.ok) {
-      const token = crypto.randomUUID()
-      document.cookie = `storely_admin_token=${token};path=/;max-age=86400;SameSite=Strict;Secure`
+    const res = await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:adminEmail,password:pass})})
+    const data = await res.json()
+    if (res.ok && data.success) {
+      document.cookie = `storely_admin_token=${data.token};path=/;max-age=86400;SameSite=Strict;Secure`
       document.cookie = `storely_admin_auth=true;path=/;max-age=86400;SameSite=Strict;Secure`
-      sessionStorage.setItem('storely_admin_pass', pass)
+      sessionStorage.setItem('storely_admin_pass', pass) // للتوافق المؤقت مع الإجراءات القديمة
+      sessionStorage.setItem('storely_admin_session_token', data.token)
+      sessionStorage.setItem('storely_admin_info', JSON.stringify(data.admin))
+      setCurrentAdmin(data.admin)
       setAuthed(true); loadUsers()
     } else { setPassErr(true); setTimeout(()=>setPassErr(false),2000) }
   }
@@ -211,10 +223,13 @@ export default function AdminPage() {
         <h1 style={{fontSize:24,fontWeight:900,color:'#0f172a',marginBottom:6}}>Storely Admin</h1>
         <p style={{fontSize:13,color:'#94a3b8',marginBottom:32}}>لوحة تحكم المشرف — وصول خاص</p>
         <form onSubmit={login}>
+          <input type="email" required value={adminEmail} onChange={e=>setAdminEmail(e.target.value)} dir="ltr"
+            style={{width:'100%',padding:'14px 16px',border:`2px solid ${passErr?'#ef4444':'#e2e8f0'}`,borderRadius:14,fontSize:15,outline:'none',fontFamily:'inherit',marginBottom:10,boxSizing:'border-box',transition:'all .2s',background:'#f8fafc'}}
+            placeholder="admin@storely.dev" autoFocus/>
           <input type="password" required value={pass} onChange={e=>setPass(e.target.value)}
             style={{width:'100%',padding:'16px',border:`2px solid ${passErr?'#ef4444':'#e2e8f0'}`,borderRadius:14,fontSize:24,textAlign:'center',letterSpacing:10,outline:'none',fontFamily:'inherit',marginBottom:14,boxSizing:'border-box',transition:'all .2s',background:'#f8fafc',animation:passErr?'shake .3s ease':'none'}}
-            placeholder="••••••••" autoFocus/>
-          {passErr && <div style={{fontSize:12,color:'#ef4444',marginBottom:14,fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>⚠️ كلمة المرور غير صحيحة</div>}
+            placeholder="••••••••"/>
+          {passErr && <div style={{fontSize:12,color:'#ef4444',marginBottom:14,fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>⚠️ بيانات الدخول غير صحيحة</div>}
           <button type="submit" style={{width:'100%',padding:'15px',background:'linear-gradient(135deg,#16a34a,#15803d)',color:'white',border:'none',borderRadius:14,fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 6px 20px rgba(22,163,74,.3)',transition:'all .2s'}}>
             دخول ←
           </button>
@@ -432,6 +447,9 @@ export default function AdminPage() {
           <button onClick={()=>setAuthed(false)} style={{padding:'7px 14px',background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
             خروج
           </button>
+          {currentAdmin && (
+            <span style={{fontSize:11,color:'#94a3b8',fontWeight:600,marginRight:6}}>👤 {currentAdmin.full_name}</span>
+          )}
         </div>
       </div>
 
