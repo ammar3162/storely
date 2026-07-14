@@ -8,6 +8,18 @@ const C = {
   bg:'#f5f5f4', border:'#ebebea',
 }
 
+const COUNTRY_PHONE_LEN: {code:string;flag:string;name:string;len:number}[] = [
+  {code:'966',flag:'🇸🇦',name:'السعودية',len:10},
+  {code:'965',flag:'🇰🇼',name:'الكويت',len:8},
+  {code:'971',flag:'🇦🇪',name:'الإمارات',len:9},
+  {code:'973',flag:'🇧🇭',name:'البحرين',len:8},
+  {code:'974',flag:'🇶🇦',name:'قطر',len:8},
+  {code:'968',flag:'🇴🇲',name:'عُمان',len:8},
+  {code:'20',flag:'🇪🇬',name:'مصر',len:10},
+  {code:'962',flag:'🇯🇴',name:'الأردن',len:9},
+  {code:'other',flag:'🌍',name:'دولة أخرى',len:14},
+]
+
 export default function StaffLoginPage() {
   const [phone, setPhone] = useState('')
   const [pin, setPin]     = useState('')
@@ -17,7 +29,11 @@ export default function StaffLoginPage() {
   const [shake, setShake] = useState(false)
   const [isPWA, setIsPWA] = useState(false)
   const [time, setTime] = useState('')
+  const [country, setCountry] = useState('السعودية')
+  const [showCountryPicker, setShowCountryPicker] = useState(false)
   const router = useRouter()
+
+  const requiredLen = COUNTRY_PHONE_LEN.find(c=>c.name===country)?.len || 10
 
   useEffect(()=>{
     const saved = localStorage.getItem('staff_session')
@@ -76,7 +92,7 @@ export default function StaffLoginPage() {
 
   function addDigit(d: string) {
     if(step==='phone'){
-      if(phone.length<10) setPhone(function(p){ return p+d })
+      if(phone.length<requiredLen) setPhone(function(p){ return p+d })
     } else {
       if(pin.length<4) setPin(function(p){ return p+d })
     }
@@ -95,7 +111,7 @@ export default function StaffLoginPage() {
   }
 
   async function handleLogin() {
-    if(!phone||phone.length<10){setError('أدخل رقم الجوال');doShake();return}
+    if(!phone||phone.length<requiredLen){setError('أدخل رقم الجوال');doShake();return}
     if(!pin||pin.length<4){setError('أدخل رمز PIN');doShake();return}
     setLoading(true)
     try {
@@ -143,8 +159,23 @@ export default function StaffLoginPage() {
         <div style={{fontSize:12,color:'#888780',marginBottom:20}}>أدخل رقم جوالك ورمز PIN</div>
         <div style={{marginBottom:12}}>
           <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:5}}>رقم الجوال</label>
-          <input value={phone} onChange={function(e){ setPhone(e.target.value.replace(/\D/g,'').slice(0,10)) }} inputMode="numeric" maxLength={10} placeholder="05xxxxxxxx"
+          <input value={phone} onChange={function(e){ setPhone(e.target.value.replace(/\D/g,'').slice(0,requiredLen)) }} inputMode="numeric" maxLength={requiredLen} placeholder={country==='السعودية'?'05xxxxxxxx':'رقم جوالك'}
             style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0dd',borderRadius:8,fontSize:14,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr'}}/>
+          <div style={{marginTop:6,position:'relative'}}>
+            <button type="button" onClick={()=>setShowCountryPicker(v=>!v)} style={{background:'none',border:'none',padding:0,fontSize:11,color:'#16a34a',fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+              {country==='السعودية' ? 'مو رقم سعودي؟' : `${COUNTRY_PHONE_LEN.find(c=>c.name===country)?.flag} ${country} — تغيير`}
+            </button>
+            {showCountryPicker && (
+              <div style={{position:'absolute',top:20,right:0,zIndex:10,background:'white',border:'1px solid #e0e0dd',borderRadius:8,boxShadow:'0 8px 24px rgba(0,0,0,.12)',padding:6,display:'flex',flexDirection:'column',gap:2,minWidth:140}}>
+                {COUNTRY_PHONE_LEN.map(c=>(
+                  <button key={c.name} type="button" onClick={()=>{setCountry(c.name);setPhone('');setShowCountryPicker(false)}}
+                    style={{background:c.name===country?'#f0fdf4':'transparent',border:'none',padding:'6px 8px',borderRadius:6,fontSize:12,textAlign:'right' as const,cursor:'pointer',fontFamily:'inherit',color:'#1c1c1a'}}>
+                    {c.flag} {c.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <div style={{marginBottom:16}}>
           <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:5}}>رمز PIN</label>
@@ -162,8 +193,8 @@ export default function StaffLoginPage() {
 
   const digits = ['1','2','3','4','5','6','7','8','9','del','0','']
   const display = step==='phone' ? phone : pin.replace(/./g,'●')
-  const placeholder = step==='phone' ? '05xxxxxxxx' : '● ● ● ●'
-  const progress = step==='phone' ? phone.length/10 : pin.length/4
+  const placeholder = step==='phone' ? (country==='السعودية'?'05xxxxxxxx':'رقم جوالك') : '● ● ● ●'
+  const progress = step==='phone' ? phone.length/requiredLen : pin.length/4
 
   return (
     <div style={{
@@ -192,6 +223,23 @@ export default function StaffLoginPage() {
         <div style={{fontSize:11,fontWeight:700,color:C.text3,marginBottom:8,textAlign:'center',textTransform:'uppercase',letterSpacing:'.06em'}}>
           {step==='phone'?'رقم الجوال':'رمز PIN'}
         </div>
+        {step==='phone' && (
+          <div style={{textAlign:'center',marginBottom:8,position:'relative'}}>
+            <button type="button" onClick={()=>setShowCountryPicker(v=>!v)} style={{background:'none',border:'none',padding:0,fontSize:11,color:C.primary,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+              {country==='السعودية' ? 'مو رقم سعودي؟' : `${COUNTRY_PHONE_LEN.find(c=>c.name===country)?.flag} ${country} — تغيير`}
+            </button>
+            {showCountryPicker && (
+              <div style={{position:'absolute',top:20,left:'50%',transform:'translateX(-50%)',zIndex:10,background:'white',border:'1px solid #e0e0dd',borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.15)',padding:6,display:'flex',flexDirection:'column',gap:2,minWidth:150}}>
+                {COUNTRY_PHONE_LEN.map(c=>(
+                  <button key={c.name} type="button" onClick={()=>{setCountry(c.name);setPhone('');setShowCountryPicker(false)}}
+                    style={{background:c.name===country?'#f0fdf4':'transparent',border:'none',padding:'7px 10px',borderRadius:6,fontSize:12,textAlign:'right' as const,cursor:'pointer',fontFamily:'inherit',color:'#1c1c1a'}}>
+                    {c.flag} {c.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         <div style={{
           fontSize:step==='phone'?28:36,fontWeight:700,color:display?C.text:C.text4,
           textAlign:'center',letterSpacing:step==='pin'?12:2,
@@ -238,9 +286,9 @@ export default function StaffLoginPage() {
       <div style={{marginTop:28,width:260}}>
         {step==='phone'?(
           <button onClick={function(){
-            if(phone.length<10){setError('أدخل رقم الجوال كاملاً');doShake();return}
+            if(phone.length<requiredLen){setError('أدخل رقم الجوال كاملاً');doShake();return}
             setStep('pin');setError('')
-          }} style={{width:'100%',padding:'14px',background:phone.length>=10?C.primary:'#e0e0dd',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:phone.length>=10?'pointer':'default',fontFamily:'inherit',transition:'all .2s'}}>
+          }} style={{width:'100%',padding:'14px',background:phone.length>=requiredLen?C.primary:'#e0e0dd',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:phone.length>=requiredLen?'pointer':'default',fontFamily:'inherit',transition:'all .2s'}}>
             التالي
           </button>
         ):(
