@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sanitizeShortText } from '@/lib/sanitize'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,8 +9,17 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
-    const { userId, orgName, fullPhone, businessType, branchCount, phone, trialEnds, countryCode } = await req.json()
-    
+    let { userId, orgName, fullPhone, businessType, branchCount, phone, trialEnds, countryCode } = await req.json()
+
+    orgName = sanitizeShortText(orgName, 150)
+    fullPhone = sanitizeShortText(fullPhone, 20)
+    phone = sanitizeShortText(phone, 20)
+    businessType = businessType ? sanitizeShortText(businessType, 50) : businessType
+
+    if (!orgName || !fullPhone) {
+      return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+    }
+
     const supabase = sb()
     
     const maxB = branchCount===1?1:branchCount<=3?3:10

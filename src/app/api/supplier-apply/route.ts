@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sanitizeShortText, sanitizeLongText } from '@/lib/sanitize'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,7 +10,19 @@ const sb = () => createClient(
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { company_name, contact_name, phone, email, business_type, description, website, offer } = body
+    let { company_name, contact_name, phone, email, business_type, description, website, offer } = body
+
+    if(!company_name||!contact_name||!phone) {
+      return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+    }
+
+    // تنظيف كل الحقول النصية قبل الحفظ (حد أقصى للطول + إزالة رموز التحكم الخفية)
+    company_name = sanitizeShortText(company_name, 150)
+    contact_name = sanitizeShortText(contact_name, 100)
+    phone = sanitizeShortText(phone, 20)
+    email = email ? sanitizeShortText(email, 150) : null
+    description = description ? sanitizeLongText(description, 1500) : null
+    offer = offer ? sanitizeLongText(offer, 500) : null
 
     if(!company_name||!contact_name||!phone) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
