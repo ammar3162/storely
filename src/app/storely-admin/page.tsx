@@ -282,10 +282,16 @@ export default function AdminPage() {
 
   async function doDelete(u: User) {
     setSaving(u.id)
-    await fetch('/api/admin/delete-user', {
+    const res = await fetch('/api/admin/delete-user', {
       method:'POST', headers:{'Content-Type':'application/json','x-admin-key':sessionStorage.getItem('storely_admin_pass')||''},
       body: JSON.stringify({ userId:u.id, orgId:u.org_id||null })
     })
+    const data = await res.json().catch(()=>({success:false}))
+    if (!res.ok || !data.success) {
+      alert('⚠️ فشل الحذف (جزئياً أو كلياً):\n' + (data.details ? data.details.join('\n') : data.error||'خطأ غير معروف'))
+      setSaving(null)
+      return
+    }
     await loadUsers(); setSaving(null); setConfirmDel(null); setSelected(null)
   }
 
