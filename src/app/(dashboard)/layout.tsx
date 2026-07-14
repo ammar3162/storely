@@ -212,6 +212,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     window.location.reload()
   }
 
+  const [confirmStopBranch, setConfirmStopBranch] = useState<any|null>(null)
+  const [stoppingBranch, setStoppingBranch] = useState(false)
+
+  async function stopBranch(b:any) {
+    if (branches.length <= 1) { alert('لا يمكن إيقاف الفرع الوحيد المتبقي'); return }
+    setStoppingBranch(true)
+    await sb.from('branches').update({ is_active:false } as any).eq('id', b.id)
+    const remaining = branches.filter((x:any)=>x.id!==b.id)
+    setBranches(remaining)
+    sessionStorage.setItem('s_branches', JSON.stringify(remaining))
+    // لو كان الفرع الموقوف هو المختار حالياً، ننقل المستخدم لأول فرع متبقي
+    if (sessionStorage.getItem('s_branch_id') === b.id) {
+      const next = remaining[0]
+      if (next) { sessionStorage.setItem('s_branch_id', next.id); sessionStorage.setItem('s_branch_name', next.name) }
+    }
+    setStoppingBranch(false)
+    setConfirmStopBranch(null)
+    window.location.reload()
+  }
+
   const isActive=(href:string)=>pathname===href||(href!=='/dashboard'&&pathname.startsWith(href))
 
   // Bottom nav items
@@ -231,17 +251,49 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div style={{width:36,height:4,borderRadius:99,background:'#e5e7eb',margin:'0 auto 20px'}}/>
             <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:16}}>اختر الفرع</div>
             {branches.map((b:any)=>(
-              <button key={b.id} onClick={()=>selectBranch(b)}
-                style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'14px 16px',borderRadius:12,border:`1.5px solid ${sessionStorage.getItem('s_branch_id')===b.id?C.primary:'#e5e7eb'}`,background:sessionStorage.getItem('s_branch_id')===b.id?C.primaryL:'white',marginBottom:8,cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
-                <div style={{width:36,height:36,borderRadius:10,background:C.primaryL,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>🏪</div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:14,fontWeight:700,color:C.text}}>{b.name}</div>
-                  {b.location&&<div style={{fontSize:11,color:C.text3}}>{b.location}</div>}
-                </div>
-                {sessionStorage.getItem('s_branch_id')===b.id&&<span style={{fontSize:12,color:C.primary,fontWeight:700}}>✓</span>}
-              </button>
+              <div key={b.id} style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                <button onClick={()=>selectBranch(b)}
+                  style={{flex:1,display:'flex',alignItems:'center',gap:12,padding:'14px 16px',borderRadius:12,border:`1.5px solid ${sessionStorage.getItem('s_branch_id')===b.id?C.primary:'#e5e7eb'}`,background:sessionStorage.getItem('s_branch_id')===b.id?C.primaryL:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
+                  <div style={{width:36,height:36,borderRadius:10,background:C.primaryL,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>🏪</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontWeight:700,color:C.text}}>{b.name}</div>
+                    {b.location&&<div style={{fontSize:11,color:C.text3}}>{b.location}</div>}
+                  </div>
+                  {sessionStorage.getItem('s_branch_id')===b.id&&<span style={{fontSize:12,color:C.primary,fontWeight:700}}>✓</span>}
+                </button>
+                {branches.length>1 && (
+                  <button onClick={()=>setConfirmStopBranch(b)} title="إيقاف الفرع"
+                    style={{width:40,height:40,borderRadius:10,background:'#fef2f2',border:'1px solid #fecaca',color:'#dc2626',cursor:'pointer',fontSize:14,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    ⏸
+                  </button>
+                )}
+              </div>
             ))}
             <button onClick={()=>setShowBranch(false)} style={{width:'100%',padding:'13px',background:'#f9fafb',border:'1.5px solid #e5e7eb',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:C.text2,marginTop:4}}>إلغاء</button>
+          </div>
+        </div>
+      )}
+
+      {/* تأكيد إيقاف الفرع */}
+      {confirmStopBranch && (
+        <div style={{position:'fixed',inset:0,zIndex:2100,display:'flex',alignItems:'center',justifyContent:'center',padding:20,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+          <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.5)',backdropFilter:'blur(6px)'}} onClick={()=>{if(!stoppingBranch)setConfirmStopBranch(null)}}/>
+          <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:360,position:'relative',boxShadow:'0 24px 60px rgba(0,0,0,.2)'}}>
+            <div style={{width:48,height:48,borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:22}}>⏸</div>
+            <div style={{fontSize:15,fontWeight:800,color:C.text,textAlign:'center',marginBottom:6}}>إيقاف الفرع</div>
+            <div style={{fontSize:13,color:C.text3,textAlign:'center',lineHeight:1.7,marginBottom:20}}>
+              راح يختفي فرع <b style={{color:C.text}}>{confirmStopBranch.name}</b> من القائمة والتقارير. بياناته تبقى محفوظة بأمان ويمكن تفعيله من جديد لاحقاً من صفحة الإعدادات.
+            </div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>setConfirmStopBranch(null)} disabled={stoppingBranch}
+                style={{flex:1,padding:'11px',background:'#f9fafb',color:C.text2,border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                إلغاء
+              </button>
+              <button onClick={()=>stopBranch(confirmStopBranch)} disabled={stoppingBranch}
+                style={{flex:2,padding:'11px',background:'#dc2626',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                {stoppingBranch?'جاري الإيقاف...':'تأكيد الإيقاف'}
+              </button>
+            </div>
           </div>
         </div>
       )}
