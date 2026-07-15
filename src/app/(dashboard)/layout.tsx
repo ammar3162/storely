@@ -33,6 +33,7 @@ const NAV_GROUPS = [
     label: 'إدارة الفريق',
     items: [
       { href:'/staff-management', label:'الموظفون', icon:'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8zm6 0a4 4 0 11-8 0' },
+      { href:'/branches', label:'إدارة الفروع', icon:'M3 21h18M5 21V7l8-4v18M19 21V11l-6-4' },
       { href:'/suppliers',  label:'الموردين', icon:'M3 7h13l3 5v5h-3m-10 0H3v-7m13-3v10m-13 0a2 2 0 104 0m-4 0a2 2 0 114 0m9 0a2 2 0 104 0m-4 0a2 2 0 114 0' },
       { href:'/marketplace', label:'موردون معتمدون', icon:'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
     ]
@@ -516,7 +517,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {NAV_GROUPS.map((group,gi)=>(
                 <div key={gi} style={{marginBottom:4}}>
                   <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.25)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{group.label}</div>
-                  {group.items.map(item=>{
+                  {group.items.filter(item=>item.href!=='/branches'||branches.length>1).map(item=>{
                     const active=isActive(item.href)
                     const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
                     const isExternal=item.href.startsWith('http')
