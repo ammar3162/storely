@@ -34,6 +34,7 @@ export default function StaffManagementPage() {
   const [staff, setStaff]           = useState<any[]>([])
   const [branches, setBranches]     = useState<any[]>([])
   const [orgId, setOrgId]           = useState('')
+  const [orgNotifyClosingWA, setOrgNotifyClosingWA] = useState(true)
   const [loading, setLoading]       = useState(true)
   const [showAdd, setShowAdd]       = useState(false)
   const [newPermissions, setNewPermissions] = useState({dispense:false,inventory:false,purchases:false,reports:false})
@@ -87,10 +88,11 @@ export default function StaffManagementPage() {
     const{data:{user}}=await sb.auth.getUser(); if(!user) return
     const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single(); if(!profile?.org_id) return
     setOrgId(profile.org_id)
-    const{data:orgLimits}=await (sb as any).from('organizations').select('max_staff,shop_open_time,shop_close_time').eq('id',profile.org_id).single()
+    const{data:orgLimits}=await (sb as any).from('organizations').select('max_staff,shop_open_time,shop_close_time,notify_cashier_closing_wa').eq('id',profile.org_id).single()
     setMaxStaff((orgLimits as any)?.max_staff||1)
     setShopOpenTime(((orgLimits as any)?.shop_open_time||'').slice(0,5))
     setShopCloseTime(((orgLimits as any)?.shop_close_time||'').slice(0,5))
+    setOrgNotifyClosingWA((orgLimits as any)?.notify_cashier_closing_wa!==false)
     await Promise.all([loadStaff(profile.org_id),loadBranches(profile.org_id),loadProducts(profile.org_id)])
     setLoading(false); setTimeout(()=>setVisible(true),50)
   }
@@ -275,6 +277,15 @@ export default function StaffManagementPage() {
           موظف جديد
         </button>
       </div>
+
+      {!orgNotifyClosingWA && staff.some((s:any)=>s.role==='cashier') && (
+        <div style={{background:colors.warningLight,border:`1.5px solid ${colors.warningBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16,fontSize:font.sm,color:colors.warning,display:'flex',alignItems:'center',gap:10}}>
+          <span style={{fontSize:18}}>⚠️</span>
+          <div>
+            <b>تقارير إقفال الكاشير عبر واتساب موقّفة من الإعدادات العامة.</b> الخيارات تحت لكل موظف (مفعّل/موقّف) ما راح تشتغل حتى تفعّلها من <a href="/settings" style={{color:colors.warning,textDecoration:'underline',fontWeight:700}}>الإعدادات ← الإشعارات</a>.
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="su" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:20,animationDelay:'.05s'}}>
