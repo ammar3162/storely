@@ -17,6 +17,31 @@ export default function BranchesPage() {
   const [editPhoneValue, setEditPhoneValue] = useState('')
   const [savingPhone, setSavingPhone] = useState(false)
   const [reactivatingId, setReactivatingId] = useState<string|null>(null)
+  const [confirmDeleteBranch, setConfirmDeleteBranch] = useState<any|null>(null)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deletingBranch, setDeletingBranch] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+
+  async function deleteBranchPermanently() {
+    if (!confirmDeleteBranch) return
+    setDeleteError('')
+    setDeletingBranch(true)
+    const{data:{user}}=await sb.auth.getUser()
+    if(!user){setDeletingBranch(false);return}
+    const res = await fetch('/api/delete-branch', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ branch_id: confirmDeleteBranch.id, org_id: orgId, user_id: user.id })
+    })
+    const data = await res.json()
+    setDeletingBranch(false)
+    if (!res.ok || !data.success) {
+      setDeleteError(data.error || 'حدث خطأ أثناء الحذف')
+      return
+    }
+    setBranches(prev=>prev.filter((b:any)=>b.id!==confirmDeleteBranch.id))
+    setInactiveBranches(prev=>prev.filter((b:any)=>b.id!==confirmDeleteBranch.id))
+    setConfirmDeleteBranch(null); setDeleteConfirmText('')
+  }
 
   useEffect(()=>{ init() },[])
 
@@ -99,7 +124,12 @@ export default function BranchesPage() {
                 </button>
                 {i===0
                   ? <span style={{fontSize:font.xs,color:colors.primary,padding:'4px 10px',background:colors.primaryLight,borderRadius:20,border:`1px solid ${colors.primaryBorder}`,fontWeight:700}}>رئيسي</span>
-                  : <button onClick={()=>deleteBranch(b.id)} style={{background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:radius.sm,padding:'6px 12px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>إيقاف</button>}
+                  : (
+                    <>
+                      <button onClick={()=>deleteBranch(b.id)} style={{background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:radius.sm,padding:'6px 12px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>إيقاف</button>
+                      <button onClick={()=>{setConfirmDeleteBranch(b);setDeleteConfirmText('');setDeleteError('')}} style={{background:'none',color:colors.text4,border:`1px solid ${colors.border}`,borderRadius:radius.sm,padding:'6px 10px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>حذف نهائي</button>
+                    </>
+                  )}
               </div>
               <div style={{marginTop:10,marginRight:48}}>
                 {editingPhoneId===b.id ? (
@@ -142,6 +172,7 @@ export default function BranchesPage() {
                 style={{background:colors.primaryLight,color:colors.primary,border:`1px solid ${colors.primaryBorder}`,borderRadius:radius.sm,padding:'6px 12px',fontSize:font.xs,fontWeight:700,cursor:(reactivatingId===b.id||branches.length>=maxBranches)?'not-allowed':'pointer',fontFamily:font.family,opacity:branches.length>=maxBranches?.5:1}}>
                 {reactivatingId===b.id?'...':branches.length>=maxBranches?'الباقة ممتلئة':'تفعيل'}
               </button>
+              <button onClick={()=>{setConfirmDeleteBranch(b);setDeleteConfirmText('');setDeleteError('')}} style={{background:'none',color:colors.text4,border:`1px solid ${colors.border}`,borderRadius:radius.sm,padding:'6px 10px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>حذف نهائي</button>
             </div>
           ))}
         </div>
@@ -161,6 +192,33 @@ export default function BranchesPage() {
       ) : (
         <div style={{...card,padding:'16px',background:colors.warningLight||'#fffbeb',textAlign:'center',fontSize:font.sm,color:colors.text3}}>
           وصلت للحد الأقصى لباقتك ({maxBranches} فرع) — رقّي باقتك لإضافة المزيد
+        </div>
+      )}
+
+      {confirmDeleteBranch && (
+        <div style={{position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.5)',backdropFilter:'blur(6px)'}} onClick={()=>!deletingBranch&&setConfirmDeleteBranch(null)}/>
+          <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:400,position:'relative',boxShadow:'0 24px 60px rgba(0,0,0,.2)'}}>
+            <div style={{width:48,height:48,borderRadius:12,background:colors.dangerLight,border:`1px solid ${colors.dangerBorder}`,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:22}}>⚠️</div>
+            <div style={{fontSize:15,fontWeight:800,color:colors.text,textAlign:'center',marginBottom:6}}>حذف الفرع نهائياً</div>
+            <div style={{fontSize:13,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
+              سيتم حذف <b style={{color:colors.text}}>{confirmDeleteBranch.name}</b> وكل بياناته (منتجات، مشتريات، مبيعات، موظفين) نهائياً. هذا الإجراء لا يمكن التراجع عنه إطلاقاً.
+            </div>
+            <div style={{fontSize:12,fontWeight:700,color:colors.text3,marginBottom:6}}>اكتب اسم الفرع للتأكيد:</div>
+            <input value={deleteConfirmText} onChange={e=>setDeleteConfirmText(e.target.value)} placeholder={confirmDeleteBranch.name}
+              style={{...inp(),marginBottom:14,boxSizing:'border-box' as const}}/>
+            {deleteError && <div style={{fontSize:12,color:colors.danger,fontWeight:600,marginBottom:12,textAlign:'center'}}>⚠️ {deleteError}</div>}
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>setConfirmDeleteBranch(null)} disabled={deletingBranch}
+                style={{flex:1,padding:'11px',background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border}`,borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
+                إلغاء
+              </button>
+              <button onClick={deleteBranchPermanently} disabled={deletingBranch || deleteConfirmText!==confirmDeleteBranch.name}
+                style={{flex:2,padding:'11px',background:colors.danger,color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:(deletingBranch||deleteConfirmText!==confirmDeleteBranch.name)?'not-allowed':'pointer',fontFamily:font.family,opacity:(deleteConfirmText!==confirmDeleteBranch.name)?.5:1}}>
+                {deletingBranch?'جاري الحذف...':'تأكيد الحذف النهائي'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
