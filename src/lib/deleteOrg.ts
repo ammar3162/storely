@@ -82,3 +82,54 @@ export async function deleteOrgCompletely(orgId: string, userId?: string): Promi
 
   return { success: errors.length === 0, errors }
 }
+
+/**
+ * حذف فرع واحد بالكامل بشكل آمن — يحترم كل قيود الربط بترتيب صحيح.
+ * لا يحذف أبداً الملف الشخصي لصاحب الحساب (profiles) — بس يفكّ ارتباطه بالفرع (branch_id = null)
+ * لأن حذف حساب دخول العميل بسبب حذف فرع كارثة أكبر بكثير من فقدان تفضيل الفرع الافتراضي.
+ */
+export async function deleteBranchCompletely(branchId: string, orgId: string): Promise<{ success: boolean; errors: string[] }> {
+  const supabase = sb()
+  const errors: string[] = []
+
+  const { data: prods } = await supabase.from('products').select('id').eq('org_id', orgId).eq('branch_id', branchId)
+  const pids = (prods || []).map((p: any) => p.id)
+
+  if (pids.length > 0) {
+    const r1 = await supabase.from('stock_movements').delete().in('product_id', pids)
+    if (r1.error) errors.push(`stock_movements: ${r1.error.message}`)
+    const r2 = await (supabase as any).from('product_suppliers').delete().in('product_id', pids)
+    if (r2.error) errors.push(`product_suppliers: ${r2.error.message}`)
+    const r3 = await (supabase as any).from('supplier_order_logs').delete().in('product_id', pids)
+    if (r3.error) errors.push(`supplier_order_logs: ${r3.error.message}`)
+  }
+
+  const { data: sups } = await supabase.from('suppliers').select('id').eq('org_id', orgId).eq('branch_id', branchId)
+  const sids = (sups || []).map((s: any) => s.id)
+  if (sids.length > 0) {
+    const r4 = await (supabase as any).from('supplier_performance_log').delete().in('supplier_id', sids)
+    if (r4.error) errors.push(`supplier_performance_log: ${r4.error.message}`)
+  }
+
+  const directTables = ['purchases', 'cashier_closings', 'supplier_orders', 'staff_members']
+  for (const t of directTables) {
+    const r = await (supabase as any).from(t).delete().eq('branch_id', branchId)
+    if (r.error) errors.push(`${t}: ${r.error.message}`)
+  }
+
+  const r5 = await supabase.from('products').delete().eq('branch_id', branchId)
+  if (r5.error) errors.push(`products: ${r5.error.message}`)
+  const r6 = await supabase.from('suppliers').delete().eq('branch_id', branchId)
+  if (r6.error) errors.push(`suppliers: ${r6.error.message}`)
+
+  // فك ارتباط ملف صاحب الحساب بالفرع بدل حذفه — يحمي تسجيل الدخول
+  const rProf = await (supabase as any).from('profiles').update({ branch_id: null }).eq('branch_id', branchId)
+  if (rProf.error) errors.push(`profiles: ${rProf.error.message}`)
+
+  if (errors.length === 0) {
+    const { error: branchErr } = await supabase.from('branches').delete().eq('id', branchId)
+    if (branchErr) errors.push(`branches: ${branchErr.message}`)
+  }
+
+  return { success: errors.length === 0, errors }
+}
