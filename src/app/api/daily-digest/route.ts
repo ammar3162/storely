@@ -27,9 +27,12 @@ export async function GET() {
 
   const { data: orgs } = await supabase
     .from('organizations')
-    .select('id,name,whatsapp_number')
+    .select('id,name,whatsapp_number,digest_time')
     .eq('digest_mode', true)
     .not('whatsapp_number', 'is', null)
+
+  // الساعة الحالية بتوقيت الرياض (الكرون يشتغل كل ساعة، ونفلتر هنا حسب تفضيل كل مؤسسة)
+  const currentRiyadhHour = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Riyadh', hour: '2-digit', hour12: false }).format(new Date())
 
   const today = new Date(); today.setHours(0,0,0,0)
   const todayIso = today.toISOString().slice(0,10)
@@ -38,6 +41,8 @@ export async function GET() {
     try {
       const whatsappNumber = (org as any).whatsapp_number
       if (!whatsappNumber) continue
+      const preferredHour = ((org as any).digest_time || '21:00').slice(0,2)
+      if (preferredHour !== currentRiyadhHour) continue
 
       // إقفالات الكاشير اليوم
       const { data: closings } = await supabase
