@@ -44,6 +44,7 @@ export default function StaffManagementPage() {
   const [staffCountry, setStaffCountry] = useState(()=>sessionStorage.getItem('s_country_code')||'+966')
   const [newBranch, setNewBranch]   = useState('')
   const [newRole, setNewRole]       = useState<'staff'|'cashier'>('staff')
+  const [newSendClosingWA, setNewSendClosingWA] = useState(true)
   const [revealedPin, setRevealedPin] = useState<{name:string,phone:string,pin:string}|null>(null)
   const [visiblePins, setVisiblePins] = useState<Record<string,boolean>>({})
   const [expandedId, setExpandedId] = useState<string|null>(null)
@@ -167,7 +168,7 @@ export default function StaffManagementPage() {
     const res = await fetch('/api/add-staff', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({org_id:orgId, branch_id:newBranch||null, name:newName.trim(), phone:cleanPhone, pin, permissions:newPermissions, role:newRole})
+      body: JSON.stringify({org_id:orgId, branch_id:newBranch||null, name:newName.trim(), phone:cleanPhone, pin, permissions:newPermissions, role:newRole, send_closing_whatsapp:newSendClosingWA})
     })
     const resData = await res.json()
     const error = !res.ok ? resData.error : null
@@ -180,7 +181,7 @@ export default function StaffManagementPage() {
       await (sb.from('organizations' as any) as any).update({shop_open_time:shopOpenTime, shop_close_time:shopCloseTime}).eq('id',orgId)
     }
     setRevealedPin({name:newName.trim(),phone:cleanPhone,pin})
-    setNewName('');setNewPhone('');setNewRole('staff');setShowAdd(false)
+    setNewName('');setNewPhone('');setNewRole('staff');setNewSendClosingWA(true);setShowAdd(false)
     loadStaff(orgId)
   }
 
@@ -390,6 +391,14 @@ export default function StaffManagementPage() {
                       <input type="time" value={shopCloseTime} onChange={e=>setShopCloseTime(e.target.value)} style={inp()}/>
                     </div>
                   </div>
+                  <label style={{display:'flex',alignItems:'center',gap:8,marginTop:12,padding:'10px 12px',background:'white',borderRadius:8,border:`1.5px solid ${newSendClosingWA?colors.primary:colors.border}`,cursor:'pointer'}}>
+                    <input type="checkbox" checked={newSendClosingWA} onChange={e=>setNewSendClosingWA(e.target.checked)}
+                      style={{accentColor:colors.primary,width:14,height:14}}/>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:700,color:newSendClosingWA?colors.primary:colors.text2}}>📲 إرسال تفاصيل الإقفال للمالك عبر واتساب</div>
+                      <div style={{fontSize:10,color:colors.text4,marginTop:2,lineHeight:1.4}}>{newSendClosingWA?'تفعّل: يوصل المالك تقرير الإقفال الكامل':'موقّف: يوصل المالك بس إشعار "الكاشير أقفل"، بدون تفاصيل'}</div>
+                    </div>
+                  </label>
                 </div>
               )}
             </div>

@@ -105,39 +105,50 @@ export async function POST(req: Request) {
       const { data: allBranches } = await supabase.from('branches').select('id,name').eq('org_id', org_id).eq('is_active', true)
       const isMultiBranch = (allBranches || []).length > 1
       const branchName = branch_id ? (allBranches || []).find((b: any) => b.id === branch_id)?.name : null
+      const { data: staffRow } = await supabase.from('staff_members').select('send_closing_whatsapp').eq('id', staff_id).maybeSingle()
+      const sendFullDetails = (staffRow as any)?.send_closing_whatsapp !== false
       if (whatsappNumber) {
         const now = new Date()
         const effectiveDate = closing_date ? new Date(`${closing_date}T${closing_time||'00:00'}:00+03:00`) : now
         const timeStr = effectiveDate.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Riyadh' })
         const dateStr = effectiveDate.toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })
-
-        const statusLine = status === 'balanced'
-          ? '✅ *مطابق تماماً*'
-          : status === 'deficit'
-            ? `⚠️ *يوجد عجز: ${Math.abs(difference).toFixed(2)} ر.س*`
-            : `📈 *يوجد زيادة: ${Math.abs(difference).toFixed(2)} ر.س*`
-
-        let networkLines = ''
-        if (mada > 0) networkLines += `  • مدى: ${mada.toFixed(2)} ر.س\n`
-        if (visa > 0) networkLines += `  • فيزا: ${visa.toFixed(2)} ر.س\n`
-        if (mastercard > 0) networkLines += `  • ماستركارد: ${mastercard.toFixed(2)} ر.س\n`
-
-        let purchasesLine = ''
-        if (totalPurchases > 0) {
-          const itemsList = purchasesList.map((p: any) => `  • ${p.reason || 'بدون سبب'}: ${Number(p.amount).toFixed(2)} ر.س`).join('\n')
-          purchasesLine = `\n🧾 مسحوبات:\n${itemsList}\n  الإجمالي: *${totalPurchases.toFixed(2)} ر.س*`
-        }
-
         const branchLine = (isMultiBranch && branchName) ? `🏪 الفرع: *${branchName}*\n` : ''
-        const msg = `🟢 *Storely — إقفال كاشير*\n\n` +
-          `👤 الموظف: *${staff_name}*\n` +
-          branchLine +
-          `🕐 ${timeStr} · ${dateStr}\n\n` +
-          `📊 إجمالي المبيعات: *${sales.toFixed(2)} ر.س*\n\n` +
-          `💳 الشبكة:\n${networkLines}  إجمالي: *${network.toFixed(2)} ر.س*\n\n` +
-          `💵 الكاش الفعلي: *${cash.toFixed(2)} ر.س*` +
-          purchasesLine +
-          `\n\n${statusLine}`
+
+        let msg: string
+        if (!sendFullDetails) {
+          // موقّف: إشعار بسيط بدون تفاصيل مالية
+          msg = `🟢 *Storely — إقفال كاشير*\n\n` +
+            `👤 الموظف *${staff_name}* أقفل الصندوق\n` +
+            branchLine +
+            `🕐 ${timeStr} · ${dateStr}`
+        } else {
+          const statusLine = status === 'balanced'
+            ? '✅ *مطابق تماماً*'
+            : status === 'deficit'
+              ? `⚠️ *يوجد عجز: ${Math.abs(difference).toFixed(2)} ر.س*`
+              : `📈 *يوجد زيادة: ${Math.abs(difference).toFixed(2)} ر.س*`
+
+          let networkLines = ''
+          if (mada > 0) networkLines += `  • مدى: ${mada.toFixed(2)} ر.س\n`
+          if (visa > 0) networkLines += `  • فيزا: ${visa.toFixed(2)} ر.س\n`
+          if (mastercard > 0) networkLines += `  • ماستركارد: ${mastercard.toFixed(2)} ر.س\n`
+
+          let purchasesLine = ''
+          if (totalPurchases > 0) {
+            const itemsList = purchasesList.map((p: any) => `  • ${p.reason || 'بدون سبب'}: ${Number(p.amount).toFixed(2)} ر.س`).join('\n')
+            purchasesLine = `\n🧾 مسحوبات:\n${itemsList}\n  الإجمالي: *${totalPurchases.toFixed(2)} ر.س*`
+          }
+
+          msg = `🟢 *Storely — إقفال كاشير*\n\n` +
+            `👤 الموظف: *${staff_name}*\n` +
+            branchLine +
+            `🕐 ${timeStr} · ${dateStr}\n\n` +
+            `📊 إجمالي المبيعات: *${sales.toFixed(2)} ر.س*\n\n` +
+            `💳 الشبكة:\n${networkLines}  إجمالي: *${network.toFixed(2)} ر.س*\n\n` +
+            `💵 الكاش الفعلي: *${cash.toFixed(2)} ر.س*` +
+            purchasesLine +
+            `\n\n${statusLine}`
+        }
 
         await fetch('https://www.wasenderapi.com/api/send-message', {
           method: 'POST',
