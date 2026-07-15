@@ -442,19 +442,39 @@ export default function InventoryPage() {
         <>
           {/* Mobile grid */}
           <div className="mgrid u" style={{animationDelay:'.1s'}}>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:10}}>
               {paginated.map(p=>{
                 const isOut=p.qty===0,isLow=p.qty<=p.reorder_point
                 const sc=isOut?C.danger:isLow?C.warning:C.primary
+                const sb2=isOut?C.dangerL:isLow?C.warningL:C.primaryL
+                const sbb=isOut?C.dangerB:isLow?C.warningB:C.primaryB
+                const pct=Math.min((p.qty/Math.max(p.reorder_point*2,p.qty,1))*100,100)
                 return (
                   <div key={p.id} className="tap" onClick={()=>openEdit(p)}
-                    style={{background:'white',borderRadius:10,padding:'12px',border:`1px solid ${isOut?C.dangerB:isLow?C.warningB:C.border}`,cursor:'pointer'}}>
-                    <div style={{fontSize:22,fontWeight:700,color:sc,lineHeight:1,fontVariantNumeric:'tabular-nums',marginBottom:4}}>{p.qty}</div>
-                    <div style={{fontSize:11,fontWeight:600,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginBottom:2}}>{p.name}</div>
-                    <div style={{fontSize:9,color:C.text4}}>{p.unit} · حد {p.reorder_point}</div>
-                    <div style={{height:2,background:C.border,borderRadius:99,overflow:'hidden',marginTop:8}}>
-                      <div style={{height:'100%',width:Math.min((p.qty/Math.max(p.reorder_point*2,p.qty,1))*100,100)+'%',background:sc,borderRadius:99}}/>
+                    style={{background:'white',borderRadius:14,padding:'14px',border:`1px solid ${C.border}`,cursor:'pointer',position:'relative',overflow:'hidden'}}>
+                    {/* شريط علوي ملوّن يدل على الحالة */}
+                    <div style={{position:'absolute',top:0,right:0,left:0,height:3,background:sc}}/>
+
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
+                      <span style={{background:sb2,color:sc,padding:'3px 9px',borderRadius:99,fontSize:10,fontWeight:700,border:`1px solid ${sbb}`}}>
+                        {isOut?'نفد':isLow?'ناقص':'كافٍ'}
+                      </span>
+                      {p.category && (
+                        <span style={{fontSize:9,color:C.text4,background:C.bg,padding:'3px 7px',borderRadius:6,maxWidth:70,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.category}</span>
+                      )}
                     </div>
+
+                    <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8,lineHeight:1.4,minHeight:36,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' as const,overflow:'hidden'}}>{p.name}</div>
+
+                    <div style={{display:'flex',alignItems:'baseline',gap:4,marginBottom:8}}>
+                      <span style={{fontSize:24,fontWeight:800,color:sc,lineHeight:1,fontVariantNumeric:'tabular-nums'}}>{p.qty}</span>
+                      <span style={{fontSize:11,color:C.text4,fontWeight:600}}>{p.unit}</span>
+                    </div>
+
+                    <div style={{height:4,background:C.bg,borderRadius:99,overflow:'hidden',marginBottom:6}}>
+                      <div style={{height:'100%',width:pct+'%',background:sc,borderRadius:99,transition:'width .3s'}}/>
+                    </div>
+                    <div style={{fontSize:10,color:C.text4,fontWeight:600}}>الحد الأدنى: {p.reorder_point} {p.unit}</div>
                   </div>
                 )
               })}
