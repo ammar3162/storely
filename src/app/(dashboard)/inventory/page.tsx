@@ -236,7 +236,7 @@ export default function InventoryPage() {
         .tap{transition:all .12s;cursor:pointer}
         .tap:active{transform:scale(.97)}
         /* mobile grid */
-        .mgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+        .mgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
         .dtable{display:none}
         @media(min-width:640px){
           .mgrid{display:none}
@@ -442,7 +442,6 @@ export default function InventoryPage() {
         <>
           {/* Mobile grid */}
           <div className="mgrid u" style={{animationDelay:'.1s'}}>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:10}}>
               {paginated.map(p=>{
                 const isOut=p.qty===0,isLow=p.qty<=p.reorder_point
                 const sc=isOut?C.danger:isLow?C.warning:C.primary
@@ -478,7 +477,6 @@ export default function InventoryPage() {
                   </div>
                 )
               })}
-            </div>
           </div>
 
           {/* Desktop table */}
