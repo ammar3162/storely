@@ -36,7 +36,7 @@ export default function StaffManagementPage() {
   const [orgId, setOrgId]           = useState('')
   const [loading, setLoading]       = useState(true)
   const [showAdd, setShowAdd]       = useState(false)
-  const [newPermissions, setNewPermissions] = useState({dispense:true,inventory:false,purchases:false,reports:false})
+  const [newPermissions, setNewPermissions] = useState({dispense:false,inventory:false,purchases:false,reports:false})
   const [editingPerms, setEditingPerms] = useState<string|null>(null)
   const [editPerms, setEditPerms] = useState({dispense:true,inventory:false,purchases:false,reports:false})
   const [newName, setNewName]       = useState('')
