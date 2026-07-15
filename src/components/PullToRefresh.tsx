@@ -14,6 +14,9 @@ export default function PullToRefresh() {
 
     function onTouchStart(e: TouchEvent) {
       if (window.scrollY > 0) return
+      // نتجاهل اللمسات اللي تبدأ من فوق عناصر تفاعلية (أزرار، فئات، حقول) — يمنع تفعيل السحب بالخطأ عند الضغط عليها
+      const target = e.target as HTMLElement
+      if (target.closest('button, a, input, select, textarea, [role="button"]')) return
       startY.current = e.touches[0].clientY
       active = true
     }
