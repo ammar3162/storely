@@ -223,6 +223,12 @@ export default function StaffManagementPage() {
     toast('تم الحذف'); loadStaff(orgId)
   }
 
+  async function toggleSendClosingWA(id:string, current:boolean) {
+    await (sb.from('staff_members' as any) as any).update({send_closing_whatsapp: !current}).eq('id',id)
+    setStaff(prev=>prev.map((s:any)=>s.id===id?{...s,send_closing_whatsapp:!current}:s))
+    toast(!current?'✅ راح توصل تفاصيل الإقفال كاملة عبر واتساب':'✅ راح يوصل بس إشعار بسيط بدون تفاصيل')
+  }
+
   async function regeneratePin(id:string,name:string,phone:string) {
     const pin=generatePin()
     await (sb.from('staff_members' as any) as any).update({pin}).eq('id',id)
@@ -718,6 +724,12 @@ export default function StaffManagementPage() {
                   {s.role==='cashier' && (
                     <button onClick={e=>{e.stopPropagation();setShowHoursModal(true)}} className="act-btn" style={{background:'#ecfeff',color:'#0891b2'}}>
                       ⏰ ساعات العمل
+                    </button>
+                  )}
+                  {s.role==='cashier' && (
+                    <button onClick={e=>{e.stopPropagation();toggleSendClosingWA(s.id, s.send_closing_whatsapp!==false)}} className="act-btn"
+                      style={{background:s.send_closing_whatsapp!==false?'#f0fdf4':colors.bg,color:s.send_closing_whatsapp!==false?colors.primary:colors.text3,border:s.send_closing_whatsapp!==false?'none':`1.5px solid ${colors.border2}`}}>
+                      {s.send_closing_whatsapp!==false?'📲 تفاصيل الإقفال: مفعّل':'📴 تفاصيل الإقفال: موقّف'}
                     </button>
                   )}
                   <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} className="act-btn" style={{background:colors.infoLight,color:colors.info}}>PIN جديد</button>
