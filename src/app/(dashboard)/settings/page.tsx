@@ -116,6 +116,9 @@ export default function SettingsPage() {
     notify_schedule:'daily',
     notify_time:'08:00',
     notify_days:['0'],
+    notify_cashier_closing_wa:true,
+    notify_supplier_wa:true,
+    digest_mode:false,
   })
   const sb = createClient()
 
@@ -164,7 +167,7 @@ export default function SettingsPage() {
     if(org){
       const parsed = parsePhone(org.whatsapp_number||'')
       setCountryCode(parsed.countryCode)
-      setForm({ name:org.name||'', whatsapp_number:parsed.number||'', notify_schedule:org.notify_schedule||'daily', notify_time:org.notify_time||'08:00', notify_days:org.notify_days||['0'] })
+      setForm({ name:org.name||'', whatsapp_number:parsed.number||'', notify_schedule:org.notify_schedule||'daily', notify_time:org.notify_time||'08:00', notify_days:org.notify_days||['0'], notify_cashier_closing_wa:org.notify_cashier_closing_wa!==false, notify_supplier_wa:org.notify_supplier_wa!==false, digest_mode:org.digest_mode===true })
       setLastSent(org.last_notified_at||null)
       setLastBackup(org.last_backup_at||null)
       setMaxBranches(org.max_branches||1)
@@ -185,7 +188,7 @@ export default function SettingsPage() {
   async function handleSave(e:React.FormEvent) {
     e.preventDefault(); setSaving(true)
     const fullPhone = countryCode + form.whatsapp_number.replace(/^0+/, '')
-    await sb.from('organizations').update({ name:form.name, whatsapp_number:fullPhone, notify_schedule:form.notify_schedule, notify_time:form.notify_time, notify_days:form.notify_days } as any).eq('id',orgId)
+    await sb.from('organizations').update({ name:form.name, whatsapp_number:fullPhone, notify_schedule:form.notify_schedule, notify_time:form.notify_time, notify_days:form.notify_days, notify_cashier_closing_wa:form.notify_cashier_closing_wa, notify_supplier_wa:form.notify_supplier_wa, digest_mode:form.digest_mode } as any).eq('id',orgId)
     setSaveOk(true); setSaving(false); setTimeout(()=>setSaveOk(false),3000)
   }
 
@@ -431,6 +434,41 @@ export default function SettingsPage() {
           {/* NOTIFY TAB */}
           {activeTab==='notify'&&(
             <form onSubmit={handleSave}>
+              <div style={{marginBottom:24,paddingBottom:24,borderBottom:`1px solid ${colors.border}`}}>
+                <label style={lbl}>رسائل واتساب — اختر وش يوصلك</label>
+                <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                  <label style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',background:colors.bg,borderRadius:radius.md,border:`1.5px solid ${form.notify_cashier_closing_wa?colors.primaryBorder:colors.border}`,cursor:'pointer'}}>
+                    <input type="checkbox" checked={form.notify_cashier_closing_wa} onChange={e=>setForm({...form,notify_cashier_closing_wa:e.target.checked})}
+                      style={{accentColor:colors.primary,width:16,height:16}}/>
+                    <div>
+                      <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>🏪 تقارير إقفال الكاشير</div>
+                      <div style={{fontSize:11,color:colors.text4,marginTop:2}}>رسالة فورية كل ما موظف يقفل الصندوق</div>
+                    </div>
+                  </label>
+                  <label style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',background:colors.bg,borderRadius:radius.md,border:`1.5px solid ${form.notify_supplier_wa?colors.primaryBorder:colors.border}`,cursor:'pointer'}}>
+                    <input type="checkbox" checked={form.notify_supplier_wa} onChange={e=>setForm({...form,notify_supplier_wa:e.target.checked})}
+                      style={{accentColor:colors.primary,width:16,height:16}}/>
+                    <div>
+                      <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>🚚 تحديثات الموردين</div>
+                      <div style={{fontSize:11,color:colors.text4,marginTop:2}}>تأكيد الاستلام وتصعيد الطلبات المتأخرة</div>
+                    </div>
+                  </label>
+                </div>
+
+                <div style={{marginTop:14,padding:'14px',background:form.digest_mode?colors.primaryLight:colors.bg,borderRadius:radius.md,border:`1.5px solid ${form.digest_mode?colors.primaryBorder:colors.border}`}}>
+                  <label style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer'}}>
+                    <input type="checkbox" checked={form.digest_mode} onChange={e=>setForm({...form,digest_mode:e.target.checked})}
+                      style={{accentColor:colors.primary,width:16,height:16}}/>
+                    <div>
+                      <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>📋 وضع الملخص اليومي</div>
+                      <div style={{fontSize:11,color:colors.text3,marginTop:2,lineHeight:1.6}}>
+                        بدل الرسائل الفورية طول اليوم، توصلك رسالة واحدة آخر اليوم فيها كل الإقفالات وحالة المخزون مجمّعة. الحالات الحرجة (عجز كبير، نفاد كامل) توصل فوراً برضو.
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
               <div style={{marginBottom:20}}>
                 <label style={lbl}>نوع الجدولة</label>
                 <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
