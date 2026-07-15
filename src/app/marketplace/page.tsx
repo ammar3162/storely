@@ -35,6 +35,7 @@ export default function MarketplacePage() {
     const { data } = await (sb as any).from('supplier_applications')
       .select('*')
       .eq('status','approved')
+      .eq('marketplace_consent',true)
       .order('created_at',{ascending:false})
     setSuppliers(data || [])
     setLoading(false)

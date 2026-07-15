@@ -11,7 +11,8 @@ const BUSINESS_TYPES = [
 export default function SuppliersJoinPage() {
   const [form, setForm] = useState({
     company_name:'', contact_name:'', phone:'', email:'',
-    business_type:[] as string[], description:'', website:'', offer:''
+    business_type:[] as string[], description:'', website:'', offer:'',
+    marketplace_consent:false
   })
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
@@ -25,6 +26,7 @@ export default function SuppliersJoinPage() {
     e.preventDefault()
     if(!form.company_name||!form.contact_name||!form.phone){setError('يرجى ملء الحقول المطلوبة');return}
     if(form.business_type.length===0){setError('اختر مجال واحد على الأقل');return}
+    if(!form.marketplace_consent){setError('يجب الموافقة على عرض بياناتك بمنصة السوق العامة');return}
     setLoading(true); setError('')
     const res = await fetch('/api/supplier-apply', {
       method:'POST',
@@ -127,6 +129,14 @@ export default function SuppliersJoinPage() {
               <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>الموقع الإلكتروني (اختياري)</label>
               <input className="inp" value={form.website} onChange={e=>setForm(f=>({...f,website:e.target.value}))} placeholder="https://yourwebsite.com" dir="ltr"/>
             </div>
+
+            <label style={{display:'flex',alignItems:'flex-start',gap:10,marginBottom:20,cursor:'pointer',padding:'12px 14px',background:'#f9fafb',borderRadius:10,border:'1px solid #e5e7eb'}}>
+              <input type="checkbox" checked={form.marketplace_consent} onChange={e=>setForm(f=>({...f,marketplace_consent:e.target.checked}))}
+                style={{marginTop:2,accentColor:'#16a34a',width:16,height:16,flexShrink:0}}/>
+              <span style={{fontSize:12,color:'#4b5563',lineHeight:1.7}}>
+                أوافق على عرض اسم شركتي ورقم التواصل بمنصة "السوق" العامة داخل Storely في حال قبول طلبي — بحسب <a href="/privacy" target="_blank" style={{color:'#16a34a',textDecoration:'underline'}}>سياسة الخصوصية</a>
+              </span>
+            </label>
 
             <button type="submit" disabled={loading}
               style={{width:'100%',padding:'14px',background:loading?'#9ca3af':'linear-gradient(135deg,#16a34a,#15803d)',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:800,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>

@@ -10,7 +10,11 @@ const sb = () => createClient(
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    let { company_name, contact_name, phone, email, business_type, description, website, offer } = body
+    let { company_name, contact_name, phone, email, business_type, description, website, offer, marketplace_consent } = body
+
+    if (marketplace_consent !== true) {
+      return NextResponse.json({ error: 'يجب الموافقة على عرض البيانات بمنصة السوق العامة' }, { status: 400 })
+    }
 
     if(!company_name||!contact_name||!phone) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
@@ -42,7 +46,8 @@ export async function POST(req: Request) {
       description: description||null,
       website: safeWebsite,
       offer: offer||null,
-      status: 'pending'
+      status: 'pending',
+      marketplace_consent: true
     })
 
     if(error) return NextResponse.json({ error: error.message }, { status: 500 })
