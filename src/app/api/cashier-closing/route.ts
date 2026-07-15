@@ -100,14 +100,22 @@ export async function POST(req: Request) {
 
     // إرسال إشعار واتساب فوري للمالك
     try {
-      const { data: org } = await supabase.from('organizations').select('name,whatsapp_number').eq('id', org_id).single()
+      const { data: org } = await supabase.from('organizations').select('name,whatsapp_number,notify_cashier_closing_wa,digest_mode').eq('id', org_id).single()
       const whatsappNumber = (org as any)?.whatsapp_number
       const { data: allBranches } = await supabase.from('branches').select('id,name').eq('org_id', org_id).eq('is_active', true)
       const isMultiBranch = (allBranches || []).length > 1
       const branchName = branch_id ? (allBranches || []).find((b: any) => b.id === branch_id)?.name : null
       const { data: staffRow } = await supabase.from('staff_members').select('send_closing_whatsapp').eq('id', staff_id).maybeSingle()
       const sendFullDetails = (staffRow as any)?.send_closing_whatsapp !== false
-      if (whatsappNumber) {
+
+      // احترام تفضيلات المالك: يوقف الرسائل الفورية لو مطفّية أو بوضع الملخص اليومي —
+      // إلا لو الحالة حرجة (عجز كبير)، وقتها ترسل فوراً بغض النظر عن التفضيلات
+      const isCritical = status === 'deficit' && Math.abs(difference) >= 50
+      const notifyEnabled = (org as any)?.notify_cashier_closing_wa !== false
+      const digestMode = (org as any)?.digest_mode === true
+      const shouldSendNow = notifyEnabled && (!digestMode || isCritical)
+
+      if (whatsappNumber && shouldSendNow) {
         const now = new Date()
         const effectiveDate = closing_date ? new Date(`${closing_date}T${closing_time||'00:00'}:00+03:00`) : now
         const timeStr = effectiveDate.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Riyadh' })

@@ -27,8 +27,12 @@ export async function POST(req: Request) {
 
     await logConfirmation(order).catch(()=>{})
 
-    const { data: org } = await db.from('organizations').select('name,whatsapp_number').eq('id', order.org_id).single()
+    const { data: org } = await db.from('organizations').select('name,whatsapp_number,notify_supplier_wa,digest_mode').eq('id', order.org_id).single()
     if (!org?.whatsapp_number) return NextResponse.json({ success: false })
+    // احترام تفضيلات المالك — تأكيد استلام مورد مو حرج، يُوقف عادي بوضع الملخص أو التعطيل
+    if ((org as any).notify_supplier_wa === false || (org as any).digest_mode === true) {
+      return NextResponse.json({ success: true, skipped: 'notify_preference' })
+    }
 
     const { data: allBranches } = await db.from('branches').select('id,name').eq('org_id', order.org_id).eq('is_active', true)
     const isMultiBranch = (allBranches || []).length > 1
