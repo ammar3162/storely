@@ -179,9 +179,20 @@ export default function AdminPage() {
     } else { setPassErr(true); setTimeout(()=>setPassErr(false),2000) }
   }
 
+  async function logAction(action: string, targetOrgId?: string|null, targetOrgName?: string|null, details?: any) {
+    try {
+      await fetch('/api/admin/log-action', {
+        method:'POST', headers:{'Content-Type':'application/json','x-admin-key':sessionStorage.getItem('storely_admin_pass')||''},
+        body: JSON.stringify({ action, target_org_id: targetOrgId, target_org_name: targetOrgName, details })
+      })
+    } catch {}
+  }
+
   async function deleteSupplierApp(id: string) {
     const sb = (await import('@/lib/supabase/client')).createClient()
+    const app = supplierApps.find((a:any)=>a.id===id)
     await (sb as any).from('supplier_applications').delete().eq('id', id)
+    logAction('delete_supplier_application', null, null, { company_name: app?.company_name })
     loadSupplierApps()
   }
 
@@ -219,11 +230,13 @@ export default function AdminPage() {
 
   async function updateSupplierStatus(id: string, status: string) {
     const sb = createClient()
+    const app = supplierApps.find((a:any)=>a.id===id)
     if(status==='rejected') {
       await (sb as any).from('supplier_applications').delete().eq('id', id)
     } else {
       await (sb as any).from('supplier_applications').update({status}).eq('id', id)
     }
+    logAction(`supplier_application_${status}`, null, null, { company_name: app?.company_name })
     loadSupplierApps()
   }
 
@@ -264,17 +277,21 @@ export default function AdminPage() {
 
   async function suspend(userId: string) {
     setSaving(userId)
+    const target = users.find(u=>u.id===userId)
     await sb.from('profiles').update({status:'suspended'}).eq('id',userId)
+    logAction('suspend_user', target?.org_id, target?.org_name, { userId })
     await loadUsers(); setSaving(null); setSelected(null)
   }
 
   async function updatePlan(orgId: string, value: number) {
     setSaving(orgId)
     const plan = PLANS.find(p=>p.v===value)!
+    const target = users.find(u=>u.org_id===orgId)
     await (sb.from('organizations') as any).update({
       max_branches:value, plan:value===1?'basic':value<=3?'pro':'advanced',
       max_staff:plan.maxStaff, max_suppliers:plan.maxSup
     }).eq('id',orgId)
+    logAction('update_plan', orgId, target?.org_name, { new_plan: plan.label })
     setUsers(prev=>prev.map(u=>u.org_id===orgId?{...u,max_branches:value}:u))
     setSelected(prev=>prev&&prev.org_id===orgId?{...prev,max_branches:value}:prev)
     setSaving(null)

@@ -1,17 +1,25 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { requirePermission } from '@/lib/adminAuth'
+import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 
 export async function POST(req: Request) {
   try {
     const adminKey = req.headers.get('x-admin-key')
-    if (!(await requirePermission(adminKey, 'manage_users'))) {
+    const admin = await requirePermission(adminKey, 'manage_users')
+    if (!admin) {
       return NextResponse.json({ success: false, error: 'unauthorized' }, { status: 401 })
     }
 
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
     const { userId, orgId } = await req.json()
     if (!userId) return NextResponse.json({ success: false, message: 'userId مطلوب' })
+
+    // نجيب اسم المؤسسة قبل الحذف (بعد الحذف ما راح يكون موجود نسجّله بسجل التدقيق)
+    let orgNameForLog: string | null = null
+    if (orgId) {
+      const { data: orgRow } = await supabase.from('organizations').select('name').eq('id', orgId).maybeSingle()
+      orgNameForLog = (orgRow as any)?.name || null
+    }
 
     const deleteErrors: string[] = []
 
@@ -80,6 +88,7 @@ export async function POST(req: Request) {
     }
 
     await supabase.auth.admin.deleteUser(userId).catch(() => {})
+    await logAdminAction(admin, 'delete_user', orgId || null, orgNameForLog, { userId })
     return NextResponse.json({ success: true })
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 })
