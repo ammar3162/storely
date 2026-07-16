@@ -484,8 +484,15 @@ export default function SettingsPage() {
               {form.notify_schedule!=='manual'&&(
                 <div style={{marginBottom:18}}>
                   <label style={lbl}>وقت الإرسال</label>
-                  <input type="time" value={form.notify_time} onChange={e=>setForm({...form,notify_time:e.target.value})} style={{...inp(),width:'auto',direction:'ltr' as const}}/>
-                  <div style={{fontSize:11,color:colors.text4,marginTop:6}}>توقيت الرياض (UTC+3)</div>
+                  <select value={form.notify_time.slice(0,2)} onChange={e=>setForm({...form,notify_time:`${e.target.value}:00`})} style={{...inp(),width:'auto',direction:'ltr' as const}}>
+                    {Array.from({length:24},(_,h)=>{
+                      const hh = String(h).padStart(2,'0')
+                      const period = h<12?'ص':'م'
+                      const h12 = h%12===0?12:h%12
+                      return <option key={hh} value={hh}>{h12}:00 {period}</option>
+                    })}
+                  </select>
+                  <div style={{fontSize:11,color:colors.text4,marginTop:6}}>توقيت الرياض (UTC+3) — الإرسال بالساعة كاملة فقط (بدون دقائق)</div>
                 </div>
               )}
 
