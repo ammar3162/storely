@@ -383,12 +383,14 @@ export async function POST(req: Request) {
             continue
           }
           const branchId = await getSelectedBranch(to)
+          const { data: userBranches } = await sb().from('branches').select('id').eq('org_id',user.org_id).eq('is_active',true)
+          const branchHint = (userBranches||[]).length > 1 ? ' | اكتب 9 لتغيير الفرع' : ''
           if (t==='1') {
             const p = await getProducts(user.org_id, branchId)
             const low = p.filter((x:any)=>x.qty<=x.reorder_point)
             if (!low.length) { await send(to,'✅ لا توجد منتجات ناقصة\n\nاكتب 0 للقائمة'); continue }
             const list = low.slice(0,15).map((x:any)=>`🔴 ${x.name}: ${x.qty}/${x.reorder_point} ${x.unit}`).join('\n')
-            await send(to,`🔴 *الناقص (${low.length})*\n\n${list}\n\nاكتب 0 للقائمة | اكتب 8 لقائمة المخزون | اكتب 9 لتغيير الفرع`)
+            await send(to,`🔴 *الناقص (${low.length})*\n\n${list}\n\nاكتب 0 للقائمة | اكتب 8 لقائمة المخزون${branchHint}`)
             continue
           }
           if (t==='2') {
@@ -396,7 +398,7 @@ export async function POST(req: Request) {
             if (!p.length) { await send(to,'📦 المخزون فارغ\n\nاكتب 0 للقائمة'); continue }
             const low = p.filter((x:any)=>x.qty<=x.reorder_point).length
             const list = p.slice(0,15).map((x:any)=>`${x.qty<=x.reorder_point?'🔴':'🟢'} ${x.name}: ${x.qty} ${x.unit}`).join('\n')
-            await send(to,`📦 *المخزون (${p.length} صنف)*\n\n${list}${p.length>15?`\n...و${p.length-15} أخرى`:''}\n\n⚠️ ناقص: ${low}\n\nاكتب 0 للقائمة | اكتب 8 للمخزون | اكتب 9 لتغيير الفرع`)
+            await send(to,`📦 *المخزون (${p.length} صنف)*\n\n${list}${p.length>15?`\n...و${p.length-15} أخرى`:''}\n\n⚠️ ناقص: ${low}\n\nاكتب 0 للقائمة | اكتب 8 للمخزون${branchHint}`)
             continue
           }
           if (t==='3') {
@@ -418,7 +420,7 @@ export async function POST(req: Request) {
             const cmp = compareText(todayTotal, yesterdayTotal)
 
             const list = moves.slice(0,10).map((x:any)=>`▪️ ${(x.products as any)?.name}: ${Math.abs(x.qty_change)} ${(x.products as any)?.unit}`).join('\n')
-            await send(to,`📤 *الصرف اليوم (${moves.length})*\n\n${list}\n\n📊 إجمالي الكمية: ${todayTotal} ${cmp}\n🏆 الأكثر طلباً: ${top[0]} (${top[1].qty} ${top[1].unit})\n\nاكتب 0 للقائمة | اكتب 8 للمخزون | اكتب 9 لتغيير الفرع`)
+            await send(to,`📤 *الصرف اليوم (${moves.length})*\n\n${list}\n\n📊 إجمالي الكمية: ${todayTotal} ${cmp}\n🏆 الأكثر طلباً: ${top[0]} (${top[1].qty} ${top[1].unit})\n\nاكتب 0 للقائمة | اكتب 8 للمخزون${branchHint}`)
             continue
           }
           if (t==='4') {
@@ -428,7 +430,7 @@ export async function POST(req: Request) {
             const yesterdayTotal = await getYesterdayPurchasesTotal(user.org_id, branchId)
             const cmp = compareText(total, yesterdayTotal)
             const list = purchases.slice(0,10).map((x:any)=>`▪️ ${x.name}: ${Number(x.amount).toFixed(0)} ر.س`).join('\n')
-            await send(to,`🛒 *مشتريات اليوم (${purchases.length})*\n\n${list}\n\n💰 الإجمالي: ${total.toFixed(2)} ر.س ${cmp}\n\nاكتب 0 للقائمة | اكتب 8 للمخزون | اكتب 9 لتغيير الفرع`)
+            await send(to,`🛒 *مشتريات اليوم (${purchases.length})*\n\n${list}\n\n💰 الإجمالي: ${total.toFixed(2)} ر.س ${cmp}\n\nاكتب 0 للقائمة | اكتب 8 للمخزون${branchHint}`)
             continue
           }
           await send(to, STOCK_MENU)
