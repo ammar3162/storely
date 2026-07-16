@@ -131,10 +131,12 @@ export async function POST(req: Request) {
       if (org.notify_schedule === 'weekly' && !(org.notify_days || []).includes(currentDay)) return false
       const orgHour = Number((org.notify_time || '08:00').slice(0, 2))
       if (orgHour !== currentHour) return false
-      // حماية من التكرار: لو المهمة تشتغل كل 15 دقيقة، نمنع إرسال أكثر من مرة بنفس الساعة لنفس المؤسسة
+      // حماية من التكرار: نتأكد ما أُرسل شي "بنفس الساعة التقويمية" اليوم (مو عداد زمني بسيط)
+      // — هذا يسمح بالإرسال فوراً لو العميل غيّر وقته المفضّل لساعة جديدة، حتى لو أُرسل له قبل شوي بساعة مختلفة
       if (org.last_notified_at) {
-        const minutesSinceLast = (nowRiyadh.getTime() - new Date(org.last_notified_at).getTime()) / 60000
-        if (minutesSinceLast < 50) return false
+        const lastRiyadh = new Date(new Date(org.last_notified_at).toLocaleString('en-US', { timeZone: 'Asia/Riyadh' }))
+        const sameCalendarHour = lastRiyadh.toDateString() === nowRiyadh.toDateString() && lastRiyadh.getHours() === currentHour
+        if (sameCalendarHour) return false
       }
       return true
     })
