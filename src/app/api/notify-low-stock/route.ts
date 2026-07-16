@@ -119,8 +119,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ success:true, ...result })
     }
 
-    const { data: orgs } = await supabase.from('organizations').select('*')
-    if (!orgs || orgs.length === 0) return NextResponse.json({ success:true, message:'لا توجد مؤسسات', sent:0 })
+    const { data: allOrgs } = await supabase.from('organizations').select('*')
+    if (!allOrgs || allOrgs.length === 0) return NextResponse.json({ success:true, message:'لا توجد مؤسسات', sent:0 })
+
+    // نفلتر حسب جدولة كل مؤسسة لحالها (نوع الجدولة، اليوم، الساعة) — بدل ما نرسل للجميع دفعة وحدة بغض النظر عن تفضيلهم
+    const nowRiyadh = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Riyadh' }))
+    const currentHour = nowRiyadh.getHours()
+    const currentDay = String(nowRiyadh.getDay()) // 0=أحد ... 6=سبت، نفس ترميز DAYS بالإعدادات
+
+    const orgs = allOrgs.filter((org: any) => {
+      if (org.notify_schedule === 'manual') return false // يدوي بس — ما يرسل تلقائياً إطلاقاً
+      if (org.notify_schedule === 'weekly' && !(org.notify_days || []).includes(currentDay)) return false
+      const orgHour = Number((org.notify_time || '08:00').slice(0, 2))
+      if (orgHour !== currentHour) return false
+      // حماية من التكرار: لو المهمة تشتغل كل 15 دقيقة، نمنع إرسال أكثر من مرة بنفس الساعة لنفس المؤسسة
+      if (org.last_notified_at) {
+        const minutesSinceLast = (nowRiyadh.getTime() - new Date(org.last_notified_at).getTime()) / 60000
+        if (minutesSinceLast < 50) return false
+      }
+      return true
+    })
+
+    if (orgs.length === 0) return NextResponse.json({ success:true, message:'لا توجد مؤسسات بموعد الإرسال حالياً', sent:0 })
+
     let sent = 0
     const results = []
     for (const org of orgs) {
