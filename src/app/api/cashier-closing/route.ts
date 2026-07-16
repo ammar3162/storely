@@ -114,8 +114,8 @@ export async function POST(req: Request) {
       const isCritical = status === 'deficit' && Math.abs(difference) >= 50
       const notifyEnabled = (org as any)?.notify_cashier_closing_wa !== false
       const digestMode = (org as any)?.digest_mode === true
-      // أثناء الإيقاف المؤقت: نحترم خيار العميل بالإعدادات (يرسل أو لا يرسل) — لو مفعّل، رسالة مختصرة بس بدون تفاصيل مالية
-const shouldSendNow = WHATSAPP_PAUSED ? notifyEnabled : (notifyEnabled && (!digestMode || isCritical))
+      // نحترم خيار العميل دايماً (مفعّل/موقّف) + وضع الملخص اليومي (يوقف الفوري، إلا الحالات الحرجة) — بغض النظر عن الإيقاف المؤقت
+const shouldSendNow = notifyEnabled && (!digestMode || isCritical)
 
       if (whatsappNumber && shouldSendNow) {
         const now = new Date()
