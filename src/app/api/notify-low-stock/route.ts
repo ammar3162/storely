@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { isSubscriptionActive } from '@/lib/subscription'
 import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
-import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 
 async function sendForOrg(supabase: any, org: any) {
   const subActive = await isSubscriptionActive(supabase, org.id)
@@ -157,7 +156,6 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
-  if (WHATSAPP_PAUSED) return NextResponse.json({ success: true, skipped: 'paused' })
 
   return POST(new Request('http://localhost', { 
     method:'POST', 
