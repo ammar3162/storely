@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
+import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 
 function generatePin() { return String(Math.floor(1000 + Math.random() * 9000)) }
 const COUNTRY_CODES = ['+966','+971','+965','+973','+974','+968','+20','+962','+1','+44','+91','+92','+880','+63']
@@ -737,7 +738,7 @@ export default function StaffManagementPage() {
                       ⏰ ساعات العمل
                     </button>
                   )}
-                  {s.role==='cashier' && (
+                  {s.role==='cashier' && !WHATSAPP_PAUSED && (
                     <button onClick={e=>{e.stopPropagation();toggleSendClosingWA(s.id, s.send_closing_whatsapp!==false)}} className="act-btn"
                       style={{background:s.send_closing_whatsapp!==false?'#f0fdf4':colors.bg,color:s.send_closing_whatsapp!==false?colors.primary:colors.text3,border:s.send_closing_whatsapp!==false?'none':`1.5px solid ${colors.border2}`}}>
                       {s.send_closing_whatsapp!==false?'📲 تفاصيل الإقفال: مفعّل':'📴 تفاصيل الإقفال: موقّف'}
