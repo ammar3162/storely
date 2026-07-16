@@ -118,8 +118,6 @@ export default function SettingsPage() {
     notify_days:['0'],
     notify_cashier_closing_wa:true,
     notify_supplier_wa:true,
-    digest_mode:false,
-    digest_time:'21:00',
   })
   const sb = createClient()
 
@@ -168,7 +166,7 @@ export default function SettingsPage() {
     if(org){
       const parsed = parsePhone(org.whatsapp_number||'')
       setCountryCode(parsed.countryCode)
-      setForm({ name:org.name||'', whatsapp_number:parsed.number||'', notify_schedule:org.notify_schedule||'daily', notify_time:org.notify_time||'08:00', notify_days:org.notify_days||['0'], notify_cashier_closing_wa:org.notify_cashier_closing_wa!==false, notify_supplier_wa:org.notify_supplier_wa!==false, digest_mode:org.digest_mode===true, digest_time:org.digest_time||'21:00' })
+      setForm({ name:org.name||'', whatsapp_number:parsed.number||'', notify_schedule:org.notify_schedule||'daily', notify_time:org.notify_time||'08:00', notify_days:org.notify_days||['0'], notify_cashier_closing_wa:org.notify_cashier_closing_wa!==false, notify_supplier_wa:org.notify_supplier_wa!==false })
       setLastSent(org.last_notified_at||null)
       setLastBackup(org.last_backup_at||null)
       setMaxBranches(org.max_branches||1)
@@ -189,7 +187,7 @@ export default function SettingsPage() {
   async function handleSave(e:React.FormEvent) {
     e.preventDefault(); setSaving(true)
     const fullPhone = countryCode + form.whatsapp_number.replace(/^0+/, '')
-    await sb.from('organizations').update({ name:form.name, whatsapp_number:fullPhone, notify_schedule:form.notify_schedule, notify_time:form.notify_time, notify_days:form.notify_days, notify_cashier_closing_wa:form.notify_cashier_closing_wa, notify_supplier_wa:form.notify_supplier_wa, digest_mode:form.digest_mode, digest_time:form.digest_time } as any).eq('id',orgId)
+    await sb.from('organizations').update({ name:form.name, whatsapp_number:fullPhone, notify_schedule:form.notify_schedule, notify_time:form.notify_time, notify_days:form.notify_days, notify_cashier_closing_wa:form.notify_cashier_closing_wa, notify_supplier_wa:form.notify_supplier_wa } as any).eq('id',orgId)
     setSaveOk(true); setSaving(false); setTimeout(()=>setSaveOk(false),3000)
   }
 
@@ -456,26 +454,6 @@ export default function SettingsPage() {
                   </label>
                 </div>
 
-                <div style={{marginTop:14,padding:'14px',background:form.digest_mode?colors.primaryLight:colors.bg,borderRadius:radius.md,border:`1.5px solid ${form.digest_mode?colors.primaryBorder:colors.border}`}}>
-                  <label style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer'}}>
-                    <input type="checkbox" checked={form.digest_mode} onChange={e=>setForm({...form,digest_mode:e.target.checked})}
-                      style={{accentColor:colors.primary,width:16,height:16}}/>
-                    <div>
-                      <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>📋 وضع الملخص اليومي</div>
-                      <div style={{fontSize:11,color:colors.text3,marginTop:2,lineHeight:1.6}}>
-                        بدل الرسائل الفورية طول اليوم، توصلك رسالة واحدة آخر اليوم فيها كل الإقفالات وحالة المخزون مجمّعة. الحالات الحرجة (عجز كبير، نفاد كامل) توصل فوراً برضو.
-                      </div>
-                    </div>
-                  </label>
-                  {form.digest_mode && (
-                    <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${colors.primaryBorder}`}}>
-                      <label style={{...lbl,marginBottom:6}}>موعد وصول الملخص</label>
-                      <input type="time" value={form.digest_time} onChange={e=>setForm({...form,digest_time:e.target.value})}
-                        style={{...inp(),width:'auto',direction:'ltr' as const}}/>
-                      <div style={{fontSize:11,color:colors.text4,marginTop:6}}>توقيت الرياض (UTC+3) — لا تنسَ تضغط "حفظ الجدولة" تحت</div>
-                    </div>
-                  )}
-                </div>
               </div>
 
               <div style={{marginBottom:20}}>

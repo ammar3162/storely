@@ -7,10 +7,6 @@
     {
       "path": "/api/escalate-supplier-orders",
       "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/daily-digest",
-      "schedule": "0 18 * * *"
     }
   ]
 }
