@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -106,14 +107,15 @@ export async function POST(req: Request) {
       const isMultiBranch = (allBranches || []).length > 1
       const branchName = branch_id ? (allBranches || []).find((b: any) => b.id === branch_id)?.name : null
       const { data: staffRow } = await supabase.from('staff_members').select('send_closing_whatsapp').eq('id', staff_id).maybeSingle()
-      const sendFullDetails = (staffRow as any)?.send_closing_whatsapp !== false
+      const sendFullDetails = WHATSAPP_PAUSED ? false : ((staffRow as any)?.send_closing_whatsapp !== false)
 
       // احترام تفضيلات المالك: يوقف الرسائل الفورية لو مطفّية أو بوضع الملخص اليومي —
       // إلا لو الحالة حرجة (عجز كبير)، وقتها ترسل فوراً بغض النظر عن التفضيلات
       const isCritical = status === 'deficit' && Math.abs(difference) >= 50
       const notifyEnabled = (org as any)?.notify_cashier_closing_wa !== false
       const digestMode = (org as any)?.digest_mode === true
-      const shouldSendNow = notifyEnabled && (!digestMode || isCritical)
+      // أثناء الإيقاف المؤقت: نرسل دايماً رسالة مختصرة بس (صفر تفاصيل مالية) — بغض النظر عن تفضيل العميل أو الموظف
+const shouldSendNow = WHATSAPP_PAUSED ? true : (notifyEnabled && (!digestMode || isCritical))
 
       if (whatsappNumber && shouldSendNow) {
         const now = new Date()

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { isSubscriptionActive } from '@/lib/subscription'
+import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -25,6 +26,7 @@ async function sendWA(phone: string, text: string) {
 }
 
 export async function POST(req: Request) {
+  if (WHATSAPP_PAUSED) return NextResponse.json({ success: true, skipped: 'paused' })
   try {
     const { org_id, product_id, new_qty, reorder_point, staff_name, qty_dispensed, product_name, product_unit } = await req.json()
     if (!org_id || !product_id) return NextResponse.json({ success: false })
