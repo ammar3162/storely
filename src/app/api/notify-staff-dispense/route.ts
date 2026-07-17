@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
+import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -15,7 +16,11 @@ function formatPhone(raw: string): string {
 export async function POST(req: Request) {
   if (WHATSAPP_PAUSED) return NextResponse.json({ success: true, skipped: 'paused' })
   try {
-    const { org_id, staff_name, product_name, qty, unit } = await req.json()
+    const auth = verifyStaffToken(extractStaffToken(req))
+    if (!auth.valid) return NextResponse.json({ success: false, error: auth.error }, { status: 401 })
+    const org_id = auth.data!.org_id
+
+    const { staff_name, product_name, qty, unit } = await req.json()
     if (!org_id) return NextResponse.json({ success: false })
 
     const db = createClient(

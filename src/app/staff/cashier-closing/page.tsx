@@ -113,7 +113,8 @@ export default function CashierClosingPage() {
       if(!saved) return
       const s = JSON.parse(saved)
       try {
-        const res = await fetch('/api/staff-permissions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({staff_id:s.id})})
+        const permToken = localStorage.getItem('staff_token')
+        const res = await fetch('/api/staff-permissions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${permToken}`},body:JSON.stringify({})})
         if(res.ok){
           const data = await res.json()
           if(data.deleted){

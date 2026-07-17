@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!
 
@@ -19,7 +20,11 @@ const LANG_NAMES: Record<string, string> = {
 
 export async function POST(req: Request) {
   try {
-    const { orgId, branchId, targetLang } = await req.json()
+    const auth = verifyStaffToken(extractStaffToken(req))
+    if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
+    const orgId = auth.data!.org_id
+
+    const { branchId, targetLang } = await req.json()
 
     if (!orgId || !targetLang) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })

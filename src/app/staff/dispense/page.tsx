@@ -91,7 +91,8 @@ export default function StaffPage() {
       if(!saved) return
       const s = JSON.parse(saved)
       try {
-        const res = await fetch('/api/staff-permissions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({staff_id:s.id})})
+        const permToken = localStorage.getItem('staff_token')
+        const res = await fetch('/api/staff-permissions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${permToken}`},body:JSON.stringify({})})
         if(res.ok){
           const data = await res.json()
           if(data.deleted){
@@ -177,7 +178,8 @@ export default function StaffPage() {
   async function fetchTranslation(s: StaffSession, targetLang: string) {
     setTranslating(true)
     try {
-      const res = await fetch('/api/translate-products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orgId:s.org_id,branchId:s.branch_id,targetLang})})
+      const transToken = localStorage.getItem('staff_token')
+      const res = await fetch('/api/translate-products',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${transToken}`},body:JSON.stringify({branchId:s.branch_id,targetLang})})
       const data = await res.json()
       setTranslations(prev=>({...prev,[targetLang]:data.translations||{}}))
     } catch {}
@@ -202,8 +204,8 @@ export default function StaffPage() {
       const staffToken = localStorage.getItem('staff_token')
       const res = await fetch('/api/staff-dispense',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},body:JSON.stringify({productId:selected.id,qty:Number(dispenseQty),staffName:session.name})})
       if(!res.ok){showMsg(T('error',lang),'error');setSubmitting(false);return}
-      fetch('/api/notify-staff-dispense',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:session.org_id,staff_name:session.name,product_name:selected.name,qty:Number(dispenseQty),unit:selected.unit})}).catch(()=>{})
-      fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:session.org_id,product_id:selected.id,new_qty:selected.qty-Number(dispenseQty),reorder_point:selected.reorder_point})}).catch(()=>{})
+      fetch('/api/notify-staff-dispense',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},body:JSON.stringify({staff_name:session.name,product_name:selected.name,qty:Number(dispenseQty),unit:selected.unit})}).catch(()=>{})
+      fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},body:JSON.stringify({org_id:session.org_id,product_id:selected.id,new_qty:selected.qty-Number(dispenseQty),reorder_point:selected.reorder_point})}).catch(()=>{})
       showMsg(T('success',lang))
       setSelected(null); setDispenseQty('')
       loadProducts(session)

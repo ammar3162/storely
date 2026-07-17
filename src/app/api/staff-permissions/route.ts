@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,7 +9,9 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
-    const { staff_id } = await req.json()
+    const auth = verifyStaffToken(extractStaffToken(req))
+    if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
+    const staff_id = auth.data!.staff_id
     if (!staff_id) return NextResponse.json({ error: 'staff_id required' }, { status: 400 })
 
     const { data } = await sb().from('staff_members')

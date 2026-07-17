@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { isSubscriptionActive } from '@/lib/subscription'
+import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
+import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -28,6 +30,15 @@ export async function POST(req: Request) {
   try {
     const { org_id, product_id, new_qty, reorder_point, staff_name, qty_dispensed, product_name, product_unit } = await req.json()
     if (!org_id || !product_id) return NextResponse.json({ success: false })
+
+    // تحقق مزدوج: يقبل إما توكن موظف صالح، أو جلسة مالك صالحة — يخدم الاثنين
+    const staffAuth = verifyStaffToken(extractStaffToken(req))
+    if (staffAuth.valid) {
+      if (staffAuth.data!.org_id !== org_id) return NextResponse.json({ success: false, error: 'غير مصرح' }, { status: 403 })
+    } else {
+      const ownerAuth = await verifyOrgAccess(org_id)
+      if (!ownerAuth.authorized) return NextResponse.json({ success: false, error: ownerAuth.error }, { status: ownerAuth.status })
+    }
 
     // لا ترسل إذا المخزون لا يزال كافٍ
     if (new_qty > reorder_point) return NextResponse.json({ success: false, message: 'كافٍ' })
