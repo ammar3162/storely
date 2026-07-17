@@ -53,13 +53,14 @@ export async function POST(req: Request) {
 
     const orderQty = (product as any).supplier_order_qty || (product as any).reorder_point
 
-    // إرسال للمورد إذا موجود
+    // إرسال للمورد إذا موجود ووافق على استلام الرسائل
     let sentToSupplier = false
     console.log('supplier_id:', (product as any).supplier_id)
     if ((product as any).supplier_id) {
       const { data: supplier } = await (db as any).from('suppliers')
-        .select('name,phone').eq('id', (product as any).supplier_id).single()
-      if ((supplier as any)?.phone) {
+        .select('name,phone,whatsapp_consent').eq('id', (product as any).supplier_id).single()
+
+      if ((supplier as any)?.phone && (supplier as any)?.whatsapp_consent === true) {
         const notesLine = (product as any).supplier_notes ? `\n📝 ${(product as any).supplier_notes}\n` : ''
 
         // تحقق: فيه طلب معلّق لنفس الصنف ونفس المورد؟ لو فيه، نرسل تذكير بس بدل طلب جديد مكرر
@@ -110,8 +111,16 @@ export async function POST(req: Request) {
     const dailyRate = total7/7
     const daysLeft = dailyRate>0 ? Math.floor(new_qty/dailyRate) : null
 
+    // تحقق من موافقة المالك قبل إرسال رسالة نقص المخزون له
+    const { data: ownerProfile } = await db.from('profiles')
+      .select('whatsapp_consent')
+      .eq('org_id', org_id)
+      .eq('role', 'owner')
+      .maybeSingle()
+    const ownerConsented = (ownerProfile as any)?.whatsapp_consent === true
+
     // رسالة المدير — وصل للحد الأدنى
-    if ((org as any).whatsapp_number) {
+    if ((org as any).whatsapp_number && ownerConsented) {
       const daysMsg = daysLeft !== null 
         ? `⏳ *المخزون سينفد خلال ${daysLeft} يوم* (بناءً على معدل صرفك ${dailyRate.toFixed(1)} ${(product as any).unit}/يوم)`
         : ''

@@ -27,12 +27,16 @@ export async function POST(req: Request) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('full_name, phone, org_id')
+      .select('full_name, phone, org_id, whatsapp_consent')
       .eq('id', userId)
       .single()
 
     if (!profile?.phone) {
       return NextResponse.json({ error: 'لا يوجد رقم هاتف' }, { status: 404 })
+    }
+
+    if (profile.whatsapp_consent !== true) {
+      return NextResponse.json({ success: false, message: 'لا يوجد موافقة واتساب' })
     }
 
     const { data: org } = await supabase

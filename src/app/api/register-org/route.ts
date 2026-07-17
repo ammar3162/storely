@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sanitizeShortText } from '@/lib/sanitize'
+import { formatPhone } from '@/lib/whatsapp'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,8 +13,8 @@ export async function POST(req: Request) {
     let { userId, orgName, fullPhone, businessType, branchCount, phone, trialEnds, countryCode } = await req.json()
 
     orgName = sanitizeShortText(orgName, 150)
-    fullPhone = sanitizeShortText(fullPhone, 20)
-    phone = sanitizeShortText(phone, 20)
+    fullPhone = formatPhone(sanitizeShortText(fullPhone, 20))
+    phone = formatPhone(sanitizeShortText(phone, 20))
     businessType = businessType ? sanitizeShortText(businessType, 50) : businessType
 
     if (!orgName || !fullPhone) {
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
     }
 
     const supabase = sb()
-    
+
     const maxB = branchCount===1?1:branchCount<=3?3:10
     const maxStaff = branchCount===1?2:branchCount<=3?10:999
     const maxSup = branchCount===1?3:branchCount<=3?10:999
@@ -29,10 +30,10 @@ export async function POST(req: Request) {
 
     const { data: org, error: orgErr } = await supabase
       .from('organizations')
-      .insert({ 
+      .insert({
         name: orgName,
-        country_code: countryCode || '+966', 
-        whatsapp_number: fullPhone, 
+        country_code: countryCode || '+966',
+        whatsapp_number: fullPhone,
         low_stock_threshold: 5,
         business_type: businessType||'مطعم',
         requested_plan: plan,

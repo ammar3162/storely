@@ -80,6 +80,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showBranch, setShowBranch] = useState(false)
   const [ready, setReady]           = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [showConsent, setShowConsent] = useState(false)
+  const [consentChecked, setConsentChecked] = useState(false)
+  const [consentSaving, setConsentSaving] = useState(false)
+  const [profileId, setProfileId] = useState('')
   const [onboardingStep, setOnboardingStep] = useState(0)
   const [theme, setTheme]           = useState<'light'|'dark'>('light')
   const router   = useRouter()
@@ -122,7 +126,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const load = useCallback(async()=>{
     const{data:{user}}=await sb.auth.getUser()
     if(!user){router.replace('/login');return}
-    const{data:p}=await sb.from('profiles').select('id,full_name,org_id,organizations(name,logo_url)').eq('id',user.id).single()
+    const{data:p}=await sb.from('profiles').select('id,full_name,org_id,whatsapp_consent,organizations(name,logo_url)').eq('id',user.id).single()
     if(!p){router.replace('/login');return}
     if(!p.org_id){router.replace('/pending');return}
     // فحص انتهاء الاشتراك
@@ -139,6 +143,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setOrgName(orgN); setUserName(userN); setUserInit(userN[0]||'م'); setOrgLogo(orgLogoUrl)
     sessionStorage.setItem('s_org_id',p.org_id)
     sessionStorage.setItem('s_profile_id',p.id)
+    setProfileId(p.id)
+    if((p as any).whatsapp_consent !== true){ setShowConsent(true) }
     const{data:orgData}=await (sb as any).from('organizations').select('plan,max_staff,max_suppliers,country_code').eq('id',p.org_id).single()
     const orgPlan=(orgData as any)?.plan||'basic'
     sessionStorage.setItem('s_plan',orgPlan)
@@ -206,6 +212,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setUnread((notifs||[]).length)
   },[])
 
+  async function acceptConsent(){
+    if(!consentChecked || !profileId) return
+    setConsentSaving(true)
+    await sb.from('profiles').update({ whatsapp_consent:true, whatsapp_consent_at:new Date().toISOString() } as any).eq('id',profileId)
+    setConsentSaving(false)
+    setShowConsent(false)
+  }
+
   function selectBranch(b:any){
     sessionStorage.setItem('s_branch_id',b.id)
     sessionStorage.setItem('s_branch_name',b.name)
@@ -245,6 +259,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <>
+      {/* Consent Modal — نافذة موافقة واتساب */}
+      {showConsent && (
+        <div style={{position:'fixed',inset:0,zIndex:3000,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+          <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:420,padding:28,boxShadow:'0 24px 60px rgba(0,0,0,.3)'}}>
+            <div style={{fontSize:36,textAlign:'center',marginBottom:12}}>🟢</div>
+            <div style={{fontSize:17,fontWeight:800,color:C.text,textAlign:'center',marginBottom:8}}>تحديث مهم بخصوص الخصوصية</div>
+            <div style={{fontSize:13,color:C.text3,textAlign:'center',lineHeight:1.8,marginBottom:20}}>
+              عشان نقدر نرسل لك تنبيهات مهمة زي نقص المخزون، إقفال الكاشير اليومي، وطلبات التوريد، نحتاج موافقتك على استلام رسائل واتساب من Storely.
+            </div>
+            <label style={{display:'flex',alignItems:'flex-start',gap:10,padding:'12px 14px',background:C.primaryL,borderRadius:12,border:`1px solid ${C.primaryB}`,cursor:'pointer',marginBottom:16}}>
+              <input type="checkbox" checked={consentChecked} onChange={e=>setConsentChecked(e.target.checked)} style={{marginTop:2,width:18,height:18,flexShrink:0,cursor:'pointer'}}/>
+              <span style={{fontSize:12,color:C.text2,lineHeight:1.6}}>أوافق على استلام رسائل واتساب من Storely المتعلقة بإدارة متجري</span>
+            </label>
+            <button onClick={acceptConsent} disabled={!consentChecked||consentSaving}
+              style={{width:'100%',padding:13,background:consentChecked?C.primary:'#e5e7eb',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:consentChecked?'pointer':'not-allowed',fontFamily:'inherit'}}>
+              {consentSaving?'جاري الحفظ...':'متابعة'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Branch selector */}
       {showBranch && branches.length>1 && (
         <div style={{position:'fixed',inset:0,zIndex:2000,background:'rgba(0,0,0,.5)',backdropFilter:'blur(6px)',display:'flex',alignItems:'flex-end',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>

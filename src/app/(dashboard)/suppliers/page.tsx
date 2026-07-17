@@ -402,6 +402,7 @@ export default function SuppliersPage() {
   const [newPhone, setNewPhone]   = useState('')
   const [supCountry, setSupCountry] = useState(()=>sessionStorage.getItem('s_country_code')||'+966')
   const [newNotes, setNewNotes]   = useState('')
+  const [newConsent, setNewConsent] = useState(false)
   const sb = createClient()
 
   useEffect(() => { init() }, [])
@@ -438,6 +439,7 @@ export default function SuppliersPage() {
   async function addSupplier() {
     if (suppliers.length >= maxSuppliers) { toast(`باقتك تسمح بـ ${maxSuppliers} موردين فقط`, 'warning'); return }
     if (!newName.trim() || !newPhone.trim()) { toast('أدخل اسم المورد ورقمه', 'warning'); return }
+    if (!newConsent) { toast('يرجى تأكيد إقرار موافقة المورد على استلام رسائل واتساب', 'warning'); return }
     const phoneRules2: Record<string,number> = {'+966':9,'+971':9,'+965':8,'+973':8,'+974':8,'+968':8,'+20':10,'+962':9,'+1':10,'+44':10,'+91':10,'+92':10}
     const reqLen2 = phoneRules2[supCountry] || 9
     const cleanedPhone2 = newPhone.trim().replace(/^0+/,'')
@@ -445,14 +447,14 @@ export default function SuppliersPage() {
     const res = await fetch('/api/add-supplier', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ org_id: orgId, branch_id: sessionStorage.getItem('s_branch_id') || null, name: newName.trim(), phone: supCountry + newPhone.trim().replace(/^0+/,''), notes: newNotes.trim() })
+      body: JSON.stringify({ org_id: orgId, branch_id: sessionStorage.getItem('s_branch_id') || null, name: newName.trim(), phone: supCountry + newPhone.trim().replace(/^0+/,''), notes: newNotes.trim(), whatsapp_consent: true })
     })
     const resData = await res.json()
     console.log('ADD SUPPLIER RESPONSE:', res.status, resData)
     const error = !res.ok ? {message: resData.error} : null
     if (error) { toast('خطأ: ' + error.message, 'error'); return }
     toast('✅ تم إضافة المورد')
-    setNewName(''); setNewPhone(''); setNewNotes(''); setShowAdd(false)
+    setNewName(''); setNewPhone(''); setNewNotes(''); setNewConsent(false); setShowAdd(false)
     loadSuppliers(orgId)
   }
 
@@ -491,6 +493,10 @@ export default function SuppliersPage() {
             </div>
           </div>
           <input value={newNotes} onChange={e=>setNewNotes(e.target.value)} style={{...inp(), width:'100%', marginBottom:14, boxSizing:'border-box' as const}} placeholder="ملاحظات عامة للمورد (اختياري)" />
+          <label style={{display:'flex',alignItems:'flex-start',gap:8,padding:'10px 12px',background:'#f0fdf4',borderRadius:10,border:'1px solid #bbf7d0',cursor:'pointer',marginBottom:14}}>
+            <input type="checkbox" checked={newConsent} onChange={e=>setNewConsent(e.target.checked)} style={{marginTop:2,width:16,height:16,flexShrink:0,cursor:'pointer'}}/>
+            <span style={{fontSize:11,color:'#166534',lineHeight:1.6}}>أقر بأن هذا المورد وافق على استلام رسائل واتساب مني بخصوص طلبات التوريد</span>
+          </label>
           <div style={{ display:'flex', gap:8 }}>
             <button onClick={addSupplier} style={{ ...btnPrimary, padding:'10px 20px', fontSize:13 }}>حفظ المورد</button>
             <button onClick={()=>setShowAdd(false)} style={{ ...btnSecondary, padding:'10px 20px', fontSize:13 }}>إلغاء</button>

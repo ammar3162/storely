@@ -48,7 +48,7 @@ async function findUser(phone: string) {
   try {
     const clean = phone.replace(/^\+/,'')
     for (const p of [clean, '0'+clean.slice(3), '+'+clean]) {
-      const { data } = await sb().from('profiles').select('id,full_name,org_id,status').eq('phone',p).maybeSingle()
+      const { data } = await sb().from('profiles').select('id,full_name,org_id,status,whatsapp_consent').eq('phone',p).maybeSingle()
       if (data) return data
     }
   } catch {}
@@ -309,6 +309,11 @@ export async function POST(req: Request) {
       }
 
       const user = await findUser(to)
+
+      if (user?.status==='active' && user?.whatsapp_consent !== true) {
+        await send(to, "🟢 *Storely*\n\nنحتاج موافقتك على استلام رسائل واتساب من Storely أولاً.\n\nيرجى تسجيل الدخول للنظام على storely.dev والموافقة من هناك لمتابعة استخدام خدمة واتساب.")
+        continue
+      }
 
       if (user?.status==='active') {
         const state = await getState(to)

@@ -26,6 +26,9 @@ export async function POST(req: Request) {
     const { data: org } = await db.from('organizations').select('name,whatsapp_number').eq('id', org_id).single()
     if (!(org as any)?.whatsapp_number) return NextResponse.json({ success: false })
 
+    const { data: ownerProfile } = await db.from('profiles').select('whatsapp_consent').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
+    if ((ownerProfile as any)?.whatsapp_consent !== true) return NextResponse.json({ success: false, message: 'لا يوجد موافقة واتساب' })
+
     const now = new Date()
     const timeStr = now.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Riyadh'})
     const dateStr = now.toLocaleDateString('ar-SA',{weekday:'long',day:'numeric',month:'long',timeZone:'Asia/Riyadh'})

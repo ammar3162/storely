@@ -91,8 +91,8 @@ export async function escalateOrder(order: any, reason: 'unavailable' | 'timeout
   const escalatedNames: string[] = []
 
   for (const supplierId of supplierIds) {
-    const { data: supplier } = await db.from('suppliers').select('id,name,phone').eq('id', supplierId).single()
-    if (!supplier?.phone) continue
+    const { data: supplier } = await db.from('suppliers').select('id,name,phone,whatsapp_consent').eq('id', supplierId).single()
+    if (!supplier?.phone || (supplier as any)?.whatsapp_consent !== true) continue
 
     const { items: its, priority } = bySupplier[supplierId]
     const itemsList = its.map((it: any, i: number) => `${i + 1}. *${it.name}* — ${it.qty} ${it.unit}`).join('\n')
@@ -122,7 +122,10 @@ export async function escalateOrder(order: any, reason: 'unavailable' | 'timeout
 
   await (db as any).from('supplier_orders').update({ status: 'escalated' }).eq('id', order.id)
 
-  if ((org as any)?.whatsapp_number && escalatedNames.length) {
+  const { data: ownerProfile } = await db.from('profiles').select('whatsapp_consent').eq('org_id', order.org_id).eq('role', 'owner').maybeSingle()
+  const ownerConsented = (ownerProfile as any)?.whatsapp_consent === true
+
+  if ((org as any)?.whatsapp_number && escalatedNames.length && ownerConsented) {
     const ownerPhone = (org as any).whatsapp_number.replace(/\D/g, '').replace(/^0/, '966')
     const reasonText = reason === 'unavailable' ? 'أبلغ بعدم توفر الصنف' : 'لم يرد بالوقت المحدد'
     const branchLine = (isMultiBranch && branchName) ? `🏪 الفرع: *${branchName}*\n` : ''

@@ -1,4 +1,11 @@
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { formatPhone as normalizePhone } from '@/lib/whatsapp'
+
+const sb = () => createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -14,6 +21,10 @@ export async function POST(req: Request) {
   try {
     const { name, phone } = await req.json()
     if (!phone) return NextResponse.json({ success: false })
+
+    const cleanPhone = normalizePhone(phone)
+    const { data: profile } = await sb().from('profiles').select('whatsapp_consent').eq('phone', cleanPhone).maybeSingle()
+    if ((profile as any)?.whatsapp_consent !== true) return NextResponse.json({ success: false, message: 'لا يوجد موافقة واتساب' })
 
     const msg = `🟢 *Storely*
 

@@ -90,3 +90,113 @@ export function formatPhone(raw: string): string {
   if (clean.startsWith('5')) return '966' + clean
   return clean
 }
+/**
+ * ============================================================
+ * Meta WhatsApp Cloud API (رسمي) — نسخة تجريبية للاختبار فقط
+ * ============================================================
+ * لا تُستخدم بعد بأي مكان بالنظام — بس للاختبار اليدوي حالياً.
+ * تستخدم رقم الاختبار المجاني من ميتا (Phone Number ID).
+ * بعد التأكد من نجاحها، تُستبدل تدريجياً بمكان sendWhatsAppMessage.
+ */
+export async function sendWhatsAppCloudAPI(phone: string, text: string): Promise<SendResult> {
+  const token = process.env.META_WA_ACCESS_TOKEN!
+  const phoneNumberId = process.env.META_WA_PHONE_NUMBER_ID!
+
+  try {
+    const res = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to: formatPhone(phone),
+        type: 'text',
+        text: { body: text },
+      }),
+    })
+
+    const data = await res.json().catch(() => ({}))
+
+    if (res.ok) {
+      return { ok: true, status: res.status, data }
+    }
+    return { ok: false, status: res.status, data }
+  } catch (err: any) {
+    return { ok: false, data: { error: err.message } }
+  }
+}
+/**
+ * يرسل رسالة باستخدام قالب معتمد من ميتا (Meta Cloud API)
+ * templateName: اسم القالب المسجل بـ WhatsApp Manager (مثل owner_alert_utility)
+ * languageCode: كود اللغة (ar للعربي)
+ * bodyParams: قيم المتغيرات بنفس ترتيبها بالقالب ({{1}}, {{2}}, ...)
+ */
+export async function sendWhatsAppTemplate(
+  phone: string,
+  templateName: string,
+  bodyParams: string[],
+  languageCode = 'ar'
+): Promise<SendResult> {
+  const token = process.env.META_WA_ACCESS_TOKEN!
+  const phoneNumberId = process.env.META_WA_PHONE_NUMBER_ID!
+
+  try {
+    const res = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to: formatPhone(phone),
+        type: 'template',
+        template: {
+          name: templateName,
+          language: { code: languageCode },
+          components: [
+            {
+              type: 'body',
+              parameters: bodyParams.map(text => ({ type: 'text', text })),
+            },
+          ],
+        },
+      }),
+    })
+
+    const data = await res.json().catch(() => ({}))
+
+    if (res.ok) {
+      return { ok: true, status: res.status, data }
+    }
+    return { ok: false, status: res.status, data }
+  } catch (err: any) {
+    return { ok: false, data: { error: err.message } }
+  }
+}
+
+/**
+ * ============================================================
+ * فحص الموافقة (Consent Check) قبل الإرسال
+ * ============================================================
+ * يتحقق من whatsapp_consent بجدول profiles أو suppliers
+ * قبل أي إرسال — لو ما وافق، يرجع false ولا يرسل شي.
+ */
+export async function hasWhatsAppConsent(
+  table: 'profiles' | 'suppliers',
+  id: string,
+  sbClient: any
+): Promise<boolean> {
+  try {
+    const { data } = await sbClient
+      .from(table)
+      .select('whatsapp_consent')
+      .eq('id', id)
+      .maybeSingle()
+    return data?.whatsapp_consent === true
+  } catch {
+    return false
+  }
+}

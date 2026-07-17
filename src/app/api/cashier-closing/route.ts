@@ -103,6 +103,8 @@ export async function POST(req: Request) {
     try {
       const { data: org } = await supabase.from('organizations').select('name,whatsapp_number,notify_cashier_closing_wa').eq('id', org_id).single()
       const whatsappNumber = (org as any)?.whatsapp_number
+      const { data: ownerProfile } = await supabase.from('profiles').select('whatsapp_consent').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
+      const ownerConsented = (ownerProfile as any)?.whatsapp_consent === true
       const { data: allBranches } = await supabase.from('branches').select('id,name').eq('org_id', org_id).eq('is_active', true)
       const isMultiBranch = (allBranches || []).length > 1
       const branchName = branch_id ? (allBranches || []).find((b: any) => b.id === branch_id)?.name : null
@@ -113,7 +115,7 @@ export async function POST(req: Request) {
       const notifyEnabled = (org as any)?.notify_cashier_closing_wa !== false
       const shouldSendNow = notifyEnabled
 
-      if (whatsappNumber && shouldSendNow) {
+      if (whatsappNumber && shouldSendNow && ownerConsented) {
         const now = new Date()
         const effectiveDate = closing_date ? new Date(`${closing_date}T${closing_time||'00:00'}:00+03:00`) : now
         const timeStr = effectiveDate.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Riyadh' })
