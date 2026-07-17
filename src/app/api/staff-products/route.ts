@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,7 +9,11 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
-    const { orgId, branchId, staffId } = await req.json()
+    const auth = verifyStaffToken(extractStaffToken(req))
+    if (!auth.valid) return NextResponse.json({ products: [], error: auth.error }, { status: 401 })
+    const { org_id: orgId, staff_id: staffId } = auth.data!
+
+    const { branchId } = await req.json()
     if (!orgId) return NextResponse.json({ products: [] })
 
     // جلب assigned_products للموظف

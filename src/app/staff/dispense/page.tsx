@@ -156,7 +156,8 @@ export default function StaffPage() {
   async function loadProducts(s: StaffSession) {
     setLoading(true)
     try {
-      const res = await fetch('/api/staff-products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orgId:s.org_id,branchId:s.branch_id,staffId:s.id})})
+      const staffToken = localStorage.getItem('staff_token')
+      const res = await fetch('/api/staff-products',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},body:JSON.stringify({branchId:s.branch_id})})
       const data = await res.json()
       setProducts(data.products || [])
     } catch { setProducts([]) }
@@ -165,7 +166,8 @@ export default function StaffPage() {
 
   async function refreshProductsQuietly(s: StaffSession) {
     try {
-      const res = await fetch('/api/staff-products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orgId:s.org_id,branchId:s.branch_id,staffId:s.id})})
+      const staffToken = localStorage.getItem('staff_token')
+      const res = await fetch('/api/staff-products',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},body:JSON.stringify({branchId:s.branch_id})})
       const data = await res.json()
       setProducts(data.products || [])
     } catch {}
