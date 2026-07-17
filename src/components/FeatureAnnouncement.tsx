@@ -79,7 +79,9 @@ export default function FeatureAnnouncement() {
     setCurrentBanner(null)
     setAnnouncements(prev=>prev.filter(a=>a.version!==version))
     if(!profileId) return
-    await (sb as any).from('user_seen_features').upsert({profile_id:profileId,feature_version:version},{onConflict:'profile_id,feature_version'}).catch(()=>{})
+    try {
+      await (sb as any).from('user_seen_features').upsert({profile_id:profileId,feature_version:version},{onConflict:'profile_id,feature_version'})
+    } catch {}
   }
 
   return (
