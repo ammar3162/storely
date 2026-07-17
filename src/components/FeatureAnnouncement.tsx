@@ -75,12 +75,11 @@ export default function FeatureAnnouncement() {
     ;(sb as any).from('user_seen_features').insert({profile_id:profileId,feature_version:'1.0.0'}).catch(()=>{})
   }
 
-  function markSeen(version:string) {
-    // نخفي البانر فوراً بدون أي انتظار — الحفظ بقاعدة البيانات يصير بالخلفية
+  async function markSeen(version:string) {
     setCurrentBanner(null)
     setAnnouncements(prev=>prev.filter(a=>a.version!==version))
     if(!profileId) return
-    ;(sb as any).from('user_seen_features').insert({profile_id:profileId,feature_version:version}).catch(()=>{})
+    await (sb as any).from('user_seen_features').upsert({profile_id:profileId,feature_version:version},{onConflict:'profile_id,feature_version'}).catch(()=>{})
   }
 
   return (
