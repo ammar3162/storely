@@ -1,12 +1,13 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { cache } from '@/lib/cache'
 import { toast } from '@/components/toast'
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh'
 import Pagination from '@/components/pagination'
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
+import Papa from 'papaparse'
 
 const C = {
   primary:'#16a34a', primaryD:'#15803d', primaryL:'#f0fdf4', primaryB:'#bbf7d0',
@@ -86,6 +87,10 @@ export default function InventoryPage() {
   const [form, setForm]           = useState({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:''})
   const [showScan, setShowScan]   = useState(false)
   const [showJardScan, setShowJardScan] = useState(false)
+  const [showImport, setShowImport] = useState(false)
+  const [importPreview, setImportPreview] = useState<any[]>([])
+  const [importing, setImporting] = useState(false)
+  const importFileRef = useRef<HTMLInputElement>(null)
   const [jardNotFound, setJardNotFound] = useState('')
   const [visible, setVisible]     = useState(false)
   const [businessType, setBusinessType] = useState('')
@@ -188,6 +193,59 @@ export default function InventoryPage() {
     toast('تم حذف المنتج');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:');setConfirm(null);load()
   }
 
+  function downloadImportTemplate() {
+    const csv = '\ufeff' + 'اسم المنتج,الفئة,الكمية,الوحدة,الحد الأدنى\nمثال: جبنة شيدر,ألبان,20,كيلو,5\n'
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = 'نموذج_استيراد_المنتجات.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function handleImportFile(file: File) {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results: any) => {
+        const rows = (results.data as any[]).map(r => ({
+          name: (r['اسم المنتج'] || '').trim(),
+          category: (r['الفئة'] || '').trim(),
+          qty: Number(r['الكمية']) || 0,
+          unit: (r['الوحدة'] || 'قطعة').trim(),
+          reorder_point: Number(r['الحد الأدنى']) || 5,
+        })).filter(r => r.name)
+        setImportPreview(rows)
+      },
+      error: () => { toast('تعذر قراءة الملف — تأكد إنه بصيغة CSV صحيحة', 'error') }
+    })
+  }
+
+  async function confirmImport() {
+    if (importing || importPreview.length === 0) return
+    setImporting(true)
+    const oid = sessionStorage.getItem('s_org_id')
+    const bid = sessionStorage.getItem('s_branch_id')
+    if (!oid) { toast('خطأ بالجلسة', 'error'); setImporting(false); return }
+
+    let added = 0, updated = 0
+    for (const row of importPreview) {
+      const existing = products.find(p => p.name.trim() === row.name)
+      if (existing) {
+        await sb.from('products').update({ qty: row.qty, reorder_point: row.reorder_point, category: row.category || null, unit: row.unit } as any).eq('id', existing.id)
+        updated++
+      } else {
+        await sb.from('products').insert({ org_id: oid, branch_id: bid, name: row.name, category: row.category || null, qty: row.qty, unit: row.unit, reorder_point: row.reorder_point, is_active: true } as any)
+        added++
+      }
+    }
+    toast(`✅ تم استيراد ${importPreview.length} صنف (${added} جديد، ${updated} محدّث)`)
+    setImportPreview([])
+    setShowImport(false)
+    setImporting(false)
+    load()
+  }
+
   function openEdit(p:Product) {
     setEditItem(p);setAddQty(0)
     setForm({name:p.name,sku:p.sku||'',unit:p.unit,qty:p.qty,reorder_point:p.reorder_point,category:p.category||'',expiry_date:(p as any).expiry_date||''})
@@ -271,6 +329,68 @@ export default function InventoryPage() {
         if(found){ setJardNotFound(''); openEdit(found) }
         else { setJardNotFound(code) }
       }} onClose={()=>setShowJardScan(false)}/></Suspense>}
+      {showImport&&(
+        <div style={{position:'fixed',inset:0,zIndex:3000,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+          <div style={{background:'white',borderRadius:16,width:'100%',maxWidth:520,maxHeight:'85vh',overflowY:'auto' as const,padding:20}}>
+            <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:4}}>📥 استيراد منتجات من ملف</div>
+            <div style={{fontSize:12,color:C.text4,marginBottom:16}}>ارفع ملف CSV بصيغة Excel — سيتم تحديث الأصناف الموجودة وإضافة الجديدة تلقائياً</div>
+
+            {importPreview.length===0 ? (
+              <>
+                <button onClick={downloadImportTemplate} type="button" style={{width:'100%',padding:10,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,fontSize:12,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit',marginBottom:10}}>
+                  ⬇️ تحميل نموذج فارغ (CSV)
+                </button>
+                <input ref={importFileRef} type="file" accept=".csv" style={{display:'none'}} onChange={e=>{if(e.target.files?.[0])handleImportFile(e.target.files[0])}}/>
+                <button onClick={()=>importFileRef.current?.click()} type="button" style={{width:'100%',padding:14,background:C.primaryL,border:`1.5px dashed ${C.primaryB}`,borderRadius:10,fontSize:13,fontWeight:700,color:C.primary,cursor:'pointer',fontFamily:'inherit'}}>
+                  📎 اختر ملف CSV للاستيراد
+                </button>
+              </>
+            ) : (
+              <>
+                <div style={{fontSize:12,fontWeight:700,color:C.text2,marginBottom:8}}>معاينة ({importPreview.length} صنف)</div>
+                <div style={{border:`1px solid ${C.border}`,borderRadius:10,overflow:'hidden',marginBottom:14,maxHeight:280,overflowY:'auto' as const}}>
+                  <table style={{width:'100%',borderCollapse:'collapse',fontSize:11}}>
+                    <thead>
+                      <tr style={{background:C.bg}}>
+                        <th style={{padding:'6px 8px',textAlign:'right',fontWeight:700,color:C.text3}}>الاسم</th>
+                        <th style={{padding:'6px 8px',textAlign:'right',fontWeight:700,color:C.text3}}>الكمية</th>
+                        <th style={{padding:'6px 8px',textAlign:'right',fontWeight:700,color:C.text3}}>الوحدة</th>
+                        <th style={{padding:'6px 8px',textAlign:'right',fontWeight:700,color:C.text3}}>الحالة</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {importPreview.map((r,i)=>{
+                        const exists = products.some(p=>p.name.trim()===r.name)
+                        return (
+                          <tr key={i} style={{borderTop:`1px solid ${C.border}`}}>
+                            <td style={{padding:'6px 8px',color:C.text}}>{r.name}</td>
+                            <td style={{padding:'6px 8px',color:C.text2}}>{r.qty}</td>
+                            <td style={{padding:'6px 8px',color:C.text2}}>{r.unit}</td>
+                            <td style={{padding:'6px 8px'}}>
+                              <span style={{fontSize:9,fontWeight:700,padding:'2px 6px',borderRadius:5,background:exists?C.warningL:C.primaryL,color:exists?C.warning:C.primary}}>
+                                {exists?'تحديث':'جديد'}
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div style={{display:'flex',gap:8}}>
+                  <button onClick={()=>setImportPreview([])} type="button" style={{flex:1,padding:11,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,fontSize:12,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                  <button onClick={confirmImport} disabled={importing} type="button" style={{flex:2,padding:11,background:C.primary,border:'none',borderRadius:10,fontSize:12,fontWeight:700,color:'white',cursor:importing?'not-allowed':'pointer',fontFamily:'inherit',opacity:importing?.7:1}}>
+                    {importing?'جاري الاستيراد...':`✅ تأكيد استيراد ${importPreview.length} صنف`}
+                  </button>
+                </div>
+              </>
+            )}
+
+            <button onClick={()=>{setShowImport(false);setImportPreview([])}} type="button" style={{width:'100%',padding:9,background:'none',border:'none',fontSize:11,color:C.text4,cursor:'pointer',fontFamily:'inherit',marginTop:10}}>إغلاق</button>
+          </div>
+        </div>
+      )}
+
       {jardNotFound&&(
         <div style={{position:'fixed',bottom:20,left:'50%',transform:'translateX(-50%)',background:C.dangerL,color:C.danger,border:`1px solid ${C.dangerB}`,borderRadius:10,padding:'10px 16px',fontSize:12,fontWeight:600,zIndex:2000,boxShadow:'0 4px 16px rgba(0,0,0,.1)'}}>
           ⚠️ لا يوجد منتج بهذا الباركود: {jardNotFound}
@@ -371,6 +491,10 @@ export default function InventoryPage() {
           <button onClick={()=>setShowJardScan(true)} title="مسح للجرد"
             style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:C.primaryL,border:`1px solid ${C.primaryB}`,borderRadius:8,cursor:'pointer',color:C.primary,flexShrink:0,fontSize:14}}>
             📷
+          </button>
+          <button onClick={()=>setShowImport(true)} title="استيراد من ملف"
+            style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'white',border:`1px solid ${C.border2}`,borderRadius:8,cursor:'pointer',color:C.text3,flexShrink:0}}>
+            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M3 15v4a2 2 0 002 2h14a2 2 0 002-2v-4M17 9l-5-5-5 5M12 4v12"/></svg>
           </button>
           <button onClick={()=>{setEditItem(null);setAddQty(0);setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:''});setShowAdd(true)}}
             style={{height:32,padding:'0 12px',background:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4,flexShrink:0,whiteSpace:'nowrap'}}>
