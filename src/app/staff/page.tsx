@@ -129,6 +129,7 @@ export default function StaffLoginPage() {
         return
       }
       localStorage.setItem('staff_session',JSON.stringify(data.staff))
+      localStorage.setItem('staff_token',data.token)
       // لو كاشير وعنده صلاحية الصرف → يختار
       if(data.staff.role === 'cashier' && data.staff.permissions?.dispense) {
         router.push('/staff/choose')

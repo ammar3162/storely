@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { createClient } from '@supabase/supabase-js'
+import { generateStaffToken } from '@/lib/staffAuth'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -75,8 +76,11 @@ export async function POST(req: Request) {
     // إعادة تعيين العداد عند النجاح
     attempts.delete(cleanPhone)
 
+    const token = generateStaffToken(staff.id, staff.org_id, staff.branch_id)
+
     return NextResponse.json({
       success: true,
+      token,
       staff: {
         id: staff.id,
         name: staff.name,
