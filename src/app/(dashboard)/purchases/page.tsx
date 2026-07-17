@@ -34,6 +34,8 @@ export default function PurchasesPage() {
   const [uploading, setUploading]   = useState(false)
   const [showScan, setShowScan]     = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
+  const [ocrItems, setOcrItems]     = useState<any[]>([])
+  const [ocrLoading, setOcrLoading] = useState(false)
   const [filterCat, setFilterCat]       = useState('all')
   const [filterPeriod, setFilterPeriod] = useState('all')
   const [filterSupplier, setFilterSupplier] = useState('')
@@ -117,8 +119,52 @@ export default function PurchasesPage() {
       const{data:{publicUrl}}=sb.storage.from('invoices').getPublicUrl(path)
       setForm(f=>({...f,invoice_image:publicUrl}));setPreviewUrl(publicUrl)
       toast('تم رفع الفاتورة ✓')
+
+      // محاولة استخراج بيانات الفاتورة تلقائياً بالذكاء الاصطناعي
+      if (file.type.startsWith('image/')) {
+        setOcrLoading(true)
+        try {
+          const base64 = await fileToBase64(compressed as File)
+          const ocrToken = localStorage.getItem('staff_token')
+          const ocrRes = await fetch('/api/ocr-invoice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(ocrToken ? {'Authorization':`Bearer ${ocrToken}`} : {}) },
+            body: JSON.stringify({ image: base64, mediaType: 'image/jpeg', org_id: orgId }),
+          })
+          const ocrData = await ocrRes.json()
+          if (ocrRes.ok && ocrData.success) {
+            const d = ocrData.data
+            setForm(f => ({
+              ...f,
+              supplier: d.supplier || f.supplier,
+              total_amount: d.total_amount ? String(d.total_amount) : f.total_amount,
+              invoice_date: d.invoice_date || f.invoice_date,
+              hasVat: d.has_vat ? 'yes' : f.hasVat,
+              name: d.items?.length === 1 ? d.items[0].name : f.name,
+              qty: d.items?.length === 1 && d.items[0].qty ? String(d.items[0].qty) : f.qty,
+              unit: d.items?.length === 1 && d.items[0].unit ? d.items[0].unit : f.unit,
+            }))
+            if (d.items?.length > 1) setOcrItems(d.items)
+            toast('✨ تم استخراج بيانات الفاتورة تلقائياً')
+          }
+        } catch {}
+        setOcrLoading(false)
+      }
     } catch { toast('فشل رفع الصورة','error') }
     setUploading(false)
+  }
+
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve((reader.result as string).split(',')[1])
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  function pickOcrItem(item: any) {
+    setForm(f => ({ ...f, name: item.name || f.name, qty: item.qty ? String(item.qty) : f.qty, unit: item.unit || f.unit }))
   }
 
   async function handleSubmit(e:React.FormEvent) {
@@ -377,6 +423,24 @@ export default function PurchasesPage() {
               </button>
               {previewUrl&&previewUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)&&(
                 <img src={previewUrl} alt="فاتورة" style={{width:'100%',maxHeight:80,objectFit:'cover',borderRadius:7,marginTop:6,border:`1px solid ${C.primaryB}`}}/>
+              )}
+              {ocrLoading&&(
+                <div style={{fontSize:11,color:C.text3,marginTop:6,display:'flex',alignItems:'center',gap:6}}>
+                  <span>✨</span><span>جاري استخراج بيانات الفاتورة...</span>
+                </div>
+              )}
+              {ocrItems.length>0&&(
+                <div style={{marginTop:8,padding:10,background:C.infoL,borderRadius:8,border:`1px solid ${C.infoB}`}}>
+                  <div style={{fontSize:11,fontWeight:700,color:C.info,marginBottom:6}}>📋 أصناف مكتشفة بالفاتورة — اختر واحد لتعبئة الفورم</div>
+                  <div style={{display:'flex',flexWrap:'wrap' as const,gap:6}}>
+                    {ocrItems.map((item,i)=>(
+                      <button key={i} type="button" onClick={()=>pickOcrItem(item)}
+                        style={{padding:'6px 10px',borderRadius:6,fontSize:11,fontWeight:600,cursor:'pointer',border:`1px solid ${C.infoB}`,background:'white',color:C.info,fontFamily:'inherit'}}>
+                        {item.name}{item.qty?` (${item.qty} ${item.unit||''})`:''}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
 
