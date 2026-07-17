@@ -45,11 +45,13 @@ export default function NotificationsPage() {
     if (!orgId) return
     await sb.from('notifications').update({ read: true }).eq('org_id', orgId).eq('read', false)
     setNotifications(prev => prev.map(n => ({...n, read: true})))
+    window.dispatchEvent(new Event('notifications-updated'))
   }
 
   async function del(id: string) {
     await sb.from('notifications').delete().eq('id', id)
     setNotifications(prev => prev.filter(n => n.id !== id))
+    window.dispatchEvent(new Event('notifications-updated'))
   }
 
   const unread   = notifications.filter(n => !n.read).length

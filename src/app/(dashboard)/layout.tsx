@@ -172,6 +172,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     window.addEventListener('logo-updated', (e:any)=>{
       setOrgLogo(e.detail)
     })
+    window.addEventListener('notifications-updated', async ()=>{
+      const oid = sessionStorage.getItem('s_org_id')
+      if(!oid) return
+      const { data: notifData } = await sb.from('notifications').select('id').eq('org_id',oid).eq('read',false)
+      setUnread(notifData?.length||0)
+    })
     if(typeof window !== "undefined" && "serviceWorker" in navigator) {
       // طلب إذن الإشعارات
       if(Notification.permission === "default") {
