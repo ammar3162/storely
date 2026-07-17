@@ -19,7 +19,7 @@ const C = {
 
 interface Product {
   id:string; name:string; sku:string|null; unit:string
-  qty:number; reorder_point:number; category:string|null
+  qty:number; reorder_point:number; category:string|null; expiry_date?:string|null
   org_id:string; is_active:boolean; created_at:string; updated_at:string
 }
 
@@ -83,7 +83,7 @@ export default function InventoryPage() {
   const [editItem, setEditItem]   = useState<Product|null>(null)
   const [addQty, setAddQty]       = useState(0)
   const [confirm, setConfirm]     = useState<{id:string,name:string}|null>(null)
-  const [form, setForm]           = useState({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:''})
+  const [form, setForm]           = useState({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:''})
   const [showScan, setShowScan]   = useState(false)
   const [visible, setVisible]     = useState(false)
   const [businessType, setBusinessType] = useState('')
@@ -158,7 +158,7 @@ export default function InventoryPage() {
     const oid=sessionStorage.getItem('s_org_id')
     if(!oid){setSaving(false);return}
     if(editItem){
-      await sb.from('products').update({name:form.name.trim(),sku:form.sku||null,unit:form.unit,reorder_point:Number(form.reorder_point),category:form.category?.trim()||null}).eq('id',editItem.id)
+      await sb.from('products').update({name:form.name.trim(),sku:form.sku||null,unit:form.unit,reorder_point:Number(form.reorder_point),category:form.category?.trim()||null,expiry_date:form.expiry_date||null} as any).eq('id',editItem.id)
       if(addQty>0) await sb.from('stock_movements').insert({product_id:editItem.id,profile_id:user.id,type:'in',qty_change:addQty,note:'إضافة مخزون'})
       toast('تم حفظ التعديلات ✓')
     } else {
@@ -168,7 +168,7 @@ export default function InventoryPage() {
         const{data:b}=await sb.from('branches').select('id').eq('org_id',oid).eq('is_active',true).order('created_at').limit(1).single()
         bid=b?.id||null
       }
-      const{data:np}=await sb.from('products').insert({org_id:oid,branch_id:bid,name:form.name.trim(),sku:form.sku||null,unit:form.unit,qty:Number(form.qty),reorder_point:Number(form.reorder_point),category:form.category?.trim()||null,is_active:true}).select().single()
+      const{data:np}=await sb.from('products').insert({org_id:oid,branch_id:bid,name:form.name.trim(),sku:form.sku||null,unit:form.unit,qty:Number(form.qty),reorder_point:Number(form.reorder_point),category:form.category?.trim()||null,expiry_date:form.expiry_date||null,is_active:true} as any).select().single()
       if(np) {
         await sb.from('stock_movements').insert({product_id:np.id,profile_id:user.id,type:'in',qty_change:Number(form.qty),note:'إضافة أولية'})
         fetch('/api/sync-product-to-staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:np.id})}).catch(()=>{})
@@ -176,7 +176,7 @@ export default function InventoryPage() {
       toast('تم إضافة المنتج ✓')
     }
     setShowAdd(false);setEditItem(null);setAddQty(0)
-    setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:''})
+    setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:''})
     cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:');setSaving(false);load()
   }
 
@@ -188,7 +188,7 @@ export default function InventoryPage() {
 
   function openEdit(p:Product) {
     setEditItem(p);setAddQty(0)
-    setForm({name:p.name,sku:p.sku||'',unit:p.unit,qty:p.qty,reorder_point:p.reorder_point,category:p.category||''})
+    setForm({name:p.name,sku:p.sku||'',unit:p.unit,qty:p.qty,reorder_point:p.reorder_point,category:p.category||'',expiry_date:(p as any).expiry_date||''})
     setShowAdd(true)
   }
 
@@ -310,6 +310,10 @@ export default function InventoryPage() {
                       <input type="number" min="0" value={form.reorder_point} onChange={e=>setForm({...form,reorder_point:Number(e.target.value)})} style={inp()}/>
                     </div>
                   </div>
+                  <div>
+                    <label style={lbl}>تاريخ انتهاء الصلاحية (اختياري)</label>
+                    <input type="date" value={form.expiry_date} onChange={e=>setForm({...form,expiry_date:e.target.value})} style={inp()}/>
+                  </div>
                   {editItem?(
                     <div style={{background:C.primaryL,border:`1px solid ${C.primaryB}`,borderRadius:10,padding:12}}>
                       <div style={{fontSize:12,color:C.primary,marginBottom:8,fontWeight:600}}>الكمية الحالية: <b style={{fontSize:18}}>{editItem.qty} {form.unit}</b></div>
@@ -350,7 +354,7 @@ export default function InventoryPage() {
             style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'white',border:`1px solid ${C.border2}`,borderRadius:8,cursor:'pointer',color:C.text3,flexShrink:0}}>
             <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
           </button>
-          <button onClick={()=>{setEditItem(null);setAddQty(0);setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:''});setShowAdd(true)}}
+          <button onClick={()=>{setEditItem(null);setAddQty(0);setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:''});setShowAdd(true)}}
             style={{height:32,padding:'0 12px',background:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4,flexShrink:0,whiteSpace:'nowrap'}}>
             <svg width="11" height="11" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
             إضافة
@@ -474,6 +478,11 @@ export default function InventoryPage() {
                       <div style={{height:'100%',width:pct+'%',background:sc,borderRadius:99,transition:'width .3s'}}/>
                     </div>
                     <div style={{fontSize:10,color:C.text4,fontWeight:600}}>الحد الأدنى: {p.reorder_point} {p.unit}</div>
+                    {(p as any).expiry_date && (()=>{ const days=Math.ceil((new Date((p as any).expiry_date).getTime()-Date.now())/86400000); return days<=7 ? (
+                      <div style={{marginTop:6,fontSize:10,fontWeight:700,color:days<0?C.danger:C.warning,background:days<0?C.dangerL:C.warningL,padding:'3px 8px',borderRadius:6,display:'inline-block'}}>
+                        {days<0?'⚠️ منتهي الصلاحية':days===0?'⚠️ ينتهي اليوم':`⏳ ينتهي خلال ${days} يوم`}
+                      </div>
+                    ) : null })()}
                   </div>
                 )
               })}
@@ -501,6 +510,11 @@ export default function InventoryPage() {
                       <td style={{padding:'12px 16px',minWidth:180}}>
                         <div style={{fontWeight:600,fontSize:13,color:C.text}}>{p.name}</div>
                         {p.sku&&<div style={{fontSize:10,color:C.text4,marginTop:1,fontFamily:'monospace'}}>#{p.sku}</div>}
+                        {(p as any).expiry_date && (()=>{ const days=Math.ceil((new Date((p as any).expiry_date).getTime()-Date.now())/86400000); return days<=7 ? (
+                          <div style={{marginTop:4,fontSize:10,fontWeight:700,color:days<0?C.danger:C.warning,background:days<0?C.dangerL:C.warningL,padding:'2px 6px',borderRadius:5,display:'inline-block'}}>
+                            {days<0?'⚠️ منتهي':days===0?'⚠️ اليوم':`⏳ ${days} يوم`}
+                          </div>
+                        ) : null })()}
                         <div style={{height:2,background:C.border,borderRadius:99,overflow:'hidden',marginTop:6,width:80}}>
                           <div style={{height:'100%',width:pct+'%',background:sc,borderRadius:99}}/>
                         </div>
