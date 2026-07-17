@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 
 
 
@@ -10,6 +11,8 @@ export async function POST(req: NextRequest) {
   )
   const { message, org_id, branch_id } = await req.json()
   if (!message || !org_id) return NextResponse.json({ error: 'missing' }, { status: 400 })
+  const access = await verifyOrgAccess(org_id)
+  if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
   // جلب كل المنتجات
   let pq = sb.from('products').select('id,name,qty,reorder_point,unit,category').eq('org_id', org_id).eq('is_active', true)
