@@ -9,8 +9,12 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
  * الخاصة بكل مورد (response_timeout_hours، افتراضي 24 ساعة)، بدون أي رد،
  * وتحوّلها تلقائياً للمورد التالي بالأولوية.
  */
-export async function POST() {
+export async function POST(req: Request) {
   try {
+    const authHeader = req.headers.get('authorization')
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+    }
     const db = sb()
 
     const { data: pendingOrders, error } = await db
@@ -47,4 +51,4 @@ export async function POST() {
   }
 }
 
-export async function GET() { return POST() }
+export async function GET(req: Request) { return POST(req) }

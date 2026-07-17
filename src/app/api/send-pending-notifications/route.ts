@@ -2,8 +2,12 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
+    const cronSecret = req.headers.get('x-cron-secret')
+    if (cronSecret !== process.env.ADMIN_PASSWORD) {
+      return NextResponse.json({ success:false, error: 'unauthorized' }, { status: 401 })
+    }
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     if (!url || !key) return NextResponse.json({ success:false, error:'missing env' }, { status:500 })
@@ -27,4 +31,4 @@ export async function POST() {
   }
 }
 
-export async function GET() { return POST() }
+export async function GET(req: Request) { return POST(req) }
