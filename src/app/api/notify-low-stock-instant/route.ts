@@ -111,7 +111,14 @@ export async function POST(req: Request) {
     const dailyRate = total7/7
     const daysLeft = dailyRate>0 ? Math.floor(new_qty/dailyRate) : null
 
-    // تحقق من موافقة المالك قبل إرسال رسالة نقص المخزون له
+    // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
+    const notifTitle = `نقص مخزون: ${(product as any).name}`
+    const notifMsg = `المتبقي: ${new_qty} ${(product as any).unit}` + (sentToSupplier ? ' — تم إرسال طلب توريد للمورد تلقائياً' : ' — يرجى الطلب في أقرب وقت')
+    await (db as any).from('notifications').insert({
+      org_id, title: notifTitle, message: notifMsg, type: 'low_stock', read: false
+    })
+
+    // تحقق من موافقة المالك قبل إرسال رسالة نقص المخزون له عبر واتساب
     const { data: ownerProfile } = await db.from('profiles')
       .select('whatsapp_consent')
       .eq('org_id', org_id)

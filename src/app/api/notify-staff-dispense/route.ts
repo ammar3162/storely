@@ -26,6 +26,11 @@ export async function POST(req: Request) {
     const { data: org } = await db.from('organizations').select('name,whatsapp_number').eq('id', org_id).single()
     if (!(org as any)?.whatsapp_number) return NextResponse.json({ success: false })
 
+    // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
+    await (db as any).from('notifications').insert({
+      org_id, title: `عملية صرف: ${staff_name}`, message: `${product_name} — ${qty} ${unit}`, type: 'staff_dispense', read: false
+    })
+
     const { data: ownerProfile } = await db.from('profiles').select('whatsapp_consent').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
     if ((ownerProfile as any)?.whatsapp_consent !== true) return NextResponse.json({ success: false, message: 'لا يوجد موافقة واتساب' })
 

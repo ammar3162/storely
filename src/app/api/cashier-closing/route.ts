@@ -105,6 +105,12 @@ export async function POST(req: Request) {
       const whatsappNumber = (org as any)?.whatsapp_number
       const { data: ownerProfile } = await supabase.from('profiles').select('whatsapp_consent').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
       const ownerConsented = (ownerProfile as any)?.whatsapp_consent === true
+
+      // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
+      const closingStatusText = status === 'balanced' ? 'مطابق تماماً' : status === 'deficit' ? `يوجد عجز: ${Math.abs(difference).toFixed(2)} ر.س` : `يوجد زيادة: ${Math.abs(difference).toFixed(2)} ر.س`
+      await (supabase as any).from('notifications').insert({
+        org_id, title: `إقفال كاشير: ${staff_name}`, message: `إجمالي المبيعات: ${sales.toFixed(2)} ر.س — ${closingStatusText}`, type: 'cashier_closing', read: false
+      })
       const { data: allBranches } = await supabase.from('branches').select('id,name').eq('org_id', org_id).eq('is_active', true)
       const isMultiBranch = (allBranches || []).length > 1
       const branchName = branch_id ? (allBranches || []).find((b: any) => b.id === branch_id)?.name : null

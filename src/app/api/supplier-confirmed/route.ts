@@ -30,6 +30,11 @@ export async function POST(req: Request) {
     const { data: org } = await db.from('organizations').select('name,whatsapp_number,notify_supplier_wa,digest_mode').eq('id', order.org_id).single()
     if (!org?.whatsapp_number) return NextResponse.json({ success: false })
 
+    // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
+    await (db as any).from('notifications').insert({
+      org_id: order.org_id, title: `تأكيد مورد: ${order.supplier_name}`, message: `تم تأكيد الطلب — سيتم التوصيل قريباً`, type: 'supplier_confirmed', read: false
+    })
+
     const { data: ownerProfile } = await db.from('profiles').select('whatsapp_consent').eq('org_id', order.org_id).eq('role', 'owner').maybeSingle()
     if ((ownerProfile as any)?.whatsapp_consent !== true) return NextResponse.json({ success: false, message: 'لا يوجد موافقة واتساب' })
     // احترام تفضيلات المالك — تأكيد استلام مورد مو حرج، يُوقف عادي بوضع الملخص أو التعطيل

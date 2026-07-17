@@ -125,6 +125,13 @@ export async function escalateOrder(order: any, reason: 'unavailable' | 'timeout
   const { data: ownerProfile } = await db.from('profiles').select('whatsapp_consent').eq('org_id', order.org_id).eq('role', 'owner').maybeSingle()
   const ownerConsented = (ownerProfile as any)?.whatsapp_consent === true
 
+  // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
+  if (escalatedNames.length) {
+    await (db as any).from('notifications').insert({
+      org_id: order.org_id, title: 'تحويل طلب توريد تلقائياً', message: `تم تحويل الطلب إلى: ${escalatedNames.join('، ')}`, type: 'supplier_escalated', read: false
+    })
+  }
+
   if ((org as any)?.whatsapp_number && escalatedNames.length && ownerConsented) {
     const ownerPhone = (org as any).whatsapp_number.replace(/\D/g, '').replace(/^0/, '966')
     const reasonText = reason === 'unavailable' ? 'أبلغ بعدم توفر الصنف' : 'لم يرد بالوقت المحدد'
