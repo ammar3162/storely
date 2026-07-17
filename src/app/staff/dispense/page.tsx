@@ -146,7 +146,8 @@ export default function StaffPage() {
 
   async function loadStats(s: StaffSession) {
     try {
-      const res = await fetch('/api/staff-dispense-stats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:s.org_id,branch_id:s.branch_id,staff_id:s.id})})
+      const statsToken = localStorage.getItem('staff_token')
+      const res = await fetch('/api/staff-dispense-stats',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${statsToken}`},body:JSON.stringify({branch_id:s.branch_id})})
       const d = await res.json()
       setMostUsed(d.mostUsed||[])
       setTodayCount(d.todayCount||0)
