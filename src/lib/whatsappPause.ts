@@ -8,4 +8,4 @@
  * ملاحظة: طلبات الموردين (notify-supplier, supplier-confirmed, escalateSupplierOrder)
  * وردود بوت الاستفسار التفاعلي (webhook) غير متأثرة بهذا المفتاح إطلاقاً — تبقى شغّالة كالمعتاد.
  */
-export const WHATSAPP_PAUSED = true
+export const WHATSAPP_PAUSED = false
