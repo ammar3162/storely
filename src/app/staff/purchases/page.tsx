@@ -84,9 +84,10 @@ export default function StaffPurchasesPage() {
     const amount = parseFloat((inputTotal/1.15).toFixed(2))
     const total_amount = inputTotal.toFixed(2)
 
+    const staffToken = localStorage.getItem('staff_token')
     const res = await fetch('/api/staff-purchase', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: {'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},
       body: JSON.stringify({
         org_id:session.org_id, branch_id:session.branch_id,
         category:form.category, name:form.name,

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,9 +9,13 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
+    const auth = verifyStaffToken(extractStaffToken(req))
+    if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
+    const { org_id, staff_id } = auth.data!
+
     const body = await req.json()
-    const { org_id, branch_id, category, name, qty, unit, reorder_point,
-            amount, supplier, note, invoice_image, staff_name, staff_id } = body
+    const { branch_id, category, name, qty, unit, reorder_point,
+            amount, supplier, note, invoice_image, staff_name } = body
 
     if (!org_id || !name) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
