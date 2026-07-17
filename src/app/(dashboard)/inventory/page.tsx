@@ -85,6 +85,8 @@ export default function InventoryPage() {
   const [confirm, setConfirm]     = useState<{id:string,name:string}|null>(null)
   const [form, setForm]           = useState({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:''})
   const [showScan, setShowScan]   = useState(false)
+  const [showJardScan, setShowJardScan] = useState(false)
+  const [jardNotFound, setJardNotFound] = useState('')
   const [visible, setVisible]     = useState(false)
   const [businessType, setBusinessType] = useState('')
   const [selectedTemplate, setSelectedTemplate] = useState<Record<string,boolean>>({})
@@ -263,6 +265,18 @@ export default function InventoryPage() {
 
       {/* Barcode */}
       {showScan&&<Suspense fallback={null}><BarcodeScanner onScan={(code:string)=>{setForm(f=>({...f,sku:code}));setShowScan(false)}} onClose={()=>setShowScan(false)}/></Suspense>}
+      {showJardScan&&<Suspense fallback={null}><BarcodeScanner onScan={(code:string)=>{
+        setShowJardScan(false)
+        const found=products.find(p=>p.sku===code)
+        if(found){ setJardNotFound(''); openEdit(found) }
+        else { setJardNotFound(code) }
+      }} onClose={()=>setShowJardScan(false)}/></Suspense>}
+      {jardNotFound&&(
+        <div style={{position:'fixed',bottom:20,left:'50%',transform:'translateX(-50%)',background:C.dangerL,color:C.danger,border:`1px solid ${C.dangerB}`,borderRadius:10,padding:'10px 16px',fontSize:12,fontWeight:600,zIndex:2000,boxShadow:'0 4px 16px rgba(0,0,0,.1)'}}>
+          ⚠️ لا يوجد منتج بهذا الباركود: {jardNotFound}
+          <button onClick={()=>setJardNotFound('')} style={{marginRight:8,background:'none',border:'none',color:C.danger,cursor:'pointer',fontWeight:700}}>✕</button>
+        </div>
+      )}
 
       {/* Add/Edit Sheet */}
       {showAdd&&(
@@ -353,6 +367,10 @@ export default function InventoryPage() {
           <button onClick={exportCSV} title="تصدير CSV"
             style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'white',border:`1px solid ${C.border2}`,borderRadius:8,cursor:'pointer',color:C.text3,flexShrink:0}}>
             <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          </button>
+          <button onClick={()=>setShowJardScan(true)} title="مسح للجرد"
+            style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:C.primaryL,border:`1px solid ${C.primaryB}`,borderRadius:8,cursor:'pointer',color:C.primary,flexShrink:0,fontSize:14}}>
+            📷
           </button>
           <button onClick={()=>{setEditItem(null);setAddQty(0);setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:''});setShowAdd(true)}}
             style={{height:32,padding:'0 12px',background:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4,flexShrink:0,whiteSpace:'nowrap'}}>
