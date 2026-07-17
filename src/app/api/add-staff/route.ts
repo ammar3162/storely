@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { createClient } from '@supabase/supabase-js'
+import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,6 +14,9 @@ export async function POST(req: Request) {
     if (!org_id || !name || !phone || !pin) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
+
+    const access = await verifyOrgAccess(org_id)
+    if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
     const supabase = sb()
 
