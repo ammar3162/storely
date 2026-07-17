@@ -115,7 +115,7 @@ export async function POST(req: Request) {
     const notifTitle = `نقص مخزون: ${(product as any).name}`
     const notifMsg = `المتبقي: ${new_qty} ${(product as any).unit}` + (sentToSupplier ? ' — تم إرسال طلب توريد للمورد تلقائياً' : ' — يرجى الطلب في أقرب وقت')
     await (db as any).from('notifications').insert({
-      org_id, title: notifTitle, message: notifMsg, type: 'low_stock', read: false
+      org_id, title: notifTitle, message: notifMsg, type: 'warning', read: false
     })
 
     // تحقق من موافقة المالك قبل إرسال رسالة نقص المخزون له عبر واتساب

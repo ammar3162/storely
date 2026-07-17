@@ -128,7 +128,7 @@ export async function escalateOrder(order: any, reason: 'unavailable' | 'timeout
   // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
   if (escalatedNames.length) {
     await (db as any).from('notifications').insert({
-      org_id: order.org_id, title: 'تحويل طلب توريد تلقائياً', message: `تم تحويل الطلب إلى: ${escalatedNames.join('، ')}`, type: 'supplier_escalated', read: false
+      org_id: order.org_id, title: 'تحويل طلب توريد تلقائياً', message: `تم تحويل الطلب إلى: ${escalatedNames.join('، ')}`, type: 'warning', read: false
     })
   }
 
