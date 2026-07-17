@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,6 +17,9 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     const org_id = searchParams.get('org_id')
     if (!org_id) return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
+
+    const access = await verifyOrgAccess(org_id)
+    if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
     const supabase = sb()
     const { data, error } = await supabase
@@ -38,6 +42,9 @@ export async function POST(req: Request) {
     if (!org_id || !name || amount === undefined) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
+    const access = await verifyOrgAccess(org_id)
+    if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+
     const supabase = sb()
     const { data, error } = await supabase
       .from('fixed_expenses')
@@ -65,6 +72,10 @@ export async function PUT(req: Request) {
     const { id, name, amount } = await req.json()
     if (!id) return NextResponse.json({ error: 'id مطلوب' }, { status: 400 })
     const supabase = sb()
+    const { data: existingRow } = await supabase.from('fixed_expenses').select('org_id').eq('id', id).single()
+    if (!existingRow) return NextResponse.json({ error: 'غير موجود' }, { status: 404 })
+    const access = await verifyOrgAccess((existingRow as any).org_id)
+    if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
     const update: any = { updated_at: new Date().toISOString() }
     if (name !== undefined) update.name = name
     if (amount !== undefined) update.amount = Number(amount)
@@ -82,6 +93,10 @@ export async function DELETE(req: Request) {
     const id = searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'id مطلوب' }, { status: 400 })
     const supabase = sb()
+    const { data: existingRow } = await supabase.from('fixed_expenses').select('org_id').eq('id', id).single()
+    if (!existingRow) return NextResponse.json({ error: 'غير موجود' }, { status: 404 })
+    const access = await verifyOrgAccess((existingRow as any).org_id)
+    if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
     const { error } = await supabase.from('fixed_expenses').update({ is_active: false }).eq('id', id)
     if (error) return NextResponse.json({ error: 'حدث خطأ أثناء الحذف' }, { status: 500 })
     return NextResponse.json({ success: true })

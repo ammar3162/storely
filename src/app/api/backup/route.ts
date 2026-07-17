@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 
 function toCSV(headers: string[], rows: any[][]): string {
   return '\ufeff' + [headers, ...rows]
@@ -12,7 +13,17 @@ export async function POST(req: Request) {
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
     let body: any = {}; try { body = await req.json() } catch {}
     const orgIds: string[] = []
-    if (body.org_id) { orgIds.push(body.org_id) } else {
+    if (body.org_id) {
+      // نسخة احتياطية لحساب واحد — يتطلب تحقق ملكية الحساب
+      const access = await verifyOrgAccess(body.org_id)
+      if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+      orgIds.push(body.org_id)
+    } else {
+      // نسخة احتياطية شاملة لكل الحسابات — عملية نظام حساسة، تتطلب مفتاح سري
+      const cronSecret = req.headers.get('x-cron-secret')
+      if (cronSecret !== process.env.ADMIN_PASSWORD) {
+        return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+      }
       const { data: orgs } = await supabase.from('organizations').select('id')
       orgs?.forEach((o: any) => orgIds.push(o.id))
     }
