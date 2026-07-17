@@ -126,7 +126,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const load = useCallback(async()=>{
     const{data:{user}}=await sb.auth.getUser()
     if(!user){router.replace('/login');return}
-    const{data:p}=await sb.from('profiles').select('id,full_name,org_id,whatsapp_consent,organizations(name,logo_url)').eq('id',user.id).single()
+    const{data:p}=await (sb as any).from('profiles').select('id,full_name,org_id,whatsapp_consent,organizations(name,logo_url)').eq('id',user.id).single()
     if(!p){router.replace('/login');return}
     if(!p.org_id){router.replace('/pending');return}
     // فحص انتهاء الاشتراك
