@@ -50,6 +50,7 @@ export default function DashboardPage() {
   const [orgName, setOrgName]   = useState('')
   const [userName, setUserName] = useState('')
   const [loading, setLoading]   = useState(true)
+  const [monthComp, setMonthComp] = useState<any>(null)
   const [subAlert, setSubAlert] = useState<string|null>(null)
   const [weeklyP, setWeeklyP]   = useState<{label:string;value:number}[]>([])
   const [weeklyD, setWeeklyD]   = useState<{label:string;value:number}[]>([])
@@ -127,6 +128,8 @@ export default function DashboardPage() {
     // جلب الإشعارات غير المقروءة
     const{data:nData}=await (sb as any).from('notifications').select('*').eq('org_id',orgId).eq('read',false).order('created_at',{ascending:false}).limit(5)
     setNotifs(nData||[])
+    // مقارنة الأداء الشهري
+    fetch('/api/month-comparison?org_id='+orgId).then(r=>r.json()).then(d=>{ if(d.success) setMonthComp(d) }).catch(()=>{})
     // خزّن في الكاش
     if(orgId_cached){
       cache.set('dashboard:'+orgId_cached, {
@@ -246,6 +249,37 @@ export default function DashboardPage() {
           </button>
         ))}
       </div>
+
+      {/* ── Month Comparison ── */}
+      {monthComp && (
+        <div className="s r u" style={{padding:'16px',marginBottom:14,animationDelay:'.15s'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+            <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>📊 مقارنة الأداء الشهري</span>
+            <span style={{fontSize:10,color:'#888780'}}>مقابل الشهر السابق</span>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
+            {[
+              {label:'المبيعات', val:monthComp.current.sales, change:monthComp.changes.sales, unit:'ر.س'},
+              {label:'المشتريات', val:monthComp.current.purchasesTotal, change:monthComp.changes.purchases, unit:'ر.س'},
+              {label:'الصافي', val:monthComp.current.net, change:monthComp.changes.net, unit:'ر.س'},
+            ].map((m,i)=>{
+              const up = m.change !== null && m.change >= 0
+              const color = m.change===null ? '#888780' : up ? '#16a34a' : '#e24b4a'
+              return (
+                <div key={i} style={{textAlign:'center' as const}}>
+                  <div style={{fontSize:9,color:'#888780',marginBottom:4}}>{m.label}</div>
+                  <div style={{fontSize:16,fontWeight:700,color:'#1c1c1a',fontVariantNumeric:'tabular-nums'}}>{m.val.toLocaleString()} <span style={{fontSize:9,fontWeight:400}}>{m.unit}</span></div>
+                  {m.change !== null && (
+                    <div style={{fontSize:10,fontWeight:700,color,marginTop:2}}>
+                      {up?'▲':'▼'} {Math.abs(m.change)}%
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Charts ── */}
       <div className="u" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14,animationDelay:'.2s'}}>
