@@ -56,6 +56,10 @@ function iconFor(cat: string) {
 
 export default function StaffPage() {
   const [session, setSession] = useState<StaffSession|null>(null)
+  const [needsReauth, setNeedsReauth] = useState(false)
+  const [reauthPin, setReauthPin] = useState('')
+  const [reauthError, setReauthError] = useState('')
+  const [reauthLoading, setReauthLoading] = useState(false)
   const [tab, setTab] = useState<'dispense'|'inventory'|'purchases'|'reports'>('dispense')
   const [products, setProducts] = useState<any[]>([])
   const [translations, setTranslations] = useState<Record<string,Record<string,string>>>({})
@@ -93,6 +97,11 @@ export default function StaffPage() {
       try {
         const permToken = localStorage.getItem('staff_token')
         const res = await fetch('/api/staff-permissions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${permToken}`},body:JSON.stringify({})})
+        if(res.status===401){
+          // انتهت الجلسة — نطلب PIN فقط بدل تسجيل خروج كامل
+          setNeedsReauth(true)
+          return
+        }
         if(res.ok){
           const data = await res.json()
           if(data.deleted){
@@ -234,7 +243,29 @@ export default function StaffPage() {
     setSavingProduct(false)
   }
 
-  function logout() { localStorage.removeItem('staff_session'); router.push('/staff') }
+  function logout() { localStorage.removeItem('staff_session'); localStorage.removeItem('staff_token'); router.push('/staff') }
+
+  async function submitReauth() {
+    if(!session || !reauthPin || reauthLoading) return
+    setReauthLoading(true); setReauthError('')
+    try {
+      const res = await fetch('/api/staff-reauth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({staff_id:session.id,pin:reauthPin})})
+      const data = await res.json()
+      if(!res.ok){
+        setReauthError(data.error||'رمز PIN غير صحيح')
+        setReauthPin('')
+        setReauthLoading(false)
+        return
+      }
+      localStorage.setItem('staff_token',data.token)
+      localStorage.setItem('staff_session',JSON.stringify(data.staff))
+      setSession(data.staff)
+      setNeedsReauth(false); setReauthPin(''); setReauthError(''); setReauthLoading(false)
+    } catch {
+      setReauthError('حدث خطأ — حاول مرة أخرى')
+      setReauthLoading(false)
+    }
+  }
 
   const categoriesMap: Record<string,number> = {}
   products.forEach(p=>{ const c=p.category?.trim()||OTHER_CATEGORY; categoriesMap[c]=(categoriesMap[c]||0)+1 })
@@ -275,6 +306,32 @@ export default function StaffPage() {
         .mu-btn{animation:fadeUpStagger .35s ease both;transition:transform .15s}
         .mu-btn:active{transform:scale(.95)}
       `}</style>
+
+      {needsReauth && (
+        <div style={{position:'fixed',inset:0,zIndex:5000,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,animation:'fadeIn .2s ease'}}>
+          <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:340,padding:28,textAlign:'center' as const,animation:'slideUp .3s ease'}}>
+            <div style={{fontSize:40,marginBottom:10}}>🔒</div>
+            <div style={{fontSize:15,fontWeight:800,color:'#0f172a',marginBottom:4}}>انتهت الجلسة</div>
+            <div style={{fontSize:12,color:'#64748b',marginBottom:18}}>أدخل رمز PIN للمتابعة، {session?.name}</div>
+            <input
+              type="password" inputMode="numeric" maxLength={6} autoFocus
+              value={reauthPin}
+              onChange={e=>{setReauthPin(e.target.value.replace(/\D/g,'')); setReauthError('')}}
+              onKeyDown={e=>{if(e.key==='Enter') submitReauth()}}
+              style={{width:'100%',padding:'14px',fontSize:22,fontWeight:700,textAlign:'center' as const,letterSpacing:8,border:`1.5px solid ${reauthError?'#ef4444':'#e2e8f0'}`,borderRadius:12,marginBottom:10,fontFamily:'inherit',boxSizing:'border-box' as const}}
+              placeholder="••••"
+            />
+            {reauthError && <div style={{fontSize:12,color:'#ef4444',fontWeight:600,marginBottom:10}}>{reauthError}</div>}
+            <button onClick={submitReauth} disabled={!reauthPin||reauthLoading}
+              style={{width:'100%',padding:13,background:!reauthPin||reauthLoading?'#cbd5e1':'#16a34a',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:!reauthPin||reauthLoading?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:10}}>
+              {reauthLoading?'جاري التحقق...':'دخول'}
+            </button>
+            <button onClick={logout} style={{width:'100%',padding:10,background:'none',border:'none',fontSize:12,color:'#94a3b8',cursor:'pointer',fontFamily:'inherit'}}>
+              تسجيل خروج كامل
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       {toast && (
