@@ -626,7 +626,13 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteError, setDeleteError] = useState('')
   const [deleting, setDeleting] = useState(false)
+  const [monthComp, setMonthComp] = useState<any>(null)
   useEffect(()=>{ load() },[period,from,to])
+  useEffect(()=>{
+    const orgId=sessionStorage.getItem('s_org_id')
+    if(!orgId) return
+    fetch('/api/month-comparison?org_id='+orgId).then(r=>r.json()).then(d=>{ if(d.success) setMonthComp(d) }).catch(()=>{})
+  },[])
 
   async function saveClosingDate(id: string) {
     setSavingDate(true)
@@ -680,6 +686,37 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
           </div>
         ))}
       </div>
+
+      {monthComp && (
+        <div style={{...card,padding:'16px',marginBottom:16}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+            <span style={{fontSize:13,fontWeight:700,color:colors.text}}>📊 مقارنة الأداء الشهري</span>
+            <span style={{fontSize:10,color:colors.text4}}>مقابل الشهر السابق</span>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
+            {[
+              {label:'المبيعات', val:monthComp.current.sales, change:monthComp.changes.sales, unit:'ر.س'},
+              {label:'المشتريات', val:monthComp.current.purchasesTotal, change:monthComp.changes.purchases, unit:'ر.س'},
+              {label:'الصافي', val:monthComp.current.net, change:monthComp.changes.net, unit:'ر.س'},
+            ].map((m,i)=>{
+              const up = m.change !== null && m.change >= 0
+              const color = m.change===null ? colors.text4 : up ? colors.primary : colors.danger
+              return (
+                <div key={i} style={{textAlign:'center' as const}}>
+                  <div style={{fontSize:9,color:colors.text4,marginBottom:4}}>{m.label}</div>
+                  <div style={{fontSize:16,fontWeight:700,color:colors.text,fontVariantNumeric:'tabular-nums' as const}}>{m.val.toLocaleString()} <span style={{fontSize:9,fontWeight:400}}>{m.unit}</span></div>
+                  {m.change !== null && (
+                    <div style={{fontSize:10,fontWeight:700,color,marginTop:2}}>
+                      {up?'▲':'▼'} {Math.abs(m.change)}%
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <div style={{...card,overflow:'hidden'}}>
         {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
         ):closings.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{fontSize:44,marginBottom:10}}>📭</div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد تقارير إقفال</div></div>
