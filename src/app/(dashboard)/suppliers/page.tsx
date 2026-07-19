@@ -403,6 +403,8 @@ export default function SuppliersPage() {
   const [supCountry, setSupCountry] = useState(()=>sessionStorage.getItem('s_country_code')||'+966')
   const [newNotes, setNewNotes]   = useState('')
   const [newConsent, setNewConsent] = useState(false)
+  const [priceComparisons, setPriceComparisons] = useState<any[]>([])
+  const [showPriceComparison, setShowPriceComparison] = useState(false)
   const sb = createClient()
 
   useEffect(() => { init() }, [])
@@ -417,6 +419,7 @@ export default function SuppliersPage() {
     const { data: orgLimits } = await (sb as any).from('organizations').select('max_suppliers').eq('id', profile.org_id).single()
     setMaxSuppliers((orgLimits as any)?.max_suppliers || 999)
     await Promise.all([loadSuppliers(profile.org_id), loadProducts(profile.org_id)])
+    fetch('/api/supplier-price-comparison',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:profile.org_id})}).then(r=>r.json()).then(d=>{ if(d.success) setPriceComparisons(d.comparisons||[]) }).catch(()=>{})
     setLoading(false)
   }
 
@@ -473,8 +476,53 @@ export default function SuppliersPage() {
           <h1 style={pageTitle}>الموردين</h1>
           <p style={pageSub}>اربط منتجاتك بموردين وحدد توقيت الإشعار لكل مورد</p>
         </div>
-        <button onClick={()=>setShowAdd(true)} style={{ ...btnPrimary, padding:'10px 18px', fontSize:font.sm }}>+ مورد جديد</button>
+        <div style={{display:'flex',gap:8}}>
+          {priceComparisons.length>0&&(
+            <button onClick={()=>setShowPriceComparison(true)} style={{ ...btnSecondary, padding:'10px 18px', fontSize:font.sm, display:'flex', alignItems:'center', gap:6 }}>
+              📊 مقارنة الأسعار
+              <span style={{background:'#dc2626',color:'white',fontSize:10,fontWeight:800,padding:'1px 6px',borderRadius:99}}>{priceComparisons.length}</span>
+            </button>
+          )}
+          <button onClick={()=>setShowAdd(true)} style={{ ...btnPrimary, padding:'10px 18px', fontSize:font.sm }}>+ مورد جديد</button>
+        </div>
       </div>
+
+      {/* نافذة مقارنة الأسعار */}
+      {showPriceComparison && (
+        <div style={{position:'fixed',inset:0,zIndex:3000,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}
+          onClick={()=>setShowPriceComparison(false)}>
+          <div style={{background:'white',borderRadius:16,width:'100%',maxWidth:560,maxHeight:'80vh',overflowY:'auto' as const,padding:20}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+              <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>📊 مقارنة أسعار الموردين</div>
+              <button onClick={()=>setShowPriceComparison(false)} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:'#94a3b8'}}>✕</button>
+            </div>
+            <div style={{fontSize:11,color:'#64748b',marginBottom:16}}>بناءً على آخر 6 أشهر من سجل مشترياتك</div>
+            <div style={{display:'flex',flexDirection:'column' as const,gap:12}}>
+              {priceComparisons.map((c,i)=>(
+                <div key={i} style={{border:'1px solid #e2e8f0',borderRadius:12,padding:14}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                    <span style={{fontSize:13,fontWeight:700,color:'#0f172a'}}>{c.name}</span>
+                    {c.savingsPct>0&&(
+                      <span style={{fontSize:10,fontWeight:800,color:'#16a34a',background:'#f0fdf4',padding:'2px 8px',borderRadius:99,border:'1px solid #bbf7d0'}}>
+                        وفّر حتى {c.savingsPct}%
+                      </span>
+                    )}
+                  </div>
+                  <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
+                    {c.suppliers.map((s:any,si:number)=>(
+                      <div key={si} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 10px',background:si===0?'#f0fdf4':'#f8fafc',borderRadius:8,border:si===0?'1px solid #bbf7d0':'1px solid #e2e8f0'}}>
+                        <span style={{fontSize:12,fontWeight:600,color:'#334155'}}>{si===0&&'🟢 '}{s.supplier}</span>
+                        <span style={{fontSize:12,fontWeight:800,color:si===0?'#16a34a':'#64748b'}}>{s.unitPrice} ر.س / {s.unit||'وحدة'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* إضافة مورد */}
       {showAdd && (
