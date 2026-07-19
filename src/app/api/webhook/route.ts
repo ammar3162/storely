@@ -1,20 +1,21 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { escalateOrder, logConfirmation } from '@/lib/escalateSupplierOrder'
-import { sendWhatsAppCloudAPI } from '@/lib/whatsapp'
 
+const API_KEY      = process.env.WASENDER_API_KEY!
+const SESSION      = process.env.WASENDER_SESSION_ID!
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 const sb = () => createClient(SUPABASE_URL, SERVICE_KEY)
 
-/**
- * إرسال ردود البوت التفاعلي عبر Meta Cloud API الرسمي.
- * دايماً رد على تفاعل العميل (نافذة 24 ساعة) — ما يحتاج قالب معتمد.
- */
 async function send(to: string, text: string) {
   try {
-    await sendWhatsAppCloudAPI(to, text)
+    await fetch('https://www.wasenderapi.com/api/send-message', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${API_KEY}`, 'X-Session-Id':SESSION },
+      body: JSON.stringify({ to, text }),
+    })
   } catch {}
 }
 
