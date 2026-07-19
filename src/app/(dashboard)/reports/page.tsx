@@ -29,32 +29,36 @@ function formatRange(period: FilterPeriod, from: string, to: string) {
 
 function FilterBar({ period, setPeriod, from, setFrom, to, setTo }: any) {
   const PERIODS = [
-    {key:'today',label:'اليوم',icon:'☀️'},
-    {key:'week',label:'الأسبوع',icon:'📅'},
-    {key:'month',label:'هذا الشهر',icon:'🗓️'},
-    {key:'year',label:'هذه السنة',icon:'📆'},
-    {key:'custom',label:'تخصيص',icon:'🔧'},
+    {key:'custom',label:'مخصص',icon:'📅'},
+    {key:'year',label:'هذه السنة'},
+    {key:'month',label:'هذا الشهر'},
+    {key:'week',label:'الأسبوع'},
+    {key:'today',label:'اليوم'},
   ]
   return (
-    <div style={{...card,padding:'16px 18px',marginBottom:20}}>
-      <div style={{fontSize:font.xs,fontWeight:700,color:colors.text4,marginBottom:10,textTransform:'uppercase' as const,letterSpacing:'.06em'}}>الفترة الزمنية</div>
-      <div style={{display:'flex',gap:6,flexWrap:'wrap' as const,marginBottom:period==='custom'?14:0}}>
-        {PERIODS.map(p=>(
-          <button key={p.key} onClick={()=>setPeriod(p.key as FilterPeriod)}
-            style={{
-              padding:'8px 14px',borderRadius:20,border:'none',fontFamily:font.family,
-              background:period===p.key?colors.primary:colors.bg,
-              color:period===p.key?'white':colors.text3,
-              fontSize:font.xs,fontWeight:700,cursor:'pointer',
-              boxShadow:period===p.key?`0 4px 12px ${colors.primary}33`:'none',
-              transition:'all .2s',transform:period===p.key?'translateY(-1px)':'none',
-            }}>
-            {p.icon} {p.label}
-          </button>
-        ))}
+    <div style={{marginBottom:24}}>
+      <div style={{display:'flex',gap:10,flexWrap:'wrap' as const,marginBottom:period==='custom'?16:0}}>
+        {PERIODS.map(p=>{
+          const active = period===p.key
+          return (
+            <button key={p.key} onClick={()=>setPeriod(p.key as FilterPeriod)}
+              style={{
+                padding:'12px 22px',borderRadius:99,fontFamily:font.family,
+                border:active?`2px solid ${colors.primary}`:`1.5px solid ${colors.border2}`,
+                background:'white',
+                color:active?colors.primary:colors.text2,
+                fontSize:14,fontWeight:700,cursor:'pointer',
+                display:'flex',alignItems:'center',gap:6,
+                transition:'all .15s',
+              }}>
+              {p.icon && <span>{p.icon}</span>}
+              {p.label}
+            </button>
+          )
+        })}
       </div>
       {period==='custom'&&(
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+        <div style={{...card,padding:16,display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
           <div><label style={{fontSize:font.xs,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>من تاريخ</label><input type="date" value={from} onChange={e=>setFrom(e.target.value)} style={inp()}/></div>
           <div><label style={{fontSize:font.xs,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>إلى تاريخ</label><input type="date" value={to} onChange={e=>setTo(e.target.value)} style={inp()}/></div>
         </div>
