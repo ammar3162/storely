@@ -4,6 +4,14 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 
 import AIAssistant from '@/components/AIAssistant'
+import { useLang } from '@/lib/i18n'
+
+// خريطة ربط النصوص العربية الحالية بمفاتيح الترجمة — بدون أي لمس لمصفوفة NAV_GROUPS نفسها
+const NAV_LABEL_MAP: Record<string,string> = {
+  'الرئيسية':'dashboard','التقارير':'reports','الإشعارات':'notifications',
+  'المخزون':'inventory','الصرف':'dispense','مشتريات':'purchases',
+  'الموظفون':'staff','الموردين':'suppliers','أدوات الذكاء':'aiTools','الإعدادات':'settings',
+}
 
 const C = {
   primary: '#16a34a', primaryD: '#15803d', primaryL: '#f0fdf4', primaryB: '#bbf7d0',
@@ -68,6 +76,8 @@ function Icon({ d, size=20, stroke='currentColor', width=2 }: { d:string; size?:
 
 // لا نضيف شيء هنا — الإشعار سيكون في الداشبورد مباشرة
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { t, lang, setLang } = useLang()
+  const trLabel = (label:string) => NAV_LABEL_MAP[label] ? t(NAV_LABEL_MAP[label] as any) : label
   const [orgName, setOrgName]       = useState('')
   const [orgLogo, setOrgLogo]       = useState<string|null>(null)
   const [branchName, setBranchName] = useState('')
@@ -371,7 +381,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <div style={{width:32,height:32,borderRadius:9,background:active?C.primary:'#e5e7eb',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                       <Icon d={item.icon} size={15} stroke={active?'white':'#6b7280'} width={2}/>
                     </div>
-                    <span style={{fontSize:12,fontWeight:active?700:600,color:active?C.primary:C.text2}}>{item.label}</span>
+                    <span style={{fontSize:12,fontWeight:active?700:600,color:active?C.primary:C.text2}}>{trLabel(item.label)}</span>
                   </button>
                 )
               })}
@@ -519,7 +529,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <Icon d={item.icon} size={22} stroke={active?C.primary:'#9ca3af'} width={active?2.5:1.8}/>
                     {(item as any).badge>0&&<span style={{position:'absolute',top:-4,right:-6,background:'#ef4444',color:'white',fontSize:8,fontWeight:700,padding:'1px 4px',borderRadius:99,minWidth:14,textAlign:'center'}}>{(item as any).badge}</span>}
                   </div>
-                  <span style={{fontSize:9,fontWeight:active?700:400}}>{item.label}</span>
+                  <span style={{fontSize:9,fontWeight:active?700:400}}>{trLabel(item.label)}</span>
                 </button>
               )
             })}
@@ -570,7 +580,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <div style={{width:28,height:28,borderRadius:7,background:active?`${C.primary}33`:'rgba(255,255,255,.06)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'all .3s cubic-bezier(0.34,1.56,0.64,1)',transform:active?'scale(1.06)':'scale(1)'}}>
                           <Icon d={item.icon} size={15} stroke={active?C.primary:'rgba(255,255,255,.55)'} width={active?2.5:2}/>
                         </div>
-                        <span style={{fontSize:12,fontWeight:active?700:500,flex:1}}>{item.label}</span>
+                        <span style={{fontSize:12,fontWeight:active?700:500,flex:1}}>{trLabel(item.label)}</span>
                         {badge>0&&<span style={{background:C.danger,color:'white',fontSize:9,fontWeight:700,padding:'2px 6px',borderRadius:99,minWidth:18,textAlign:'center'}}>{badge}</span>}
                       </button>
                     )
@@ -585,6 +595,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,.8)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{userName}</div>
               </div>
               <button onClick={toggleTheme} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,.5)',fontSize:14,padding:4}}>{theme==='light'?'🌙':'☀️'}</button>
+              <button onClick={()=>setLang(lang==='ar'?'en':'ar')} title={t('selectLanguage')} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,.5)',fontSize:10,fontWeight:700,padding:4}}>{lang==='ar'?'EN':'AR'}</button>
               <button onClick={async()=>{await sb.auth.signOut();_cache=null;sessionStorage.clear();router.replace('/login')}} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,.5)',padding:4}}>
                 <Icon d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" size={15} stroke="rgba(255,255,255,.5)" width={2}/>
               </button>
