@@ -35,6 +35,8 @@ export default function PurchasesPage() {
   const [showScan, setShowScan]     = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
   const [ocrItems, setOcrItems]     = useState<any[]>([])
+  const [ocrSelected, setOcrSelected] = useState<Record<number,boolean>>({})
+  const [bulkSaving, setBulkSaving] = useState(false)
   const [ocrLoading, setOcrLoading] = useState(false)
   const [filterCat, setFilterCat]       = useState('all')
   const [filterPeriod, setFilterPeriod] = useState('all')
@@ -144,7 +146,12 @@ export default function PurchasesPage() {
               qty: d.items?.length === 1 && d.items[0].qty ? String(d.items[0].qty) : f.qty,
               unit: d.items?.length === 1 && d.items[0].unit ? d.items[0].unit : f.unit,
             }))
-            if (d.items?.length > 1) setOcrItems(d.items)
+            if (d.items?.length > 1) {
+              setOcrItems(d.items)
+              const sel: Record<number,boolean> = {}
+              d.items.forEach((_:any,i:number)=>{ sel[i]=true })
+              setOcrSelected(sel)
+            }
             toast('✨ تم استخراج بيانات الفاتورة تلقائياً')
           }
         } catch {}
@@ -165,6 +172,50 @@ export default function PurchasesPage() {
 
   function pickOcrItem(item: any) {
     setForm(f => ({ ...f, name: item.name || f.name, qty: item.qty ? String(item.qty) : f.qty, unit: item.unit || f.unit }))
+  }
+
+  async function saveBulkOcrItems() {
+    const selectedItems = ocrItems.filter((_,i)=>ocrSelected[i])
+    if (selectedItems.length===0 || bulkSaving || !orgId) return
+    setBulkSaving(true)
+    const bid = sessionStorage.getItem('s_branch_id')
+    const totalAmount = Number(form.total_amount) || 0
+    const netAmount = totalAmount / (form.hasVat==='yes' ? 1.15 : 1)
+
+    for (let i=0; i<selectedItems.length; i++) {
+      const item = selectedItems[i]
+      const qty = Number(item.qty) || 0
+      const unit = item.unit || 'قطعة'
+      const isFirst = i===0
+
+      // سجل عملية الشراء (فاتورة/سطر) — المبلغ فقط بالصنف الأول
+      await sb.from('purchases').insert({
+        org_id:orgId, profile_id:userId, branch_id:bid||null,
+        category:'مخزون', name:item.name, qty, unit,
+        reorder_point:5, total_amount:isFirst?totalAmount:0,
+        amount:isFirst?netAmount:0, supplier:form.supplier||null,
+        note:isFirst?form.note||null:null, invoice_image:isFirst?form.invoice_image||null:null,
+        hasVat:form.hasVat==='yes', invoice_date:form.invoice_date,
+      } as any)
+
+      // تحديث المنتج الموجود أو إضافة جديد
+      const existing = products.find(p=>p.name.trim()===item.name.trim())
+      if (existing) {
+        await sb.from('products').update({ qty: (existing.qty||0)+qty } as any).eq('id', existing.id)
+      } else {
+        await (sb.from('products') as any).insert({
+          org_id:orgId, branch_id:bid, name:item.name.trim(), unit, qty,
+          reorder_point:5, is_active:true,
+        })
+      }
+    }
+
+    toast(`✅ تم حفظ ${selectedItems.length} صنف بنجاح`)
+    setOcrItems([]); setOcrSelected([] as any)
+    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh()})
+    setPreviewUrl(null)
+    setBulkSaving(false)
+    loadHistory(orgId)
   }
 
   async function handleSubmit(e:React.FormEvent) {
@@ -430,16 +481,21 @@ export default function PurchasesPage() {
                 </div>
               )}
               {ocrItems.length>0&&(
-                <div style={{marginTop:8,padding:10,background:C.infoL,borderRadius:8,border:`1px solid ${C.infoB}`}}>
-                  <div style={{fontSize:11,fontWeight:700,color:C.info,marginBottom:6}}>📋 أصناف مكتشفة بالفاتورة — اختر واحد لتعبئة الفورم</div>
-                  <div style={{display:'flex',flexWrap:'wrap' as const,gap:6}}>
+                <div style={{marginTop:8,padding:12,background:C.infoL,borderRadius:10,border:`1px solid ${C.infoB}`}}>
+                  <div style={{fontSize:11,fontWeight:700,color:C.info,marginBottom:8}}>📋 {ocrItems.length} صنف مكتشف بالفاتورة — حدد اللي تبي تحفظه</div>
+                  <div style={{display:'flex',flexDirection:'column' as const,gap:6,marginBottom:10}}>
                     {ocrItems.map((item,i)=>(
-                      <button key={i} type="button" onClick={()=>pickOcrItem(item)}
-                        style={{padding:'6px 10px',borderRadius:6,fontSize:11,fontWeight:600,cursor:'pointer',border:`1px solid ${C.infoB}`,background:'white',color:C.info,fontFamily:'inherit'}}>
-                        {item.name}{item.qty?` (${item.qty} ${item.unit||''})`:''}
-                      </button>
+                      <label key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',borderRadius:7,background:'white',border:`1px solid ${C.infoB}`,cursor:'pointer'}}>
+                        <input type="checkbox" checked={!!ocrSelected[i]} onChange={e=>setOcrSelected(s=>({...s,[i]:e.target.checked}))} style={{width:15,height:15,cursor:'pointer'}}/>
+                        <span style={{fontSize:12,color:C.text,flex:1}}>{item.name}</span>
+                        <span style={{fontSize:11,color:C.text3}}>{item.qty||0} {item.unit||''}</span>
+                      </label>
                     ))}
                   </div>
+                  <button type="button" onClick={saveBulkOcrItems} disabled={bulkSaving||Object.values(ocrSelected).every(v=>!v)}
+                    style={{width:'100%',padding:10,background:bulkSaving?C.text4:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:bulkSaving?'not-allowed':'pointer',fontFamily:'inherit'}}>
+                    {bulkSaving?'جاري الحفظ...':`✅ حفظ ${Object.values(ocrSelected).filter(Boolean).length} صنف محدد`}
+                  </button>
                 </div>
               )}
             </div>
