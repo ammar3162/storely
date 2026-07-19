@@ -50,6 +50,7 @@ export default function DashboardPage() {
   const [orgName, setOrgName]   = useState('')
   const [userName, setUserName] = useState('')
   const [loading, setLoading]   = useState(true)
+  const [smartSuggestions, setSmartSuggestions] = useState<any[]>([])
   const [monthComp, setMonthComp] = useState<any>(null)
   const [subAlert, setSubAlert] = useState<string|null>(null)
   const [weeklyP, setWeeklyP]   = useState<{label:string;value:number}[]>([])
@@ -128,6 +129,8 @@ export default function DashboardPage() {
     // جلب الإشعارات غير المقروءة
     const{data:nData}=await (sb as any).from('notifications').select('*').eq('org_id',orgId).eq('read',false).order('created_at',{ascending:false}).limit(5)
     setNotifs(nData||[])
+    // توقيت الطلب الذكي
+    fetch('/api/smart-reorder-timing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:bid})}).then(r=>r.json()).then(d=>{ if(d.success) setSmartSuggestions(d.suggestions||[]) }).catch(()=>{})
     // مقارنة الأداء الشهري
     fetch('/api/month-comparison?org_id='+orgId).then(r=>r.json()).then(d=>{ if(d.success) setMonthComp(d) }).catch(()=>{})
     // خزّن في الكاش
@@ -229,6 +232,31 @@ export default function DashboardPage() {
           </div>
           <svg width={13} height={13} fill="none" stroke="#854f0b" strokeWidth={2} viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
         </button>
+      )}
+
+      {/* ── Smart Reorder Timing ── */}
+      {smartSuggestions.length>0&&(
+        <div className="s r u" style={{padding:'16px',marginBottom:16,animationDelay:'.09s',border:'1px solid #bfdbfe',background:'#eff6ff'}}>
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+            <span style={{fontSize:16}}>🔔</span>
+            <span style={{fontSize:13,fontWeight:800,color:'#1c1c1a'}}>توقيت الطلب الذكي</span>
+          </div>
+          <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+            {smartSuggestions.slice(0,4).map((s,i)=>(
+              <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 10px',background:'white',borderRadius:9,border:`1px solid ${s.urgency==='now'?'#fecaca':'#e5e7eb'}`}}>
+                <div>
+                  <div style={{fontSize:12,fontWeight:700,color:'#1c1c1a'}}>{s.name}</div>
+                  <div style={{fontSize:10,color:'#6b7280',marginTop:2}}>
+                    استهلاك {s.dailyRate} {s.unit}/يوم · توريد يستغرق {s.avgLeadTimeDays} يوم عادة
+                  </div>
+                </div>
+                <span style={{fontSize:10,fontWeight:800,padding:'4px 9px',borderRadius:99,background:s.urgency==='now'?'#fef2f2':'#fffbeb',color:s.urgency==='now'?'#dc2626':'#b45309',whiteSpace:'nowrap' as const}}>
+                  {s.urgency==='now'?'⚠️ اطلب الآن':`اطلب خلال ${Math.max(s.suggestedOrderInDays,0)} يوم`}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* ── Stats ── */}
