@@ -64,6 +64,7 @@ export default function StaffPage() {
   const [products, setProducts] = useState<any[]>([])
   const [translations, setTranslations] = useState<Record<string,Record<string,string>>>({})
   const [lang, setLang] = useState('ar')
+  const [showLangMenu, setShowLangMenu] = useState(false)
   const [translating, setTranslating] = useState(false)
   const [loading, setLoading] = useState(true)
   const [orgLogo, setOrgLogo] = useState<string|null>(null)
@@ -372,14 +373,23 @@ export default function StaffPage() {
           </div>
         )}
 
-        {/* Languages */}
-        <div style={{padding:'10px 16px',display:'flex',gap:6,overflowX:'auto',background:'rgba(0,0,0,.1)'}}>
-          {LANGUAGES.map(l=>(
-            <button key={l.code} className="lang-btn" onClick={()=>{setLang(l.code);localStorage.setItem('staff_lang',l.code);if(l.code!=='ar'&&session)fetchTranslation(session,l.code)}} disabled={translating}
-              style={{background:lang===l.code?'#16a34a':'rgba(255,255,255,.1)',color:'white',opacity:translating?0.6:1}}>
-              {l.label}
-            </button>
-          ))}
+        {/* Language selector — زر واحد + قائمة منسدلة */}
+        <div style={{padding:'10px 16px',background:'rgba(0,0,0,.1)',position:'relative' as const}}>
+          <button onClick={()=>setShowLangMenu(v=>!v)} disabled={translating}
+            style={{background:'rgba(255,255,255,.15)',color:'white',border:'none',borderRadius:20,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6,opacity:translating?0.6:1}}>
+            🌐 {LANGUAGES.find(l=>l.code===lang)?.label || 'العربية'} {showLangMenu?'▴':'▾'}
+          </button>
+          {showLangMenu && (
+            <div style={{position:'absolute' as const,bottom:'100%',right:16,marginBottom:6,background:'white',borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.2)',overflow:'hidden',minWidth:140,zIndex:50}}>
+              {LANGUAGES.map(l=>(
+                <button key={l.code}
+                  onClick={()=>{setLang(l.code);localStorage.setItem('staff_lang',l.code);if(l.code!=='ar'&&session)fetchTranslation(session,l.code);setShowLangMenu(false)}}
+                  style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#f0fdf4':'white',color:lang===l.code?'#16a34a':'#1c1c1a',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
+                  {lang===l.code?'✓ ':''}{l.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
