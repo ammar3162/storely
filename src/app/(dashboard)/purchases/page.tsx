@@ -267,6 +267,12 @@ export default function PurchasesPage() {
         toast(`✅ تم إضافة "${form.name}" للمخزون`)
       }
     } else { toast('✅ تم تسجيل الشراء') }
+
+    // تحقق تلقائي: لو المورد المكتوب يطابق مورد مرتبط بهذا الصنف فعلياً، يرسل له شكر تلقائي
+    if (form.category==='مخزون' && form.name && form.supplier.trim()) {
+      fetch('/api/supplier-delivery-thanks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,product_name:form.name,supplier_name:form.supplier})}).catch(()=>{})
+    }
+
     setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh()})
     setPreviewUrl(null);setLoading(false);submitting.current=false
     cache.invalidate('purchases:');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
