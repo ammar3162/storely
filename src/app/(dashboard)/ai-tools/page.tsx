@@ -11,6 +11,17 @@ const C = {
 
 const TOOLS = [
   {
+    href:'/purchases',
+    icon:'📸',
+    title:'مسح الفواتير بالذكاء الاصطناعي',
+    desc:'صوّر فاتورة الشراء، ودع الذكاء الاصطناعي يستخرج المورد والأصناف والمبلغ تلقائياً',
+    color:'#f97316',
+    bg:'#fff7ed',
+    border:'#fed7aa',
+    features:['استخراج تلقائي للبيانات','دعم فواتير متعددة الأصناف','تحديث المخزون فوراً'],
+    minPlan:'basic',
+  },
+  {
     href:'/purchase-suggestion',
     icon:'🛒',
     title:'اقتراح الشراء الذكي',
@@ -50,6 +61,8 @@ export default function AIToolsPage() {
   const [applyingId, setApplyingId] = useState<string|null>(null)
   const [forecast, setForecast] = useState<any[]>([])
   const [forecastLoading, setForecastLoading] = useState(false)
+  const [smartTiming, setSmartTiming] = useState<any[]>([])
+  const [smartTimingLoading, setSmartTimingLoading] = useState(false)
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [suggestLoading, setSuggestLoading] = useState(false)
   const [seasonality, setSeasonality] = useState<any>(null)
@@ -202,6 +215,64 @@ export default function AIToolsPage() {
               </div>
             ))}
           </div>
+          </>
+        )}
+      </div>
+
+      {/* توقيت الطلب الذكي */}
+      <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <div>
+            <div style={{fontSize:14,fontWeight:800,color:C.text}}>🔔 توقيت الطلب الذكي</div>
+            <div style={{fontSize:11,color:C.text3,marginTop:2}}>يتعلم مدة التوريد الفعلية من تاريخك ويقترح متى بالضبط تطلب</div>
+          </div>
+          <button onClick={async()=>{
+            const orgId=sessionStorage.getItem('s_org_id')
+            if(!orgId) return
+            setSmartTimingLoading(true)
+            const res=await fetch('/api/smart-reorder-timing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id')})})
+            const data=await res.json()
+            setSmartTiming(data.suggestions||[])
+            setSmartTimingLoading(false)
+          }} style={{padding:'8px 16px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+            {smartTimingLoading?'⏳ جاري...':'تحليل التوقيت'}
+          </button>
+        </div>
+
+        {smartTiming.length>0 && (
+          <>
+            <div style={{display:'flex',justifyContent:'flex-end',marginTop:8}}>
+              <button onClick={()=>setSmartTiming([])}
+                style={{background:'none',border:'1px solid #e5e7eb',color:'#6b7280',borderRadius:8,padding:'4px 10px',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>
+                ✕ إغلاق النتائج
+              </button>
+            </div>
+            <div style={{display:'flex',flexDirection:'column' as const,gap:8,marginTop:8}}>
+              {smartTiming.map((s:any,i:number)=>(
+                <div key={i} style={{padding:'12px 14px',borderRadius:10,background:s.urgency==='now'?'#fef2f2':'#fffbeb',border:`1px solid ${s.urgency==='now'?'#fecaca':'#fde68a'}`}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                    <div style={{fontSize:13,fontWeight:800,color:C.text}}>{s.name}</div>
+                    <span style={{fontSize:11,fontWeight:700,padding:'2px 10px',borderRadius:99,background:s.urgency==='now'?'#fee2e2':'#fde68a',color:s.urgency==='now'?'#dc2626':'#b45309'}}>
+                      {s.urgency==='now'?'⚠️ اطلب الآن':`اطلب خلال ${Math.max(s.suggestedOrderInDays,0)} يوم`}
+                    </span>
+                  </div>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,textAlign:'center' as const}}>
+                    <div style={{background:'white',borderRadius:6,padding:'6px'}}>
+                      <div style={{fontSize:13,fontWeight:900,color:C.text}}>{s.currentQty} {s.unit}</div>
+                      <div style={{fontSize:9,color:C.text4}}>المخزون الحالي</div>
+                    </div>
+                    <div style={{background:'white',borderRadius:6,padding:'6px'}}>
+                      <div style={{fontSize:13,fontWeight:900,color:'#2563eb'}}>{s.dailyRate}/يوم</div>
+                      <div style={{fontSize:9,color:C.text4}}>معدل الاستهلاك</div>
+                    </div>
+                    <div style={{background:'white',borderRadius:6,padding:'6px'}}>
+                      <div style={{fontSize:13,fontWeight:900,color:'#7c3aed'}}>{s.avgLeadTimeDays} يوم</div>
+                      <div style={{fontSize:9,color:C.text4}}>مدة التوريد المعتادة</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </>
         )}
       </div>
