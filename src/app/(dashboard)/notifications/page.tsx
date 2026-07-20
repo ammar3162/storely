@@ -14,7 +14,7 @@ const TYPE_CFG: Record<string,{icon:string;color:string;bg:string;border:string}
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter]   = useState<'all'|'unread'>('all')
+  const [filter, setFilter]   = useState<'all'|'unread'|'warning'|'danger'|'success'|'info'>('all')
   const sb = createClient()
 
   useEffect(() => { load() }, [])
@@ -55,7 +55,9 @@ export default function NotificationsPage() {
   }
 
   const unread   = notifications.filter(n => !n.read).length
-  const filtered = filter === 'unread' ? notifications.filter(n => !n.read) : notifications
+  const filtered = filter === 'unread' ? notifications.filter(n => !n.read)
+    : filter === 'all' ? notifications
+    : notifications.filter(n => n.type === filter)
 
   if (loading) return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:800,margin:'0 auto'}}>
@@ -71,16 +73,23 @@ export default function NotificationsPage() {
           <h1 style={{...pageTitle}}>الإشعارات</h1>
           <p style={{...pageSub}}>{unread > 0 ? `${unread} إشعار غير مقروء` : 'كل الإشعارات مقروءة'}</p>
         </div>
-        <div style={{display:'flex',gap:8}}>
-          <div style={{display:'flex',background:colors.bg,borderRadius:radius.md,padding:3,border:`1px solid ${colors.border2}`}}>
-            {(['all','unread'] as const).map(f => (
-              <button key={f} onClick={()=>setFilter(f)} style={{padding:'6px 14px',borderRadius:radius.sm,border:'none',background:filter===f?colors.surface:'transparent',color:filter===f?colors.text:colors.text3,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family,boxShadow:filter===f?'0 1px 3px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
-                {f==='all'?'الكل':'غير مقروء'}{f==='unread'&&unread>0&&<span style={{marginRight:4,background:colors.danger,color:'white',fontSize:9,fontWeight:700,padding:'1px 5px',borderRadius:99}}>{unread}</span>}
-              </button>
-            ))}
-          </div>
-          {unread > 0 && <button onClick={markAllRead} style={{...btnSecondary,padding:'8px 14px',fontSize:font.xs}}>تحديد الكل كمقروء</button>}
-        </div>
+        {unread > 0 && <button onClick={markAllRead} style={{...btnSecondary,padding:'8px 14px',fontSize:font.xs,flexShrink:0}}>تحديد الكل كمقروء</button>}
+      </div>
+
+      <div style={{display:'flex',gap:6,flexWrap:'wrap' as const,marginBottom:18}}>
+        {([
+          {key:'all',label:'الكل'},
+          {key:'unread',label:'غير مقروء'},
+          {key:'warning',label:'⚠️ تحذير'},
+          {key:'danger',label:'🚨 خطر'},
+          {key:'success',label:'✅ نجاح'},
+          {key:'info',label:'ℹ️ معلومة'},
+        ] as const).map(f => (
+          <button key={f.key} onClick={()=>setFilter(f.key)}
+            style={{padding:'7px 13px',borderRadius:99,border:`1.5px solid ${filter===f.key?colors.text:colors.border2}`,background:filter===f.key?colors.text:'white',color:filter===f.key?'white':colors.text3,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family,transition:'all .15s',whiteSpace:'nowrap' as const}}>
+            {f.label}{f.key==='unread'&&unread>0&&<span style={{marginRight:4,background:colors.danger,color:'white',fontSize:9,fontWeight:700,padding:'1px 5px',borderRadius:99}}>{unread}</span>}
+          </button>
+        ))}
       </div>
 
       {filtered.length === 0 ? (
