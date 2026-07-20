@@ -19,9 +19,12 @@ export async function POST(req: Request) {
       if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
       orgIds.push(body.org_id)
     } else {
-      // نسخة احتياطية شاملة لكل الحسابات — عملية نظام حساسة، تتطلب مفتاح سري
+      // نسخة احتياطية شاملة لكل الحسابات — تقبل إما مفتاح يدوي أو معيار Vercel Cron الرسمي
       const cronSecret = req.headers.get('x-cron-secret')
-      if (cronSecret !== process.env.ADMIN_PASSWORD) {
+      const authHeader = req.headers.get('authorization')
+      const isManualAuth = cronSecret === process.env.ADMIN_PASSWORD
+      const isVercelCron = authHeader === `Bearer ${process.env.CRON_SECRET}`
+      if (!isManualAuth && !isVercelCron) {
         return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
       }
       const { data: orgs } = await supabase.from('organizations').select('id')
@@ -57,4 +60,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ success:true, results })
   } catch (err: any) { return NextResponse.json({ success:false, error:err.message }, { status:500 }) }
 }
-export async function GET() { return POST(new Request('http://localhost',{method:'POST',body:'{}'})) }
+export async function GET(req: Request) { return POST(new Request('http://localhost',{method:'POST',body:'{}',headers:req.headers})) }
