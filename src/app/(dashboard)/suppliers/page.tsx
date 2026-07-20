@@ -107,7 +107,7 @@ function EscalationChain({ productId, allSuppliers, primarySupplierId, refreshKe
   )
 }
 
-function SupplierCard({ s, products, orgId, onRefresh, allSuppliers }: any) {
+function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating }: any) {
   const [open, setOpen]           = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [mode, setMode]           = useState(s.notify_mode || 'daily')
@@ -213,6 +213,11 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers }: any) {
           <div>
             <div style={{display:'flex',alignItems:'center',gap:8}}>
               <div style={{ fontSize:15, fontWeight:700, color:'#0f172a' }}>{s.name}</div>
+              {rating?.hasData && rating?.stars!=null && (
+                <span title={`${rating.details.confirmedOrders}/${rating.details.totalOrders} طلب مؤكد · ${rating.details.dealCount} تعامل`} style={{fontSize:11,fontWeight:700,color:'#b45309',display:'flex',alignItems:'center',gap:2}}>
+                  {'⭐'.repeat(Math.round(rating.stars))}<span style={{color:'#92400e',marginRight:2}}>{rating.stars}</span>
+                </span>
+              )}
               {linked.length>0 && <span style={{fontSize:11,fontWeight:700,background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',borderRadius:20,padding:'2px 8px'}}>{linked.length} منتج مرتبط</span>}
               {linked.length===0 && <span style={{fontSize:11,fontWeight:700,background:'#fef3c7',color:'#92400e',border:'1px solid #fcd34d',borderRadius:20,padding:'2px 8px'}}>⚠️ لا منتجات مرتبطة</span>}
             </div>
@@ -405,6 +410,7 @@ export default function SuppliersPage() {
   const [newConsent, setNewConsent] = useState(false)
   const [priceComparisons, setPriceComparisons] = useState<any[]>([])
   const [showPriceComparison, setShowPriceComparison] = useState(false)
+  const [supplierRatings, setSupplierRatings] = useState<Record<string,any>>({})
   const sb = createClient()
 
   useEffect(() => { init() }, [])
@@ -420,6 +426,9 @@ export default function SuppliersPage() {
     setMaxSuppliers((orgLimits as any)?.max_suppliers || 999)
     await Promise.all([loadSuppliers(profile.org_id), loadProducts(profile.org_id)])
     fetch('/api/supplier-price-comparison',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:profile.org_id})}).then(r=>r.json()).then(d=>{ if(d.success) setPriceComparisons(d.comparisons||[]) }).catch(()=>{})
+    fetch('/api/supplier-rating',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:profile.org_id})}).then(r=>r.json()).then(d=>{
+      if(d.success){ const map:Record<string,any>={}; d.ratings.forEach((r:any)=>{ map[r.id]=r }); setSupplierRatings(map) }
+    }).catch(()=>{})
     setLoading(false)
   }
 
@@ -579,7 +588,7 @@ export default function SuppliersPage() {
       ) : (
         <div style={{ display:'flex', flexDirection:'column' as const, gap:12 }}>
           {suppliers.map(s => (
-            <SupplierCard key={s.id} s={s} products={products} orgId={orgId} onRefresh={refresh} allSuppliers={suppliers} />
+            <SupplierCard key={s.id} s={s} products={products} orgId={orgId} onRefresh={refresh} allSuppliers={suppliers} rating={supplierRatings[s.id]} />
           ))}
         </div>
       )}
