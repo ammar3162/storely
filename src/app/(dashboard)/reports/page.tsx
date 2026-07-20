@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { cache } from '@/lib/cache'
 import { createClient } from '@/lib/supabase/client'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
+import { exportReportPdf } from '@/lib/pdfExport'
 
 type FilterPeriod = 'today'|'week'|'month'|'year'|'custom'
 
@@ -631,6 +632,42 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   const [deleteError, setDeleteError] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [monthComp, setMonthComp] = useState<any>(null)
+  const [exportingPdf, setExportingPdf] = useState(false)
+
+  async function handleExportPdf() {
+    setExportingPdf(true)
+    try {
+      const orgId = sessionStorage.getItem('s_org_id')
+      const sbPdf = createClient()
+      const { data: org } = orgId ? await sbPdf.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      await exportReportPdf({
+        title: 'تقرير إقفال الكاشير اليومي',
+        subtitle: formatRange(period, from, to),
+        orgName: (org as any)?.name || 'Storely',
+        columns: [
+          { header: 'التاريخ', key: 'date' },
+          { header: 'الكاشير', key: 'staff' },
+          { header: 'المبيعات', key: 'sales', align: 'left' },
+          { header: 'الصافي', key: 'net', align: 'left' },
+          { header: 'النتيجة', key: 'result' },
+        ],
+        rows: closings.map((c: any) => ({
+          date: new Date(c.closing_date).toLocaleDateString('ar-SA'),
+          staff: c.staff_name || '—',
+          sales: Number(c.total_sales || 0).toFixed(2) + ' ر.س',
+          net: (Number(c.network_amount||0)+Number(c.cash_amount||0)-Number(c.total_purchases||0)).toFixed(2) + ' ر.س',
+          result: c.difference > 0 ? `زيادة ${c.difference.toFixed(2)}` : c.difference < 0 ? `عجز ${Math.abs(c.difference).toFixed(2)}` : 'مطابق',
+        })),
+        summaryStats: [
+          { label: 'إجمالي التقارير', value: String(closings.length), color: '#0891b2' },
+          { label: 'إجمالي العجز', value: totalDeficit.toFixed(0) + ' ر.س', color: colors.danger },
+          { label: 'إجمالي الزيادة', value: totalSurplus.toFixed(0) + ' ر.س', color: colors.info },
+        ],
+        fileName: `تقرير-اقفال-الكاشير-${new Date().toISOString().slice(0,10)}.pdf`,
+      })
+    } catch { alert('تعذر تصدير التقرير') }
+    setExportingPdf(false)
+  }
   useEffect(()=>{ load() },[period,from,to])
   useEffect(()=>{
     const orgId=sessionStorage.getItem('s_org_id')
@@ -677,8 +714,14 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   return (
     <div>
       <BackBtn onClick={onBack}/>
-      <PeriodBadge period={period} from={from} to={to}/>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap' as const,gap:8}}>
+        <PeriodBadge period={period} from={from} to={to}/>
+        <button onClick={handleExportPdf} disabled={exportingPdf || closings.length===0}
+          style={{...btnSecondary,padding:'8px 16px',fontSize:font.xs,opacity:exportingPdf||closings.length===0?0.6:1,cursor:exportingPdf||closings.length===0?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:6}}>
+          {exportingPdf?'⏳ جاري التصدير...':'📄 تصدير PDF'}
+        </button>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16,marginTop:12}}>
         {[
           {label:'إجمالي التقارير',value:closings.length,color:'#0891b2',bg:'#ecfeff',border:'#a5f3fc'},
           {label:'إجمالي العجز',value:totalDeficit.toFixed(0)+' ر.س',color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
