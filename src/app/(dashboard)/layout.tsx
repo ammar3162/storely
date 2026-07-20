@@ -69,6 +69,7 @@ function Icon({ d, size=20, stroke='currentColor', width=2 }: { d:string; size?:
 // لا نضيف شيء هنا — الإشعار سيكون في الداشبورد مباشرة
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [orgName, setOrgName]       = useState('')
+  const [subDaysLeft, setSubDaysLeft] = useState<number|null>(null)
   const [orgLogo, setOrgLogo]       = useState<string|null>(null)
   const [branchName, setBranchName] = useState('')
   const [userName, setUserName]     = useState('')
@@ -136,6 +137,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if(ends<new Date()&&subData.subscription_type!=='paid'){
         router.replace('/expired');return
       }
+      // تحذير استباقي قبل انتهاء الاشتراك (خلال 7 أيام أو أقل)
+      const daysLeft=Math.ceil((ends.getTime()-Date.now())/(1000*60*60*24))
+      if(daysLeft<=7&&daysLeft>=0) setSubDaysLeft(daysLeft)
     }
     const orgN=(p.organizations as any)?.name||''
     const orgLogoUrl=(p.organizations as any)?.logo_url||null
@@ -615,6 +619,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Desktop Content */}
           <main className="desk-content" style={{paddingTop:52}}>
+            {subDaysLeft!==null && (
+              <div style={{width:'100%',background:'#fffbeb',borderBottom:'1px solid #fac775',padding:'12px 20px',display:'flex',alignItems:'center',justifyContent:'center',gap:10,flexWrap:'wrap' as const,textAlign:'center' as const}}>
+                <svg width={16} height={16} fill="none" stroke="#854f0b" strokeWidth={2.5} viewBox="0 0 24 24" style={{flexShrink:0}}><path strokeLinecap="round" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                <span style={{fontSize:13,fontWeight:600,color:'#633806'}}>
+                  {subDaysLeft===0?'ينتهي اشتراكك اليوم!':`سيتم تعطيل حسابك خلال ${subDaysLeft} ${subDaysLeft===1?'يوم':'أيام'}.`} قم بالتجديد الآن لتجنب التعطيل!
+                </span>
+                <button onClick={()=>router.push('/settings')} style={{background:'#854f0b',color:'white',border:'none',borderRadius:8,padding:'5px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>
+                  جدد الآن
+                </button>
+              </div>
+            )}
             {ready ? children : (
               <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'60vh'}}>
                 <div style={{width:32,height:32,border:`3px solid #e5e7eb`,borderTopColor:C.primary,borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
