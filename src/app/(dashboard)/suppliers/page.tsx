@@ -108,6 +108,19 @@ function EscalationChain({ productId, allSuppliers, primarySupplierId, refreshKe
 }
 
 function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating }: any) {
+  const [showTimeline, setShowTimeline] = useState(false)
+  const [timelineEvents, setTimelineEvents] = useState<any[]>([])
+  const [timelineLoading, setTimelineLoading] = useState(false)
+
+  async function openTimeline() {
+    setShowTimeline(true); setTimelineLoading(true)
+    try {
+      const res = await fetch('/api/supplier-timeline',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,supplier_id:s.id,supplier_name:s.name})})
+      const data = await res.json()
+      setTimelineEvents(data.events || [])
+    } catch { setTimelineEvents([]) }
+    setTimelineLoading(false)
+  }
   const [open, setOpen]           = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [mode, setMode]           = useState(s.notify_mode || 'daily')
@@ -244,6 +257,10 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating }: a
           <button onClick={sendNow} disabled={sending}
             style={{ background:'#f0fdf4', color:'#16a34a', border:'1.5px solid #bbf7d0', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
             {sending ? '...' : '📤'}
+          </button>
+          <button onClick={openTimeline} title="سجل التواصل"
+            style={{ background:'#eff6ff', color:'#2563eb', border:'1.5px solid #bfdbfe', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+            📋
           </button>
           <button onClick={()=>setSettingsOpen(o=>!o)}
             style={{ background: settingsOpen?'#0f172a':'#f8fafc', color:settingsOpen?'white':'#475569', border:'1.5px solid #e2e8f0', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
@@ -390,6 +407,41 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating }: a
           {unlinked.length === 0 && linked.length === 0 && (
             <div style={{ textAlign:'center', padding:'24px', color:'#94a3b8', fontSize:13 }}>لا توجد منتجات متاحة للربط</div>
           )}
+        </div>
+      )}
+
+      {showTimeline && (
+        <div style={{position:'fixed',inset:0,zIndex:3500,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}
+          onClick={()=>setShowTimeline(false)}>
+          <div style={{background:'white',borderRadius:16,width:'100%',maxWidth:480,maxHeight:'75vh',overflowY:'auto' as const,padding:20}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+              <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>📋 سجل التواصل — {s.name}</div>
+              <button onClick={()=>setShowTimeline(false)} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:'#94a3b8'}}>✕</button>
+            </div>
+            {timelineLoading ? (
+              <div style={{textAlign:'center' as const,padding:40,color:'#94a3b8',fontSize:12}}>جاري التحميل...</div>
+            ) : timelineEvents.length === 0 ? (
+              <div style={{textAlign:'center' as const,padding:40,color:'#94a3b8',fontSize:12}}>لا يوجد سجل تواصل بعد مع هذا المورد</div>
+            ) : (
+              <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
+                {timelineEvents.map((e:any,i:number)=>{
+                  const icons: Record<string,string> = { order_sent:'🟢', order_confirmed:'✅', order_escalated:'⚠️', purchase:'💰' }
+                  const colors: Record<string,string> = { order_sent:'#16a34a', order_confirmed:'#16a34a', order_escalated:'#d97706', purchase:'#2563eb' }
+                  return (
+                    <div key={i} style={{display:'flex',gap:10,paddingBottom:10,borderBottom:i<timelineEvents.length-1?'1px solid #f1f5f9':'none'}}>
+                      <div style={{fontSize:16,flexShrink:0}}>{icons[e.type]||'•'}</div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:12,fontWeight:700,color:colors[e.type]||'#334155'}}>{e.title}</div>
+                        {e.detail && <div style={{fontSize:11,color:'#64748b',marginTop:2}}>{e.detail}</div>}
+                        <div style={{fontSize:10,color:'#94a3b8',marginTop:3}}>{new Date(e.at).toLocaleDateString('ar-SA',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
