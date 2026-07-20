@@ -270,7 +270,8 @@ export default function PurchasesPage() {
 
     // تحقق تلقائي: لو المورد المكتوب يطابق مورد مرتبط بهذا الصنف فعلياً، يرسل له شكر تلقائي
     if (form.category==='مخزون' && form.name && form.supplier.trim()) {
-      fetch('/api/supplier-delivery-thanks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,product_name:form.name,supplier_name:form.supplier})}).catch(()=>{})
+      fetch('/api/supplier-delivery-thanks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,product_name:form.name,supplier_name:form.supplier})})
+        .then(r=>r.json()).then(d=>{ console.log('[supplier-delivery-thanks]', d) }).catch(err=>{ console.log('[supplier-delivery-thanks] network error', err) })
     }
 
     setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh()})
