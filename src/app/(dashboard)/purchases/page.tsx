@@ -37,6 +37,7 @@ export default function PurchasesPage() {
   const [ocrItems, setOcrItems]     = useState<any[]>([])
   const [ocrSelected, setOcrSelected] = useState<Record<number,boolean>>({})
   const [bulkSaving, setBulkSaving] = useState(false)
+  const [pendingThanks, setPendingThanks] = useState<{productName:string; supplierName:string}|null>(null)
   const [ocrLoading, setOcrLoading] = useState(false)
   const [filterCat, setFilterCat]       = useState('all')
   const [filterPeriod, setFilterPeriod] = useState('all')
@@ -170,6 +171,18 @@ export default function PurchasesPage() {
     })
   }
 
+  async function confirmSupplierThanks() {
+    if (!pendingThanks || !orgId) return
+    const { productName, supplierName } = pendingThanks
+    setPendingThanks(null)
+    try {
+      const res = await fetch('/api/supplier-delivery-thanks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,product_name:productName,supplier_name:supplierName})})
+      const data = await res.json()
+      if (data.sent) toast(`✅ تم إرسال رسالة شكر لـ${data.supplier}`)
+      else toast('تعذر إرسال رسالة الشكر (تحقق من ربط المورد أو موافقة واتساب)', 'warning')
+    } catch { toast('حدث خطأ أثناء الإرسال', 'error') }
+  }
+
   function pickOcrItem(item: any) {
     setForm(f => ({ ...f, name: item.name || f.name, qty: item.qty ? String(item.qty) : f.qty, unit: item.unit || f.unit }))
   }
@@ -268,10 +281,9 @@ export default function PurchasesPage() {
       }
     } else { toast('✅ تم تسجيل الشراء') }
 
-    // تحقق تلقائي: لو المورد المكتوب يطابق مورد مرتبط بهذا الصنف فعلياً، يرسل له شكر تلقائي
+    // تأكيد يدوي قبل إرسال رسالة الشكر — يحمي من خطأ كتابة اسم مورد أو إضافة كمية لسبب غير الاستلام الفعلي
     if (form.category==='مخزون' && form.name && form.supplier.trim()) {
-      fetch('/api/supplier-delivery-thanks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,product_name:form.name,supplier_name:form.supplier})})
-        .then(r=>r.json()).then(d=>{ console.log('[supplier-delivery-thanks]', d) }).catch(err=>{ console.log('[supplier-delivery-thanks] network error', err) })
+      setPendingThanks({ productName: form.name, supplierName: form.supplier.trim() })
     }
 
     setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh()})
@@ -302,6 +314,26 @@ export default function PurchasesPage() {
 
   return (
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
+      {pendingThanks && (
+        <div style={{position:'fixed',inset:0,zIndex:4000,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+          <div style={{background:'white',borderRadius:16,width:'100%',maxWidth:380,padding:24,textAlign:'center' as const}}>
+            <div style={{fontSize:32,marginBottom:10}}>🚚</div>
+            <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:6}}>تأكيد استلام الطلبية</div>
+            <div style={{fontSize:12,color:C.text3,marginBottom:20,lineHeight:1.6}}>
+              هل المورد <b>{pendingThanks.supplierName}</b> فعلاً هو اللي وصّل "{pendingThanks.productName}"؟<br/>
+              لو أكدت، بنرسل له رسالة شكر تلقائية عبر واتساب.
+            </div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>setPendingThanks(null)} style={{flex:1,padding:11,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,fontSize:12,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>
+                لا، تجاهل
+              </button>
+              <button onClick={confirmSupplierThanks} style={{flex:1,padding:11,background:C.primary,border:'none',borderRadius:10,fontSize:12,fontWeight:700,color:'white',cursor:'pointer',fontFamily:'inherit'}}>
+                ✅ نعم، أرسل شكر
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <style>{`
         @keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
         .u{animation:up .3s ease both}
