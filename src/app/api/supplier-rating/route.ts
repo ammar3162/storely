@@ -55,16 +55,22 @@ export async function POST(req: Request) {
       const scores = [commitmentScore, speedScore, consistencyScore].filter((v): v is number => v != null)
       const overall = scores.length > 0 ? scores.reduce((s, v) => s + v, 0) / scores.length : null
 
+      // حد أدنى من البيانات قبل عرض أي تقييم — تجنب تقييم مضلل من صفقة أو صفقتين بس
+      const totalDataPoints = totalEvents + dealCount
+      const MIN_DATA_POINTS = 3
+      const hasEnoughData = totalDataPoints >= MIN_DATA_POINTS
+
       return {
         id: s.id,
         name: s.name,
-        stars: overall != null ? Math.round(overall * 10) / 10 : null,
-        hasData: totalEvents > 0 || dealCount > 0,
+        stars: hasEnoughData && overall != null ? Math.round(overall * 10) / 10 : null,
+        hasData: hasEnoughData,
         details: {
           totalOrders: totalEvents,
           confirmedOrders: confirmed.length,
           avgResponseHours: avgResponseMin != null ? Math.round((avgResponseMin / 60) * 10) / 10 : null,
           dealCount,
+          totalDataPoints,
         },
       }
     })
