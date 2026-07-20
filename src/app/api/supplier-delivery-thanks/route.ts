@@ -33,13 +33,16 @@ export async function POST(req: Request) {
 
     const db = sb()
 
-    // نلقى المنتج بالاسم (لنفس المؤسسة)
-    const { data: product } = await db.from('products').select('id').eq('org_id', org_id).ilike('name', product_name.trim()).limit(1).maybeSingle()
+    // نلقى المنتج بالاسم (لنفس المؤسسة) — نجيب supplier_id المباشر أيضاً (المصدر الرئيسي للربط)
+    const { data: product } = await db.from('products').select('id,supplier_id').eq('org_id', org_id).ilike('name', product_name.trim()).order('created_at', { ascending: false }).limit(1).maybeSingle()
     if (!product) return NextResponse.json({ sent: false, reason: 'product_not_found' })
 
-    // نلقى الموردين المرتبطين بهذا المنتج (أساسي وبديل)
+    // نلقى الموردين المرتبطين: المورد الأساسي (products.supplier_id) + الموردين البدلاء (product_suppliers)
     const { data: links } = await (db as any).from('product_suppliers').select('supplier_id').eq('product_id', product.id)
-    const linkedSupplierIds = (links || []).map((l: any) => l.supplier_id)
+    const linkedSupplierIds = [
+      ...((product as any).supplier_id ? [(product as any).supplier_id] : []),
+      ...(links || []).map((l: any) => l.supplier_id),
+    ]
     if (linkedSupplierIds.length === 0) return NextResponse.json({ sent: false, reason: 'no_linked_supplier' })
 
     const { data: suppliers } = await db.from('suppliers').select('id,name,phone,whatsapp_consent').in('id', linkedSupplierIds)
