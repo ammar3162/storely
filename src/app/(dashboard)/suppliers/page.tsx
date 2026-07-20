@@ -249,7 +249,6 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating }: a
               )}
               <span style={{ fontSize:12, color:'#94a3b8' }}>·</span>
               <span style={{ fontSize:12, color:'#64748b' }}>{linked.length} منتج</span>
-              <NotifyBadge mode={s.notify_mode||'daily'} time={s.notify_time||'08:00'} day={s.notify_day??0} />
             </div>
           </div>
         </div>
@@ -262,10 +261,6 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating }: a
             style={{ background:'#eff6ff', color:'#2563eb', border:'1.5px solid #bfdbfe', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
             📋
           </button>
-          <button onClick={()=>setSettingsOpen(o=>!o)}
-            style={{ background: settingsOpen?'#0f172a':'#f8fafc', color:settingsOpen?'white':'#475569', border:'1.5px solid #e2e8f0', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
-            ⚙️
-          </button>
           <button onClick={deleteSupplier}
             style={{ background:'#fef2f2', color:'#ef4444', border:'1.5px solid #fecaca', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
             🗑️
@@ -275,55 +270,6 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating }: a
       </div>
 
       {/* إعدادات الإشعارات */}
-      {settingsOpen && (
-        <div style={{ borderTop:'1.5px solid #f1f5f9', padding:'18px 20px', background:'#fafafa' }}>
-          <div style={{ fontSize:13, fontWeight:700, color:'#0f172a', marginBottom:14 }}>🔔 إعدادات الإشعار لهذا المورد</div>
-          
-          {/* اختيار النوع */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:14 }}>
-            {NOTIFY_OPTS.map(opt=>(
-              <div key={opt.id} onClick={()=>setMode(opt.id)}
-                style={{ border:`2px solid ${mode===opt.id?'#0f172a':'#e2e8f0'}`, background:mode===opt.id?'#0f172a':'white', borderRadius:10, padding:'12px', cursor:'pointer', textAlign:'center' as const, transition:'all .15s' }}>
-                <div style={{ fontSize:20, marginBottom:4 }}>{opt.icon}</div>
-                <div style={{ fontSize:13, fontWeight:700, color:mode===opt.id?'white':'#0f172a' }}>{opt.label}</div>
-                <div style={{ fontSize:10, color:mode===opt.id?'rgba(255,255,255,.6)':'#94a3b8', marginTop:2 }}>{opt.desc}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* الوقت */}
-          {mode !== 'instant' && (
-            <div style={{ display:'flex', gap:10, marginBottom:14, flexWrap:'wrap' as const }}>
-              {mode === 'weekly' && (
-                <div style={{ flex:1 }}>
-                  <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:5, fontWeight:600 }}>اليوم</label>
-                  <select value={day} onChange={e=>setDay(e.target.value)}
-                    style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', background:'white', color:'#0f172a', outline:'none' }}>
-                    {DAYS.map((d,i)=><option key={i} value={i}>{d}</option>)}
-                  </select>
-                </div>
-              )}
-              <div style={{ flex:1 }}>
-                <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:5, fontWeight:600 }}>الوقت</label>
-                <input type="time" value={time} onChange={e=>setTime(e.target.value)}
-                  style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', background:'white', color:'#0f172a', outline:'none' }} />
-              </div>
-            </div>
-          )}
-
-          <div style={{ display:'flex', gap:8 }}>
-            <button onClick={saveSettings} disabled={saving}
-              style={{ ...btnPrimary, padding:'10px 20px', fontSize:13 }}>
-              {saving ? 'جاري الحفظ...' : '💾 حفظ'}
-            </button>
-            <button onClick={()=>setSettingsOpen(false)}
-              style={{ ...btnSecondary, padding:'10px 20px', fontSize:13 }}>
-              إلغاء
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* المنتجات */}
       {open && (
         <div style={{ borderTop:'1.5px solid #f1f5f9', padding:'16px 20px' }}>
