@@ -25,11 +25,20 @@ interface PdfExportOptions {
 export async function exportReportPdf(opts: PdfExportOptions) {
   const { title, subtitle, orgName, logoUrl, columns, rows, summaryStats, fileName } = opts
 
-  // بناء عنصر HTML مؤقت (خارج الشاشة) بتصميم التقرير
+  // طبقة تغطية بيضاء كاملة (تظهر كـ"شاشة تحميل" أثناء التصدير — عادي وشائع بالأنظمة الاحترافية)
+  const overlay = document.createElement('div')
+  overlay.style.position = 'fixed'
+  overlay.style.inset = '0'
+  overlay.style.background = 'white'
+  overlay.style.zIndex = '99998'
+  overlay.style.overflow = 'auto'
+  overlay.style.display = 'flex'
+  overlay.style.justifyContent = 'center'
+  overlay.style.padding = '20px'
+  document.body.appendChild(overlay)
+
+  // عنصر HTML الفعلي بتصميم التقرير — داخل حدود الشاشة (مطلوب لالتقاط html2canvas بشكل صحيح)
   const container = document.createElement('div')
-  container.style.position = 'fixed'
-  container.style.top = '-9999px'
-  container.style.left = '-9999px'
   container.style.width = '780px'
   container.style.background = 'white'
   container.style.padding = '32px'
@@ -74,7 +83,7 @@ export async function exportReportPdf(opts: PdfExportOptions) {
     </div>
   `
 
-  document.body.appendChild(container)
+  overlay.appendChild(container)
 
   const pdf = new jsPDF('p', 'mm', 'a4')
   await new Promise<void>((resolve, reject) => {
@@ -82,7 +91,7 @@ export async function exportReportPdf(opts: PdfExportOptions) {
       pdf.html(container, {
         callback: (doc) => {
           doc.save(fileName)
-          document.body.removeChild(container)
+          document.body.removeChild(overlay)
           resolve()
         },
         x: 10,
@@ -92,7 +101,7 @@ export async function exportReportPdf(opts: PdfExportOptions) {
         html2canvas: { scale: 0.35 },
       })
     } catch (err) {
-      document.body.removeChild(container)
+      document.body.removeChild(overlay)
       reject(err)
     }
   })
