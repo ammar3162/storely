@@ -80,8 +80,9 @@ export async function exportReportPdf(opts: PdfExportOptions) {
       <thead><tr>${tableHeaderHtml}</tr></thead>
       <tbody>${tableRowsHtml}</tbody>
     </table>
-    <div style="margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;text-align:center">
-      تم إنشاء هذا التقرير تلقائياً عبر نظام Storely
+    <div style="margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;text-align:center;line-height:1.8">
+      <div>تم إنشاء هذا التقرير تلقائياً عبر نظام Storely</div>
+      <div style="margin-top:2px">© ${new Date().getFullYear()} Storely — جميع الحقوق محفوظة</div>
     </div>
   `
 
