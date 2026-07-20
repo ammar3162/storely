@@ -14,7 +14,7 @@ const TYPE_CFG: Record<string,{icon:string;color:string;bg:string;border:string}
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter]   = useState<'all'|'unread'|'warning'|'danger'|'success'|'info'>('all')
+  const [filter, setFilter]   = useState<'all'|'unread'|'warning'|'success'|'info'>('all')
   const sb = createClient()
 
   useEffect(() => { load() }, [])
@@ -81,7 +81,6 @@ export default function NotificationsPage() {
           {key:'all',label:'الكل'},
           {key:'unread',label:'غير مقروء'},
           {key:'warning',label:'⚠️ تحذير'},
-          {key:'danger',label:'🚨 خطر'},
           {key:'success',label:'✅ نجاح'},
           {key:'info',label:'ℹ️ معلومة'},
         ] as const).map(f => (
