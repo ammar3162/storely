@@ -322,6 +322,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteError, setDeleteError] = useState('')
   const [deleting, setDeleting] = useState(false)
+  const [exportingPdf, setExportingPdf] = useState(false)
   const sb = createClient()
   useEffect(()=>{ load() },[period,from,to])
 
@@ -347,6 +348,37 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     const csv='\ufeff'+[['التاريخ','الصنف','النوع','بدون ضريبة','الضريبة','الإجمالي','المورد'],...filtered.map(p=>[new Date(p.created_at).toLocaleDateString('en-GB'),p.name||'',p.category||'',Number(p.amount||0).toFixed(2),Number(p.vat_amount||0).toFixed(2),Number(p.total_amount||0).toFixed(2),p.supplier||''])].map(r=>r.map(c=>'"'+c+'"').join(',')).join('\n')
     Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})),download:'تقرير_المشتريات.csv'}).click()
   }
+  async function handleExportPdf() {
+    setExportingPdf(true)
+    try {
+      const orgId = sessionStorage.getItem('s_org_id')
+      const { data: org } = orgId ? await sb.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      await exportReportPdf({
+        title: 'تقرير المشتريات',
+        subtitle: formatRange(period, from, to),
+        orgName: (org as any)?.name || 'Storely',
+        columns: [
+          { header: 'التاريخ', key: 'date' },
+          { header: 'الصنف', key: 'name' },
+          { header: 'المورد', key: 'supplier' },
+          { header: 'الإجمالي', key: 'total', align: 'left' },
+        ],
+        rows: filtered.map((p:any) => ({
+          date: new Date(p.created_at).toLocaleDateString('ar-SA'),
+          name: p.name || '—',
+          supplier: p.supplier || '—',
+          total: Number(p.total_amount || 0).toFixed(2) + ' ر.س',
+        })),
+        summaryStats: [
+          { label: 'بدون ضريبة', value: totalAmount.toFixed(0) + ' ر.س', color: colors.text2 },
+          { label: 'ضريبة 15%', value: totalVat.toFixed(0) + ' ر.س', color: colors.warning },
+          { label: 'الإجمالي', value: totalWithVat.toFixed(0) + ' ر.س', color: colors.primary },
+        ],
+        fileName: `تقرير-المشتريات-${new Date().toISOString().slice(0,10)}.pdf`,
+      })
+    } catch { alert('تعذر تصدير التقرير') }
+    setExportingPdf(false)
+  }
   const filtered=purchases.filter(p=>(!search||p.name?.includes(search)||p.supplier?.includes(search))&&(!filterCat||p.category===filterCat))
   const totalAmount=filtered.reduce((s,p)=>s+Number(p.amount||0),0)
   const totalVat=filtered.reduce((s,p)=>s+Number(p.vat_amount||0),0)
@@ -355,8 +387,14 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
   return (
     <div>
       <BackBtn onClick={onBack}/>
-      <PeriodBadge period={period} from={from} to={to}/>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap' as const,gap:8}}>
+        <PeriodBadge period={period} from={from} to={to}/>
+        <button onClick={handleExportPdf} disabled={exportingPdf || filtered.length===0}
+          style={{...btnSecondary,padding:'8px 16px',fontSize:font.xs,opacity:exportingPdf||filtered.length===0?0.6:1,cursor:exportingPdf||filtered.length===0?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:6}}>
+          {exportingPdf?'⏳ جاري التصدير...':'📄 تصدير PDF'}
+        </button>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16,marginTop:12}}>
         {[
           {label:'بدون ضريبة',value:totalAmount.toFixed(0)+' ر.س',color:colors.text2,bg:colors.bg,border:colors.border2},
           {label:'ضريبة 15%',value:totalVat.toFixed(0)+' ر.س',color:colors.warning,bg:colors.warningLight,border:colors.warningBorder},
