@@ -76,17 +76,24 @@ export async function exportReportPdf(opts: PdfExportOptions) {
 
   document.body.appendChild(container)
 
-  try {
-    const pdf = new jsPDF('p', 'mm', 'a4')
-    await pdf.html(container, {
-      callback: (doc) => { doc.save(fileName) },
-      x: 10,
-      y: 10,
-      width: 190,
-      windowWidth: 780,
-      html2canvas: { scale: 0.35 },
-    })
-  } finally {
-    document.body.removeChild(container)
-  }
+  const pdf = new jsPDF('p', 'mm', 'a4')
+  await new Promise<void>((resolve, reject) => {
+    try {
+      pdf.html(container, {
+        callback: (doc) => {
+          doc.save(fileName)
+          document.body.removeChild(container)
+          resolve()
+        },
+        x: 10,
+        y: 10,
+        width: 190,
+        windowWidth: 780,
+        html2canvas: { scale: 0.35 },
+      })
+    } catch (err) {
+      document.body.removeChild(container)
+      reject(err)
+    }
+  })
 }
