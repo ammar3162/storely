@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 
 interface PdfTableColumn {
   header: string
@@ -18,14 +19,15 @@ interface PdfExportOptions {
 }
 
 /**
- * يولّد PDF احترافي بدعم كامل للعربي — عن طريق تصميم HTML منسّق
- * وتحويله لصورة عالية الجودة داخل ملف PDF (يتجاوز مشكلة عدم دعم
- * jsPDF الافتراضي للخطوط العربية).
+ * يولّد PDF احترافي بدعم كامل للعربي — يبني تصميم HTML منسّق، يلتقطه
+ * كصورة حقيقية (بكسل بكسل) عبر html2canvas، ثم يدمجها داخل ملف PDF.
+ * هذا يضمن ظهور النص العربي صحيحاً دائماً (بعكس محرك jsPDF النصي
+ * الداخلي الذي لا يدعم الخطوط العربية).
  */
 export async function exportReportPdf(opts: PdfExportOptions) {
-  const { title, subtitle, orgName, logoUrl, columns, rows, summaryStats, fileName } = opts
+  const { title, subtitle, orgName, columns, rows, summaryStats, fileName } = opts
 
-  // طبقة تغطية بيضاء كاملة (تظهر كـ"شاشة تحميل" أثناء التصدير — عادي وشائع بالأنظمة الاحترافية)
+  // طبقة تغطية بيضاء كاملة (تظهر كـ"شاشة تحميل" أثناء التصدير)
   const overlay = document.createElement('div')
   overlay.style.position = 'fixed'
   overlay.style.inset = '0'
@@ -37,13 +39,13 @@ export async function exportReportPdf(opts: PdfExportOptions) {
   overlay.style.padding = '20px'
   document.body.appendChild(overlay)
 
-  // عنصر HTML الفعلي بتصميم التقرير — داخل حدود الشاشة (مطلوب لالتقاط html2canvas بشكل صحيح)
   const container = document.createElement('div')
   container.style.width = '780px'
   container.style.background = 'white'
   container.style.padding = '32px'
   container.style.fontFamily = "'IBM Plex Sans Arabic', system-ui, sans-serif"
   container.style.direction = 'rtl'
+  overlay.appendChild(container)
 
   const summaryHtml = summaryStats?.length
     ? `<div style="display:flex;gap:12px;margin-bottom:20px">
@@ -83,26 +85,35 @@ export async function exportReportPdf(opts: PdfExportOptions) {
     </div>
   `
 
-  overlay.appendChild(container)
+  try {
+    // انتظار قصير لضمان اكتمال تحميل الخط قبل الالتقاط
+    await new Promise(r => setTimeout(r, 150))
 
-  const pdf = new jsPDF('p', 'mm', 'a4')
-  await new Promise<void>((resolve, reject) => {
-    try {
-      pdf.html(container, {
-        callback: (doc) => {
-          doc.save(fileName)
-          document.body.removeChild(overlay)
-          resolve()
-        },
-        x: 10,
-        y: 10,
-        width: 190,
-        windowWidth: 780,
-        html2canvas: { scale: 0.35 },
-      })
-    } catch (err) {
-      document.body.removeChild(overlay)
-      reject(err)
+    const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff', useCORS: true })
+    const imgData = canvas.toDataURL('image/jpeg', 0.95)
+
+    const pdf = new jsPDF('p', 'mm', 'a4')
+    const pageWidth = 210
+    const pageHeight = 297
+    const imgWidth = pageWidth - 20 // هوامش 10مم كل جانب
+    const imgHeight = (canvas.height * imgWidth) / canvas.width
+
+    let heightLeft = imgHeight
+    let position = 10
+
+    pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight)
+    heightLeft -= (pageHeight - 20)
+
+    // لو المحتوى أطول من صفحة وحدة، نكمل بصفحات إضافية
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight + 10
+      pdf.addPage()
+      pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight)
+      heightLeft -= (pageHeight - 20)
     }
-  })
+
+    pdf.save(fileName)
+  } finally {
+    document.body.removeChild(overlay)
+  }
 }
