@@ -512,6 +512,7 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
   const [loading, setLoading]   = useState(true)
   const [search, setSearch]     = useState('')
   const [filter, setFilter]     = useState<'all'|'low'|'out'>('all')
+  const [exportingPdf, setExportingPdf] = useState(false)
   const sb = createClient()
 
   useEffect(()=>{ load() },[period,from,to])
@@ -547,6 +548,38 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
     Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})),download:'تقرير_الجرد.csv'}).click()
   }
 
+  async function handleExportPdf() {
+    setExportingPdf(true)
+    try {
+      const orgId = sessionStorage.getItem('s_org_id')
+      const { data: org } = orgId ? await sb.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      await exportReportPdf({
+        title: 'تقرير الجرد اليومي',
+        subtitle: formatRange(period, from, to),
+        orgName: (org as any)?.name || 'Storely',
+        columns: [
+          { header: 'الصنف', key: 'name' },
+          { header: 'الفئة', key: 'category' },
+          { header: 'المتبقي', key: 'qty', align: 'left' },
+          { header: 'الحالة', key: 'status' },
+        ],
+        rows: filtered.map((p:any) => ({
+          name: p.name || '—',
+          category: p.category || '—',
+          qty: p.qty + ' ' + (p.unit || ''),
+          status: p.qty===0 ? 'نفد' : p.qty<=p.reorder_point ? 'ناقص' : 'كافٍ',
+        })),
+        summaryStats: [
+          { label: 'إجمالي الأصناف', value: String(products.length), color: '#7c3aed' },
+          { label: 'مخزون ناقص', value: String(lowCount), color: colors.warning },
+          { label: 'نفد المخزون', value: String(outCount), color: colors.danger },
+        ],
+        fileName: `تقرير-الجرد-${new Date().toISOString().slice(0,10)}.pdf`,
+      })
+    } catch { alert('تعذر تصدير التقرير') }
+    setExportingPdf(false)
+  }
+
   // dispensed map
   const dispensedMap:Record<string,number>={}
   movements.filter(m=>m.type==='out').forEach(m=>{const n=(m.products as any)?.name||'—';dispensedMap[n]=(dispensedMap[n]||0)+Math.abs(m.qty_change)})
@@ -567,8 +600,14 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
   return (
     <div>
       <BackBtn onClick={onBack}/>
-      <PeriodBadge period={period} from={from} to={to}/>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap' as const,gap:8}}>
+        <PeriodBadge period={period} from={from} to={to}/>
+        <button onClick={handleExportPdf} disabled={exportingPdf || filtered.length===0}
+          style={{...btnSecondary,padding:'8px 16px',fontSize:font.xs,opacity:exportingPdf||filtered.length===0?0.6:1,cursor:exportingPdf||filtered.length===0?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:6}}>
+          {exportingPdf?'⏳ جاري التصدير...':'📄 تصدير PDF'}
+        </button>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16,marginTop:12}}>
         {[
           {label:'إجمالي الأصناف',value:products.length,color:'#7c3aed',bg:'#f5f3ff',border:'#ddd6fe'},
           {label:'وحدات مصروفة',value:totalDispensed,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
