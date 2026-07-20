@@ -155,6 +155,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
   const [movements, setMovements] = useState<any[]>([])
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
+  const [exportingPdf, setExportingPdf] = useState(false)
   const sb = createClient()
   useEffect(()=>{ load() },[period,from,to])
   async function load() {
@@ -179,6 +180,38 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     const csv='\ufeff'+[['التاريخ','المنتج','الكمية','الوحدة','الموظف','الملاحظة'],...filtered.map(m=>[new Date(m.created_at).toLocaleDateString('en-GB'),(m.products as any)?.name||'',Math.abs(m.qty_change),(m.products as any)?.unit||'',(m.profiles as any)?.full_name||(m.staff_members as any)?.name||(m.note?.match(/بواسطة الموظف: (.+)/)?.[1])||'—',m.note||''])].map(r=>r.map(c=>'"'+c+'"').join(',')).join('\n')
     Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})),download:'تقرير_الصرف.csv'}).click()
   }
+  async function handleExportPdf() {
+    setExportingPdf(true)
+    try {
+      const orgId = sessionStorage.getItem('s_org_id')
+      const sbPdf = createClient()
+      const { data: org } = orgId ? await sbPdf.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      await exportReportPdf({
+        title: 'تقرير الصرف',
+        subtitle: formatRange(period, from, to),
+        orgName: (org as any)?.name || 'Storely',
+        columns: [
+          { header: 'التاريخ', key: 'date' },
+          { header: 'المنتج', key: 'product' },
+          { header: 'الكمية', key: 'qty', align: 'left' },
+          { header: 'الموظف', key: 'staff' },
+        ],
+        rows: filtered.map((m:any) => ({
+          date: new Date(m.created_at).toLocaleDateString('ar-SA'),
+          product: (m.products as any)?.name || '—',
+          qty: Math.abs(m.qty_change) + ' ' + ((m.products as any)?.unit || ''),
+          staff: (m.profiles as any)?.full_name || (m.staff_members as any)?.name || (m.note?.match(/بواسطة الموظف: (.+)/)?.[1]) || '—',
+        })),
+        summaryStats: [
+          { label: 'كميات مصروفة', value: String(totalQty), color: colors.danger },
+          { label: 'عمليات الصرف', value: String(filtered.length), color: colors.info },
+          { label: 'أصناف مختلفة', value: String(Object.keys(productMap).length), color: '#7c3aed' },
+        ],
+        fileName: `تقرير-الصرف-${new Date().toISOString().slice(0,10)}.pdf`,
+      })
+    } catch { alert('تعذر تصدير التقرير') }
+    setExportingPdf(false)
+  }
   const filtered=movements.filter(m=>!search||(m.products as any)?.name?.includes(search)||m.note?.includes(search))
   const totalQty=filtered.reduce((s,m)=>s+Math.abs(m.qty_change),0)
   const productMap:Record<string,number>={}
@@ -188,8 +221,14 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
   return (
     <div>
       <BackBtn onClick={onBack}/>
-      <PeriodBadge period={period} from={from} to={to}/>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap' as const,gap:8}}>
+        <PeriodBadge period={period} from={from} to={to}/>
+        <button onClick={handleExportPdf} disabled={exportingPdf || filtered.length===0}
+          style={{...btnSecondary,padding:'8px 16px',fontSize:font.xs,opacity:exportingPdf||filtered.length===0?0.6:1,cursor:exportingPdf||filtered.length===0?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:6}}>
+          {exportingPdf?'⏳ جاري التصدير...':'📄 تصدير PDF'}
+        </button>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16,marginTop:12}}>
         {[
           {label:'كميات مصروفة',value:totalQty,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
           {label:'عمليات الصرف',value:filtered.length,color:colors.info,bg:colors.infoLight,border:colors.infoBorder},
