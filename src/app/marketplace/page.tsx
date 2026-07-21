@@ -33,7 +33,7 @@ export default function MarketplacePage() {
     setLoading(true)
     const sb = createClient()
     const { data } = await (sb as any).from('supplier_applications')
-      .select('*')
+      .select('id,company_name,business_type,description,phone,whatsapp,logo_url,offer,website')
       .eq('status','approved')
       .eq('marketplace_consent',true)
       .order('created_at',{ascending:false})
