@@ -143,17 +143,11 @@ async function autoFix(supabase: any) {
     if (branch) await supabase.from('products').update({ branch_id: branch.id }).eq('id', prod.id)
   }
 
-  // إصلاح 4: منتجات مكررة — احتفظ بالأحدث واحذف القديمة
-  const { data: allProds } = await supabase.from('products').select('id, org_id, name, created_at').eq('is_active', true).order('created_at', { ascending: false })
-  const seen: Record<string, string> = {}
-  for (const p of allProds || []) {
-    const key = `${p.org_id}::${p.name}`
-    if (seen[key]) {
-      await supabase.from('products').update({ is_active: false }).eq('id', p.id)
-    } else {
-      seen[key] = p.id
-    }
-  }
+  // ⚠️ ملاحظة أمان: كان هنا "إصلاح 4" يعطّل تلقائياً أي منتج بنفس اسم منتج آخر
+  // بنفس المؤسسة (يعتبره تكرار). تم حذفه نهائياً بتاريخ اليوم لأنه عطّل
+  // بيانات حقيقية بصمت بدون أي تأكيد أو تنبيه مسبق للمالك. التكرار الآن
+  // يُبلّغ عنه فقط عبر checkDuplicateProducts (تنبيه واتساب)، والقرار
+  // يبقى بيد المالك يدوياً من صفحة المخزون.
 }
 
 export async function GET(req: Request) {
