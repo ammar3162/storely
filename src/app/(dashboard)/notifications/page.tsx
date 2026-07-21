@@ -30,7 +30,8 @@ export default function NotificationsPage() {
       orgId = profile.org_id
       sessionStorage.setItem('s_org_id', orgId!)
     }
-    const { data } = await sb.from('notifications').select('*').eq('org_id', orgId).order('created_at', { ascending: false })
+    const bid = sessionStorage.getItem('s_branch_id')
+    const { data } = await sb.from('notifications').select('*').eq('org_id', orgId).or(bid?`branch_id.is.null,branch_id.eq.${bid}`:'branch_id.is.null,branch_id.not.is.null').order('created_at', { ascending: false })
     setNotifications(data || [])
     setLoading(false)
   }
@@ -43,7 +44,8 @@ export default function NotificationsPage() {
   async function markAllRead() {
     const orgId = sessionStorage.getItem('s_org_id')
     if (!orgId) return
-    await sb.from('notifications').update({ read: true }).eq('org_id', orgId).eq('read', false)
+    const bidAll = sessionStorage.getItem('s_branch_id')
+    await sb.from('notifications').update({ read: true }).eq('org_id', orgId).eq('read', false).or(bidAll?`branch_id.is.null,branch_id.eq.${bidAll}`:'branch_id.is.null,branch_id.not.is.null')
     setNotifications(prev => prev.map(n => ({...n, read: true})))
     window.dispatchEvent(new Event('notifications-updated'))
   }
