@@ -146,7 +146,8 @@ async function handleDispense(to: string, user: any, text: string) {
   }
   const productName = match[1].trim()
   const qty = Number(match[2])
-  const products = await getProducts(user.org_id)
+  const dispenseBranchId = await getSelectedBranch(to)
+  const products = await getProducts(user.org_id, dispenseBranchId)
   const product = products.find((p:any) => p.name.includes(productName) || productName.includes(p.name))
   if (!product) {
     await send(to, `❌ المنتج "${productName}" غير موجود في المخزون\n\nاكتب 0 للقائمة`)
@@ -162,10 +163,15 @@ async function handleDispense(to: string, user: any, text: string) {
   })
   if (error) { await send(to, '❌ حدث خطأ، حاول مرة أخرى'); return }
 
-  // 4. إشعار للمدير
+  // 4. إشعار للمدير — رقم الفرع المخصص له الأولوية على رقم المؤسسة الرئيسي
   const { data: org } = await sb().from('organizations').select('whatsapp_number,name').eq('id',user.org_id).single()
-  if (org?.whatsapp_number) {
-    const managerPhone = org.whatsapp_number.replace(/^\+/,'').replace(/^0/,'966')
+  let managerNotifyPhone = org?.whatsapp_number
+  if (dispenseBranchId) {
+    const { data: dispenseBranch } = await sb().from('branches').select('whatsapp_number').eq('id', dispenseBranchId).maybeSingle()
+    managerNotifyPhone = (dispenseBranch as any)?.whatsapp_number || managerNotifyPhone
+  }
+  if (managerNotifyPhone) {
+    const managerPhone = managerNotifyPhone.replace(/^\+/,'').replace(/^0/,'966')
     const remaining = product.qty - qty
     await send(managerPhone,
       `📤 *إشعار صرف*\n\n👤 ${user.full_name}\n📦 ${product.name}: ${qty} ${product.unit}\n📊 المتبقي: ${remaining} ${product.unit}${remaining<=product.reorder_point?'\n⚠️ وصل للحد الأدنى!':''}`
