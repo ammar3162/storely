@@ -40,8 +40,10 @@ export async function POST(req: Request) {
       const purchasedQty = Number(qty)
       const unitCost = purchasedQty > 0 ? (Number(amount) || 0) / purchasedQty : 0
 
-      const { data: existing } = await supabase.from('products')
-        .select('id,qty,avg_cost').eq('org_id', org_id).eq('name', name).limit(1)
+      let existingQ = supabase.from('products')
+        .select('id,qty,avg_cost').eq('org_id', org_id).eq('name', name)
+      if (branch_id) existingQ = existingQ.eq('branch_id', branch_id)
+      const { data: existing } = await existingQ.limit(1)
 
       if (existing && existing.length > 0) {
         const oldQty = Number(existing[0].qty) || 0
