@@ -145,7 +145,7 @@ export default function InventoryPage() {
     const { count } = await sb.from('products').select('*',{count:'exact',head:true}).eq('org_id',oid).eq('is_active',true)
     setTotalCount(count||0)
     
-    let q = sb.from('products').select('*').eq('org_id',oid).eq('is_active',true)
+    let q = (sb.from('products') as any).select('id,name,org_id,qty,reorder_point,category,sku,unit,expiry_date').eq('org_id',oid).eq('is_active',true)
     if (bid) q = q.eq('branch_id',bid)
     const{data}=await q.order('name')
     setProducts(data||[])
