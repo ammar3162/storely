@@ -44,7 +44,7 @@ export default function StaffManagementPage() {
   const [newName, setNewName]       = useState('')
   const [newPhone, setNewPhone]     = useState('')
   const [staffCountry, setStaffCountry] = useState(()=>sessionStorage.getItem('s_country_code')||'+966')
-  const [newBranch, setNewBranch]   = useState('')
+  const [newBranch, setNewBranch]   = useState(typeof window!=='undefined' ? (sessionStorage.getItem('s_branch_id')||'') : '')
   const [newRole, setNewRole]       = useState<'staff'|'cashier'>('staff')
   const [newSendClosingWA, setNewSendClosingWA] = useState(true)
   const [revealedPin, setRevealedPin] = useState<{name:string,phone:string,pin:string}|null>(null)
