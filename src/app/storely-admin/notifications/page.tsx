@@ -44,7 +44,7 @@ export default function AdminNotificationsPage() {
     setLoading(true)
     const{data:orgsData}=await sb.from('organizations').select('id,name,created_at').order('name')
     setOrgs(orgsData||[])
-    const{data:notifsData}=await (sb as any).from('admin_notifications').select('*').order('created_at',{ascending:false}).limit(50)
+    const{data:notifsData}=await (sb as any).from('admin_notifications').select('id,type,created_at,title,message,sent_to_count').order('created_at',{ascending:false}).limit(50)
     setSent(notifsData||[])
     setLoading(false)
   }
