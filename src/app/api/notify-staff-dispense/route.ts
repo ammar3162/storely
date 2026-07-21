@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
+import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -16,11 +17,27 @@ function formatPhone(raw: string): string {
 export async function POST(req: Request) {
   if (WHATSAPP_PAUSED) return NextResponse.json({ success: true, skipped: 'paused' })
   try {
-    const auth = verifyStaffToken(extractStaffToken(req))
-    if (!auth.valid) return NextResponse.json({ success: false, error: auth.error }, { status: 401 })
-    const org_id = auth.data!.org_id
+    const bodyForOwnerCheck = await req.clone().json().catch(()=>({}))
+    const staffAuth = verifyStaffToken(extractStaffToken(req))
 
-    const { staff_name, product_name, qty, unit } = await req.json()
+    let org_id: string
+    let branch_id: string | null = null
+
+    if (staffAuth.valid) {
+      // مسار الموظف — مصادق بتوكن الموظف
+      org_id = staffAuth.data!.org_id
+      branch_id = staffAuth.data!.branch_id || null
+    } else if (bodyForOwnerCheck.org_id) {
+      // مسار المالك — مصادق بجلسة تسجيل الدخول الحقيقية (مو بمجرد ثقة بـ org_id المُرسل)
+      const ownerAccess = await verifyOrgAccess(bodyForOwnerCheck.org_id)
+      if (!ownerAccess.authorized) return NextResponse.json({ success: false, error: ownerAccess.error }, { status: ownerAccess.status })
+      org_id = bodyForOwnerCheck.org_id
+      branch_id = bodyForOwnerCheck.branch_id || null
+    } else {
+      return NextResponse.json({ success: false, error: staffAuth.error }, { status: 401 })
+    }
+
+    const { staff_name, product_name, qty, unit } = bodyForOwnerCheck
     if (!org_id) return NextResponse.json({ success: false })
 
     const db = createClient(
@@ -33,13 +50,13 @@ export async function POST(req: Request) {
 
     // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
     await (db as any).from('notifications').insert({
-      org_id, branch_id: auth.data!.branch_id || null, title: `عملية صرف: ${staff_name}`, message: `${product_name} — ${qty} ${unit}`, type: 'info', read: false
+      org_id, branch_id, title: `عملية صرف: ${staff_name}`, message: `${product_name} — ${qty} ${unit}`, type: 'info', read: false
     })
 
     // رقم الفرع المخصص له الأولوية على رقم المؤسسة الرئيسي
     let notifyPhone = (org as any).whatsapp_number
-    if (auth.data!.branch_id) {
-      const { data: staffBranch } = await db.from('branches').select('whatsapp_number').eq('id', auth.data!.branch_id).maybeSingle()
+    if (branch_id) {
+      const { data: staffBranch } = await db.from('branches').select('whatsapp_number').eq('id', branch_id).maybeSingle()
       notifyPhone = (staffBranch as any)?.whatsapp_number || notifyPhone
     }
     if (!notifyPhone) return NextResponse.json({ success: false })
