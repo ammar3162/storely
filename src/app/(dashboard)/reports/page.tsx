@@ -795,7 +795,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   useEffect(()=>{
     const orgId=sessionStorage.getItem('s_org_id')
     if(!orgId) return
-    fetch('/api/month-comparison?org_id='+orgId).then(r=>r.json()).then(d=>{ if(d.success) setMonthComp(d) }).catch(()=>{})
+    fetch('/api/month-comparison?org_id='+orgId+'&branch_id='+(sessionStorage.getItem('s_branch_id')||'')).then(r=>r.json()).then(d=>{ if(d.success) setMonthComp(d) }).catch(()=>{})
   },[])
 
   async function saveClosingDate(id: string) {

@@ -19,6 +19,7 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const org_id = searchParams.get('org_id')
+    const branch_id = searchParams.get('branch_id')
     if (!org_id) return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
 
     const access = await verifyOrgAccess(org_id)
@@ -33,10 +34,16 @@ export async function GET(req: Request) {
     const fmt = (d: Date) => d.toISOString().slice(0, 10)
 
     async function periodStats(fromDate: string, toDate: string) {
+      let closingsQ2 = supabase.from('cashier_closings').select('total_sales').eq('org_id', org_id).gte('closing_date', fromDate).lte('closing_date', toDate)
+      let purchasesQ2 = supabase.from('purchases').select('total_amount').eq('org_id', org_id).gte('created_at', fromDate).lte('created_at', toDate + 'T23:59:59')
+      let movementsQ3 = supabase.from('stock_movements').select('id,products!inner(org_id,branch_id)').eq('type', 'out').eq('products.org_id', org_id).gte('created_at', fromDate).lte('created_at', toDate + 'T23:59:59')
+      if (branch_id) {
+        closingsQ2 = (closingsQ2 as any).eq('branch_id', branch_id)
+        purchasesQ2 = (purchasesQ2 as any).eq('branch_id', branch_id)
+        movementsQ3 = (movementsQ3 as any).eq('products.branch_id', branch_id)
+      }
       const [{ data: closings }, { data: purchases }, { data: movements }] = await Promise.all([
-        supabase.from('cashier_closings').select('total_sales').eq('org_id', org_id).gte('closing_date', fromDate).lte('closing_date', toDate),
-        supabase.from('purchases').select('total_amount').eq('org_id', org_id).gte('created_at', fromDate).lte('created_at', toDate + 'T23:59:59'),
-        supabase.from('stock_movements').select('id,products!inner(org_id)').eq('type', 'out').eq('products.org_id', org_id).gte('created_at', fromDate).lte('created_at', toDate + 'T23:59:59'),
+        closingsQ2, purchasesQ2, movementsQ3,
       ])
       const sales = (closings || []).reduce((s: number, c: any) => s + Number(c.total_sales || 0), 0)
       const purchasesTotal = (purchases || []).reduce((s: number, p: any) => s + Number(p.total_amount || 0), 0)

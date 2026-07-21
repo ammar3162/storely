@@ -132,7 +132,7 @@ export default function DashboardPage() {
     // توقيت الطلب الذكي
     fetch('/api/smart-reorder-timing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:bid})}).then(r=>r.json()).then(d=>{ if(d.success) setSmartSuggestions(d.suggestions||[]) }).catch(()=>{})
     // مقارنة الأداء الشهري
-    fetch('/api/month-comparison?org_id='+orgId).then(r=>r.json()).then(d=>{ if(d.success) setMonthComp(d) }).catch(()=>{})
+    fetch('/api/month-comparison?org_id='+orgId+'&branch_id='+(sessionStorage.getItem('s_branch_id')||'')).then(r=>r.json()).then(d=>{ if(d.success) setMonthComp(d) }).catch(()=>{})
     // خزّن في الكاش
     if(orgId_cached){
       cache.set('dashboard:'+orgId_cached, {

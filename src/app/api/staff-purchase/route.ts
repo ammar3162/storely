@@ -9,7 +9,8 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
-    const auth = verifyStaffToken(extractStaffToken(req))
+    const rawStaffToken = extractStaffToken(req)
+    const auth = verifyStaffToken(rawStaffToken)
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
     const { org_id, staff_id } = auth.data!
 
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
           } as any)
           if (staff_id) await addToAssignedProducts(supabase, staff_id, np.id)
           fetch((process.env.NEXT_PUBLIC_APP_URL || 'https://storely.dev') + '/api/sync-product-to-staff', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${rawStaffToken}` },
             body: JSON.stringify({ org_id, product_id: np.id }),
           }).catch(() => {})
         }

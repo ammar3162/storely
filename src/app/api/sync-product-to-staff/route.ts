@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,9 +11,14 @@ const sb = () => createClient(
 export async function POST(req: Request) {
   try {
     const { org_id, product_id } = await req.json()
-  const access = await verifyOrgAccess(org_id)
-  if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
     if (!org_id || !product_id) return NextResponse.json({ success: false })
+
+    // مسموح لطلبين: جلسة المالك (كوكيز) أو توكن موظف صالح (نداء سيرفر-لسيرفر بدون كوكيز)
+    const staffAuth = verifyStaffToken(extractStaffToken(req))
+    if (!staffAuth.valid || staffAuth.data!.org_id !== org_id) {
+      const access = await verifyOrgAccess(org_id)
+      if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    }
 
     const supabase = sb()
 

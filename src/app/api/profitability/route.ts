@@ -36,6 +36,7 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const org_id = searchParams.get('org_id')
+    const branch_id = searchParams.get('branch_id')
     const monthParam = searchParams.get('month') // format YYYY-MM
     if (!org_id || !monthParam) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
@@ -62,23 +63,27 @@ export async function GET(req: Request) {
     await ensureGenerated(supabase, org_id, monthStart)
 
     // 1) دخلت — كل مبيعات إقفالات الكاشير هالشهر (شامل الضريبة، رقم حقيقي)
-    const { data: closings } = await supabase
+    let closingsQ = supabase
       .from('cashier_closings')
       .select('total_sales')
       .eq('org_id', org_id)
       .gte('closing_date', monthStart)
       .lte('closing_date', monthEndDate)
+    if (branch_id) closingsQ = (closingsQ as any).eq('branch_id', branch_id)
+    const { data: closings } = await closingsQ
 
     const totalIn = (closings || []).reduce((s: number, c: any) => s + Number(c.total_sales || 0), 0)
     const closingsCount = (closings || []).length
 
     // 2) طلع مني — كل المشتريات (مخزون + غيرها) هالشهر (شامل الضريبة، رقم حقيقي)
-    const { data: purchases } = await supabase
+    let purchasesQ = supabase
       .from('purchases')
       .select('category,total_amount')
       .eq('org_id', org_id)
       .gte('created_at', monthStartTs)
       .lte('created_at', monthEndTs)
+    if (branch_id) purchasesQ = (purchasesQ as any).eq('branch_id', branch_id)
+    const { data: purchases } = await purchasesQ
 
     const purchasesList = purchases || []
     const inventoryPurchases = purchasesList.filter((p: any) => p.category === 'مخزون').reduce((s: number, p: any) => s + Number(p.total_amount || 0), 0)
