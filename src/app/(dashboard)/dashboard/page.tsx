@@ -127,7 +127,7 @@ export default function DashboardPage() {
     }
     setWeeklyP(wp);setWeeklyD(wd)
     // جلب الإشعارات غير المقروءة
-    const{data:nData}=await (sb as any).from('notifications').select('*').eq('org_id',orgId).eq('read',false).order('created_at',{ascending:false}).limit(5)
+    const{data:nData}=await (sb as any).from('notifications').select('id,title,message,type').eq('org_id',orgId).eq('read',false).order('created_at',{ascending:false}).limit(5)
     setNotifs(nData||[])
     // توقيت الطلب الذكي
     fetch('/api/smart-reorder-timing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:bid})}).then(r=>r.json()).then(d=>{ if(d.success) setSmartSuggestions(d.suggestions||[]) }).catch(()=>{})
