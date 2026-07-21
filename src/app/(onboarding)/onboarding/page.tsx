@@ -101,7 +101,7 @@ export default function OnboardingPage() {
   async function loadOrg() {
     const{data:{user}}=await sb.auth.getUser(); if(!user){router.push('/login');return}
     const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single(); if(!profile) return
-    const{data:org}=await sb.from('organizations').select('*').eq('id',profile.org_id).single() as any
+    const{data:org}=await sb.from('organizations').select('onboarding_done,name,whatsapp_number,business_type').eq('id',profile.org_id).single() as any
     if(org?.onboarding_done){router.push('/dashboard');return}
     setOrgId(profile.org_id)
     if(org?.name) setOrgName(org.name)
