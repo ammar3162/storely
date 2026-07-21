@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     await logConfirmation(order).catch(()=>{})
 
     const { data: org } = await db.from('organizations').select('name,whatsapp_number,notify_supplier_wa,digest_mode').eq('id', order.org_id).single()
-    if (!org?.whatsapp_number) return NextResponse.json({ success: false })
+    if (!org) return NextResponse.json({ success: false })
 
     // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
     await (db as any).from('notifications').insert({
@@ -42,15 +42,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, skipped: 'notify_preference' })
     }
 
-    const { data: allBranches } = await db.from('branches').select('id,name').eq('org_id', order.org_id).eq('is_active', true)
+    const { data: allBranches } = await db.from('branches').select('id,name,whatsapp_number').eq('org_id', order.org_id).eq('is_active', true)
     const isMultiBranch = (allBranches || []).length > 1
-    const branchName = order.branch_id ? (allBranches || []).find((b: any) => b.id === order.branch_id)?.name : null
+    const currentBranch = order.branch_id ? (allBranches || []).find((b: any) => b.id === order.branch_id) : null
+    const branchName = currentBranch?.name || null
     const branchLine = (isMultiBranch && branchName) ? `🏪 الفرع: *${branchName}*\n` : ''
+    // رقم الفرع المخصص له الأولوية على رقم المؤسسة الرئيسي
+    const notifyPhone = (currentBranch as any)?.whatsapp_number || (org as any).whatsapp_number
+    if (!notifyPhone) return NextResponse.json({ success: false })
 
     const items = (order.items || []).map((i: any) => `• ${i.name} — ${i.qty} ${i.unit}`).join('\n')
     const msg = `🟢 *Storely*\n\nمرحباً ${(org as any).name}،\n\n✅ المورد *${order.supplier_name}* أكد طلبك\n${branchLine}\n${items}\n\nسيتم التوصيل قريباً`
 
-    const phone = formatPhone((org as any).whatsapp_number)
+    const phone = formatPhone(notifyPhone)
     await fetch('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',
       headers: {
