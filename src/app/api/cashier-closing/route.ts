@@ -109,7 +109,7 @@ export async function POST(req: Request) {
       // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
       const closingStatusText = status === 'balanced' ? 'مطابق تماماً' : status === 'deficit' ? `يوجد عجز: ${Math.abs(difference).toFixed(2)} ر.س` : `يوجد زيادة: ${Math.abs(difference).toFixed(2)} ر.س`
       await (supabase as any).from('notifications').insert({
-        org_id, title: `إقفال كاشير: ${staff_name}`, message: `إجمالي المبيعات: ${sales.toFixed(2)} ر.س — ${closingStatusText}`, type: 'info', read: false
+        org_id, branch_id: branch_id || null, title: `إقفال كاشير: ${staff_name}`, message: `إجمالي المبيعات: ${sales.toFixed(2)} ر.س — ${closingStatusText}`, type: 'info', read: false
       })
       const { data: allBranches } = await supabase.from('branches').select('id,name').eq('org_id', org_id).eq('is_active', true)
       const isMultiBranch = (allBranches || []).length > 1
