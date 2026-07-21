@@ -53,12 +53,14 @@ export async function POST(req: Request) {
       org_id, branch_id, title: `عملية صرف: ${staff_name}`, message: `${product_name} — ${qty} ${unit}`, type: 'info', read: false
     })
 
+    // جيب كل الفروع — نستخدمها لتحديد اسم الفرع ورقمه المخصص
+    const { data: allBranches } = await db.from('branches').select('id,name,whatsapp_number').eq('org_id', org_id).eq('is_active', true)
+    const isMultiBranch = (allBranches || []).length > 1
+    const currentBranch = branch_id ? (allBranches || []).find((b: any) => b.id === branch_id) : null
+    const branchLine = (isMultiBranch && currentBranch?.name) ? `🏪 الفرع: *${currentBranch.name}*\n` : ''
+
     // رقم الفرع المخصص له الأولوية على رقم المؤسسة الرئيسي
-    let notifyPhone = (org as any).whatsapp_number
-    if (branch_id) {
-      const { data: staffBranch } = await db.from('branches').select('whatsapp_number').eq('id', branch_id).maybeSingle()
-      notifyPhone = (staffBranch as any)?.whatsapp_number || notifyPhone
-    }
+    const notifyPhone = (currentBranch as any)?.whatsapp_number || (org as any).whatsapp_number
     if (!notifyPhone) return NextResponse.json({ success: false })
 
     const { data: ownerProfile } = await db.from('profiles').select('whatsapp_consent').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
@@ -67,7 +69,7 @@ export async function POST(req: Request) {
     const now = new Date()
     const timeStr = now.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Riyadh'})
     const dateStr = now.toLocaleDateString('ar-SA',{weekday:'long',day:'numeric',month:'long',timeZone:'Asia/Riyadh'})
-    const msg = `🟢 *Storely*\n\nمرحباً ${(org as any).name}،\n\n👤 *${staff_name}* قام بصرف:\n• ${product_name} — *${qty} ${unit}*\n\n🕐 ${timeStr} · ${dateStr}`
+    const msg = `🟢 *Storely*\n\nمرحباً ${(org as any).name}،\n${branchLine}\n👤 *${staff_name}* قام بصرف:\n• ${product_name} — *${qty} ${unit}*\n\n🕐 ${timeStr} · ${dateStr}`
 
     await fetch('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',
