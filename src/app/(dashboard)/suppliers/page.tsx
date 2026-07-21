@@ -432,7 +432,7 @@ export default function SuppliersPage() {
 
   async function loadSuppliers(oid: string) {
     const bid = sessionStorage.getItem('s_branch_id')
-    let q = (sb as any).from('suppliers').select('*').eq('org_id', oid)
+    let q = (sb as any).from('suppliers').select('id,name,phone').eq('org_id', oid)
     if (bid) q = q.eq('branch_id', bid)
     const { data } = await q.order('created_at', { ascending: false })
     setSuppliers(data || [])
