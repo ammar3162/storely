@@ -15,10 +15,17 @@ export async function POST(req: Request) {
     if (!org_id || !product_id) return NextResponse.json({ success: false })
 
     const supabase = sb()
-    const { data: staffList } = await supabase
+
+    // جيب فرع المنتج — نزامن بس للموظفين بنفس فرع المنتج (يمنع تسريب صلاحية منتج فرع لموظف فرع ثاني)
+    const { data: productRow } = await supabase.from('products').select('branch_id').eq('id', product_id).maybeSingle()
+    const productBranchId = (productRow as any)?.branch_id || null
+
+    let staffQ = supabase
       .from('staff_members')
       .select('id,assigned_products')
       .eq('org_id', org_id)
+    if (productBranchId) staffQ = staffQ.eq('branch_id', productBranchId)
+    const { data: staffList } = await staffQ
 
     for (const s of (staffList || [])) {
       const assigned = (s as any).assigned_products
