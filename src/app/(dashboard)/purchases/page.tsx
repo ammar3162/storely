@@ -255,10 +255,15 @@ export default function PurchasesPage() {
       const qty=form.qty?Number(form.qty):0
       const unitCost = qty>0 ? (amount||0)/qty : 0
       let existing:any=null
-      const{data:byNameArr}=await (sb.from('products') as any).select('id,qty,sku,avg_cost').eq('org_id',orgId).eq('name',form.name).order('created_at',{ascending:false}).limit(1)
+      const purchaseBid=sessionStorage.getItem('s_branch_id')
+      let byNameQ=(sb.from('products') as any).select('id,qty,sku,avg_cost').eq('org_id',orgId).eq('name',form.name)
+      if(purchaseBid) byNameQ=byNameQ.eq('branch_id',purchaseBid)
+      const{data:byNameArr}=await byNameQ.order('created_at',{ascending:false}).limit(1)
       if(byNameArr&&byNameArr.length>0){existing=byNameArr[0]}
       else if(form.sku){
-        const{data:bySkuArr}=await (sb.from('products') as any).select('id,qty,sku,name,avg_cost').eq('org_id',orgId).eq('sku',form.sku).order('created_at',{ascending:false}).limit(1)
+        let bySkuQ=(sb.from('products') as any).select('id,qty,sku,name,avg_cost').eq('org_id',orgId).eq('sku',form.sku)
+        if(purchaseBid) bySkuQ=bySkuQ.eq('branch_id',purchaseBid)
+        const{data:bySkuArr}=await bySkuQ.order('created_at',{ascending:false}).limit(1)
         if(bySkuArr&&bySkuArr.length>0) existing=bySkuArr[0]
       }
       if(existing){
