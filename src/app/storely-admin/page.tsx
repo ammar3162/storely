@@ -223,7 +223,7 @@ export default function AdminPage() {
   async function loadSupplierApps() {
     setSuppLoading(true)
     const sb = createClient()
-    const { data } = await sb.from('supplier_applications' as any).select('*').order('created_at', {ascending:false})
+    const { data } = await sb.from('supplier_applications' as any).select('id,company_name,status,contact_name,phone,email,website,business_type,description,created_at').order('created_at', {ascending:false})
     setSupplierApps(data || [])
     setSuppLoading(false)
   }
