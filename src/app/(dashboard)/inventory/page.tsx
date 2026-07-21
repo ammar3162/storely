@@ -142,7 +142,9 @@ export default function InventoryPage() {
     }
     const bid = sessionStorage.getItem('s_branch_id')
     // جيب العدد الكلي
-    const { count } = await sb.from('products').select('*',{count:'exact',head:true}).eq('org_id',oid).eq('is_active',true)
+    let cq = sb.from('products').select('*',{count:'exact',head:true}).eq('org_id',oid).eq('is_active',true)
+    if (bid) cq = cq.eq('branch_id',bid)
+    const { count } = await cq
     setTotalCount(count||0)
     
     let q = sb.from('products').select('*').eq('org_id',oid).eq('is_active',true)
