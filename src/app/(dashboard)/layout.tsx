@@ -179,7 +179,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     window.addEventListener('notifications-updated', async ()=>{
       const oid = sessionStorage.getItem('s_org_id')
       if(!oid) return
-      const { data: notifData } = await sb.from('notifications').select('id').eq('org_id',oid).eq('read',false)
+      const _bidEvt = sessionStorage.getItem('s_branch_id')
+      const { data: notifData } = await sb.from('notifications').select('id').eq('org_id',oid).eq('read',false).or(_bidEvt?`branch_id.is.null,branch_id.eq.${_bidEvt}`:'branch_id.is.null,branch_id.not.is.null')
       setUnread(notifData?.length||0)
     })
     if(typeof window !== "undefined" && "serviceWorker" in navigator) {
@@ -207,7 +208,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const orgId = p?.org_id
     if(orgId){
       const notifInterval = setInterval(async()=>{
-        const{data:notifData}=await sb.from('notifications').select('id').eq('org_id',orgId).eq('read',false)
+        const _bidPoll = sessionStorage.getItem('s_branch_id')
+        const{data:notifData}=await sb.from('notifications').select('id').eq('org_id',orgId).eq('read',false).or(_bidPoll?`branch_id.is.null,branch_id.eq.${_bidPoll}`:'branch_id.is.null,branch_id.not.is.null')
         setUnread(notifData?.length||0)
       }, 30000)
     }
@@ -216,7 +218,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (_bidLayout) _prodsQ = _prodsQ.eq('branch_id', _bidLayout)
     const[{data:prods},{data:notifs}]=await Promise.all([
       _prodsQ,
-      sb.from('notifications').select('id').eq('org_id',p.org_id).eq('read',false),
+      sb.from('notifications').select('id').eq('org_id',p.org_id).eq('read',false).or(_bidLayout?`branch_id.is.null,branch_id.eq.${_bidLayout}`:'branch_id.is.null,branch_id.not.is.null'),
     ])
     setLowCount((prods||[]).filter((x:any)=>x.qty<=x.reorder_point).length)
     setUnread((notifs||[]).length)
