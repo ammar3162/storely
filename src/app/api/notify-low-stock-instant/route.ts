@@ -137,8 +137,15 @@ export async function POST(req: Request) {
       .maybeSingle()
     const ownerConsented = (ownerProfile as any)?.whatsapp_consent === true
 
+    // رقم الفرع المخصص له الأولوية على رقم المؤسسة الرئيسي
+    let notifyPhone = (org as any).whatsapp_number
+    if ((product as any).branch_id) {
+      const { data: prodBranch } = await db.from('branches').select('whatsapp_number').eq('id', (product as any).branch_id).maybeSingle()
+      notifyPhone = (prodBranch as any)?.whatsapp_number || notifyPhone
+    }
+
     // رسالة المدير — وصل للحد الأدنى
-    if ((org as any).whatsapp_number && ownerConsented) {
+    if (notifyPhone && ownerConsented) {
       const daysMsg = daysLeft !== null 
         ? `⏳ *المخزون سينفد خلال ${daysLeft} يوم* (بناءً على معدل صرفك ${dailyRate.toFixed(1)} ${(product as any).unit}/يوم)`
         : ''
@@ -167,7 +174,7 @@ ${daysMsg}
 ${daysMsg}
 
 🛒 *يرجى الطلب في أقرب وقت*`
-      await sendWA((org as any).whatsapp_number, adminMsg)
+      await sendWA(notifyPhone, adminMsg)
     }
 
     return NextResponse.json({ success: true })
