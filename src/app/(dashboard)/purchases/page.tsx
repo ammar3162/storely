@@ -84,7 +84,7 @@ export default function PurchasesPage() {
     const urlBid=new URLSearchParams(window.location.search).get('_b')
     if(urlBid){sessionStorage.setItem('s_branch_id',urlBid);window.history.replaceState({},'',window.location.pathname)}
     const bid=urlBid||sessionStorage.getItem('s_branch_id')
-    let q=sb.from('purchases').select('*').eq('org_id',oid).order('created_at',{ascending:false}).limit(50)
+    let q=sb.from('purchases').select('id,category,name,qty,unit,amount,vat_amount,total_amount,supplier,invoice_image,created_at').eq('org_id',oid).order('created_at',{ascending:false}).limit(50)
     if(bid) q=(q as any).eq('branch_id',bid)
     const{data}=await q;setHistory(data||[]);cache.set('purchases:'+oid,data||[])
   }
