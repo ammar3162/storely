@@ -73,7 +73,8 @@ export async function POST(req: Request) {
 
     if (!due.length) return NextResponse.json({ success: true, sent: 0, message: 'لا توجد منتجات تحتاج طلب توريد' })
 
-    const bySupplier: Record<string, any[]> = {}
+    // نجمّع حسب (المورد + الفرع) مع بعض — يمنع دمج منتجات فرعين مختلفين بطلب توريد واحد
+    const bySupplierBranch: Record<string, any[]> = {}
     for (const p of due) {
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
       const { data: recentLog } = await supabase
@@ -85,14 +86,16 @@ export async function POST(req: Request) {
 
       if (recentLog) continue
 
-      if (!bySupplier[p.supplier_id]) bySupplier[p.supplier_id] = []
-      bySupplier[p.supplier_id].push(p)
+      const groupKey = `${p.supplier_id}::${p.branch_id || 'none'}`
+      if (!bySupplierBranch[groupKey]) bySupplierBranch[groupKey] = []
+      bySupplierBranch[groupKey].push(p)
     }
 
     let totalSent = 0
 
-    for (const supplierId of Object.keys(bySupplier)) {
-      const items = bySupplier[supplierId]
+    for (const groupKey of Object.keys(bySupplierBranch)) {
+      const items = bySupplierBranch[groupKey]
+      const supplierId = groupKey.split('::')[0]
       const { data: supplier } = await supabase.from('suppliers').select('name, phone, notes').eq('id', supplierId).single()
       if (!supplier?.phone) continue
 
