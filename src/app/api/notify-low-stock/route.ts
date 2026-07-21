@@ -112,13 +112,13 @@ export async function POST(req: Request) {
     try { body = await req.json() } catch {}
 
     if (body.org_id) {
-      const { data: org } = await supabase.from('organizations').select('*').eq('id', body.org_id).single()
+      const { data: org } = await supabase.from('organizations').select('id,name,whatsapp_number').eq('id', body.org_id).single()
       if (!org) return NextResponse.json({ success:false, message:'المؤسسة غير موجودة' })
       const result = await sendForOrg(supabase, org)
       return NextResponse.json({ success:true, ...result })
     }
 
-    const { data: allOrgs } = await supabase.from('organizations').select('*')
+    const { data: allOrgs } = await supabase.from('organizations').select('id,name,whatsapp_number,notify_schedule,notify_days,notify_time,last_notified_at')
     if (!allOrgs || allOrgs.length === 0) return NextResponse.json({ success:true, message:'لا توجد مؤسسات', sent:0 })
 
     // نفلتر حسب جدولة كل مؤسسة لحالها (نوع الجدولة، اليوم، الساعة) — بدل ما نرسل للجميع دفعة وحدة بغض النظر عن تفضيلهم
