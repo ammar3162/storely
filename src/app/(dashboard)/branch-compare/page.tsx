@@ -3,7 +3,6 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { colors, radius, font, card, btnSecondary, pageTitle, pageSub } from '@/lib/ds'
-import { exportReportPdf } from '@/lib/pdfExport'
 
 export default function BranchComparePage() {
   const [comparison, setComparison] = useState<any[]>([])
@@ -30,6 +29,7 @@ export default function BranchComparePage() {
     try {
       const orgId = sessionStorage.getItem('s_org_id')
       const { data: org } = orgId ? await sb.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
         title: 'مقارنة أداء الفروع',
         subtitle: 'آخر 30 يوم',

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { cache } from '@/lib/cache'
 import { createClient } from '@/lib/supabase/client'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
-import { exportReportPdf } from '@/lib/pdfExport'
 
 type FilterPeriod = 'today'|'week'|'month'|'year'|'custom'
 
@@ -186,6 +185,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
       const orgId = sessionStorage.getItem('s_org_id')
       const sbPdf = createClient()
       const { data: org } = orgId ? await sbPdf.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
         title: 'تقرير الصرف',
         subtitle: formatRange(period, from, to),
@@ -353,6 +353,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     try {
       const orgId = sessionStorage.getItem('s_org_id')
       const { data: org } = orgId ? await sb.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
         title: 'تقرير المشتريات',
         subtitle: formatRange(period, from, to),
@@ -553,6 +554,7 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
     try {
       const orgId = sessionStorage.getItem('s_org_id')
       const { data: org } = orgId ? await sb.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
         title: 'تقرير الجرد اليومي',
         subtitle: formatRange(period, from, to),
@@ -756,6 +758,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
       const orgId = sessionStorage.getItem('s_org_id')
       const sbPdf = createClient()
       const { data: org } = orgId ? await sbPdf.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
         title: 'تقرير إقفال الكاشير اليومي',
         subtitle: formatRange(period, from, to),
