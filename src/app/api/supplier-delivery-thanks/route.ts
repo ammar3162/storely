@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     const db = sb()
 
     // نلقى المنتج بالاسم (لنفس المؤسسة) — نجيب supplier_id المباشر أيضاً (المصدر الرئيسي للربط)
-    const { data: product } = await db.from('products').select('id,supplier_id').eq('org_id', org_id).ilike('name', product_name.trim()).order('created_at', { ascending: false }).limit(1).maybeSingle()
+    const { data: product } = await db.from('products').select('id,supplier_id,branch_id').eq('org_id', org_id).ilike('name', product_name.trim()).order('created_at', { ascending: false }).limit(1).maybeSingle()
     if (!product) return NextResponse.json({ sent: false, reason: 'product_not_found' })
 
     // نلقى الموردين المرتبطين: المورد الأساسي (products.supplier_id) + الموردين البدلاء (product_suppliers)
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
 
     // إشعار داخلي — دايماً يصل بغض النظر عن موافقة واتساب
     await (db as any).from('notifications').insert({
-      org_id, title: `توصيل مؤكد: ${matchedSupplier.name}`,
+      org_id, branch_id: (product as any).branch_id || null, title: `توصيل مؤكد: ${matchedSupplier.name}`,
       message: `تم استلام "${product_name}" — أُرسلت رسالة شكر للمورد`, type: 'success', read: false,
     })
 
