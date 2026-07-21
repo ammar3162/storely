@@ -16,6 +16,10 @@ export default function BranchesPage() {
   const [editingPhoneId, setEditingPhoneId] = useState<string|null>(null)
   const [editPhoneValue, setEditPhoneValue] = useState('')
   const [savingPhone, setSavingPhone] = useState(false)
+  const [phoneOtpStep, setPhoneOtpStep] = useState<'phone'|'otp'>('phone')
+  const [phoneOtpValue, setPhoneOtpValue] = useState('')
+  const [phoneOtpError, setPhoneOtpError] = useState('')
+  const [sendingOtp, setSendingOtp] = useState(false)
   const [reactivatingId, setReactivatingId] = useState<string|null>(null)
   const [confirmDeleteBranch, setConfirmDeleteBranch] = useState<any|null>(null)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
@@ -86,11 +90,45 @@ export default function BranchesPage() {
     setReactivatingId(null)
   }
 
-  async function saveBranchPhone(id:string) {
+  function resetPhoneEdit() {
+    setEditingPhoneId(null); setEditPhoneValue(''); setPhoneOtpStep('phone'); setPhoneOtpValue(''); setPhoneOtpError('')
+  }
+
+  async function sendBranchPhoneOtp() {
+    const cleanPhone = editPhoneValue.trim().replace(/^0+/, '')
+    if (!cleanPhone) {
+      // السماح بمسح الرقم المخصص بدون تحقق (رجوع لرقم المؤسسة الرئيسي)
+      await saveBranchPhone(editingPhoneId!, null)
+      return
+    }
+    setPhoneOtpError(''); setSendingOtp(true)
+    const res = await fetch('/api/send-otp', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ phone: cleanPhone, countryCode: '+966' })
+    })
+    const data = await res.json()
+    setSendingOtp(false)
+    if (!res.ok || data.error) { setPhoneOtpError(data.error || 'تعذر إرسال رمز التحقق'); return }
+    setPhoneOtpStep('otp')
+  }
+
+  async function verifyBranchPhoneOtp(id:string) {
+    const cleanPhone = editPhoneValue.trim().replace(/^0+/, '')
+    setPhoneOtpError(''); setSavingPhone(true)
+    const res = await fetch('/api/verify-otp', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ phone: cleanPhone, countryCode: '+966', otp: phoneOtpValue.trim() })
+    })
+    const data = await res.json()
+    if (!res.ok || data.error) { setPhoneOtpError(data.error || 'رمز التحقق غير صحيح'); setSavingPhone(false); return }
+    await saveBranchPhone(id, cleanPhone)
+  }
+
+  async function saveBranchPhone(id:string, verifiedNumber:string|null) {
     setSavingPhone(true)
-    await (sb.from('branches' as any) as any).update({ whatsapp_number: editPhoneValue.trim() || null }).eq('id', id)
-    setBranches((prev:any[]) => prev.map(b => b.id===id ? {...b, whatsapp_number: editPhoneValue.trim() || null} : b))
-    setEditingPhoneId(null); setSavingPhone(false)
+    await (sb.from('branches' as any) as any).update({ whatsapp_number: verifiedNumber }).eq('id', id)
+    setBranches((prev:any[]) => prev.map(b => b.id===id ? {...b, whatsapp_number: verifiedNumber} : b))
+    resetPhoneEdit(); setSavingPhone(false)
   }
 
   function selectBranch(b:any){
@@ -133,18 +171,40 @@ export default function BranchesPage() {
               </div>
               <div style={{marginTop:10,marginRight:48}}>
                 {editingPhoneId===b.id ? (
-                  <div style={{display:'flex',gap:6,alignItems:'center'}}>
-                    <input value={editPhoneValue} onChange={e=>setEditPhoneValue(e.target.value)} placeholder="5xxxxxxxx" dir="ltr"
-                      style={{...inp(),padding:'6px 10px',fontSize:font.xs,flex:1}}/>
-                    <button onClick={()=>saveBranchPhone(b.id)} disabled={savingPhone}
-                      style={{background:colors.primary,color:'white',border:'none',borderRadius:6,padding:'6px 12px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
-                      {savingPhone?'...':'حفظ'}
-                    </button>
-                    <button onClick={()=>setEditingPhoneId(null)}
-                      style={{background:colors.bg,color:colors.text3,border:'none',borderRadius:6,padding:'6px 12px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
-                      إلغاء
-                    </button>
-                  </div>
+                  phoneOtpStep==='phone' ? (
+                    <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                        <input value={editPhoneValue} onChange={e=>setEditPhoneValue(e.target.value)} placeholder="5xxxxxxxx" dir="ltr"
+                          style={{...inp(),padding:'6px 10px',fontSize:font.xs,flex:1}}/>
+                        <button onClick={sendBranchPhoneOtp} disabled={sendingOtp}
+                          style={{background:colors.primary,color:'white',border:'none',borderRadius:6,padding:'6px 12px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
+                          {sendingOtp?'...':editPhoneValue.trim()?'إرسال رمز التحقق':'حفظ'}
+                        </button>
+                        <button onClick={resetPhoneEdit}
+                          style={{background:colors.bg,color:colors.text3,border:'none',borderRadius:6,padding:'6px 12px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
+                          إلغاء
+                        </button>
+                      </div>
+                      {phoneOtpError && <div style={{fontSize:10,color:colors.danger}}>{phoneOtpError}</div>}
+                    </div>
+                  ) : (
+                    <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                      <div style={{fontSize:10,color:colors.text3}}>أرسلنا رمز تحقق عبر واتساب للرقم {editPhoneValue} — أدخله للتأكيد</div>
+                      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                        <input value={phoneOtpValue} onChange={e=>setPhoneOtpValue(e.target.value)} placeholder="رمز التحقق" dir="ltr" maxLength={6}
+                          style={{...inp(),padding:'6px 10px',fontSize:font.xs,flex:1}}/>
+                        <button onClick={()=>verifyBranchPhoneOtp(b.id)} disabled={savingPhone}
+                          style={{background:colors.primary,color:'white',border:'none',borderRadius:6,padding:'6px 12px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
+                          {savingPhone?'...':'تأكيد'}
+                        </button>
+                        <button onClick={resetPhoneEdit}
+                          style={{background:colors.bg,color:colors.text3,border:'none',borderRadius:6,padding:'6px 12px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
+                          إلغاء
+                        </button>
+                      </div>
+                      {phoneOtpError && <div style={{fontSize:10,color:colors.danger}}>{phoneOtpError}</div>}
+                    </div>
+                  )
                 ) : (
                   <button onClick={()=>{setEditingPhoneId(b.id);setEditPhoneValue(b.whatsapp_number||'')}}
                     style={{background:'none',border:'none',color:colors.text4,fontSize:11,cursor:'pointer',fontFamily:font.family,padding:0,display:'flex',alignItems:'center',gap:4}}>
