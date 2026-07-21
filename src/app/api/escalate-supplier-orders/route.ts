@@ -19,7 +19,7 @@ export async function POST(req: Request) {
 
     const { data: pendingOrders, error } = await db
       .from('supplier_orders')
-      .select('*')
+      .select('id,org_id,branch_id,supplier_id,supplier_name,supplier_phone,items,current_priority,created_at')
       .eq('status', 'pending')
 
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
