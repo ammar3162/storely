@@ -102,7 +102,6 @@ export async function POST(req: Request) {
     // إرسال إشعار واتساب فوري للمالك
     try {
       const { data: org } = await supabase.from('organizations').select('name,whatsapp_number,notify_cashier_closing_wa').eq('id', org_id).single()
-      const whatsappNumber = (org as any)?.whatsapp_number
       const { data: ownerProfile } = await supabase.from('profiles').select('whatsapp_consent').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
       const ownerConsented = (ownerProfile as any)?.whatsapp_consent === true
 
@@ -111,9 +110,12 @@ export async function POST(req: Request) {
       await (supabase as any).from('notifications').insert({
         org_id, branch_id: branch_id || null, title: `إقفال كاشير: ${staff_name}`, message: `إجمالي المبيعات: ${sales.toFixed(2)} ر.س — ${closingStatusText}`, type: 'info', read: false
       })
-      const { data: allBranches } = await supabase.from('branches').select('id,name').eq('org_id', org_id).eq('is_active', true)
+      const { data: allBranches } = await supabase.from('branches').select('id,name,whatsapp_number').eq('org_id', org_id).eq('is_active', true)
       const isMultiBranch = (allBranches || []).length > 1
-      const branchName = branch_id ? (allBranches || []).find((b: any) => b.id === branch_id)?.name : null
+      const currentBranch = branch_id ? (allBranches || []).find((b: any) => b.id === branch_id) : null
+      const branchName = currentBranch?.name || null
+      // رقم الفرع المخصص له الأولوية على رقم المؤسسة الرئيسي
+      const whatsappNumber = (currentBranch as any)?.whatsapp_number || (org as any)?.whatsapp_number
       const { data: staffRow } = await supabase.from('staff_members').select('send_closing_whatsapp').eq('id', staff_id).maybeSingle()
       const sendFullDetails = WHATSAPP_PAUSED ? false : ((staffRow as any)?.send_closing_whatsapp !== false)
 
