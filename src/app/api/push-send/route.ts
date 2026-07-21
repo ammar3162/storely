@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     
     // جيب كل subscriptions للمنشأة
     const { data: subs } = await sb().from('push_subscriptions')
-      .select('*').eq('org_id', org_id)
+      .select('id,subscription').eq('org_id', org_id)
     
     if (!subs || subs.length === 0) return NextResponse.json({ success: true, sent: 0 })
     
