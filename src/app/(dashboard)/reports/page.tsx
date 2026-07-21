@@ -339,8 +339,11 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
   async function load() {
     setLoading(true)
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setLoading(false);return}
+    const purchBid=sessionStorage.getItem('s_branch_id')
     const{start,end}=getRange(period,from,to)
-    const{data}=await sb.from('purchases').select('*').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString()).order('created_at',{ascending:false})
+    let purchQ=sb.from('purchases').select('*').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
+    if(purchBid) purchQ=(purchQ as any).eq('branch_id',purchBid)
+    const{data}=await purchQ.order('created_at',{ascending:false})
     setPurchases(data||[]); setLoading(false)
     if(orgId) cache.set('report_purchases:'+orgId, data||[])
   }
@@ -536,6 +539,7 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
 
     // purchases in period
     let puq=sb.from('purchases').select('name,qty,unit,category').eq('org_id',orgId).eq('category','مخزون').gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
+    if(branchId) puq=(puq as any).eq('branch_id',branchId)
     const{data:pus}=await puq
 
     setProducts(prods||[])
