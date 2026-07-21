@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     if (!subActive) return NextResponse.json({ success: false, message: 'الاشتراك منتهي — لا يتم إرسال إشعارات' })
 
     const { data: product } = await db.from('products')
-      .select('id,name,qty,unit,reorder_point,supplier_id,supplier_order_qty,supplier_notes')
+      .select('id,name,qty,unit,reorder_point,supplier_id,supplier_order_qty,supplier_notes,branch_id')
       .eq('id', product_id).single()
     console.log('product:', product)
     if (!product) return NextResponse.json({ success: false })
@@ -126,7 +126,7 @@ export async function POST(req: Request) {
     const notifTitle = `نقص مخزون: ${(product as any).name}`
     const notifMsg = `المتبقي: ${new_qty} ${(product as any).unit}` + (sentToSupplier ? ' — تم إرسال طلب توريد للمورد تلقائياً' : ' — يرجى الطلب في أقرب وقت')
     await (db as any).from('notifications').insert({
-      org_id, title: notifTitle, message: notifMsg, type: 'warning', read: false
+      org_id, branch_id: (product as any).branch_id || null, title: notifTitle, message: notifMsg, type: 'warning', read: false
     })
 
     // تحقق من موافقة المالك قبل إرسال رسالة نقص المخزون له عبر واتساب
