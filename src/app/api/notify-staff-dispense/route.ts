@@ -29,12 +29,20 @@ export async function POST(req: Request) {
     )
 
     const { data: org } = await db.from('organizations').select('name,whatsapp_number').eq('id', org_id).single()
-    if (!(org as any)?.whatsapp_number) return NextResponse.json({ success: false })
+    if (!org) return NextResponse.json({ success: false })
 
     // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
     await (db as any).from('notifications').insert({
       org_id, branch_id: auth.data!.branch_id || null, title: `عملية صرف: ${staff_name}`, message: `${product_name} — ${qty} ${unit}`, type: 'info', read: false
     })
+
+    // رقم الفرع المخصص له الأولوية على رقم المؤسسة الرئيسي
+    let notifyPhone = (org as any).whatsapp_number
+    if (auth.data!.branch_id) {
+      const { data: staffBranch } = await db.from('branches').select('whatsapp_number').eq('id', auth.data!.branch_id).maybeSingle()
+      notifyPhone = (staffBranch as any)?.whatsapp_number || notifyPhone
+    }
+    if (!notifyPhone) return NextResponse.json({ success: false })
 
     const { data: ownerProfile } = await db.from('profiles').select('whatsapp_consent').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
     if ((ownerProfile as any)?.whatsapp_consent !== true) return NextResponse.json({ success: false, message: 'لا يوجد موافقة واتساب' })
@@ -51,7 +59,7 @@ export async function POST(req: Request) {
         'Authorization': `Bearer ${process.env.WASENDER_API_KEY}`,
         'X-Session-Id': process.env.WASENDER_SESSION_ID!,
       },
-      body: JSON.stringify({ to: formatPhone((org as any).whatsapp_number), text: msg }),
+      body: JSON.stringify({ to: formatPhone(notifyPhone), text: msg }),
     })
 
     return NextResponse.json({ success: true })
