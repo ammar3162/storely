@@ -14,7 +14,7 @@ export default function ConfirmPage({ params }: { params: { token: string } }) {
   useEffect(()=>{ load() },[])
 
   async function load() {
-    const{data}=await (sb as any).from('supplier_orders').select('*').eq('token',params.token).single()
+    const{data}=await (sb as any).from('supplier_orders').select('status,supplier_name,org_name,items').eq('token',params.token).single()
     if(!data){ setStatus('error'); return }
     if(data.status==='confirmed'){ setStatus('done'); return }
     setOrder(data); setStatus('confirm')
