@@ -33,7 +33,7 @@ export async function POST(req: Request) {
 
     // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
     await (db as any).from('notifications').insert({
-      org_id, title: `عملية صرف: ${staff_name}`, message: `${product_name} — ${qty} ${unit}`, type: 'info', read: false
+      org_id, branch_id: auth.data!.branch_id || null, title: `عملية صرف: ${staff_name}`, message: `${product_name} — ${qty} ${unit}`, type: 'info', read: false
     })
 
     const { data: ownerProfile } = await db.from('profiles').select('whatsapp_consent').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
