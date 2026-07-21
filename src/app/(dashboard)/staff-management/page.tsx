@@ -107,7 +107,10 @@ export default function StaffManagementPage() {
   }
 
   async function loadProducts(oid:string) {
-    const{data}=await sb.from('products').select('id,name,unit,category').eq('org_id',oid).eq('is_active',true).order('name')
+    const bidProd = sessionStorage.getItem('s_branch_id')
+    let pq = sb.from('products').select('id,name,unit,category').eq('org_id',oid).eq('is_active',true)
+    if (bidProd) pq = pq.eq('branch_id', bidProd)
+    const{data}=await pq.order('name')
     setProducts(data||[])
   }
 
