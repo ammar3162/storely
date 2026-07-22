@@ -119,7 +119,7 @@ export default function StaffManagementPage() {
     setReportLoading(true)
     if(s.role==='cashier'){
       const{data}=await sb.from('cashier_closings' as any)
-        .select('*')
+        .select('id,status,closing_date,total_sales,network_amount,difference')
         .eq('staff_id',s.id)
         .order('closing_date',{ascending:false})
         .order('created_at',{ascending:false})
