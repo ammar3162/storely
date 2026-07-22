@@ -57,9 +57,9 @@ export default function BranchesPage() {
     setOrgId(profile.org_id)
     const{data:org}=await (sb.from('organizations' as any) as any).select('max_branches').eq('id',profile.org_id).single()
     setMaxBranches((org as any)?.max_branches||1)
-    const{data:bList}=await sb.from('branches').select('*').eq('org_id',profile.org_id).eq('is_active',true).order('created_at')
+    const{data:bList}=await sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',profile.org_id).eq('is_active',true).order('created_at')
     setBranches(bList||[])
-    const{data:iList}=await sb.from('branches').select('*').eq('org_id',profile.org_id).eq('is_active',false).order('created_at')
+    const{data:iList}=await sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',profile.org_id).eq('is_active',false).order('created_at')
     setInactiveBranches(iList||[])
     setLoading(false)
   }
@@ -68,7 +68,7 @@ export default function BranchesPage() {
     if(!newBranch.name.trim()) return
     setBranchSaving(true)
     await sb.from('branches').insert({ org_id:orgId, name:newBranch.name.trim(), location:newBranch.location.trim()||null })
-    const{data:bList}=await sb.from('branches').select('*').eq('org_id',orgId).eq('is_active',true).order('created_at')
+    const{data:bList}=await sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',orgId).eq('is_active',true).order('created_at')
     setBranches(bList||[]); setNewBranch({name:'',location:''}); setBranchSaving(false)
   }
 
