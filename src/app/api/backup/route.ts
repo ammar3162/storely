@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     }
     const results = []
     for (const org_id of orgIds) {
-      const { data: org } = await supabase.from('organizations').select('*').eq('id', org_id).single()
+      const { data: org } = await supabase.from('organizations').select('name').eq('id', org_id).single()
       if (!org) continue
       const [{ data: products },{ data: purchases },{ data: movements },{ data: profiles }] = await Promise.all([
         supabase.from('products').select('*').eq('org_id', org_id),
