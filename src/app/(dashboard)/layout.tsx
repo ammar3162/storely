@@ -84,6 +84,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showConsent, setShowConsent] = useState(false)
   const [consentChecked, setConsentChecked] = useState(false)
   const [consentSaving, setConsentSaving] = useState(false)
+  const [showMaintenance, setShowMaintenance] = useState(false)
+  const [maintenanceMsg, setMaintenanceMsg] = useState('')
   const [showTermsConsent, setShowTermsConsent] = useState(false)
   const [termsChecked, setTermsChecked] = useState(false)
   const [termsSaving, setTermsSaving] = useState(false)
@@ -130,6 +132,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const load = useCallback(async()=>{
     const{data:{user}}=await sb.auth.getUser()
     if(!user){router.replace('/login');return}
+    try {
+      const ms = await fetch('/api/platform-settings').then(r=>r.json())
+      if (ms.maintenanceMode) { setMaintenanceMsg(ms.maintenanceMessage); setShowMaintenance(true); return }
+    } catch {}
     const{data:p}=await (sb as any).from('profiles').select('id,full_name,org_id,role,whatsapp_consent,terms_accepted_at,terms_version_accepted,organizations(name,logo_url)').eq('id',user.id).single()
     if(!p){router.replace('/login');return}
     if(!p.org_id){router.replace('/pending');return}
@@ -287,6 +293,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href:'/dispense',   label:'الصرف',   icon:'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
     { href:'/purchases',  label:'مشتريات', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
   ]
+
+  if (showMaintenance) return (
+    <div style={{minHeight:'100vh',background:C.bg,display:'flex',alignItems:'center',justifyContent:'center',padding:24,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+      <div style={{background:C.surface,borderRadius:20,padding:'40px 32px',maxWidth:420,width:'100%',textAlign:'center',boxShadow:'0 8px 30px rgba(0,0,0,.08)'}}>
+        <div style={{fontSize:48,marginBottom:16}}>🛠️</div>
+        <div style={{fontSize:17,fontWeight:800,color:C.text,marginBottom:10}}>الموقع بصيانة مؤقتة</div>
+        <div style={{fontSize:13,color:C.text3,lineHeight:1.8}}>{maintenanceMsg}</div>
+      </div>
+    </div>
+  )
 
   return (
     <>

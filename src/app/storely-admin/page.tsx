@@ -151,11 +151,39 @@ export default function AdminPage() {
   const [suppLoading, setSuppLoading] = useState(false)
   const sb = createClient()
 
+  const [maintenanceMode, setMaintenanceMode] = useState(false)
+  const [maintenanceMsgInput, setMaintenanceMsgInput] = useState('')
+  const [maintenanceSaving, setMaintenanceSaving] = useState(false)
+  const [maintenanceStatusMsg, setMaintenanceStatusMsg] = useState('')
+
+  async function loadMaintenance() {
+    try {
+      const data = await fetch('/api/platform-settings').then(r=>r.json())
+      setMaintenanceMode(data.maintenanceMode); setMaintenanceMsgInput(data.maintenanceMessage)
+    } catch {}
+  }
+
+  async function toggleMaintenance(next: boolean) {
+    setMaintenanceSaving(true); setMaintenanceStatusMsg('')
+    try {
+      const key = sessionStorage.getItem('storely_admin_pass') || ''
+      const res = await fetch('/api/platform-settings', {
+        method: 'POST', headers: { 'Content-Type':'application/json', 'x-admin-key': key },
+        body: JSON.stringify({ maintenanceMode: next, maintenanceMessage: maintenanceMsgInput })
+      })
+      if (!res.ok) { setMaintenanceStatusMsg('حدث خطأ'); setMaintenanceSaving(false); return }
+      setMaintenanceMode(next)
+      setMaintenanceStatusMsg(next ? '✅ الصيانة مفعّلة الآن — العملاء يشوفون شاشة الصيانة' : '✅ الموقع رجع يشتغل عادي')
+    } catch { setMaintenanceStatusMsg('حدث خطأ') }
+    setMaintenanceSaving(false)
+  }
+
   useEffect(() => {
     const saved = sessionStorage.getItem('storely_admin_info')
     if (saved) {
       try { setCurrentAdmin(JSON.parse(saved)) } catch {}
     }
+    loadMaintenance()
   }, [])
 
   async function login(e: React.FormEvent) {
@@ -609,6 +637,36 @@ export default function AdminPage() {
       </div>
 
       <div style={{padding:'24px',maxWidth:1300,margin:'0 auto'}}>
+
+        {/* وضع الصيانة */}
+        {currentAdmin?.role==='super_admin' && (
+          <div style={{background: maintenanceMode?'#fef2f2':'#ffffff', border:`1.5px solid ${maintenanceMode?'#fecaca':'#e5e7eb'}`, borderRadius:14, padding:'16px 18px', marginBottom:20}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:maintenanceMode?12:0,flexWrap:'wrap' as const,gap:10}}>
+              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                <div style={{fontSize:20}}>🛠️</div>
+                <div>
+                  <div style={{fontSize:13,fontWeight:800,color:'#0f172a'}}>وضع الصيانة {maintenanceMode && <span style={{color:'#dc2626'}}>— مفعّل حالياً</span>}</div>
+                  <div style={{fontSize:11,color:'#94a3b8'}}>يوقف واجهة العملاء بس — العمليات الخلفية (واتساب، cron) تستمر عادي</div>
+                </div>
+              </div>
+              <button onClick={()=>toggleMaintenance(!maintenanceMode)} disabled={maintenanceSaving}
+                style={{padding:'8px 18px',background:maintenanceMode?'#16a34a':'#dc2626',color:'white',border:'none',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:maintenanceSaving?.6:1}}>
+                {maintenanceSaving?'...':maintenanceMode?'إيقاف الصيانة':'تفعيل الصيانة'}
+              </button>
+            </div>
+            {maintenanceMode && (
+              <div style={{display:'flex',gap:10,alignItems:'center'}}>
+                <input value={maintenanceMsgInput} onChange={e=>setMaintenanceMsgInput(e.target.value)} placeholder="رسالة الصيانة اللي يشوفها العملاء"
+                  style={{flex:1,padding:'8px 12px',border:'1px solid #e5e7eb',borderRadius:8,fontSize:12,fontFamily:'inherit'}}/>
+                <button onClick={()=>toggleMaintenance(true)} disabled={maintenanceSaving}
+                  style={{padding:'8px 14px',background:'#0f172a',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                  حفظ الرسالة
+                </button>
+              </div>
+            )}
+            {maintenanceStatusMsg && <div style={{fontSize:11,color:'#16a34a',marginTop:8}}>{maintenanceStatusMsg}</div>}
+          </div>
+        )}
 
         {/* Alert: pending users */}
         {stats.pending > 0 && (
