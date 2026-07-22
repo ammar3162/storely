@@ -47,7 +47,7 @@ export async function GET(req: Request) {
 
     const { data, error } = await supabase
       .from('monthly_fixed_expenses')
-      .select('*')
+      .select('id,org_id,month,fixed_expense_id,name,amount,created_at,updated_at')
       .eq('org_id', org_id)
       .eq('month', month)
       .order('created_at', { ascending: true })
