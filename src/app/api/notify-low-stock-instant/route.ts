@@ -76,7 +76,7 @@ export async function POST(req: Request) {
 
         // تحقق: فيه طلب معلّق لنفس الصنف ونفس المورد؟ لو فيه، نرسل تذكير بس بدل طلب جديد مكرر
         const { data: pendingExisting } = await (db as any).from('supplier_orders')
-          .select('*')
+          .select('items')
           .eq('org_id', org_id)
           .eq('product_id', product_id)
           .eq('status', 'pending')
@@ -94,10 +94,13 @@ export async function POST(req: Request) {
           const orderItems = [{ name: (product as any).name, qty: orderQty, unit: (product as any).unit }]
           const { data: orderData, error: orderErr } = await (db as any).from('supplier_orders').insert({
             org_id,
+            branch_id: (product as any).branch_id || null,
             product_id,
             supplier_name: (supplier as any).name,
             supplier_phone: (supplier as any).phone,
             items: orderItems,
+            status: 'pending',
+            current_priority: 1,
           }).select('token').single()
           if (orderErr) {
             return NextResponse.json({ success: false, debug: orderErr.message })
