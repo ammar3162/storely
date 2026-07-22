@@ -73,7 +73,7 @@ export default function SettingsPage() {
   const [reactivatingId, setReactivatingId] = useState<string|null>(null)
 
   async function loadInactiveBranches(oid:string) {
-    const{data}=await sb.from('branches').select('*').eq('org_id',oid).eq('is_active',false).order('created_at')
+    const{data}=await sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',oid).eq('is_active',false).order('created_at')
     setInactiveBranches(data||[])
   }
 
@@ -161,7 +161,7 @@ export default function SettingsPage() {
     const{data:{user}}=await sb.auth.getUser(); if(!user) return
     const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single(); if(!profile) return
     setOrgId(profile.org_id)
-    const{data:orgRaw}=await sb.from('organizations').select('*').eq('id',profile.org_id).single()
+    const{data:orgRaw}=await sb.from('organizations').select('whatsapp_number,name,notify_schedule,notify_time,notify_days,notify_cashier_closing_wa,notify_supplier_wa,last_notified_at,last_backup_at,max_branches,logo_url,plan,subscription_ends_at').eq('id',profile.org_id).single()
     const org=orgRaw as any
     if(org){
       const parsed = parsePhone(org.whatsapp_number||'')
@@ -176,7 +176,7 @@ export default function SettingsPage() {
       const planMap: Record<string,string> = {'basic':'الأساسية','pro':'المتوسطة','advanced':'المتقدمة'}
       setPlanName(planMap[org.plan||'']||org.plan||'')
       setSubEndsAt(org.subscription_ends_at||null)
-      const{data:bList}=await sb.from('branches').select('*').eq('org_id',profile.org_id).eq('is_active',true).order('created_at')
+      const{data:bList}=await sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',profile.org_id).eq('is_active',true).order('created_at')
       setBranches(bList||[])
       loadInactiveBranches(profile.org_id)
     }
@@ -237,7 +237,7 @@ export default function SettingsPage() {
     if(!newBranch.name.trim()) return
     setBranchSaving(true)
     await sb.from('branches').insert({ org_id:orgId, name:newBranch.name.trim(), location:newBranch.location.trim()||null })
-    const{data:bList}=await sb.from('branches').select('*').eq('org_id',orgId).eq('is_active',true).order('created_at')
+    const{data:bList}=await sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',orgId).eq('is_active',true).order('created_at')
     setBranches(bList||[]); setNewBranch({name:'',location:''}); setBranchSaving(false)
   }
 
