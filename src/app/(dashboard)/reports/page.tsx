@@ -341,7 +341,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setLoading(false);return}
     const purchBid=sessionStorage.getItem('s_branch_id')
     const{start,end}=getRange(period,from,to)
-    let purchQ=sb.from('purchases').select('*').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
+    let purchQ=sb.from('purchases').select('id,created_at,name,category,amount,vat_amount,total_amount,supplier,invoice_image,qty').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
     if(purchBid) purchQ=(purchQ as any).eq('branch_id',purchBid)
     const{data}=await purchQ.order('created_at',{ascending:false})
     setPurchases(data||[]); setLoading(false)
