@@ -84,6 +84,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showConsent, setShowConsent] = useState(false)
   const [consentChecked, setConsentChecked] = useState(false)
   const [consentSaving, setConsentSaving] = useState(false)
+  const [showTermsConsent, setShowTermsConsent] = useState(false)
+  const [termsChecked, setTermsChecked] = useState(false)
+  const [termsSaving, setTermsSaving] = useState(false)
   const [profileId, setProfileId] = useState('')
   const [onboardingStep, setOnboardingStep] = useState(0)
   const [theme, setTheme]           = useState<'light'|'dark'>('light')
@@ -127,7 +130,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const load = useCallback(async()=>{
     const{data:{user}}=await sb.auth.getUser()
     if(!user){router.replace('/login');return}
-    const{data:p}=await (sb as any).from('profiles').select('id,full_name,org_id,whatsapp_consent,organizations(name,logo_url)').eq('id',user.id).single()
+    const{data:p}=await (sb as any).from('profiles').select('id,full_name,org_id,role,whatsapp_consent,terms_accepted_at,organizations(name,logo_url)').eq('id',user.id).single()
     if(!p){router.replace('/login');return}
     if(!p.org_id){router.replace('/pending');return}
     // فحص انتهاء الاشتراك
@@ -149,6 +152,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     sessionStorage.setItem('s_profile_id',p.id)
     setProfileId(p.id)
     if((p as any).whatsapp_consent !== true){ setShowConsent(true) }
+    if((p as any).role==='owner' && !(p as any).terms_accepted_at){ setShowTermsConsent(true) }
     const{data:orgData}=await (sb as any).from('organizations').select('plan,max_staff,max_suppliers,country_code').eq('id',p.org_id).single()
     const orgPlan=(orgData as any)?.plan||'basic'
     sessionStorage.setItem('s_plan',orgPlan)
@@ -232,6 +236,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setShowConsent(false)
   }
 
+  async function acceptTermsConsent(){
+    if(!termsChecked) return
+    setTermsSaving(true)
+    try {
+      await fetch('/api/accept-terms', { method:'POST' })
+    } catch {}
+    setTermsSaving(false)
+    setShowTermsConsent(false)
+  }
+
   function selectBranch(b:any){
     sessionStorage.setItem('s_branch_id',b.id)
     sessionStorage.setItem('s_branch_name',b.name)
@@ -271,6 +285,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <>
+      {/* Terms Consent Modal — نافذة موافقة الشروط والأحكام المحدّثة (للمالك فقط) */}
+      {showTermsConsent && (
+        <div style={{position:'fixed',inset:0,zIndex:3100,background:'rgba(15,23,42,.55)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+          <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:440,boxShadow:'0 24px 60px rgba(0,0,0,.25)',overflow:'hidden'}}>
+            <div style={{height:5,background:'linear-gradient(90deg,#16a34a,#4ade80,#16a34a)'}}/>
+            <div style={{padding:'28px 26px 24px'}}>
+              <div style={{textAlign:'center',marginBottom:20}}>
+                <div style={{fontSize:40,marginBottom:10}}>📋</div>
+                <div style={{fontSize:19,fontWeight:800,color:C.text,marginBottom:8}}>تحديث على الشروط والأحكام</div>
+                <div style={{fontSize:13,color:C.text3,lineHeight:1.8}}>
+                  حدّثنا الشروط والأحكام وسياسة الخصوصية.<br/>وافق للمتابعة باستخدام حسابك.
+                </div>
+              </div>
+              <label style={{display:'flex',alignItems:'flex-start',gap:8,fontSize:12,color:C.text2,cursor:'pointer',marginBottom:18}}>
+                <input type="checkbox" checked={termsChecked} onChange={e=>setTermsChecked(e.target.checked)} style={{marginTop:2,width:18,height:18,flexShrink:0,cursor:'pointer'}}/>
+                <span>
+                  أوافق على <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:C.primary,fontWeight:700,textDecoration:'underline'}}>الشروط والأحكام</a>
+                  {' '}و{' '}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:C.primary,fontWeight:700,textDecoration:'underline'}}>سياسة الخصوصية</a> المحدّثة
+                </span>
+              </label>
+              <button onClick={acceptTermsConsent} disabled={!termsChecked||termsSaving}
+                style={{width:'100%',padding:14,background:termsChecked?'linear-gradient(135deg,#16a34a,#15803d)':'#e5e7eb',color:'white',border:'none',borderRadius:14,fontSize:14,fontWeight:800,cursor:termsChecked?'pointer':'not-allowed',fontFamily:'inherit',boxShadow:termsChecked?'0 6px 20px rgba(22,163,74,.3)':'none'}}>
+                {termsSaving?'جاري الحفظ...':'أوافق وأكمل ←'}
+              </button>
+              <div style={{textAlign:'center',fontSize:10,color:C.text4,marginTop:12}}>لن تقدر تستخدم حسابك قبل الموافقة</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Consent Modal — نافذة موافقة واتساب */}
       {showConsent && (
         <div style={{position:'fixed',inset:0,zIndex:3000,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
