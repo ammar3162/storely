@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    const { data: order } = await (db as any).from('supplier_orders').select('*').eq('token', token).single()
+    const { data: order } = await (db as any).from('supplier_orders').select('id,org_id,branch_id,supplier_id,supplier_name,items,created_at').eq('token', token).single()
     if (!order) return NextResponse.json({ success: false })
 
     await logConfirmation(order).catch(()=>{})
