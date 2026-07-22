@@ -93,7 +93,7 @@ export async function GET(req: Request) {
     // 3) المصروفات الثابتة لهذا الشهر (رواتب، إيجار...)
     const { data: fixedExpensesData } = await supabase
       .from('monthly_fixed_expenses')
-      .select('*')
+      .select('id,name,amount,fixed_expense_id,month,org_id,created_at')
       .eq('org_id', org_id)
       .eq('month', monthStart)
       .order('created_at', { ascending: true })
