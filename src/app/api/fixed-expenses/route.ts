@@ -24,7 +24,7 @@ export async function GET(req: Request) {
     const supabase = sb()
     const { data, error } = await supabase
       .from('fixed_expenses')
-      .select('*')
+      .select('id,org_id,name,amount,is_active,created_at,updated_at')
       .eq('org_id', org_id)
       .eq('is_active', true)
       .order('created_at', { ascending: true })
