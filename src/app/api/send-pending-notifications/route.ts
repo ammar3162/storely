@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     if (!url || !key) return NextResponse.json({ success:false, error:'missing env' }, { status:500 })
     const sb = createClient(url, key)
-    const { data: pending } = await sb.from('whatsapp_logs').select('*').eq('status','pending').limit(20)
+    const { data: pending } = await sb.from('whatsapp_logs').select('id,phone,message').eq('status','pending').limit(20)
     if (!pending || pending.length === 0) return NextResponse.json({ success:true, sent:0 })
     let sent = 0
     for (const log of pending) {
