@@ -8,9 +8,6 @@ const sb = () => createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// يجب تحديث هذا الرقم يدوياً كل ما تُعدَّل صفحة الشروط والأحكام (storely.dev/terms)
-const TERMS_VERSION = '2026-06-b'
-
 export async function POST(req: Request) {
   try {
     let { userId, orgName, fullPhone, businessType, branchCount, phone, trialEnds, countryCode, termsAcceptedAt } = await req.json()
@@ -27,6 +24,8 @@ export async function POST(req: Request) {
     }
 
     const supabase = sb()
+    const { data: settingsRow } = await supabase.from('platform_settings').select('terms_version').eq('id', 1).single()
+    const TERMS_VERSION = (settingsRow as any)?.terms_version || '2026-06-b'
 
     const maxB = branchCount===1?1:branchCount<=3?3:10
     const maxStaff = branchCount===1?2:branchCount<=3?10:999
@@ -65,7 +64,8 @@ export async function POST(req: Request) {
       status: 'active',
       subscription_type: 'trial',
       subscription_ends_at: trialEnds,
-      terms_accepted_at: acceptedAt
+      terms_accepted_at: acceptedAt,
+      terms_version_accepted: TERMS_VERSION
     }, { onConflict: 'id' })
 
     // سجل موافقة مفصّل — دليل قانوني موثّق (نسخة الشروط، IP، الجهاز)

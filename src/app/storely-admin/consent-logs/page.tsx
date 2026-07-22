@@ -9,6 +9,10 @@ export default function ConsentLogsPage() {
   const [authChecked, setAuthChecked] = useState(false)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const [currentVersion, setCurrentVersion] = useState('')
+  const [newVersion, setNewVersion] = useState('')
+  const [versionSaving, setVersionSaving] = useState(false)
+  const [versionMsg, setVersionMsg] = useState('')
 
   useEffect(() => {
     const key = sessionStorage.getItem('storely_admin_pass') || ''
@@ -21,7 +25,31 @@ export default function ConsentLogsPage() {
       .catch(() => { window.location.href = '/storely-admin' })
   }, [])
 
-  useEffect(() => { if (authChecked) load() }, [authChecked])
+  useEffect(() => { if (authChecked) { load(); loadVersion() } }, [authChecked])
+
+  async function loadVersion() {
+    try {
+      const data = await fetch('/api/terms-version').then(r=>r.json())
+      setCurrentVersion(data.version); setNewVersion(data.version)
+    } catch {}
+  }
+
+  async function updateVersion() {
+    if (!newVersion.trim() || newVersion === currentVersion) return
+    setVersionSaving(true); setVersionMsg('')
+    try {
+      const key = sessionStorage.getItem('storely_admin_pass') || ''
+      const res = await fetch('/api/terms-version', {
+        method: 'POST', headers: { 'Content-Type':'application/json', 'x-admin-key': key },
+        body: JSON.stringify({ version: newVersion.trim() })
+      })
+      const data = await res.json()
+      if (!res.ok) { setVersionMsg('خطأ: ' + (data.error||'')); setVersionSaving(false); return }
+      setCurrentVersion(data.version)
+      setVersionMsg('✅ تم التحديث — كل المستخدمين الحاليين بيشوفون نافذة الموافقة بأول دخول لهم')
+    } catch { setVersionMsg('حدث خطأ') }
+    setVersionSaving(false)
+  }
 
   async function load(searchTerm?: string) {
     setLoading(true); setError('')
@@ -73,6 +101,20 @@ export default function ConsentLogsPage() {
           <button onClick={exportCSV} disabled={logs.length===0} style={{padding:'8px 16px',background:C.green+'22',color:C.green,border:`1px solid ${C.green}44`,borderRadius:10,fontSize:13,fontWeight:700,cursor:logs.length===0?'not-allowed':'pointer',fontFamily:'inherit',opacity:logs.length===0?.5:1}}>⬇ تصدير CSV</button>
           <a href="/storely-admin" style={{padding:'8px 16px',background:'#334155',color:C.text,borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none'}}>← الرئيسية</a>
         </div>
+      </div>
+
+      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:16,marginBottom:20}}>
+        <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:10}}>نسخة الشروط الحالية: <span style={{color:C.green}}>{currentVersion||'...'}</span></div>
+        <div style={{display:'flex',gap:10,alignItems:'center'}}>
+          <input value={newVersion} onChange={e=>setNewVersion(e.target.value)} placeholder="رقم النسخة الجديد (مثلاً 2026-09)"
+            style={{flex:1,padding:'9px 12px',background:C.bg,border:`1px solid ${C.border}`,borderRadius:9,color:C.text,fontSize:13,fontFamily:'inherit'}}/>
+          <button onClick={updateVersion} disabled={versionSaving||!newVersion.trim()||newVersion===currentVersion}
+            style={{padding:'9px 18px',background:C.green,color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:(versionSaving||!newVersion.trim()||newVersion===currentVersion)?.5:1}}>
+            {versionSaving?'...':'تحديث النسخة'}
+          </button>
+        </div>
+        {versionMsg && <div style={{fontSize:12,color:versionMsg.startsWith('✅')?C.green:'#fca5a5',marginTop:8}}>{versionMsg}</div>}
+        <div style={{fontSize:11,color:C.text3,marginTop:8}}>تحديث النسخة يفرض على كل المالكين إعادة الموافقة على الشروط بأول دخول لهم بعد نشر التعديل بصفحة /terms</div>
       </div>
 
       <form onSubmit={handleSearch} style={{display:'flex',gap:10,marginBottom:20}}>

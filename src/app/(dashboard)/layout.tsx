@@ -130,7 +130,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const load = useCallback(async()=>{
     const{data:{user}}=await sb.auth.getUser()
     if(!user){router.replace('/login');return}
-    const{data:p}=await (sb as any).from('profiles').select('id,full_name,org_id,role,whatsapp_consent,terms_accepted_at,organizations(name,logo_url)').eq('id',user.id).single()
+    const{data:p}=await (sb as any).from('profiles').select('id,full_name,org_id,role,whatsapp_consent,terms_accepted_at,terms_version_accepted,organizations(name,logo_url)').eq('id',user.id).single()
     if(!p){router.replace('/login');return}
     if(!p.org_id){router.replace('/pending');return}
     // فحص انتهاء الاشتراك
@@ -152,7 +152,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     sessionStorage.setItem('s_profile_id',p.id)
     setProfileId(p.id)
     if((p as any).whatsapp_consent !== true){ setShowConsent(true) }
-    if((p as any).role==='owner' && !(p as any).terms_accepted_at){ setShowTermsConsent(true) }
+    if((p as any).role==='owner'){
+      try {
+        const tv = await fetch('/api/terms-version').then(r=>r.json())
+        if(!(p as any).terms_version_accepted || (p as any).terms_version_accepted !== tv.version){ setShowTermsConsent(true) }
+      } catch {}
+    }
     const{data:orgData}=await (sb as any).from('organizations').select('plan,max_staff,max_suppliers,country_code').eq('id',p.org_id).single()
     const orgPlan=(orgData as any)?.plan||'basic'
     sessionStorage.setItem('s_plan',orgPlan)
