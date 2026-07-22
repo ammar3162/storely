@@ -12,7 +12,7 @@ export async function GET(req: Request) {
   if(!(await requirePermission(adminKey, 'manage_suppliers'))) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
-  const { data } = await sb().from('supplier_applications').select('*').order('created_at', {ascending:false})
+  const { data } = await sb().from('supplier_applications').select('id,company_name,status,contact_name,phone,email,website,business_type,description,created_at').order('created_at', {ascending:false})
   return NextResponse.json({ data: data || [] })
 }
 
