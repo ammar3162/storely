@@ -57,7 +57,7 @@ export default function FeatureAnnouncement() {
     if(profile.seen_welcome===false && pathname==='/dashboard'){
       setShow(true); return
     }
-    const{data:allAnn}=await (sb as any).from('feature_announcements').select('*').order('created_at')
+    const{data:allAnn}=await (sb as any).from('feature_announcements').select('id,version,title,description,type,page,icon,color,target_orgs').order('created_at')
     const{data:seenAnn}=await (sb as any).from('user_seen_features').select('feature_version').eq('profile_id',user.id)
     const seen=new Set((seenAnn||[]).map((s:any)=>s.feature_version))
     // نطبّق التحديد المستهدف: لو target_orgs فاضية أو null، الإشعار للكل. غير كذا، بس للمؤسسات المحددة
