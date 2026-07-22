@@ -90,6 +90,7 @@ function LoginPage() {
   const [branchCount, setBranchCount] = useState<number|null>(null)
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState('')
+  const [agreedTerms, setAgreedTerms] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -205,6 +206,7 @@ function LoginPage() {
     e.preventDefault()
     if (!otpVerified) { setError('يجب التحقق من رقم الجوال أولاً'); return }
     if (!branchCount) { setError('اختر الباقة المناسبة'); return }
+    if (!agreedTerms) { setError('يجب الموافقة على الشروط والأحكام للمتابعة'); return }
     setLoading(true); setError('')
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) {
@@ -237,7 +239,8 @@ function LoginPage() {
           branchCount,
           phone: phone.trim(),
           countryCode,
-          trialEnds
+          trialEnds,
+          termsAcceptedAt: new Date().toISOString()
         })
       })
       const regData = await regRes.json()
@@ -496,7 +499,18 @@ function LoginPage() {
                     </div>
                   )}
 
-                  <button type="submit" disabled={loading||!branchCount} className="btn-main" style={{marginTop:8,opacity:!branchCount?.6:1}}>
+                  <label style={{display:'flex',alignItems:'flex-start',gap:8,fontSize:12,color:'#4b5563',cursor:'pointer',marginTop:4}}>
+                    <input type="checkbox" checked={agreedTerms} onChange={e=>setAgreedTerms(e.target.checked)}
+                      style={{marginTop:2,flexShrink:0,cursor:'pointer'}}/>
+                    <span>
+                      أوافق على{' '}
+                      <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:'#16a34a',fontWeight:700,textDecoration:'underline'}}>الشروط والأحكام</a>
+                      {' '}و{' '}
+                      <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:'#16a34a',fontWeight:700,textDecoration:'underline'}}>سياسة الخصوصية</a>
+                    </span>
+                  </label>
+
+                  <button type="submit" disabled={loading||!branchCount||!agreedTerms} className="btn-main" style={{marginTop:8,opacity:(!branchCount||!agreedTerms)?.6:1}}>
                     {loading?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span style={{width:16,height:16,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block'}}/>جاري الإنشاء...</span>:'إنشاء الحساب'}
                   </button>
                 </form>

@@ -10,7 +10,7 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
-    let { userId, orgName, fullPhone, businessType, branchCount, phone, trialEnds, countryCode } = await req.json()
+    let { userId, orgName, fullPhone, businessType, branchCount, phone, trialEnds, countryCode, termsAcceptedAt } = await req.json()
 
     orgName = sanitizeShortText(orgName, 150)
     fullPhone = formatPhone(sanitizeShortText(fullPhone, 20))
@@ -58,7 +58,8 @@ export async function POST(req: Request) {
       phone: phone,
       status: 'active',
       subscription_type: 'trial',
-      subscription_ends_at: trialEnds
+      subscription_ends_at: trialEnds,
+      terms_accepted_at: termsAcceptedAt || new Date().toISOString()
     }, { onConflict: 'id' })
 
     return NextResponse.json({ success: true, org_id: org.id })
