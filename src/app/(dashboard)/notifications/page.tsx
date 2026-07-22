@@ -31,7 +31,7 @@ export default function NotificationsPage() {
       sessionStorage.setItem('s_org_id', orgId!)
     }
     const bid = sessionStorage.getItem('s_branch_id')
-    const { data } = await sb.from('notifications').select('*').eq('org_id', orgId).or(bid?`branch_id.is.null,branch_id.eq.${bid}`:'branch_id.is.null,branch_id.not.is.null').order('created_at', { ascending: false })
+    const { data } = await sb.from('notifications').select('id,type,read,title,message,created_at').eq('org_id', orgId).or(bid?`branch_id.is.null,branch_id.eq.${bid}`:'branch_id.is.null,branch_id.not.is.null').order('created_at', { ascending: false })
     setNotifications(data || [])
     setLoading(false)
   }
