@@ -9,7 +9,7 @@ const sb = () => createClient(
 )
 
 // يجب تحديث هذا الرقم يدوياً كل ما تُعدَّل صفحة الشروط والأحكام (storely.dev/terms)
-const TERMS_VERSION = '2026-06'
+const TERMS_VERSION = '2026-06-b'
 
 export async function POST(req: Request) {
   try {
