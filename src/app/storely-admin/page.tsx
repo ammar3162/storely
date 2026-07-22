@@ -561,6 +561,11 @@ export default function AdminPage() {
               🔔 الإشعارات
             </a>
           )}
+          {currentAdmin?.role==='super_admin' && (
+            <a href="/storely-admin/consent-logs" style={{padding:'7px 14px',background:'#ffffff',color:'#475569',border:'1px solid #e5e7eb',borderRadius:9,fontSize:12,fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:6}}>
+              📝 سجلات الموافقة
+            </a>
+          )}
           {(currentAdmin?.role==='super_admin' || currentAdmin?.permissions?.manage_users || currentAdmin?.permissions?.view_analytics) && (
             <button onClick={()=>setTab('dashboard')} style={{padding:'7px 14px',background:tab==='dashboard'?'#2563eb':'#ffffff',color:tab==='dashboard'?'white':'#475569',border:`1px solid ${tab==='dashboard'?'#2563eb':'#e5e7eb'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
               📊 Dashboard
