@@ -34,6 +34,8 @@ const NAV_GROUPS = [
     items: [
       { href:'/staff-management', label:'الموظفون', icon:'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8zm6 0a4 4 0 11-8 0' },
       { href:'/branches', label:'إدارة الفروع', icon:'M3 21h18M5 21V7l8-4v18M19 21V11l-6-4' },
+      { href:'/branch-compare', label:'مقارنة الفروع', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+      { href:'/branch-compare', label:'مقارنة الفروع', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
       { href:'/suppliers',  label:'الموردين', icon:'M3 7h13l3 5v5h-3m-10 0H3v-7m13-3v10m-13 0a2 2 0 104 0m-4 0a2 2 0 114 0m9 0a2 2 0 104 0m-4 0a2 2 0 114 0' },
       { href:'/marketplace', label:'موردون معتمدون', icon:'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
     ]
@@ -79,6 +81,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [branches, setBranches]     = useState<any[]>([])
   const [showMore, setShowMore]     = useState(false)
   const [showBranch, setShowBranch] = useState(false)
+  const [branchLowCounts, setBranchLowCounts] = useState<Record<string, number>>({})
   const [ready, setReady]           = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showConsent, setShowConsent] = useState(false)
@@ -257,6 +260,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setShowTermsConsent(false)
   }
 
+  async function loadBranchLowCounts(){
+    const oid = sessionStorage.getItem('s_org_id')
+    if(!oid) return
+    const{data}=await sb.from('products').select('branch_id,qty,reorder_point').eq('org_id',oid).eq('is_active',true)
+    const counts:Record<string,number>={}
+    ;(data||[]).forEach((p:any)=>{
+      if(p.qty<=p.reorder_point && p.branch_id){ counts[p.branch_id]=(counts[p.branch_id]||0)+1 }
+    })
+    setBranchLowCounts(counts)
+  }
+
+  function openBranchSelector(){
+    setShowBranch(true)
+    loadBranchLowCounts()
+  }
+
   function selectBranch(b:any){
     sessionStorage.setItem('s_branch_id',b.id)
     sessionStorage.setItem('s_branch_name',b.name)
@@ -373,6 +392,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <div style={{fontSize:14,fontWeight:700,color:C.text}}>{b.name}</div>
                     {b.location&&<div style={{fontSize:11,color:C.text3}}>{b.location}</div>}
                   </div>
+                  {branchLowCounts[b.id]>0 && (
+                    <span style={{display:'flex',alignItems:'center',gap:3,fontSize:11,fontWeight:700,color:C.danger,background:C.dangerL,padding:'3px 8px',borderRadius:99,flexShrink:0}}>
+                      🔴 {branchLowCounts[b.id]}
+                    </span>
+                  )}
                   {sessionStorage.getItem('s_branch_id')===b.id&&<span style={{fontSize:12,color:C.primary,fontWeight:700}}>✓</span>}
                 </button>
                 {branches.length>1 && (
@@ -429,7 +453,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {branchName&&<div style={{fontSize:10,color:C.text3}}>{branchName}</div>}
               </div>
               {branches.length>1&&(
-                <button onClick={()=>{setShowMore(false);setShowBranch(true)}} style={{padding:'6px 12px',background:'white',border:`1px solid ${C.primaryB}`,borderRadius:8,fontSize:11,fontWeight:700,color:C.primary,cursor:'pointer',fontFamily:'inherit'}}>تغيير</button>
+                <button onClick={()=>{setShowMore(false);openBranchSelector()}} style={{padding:'6px 12px',background:'white',border:`1px solid ${C.primaryB}`,borderRadius:8,fontSize:11,fontWeight:700,color:C.primary,cursor:'pointer',fontFamily:'inherit'}}>تغيير</button>
               )}
             </div>
 
@@ -547,7 +571,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div style={{minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:800,color:'white',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName||'Storely'}</div>
                 {branchName&&(
-                  <button onClick={()=>branches.length>1&&setShowBranch(true)}
+                  <button onClick={()=>branches.length>1&&openBranchSelector()}
                     style={{fontSize:10,color:'rgba(255,255,255,.8)',background:'none',border:'none',cursor:branches.length>1?'pointer':'default',padding:0,fontFamily:'inherit',display:'flex',alignItems:'center',gap:2}}>
                     {branchName}{branches.length>1&&' ▾'}
                   </button>
@@ -615,7 +639,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div style={{width:44,height:44,borderRadius:'50%',background:'rgba(255,255,255,.92)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:5}}><img src={orgLogo||"/storely-logo.png"} alt="Storely" style={{maxWidth:'100%',maxHeight:'100%',width:'auto',height:'auto',objectFit:'contain'}}/></div>
               <div style={{minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:800,color:'rgba(255,255,255,.9)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName||'Storely'}</div>
-                {branchName&&<button onClick={()=>branches.length>1&&setShowBranch(true)} style={{fontSize:10,color:C.primary,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit'}}>{branchName}{branches.length>1&&' ▾'}</button>}
+                {branchName&&<button onClick={()=>branches.length>1&&openBranchSelector()} style={{fontSize:10,color:C.primary,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit'}}>{branchName}{branches.length>1&&' ▾'}</button>}
               </div>
             </div>
 
