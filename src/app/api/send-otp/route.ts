@@ -3,16 +3,29 @@ import { createClient } from '@supabase/supabase-js'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-async function sendWhatsApp(to: string, text: string) {
-  await fetch('https://www.wasenderapi.com/api/send-message', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.WASENDER_API_KEY}`,
-      'X-Session-Id': process.env.WASENDER_SESSION_ID!
-    },
-    body: JSON.stringify({ to, text }),
-  })
+async function sendWhatsApp(to: string, text: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    // إزالة علامة + قبل الإرسال — مطلوبة لواتساب/Wasender (نفس نمط formatPhone المستخدم بباقي المشروع)
+    const cleanTo = to.replace(/^\+/, '')
+    const res = await fetch('https://www.wasenderapi.com/api/send-message', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.WASENDER_API_KEY}`,
+        'X-Session-Id': process.env.WASENDER_SESSION_ID!
+      },
+      body: JSON.stringify({ to: cleanTo, text }),
+    })
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '')
+      console.error('send-otp WhatsApp send failed:', res.status, errBody)
+      return { ok: false, error: `فشل الإرسال (${res.status})` }
+    }
+    return { ok: true }
+  } catch (err: any) {
+    console.error('send-otp WhatsApp send exception:', err)
+    return { ok: false, error: err.message }
+  }
 }
 
 export async function POST(req: Request) {
@@ -33,7 +46,10 @@ export async function POST(req: Request) {
     }, { onConflict: 'phone' })
 
     // أرسل عبر واتساب
-    await sendWhatsApp(fullPhone, `🔐 *رمز التحقق الخاص بك في Storely:*\n\n*${otp}*\n\nصالح لمدة 5 دقائق فقط. لا تشاركه مع أحد.`)
+    const sendResult = await sendWhatsApp(fullPhone, `🔐 *رمز التحقق الخاص بك في Storely:*\n\n*${otp}*\n\nصالح لمدة 5 دقائق فقط. لا تشاركه مع أحد.`)
+    if (!sendResult.ok) {
+      return NextResponse.json({ error: 'تعذر إرسال رمز التحقق — تأكد من رقم الجوال وحاول مرة أخرى' }, { status: 502 })
+    }
 
     return NextResponse.json({ success: true })
   } catch (err: any) {
