@@ -308,6 +308,9 @@ export default function AdminPage() {
     const target = users.find(u=>u.id===userId)
     await sb.from('profiles').update({status:'suspended'}).eq('id',userId)
     logAction('suspend_user', target?.org_id, target?.org_name, { userId })
+    if (target?.org_id) {
+      try { await (sb as any).from('subscription_events').insert({ org_id: target.org_id, event_type: 'cancelled', plan: null, amount: 0 }) } catch {}
+    }
     await loadUsers(); setSaving(null); setSelected(null)
   }
 
@@ -315,11 +318,24 @@ export default function AdminPage() {
     setSaving(orgId)
     const plan = PLANS.find(p=>p.v===value)!
     const target = users.find(u=>u.org_id===orgId)
+    const oldBranches = target?.max_branches || 1
     await (sb.from('organizations') as any).update({
       max_branches:value, plan:value===1?'basic':value<=3?'pro':'advanced',
       max_staff:plan.maxStaff, max_suppliers:plan.maxSup
     }).eq('id',orgId)
     logAction('update_plan', orgId, target?.org_name, { new_plan: plan.label })
+    const newAmount = value===1?149:value<=3?249:399
+    const oldAmount = oldBranches===1?149:oldBranches<=3?249:399
+    if (value !== oldBranches) {
+      try {
+        await (sb as any).from('subscription_events').insert({
+          org_id: orgId,
+          event_type: newAmount > oldAmount ? 'upgraded' : 'downgraded',
+          plan: value===1?'basic':value<=3?'pro':'advanced',
+          amount: newAmount,
+        })
+      } catch {}
+    }
     setUsers(prev=>prev.map(u=>u.org_id===orgId?{...u,max_branches:value}:u))
     setSelected(prev=>prev&&prev.org_id===orgId?{...prev,max_branches:value}:prev)
     setSaving(null)
@@ -602,6 +618,11 @@ export default function AdminPage() {
           {currentAdmin?.role==='super_admin' && (
             <a href="/storely-admin/health" style={{padding:'7px 14px',background:'#ffffff',color:'#475569',border:'1px solid #e5e7eb',borderRadius:9,fontSize:12,fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:6}}>
               🩺 الصحة
+            </a>
+          )}
+          {currentAdmin?.role==='super_admin' && (
+            <a href="/storely-admin/metrics" style={{padding:'7px 14px',background:'#ffffff',color:'#475569',border:'1px solid #e5e7eb',borderRadius:9,fontSize:12,fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:6}}>
+              📊 مقاييس العمل
             </a>
           )}
           {(currentAdmin?.role==='super_admin' || currentAdmin?.permissions?.manage_users || currentAdmin?.permissions?.view_analytics) && (
