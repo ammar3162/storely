@@ -54,7 +54,7 @@ export default function MarketplacePage() {
   }
 
   // الصفحة مقفلة مؤقتاً لين يتجمع موردون معتمدون فعليون
-  const COMING_SOON = true
+  const COMING_SOON = false
   if (COMING_SOON) return (
     <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700;800&display=swap');*{box-sizing:border-box}`}</style>
