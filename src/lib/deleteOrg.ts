@@ -38,7 +38,7 @@ export async function deleteOrgCompletely(orgId: string, userId?: string): Promi
 
   // 3) جداول تعتمد على المؤسسة مباشرة
   const directTables = [
-    'notifications','purchases','staff_members','whatsapp_logs','whatsapp_sessions',
+    'notifications','purchases','staff_members','whatsapp_logs',
     'push_subscriptions','cashier_closings','fixed_expenses','monthly_fixed_expenses',
     'inventory_snapshots','supplier_orders','data_backups',
   ]

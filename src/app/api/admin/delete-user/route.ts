@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       }
 
       // 3) جداول تعتمد على المؤسسة مباشرة (لا تعتمد على منتجات/موردين/فروع)
-      const directTables = ['notifications','purchases','staff_members','whatsapp_logs','whatsapp_sessions','push_subscriptions','cashier_closings','fixed_expenses','monthly_fixed_expenses','inventory_snapshots','supplier_orders']
+      const directTables = ['notifications','purchases','staff_members','whatsapp_logs','push_subscriptions','cashier_closings','fixed_expenses','monthly_fixed_expenses','inventory_snapshots','supplier_orders']
       for (const t of directTables) {
         const r = await (supabase as any).from(t).delete().eq('org_id', orgId)
         if (r.error) deleteErrors.push(`${t}: ${r.error.message}`)
