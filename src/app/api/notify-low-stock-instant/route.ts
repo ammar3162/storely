@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { isSubscriptionActive } from '@/lib/subscription'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { sendPushToOrg } from '@/lib/push'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -191,6 +192,8 @@ ${daysMsg}
           status: ownerSendResult.ok ? 'sent' : 'failed',
         })
       } catch {}
+      // إشعار فوري بالمتصفح/الجوال — لا يعتمد على واتساب إطلاقاً
+      sendPushToOrg(org_id, '⚠️ نقص مخزون', `${(product as any).name} وصل للحد الأدنى — المتبقي ${new_qty} ${(product as any).unit}`, '/inventory').catch(()=>{})
     }
 
     return NextResponse.json({ success: true })

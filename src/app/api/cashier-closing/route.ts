@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
+import { sendPushToOrg } from '@/lib/push'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -110,6 +111,8 @@ export async function POST(req: Request) {
       await (supabase as any).from('notifications').insert({
         org_id, branch_id: branch_id || null, title: `إقفال كاشير: ${staff_name}`, message: `إجمالي المبيعات: ${sales.toFixed(2)} ر.س — ${closingStatusText}`, type: 'info', read: false
       })
+      // إشعار فوري بالمتصفح/الجوال — لا يعتمد على واتساب إطلاقاً
+      sendPushToOrg(org_id, `إقفال كاشير: ${staff_name}`, `إجمالي المبيعات: ${sales.toFixed(2)} ر.س — ${closingStatusText}`, '/reports').catch(()=>{})
       const { data: allBranches } = await supabase.from('branches').select('id,name,whatsapp_number').eq('org_id', org_id).eq('is_active', true)
       const isMultiBranch = (allBranches || []).length > 1
       const currentBranch = branch_id ? (allBranches || []).find((b: any) => b.id === branch_id) : null
