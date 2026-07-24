@@ -201,25 +201,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       setUnread(notifData?.length||0)
     })
     if(typeof window !== "undefined" && "serviceWorker" in navigator) {
-      // طلب إذن الإشعارات
-      if(Notification.permission === "default") {
-        Notification.requestPermission()
-      }
       try {
-        const reg = await navigator.serviceWorker.register("/sw.js")
-        const existing = await reg.pushManager.getSubscription()
-        if(!existing) {
-          const sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-          })
-          await fetch("/api/push-subscribe", {
-            method: "POST",
-            headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({ subscription: sub, org_id: p?.org_id })
-          })
+        // طلب إذن الإشعارات — محمي بالكامل داخل try/catch (بعض متصفحات iOS ما تدعم كائن Notification بنفس الشكل)
+        if(typeof Notification !== "undefined" && Notification.permission === "default") {
+          await Notification.requestPermission()
         }
-      } catch(e) { console.log("Push:", e) }
+        if(typeof Notification === "undefined" || Notification.permission === "granted") {
+          const reg = await navigator.serviceWorker.register("/sw.js")
+          const existing = await reg.pushManager.getSubscription()
+          if(!existing) {
+            const sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+            })
+            await fetch("/api/push-subscribe", {
+              method: "POST",
+              headers: {"Content-Type":"application/json"},
+              body: JSON.stringify({ subscription: sub, org_id: p?.org_id })
+            })
+          }
+        }
+      } catch(e) { console.log("Push setup error:", e) }
     }
     // polling للإشعارات كل 30 ثانية
     const orgId = p?.org_id
