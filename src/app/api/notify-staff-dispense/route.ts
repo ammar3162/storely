@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { sendPushToOrg } from '@/lib/push'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -52,6 +53,8 @@ export async function POST(req: Request) {
     await (db as any).from('notifications').insert({
       org_id, branch_id, title: `عملية صرف: ${staff_name}`, message: `${product_name} — ${qty} ${unit}`, type: 'info', read: false
     })
+    // إشعار فوري بالمتصفح/الجوال — لا يعتمد على واتساب إطلاقاً
+    sendPushToOrg(org_id, `عملية صرف: ${staff_name}`, `${product_name} — ${qty} ${unit}`, '/dispense').catch(()=>{})
 
     // جيب كل الفروع — نستخدمها لتحديد اسم الفرع ورقمه المخصص
     const { data: allBranches } = await db.from('branches').select('id,name,whatsapp_number').eq('org_id', org_id).eq('is_active', true)
