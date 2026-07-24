@@ -14,16 +14,21 @@ function formatPhone(raw: string): string {
   return clean
 }
 
-async function sendWA(phone: string, text: string) {
-  return fetch('https://www.wasenderapi.com/api/send-message', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.WASENDER_API_KEY}`,
-      'X-Session-Id': process.env.WASENDER_SESSION_ID!,
-    },
-    body: JSON.stringify({ to: formatPhone(phone), text }),
-  })
+async function sendWA(phone: string, text: string): Promise<{ ok: boolean }> {
+  try {
+    const res = await fetch('https://www.wasenderapi.com/api/send-message', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.WASENDER_API_KEY}`,
+        'X-Session-Id': process.env.WASENDER_SESSION_ID!,
+      },
+      body: JSON.stringify({ to: formatPhone(phone), text }),
+    })
+    return { ok: res.ok }
+  } catch {
+    return { ok: false }
+  }
 }
 
 export async function POST(req: Request) {
@@ -177,7 +182,15 @@ ${daysMsg}
 ${daysMsg}
 
 🛒 *يرجى الطلب في أقرب وقت*`
-      await sendWA(notifyPhone, adminMsg)
+      const ownerSendResult = await sendWA(notifyPhone, adminMsg)
+      try {
+        await db.from('notification_logs').insert({
+          org_id: org_id,
+          notification_type: 'low_stock_owner',
+          phone: notifyPhone,
+          status: ownerSendResult.ok ? 'sent' : 'failed',
+        })
+      } catch {}
     }
 
     return NextResponse.json({ success: true })

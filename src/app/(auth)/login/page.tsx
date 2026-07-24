@@ -204,7 +204,7 @@ function LoginPage() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
-    if (!otpVerified) { setError('يجب التحقق من رقم الجوال أولاً'); return }
+    // تم تعطيل إجبارية تحقق الـOTP مؤقتاً (2026-07-24) لحين حل مشكلة توصيل واتساب — راجع notification_logs
     if (!branchCount) { setError('اختر الباقة المناسبة'); return }
     if (!agreedTerms) { setError('يجب الموافقة على الشروط والأحكام للمتابعة'); return }
     setLoading(true); setError('')

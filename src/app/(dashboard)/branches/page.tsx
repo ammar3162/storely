@@ -202,6 +202,10 @@ export default function BranchesPage() {
                           إلغاء
                         </button>
                       </div>
+                      <button onClick={()=>saveBranchPhone(b.id, editPhoneValue.trim().replace(/^0+/, ''))} disabled={savingPhone}
+                        style={{background:'none',border:'none',color:colors.text4,fontSize:10,cursor:'pointer',fontFamily:font.family,padding:0,textDecoration:'underline',textAlign:'right'}}>
+                        ما وصلني الرمز — احفظ بدون تحقق مؤقتاً
+                      </button>
                       {phoneOtpError && <div style={{fontSize:10,color:colors.danger}}>{phoneOtpError}</div>}
                     </div>
                   )
