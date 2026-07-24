@@ -409,29 +409,7 @@ function LoginPage() {
                     <div style={{fontSize:11,color:'#9ca3af',marginTop:4}}>
                       {PHONE_RULES[countryCode] ? `${PHONE_RULES[countryCode].length} أرقام${PHONE_RULES[countryCode].prefix ? ` · يبدأ بـ ${PHONE_RULES[countryCode].prefix}` : ''}` : ''}
                     </div>
-                    {/* زر إرسال OTP */}
-                    {!otpVerified && (
-                      <button type="button" onClick={sendOtp} disabled={sendingOtp||!phone.trim()}
-                        style={{marginTop:8,width:'100%',padding:'10px',background:otpSent?'#f0fdf4':'#16a34a',color:otpSent?'#16a34a':'white',border:`1.5px solid #16a34a`,borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',transition:'all .2s'}}>
-                        {sendingOtp?'⏳ جاري الإرسال...':otpSent?'✅ تم الإرسال — أعد الإرسال':'📲 أرسل رمز التحقق عبر واتساب'}
-                      </button>
-                    )}
-                    {/* خانة OTP */}
-                    {otpSent && !otpVerified && (
-                      <div style={{marginTop:8,display:'flex',gap:8}}>
-                        <input type="number" value={otp} onChange={e=>setOtp(e.target.value)} placeholder="أدخل الرمز المكون من 6 أرقام"
-                          style={{flex:1,padding:'11px 14px',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:14,outline:'none',fontFamily:'inherit',direction:'ltr',textAlign:'center',letterSpacing:4}}/>
-                        <button type="button" onClick={verifyOtp} disabled={sendingOtp||!otp.trim()}
-                          style={{padding:'11px 16px',background:'#16a34a',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
-                          {sendingOtp?'...':'تحقق ✓'}
-                        </button>
-                      </div>
-                    )}
-                    {otpVerified && (
-                      <div style={{marginTop:8,padding:'10px 14px',background:'#f0fdf4',border:'1.5px solid #bbf7d0',borderRadius:10,fontSize:13,fontWeight:700,color:'#16a34a',textAlign:'center'}}>
-                        ✅ تم التحقق من رقم الجوال
-                      </div>
-                    )}
+                    {/* واجهة تحقق OTP معطّلة مؤقتاً (2026-07-24) لحين حل مشكلة توصيل واتساب — راجع notification_logs */}
                   </div>
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>كلمة المرور *</label>
