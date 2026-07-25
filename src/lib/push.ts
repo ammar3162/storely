@@ -8,9 +8,8 @@ const sb = () => createClient(
 
 /**
  * يرسل إشعار Push فوري لكل الأجهزة المشتركة لمنشأة معينة.
- * يرفق تلقائياً عدد الإشعارات غير المقروءة — يُستخدم بـ Service Worker لتحديث
- * الرقم على أيقونة التطبيق (App Badge) حتى لو التطبيق مقفول تماماً.
- * فشله لا يوقف العملية الأساسية أبداً (استدعِها دايماً جوّه try/catch أو بدونه بأمان).
+ * يرفق عدد الإشعارات غير المقروءة لتحديث App Badge — بس فشل حساب هذا الرقم
+ * لا يوقف الإرسال الأساسي أبداً (معزول بـ try/catch مستقل تماماً).
  */
 export async function sendPushToOrg(org_id: string, title: string, body: string, url?: string) {
   try {
@@ -23,13 +22,20 @@ export async function sendPushToOrg(org_id: string, title: string, body: string,
     const { data: subs } = await supabase.from('push_subscriptions').select('id,subscription').eq('org_id', org_id)
     if (!subs || subs.length === 0) return { sent: 0 }
 
-    const { count } = await (supabase as any)
-      .from('notifications')
-      .select('id', { count: 'exact', head: true })
-      .eq('org_id', org_id)
-      .eq('read', false)
+    // حساب عدد الإشعارات غير المقروءة — معزول تماماً، فشله لا يوقف الإرسال إطلاقاً
+    let badgeCount = 0
+    try {
+      const { count } = await (supabase as any)
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('org_id', org_id)
+        .eq('read', false)
+      badgeCount = count || 0
+    } catch (badgeErr) {
+      console.error('badge count error (non-blocking):', badgeErr)
+    }
 
-    const payload = JSON.stringify({ title, body, url: url || '/dashboard', badgeCount: count || 0 })
+    const payload = JSON.stringify({ title, body, url: url || '/dashboard', badgeCount })
     const results = await Promise.allSettled(
       subs.map((s: any) => webpush.sendNotification(s.subscription, payload))
     )
