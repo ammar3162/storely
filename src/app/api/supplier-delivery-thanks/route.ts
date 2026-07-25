@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { sendPushToOrg } from '@/lib/push'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -58,6 +59,8 @@ export async function POST(req: Request) {
       org_id, branch_id: (product as any).branch_id || null, title: `توصيل مؤكد: ${matchedSupplier.name}`,
       message: `تم استلام "${product_name}" — أُرسلت رسالة شكر للمورد`, type: 'success', read: false,
     })
+    // إشعار فوري بالمتصفح/الجوال — لا يعتمد على واتساب إطلاقاً
+    sendPushToOrg(org_id, `توصيل مؤكد: ${matchedSupplier.name}`, `تم استلام "${product_name}"`, '/purchases').catch(()=>{})
 
     if (!matchedSupplier.phone || matchedSupplier.whatsapp_consent !== true) {
       return NextResponse.json({ sent: false, reason: 'no_consent' })

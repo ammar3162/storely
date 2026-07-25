@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { logConfirmation } from '@/lib/escalateSupplierOrder'
+import { sendPushToOrg } from '@/lib/push'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -34,6 +35,8 @@ export async function POST(req: Request) {
     await (db as any).from('notifications').insert({
       org_id: order.org_id, branch_id: order.branch_id || null, title: `تأكيد مورد: ${order.supplier_name}`, message: `تم تأكيد الطلب — سيتم التوصيل قريباً`, type: 'success', read: false
     })
+    // إشعار فوري بالمتصفح/الجوال — لا يعتمد على واتساب إطلاقاً
+    sendPushToOrg(order.org_id, `تأكيد مورد: ${order.supplier_name}`, `تم تأكيد الطلب — سيتم التوصيل قريباً`, '/purchases').catch(()=>{})
 
     const { data: ownerProfile } = await db.from('profiles').select('whatsapp_consent').eq('org_id', order.org_id).eq('role', 'owner').maybeSingle()
     if ((ownerProfile as any)?.whatsapp_consent !== true) return NextResponse.json({ success: false, message: 'لا يوجد موافقة واتساب' })

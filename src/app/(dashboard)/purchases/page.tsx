@@ -251,6 +251,7 @@ export default function PurchasesPage() {
       created_at:invoiceTs,
     })
     if(insErr){toast('خطأ: '+insErr.message,'error');setLoading(false);submitting.current=false;return}
+    let matchedProductId:string|null=null
     if(form.category==='مخزون'&&form.name){
       const qty=form.qty?Number(form.qty):0
       const unitCost = qty>0 ? (amount||0)/qty : 0
@@ -273,12 +274,14 @@ export default function PurchasesPage() {
         const oldAvgCost=Number(existing.avg_cost)||0
         const newAvgCost=(oldQty+qty)>0?((oldQty*oldAvgCost)+(qty*unitCost))/(oldQty+qty):0
         await (sb.from('products') as any).update({avg_cost:newAvgCost}).eq('id',existing.id)
+        matchedProductId = existing.id
         toast(`✅ تم تحديث المخزون (+${qty})`,'success')
       } else {
         const branchId=sessionStorage.getItem('s_branch_id')||
           (await sb.from('branches').select('id').eq('org_id',orgId).eq('is_active',true).order('created_at').limit(1).single()).data?.id||null
         const{data:np}=await (sb.from('products') as any).insert({org_id:orgId,branch_id:branchId,name:form.name.trim(),sku:form.sku||null,unit:form.unit||'قطعة',qty:0,reorder_point:Number(form.reorder_point)||5,is_active:true,avg_cost:unitCost}).select().single()
         if(np) {
+          matchedProductId = np.id
           if(qty>0) await (sb.from('stock_movements') as any).insert({product_id:np.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء جديد من: ${form.supplier}`,created_at:invoiceTs})
           fetch('/api/sync-product-to-staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,product_id:np.id})}).catch(()=>{})
         }
@@ -286,9 +289,23 @@ export default function PurchasesPage() {
       }
     } else { toast('✅ تم تسجيل الشراء') }
 
-    // تأكيد يدوي قبل إرسال رسالة الشكر — يحمي من خطأ كتابة اسم مورد أو إضافة كمية لسبب غير الاستلام الفعلي
-    if (form.category==='مخزون' && form.name && form.supplier.trim()) {
-      setPendingThanks({ productName: form.name, supplierName: form.supplier.trim() })
+    // تأكيد يدوي قبل إرسال رسالة الشكر — يظهر فقط لو المورد مسجّل فعلياً بالنظام والمنتج مرتبط فيه تحديداً
+    if (form.category==='مخزون' && form.name && form.supplier.trim() && matchedProductId) {
+      const { data: matchedSupplier } = await (sb.from('suppliers' as any) as any)
+        .select('id').eq('org_id',orgId).ilike('name',form.supplier.trim()).maybeSingle()
+      if (matchedSupplier) {
+        const { data: directLink } = await (sb.from('products') as any)
+          .select('id').eq('id',matchedProductId).eq('supplier_id',matchedSupplier.id).maybeSingle()
+        let isLinked = !!directLink
+        if (!isLinked) {
+          const { data: altLink } = await (sb.from('product_suppliers' as any) as any)
+            .select('id').eq('product_id',matchedProductId).eq('supplier_id',matchedSupplier.id).maybeSingle()
+          isLinked = !!altLink
+        }
+        if (isLinked) {
+          setPendingThanks({ productName: form.name, supplierName: form.supplier.trim() })
+        }
+      }
     }
 
     setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh()})
