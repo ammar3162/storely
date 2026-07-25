@@ -13,7 +13,16 @@ self.addEventListener('push', function(event) {
     ]
   }
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Storely', options)
+    (async () => {
+      await self.registration.showNotification(data.title || 'Storely', options)
+      // تحديث الرقم على أيقونة التطبيق (App Badge) — يدعمه iOS 16.4+ وAndroid
+      try {
+        if ('setAppBadge' in self.navigator && typeof data.badgeCount === 'number') {
+          if (data.badgeCount > 0) await self.navigator.setAppBadge(data.badgeCount)
+          else await self.navigator.clearAppBadge()
+        }
+      } catch (e) {}
+    })()
   )
 })
 

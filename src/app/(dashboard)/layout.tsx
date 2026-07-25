@@ -77,6 +77,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [userInit, setUserInit]     = useState('م')
   const [lowCount, setLowCount]     = useState(0)
   const [unread, setUnread]         = useState(0)
+
+  // يزامن الرقم على أيقونة التطبيق مع عدد الإشعارات غير المقروءة تلقائياً
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && 'setAppBadge' in navigator) {
+      try {
+        if (unread > 0) (navigator as any).setAppBadge(unread).catch(()=>{})
+        else (navigator as any).clearAppBadge().catch(()=>{})
+      } catch {}
+    }
+  }, [unread])
   const [branches, setBranches]     = useState<any[]>([])
   const [showMore, setShowMore]     = useState(false)
   const [showBranch, setShowBranch] = useState(false)
