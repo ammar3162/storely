@@ -278,24 +278,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   async function enablePush(){
     setEnablingPush(true)
     try {
-      if(typeof Notification !== "undefined") {
-        const perm = await Notification.requestPermission()
-        if(perm === "granted") {
-          const reg = await navigator.serviceWorker.ready
-          const existing = await reg.pushManager.getSubscription()
-          const sub = existing || await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-          })
-          const oid = sessionStorage.getItem('s_org_id')
-          await fetch("/api/push-subscribe", {
-            method: "POST",
-            headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({ subscription: sub, org_id: oid })
-          })
-        }
+      if(typeof Notification === "undefined") {
+        alert("⚠️ متصفحك لا يدعم الإشعارات إطلاقاً")
+        setEnablingPush(false); setShowEnableNotif(false); return
       }
-    } catch(e) { console.log("enablePush error:", e) }
+      const perm = await Notification.requestPermission()
+      if(perm !== "granted") {
+        alert(`❌ الإذن لم يُمنح — الحالة: ${perm}`)
+        setEnablingPush(false); return
+      }
+      const reg = await navigator.serviceWorker.ready
+      const existing = await reg.pushManager.getSubscription()
+      const sub = existing || await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+      })
+      const oid = sessionStorage.getItem('s_org_id')
+      const res = await fetch("/api/push-subscribe", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ subscription: sub, org_id: oid })
+      })
+      const data = await res.json().catch(()=>({}))
+      if(res.ok && data.success) {
+        alert("✅ تم تفعيل الإشعارات بنجاح!")
+      } else {
+        alert(`❌ فشل حفظ الاشتراك بالسيرفر: ${data.error || res.status}`)
+      }
+    } catch(e:any) {
+      alert(`❌ خطأ: ${e?.message || e}`)
+      console.log("enablePush error:", e)
+    }
     setEnablingPush(false)
     setShowEnableNotif(false)
   }
