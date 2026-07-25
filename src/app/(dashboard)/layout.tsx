@@ -222,17 +222,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         } else if(typeof Notification !== "undefined" && Notification.permission === "granted") {
           const reg = await navigator.serviceWorker.ready
           const existing = await reg.pushManager.getSubscription()
-          if(!existing) {
-            const sub = await reg.pushManager.subscribe({
-              userVisibleOnly: true,
-              applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-            })
-            await fetch("/api/push-subscribe", {
-              method: "POST",
-              headers: {"Content-Type":"application/json"},
-              body: JSON.stringify({ subscription: sub, org_id: p?.org_id })
-            })
-          }
+          // نجدد الاشتراك دايماً — يحمي من بقاء اشتراك قديم مرتبط بمفتاح VAPID سابق بعد أي تغيير للمفاتيح
+          if(existing) { await existing.unsubscribe().catch(()=>{}) }
+          const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+          })
+          await fetch("/api/push-subscribe", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ subscription: sub, org_id: p?.org_id })
+          })
         }
       } catch(e) { console.log("Push setup error:", e) }
     }
@@ -289,7 +289,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
       const reg = await navigator.serviceWorker.ready
       const existing = await reg.pushManager.getSubscription()
-      const sub = existing || await reg.pushManager.subscribe({
+      if(existing) { await existing.unsubscribe().catch(()=>{}) }
+      const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
       })
