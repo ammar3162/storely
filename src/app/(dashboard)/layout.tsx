@@ -87,6 +87,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [consentChecked, setConsentChecked] = useState(false)
   const [consentSaving, setConsentSaving] = useState(false)
   const [showMaintenance, setShowMaintenance] = useState(false)
+  const [showEnableNotif, setShowEnableNotif] = useState(false)
+  const [enablingPush, setEnablingPush] = useState(false)
   const [maintenanceMsg, setMaintenanceMsg] = useState('')
   const [showTermsConsent, setShowTermsConsent] = useState(false)
   const [termsChecked, setTermsChecked] = useState(false)
@@ -202,12 +204,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     })
     if(typeof window !== "undefined" && "serviceWorker" in navigator) {
       try {
-        // طلب إذن الإشعارات — محمي بالكامل داخل try/catch (بعض متصفحات iOS ما تدعم كائن Notification بنفس الشكل)
+        await navigator.serviceWorker.register("/sw.js")
+        // لا نطلب الإذن تلقائياً — Safari/iOS يتجاهل الطلب لو ما كان ردة فعل مباشرة على ضغطة المستخدم.
+        // بس نتحقق من الحالة الحالية، ونعرض زر "فعّل الإشعارات" لو لسا ما تقرر المستخدم.
         if(typeof Notification !== "undefined" && Notification.permission === "default") {
-          await Notification.requestPermission()
-        }
-        if(typeof Notification === "undefined" || Notification.permission === "granted") {
-          const reg = await navigator.serviceWorker.register("/sw.js")
+          setShowEnableNotif(true)
+        } else if(typeof Notification !== "undefined" && Notification.permission === "granted") {
+          const reg = await navigator.serviceWorker.ready
           const existing = await reg.pushManager.getSubscription()
           if(!existing) {
             const sub = await reg.pushManager.subscribe({
@@ -259,6 +262,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     } catch {}
     setTermsSaving(false)
     setShowTermsConsent(false)
+  }
+
+  // يُستدعى بضغطة زر المستخدم مباشرة — Safari/iOS يتجاهل طلب الإذن لو ما كان ردة فعل فورية على تفاعل حقيقي
+  async function enablePush(){
+    setEnablingPush(true)
+    try {
+      if(typeof Notification !== "undefined") {
+        const perm = await Notification.requestPermission()
+        if(perm === "granted") {
+          const reg = await navigator.serviceWorker.ready
+          const existing = await reg.pushManager.getSubscription()
+          const sub = existing || await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+          })
+          const oid = sessionStorage.getItem('s_org_id')
+          await fetch("/api/push-subscribe", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ subscription: sub, org_id: oid })
+          })
+        }
+      }
+    } catch(e) { console.log("enablePush error:", e) }
+    setEnablingPush(false)
+    setShowEnableNotif(false)
   }
 
   async function loadBranchLowCounts(){
@@ -720,6 +749,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </span>
                 <button onClick={()=>router.push('/settings')} style={{background:'#854f0b',color:'white',border:'none',borderRadius:8,padding:'5px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>
                   جدد الآن
+                </button>
+              </div>
+            )}
+            {showEnableNotif && (
+              <div style={{width:'100%',background:C.primaryL,borderBottom:`1px solid ${C.primaryB}`,padding:'12px 20px',display:'flex',alignItems:'center',justifyContent:'center',gap:10,flexWrap:'wrap' as const,textAlign:'center' as const}}>
+                <span style={{fontSize:16,flexShrink:0}}>🔔</span>
+                <span style={{fontSize:13,fontWeight:600,color:C.primaryD}}>
+                  فعّل الإشعارات الفورية عشان توصلك تنبيهات نقص المخزون وإقفال الكاشير فوراً — حتى لو التطبيق مقفول.
+                </span>
+                <button onClick={enablePush} disabled={enablingPush} style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'5px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>
+                  {enablingPush?'جاري التفعيل...':'فعّل الإشعارات'}
+                </button>
+                <button onClick={()=>setShowEnableNotif(false)} style={{background:'none',border:'none',color:C.primaryD,fontSize:12,cursor:'pointer',fontFamily:'inherit',textDecoration:'underline',flexShrink:0}}>
+                  لاحقاً
                 </button>
               </div>
             )}
