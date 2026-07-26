@@ -74,6 +74,9 @@ export default function StaffPage() {
   const [todayCount, setTodayCount] = useState(0)
   const [selected, setSelected] = useState<any>(null)
   const [dispenseQty, setDispenseQty] = useState('')
+  const [wasteMode, setWasteMode] = useState(false)
+  const [wasteReason, setWasteReason] = useState('')
+  const [wasteNote, setWasteNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState<{msg:string,type:'success'|'error'}|null>(null)
   // inventory
@@ -218,6 +221,25 @@ export default function StaffPage() {
       fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},body:JSON.stringify({org_id:session.org_id,product_id:selected.id,new_qty:selected.qty-Number(dispenseQty),reorder_point:selected.reorder_point})}).catch(()=>{})
       showMsg(T('success',lang))
       setSelected(null); setDispenseQty('')
+      loadProducts(session)
+    } catch { showMsg(T('error',lang),'error') }
+    setSubmitting(false)
+  }
+
+  const WASTE_REASONS = ['تالف','منتهي الصلاحية','كسر','سرقة/فقدان','خطأ تحضير','أخرى']
+
+  async function handleWaste() {
+    if(!session||!selected||!dispenseQty||Number(dispenseQty)<=0||!wasteReason){showMsg(T('error',lang),'error');return}
+    if(Number(dispenseQty)>selected.qty){showMsg(T('tooMuch',lang),'error');return}
+    setSubmitting(true)
+    try {
+      const staffToken = localStorage.getItem('staff_token')
+      const res = await fetch('/api/staff-waste',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},body:JSON.stringify({productId:selected.id,qty:Number(dispenseQty),staffName:session.name,wasteReason,note:wasteNote})})
+      if(!res.ok){showMsg(T('error',lang),'error');setSubmitting(false);return}
+      fetch('/api/notify-waste',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},body:JSON.stringify({staff_name:session.name,product_name:selected.name,qty:Number(dispenseQty),unit:selected.unit,waste_reason:wasteReason})}).catch(()=>{})
+      fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},body:JSON.stringify({org_id:session.org_id,product_id:selected.id,new_qty:selected.qty-Number(dispenseQty),reorder_point:selected.reorder_point})}).catch(()=>{})
+      showMsg('🗑️ تم تسجيل الهدر بنجاح')
+      setSelected(null); setDispenseQty(''); setWasteMode(false); setWasteReason(''); setWasteNote('')
       loadProducts(session)
     } catch { showMsg(T('error',lang),'error') }
     setSubmitting(false)
@@ -539,7 +561,7 @@ export default function StaffPage() {
 
       {/* Dispense modal */}
       {selected && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:200,backdropFilter:'blur(4px)'}} onClick={()=>{setSelected(null);setDispenseQty('')}}>
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:200,backdropFilter:'blur(4px)'}} onClick={()=>{setSelected(null);setDispenseQty('');setWasteMode(false);setWasteReason('');setWasteNote('')}}>
           <div style={{background:'white',borderRadius:'24px 24px 0 0',padding:28,width:'100%',maxWidth:480,animation:'slideUp .3s ease'}} onClick={e=>e.stopPropagation()}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20}}>
               <div>
@@ -547,16 +569,48 @@ export default function StaffPage() {
                 {lang!=='ar'&&<div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>{selected.name}</div>}
                 <div style={{fontSize:13,color:'#64748b',marginTop:4}}>{T('available',lang)}: <b style={{color:selected.qty<=selected.reorder_point?'#ef4444':'#16a34a'}}>{selected.qty} {selected.unit}</b></div>
               </div>
-              <button onClick={()=>{setSelected(null);setDispenseQty('')}} style={{background:'#f1f5f9',border:'none',borderRadius:'50%',width:36,height:36,color:'#64748b',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+              <button onClick={()=>{setSelected(null);setDispenseQty('');setWasteMode(false);setWasteReason('');setWasteNote('')}} style={{background:'#f1f5f9',border:'none',borderRadius:'50%',width:36,height:36,color:'#64748b',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
             </div>
+            <div style={{display:'flex',gap:8,marginBottom:20,background:'#f1f5f9',borderRadius:12,padding:4}}>
+              <button onClick={()=>setWasteMode(false)} style={{flex:1,padding:'10px',borderRadius:9,border:'none',background:!wasteMode?'white':'transparent',color:!wasteMode?'#16a34a':'#64748b',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:!wasteMode?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
+                📤 صرف عادي
+              </button>
+              <button onClick={()=>setWasteMode(true)} style={{flex:1,padding:'10px',borderRadius:9,border:'none',background:wasteMode?'white':'transparent',color:wasteMode?'#d97706':'#64748b',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:wasteMode?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
+                🗑️ تسجيل هدر
+              </button>
+            </div>
+            {wasteMode && (
+              <>
+                <div style={{fontSize:13,fontWeight:700,color:'#64748b',marginBottom:8}}>سبب الهدر *</div>
+                <div style={{display:'flex',flexWrap:'wrap' as const,gap:8,marginBottom:16}}>
+                  {WASTE_REASONS.map(r=>(
+                    <button key={r} onClick={()=>setWasteReason(r)}
+                      style={{padding:'8px 14px',borderRadius:99,border:`1.5px solid ${wasteReason===r?'#d97706':'#e2e8f0'}`,background:wasteReason===r?'#fffbeb':'white',color:wasteReason===r?'#b45309':'#64748b',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                      {r}
+                    </button>
+                  ))}
+                </div>
+                <div style={{fontSize:13,fontWeight:700,color:'#64748b',marginBottom:8}}>ملاحظة (اختياري)</div>
+                <textarea value={wasteNote} onChange={e=>setWasteNote(e.target.value)}
+                  placeholder="أي تفاصيل إضافية عن الهدر..."
+                  style={{width:'100%',padding:'12px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:14,fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:16,minHeight:60,resize:'none' as const}}/>
+              </>
+            )}
             <div style={{fontSize:13,fontWeight:700,color:'#64748b',marginBottom:10}}>{T('qty',lang)}</div>
             <input value={dispenseQty} onChange={e=>setDispenseQty(e.target.value.replace(/[^0-9.]/g,''))}
               style={{width:'100%',padding:'16px',border:'2px solid #e2e8f0',borderRadius:14,fontSize:28,fontWeight:800,textAlign:'center',fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:16}}
               placeholder="0" inputMode="decimal" autoFocus/>
-            <button onClick={handleDispense} disabled={!dispenseQty||submitting}
-              style={{width:'100%',padding:18,background:(!dispenseQty||submitting)?'#94a3b8':'linear-gradient(135deg,#16a34a,#15803d)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:800,cursor:(!dispenseQty||submitting)?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:(!dispenseQty||submitting)?'none':'0 8px 24px rgba(22,163,74,.35)'}}>
-              {submitting?T('saving',lang):T('confirm',lang)}
-            </button>
+            {wasteMode ? (
+              <button onClick={handleWaste} disabled={!dispenseQty||!wasteReason||submitting}
+                style={{width:'100%',padding:18,background:(!dispenseQty||!wasteReason||submitting)?'#94a3b8':'linear-gradient(135deg,#d97706,#b45309)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:800,cursor:(!dispenseQty||!wasteReason||submitting)?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:(!dispenseQty||!wasteReason||submitting)?'none':'0 8px 24px rgba(217,119,6,.35)'}}>
+                {submitting?T('saving',lang):`🗑️ تسجيل هدر ${dispenseQty||''} ${selected.unit}`}
+              </button>
+            ) : (
+              <button onClick={handleDispense} disabled={!dispenseQty||submitting}
+                style={{width:'100%',padding:18,background:(!dispenseQty||submitting)?'#94a3b8':'linear-gradient(135deg,#16a34a,#15803d)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:800,cursor:(!dispenseQty||submitting)?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:(!dispenseQty||submitting)?'none':'0 8px 24px rgba(22,163,74,.35)'}}>
+                {submitting?T('saving',lang):T('confirm',lang)}
+              </button>
+            )}
           </div>
         </div>
       )}
