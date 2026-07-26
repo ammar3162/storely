@@ -313,6 +313,176 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
   )
 }
 
+function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:string; to:string; onBack:()=>void }) {
+  const [movements, setMovements] = useState<any[]>([])
+  const [loading, setLoading]     = useState(true)
+  const [search, setSearch]       = useState('')
+  const [exportingPdf, setExportingPdf] = useState(false)
+  const sb = createClient()
+  useEffect(()=>{ load() },[period,from,to])
+  async function load() {
+    setLoading(true)
+    let orgId=sessionStorage.getItem('s_org_id')
+    if(!orgId){
+      const{data:{user}}=await sb.auth.getUser()
+      if(!user){setLoading(false);return}
+      const{data:p}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
+      if(!p){setLoading(false);return}
+      orgId=p.org_id; sessionStorage.setItem('s_org_id',orgId!)
+    }
+    const{start,end}=getRange(period,from,to)
+    const _bid1 = sessionStorage.getItem('s_branch_id')
+    let _mq1 = sb.from('stock_movements').select('*,products!inner(name,unit,org_id,branch_id),profiles!profile_id(full_name),staff_members!staff_id(name)').eq('type','waste').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
+    if (_bid1) _mq1 = _mq1.eq('products.branch_id', _bid1)
+    const{data}=await _mq1.order('created_at',{ascending:false})
+    setMovements(data||[]); setLoading(false)
+  }
+  function exportCSV(){
+    const csv='\ufeff'+[['التاريخ','المنتج','الكمية','الوحدة','السبب','الموظف','الملاحظة'],...filtered.map(m=>[new Date(m.created_at).toLocaleDateString('en-GB'),(m.products as any)?.name||'',Math.abs(m.qty_change),(m.products as any)?.unit||'',(m as any).waste_reason||'',(m.profiles as any)?.full_name||(m.staff_members as any)?.name||(m.note?.match(/بواسطة[^:]*:\s*(.+)/)?.[1])||'—',m.note||''])].map(r=>r.map(c=>'"'+c+'"').join(',')).join('\n')
+    Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})),download:'تقرير_الهدر.csv'}).click()
+  }
+  async function handleExportPdf() {
+    setExportingPdf(true)
+    try {
+      const orgId = sessionStorage.getItem('s_org_id')
+      const sbPdf = createClient()
+      const { data: org } = orgId ? await sbPdf.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      const { exportReportPdf } = await import('@/lib/pdfExport')
+      await exportReportPdf({
+        title: 'تقرير الهدر',
+        subtitle: formatRange(period, from, to),
+        orgName: (org as any)?.name || 'Storely',
+        columns: [
+          { header: 'التاريخ', key: 'date' },
+          { header: 'المنتج', key: 'product' },
+          { header: 'الكمية', key: 'qty', align: 'left' },
+          { header: 'السبب', key: 'reason' },
+          { header: 'الموظف', key: 'staff' },
+        ],
+        rows: filtered.map((m:any) => ({
+          date: new Date(m.created_at).toLocaleDateString('ar-SA'),
+          product: (m.products as any)?.name || '—',
+          qty: Math.abs(m.qty_change) + ' ' + ((m.products as any)?.unit || ''),
+          reason: (m as any).waste_reason || '—',
+          staff: (m.profiles as any)?.full_name || (m.staff_members as any)?.name || (m.note?.match(/بواسطة[^:]*:\s*(.+)/)?.[1]) || '—',
+        })),
+        summaryStats: [
+          { label: 'كميات مهدورة', value: String(totalQty), color: colors.danger },
+          { label: 'عمليات الهدر', value: String(filtered.length), color: colors.info },
+          { label: 'أصناف مختلفة', value: String(Object.keys(productMap).length), color: '#7c3aed' },
+        ],
+        fileName: `تقرير-الهدر-${new Date().toISOString().slice(0,10)}.pdf`,
+      })
+    } catch { alert('تعذر تصدير التقرير') }
+    setExportingPdf(false)
+  }
+  const filtered=movements.filter(m=>!search||(m.products as any)?.name?.includes(search)||m.note?.includes(search)||(m as any).waste_reason?.includes(search))
+  const totalQty=filtered.reduce((s,m)=>s+Math.abs(m.qty_change),0)
+  const productMap:Record<string,number>={}
+  filtered.forEach(m=>{const n=(m.products as any)?.name||'—';productMap[n]=(productMap[n]||0)+Math.abs(m.qty_change)})
+  const topProducts=Object.entries(productMap).sort((a,b)=>b[1]-a[1]).slice(0,5)
+  const reasonMap:Record<string,number>={}
+  filtered.forEach(m=>{const r=(m as any).waste_reason||'أخرى';reasonMap[r]=(reasonMap[r]||0)+Math.abs(m.qty_change)})
+  const barColors=[colors.primary,colors.info,'#8b5cf6',colors.warning,colors.danger]
+  return (
+    <div>
+      <BackBtn onClick={onBack}/>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap' as const,gap:8}}>
+        <PeriodBadge period={period} from={from} to={to}/>
+        <button onClick={handleExportPdf} disabled={exportingPdf || filtered.length===0}
+          style={{...btnSecondary,padding:'8px 16px',fontSize:font.xs,opacity:exportingPdf||filtered.length===0?0.6:1,cursor:exportingPdf||filtered.length===0?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:6}}>
+          {exportingPdf?'⏳ جاري التصدير...':'📄 تصدير PDF'}
+        </button>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16,marginTop:12}}>
+        {[
+          {label:'كميات مهدورة',value:totalQty,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
+          {label:'عمليات الهدر',value:filtered.length,color:colors.info,bg:colors.infoLight,border:colors.infoBorder},
+          {label:'أصناف مختلفة',value:Object.keys(productMap).length,color:'#7c3aed',bg:'#f5f3ff',border:'#ddd6fe'},
+        ].map((s,i)=>(
+          <div key={i} style={{...card,padding:'16px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
+            <div style={{fontSize:28,fontWeight:900,color:s.color,letterSpacing:'-1px'}}>{s.value}</div>
+            <div style={{fontSize:font.xs,color:s.color,marginTop:4,fontWeight:700,opacity:.8}}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+      {Object.keys(reasonMap).length>0&&(
+        <div style={{...card,padding:'16px 18px',marginBottom:16}}>
+          <div style={{fontSize:font.base,fontWeight:800,color:colors.text,marginBottom:14}}>🗑️ الهدر حسب السبب</div>
+          {Object.entries(reasonMap).sort((a,b)=>b[1]-a[1]).map(([reason,qty],i)=>{
+            const maxV = Math.max(...Object.values(reasonMap),1)
+            const pct=Math.round((qty/maxV)*100)
+            return(
+              <div key={i} style={{display:'flex',alignItems:'center',gap:10,marginBottom:i<Object.keys(reasonMap).length-1?12:0}}>
+                <div style={{width:26,height:26,borderRadius:8,background:barColors[i%barColors.length]+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:`1px solid ${barColors[i%barColors.length]}44`}}>
+                  <span style={{fontSize:11,fontWeight:900,color:barColors[i%barColors.length]}}>{i+1}</span>
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:5}}>
+                    <span style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{reason}</span>
+                    <span style={{fontSize:font.sm,fontWeight:900,color:barColors[i%barColors.length]}}>{qty}</span>
+                  </div>
+                  <div style={{height:5,background:colors.border,borderRadius:99}}>
+                    <div style={{height:'100%',width:pct+'%',background:barColors[i%barColors.length],borderRadius:99,transition:'width .6s'}}/>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      <div style={{...card,overflow:'hidden'}}>
+        <div style={{padding:'12px 16px',borderBottom:`1px solid ${colors.border}`,display:'flex',gap:8}}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث بالمنتج أو السبب أو الملاحظة..." style={{...inp(),flex:1}}/>
+          <button onClick={exportCSV} style={{...btnPrimary,padding:'9px 14px',fontSize:font.xs,display:'flex',alignItems:'center',gap:6}}>
+            <svg width="12" height="12" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            تصدير
+          </button>
+        </div>
+        {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
+        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{fontSize:44,marginBottom:10}}>📭</div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
+        ):(
+          <>
+          <div style={{overflowX:'auto'}}>
+            <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:400}}>
+              <thead>
+                <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
+                  {['التاريخ','المنتج','الكمية','السبب','الموظف','الملاحظة'].map((h,i)=>(
+                    <th key={i} style={{padding:'10px 16px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((m,i)=>(
+                  <tr key={m.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}>
+                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA',{month:'short',day:'numeric'})}</td>
+                    <td style={{padding:'11px 16px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td>
+                    <td style={{padding:'11px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:900}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
+                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#fffbeb',color:'#b45309',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #fde68a'}}>
+{(m as any).waste_reason||'—'}
+</span></td>
+                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f0fdf4',color:'#16a34a',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #bbf7d0'}}>
+{(m.profiles as any)?.full_name||(m.staff_members as any)?.name||(m.note?.match(/بواسطة[^:]*:\s*(.+)/)?.[1])||'—'}
+</span></td>
+                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text4}}>
+                      {m.note?.replace(/هدر: .+/, '').trim() || m.note || '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{padding:'12px 16px',background:colors.dangerLight,borderTop:`1.5px solid ${colors.dangerBorder}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <span style={{fontSize:font.sm,fontWeight:700,color:colors.danger}}>{filtered.length} عملية</span>
+            <span style={{fontSize:font.base,fontWeight:900,color:colors.danger}}>{totalQty} وحدة مهدورة</span>
+          </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; from:string; to:string; onBack:()=>void }) {
   const [purchases, setPurchases] = useState<any[]>([])
   const [loading, setLoading]     = useState(true)
@@ -1020,11 +1190,12 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
 }
 
 export default function ReportsPage() {
-  const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'|'cashier'>('home')
+  const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'|'cashier'|'waste'>('home')
   const [period, setPeriod]       = useState<FilterPeriod>('today')
   const [from, setFrom]           = useState('')
   const [to, setTo]               = useState('')
   const [dispenseStats, setDS]    = useState({ops:0,qty:0,items:0})
+  const [wasteStats, setWS]       = useState({ops:0,qty:0,items:0})
   const [purchaseStats, setPS]    = useState({invoices:0,total:0,vat:0})
   const [statsLoading, setSL]     = useState(true)
   const [weeklyD, setWD]          = useState<number[]>([])
@@ -1042,10 +1213,13 @@ export default function ReportsPage() {
     setSL(true)
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setSL(false);return}
     const{start,end}=getRange(period,from,to)
-    const[{data:mv},{data:pu}]=await Promise.all([
+    const[{data:mv},{data:pu},{data:wv}]=await Promise.all([
       (()=>{const _bid2=sessionStorage.getItem('s_branch_id');let _mq2=sb.from('stock_movements').select('qty_change,created_at,products!inner(name,org_id,branch_id)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bid2)_mq2=_mq2.eq('products.branch_id',_bid2);return _mq2})(),
       (()=>{const _bidP=sessionStorage.getItem('s_branch_id');let _pq=sb.from('purchases').select('amount,total_amount,vat_amount,created_at,branch_id').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bidP)_pq=_pq.eq('branch_id',_bidP);return _pq})(),
+      (()=>{const _bidW=sessionStorage.getItem('s_branch_id');let _wq=sb.from('stock_movements').select('qty_change,created_at,products!inner(name,org_id,branch_id)').eq('type','waste').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bidW)_wq=_wq.eq('products.branch_id',_bidW);return _wq})(),
     ])
+    const wasteItems=new Set((wv||[]).map((m:any)=>m.products?.name)).size
+    setWS({ops:(wv||[]).length,qty:(wv||[]).reduce((s:number,m:any)=>s+Math.abs(m.qty_change),0),items:wasteItems})
     const items=new Set((mv||[]).map((m:any)=>m.products?.name)).size
     setDS({ops:(mv||[]).length,qty:(mv||[]).reduce((s:number,m:any)=>s+Math.abs(m.qty_change),0),items})
     setPS({invoices:(pu||[]).length,total:(pu||[]).reduce((s:number,p:any)=>s+Number(p.total_amount||0),0),vat:(pu||[]).reduce((s:number,p:any)=>s+Number(p.vat_amount||0),0)})
@@ -1113,6 +1287,14 @@ export default function ReportsPage() {
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}>إقفال الكاشير اليومي</h1>
       <CashierClosingDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
+    </div>
+  )
+
+  if (view==='waste') return (
+    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <h1 style={{...pageTitle,marginBottom:16}}>تقرير الهدر</h1>
+      <WasteDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
     </div>
   )
 
@@ -1205,6 +1387,24 @@ export default function ReportsPage() {
               {label:'حالات زيادة',value:cashierStats.surplus,color:colors.info},
             ]}
             onClick={()=>setView('cashier')}
+          />
+        </div>
+        <div className="su" style={{animationDelay:'.3s'}}>
+          <ReportCard
+            title="تقرير الهدر"
+            subtitle="الأصناف المهدورة وأسبابها"
+            icon="🗑️"
+            color={colors.danger}
+            bg={colors.dangerLight}
+            border={colors.dangerBorder}
+            loading={statsLoading}
+            chartData={[]}
+            stats={[
+              {label:'عمليات الهدر',value:wasteStats.ops,color:colors.danger,highlight:true},
+              {label:'وحدات مهدورة',value:wasteStats.qty,color:colors.danger},
+              {label:'أصناف مختلفة',value:wasteStats.items,color:colors.danger},
+            ]}
+            onClick={()=>setView('waste')}
           />
         </div>
       </div>

@@ -98,6 +98,7 @@ export default function DispensePage() {
     const{error}=await (sb as any).from('stock_movements').insert({product_id:selected.id,profile_id:pid,type:'waste',qty_change:-qn,waste_reason:wasteReason,note:`هدر: ${wasteReason}`})
     if(error){toast('خطأ','error');setSaving(false);return}
     cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
+    fetch('/api/notify-waste',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,branch_id:sessionStorage.getItem('s_branch_id')||null,staff_name:sessionStorage.getItem('s_full_name')||'المالك',product_name:selected.name,qty:qn,unit:selected.unit,waste_reason:wasteReason})}).catch(()=>{})
     toast(`🗑️ تم تسجيل هدر ${qn} ${selected.unit} من ${selected.name}`)
     setSelected(null);setQty('');setWasteMode(false);setWasteReason('')
     setSaving(false);loadProducts(oid);loadHistory(oid)
