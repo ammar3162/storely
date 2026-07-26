@@ -151,7 +151,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const ms = await fetch('/api/platform-settings').then(r=>r.json())
       if (ms.maintenanceMode) { setMaintenanceMsg(ms.maintenanceMessage); setShowMaintenance(true); return }
     } catch {}
-    const{data:p}=await (sb as any).from('profiles').select('id,full_name,org_id,role,whatsapp_consent,whatsapp_first_contact_confirmed,terms_accepted_at,terms_version_accepted,organizations(name,logo_url)').eq('id',user.id).single()
+    const{data:p}=await (sb as any).from('profiles').select('id,full_name,org_id,role,whatsapp_consent,whatsapp_first_contact_confirmed,terms_accepted_at,terms_version_accepted,organizations(name,logo_url,deletion_scheduled_at)').eq('id',user.id).single()
     if(!p){router.replace('/login');return}
     if(!p.org_id){router.replace('/pending');return}
     // فحص انتهاء الاشتراك
@@ -174,6 +174,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setProfileId(p.id)
     if((p as any).whatsapp_consent !== true){ setShowConsent(true) }
     else if((p as any).whatsapp_first_contact_confirmed !== true){ setShowWaInvite(true) }
+
+    // إلغاء تلقائي لحذف الحساب المجدول — مجرد تسجيل الدخول يعتبر تراجع عن طلب الحذف
+    if((p as any).organizations?.deletion_scheduled_at){
+      await sb.from('organizations').update({ deletion_scheduled_at: null } as any).eq('id', (p as any).org_id)
+      alert('✅ تم إلغاء حذف حسابك المجدول تلقائياً — حسابك آمن ومستمر بشكل طبيعي.')
+    }
     if((p as any).role==='owner'){
       try {
         const tv = await fetch('/api/terms-version').then(r=>r.json())

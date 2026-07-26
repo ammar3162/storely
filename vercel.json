@@ -11,6 +11,10 @@
     {
       "path": "/api/backup",
       "schedule": "0 3 * * 0"
+    },
+    {
+      "path": "/api/process-scheduled-deletions",
+      "schedule": "0 4 * * *"
     }
   ]
 }

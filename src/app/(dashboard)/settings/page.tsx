@@ -269,7 +269,7 @@ export default function SettingsPage() {
       const data=await res.json()
       if(data.success){
         await sb.auth.signOut()
-        window.location.href='/login?deleted=1'
+        window.location.href='/login?deletion_scheduled=1'
       } else {
         setDeleteMsg({ok:false,text:'حدث خطأ أثناء الحذف — تواصل معنا'})
         setDeleting(false)
@@ -704,10 +704,10 @@ export default function SettingsPage() {
                       <div style={{fontSize:font.xs,color:colors.danger,opacity:.8}}>لا يمكن التراجع عن هذا الإجراء</div>
                     </div>
                   </div>
-                  <p style={{fontSize:font.xs,color:colors.danger,opacity:.85,marginBottom:14,lineHeight:1.7}}>سيتم حذف جميع بياناتك — المخزون، المشتريات، الموظفين، والتقارير — بشكل نهائي.</p>
+                  <p style={{fontSize:font.xs,color:colors.danger,opacity:.85,marginBottom:14,lineHeight:1.7}}>عند الحذف، تحصل على <b>15 يوم فترة سماح</b> — بعدها يُحذف كل شي نهائياً (المخزون، المشتريات، الموظفين، والتقارير). تسجيل الدخول خلال هذي الفترة يلغي الحذف تلقائياً.</p>
                   <button onClick={()=>setShowDelete(true)}
                     style={{width:'100%',padding:'11px',background:colors.danger,color:'white',border:'none',borderRadius:radius.md,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
-                    حذف حسابي نهائياً
+                    حذف حسابي
                   </button>
                 </div>
               </div>
@@ -724,7 +724,7 @@ export default function SettingsPage() {
           <div style={{textAlign:'center',marginBottom:20}}>
             <div style={{fontSize:44,marginBottom:10}}>⚠️</div>
             <div style={{fontSize:font.lg,fontWeight:900,color:colors.text,marginBottom:8}}>تأكيد حذف الحساب</div>
-            <p style={{fontSize:font.sm,color:colors.text3,lineHeight:1.7}}>هذا الإجراء <b style={{color:colors.danger}}>لا يمكن التراجع عنه</b>. سيتم حذف جميع بياناتك نهائياً.</p>
+            <p style={{fontSize:font.sm,color:colors.text3,lineHeight:1.7}}>بعد التأكيد، تحصل على <b style={{color:colors.text}}>15 يوم فترة سماح</b> — إذا سجّلت دخول خلالها، يُلغى الحذف تلقائياً. بعد انتهاء المهلة، <b style={{color:colors.danger}}>يُحذف كل شي نهائياً بدون رجعة</b>.</p>
           </div>
           {deleteMsg&&<div style={{background:colors.dangerLight,border:`1px solid ${colors.dangerBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:14,fontSize:font.sm,color:colors.danger,fontWeight:600}}>{deleteMsg.text}</div>}
           <div style={{marginBottom:18}}>
@@ -735,7 +735,7 @@ export default function SettingsPage() {
             <button onClick={()=>{setShowDelete(false);setDeleteConfirm('');setDeleteMsg(null)}} style={{...btnSecondary,flex:1,padding:'12px',fontSize:font.sm}}>إلغاء</button>
             <button onClick={deleteAccount} disabled={deleting||deleteConfirm!==form.name}
               style={{flex:2,padding:'12px',background:deleteConfirm===form.name?colors.danger:'#94a3b8',color:'white',border:'none',borderRadius:radius.md,fontSize:font.sm,fontWeight:700,cursor:deleteConfirm===form.name?'pointer':'not-allowed',fontFamily:font.family}}>
-              {deleting?'⏳ جاري الحذف...':'🗑️ حذف نهائياً'}
+              {deleting?'⏳ جاري الجدولة...':'🗑️ جدولة الحذف (15 يوم)'}
             </button>
           </div>
         </div>
