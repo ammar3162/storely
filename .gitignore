@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 node_modules/
+android/storely-release-key.jks
+*.jks
+android/keystore.properties

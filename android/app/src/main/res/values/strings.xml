@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Storely</string>
+    <string name="title_activity_main">Storely</string>
+    <string name="package_name">dev.storely.app</string>
+    <string name="custom_url_scheme">dev.storely.app</string>
+</resources>
