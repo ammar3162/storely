@@ -151,7 +151,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const ms = await fetch('/api/platform-settings').then(r=>r.json())
       if (ms.maintenanceMode) { setMaintenanceMsg(ms.maintenanceMessage); setShowMaintenance(true); return }
     } catch {}
-    const{data:p}=await (sb as any).from('profiles').select('id,full_name,org_id,role,whatsapp_consent,terms_accepted_at,terms_version_accepted,organizations(name,logo_url)').eq('id',user.id).single()
+    const{data:p}=await (sb as any).from('profiles').select('id,full_name,org_id,role,whatsapp_consent,whatsapp_first_contact_confirmed,terms_accepted_at,terms_version_accepted,organizations(name,logo_url)').eq('id',user.id).single()
     if(!p){router.replace('/login');return}
     if(!p.org_id){router.replace('/pending');return}
     // فحص انتهاء الاشتراك
@@ -173,6 +173,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     sessionStorage.setItem('s_profile_id',p.id)
     setProfileId(p.id)
     if((p as any).whatsapp_consent !== true){ setShowConsent(true) }
+    else if((p as any).whatsapp_first_contact_confirmed !== true){ setShowWaInvite(true) }
     if((p as any).role==='owner'){
       try {
         const tv = await fetch('/api/terms-version').then(r=>r.json())
@@ -264,6 +265,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setConsentSaving(false)
     setShowConsent(false)
     setShowWaInvite(true)
+  }
+
+  async function confirmWaFirstContact(){
+    if(!profileId) return
+    await sb.from('profiles').update({ whatsapp_first_contact_confirmed:true } as any).eq('id',profileId)
+    setShowWaInvite(false)
   }
 
   async function acceptTermsConsent(){
@@ -436,19 +443,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {showWaInvite && (
         <div style={{position:'fixed',inset:0,zIndex:3000,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
           <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:420,padding:28,boxShadow:'0 24px 60px rgba(0,0,0,.3)'}}>
-            <div style={{fontSize:36,textAlign:'center',marginBottom:12}}>💬</div>
-            <div style={{fontSize:17,fontWeight:800,color:C.text,textAlign:'center',marginBottom:8}}>خطوة أخيرة تضمن وصول تنبيهاتك</div>
+            <div style={{fontSize:36,textAlign:'center',marginBottom:12}}>📲</div>
+            <div style={{fontSize:17,fontWeight:800,color:C.text,textAlign:'center',marginBottom:8}}>تفعيل استلام التنبيهات مطلوب</div>
             <div style={{fontSize:13,color:C.text3,textAlign:'center',lineHeight:1.8,marginBottom:20}}>
-              واتساب أحياناً يمنع الرسائل الأولى من أرقام الأعمال. أرسل لنا رسالة بسيطة الآن (ضغطة وحدة، جاهزة مسبقاً) عشان تضمن وصول كل تنبيهاتك المستقبلية بدون أي تأخير.
+              لضمان وصول تنبيهاتك (نقص المخزون، إقفال الكاشير، طلبات التوريد) دون تأخير، تتطلب سياسات واتساب إرسال رسالة تفعيل واحدة من طرفك أولاً. اضغط الزر أدناه لإرسالها (نص الرسالة معبّأ مسبقاً)، ثم أكّد الإرسال.
             </div>
-            <a href="https://wa.me/966594351667?text=مرحباً%2C%20أرسل%20لتفعيل%20استلام%20التنبيهات" target="_blank" rel="noopener noreferrer"
-              onClick={()=>setShowWaInvite(false)}
+            <a href="https://wa.me/966594351667?text=أطلب%20تفعيل%20استلام%20تنبيهات%20حسابي%20على%20Storely" target="_blank" rel="noopener noreferrer"
               style={{display:'block',width:'100%',padding:13,background:'#25D366',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',textAlign:'center',textDecoration:'none',marginBottom:10}}>
-              📱 أرسل رسالة الآن (جاهزة مسبقاً)
+              📱 إرسال رسالة التفعيل
             </a>
-            <button onClick={()=>setShowWaInvite(false)}
-              style={{width:'100%',padding:11,background:'none',color:C.text3,border:'none',fontSize:12,cursor:'pointer',fontFamily:'inherit',textDecoration:'underline'}}>
-              لاحقاً
+            <button onClick={confirmWaFirstContact}
+              style={{width:'100%',padding:13,background:C.primary,color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+              أكّدت إرسال الرسالة، متابعة
             </button>
           </div>
         </div>
