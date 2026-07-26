@@ -94,6 +94,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [ready, setReady]           = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showConsent, setShowConsent] = useState(false)
+  const [showWaInvite, setShowWaInvite] = useState(false)
   const [consentChecked, setConsentChecked] = useState(false)
   const [consentSaving, setConsentSaving] = useState(false)
   const [showMaintenance, setShowMaintenance] = useState(false)
@@ -262,6 +263,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     await sb.from('profiles').update({ whatsapp_consent:true, whatsapp_consent_at:new Date().toISOString() } as any).eq('id',profileId)
     setConsentSaving(false)
     setShowConsent(false)
+    setShowWaInvite(true)
   }
 
   async function acceptTermsConsent(){
@@ -426,6 +428,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <button onClick={acceptConsent} disabled={!consentChecked||consentSaving}
               style={{width:'100%',padding:13,background:consentChecked?C.primary:'#e5e7eb',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:consentChecked?'pointer':'not-allowed',fontFamily:'inherit'}}>
               {consentSaving?'جاري الحفظ...':'متابعة'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showWaInvite && (
+        <div style={{position:'fixed',inset:0,zIndex:3000,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+          <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:420,padding:28,boxShadow:'0 24px 60px rgba(0,0,0,.3)'}}>
+            <div style={{fontSize:36,textAlign:'center',marginBottom:12}}>💬</div>
+            <div style={{fontSize:17,fontWeight:800,color:C.text,textAlign:'center',marginBottom:8}}>خطوة أخيرة تضمن وصول تنبيهاتك</div>
+            <div style={{fontSize:13,color:C.text3,textAlign:'center',lineHeight:1.8,marginBottom:20}}>
+              واتساب أحياناً يمنع الرسائل الأولى من أرقام الأعمال. أرسل لنا رسالة بسيطة الآن (ضغطة وحدة، جاهزة مسبقاً) عشان تضمن وصول كل تنبيهاتك المستقبلية بدون أي تأخير.
+            </div>
+            <a href="https://wa.me/966594351667?text=مرحباً%2C%20أرسل%20لتفعيل%20استلام%20التنبيهات" target="_blank" rel="noopener noreferrer"
+              onClick={()=>setShowWaInvite(false)}
+              style={{display:'block',width:'100%',padding:13,background:'#25D366',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',textAlign:'center',textDecoration:'none',marginBottom:10}}>
+              📱 أرسل رسالة الآن (جاهزة مسبقاً)
+            </a>
+            <button onClick={()=>setShowWaInvite(false)}
+              style={{width:'100%',padding:11,background:'none',color:C.text3,border:'none',fontSize:12,cursor:'pointer',fontFamily:'inherit',textDecoration:'underline'}}>
+              لاحقاً
             </button>
           </div>
         </div>
