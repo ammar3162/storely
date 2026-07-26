@@ -380,7 +380,7 @@ export default function StaffPage() {
             🌐 {LANGUAGES.find(l=>l.code===lang)?.label || 'العربية'} {showLangMenu?'▴':'▾'}
           </button>
           {showLangMenu && (
-            <div style={{position:'absolute' as const,bottom:'100%',right:16,marginBottom:6,background:'white',borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.2)',overflow:'hidden',minWidth:140,zIndex:50}}>
+            <div style={{position:'absolute' as const,top:'100%',right:16,marginTop:6,background:'white',borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.2)',overflow:'hidden',minWidth:140,zIndex:50}}>
               {LANGUAGES.map(l=>(
                 <button key={l.code}
                   onClick={()=>{setLang(l.code);localStorage.setItem('staff_lang',l.code);if(l.code!=='ar'&&session)fetchTranslation(session,l.code);setShowLangMenu(false)}}
