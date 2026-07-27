@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
+import { currencySymbol } from '@/lib/currencySymbol'
 import { cache } from '@/lib/cache'
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 import { createClient } from '@/lib/supabase/client'
@@ -28,6 +29,7 @@ export default function PurchasesPage() {
   const [products, setProducts]     = useState<any[]>([])
   const [isExisting, setIsExisting] = useState<boolean|null>(null)
   const [orgId, setOrgId]           = useState('')
+  const [curr, setCurr]             = useState('ر.س')
   const [userId, setUserId]         = useState('')
   const [loading, setLoading]       = useState(false)
   const submitting = useRef(false)
@@ -66,6 +68,7 @@ export default function PurchasesPage() {
       oid=p.org_id;uid=p.id;sessionStorage.setItem('s_org_id',oid!);sessionStorage.setItem('s_profile_id',uid!)
     }
     setOrgId(oid!);setUserId(uid!)
+    sb.from('organizations').select('currency').eq('id',oid!).single().then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
     loadProducts(oid!);setTimeout(()=>loadHistory(oid!),300)
   }
 
@@ -378,9 +381,9 @@ export default function PurchasesPage() {
       <div className="u" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:16,animationDelay:'.04s'}}>
         {[
           {label:'الفواتير',   value:filteredHistory.length,       color:C.info},
-          {label:'بدون ضريبة',value:totalNet.toFixed(0)+' ر.س',   color:C.text},
-          {label:'ضريبة 15%', value:totalVat.toFixed(0)+' ر.س',   color:C.warning},
-          {label:'الإجمالي',  value:totalSpent.toFixed(0)+' ر.س', color:C.primary},
+          {label:'بدون ضريبة',value:totalNet.toFixed(0)+' '+curr,   color:C.text},
+          {label:'ضريبة 15%', value:totalVat.toFixed(0)+' '+curr,   color:C.warning},
+          {label:'الإجمالي',  value:totalSpent.toFixed(0)+' '+curr, color:C.primary},
         ].map((s,i)=>(
           <div key={i} style={{background:'white',borderRadius:10,padding:'12px 14px',border:`1px solid ${C.border}`}}>
             <div style={{fontSize:10,color:C.text4,fontWeight:600,marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>{s.label}</div>
@@ -481,13 +484,13 @@ export default function PurchasesPage() {
 
             {/* Amount */}
             <div style={{marginBottom:10}}>
-              <label style={lbl}>المبلغ الإجمالي (ر.س) *</label>
+              <label style={lbl}>المبلغ الإجمالي ({curr}) *</label>
               <input type="number" min="0" step="0.01" required value={form.total_amount}
                 onChange={e=>setForm({...form,total_amount:e.target.value})}
                 style={{...inp,fontSize:16,fontWeight:700}} placeholder="0.00" inputMode="decimal"/>
               {inputTotal>0&&form.hasVat==='yes'&&(
                 <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:7,padding:'9px 12px',marginTop:6}}>
-                  {[['بدون ضريبة',displayAmount+' ر.س',C.text],['ضريبة 15%',displayVat+' ر.س',C.warning],['الإجمالي',inputTotal.toFixed(2)+' ر.س',C.primary]].map(([k,v,c],i)=>(
+                  {[['بدون ضريبة',displayAmount+' '+curr,C.text],['ضريبة 15%',displayVat+' '+curr,C.warning],['الإجمالي',inputTotal.toFixed(2)+' '+curr,C.primary]].map(([k,v,c],i)=>(
                     <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:i<2?4:0,paddingTop:i===2?6:0,borderTop:i===2?`1px solid ${C.border}`:undefined}}>
                       <span style={{color:C.text3}}>{k}</span><span style={{fontWeight:700,color:String(c)}}>{v}</span>
                     </div>
@@ -646,7 +649,7 @@ export default function PurchasesPage() {
                     </div>
                     <div style={{textAlign:'left',flexShrink:0}}>
                       <div style={{fontSize:15,fontWeight:700,color:C.primary,fontVariantNumeric:'tabular-nums'}}>{Number(p.total_amount||0).toFixed(0)}</div>
-                      <div style={{fontSize:10,color:C.text4}}>ر.س</div>
+                      <div style={{fontSize:10,color:C.text4}}>{curr}</div>
                       {Number(p.vat_amount||0)>0&&<div style={{fontSize:10,color:C.warning,marginTop:1}}>+{Number(p.vat_amount||0).toFixed(0)} ض</div>}
                     </div>
                   </div>
