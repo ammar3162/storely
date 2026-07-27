@@ -15,6 +15,7 @@ interface PdfExportOptions {
   columns: PdfTableColumn[]
   rows: Record<string, any>[]
   summaryStats?: { label: string; value: string; color?: string }[]
+  totalsRow?: Record<string, any>
   fileName: string
 }
 
@@ -25,7 +26,7 @@ interface PdfExportOptions {
  * الداخلي الذي لا يدعم الخطوط العربية).
  */
 export async function exportReportPdf(opts: PdfExportOptions) {
-  const { title, subtitle, orgName, columns, rows, summaryStats, fileName } = opts
+  const { title, subtitle, orgName, columns, rows, summaryStats, totalsRow, fileName } = opts
 
   // طبقة تغطية بيضاء كاملة (تظهر كـ"شاشة تحميل" أثناء التصدير)
   const overlay = document.createElement('div')
@@ -65,6 +66,12 @@ export async function exportReportPdf(opts: PdfExportOptions) {
     </tr>
   `).join('')
 
+  const totalsRowHtml = totalsRow
+    ? `<tr style="background:#f0fdf4;border-top:2px solid #16a34a">
+        ${columns.map(c => `<td style="padding:11px 12px;font-size:11px;font-weight:800;color:#16a34a;text-align:${c.align || 'right'}">${totalsRow[c.key] ?? ''}</td>`).join('')}
+      </tr>`
+    : ''
+
   container.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #16a34a">
       <div>
@@ -78,7 +85,7 @@ export async function exportReportPdf(opts: PdfExportOptions) {
     ${summaryHtml}
     <table style="width:100%;border-collapse:collapse">
       <thead><tr>${tableHeaderHtml}</tr></thead>
-      <tbody>${tableRowsHtml}</tbody>
+      <tbody>${tableRowsHtml}${totalsRowHtml}</tbody>
     </table>
     <div style="margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;text-align:center;line-height:1.8">
       <div>تم إنشاء هذا التقرير تلقائياً عبر نظام Storely</div>

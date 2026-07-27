@@ -964,6 +964,17 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
           { label: 'إجمالي العجز', value: totalDeficit.toFixed(0) + ' ر.س', color: colors.danger },
           { label: 'إجمالي الزيادة', value: totalSurplus.toFixed(0) + ' ر.س', color: colors.info },
         ],
+        totalsRow: {
+          date: 'الإجمالي',
+          staff: '—',
+          sales: closings.reduce((s:number,c:any)=>s+Number(c.total_sales||0),0).toFixed(2) + ' ر.س',
+          network: closings.reduce((s:number,c:any)=>s+Number(c.network_amount||0),0).toFixed(2) + ' ر.س',
+          cash: closings.reduce((s:number,c:any)=>s+Number(c.cash_amount||0),0).toFixed(2) + ' ر.س',
+          withdrawals: closings.reduce((s:number,c:any)=>s+Number(c.total_purchases||0),0) > 0 ? '−' + closings.reduce((s:number,c:any)=>s+Number(c.total_purchases||0),0).toFixed(2) + ' ر.س' : '—',
+          cashAfter: closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount||0)-Number(c.total_purchases||0)),0).toFixed(2) + ' ر.س',
+          net: closings.reduce((s:number,c:any)=>s+Number(c.network_amount||0)+Number(c.cash_amount||0)-Number(c.total_purchases||0),0).toFixed(2) + ' ر.س',
+          result: '—',
+        },
         fileName: `تقرير-اقفال-الكاشير-${new Date().toISOString().slice(0,10)}.pdf`,
       })
     } catch { alert('تعذر تصدير التقرير') }
