@@ -190,17 +190,20 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
         title: 'تقرير الصرف',
         subtitle: formatRange(period, from, to),
         orgName: (org as any)?.name || 'Storely',
+        logoUrl: '/storely-logo.png',
         columns: [
           { header: 'التاريخ', key: 'date' },
           { header: 'المنتج', key: 'product' },
           { header: 'الكمية', key: 'qty', align: 'left' },
           { header: 'الموظف', key: 'staff' },
+          { header: 'الملاحظة', key: 'note' },
         ],
         rows: filtered.map((m:any) => ({
           date: new Date(m.created_at).toLocaleDateString('ar-SA'),
           product: (m.products as any)?.name || '—',
           qty: Math.abs(m.qty_change) + ' ' + ((m.products as any)?.unit || ''),
           staff: (m.profiles as any)?.full_name || (m.staff_members as any)?.name || (m.note?.match(/بواسطة الموظف: (.+)/)?.[1]) || '—',
+          note: m.note?.replace(/صرف بواسطة الموظف: .+/, '').trim() || m.note || '—',
         })),
         summaryStats: [
           { label: 'كميات مصروفة', value: String(totalQty), color: colors.danger },
@@ -352,6 +355,7 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
         title: 'تقرير الهدر',
         subtitle: formatRange(period, from, to),
         orgName: (org as any)?.name || 'Storely',
+        logoUrl: '/storely-logo.png',
         columns: [
           { header: 'التاريخ', key: 'date' },
           { header: 'المنتج', key: 'product' },
@@ -531,6 +535,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
         title: 'تقرير المشتريات',
         subtitle: formatRange(period, from, to),
         orgName: (org as any)?.name || 'Storely',
+        logoUrl: '/storely-logo.png',
         columns: [
           { header: 'التاريخ', key: 'date' },
           { header: 'الصنف', key: 'name' },
@@ -733,6 +738,7 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
         title: 'تقرير الجرد اليومي',
         subtitle: formatRange(period, from, to),
         orgName: (org as any)?.name || 'Storely',
+        logoUrl: '/storely-logo.png',
         columns: [
           { header: 'الصنف', key: 'name' },
           { header: 'الفئة', key: 'category' },
@@ -937,6 +943,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
         title: 'تقرير إقفال الكاشير اليومي',
         subtitle: formatRange(period, from, to),
         orgName: (org as any)?.name || 'Storely',
+        logoUrl: '/storely-logo.png',
         columns: [
           { header: 'التاريخ', key: 'date' },
           { header: 'الكاشير', key: 'staff' },

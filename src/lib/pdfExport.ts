@@ -26,7 +26,7 @@ interface PdfExportOptions {
  * الداخلي الذي لا يدعم الخطوط العربية).
  */
 export async function exportReportPdf(opts: PdfExportOptions) {
-  const { title, subtitle, orgName, columns, rows, summaryStats, totalsRow, fileName } = opts
+  const { title, subtitle, orgName, logoUrl, columns, rows, summaryStats, totalsRow, fileName } = opts
 
   // طبقة تغطية بيضاء كاملة (تظهر كـ"شاشة تحميل" أثناء التصدير)
   const overlay = document.createElement('div')
@@ -74,9 +74,12 @@ export async function exportReportPdf(opts: PdfExportOptions) {
 
   container.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #16a34a">
-      <div>
-        <div style="font-size:20px;font-weight:800;color:#0f172a">${orgName}</div>
-        <div style="font-size:12px;color:#64748b;margin-top:2px">${title}${subtitle ? ' — ' + subtitle : ''}</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        ${logoUrl ? `<img src="${logoUrl}" style="width:36px;height:36px;border-radius:8px;object-fit:cover" crossorigin="anonymous" />` : ''}
+        <div>
+          <div style="font-size:20px;font-weight:800;color:#0f172a">${orgName}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">${title}${subtitle ? ' — ' + subtitle : ''}</div>
+        </div>
       </div>
       <div style="font-size:11px;color:#94a3b8">
         تاريخ الإصدار: ${new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })}
