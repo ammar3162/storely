@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
+import { currencySymbol } from '@/lib/currencySymbol'
 import { cache } from '@/lib/cache'
 import { createClient } from '@/lib/supabase/client'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
@@ -529,7 +530,8 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     setExportingPdf(true)
     try {
       const orgId = sessionStorage.getItem('s_org_id')
-      const { data: org } = orgId ? await sb.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      const { data: org } = orgId ? await sb.from('organizations').select('name,currency').eq('id', orgId).single() : { data: null }
+      const curr = currencySymbol((org as any)?.currency)
       const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
         title: 'تقرير المشتريات',
@@ -550,16 +552,16 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
           date: new Date(p.created_at).toLocaleDateString('ar-SA'),
           name: p.name || '—',
           category: p.category || '—',
-          amount: Number(p.amount || 0).toFixed(2) + ' ر.س',
-          vat: Number(p.vat_amount || 0).toFixed(2) + ' ر.س',
-          total: Number(p.total_amount || 0).toFixed(2) + ' ر.س',
+          amount: Number(p.amount || 0).toFixed(2) + ' ' + curr,
+          vat: Number(p.vat_amount || 0).toFixed(2) + ' ' + curr,
+          total: Number(p.total_amount || 0).toFixed(2) + ' ' + curr,
           supplier: p.supplier || '—',
           invoice: p.invoice_image ? '✅ مرفقة' : '❌ غير مرفقة',
         })),
         summaryStats: [
-          { label: 'بدون ضريبة', value: totalAmount.toFixed(0) + ' ر.س', color: colors.text2 },
-          { label: 'ضريبة 15%', value: totalVat.toFixed(0) + ' ر.س', color: colors.warning },
-          { label: 'الإجمالي', value: totalWithVat.toFixed(0) + ' ر.س', color: colors.primary },
+          { label: 'بدون ضريبة', value: totalAmount.toFixed(0) + ' ' + curr, color: colors.text2 },
+          { label: 'ضريبة 15%', value: totalVat.toFixed(0) + ' ' + curr, color: colors.warning },
+          { label: 'الإجمالي', value: totalWithVat.toFixed(0) + ' ' + curr, color: colors.primary },
         ],
         fileName: `تقرير-المشتريات-${new Date().toISOString().slice(0,10)}.pdf`,
       })
@@ -945,7 +947,8 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
     try {
       const orgId = sessionStorage.getItem('s_org_id')
       const sbPdf = createClient()
-      const { data: org } = orgId ? await sbPdf.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      const { data: org } = orgId ? await sbPdf.from('organizations').select('name,currency').eq('id', orgId).single() : { data: null }
+      const curr = currencySymbol((org as any)?.currency)
       const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
         title: 'تقرير إقفال الكاشير اليومي',
@@ -966,28 +969,28 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
         rows: closings.map((c: any) => ({
           date: new Date(c.closing_date).toLocaleDateString('ar-SA'),
           staff: c.staff_name || '—',
-          sales: Number(c.total_sales || 0).toFixed(2) + ' ر.س',
-          network: Number(c.network_amount || 0).toFixed(2) + ' ر.س',
-          cash: Number(c.cash_amount || 0).toFixed(2) + ' ر.س',
-          withdrawals: Number(c.total_purchases || 0) > 0 ? '−' + Number(c.total_purchases).toFixed(2) + ' ر.س' : '—',
-          cashAfter: (Number(c.cash_amount||0)-Number(c.total_purchases||0)).toFixed(2) + ' ر.س',
-          net: (Number(c.network_amount||0)+Number(c.cash_amount||0)-Number(c.total_purchases||0)).toFixed(2) + ' ر.س',
+          sales: Number(c.total_sales || 0).toFixed(2) + ' ' + curr,
+          network: Number(c.network_amount || 0).toFixed(2) + ' ' + curr,
+          cash: Number(c.cash_amount || 0).toFixed(2) + ' ' + curr,
+          withdrawals: Number(c.total_purchases || 0) > 0 ? '−' + Number(c.total_purchases).toFixed(2) + ' ' + curr : '—',
+          cashAfter: (Number(c.cash_amount||0)-Number(c.total_purchases||0)).toFixed(2) + ' ' + curr,
+          net: (Number(c.network_amount||0)+Number(c.cash_amount||0)-Number(c.total_purchases||0)).toFixed(2) + ' ' + curr,
           result: c.difference > 0 ? `زيادة ${c.difference.toFixed(2)}` : c.difference < 0 ? `عجز ${Math.abs(c.difference).toFixed(2)}` : 'مطابق',
         })),
         summaryStats: [
           { label: 'إجمالي التقارير', value: String(closings.length), color: '#0891b2' },
-          { label: 'إجمالي العجز', value: totalDeficit.toFixed(0) + ' ر.س', color: colors.danger },
-          { label: 'إجمالي الزيادة', value: totalSurplus.toFixed(0) + ' ر.س', color: colors.info },
+          { label: 'إجمالي العجز', value: totalDeficit.toFixed(0) + ' ' + curr, color: colors.danger },
+          { label: 'إجمالي الزيادة', value: totalSurplus.toFixed(0) + ' ' + curr, color: colors.info },
         ],
         totalsRow: {
           date: 'الإجمالي',
           staff: '—',
-          sales: closings.reduce((s:number,c:any)=>s+Number(c.total_sales||0),0).toFixed(2) + ' ر.س',
-          network: closings.reduce((s:number,c:any)=>s+Number(c.network_amount||0),0).toFixed(2) + ' ر.س',
-          cash: closings.reduce((s:number,c:any)=>s+Number(c.cash_amount||0),0).toFixed(2) + ' ر.س',
-          withdrawals: closings.reduce((s:number,c:any)=>s+Number(c.total_purchases||0),0) > 0 ? '−' + closings.reduce((s:number,c:any)=>s+Number(c.total_purchases||0),0).toFixed(2) + ' ر.س' : '—',
-          cashAfter: closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount||0)-Number(c.total_purchases||0)),0).toFixed(2) + ' ر.س',
-          net: closings.reduce((s:number,c:any)=>s+Number(c.network_amount||0)+Number(c.cash_amount||0)-Number(c.total_purchases||0),0).toFixed(2) + ' ر.س',
+          sales: closings.reduce((s:number,c:any)=>s+Number(c.total_sales||0),0).toFixed(2) + ' ' + curr,
+          network: closings.reduce((s:number,c:any)=>s+Number(c.network_amount||0),0).toFixed(2) + ' ' + curr,
+          cash: closings.reduce((s:number,c:any)=>s+Number(c.cash_amount||0),0).toFixed(2) + ' ' + curr,
+          withdrawals: closings.reduce((s:number,c:any)=>s+Number(c.total_purchases||0),0) > 0 ? '−' + closings.reduce((s:number,c:any)=>s+Number(c.total_purchases||0),0).toFixed(2) + ' ' + curr : '—',
+          cashAfter: closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount||0)-Number(c.total_purchases||0)),0).toFixed(2) + ' ' + curr,
+          net: closings.reduce((s:number,c:any)=>s+Number(c.network_amount||0)+Number(c.cash_amount||0)-Number(c.total_purchases||0),0).toFixed(2) + ' ' + curr,
           result: '—',
         },
         fileName: `تقرير-اقفال-الكاشير-${new Date().toISOString().slice(0,10)}.pdf`,
