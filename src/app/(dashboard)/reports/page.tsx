@@ -186,11 +186,14 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
       const orgId = sessionStorage.getItem('s_org_id')
       const sbPdf = createClient()
       const { data: org } = orgId ? await sbPdf.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      const branchIdPdf = sessionStorage.getItem('s_branch_id')
+      const { data: branchRow } = branchIdPdf ? await sbPdf.from('branches').select('name').eq('id', branchIdPdf).single() : { data: null }
+      const orgDisplayName = ((org as any)?.name || 'Storely') + ((branchRow as any)?.name ? ' — فرع ' + (branchRow as any).name : '')
       const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
         title: 'تقرير الصرف',
         subtitle: formatRange(period, from, to),
-        orgName: (org as any)?.name || 'Storely',
+        orgName: orgDisplayName,
         logoUrl: '/storely-logo.png',
         columns: [
           { header: 'التاريخ', key: 'date' },
@@ -351,11 +354,14 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
       const orgId = sessionStorage.getItem('s_org_id')
       const sbPdf = createClient()
       const { data: org } = orgId ? await sbPdf.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      const branchIdPdf = sessionStorage.getItem('s_branch_id')
+      const { data: branchRow } = branchIdPdf ? await sbPdf.from('branches').select('name').eq('id', branchIdPdf).single() : { data: null }
+      const orgDisplayName = ((org as any)?.name || 'Storely') + ((branchRow as any)?.name ? ' — فرع ' + (branchRow as any).name : '')
       const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
         title: 'تقرير الهدر',
         subtitle: formatRange(period, from, to),
-        orgName: (org as any)?.name || 'Storely',
+        orgName: orgDisplayName,
         logoUrl: '/storely-logo.png',
         columns: [
           { header: 'التاريخ', key: 'date' },
@@ -539,11 +545,14 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
       const orgId = sessionStorage.getItem('s_org_id')
       const { data: org } = orgId ? await sb.from('organizations').select('name,currency').eq('id', orgId).single() : { data: null }
       const curr = currencySymbol((org as any)?.currency)
+      const branchIdPdf = sessionStorage.getItem('s_branch_id')
+      const { data: branchRow } = branchIdPdf ? await sb.from('branches').select('name').eq('id', branchIdPdf).single() : { data: null }
+      const orgDisplayName = ((org as any)?.name || 'Storely') + ((branchRow as any)?.name ? ' — فرع ' + (branchRow as any).name : '')
       const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
         title: 'تقرير المشتريات',
         subtitle: formatRange(period, from, to),
-        orgName: (org as any)?.name || 'Storely',
+        orgName: orgDisplayName,
         logoUrl: '/storely-logo.png',
         columns: [
           { header: 'التاريخ', key: 'date' },
@@ -750,11 +759,14 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
     try {
       const orgId = sessionStorage.getItem('s_org_id')
       const { data: org } = orgId ? await sb.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      const branchIdPdf = sessionStorage.getItem('s_branch_id')
+      const { data: branchRow } = branchIdPdf ? await sb.from('branches').select('name').eq('id', branchIdPdf).single() : { data: null }
+      const orgDisplayName = ((org as any)?.name || 'Storely') + ((branchRow as any)?.name ? ' — فرع ' + (branchRow as any).name : '')
       const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
         title: 'تقرير الجرد اليومي',
         subtitle: formatRange(period, from, to),
-        orgName: (org as any)?.name || 'Storely',
+        orgName: orgDisplayName,
         logoUrl: '/storely-logo.png',
         columns: [
           { header: 'الصنف', key: 'name' },
@@ -964,11 +976,14 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
       const sbPdf = createClient()
       const { data: org } = orgId ? await sbPdf.from('organizations').select('name,currency').eq('id', orgId).single() : { data: null }
       const curr = currencySymbol((org as any)?.currency)
+      const branchIdPdf = sessionStorage.getItem('s_branch_id')
+      const { data: branchRow } = branchIdPdf ? await sbPdf.from('branches').select('name').eq('id', branchIdPdf).single() : { data: null }
+      const orgDisplayName = ((org as any)?.name || 'Storely') + ((branchRow as any)?.name ? ' — فرع ' + (branchRow as any).name : '')
       const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
         title: 'تقرير إقفال الكاشير اليومي',
         subtitle: formatRange(period, from, to),
-        orgName: (org as any)?.name || 'Storely',
+        orgName: orgDisplayName,
         logoUrl: '/storely-logo.png',
         columns: [
           { header: 'التاريخ', key: 'date' },
