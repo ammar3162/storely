@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sanitizeShortText } from '@/lib/sanitize'
 import { formatPhone } from '@/lib/whatsapp'
+import { currencyForDialCode } from '@/lib/currencyByCountry'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,6 +38,7 @@ export async function POST(req: Request) {
       .insert({
         name: orgName,
         country_code: countryCode || '+966',
+        currency: currencyForDialCode(countryCode || '+966'),
         whatsapp_number: fullPhone,
         low_stock_threshold: 5,
         business_type: businessType||'مطعم',
