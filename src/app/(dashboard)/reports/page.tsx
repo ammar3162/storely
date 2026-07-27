@@ -498,8 +498,15 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
   const [deleteError, setDeleteError] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [exportingPdf, setExportingPdf] = useState(false)
+  const [curr, setCurr] = useState('ر.س')
   const sb = createClient()
   useEffect(()=>{ load() },[period,from,to])
+  useEffect(()=>{
+    const oid = sessionStorage.getItem('s_org_id')
+    if(!oid) return
+    sb.from('organizations' as any).select('currency').eq('id',oid).single()
+      .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
+  },[])
 
   async function confirmDeletePurchase() {
     setDeleteError(''); setDeleting(true)
@@ -585,9 +592,9 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16,marginTop:12}}>
         {[
-          {label:'بدون ضريبة',value:totalAmount.toFixed(0)+' ر.س',color:colors.text2,bg:colors.bg,border:colors.border2},
-          {label:'ضريبة 15%',value:totalVat.toFixed(0)+' ر.س',color:colors.warning,bg:colors.warningLight,border:colors.warningBorder},
-          {label:'الإجمالي',value:totalWithVat.toFixed(0)+' ر.س',color:colors.primary,bg:colors.primaryLight,border:colors.primaryBorder},
+          {label:'بدون ضريبة',value:totalAmount.toFixed(0)+' '+curr,color:colors.text2,bg:colors.bg,border:colors.border2},
+          {label:'ضريبة 15%',value:totalVat.toFixed(0)+' '+curr,color:colors.warning,bg:colors.warningLight,border:colors.warningBorder},
+          {label:'الإجمالي',value:totalWithVat.toFixed(0)+' '+curr,color:colors.primary,bg:colors.primaryLight,border:colors.primaryBorder},
           {label:'الفواتير',value:String(filtered.length),color:colors.info,bg:colors.infoLight,border:colors.infoBorder},
         ].map((s,i)=>(
           <div key={i} style={{...card,padding:'14px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
@@ -629,9 +636,9 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
                     <td style={{padding:'11px 12px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(p.created_at).toLocaleDateString('ar-SA',{month:'short',day:'numeric'})}</td>
                     <td style={{padding:'11px 12px',fontSize:font.sm,fontWeight:700,color:colors.text,maxWidth:140,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.name}</td>
                     <td style={{padding:'11px 12px'}}><span style={catTag(p.category)}>{p.category}</span></td>
-                    <td style={{padding:'11px 12px',fontSize:font.sm}}>{Number(p.amount||0).toFixed(0)} ر.س</td>
-                    <td style={{padding:'11px 12px',fontSize:font.sm,color:colors.warning,fontWeight:600}}>{Number(p.vat_amount||0).toFixed(0)} ر.س</td>
-                    <td style={{padding:'11px 12px',fontSize:font.sm,fontWeight:700,color:colors.primary}}>{Number(p.total_amount||0).toFixed(0)} ر.س</td>
+                    <td style={{padding:'11px 12px',fontSize:font.sm}}>{Number(p.amount||0).toFixed(0)} {curr}</td>
+                    <td style={{padding:'11px 12px',fontSize:font.sm,color:colors.warning,fontWeight:600}}>{Number(p.vat_amount||0).toFixed(0)} {curr}</td>
+                    <td style={{padding:'11px 12px',fontSize:font.sm,fontWeight:700,color:colors.primary}}>{Number(p.total_amount||0).toFixed(0)} {curr}</td>
                     <td style={{padding:'11px 12px',fontSize:font.xs,color:colors.text4,maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.supplier||'—'}</td>
                     <td style={{padding:'11px 12px',textAlign:'center' as const}}>
                       {p.invoice_image
@@ -650,9 +657,9 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
               <tfoot>
                 <tr style={{background:colors.primaryLight,borderTop:`2px solid ${colors.primaryBorder}`}}>
                   <td colSpan={3} style={{padding:'11px 12px',fontWeight:800,fontSize:font.sm,color:colors.text}}>الإجمالي ({filtered.length} فاتورة)</td>
-                  <td style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm}}>{totalAmount.toFixed(0)} ر.س</td>
-                  <td style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm,color:colors.warning}}>{totalVat.toFixed(0)} ر.س</td>
-                  <td style={{padding:'11px 12px',fontWeight:900,fontSize:font.md,color:colors.primary}}>{totalWithVat.toFixed(0)} ر.س</td>
+                  <td style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm}}>{totalAmount.toFixed(0)} {curr}</td>
+                  <td style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm,color:colors.warning}}>{totalVat.toFixed(0)} {curr}</td>
+                  <td style={{padding:'11px 12px',fontWeight:900,fontSize:font.md,color:colors.primary}}>{totalWithVat.toFixed(0)} {curr}</td>
                   <td/><td/><td/>
                 </tr>
               </tfoot>
@@ -669,7 +676,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
             <div style={{width:48,height:48,borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:22}}>🔒</div>
             <div style={{fontSize:15,fontWeight:800,color:colors.text,textAlign:'center',marginBottom:6}}>تأكيد حذف العملية</div>
             <div style={{fontSize:12,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
-              سيتم حذف <b style={{color:colors.text}}>{confirmDelete.name}</b> ({Number(confirmDelete.total_amount||0).toFixed(0)} ر.س) نهائياً.<br/>أدخل كلمة مرور حسابك للتأكيد
+              سيتم حذف <b style={{color:colors.text}}>{confirmDelete.name}</b> ({Number(confirmDelete.total_amount||0).toFixed(0)} {curr}) نهائياً.<br/>أدخل كلمة مرور حسابك للتأكيد
             </div>
             <input type="password" value={deletePassword} onChange={e=>setDeletePassword(e.target.value)}
               onKeyDown={e=>{if(e.key==='Enter'&&deletePassword&&!deleting) confirmDeletePurchase()}}
@@ -941,6 +948,14 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   const [deleting, setDeleting] = useState(false)
   const [monthComp, setMonthComp] = useState<any>(null)
   const [exportingPdf, setExportingPdf] = useState(false)
+  const [curr, setCurr] = useState('ر.س')
+  useEffect(()=>{
+    const oid = sessionStorage.getItem('s_org_id')
+    if(!oid) return
+    const sbCurr = createClient()
+    sbCurr.from('organizations' as any).select('currency').eq('id',oid).single()
+      .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
+  },[])
 
   async function handleExportPdf() {
     setExportingPdf(true)
@@ -1054,8 +1069,8 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16,marginTop:12}}>
         {[
           {label:'إجمالي التقارير',value:closings.length,color:'#0891b2',bg:'#ecfeff',border:'#a5f3fc'},
-          {label:'إجمالي العجز',value:totalDeficit.toFixed(0)+' ر.س',color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
-          {label:'إجمالي الزيادة',value:totalSurplus.toFixed(0)+' ر.س',color:colors.info,bg:colors.infoLight,border:colors.infoBorder},
+          {label:'إجمالي العجز',value:totalDeficit.toFixed(0)+' '+curr,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
+          {label:'إجمالي الزيادة',value:totalSurplus.toFixed(0)+' '+curr,color:colors.info,bg:colors.infoLight,border:colors.infoBorder},
         ].map((s,i)=>(
           <div key={i} style={{...card,padding:'16px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
             <div style={{fontSize:22,fontWeight:900,color:s.color,letterSpacing:'-1px'}}>{s.value}</div>
@@ -1072,9 +1087,9 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
           </div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
             {[
-              {label:'المبيعات', val:monthComp.current.sales, change:monthComp.changes.sales, unit:'ر.س'},
-              {label:'المشتريات', val:monthComp.current.purchasesTotal, change:monthComp.changes.purchases, unit:'ر.س'},
-              {label:'الصافي', val:monthComp.current.net, change:monthComp.changes.net, unit:'ر.س'},
+              {label:'المبيعات', val:monthComp.current.sales, change:monthComp.changes.sales, unit:curr},
+              {label:'المشتريات', val:monthComp.current.purchasesTotal, change:monthComp.changes.purchases, unit:curr},
+              {label:'الصافي', val:monthComp.current.net, change:monthComp.changes.net, unit:curr},
             ].map((m,i)=>{
               const up = m.change !== null && m.change >= 0
               const color = m.change===null ? colors.text4 : up ? colors.primary : colors.danger
@@ -1132,28 +1147,28 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                       )}
                     </td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{c.staff_name}</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.total_sales).toFixed(0)} ر.س</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.network_amount).toFixed(0)} ر.س</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.cash_amount).toFixed(0)} ر.س</td>
+                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.total_sales).toFixed(0)} {curr}</td>
+                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.network_amount).toFixed(0)} {curr}</td>
+                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.cash_amount).toFixed(0)} {curr}</td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:Number(c.total_purchases)>0?colors.danger:colors.text4}}>
                       {Number(c.total_purchases)>0 ? (
                         <div onClick={()=>setExpandedReasons(prev=>({...prev,[c.id]:!prev[c.id]}))} style={{cursor:'pointer'}}>
                           <div style={{fontWeight:700,display:'flex',alignItems:'center',gap:4}}>
-                            −{Number(c.total_purchases).toFixed(0)} ر.س
+                            −{Number(c.total_purchases).toFixed(0)} {curr}
                             <span style={{fontSize:9,color:colors.text4}}>{expandedReasons[c.id]?'▲':'▼'}</span>
                           </div>
                           {expandedReasons[c.id] && (c.purchases||[]).map((p:any,pi:number)=>(
                             <div key={pi} style={{fontSize:10,color:colors.text4,fontWeight:500,marginTop:2}}>
-                              {p.reason||'بدون سبب'} ({Number(p.amount).toFixed(0)} ر.س)
+                              {p.reason||'بدون سبب'} ({Number(p.amount).toFixed(0)} {curr})
                             </div>
                           ))}
                         </div>
                       ) : '—'}
                     </td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{(Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} ر.س</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{(Number(c.network_amount)+Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} ر.س</td>
+                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{(Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} {curr}</td>
+                    <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{(Number(c.network_amount)+Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} {curr}</td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:statusColor[c.status]}}>
-                      {statusLabel[c.status]}{c.status!=='balanced'?` (${Math.abs(Number(c.difference)).toFixed(0)} ر.س)`:''}
+                      {statusLabel[c.status]}{c.status!=='balanced'?` (${Math.abs(Number(c.difference)).toFixed(0)} ${curr})`:''}
                     </td>
                     <td style={{padding:'12px 16px'}}>
                       <div style={{display:'flex',gap:6}}>
@@ -1180,13 +1195,13 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
               <tfoot style={{position:'sticky' as const,bottom:0,zIndex:2}}>
                 <tr style={{background:colors.primaryLight,borderTop:`2px solid ${colors.primaryBorder}`,boxShadow:'0 -2px 8px rgba(0,0,0,.06)'}}>
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}} colSpan={2}>الإجمالي ({closings.length})</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_sales),0).toFixed(0)} ر.س</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.network_amount),0).toFixed(0)} ر.س</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.cash_amount),0).toFixed(0)} ر.س</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0)>0?'−'+closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0).toFixed(0)+' ر.س':'—'}</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount)-Number(c.total_purchases)),0).toFixed(0)} ر.س</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{closings.reduce((s:number,c:any)=>s+Number(c.network_amount)+Number(c.cash_amount)-Number(c.total_purchases),0).toFixed(0)} ر.س</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.difference),0).toFixed(0)} ر.س</td>
+                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_sales),0).toFixed(0)} {curr}</td>
+                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.network_amount),0).toFixed(0)} {curr}</td>
+                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.cash_amount),0).toFixed(0)} {curr}</td>
+                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0)>0?'−'+closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0).toFixed(0)+' '+curr:'—'}</td>
+                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount)-Number(c.total_purchases)),0).toFixed(0)} {curr}</td>
+                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{closings.reduce((s:number,c:any)=>s+Number(c.network_amount)+Number(c.cash_amount)-Number(c.total_purchases),0).toFixed(0)} {curr}</td>
+                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.difference),0).toFixed(0)} {curr}</td>
                   <td/><td/>
                 </tr>
               </tfoot>
@@ -1234,6 +1249,7 @@ export default function ReportsPage() {
   const [dispenseStats, setDS]    = useState({ops:0,qty:0,items:0})
   const [wasteStats, setWS]       = useState({ops:0,qty:0,items:0})
   const [purchaseStats, setPS]    = useState({invoices:0,total:0,vat:0})
+  const [homeCurr, setHomeCurr]   = useState('ر.س')
   const [statsLoading, setSL]     = useState(true)
   const [weeklyD, setWD]          = useState<number[]>([])
   const [inventoryStats, setIS]   = useState({low:0,out:0,total:0})
@@ -1249,6 +1265,8 @@ export default function ReportsPage() {
   async function loadStats() {
     setSL(true)
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setSL(false);return}
+    sb.from('organizations' as any).select('currency').eq('id',orgId).single()
+      .then(({data}:any)=>{ if(data?.currency) setHomeCurr(currencySymbol(data.currency)) })
     const{start,end}=getRange(period,from,to)
     const[{data:mv},{data:pu},{data:wv}]=await Promise.all([
       (()=>{const _bid2=sessionStorage.getItem('s_branch_id');let _mq2=sb.from('stock_movements').select('qty_change,created_at,products!inner(name,org_id,branch_id)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bid2)_mq2=_mq2.eq('products.branch_id',_bid2);return _mq2})(),
@@ -1384,8 +1402,8 @@ export default function ReportsPage() {
             chartData={weeklyP}
             stats={[
               {label:'عدد الفواتير',value:purchaseStats.invoices,color:colors.primary,highlight:true},
-              {label:'إجمالي شامل',value:purchaseStats.total.toFixed(0)+' ر.س',color:colors.primary},
-              {label:'ضريبة القيمة',value:purchaseStats.vat.toFixed(0)+' ر.س',color:colors.warning},
+              {label:'إجمالي شامل',value:purchaseStats.total.toFixed(0)+' '+homeCurr,color:colors.primary},
+              {label:'ضريبة القيمة',value:purchaseStats.vat.toFixed(0)+' '+homeCurr,color:colors.warning},
             ]}
             onClick={()=>setView('purchase')}
           />
