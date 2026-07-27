@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -21,7 +22,7 @@ function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconColor, error }: any) {
+function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconColor, error, currency }: any) {
   return (
     <div>
       <div style={{position:'relative'}}>
@@ -33,7 +34,7 @@ function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconColor, err
           onFocus={e=>{if(!error)e.target.style.borderColor=iconColor}}
           onBlur={e=>{if(!error)e.target.style.borderColor='#e5e5e2'}}
         />
-        <span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:11,fontWeight:700,color:'#a8a7a1'}}>ر.س</span>
+        <span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:11,fontWeight:700,color:'#a8a7a1'}}>{currency || 'ر.س'}</span>
       </div>
       {error && <div style={{fontSize:11,color:'#dc2626',fontWeight:700,marginTop:6,display:'flex',alignItems:'center',gap:4}}>⚠️ {error}</div>}
     </div>
@@ -93,6 +94,7 @@ export default function CashierClosingPage() {
   const [submitting, setSubmitting] = useState(false)
   const [saved, setSaved] = useState(false)
   const [thankYouMsg, setThankYouMsg] = useState('')
+  const [curr, setCurr] = useState('ر.س')
   const [toast, setToast] = useState<{msg:string,type:'success'|'error'}|null>(null)
   const router = useRouter()
   const sb = createClient()
@@ -103,8 +105,8 @@ export default function CashierClosingPage() {
     const s = JSON.parse(savedSession) as StaffSession
     if(s.role !== 'cashier'){router.push('/staff/dispense');return}
     setSession(s)
-    sb.from('organizations' as any).select('logo_url').eq('id',s.org_id).single()
-      .then(({data}:any)=>{ if(data?.logo_url) setOrgLogo(data.logo_url) })
+    sb.from('organizations' as any).select('logo_url,currency').eq('id',s.org_id).single()
+      .then(({data}:any)=>{ if(data?.logo_url) setOrgLogo(data.logo_url); if(data?.currency) setCurr(currencySymbol(data.currency)) })
   },[])
 
   useEffect(()=>{
@@ -298,7 +300,7 @@ export default function CashierClosingPage() {
                 </div>
                 <div style={{marginBottom:16}}>
                   <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>إجمالي المبيعات (النظام)</label>
-                  <MoneyInput value={totalSales} onChange={setTotalSales} placeholder="0.00" icon="📊" iconBg="#f0fdf4" iconColor="#16a34a"/>
+                  <MoneyInput value={totalSales} onChange={setTotalSales} placeholder="0.00" icon="📊" iconBg="#f0fdf4" iconColor="#16a34a" currency={curr}/>
                 </div>
                 <div style={{marginBottom:16}}>
                   <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>الشبكة — حسب تقرير جهاز مدى</label>
@@ -322,19 +324,19 @@ export default function CashierClosingPage() {
                   {anyNetworkEntered && (
                     <div style={{display:'flex',justifyContent:'space-between',marginTop:8,padding:'8px 10px',background:'#eff6ff',borderRadius:8,fontSize:11,fontWeight:700}}>
                       <span style={{color:'#2563eb'}}>إجمالي الشبكة</span>
-                      <span style={{color:'#2563eb',direction:'ltr' as const}}>{fmt(network)} ر.س</span>
+                      <span style={{color:'#2563eb',direction:'ltr' as const}}>{fmt(network)} {curr}</span>
                     </div>
                   )}
                   {networkError && <div style={{fontSize:11,color:'#dc2626',fontWeight:700,marginTop:6,display:'flex',alignItems:'center',gap:4}}>⚠️ {networkError}</div>}
                 </div>
                 <div style={{marginBottom: (totalSales && anyNetworkEntered && !networkError) ? 16 : 0}}>
                   <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>الكاش الفعلي بالدرج</label>
-                  <MoneyInput value={cashAmount} onChange={setCashAmount} placeholder="0.00" icon="💵" iconBg="#fffbeb" iconColor="#d97706"/>
+                  <MoneyInput value={cashAmount} onChange={setCashAmount} placeholder="0.00" icon="💵" iconBg="#fffbeb" iconColor="#d97706" currency={curr}/>
                 </div>
                 {totalSales && anyNetworkEntered && !networkError && (
                   <div style={{display:'flex',justifyContent:'space-between',padding:'12px 14px',background:'#f7f7f5',borderRadius:10,fontSize:12,fontWeight:700}}>
                     <span style={{color:'#8b8a84'}}>الكاش المتوقع (معاينة)</span>
-                    <span style={{color:'#1c1c1a',direction:'ltr' as const}}>{fmt(expectedCash)} ر.س</span>
+                    <span style={{color:'#1c1c1a',direction:'ltr' as const}}>{fmt(expectedCash)} {curr}</span>
                   </div>
                 )}
               </div>
@@ -379,7 +381,7 @@ export default function CashierClosingPage() {
                     {totalPurchasesNow>0 && (
                       <div style={{display:'flex',justifyContent:'space-between',marginTop:12,padding:'10px 12px',background:'#fef2f2',borderRadius:9,fontSize:12,fontWeight:700}}>
                         <span style={{color:'#dc2626'}}>إجمالي المسحوبات</span>
-                        <span style={{color:'#dc2626',direction:'ltr' as const}}>{fmt(totalPurchasesNow)} ر.س</span>
+                        <span style={{color:'#dc2626',direction:'ltr' as const}}>{fmt(totalPurchasesNow)} {curr}</span>
                       </div>
                     )}
                   </div>
@@ -439,23 +441,23 @@ export default function CashierClosingPage() {
                 ].map((r,i)=>(
                   <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:13,borderBottom:'1px dashed #eeeeeb'}}>
                     <span style={{color:'#8b8a84',fontWeight:600}}>{r.label}</span>
-                    <span style={{color:'#1c1c1a',fontWeight:700,direction:'ltr' as const}}>{r.sign}{fmt(r.value)} ر.س</span>
+                    <span style={{color:'#1c1c1a',fontWeight:700,direction:'ltr' as const}}>{r.sign}{fmt(r.value)} {curr}</span>
                   </div>
                 ))}
                 <div style={{display:'flex',justifyContent:'space-between',padding:'12px 0 16px',fontSize:14}}>
                   <span style={{color:'#1c1c1a',fontWeight:800}}>= الكاش المتوقع</span>
-                  <span style={{color:'#1c1c1a',fontWeight:900,direction:'ltr' as const}}>{fmt(expectedCash)} ر.س</span>
+                  <span style={{color:'#1c1c1a',fontWeight:900,direction:'ltr' as const}}>{fmt(expectedCash)} {curr}</span>
                 </div>
                 <div style={{height:1,background:'#eeeeeb',margin:'4px 0 12px'}}/>
                 <div style={{display:'flex',justifyContent:'space-between',padding:'12px 0 16px',fontSize:14}}>
                   <span style={{color:'#1c1c1a',fontWeight:800}}>الكاش الفعلي بالدرج</span>
-                  <span style={{color:'#1c1c1a',fontWeight:900,direction:'ltr' as const}}>{fmt(cash)} ر.س</span>
+                  <span style={{color:'#1c1c1a',fontWeight:900,direction:'ltr' as const}}>{fmt(cash)} {curr}</span>
                 </div>
                 {totalPurchasesNow>0 && (
                   <div style={{background:'#faf9f7',borderRadius:10,padding:'10px 12px',marginBottom:16}}>
                     <div style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
                       <span style={{color:'#8b8a84',fontWeight:600}}>📌 مسحوبات مسجّلة (للسجل فقط)</span>
-                      <span style={{color:'#8b8a84',fontWeight:700,direction:'ltr' as const}}>{fmt(totalPurchasesNow)} ر.س</span>
+                      <span style={{color:'#8b8a84',fontWeight:700,direction:'ltr' as const}}>{fmt(totalPurchasesNow)} {curr}</span>
                     </div>
                     <div style={{fontSize:10,color:'#a8a7a1',marginTop:4}}>ما تؤثر على حساب العجز/الزيادة — الكاش المُدخل مفروض أصلاً بعد خصمها</div>
                   </div>
@@ -470,7 +472,7 @@ export default function CashierClosingPage() {
                   </div>
                   {status!=='balanced' && (
                     <div style={{fontSize:28,fontWeight:900,color: status==='deficit' ? '#dc2626' : '#2563eb'}}>
-                      {fmt(Math.abs(difference))} ر.س
+                      {fmt(Math.abs(difference))} {curr}
                     </div>
                   )}
                 </div>
