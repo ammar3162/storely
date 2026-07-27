@@ -1,6 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { currencySymbol } from '@/lib/currencySymbol'
 import { createClient } from '@/lib/supabase/client'
 
 const C = {
@@ -72,6 +73,13 @@ export default function AIToolsPage() {
   const [reportLoading, setReportLoading] = useState(false)
   const router = useRouter()
   const sb = createClient()
+  const [curr, setCurr] = useState('ر.س')
+  useEffect(()=>{
+    const oid = sessionStorage.getItem('s_org_id')
+    if(!oid) return
+    sb.from('organizations' as any).select('currency').eq('id',oid).single()
+      .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
+  },[])
 
   async function applyReorderSuggestion(productId: string, newReorderPoint: number) {
     setApplyingId(productId)
@@ -606,7 +614,7 @@ export default function AIToolsPage() {
             <>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
                 <div style={{background:'#fef2f2',borderRadius:10,padding:'12px',textAlign:'center' as const,border:'1px solid #fecaca'}}>
-                  <div style={{fontSize:20,fontWeight:900,color:'#dc2626'}}>{realWasteReport.totalEstimatedCost?.toLocaleString()||0} ر.س</div>
+                  <div style={{fontSize:20,fontWeight:900,color:'#dc2626'}}>{realWasteReport.totalEstimatedCost?.toLocaleString()||0} {curr}</div>
                   <div style={{fontSize:10,color:'#991b1b',marginTop:2}}>القيمة التقديرية للهدر</div>
                 </div>
                 <div style={{background:'#fef2f2',borderRadius:10,padding:'12px',textAlign:'center' as const,border:'1px solid #fecaca'}}>
@@ -619,7 +627,7 @@ export default function AIToolsPage() {
                   <div key={i} style={{padding:'12px 14px',background:'#fef2f2',borderRadius:10,border:'1px solid #fecaca'}}>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                       <div style={{fontSize:13,fontWeight:800,color:'#991b1b'}}>{r.name}</div>
-                      {r.estimatedCost!==null && <span style={{fontSize:12,fontWeight:800,color:'#dc2626'}}>{r.estimatedCost.toLocaleString()} ر.س</span>}
+                      {r.estimatedCost!==null && <span style={{fontSize:12,fontWeight:800,color:'#dc2626'}}>{r.estimatedCost.toLocaleString()} {curr}</span>}
                     </div>
                     <div style={{fontSize:11,color:'#9ca3af',marginTop:4}}>
                       الكمية: <b style={{color:'#374151'}}>{r.totalQty} {r.unit}</b>

@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { colors, radius, font, card, btnSecondary, pageTitle, pageSub } from '@/lib/ds'
+import { currencySymbol } from '@/lib/currencySymbol'
 
 export default function BranchComparePage() {
   const [comparison, setComparison] = useState<any[]>([])
@@ -11,8 +12,15 @@ export default function BranchComparePage() {
   const [exportingPdf, setExportingPdf] = useState(false)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const sb = createClient()
+  const [curr, setCurr] = useState('ر.س')
 
   useEffect(() => { load() }, [])
+  useEffect(() => {
+    const oid = sessionStorage.getItem('s_org_id')
+    if (!oid) return
+    sb.from('organizations' as any).select('currency').eq('id',oid).single()
+      .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
+  }, [])
 
   async function load() {
     setLoading(true)
@@ -50,7 +58,7 @@ export default function BranchComparePage() {
           name: b.name,
           dispensed: b.dispensed,
           added: b.added,
-          purchases: Number(b.purchases || 0).toFixed(0) + ' ر.س',
+          purchases: Number(b.purchases || 0).toFixed(0) + ' ' + curr,
           efficiency: b.efficiency + '%',
           invTotal: b.inventory?.total || 0,
           invLow: b.inventory?.low || 0,
@@ -60,7 +68,7 @@ export default function BranchComparePage() {
         summaryStats: [
           { label: 'عدد الفروع', value: String(comparison.length), color: '#7c3aed' },
           { label: 'إجمالي الصرف', value: String(comparison.reduce((s, b) => s + b.dispensed, 0)), color: colors.danger },
-          { label: 'إجمالي المشتريات', value: comparison.reduce((s, b) => s + Number(b.purchases || 0), 0).toFixed(0) + ' ر.س', color: colors.primary },
+          { label: 'إجمالي المشتريات', value: comparison.reduce((s, b) => s + Number(b.purchases || 0), 0).toFixed(0) + ' ' + curr, color: colors.primary },
         ],
         fileName: `مقارنة-الفروع-${new Date().toISOString().slice(0, 10)}.pdf`,
       })
@@ -135,7 +143,7 @@ export default function BranchComparePage() {
                   </div>
                   <div style={{ background: colors.bg, borderRadius: 8, padding: '8px 6px' }}>
                     <div style={{ fontSize: 15, fontWeight: 900, color: colors.info }}>{Number(b.purchases || 0).toFixed(0)}</div>
-                    <div style={{ fontSize: 9, color: colors.text4, marginTop: 2 }}>مشتريات (ر.س)</div>
+                    <div style={{ fontSize: 9, color: colors.text4, marginTop: 2 }}>مشتريات ({curr})</div>
                   </div>
                   <div style={{ background: colors.bg, borderRadius: 8, padding: '8px 6px' }}>
                     <div style={{ fontSize: 15, fontWeight: 900, color: '#7c3aed' }}>{b.ops}</div>

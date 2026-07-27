@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
+import { currencySymbol } from '@/lib/currencySymbol'
 
 function generatePin() { return String(Math.floor(1000 + Math.random() * 9000)) }
 const COUNTRY_CODES = ['+966','+971','+965','+973','+974','+968','+20','+962','+1','+44','+91','+92','+880','+63']
@@ -35,6 +36,7 @@ export default function StaffManagementPage() {
   const [staff, setStaff]           = useState<any[]>([])
   const [branches, setBranches]     = useState<any[]>([])
   const [orgId, setOrgId]           = useState('')
+  const [curr, setCurr]             = useState('ر.س')
   const [orgNotifyClosingWA, setOrgNotifyClosingWA] = useState(true)
   const [loading, setLoading]       = useState(true)
   const [showAdd, setShowAdd]       = useState(false)
@@ -89,6 +91,8 @@ export default function StaffManagementPage() {
     const{data:{user}}=await sb.auth.getUser(); if(!user) return
     const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single(); if(!profile?.org_id) return
     setOrgId(profile.org_id)
+    sb.from('organizations' as any).select('currency').eq('id',profile.org_id).single()
+      .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
     const{data:orgLimits}=await (sb as any).from('organizations').select('max_staff,shop_open_time,shop_close_time,notify_cashier_closing_wa').eq('id',profile.org_id).single()
     setMaxStaff((orgLimits as any)?.max_staff||1)
     setShopOpenTime(((orgLimits as any)?.shop_open_time||'').slice(0,5))
@@ -633,10 +637,10 @@ export default function StaffManagementPage() {
                     </div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:13,fontWeight:600,color:'#1c1c1a'}}>{new Date(c.closing_date).toLocaleDateString('ar-SA',{weekday:'short',month:'short',day:'numeric'})}</div>
-                      <div style={{fontSize:10,color:'#888780',marginTop:1}}>مبيعات {Number(c.total_sales).toFixed(0)} ر.س · شبكة {Number(c.network_amount).toFixed(0)} ر.س</div>
+                      <div style={{fontSize:10,color:'#888780',marginTop:1}}>مبيعات {Number(c.total_sales).toFixed(0)} {curr} · شبكة {Number(c.network_amount).toFixed(0)} {curr}</div>
                     </div>
                     <div style={{fontSize:11,fontWeight:700,color:statusColor[c.status],flexShrink:0}}>
-                      {statusLabel[c.status]}{c.status!=='balanced'?` (${Math.abs(Number(c.difference)).toFixed(0)} ر.س)`:''}
+                      {statusLabel[c.status]}{c.status!=='balanced'?` (${Math.abs(Number(c.difference)).toFixed(0)} ${curr})`:''}
                     </div>
                   </div>
                 )
