@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
+import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -38,6 +39,7 @@ export default function StaffPurchasesPage() {
     invoice_image:'', hasVat:''
   })
   const submitting = useRef(false)
+  const [curr, setCurr] = useState('ر.س')
   const sb = createClient()
   const router = useRouter()
 
@@ -48,6 +50,8 @@ export default function StaffPurchasesPage() {
     if (!s.permissions?.purchases) { router.push('/staff/dispense'); return }
     setSession(s)
     loadSuppliers(s.org_id)
+    sb.from('organizations' as any).select('currency').eq('id',s.org_id).single()
+      .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
   },[])
 
   function showToast(msg: string) {
@@ -193,7 +197,7 @@ export default function StaffPurchasesPage() {
 
           {/* المبلغ */}
           <div style={{marginBottom:12}}>
-            <label style={lbl}>المبلغ الإجمالي (ر.س) *</label>
+            <label style={lbl}>المبلغ الإجمالي ({curr}) *</label>
             <input style={{...inp,fontSize:18,fontWeight:700,textAlign:'center' as const}} type="number" min="0" step="0.01" value={form.total_amount} onChange={e=>setForm(f=>({...f,total_amount:e.target.value}))} placeholder="0.00" required/>
             {inputTotal>0&&form.hasVat&&(
               <div style={{display:'flex',gap:8,marginTop:6}}>

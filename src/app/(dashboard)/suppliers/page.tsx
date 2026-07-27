@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { colors, font, pageTitle, pageSub, card, btnPrimary, btnSecondary, inp } from '@/lib/ds'
@@ -107,7 +108,7 @@ function EscalationChain({ productId, allSuppliers, primarySupplierId, refreshKe
   )
 }
 
-function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating }: any) {
+function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, curr }: any) {
   const [showTimeline, setShowTimeline] = useState(false)
   const [timelineEvents, setTimelineEvents] = useState<any[]>([])
   const [timelineLoading, setTimelineLoading] = useState(false)
@@ -399,6 +400,7 @@ export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [products, setProducts]   = useState<any[]>([])
   const [orgId, setOrgId]         = useState('')
+  const [curr, setCurr]           = useState('ر.س')
   const [loading, setLoading]     = useState(true)
   const [showAdd, setShowAdd]     = useState(false)
   const [newName, setNewName]     = useState('')
@@ -420,6 +422,8 @@ export default function SuppliersPage() {
     const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
     if (!profile?.org_id) return
     setOrgId(profile.org_id)
+    sb.from('organizations' as any).select('currency').eq('id',profile.org_id).single()
+      .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
     const { data: orgLimits } = await (sb as any).from('organizations').select('max_suppliers').eq('id', profile.org_id).single()
     setMaxSuppliers((orgLimits as any)?.max_suppliers || 999)
     await Promise.all([loadSuppliers(profile.org_id), loadProducts(profile.org_id)])
@@ -520,7 +524,7 @@ export default function SuppliersPage() {
                     {c.suppliers.map((s:any,si:number)=>(
                       <div key={si} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 10px',background:si===0?'#f0fdf4':'#f8fafc',borderRadius:8,border:si===0?'1px solid #bbf7d0':'1px solid #e2e8f0'}}>
                         <span style={{fontSize:12,fontWeight:600,color:'#334155'}}>{si===0&&'🟢 '}{s.supplier}</span>
-                        <span style={{fontSize:12,fontWeight:800,color:si===0?'#16a34a':'#64748b'}}>{s.unitPrice} ر.س / {s.unit||'وحدة'}</span>
+                        <span style={{fontSize:12,fontWeight:800,color:si===0?'#16a34a':'#64748b'}}>{s.unitPrice} {curr||'ر.س'} / {s.unit||'وحدة'}</span>
                       </div>
                     ))}
                   </div>
@@ -586,7 +590,7 @@ export default function SuppliersPage() {
       ) : (
         <div style={{ display:'flex', flexDirection:'column' as const, gap:12 }}>
           {suppliers.map(s => (
-            <SupplierCard key={s.id} s={s} products={products} orgId={orgId} onRefresh={refresh} allSuppliers={suppliers} rating={supplierRatings[s.id]} />
+            <SupplierCard key={s.id} s={s} products={products} orgId={orgId} onRefresh={refresh} allSuppliers={suppliers} rating={supplierRatings[s.id]} curr={curr} />
           ))}
         </div>
       )}
