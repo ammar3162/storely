@@ -35,6 +35,7 @@ const TRUST_POINTS = [
 
 const BRANCH_OPTIONS = ['فرع واحد','2-3 فروع','4-10 فروع','أكثر من 10 فروع']
 
+
 function FaqItem({ q, a }: { q:string; a:string }) {
   const [open, setOpen] = useState(false)
   return (
@@ -107,6 +108,7 @@ export default function LandingPage() {
   const [agreed, setAgreed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitMsg, setSubmitMsg] = useState<{ok:boolean,text:string}|null>(null)
+  const [partners, setPartners] = useState<any[]>([])
 
   useEffect(()=>{
     import('@/lib/supabase/client').then(({createClient})=>{
@@ -120,6 +122,10 @@ export default function LandingPage() {
     const fn=()=>setScrolled(window.scrollY>50)
     window.addEventListener('scroll',fn)
     return ()=>window.removeEventListener('scroll',fn)
+  },[])
+
+  useEffect(()=>{
+    fetch('/api/partners').then(r=>r.json()).then(d=>setPartners(d.partners||[])).catch(()=>{})
   },[])
 
   async function submitDemoRequest(e: React.FormEvent) {
@@ -242,6 +248,21 @@ export default function LandingPage() {
           ))}
         </div>
       </section>
+
+      {/* PARTNERS */}
+      {partners.length > 0 && (
+        <section style={{padding:'50px 40px',textAlign:'center' as const}}>
+          <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8}}>نبني شراكات مع منشآت في كل مكان</h2>
+          <p style={{fontSize:14,color:'#9ca3af',marginBottom:36}}>منشآت حقيقية تدير مخزونها عبر Storely يومياً</p>
+          <div style={{display:'flex',gap:32,justifyContent:'center',flexWrap:'wrap' as const}}>
+            {partners.map((p:any)=>(
+              <div key={p.id} style={{width:180,height:90,borderRadius:14,background:'#fafafa',border:'1px solid #f3f4f6',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+                <img src={p.logo_url} alt={p.name} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain'}}/>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* TRUST */}
       <section style={{padding:'50px 40px',background:'#fafafa',borderTop:'1px solid #f3f4f6',borderBottom:'1px solid #f3f4f6'}}>
