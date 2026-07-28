@@ -13,7 +13,8 @@ export async function POST(req: Request) {
     if (!org_id) return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
 
     const db = sb()
-    const since30 = new Date(Date.now() - 30*24*60*60*1000).toISOString()
+    // نجيب 6 أشهر كاملة عشان نقدر نحسب اتجاه الطلب الشهري (صاعد/نازل)، مو بس متوسط ثابت
+    const since6mo = new Date(); since6mo.setMonth(since6mo.getMonth()-6)
 
     let productsQ2 = db.from('products').select('id,name,qty,unit,reorder_point,supplier_id').eq('org_id',org_id).eq('is_active',true)
     if (branch_id) productsQ2 = productsQ2.eq('branch_id', branch_id)
@@ -21,24 +22,45 @@ export async function POST(req: Request) {
       .select('product_id,qty_change,created_at,products!inner(org_id,branch_id)')
       .eq('products.org_id',org_id)
       .eq('type','out')
-      .gte('created_at',since30)
+      .gte('created_at',since6mo.toISOString())
     if (branch_id) movementsQ2 = movementsQ2.eq('products.branch_id', branch_id)
 
     const [{ data: products }, { data: movements }] = await Promise.all([productsQ2, movementsQ2])
 
-    // نحسب الاستهلاك على نافذتين — آخر 7 أيام وآخر 30 يوم — لنميّز التغيّر الحديث بالطلب
+    // نحسب الاستهلاك على 3 مستويات: آخر 7 أيام، آخر 30 يوم، وإجمالي كل شهر تقويمي كامل (للاتجاه)
     const since7 = new Date(Date.now() - 7*24*60*60*1000).toISOString()
+    const since30 = new Date(Date.now() - 30*24*60*60*1000).toISOString()
+    const currentMonthKey = new Date().toISOString().slice(0,7)
     const dispMap30: Record<string,number> = {}
     const dispMap7: Record<string,number> = {}
+    const monthlyMap: Record<string, Record<string,number>> = {} // product_id -> 'YYYY-MM' -> إجمالي
     for (const m of (movements||[])) {
       const pid = (m as any).product_id
       if (!pid) continue
+      const createdAt = (m as any).created_at as string
       const qty = Math.abs((m as any).qty_change)
-      dispMap30[pid] = (dispMap30[pid]||0) + qty
-      if ((m as any).created_at >= since7) dispMap7[pid] = (dispMap7[pid]||0) + qty
+      if (createdAt >= since30) dispMap30[pid] = (dispMap30[pid]||0) + qty
+      if (createdAt >= since7) dispMap7[pid] = (dispMap7[pid]||0) + qty
+      const mk = createdAt.slice(0,7)
+      monthlyMap[pid] = monthlyMap[pid] || {}
+      monthlyMap[pid][mk] = (monthlyMap[pid][mk]||0) + qty
     }
 
     const SAFETY_MARGIN = 1.25 // هامش أمان 25% يحمي من تذبذب الطلب اليومي الطبيعي — يمنع النفاد قبل التوصيل التالي
+
+    // يحلل اتجاه الطلب الشهري (صاعد/نازل) لمنتج معيّن — يحتاج شهرين كاملين على الأقل ليعطي نتيجة
+    function monthlyTrend(pid: string): { dailyRate: number; growthPct: number } | null {
+      const monthsData = monthlyMap[pid] || {}
+      const completeMonths = Object.keys(monthsData).filter(mk => mk !== currentMonthKey).sort()
+      if (completeMonths.length < 2) return null
+      const latest = monthsData[completeMonths[completeMonths.length-1]]
+      const prev = monthsData[completeMonths[completeMonths.length-2]]
+      if (!prev || prev <= 0) return null
+      let growth = (latest - prev) / prev
+      growth = Math.max(-0.5, Math.min(1.0, growth)) // نحدّ التغيّر بين -50% و +100% لتفادي تشوّهات بيانات نادرة أو استثنائية
+      const projectedNextMonth = latest * (1 + growth)
+      return { dailyRate: projectedNextMonth/30, growthPct: Math.round(growth*100) }
+    }
 
     const items = (products||[])
       .map((p:any) => {
@@ -46,8 +68,21 @@ export async function POST(req: Request) {
         const total7 = dispMap7[p.id]||0
         const rate30 = total30/30
         const rate7 = total7/7
-        // مزج مرجّح: 60% وزن لآخر 7 أيام (استجابة سريعة للتغيّر الحديث)، 40% لآخر 30 يوم (استقرار ضد التذبذب العشوائي)
-        const dailyRate = total30 > 0 ? (rate7*0.6 + rate30*0.4) : 0
+        const trend = monthlyTrend(p.id)
+
+        let dailyRate = 0
+        let method: 'trend'|'recent_average'|'no_history' = 'no_history'
+        let growthPct: number|null = null
+        if (trend) {
+          // عندنا شهرين فأكثر من بيانات — نعتمد على الاتجاه الشهري الفعلي (الأدق)
+          dailyRate = trend.dailyRate
+          method = 'trend'
+          growthPct = trend.growthPct
+        } else if (total30 > 0) {
+          // بيانات شهرية غير كافية بعد — نرجع لمزيج آخر 7/30 يوم (وزن أعلى للأحدث)
+          dailyRate = rate7*0.6 + rate30*0.4
+          method = 'recent_average'
+        }
 
         let suggested = 0
         let daysLeft = 999
@@ -59,7 +94,7 @@ export async function POST(req: Request) {
           daysLeft = p.qty / dailyRate
           urgency = daysLeft <= 2 ? 'urgent' : daysLeft <= 5 ? 'soon' : 'normal'
         } else if (p.reorder_point > 0 && p.qty <= p.reorder_point) {
-          // منتج بدون أي حركة صرف مسجّلة بآخر 30 يوم، لكنه فعلياً تحت الحد الأدنى — كان يُستبعد بالكامل بالسابق رغم نفاده الفعلي
+          // منتج بدون أي حركة صرف مسجّلة، لكنه فعلياً تحت الحد الأدنى — كان يُستبعد بالكامل بالسابق رغم نفاده الفعلي
           suggested = Math.max(p.reorder_point - p.qty, 0)
           daysLeft = 0
           urgency = 'urgent'
@@ -78,6 +113,8 @@ export async function POST(req: Request) {
           dailyRate,
           urgency,
           noHistory,
+          method,
+          growthPct,
         }
       })
       .filter((i:any) => i.suggested > 0)
@@ -94,6 +131,8 @@ export async function POST(req: Request) {
       suggestedQty: i.suggested,
       urgency: i.urgency,
       noHistory: i.noHistory,
+      method: i.method,
+      growthPct: i.growthPct,
     }))
 
     if (items.length === 0) {

@@ -317,9 +317,14 @@ export default function AIToolsPage() {
                 p.urgency==='urgent'?'#fef2f2':p.urgency==='soon'?'#fffbeb':'#f8fafc',
                 border:`1px solid ${p.urgency==='urgent'?'#fecaca':p.urgency==='soon'?'#fde68a':'#e2e8f0'}`}}>
                 <div>
-                  <div style={{fontSize:12,fontWeight:700,color:C.text,display:'flex',alignItems:'center',gap:6}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.text,display:'flex',alignItems:'center',gap:6,flexWrap:'wrap' as const}}>
                     {p.name}
                     {p.noHistory && <span style={{fontSize:9,fontWeight:800,padding:'1px 6px',borderRadius:99,background:'#fee2e2',color:'#dc2626'}}>نافد بدون تاريخ صرف</span>}
+                    {p.method==='trend' && p.growthPct!==null && (
+                      <span style={{fontSize:9,fontWeight:800,padding:'1px 6px',borderRadius:99,background:p.growthPct>=0?'#dcfce7':'#fee2e2',color:p.growthPct>=0?'#16a34a':'#dc2626'}}>
+                        {p.growthPct>=0?'↑':'↓'} اتجاه شهري {p.growthPct>=0?'+':''}{p.growthPct}%
+                      </span>
+                    )}
                   </div>
                   <div style={{fontSize:10,color:C.text4}}>نقطة الطلب: {p.reorderPoint} {p.unit}</div>
                 </div>
@@ -333,7 +338,7 @@ export default function AIToolsPage() {
               </div>
             ))}
             <div style={{fontSize:11,color:C.text4,textAlign:'center',marginTop:4}}>
-              * المقترح يكفي أسبوعين + هامش أمان 25% ضد تذبذب الطلب، بناءً على معدل صرفك الأخير (وزن أعلى لآخر 7 أيام)
+              * المقترح يكفي أسبوعين + هامش أمان 25%. يعتمد على اتجاه استهلاكك الشهري الفعلي (بعد توفر شهرين بيانات فأكثر)، وإلا يعتمد على آخر أسبوع
             </div>
           </div>
         )}
