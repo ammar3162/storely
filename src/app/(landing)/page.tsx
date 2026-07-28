@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation'
 const PLANS = [
   { name:'الأساسية', price:'149', color:'#16a34a', popular:false,
     limits:['فرع واحد','2 موظفين','3 موردين'],
-    features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين','—','—','—','—','—','—','—','—','—','—','—','—'] },
+    features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين'] },
   { name:'المتوسطة', price:'249', color:'#16a34a', popular:true,
     limits:['3 فروع','10 موظفين','10 موردين'],
-    features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين','تقارير متقدمة','إقفال الكاشير اليومي','تقرير الربحية الشهري 📈','اقتراح الشراء الذكي 🤖','توقع نفاد المخزون 🔮','تحليل الموسمية','تحسين نقطة إعادة الطلب 🎯','—','—','—','دعم ذو أولوية','—'] },
+    features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين','تقارير متقدمة','إقفال الكاشير اليومي','تقرير الربحية الشهري 📈','اقتراح الشراء الذكي 🤖','توقع نفاد المخزون 🔮','تحليل الموسمية','تحسين نقطة إعادة الطلب 🎯'] },
   { name:'المتقدمة', price:'399', color:'#16a34a', popular:false,
     limits:['غير محدود','غير محدود','غير محدود'],
     features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين','تقارير متقدمة','إقفال الكاشير اليومي','تقرير الربحية الشهري 📈','اقتراح الشراء الذكي 🤖','توقع نفاد المخزون 🔮','تحليل الموسمية','تحسين نقطة إعادة الطلب 🎯','مقارنة الفروع 🤖','المخزون الراكد 🐌','كشف الهدر الحقيقي 🗑️','دعم ذو أولوية','دعم 24/7'] },
@@ -21,16 +21,19 @@ const FEATURES = [
   { icon:'💰', title:'إقفال الكاشير اليومي', desc:'تسوية الصندوق بخطوات بسيطة مع صور إثبات، وتنبيه واتساب فوري لك عند أي عجز أو زيادة.' },
   { icon:'📈', title:'تقرير الربحية الشهري', desc:'صافي ربحك الحقيقي شهرياً: الإيرادات ناقص المصروفات الثابتة والمتغيرة وصافي الضريبة المستحقة.' },
   { icon:'🌍', title:'7 لغات', desc:'واجهة موظفين بالعربي والإنجليزي والأردو والهندي والتاغالوغ والبنغالي والفرنسي.' },
-  { icon:'📊', title:'تقارير ذكية', desc:'تقارير الصرف والمشتريات والجرد وإقفال الكاشير. صدّرها بـ CSV بضغطة واحدة.' },
+  { icon:'📊', title:'تقارير ذكية', desc:'تقارير الصرف والمشتريات والجرد وإقفال الكاشير. صدّرها بـ PDF أو CSV بضغطة واحدة.' },
   { icon:'🏪', title:'متعدد الفروع', desc:'أدر جميع فروعك من لوحة تحكم واحدة مع مخزون مستقل لكل فرع.' },
-  { icon:'🤖', title:'أدوات الذكاء الاصطناعي', desc:'اقتراح الشراء الذكي بناءً على معدل الصرف، ومقارنة أداء الفروع تلقائياً.' },
+  { icon:'🤖', title:'أدوات الذكاء الاصطناعي', desc:'اقتراح الشراء الذكي بناءً على اتجاه استهلاكك الفعلي، ومقارنة أداء الفروع تلقائياً.' },
 ]
 
-const TESTIMONIALS = [
-  { name:'أحمد العتيبي', role:'صاحب مطعم — الرياض', text:'قبل Storely كنت أعرف نقص المواد بعد ما تنتهي. الحين يجيني واتساب قبل أي نقص بوقت كافي.' },
-  { name:'سارة المطيري', role:'مديرة سلسلة كافيهات — جدة', text:'ثلاث فروع تحت عيني من جوالي. التقارير اليومية وفّرت علي ساعات من المتابعة.' },
-  { name:'خالد الشمري', role:'صاحب صيدلية — الدمام', text:'الموظفين الأجانب يستخدمون النظام بلغتهم بدون أي مشكلة. أفضل قرار اتخذته.' },
+const TRUST_POINTS = [
+  { icon:'🔒', label:'بياناتك محمية بنسخ احتياطي يومي' },
+  { icon:'⚡', label:'إعداد حسابك خلال دقائق' },
+  { icon:'📱', label:'دعم عربي كامل عبر واتساب' },
+  { icon:'🌍', label:'واجهة موظفين بـ7 لغات' },
 ]
+
+const BRANCH_OPTIONS = ['فرع واحد','2-3 فروع','4-10 فروع','أكثر من 10 فروع']
 
 function FaqItem({ q, a }: { q:string; a:string }) {
   const [open, setOpen] = useState(false)
@@ -45,10 +48,65 @@ function FaqItem({ q, a }: { q:string; a:string }) {
   )
 }
 
+function MiniMockup({ variant }: { variant: 'stats'|'whatsapp'|'staff'|'chart' }) {
+  if (variant === 'whatsapp') return (
+    <div style={{background:'white',borderRadius:16,padding:16,height:'100%',display:'flex',flexDirection:'column',gap:8,justifyContent:'center'}}>
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+        <div style={{width:26,height:26,borderRadius:8,background:'#25d366',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13}}>📲</div>
+        <span style={{fontSize:11,fontWeight:800,color:'#111827'}}>تنبيه واتساب</span>
+      </div>
+      <div style={{background:'#dcf8c6',borderRadius:'10px 10px 10px 2px',padding:'8px 10px',fontSize:11,color:'#111827',lineHeight:1.6}}>
+        ⚠️ صنف "جبنة شيدر" وصل للحد الأدنى — 3 كيلو متبقية فقط
+      </div>
+    </div>
+  )
+  if (variant === 'staff') return (
+    <div style={{background:'white',borderRadius:16,padding:16,height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:10}}>
+      <div style={{fontSize:11,fontWeight:700,color:'#6b7280'}}>ادخل رمزك</div>
+      <div style={{display:'flex',gap:6}}>
+        {[1,2,3,4].map(i=><div key={i} style={{width:22,height:26,borderRadius:6,background:'#f0fdf4',border:'1.5px solid #16a34a'}}/>)}
+      </div>
+      <div style={{fontSize:9,color:'#9ca3af'}}>موظف: محمد أمين</div>
+    </div>
+  )
+  if (variant === 'chart') return (
+    <div style={{background:'white',borderRadius:16,padding:16,height:'100%',display:'flex',flexDirection:'column',justifyContent:'center',gap:8}}>
+      <div style={{fontSize:11,fontWeight:800,color:'#111827',marginBottom:2}}>الربحية الشهرية</div>
+      <div style={{display:'flex',alignItems:'flex-end',gap:5,height:50}}>
+        {[40,65,50,80,60,90].map((h,i)=><div key={i} style={{flex:1,height:`${h}%`,background:i===5?'#16a34a':'#d1fae5',borderRadius:3}}/>)}
+      </div>
+    </div>
+  )
+  return (
+    <div style={{background:'white',borderRadius:16,padding:18,height:'100%'}}>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:12}}>
+        {[['15','صرف اليوم','#16a34a'],['4','ناقص','#dc2626'],['72','بالمخزون','#2563eb']].map(([v,l,c])=>(
+          <div key={l} style={{background:'#f8fafc',borderRadius:10,padding:'10px 6px',textAlign:'center' as const}}>
+            <div style={{fontSize:16,fontWeight:900,color:c}}>{v}</div>
+            <div style={{fontSize:8,color:'#9ca3af',marginTop:2}}>{l}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>
+        {[['جبنة شيدر','−2','#dc2626'],['صوص باربكيو','−1','#dc2626'],['علبة مايونيز','+10','#16a34a']].map(([n,q,c])=>(
+          <div key={n} style={{display:'flex',justifyContent:'space-between',padding:'7px 10px',background:'#fafafa',borderRadius:8}}>
+            <span style={{fontSize:11,color:'#374151',fontWeight:600}}>{n}</span>
+            <span style={{fontSize:11,fontWeight:800,color:c}}>{q}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function LandingPage() {
   const router = useRouter()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [form, setForm] = useState({firstName:'',lastName:'',phone:'',email:'',businessName:'',branchCount:''})
+  const [agreed, setAgreed] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitMsg, setSubmitMsg] = useState<{ok:boolean,text:string}|null>(null)
 
   useEffect(()=>{
     import('@/lib/supabase/client').then(({createClient})=>{
@@ -63,6 +121,24 @@ export default function LandingPage() {
     window.addEventListener('scroll',fn)
     return ()=>window.removeEventListener('scroll',fn)
   },[])
+
+  async function submitDemoRequest(e: React.FormEvent) {
+    e.preventDefault()
+    if (!agreed) { setSubmitMsg({ok:false,text:'لازم توافق على الشروط والأحكام أولاً'}); return }
+    setSubmitting(true); setSubmitMsg(null)
+    try {
+      const res = await fetch('/api/demo-request', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(form)})
+      const data = await res.json()
+      if (data.success) {
+        setSubmitMsg({ok:true,text:'✅ تم إرسال طلبك بنجاح! بنتواصل معك قريباً عبر واتساب'})
+        setForm({firstName:'',lastName:'',phone:'',email:'',businessName:'',branchCount:''})
+        setAgreed(false)
+      } else {
+        setSubmitMsg({ok:false,text:data.error || 'حدث خطأ، حاول مرة ثانية'})
+      }
+    } catch { setSubmitMsg({ok:false,text:'خطأ بالاتصال، حاول مرة ثانية'}) }
+    setSubmitting(false)
+  }
 
   return (
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',background:'white',color:'#111827'}}>
@@ -81,17 +157,20 @@ export default function LandingPage() {
         .plan-card{border:1.5px solid #e5e7eb;border-radius:16px;padding:28px;transition:all .2s;background:white}
         .plan-card:hover{border-color:#16a34a}
         .plan-card.popular{border-color:#16a34a;border-width:2px}
+        .demo-input{width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}
+        .demo-input:focus{border-color:#16a34a}
         @media(max-width:768px){
           .desk-nav{display:none!important}
           .mob-menu-btn{display:flex!important}
-          .hero-h1{font-size:36px!important}
+          .hero-h1{font-size:34px!important}
           .hero-btns{flex-direction:column!important}
-          .hero-grid{grid-template-columns:1fr!important}
-          .hero-mockup{order:-1;margin-bottom:20px;transform:scale(.92)}
+          .collage-grid{grid-template-columns:1fr 1fr!important;height:auto!important}
           .feat-grid{grid-template-columns:1fr!important}
           .plan-grid{grid-template-columns:1fr!important}
           .stats-row{flex-wrap:wrap!important;gap:20px!important}
           .footer-grid{grid-template-columns:1fr!important}
+          .demo-grid{grid-template-columns:1fr!important}
+          .demo-fields{grid-template-columns:1fr!important}
           .section-pad{padding:60px 20px!important}
         }
         @media(min-width:769px){.mob-menu-btn{display:none!important}.mob-menu{display:none!important}}
@@ -104,13 +183,13 @@ export default function LandingPage() {
           <span style={{fontSize:18,fontWeight:800,color:'#111827',letterSpacing:'-0.3px'}}>Storely</span>
         </div>
         <div className="desk-nav" style={{display:'flex',gap:28,alignItems:'center'}}>
-          {[['المميزات','#features'],['الأسعار','#pricing'],['آراء العملاء','#testimonials'],['الأسئلة','#faq']].map(([l,h])=>(
+          {[['المميزات','#features'],['الأسعار','#pricing'],['الأسئلة','#faq']].map(([l,h])=>(
             <a key={h} href={h} className="nav-link">{l}</a>
           ))}
         </div>
         <div className="desk-nav" style={{display:'flex',gap:10,alignItems:'center'}}>
           <button onClick={()=>router.push('/login')} className="btn-outline" style={{padding:'8px 18px',fontSize:14}}>دخول</button>
-          <button onClick={()=>router.push('/login?mode=register')} className="btn-primary" style={{padding:'9px 20px',fontSize:14}}>ابدأ مجاناً</button>
+          <a href="#demo" className="btn-primary" style={{padding:'9px 20px',fontSize:14}}>اطلب عرض النظام</a>
         </div>
         <button className="mob-menu-btn" onClick={()=>setMenuOpen(o=>!o)}
           style={{background:'none',border:'none',cursor:'pointer',fontSize:22,color:'#111827',padding:4}}>
@@ -118,235 +197,187 @@ export default function LandingPage() {
         </button>
       </nav>
 
-      {/* Mobile Menu */}
       {menuOpen && (
         <div className="mob-menu" style={{position:'fixed',top:64,right:0,left:0,zIndex:999,background:'white',borderBottom:'1px solid #f3f4f6',padding:'20px 24px',display:'flex',flexDirection:'column',gap:16}}>
-          {[['المميزات','#features'],['الأسعار','#pricing'],['آراء العملاء','#testimonials']].map(([l,h])=>(
+          {[['المميزات','#features'],['الأسعار','#pricing'],['الأسئلة','#faq']].map(([l,h])=>(
             <a key={h} href={h} onClick={()=>setMenuOpen(false)} style={{color:'#374151',textDecoration:'none',fontSize:16,fontWeight:500,padding:'8px 0',borderBottom:'1px solid #f9fafb'}}>{l}</a>
           ))}
-          <button onClick={()=>router.push('/login?mode=register')} className="btn-primary" style={{textAlign:'center'}}>ابدأ مجاناً — مجاناً</button>
+          <a href="#demo" onClick={()=>setMenuOpen(false)} className="btn-primary" style={{textAlign:'center'}}>اطلب عرض النظام</a>
         </div>
       )}
 
       {/* HERO */}
-      <section style={{paddingTop:120,paddingBottom:80,padding:'120px 40px 60px',maxWidth:1240,margin:'0 auto'}}>
-        <div className="hero-grid" style={{display:'grid',gridTemplateColumns:'1.05fr 1fr',gap:48,alignItems:'center'}}>
-          <div>
-            <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:99,padding:'6px 16px',fontSize:13,fontWeight:600,color:'#16a34a',marginBottom:24}}>
-              ✓ تجربة مجانية 14 يوماً — لا يتطلب بطاقة ائتمانية
-            </div>
-            <h1 className="hero-h1" style={{fontSize:52,fontWeight:900,color:'#111827',lineHeight:1.12,marginBottom:20,letterSpacing:'-2px'}}>
-              نظام إدارة المخزون<br/>
-              <span style={{color:'#16a34a'}}>الأذكى في المنطقة</span>
-            </h1>
-            <p style={{fontSize:18,color:'#6b7280',maxWidth:480,marginBottom:32,lineHeight:1.7}}>
-              تتبع مخزونك لحظة بلحظة، واستقبل تنبيهات واتساب عند نقص الأصناف، وأدر موظفيك وفروعك من مكان واحد
-            </p>
-            <div className="hero-btns" style={{display:'flex',gap:12,marginBottom:40}}>
-              <button onClick={()=>router.push('/login?mode=register')} className="btn-primary" style={{fontSize:16,padding:'14px 32px'}}>
-                ابدأ تجربتك المجانية
-              </button>
-              <a href="#features" className="btn-outline" style={{fontSize:16,padding:'14px 28px'}}>اكتشف المميزات</a>
-            </div>
-            <div className="stats-row" style={{display:'flex',gap:40}}>
-              {[['149 ر.س','يبدأ من'],['14 يوم','مجاناً'],['7','لغات'],['24/7','تنبيهات']].map(([n,l])=>(
-                <div key={l}>
-                  <div style={{fontSize:24,fontWeight:900,color:'#111827'}}>{n}</div>
-                  <div style={{fontSize:12,color:'#9ca3af',marginTop:3}}>{l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+      <section style={{paddingTop:130,paddingBottom:60,padding:'130px 40px 60px',maxWidth:1240,margin:'0 auto',textAlign:'center' as const}}>
+        <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:99,padding:'6px 16px',fontSize:13,fontWeight:600,color:'#16a34a',marginBottom:24}}>
+          ✓ تجربة مجانية 14 يوماً — لا يتطلب بطاقة ائتمانية
+        </div>
+        <h1 className="hero-h1" style={{fontSize:52,fontWeight:900,color:'#111827',lineHeight:1.15,marginBottom:20,letterSpacing:'-2px',maxWidth:820,margin:'0 auto 20px'}}>
+          نصمّم مستقبل إدارة المخزون<br/>
+          <span style={{color:'#16a34a'}}>لمطاعم ومنشآت المنطقة</span>
+        </h1>
+        <p style={{fontSize:18,color:'#6b7280',maxWidth:560,margin:'0 auto 32px',lineHeight:1.7}}>
+          تتبع مخزونك لحظة بلحظة، واستقبل تنبيهات واتساب عند نقص الأصناف، وأدر موظفيك وفروعك من مكان واحد
+        </p>
+        <div className="hero-btns" style={{display:'flex',gap:12,justifyContent:'center',marginBottom:56}}>
+          <a href="#demo" className="btn-outline" style={{fontSize:16,padding:'14px 28px'}}>جرب نظام Storely</a>
+          <button onClick={()=>router.push('/login?mode=register')} className="btn-primary" style={{fontSize:16,padding:'14px 32px'}}>
+            ابدأ تجربتك المجانية
+          </button>
+        </div>
 
-          {/* Dashboard preview mockup */}
-          <div className="hero-mockup" style={{position:'relative'}}>
-            <div style={{position:'absolute',top:'-40px',left:'-40px',width:280,height:280,background:'radial-gradient(circle,rgba(22,163,74,.10),transparent 70%)',borderRadius:'50%',pointerEvents:'none'}}/>
-            <div style={{position:'relative',background:'white',borderRadius:20,border:'1px solid #eef0f2',boxShadow:'0 24px 60px rgba(15,23,42,.12)',overflow:'hidden'}}>
-              <div style={{background:'linear-gradient(135deg,#16a34a,#15803d)',padding:'16px 20px',display:'flex',alignItems:'center',gap:10}}>
-                <div style={{width:28,height:28,borderRadius:8,background:'rgba(255,255,255,.9)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>📦</div>
-                <span style={{color:'white',fontSize:13,fontWeight:800}}>Storely</span>
-                <div style={{marginRight:'auto',display:'flex',gap:5}}>
-                  <span style={{width:6,height:6,borderRadius:'50%',background:'rgba(255,255,255,.5)'}}/>
-                  <span style={{width:6,height:6,borderRadius:'50%',background:'rgba(255,255,255,.5)'}}/>
-                  <span style={{width:6,height:6,borderRadius:'50%',background:'rgba(255,255,255,.5)'}}/>
-                </div>
-              </div>
-              <div style={{padding:20}}>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:14}}>
-                  {[['15','صرف اليوم','#16a34a'],['4','ناقص','#dc2626'],['72','بالمخزون','#2563eb']].map(([v,l,c2])=>(
-                    <div key={l as string} style={{background:'#f8fafc',borderRadius:10,padding:'10px 8px',textAlign:'center' as const}}>
-                      <div style={{fontSize:18,fontWeight:900,color:c2 as string}}>{v}</div>
-                      <div style={{fontSize:9,color:'#9ca3af',marginTop:2}}>{l}</div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:10,padding:'10px 12px',display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
-                  <span style={{fontSize:14}}>⚠️</span>
-                  <span style={{fontSize:11,color:'#92400e',fontWeight:700}}>4 أصناف وصلت للحد الأدنى</span>
-                </div>
-                <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
-                  {[['جبنة شيدر','−2','#dc2626'],['صوص باربكيو','−1','#dc2626'],['علبة مايونيز','+10','#16a34a']].map(([n,q,c3])=>(
-                    <div key={n as string} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'9px 12px',background:'#fafafa',borderRadius:8}}>
-                      <span style={{fontSize:12,color:'#374151',fontWeight:600}}>{n}</span>
-                      <span style={{fontSize:12,fontWeight:800,color:c3 as string}}>{q}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+        {/* شبكة معاينات — تُستبدل بلقطات شاشة حقيقية لاحقاً */}
+        <div className="collage-grid" style={{display:'grid',gridTemplateColumns:'1.1fr 0.9fr 0.9fr 1.3fr',gap:14,height:340,maxWidth:1100,margin:'0 auto'}}>
+          <div style={{background:'linear-gradient(160deg,#f0fdf4,#dcfce7)',borderRadius:20,padding:10}}><MiniMockup variant="whatsapp"/></div>
+          <div style={{background:'linear-gradient(160deg,#eff6ff,#dbeafe)',borderRadius:20,padding:10}}><MiniMockup variant="staff"/></div>
+          <div style={{background:'linear-gradient(160deg,#fefce8,#fef9c3)',borderRadius:20,padding:10}}><MiniMockup variant="chart"/></div>
+          <div style={{background:'linear-gradient(160deg,#f0fdf4,#bbf7d0)',borderRadius:20,padding:10}}><MiniMockup variant="stats"/></div>
+        </div>
+
+        <div className="stats-row" style={{display:'flex',gap:40,justifyContent:'center',marginTop:48}}>
+          {[['149 ر.س','يبدأ من'],['14 يوم','مجاناً'],['7','لغات'],['24/7','تنبيهات']].map(([n,l])=>(
+            <div key={l}>
+              <div style={{fontSize:24,fontWeight:900,color:'#111827'}}>{n}</div>
+              <div style={{fontSize:12,color:'#9ca3af',marginTop:3}}>{l}</div>
             </div>
-            {/* شارة إشعار عائمة */}
-            <div style={{position:'absolute',bottom:-16,left:-16,background:'white',borderRadius:14,border:'1px solid #eef0f2',boxShadow:'0 12px 32px rgba(15,23,42,.14)',padding:'12px 16px',display:'flex',alignItems:'center',gap:10}}>
-              <div style={{width:32,height:32,borderRadius:9,background:'#25d366',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>📲</div>
-              <div>
-                <div style={{fontSize:11,fontWeight:800,color:'#111827'}}>تنبيه واتساب</div>
-                <div style={{fontSize:10,color:'#9ca3af'}}>وصل المخزون للحد الأدنى</div>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* Logos / Business types */}
-      <div style={{background:'#f9fafb',padding:'28px 40px',textAlign:'center',borderTop:'1px solid #f3f4f6',borderBottom:'1px solid #f3f4f6'}}>
-        <p style={{fontSize:13,color:'#9ca3af',marginBottom:20,fontWeight:500}}>يناسب جميع أنواع المنشآت</p>
-        <div style={{display:'flex',justifyContent:'center',gap:12,flexWrap:'wrap'}}>
-          {['🍔 مطاعم','☕ كافيهات','🥖 مخابز','🛒 بقاليات','💊 صيدليات','🏭 مستودعات','🛍️ متاجر'].map(b=>(
-            <span key={b} style={{background:'white',border:'1px solid #e5e7eb',borderRadius:99,padding:'7px 16px',fontSize:13,fontWeight:600,color:'#374151'}}>{b}</span>
-          ))}
+      {/* TRUST */}
+      <section style={{padding:'50px 40px',background:'#fafafa',borderTop:'1px solid #f3f4f6',borderBottom:'1px solid #f3f4f6'}}>
+        <div style={{maxWidth:1000,margin:'0 auto',textAlign:'center' as const}}>
+          <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:32}}>نبني الثقة مع منشآت في كل مكان</h2>
+          <div style={{display:'flex',flexWrap:'wrap' as const,gap:28,justifyContent:'center'}}>
+            {TRUST_POINTS.map((t,i)=>(
+              <div key={i} style={{display:'flex',alignItems:'center',gap:8,background:'white',border:'1px solid #f3f4f6',borderRadius:99,padding:'10px 18px'}}>
+                <span style={{fontSize:16}}>{t.icon}</span>
+                <span style={{fontSize:13,fontWeight:600,color:'#374151'}}>{t.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* FEATURES */}
-      <section id="features" className="section-pad" style={{padding:'80px 40px',maxWidth:1100,margin:'0 auto'}}>
+      <section id="features" className="section-pad" style={{padding:'90px 40px',maxWidth:1200,margin:'0 auto'}}>
         <div style={{textAlign:'center',marginBottom:56}}>
           <p style={{fontSize:13,fontWeight:700,color:'#16a34a',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>المميزات</p>
-          <h2 style={{fontSize:38,fontWeight:900,color:'#111827',marginBottom:14,letterSpacing:'-1px'}}>كل شي تحتاجه في مكان واحد</h2>
-          <p style={{fontSize:16,color:'#6b7280',maxWidth:480,margin:'0 auto'}}>أدوات احترافية مصممة لاحتياجات المنشآت السعودية والخليجية</p>
+          <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>كل شي تحتاجه لإدارة مخزونك</h2>
         </div>
-        <div className="feat-grid" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
+        <div className="feat-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:20}}>
           {FEATURES.map((f,i)=>(
             <div key={i} className="feat-card">
-              <div style={{width:48,height:48,borderRadius:12,background:'#f0fdf4',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,marginBottom:16}}>{f.icon}</div>
-              <h3 style={{fontSize:17,fontWeight:700,color:'#111827',marginBottom:8}}>{f.title}</h3>
-              <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7}}>{f.desc}</p>
+              <div style={{fontSize:28,marginBottom:14}}>{f.icon}</div>
+              <div style={{fontSize:17,fontWeight:800,color:'#111827',marginBottom:8}}>{f.title}</div>
+              <div style={{fontSize:14,color:'#6b7280',lineHeight:1.7}}>{f.desc}</div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* HOW */}
-      <section style={{background:'#f9fafb',padding:'80px 40px',borderTop:'1px solid #f3f4f6',borderBottom:'1px solid #f3f4f6'}}>
-        <div style={{maxWidth:900,margin:'0 auto',textAlign:'center'}}>
-          <p style={{fontSize:13,fontWeight:700,color:'#16a34a',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>كيف يعمل</p>
-          <h2 style={{fontSize:38,fontWeight:900,color:'#111827',marginBottom:48,letterSpacing:'-1px'}}>ابدأ في 4 خطوات بسيطة</h2>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16}}>
-            {[
-              {n:'01',title:'سجّل منشأتك',desc:'أنشئ حساب وأضف بيانات منشأتك في دقيقتين'},
-              {n:'02',title:'أضف مخزونك',desc:'أدخل منتجاتك أو اختر من القوالب الجاهزة'},
-              {n:'03',title:'أضف موظفيك',desc:'كل موظف يحصل على رمز PIN للصرف'},
-              {n:'04',title:'تحكم من أي مكان',desc:'راقب مخزونك واستقبل تقارير على جوالك'},
-            ].map((s,i)=>(
-              <div key={i} style={{background:'white',border:'1px solid #e5e7eb',borderRadius:14,padding:'24px 20px',textAlign:'right'}}>
-                <div style={{fontSize:32,fontWeight:900,color:'#16a34a',marginBottom:12}}>{s.n}</div>
-                <h3 style={{fontSize:15,fontWeight:700,color:'#111827',marginBottom:8}}>{s.title}</h3>
-                <p style={{fontSize:13,color:'#6b7280',lineHeight:1.7}}>{s.desc}</p>
+      {/* DEMO REQUEST FORM */}
+      <section id="demo" className="section-pad" style={{padding:'90px 40px',background:'#fafafa'}}>
+        <div className="demo-grid" style={{maxWidth:1000,margin:'0 auto',display:'grid',gridTemplateColumns:'1fr 1fr',gap:0,borderRadius:20,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.08)'}}>
+          <form onSubmit={submitDemoRequest} style={{background:'white',padding:40}}>
+            <h2 style={{fontSize:24,fontWeight:900,color:'#111827',marginBottom:6}}>اطلب عرض النظام</h2>
+            <p style={{fontSize:14,color:'#6b7280',marginBottom:24}}>عبّي بياناتك وبنتواصل معك خلال ساعات عبر واتساب</p>
+            {submitMsg && (
+              <div style={{background:submitMsg.ok?'#f0fdf4':'#fef2f2',border:`1px solid ${submitMsg.ok?'#bbf7d0':'#fecaca'}`,borderRadius:8,padding:'10px 14px',marginBottom:16,fontSize:13,fontWeight:600,color:submitMsg.ok?'#16a34a':'#dc2626'}}>
+                {submitMsg.text}
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* IMPACT NUMBERS */}
-      <section id="testimonials" style={{background:'#f9fafb',padding:'80px 40px',borderTop:'1px solid #f3f4f6',borderBottom:'1px solid #f3f4f6'}}>
-        <div style={{maxWidth:1000,margin:'0 auto'}}>
-          <div style={{textAlign:'center',marginBottom:56}}>
-            <p style={{fontSize:13,fontWeight:700,color:'#16a34a',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>التأثير الحقيقي</p>
-            <h2 style={{fontSize:38,fontWeight:900,color:'#111827',marginBottom:12,letterSpacing:'-1px'}}>أرقام تتكلم عن نفسها</h2>
-            <p style={{fontSize:16,color:'#6b7280'}}>ما يحققه أصحاب المنشآت بعد استخدام Storely</p>
-          </div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
-            {[
-              {num:'3 ساعات',label:'توفير يومي',desc:'بدل المتابعة اليدوية للمخزون والجرد اليومي',icon:'⏱️'},
-              {num:'40%',label:'تقليل الهدر',desc:'بفضل التنبيهات المبكرة قبل نفاد أي صنف',icon:'📉'},
-              {num:'صفر',label:'مفاجآت نقص',desc:'تنبيه واتساب فوري قبل أن تنتهي أي مادة',icon:'🔔'},
-              {num:'100%',label:'تحكم من الجوال',desc:'راقب كل فرع ومورد وموظف من أي مكان',icon:'📱'},
-              {num:'7 لغات',label:'لكل موظف',desc:'لا حاجة لتدريب — كل موظف يعمل بلغته',icon:'🌍'},
-              {num:'24 ساعة',label:'تفعيل سريع',desc:'من التسجيل لأول تنبيه في أقل من يوم واحد',icon:'⚡'},
-            ].map((s,i)=>(
-              <div key={i} style={{background:'white',border:'1px solid #e5e7eb',borderRadius:16,padding:'28px 24px',transition:'all .2s'}}
-                onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.borderColor='#16a34a';(e.currentTarget as HTMLElement).style.boxShadow='0 4px 20px rgba(22,163,74,.08)'}}
-                onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.borderColor='#e5e7eb';(e.currentTarget as HTMLElement).style.boxShadow='none'}}>
-                <div style={{fontSize:28,marginBottom:14}}>{s.icon}</div>
-                <div style={{fontSize:36,fontWeight:900,color:'#16a34a',letterSpacing:'-1px',marginBottom:6}}>{s.num}</div>
-                <div style={{fontSize:15,fontWeight:700,color:'#111827',marginBottom:8}}>{s.label}</div>
-                <p style={{fontSize:13,color:'#6b7280',lineHeight:1.7}}>{s.desc}</p>
+            )}
+            <div className="demo-fields" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
+              <div>
+                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>الاسم *</label>
+                <input required className="demo-input" value={form.firstName} onChange={e=>setForm(f=>({...f,firstName:e.target.value}))}/>
               </div>
-            ))}
+              <div>
+                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>اسم العائلة *</label>
+                <input required className="demo-input" value={form.lastName} onChange={e=>setForm(f=>({...f,lastName:e.target.value}))}/>
+              </div>
+            </div>
+            <div style={{marginBottom:12}}>
+              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>رقم الهاتف *</label>
+              <input required type="tel" placeholder="05xxxxxxxx" className="demo-input" value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))}/>
+            </div>
+            <div style={{marginBottom:12}}>
+              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني *</label>
+              <input required type="email" className="demo-input" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/>
+            </div>
+            <div className="demo-fields" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16}}>
+              <div>
+                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>اسم المنشأة *</label>
+                <input required className="demo-input" value={form.businessName} onChange={e=>setForm(f=>({...f,businessName:e.target.value}))}/>
+              </div>
+              <div>
+                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>عدد الفروع</label>
+                <select className="demo-input" value={form.branchCount} onChange={e=>setForm(f=>({...f,branchCount:e.target.value}))}>
+                  <option value="">يرجى التحديد</option>
+                  {BRANCH_OPTIONS.map(o=><option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+            </div>
+            <label style={{display:'flex',alignItems:'flex-start',gap:8,fontSize:12,color:'#6b7280',marginBottom:20,cursor:'pointer'}}>
+              <input type="checkbox" checked={agreed} onChange={e=>setAgreed(e.target.checked)} style={{marginTop:2}}/>
+              أؤكد أني قرأت وأوافق على <a href="/terms" target="_blank" style={{color:'#16a34a'}}>الشروط والأحكام</a> و<a href="/privacy" target="_blank" style={{color:'#16a34a'}}>سياسة الخصوصية</a>
+            </label>
+            <button type="submit" disabled={submitting} className="btn-primary" style={{width:'100%',padding:'13px',fontSize:15,opacity:submitting?.6:1}}>
+              {submitting?'⏳ جاري الإرسال...':'إرسال الطلب'}
+            </button>
+          </form>
+          <div style={{background:'linear-gradient(160deg,#16a34a,#15803d)',padding:40,display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',textAlign:'center' as const}}>
+            <div style={{width:70,height:70,borderRadius:18,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:32,marginBottom:20}}>📦</div>
+            <h3 style={{fontSize:22,fontWeight:900,color:'white',marginBottom:12,lineHeight:1.4}}>اطلب تجربة نظام Storely لإدارة المخزون مجاناً</h3>
+            <p style={{fontSize:14,color:'rgba(255,255,255,.85)',lineHeight:1.8}}>بنساعدك تختار الباقة الأنسب لمنشأتك، ونجاوب على كل أسئلتك مباشرة</p>
           </div>
         </div>
       </section>
 
       {/* PRICING */}
-      <section id="pricing" style={{background:'#f9fafb',padding:'80px 40px',borderTop:'1px solid #f3f4f6',borderBottom:'1px solid #f3f4f6'}}>
-        <div style={{maxWidth:1000,margin:'0 auto'}}>
-          <div style={{textAlign:'center',marginBottom:56}}>
-            <p style={{fontSize:13,fontWeight:700,color:'#16a34a',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>الأسعار</p>
-            <h2 style={{fontSize:38,fontWeight:900,color:'#111827',marginBottom:12,letterSpacing:'-1px'}}>باقات تناسب حجم عملك</h2>
-            <p style={{fontSize:16,color:'#6b7280'}}>14 يوماً تجربة مجانية على كل الباقات</p>
-          </div>
-          <div className="plan-grid" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
-            {PLANS.map((p,i)=>(
-              <div key={i} className={`plan-card${p.popular?' popular':''}`}>
-                {p.popular && <div style={{display:'inline-block',background:'#16a34a',color:'white',fontSize:11,fontWeight:700,padding:'4px 12px',borderRadius:99,marginBottom:16}}>الأكثر طلباً</div>}
-                {!p.popular && <div style={{height:28,marginBottom:16}}/>}
-                <div style={{fontSize:13,fontWeight:600,color:'#6b7280',marginBottom:8}}>{p.name}</div>
-                <div style={{display:'flex',alignItems:'baseline',gap:4,marginBottom:16}}>
-                  <span style={{fontSize:42,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>{p.price}</span>
-                  <span style={{fontSize:14,color:'#9ca3af'}}>ر.س/شهر</span>
-                </div>
-                <div style={{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'}}>
-                  {p.limits.map((l,j)=>(
-                    <span key={j} style={{background:'#f0fdf4',color:'#16a34a',fontSize:11,fontWeight:600,padding:'3px 10px',borderRadius:99,border:'1px solid #bbf7d0'}}>{l}</span>
-                  ))}
-                </div>
-                <div style={{height:1,background:'#f3f4f6',marginBottom:18}}/>
-                <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:24}}>
-                  {p.features.map((f,j)=>(
-                    <div key={j} style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:f==='—'?'#d1d5db':'#374151'}}>
-                      <span style={{color:f==='—'?'#d1d5db':'#16a34a',fontWeight:700,flexShrink:0}}>{f==='—'?'—':'✓'}</span>
-                      {f!=='—'&&f}
-                    </div>
-                  ))}
-                </div>
-                <button onClick={()=>router.push('/login?mode=register')}
-                  style={{width:'100%',padding:'13px',background:p.popular?'#16a34a':'white',color:p.popular?'white':'#16a34a',border:`1.5px solid #16a34a`,borderRadius:9,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',transition:'all .2s'}}>
-                  ابدأ تجربتك المجانية
-                </button>
-                <p style={{textAlign:'center',fontSize:11,color:'#9ca3af',marginTop:10}}>14 يوماً مجاناً · لا يتطلب بطاقة</p>
+      <section id="pricing" className="section-pad" style={{padding:'90px 40px',maxWidth:1200,margin:'0 auto'}}>
+        <div style={{textAlign:'center',marginBottom:56}}>
+          <p style={{fontSize:13,fontWeight:700,color:'#16a34a',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>الأسعار</p>
+          <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>باقة تناسب كل حجم منشأة</h2>
+        </div>
+        <div className="plan-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:20}}>
+          {PLANS.map((p,i)=>(
+            <div key={i} className={`plan-card${p.popular?' popular':''}`} style={{position:'relative'}}>
+              {p.popular && <div style={{position:'absolute',top:-13,right:24,background:'#16a34a',color:'white',fontSize:11,fontWeight:800,padding:'4px 12px',borderRadius:99}}>الأكثر شيوعاً</div>}
+              <div style={{fontSize:16,fontWeight:800,color:'#111827',marginBottom:8}}>{p.name}</div>
+              <div style={{display:'flex',alignItems:'baseline',gap:6,marginBottom:16}}>
+                <span style={{fontSize:34,fontWeight:900,color:'#111827'}}>{p.price}</span>
+                <span style={{fontSize:14,color:'#9ca3af'}}>ر.س / شهرياً</span>
               </div>
-            ))}
-          </div>
+              <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:16,paddingBottom:16,borderBottom:'1px solid #f3f4f6'}}>
+                {p.limits.map((l,j)=><div key={j} style={{fontSize:13,color:'#6b7280'}}>• {l}</div>)}
+              </div>
+              <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:24}}>
+                {p.features.map((f,j)=>(
+                  <div key={j} style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#374151'}}>
+                    <span style={{color:'#16a34a'}}>✓</span>{f}
+                  </div>
+                ))}
+              </div>
+              <button onClick={()=>router.push('/login?mode=register')} className={p.popular?'btn-primary':'btn-outline'} style={{width:'100%',textAlign:'center' as const}}>ابدأ الآن</button>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* CTA */}
-      <section style={{padding:'80px 40px',textAlign:'center',background:'#16a34a'}}>
-        <div style={{maxWidth:600,margin:'0 auto'}}>
-          <h2 style={{fontSize:38,fontWeight:900,color:'white',marginBottom:14,letterSpacing:'-1px'}}>جاهز تبدأ؟</h2>
-          <p style={{fontSize:17,color:'rgba(255,255,255,.8)',marginBottom:36,lineHeight:1.7}}>
-            سجّل الآن واستمتع بـ 14 يوم تجربة مجانية كاملة
-          </p>
-          <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'}}>
-            <button onClick={()=>router.push('/login?mode=register')}
-              style={{background:'white',color:'#16a34a',border:'none',borderRadius:9,padding:'14px 32px',fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
-              سجّل مجاناً الآن
-            </button>
-            <a href="https://wa.me/966594351667" target="_blank" rel="noreferrer"
-              style={{display:'flex',alignItems:'center',gap:8,padding:'14px 24px',borderRadius:9,background:'rgba(255,255,255,.15)',color:'white',textDecoration:'none',fontSize:15,fontWeight:700,border:'1.5px solid rgba(255,255,255,.3)'}}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-              تواصل معنا
-            </a>
-          </div>
+      {/* CTA BANNER */}
+      <section style={{background:'linear-gradient(135deg,#16a34a,#15803d)',padding:'70px 40px',textAlign:'center' as const}}>
+        <h2 style={{fontSize:32,fontWeight:900,color:'white',marginBottom:14}}>جاهز تبدأ؟</h2>
+        <p style={{fontSize:16,color:'rgba(255,255,255,.85)',marginBottom:32}}>جرّب Storely مجاناً 14 يوماً — بدون بطاقة ائتمانية</p>
+        <div style={{display:'flex',gap:14,justifyContent:'center',flexWrap:'wrap' as const}}>
+          <button onClick={()=>router.push('/login?mode=register')}
+            style={{background:'white',color:'#16a34a',border:'none',borderRadius:9,padding:'14px 32px',fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+            سجّل مجاناً الآن
+          </button>
+          <a href="https://wa.me/966594351667" target="_blank" rel="noreferrer"
+            style={{display:'flex',alignItems:'center',gap:8,padding:'14px 24px',borderRadius:9,background:'rgba(255,255,255,.15)',color:'white',textDecoration:'none',fontSize:15,fontWeight:700,border:'1.5px solid rgba(255,255,255,.3)'}}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            تواصل معنا
+          </a>
         </div>
       </section>
 
@@ -372,7 +403,7 @@ export default function LandingPage() {
           <div className="footer-grid" style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr',gap:40,marginBottom:48}}>
             <div>
               <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
-                <img src="/storely-icon.svg" alt="Storely" style={{width:32,height:32,borderRadius:8}}/>
+                <img src="/storely-logo.png" alt="Storely" style={{width:32,height:32,borderRadius:8}}/>
                 <span style={{fontSize:18,fontWeight:800,color:'white'}}>Storely</span>
               </div>
               <p style={{fontSize:13,color:'#6b7280',lineHeight:1.7,maxWidth:220}}>منصة إدارة المخزون الذكية للمنشآت السعودية والخليجية</p>
