@@ -67,12 +67,17 @@ export default function DemoRequestsPage() {
                       {Object.entries(STATUS_LABELS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
                     </select>
                   </div>
-                  <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, fontSize:13}}>
+                  <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, fontSize:13, marginBottom:14}}>
                     <div style={{color:C.text2}}>🏢 <span style={{color:C.text}}>{r.business_name}</span></div>
                     <div style={{color:C.text2}}>🏪 <span style={{color:C.text}}>{r.branch_count || 'غير محدد'}</span></div>
                     <div style={{color:C.text2}}>📱 <a href={`https://wa.me/${r.phone.replace(/[^0-9]/g,'')}`} target="_blank" style={{color:C.blue}}>{r.phone}</a></div>
                     <div style={{color:C.text2}}>✉️ <a href={`mailto:${r.email}`} style={{color:C.blue}}>{r.email}</a></div>
                   </div>
+                  <a href={`https://wa.me/${r.phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent('مرحباً '+r.first_name+'! 🎉\n\nشكراً لطلبك عرض Storely لإدارة مخزون "'+r.business_name+'".\n\nودّي أوريك النظام مباشرة وأجاوب على أي سؤال عندك — متى يناسبك اتصال سريع 5 دقائق؟\n\nأو لو حاب تبدأ فوراً بنفسك، تقدر تسجّل حسابك المجاني (14 يوم بدون بطاقة ائتمان) من هنا:\nhttps://storely.dev/login?mode=register')}`}
+                    target="_blank" rel="noreferrer"
+                    style={{display:'inline-flex', alignItems:'center', gap:8, background:'#22c55e', color:'white', padding:'9px 16px', borderRadius:8, fontSize:13, fontWeight:700, textDecoration:'none'}}>
+                    📲 تواصل معه عبر واتساب
+                  </a>
                 </div>
               ))}
             </div>
