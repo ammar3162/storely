@@ -38,6 +38,7 @@ export default function PurchasesPage() {
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
   const [ocrItems, setOcrItems]     = useState<any[]>([])
   const [ocrSelected, setOcrSelected] = useState<Record<number,boolean>>({})
+  const [ocrPrices, setOcrPrices] = useState<Record<number,string>>({})
   const [bulkSaving, setBulkSaving] = useState(false)
   const [pendingThanks, setPendingThanks] = useState<{productName:string; supplierName:string}|null>(null)
   const [ocrLoading, setOcrLoading] = useState(false)
@@ -153,8 +154,11 @@ export default function PurchasesPage() {
             if (d.items?.length > 1) {
               setOcrItems(d.items)
               const sel: Record<number,boolean> = {}
-              d.items.forEach((_:any,i:number)=>{ sel[i]=true })
+              const initPrices: Record<number,string> = {}
+              const equalShare = d.total_amount ? (Number(d.total_amount)/d.items.length).toFixed(2) : ''
+              d.items.forEach((_:any,i:number)=>{ sel[i]=true; initPrices[i]=equalShare })
               setOcrSelected(sel)
+              setOcrPrices(initPrices)
             }
             toast('✨ تم استخراج بيانات الفاتورة تلقائياً')
           }
@@ -191,27 +195,29 @@ export default function PurchasesPage() {
   }
 
   async function saveBulkOcrItems() {
-    const selectedItems = ocrItems.filter((_,i)=>ocrSelected[i])
-    if (selectedItems.length===0 || bulkSaving || !orgId) return
+    const selectedIndexes = ocrItems.map((_,i)=>i).filter(i=>ocrSelected[i])
+    if (selectedIndexes.length===0 || bulkSaving || !orgId) return
     setBulkSaving(true)
     const bid = sessionStorage.getItem('s_branch_id')
-    const totalAmount = Number(form.total_amount) || 0
-    const netAmount = totalAmount / (form.hasVat==='yes' ? 1.15 : 1)
+    const isVat = form.hasVat==='yes'
 
-    for (let i=0; i<selectedItems.length; i++) {
-      const item = selectedItems[i]
+    for (const i of selectedIndexes) {
+      const item = ocrItems[i]
       const qty = Number(item.qty) || 0
       const unit = item.unit || 'قطعة'
-      const isFirst = i===0
+      // سعر هذا الصنف تحديداً (قابل للتعديل بالواجهة) — لو ما اتعدّل، يستخدم القيمة المبدئية الموزّعة بالتساوي
+      const itemTotal = Number(ocrPrices[i]) || 0
+      const itemNet = itemTotal / (isVat ? 1.15 : 1)
+      const itemVat = itemTotal - itemNet
 
-      // سجل عملية الشراء (فاتورة/سطر) — المبلغ فقط بالصنف الأول
+      // سجل عملية شراء كاملة ودقيقة لكل صنف — سعره الخاص، ضريبته، وكل مرفقات الفاتورة (مو الصنف الأول بس)
       await sb.from('purchases').insert({
         org_id:orgId, profile_id:userId, branch_id:bid||null,
         category:'مخزون', name:item.name, qty, unit,
-        reorder_point:5, total_amount:isFirst?totalAmount:0,
-        amount:isFirst?netAmount:0, supplier:form.supplier||null,
-        note:isFirst?form.note||null:null, invoice_image:isFirst?form.invoice_image||null:null,
-        hasVat:form.hasVat==='yes', invoice_date:form.invoice_date,
+        reorder_point:5, total_amount:itemTotal,
+        amount:itemNet, vat_amount:itemVat, supplier:form.supplier||null,
+        note:form.note||null, invoice_image:form.invoice_image||null,
+        hasVat:isVat, invoice_date:form.invoice_date,
       } as any)
 
       // تحديث المنتج الموجود أو إضافة جديد
@@ -226,8 +232,8 @@ export default function PurchasesPage() {
       }
     }
 
-    toast(`✅ تم حفظ ${selectedItems.length} صنف بنجاح`)
-    setOcrItems([]); setOcrSelected([] as any)
+    toast(`✅ تم حفظ ${selectedIndexes.length} صنف بنجاح، بكل تفاصيل السعر والضريبة`)
+    setOcrItems([]); setOcrSelected([] as any); setOcrPrices({})
     setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh()})
     setPreviewUrl(null)
     setBulkSaving(false)
@@ -553,8 +559,13 @@ export default function PurchasesPage() {
                         <input type="checkbox" checked={!!ocrSelected[i]} onChange={e=>setOcrSelected(s=>({...s,[i]:e.target.checked}))} style={{width:15,height:15,cursor:'pointer'}}/>
                         <span style={{fontSize:12,color:C.text,flex:1}}>{item.name}</span>
                         <span style={{fontSize:11,color:C.text3}}>{item.qty||0} {item.unit||''}</span>
+                        <input type="number" step="0.01" value={ocrPrices[i]||''} onChange={e=>setOcrPrices(p=>({...p,[i]:e.target.value}))}
+                          placeholder="السعر" style={{width:64,padding:'4px 6px',borderRadius:6,border:`1px solid ${C.border}`,fontSize:11,textAlign:'left' as const,fontFamily:'inherit'}}/>
                       </label>
                     ))}
+                  </div>
+                  <div style={{fontSize:10,color:C.text3,marginBottom:8}}>
+                    * السعر يتوزّع تلقائياً بالتساوي بدايةً — عدّله لكل صنف حسب سعره الفعلي بالفاتورة لدقة أعلى بالتقارير
                   </div>
                   <button type="button" onClick={saveBulkOcrItems} disabled={bulkSaving||Object.values(ocrSelected).every(v=>!v)}
                     style={{width:'100%',padding:10,background:bulkSaving?C.text4:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:bulkSaving?'not-allowed':'pointer',fontFamily:'inherit'}}>
