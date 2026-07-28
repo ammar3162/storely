@@ -616,6 +616,16 @@ export default function AdminPage() {
             </a>
           )}
           {currentAdmin?.role==='super_admin' && (
+            <a href="/storely-admin/demo-requests" style={{padding:'7px 14px',background:'#ffffff',color:'#475569',border:'1px solid #e5e7eb',borderRadius:9,fontSize:12,fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:6}}>
+              📩 طلبات العرض
+            </a>
+          )}
+          {currentAdmin?.role==='super_admin' && (
+            <a href="/storely-admin/partners" style={{padding:'7px 14px',background:'#ffffff',color:'#475569',border:'1px solid #e5e7eb',borderRadius:9,fontSize:12,fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:6}}>
+              🤝 الشركاء
+            </a>
+          )}
+          {currentAdmin?.role==='super_admin' && (
             <a href="/storely-admin/health" style={{padding:'7px 14px',background:'#ffffff',color:'#475569',border:'1px solid #e5e7eb',borderRadius:9,fontSize:12,fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:6}}>
               🩺 الصحة
             </a>
