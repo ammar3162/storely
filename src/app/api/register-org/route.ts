@@ -80,6 +80,16 @@ export async function POST(req: Request) {
       user_agent: userAgent,
     }).then(({ error }: any) => { if (error) console.log('consent_logs insert error:', error.message) })
 
+    // ربط تلقائي بطلب عرض سابق (لو وجد) — نطابق آخر 9 أرقام من رقم الجوال، بدون تدخل يدوي
+    try {
+      const last9 = fullPhone.replace(/[^0-9]/g,'').slice(-9)
+      const { data: pendingRequests } = await supabase.from('demo_requests').select('id,phone').in('status',['new','contacted']).is('matched_org_id', null)
+      const match = (pendingRequests||[]).find((r:any) => (r.phone||'').replace(/[^0-9]/g,'').slice(-9) === last9)
+      if (match) {
+        await supabase.from('demo_requests').update({ matched_org_id: org.id } as any).eq('id', (match as any).id)
+      }
+    } catch {}
+
     return NextResponse.json({ success: true, org_id: org.id })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
