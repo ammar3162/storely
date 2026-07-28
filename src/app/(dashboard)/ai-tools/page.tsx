@@ -317,7 +317,10 @@ export default function AIToolsPage() {
                 p.urgency==='urgent'?'#fef2f2':p.urgency==='soon'?'#fffbeb':'#f8fafc',
                 border:`1px solid ${p.urgency==='urgent'?'#fecaca':p.urgency==='soon'?'#fde68a':'#e2e8f0'}`}}>
                 <div>
-                  <div style={{fontSize:12,fontWeight:700,color:C.text}}>{p.name}</div>
+                  <div style={{fontSize:12,fontWeight:700,color:C.text,display:'flex',alignItems:'center',gap:6}}>
+                    {p.name}
+                    {p.noHistory && <span style={{fontSize:9,fontWeight:800,padding:'1px 6px',borderRadius:99,background:'#fee2e2',color:'#dc2626'}}>نافد بدون تاريخ صرف</span>}
+                  </div>
                   <div style={{fontSize:10,color:C.text4}}>نقطة الطلب: {p.reorderPoint} {p.unit}</div>
                 </div>
                 <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:C.text}}>{p.currentQty} {p.unit}</div>
@@ -330,7 +333,7 @@ export default function AIToolsPage() {
               </div>
             ))}
             <div style={{fontSize:11,color:C.text4,textAlign:'center',marginTop:4}}>
-              * المقترح يكفي أسبوعين بناءً على معدل صرفك الشهري
+              * المقترح يكفي أسبوعين + هامش أمان 25% ضد تذبذب الطلب، بناءً على معدل صرفك الأخير (وزن أعلى لآخر 7 أيام)
             </div>
           </div>
         )}

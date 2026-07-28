@@ -26,20 +26,46 @@ export async function POST(req: Request) {
 
     const [{ data: products }, { data: movements }] = await Promise.all([productsQ2, movementsQ2])
 
-    const dispMap: Record<string,number> = {}
+    // نحسب الاستهلاك على نافذتين — آخر 7 أيام وآخر 30 يوم — لنميّز التغيّر الحديث بالطلب
+    const since7 = new Date(Date.now() - 7*24*60*60*1000).toISOString()
+    const dispMap30: Record<string,number> = {}
+    const dispMap7: Record<string,number> = {}
     for (const m of (movements||[])) {
       const pid = (m as any).product_id
       if (!pid) continue
-      dispMap[pid] = (dispMap[pid]||0) + Math.abs((m as any).qty_change)
+      const qty = Math.abs((m as any).qty_change)
+      dispMap30[pid] = (dispMap30[pid]||0) + qty
+      if ((m as any).created_at >= since7) dispMap7[pid] = (dispMap7[pid]||0) + qty
     }
+
+    const SAFETY_MARGIN = 1.25 // هامش أمان 25% يحمي من تذبذب الطلب اليومي الطبيعي — يمنع النفاد قبل التوصيل التالي
 
     const items = (products||[])
       .map((p:any) => {
-        const total30 = dispMap[p.id]||0
-        const dailyRate = total30/30
-        const suggested = Math.max(Math.ceil(dailyRate*14) - p.qty, 0)
-        const daysLeft = dailyRate > 0 ? p.qty / dailyRate : 999
-        const urgency = daysLeft <= 2 ? 'urgent' : daysLeft <= 5 ? 'soon' : 'normal'
+        const total30 = dispMap30[p.id]||0
+        const total7 = dispMap7[p.id]||0
+        const rate30 = total30/30
+        const rate7 = total7/7
+        // مزج مرجّح: 60% وزن لآخر 7 أيام (استجابة سريعة للتغيّر الحديث)، 40% لآخر 30 يوم (استقرار ضد التذبذب العشوائي)
+        const dailyRate = total30 > 0 ? (rate7*0.6 + rate30*0.4) : 0
+
+        let suggested = 0
+        let daysLeft = 999
+        let urgency: 'urgent'|'soon'|'normal' = 'normal'
+        let noHistory = false
+
+        if (dailyRate > 0) {
+          suggested = Math.max(Math.ceil(dailyRate*14*SAFETY_MARGIN) - p.qty, 0)
+          daysLeft = p.qty / dailyRate
+          urgency = daysLeft <= 2 ? 'urgent' : daysLeft <= 5 ? 'soon' : 'normal'
+        } else if (p.reorder_point > 0 && p.qty <= p.reorder_point) {
+          // منتج بدون أي حركة صرف مسجّلة بآخر 30 يوم، لكنه فعلياً تحت الحد الأدنى — كان يُستبعد بالكامل بالسابق رغم نفاده الفعلي
+          suggested = Math.max(p.reorder_point - p.qty, 0)
+          daysLeft = 0
+          urgency = 'urgent'
+          noHistory = true
+        }
+
         return {
           id: p.id,
           name: p.name,
@@ -51,9 +77,10 @@ export async function POST(req: Request) {
           suggested,
           dailyRate,
           urgency,
+          noHistory,
         }
       })
-      .filter((i:any) => i.suggested > 0 && i.monthly > 0)
+      .filter((i:any) => i.suggested > 0)
       .sort((a:any,b:any) => b.suggested - a.suggested)
 
     // الشكل اللي تحتاجه واجهة صفحة أدوات الذكاء (ai-tools)
@@ -66,6 +93,7 @@ export async function POST(req: Request) {
       weeklyNeed: Math.round(i.dailyRate*7),
       suggestedQty: i.suggested,
       urgency: i.urgency,
+      noHistory: i.noHistory,
     }))
 
     if (items.length === 0) {
