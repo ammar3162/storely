@@ -39,15 +39,12 @@ export default function PartnersPage() {
     if (!name.trim() || !file) { setMsg('عبّي الاسم واختر ملف الشعار'); return }
     setUploading(true); setMsg('')
     try {
-      const ext = file.name.split('.').pop()
-      const path = `${Date.now()}.${ext}`
-      const { error: upErr } = await sb.storage.from('partner-logos').upload(path, file)
-      if (upErr) { setMsg('فشل رفع الشعار'); setUploading(false); return }
-      const { data: pub } = sb.storage.from('partner-logos').getPublicUrl(path)
-
+      const fd = new FormData()
+      fd.append('name', name.trim())
+      fd.append('file', file)
       const res = await fetch('/api/admin/partners', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
-        body: JSON.stringify({ name: name.trim(), logo_url: pub.publicUrl })
+        method: 'POST', headers: { 'x-admin-key': key() },
+        body: fd
       })
       const data = await res.json()
       if (data.success) {

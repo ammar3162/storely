@@ -17,18 +17,33 @@ export async function GET(req: Request) {
   return NextResponse.json({ partners: data })
 }
 
+// نرفع الشعار من هنا (السيرفر، بمفتاح كامل الصلاحيات) — بدل المتصفح مباشرة،
+// لأن لوحة الإدارة تستخدم نظام دخول منفصل عن Supabase الأساسي فما تقدر ترفع ملفات مباشرة بنفسها
 export async function POST(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
   if (!(await requirePermission(adminKey, 'manage_users'))) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
-  const { name, logo_url } = await req.json()
-  if (!name || !logo_url) return NextResponse.json({ error: 'الاسم والشعار مطلوبان' }, { status: 400 })
 
-  const { data: existing } = await sb().from('landing_partners').select('display_order').order('display_order', { ascending: false }).limit(1)
+  const formData = await req.formData()
+  const name = formData.get('name') as string
+  const file = formData.get('file') as File | null
+  if (!name || !file) return NextResponse.json({ error: 'الاسم والشعار مطلوبان' }, { status: 400 })
+
+  const db = sb()
+  const ext = file.name.split('.').pop() || 'png'
+  const path = `${Date.now()}.${ext}`
+  const buffer = Buffer.from(await file.arrayBuffer())
+
+  const { error: upErr } = await db.storage.from('partner-logos').upload(path, buffer, { contentType: file.type })
+  if (upErr) return NextResponse.json({ error: 'فشل رفع الشعار: ' + upErr.message }, { status: 500 })
+
+  const { data: pub } = db.storage.from('partner-logos').getPublicUrl(path)
+
+  const { data: existing } = await db.from('landing_partners').select('display_order').order('display_order', { ascending: false }).limit(1)
   const nextOrder = existing && existing.length ? (existing[0] as any).display_order + 1 : 0
 
-  const { error } = await sb().from('landing_partners').insert({ name, logo_url, display_order: nextOrder } as any)
+  const { error } = await db.from('landing_partners').insert({ name, logo_url: pub.publicUrl, display_order: nextOrder } as any)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })
 }
