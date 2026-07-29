@@ -114,30 +114,44 @@ export default function OnboardingPage() {
   async function saveSetup() {
     if(!orgName.trim()){toast('أدخل اسم المنشأة','warning');return}
     setSaving(true)
-    await sb.from('organizations').update({name:orgName.trim(),whatsapp_number:whatsapp.trim(),business_type:businessType} as any).eq('id',orgId)
-    setSaving(false); setStep('products')
+    const{error}=await sb.from('organizations').update({name:orgName.trim(),whatsapp_number:whatsapp.trim(),business_type:businessType} as any).eq('id',orgId)
+    setSaving(false)
+    if(error){toast('حدث خطأ أثناء الحفظ — حاول مرة أخرى','error');return}
+    setStep('products')
   }
 
   async function saveProducts() {
     setSaving(true)
-    const{data:{user}}=await sb.auth.getUser(); if(!user){setSaving(false);return}
+    const{data:{user}}=await sb.auth.getUser(); if(!user){setSaving(false);toast('حدث خطأ — أعد تسجيل الدخول','error');return}
     const toAdd=selectedProducts.filter(p=>p.selected)
+    let failedCount=0
     for(const p of toAdd){
-      const{data:np}=await sb.from('products').insert({org_id:orgId,branch_id:branchId||null,name:p.name,unit:p.unit,qty:p.qty||0,reorder_point:p.reorder,category:p.category,is_active:true}).select().single()
-      if(np&&p.qty>0) await sb.from('stock_movements').insert({product_id:np.id,profile_id:user.id,type:'in',qty_change:p.qty,note:'إضافة أولية عند الإعداد'})
+      const{data:np,error:prodErr}=await sb.from('products').insert({org_id:orgId,branch_id:branchId||null,name:p.name,unit:p.unit,qty:p.qty||0,reorder_point:p.reorder,category:p.category,is_active:true}).select().single()
+      if(prodErr||!np){failedCount++;continue}
+      if(p.qty>0){
+        const{error:moveErr}=await sb.from('stock_movements').insert({product_id:np.id,profile_id:user.id,type:'in',qty_change:p.qty,note:'إضافة أولية عند الإعداد'})
+        if(moveErr) failedCount++
+      }
     }
-    setSaving(false); setStep('staff')
+    setSaving(false)
+    if(failedCount>0) toast(`تنبيه: فشل حفظ ${failedCount} من ${toAdd.length} — تقدر تضيفهم لاحقاً من صفحة المخزون`,'warning')
+    setStep('staff')
   }
 
   async function saveStaff() {
     setSaving(true)
     const toAdd=staffList.filter(s=>s.name.trim()&&s.phone.trim())
+    let failedCount=0
     for(const s of toAdd){
       const pin=String(Math.floor(1000+Math.random()*9000))
-      await (sb.from('staff_members' as any) as any).insert({org_id:orgId,branch_id:branchId||null,name:s.name.trim(),phone:s.phone.trim(),pin}).catch(()=>{})
+      const{error}=await (sb.from('staff_members' as any) as any).insert({org_id:orgId,branch_id:branchId||null,name:s.name.trim(),phone:s.phone.trim(),pin})
+      if(error) failedCount++
     }
-    await sb.from('organizations').update({onboarding_done:true} as any).eq('id',orgId)
-    setSaving(false); setStep('done')
+    const{error:orgErr}=await sb.from('organizations').update({onboarding_done:true} as any).eq('id',orgId)
+    setSaving(false)
+    if(orgErr){toast('حدث خطأ أثناء إنهاء الإعداد — حاول مرة أخرى','error');return}
+    if(failedCount>0) toast(`تنبيه: فشل حفظ ${failedCount} من ${toAdd.length} موظف — تقدر تضيفهم لاحقاً من صفحة الموظفين`,'warning')
+    setStep('done')
   }
 
   async function skipToDashboard() {
