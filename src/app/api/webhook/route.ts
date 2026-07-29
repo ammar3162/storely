@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { escalateOrder, logConfirmation } from '@/lib/escalateSupplierOrder'
-
 const API_KEY      = process.env.WASENDER_API_KEY!
 const SESSION      = process.env.WASENDER_SESSION_ID!
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -196,7 +195,6 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    console.log('WEBHOOK_EVENT_TYPE:', body?.event)
 
     // تحديث حالة تسليم رسائل طلبات التوريد
     if (body?.event === 'messages.update') {

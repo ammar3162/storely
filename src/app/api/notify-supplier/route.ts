@@ -142,7 +142,6 @@ export async function POST(req: Request) {
           qty_at_trigger: p.qty,
           status: ok ? 'sent' : 'failed',
         }).select('id').single()
-        if (logInsertErr) console.log('LOG_INSERT_ERROR:', logInsertErr.message)
         else if (insertedLog) insertedLogIds.push((insertedLog as any).id)
       }
 
@@ -160,14 +159,10 @@ export async function POST(req: Request) {
               const waMsgId = infoData?.data?.key?.id || infoData?.data?.id || null
               if (waMsgId) {
                 await supabase.from('supplier_order_logs').update({ wa_msg_id: waMsgId }).in('id', insertedLogIds)
-                console.log('WAMID_BACKGROUND_SUCCESS:', JSON.stringify({ numericMsgId, waMsgId }))
                 return
               }
-            } catch (e: any) {
-              console.log('WAMID_BACKGROUND_ERROR:', e.message)
-            }
+            } catch {}
           }
-          console.log('WAMID_BACKGROUND_GAVE_UP:', numericMsgId)
         })())
       }
 
