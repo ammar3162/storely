@@ -320,14 +320,26 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
                       placeholder="🔍 ابحث..."
                       style={{width:'100%',padding:'8px 12px',border:'none',borderBottom:'1px solid #f1f5f9',fontSize:12,fontFamily:'inherit',outline:'none',boxSizing:'border-box',background:'#f8fafc'}}
                     />
-                    <select value={selectedProduct} onChange={e=>setSelectedProduct(e.target.value)}
-                      size={5}
-                      style={{width:'100%',border:'none',fontSize:13,fontFamily:'inherit',background:'white',color:'#0f172a',outline:'none',padding:'4px 0'}}>
-                      <option value="">— اختر —</option>
-                      {unlinked.filter((p:any)=>!productSearch||p.name.includes(productSearch)).map((p:any)=>(
-                        <option key={p.id} value={p.id}>{p.name} ({p.qty} {p.unit})</option>
-                      ))}
-                    </select>
+                    {(() => {
+                      const filteredUnlinked = unlinked.filter((p:any)=>!productSearch||p.name.includes(productSearch))
+                      if (productSearch && filteredUnlinked.length === 0) {
+                        return (
+                          <div style={{padding:'20px 12px',textAlign:'center' as const,fontSize:12,color:'#94a3b8'}}>
+                            🔍 ما فيه منتج مطابق لـ "{productSearch}"
+                          </div>
+                        )
+                      }
+                      return (
+                        <select value={selectedProduct} onChange={e=>setSelectedProduct(e.target.value)}
+                          size={5}
+                          style={{width:'100%',border:'none',fontSize:13,fontFamily:'inherit',background:'white',color:'#0f172a',outline:'none',padding:'4px 0'}}>
+                          <option value="">— اختر —</option>
+                          {filteredUnlinked.map((p:any)=>(
+                            <option key={p.id} value={p.id}>{p.name} ({p.qty} {p.unit})</option>
+                          ))}
+                        </select>
+                      )
+                    })()}
                   </div>
                 </div>
                 <div>
