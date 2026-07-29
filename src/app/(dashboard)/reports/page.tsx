@@ -5,6 +5,7 @@ import { currencySymbol } from '@/lib/currencySymbol'
 import { cache } from '@/lib/cache'
 import { createClient } from '@/lib/supabase/client'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
+import { toast } from '@/components/toast'
 
 type FilterPeriod = 'today'|'week'|'month'|'year'|'custom'
 
@@ -520,7 +521,8 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     if (!user?.email) { setDeleteError('تعذر التحقق من الحساب'); setDeleting(false); return }
     const { error } = await sb.auth.signInWithPassword({ email: user.email, password: deletePassword })
     if (error) { setDeleteError('كلمة المرور غير صحيحة'); setDeleting(false); return }
-    await sb.from('purchases').delete().eq('id', confirmDelete.id)
+    const{error:delErr}=await sb.from('purchases').delete().eq('id', confirmDelete.id)
+    if(delErr){setDeleteError('فشل الحذف — حاول مرة أخرى');setDeleting(false);return}
     setPurchases(prev => prev.filter(p => p.id !== confirmDelete.id))
     setConfirmDelete(null); setDeletePassword(''); setDeleting(false)
   }
@@ -1038,9 +1040,11 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   async function saveClosingDate(id: string) {
     setSavingDate(true)
     const sb = createClient()
-    await (sb as any).from('cashier_closings').update({ closing_date: editDateValue }).eq('id', id)
+    const{error}=await (sb as any).from('cashier_closings').update({ closing_date: editDateValue }).eq('id', id)
+    setSavingDate(false)
+    if(error){toast('فشل تعديل التاريخ — حاول مرة أخرى','error');return}
     setClosings(prev => prev.map(c => c.id===id ? {...c, closing_date: editDateValue} : c))
-    setEditingDateId(null); setSavingDate(false)
+    setEditingDateId(null)
   }
 
   async function confirmDeleteClosing() {
@@ -1050,7 +1054,8 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
     if (!user?.email) { setDeleteError('تعذر التحقق من الحساب'); setDeleting(false); return }
     const { error } = await sb.auth.signInWithPassword({ email: user.email, password: deletePassword })
     if (error) { setDeleteError('كلمة المرور غير صحيحة'); setDeleting(false); return }
-    await sb.from('cashier_closings' as any).delete().eq('id', confirmDelete.id)
+    const{error:delErr}=await sb.from('cashier_closings' as any).delete().eq('id', confirmDelete.id)
+    if(delErr){setDeleteError('فشل الحذف — حاول مرة أخرى');setDeleting(false);return}
     setClosings(prev => prev.filter(c => c.id !== confirmDelete.id))
     setConfirmDelete(null); setDeletePassword(''); setDeleting(false)
   }
