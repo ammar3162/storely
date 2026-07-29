@@ -196,6 +196,8 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
 
+    console.log('WEBHOOK_EVENT_TYPE:', body?.event)
+
     // تحديث حالة تسليم رسائل طلبات التوريد
     if (body?.event === 'messages.update') {
       const waMsgId = body?.data?.key?.id
