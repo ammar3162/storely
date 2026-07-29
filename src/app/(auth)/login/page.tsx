@@ -91,6 +91,7 @@ function LoginPage() {
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState('')
   const [agreedTerms, setAgreedTerms] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -389,11 +390,6 @@ function LoginPage() {
                     <input className="inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
                   </div>
                   <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>الدولة *</label>
-                    <select value={countryCode} onChange={e=>{setCountryCode(e.target.value);setOtpSent(false);setOtpVerified(false);setPhone('');setOtp('')}}
-                      style={{width:'100%',padding:'12px 14px',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:14,fontFamily:'inherit',outline:'none',background:'white',color:'#111827',marginBottom:12,cursor:'pointer'}}>
-                      {COUNTRY_CODES.map(c=><option key={c.code} value={c.code}>{c.flag} {c.name} ({c.code})</option>)}
-                    </select>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>رقم واتساب *</label>
                     <div style={{display:'flex',border:'1.5px solid #e5e7eb',borderRadius:10,overflow:'hidden',background:'white',transition:'border-color .2s'}}
                       onFocusCapture={e=>(e.currentTarget as HTMLElement).style.borderColor='#16a34a'}
@@ -413,7 +409,14 @@ function LoginPage() {
                   </div>
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>كلمة المرور *</label>
-                    <input className="inp" type="password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="8+ أحرف، أرقام، رموز (@#$)"/>
+                    <div style={{position:'relative'}}>
+                      <input className="inp" type={showPassword?'text':'password'} required value={password} onChange={e=>setPassword(e.target.value)} placeholder="8+ أحرف، أرقام، رموز (@#$)" style={{paddingLeft:44}}/>
+                      <button type="button" onClick={()=>setShowPassword(s=>!s)}
+                        style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',fontSize:16,color:'#9ca3af',padding:4}}
+                        aria-label={showPassword?'إخفاء كلمة المرور':'إظهار كلمة المرور'}>
+                        {showPassword?'🙈':'👁️'}
+                      </button>
+                    </div>
                     {password.length>0 && (
                       <div style={{marginTop:6,display:'flex',alignItems:'center',gap:6}}>
                         {[1,2,3,4].map(l=>{
