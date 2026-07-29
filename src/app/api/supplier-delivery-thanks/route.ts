@@ -26,7 +26,7 @@ const sb = () => createClient(
  */
 export async function POST(req: Request) {
   try {
-    const { org_id, product_name, supplier_name } = await req.json()
+    const { org_id, product_id, product_name, supplier_name } = await req.json()
     if (!org_id || !product_name || !supplier_name) return NextResponse.json({ sent: false })
 
     const access = await verifyOrgAccess(org_id)
@@ -34,8 +34,17 @@ export async function POST(req: Request) {
 
     const db = sb()
 
-    // نلقى المنتج بالاسم (لنفس المؤسسة) — نجيب supplier_id المباشر أيضاً (المصدر الرئيسي للربط)
-    const { data: product } = await db.from('products').select('id,supplier_id,branch_id').eq('org_id', org_id).ilike('name', product_name.trim()).order('created_at', { ascending: false }).limit(1).maybeSingle()
+    // نستخدم معرّف المنتج الدقيق مباشرة لو موجود (الأدق، يتفادى تضارب أسماء متطابقة)،
+    // ونرجع للبحث بالاسم كخطة احتياطية فقط لو المعرّف ما وصل لأي سبب
+    let product: any = null
+    if (product_id) {
+      const { data } = await db.from('products').select('id,supplier_id,branch_id').eq('id', product_id).eq('org_id', org_id).maybeSingle()
+      product = data
+    }
+    if (!product) {
+      const { data } = await db.from('products').select('id,supplier_id,branch_id').eq('org_id', org_id).ilike('name', product_name.trim()).order('created_at', { ascending: false }).limit(1).maybeSingle()
+      product = data
+    }
     if (!product) return NextResponse.json({ sent: false, reason: 'product_not_found' })
 
     // نلقى الموردين المرتبطين: المورد الأساسي (products.supplier_id) + الموردين البدلاء (product_suppliers)

@@ -40,7 +40,7 @@ export default function PurchasesPage() {
   const [ocrSelected, setOcrSelected] = useState<Record<number,boolean>>({})
   const [ocrPrices, setOcrPrices] = useState<Record<number,string>>({})
   const [bulkSaving, setBulkSaving] = useState(false)
-  const [pendingThanks, setPendingThanks] = useState<{productName:string; supplierName:string}|null>(null)
+  const [pendingThanks, setPendingThanks] = useState<{productId:string; productName:string; supplierName:string}|null>(null)
   const [ocrLoading, setOcrLoading] = useState(false)
   const [filterCat, setFilterCat]       = useState('all')
   const [filterPeriod, setFilterPeriod] = useState('all')
@@ -180,10 +180,10 @@ export default function PurchasesPage() {
 
   async function confirmSupplierThanks() {
     if (!pendingThanks || !orgId) return
-    const { productName, supplierName } = pendingThanks
+    const { productId, productName, supplierName } = pendingThanks
     setPendingThanks(null)
     try {
-      const res = await fetch('/api/supplier-delivery-thanks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,product_name:productName,supplier_name:supplierName})})
+      const res = await fetch('/api/supplier-delivery-thanks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,product_id:productId,product_name:productName,supplier_name:supplierName})})
       const data = await res.json()
       if (data.sent) toast(`✅ تم إرسال رسالة شكر لـ${data.supplier}`)
       else toast('تعذر إرسال رسالة الشكر (تحقق من ربط المورد أو موافقة واتساب)', 'warning')
@@ -314,7 +314,7 @@ export default function PurchasesPage() {
           isLinked = !!altLink
         }
         if (isLinked) {
-          setPendingThanks({ productName: form.name, supplierName: form.supplier.trim() })
+          setPendingThanks({ productId: matchedProductId, productName: form.name, supplierName: form.supplier.trim() })
         }
       }
     }
