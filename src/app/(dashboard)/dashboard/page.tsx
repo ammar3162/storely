@@ -4,6 +4,7 @@ import { useState, useEffect, Component } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { cache } from '@/lib/cache'
 import { useRouter } from 'next/navigation'
+import { currencySymbol } from '@/lib/currencySymbol'
 
 class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|null}> {
   state = { error: null }
@@ -57,6 +58,8 @@ export default function DashboardPage() {
   const [weeklyD, setWeeklyD]   = useState<{label:string;value:number}[]>([])
   const [visible, setVisible]   = useState(false)
   const [notifs, setNotifs]     = useState<any[]>([])
+  const [curr, setCurr]         = useState('ر.س')
+  const [subExpired, setSubExpired] = useState(false)
   const sb = createClient()
   const router = useRouter()
 
@@ -91,12 +94,14 @@ export default function DashboardPage() {
       const endsAt=(profile as any).subscription_ends_at
       if(endsAt){
         const days=Math.ceil((new Date(endsAt).getTime()-Date.now())/(1000*60*60*24))
-        if(days<=7&&days>0) setSubAlert(`ينتهي اشتراكك بعد ${days} أيام`)
+        if(days<=0){ setSubExpired(true); setSubAlert('انتهى اشتراكك — يرجى التجديد لمتابعة استخدام النظام') }
+        else if(days<=7) setSubAlert(`ينتهي اشتراكك بعد ${days} أيام`)
       }
     }
     const orgId=profile?.org_id; if(!orgId)return
     sessionStorage.setItem('s_org_id',orgId)
     sessionStorage.setItem('s_profile_id',user.id)
+    sb.from('organizations').select('currency').eq('id',orgId).single().then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
     const bid=sessionStorage.getItem('s_branch_id')
     const ab=(q:any)=>bid?q.eq('branch_id',bid):q
     let movementsQuery = sb.from('stock_movements').select('qty_change,type,created_at,products!inner(name,unit,org_id,branch_id)').eq('products.org_id',orgId).order('created_at',{ascending:false}).limit(50)
@@ -216,9 +221,9 @@ export default function DashboardPage() {
 
       {/* ── Sub alert ── */}
       {subAlert&&(
-        <div className="u r" style={{padding:'10px 14px',marginBottom:14,background:'#fffbeb',border:'1px solid #fac775',display:'flex',alignItems:'center',gap:10,animationDelay:'.06s'}}>
-          <svg width={14} height={14} fill="none" stroke="#854f0b" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-          <span style={{fontSize:12,fontWeight:500,color:'#633806'}}>{subAlert}</span>
+        <div className="u r" style={{padding:'10px 14px',marginBottom:14,background:subExpired?'#fef2f2':'#fffbeb',border:`1px solid ${subExpired?'#f7c1c1':'#fac775'}`,display:'flex',alignItems:'center',gap:10,animationDelay:'.06s'}}>
+          <svg width={14} height={14} fill="none" stroke={subExpired?'#a32d2d':'#854f0b'} strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          <span style={{fontSize:12,fontWeight:600,color:subExpired?'#a32d2d':'#633806'}}>{subAlert}</span>
         </div>
       )}
 
@@ -277,6 +282,32 @@ export default function DashboardPage() {
           </button>
         ))}
       </div>
+
+      {monthComp?.success&&(
+        <div className="s r u" style={{padding:'14px 16px',marginBottom:14,animationDelay:'.16s'}}>
+          <div style={{fontSize:12,fontWeight:700,color:'#1c1c1a',marginBottom:12}}>📈 أداء هذا الشهر مقارنة بالشهر الماضي</div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:10}}>
+            {[
+              {label:'المبيعات', value:monthComp.current.sales, change:monthComp.changes.sales, isMoney:true},
+              {label:'المشتريات', value:monthComp.current.purchasesTotal, change:monthComp.changes.purchases, isMoney:true},
+              {label:'الصافي', value:monthComp.current.net, change:monthComp.changes.net, isMoney:true},
+              {label:'عمليات الصرف', value:monthComp.current.dispenseCount, change:monthComp.changes.dispenseCount, isMoney:false},
+            ].map((m,i)=>(
+              <div key={i} style={{padding:'10px 12px',background:'#f9f9f8',borderRadius:9}}>
+                <div style={{fontSize:10,color:'#888780',marginBottom:4}}>{m.label}</div>
+                <div style={{fontSize:15,fontWeight:700,color:'#1c1c1a',fontVariantNumeric:'tabular-nums'}}>
+                  {m.isMoney?Number(m.value).toLocaleString('ar-SA',{maximumFractionDigits:0})+' '+curr:m.value}
+                </div>
+                {m.change!==null&&(
+                  <div style={{fontSize:10,fontWeight:600,color:m.change>=0?'#16a34a':'#e24b4a',marginTop:3}}>
+                    {m.change>=0?'▲':'▼'} {Math.abs(m.change)}% عن الشهر الماضي
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Charts ── */}
       <div className="u" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14,animationDelay:'.2s'}}>
