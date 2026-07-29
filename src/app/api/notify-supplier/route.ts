@@ -130,7 +130,19 @@ export async function POST(req: Request) {
       const text = buildOrderMessage(orgName, messageItems, supplier.notes) + '\n\nللتأكيد رد بكلمة: *تم*\nإن لم يتوفر الصنف، رد بكلمة: *غير متوفر*'
       const result = await sendWhatsAppMessage(formatPhone(supplier.phone), text)
       const ok = result.ok
-      const msgId = result.data?.data?.msgId || result.data?.msgId || null
+      const numericMsgId = result.data?.data?.msgId || result.data?.msgId || null
+
+      // نجيب رمز واتساب الحقيقي (WAMID) عشان نقدر نطابقه لاحقاً مع تحديثات messages.update
+      let waMsgId: string | null = null
+      if (ok && numericMsgId) {
+        try {
+          const infoRes = await fetch(`https://www.wasenderapi.com/api/messages/${numericMsgId}/info`, {
+            headers: { 'Authorization': `Bearer ${process.env.WASENDER_API_KEY}` },
+          })
+          const infoData = await infoRes.json().catch(() => null)
+          waMsgId = infoData?.data?.key?.id || infoData?.data?.id || null
+        } catch {}
+      }
 
       for (const p of items) {
         await supabase.from('supplier_order_logs').insert({
@@ -138,7 +150,7 @@ export async function POST(req: Request) {
           supplier_id: supplierId,
           qty_at_trigger: p.qty,
           status: ok ? 'sent' : 'failed',
-          wa_msg_id: msgId,
+          wa_msg_id: waMsgId,
         })
       }
 

@@ -195,7 +195,30 @@ async function searchProduct(to: string, orgId: string, query: string) {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    console.log('WEBHOOK_DEBUG_EVENT:', JSON.stringify(body))
+
+    // تحديث حالة تسليم رسائل طلبات التوريد
+    if (body?.event === 'messages.update') {
+      const waMsgId = body?.data?.key?.id
+      const statusCode = body?.data?.update?.status
+      if (waMsgId && typeof statusCode === 'number') {
+        const statusMap: Record<number, string> = {
+          0: 'failed',
+          1: 'pending',
+          2: 'sent',
+          3: 'delivered',
+          4: 'read',
+          5: 'played',
+        }
+        const mappedStatus = statusMap[statusCode]
+        if (mappedStatus) {
+          await sb().from('supplier_order_logs' as any)
+            .update({ status: mappedStatus })
+            .eq('wa_msg_id', waMsgId)
+        }
+      }
+      return NextResponse.json({ok:true})
+    }
+
     if (body?.data?.test===true) return NextResponse.json({ok:true})
     const messages = body?.data?.messages
     const msgs = Array.isArray(messages)?messages:(messages?[messages]:[])
