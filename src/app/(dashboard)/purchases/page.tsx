@@ -220,15 +220,17 @@ export default function PurchasesPage() {
         hasVat:isVat, invoice_date:form.invoice_date,
       } as any)
 
-      // تحديث المنتج الموجود أو إضافة جديد
+      // تحديث المنتج الموجود أو إضافة جديد — عبر حركة مخزون حقيقية دايماً (مو تعديل مباشر للكمية)،
+      // لأن الزرّاق (Trigger) اللي يعيد حساب الكمية من مجموع الحركات بيصفّرها لو ما فيه حركة مقابلة لأول لمسة له
       const existing = products.find(p=>p.name.trim()===item.name.trim())
       if (existing) {
-        await sb.from('products').update({ qty: (existing.qty||0)+qty } as any).eq('id', existing.id)
+        if(qty>0) await sb.from('stock_movements').insert({product_id:existing.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء من: ${form.supplier||'—'} (OCR)`} as any)
       } else {
-        await (sb.from('products') as any).insert({
-          org_id:orgId, branch_id:bid, name:item.name.trim(), unit, qty,
+        const{data:np}=await (sb.from('products') as any).insert({
+          org_id:orgId, branch_id:bid, name:item.name.trim(), unit, qty:0,
           reorder_point:5, is_active:true,
-        })
+        }).select().single()
+        if(np && qty>0) await sb.from('stock_movements').insert({product_id:np.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء جديد من: ${form.supplier||'—'} (OCR)`} as any)
       }
     }
 

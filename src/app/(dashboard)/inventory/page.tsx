@@ -226,18 +226,23 @@ export default function InventoryPage() {
   async function confirmImport() {
     if (importing || importPreview.length === 0) return
     setImporting(true)
+    const{data:{user}}=await sb.auth.getUser()
     const oid = sessionStorage.getItem('s_org_id')
     const bid = sessionStorage.getItem('s_branch_id')
-    if (!oid) { toast('خطأ بالجلسة', 'error'); setImporting(false); return }
+    if (!oid || !user) { toast('خطأ بالجلسة', 'error'); setImporting(false); return }
 
     let added = 0, updated = 0
     for (const row of importPreview) {
       const existing = products.find(p => p.name.trim() === row.name)
       if (existing) {
-        await sb.from('products').update({ qty: row.qty, reorder_point: row.reorder_point, category: row.category || null, unit: row.unit } as any).eq('id', existing.id)
+        // نعدّل الكمية عبر حركة "تسوية" بالفرق — لا نكتب الكمية مباشرة أبداً، عشان الزرّاق (Trigger) اللي يعيد حسابها من مجموع الحركات ما يصفّرها لاحقاً
+        await sb.from('products').update({ reorder_point: row.reorder_point, category: row.category || null, unit: row.unit } as any).eq('id', existing.id)
+        const delta = row.qty - (existing.qty||0)
+        if (delta !== 0) await sb.from('stock_movements').insert({product_id:existing.id, profile_id:user.id, type:'adjustment', qty_change:delta, note:'تسوية استيراد جماعي'})
         updated++
       } else {
-        await sb.from('products').insert({ org_id: oid, branch_id: bid, name: row.name, category: row.category || null, qty: row.qty, unit: row.unit, reorder_point: row.reorder_point, is_active: true } as any)
+        const{data:np}=await sb.from('products').insert({ org_id: oid, branch_id: bid, name: row.name, category: row.category || null, qty: 0, unit: row.unit, reorder_point: row.reorder_point, is_active: true } as any).select().single()
+        if (np && row.qty > 0) await sb.from('stock_movements').insert({product_id:np.id, profile_id:user.id, type:'in', qty_change:row.qty, note:'إضافة أولية — استيراد جماعي'})
         added++
       }
     }
