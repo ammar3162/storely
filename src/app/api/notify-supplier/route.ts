@@ -141,7 +141,10 @@ export async function POST(req: Request) {
           })
           const infoData = await infoRes.json().catch(() => null)
           waMsgId = infoData?.data?.key?.id || infoData?.data?.id || null
-        } catch {}
+          console.log('WAMID_DEBUG:', JSON.stringify({ numericMsgId, infoStatus: infoRes.status, infoData, waMsgId }))
+        } catch (e: any) {
+          console.log('WAMID_DEBUG_ERROR:', e.message)
+        }
       }
 
       for (const p of items) {
