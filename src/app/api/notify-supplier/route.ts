@@ -136,6 +136,7 @@ export async function POST(req: Request) {
       let waMsgId: string | null = null
       if (ok && numericMsgId) {
         try {
+          await delay(2500) // نعطي WasenderAPI وقت يسجّل الرسالة قبل الاستعلام عنها
           const infoRes = await fetch(`https://www.wasenderapi.com/api/messages/${numericMsgId}/info`, {
             headers: { 'Authorization': `Bearer ${process.env.WASENDER_API_KEY}` },
           })
