@@ -74,7 +74,7 @@ export async function POST(req: Request) {
     const dateStr = now.toLocaleDateString('ar-SA',{weekday:'long',day:'numeric',month:'long',timeZone:'Asia/Riyadh'})
     const msg = `🟢 *Storely*\n\nمرحباً ${(org as any).name}،\n${branchLine}\n👤 *${staff_name}* قام بصرف:\n• ${product_name} — *${qty} ${unit}*\n\n🕐 ${timeStr} · ${dateStr}`
 
-    await fetch('https://www.wasenderapi.com/api/send-message', {
+    const waRes = await fetch('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -83,8 +83,10 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({ to: formatPhone(notifyPhone), text: msg }),
     })
+    const waBody = await waRes.text()
 
-    return NextResponse.json({ success: true })
+    // نرجّع استجابة واتساب الحقيقية بالرد — مؤقتاً للتشخيص، حتى نتأكد الإرسال نجح فعلياً وليس بس نجاح وهمي
+    return NextResponse.json({ success: true, wa_status: waRes.status, wa_ok: waRes.ok, wa_response: waBody, sent_to: formatPhone(notifyPhone) })
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message })
   }
