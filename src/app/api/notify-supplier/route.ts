@@ -148,13 +148,14 @@ export async function POST(req: Request) {
       }
 
       for (const p of items) {
-        await supabase.from('supplier_order_logs').insert({
+        const { error: logInsertErr } = await supabase.from('supplier_order_logs').insert({
           product_id: p.id,
           supplier_id: supplierId,
           qty_at_trigger: p.qty,
           status: ok ? 'sent' : 'failed',
           wa_msg_id: waMsgId,
         })
+        if (logInsertErr) console.log('LOG_INSERT_ERROR:', JSON.stringify({ waMsgId, error: logInsertErr.message }))
       }
 
       if (ok) totalSent += items.length
