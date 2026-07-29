@@ -65,7 +65,7 @@ export default function DispensePage() {
 
   async function loadHistory(oid:string) {
     const bid=sessionStorage.getItem('s_branch_id')
-    let q=sb.from('stock_movements').select('id,qty_change,created_at,products!inner(name,unit,org_id,branch_id)').eq('type','out').eq('products.org_id',oid)
+    let q=sb.from('stock_movements').select('id,qty_change,type,waste_reason,created_at,products!inner(name,unit,org_id,branch_id)').in('type',['out','waste']).eq('products.org_id',oid)
     if(bid) q=q.eq('products.branch_id',bid)
     const{data}=await q.order('created_at',{ascending:false}).limit(30)
     setHistory(data||[])
@@ -83,8 +83,6 @@ export default function DispensePage() {
     toast(`✅ تم صرف ${qn} ${selected.unit} من ${selected.name}`)
     fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:selected.id,new_qty:selected.qty-qn,reorder_point:selected.reorder_point})}).catch(()=>{})
     fetch('/api/notify-staff-dispense',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,branch_id:sessionStorage.getItem('s_branch_id')||null,staff_name:sessionStorage.getItem('s_full_name')||'المالك',product_name:selected.name,qty:qn,unit:selected.unit})}).catch(()=>{})
-    try{
-    }catch{}
     setSelected(null);setQty('');setWasteMode(false);setWasteReason('')
     setSaving(false);loadProducts(oid);loadHistory(oid)
   }
@@ -249,18 +247,26 @@ export default function DispensePage() {
             <div style={{overflowY:'auto',flex:1}}>
               {history.length===0?(
                 <div style={{padding:'32px',textAlign:'center',color:C.text4,fontSize:12}}>لا توجد عمليات بعد</div>
-              ):history.map((h,i)=>(
+              ):history.map((h,i)=>{
+                const isWaste=h.type==='waste'
+                const badgeColor=isWaste?'#d97706':C.danger
+                const badgeBg=isWaste?C.warningL:C.dangerL
+                const badgeBorder=isWaste?C.warningB:C.dangerB
+                return (
                 <div key={h.id} style={{display:'flex',alignItems:'center',gap:10,padding:'11px 20px',borderBottom:i<history.length-1?`1px solid ${C.border}`:'none'}}>
-                  <div style={{width:30,height:30,borderRadius:8,background:C.dangerL,border:`1px solid ${C.dangerB}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    <svg width="12" height="12" fill="none" stroke={C.danger} strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                  <div style={{width:30,height:30,borderRadius:8,background:badgeBg,border:`1px solid ${badgeBorder}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:13}}>
+                    {isWaste?'🗑️':<svg width="12" height="12" fill="none" stroke={C.danger} strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(h.products as any)?.name}</div>
+                    <div style={{fontSize:13,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                      {(h.products as any)?.name}
+                      {isWaste&&<span style={{fontSize:9,fontWeight:700,color:'#b45309',background:'#fffbeb',padding:'1px 6px',borderRadius:99,marginRight:6,border:'1px solid #fde68a'}}>هدر{h.waste_reason?` · ${h.waste_reason}`:''}</span>}
+                    </div>
                     <div style={{fontSize:10,color:C.text4,marginTop:1}}>{new Date(h.created_at).toLocaleDateString('ar-SA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
                   </div>
-                  <span style={{fontSize:13,fontWeight:800,color:C.danger,flexShrink:0}}>{Math.abs(h.qty_change)} <span style={{fontSize:10,color:C.text4,fontWeight:400}}>{(h.products as any)?.unit}</span></span>
+                  <span style={{fontSize:13,fontWeight:800,color:badgeColor,flexShrink:0}}>{Math.abs(h.qty_change)} <span style={{fontSize:10,color:C.text4,fontWeight:400}}>{(h.products as any)?.unit}</span></span>
                 </div>
-              ))}
+              )})}
             </div>
           </div>
         </div>
