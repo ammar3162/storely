@@ -130,6 +130,7 @@ export async function POST(req: Request) {
       const text = buildOrderMessage(orgName, messageItems, supplier.notes) + '\n\nللتأكيد رد بكلمة: *تم*\nإن لم يتوفر الصنف، رد بكلمة: *غير متوفر*'
       const result = await sendWhatsAppMessage(formatPhone(supplier.phone), text)
       const ok = result.ok
+      const msgId = result.data?.data?.msgId || result.data?.msgId || null
 
       for (const p of items) {
         await supabase.from('supplier_order_logs').insert({
@@ -137,6 +138,7 @@ export async function POST(req: Request) {
           supplier_id: supplierId,
           qty_at_trigger: p.qty,
           status: ok ? 'sent' : 'failed',
+          wa_msg_id: msgId,
         })
       }
 

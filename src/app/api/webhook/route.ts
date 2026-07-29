@@ -195,6 +195,7 @@ async function searchProduct(to: string, orgId: string, query: string) {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
+    console.log('WEBHOOK_DEBUG_EVENT:', JSON.stringify(body))
     if (body?.data?.test===true) return NextResponse.json({ok:true})
     const messages = body?.data?.messages
     const msgs = Array.isArray(messages)?messages:(messages?[messages]:[])
