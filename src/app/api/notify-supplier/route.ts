@@ -142,7 +142,7 @@ export async function POST(req: Request) {
           qty_at_trigger: p.qty,
           status: ok ? 'sent' : 'failed',
         }).select('id').single()
-        else if (insertedLog) insertedLogIds.push((insertedLog as any).id)
+        if (insertedLog) insertedLogIds.push((insertedLog as any).id)
       }
 
       // نجيب رمز واتساب الحقيقي (WAMID) بالخلفية بعد الرد — بدون ما نأخر المستخدم

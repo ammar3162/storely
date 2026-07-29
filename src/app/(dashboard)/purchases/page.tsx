@@ -21,7 +21,7 @@ const CATS = ['مخزون','مشتريات','أخرى']
 const CAT_ICONS: Record<string,string> = {'مخزون':'📦','مشتريات':'🛒','أخرى':'📋'}
 const UNITS = ['قطعة','كيلو','كيس','كرتون','لتر','علبة','باكيت','درزن','رول','غرام','أخرى']
 
-const lbl: React.CSSProperties = {fontSize:10,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em'}
+const lbl: React.CSSProperties = {fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6,textTransform:'uppercase',letterSpacing:'.04em'}
 const inp: React.CSSProperties = {width:'100%',padding:'10px 12px',border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',background:'white',color:C.text,fontFamily:'inherit'}
 
 export default function PurchasesPage() {
@@ -423,6 +423,52 @@ export default function PurchasesPage() {
               {form.category==='مخزون'&&<div style={{background:C.primaryL,border:`1px solid ${C.primaryB}`,borderRadius:7,padding:'7px 10px',marginTop:8,fontSize:11,color:C.primary,fontWeight:600}}>سيتم إضافة الصنف للمخزون تلقائياً</div>}
             </div>
 
+            {/* Invoice image */}
+            <div style={{marginBottom:10}}>
+              <label style={lbl}>صورة الفاتورة {form.hasVat==='yes'?<span style={{color:C.danger}}>*</span>:'(اختياري)'}</label>
+              <input ref={fileRef} type="file" accept="image/*,.pdf" style={{display:'none'}} onChange={e=>{if(e.target.files?.[0])handleImage(e.target.files[0])}}/>
+              <button type="button" onClick={()=>fileRef.current?.click()} style={{
+                width:'100%',padding:'10px',borderRadius:8,cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:600,
+                border:`1.5px dashed ${previewUrl?C.primary:form.hasVat==='yes'&&!previewUrl?C.danger:C.border2}`,
+                background:previewUrl?C.primaryL:form.hasVat==='yes'&&!previewUrl?C.dangerL:C.bg,
+                color:previewUrl?C.primary:form.hasVat==='yes'&&!previewUrl?C.danger:C.text3,
+              }}>
+                {uploading?'⏳ جاري الرفع...':previewUrl?'✅ تم الرفع — اضغط للتغيير':form.hasVat==='yes'?'📎 رفع صورة الفاتورة (مطلوب)':'📎 رفع صورة الفاتورة'}
+              </button>
+              {previewUrl&&previewUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)&&(
+                <img src={previewUrl} alt="فاتورة" style={{width:'100%',maxHeight:80,objectFit:'cover',borderRadius:7,marginTop:6,border:`1px solid ${C.primaryB}`}}/>
+              )}
+              {ocrLoading&&(
+                <div style={{fontSize:11,color:C.text3,marginTop:6,display:'flex',alignItems:'center',gap:6}}>
+                  <span>✨</span><span>جاري استخراج بيانات الفاتورة...</span>
+                </div>
+              )}
+              {ocrItems.length>0&&(
+                <div style={{marginTop:8,padding:12,background:C.infoL,borderRadius:10,border:`1px solid ${C.infoB}`}}>
+                  <div style={{fontSize:11,fontWeight:700,color:C.info,marginBottom:8}}>📋 {ocrItems.length} صنف مكتشف بالفاتورة — حدد اللي تبي تحفظه</div>
+                  <div style={{display:'flex',flexDirection:'column' as const,gap:6,marginBottom:10}}>
+                    {ocrItems.map((item,i)=>(
+                      <label key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',borderRadius:7,background:'white',border:`1px solid ${C.infoB}`,cursor:'pointer'}}>
+                        <input type="checkbox" checked={!!ocrSelected[i]} onChange={e=>setOcrSelected(s=>({...s,[i]:e.target.checked}))} style={{width:15,height:15,cursor:'pointer'}}/>
+                        <span style={{fontSize:12,color:C.text,flex:1}}>{item.name}</span>
+                        <span style={{fontSize:11,color:C.text3}}>{item.qty||0} {item.unit||''}</span>
+                        <input type="number" step="0.01" value={ocrPrices[i]||''} onChange={e=>setOcrPrices(p=>({...p,[i]:e.target.value}))}
+                          placeholder="السعر" style={{width:64,padding:'4px 6px',borderRadius:6,border:`1px solid ${C.border}`,fontSize:11,textAlign:'left' as const,fontFamily:'inherit'}}/>
+                      </label>
+                    ))}
+                  </div>
+                  <div style={{fontSize:10,color:C.text3,marginBottom:8}}>
+                    * السعر يتوزّع تلقائياً بالتساوي بدايةً — عدّله لكل صنف حسب سعره الفعلي بالفاتورة لدقة أعلى بالتقارير
+                  </div>
+                  <button type="button" onClick={saveBulkOcrItems} disabled={bulkSaving||Object.values(ocrSelected).every(v=>!v)}
+                    style={{width:'100%',padding:10,background:bulkSaving?C.text4:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:bulkSaving?'not-allowed':'pointer',fontFamily:'inherit'}}>
+                    {bulkSaving?'جاري الحفظ...':`✅ حفظ ${Object.values(ocrSelected).filter(Boolean).length} صنف محدد`}
+                  </button>
+                </div>
+              )}
+            </div>
+
+
             {/* Existing/New toggle */}
             {form.category==='مخزون'&&(
               <div style={{display:'flex',gap:6,marginBottom:12}}>
@@ -530,51 +576,6 @@ export default function PurchasesPage() {
                   </button>
                 ))}
               </div>
-            </div>
-
-            {/* Invoice image */}
-            <div style={{marginBottom:10}}>
-              <label style={lbl}>صورة الفاتورة {form.hasVat==='yes'?<span style={{color:C.danger}}>*</span>:'(اختياري)'}</label>
-              <input ref={fileRef} type="file" accept="image/*,.pdf" style={{display:'none'}} onChange={e=>{if(e.target.files?.[0])handleImage(e.target.files[0])}}/>
-              <button type="button" onClick={()=>fileRef.current?.click()} style={{
-                width:'100%',padding:'10px',borderRadius:8,cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:600,
-                border:`1.5px dashed ${previewUrl?C.primary:form.hasVat==='yes'&&!previewUrl?C.danger:C.border2}`,
-                background:previewUrl?C.primaryL:form.hasVat==='yes'&&!previewUrl?C.dangerL:C.bg,
-                color:previewUrl?C.primary:form.hasVat==='yes'&&!previewUrl?C.danger:C.text3,
-              }}>
-                {uploading?'⏳ جاري الرفع...':previewUrl?'✅ تم الرفع — اضغط للتغيير':form.hasVat==='yes'?'📎 رفع صورة الفاتورة (مطلوب)':'📎 رفع صورة الفاتورة'}
-              </button>
-              {previewUrl&&previewUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)&&(
-                <img src={previewUrl} alt="فاتورة" style={{width:'100%',maxHeight:80,objectFit:'cover',borderRadius:7,marginTop:6,border:`1px solid ${C.primaryB}`}}/>
-              )}
-              {ocrLoading&&(
-                <div style={{fontSize:11,color:C.text3,marginTop:6,display:'flex',alignItems:'center',gap:6}}>
-                  <span>✨</span><span>جاري استخراج بيانات الفاتورة...</span>
-                </div>
-              )}
-              {ocrItems.length>0&&(
-                <div style={{marginTop:8,padding:12,background:C.infoL,borderRadius:10,border:`1px solid ${C.infoB}`}}>
-                  <div style={{fontSize:11,fontWeight:700,color:C.info,marginBottom:8}}>📋 {ocrItems.length} صنف مكتشف بالفاتورة — حدد اللي تبي تحفظه</div>
-                  <div style={{display:'flex',flexDirection:'column' as const,gap:6,marginBottom:10}}>
-                    {ocrItems.map((item,i)=>(
-                      <label key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',borderRadius:7,background:'white',border:`1px solid ${C.infoB}`,cursor:'pointer'}}>
-                        <input type="checkbox" checked={!!ocrSelected[i]} onChange={e=>setOcrSelected(s=>({...s,[i]:e.target.checked}))} style={{width:15,height:15,cursor:'pointer'}}/>
-                        <span style={{fontSize:12,color:C.text,flex:1}}>{item.name}</span>
-                        <span style={{fontSize:11,color:C.text3}}>{item.qty||0} {item.unit||''}</span>
-                        <input type="number" step="0.01" value={ocrPrices[i]||''} onChange={e=>setOcrPrices(p=>({...p,[i]:e.target.value}))}
-                          placeholder="السعر" style={{width:64,padding:'4px 6px',borderRadius:6,border:`1px solid ${C.border}`,fontSize:11,textAlign:'left' as const,fontFamily:'inherit'}}/>
-                      </label>
-                    ))}
-                  </div>
-                  <div style={{fontSize:10,color:C.text3,marginBottom:8}}>
-                    * السعر يتوزّع تلقائياً بالتساوي بدايةً — عدّله لكل صنف حسب سعره الفعلي بالفاتورة لدقة أعلى بالتقارير
-                  </div>
-                  <button type="button" onClick={saveBulkOcrItems} disabled={bulkSaving||Object.values(ocrSelected).every(v=>!v)}
-                    style={{width:'100%',padding:10,background:bulkSaving?C.text4:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:bulkSaving?'not-allowed':'pointer',fontFamily:'inherit'}}>
-                    {bulkSaving?'جاري الحفظ...':`✅ حفظ ${Object.values(ocrSelected).filter(Boolean).length} صنف محدد`}
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Note */}
