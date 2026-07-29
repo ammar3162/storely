@@ -138,13 +138,15 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
   const [editingPhone, setEditingPhone] = useState(false)
   const [editPhoneVal, setEditPhoneVal] = useState(s.phone || '')
   const [savingPhone, setSavingPhone]   = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const sb = createClient()
 
   async function savePhone() {
     if (!editPhoneVal.trim()) { toast('أدخل رقم صحيح', 'warning'); return }
     setSavingPhone(true)
-    await (sb as any).from('suppliers').update({ phone: editPhoneVal.trim() }).eq('id', s.id)
+    const{error}=await (sb as any).from('suppliers').update({ phone: editPhoneVal.trim() }).eq('id', s.id)
     setSavingPhone(false)
+    if(error){toast('فشل تحديث رقم المورد','error');return}
     setEditingPhone(false)
     toast('✅ تم تحديث رقم المورد')
     onRefresh()
@@ -155,12 +157,13 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
 
   async function saveSettings() {
     setSaving(true)
-    await (sb as any).from('suppliers').update({
+    const{error}=await (sb as any).from('suppliers').update({
       notify_mode: mode,
       notify_time: time,
       notify_day: Number(day),
     }).eq('id', s.id)
     setSaving(false)
+    if(error){toast('فشل حفظ الإعدادات','error');return}
     setSettingsOpen(false)
     toast('✅ تم حفظ إعدادات المورد')
     onRefresh()
@@ -181,14 +184,15 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
 
   async function linkProduct() {
     if (!selectedProduct || !reorderPoint) { toast('اختر منتج وأدخل الحد الأدنى', 'warning'); return }
-    await (sb as any).from('products').update({
+    const{error:prodErr}=await (sb as any).from('products').update({
       supplier_id: s.id,
       supplier_reorder_point: Number(reorderPoint),
       supplier_order_qty: Number(orderQty) || Number(reorderPoint),
       supplier_notes: supplierNotes.trim() || null,
     }).eq('id', selectedProduct)
+    if(prodErr){toast('فشل ربط المنتج بالمورد','error');return}
     // مزامنة الأولوية 1 بجدول سلسلة التصعيد
-    await (sb as any).from('product_suppliers').upsert({
+    const{error:chainErr}=await (sb as any).from('product_suppliers').upsert({
       product_id: selectedProduct,
       supplier_id: s.id,
       priority: 1,
@@ -196,22 +200,25 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
       order_qty: Number(orderQty) || Number(reorderPoint),
       notes: supplierNotes.trim() || null,
     }, { onConflict: 'product_id,priority' })
-    toast('✅ تم ربط المنتج')
+    if(chainErr){toast('تم ربط المنتج، لكن فشل تحديث سلسلة التصعيد','warning')}
+    else toast('✅ تم ربط المنتج')
     setSelectedProduct(''); setReorderPoint(''); setOrderQty(''); setSupplierNotes('')
     onRefresh()
   }
 
   async function unlinkProduct(pid: string) {
-    await (sb as any).from('products').update({ supplier_id: null, supplier_reorder_point: null, supplier_order_qty: 0, supplier_notes: null }).eq('id', pid)
+    const{error}=await (sb as any).from('products').update({ supplier_id: null, supplier_reorder_point: null, supplier_order_qty: 0, supplier_notes: null }).eq('id', pid)
+    if(error){toast('فشل فك الارتباط','error');return}
     await (sb as any).from('product_suppliers').delete().eq('product_id', pid)
     toast('تم فك الارتباط')
     onRefresh()
   }
 
   async function deleteSupplier() {
-    if (!confirm(`حذف المورد "${s.name}"؟`)) return
     await (sb as any).from('products').update({ supplier_id: null, supplier_reorder_point: null, supplier_order_qty: 0 }).eq('supplier_id', s.id)
-    await (sb as any).from('suppliers').delete().eq('id', s.id)
+    const{error}=await (sb as any).from('suppliers').delete().eq('id', s.id)
+    setConfirmDelete(false)
+    if(error){toast('فشل حذف المورد','error');return}
     toast('تم الحذف')
     onRefresh()
   }
@@ -262,7 +269,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
             style={{ background:'#eff6ff', color:'#2563eb', border:'1.5px solid #bfdbfe', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
             📋
           </button>
-          <button onClick={deleteSupplier}
+          <button onClick={()=>setConfirmDelete(true)}
             style={{ background:'#fef2f2', color:'#ef4444', border:'1.5px solid #fecaca', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
             🗑️
           </button>
@@ -366,6 +373,19 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
           {unlinked.length === 0 && linked.length === 0 && (
             <div style={{ textAlign:'center', padding:'24px', color:'#94a3b8', fontSize:13 }}>لا توجد منتجات متاحة للربط</div>
           )}
+        </div>
+      )}
+
+      {confirmDelete && (
+        <div style={{position:'fixed',inset:0,zIndex:4000,display:'flex',alignItems:'center',justifyContent:'center',padding:20,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)'}}>
+          <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:320,fontFamily:font.family,direction:'rtl'}}>
+            <div style={{fontSize:14,fontWeight:700,color:'#0f172a',marginBottom:6,textAlign:'center'}}>حذف المورد "{s.name}"؟</div>
+            <div style={{fontSize:12,color:'#64748b',textAlign:'center',marginBottom:16,lineHeight:1.6}}>سيتم فك ارتباطه بكل المنتجات المرتبطة به. لا يمكن التراجع عن هذا الإجراء.</div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>setConfirmDelete(false)} style={{flex:1,padding:'10px',background:'#f1f5f9',color:'#334155',border:'1px solid #e2e8f0',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+              <button onClick={deleteSupplier} style={{flex:1,padding:'10px',background:'#ef4444',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>حذف</button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -476,7 +496,6 @@ export default function SuppliersPage() {
       body: JSON.stringify({ org_id: orgId, branch_id: sessionStorage.getItem('s_branch_id') || null, name: newName.trim(), phone: supCountry + newPhone.trim().replace(/^0+/,''), notes: newNotes.trim(), whatsapp_consent: true })
     })
     const resData = await res.json()
-    console.log('ADD SUPPLIER RESPONSE:', res.status, resData)
     const error = !res.ok ? {message: resData.error} : null
     if (error) { toast('خطأ: ' + error.message, 'error'); return }
     toast('✅ تم إضافة المورد')
