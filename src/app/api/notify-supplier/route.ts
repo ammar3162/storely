@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { waitUntil } from '@vercel/functions'
 import { createClient } from '@supabase/supabase-js'
 import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 
@@ -132,31 +133,42 @@ export async function POST(req: Request) {
       const ok = result.ok
       const numericMsgId = result.data?.data?.msgId || result.data?.msgId || null
 
-      // نجيب رمز واتساب الحقيقي (WAMID) عشان نقدر نطابقه لاحقاً مع تحديثات messages.update
-      let waMsgId: string | null = null
-      if (ok && numericMsgId) {
-        try {
-          await delay(2500) // نعطي WasenderAPI وقت يسجّل الرسالة قبل الاستعلام عنها
-          const infoRes = await fetch(`https://www.wasenderapi.com/api/messages/${numericMsgId}/info`, {
-            headers: { 'Authorization': `Bearer ${process.env.WASENDER_API_KEY}` },
-          })
-          const infoData = await infoRes.json().catch(() => null)
-          waMsgId = infoData?.data?.key?.id || infoData?.data?.id || null
-          console.log('WAMID_DEBUG:', JSON.stringify({ numericMsgId, infoStatus: infoRes.status, infoData, waMsgId }))
-        } catch (e: any) {
-          console.log('WAMID_DEBUG_ERROR:', e.message)
-        }
-      }
-
+      // نحفظ السجلات فوراً بدون WAMID (ما نأخر رد المستخدم)
+      const insertedLogIds: string[] = []
       for (const p of items) {
-        const { error: logInsertErr } = await supabase.from('supplier_order_logs').insert({
+        const { data: insertedLog, error: logInsertErr } = await supabase.from('supplier_order_logs').insert({
           product_id: p.id,
           supplier_id: supplierId,
           qty_at_trigger: p.qty,
           status: ok ? 'sent' : 'failed',
-          wa_msg_id: waMsgId,
-        })
-        if (logInsertErr) console.log('LOG_INSERT_ERROR:', JSON.stringify({ waMsgId, error: logInsertErr.message }))
+        }).select('id').single()
+        if (logInsertErr) console.log('LOG_INSERT_ERROR:', logInsertErr.message)
+        else if (insertedLog) insertedLogIds.push((insertedLog as any).id)
+      }
+
+      // نجيب رمز واتساب الحقيقي (WAMID) بالخلفية بعد الرد — بدون ما نأخر المستخدم
+      if (ok && numericMsgId && insertedLogIds.length) {
+        waitUntil((async () => {
+          const delays = [5000, 10000, 20000]
+          for (const waitMs of delays) {
+            await delay(waitMs)
+            try {
+              const infoRes = await fetch(`https://www.wasenderapi.com/api/messages/${numericMsgId}/info`, {
+                headers: { 'Authorization': `Bearer ${process.env.WASENDER_API_KEY}` },
+              })
+              const infoData = await infoRes.json().catch(() => null)
+              const waMsgId = infoData?.data?.key?.id || infoData?.data?.id || null
+              if (waMsgId) {
+                await supabase.from('supplier_order_logs').update({ wa_msg_id: waMsgId }).in('id', insertedLogIds)
+                console.log('WAMID_BACKGROUND_SUCCESS:', JSON.stringify({ numericMsgId, waMsgId }))
+                return
+              }
+            } catch (e: any) {
+              console.log('WAMID_BACKGROUND_ERROR:', e.message)
+            }
+          }
+          console.log('WAMID_BACKGROUND_GAVE_UP:', numericMsgId)
+        })())
       }
 
       if (ok) totalSent += items.length
