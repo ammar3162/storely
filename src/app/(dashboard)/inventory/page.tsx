@@ -167,8 +167,12 @@ export default function InventoryPage() {
     const oid=sessionStorage.getItem('s_org_id')
     if(!oid){setSaving(false);return}
     if(editItem){
-      await sb.from('products').update({name:form.name.trim(),sku:form.sku||null,unit:form.unit,reorder_point:Number(form.reorder_point),category:form.category?.trim()||null,expiry_date:form.expiry_date||null} as any).eq('id',editItem.id)
-      if(addQty>0) await sb.from('stock_movements').insert({product_id:editItem.id,profile_id:user.id,type:'in',qty_change:addQty,note:'إضافة مخزون'})
+      const{error:updErr}=await sb.from('products').update({name:form.name.trim(),sku:form.sku||null,unit:form.unit,reorder_point:Number(form.reorder_point),category:form.category?.trim()||null,expiry_date:form.expiry_date||null} as any).eq('id',editItem.id)
+      if(updErr){toast('فشل حفظ التعديلات — حاول مرة أخرى','error');setSaving(false);return}
+      if(addQty>0){
+        const{error:moveErr}=await sb.from('stock_movements').insert({product_id:editItem.id,profile_id:user.id,type:'in',qty_change:addQty,note:'إضافة مخزون'})
+        if(moveErr){toast('تم حفظ التعديلات لكن فشلت إضافة الكمية — حاول تضيفها مرة أخرى','warning');setSaving(false);setShowAdd(false);setEditItem(null);setAddQty(0);cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:');load();return}
+      }
       toast('تم حفظ التعديلات ✓')
     } else {
       if(!form.qty){toast('أدخل كمية أكبر من صفر','warning');setSaving(false);return}
@@ -177,12 +181,12 @@ export default function InventoryPage() {
         const{data:b}=await sb.from('branches').select('id').eq('org_id',oid).eq('is_active',true).order('created_at').limit(1).single()
         bid=b?.id||null
       }
-      const{data:np}=await sb.from('products').insert({org_id:oid,branch_id:bid,name:form.name.trim(),sku:form.sku||null,unit:form.unit,qty:Number(form.qty),reorder_point:Number(form.reorder_point),category:form.category?.trim()||null,expiry_date:form.expiry_date||null,is_active:true} as any).select().single()
-      if(np) {
-        await sb.from('stock_movements').insert({product_id:np.id,profile_id:user.id,type:'in',qty_change:Number(form.qty),note:'إضافة أولية'})
-        fetch('/api/sync-product-to-staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:np.id})}).catch(()=>{})
-      }
-      toast('تم إضافة المنتج ✓')
+      const{data:np,error:insErr}=await sb.from('products').insert({org_id:oid,branch_id:bid,name:form.name.trim(),sku:form.sku||null,unit:form.unit,qty:Number(form.qty),reorder_point:Number(form.reorder_point),category:form.category?.trim()||null,expiry_date:form.expiry_date||null,is_active:true} as any).select().single()
+      if(insErr||!np){toast('فشل إضافة المنتج — حاول مرة أخرى','error');setSaving(false);return}
+      const{error:moveErr}=await sb.from('stock_movements').insert({product_id:np.id,profile_id:user.id,type:'in',qty_change:Number(form.qty),note:'إضافة أولية'})
+      if(moveErr){toast('تمت إضافة المنتج لكن فشل تسجيل الكمية الابتدائية — عدّلها يدوياً','warning')}
+      else toast('تم إضافة المنتج ✓')
+      fetch('/api/sync-product-to-staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:np.id})}).catch(()=>{})
     }
     setShowAdd(false);setEditItem(null);setAddQty(0)
     setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:''})
@@ -191,7 +195,8 @@ export default function InventoryPage() {
 
   async function doDelete() {
     if(!confirm) return
-    await sb.from('products').update({is_active:false}).eq('id',confirm.id)
+    const{error}=await sb.from('products').update({is_active:false}).eq('id',confirm.id)
+    if(error){toast('فشل حذف المنتج — حاول مرة أخرى','error');setConfirm(null);return}
     toast('تم حذف المنتج');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:');setConfirm(null);load()
   }
 
@@ -231,22 +236,31 @@ export default function InventoryPage() {
     const bid = sessionStorage.getItem('s_branch_id')
     if (!oid || !user) { toast('خطأ بالجلسة', 'error'); setImporting(false); return }
 
-    let added = 0, updated = 0
+    let added = 0, updated = 0, failed = 0
     for (const row of importPreview) {
       const existing = products.find(p => p.name.trim() === row.name)
       if (existing) {
         // نعدّل الكمية عبر حركة "تسوية" بالفرق — لا نكتب الكمية مباشرة أبداً، عشان الزرّاق (Trigger) اللي يعيد حسابها من مجموع الحركات ما يصفّرها لاحقاً
-        await sb.from('products').update({ reorder_point: row.reorder_point, category: row.category || null, unit: row.unit } as any).eq('id', existing.id)
+        const{error:updErr}=await sb.from('products').update({ reorder_point: row.reorder_point, category: row.category || null, unit: row.unit } as any).eq('id', existing.id)
+        if(updErr){failed++;continue}
         const delta = row.qty - (existing.qty||0)
-        if (delta !== 0) await sb.from('stock_movements').insert({product_id:existing.id, profile_id:user.id, type:'adjustment', qty_change:delta, note:'تسوية استيراد جماعي'})
+        if (delta !== 0) {
+          const{error:moveErr}=await sb.from('stock_movements').insert({product_id:existing.id, profile_id:user.id, type:'adjustment', qty_change:delta, note:'تسوية استيراد جماعي'})
+          if(moveErr){failed++;continue}
+        }
         updated++
       } else {
-        const{data:np}=await sb.from('products').insert({ org_id: oid, branch_id: bid, name: row.name, category: row.category || null, qty: 0, unit: row.unit, reorder_point: row.reorder_point, is_active: true } as any).select().single()
-        if (np && row.qty > 0) await sb.from('stock_movements').insert({product_id:np.id, profile_id:user.id, type:'in', qty_change:row.qty, note:'إضافة أولية — استيراد جماعي'})
+        const{data:np,error:insErr}=await sb.from('products').insert({ org_id: oid, branch_id: bid, name: row.name, category: row.category || null, qty: 0, unit: row.unit, reorder_point: row.reorder_point, is_active: true } as any).select().single()
+        if (insErr||!np) { failed++; continue }
+        if (row.qty > 0) {
+          const{error:moveErr}=await sb.from('stock_movements').insert({product_id:np.id, profile_id:user.id, type:'in', qty_change:row.qty, note:'إضافة أولية — استيراد جماعي'})
+          if(moveErr){failed++;continue}
+        }
         added++
       }
     }
-    toast(`✅ تم استيراد ${importPreview.length} صنف (${added} جديد، ${updated} محدّث)`)
+    if(failed>0) toast(`تم استيراد ${added+updated} صنف (${added} جديد، ${updated} محدّث) — لكن فشل ${failed} صنف، حاول تستوردهم يدوياً`,'warning')
+    else toast(`✅ تم استيراد ${importPreview.length} صنف (${added} جديد، ${updated} محدّث)`)
     setImportPreview([])
     setShowImport(false)
     setImporting(false)
