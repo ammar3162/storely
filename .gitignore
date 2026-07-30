@@ -43,3 +43,6 @@ node_modules/
 android/storely-release-key.jks
 *.jks
 android/keystore.properties
+schema.sql
+supabase/.temp/
+.vercel/
