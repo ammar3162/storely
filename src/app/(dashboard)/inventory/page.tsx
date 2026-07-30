@@ -538,7 +538,7 @@ export default function InventoryPage() {
         ].map((s,i)=>(
           <button key={i} onClick={()=>{if(s.key!=='all'||i===0){setStatusFilter(s.key);setCatFilter('all');setPage(1)}}}
             className="tap"
-            style={{background:'white',borderRadius:10,padding:'12px 14px',border:`1px solid ${statusFilter===s.key&&i<3?s.color:C.border}`,textAlign:'right',cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
+            style={{background:'white',borderRadius:12,padding:'12px 14px',border:`1px solid ${statusFilter===s.key&&i<3?s.color:C.border}`,boxShadow:'0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)',textAlign:'right',cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
             <div style={{fontSize:22,fontWeight:700,color:s.color,letterSpacing:'-0.5px',fontVariantNumeric:'tabular-nums'}}>{s.value.toLocaleString()}</div>
             <div style={{fontSize:10,color:C.text4,marginTop:3,fontWeight:500}}>{s.label}</div>
           </button>
@@ -619,7 +619,7 @@ export default function InventoryPage() {
                 const pct=Math.min((p.qty/Math.max(p.reorder_point*2,p.qty,1))*100,100)
                 return (
                   <div key={p.id} className="tap" onClick={()=>openEdit(p)}
-                    style={{background:'white',borderRadius:14,padding:'14px',border:`1px solid ${C.border}`,cursor:'pointer',position:'relative',overflow:'hidden'}}>
+                    style={{background:'white',borderRadius:14,padding:'14px',border:`1px solid ${C.border}`,boxShadow:'0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)',cursor:'pointer',position:'relative',overflow:'hidden'}}>
                     {/* شريط علوي ملوّن يدل على الحالة */}
                     <div style={{position:'absolute',top:0,right:0,left:0,height:3,background:sc}}/>
 

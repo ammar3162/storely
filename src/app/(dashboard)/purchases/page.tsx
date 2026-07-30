@@ -395,7 +395,7 @@ export default function PurchasesPage() {
           {label:'ضريبة 15%', value:totalVat.toFixed(0)+' '+curr,   color:C.warning},
           {label:'الإجمالي',  value:totalSpent.toFixed(0)+' '+curr, color:C.primary},
         ].map((s,i)=>(
-          <div key={i} style={{background:'white',borderRadius:10,padding:'12px 14px',border:`1px solid ${C.border}`}}>
+          <div key={i} style={{background:'white',borderRadius:12,padding:'12px 14px',border:`1px solid ${C.border}`,boxShadow:'0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)'}}>
             <div style={{fontSize:10,color:C.text4,fontWeight:600,marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>{s.label}</div>
             <div style={{fontSize:18,fontWeight:700,color:s.color,fontVariantNumeric:'tabular-nums'}}>{s.value}</div>
           </div>

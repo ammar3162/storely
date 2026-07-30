@@ -142,8 +142,9 @@ export default function DispensePage() {
         input:focus{border-color:#16a34a!important;box-shadow:0 0 0 3px #f0fdf4!important;outline:none!important}
         /* Product card */
         .pcard{
-          background:white;border-radius:10px;padding:10px 8px;
+          background:white;border-radius:12px;padding:10px 8px;
           cursor:pointer;border:1.5px solid #f0f0f0;
+          box-shadow:0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03);
           transition:all .15s;font-family:inherit;
           display:flex;flex-direction:column;align-items:center;
           text-align:center;gap:6px;
