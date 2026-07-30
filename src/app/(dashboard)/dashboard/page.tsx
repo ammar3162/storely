@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { cache } from '@/lib/cache'
 import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
+import { Package, AlertTriangle, ShoppingCart, TrendingUp } from 'lucide-react'
 
 class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|null}> {
   state = { error: null }
@@ -170,8 +171,8 @@ export default function DashboardPage() {
         *{box-sizing:border-box}
         @keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
         .u{animation:up .35s ease both}
-        .r{border-radius:12px}
-        .s{background:#fff;border:1px solid #ebebea}
+        .r{border-radius:14px}
+        .s{background:#fff;border:1px solid #ebebea;box-shadow:0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)}
         .tap{transition:transform .12s,opacity .12s;cursor:pointer}
         .tap:active{transform:scale(.97);opacity:.85}
         .rh:hover{background:#f9f9f8}
@@ -267,14 +268,17 @@ export default function DashboardPage() {
       {/* ── Stats ── */}
       <div className="g4 u" style={{marginBottom:14,animationDelay:'.1s'}}>
         {[
-          {label:'الأصناف',    val:stats.products,       note:'في المخزون',   href:'/inventory', accent:'#16a34a'},
-          {label:'ناقص',      val:stats.lowStock,        note:`${stats.outOfStock} نفدت`,href:'/inventory',accent:'#e24b4a'},
-          {label:'شراء اليوم',val:stats.todayPurchases,  note:'فاتورة',       href:'/purchases', accent:'#378add'},
-          {label:'صرف اليوم', val:stats.todayDispenses,  note:'عملية',        href:'/dispense',  accent:'#ba7517'},
+          {label:'الأصناف',    val:stats.products,       note:'في المخزون',   href:'/inventory', accent:'#16a34a', Icon:Package},
+          {label:'ناقص',      val:stats.lowStock,        note:`${stats.outOfStock} نفدت`,href:'/inventory',accent:'#e24b4a', Icon:AlertTriangle},
+          {label:'شراء اليوم',val:stats.todayPurchases,  note:'فاتورة',       href:'/purchases', accent:'#378add', Icon:ShoppingCart},
+          {label:'صرف اليوم', val:stats.todayDispenses,  note:'عملية',        href:'/dispense',  accent:'#ba7517', Icon:TrendingUp},
         ].map((s,i)=>(
           <button key={i} onClick={()=>router.push(s.href)} className="s r tap"
             style={{padding:'16px',textAlign:'right',fontFamily:'inherit',cursor:'pointer',animationDelay:`${.12+i*.04}s`}}>
-            <div style={{fontSize:28,fontWeight:700,color:s.accent,letterSpacing:'-1px',lineHeight:1,marginBottom:6,fontVariantNumeric:'tabular-nums'}}>
+            <div style={{width:32,height:32,borderRadius:9,background:s.accent+'14',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:10}}>
+              <s.Icon size={16} color={s.accent} strokeWidth={2.2}/>
+            </div>
+            <div style={{fontSize:24,fontWeight:700,color:s.accent,letterSpacing:'-0.5px',lineHeight:1,marginBottom:6,fontVariantNumeric:'tabular-nums'}}>
               <Num value={s.val}/>
             </div>
             <div style={{fontSize:12,fontWeight:500,color:'#1c1c1a',marginBottom:2}}>{s.label}</div>
