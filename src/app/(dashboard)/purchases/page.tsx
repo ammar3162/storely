@@ -2,19 +2,21 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
+import { colors as dsColors } from '@/lib/ds'
 import { cache } from '@/lib/cache'
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/components/toast'
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh'
 
+// موحّد مع نظام التصميم المشترك (@/lib/ds) — نفس أسماء المفاتيح المستخدمة بالملف، قيم موحدة
 const C = {
-  primary:'#16a34a', primaryD:'#15803d', primaryL:'#f0fdf4', primaryB:'#bbf7d0',
-  danger:'#e24b4a',  dangerL:'#fef2f2',  dangerB:'#fecaca',
-  warning:'#ba7517', warningL:'#fffbeb', warningB:'#fde68a',
-  info:'#378add',    infoL:'#eff6ff',    infoB:'#bfdbfe',
-  text:'#1c1c1a', text2:'#3d3d3a', text3:'#5f5e5a', text4:'#888780',
-  bg:'#f5f5f4', surface:'#ffffff', border:'#ebebea', border2:'#e0e0dd',
+  primary:dsColors.primary, primaryD:dsColors.primaryDark, primaryL:dsColors.primaryLight, primaryB:dsColors.primaryBorder,
+  danger:dsColors.danger,  dangerL:dsColors.dangerLight,  dangerB:dsColors.dangerBorder,
+  warning:dsColors.warning, warningL:dsColors.warningLight, warningB:dsColors.warningBorder,
+  info:dsColors.info,    infoL:dsColors.infoLight,    infoB:dsColors.infoBorder,
+  text:dsColors.text, text2:dsColors.text2, text3:dsColors.text3, text4:dsColors.text4,
+  bg:dsColors.bg, surface:dsColors.surface, border:dsColors.border, border2:dsColors.border2,
 }
 
 const CATS = ['مخزون','مشتريات','أخرى']
