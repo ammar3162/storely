@@ -4,12 +4,14 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 
 import AIAssistant from '@/components/AIAssistant'
+import { colors as dsColors } from '@/lib/ds'
 
+// موحّد مع نظام التصميم المشترك (@/lib/ds)
 const C = {
-  primary: '#16a34a', primaryD: '#15803d', primaryL: '#f0fdf4', primaryB: '#bbf7d0',
-  danger:  '#ef4444', dangerL:  '#fef2f2',
-  text:    '#111827', text2: '#374151', text3: '#6b7280', text4: '#9ca3af',
-  bg:      '#f5f7fa', surface: '#ffffff', border: '#f0f0f0',
+  primary: dsColors.primary, primaryD: dsColors.primaryDark, primaryL: dsColors.primaryLight, primaryB: dsColors.primaryBorder,
+  danger:  dsColors.danger, dangerL:  dsColors.dangerLight,
+  text:    dsColors.text, text2: dsColors.text2, text3: dsColors.text3, text4: dsColors.text4,
+  bg:      dsColors.bg, surface: dsColors.surface, border: dsColors.border,
 }
 
 const NAV_GROUPS = [

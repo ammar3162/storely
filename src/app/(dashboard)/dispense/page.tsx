@@ -4,13 +4,15 @@ import { useState, useEffect, useRef } from 'react'
 import { toast } from '@/components/toast'
 import { cache } from '@/lib/cache'
 import { createClient } from '@/lib/supabase/client'
+import { colors as dsColors } from '@/lib/ds'
 
+// موحّد مع نظام التصميم المشترك (@/lib/ds)
 const C = {
-  primary:'#16a34a', primaryD:'#15803d', primaryL:'#f0fdf4', primaryB:'#bbf7d0',
-  danger:'#ef4444', dangerL:'#fef2f2', dangerB:'#fecaca',
-  warning:'#f59e0b', warningL:'#fffbeb', warningB:'#fde68a',
-  text:'#111827', text2:'#374151', text3:'#6b7280', text4:'#9ca3af',
-  bg:'#f5f7fa', surface:'#ffffff', border:'#f0f0f0', border2:'#e5e7eb',
+  primary:dsColors.primary, primaryD:dsColors.primaryDark, primaryL:dsColors.primaryLight, primaryB:dsColors.primaryBorder,
+  danger:dsColors.danger, dangerL:dsColors.dangerLight, dangerB:dsColors.dangerBorder,
+  warning:dsColors.warning, warningL:dsColors.warningLight, warningB:dsColors.warningBorder,
+  text:dsColors.text, text2:dsColors.text2, text3:dsColors.text3, text4:dsColors.text4,
+  bg:dsColors.bg, surface:dsColors.surface, border:dsColors.border, border2:dsColors.border2,
 }
 
 const CAT_COLORS = ['#16a34a','#2563eb','#dc2626','#d97706','#7c3aed','#0891b2','#db2777','#65a30d']
