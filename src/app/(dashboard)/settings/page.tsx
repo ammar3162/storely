@@ -12,6 +12,7 @@ const DAYS = [
 ]
 
 const TABS = [
+  {key:'account', label:'الحساب',     icon:'👤'},
   {key:'org',    label:'المؤسسة',    icon:'🏢'},
   {key:'notify', label:'الإشعارات',  icon:'🔔'},
   {key:'branches',label:'الفروع',   icon:'🏪'},
@@ -109,6 +110,8 @@ export default function SettingsPage() {
   const [planName, setPlanName]         = useState('')
   const [checkoutLoading, setCheckoutLoading] = useState<string|null>(null)
   const [userEmail, setUserEmail]       = useState('')
+  const [userPhone, setUserPhone]       = useState('')
+  const [userFullName, setUserFullName] = useState('')
   const [userId, setUserId]             = useState('')
   const [subEndsAt, setSubEndsAt]       = useState<string|null>(null)
   const [form, setForm] = useState({
@@ -159,8 +162,10 @@ export default function SettingsPage() {
   async function load() {
     setLoading(true)
     const{data:{user}}=await sb.auth.getUser(); if(!user) return
-    const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single(); if(!profile) return
+    const{data:profile}=await sb.from('profiles').select('org_id,full_name,phone').eq('id',user.id).single(); if(!profile) return
     setOrgId(profile.org_id)
+    setUserFullName((profile as any).full_name||'')
+    setUserPhone((profile as any).phone||'')
     const{data:orgRaw}=await sb.from('organizations').select('whatsapp_number,name,notify_schedule,notify_time,notify_days,notify_cashier_closing_wa,notify_supplier_wa,last_notified_at,last_backup_at,max_branches,logo_url,plan,subscription_ends_at').eq('id',profile.org_id).single()
     const org=orgRaw as any
     if(org){
@@ -345,6 +350,39 @@ export default function SettingsPage() {
         <div style={{padding:22}}>
 
           {/* ORG TAB */}
+          {activeTab==='account'&&(
+            <div className="su">
+              <div style={{...card,padding:'20px',marginBottom:14}}>
+                <div style={{fontSize:font.sm,fontWeight:800,color:colors.text,marginBottom:16}}>معلوماتك الشخصية</div>
+                <div style={{display:'grid',gap:14}}>
+                  <div>
+                    <label style={lbl}>الاسم الكامل</label>
+                    <div style={{...inp(),display:'flex',alignItems:'center',background:colors.bg,color:colors.text2}}>{userFullName||'—'}</div>
+                  </div>
+                  <div>
+                    <label style={lbl}>البريد الإلكتروني</label>
+                    <div style={{...inp(),display:'flex',alignItems:'center',background:colors.bg,color:colors.text2,direction:'ltr' as const,justifyContent:'flex-end'}}>{userEmail||'—'}</div>
+                  </div>
+                  <div>
+                    <label style={lbl}>رقم الجوال</label>
+                    <div style={{...inp(),display:'flex',alignItems:'center',background:colors.bg,color:colors.text2,direction:'ltr' as const,justifyContent:'flex-end'}}>{userPhone||'—'}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{...card,padding:'20px'}}>
+                <div style={{fontSize:font.sm,fontWeight:800,color:colors.text,marginBottom:16}}>باقتك الحالية</div>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'14px 16px',background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`,borderRadius:radius.md,marginBottom:subEndsAt?12:0}}>
+                  <span style={{fontSize:font.sm,fontWeight:800,color:colors.primary}}>{planLabel}</span>
+                  <span style={{fontSize:16}}>💎</span>
+                </div>
+                {subEndsAt&&(
+                  <div style={{fontSize:font.xs,color:colors.text3}}>ينتهي الاشتراك بتاريخ: <b style={{color:colors.text}}>{new Date(subEndsAt).toLocaleDateString('ar-SA',{year:'numeric',month:'long',day:'numeric'})}</b></div>
+                )}
+              </div>
+            </div>
+          )}
+
           {activeTab==='org'&&(
             <form onSubmit={handleSave}>
               <div style={{display:'flex',flexDirection:'column' as const,gap:18}}>
