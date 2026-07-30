@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { colors, radius, font, card, btnPrimary, inp, pageTitle, pageSub } from '@/lib/ds'
+import { toast } from '@/components/toast'
 
 export default function BranchesPage() {
   const sb = createClient()
@@ -67,27 +68,33 @@ export default function BranchesPage() {
   async function addBranch() {
     if(!newBranch.name.trim()) return
     setBranchSaving(true)
-    await sb.from('branches').insert({ org_id:orgId, name:newBranch.name.trim(), location:newBranch.location.trim()||null })
+    const{error}=await sb.from('branches').insert({ org_id:orgId, name:newBranch.name.trim(), location:newBranch.location.trim()||null })
+    if(error){toast('فشل إضافة الفرع — حاول مرة أخرى','error');setBranchSaving(false);return}
     const{data:bList}=await sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',orgId).eq('is_active',true).order('created_at')
     setBranches(bList||[]); setNewBranch({name:'',location:''}); setBranchSaving(false)
+    toast('✅ تم إضافة الفرع')
   }
 
   async function deleteBranch(id:string) {
-    if(branches.length<=1){alert('لا يمكن حذف الفرع الوحيد');return}
+    if(branches.length<=1){toast('لا يمكن حذف الفرع الوحيد','warning');return}
     if(!confirm('إيقاف هذا الفرع؟ بياناته تبقى محفوظة ويمكن تفعيله لاحقاً.')) return
-    await sb.from('branches').update({is_active:false} as any).eq('id',id)
+    const{error}=await sb.from('branches').update({is_active:false} as any).eq('id',id)
+    if(error){toast('فشل إيقاف الفرع — حاول مرة أخرى','error');return}
     const stopped = branches.find((b:any)=>b.id===id)
     setBranches(prev=>prev.filter((b:any)=>b.id!==id))
     if (stopped) setInactiveBranches(prev=>[...prev, stopped])
+    toast('تم إيقاف الفرع')
   }
 
   async function reactivateBranch(id:string) {
     setReactivatingId(id)
-    await sb.from('branches').update({is_active:true} as any).eq('id',id)
+    const{error}=await sb.from('branches').update({is_active:true} as any).eq('id',id)
+    if(error){toast('فشل إعادة تفعيل الفرع — حاول مرة أخرى','error');setReactivatingId(null);return}
     const b = inactiveBranches.find((x:any)=>x.id===id)
     setInactiveBranches(prev=>prev.filter((x:any)=>x.id!==id))
     if (b) setBranches(prev=>[...prev, b])
     setReactivatingId(null)
+    toast('✅ تم إعادة تفعيل الفرع')
   }
 
   function resetPhoneEdit() {
@@ -126,9 +133,12 @@ export default function BranchesPage() {
 
   async function saveBranchPhone(id:string, verifiedNumber:string|null) {
     setSavingPhone(true)
-    await (sb.from('branches' as any) as any).update({ whatsapp_number: verifiedNumber }).eq('id', id)
+    const{error}=await (sb.from('branches' as any) as any).update({ whatsapp_number: verifiedNumber }).eq('id', id)
+    setSavingPhone(false)
+    if(error){toast('فشل حفظ رقم الواتساب — حاول مرة أخرى','error');return}
     setBranches((prev:any[]) => prev.map(b => b.id===id ? {...b, whatsapp_number: verifiedNumber} : b))
-    resetPhoneEdit(); setSavingPhone(false)
+    resetPhoneEdit()
+    toast('✅ تم حفظ رقم الفرع')
   }
 
   function selectBranch(b:any){
