@@ -10,15 +10,16 @@ export const colors = {
   primaryBorder:'#bbf7d0',
 
   // Semantic
-  danger:       '#ef4444',
+  // موحّد مع صفحة الهبوط التسويقية (LandingPageClient.tsx) — نفس القيم بالضبط
+  danger:       '#dc2626',
   dangerLight:  '#fef2f2',
   dangerBorder: '#fecaca',
   warning:      '#f59e0b',
   warningLight: '#fffbeb',
   warningBorder:'#fde68a',
-  info:         '#3b82f6',
+  info:         '#2563eb',
   infoLight:    '#eff6ff',
-  infoBorder:   '#bfdbfe',
+  infoBorder:   '#dbeafe',
 
   // Neutral
   bg:           '#f5f7fa',
