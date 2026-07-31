@@ -157,6 +157,19 @@ export default function StaffManagementPage() {
   }
 
   async function saveAssigned() {
+    // تحقق نهائي مباشر من قاعدة البيانات (مو من بيانات المتصفح القديمة) — يمنع تعارض التخصيص حتى لو فُتحت نافذتان بنفس الوقت
+    if (selectedProds.length) {
+      const{data:conflicting}=await (sb.from('staff_members' as any) as any)
+        .select('id,name,assigned_products').eq('org_id',orgId).neq('id',assigningId)
+      const conflictNames = new Set<string>()
+      ;(conflicting||[]).forEach((s:any)=>{
+        if ((s.assigned_products||[]).some((pid:string)=>selectedProds.includes(pid))) conflictNames.add(s.name)
+      })
+      if (conflictNames.size) {
+        toast(`تعذّر الحفظ — بعض المنتجات صارت مخصصة لموظف آخر (${Array.from(conflictNames).join('، ')}) بينما كانت النافذة مفتوحة. أعد المحاولة.`,'error')
+        return
+      }
+    }
     await (sb.from('staff_members' as any) as any).update({assigned_products:selectedProds}).eq('id',assigningId)
     toast('✅ تم حفظ المنتجات المخصصة')
     setAssigningId(null)
