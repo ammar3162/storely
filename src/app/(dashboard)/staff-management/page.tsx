@@ -32,6 +32,7 @@ function Avatar({ name, active }: { name:string; active:boolean }) {
 }
 
 export default function StaffManagementPage() {
+  const [showUnassigned, setShowUnassigned] = useState(false)
   const orgPlan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
   const [staff, setStaff]           = useState<any[]>([])
   const [branches, setBranches]     = useState<any[]>([])
@@ -294,6 +295,32 @@ export default function StaffManagementPage() {
           </div>
         </div>
       )}
+
+      {(() => {
+        const assignedIds = new Set<string>()
+        staff.forEach((s:any) => (s.assigned_products||[]).forEach((pid:string) => assignedIds.add(pid)))
+        const unassignedProducts = products.filter((p:any) => !assignedIds.has(p.id))
+        if (unassignedProducts.length === 0) return null
+        return (
+          <div className="su" style={{background:colors.infoLight,border:`1.5px solid ${colors.infoBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16}}>
+            <div style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer'}} onClick={()=>setShowUnassigned(v=>!v)}>
+              <span style={{fontSize:18}}>📦</span>
+              <div style={{flex:1}}>
+                <b style={{fontSize:font.sm,color:colors.info}}>{unassignedProducts.length} منتج غير مخصص لأي موظف</b>
+                <div style={{fontSize:font.xs,color:colors.text3,marginTop:2}}>هذي المنتجات يقدر يشوفها جميع الموظفين بدون تخصيص</div>
+              </div>
+              <span style={{fontSize:12,color:colors.info,transform:showUnassigned?'rotate(180deg)':'none',transition:'transform .2s'}}>▾</span>
+            </div>
+            {showUnassigned && (
+              <div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${colors.infoBorder}`,display:'flex',flexWrap:'wrap' as const,gap:6}}>
+                {unassignedProducts.map((p:any)=>(
+                  <span key={p.id} style={{fontSize:font.xs,fontWeight:600,color:colors.text2,background:colors.surface,border:`1px solid ${colors.border2}`,borderRadius:radius.sm,padding:'4px 10px'}}>{p.name}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Stats */}
       <div className="su" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:20,animationDelay:'.05s'}}>
