@@ -199,6 +199,20 @@ export default function InventoryPage() {
     if(!confirm) return
     const{error}=await sb.from('products').update({is_active:false}).eq('id',confirm.id)
     if(error){toast('فشل حذف المنتج — حاول مرة أخرى','error');setConfirm(null);return}
+    // تنظيف تلقائي: نشيل المنتج المعطّل من قائمة أي موظف كان مخصص له، حتى ما يبقى "عالق" بصمت
+    try {
+      const oid = sessionStorage.getItem('s_org_id')
+      if (oid) {
+        const{data:staffWithProduct}=await (sb.from('staff_members' as any) as any)
+          .select('id,assigned_products').eq('org_id',oid).contains('assigned_products',[confirm.id])
+        if (staffWithProduct?.length) {
+          for (const s of staffWithProduct as any[]) {
+            const updated = (s.assigned_products||[]).filter((pid:string)=>pid!==confirm.id)
+            await (sb.from('staff_members' as any) as any).update({assigned_products:updated}).eq('id',s.id)
+          }
+        }
+      }
+    } catch {}
     toast('تم حذف المنتج');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:');setConfirm(null);load()
   }
 
