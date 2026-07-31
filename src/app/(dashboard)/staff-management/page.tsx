@@ -33,6 +33,8 @@ function Avatar({ name, active }: { name:string; active:boolean }) {
 
 export default function StaffManagementPage() {
   const [showUnassigned, setShowUnassigned] = useState(false)
+  const [pickerFor, setPickerFor] = useState<string|null>(null)
+  const [assigning, setAssigning] = useState(false)
   const orgPlan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
   const [staff, setStaff]           = useState<any[]>([])
   const [branches, setBranches]     = useState<any[]>([])
@@ -158,6 +160,19 @@ export default function StaffManagementPage() {
     await (sb.from('staff_members' as any) as any).update({assigned_products:selectedProds}).eq('id',assigningId)
     toast('✅ تم حفظ المنتجات المخصصة')
     setAssigningId(null)
+    loadStaff(orgId)
+  }
+
+  async function quickAssignProduct(productId:string, staffId:string) {
+    setAssigning(true)
+    const target = staff.find((s:any)=>s.id===staffId)
+    if(!target){ setAssigning(false); return }
+    const updated = [...(target.assigned_products||[]), productId]
+    const { error } = await (sb.from('staff_members' as any) as any).update({assigned_products:updated}).eq('id',staffId)
+    setAssigning(false)
+    if(error){ toast('فشل التخصيص — حاول مرة أخرى','error'); return }
+    toast(`✅ تم تخصيص المنتج لـ${target.name}`)
+    setPickerFor(null)
     loadStaff(orgId)
   }
 
@@ -312,9 +327,27 @@ export default function StaffManagementPage() {
               <span style={{fontSize:12,color:colors.info,transform:showUnassigned?'rotate(180deg)':'none',transition:'transform .2s'}}>▾</span>
             </div>
             {showUnassigned && (
-              <div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${colors.infoBorder}`,display:'flex',flexWrap:'wrap' as const,gap:6}}>
+              <div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${colors.infoBorder}`,display:'flex',flexDirection:'column' as const,gap:6}} onClick={e=>e.stopPropagation()}>
                 {unassignedProducts.map((p:any)=>(
-                  <span key={p.id} style={{fontSize:font.xs,fontWeight:600,color:colors.text2,background:colors.surface,border:`1px solid ${colors.border2}`,borderRadius:radius.sm,padding:'4px 10px'}}>{p.name}</span>
+                  <div key={p.id} style={{background:colors.surface,border:`1px solid ${colors.border2}`,borderRadius:radius.sm,overflow:'hidden'}}>
+                    <button onClick={()=>setPickerFor(prev=>prev===p.id?null:p.id)}
+                      style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>
+                      <span style={{fontSize:font.xs,fontWeight:600,color:colors.text2}}>{p.name}</span>
+                      <span style={{fontSize:11,color:colors.primary,fontWeight:700}}>{pickerFor===p.id?'إغلاق ×':'+ تخصيص لموظف'}</span>
+                    </button>
+                    {pickerFor===p.id && (
+                      <div style={{display:'flex',flexWrap:'wrap' as const,gap:6,padding:'0 12px 10px'}}>
+                        {staff.length===0 ? (
+                          <span style={{fontSize:11,color:colors.text4}}>لا يوجد موظفون بعد</span>
+                        ) : staff.map((s:any)=>(
+                          <button key={s.id} disabled={assigning} onClick={()=>quickAssignProduct(p.id,s.id)}
+                            style={{fontSize:11,fontWeight:600,padding:'5px 10px',borderRadius:99,border:`1px solid ${colors.primaryBorder}`,background:colors.primaryLight,color:colors.primary,cursor:assigning?'not-allowed':'pointer',fontFamily:'inherit',opacity:assigning?.6:1}}>
+                            {s.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
