@@ -3,9 +3,9 @@
 // ═══════════════════════════════════════
 
 export const colors = {
-  // Brand
-  primary:      '#16a34a',
-  primaryDark:  '#15803d',
+  // Brand — أخضر غامق
+  primary:      '#15803d',
+  primaryDark:  '#14532d',
   primaryLight: '#f0fdf4',
   primaryBorder:'#bbf7d0',
 
