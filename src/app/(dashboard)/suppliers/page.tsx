@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { colors, font, pageTitle, pageSub, card, btnPrimary, btnSecondary, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
+import { Send, Clock, Trash2, Truck } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 
 const DAYS = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت']
@@ -224,7 +225,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
   }
 
   return (
-    <div style={{ background:'white', border:'1.5px solid #e2e8f0', borderRadius:16, overflow:'hidden', transition:'box-shadow .2s' }}>
+    <div style={{ background:'white', border:'1.5px solid #e2e8f0', borderRadius:16, overflow:'hidden', boxShadow:'0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)', transition:'box-shadow .2s' }}>
       {/* Header */}
       <div style={{ padding:'16px 20px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <div style={{ display:'flex', alignItems:'center', gap:12, cursor:'pointer', flex:1 }} onClick={()=>setOpen(o=>!o)}>
@@ -261,17 +262,17 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
           </div>
         </div>
         <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
-          <button onClick={sendNow} disabled={sending}
-            style={{ background:'#f0fdf4', color:'#16a34a', border:'1.5px solid #bbf7d0', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
-            {sending ? '...' : '📤'}
+          <button onClick={sendNow} disabled={sending} title="إرسال طلب توريد الآن"
+            style={{ background:'#f0fdf4', color:'#16a34a', border:'1.5px solid #bbf7d0', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            {sending ? '...' : <Send size={14} strokeWidth={2.3}/>}
           </button>
           <button onClick={openTimeline} title="سجل التواصل"
-            style={{ background:'#eff6ff', color:'#2563eb', border:'1.5px solid #bfdbfe', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
-            📋
+            style={{ background:'#eff6ff', color:'#2563eb', border:'1.5px solid #bfdbfe', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <Clock size={14} strokeWidth={2.3}/>
           </button>
-          <button onClick={()=>setConfirmDelete(true)}
-            style={{ background:'#fef2f2', color:'#ef4444', border:'1.5px solid #fecaca', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
-            🗑️
+          <button onClick={()=>setConfirmDelete(true)} title="حذف المورد"
+            style={{ background:'#fef2f2', color:'#ef4444', border:'1.5px solid #fecaca', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <Trash2 size={14} strokeWidth={2.3}/>
           </button>
           <span style={{ color:'#94a3b8', fontSize:16, transform:open?'rotate(180deg)':'none', transition:'transform .2s', cursor:'pointer' }} onClick={()=>setOpen(o=>!o)}>⌄</span>
         </div>
@@ -614,7 +615,7 @@ export default function SuppliersPage() {
       {/* قائمة الموردين */}
       {suppliers.length === 0 ? (
         <div style={{ background:'white', border:'1.5px solid #e2e8f0', borderRadius:16, padding:48, textAlign:'center' }}>
-          <div style={{ fontSize:48, marginBottom:12 }}>🚚</div>
+          <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}><Truck size={44} color="#94a3b8" strokeWidth={1.5}/></div>
           <div style={{ fontSize:15, fontWeight:700, color:'#475569', marginBottom:6 }}>لا يوجد موردين بعد</div>
           <div style={{ fontSize:13, color:'#94a3b8' }}>أضف أول مورد وابدأ بتتبع طلبات التوريد تلقائياً</div>
         </div>
