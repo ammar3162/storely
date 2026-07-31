@@ -505,7 +505,7 @@ export default function PurchasesPage() {
                 </div>
               ):(
                 <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp}
-                  placeholder={form.category==='مخزون'?'قهوة، سكر...':form.category==='مشتريات'?'مستلزمات مكتبية...':'إيجار، كهرباء...'}/>
+                  placeholder={form.category==='مخزون'?'مثال: اسم الصنف':form.category==='مشتريات'?'مثال: أدوات ومستلزمات':'مثال: مصاريف تشغيلية'}/>
               )}
             </div>
 

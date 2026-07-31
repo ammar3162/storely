@@ -451,7 +451,7 @@ export default function InventoryPage() {
                 <div style={{display:'flex',flexDirection:'column',gap:12}}>
                   <div>
                     <label style={lbl}>اسم المنتج *</label>
-                    <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp()} placeholder="مثال: قهوة عربية"/>
+                    <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp()} placeholder="مثال: اسم المنتج"/>
                   </div>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                     <div>
