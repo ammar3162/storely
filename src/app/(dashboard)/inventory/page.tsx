@@ -499,7 +499,13 @@ export default function InventoryPage() {
                     </div>
                   )}
                 </div>
-                <div style={{display:'flex',gap:8,marginTop:16}}>
+                {editItem && (
+                  <button type="button" onClick={()=>{setConfirm({id:editItem.id,name:editItem.name});setShowAdd(false)}}
+                    style={{width:'100%',padding:'10px',marginTop:16,background:C.dangerL,color:C.danger,border:`1px solid ${C.dangerB}`,borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                    🗑️ حذف هذا المنتج
+                  </button>
+                )}
+                <div style={{display:'flex',gap:8,marginTop:editItem?8:16}}>
                   <button type="button" onClick={()=>{setShowAdd(false);setEditItem(null)}} style={{flex:1,padding:'11px',background:C.bg,color:C.text2,border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
                   <button type="submit" disabled={saving} style={{flex:2,padding:'11px',background:C.primary,color:'white',border:'none',borderRadius:8,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:saving?.7:1}}>
                     {saving?'جاري الحفظ...':editItem?'حفظ التعديلات':'إضافة المنتج'}
