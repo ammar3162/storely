@@ -100,11 +100,18 @@ export default function PurchasesPage() {
   }
 
   async function loadPayables(oid:string) {
-    const{data}=await (sb.from('purchases') as any)
+    const{data,error}=await (sb.from('purchases') as any)
       .select('id,name,supplier,total_amount,due_date,created_at')
       .eq('org_id',oid).eq('payment_status','unpaid')
-      .order('due_date',{ascending:true,nullsFirst:false}).limit(200)
-    setPayables(data||[])
+      .order('created_at',{ascending:false}).limit(200)
+    if(error){ console.error('loadPayables error:', error); setPayables([]); return }
+    const sorted = (data||[]).slice().sort((a:any,b:any)=>{
+      if(!a.due_date && !b.due_date) return 0
+      if(!a.due_date) return 1
+      if(!b.due_date) return -1
+      return a.due_date.localeCompare(b.due_date)
+    })
+    setPayables(sorted)
   }
 
   async function markPaid(id:string) {
