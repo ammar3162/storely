@@ -28,6 +28,9 @@ const inp: React.CSSProperties = {width:'100%',padding:'10px 12px',border:`1px s
 
 export default function PurchasesPage() {
   const [history, setHistory]       = useState<any[]>([])
+  const [payables, setPayables]     = useState<any[]>([])
+  const [showPayables, setShowPayables] = useState(false)
+  const [payingId, setPayingId]     = useState<string|null>(null)
   const [products, setProducts]     = useState<any[]>([])
   const [isExisting, setIsExisting] = useState<boolean|null>(null)
   const [orgId, setOrgId]           = useState('')
@@ -55,6 +58,7 @@ export default function PurchasesPage() {
     category:'مخزون', name:'', sku:'', qty:'', unit:'قطعة',
     reorder_point:'5', total_amount:'', supplier:'',
     note:'', invoice_image:'', hasVat:'', invoice_date: todayRiyadh(),
+    payment_status:'unpaid', due_date:'',
   })
   const sb = createClient()
 
@@ -72,7 +76,7 @@ export default function PurchasesPage() {
     }
     setOrgId(oid!);setUserId(uid!)
     sb.from('organizations').select('currency').eq('id',oid!).single().then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
-    loadProducts(oid!);setTimeout(()=>loadHistory(oid!),300)
+    loadProducts(oid!);setTimeout(()=>{loadHistory(oid!);loadPayables(oid!)},300)
   }
 
   async function loadProducts(oid:string) {
@@ -93,6 +97,23 @@ export default function PurchasesPage() {
     let q=sb.from('purchases').select('id,category,name,qty,unit,amount,vat_amount,total_amount,supplier,invoice_image,created_at').eq('org_id',oid).order('created_at',{ascending:false}).limit(50)
     if(bid) q=(q as any).eq('branch_id',bid)
     const{data}=await q;setHistory(data||[]);cache.set('purchases:'+oid,data||[])
+  }
+
+  async function loadPayables(oid:string) {
+    const{data}=await (sb.from('purchases') as any)
+      .select('id,name,supplier,total_amount,due_date,created_at')
+      .eq('org_id',oid).eq('payment_status','unpaid')
+      .order('due_date',{ascending:true,nullsFirst:false}).limit(200)
+    setPayables(data||[])
+  }
+
+  async function markPaid(id:string) {
+    setPayingId(id)
+    const{error}=await (sb.from('purchases') as any).update({payment_status:'paid',paid_at:new Date().toISOString()}).eq('id',id)
+    setPayingId(null)
+    if(error){toast('فشل تحديث الحالة — حاول مرة أخرى','error');return}
+    toast('✅ تم تسجيل الدفع')
+    setPayables(prev=>prev.filter((p:any)=>p.id!==id))
   }
 
   async function compressImage(file:File): Promise<Blob> {
@@ -238,7 +259,7 @@ export default function PurchasesPage() {
 
     toast(`✅ تم حفظ ${selectedIndexes.length} صنف بنجاح، بكل تفاصيل السعر والضريبة`)
     setOcrItems([]); setOcrSelected([] as any); setOcrPrices({})
-    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh()})
+    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'unpaid',due_date:''})
     setPreviewUrl(null)
     setBulkSaving(false)
     loadHistory(orgId)
@@ -261,7 +282,7 @@ export default function PurchasesPage() {
       category:form.category,name:form.name,qty:form.qty?Number(form.qty):null,
       unit:form.unit||null,reorder_point:Number(form.reorder_point)||5,
       amount,supplier:form.supplier,note:form.note||null,invoice_image:form.invoice_image||null,
-      created_at:invoiceTs,
+      created_at:invoiceTs,payment_status:form.payment_status,due_date:form.due_date||null,
     })
     if(insErr){toast('خطأ: '+insErr.message,'error');setLoading(false);submitting.current=false;return}
     let matchedProductId:string|null=null
@@ -321,10 +342,10 @@ export default function PurchasesPage() {
       }
     }
 
-    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh()})
+    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'unpaid',due_date:''})
     setPreviewUrl(null);setLoading(false);submitting.current=false
     cache.invalidate('purchases:');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
-    loadHistory(orgId)
+    loadHistory(orgId);loadPayables(orgId)
   }
 
   const inputTotal=Number(form.total_amount)||0
@@ -561,6 +582,28 @@ export default function PurchasesPage() {
               <input required value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})} style={inp} placeholder="اسم المورد أو الشركة"/>
             </div>
 
+            {/* Payment status */}
+            <div style={{marginBottom:10}}>
+              <label style={lbl}>حالة الدفع</label>
+              <div style={{display:'flex',gap:8}}>
+                <button type="button" onClick={()=>setForm({...form,payment_status:'unpaid'})}
+                  style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.payment_status==='unpaid'?C.danger:C.border}`,background:form.payment_status==='unpaid'?C.dangerL:'white',color:form.payment_status==='unpaid'?C.danger:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                  غير مدفوعة
+                </button>
+                <button type="button" onClick={()=>setForm({...form,payment_status:'paid'})}
+                  style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.payment_status==='paid'?C.primary:C.border}`,background:form.payment_status==='paid'?C.primaryL:'white',color:form.payment_status==='paid'?C.primary:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                  مدفوعة
+                </button>
+              </div>
+            </div>
+
+            {form.payment_status==='unpaid' && (
+              <div style={{marginBottom:10}}>
+                <label style={lbl}>موعد استحقاق الدفع (اختياري)</label>
+                <input type="date" value={form.due_date} onChange={e=>setForm({...form,due_date:e.target.value})} style={inp}/>
+              </div>
+            )}
+
             {/* Invoice Date */}
             <div style={{marginBottom:10}}>
               <label style={lbl}>تاريخ الفاتورة</label>
@@ -597,6 +640,67 @@ export default function PurchasesPage() {
             </button>
           </form>
         </div>
+
+        {/* Payables — المستحقات للموردين */}
+        {payables.length>0 && (() => {
+          const todayStr = todayRiyadh()
+          const totalOwed = payables.reduce((s:number,p:any)=>s+(p.total_amount||0),0)
+          const overdueCount = payables.filter((p:any)=>p.due_date && p.due_date < todayStr).length
+          const bySupplier: Record<string, any[]> = {}
+          payables.forEach((p:any)=>{ const k=p.supplier||'—'; (bySupplier[k]=bySupplier[k]||[]).push(p) })
+          return (
+            <div className="u" style={{background:'white',borderRadius:12,border:`1px solid ${overdueCount>0?C.dangerB:C.border}`,overflow:'hidden',marginBottom:14,animationDelay:'.06s'}}>
+              <button onClick={()=>setShowPayables(v=>!v)} style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 14px',background:overdueCount>0?C.dangerL:C.bg,border:'none',cursor:'pointer',fontFamily:'inherit'}}>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <span style={{fontSize:16}}>💰</span>
+                  <div style={{textAlign:'right'}}>
+                    <div style={{fontSize:13,fontWeight:800,color:overdueCount>0?C.danger:C.text}}>{payables.length} فاتورة غير مدفوعة — {totalOwed.toLocaleString('ar',{maximumFractionDigits:0})} {curr}</div>
+                    {overdueCount>0 && <div style={{fontSize:11,color:C.danger,fontWeight:700,marginTop:2}}>⚠️ {overdueCount} متأخرة عن موعد الاستحقاق</div>}
+                  </div>
+                </div>
+                <span style={{fontSize:12,color:C.text3,transform:showPayables?'rotate(180deg)':'none',transition:'transform .2s'}}>▾</span>
+              </button>
+              {showPayables && (
+                <div style={{padding:'10px 14px 14px',display:'flex',flexDirection:'column' as const,gap:10}}>
+                  {Object.entries(bySupplier).map(([supplierName, items]) => {
+                    const subtotal = items.reduce((s,p)=>s+(p.total_amount||0),0)
+                    return (
+                      <div key={supplierName} style={{border:`1px solid ${C.border}`,borderRadius:10,overflow:'hidden'}}>
+                        <div style={{display:'flex',justifyContent:'space-between',padding:'8px 12px',background:C.bg,fontSize:12,fontWeight:700,color:C.text}}>
+                          <span>{supplierName}</span>
+                          <span>{subtotal.toLocaleString('ar',{maximumFractionDigits:0})} {curr}</span>
+                        </div>
+                        {items.map((p:any)=>{
+                          const isOverdue = p.due_date && p.due_date < todayStr
+                          const isSoon = p.due_date && !isOverdue && p.due_date <= new Date(Date.now()+3*86400000).toISOString().slice(0,10)
+                          return (
+                            <div key={p.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',borderTop:`1px solid ${C.border}`,fontSize:11}}>
+                              <div>
+                                <div style={{color:C.text2,fontWeight:600}}>{p.name||'—'}</div>
+                                {p.due_date && (
+                                  <div style={{color:isOverdue?C.danger:isSoon?C.warning:C.text4,fontWeight:isOverdue||isSoon?700:500,marginTop:2}}>
+                                    {isOverdue?'⚠️ متأخرة — ':''}استحقاق: {p.due_date}
+                                  </div>
+                                )}
+                              </div>
+                              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                                <span style={{fontWeight:700,color:C.text}}>{(p.total_amount||0).toLocaleString('ar',{maximumFractionDigits:0})} {curr}</span>
+                                <button onClick={()=>markPaid(p.id)} disabled={payingId===p.id}
+                                  style={{padding:'4px 10px',borderRadius:7,border:`1px solid ${C.primaryB}`,background:C.primaryL,color:C.primary,fontSize:10,fontWeight:700,cursor:payingId===p.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:payingId===p.id?.6:1}}>
+                                  {payingId===p.id?'...':'✓ دُفعت'}
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         {/* History */}
         <div className="u" style={{background:'white',borderRadius:12,border:`1px solid ${C.border}`,overflow:'hidden',animationDelay:'.08s'}}>
