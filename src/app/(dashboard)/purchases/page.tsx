@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
+import { Clock, CheckCircle2, Ban, Percent } from 'lucide-react'
 import { colors as dsColors } from '@/lib/ds'
 import { cache } from '@/lib/cache'
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
@@ -594,12 +595,12 @@ export default function PurchasesPage() {
               <label style={lbl}>حالة الدفع</label>
               <div style={{display:'flex',gap:8}}>
                 <button type="button" onClick={()=>setForm({...form,payment_status:'unpaid'})}
-                  style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.payment_status==='unpaid'?C.danger:C.border}`,background:form.payment_status==='unpaid'?C.dangerL:'white',color:form.payment_status==='unpaid'?C.danger:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                  غير مدفوعة
+                  style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.payment_status==='unpaid'?C.danger:C.border}`,background:form.payment_status==='unpaid'?C.dangerL:'white',color:form.payment_status==='unpaid'?C.danger:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                  <Clock size={13} strokeWidth={2.3}/> غير مدفوعة
                 </button>
                 <button type="button" onClick={()=>setForm({...form,payment_status:'paid'})}
-                  style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.payment_status==='paid'?C.primary:C.border}`,background:form.payment_status==='paid'?C.primaryL:'white',color:form.payment_status==='paid'?C.primary:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                  مدفوعة
+                  style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.payment_status==='paid'?C.primary:C.border}`,background:form.payment_status==='paid'?C.primaryL:'white',color:form.payment_status==='paid'?C.primary:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                  <CheckCircle2 size={13} strokeWidth={2.3}/> مدفوعة
                 </button>
               </div>
             </div>
@@ -621,10 +622,10 @@ export default function PurchasesPage() {
             <div style={{marginBottom:10}}>
               <label style={lbl}>الفاتورة شاملة ضريبة 15%؟ *</label>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
-                {[{v:'no',l:'بدون ضريبة',c:C.primary},{v:'yes',l:'شاملة 15%',c:C.warning}].map(b=>(
+                {[{v:'no',l:'بدون ضريبة',c:C.primary,Icon:Ban},{v:'yes',l:'شاملة 15%',c:C.warning,Icon:Percent}].map(b=>(
                   <button key={b.v} type="button" onClick={()=>setForm({...form,hasVat:b.v,invoice_image:b.v==='no'?'':form.invoice_image})}
-                    style={{padding:'10px',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer',border:`1px solid ${form.hasVat===b.v?b.c:C.border2}`,background:form.hasVat===b.v?b.v==='no'?C.primaryL:C.warningL:'white',color:form.hasVat===b.v?b.c:C.text3,fontFamily:'inherit',transition:'all .15s'}}>
-                    {b.l}
+                    style={{padding:'10px',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer',border:`1px solid ${form.hasVat===b.v?b.c:C.border2}`,background:form.hasVat===b.v?b.v==='no'?C.primaryL:C.warningL:'white',color:form.hasVat===b.v?b.c:C.text3,fontFamily:'inherit',transition:'all .15s',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                    <b.Icon size={13} strokeWidth={2.3}/> {b.l}
                   </button>
                 ))}
               </div>
