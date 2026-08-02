@@ -962,7 +962,12 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
   async function addComp() {
     if(!newCompId||!newCompQty||Number(newCompQty)<=0) return
     if(components.some(c=>c.component_product_id===newCompId)) return
+    const comp = rawMaterials.find((r:any)=>r.id===newCompId)
     const customFactor=Number(customSubCount)
+    if(!hasKnownConversion(comp) && !(customFactor>0)){
+      toast(`لازم تحدد "كم قطعة/وحدة بكل ${comp?.unit||'وحدة'} واحد؟" بالمربع الأصفر قبل الإضافة — وإلا الحساب بيكون غلط`,'error')
+      return
+    }
     const factor = customFactor>0 ? customFactor : newCompSubUnit
     const baseQty=Number(newCompQty)/factor
     setComponents(prev=>[...prev,{component_product_id:newCompId,qty:String(baseQty)}])
@@ -980,7 +985,13 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
     // حماية: لو المستخدم كتب مكوّن بالحقول لكن نسي يضغط "+"، نضيفه تلقائياً هنا قبل الحفظ
     let finalComponents = [...components]
     if(newCompId && newCompQty && Number(newCompQty)>0 && !components.some(c=>c.component_product_id===newCompId)){
+      const pendingComp = rawMaterials.find((r:any)=>r.id===newCompId)
       const customFactor=Number(customSubCount)
+      if(!hasKnownConversion(pendingComp) && !(customFactor>0)){
+        toast(`تعذّر الحفظ — حدد "كم قطعة/وحدة بكل ${pendingComp?.unit||'وحدة'} واحد؟" للمكوّن ${pendingComp?.name||''} أولاً`,'error')
+        setSaving(false)
+        return
+      }
       const factor = customFactor>0 ? customFactor : newCompSubUnit
       const baseQty=Number(newCompQty)/factor
       finalComponents.push({component_product_id:newCompId,qty:String(baseQty)})
