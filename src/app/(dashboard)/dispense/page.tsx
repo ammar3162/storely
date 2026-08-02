@@ -437,13 +437,22 @@ function RecipeQuickAdd({onClose,onSaved,rawMaterials,sb,orgId,branchId}:{onClos
   const [components,setComponents]=useState<{component_product_id:string,qty:string}[]>([])
   const [newCompId,setNewCompId]=useState('')
   const [newCompQty,setNewCompQty]=useState('')
+  const [newCompSubUnit,setNewCompSubUnit]=useState(1)
+
+  function subUnitOptions(baseUnit:string) {
+    const u=(baseUnit||'').trim()
+    if(['كيلو','كجم','كيلوجرام','كيلو جرام'].includes(u)) return [{label:'جرام',factor:1000},{label:'كيلو',factor:1}]
+    if(['لتر','ليتر'].includes(u)) return [{label:'مل',factor:1000},{label:'لتر',factor:1}]
+    return [{label:u||'وحدة',factor:1}]
+  }
   const [saving,setSaving]=useState(false)
 
   function addComp() {
     if(!newCompId||!newCompQty||Number(newCompQty)<=0) return
     if(components.some(c=>c.component_product_id===newCompId)) return
-    setComponents(prev=>[...prev,{component_product_id:newCompId,qty:newCompQty}])
-    setNewCompId('');setNewCompQty('')
+    const baseQty=Number(newCompQty)/newCompSubUnit
+    setComponents(prev=>[...prev,{component_product_id:newCompId,qty:String(baseQty)}])
+    setNewCompId('');setNewCompQty('');setNewCompSubUnit(1)
   }
 
   async function save() {
@@ -474,21 +483,30 @@ function RecipeQuickAdd({onClose,onSaved,rawMaterials,sb,orgId,branchId}:{onClos
             const comp=rawMaterials.find(r=>r.id===c.component_product_id)
             return (
               <div key={c.component_product_id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'#f9fafb',border:'1px solid #e5e7eb',borderRadius:8,padding:'6px 10px'}}>
-                <span style={{fontSize:11}}>{comp?.name||'—'} — {c.qty} {comp?.recipe_unit||comp?.unit}</span>
+                <span style={{fontSize:11}}>{comp?.name||'—'} — {c.qty} {comp?.unit}</span>
                 <button onClick={()=>setComponents(prev=>prev.filter(x=>x.component_product_id!==c.component_product_id))} style={{background:'none',border:'none',color:'#ef4444',cursor:'pointer',fontSize:14}}>×</button>
               </div>
             )
           })}
         </div>
       )}
-      <div style={{display:'flex',gap:6,marginBottom:16}}>
-        <select value={newCompId} onChange={e=>setNewCompId(e.target.value)} style={{flex:2,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}>
+      <div style={{display:'flex',gap:6,marginBottom:6}}>
+        <select value={newCompId} onChange={e=>{const id=e.target.value;setNewCompId(id);const r=rawMaterials.find(x=>x.id===id);const opts=subUnitOptions(r?.unit||'');setNewCompSubUnit(opts[0].factor)}} style={{flex:2,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}>
           <option value="">اختر مكوّن...</option>
           {rawMaterials.filter(r=>!components.some(c=>c.component_product_id===r.id)).map(r=>(
-            <option key={r.id} value={r.id}>{r.name} ({r.recipe_unit||r.unit})</option>
+            <option key={r.id} value={r.id}>{r.name} ({r.unit})</option>
           ))}
         </select>
+      </div>
+      <div style={{display:'flex',gap:6,marginBottom:16}}>
         <input type="number" step="0.01" min="0" value={newCompQty} onChange={e=>setNewCompQty(e.target.value)} placeholder="الكمية" style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}/>
+        {newCompId && (()=>{const r=rawMaterials.find(x=>x.id===newCompId);const opts=subUnitOptions(r?.unit||'');return opts.length>1 ? (
+          <select value={newCompSubUnit} onChange={e=>setNewCompSubUnit(Number(e.target.value))} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}>
+            {opts.map(o=>(<option key={o.label} value={o.factor}>{o.label}</option>))}
+          </select>
+        ) : (
+          <div style={{flex:1,padding:'8px',fontSize:11,color:'#6b7280',display:'flex',alignItems:'center',justifyContent:'center'}}>{opts[0].label}</div>
+        )})()}
         <button onClick={addComp} style={{padding:'0 12px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:16,fontWeight:700,cursor:'pointer'}}>+</button>
       </div>
 
