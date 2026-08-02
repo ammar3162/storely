@@ -60,6 +60,8 @@ export default function AIToolsPage() {
   const [realWasteReport, setRealWasteReport] = useState<any>(null)
   const [recipeReconReport, setRecipeReconReport] = useState<any>(null)
   const [reconLoading, setReconLoading] = useState(false)
+  const [showRecipeModal, setShowRecipeModal] = useState(false)
+  const [rawMaterials, setRawMaterials] = useState<any[]>([])
   const [realWasteLoading, setRealWasteLoading] = useState(false)
   const [reorderSuggestions, setReorderSuggestions] = useState<any>(null)
   const [reorderLoading, setReorderLoading] = useState(false)
@@ -525,15 +527,26 @@ export default function AIToolsPage() {
       </div>
       )}
 
-      {/* تقرير مطابقة استهلاك الوصفات */}
+      {/* إدارة الوصفات وتقدير الإنتاج */}
       <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
-        <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+        <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <span style={{fontSize:18}}>🍔</span>
             <div style={{flex:1}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.text}}>مطابقة استهلاك الوصفات</div>
-              <div style={{fontSize:11,color:C.text3}}>يقارن استهلاك المكوّنات المتوقع (من مبيعات الوصفات) بالاستهلاك الفعلي، ويكشف الفروقات</div>
+              <div style={{fontSize:13,fontWeight:700,color:C.text}}>الوصفات وتقدير الإنتاج</div>
+              <div style={{fontSize:11,color:C.text3}}>عرّف وصفة (اسم + مكوناتها)، والنظام يقدّر كم وحدة تم تحضيرها بناءً على استهلاك موظفيك الفعلي للمواد الخام</div>
             </div>
+          </div>
+          <div style={{display:'flex',gap:8}}>
+            <button onClick={async()=>{
+              const orgId=sessionStorage.getItem('s_org_id')
+              if(!orgId) return
+              const{data}=await sb.from('products').select('id,name,unit').eq('org_id',orgId).eq('is_active',true)
+              setRawMaterials(data||[])
+              setShowRecipeModal(true)
+            }} style={{flex:1,padding:'8px 14px',background:'white',color:'#7c3aed',border:'1.5px solid #ddd6fe',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+              + وصفة جديدة
+            </button>
             <button onClick={async()=>{
               const orgId=sessionStorage.getItem('s_org_id')
               if(!orgId) return
@@ -542,8 +555,8 @@ export default function AIToolsPage() {
               const data=await res.json()
               setRecipeReconReport(data)
               setReconLoading(false)
-            }} style={{padding:'6px 14px',background:'#7c3aed',color:'white',border:'none',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
-              {reconLoading?'⏳ جاري...':'تشغيل المطابقة'}
+            }} style={{flex:1,padding:'8px 14px',background:'#7c3aed',color:'white',border:'none',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+              {reconLoading?'⏳ جاري...':'تقدير الإنتاج'}
             </button>
           </div>
         </div>
@@ -551,47 +564,37 @@ export default function AIToolsPage() {
 
       {recipeReconReport && (
         <div style={{marginTop:16,background:C.surface,borderRadius:14,padding:'20px',border:'1.5px solid #ddd6fe'}}>
-          <div style={{fontSize:14,fontWeight:800,color:'#5b21b6',marginBottom:4}}>🍔 مطابقة استهلاك الوصفات (آخر 30 يوم)</div>
-          <div style={{fontSize:11,color:'#7c3aed',marginBottom:16}}>الفرق الموجب يعني استهلاك فعلي أكتر من المتوقع من الوصفات — راجعه</div>
+          <div style={{fontSize:14,fontWeight:800,color:'#5b21b6',marginBottom:4}}>🍔 تقدير الإنتاج (آخر 30 يوم)</div>
+          <div style={{fontSize:11,color:'#7c3aed',marginBottom:16}}>محسوب من استهلاك المواد الخام الفعلي ÷ مكونات كل وصفة</div>
 
           {!recipeReconReport.hasData ? (
             <div style={{textAlign:'center',padding:'24px',color:'#9ca3af',fontSize:13}}>
-              ما فيه مبيعات وصفات مسجّلة خلال آخر 30 يوم<br/>
-              <span style={{fontSize:11}}>جرّب تصرف منتج وصفة من صفحة "الصرف" أولاً</span>
+              ما فيه أي وصفة معرّفة بعد<br/>
+              <span style={{fontSize:11}}>اضغط "+ وصفة جديدة" وأضف اسمها ومكوناتها أولاً</span>
             </div>
           ) : (
-            <>
-              {recipeReconReport.recipesSold?.length>0 && (
-                <div style={{marginBottom:16}}>
-                  <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:8}}>الوصفات المباعة</div>
-                  <div style={{display:'flex',flexWrap:'wrap' as const,gap:6}}>
-                    {recipeReconReport.recipesSold.map((r:any)=>(
-                      <span key={r.id} style={{fontSize:11,fontWeight:600,color:'#5b21b6',background:'#f5f3ff',border:'1px solid #ddd6fe',borderRadius:99,padding:'4px 12px'}}>{r.name}: {r.qtySold} {r.unit}</span>
-                    ))}
+            <div style={{display:'flex',flexDirection:'column' as const,gap:12}}>
+              {recipeReconReport.recipes.map((r:any)=>(
+                <div key={r.id} style={{background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,padding:'12px 14px'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                    <span style={{fontSize:13,fontWeight:700,color:C.text}}>{r.name}</span>
+                    <span style={{fontSize:16,fontWeight:900,color:'#7c3aed'}}>≈ {r.estimatedProduced} وحدة</span>
                   </div>
-                </div>
-              )}
-              {recipeReconReport.componentsReport?.length>0 ? (
-                <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
-                  {recipeReconReport.componentsReport.map((c:any)=>(
-                    <div key={c.id} style={{background:Math.abs(c.variance)>0.01?'#fef2f2':C.bg,border:`1px solid ${Math.abs(c.variance)>0.01?'#fecaca':C.border2}`,borderRadius:10,padding:'10px 14px'}}>
-                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                        <span style={{fontSize:12,fontWeight:700,color:C.text}}>{c.name}</span>
-                        <span style={{fontSize:12,fontWeight:800,color:c.variance>0.01?'#dc2626':c.variance<-0.01?'#16a34a':C.text4}}>
-                          {c.variance>0?'+':''}{c.variance} {c.unit}{c.variancePercent!==null?` (${c.variancePercent>0?'+':''}${c.variancePercent}%)`:''}
-                        </span>
-                      </div>
-                      <div style={{display:'flex',gap:12,marginTop:4,fontSize:10,color:C.text4}}>
-                        <span>متوقع: {c.expected} {c.unit}</span>
-                        <span>فعلي: {c.actual} {c.unit}</span>
-                      </div>
+                  {r.components.length>0 ? (
+                    <div style={{display:'flex',flexDirection:'column' as const,gap:4}}>
+                      {r.components.map((c:any,i:number)=>(
+                        <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:10,color:C.text4}}>
+                          <span>{c.name}: استهلاك {c.consumed} {c.unit}</span>
+                          <span>يقدّر {c.impliedCount} وحدة</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    <div style={{fontSize:10,color:C.text4}}>هذي الوصفة بدون مكوّنات بعد</div>
+                  )}
                 </div>
-              ) : (
-                <div style={{textAlign:'center',padding:'16px',color:'#9ca3af',fontSize:12}}>لا توجد مكوّنات مرتبطة بالوصفات المباعة</div>
-              )}
-            </>
+              ))}
+            </div>
           )}
         </div>
       )}
@@ -849,6 +852,121 @@ export default function AIToolsPage() {
         </div>
       )}
 
+      {showRecipeModal && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:16,backdropFilter:'blur(4px)'}} onClick={()=>setShowRecipeModal(false)}>
+          <RecipeCreateModal
+            onClose={()=>setShowRecipeModal(false)}
+            onSaved={()=>setShowRecipeModal(false)}
+            rawMaterials={rawMaterials}
+            sb={sb}
+            orgId={typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null}
+            branchId={typeof window!=='undefined'?sessionStorage.getItem('s_branch_id'):null}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId}:{onClose:()=>void,onSaved:()=>void,rawMaterials:any[],sb:any,orgId:string|null,branchId:string|null}) {
+  const [name,setName]=useState('')
+  const [components,setComponents]=useState<{component_product_id:string,qty:string}[]>([])
+  const [newCompId,setNewCompId]=useState('')
+  const [newCompQty,setNewCompQty]=useState('')
+  const [newCompSubUnit,setNewCompSubUnit]=useState(1)
+  const [customSubLabel,setCustomSubLabel]=useState('')
+  const [customSubCount,setCustomSubCount]=useState('')
+  const [saving,setSaving]=useState(false)
+
+  function subUnitOptions(baseUnit:string) {
+    const u=(baseUnit||'').trim()
+    if(['كيلو','كجم','كيلوجرام','كيلو جرام'].includes(u)) return [{label:'جرام',factor:1000},{label:'كيلو',factor:1}]
+    if(['لتر','ليتر'].includes(u)) return [{label:'مل',factor:1000},{label:'لتر',factor:1}]
+    return [{label:u||'وحدة',factor:1}]
+  }
+  function isStandardUnit(baseUnit:string) {
+    const u=(baseUnit||'').trim()
+    return ['كيلو','كجم','كيلوجرام','كيلو جرام','لتر','ليتر'].includes(u)
+  }
+
+  function addComp() {
+    if(!newCompId||!newCompQty||Number(newCompQty)<=0) return
+    if(components.some(c=>c.component_product_id===newCompId)) return
+    const customFactor=Number(customSubCount)
+    const factor = customFactor>0 ? customFactor : newCompSubUnit
+    const baseQty=Number(newCompQty)/factor
+    setComponents(prev=>[...prev,{component_product_id:newCompId,qty:String(baseQty)}])
+    setNewCompId('');setNewCompQty('');setNewCompSubUnit(1);setCustomSubLabel('');setCustomSubCount('')
+  }
+
+  async function save() {
+    if(!name.trim()||!orgId) return
+    setSaving(true)
+    const{data:nr,error}=await sb.from('recipes').insert({org_id:orgId,branch_id:branchId||null,name:name.trim()}).select().single()
+    if(error||!nr){setSaving(false);return}
+    if(components.length>0){
+      const rows=components.map(c=>({recipe_id:nr.id,component_product_id:c.component_product_id,qty:Number(c.qty)}))
+      await sb.from('recipe_items').insert(rows)
+    }
+    setSaving(false)
+    onSaved()
+  }
+
+  return (
+    <div onClick={(e:any)=>e.stopPropagation()} style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,maxHeight:'85vh',overflowY:'auto',padding:20,fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl' as const}}>
+      <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>🍔 وصفة جديدة</div>
+      <label style={{fontSize:11,fontWeight:700,color:'#6b7280',display:'block',marginBottom:5}}>اسم الوصفة *</label>
+      <input value={name} onChange={(e:any)=>setName(e.target.value)} placeholder="مثال: برجر بالجبن" style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e7eb',borderRadius:9,fontSize:13,marginBottom:14,fontFamily:'inherit'}}/>
+
+      <div style={{fontSize:12,fontWeight:700,marginBottom:8}}>مكوّنات الوصفة</div>
+      {components.length>0 && (
+        <div style={{display:'flex',flexDirection:'column' as const,gap:6,marginBottom:8}}>
+          {components.map(c=>{
+            const comp=rawMaterials.find(r=>r.id===c.component_product_id)
+            return (
+              <div key={c.component_product_id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'#f9fafb',border:'1px solid #e5e7eb',borderRadius:8,padding:'6px 10px'}}>
+                <span style={{fontSize:11}}>{comp?.name||'—'} — {c.qty} {comp?.unit}</span>
+                <button onClick={()=>setComponents(prev=>prev.filter(x=>x.component_product_id!==c.component_product_id))} style={{background:'none',border:'none',color:'#ef4444',cursor:'pointer',fontSize:14}}>×</button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      <div style={{display:'flex',gap:6,marginBottom:6}}>
+        <select value={newCompId} onChange={(e:any)=>{const id=e.target.value;setNewCompId(id);const r=rawMaterials.find(x=>x.id===id);const opts=subUnitOptions(r?.unit||'');setNewCompSubUnit(opts[0].factor)}} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}>
+          <option value="">اختر مكوّن...</option>
+          {rawMaterials.filter(r=>!components.some(c=>c.component_product_id===r.id)).map(r=>(
+            <option key={r.id} value={r.id}>{r.name} ({r.unit})</option>
+          ))}
+        </select>
+      </div>
+      {newCompId && !isStandardUnit(rawMaterials.find(x=>x.id===newCompId)?.unit||'') && (
+        <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:8,padding:8,marginBottom:8}}>
+          <div style={{fontSize:10,color:'#92400e',marginBottom:6}}>كم قطعة/وحدة بكل {rawMaterials.find(x=>x.id===newCompId)?.unit} واحد؟ (اختياري)</div>
+          <div style={{display:'flex',gap:6}}>
+            <input value={customSubLabel} onChange={(e:any)=>setCustomSubLabel(e.target.value)} placeholder="اسم الوحدة (مثال: رغيف)" style={{flex:2,padding:'7px',border:'1.5px solid #fde68a',borderRadius:7,fontSize:10}}/>
+            <input type="number" min="1" value={customSubCount} onChange={(e:any)=>setCustomSubCount(e.target.value)} placeholder="العدد" style={{flex:1,padding:'7px',border:'1.5px solid #fde68a',borderRadius:7,fontSize:10}}/>
+          </div>
+        </div>
+      )}
+      <div style={{display:'flex',gap:6,marginBottom:16}}>
+        <input type="number" step="0.01" min="0" value={newCompQty} onChange={(e:any)=>setNewCompQty(e.target.value)} placeholder={customSubCount?`الكمية بـ${customSubLabel||'وحدة'}`:'الكمية'} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}/>
+        {newCompId && (()=>{const r=rawMaterials.find(x=>x.id===newCompId);const opts=subUnitOptions(r?.unit||'');return opts.length>1 ? (
+          <select value={newCompSubUnit} onChange={(e:any)=>setNewCompSubUnit(Number(e.target.value))} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}>
+            {opts.map(o=>(<option key={o.label} value={o.factor}>{o.label}</option>))}
+          </select>
+        ) : (
+          <div style={{flex:1,padding:'8px',fontSize:11,color:'#6b7280',display:'flex',alignItems:'center',justifyContent:'center'}}>{customSubLabel||opts[0].label}</div>
+        )})()}
+        <button onClick={addComp} style={{padding:'0 12px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:16,fontWeight:700,cursor:'pointer'}}>+</button>
+      </div>
+
+      <div style={{display:'flex',gap:8}}>
+        <button onClick={onClose} style={{flex:1,padding:'11px',background:'#f9fafb',color:'#374151',border:'1px solid #e5e7eb',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+        <button onClick={save} disabled={saving||!name.trim()} style={{flex:2,padding:'11px',background:'#7c3aed',color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:saving||!name.trim()?.6:1}}>
+          {saving?'جاري الحفظ...':'حفظ الوصفة'}
+        </button>
+      </div>
     </div>
   )
 }
