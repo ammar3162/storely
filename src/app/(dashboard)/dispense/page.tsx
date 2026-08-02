@@ -349,7 +349,7 @@ export default function DispensePage() {
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
                 <div>
                   <div style={{fontSize:16,fontWeight:800,color:C.text}}>{selected.name}</div>
-                  <div style={{fontSize:11,color:C.text3,marginTop:2}}>متاح: <b style={{color:C.primary,fontSize:14}}>{selected.qty}</b> {selected.unit}</div>
+                  <div style={{fontSize:11,color:C.text3,marginTop:2}}>{selected.is_recipe ? '🍔 صنف قائمة — يُصرف بدون حد أقصى' : (<>متاح: <b style={{color:C.primary,fontSize:14}}>{selected.qty}</b> {selected.unit}</>)}</div>
                 </div>
                 <button onClick={()=>{setSelected(null);setQty('');setWasteMode(false);setWasteReason('')}} style={{width:28,height:28,borderRadius:'50%',background:C.bg,border:`1px solid ${C.border2}`,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}}>✕</button>
               </div>
@@ -379,9 +379,11 @@ export default function DispensePage() {
                 </div>
               )}
 
-              <div style={{height:5,background:C.border,borderRadius:99,overflow:'hidden',marginBottom:18}}>
-                <div style={{height:'100%',width:Math.min((selected.qty/Math.max(selected.reorder_point*2,selected.qty,1))*100,100)+'%',background:selected.qty<=selected.reorder_point?C.warning:C.primary,borderRadius:99}}/>
-              </div>
+              {!selected.is_recipe && (
+                <div style={{height:5,background:C.border,borderRadius:99,overflow:'hidden',marginBottom:18}}>
+                  <div style={{height:'100%',width:Math.min((selected.qty/Math.max(selected.reorder_point*2,selected.qty,1))*100,100)+'%',background:selected.qty<=selected.reorder_point?C.warning:C.primary,borderRadius:99}}/>
+                </div>
+              )}
 
               <div style={{marginBottom:14}}>
                 <div style={{display:'flex',alignItems:'center',gap:12,justifyContent:'center',marginBottom:10}}>
@@ -400,7 +402,7 @@ export default function DispensePage() {
                 </div>
               </div>
 
-              {Number(qty)>selected.qty&&(
+              {!selected.is_recipe && Number(qty)>selected.qty&&(
                 <div style={{background:C.dangerL,border:`1px solid ${C.dangerB}`,borderRadius:9,padding:'8px 14px',marginBottom:10,fontSize:12,fontWeight:700,color:C.danger}}>
                   ⚠️ الكمية تتجاوز المتاح
                 </div>
