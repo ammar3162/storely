@@ -63,6 +63,36 @@ export default function AIToolsPage() {
   const [reconLoading, setReconLoading] = useState(false)
   const [showRecipeModal, setShowRecipeModal] = useState(false)
   const [rawMaterials, setRawMaterials] = useState<any[]>([])
+  const [recipesList, setRecipesList] = useState<any[]>([])
+  const [showRecipesList, setShowRecipesList] = useState(false)
+  const [editingRecipeId, setEditingRecipeId] = useState<string|null>(null)
+  const [deletingRecipeId, setDeletingRecipeId] = useState<string|null>(null)
+
+  async function loadRecipesList() {
+    const orgId=sessionStorage.getItem('s_org_id')
+    if(!orgId) return
+    const{data}=await (sb.from('recipes' as any) as any).select('id,name').eq('org_id',orgId).order('created_at',{ascending:false})
+    setRecipesList(data||[])
+  }
+
+  async function deleteRecipe(id:string) {
+    if(!confirm('حذف هذي الوصفة؟ هذا الإجراء لا يمكن التراجع عنه.')) return
+    setDeletingRecipeId(id)
+    const{error}=await (sb.from('recipes' as any) as any).delete().eq('id',id)
+    setDeletingRecipeId(null)
+    if(error){toast('فشل حذف الوصفة — حاول مرة أخرى','error');return}
+    toast('✅ تم حذف الوصفة')
+    setRecipesList(prev=>prev.filter(r=>r.id!==id))
+  }
+
+  async function openEditRecipe(id:string) {
+    const orgId=sessionStorage.getItem('s_org_id')
+    if(!orgId) return
+    const{data}=await sb.from('products').select('id,name,unit').eq('org_id',orgId).eq('is_active',true)
+    setRawMaterials(data||[])
+    setEditingRecipeId(id)
+    setShowRecipeModal(true)
+  }
   const [realWasteLoading, setRealWasteLoading] = useState(false)
   const [reorderSuggestions, setReorderSuggestions] = useState<any>(null)
   const [reorderLoading, setReorderLoading] = useState(false)
@@ -560,6 +590,25 @@ export default function AIToolsPage() {
               {reconLoading?'⏳ جاري...':'تقدير الإنتاج'}
             </button>
           </div>
+          <button onClick={async()=>{ if(!showRecipesList) await loadRecipesList(); setShowRecipesList(v=>!v) }}
+            style={{padding:'6px 0',background:'none',border:'none',color:'#7c3aed',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textDecoration:'underline'}}>
+            {showRecipesList?'إخفاء الوصفات المسجّلة':'إدارة الوصفات (تعديل/حذف)'}
+          </button>
+          {showRecipesList && (
+            <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
+              {recipesList.length===0 ? (
+                <div style={{fontSize:11,color:C.text4,textAlign:'center' as const,padding:8}}>ما فيه وصفات مسجّلة بعد</div>
+              ) : recipesList.map((r:any)=>(
+                <div key={r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'white',border:`1px solid ${C.border2}`,borderRadius:8,padding:'8px 12px'}}>
+                  <span style={{fontSize:12,fontWeight:600,color:C.text}}>{r.name}</span>
+                  <div style={{display:'flex',gap:6}}>
+                    <button onClick={()=>openEditRecipe(r.id)} style={{padding:'4px 10px',background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:7,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>✏️ تعديل</button>
+                    <button onClick={()=>deleteRecipe(r.id)} disabled={deletingRecipeId===r.id} style={{padding:'4px 10px',background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:7,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:deletingRecipeId===r.id?.6:1}}>{deletingRecipeId===r.id?'...':'🗑️ حذف'}</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -860,14 +909,15 @@ export default function AIToolsPage() {
       )}
 
       {showRecipeModal && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:16,backdropFilter:'blur(4px)'}} onClick={()=>setShowRecipeModal(false)}>
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:16,backdropFilter:'blur(4px)'}} onClick={()=>{setShowRecipeModal(false);setEditingRecipeId(null)}}>
           <RecipeCreateModal
-            onClose={()=>setShowRecipeModal(false)}
-            onSaved={()=>setShowRecipeModal(false)}
+            onClose={()=>{setShowRecipeModal(false);setEditingRecipeId(null)}}
+            onSaved={()=>{setShowRecipeModal(false);setEditingRecipeId(null);if(showRecipesList)loadRecipesList()}}
             rawMaterials={rawMaterials}
             sb={sb}
             orgId={typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null}
             branchId={typeof window!=='undefined'?sessionStorage.getItem('s_branch_id'):null}
+            editingRecipeId={editingRecipeId}
           />
         </div>
       )}
@@ -875,7 +925,7 @@ export default function AIToolsPage() {
   )
 }
 
-function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId}:{onClose:()=>void,onSaved:()=>void,rawMaterials:any[],sb:any,orgId:string|null,branchId:string|null}) {
+function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editingRecipeId}:{onClose:()=>void,onSaved:()=>void,rawMaterials:any[],sb:any,orgId:string|null,branchId:string|null,editingRecipeId?:string|null}) {
   const [name,setName]=useState('')
   const [components,setComponents]=useState<{component_product_id:string,qty:string}[]>([])
   const [newCompId,setNewCompId]=useState('')
@@ -884,6 +934,18 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId}:{onC
   const [customSubLabel,setCustomSubLabel]=useState('')
   const [customSubCount,setCustomSubCount]=useState('')
   const [saving,setSaving]=useState(false)
+  const [loadingEdit,setLoadingEdit]=useState(!!editingRecipeId)
+
+  useEffect(()=>{
+    if(!editingRecipeId) return
+    ;(async()=>{
+      const{data:recipe}=await (sb.from('recipes' as any) as any).select('name').eq('id',editingRecipeId).single()
+      if(recipe) setName(recipe.name)
+      const{data:items}=await sb.from('recipe_items').select('component_product_id,qty').eq('recipe_id',editingRecipeId)
+      setComponents((items||[]).map((it:any)=>({component_product_id:it.component_product_id,qty:String(it.qty)})))
+      setLoadingEdit(false)
+    })()
+  },[editingRecipeId])
 
   function subUnitOptions(baseUnit:string) {
     const u=(baseUnit||'').trim()
@@ -909,21 +971,35 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId}:{onC
   async function save() {
     if(!name.trim()||!orgId) return
     setSaving(true)
-    const{data:nr,error}=await sb.from('recipes').insert({org_id:orgId,branch_id:branchId||null,name:name.trim()}).select().single()
-    if(error||!nr){toast('فشل حفظ الوصفة — حاول مرة أخرى','error');setSaving(false);return}
-    if(components.length>0){
-      const rows=components.map(c=>({recipe_id:nr.id,component_product_id:c.component_product_id,qty:Number(c.qty)}))
+    let recipeId = editingRecipeId
+    if(editingRecipeId){
+      const{error:updErr}=await (sb.from('recipes' as any) as any).update({name:name.trim()}).eq('id',editingRecipeId)
+      if(updErr){toast('فشل تحديث الوصفة — حاول مرة أخرى','error');setSaving(false);return}
+      await sb.from('recipe_items').delete().eq('recipe_id',editingRecipeId)
+    } else {
+      const{data:nr,error}=await (sb.from('recipes' as any) as any).insert({org_id:orgId,branch_id:branchId||null,name:name.trim()}).select().single()
+      if(error||!nr){toast('فشل حفظ الوصفة — حاول مرة أخرى','error');setSaving(false);return}
+      recipeId = nr.id
+    }
+    if(components.length>0 && recipeId){
+      const rows=components.map(c=>({recipe_id:recipeId,component_product_id:c.component_product_id,qty:Number(c.qty)}))
       const{error:itemsErr}=await sb.from('recipe_items').insert(rows)
       if(itemsErr){toast('تم حفظ اسم الوصفة لكن فشل حفظ المكوّنات: '+itemsErr.message,'error');setSaving(false);return}
     }
     setSaving(false)
-    toast('✅ تم حفظ الوصفة بمكوناتها')
+    toast(editingRecipeId?'✅ تم تحديث الوصفة':'✅ تم حفظ الوصفة بمكوناتها')
     onSaved()
   }
 
+  if(loadingEdit) return (
+    <div onClick={(e:any)=>e.stopPropagation()} style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,padding:40,textAlign:'center' as const,fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
+      <div style={{fontSize:13,color:'#6b7280'}}>⏳ جاري تحميل بيانات الوصفة...</div>
+    </div>
+  )
+
   return (
     <div onClick={(e:any)=>e.stopPropagation()} style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,maxHeight:'85vh',overflowY:'auto',padding:20,fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl' as const}}>
-      <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>🍔 وصفة جديدة</div>
+      <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>🍔 {editingRecipeId?'تعديل الوصفة':'وصفة جديدة'}</div>
       <label style={{fontSize:11,fontWeight:700,color:'#6b7280',display:'block',marginBottom:5}}>اسم الوصفة *</label>
       <input value={name} onChange={(e:any)=>setName(e.target.value)} placeholder="مثال: برجر بالجبن" style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e7eb',borderRadius:9,fontSize:13,marginBottom:14,fontFamily:'inherit'}}/>
 
@@ -973,7 +1049,7 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId}:{onC
       <div style={{display:'flex',gap:8}}>
         <button onClick={onClose} style={{flex:1,padding:'11px',background:'#f9fafb',color:'#374151',border:'1px solid #e5e7eb',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
         <button onClick={save} disabled={saving||!name.trim()} style={{flex:2,padding:'11px',background:'#7c3aed',color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:saving||!name.trim()?.6:1}}>
-          {saving?'جاري الحفظ...':'حفظ الوصفة'}
+          {saving?'جاري الحفظ...':(editingRecipeId?'حفظ التعديلات':'حفظ الوصفة')}
         </button>
       </div>
     </div>
