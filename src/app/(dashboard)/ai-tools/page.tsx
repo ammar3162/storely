@@ -976,6 +976,19 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
   async function save() {
     if(!name.trim()||!orgId) return
     setSaving(true)
+
+    // حماية: لو المستخدم كتب مكوّن بالحقول لكن نسي يضغط "+"، نضيفه تلقائياً هنا قبل الحفظ
+    let finalComponents = [...components]
+    if(newCompId && newCompQty && Number(newCompQty)>0 && !components.some(c=>c.component_product_id===newCompId)){
+      const customFactor=Number(customSubCount)
+      const factor = customFactor>0 ? customFactor : newCompSubUnit
+      const baseQty=Number(newCompQty)/factor
+      finalComponents.push({component_product_id:newCompId,qty:String(baseQty)})
+      if(customFactor>0 && customSubLabel.trim()){
+        await sb.from('products').update({recipe_unit:customSubLabel.trim(),recipe_unit_factor:customFactor}).eq('id',newCompId)
+      }
+    }
+
     let recipeId = editingRecipeId
     if(editingRecipeId){
       const{error:updErr}=await (sb.from('recipes' as any) as any).update({name:name.trim()}).eq('id',editingRecipeId)
@@ -986,13 +999,15 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
       if(error||!nr){toast('فشل حفظ الوصفة — حاول مرة أخرى','error');setSaving(false);return}
       recipeId = nr.id
     }
-    if(components.length>0 && recipeId){
-      const rows=components.map(c=>({recipe_id:recipeId,component_product_id:c.component_product_id,qty:Number(c.qty)}))
+    if(finalComponents.length>0 && recipeId){
+      const rows=finalComponents.map(c=>({recipe_id:recipeId,component_product_id:c.component_product_id,qty:Number(c.qty)}))
       const{error:itemsErr}=await sb.from('recipe_items').insert(rows)
       if(itemsErr){toast('تم حفظ اسم الوصفة لكن فشل حفظ المكوّنات: '+itemsErr.message,'error');setSaving(false);return}
+    } else if(finalComponents.length===0) {
+      toast('⚠️ تنبيه: الوصفة اتحفظت بدون أي مكوّنات — أضف مكوّناتها لاحقاً من "تعديل"','warning')
     }
     setSaving(false)
-    toast(editingRecipeId?'✅ تم تحديث الوصفة':'✅ تم حفظ الوصفة بمكوناتها')
+    if(finalComponents.length>0) toast(editingRecipeId?'✅ تم تحديث الوصفة':'✅ تم حفظ الوصفة بمكوناتها')
     onSaved()
   }
 
