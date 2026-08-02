@@ -25,9 +25,6 @@ export default function DispensePage() {
   const [saving, setSaving]       = useState(false)
   const [activeCat, setActiveCat] = useState('كل المنتجات')
   const [selected, setSelected]   = useState<any>(null)
-  const [restrictedIds, setRestrictedIds] = useState<Set<string>>(new Set())
-  const [activeSection, setActiveSection] = useState<'menu'|'inventory'>('menu')
-  const [showRecipeModal, setShowRecipeModal] = useState(false)
   const [qty, setQty]             = useState('')
   const [wasteMode, setWasteMode] = useState(false)
   const [wasteReason, setWasteReason] = useState('')
@@ -62,20 +59,10 @@ export default function DispensePage() {
 
   async function loadProducts(oid:string) {
     const bid=sessionStorage.getItem('s_branch_id')
-    let q=sb.from('products').select('id,name,sku,unit,qty,reorder_point,category,is_recipe,recipe_unit,recipe_unit_factor,allow_direct_dispense').eq('org_id',oid).eq('is_active',true)
+    let q=sb.from('products').select('id,name,sku,unit,qty,reorder_point,category').eq('org_id',oid).eq('is_active',true)
     if(bid) q=q.eq('branch_id',bid)
     const{data}=await q.order('qty',{ascending:true})
-    if(data){
-      setProducts(data)
-      const recipeIds=(data as any[]).filter(p=>p.is_recipe).map(p=>p.id)
-      if(recipeIds.length){
-        const{data:ri}=await (sb.from('recipe_items' as any) as any).select('component_product_id').in('product_id',recipeIds)
-        const compIds=new Set((ri||[]).map((r:any)=>r.component_product_id))
-        const restricted=new Set<string>()
-        ;(data as any[]).forEach(p=>{ if(compIds.has(p.id) && p.allow_direct_dispense===false) restricted.add(p.id) })
-        setRestrictedIds(restricted)
-      } else setRestrictedIds(new Set())
-    }
+    if(data) setProducts(data)
   }
 
   async function loadHistory(oid:string) {
@@ -89,29 +76,8 @@ export default function DispensePage() {
   async function handleDispense() {
     const oid=orgRef.current,pid=profRef.current
     if(!selected||!qty||!oid||!pid)return
-    if(restrictedIds.has(selected.id)){toast('هذا مكوّن داخل وصفة — يُصرف تلقائياً معها، لا يُباع مباشرة','warning');return}
     setSaving(true)
     const qn=Number(qty)
-
-    if((selected as any).is_recipe){
-      const{data:items}=await (sb.from('recipe_items' as any) as any).select('component_product_id,qty').eq('product_id',selected.id)
-      if(!items||items.length===0){toast('هذه الوصفة بدون مكوّنات معرّفة — أضفها من صفحة المخزون أولاً','warning');setSaving(false);return}
-      for(const it of items as any[]){
-        const comp=products.find((p:any)=>p.id===it.component_product_id)
-        const factor=(comp as any)?.recipe_unit_factor||1
-        const deduct=(Number(it.qty)*qn)/factor
-        await sb.from('stock_movements').insert({product_id:it.component_product_id,profile_id:pid,type:'out',qty_change:-deduct,note:`صرف ضمن وصفة: ${selected.name} × ${qn}`})
-        fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:it.component_product_id,new_qty:(comp?.qty||0)-deduct,reorder_point:comp?.reorder_point||0})}).catch(()=>{})
-      }
-      await (sb.from('recipe_sales_log' as any) as any).insert({product_id:selected.id,org_id:oid,branch_id:sessionStorage.getItem('s_branch_id')||null,qty:qn,profile_id:pid,staff_name:sessionStorage.getItem('s_full_name')||'المالك'})
-      cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
-      toast(`✅ تم صرف ${qn} ${selected.unit} من ${selected.name} — خُصمت المكوّنات تلقائياً`)
-      fetch('/api/notify-staff-dispense',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,branch_id:sessionStorage.getItem('s_branch_id')||null,staff_name:sessionStorage.getItem('s_full_name')||'المالك',product_name:selected.name,qty:qn,unit:selected.unit})}).catch(()=>{})
-      setSelected(null);setQty('');setWasteMode(false);setWasteReason('')
-      setSaving(false);loadProducts(oid);loadHistory(oid)
-      return
-    }
-
     if(selected.qty<qn){toast('الكمية أكبر من المتاح!','warning');setSaving(false);return}
     const{error}=await sb.from('stock_movements').insert({product_id:selected.id,profile_id:pid,type:'out',qty_change:-qn,note:'استهلاك يومي'})
     if(error){toast('خطأ','error');setSaving(false);return}
@@ -140,17 +106,15 @@ export default function DispensePage() {
 
   const WASTE_REASONS = ['تالف','منتهي الصلاحية','كسر','سرقة/فقدان','خطأ تحضير','أخرى']
 
-  const sectionProducts = products.filter((p:any)=>activeSection==='menu' ? !!p.is_recipe : !p.is_recipe)
-
   const catMap: Record<string,number>={}
-  sectionProducts.forEach((p:any)=>{const c=p.category?.trim()||OTHER;catMap[c]=(catMap[c]||0)+1})
+  products.forEach(p=>{const c=p.category?.trim()||OTHER;catMap[c]=(catMap[c]||0)+1})
   const categories=Object.keys(catMap).sort((a,b)=>{if(a===OTHER)return 1;if(b===OTHER)return -1;return catMap[b]-catMap[a]})
   const allCats=['كل المنتجات',...categories]
   const catColor=(cat:string)=>CAT_COLORS[categories.indexOf(cat)%CAT_COLORS.length]
 
-  const displayed=sectionProducts
-    .filter((p:any)=>!search||(p.name?.toLowerCase().includes(search.toLowerCase())))
-    .filter((p:any)=>activeCat==='كل المنتجات'||(p.category?.trim()||OTHER)===activeCat)
+  const displayed=products
+    .filter(p=>!search||(p.name?.toLowerCase().includes(search.toLowerCase())))
+    .filter(p=>activeCat==='كل المنتجات'||(p.category?.trim()||OTHER)===activeCat)
 
   const outCount=products.filter(p=>p.qty===0).length
   const lowCount=products.filter(p=>p.qty>0&&p.qty<=p.reorder_point).length
@@ -217,25 +181,6 @@ export default function DispensePage() {
         </button>
       </div>
 
-      {/* Section tabs: القائمة vs المخزون */}
-      <div style={{display:'flex',gap:6,marginBottom:12,background:C.bg,borderRadius:10,padding:4}}>
-        <button onClick={()=>{setActiveSection('menu');setActiveCat('كل المنتجات');setSearch('')}}
-          style={{flex:1,padding:'9px',borderRadius:8,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,background:activeSection==='menu'?'white':'transparent',color:activeSection==='menu'?C.primary:C.text3,boxShadow:activeSection==='menu'?'0 1px 3px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
-          🍔 القائمة
-        </button>
-        <button onClick={()=>{setActiveSection('inventory');setActiveCat('كل المنتجات');setSearch('')}}
-          style={{flex:1,padding:'9px',borderRadius:8,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,background:activeSection==='inventory'?'white':'transparent',color:activeSection==='inventory'?C.primary:C.text3,boxShadow:activeSection==='inventory'?'0 1px 3px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
-          📦 المخزون
-        </button>
-      </div>
-
-      {activeSection==='menu' && (
-        <button onClick={()=>setShowRecipeModal(true)}
-          style={{width:'100%',padding:'10px',marginBottom:10,background:C.primaryL,color:C.primary,border:`1.5px dashed ${C.primaryB}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-          + إضافة صنف جديد للقائمة
-        </button>
-      )}
-
       {/* Search */}
       <div style={{position:'relative',marginBottom:10}}>
         <svg style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}} width="13" height="13" fill="none" stroke={C.text4} strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -267,34 +212,25 @@ export default function DispensePage() {
         </div>
       ) : (
         <div className="pgrid">
-          {displayed.map((p:any)=>{
-            const isRecipe=!!p.is_recipe
-            const isOut=!isRecipe&&p.qty===0
-            const isLow=!isRecipe&&!isOut&&p.qty<=p.reorder_point
-            const sc=isRecipe?C.primary:isOut?C.danger:isLow?C.warning:C.primary
+          {displayed.map(p=>{
+            const isOut=p.qty===0
+            const isLow=!isOut&&p.qty<=p.reorder_point
+            const sc=isOut?C.danger:isLow?C.warning:C.primary
             const isSel=selected?.id===p.id
             return (
               <button key={p.id}
                 className={`pcard${isSel?' selected':''}${isOut?' out':''}`}
                 onClick={()=>{if(isOut)return;setSelected(p);setQty('1')}}>
-                {/* Qty or icon */}
-                {isRecipe ? (
-                  <div style={{fontSize:22,lineHeight:1}}>🍔</div>
-                ) : (
-                  <div style={{fontSize:22,fontWeight:900,color:sc,lineHeight:1}}>{p.qty}</div>
-                )}
+                {/* Qty */}
+                <div style={{fontSize:22,fontWeight:900,color:sc,lineHeight:1}}>{p.qty}</div>
                 {/* Name */}
                 <div style={{fontSize:11,fontWeight:700,color:C.text,lineHeight:1.3,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' as any}}>{p.name}</div>
                 {/* Unit */}
                 <div style={{fontSize:9,color:C.text4}}>{p.unit}</div>
                 {/* Status */}
-                {isRecipe ? (
-                  <span style={{fontSize:8,fontWeight:700,color:C.primary,background:C.primaryL,padding:'2px 8px',borderRadius:99,border:`1px solid ${C.primaryB}`}}>متاح</span>
-                ) : (
-                  <span style={{fontSize:8,fontWeight:700,color:sc,background:isOut?C.dangerL:isLow?C.warningL:C.primaryL,padding:'2px 8px',borderRadius:99,border:`1px solid ${isOut?C.dangerB:isLow?C.warningB:C.primaryB}`}}>
-                    {isOut?'نفد':isLow?'ناقص':'كافٍ'}
-                  </span>
-                )}
+                <span style={{fontSize:8,fontWeight:700,color:sc,background:isOut?C.dangerL:isLow?C.warningL:C.primaryL,padding:'2px 8px',borderRadius:99,border:`1px solid ${isOut?C.dangerB:isLow?C.warningB:C.primaryB}`}}>
+                  {isOut?'نفد':isLow?'ناقص':'كافٍ'}
+                </span>
               </button>
             )
           })}
@@ -349,7 +285,7 @@ export default function DispensePage() {
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
                 <div>
                   <div style={{fontSize:16,fontWeight:800,color:C.text}}>{selected.name}</div>
-                  <div style={{fontSize:11,color:C.text3,marginTop:2}}>{selected.is_recipe ? '🍔 صنف قائمة — يُصرف بدون حد أقصى' : (<>متاح: <b style={{color:C.primary,fontSize:14}}>{selected.qty}</b> {selected.unit}</>)}</div>
+                  <div style={{fontSize:11,color:C.text3,marginTop:2}}>متاح: <b style={{color:C.primary,fontSize:14}}>{selected.qty}</b> {selected.unit}</div>
                 </div>
                 <button onClick={()=>{setSelected(null);setQty('');setWasteMode(false);setWasteReason('')}} style={{width:28,height:28,borderRadius:'50%',background:C.bg,border:`1px solid ${C.border2}`,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}}>✕</button>
               </div>
@@ -379,11 +315,9 @@ export default function DispensePage() {
                 </div>
               )}
 
-              {!selected.is_recipe && (
-                <div style={{height:5,background:C.border,borderRadius:99,overflow:'hidden',marginBottom:18}}>
-                  <div style={{height:'100%',width:Math.min((selected.qty/Math.max(selected.reorder_point*2,selected.qty,1))*100,100)+'%',background:selected.qty<=selected.reorder_point?C.warning:C.primary,borderRadius:99}}/>
-                </div>
-              )}
+              <div style={{height:5,background:C.border,borderRadius:99,overflow:'hidden',marginBottom:18}}>
+                <div style={{height:'100%',width:Math.min((selected.qty/Math.max(selected.reorder_point*2,selected.qty,1))*100,100)+'%',background:selected.qty<=selected.reorder_point?C.warning:C.primary,borderRadius:99}}/>
+              </div>
 
               <div style={{marginBottom:14}}>
                 <div style={{display:'flex',alignItems:'center',gap:12,justifyContent:'center',marginBottom:10}}>
@@ -402,7 +336,7 @@ export default function DispensePage() {
                 </div>
               </div>
 
-              {!selected.is_recipe && Number(qty)>selected.qty&&(
+              {Number(qty)>selected.qty&&(
                 <div style={{background:C.dangerL,border:`1px solid ${C.dangerB}`,borderRadius:9,padding:'8px 14px',marginBottom:10,fontSize:12,fontWeight:700,color:C.danger}}>
                   ⚠️ الكمية تتجاوز المتاح
                 </div>
@@ -411,13 +345,13 @@ export default function DispensePage() {
 
             <div style={{padding:'8px 20px 16px'}}>
               {wasteMode ? (
-                <button disabled={saving||!qty||Number(qty)<=0||(!selected.is_recipe&&Number(qty)>selected.qty)||!wasteReason} onClick={handleWaste}
-                  style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||(!selected.is_recipe&&Number(qty)>selected.qty)||!wasteReason?C.text4:'#d97706',color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||(!selected.is_recipe&&Number(qty)>selected.qty)||!wasteReason?.6:1,boxShadow:'0 6px 16px #d9770630',transition:'all .2s'}}>
+                <button disabled={saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason} onClick={handleWaste}
+                  style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason?C.text4:'#d97706',color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason?.6:1,boxShadow:'0 6px 16px #d9770630',transition:'all .2s'}}>
                   {saving?'⏳ جاري الحفظ...':`🗑️ تسجيل هدر ${qty||0} ${selected.unit}`}
                 </button>
               ) : (
-                <button disabled={saving||!qty||Number(qty)<=0||(!selected.is_recipe&&Number(qty)>selected.qty)} onClick={handleDispense}
-                  style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||(!selected.is_recipe&&Number(qty)>selected.qty)?C.text4:C.danger,color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||(!selected.is_recipe&&Number(qty)>selected.qty)?.6:1,boxShadow:`0 6px 16px ${C.danger}30`,transition:'all .2s'}}>
+                <button disabled={saving||!qty||Number(qty)<=0||Number(qty)>selected.qty} onClick={handleDispense}
+                  style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?C.text4:C.danger,color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?.6:1,boxShadow:`0 6px 16px ${C.danger}30`,transition:'all .2s'}}>
                   {saving?'⏳ جاري الحفظ...':`✓ صرف ${qty||0} ${selected.unit} من ${selected.name}`}
                 </button>
               )}
@@ -425,125 +359,6 @@ export default function DispensePage() {
           </div>
         </div>
       )}
-
-      {showRecipeModal && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:16,backdropFilter:'blur(4px)'}} onClick={()=>setShowRecipeModal(false)}>
-          <RecipeQuickAdd
-            onClose={()=>setShowRecipeModal(false)}
-            onSaved={()=>{setShowRecipeModal(false); const oid=orgRef.current; if(oid) loadProducts(oid)}}
-            rawMaterials={products.filter((p:any)=>!p.is_recipe)}
-            sb={sb}
-            orgId={orgRef.current}
-            branchId={typeof window!=='undefined'?sessionStorage.getItem('s_branch_id'):null}
-          />
-        </div>
-      )}
-    </div>
-  )
-}
-
-function RecipeQuickAdd({onClose,onSaved,rawMaterials,sb,orgId,branchId}:{onClose:()=>void,onSaved:()=>void,rawMaterials:any[],sb:any,orgId:string|null,branchId:string|null}) {
-  const [name,setName]=useState('')
-  const [unit,setUnit]=useState('قطعة')
-  const [components,setComponents]=useState<{component_product_id:string,qty:string}[]>([])
-  const [newCompId,setNewCompId]=useState('')
-  const [newCompQty,setNewCompQty]=useState('')
-  const [newCompSubUnit,setNewCompSubUnit]=useState(1)
-  const [customSubLabel,setCustomSubLabel]=useState('')
-  const [customSubCount,setCustomSubCount]=useState('')
-
-  function subUnitOptions(baseUnit:string) {
-    const u=(baseUnit||'').trim()
-    if(['كيلو','كجم','كيلوجرام','كيلو جرام'].includes(u)) return [{label:'جرام',factor:1000},{label:'كيلو',factor:1}]
-    if(['لتر','ليتر'].includes(u)) return [{label:'مل',factor:1000},{label:'لتر',factor:1}]
-    return [{label:u||'وحدة',factor:1}]
-  }
-  function isStandardUnit(baseUnit:string) {
-    const u=(baseUnit||'').trim()
-    return ['كيلو','كجم','كيلوجرام','كيلو جرام','لتر','ليتر'].includes(u)
-  }
-  const [saving,setSaving]=useState(false)
-
-  function addComp() {
-    if(!newCompId||!newCompQty||Number(newCompQty)<=0) return
-    if(components.some(c=>c.component_product_id===newCompId)) return
-    const customFactor=Number(customSubCount)
-    const factor = customFactor>0 ? customFactor : newCompSubUnit
-    const baseQty=Number(newCompQty)/factor
-    setComponents(prev=>[...prev,{component_product_id:newCompId,qty:String(baseQty)}])
-    setNewCompId('');setNewCompQty('');setNewCompSubUnit(1);setCustomSubLabel('');setCustomSubCount('')
-  }
-
-  async function save() {
-    if(!name.trim()||!orgId) return
-    setSaving(true)
-    const{data:np,error}=await sb.from('products').insert({org_id:orgId,branch_id:branchId||null,name:name.trim(),unit,qty:0,reorder_point:0,is_active:true,is_recipe:true}).select().single()
-    if(error||!np){setSaving(false);return}
-    if(components.length>0){
-      const rows=components.map(c=>({product_id:np.id,component_product_id:c.component_product_id,qty:Number(c.qty)}))
-      await (sb.from('recipe_items' as any) as any).insert(rows)
-    }
-    setSaving(false)
-    onSaved()
-  }
-
-  return (
-    <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,maxHeight:'85vh',overflowY:'auto',padding:20}}>
-      <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>🍔 صنف جديد للقائمة</div>
-      <label style={{fontSize:11,fontWeight:700,color:'#6b7280',display:'block',marginBottom:5}}>اسم الصنف *</label>
-      <input value={name} onChange={e=>setName(e.target.value)} placeholder="مثال: برجر بالجبن" style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e7eb',borderRadius:9,fontSize:13,marginBottom:12,fontFamily:'inherit'}}/>
-      <label style={{fontSize:11,fontWeight:700,color:'#6b7280',display:'block',marginBottom:5}}>وحدة البيع</label>
-      <input value={unit} onChange={e=>setUnit(e.target.value)} placeholder="قطعة، كوب، طبق..." style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e7eb',borderRadius:9,fontSize:13,marginBottom:14,fontFamily:'inherit'}}/>
-
-      <div style={{fontSize:12,fontWeight:700,marginBottom:8}}>مكوّنات الصنف</div>
-      {components.length>0 && (
-        <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:8}}>
-          {components.map(c=>{
-            const comp=rawMaterials.find(r=>r.id===c.component_product_id)
-            return (
-              <div key={c.component_product_id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'#f9fafb',border:'1px solid #e5e7eb',borderRadius:8,padding:'6px 10px'}}>
-                <span style={{fontSize:11}}>{comp?.name||'—'} — {c.qty} {comp?.unit}</span>
-                <button onClick={()=>setComponents(prev=>prev.filter(x=>x.component_product_id!==c.component_product_id))} style={{background:'none',border:'none',color:'#ef4444',cursor:'pointer',fontSize:14}}>×</button>
-              </div>
-            )
-          })}
-        </div>
-      )}
-      <div style={{display:'flex',gap:6,marginBottom:6}}>
-        <select value={newCompId} onChange={e=>{const id=e.target.value;setNewCompId(id);const r=rawMaterials.find(x=>x.id===id);const opts=subUnitOptions(r?.unit||'');setNewCompSubUnit(opts[0].factor)}} style={{flex:2,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}>
-          <option value="">اختر مكوّن...</option>
-          {rawMaterials.filter(r=>!components.some(c=>c.component_product_id===r.id)).map(r=>(
-            <option key={r.id} value={r.id}>{r.name} ({r.unit})</option>
-          ))}
-        </select>
-      </div>
-      {newCompId && !isStandardUnit(rawMaterials.find(x=>x.id===newCompId)?.unit||'') && (
-        <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:8,padding:8,marginBottom:8}}>
-          <div style={{fontSize:10,color:'#92400e',marginBottom:6}}>كم قطعة/وحدة بكل {rawMaterials.find(x=>x.id===newCompId)?.unit} واحد؟ (اختياري — يخليك تكتب الكمية بوحدة أدق)</div>
-          <div style={{display:'flex',gap:6}}>
-            <input value={customSubLabel} onChange={e=>setCustomSubLabel(e.target.value)} placeholder="اسم الوحدة (مثال: رغيف)" style={{flex:2,padding:'7px',border:'1.5px solid #fde68a',borderRadius:7,fontSize:10}}/>
-            <input type="number" min="1" value={customSubCount} onChange={e=>setCustomSubCount(e.target.value)} placeholder="العدد" style={{flex:1,padding:'7px',border:'1.5px solid #fde68a',borderRadius:7,fontSize:10}}/>
-          </div>
-        </div>
-      )}
-      <div style={{display:'flex',gap:6,marginBottom:16}}>
-        <input type="number" step="0.01" min="0" value={newCompQty} onChange={e=>setNewCompQty(e.target.value)} placeholder={customSubCount?`الكمية بـ${customSubLabel||'وحدة'}`:'الكمية'} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}/>
-        {newCompId && (()=>{const r=rawMaterials.find(x=>x.id===newCompId);const opts=subUnitOptions(r?.unit||'');return opts.length>1 ? (
-          <select value={newCompSubUnit} onChange={e=>setNewCompSubUnit(Number(e.target.value))} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}>
-            {opts.map(o=>(<option key={o.label} value={o.factor}>{o.label}</option>))}
-          </select>
-        ) : (
-          <div style={{flex:1,padding:'8px',fontSize:11,color:'#6b7280',display:'flex',alignItems:'center',justifyContent:'center'}}>{customSubLabel||opts[0].label}</div>
-        )})()}
-        <button onClick={addComp} style={{padding:'0 12px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:16,fontWeight:700,cursor:'pointer'}}>+</button>
-      </div>
-
-      <div style={{display:'flex',gap:8}}>
-        <button onClick={onClose} style={{flex:1,padding:'11px',background:'#f9fafb',color:'#374151',border:'1px solid #e5e7eb',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
-        <button onClick={save} disabled={saving||!name.trim()} style={{flex:2,padding:'11px',background:'#16a34a',color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:saving||!name.trim()?.6:1}}>
-          {saving?'جاري الحفظ...':'حفظ الصنف'}
-        </button>
-      </div>
     </div>
   )
 }
