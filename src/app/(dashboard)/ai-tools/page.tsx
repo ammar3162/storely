@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { createClient } from '@/lib/supabase/client'
 import { colors as dsColors } from '@/lib/ds'
+import { toast } from '@/components/toast'
 
 // موحّد مع نظام التصميم المشترك (@/lib/ds)
 const C = {
@@ -903,12 +904,14 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId}:{onC
     if(!name.trim()||!orgId) return
     setSaving(true)
     const{data:nr,error}=await sb.from('recipes').insert({org_id:orgId,branch_id:branchId||null,name:name.trim()}).select().single()
-    if(error||!nr){setSaving(false);return}
+    if(error||!nr){toast('فشل حفظ الوصفة — حاول مرة أخرى','error');setSaving(false);return}
     if(components.length>0){
       const rows=components.map(c=>({recipe_id:nr.id,component_product_id:c.component_product_id,qty:Number(c.qty)}))
-      await sb.from('recipe_items').insert(rows)
+      const{error:itemsErr}=await sb.from('recipe_items').insert(rows)
+      if(itemsErr){toast('تم حفظ اسم الوصفة لكن فشل حفظ المكوّنات: '+itemsErr.message,'error');setSaving(false);return}
     }
     setSaving(false)
+    toast('✅ تم حفظ الوصفة بمكوناتها')
     onSaved()
   }
 
