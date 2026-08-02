@@ -267,25 +267,34 @@ export default function DispensePage() {
         </div>
       ) : (
         <div className="pgrid">
-          {displayed.map(p=>{
-            const isOut=p.qty===0
-            const isLow=!isOut&&p.qty<=p.reorder_point
-            const sc=isOut?C.danger:isLow?C.warning:C.primary
+          {displayed.map((p:any)=>{
+            const isRecipe=!!p.is_recipe
+            const isOut=!isRecipe&&p.qty===0
+            const isLow=!isRecipe&&!isOut&&p.qty<=p.reorder_point
+            const sc=isRecipe?C.primary:isOut?C.danger:isLow?C.warning:C.primary
             const isSel=selected?.id===p.id
             return (
               <button key={p.id}
                 className={`pcard${isSel?' selected':''}${isOut?' out':''}`}
                 onClick={()=>{if(isOut)return;setSelected(p);setQty('1')}}>
-                {/* Qty */}
-                <div style={{fontSize:22,fontWeight:900,color:sc,lineHeight:1}}>{p.qty}</div>
+                {/* Qty or icon */}
+                {isRecipe ? (
+                  <div style={{fontSize:22,lineHeight:1}}>🍔</div>
+                ) : (
+                  <div style={{fontSize:22,fontWeight:900,color:sc,lineHeight:1}}>{p.qty}</div>
+                )}
                 {/* Name */}
                 <div style={{fontSize:11,fontWeight:700,color:C.text,lineHeight:1.3,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' as any}}>{p.name}</div>
                 {/* Unit */}
                 <div style={{fontSize:9,color:C.text4}}>{p.unit}</div>
                 {/* Status */}
-                <span style={{fontSize:8,fontWeight:700,color:sc,background:isOut?C.dangerL:isLow?C.warningL:C.primaryL,padding:'2px 8px',borderRadius:99,border:`1px solid ${isOut?C.dangerB:isLow?C.warningB:C.primaryB}`}}>
-                  {isOut?'نفد':isLow?'ناقص':'كافٍ'}
-                </span>
+                {isRecipe ? (
+                  <span style={{fontSize:8,fontWeight:700,color:C.primary,background:C.primaryL,padding:'2px 8px',borderRadius:99,border:`1px solid ${C.primaryB}`}}>متاح</span>
+                ) : (
+                  <span style={{fontSize:8,fontWeight:700,color:sc,background:isOut?C.dangerL:isLow?C.warningL:C.primaryL,padding:'2px 8px',borderRadius:99,border:`1px solid ${isOut?C.dangerB:isLow?C.warningB:C.primaryB}`}}>
+                    {isOut?'نفد':isLow?'ناقص':'كافٍ'}
+                  </span>
+                )}
               </button>
             )
           })}
