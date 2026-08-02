@@ -86,7 +86,10 @@ export default function InventoryPage() {
   const [editItem, setEditItem]   = useState<Product|null>(null)
   const [addQty, setAddQty]       = useState(0)
   const [confirm, setConfirm]     = useState<{id:string,name:string}|null>(null)
-  const [form, setForm]           = useState({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:''})
+  const [form, setForm]           = useState({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:'',is_recipe:false,recipe_unit:'',recipe_unit_factor:'' as string|number,allow_direct_dispense:true})
+  const [recipeItems, setRecipeItems] = useState<{component_product_id:string,qty:string}[]>([])
+  const [newComponentId, setNewComponentId] = useState('')
+  const [newComponentQty, setNewComponentQty] = useState('')
   const [showScan, setShowScan]   = useState(false)
   const [showJardScan, setShowJardScan] = useState(false)
   const [showImport, setShowImport] = useState(false)
@@ -169,8 +172,16 @@ export default function InventoryPage() {
     const oid=sessionStorage.getItem('s_org_id')
     if(!oid){setSaving(false);return}
     if(editItem){
-      const{error:updErr}=await sb.from('products').update({name:form.name.trim(),sku:form.sku||null,unit:form.unit,reorder_point:Number(form.reorder_point),category:form.category?.trim()||null,expiry_date:form.expiry_date||null} as any).eq('id',editItem.id)
+      const{error:updErr}=await sb.from('products').update({name:form.name.trim(),sku:form.sku||null,unit:form.unit,reorder_point:Number(form.reorder_point),category:form.category?.trim()||null,expiry_date:form.expiry_date||null,is_recipe:form.is_recipe,recipe_unit:form.recipe_unit||null,recipe_unit_factor:form.recipe_unit_factor?Number(form.recipe_unit_factor):null,allow_direct_dispense:form.allow_direct_dispense} as any).eq('id',editItem.id)
       if(updErr){toast('فشل حفظ التعديلات — حاول مرة أخرى','error');setSaving(false);return}
+      if(form.is_recipe){
+        await (sb.from('recipe_items' as any) as any).delete().eq('product_id',editItem.id)
+        if(recipeItems.length>0){
+          const rows = recipeItems.map(r=>({product_id:editItem.id,component_product_id:r.component_product_id,qty:Number(r.qty)}))
+          const{error:recErr}=await (sb.from('recipe_items' as any) as any).insert(rows)
+          if(recErr){toast('تم حفظ المنتج لكن فشل حفظ مكونات الوصفة — حاول مرة أخرى','warning')}
+        }
+      }
       if(addQty>0){
         const{error:moveErr}=await sb.from('stock_movements').insert({product_id:editItem.id,profile_id:user.id,type:'in',qty_change:addQty,note:'إضافة مخزون'})
         if(moveErr){toast('تم حفظ التعديلات لكن فشلت إضافة الكمية — حاول تضيفها مرة أخرى','warning');setSaving(false);setShowAdd(false);setEditItem(null);setAddQty(0);cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:');load();return}
@@ -191,7 +202,8 @@ export default function InventoryPage() {
       fetch('/api/sync-product-to-staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:np.id})}).catch(()=>{})
     }
     setShowAdd(false);setEditItem(null);setAddQty(0)
-    setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:''})
+    setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:'',is_recipe:false,recipe_unit:'',recipe_unit_factor:'',allow_direct_dispense:true})
+    setRecipeItems([])
     cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:');setSaving(false);load()
   }
 
@@ -283,10 +295,27 @@ export default function InventoryPage() {
     load()
   }
 
-  function openEdit(p:Product) {
+  async function openEdit(p:Product) {
     setEditItem(p);setAddQty(0)
-    setForm({name:p.name,sku:p.sku||'',unit:p.unit,qty:p.qty,reorder_point:p.reorder_point,category:p.category||'',expiry_date:(p as any).expiry_date||''})
+    const pAny = p as any
+    setForm({name:p.name,sku:p.sku||'',unit:p.unit,qty:p.qty,reorder_point:p.reorder_point,category:p.category||'',expiry_date:pAny.expiry_date||'',is_recipe:!!pAny.is_recipe,recipe_unit:pAny.recipe_unit||'',recipe_unit_factor:pAny.recipe_unit_factor||'',allow_direct_dispense:pAny.allow_direct_dispense!==false})
+    setRecipeItems([])
     setShowAdd(true)
+    if (pAny.is_recipe) {
+      const{data}=await (sb.from('recipe_items' as any) as any).select('component_product_id,qty').eq('product_id',p.id)
+      setRecipeItems((data||[]).map((r:any)=>({component_product_id:r.component_product_id,qty:String(r.qty)})))
+    }
+  }
+
+  function addRecipeComponent() {
+    if(!newComponentId||!newComponentQty||Number(newComponentQty)<=0) return
+    if(recipeItems.some(r=>r.component_product_id===newComponentId)){toast('هذا المكوّن مضاف بالفعل','warning');return}
+    setRecipeItems(prev=>[...prev,{component_product_id:newComponentId,qty:newComponentQty}])
+    setNewComponentId('');setNewComponentQty('')
+  }
+
+  function removeRecipeComponent(id:string) {
+    setRecipeItems(prev=>prev.filter(r=>r.component_product_id!==id))
   }
 
   function exportCSV() {
@@ -485,6 +514,59 @@ export default function InventoryPage() {
                     <label style={lbl}>تاريخ انتهاء الصلاحية (اختياري)</label>
                     <input type="date" value={form.expiry_date} onChange={e=>setForm({...form,expiry_date:e.target.value})} style={inp()}/>
                   </div>
+
+                  {/* نظام الوصفات (Recipe/BOM) */}
+                  <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:12}}>
+                    <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontSize:12,fontWeight:700,color:C.text}}>
+                      <input type="checkbox" checked={form.is_recipe} onChange={e=>setForm({...form,is_recipe:e.target.checked})} style={{width:16,height:16}}/>
+                      🍔 هذا منتج وصفة (يُصرف كوحدة، ويُخصم تلقائياً من مكوّناته)
+                    </label>
+
+                    {form.is_recipe ? (
+                      <div style={{marginTop:12,display:'flex',flexDirection:'column' as const,gap:8}}>
+                        <div style={{fontSize:10,color:C.text4}}>هذا المنتج ما يحتفظ برصيد مستقل — مكوّناته تنقص تلقائياً وقت الصرف</div>
+                        {recipeItems.length>0 && (
+                          <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
+                            {recipeItems.map(r=>{
+                              const comp = products.find(p=>p.id===r.component_product_id)
+                              return (
+                                <div key={r.component_product_id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'white',border:`1px solid ${C.border2}`,borderRadius:8,padding:'6px 10px'}}>
+                                  <span style={{fontSize:11,color:C.text2}}>{comp?.name||'—'} — {r.qty} {(comp as any)?.recipe_unit||comp?.unit}</span>
+                                  <button type="button" onClick={()=>removeRecipeComponent(r.component_product_id)} style={{background:'none',border:'none',color:C.danger,cursor:'pointer',fontSize:14}}>×</button>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                        <div style={{display:'flex',gap:6}}>
+                          <select value={newComponentId} onChange={e=>setNewComponentId(e.target.value)} style={{...inp(),flex:2,fontSize:11}}>
+                            <option value="">اختر مكوّن...</option>
+                            {products.filter((p:any)=>!p.is_recipe && p.id!==editItem?.id && !recipeItems.some(r=>r.component_product_id===p.id)).map(p=>(
+                              <option key={p.id} value={p.id}>{p.name} ({(p as any).recipe_unit||p.unit})</option>
+                            ))}
+                          </select>
+                          <input type="number" step="0.01" min="0" value={newComponentQty} onChange={e=>setNewComponentQty(e.target.value)} placeholder="الكمية" style={{...inp(),flex:1,fontSize:11}}/>
+                          <button type="button" onClick={addRecipeComponent} style={{padding:'0 12px',background:C.primary,color:'white',border:'none',borderRadius:8,fontSize:16,fontWeight:700,cursor:'pointer'}}>+</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{marginTop:12,display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                        <div>
+                          <label style={lbl}>وحدة الوصفة (اختياري)</label>
+                          <input value={form.recipe_unit} onChange={e=>setForm({...form,recipe_unit:e.target.value})} style={{...inp(),fontSize:11}} placeholder="مثال: مل"/>
+                        </div>
+                        <div>
+                          <label style={lbl}>معامل التحويل (اختياري)</label>
+                          <input type="number" min="0" value={form.recipe_unit_factor} onChange={e=>setForm({...form,recipe_unit_factor:e.target.value})} style={{...inp(),fontSize:11}} placeholder={`1 ${form.unit} = ؟ ${form.recipe_unit||'وحدة'}`}/>
+                        </div>
+                        <label style={{gridColumn:'1/-1',display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontSize:11,color:C.text2,marginTop:2}}>
+                          <input type="checkbox" checked={form.allow_direct_dispense} onChange={e=>setForm({...form,allow_direct_dispense:e.target.checked})} style={{width:14,height:14}}/>
+                          اسمح بصرف هذا المنتج مباشرة (بدون وصفة)
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
                   {editItem?(
                     <div style={{background:C.primaryL,border:`1px solid ${C.primaryB}`,borderRadius:10,padding:12}}>
                       <div style={{fontSize:12,color:C.primary,marginBottom:8,fontWeight:600}}>الكمية الحالية: <b style={{fontSize:18}}>{editItem.qty} {form.unit}</b></div>
@@ -539,7 +621,7 @@ export default function InventoryPage() {
             style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'white',border:`1px solid ${C.border2}`,borderRadius:8,cursor:'pointer',color:C.text3,flexShrink:0}}>
             <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M3 15v4a2 2 0 002 2h14a2 2 0 002-2v-4M17 9l-5-5-5 5M12 4v12"/></svg>
           </button>
-          <button onClick={()=>{setEditItem(null);setAddQty(0);setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:''});setShowAdd(true)}}
+          <button onClick={()=>{setEditItem(null);setAddQty(0);setRecipeItems([]);setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:'',is_recipe:false,recipe_unit:'',recipe_unit_factor:'',allow_direct_dispense:true});setShowAdd(true)}}
             style={{height:32,padding:'0 12px',background:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4,flexShrink:0,whiteSpace:'nowrap'}}>
             <svg width="11" height="11" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
             إضافة
