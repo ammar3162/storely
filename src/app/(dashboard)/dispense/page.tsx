@@ -26,6 +26,8 @@ export default function DispensePage() {
   const [activeCat, setActiveCat] = useState('كل المنتجات')
   const [selected, setSelected]   = useState<any>(null)
   const [restrictedIds, setRestrictedIds] = useState<Set<string>>(new Set())
+  const [activeSection, setActiveSection] = useState<'menu'|'inventory'>('menu')
+  const [showRecipeModal, setShowRecipeModal] = useState(false)
   const [qty, setQty]             = useState('')
   const [wasteMode, setWasteMode] = useState(false)
   const [wasteReason, setWasteReason] = useState('')
@@ -138,15 +140,17 @@ export default function DispensePage() {
 
   const WASTE_REASONS = ['تالف','منتهي الصلاحية','كسر','سرقة/فقدان','خطأ تحضير','أخرى']
 
+  const sectionProducts = products.filter((p:any)=>activeSection==='menu' ? !!p.is_recipe : !p.is_recipe)
+
   const catMap: Record<string,number>={}
-  products.forEach(p=>{const c=p.category?.trim()||OTHER;catMap[c]=(catMap[c]||0)+1})
+  sectionProducts.forEach((p:any)=>{const c=p.category?.trim()||OTHER;catMap[c]=(catMap[c]||0)+1})
   const categories=Object.keys(catMap).sort((a,b)=>{if(a===OTHER)return 1;if(b===OTHER)return -1;return catMap[b]-catMap[a]})
   const allCats=['كل المنتجات',...categories]
   const catColor=(cat:string)=>CAT_COLORS[categories.indexOf(cat)%CAT_COLORS.length]
 
-  const displayed=products
-    .filter(p=>!search||(p.name?.toLowerCase().includes(search.toLowerCase())))
-    .filter(p=>activeCat==='كل المنتجات'||(p.category?.trim()||OTHER)===activeCat)
+  const displayed=sectionProducts
+    .filter((p:any)=>!search||(p.name?.toLowerCase().includes(search.toLowerCase())))
+    .filter((p:any)=>activeCat==='كل المنتجات'||(p.category?.trim()||OTHER)===activeCat)
 
   const outCount=products.filter(p=>p.qty===0).length
   const lowCount=products.filter(p=>p.qty>0&&p.qty<=p.reorder_point).length
@@ -212,6 +216,25 @@ export default function DispensePage() {
           السجل ({history.length})
         </button>
       </div>
+
+      {/* Section tabs: القائمة vs المخزون */}
+      <div style={{display:'flex',gap:6,marginBottom:12,background:C.bg,borderRadius:10,padding:4}}>
+        <button onClick={()=>{setActiveSection('menu');setActiveCat('كل المنتجات');setSearch('')}}
+          style={{flex:1,padding:'9px',borderRadius:8,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,background:activeSection==='menu'?'white':'transparent',color:activeSection==='menu'?C.primary:C.text3,boxShadow:activeSection==='menu'?'0 1px 3px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
+          🍔 القائمة
+        </button>
+        <button onClick={()=>{setActiveSection('inventory');setActiveCat('كل المنتجات');setSearch('')}}
+          style={{flex:1,padding:'9px',borderRadius:8,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:700,background:activeSection==='inventory'?'white':'transparent',color:activeSection==='inventory'?C.primary:C.text3,boxShadow:activeSection==='inventory'?'0 1px 3px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
+          📦 المخزون
+        </button>
+      </div>
+
+      {activeSection==='menu' && (
+        <button onClick={()=>setShowRecipeModal(true)}
+          style={{width:'100%',padding:'10px',marginBottom:10,background:C.primaryL,color:C.primary,border:`1.5px dashed ${C.primaryB}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+          + إضافة صنف جديد للقائمة
+        </button>
+      )}
 
       {/* Search */}
       <div style={{position:'relative',marginBottom:10}}>
@@ -377,13 +400,13 @@ export default function DispensePage() {
 
             <div style={{padding:'8px 20px 16px'}}>
               {wasteMode ? (
-                <button disabled={saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason} onClick={handleWaste}
-                  style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason?C.text4:'#d97706',color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason?.6:1,boxShadow:'0 6px 16px #d9770630',transition:'all .2s'}}>
+                <button disabled={saving||!qty||Number(qty)<=0||(!selected.is_recipe&&Number(qty)>selected.qty)||!wasteReason} onClick={handleWaste}
+                  style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||(!selected.is_recipe&&Number(qty)>selected.qty)||!wasteReason?C.text4:'#d97706',color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||(!selected.is_recipe&&Number(qty)>selected.qty)||!wasteReason?.6:1,boxShadow:'0 6px 16px #d9770630',transition:'all .2s'}}>
                   {saving?'⏳ جاري الحفظ...':`🗑️ تسجيل هدر ${qty||0} ${selected.unit}`}
                 </button>
               ) : (
-                <button disabled={saving||!qty||Number(qty)<=0||Number(qty)>selected.qty} onClick={handleDispense}
-                  style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?C.text4:C.danger,color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?.6:1,boxShadow:`0 6px 16px ${C.danger}30`,transition:'all .2s'}}>
+                <button disabled={saving||!qty||Number(qty)<=0||(!selected.is_recipe&&Number(qty)>selected.qty)} onClick={handleDispense}
+                  style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||(!selected.is_recipe&&Number(qty)>selected.qty)?C.text4:C.danger,color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||(!selected.is_recipe&&Number(qty)>selected.qty)?.6:1,boxShadow:`0 6px 16px ${C.danger}30`,transition:'all .2s'}}>
                   {saving?'⏳ جاري الحفظ...':`✓ صرف ${qty||0} ${selected.unit} من ${selected.name}`}
                 </button>
               )}
@@ -391,6 +414,90 @@ export default function DispensePage() {
           </div>
         </div>
       )}
+
+      {showRecipeModal && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:16,backdropFilter:'blur(4px)'}} onClick={()=>setShowRecipeModal(false)}>
+          <RecipeQuickAdd
+            onClose={()=>setShowRecipeModal(false)}
+            onSaved={()=>{setShowRecipeModal(false); const oid=orgRef.current; if(oid) loadProducts(oid)}}
+            rawMaterials={products.filter((p:any)=>!p.is_recipe)}
+            sb={sb}
+            orgId={orgRef.current}
+            branchId={typeof window!=='undefined'?sessionStorage.getItem('s_branch_id'):null}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function RecipeQuickAdd({onClose,onSaved,rawMaterials,sb,orgId,branchId}:{onClose:()=>void,onSaved:()=>void,rawMaterials:any[],sb:any,orgId:string|null,branchId:string|null}) {
+  const [name,setName]=useState('')
+  const [unit,setUnit]=useState('قطعة')
+  const [components,setComponents]=useState<{component_product_id:string,qty:string}[]>([])
+  const [newCompId,setNewCompId]=useState('')
+  const [newCompQty,setNewCompQty]=useState('')
+  const [saving,setSaving]=useState(false)
+
+  function addComp() {
+    if(!newCompId||!newCompQty||Number(newCompQty)<=0) return
+    if(components.some(c=>c.component_product_id===newCompId)) return
+    setComponents(prev=>[...prev,{component_product_id:newCompId,qty:newCompQty}])
+    setNewCompId('');setNewCompQty('')
+  }
+
+  async function save() {
+    if(!name.trim()||!orgId) return
+    setSaving(true)
+    const{data:np,error}=await sb.from('products').insert({org_id:orgId,branch_id:branchId||null,name:name.trim(),unit,qty:0,reorder_point:0,is_active:true,is_recipe:true}).select().single()
+    if(error||!np){setSaving(false);return}
+    if(components.length>0){
+      const rows=components.map(c=>({product_id:np.id,component_product_id:c.component_product_id,qty:Number(c.qty)}))
+      await (sb.from('recipe_items' as any) as any).insert(rows)
+    }
+    setSaving(false)
+    onSaved()
+  }
+
+  return (
+    <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,maxHeight:'85vh',overflowY:'auto',padding:20}}>
+      <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>🍔 صنف جديد للقائمة</div>
+      <label style={{fontSize:11,fontWeight:700,color:'#6b7280',display:'block',marginBottom:5}}>اسم الصنف *</label>
+      <input value={name} onChange={e=>setName(e.target.value)} placeholder="مثال: برجر بالجبن" style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e7eb',borderRadius:9,fontSize:13,marginBottom:12,fontFamily:'inherit'}}/>
+      <label style={{fontSize:11,fontWeight:700,color:'#6b7280',display:'block',marginBottom:5}}>وحدة البيع</label>
+      <input value={unit} onChange={e=>setUnit(e.target.value)} placeholder="قطعة، كوب، طبق..." style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e7eb',borderRadius:9,fontSize:13,marginBottom:14,fontFamily:'inherit'}}/>
+
+      <div style={{fontSize:12,fontWeight:700,marginBottom:8}}>مكوّنات الصنف</div>
+      {components.length>0 && (
+        <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:8}}>
+          {components.map(c=>{
+            const comp=rawMaterials.find(r=>r.id===c.component_product_id)
+            return (
+              <div key={c.component_product_id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'#f9fafb',border:'1px solid #e5e7eb',borderRadius:8,padding:'6px 10px'}}>
+                <span style={{fontSize:11}}>{comp?.name||'—'} — {c.qty} {comp?.recipe_unit||comp?.unit}</span>
+                <button onClick={()=>setComponents(prev=>prev.filter(x=>x.component_product_id!==c.component_product_id))} style={{background:'none',border:'none',color:'#ef4444',cursor:'pointer',fontSize:14}}>×</button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      <div style={{display:'flex',gap:6,marginBottom:16}}>
+        <select value={newCompId} onChange={e=>setNewCompId(e.target.value)} style={{flex:2,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}>
+          <option value="">اختر مكوّن...</option>
+          {rawMaterials.filter(r=>!components.some(c=>c.component_product_id===r.id)).map(r=>(
+            <option key={r.id} value={r.id}>{r.name} ({r.recipe_unit||r.unit})</option>
+          ))}
+        </select>
+        <input type="number" step="0.01" min="0" value={newCompQty} onChange={e=>setNewCompQty(e.target.value)} placeholder="الكمية" style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}/>
+        <button onClick={addComp} style={{padding:'0 12px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:16,fontWeight:700,cursor:'pointer'}}>+</button>
+      </div>
+
+      <div style={{display:'flex',gap:8}}>
+        <button onClick={onClose} style={{flex:1,padding:'11px',background:'#f9fafb',color:'#374151',border:'1px solid #e5e7eb',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+        <button onClick={save} disabled={saving||!name.trim()} style={{flex:2,padding:'11px',background:'#16a34a',color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:saving||!name.trim()?.6:1}}>
+          {saving?'جاري الحفظ...':'حفظ الصنف'}
+        </button>
+      </div>
     </div>
   )
 }
