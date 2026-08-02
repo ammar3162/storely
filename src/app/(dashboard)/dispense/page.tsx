@@ -438,6 +438,8 @@ function RecipeQuickAdd({onClose,onSaved,rawMaterials,sb,orgId,branchId}:{onClos
   const [newCompId,setNewCompId]=useState('')
   const [newCompQty,setNewCompQty]=useState('')
   const [newCompSubUnit,setNewCompSubUnit]=useState(1)
+  const [customSubLabel,setCustomSubLabel]=useState('')
+  const [customSubCount,setCustomSubCount]=useState('')
 
   function subUnitOptions(baseUnit:string) {
     const u=(baseUnit||'').trim()
@@ -445,14 +447,20 @@ function RecipeQuickAdd({onClose,onSaved,rawMaterials,sb,orgId,branchId}:{onClos
     if(['لتر','ليتر'].includes(u)) return [{label:'مل',factor:1000},{label:'لتر',factor:1}]
     return [{label:u||'وحدة',factor:1}]
   }
+  function isStandardUnit(baseUnit:string) {
+    const u=(baseUnit||'').trim()
+    return ['كيلو','كجم','كيلوجرام','كيلو جرام','لتر','ليتر'].includes(u)
+  }
   const [saving,setSaving]=useState(false)
 
   function addComp() {
     if(!newCompId||!newCompQty||Number(newCompQty)<=0) return
     if(components.some(c=>c.component_product_id===newCompId)) return
-    const baseQty=Number(newCompQty)/newCompSubUnit
+    const customFactor=Number(customSubCount)
+    const factor = customFactor>0 ? customFactor : newCompSubUnit
+    const baseQty=Number(newCompQty)/factor
     setComponents(prev=>[...prev,{component_product_id:newCompId,qty:String(baseQty)}])
-    setNewCompId('');setNewCompQty('');setNewCompSubUnit(1)
+    setNewCompId('');setNewCompQty('');setNewCompSubUnit(1);setCustomSubLabel('');setCustomSubCount('')
   }
 
   async function save() {
@@ -498,14 +506,23 @@ function RecipeQuickAdd({onClose,onSaved,rawMaterials,sb,orgId,branchId}:{onClos
           ))}
         </select>
       </div>
+      {newCompId && !isStandardUnit(rawMaterials.find(x=>x.id===newCompId)?.unit||'') && (
+        <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:8,padding:8,marginBottom:8}}>
+          <div style={{fontSize:10,color:'#92400e',marginBottom:6}}>كم قطعة/وحدة بكل {rawMaterials.find(x=>x.id===newCompId)?.unit} واحد؟ (اختياري — يخليك تكتب الكمية بوحدة أدق)</div>
+          <div style={{display:'flex',gap:6}}>
+            <input value={customSubLabel} onChange={e=>setCustomSubLabel(e.target.value)} placeholder="اسم الوحدة (مثال: رغيف)" style={{flex:2,padding:'7px',border:'1.5px solid #fde68a',borderRadius:7,fontSize:10}}/>
+            <input type="number" min="1" value={customSubCount} onChange={e=>setCustomSubCount(e.target.value)} placeholder="العدد" style={{flex:1,padding:'7px',border:'1.5px solid #fde68a',borderRadius:7,fontSize:10}}/>
+          </div>
+        </div>
+      )}
       <div style={{display:'flex',gap:6,marginBottom:16}}>
-        <input type="number" step="0.01" min="0" value={newCompQty} onChange={e=>setNewCompQty(e.target.value)} placeholder="الكمية" style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}/>
+        <input type="number" step="0.01" min="0" value={newCompQty} onChange={e=>setNewCompQty(e.target.value)} placeholder={customSubCount?`الكمية بـ${customSubLabel||'وحدة'}`:'الكمية'} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}/>
         {newCompId && (()=>{const r=rawMaterials.find(x=>x.id===newCompId);const opts=subUnitOptions(r?.unit||'');return opts.length>1 ? (
           <select value={newCompSubUnit} onChange={e=>setNewCompSubUnit(Number(e.target.value))} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}>
             {opts.map(o=>(<option key={o.label} value={o.factor}>{o.label}</option>))}
           </select>
         ) : (
-          <div style={{flex:1,padding:'8px',fontSize:11,color:'#6b7280',display:'flex',alignItems:'center',justifyContent:'center'}}>{opts[0].label}</div>
+          <div style={{flex:1,padding:'8px',fontSize:11,color:'#6b7280',display:'flex',alignItems:'center',justifyContent:'center'}}>{customSubLabel||opts[0].label}</div>
         )})()}
         <button onClick={addComp} style={{padding:'0 12px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:16,fontWeight:700,cursor:'pointer'}}>+</button>
       </div>
