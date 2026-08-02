@@ -11,12 +11,14 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
  */
 export async function POST(req: Request) {
   try {
-    const { org_id, branch_id } = await req.json()
+    const { org_id, branch_id, from, to } = await req.json()
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
     const db = sb()
-    const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    // لو ما تحدد نطاق تاريخ، افتراضياً آخر 30 يوم. لو تحدد، نطاق مخصص (تشمل اليوم كامل بالنهاية)
+    const since30 = from ? new Date(from + 'T00:00:00').toISOString() : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    const untilDate = to ? new Date(to + 'T23:59:59').toISOString() : null
 
     let recipesQ = (db as any).from('recipes').select('id,name').eq('org_id', org_id)
     if (branch_id) recipesQ = recipesQ.eq('branch_id', branch_id)
@@ -44,6 +46,7 @@ export async function POST(req: Request) {
       .in('product_id', componentIds as string[])
       .eq('products.org_id', org_id)
       .gte('created_at', since30)
+    if (untilDate) movesQ = movesQ.lte('created_at', untilDate)
     if (branch_id) movesQ = movesQ.eq('products.branch_id', branch_id)
     const { data: moves } = await movesQ
 

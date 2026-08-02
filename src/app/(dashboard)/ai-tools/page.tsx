@@ -67,6 +67,8 @@ export default function AIToolsPage() {
   const [showRecipesList, setShowRecipesList] = useState(false)
   const [editingRecipeId, setEditingRecipeId] = useState<string|null>(null)
   const [deletingRecipeId, setDeletingRecipeId] = useState<string|null>(null)
+  const [reconFrom, setReconFrom] = useState('')
+  const [reconTo, setReconTo] = useState('')
 
   async function loadRecipesList() {
     const orgId=sessionStorage.getItem('s_org_id')
@@ -568,6 +570,15 @@ export default function AIToolsPage() {
               <div style={{fontSize:11,color:C.text3}}>عرّف وصفة (اسم + مكوناتها)، والنظام يقدّر كم وحدة تم تحضيرها بناءً على استهلاك موظفيك الفعلي للمواد الخام</div>
             </div>
           </div>
+          <div style={{display:'flex',gap:6,alignItems:'center'}}>
+            <span style={{fontSize:10,color:C.text4,whiteSpace:'nowrap' as const}}>من</span>
+            <input type="date" value={reconFrom} onChange={e=>setReconFrom(e.target.value)} style={{flex:1,padding:'6px 8px',border:`1px solid ${C.border2}`,borderRadius:7,fontSize:10,fontFamily:'inherit'}}/>
+            <span style={{fontSize:10,color:C.text4,whiteSpace:'nowrap' as const}}>إلى</span>
+            <input type="date" value={reconTo} onChange={e=>setReconTo(e.target.value)} style={{flex:1,padding:'6px 8px',border:`1px solid ${C.border2}`,borderRadius:7,fontSize:10,fontFamily:'inherit'}}/>
+            {(reconFrom||reconTo) && (
+              <button onClick={()=>{setReconFrom('');setReconTo('')}} style={{padding:'4px 8px',background:'none',border:'none',color:'#7c3aed',fontSize:10,cursor:'pointer',fontFamily:'inherit',textDecoration:'underline',whiteSpace:'nowrap' as const}}>تصفير</button>
+            )}
+          </div>
           <div style={{display:'flex',gap:8}}>
             <button onClick={async()=>{
               const orgId=sessionStorage.getItem('s_org_id')
@@ -582,7 +593,7 @@ export default function AIToolsPage() {
               const orgId=sessionStorage.getItem('s_org_id')
               if(!orgId) return
               setReconLoading(true)
-              const res=await fetch('/api/recipe-reconciliation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id')})})
+              const res=await fetch('/api/recipe-reconciliation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id'),from:reconFrom||undefined,to:reconTo||undefined})})
               const data=await res.json()
               setRecipeReconReport(data)
               setReconLoading(false)
@@ -614,7 +625,7 @@ export default function AIToolsPage() {
 
       {recipeReconReport && (
         <div style={{marginTop:16,background:C.surface,borderRadius:14,padding:'20px',border:'1.5px solid #ddd6fe'}}>
-          <div style={{fontSize:14,fontWeight:800,color:'#5b21b6',marginBottom:4}}>🍔 تقدير الإنتاج (آخر 30 يوم)</div>
+          <div style={{fontSize:14,fontWeight:800,color:'#5b21b6',marginBottom:4}}>🍔 تقدير الإنتاج ({reconFrom||reconTo ? `${reconFrom||'البداية'} إلى ${reconTo||'اليوم'}` : 'آخر 30 يوم'})</div>
           <div style={{fontSize:11,color:'#7c3aed',marginBottom:16}}>محسوب من استهلاك المواد الخام الفعلي ÷ مكونات كل وصفة</div>
 
           {!recipeReconReport.hasData ? (
