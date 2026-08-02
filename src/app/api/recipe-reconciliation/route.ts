@@ -67,11 +67,13 @@ export async function POST(req: Request) {
           impliedCount,
         }
       })
-      const validCounts = components.map((c: any) => c.impliedCount).filter((n: number) => n > 0)
-      const avg = validCounts.length ? Math.round((validCounts.reduce((s: number, n: number) => s + n, 0) / validCounts.length) * 10) / 10 : 0
-      const min = validCounts.length ? Math.min(...validCounts) : 0
-      const max = validCounts.length ? Math.max(...validCounts) : 0
-      return { id: r.id, name: r.name, estimatedProduced: avg, minEstimate: min, maxEstimate: max, components }
+      const allCounts = components.map((c: any) => c.impliedCount)
+      // الرقم الصحيح = أقل مكوّن متوفر (العنق الزجاجي) — ما تقدر تسوي وصفات أكتر من أضعف مكوّن عندك
+      const min = allCounts.length ? Math.min(...allCounts) : 0
+      const avg = allCounts.length ? Math.round((allCounts.reduce((s: number, n: number) => s + n, 0) / allCounts.length) * 10) / 10 : 0
+      const max = allCounts.length ? Math.max(...allCounts) : 0
+      const bottleneck = components.find((c: any) => c.impliedCount === min)
+      return { id: r.id, name: r.name, estimatedProduced: min, avgEstimate: avg, maxEstimate: max, bottleneckName: bottleneck?.name || null, components }
     })
 
     return NextResponse.json({ hasData: true, recipes: report })

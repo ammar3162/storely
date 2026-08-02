@@ -577,18 +577,24 @@ export default function AIToolsPage() {
             <div style={{display:'flex',flexDirection:'column' as const,gap:12}}>
               {recipeReconReport.recipes.map((r:any)=>(
                 <div key={r.id} style={{background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,padding:'12px 14px'}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
                     <span style={{fontSize:13,fontWeight:700,color:C.text}}>{r.name}</span>
-                    <span style={{fontSize:16,fontWeight:900,color:'#7c3aed'}}>≈ {r.estimatedProduced} وحدة</span>
+                    <span style={{fontSize:16,fontWeight:900,color:'#7c3aed'}}>{r.estimatedProduced} وحدة</span>
                   </div>
+                  {r.bottleneckName && (
+                    <div style={{fontSize:9,color:'#b45309',marginBottom:8}}>⚠️ محدَّد بواسطة: {r.bottleneckName} (المكوّن الأقل توفراً)</div>
+                  )}
                   {r.components.length>0 ? (
                     <div style={{display:'flex',flexDirection:'column' as const,gap:4}}>
-                      {r.components.map((c:any,i:number)=>(
-                        <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:10,color:C.text4}}>
-                          <span>{c.name}: استهلاك {c.consumed} {c.unit}</span>
-                          <span>يقدّر {c.impliedCount} وحدة</span>
-                        </div>
-                      ))}
+                      {r.components.map((c:any,i:number)=>{
+                        const isBottleneck = c.name===r.bottleneckName
+                        return (
+                          <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:10,color:isBottleneck?'#b45309':C.text4,fontWeight:isBottleneck?700:400}}>
+                            <span>{isBottleneck?'🔻 ':''}{c.name}: استهلاك {c.consumed} {c.unit}</span>
+                            <span>يكفي لـ {c.impliedCount} وحدة</span>
+                          </div>
+                        )
+                      })}
                     </div>
                   ) : (
                     <div style={{fontSize:10,color:C.text4}}>هذي الوصفة بدون مكوّنات بعد</div>
