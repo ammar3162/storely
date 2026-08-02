@@ -58,6 +58,8 @@ export default function AIToolsPage() {
   const [wasteReport, setWasteReport] = useState<any[]>([])
   const [wasteLoading, setWasteLoading] = useState(false)
   const [realWasteReport, setRealWasteReport] = useState<any>(null)
+  const [recipeReconReport, setRecipeReconReport] = useState<any>(null)
+  const [reconLoading, setReconLoading] = useState(false)
   const [realWasteLoading, setRealWasteLoading] = useState(false)
   const [reorderSuggestions, setReorderSuggestions] = useState<any>(null)
   const [reorderLoading, setReorderLoading] = useState(false)
@@ -521,6 +523,77 @@ export default function AIToolsPage() {
           </div>
         </div>
       </div>
+      )}
+
+      {/* تقرير مطابقة استهلاك الوصفات */}
+      <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
+        <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <span style={{fontSize:18}}>🍔</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.text}}>مطابقة استهلاك الوصفات</div>
+              <div style={{fontSize:11,color:C.text3}}>يقارن استهلاك المكوّنات المتوقع (من مبيعات الوصفات) بالاستهلاك الفعلي، ويكشف الفروقات</div>
+            </div>
+            <button onClick={async()=>{
+              const orgId=sessionStorage.getItem('s_org_id')
+              if(!orgId) return
+              setReconLoading(true)
+              const res=await fetch('/api/recipe-reconciliation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id')})})
+              const data=await res.json()
+              setRecipeReconReport(data)
+              setReconLoading(false)
+            }} style={{padding:'6px 14px',background:'#7c3aed',color:'white',border:'none',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+              {reconLoading?'⏳ جاري...':'تشغيل المطابقة'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {recipeReconReport && (
+        <div style={{marginTop:16,background:C.surface,borderRadius:14,padding:'20px',border:'1.5px solid #ddd6fe'}}>
+          <div style={{fontSize:14,fontWeight:800,color:'#5b21b6',marginBottom:4}}>🍔 مطابقة استهلاك الوصفات (آخر 30 يوم)</div>
+          <div style={{fontSize:11,color:'#7c3aed',marginBottom:16}}>الفرق الموجب يعني استهلاك فعلي أكتر من المتوقع من الوصفات — راجعه</div>
+
+          {!recipeReconReport.hasData ? (
+            <div style={{textAlign:'center',padding:'24px',color:'#9ca3af',fontSize:13}}>
+              ما فيه مبيعات وصفات مسجّلة خلال آخر 30 يوم<br/>
+              <span style={{fontSize:11}}>جرّب تصرف منتج وصفة من صفحة "الصرف" أولاً</span>
+            </div>
+          ) : (
+            <>
+              {recipeReconReport.recipesSold?.length>0 && (
+                <div style={{marginBottom:16}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:8}}>الوصفات المباعة</div>
+                  <div style={{display:'flex',flexWrap:'wrap' as const,gap:6}}>
+                    {recipeReconReport.recipesSold.map((r:any)=>(
+                      <span key={r.id} style={{fontSize:11,fontWeight:600,color:'#5b21b6',background:'#f5f3ff',border:'1px solid #ddd6fe',borderRadius:99,padding:'4px 12px'}}>{r.name}: {r.qtySold} {r.unit}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {recipeReconReport.componentsReport?.length>0 ? (
+                <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                  {recipeReconReport.componentsReport.map((c:any)=>(
+                    <div key={c.id} style={{background:Math.abs(c.variance)>0.01?'#fef2f2':C.bg,border:`1px solid ${Math.abs(c.variance)>0.01?'#fecaca':C.border2}`,borderRadius:10,padding:'10px 14px'}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                        <span style={{fontSize:12,fontWeight:700,color:C.text}}>{c.name}</span>
+                        <span style={{fontSize:12,fontWeight:800,color:c.variance>0.01?'#dc2626':c.variance<-0.01?'#16a34a':C.text4}}>
+                          {c.variance>0?'+':''}{c.variance} {c.unit}{c.variancePercent!==null?` (${c.variancePercent>0?'+':''}${c.variancePercent}%)`:''}
+                        </span>
+                      </div>
+                      <div style={{display:'flex',gap:12,marginTop:4,fontSize:10,color:C.text4}}>
+                        <span>متوقع: {c.expected} {c.unit}</span>
+                        <span>فعلي: {c.actual} {c.unit}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{textAlign:'center',padding:'16px',color:'#9ca3af',fontSize:12}}>لا توجد مكوّنات مرتبطة بالوصفات المباعة</div>
+              )}
+            </>
+          )}
+        </div>
       )}
 
       {/* Coming soon — أدوات متاحة للمتوسطة والمتقدمة */}

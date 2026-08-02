@@ -101,6 +101,7 @@ export default function DispensePage() {
         await sb.from('stock_movements').insert({product_id:it.component_product_id,profile_id:pid,type:'out',qty_change:-deduct,note:`صرف ضمن وصفة: ${selected.name} × ${qn}`})
         fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:it.component_product_id,new_qty:(comp?.qty||0)-deduct,reorder_point:comp?.reorder_point||0})}).catch(()=>{})
       }
+      await (sb.from('recipe_sales_log' as any) as any).insert({product_id:selected.id,org_id:oid,branch_id:sessionStorage.getItem('s_branch_id')||null,qty:qn,profile_id:pid,staff_name:sessionStorage.getItem('s_full_name')||'المالك'})
       cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
       toast(`✅ تم صرف ${qn} ${selected.unit} من ${selected.name} — خُصمت المكوّنات تلقائياً`)
       fetch('/api/notify-staff-dispense',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,branch_id:sessionStorage.getItem('s_branch_id')||null,staff_name:sessionStorage.getItem('s_full_name')||'المالك',product_name:selected.name,qty:qn,unit:selected.unit})}).catch(()=>{})
