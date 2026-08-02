@@ -88,7 +88,7 @@ export default function AIToolsPage() {
   async function openEditRecipe(id:string) {
     const orgId=sessionStorage.getItem('s_org_id')
     if(!orgId) return
-    const{data}=await sb.from('products').select('id,name,unit').eq('org_id',orgId).eq('is_active',true)
+    const{data}=await sb.from('products').select('id,name,unit,recipe_unit,recipe_unit_factor').eq('org_id',orgId).eq('is_active',true)
     setRawMaterials(data||[])
     setEditingRecipeId(id)
     setShowRecipeModal(true)
@@ -572,7 +572,7 @@ export default function AIToolsPage() {
             <button onClick={async()=>{
               const orgId=sessionStorage.getItem('s_org_id')
               if(!orgId) return
-              const{data}=await sb.from('products').select('id,name,unit').eq('org_id',orgId).eq('is_active',true)
+              const{data}=await sb.from('products').select('id,name,unit,recipe_unit,recipe_unit_factor').eq('org_id',orgId).eq('is_active',true)
               setRawMaterials(data||[])
               setShowRecipeModal(true)
             }} style={{flex:1,padding:'8px 14px',background:'white',color:'#7c3aed',border:'1.5px solid #ddd6fe',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
@@ -947,24 +947,29 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
     })()
   },[editingRecipeId])
 
-  function subUnitOptions(baseUnit:string) {
-    const u=(baseUnit||'').trim()
+  function subUnitOptions(component:any) {
+    const u=(component?.unit||'').trim()
     if(['كيلو','كجم','كيلوجرام','كيلو جرام'].includes(u)) return [{label:'جرام',factor:1000},{label:'كيلو',factor:1}]
     if(['لتر','ليتر'].includes(u)) return [{label:'مل',factor:1000},{label:'لتر',factor:1}]
+    if(component?.recipe_unit_factor) return [{label:component.recipe_unit||'وحدة',factor:component.recipe_unit_factor},{label:u||'وحدة',factor:1}]
     return [{label:u||'وحدة',factor:1}]
   }
-  function isStandardUnit(baseUnit:string) {
-    const u=(baseUnit||'').trim()
-    return ['كيلو','كجم','كيلوجرام','كيلو جرام','لتر','ليتر'].includes(u)
+  function hasKnownConversion(component:any) {
+    const u=(component?.unit||'').trim()
+    return ['كيلو','كجم','كيلوجرام','كيلو جرام','لتر','ليتر'].includes(u) || !!component?.recipe_unit_factor
   }
 
-  function addComp() {
+  async function addComp() {
     if(!newCompId||!newCompQty||Number(newCompQty)<=0) return
     if(components.some(c=>c.component_product_id===newCompId)) return
     const customFactor=Number(customSubCount)
     const factor = customFactor>0 ? customFactor : newCompSubUnit
     const baseQty=Number(newCompQty)/factor
     setComponents(prev=>[...prev,{component_product_id:newCompId,qty:String(baseQty)}])
+    if(customFactor>0 && customSubLabel.trim()){
+      // نحفظ التحويل بالمنتج نفسه عشان ما نسأل عنه مرة ثانية بأي وصفة جاية
+      await sb.from('products').update({recipe_unit:customSubLabel.trim(),recipe_unit_factor:customFactor}).eq('id',newCompId)
+    }
     setNewCompId('');setNewCompQty('');setNewCompSubUnit(1);setCustomSubLabel('');setCustomSubCount('')
   }
 
@@ -1018,14 +1023,14 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
         </div>
       )}
       <div style={{display:'flex',gap:6,marginBottom:6}}>
-        <select value={newCompId} onChange={(e:any)=>{const id=e.target.value;setNewCompId(id);const r=rawMaterials.find(x=>x.id===id);const opts=subUnitOptions(r?.unit||'');setNewCompSubUnit(opts[0].factor)}} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}>
+        <select value={newCompId} onChange={(e:any)=>{const id=e.target.value;setNewCompId(id);const r=rawMaterials.find(x=>x.id===id);const opts=subUnitOptions(r);setNewCompSubUnit(opts[0].factor)}} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}>
           <option value="">اختر مكوّن...</option>
           {rawMaterials.filter(r=>!components.some(c=>c.component_product_id===r.id)).map(r=>(
             <option key={r.id} value={r.id}>{r.name} ({r.unit})</option>
           ))}
         </select>
       </div>
-      {newCompId && !isStandardUnit(rawMaterials.find(x=>x.id===newCompId)?.unit||'') && (
+      {newCompId && !hasKnownConversion(rawMaterials.find(x=>x.id===newCompId)) && (
         <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:8,padding:8,marginBottom:8}}>
           <div style={{fontSize:10,color:'#92400e',marginBottom:6}}>كم قطعة/وحدة بكل {rawMaterials.find(x=>x.id===newCompId)?.unit} واحد؟ (اختياري)</div>
           <div style={{display:'flex',gap:6}}>
@@ -1036,7 +1041,7 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
       )}
       <div style={{display:'flex',gap:6,marginBottom:16}}>
         <input type="number" step="0.01" min="0" value={newCompQty} onChange={(e:any)=>setNewCompQty(e.target.value)} placeholder={customSubCount?`الكمية بـ${customSubLabel||'وحدة'}`:'الكمية'} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}/>
-        {newCompId && (()=>{const r=rawMaterials.find(x=>x.id===newCompId);const opts=subUnitOptions(r?.unit||'');return opts.length>1 ? (
+        {newCompId && (()=>{const r=rawMaterials.find(x=>x.id===newCompId);const opts=subUnitOptions(r);return opts.length>1 ? (
           <select value={newCompSubUnit} onChange={(e:any)=>setNewCompSubUnit(Number(e.target.value))} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}>
             {opts.map(o=>(<option key={o.label} value={o.factor}>{o.label}</option>))}
           </select>
