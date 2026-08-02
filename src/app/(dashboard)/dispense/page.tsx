@@ -25,6 +25,7 @@ export default function DispensePage() {
   const [saving, setSaving]       = useState(false)
   const [activeCat, setActiveCat] = useState('كل المنتجات')
   const [selected, setSelected]   = useState<any>(null)
+  const [restrictedIds, setRestrictedIds] = useState<Set<string>>(new Set())
   const [qty, setQty]             = useState('')
   const [wasteMode, setWasteMode] = useState(false)
   const [wasteReason, setWasteReason] = useState('')
@@ -59,10 +60,20 @@ export default function DispensePage() {
 
   async function loadProducts(oid:string) {
     const bid=sessionStorage.getItem('s_branch_id')
-    let q=sb.from('products').select('id,name,sku,unit,qty,reorder_point,category').eq('org_id',oid).eq('is_active',true)
+    let q=sb.from('products').select('id,name,sku,unit,qty,reorder_point,category,is_recipe,recipe_unit,recipe_unit_factor,allow_direct_dispense').eq('org_id',oid).eq('is_active',true)
     if(bid) q=q.eq('branch_id',bid)
     const{data}=await q.order('qty',{ascending:true})
-    if(data) setProducts(data)
+    if(data){
+      setProducts(data)
+      const recipeIds=(data as any[]).filter(p=>p.is_recipe).map(p=>p.id)
+      if(recipeIds.length){
+        const{data:ri}=await (sb.from('recipe_items' as any) as any).select('component_product_id').in('product_id',recipeIds)
+        const compIds=new Set((ri||[]).map((r:any)=>r.component_product_id))
+        const restricted=new Set<string>()
+        ;(data as any[]).forEach(p=>{ if(compIds.has(p.id) && p.allow_direct_dispense===false) restricted.add(p.id) })
+        setRestrictedIds(restricted)
+      } else setRestrictedIds(new Set())
+    }
   }
 
   async function loadHistory(oid:string) {
@@ -76,8 +87,28 @@ export default function DispensePage() {
   async function handleDispense() {
     const oid=orgRef.current,pid=profRef.current
     if(!selected||!qty||!oid||!pid)return
+    if(restrictedIds.has(selected.id)){toast('هذا مكوّن داخل وصفة — يُصرف تلقائياً معها، لا يُباع مباشرة','warning');return}
     setSaving(true)
     const qn=Number(qty)
+
+    if((selected as any).is_recipe){
+      const{data:items}=await (sb.from('recipe_items' as any) as any).select('component_product_id,qty').eq('product_id',selected.id)
+      if(!items||items.length===0){toast('هذه الوصفة بدون مكوّنات معرّفة — أضفها من صفحة المخزون أولاً','warning');setSaving(false);return}
+      for(const it of items as any[]){
+        const comp=products.find((p:any)=>p.id===it.component_product_id)
+        const factor=(comp as any)?.recipe_unit_factor||1
+        const deduct=(Number(it.qty)*qn)/factor
+        await sb.from('stock_movements').insert({product_id:it.component_product_id,profile_id:pid,type:'out',qty_change:-deduct,note:`صرف ضمن وصفة: ${selected.name} × ${qn}`})
+        fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:it.component_product_id,new_qty:(comp?.qty||0)-deduct,reorder_point:comp?.reorder_point||0})}).catch(()=>{})
+      }
+      cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
+      toast(`✅ تم صرف ${qn} ${selected.unit} من ${selected.name} — خُصمت المكوّنات تلقائياً`)
+      fetch('/api/notify-staff-dispense',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,branch_id:sessionStorage.getItem('s_branch_id')||null,staff_name:sessionStorage.getItem('s_full_name')||'المالك',product_name:selected.name,qty:qn,unit:selected.unit})}).catch(()=>{})
+      setSelected(null);setQty('');setWasteMode(false);setWasteReason('')
+      setSaving(false);loadProducts(oid);loadHistory(oid)
+      return
+    }
+
     if(selected.qty<qn){toast('الكمية أكبر من المتاح!','warning');setSaving(false);return}
     const{error}=await sb.from('stock_movements').insert({product_id:selected.id,profile_id:pid,type:'out',qty_change:-qn,note:'استهلاك يومي'})
     if(error){toast('خطأ','error');setSaving(false);return}
