@@ -678,6 +678,38 @@ export default function AIToolsPage() {
                 </div>
               ))}
             </div>
+
+            {recipeReconReport.daily && recipeReconReport.daily.length>0 && (
+              <div style={{marginTop:18}}>
+                <div style={{fontSize:12,fontWeight:800,color:'#5b21b6',marginBottom:8}}>📅 التفصيل اليومي</div>
+                <div style={{overflowX:'auto',border:'1px solid #ddd6fe',borderRadius:10}}>
+                  <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:400}}>
+                    <thead>
+                      <tr style={{background:'#f5f3ff'}}>
+                        <th style={{padding:'8px 12px',fontSize:10,fontWeight:700,color:'#5b21b6',textAlign:'right' as const,whiteSpace:'nowrap' as const}}>التاريخ</th>
+                        {recipeReconReport.recipes.map((r:any)=>(
+                          <th key={r.id} style={{padding:'8px 12px',fontSize:10,fontWeight:700,color:'#5b21b6',textAlign:'center' as const,whiteSpace:'nowrap' as const}}>{r.name}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recipeReconReport.daily.map((d:any,i:number)=>(
+                        <tr key={d.date} style={{borderTop:'1px solid #ede9fe',background:i%2===0?'white':'#faf5ff'}}>
+                          <td style={{padding:'7px 12px',fontSize:11,color:'#5b21b6',fontWeight:600,whiteSpace:'nowrap' as const}}>{new Date(d.date).toLocaleDateString('ar-SA',{weekday:'short',month:'short',day:'numeric'})}</td>
+                          {recipeReconReport.recipes.map((r:any)=>{
+                            const dr = d.recipes.find((x:any)=>x.id===r.id)
+                            const v = dr?.estimatedProduced||0
+                            return (
+                              <td key={r.id} style={{padding:'7px 12px',fontSize:11,textAlign:'center' as const,fontWeight:v>0?800:400,color:v>0?'#7c3aed':'#c4b5fd'}}>{v}</td>
+                            )
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
             </>
           )}
         </div>

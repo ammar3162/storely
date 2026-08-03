@@ -27,14 +27,14 @@ export async function POST(req: Request) {
     const { data: recipes } = await recipesQ
 
     if (!recipes || recipes.length === 0) {
-      return NextResponse.json({ hasData: false, recipes: [] })
+      return NextResponse.json({ hasData: false, recipes: [], daily: [] })
     }
 
     const recipeIds = recipes.map((r: any) => r.id)
     const { data: recipeItems } = await (db as any).from('recipe_items').select('recipe_id,component_product_id,qty').in('recipe_id', recipeIds)
 
     if (!recipeItems || recipeItems.length === 0) {
-      return NextResponse.json({ hasData: true, recipes: recipes.map((r: any) => ({ id: r.id, name: r.name, estimatedProduced: 0, costPerUnit: null, totalCost: null, components: [] })) })
+      return NextResponse.json({ hasData: true, recipes: recipes.map((r: any) => ({ id: r.id, name: r.name, estimatedProduced: 0, costPerUnit: null, totalCost: null, components: [] })), daily: [] })
     }
 
     const componentIds = [...new Set(recipeItems.map((r: any) => r.component_product_id))]
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     const resolvedIds = [...new Set(Object.values(resolveMap))]
 
     let movesQ = (db as any).from('stock_movements')
-      .select('product_id,qty_change,products!inner(org_id,branch_id)')
+      .select('product_id,qty_change,created_at,products!inner(org_id,branch_id)')
       .eq('type', 'out')
       .in('product_id', resolvedIds)
       .eq('products.org_id', org_id)
@@ -73,6 +73,40 @@ export async function POST(req: Request) {
       const r = m as any
       consumed[r.product_id] = (consumed[r.product_id] || 0) + Math.abs(r.qty_change)
     }
+
+    // نفس منطق "العنق الزجاجي" بس محسوب لكل يوم لحاله — عشان نعرض جدول يومي بدل رقم مجمّع واحد
+    const dailyConsumed: Record<string, Record<string, number>> = {}
+    for (const m of (moves || [])) {
+      const r = m as any
+      const dateKey = new Date(r.created_at).toISOString().slice(0, 10)
+      if (!dailyConsumed[dateKey]) dailyConsumed[dateKey] = {}
+      dailyConsumed[dateKey][r.product_id] = (dailyConsumed[dateKey][r.product_id] || 0) + Math.abs(r.qty_change)
+    }
+    const dayKeys: string[] = []
+    {
+      const startD = new Date(since30)
+      const endD = untilDate ? new Date(untilDate) : new Date()
+      const cursor = new Date(Date.UTC(startD.getUTCFullYear(), startD.getUTCMonth(), startD.getUTCDate()))
+      const endCursor = new Date(Date.UTC(endD.getUTCFullYear(), endD.getUTCMonth(), endD.getUTCDate()))
+      while (cursor <= endCursor) {
+        dayKeys.push(cursor.toISOString().slice(0, 10))
+        cursor.setUTCDate(cursor.getUTCDate() + 1)
+      }
+    }
+    const daily = dayKeys.map(dateKey => {
+      const dayConsumed = dailyConsumed[dateKey] || {}
+      const dayRecipes = recipes.map((r: any) => {
+        const items = recipeItems.filter((ri: any) => ri.recipe_id === r.id)
+        const counts = items.map((ri: any) => {
+          const pid = resolveMap[ri.component_product_id] || ri.component_product_id
+          const c = dayConsumed[pid] || 0
+          return ri.qty > 0 ? c / ri.qty : 0
+        })
+        const min = counts.length ? Math.round(Math.min(...counts) * 10) / 10 : 0
+        return { id: r.id, name: r.name, estimatedProduced: min }
+      })
+      return { date: dateKey, recipes: dayRecipes }
+    })
 
     // متوسط سعر الوحدة لكل مكوّن (من سجل المشتريات، بنفس منهج تقرير الهدر وحاسبة التكلفة بنافذة الوصفة)
     let purQ = db.from('purchases').select('name,qty,total_amount').eq('org_id', org_id).not('total_amount', 'is', null).not('qty', 'is', null)
@@ -124,7 +158,7 @@ export async function POST(req: Request) {
       }
     })
 
-    return NextResponse.json({ hasData: true, recipes: report })
+    return NextResponse.json({ hasData: true, recipes: report, daily })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
