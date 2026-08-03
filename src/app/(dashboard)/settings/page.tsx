@@ -15,7 +15,6 @@ const TABS = [
   {key:'account', label:'الحساب',     icon:'👤'},
   {key:'org',    label:'المؤسسة',    icon:'🏢'},
   {key:'notify', label:'الإشعارات',  icon:'🔔'},
-  {key:'branches',label:'الفروع',   icon:'🏪'},
   {key:'backup', label:'النسخ الاحتياطي', icon:'💾'},
   {key:'security',label:'الأمان',   icon:'🔐'},
 ]
@@ -566,94 +565,6 @@ export default function SettingsPage() {
                 </div>
               )}
             </form>
-          )}
-
-          {/* BRANCHES TAB */}
-          {activeTab==='branches'&&(
-            <div>
-              <p style={{fontSize:font.sm,color:colors.text3,marginBottom:16,lineHeight:1.8}}>كل فرع له مخزونه المستقل. الباقة الحالية تسمح بـ <b style={{color:colors.primary}}>{maxBranches} فرع</b>.</p>
-
-              {branches.length>0&&(
-                <div style={{...card,overflow:'hidden',marginBottom:16}}>
-                  {branches.map((b:any,i:number)=>(
-                    <div key={b.id} style={{padding:'14px 16px',borderBottom:i<branches.length-1?`1px solid ${colors.border}`:'none'}}>
-                      <div style={{display:'flex',alignItems:'center',gap:12}}>
-                        <div style={{width:36,height:36,borderRadius:10,background:i===0?colors.primaryLight:colors.bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0,border:`1px solid ${i===0?colors.primaryBorder:colors.border}`}}>
-                          {i===0?'🏠':'🏪'}
-                        </div>
-                        <div style={{flex:1}}>
-                          <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{b.name}</div>
-                          {b.location&&<div style={{fontSize:font.xs,color:colors.text4,marginTop:1}}>📍 {b.location}</div>}
-                        </div>
-                        {i===0
-                          ? <span style={{fontSize:font.xs,color:colors.primary,padding:'4px 10px',background:colors.primaryLight,borderRadius:20,border:`1px solid ${colors.primaryBorder}`,fontWeight:700}}>رئيسي</span>
-                          : <button onClick={()=>deleteBranch(b.id)} style={{background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:radius.sm,padding:'6px 12px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>حذف</button>}
-                      </div>
-                      <div style={{marginTop:10,marginRight:48}}>
-                        {editingPhoneId===b.id ? (
-                          <div style={{display:'flex',gap:6,alignItems:'center'}}>
-                            <input value={editPhoneValue} onChange={e=>setEditPhoneValue(e.target.value)} placeholder="5xxxxxxxx" dir="ltr"
-                              style={{...inp(),padding:'6px 10px',fontSize:font.xs,flex:1}}/>
-                            <button onClick={()=>saveBranchPhone(b.id)} disabled={savingPhone}
-                              style={{background:colors.primary,color:'white',border:'none',borderRadius:6,padding:'6px 12px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
-                              {savingPhone?'...':'حفظ'}
-                            </button>
-                            <button onClick={()=>setEditingPhoneId(null)}
-                              style={{background:colors.bg,color:colors.text3,border:'none',borderRadius:6,padding:'6px 12px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
-                              إلغاء
-                            </button>
-                          </div>
-                        ) : (
-                          <button onClick={()=>{setEditingPhoneId(b.id);setEditPhoneValue(b.whatsapp_number||'')}}
-                            style={{background:'none',border:'none',color:colors.text4,fontSize:11,cursor:'pointer',fontFamily:font.family,padding:0,display:'flex',alignItems:'center',gap:4}}>
-                            📱 {b.whatsapp_number ? `رقم مخصص: ${b.whatsapp_number}` : 'استخدام رقم مخصص لهذا الفرع (اختياري)'}
-                            <span style={{textDecoration:'underline'}}>تعديل</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {inactiveBranches.length>0&&(
-                <div style={{...card,overflow:'hidden',marginBottom:16,opacity:.8}}>
-                  <div style={{padding:'10px 16px',borderBottom:`1px solid ${colors.border}`,fontSize:font.xs,fontWeight:700,color:colors.text4}}>فروع موقوفة ({inactiveBranches.length})</div>
-                  {inactiveBranches.map((b:any,i:number)=>(
-                    <div key={b.id} style={{padding:'14px 16px',borderBottom:i<inactiveBranches.length-1?`1px solid ${colors.border}`:'none',display:'flex',alignItems:'center',gap:12}}>
-                      <div style={{width:36,height:36,borderRadius:10,background:colors.bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0,border:`1px solid ${colors.border}`}}>⏸</div>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:font.sm,fontWeight:700,color:colors.text3}}>{b.name}</div>
-                        {b.location&&<div style={{fontSize:font.xs,color:colors.text4,marginTop:1}}>📍 {b.location}</div>}
-                      </div>
-                      <button onClick={()=>reactivateBranch(b.id)} disabled={reactivatingId===b.id || branches.length>=maxBranches}
-                        style={{background:colors.primaryLight,color:colors.primary,border:`1px solid ${colors.primaryBorder}`,borderRadius:radius.sm,padding:'6px 12px',fontSize:font.xs,fontWeight:700,cursor:(reactivatingId===b.id||branches.length>=maxBranches)?'not-allowed':'pointer',fontFamily:font.family,opacity:branches.length>=maxBranches?.5:1}}>
-                        {reactivatingId===b.id?'...':branches.length>=maxBranches?'الباقة ممتلئة':'تفعيل'}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {branches.length < maxBranches ? (
-                <div style={{...card,padding:'18px',background:colors.bg}}>
-                  <div style={{fontSize:font.sm,fontWeight:700,color:colors.text,marginBottom:14}}>➕ إضافة فرع جديد</div>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}}>
-                    <div><label style={lbl}>اسم الفرع *</label><input value={newBranch.name} onChange={e=>setNewBranch({...newBranch,name:e.target.value})} style={inp()} placeholder="مثال: فرع الرياض"/></div>
-                    <div><label style={lbl}>الموقع (اختياري)</label><input value={newBranch.location} onChange={e=>setNewBranch({...newBranch,location:e.target.value})} style={inp()} placeholder="مثال: حي النزهة"/></div>
-                  </div>
-                  <button type="button" onClick={addBranch} disabled={branchSaving||!newBranch.name.trim()} style={{...btnPrimary,width:'100%',padding:'12px',opacity:(branchSaving||!newBranch.name.trim())?0.6:1,cursor:(branchSaving||!newBranch.name.trim())?'not-allowed':'pointer'}}>
-                    {branchSaving?'⏳ جاري الإضافة...':'+ إضافة فرع'}
-                  </button>
-                </div>
-              ) : (
-                <div style={{...card,padding:'20px',background:colors.warningLight,border:`1.5px solid ${colors.warningBorder}`,textAlign:'center'}}>
-                  <div style={{fontSize:24,marginBottom:10}}>🔒</div>
-                  <div style={{fontSize:font.sm,color:'#92400e',fontWeight:700,marginBottom:4}}>وصلت للحد الأقصى من الفروع</div>
-                  <div style={{fontSize:font.xs,color:'#b45309'}}>للترقية وإضافة فروع أكثر، تواصل معنا عبر واتساب</div>
-                </div>
-              )}
-            </div>
           )}
 
           {/* BACKUP TAB */}

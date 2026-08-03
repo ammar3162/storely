@@ -111,7 +111,7 @@ export async function deleteBranchCompletely(branchId: string, orgId: string): P
     if (r4.error) errors.push(`supplier_performance_log: ${r4.error.message}`)
   }
 
-  const directTables = ['purchases', 'cashier_closings', 'supplier_orders', 'staff_members']
+  const directTables = ['purchases', 'cashier_closings', 'supplier_orders', 'staff_members', 'notifications']
   for (const t of directTables) {
     const r = await (supabase as any).from(t).delete().eq('branch_id', branchId)
     if (r.error) errors.push(`${t}: ${r.error.message}`)
