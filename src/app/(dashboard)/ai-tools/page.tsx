@@ -1057,7 +1057,8 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
       if(updErr){toast('فشل تحديث الوصفة — حاول مرة أخرى','error');setSaving(false);return}
       await sb.from('recipe_items').delete().eq('recipe_id',editingRecipeId)
     } else {
-      const{data:nr,error}=await (sb.from('recipes' as any) as any).insert({org_id:orgId,branch_id:branchId||null,name:name.trim(),sell_price:sellPriceVal}).select().single()
+      // الوصفات مشتركة على مستوى الشركة كاملة (مو حصرية بفرع واحد) — تُعرَّف مرة وتشتغل بكل الفروع تلقائياً
+      const{data:nr,error}=await (sb.from('recipes' as any) as any).insert({org_id:orgId,branch_id:null,name:name.trim(),sell_price:sellPriceVal}).select().single()
       if(error||!nr){toast('فشل حفظ الوصفة — حاول مرة أخرى','error');setSaving(false);return}
       recipeId = nr.id
     }

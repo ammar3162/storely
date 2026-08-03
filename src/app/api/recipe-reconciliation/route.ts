@@ -22,8 +22,8 @@ export async function POST(req: Request) {
     const since30 = from ? new Date(from + 'T00:00:00').toISOString() : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
     const untilDate = to ? new Date(to + 'T23:59:59').toISOString() : null
 
+    // الوصفات مشتركة على مستوى الشركة كاملة — نجيبها كلها بغض النظر عن الفرع المختار حالياً
     let recipesQ = (db as any).from('recipes').select('id,name').eq('org_id', org_id)
-    if (branch_id) recipesQ = recipesQ.eq('branch_id', branch_id)
     const { data: recipes } = await recipesQ
 
     if (!recipes || recipes.length === 0) {
