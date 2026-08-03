@@ -96,7 +96,7 @@ export default function PurchasesPage() {
     const urlBid=new URLSearchParams(window.location.search).get('_b')
     if(urlBid){sessionStorage.setItem('s_branch_id',urlBid);window.history.replaceState({},'',window.location.pathname)}
     const bid=urlBid||sessionStorage.getItem('s_branch_id')
-    let q=sb.from('purchases').select('id,category,name,qty,unit,amount,vat_amount,total_amount,supplier,invoice_image,created_at').eq('org_id',oid).order('created_at',{ascending:false}).limit(50)
+    let q=sb.from('purchases').select('id,category,name,qty,unit,amount,vat_amount,total_amount,supplier,invoice_image,created_at').eq('org_id',oid).is('deleted_at',null).order('created_at',{ascending:false}).limit(50)
     if(bid) q=(q as any).eq('branch_id',bid)
     const{data}=await q;setHistory(data||[]);cache.set('purchases:'+oid,data||[])
   }
@@ -104,7 +104,7 @@ export default function PurchasesPage() {
   async function loadPayables(oid:string) {
     const{data,error}=await (sb.from('purchases') as any)
       .select('id,name,supplier,total_amount,due_date,created_at')
-      .eq('org_id',oid).eq('payment_status','unpaid')
+      .eq('org_id',oid).eq('payment_status','unpaid').is('deleted_at',null)
       .order('created_at',{ascending:false}).limit(200)
     if(error){ console.error('loadPayables error:', error); setPayables([]); return }
     const sorted = (data||[]).slice().sort((a:any,b:any)=>{
@@ -145,7 +145,7 @@ export default function PurchasesPage() {
       }
     }
 
-    const{error}=await sb.from('purchases').delete().eq('id',purchase.id)
+    const{error}=await (sb.from('purchases') as any).update({deleted_at:new Date().toISOString(),deleted_by:userId}).eq('id',purchase.id)
     setDeletingId(null)
     if(error){toast('فشل حذف الفاتورة — حاول مرة أخرى','error');return}
     toast('🗑️ تم حذف الفاتورة')

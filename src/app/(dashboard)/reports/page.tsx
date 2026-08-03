@@ -521,7 +521,23 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     if (!user?.email) { setDeleteError('تعذر التحقق من الحساب'); setDeleting(false); return }
     const { error } = await sb.auth.signInWithPassword({ email: user.email, password: deletePassword })
     if (error) { setDeleteError('كلمة المرور غير صحيحة'); setDeleting(false); return }
-    const{error:delErr}=await sb.from('purchases').delete().eq('id', confirmDelete.id)
+
+    // تعويض المخزون: لو الفاتورة أضافت كمية لمنتج مخزون، نطرحها الآن (نلغي أثر الفاتورة)
+    if(confirmDelete.category==='مخزون' && confirmDelete.name && Number(confirmDelete.qty)>0){
+      const orgId=sessionStorage.getItem('s_org_id')||''
+      const bid=sessionStorage.getItem('s_branch_id')
+      let pq=sb.from('products').select('id').eq('org_id',orgId).eq('name',confirmDelete.name)
+      if(bid) pq=(pq as any).eq('branch_id',bid)
+      const{data:matched}=await pq.limit(1)
+      if(matched && matched.length>0){
+        await (sb.from('stock_movements') as any).insert({
+          product_id:matched[0].id, profile_id:user.id, type:'out',
+          qty_change:-Number(confirmDelete.qty), note:`إلغاء فاتورة شراء محذوفة (${confirmDelete.supplier||'—'})`,
+        })
+      }
+    }
+
+    const{error:delErr}=await (sb.from('purchases') as any).update({deleted_at:new Date().toISOString(),deleted_by:user.id}).eq('id', confirmDelete.id)
     if(delErr){setDeleteError('فشل الحذف — حاول مرة أخرى');setDeleting(false);return}
     setPurchases(prev => prev.filter(p => p.id !== confirmDelete.id))
     setConfirmDelete(null); setDeletePassword(''); setDeleting(false)
@@ -531,7 +547,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setLoading(false);return}
     const purchBid=sessionStorage.getItem('s_branch_id')
     const{start,end}=getRange(period,from,to)
-    let purchQ=sb.from('purchases').select('id,created_at,name,category,amount,vat_amount,total_amount,supplier,invoice_image,qty').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
+    let purchQ=sb.from('purchases').select('id,created_at,name,category,amount,vat_amount,total_amount,supplier,invoice_image,qty,unit').eq('org_id',orgId).is('deleted_at',null).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
     if(purchBid) purchQ=(purchQ as any).eq('branch_id',purchBid)
     const{data}=await purchQ.order('created_at',{ascending:false})
     setPurchases(data||[]); setLoading(false)
@@ -751,7 +767,7 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
     const{data:mvs}=await mq
 
     // purchases in period
-    let puq=sb.from('purchases').select('name,qty,unit,category').eq('org_id',orgId).eq('category','مخزون').gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
+    let puq=sb.from('purchases').select('name,qty,unit,category').eq('org_id',orgId).eq('category','مخزون').is('deleted_at',null).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
     if(branchId) puq=(puq as any).eq('branch_id',branchId)
     const{data:pus}=await puq
 
@@ -1300,7 +1316,7 @@ export default function ReportsPage() {
     const{start,end}=getRange(period,from,to)
     const[{data:mv},{data:pu},{data:wv}]=await Promise.all([
       (()=>{const _bid2=sessionStorage.getItem('s_branch_id');let _mq2=sb.from('stock_movements').select('qty_change,created_at,products!inner(name,org_id,branch_id)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bid2)_mq2=_mq2.eq('products.branch_id',_bid2);return _mq2})(),
-      (()=>{const _bidP=sessionStorage.getItem('s_branch_id');let _pq=sb.from('purchases').select('amount,total_amount,vat_amount,created_at,branch_id').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bidP)_pq=_pq.eq('branch_id',_bidP);return _pq})(),
+      (()=>{const _bidP=sessionStorage.getItem('s_branch_id');let _pq=sb.from('purchases').select('amount,total_amount,vat_amount,created_at,branch_id').eq('org_id',orgId).is('deleted_at',null).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bidP)_pq=_pq.eq('branch_id',_bidP);return _pq})(),
       (()=>{const _bidW=sessionStorage.getItem('s_branch_id');let _wq=sb.from('stock_movements').select('qty_change,created_at,products!inner(name,org_id,branch_id)').eq('type','waste').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bidW)_wq=_wq.eq('products.branch_id',_bidW);return _wq})(),
     ])
     const wasteItems=new Set((wv||[]).map((m:any)=>m.products?.name)).size
