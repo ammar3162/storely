@@ -24,11 +24,16 @@ interface PdfExportOptions {
  * كصورة حقيقية (بكسل بكسل) عبر html2canvas، ثم يدمجها داخل ملف PDF.
  * هذا يضمن ظهور النص العربي صحيحاً دائماً (بعكس محرك jsPDF النصي
  * الداخلي الذي لا يدعم الخطوط العربية).
+ *
+ * مهم: نقسّم الصفوف نفسها لمجموعات (صفحة = مجموعة)، ونلتقط كل مجموعة
+ * كصورة صغيرة مستقلة على حدة — بدل التقاط الجدول كامل كصورة وحدة طويلة
+ * (اللي كانت تنقطع بمنتصفها لو عدد الصفوف كبير، بسبب حد أقصى لحجم الصورة
+ * اللي يقدر المتصفح يرسمها). هذا يضمن عدم فقدان أي بيانات مهما كان
+ * حجم التقرير، وظهور صف "الإجمالي" دائماً بآخر صفحة.
  */
 export async function exportReportPdf(opts: PdfExportOptions) {
   const { title, subtitle, orgName, logoUrl, columns, rows, summaryStats, totalsRow, fileName } = opts
 
-  // طبقة تغطية بيضاء كاملة (تظهر كـ"شاشة تحميل" أثناء التصدير)
   const overlay = document.createElement('div')
   overlay.style.position = 'fixed'
   overlay.style.inset = '0'
@@ -43,10 +48,24 @@ export async function exportReportPdf(opts: PdfExportOptions) {
   const container = document.createElement('div')
   container.style.width = '780px'
   container.style.background = 'white'
-  container.style.padding = '32px'
   container.style.fontFamily = "'IBM Plex Sans Arabic', system-ui, sans-serif"
   container.style.direction = 'rtl'
   overlay.appendChild(container)
+
+  const headerHtml = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #16a34a">
+      <div style="display:flex;align-items:center;gap:10px">
+        ${logoUrl ? `<img src="${logoUrl}" style="width:36px;height:36px;border-radius:8px;object-fit:cover" crossorigin="anonymous" />` : ''}
+        <div>
+          <div style="font-size:20px;font-weight:800;color:#0f172a">${orgName}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">${title}${subtitle ? ' — ' + subtitle : ''}</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#94a3b8">
+        تاريخ الإصدار: ${new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })}
+      </div>
+    </div>
+  `
 
   const summaryHtml = summaryStats?.length
     ? `<div style="display:flex;gap:12px;margin-bottom:20px">
@@ -60,67 +79,76 @@ export async function exportReportPdf(opts: PdfExportOptions) {
     : ''
 
   const tableHeaderHtml = columns.map(c => `<th style="padding:10px 12px;background:#0f172a;color:white;font-size:11px;font-weight:700;text-align:${c.align || 'right'}">${c.header}</th>`).join('')
-  const tableRowsHtml = rows.map((r, i) => `
-    <tr style="background:${i % 2 === 0 ? 'white' : '#f8fafc'}">
-      ${columns.map(c => `<td style="padding:9px 12px;font-size:11px;color:#1e293b;border-bottom:1px solid #f1f5f9;text-align:${c.align || 'right'}">${r[c.key] ?? '—'}</td>`).join('')}
-    </tr>
-  `).join('')
 
-  const totalsRowHtml = totalsRow
-    ? `<tr style="background:#f0fdf4;border-top:2px solid #16a34a">
-        ${columns.map(c => `<td style="padding:11px 12px;font-size:11px;font-weight:800;color:#16a34a;text-align:${c.align || 'right'}">${totalsRow[c.key] ?? ''}</td>`).join('')}
-      </tr>`
-    : ''
+  function rowsTableHtml(rowsChunk: Record<string, any>[], includeTotals: boolean) {
+    const bodyHtml = rowsChunk.map((r, i) => `
+      <tr style="background:${i % 2 === 0 ? 'white' : '#f8fafc'}">
+        ${columns.map(c => `<td style="padding:9px 12px;font-size:11px;color:#1e293b;border-bottom:1px solid #f1f5f9;text-align:${c.align || 'right'}">${r[c.key] ?? '—'}</td>`).join('')}
+      </tr>
+    `).join('')
+    const totalsHtml = includeTotals && totalsRow
+      ? `<tr style="background:#f0fdf4;border-top:2px solid #16a34a">
+          ${columns.map(c => `<td style="padding:11px 12px;font-size:11px;font-weight:800;color:#16a34a;text-align:${c.align || 'right'}">${totalsRow[c.key] ?? ''}</td>`).join('')}
+        </tr>`
+      : ''
+    return `
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>${tableHeaderHtml}</tr></thead>
+        <tbody>${bodyHtml}${totalsHtml}</tbody>
+      </table>
+    `
+  }
 
-  container.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #16a34a">
-      <div style="display:flex;align-items:center;gap:10px">
-        ${logoUrl ? `<img src="${logoUrl}" style="width:36px;height:36px;border-radius:8px;object-fit:cover" crossorigin="anonymous" />` : ''}
-        <div>
-          <div style="font-size:20px;font-weight:800;color:#0f172a">${orgName}</div>
-          <div style="font-size:12px;color:#64748b;margin-top:2px">${title}${subtitle ? ' — ' + subtitle : ''}</div>
-        </div>
-      </div>
-      <div style="font-size:11px;color:#94a3b8">
-        تاريخ الإصدار: ${new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })}
-      </div>
-    </div>
-    ${summaryHtml}
-    <table style="width:100%;border-collapse:collapse">
-      <thead><tr>${tableHeaderHtml}</tr></thead>
-      <tbody>${tableRowsHtml}${totalsRowHtml}</tbody>
-    </table>
+  const footerHtml = `
     <div style="margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;text-align:center;line-height:1.8">
       <div>تم إنشاء هذا التقرير تلقائياً عبر نظام Storely</div>
       <div style="margin-top:2px">© ${new Date().getFullYear()} Storely — جميع الحقوق محفوظة</div>
     </div>
   `
 
+  // تقسيم الصفوف لمجموعات (صفحة = مجموعة صغيرة، آخر صفحة فيها الإجمالي دائماً)
+  const ROWS_PER_PAGE_FIRST = 16
+  const ROWS_PER_PAGE_OTHER = 24
+  type PageChunk = { rowsChunk: Record<string, any>[]; includeHeader: boolean; includeTotals: boolean; isLast: boolean }
+  const pages: PageChunk[] = []
+  if (rows.length === 0) {
+    pages.push({ rowsChunk: [], includeHeader: true, includeTotals: true, isLast: true })
+  } else {
+    let idx = 0
+    let first = true
+    while (idx < rows.length) {
+      const perPage = first ? ROWS_PER_PAGE_FIRST : ROWS_PER_PAGE_OTHER
+      const chunk = rows.slice(idx, idx + perPage)
+      idx += perPage
+      const isLast = idx >= rows.length
+      pages.push({ rowsChunk: chunk, includeHeader: first, includeTotals: isLast, isLast })
+      first = false
+    }
+  }
+
   try {
-    // انتظار قصير لضمان اكتمال تحميل الخط قبل الالتقاط
-    await new Promise(r => setTimeout(r, 150))
-
-    const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff', useCORS: true })
-    const imgData = canvas.toDataURL('image/jpeg', 0.95)
-
     const pdf = new jsPDF('p', 'mm', 'a4')
     const pageWidth = 210
-    const pageHeight = 297
-    const imgWidth = pageWidth - 20 // هوامش 10مم كل جانب
-    const imgHeight = (canvas.height * imgWidth) / canvas.width
+    const marginX = 10
+    const imgWidth = pageWidth - marginX * 2
 
-    let heightLeft = imgHeight
-    let position = 10
+    for (let p = 0; p < pages.length; p++) {
+      const { rowsChunk, includeHeader, includeTotals, isLast } = pages[p]
+      container.innerHTML = `
+        <div style="padding:32px">
+          ${includeHeader ? headerHtml + summaryHtml : ''}
+          ${rowsTableHtml(rowsChunk, includeTotals)}
+          ${isLast ? footerHtml : ''}
+        </div>
+      `
+      // انتظار قصير لضمان اكتمال تحميل الخط قبل الالتقاط
+      await new Promise(r => setTimeout(r, 120))
+      const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff', useCORS: true })
+      const imgData = canvas.toDataURL('image/jpeg', 0.95)
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
 
-    pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight)
-    heightLeft -= (pageHeight - 20)
-
-    // لو المحتوى أطول من صفحة وحدة، نكمل بصفحات إضافية
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight + 10
-      pdf.addPage()
-      pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight)
-      heightLeft -= (pageHeight - 20)
+      if (p > 0) pdf.addPage()
+      pdf.addImage(imgData, 'JPEG', marginX, 10, imgWidth, imgHeight)
     }
 
     pdf.save(fileName)
