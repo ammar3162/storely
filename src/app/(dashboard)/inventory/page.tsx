@@ -510,7 +510,7 @@ export default function InventoryPage() {
                       </div>
                       <div>
                         <label style={lbl}>الكمية بالوحدة الدقيقة</label>
-                        <input type="number" min="0.0001" step="0.01" value={form.recipe_unit_factor} onChange={e=>setForm({...form,recipe_unit_factor:e.target.value})} style={{...inp(),fontSize:11,borderColor:'#e9d5ff'}} placeholder={`1 ${form.unit} = ؟ ${form.recipe_unit||'وحدة'}`}/>
+                        <input type="number" min="0" step="any" value={form.recipe_unit_factor} onChange={e=>setForm({...form,recipe_unit_factor:e.target.value})} style={{...inp(),fontSize:11,borderColor:'#e9d5ff'}} placeholder={`1 ${form.unit} = ؟ ${form.recipe_unit||'وحدة'}`}/>
                       </div>
                     </div>
                     {form.recipe_unit && form.recipe_unit_factor && Number(form.recipe_unit_factor)>0 && (
