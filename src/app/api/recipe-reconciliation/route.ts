@@ -8,6 +8,8 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
  * تقرير تقدير إنتاج الوصفات — يعتمد بالكامل على الاستهلاك الفعلي للمواد الخام
  * (حركات الصرف الحقيقية اللي يسجّلها الموظفون يدوياً)، مقارنةً بمكونات كل وصفة معرّفة،
  * ليقدّر "كم وحدة من كل وصفة تم تحضيرها تقريباً" — بدون أي تسجيل مبيعات مباشر.
+ * كمان يحسب تكلفة الإنتاج التقديرية: تكلفة الوحدة الواحدة (من متوسط سعر شراء كل مكوّن)
+ * × عدد الوحدات المُقدّرة = التكلفة الإجمالية لإنتاج الفترة.
  */
 export async function POST(req: Request) {
   try {
@@ -32,7 +34,7 @@ export async function POST(req: Request) {
     const { data: recipeItems } = await (db as any).from('recipe_items').select('recipe_id,component_product_id,qty').in('recipe_id', recipeIds)
 
     if (!recipeItems || recipeItems.length === 0) {
-      return NextResponse.json({ hasData: true, recipes: recipes.map((r: any) => ({ id: r.id, name: r.name, estimatedProduced: 0, components: [] })) })
+      return NextResponse.json({ hasData: true, recipes: recipes.map((r: any) => ({ id: r.id, name: r.name, estimatedProduced: 0, costPerUnit: null, totalCost: null, components: [] })) })
     }
 
     const componentIds = [...new Set(recipeItems.map((r: any) => r.component_product_id))]
@@ -56,18 +58,34 @@ export async function POST(req: Request) {
       consumed[r.product_id] = (consumed[r.product_id] || 0) + Math.abs(r.qty_change)
     }
 
+    // متوسط سعر الوحدة لكل مكوّن (من سجل المشتريات، بنفس منهج تقرير الهدر وحاسبة التكلفة بنافذة الوصفة)
+    let purQ = db.from('purchases').select('name,qty,total_amount').eq('org_id', org_id).not('total_amount', 'is', null).not('qty', 'is', null)
+    if (branch_id) purQ = purQ.eq('branch_id', branch_id)
+    const { data: purchases } = await purQ
+    const priceTotals: Record<string, { total: number; qty: number }> = {}
+    for (const p of (purchases || []) as any[]) {
+      const nm = p.name; const qty = Number(p.qty) || 0; const amt = Number(p.total_amount) || 0
+      if (!nm || qty <= 0) continue
+      if (!priceTotals[nm]) priceTotals[nm] = { total: 0, qty: 0 }
+      priceTotals[nm].total += amt; priceTotals[nm].qty += qty
+    }
+    const priceMap: Record<string, number> = {}
+    for (const nm in priceTotals) priceMap[nm] = priceTotals[nm].qty > 0 ? priceTotals[nm].total / priceTotals[nm].qty : 0
+
     const report = recipes.map((r: any) => {
       const items = recipeItems.filter((ri: any) => ri.recipe_id === r.id)
       const components = items.map((ri: any) => {
         const comp = compMap[ri.component_product_id]
         const totalConsumed = consumed[ri.component_product_id] || 0
         const impliedCount = ri.qty > 0 ? Math.round((totalConsumed / ri.qty) * 10) / 10 : 0
+        const unitPrice = comp ? (priceMap[comp.name] || 0) : 0
         return {
           name: comp?.name || '—',
           unit: comp?.unit || '',
           consumed: Math.round(totalConsumed * 100) / 100,
           qtyPerUnit: ri.qty,
           impliedCount,
+          costPerUnit: Math.round(unitPrice * ri.qty * 100) / 100,
         }
       })
       const allCounts = components.map((c: any) => c.impliedCount)
@@ -76,7 +94,18 @@ export async function POST(req: Request) {
       const avg = allCounts.length ? Math.round((allCounts.reduce((s: number, n: number) => s + n, 0) / allCounts.length) * 10) / 10 : 0
       const max = allCounts.length ? Math.max(...allCounts) : 0
       const bottleneck = components.find((c: any) => c.impliedCount === min)
-      return { id: r.id, name: r.name, estimatedProduced: min, avgEstimate: avg, maxEstimate: max, bottleneckName: bottleneck?.name || null, components }
+
+      // تكلفة الوحدة = مجموع تكلفة كل مكوّن بمكونات الوصفة (بغض النظر عن الاستهلاك الفعلي)
+      const costPerUnit = components.reduce((s: number, c: any) => s + c.costPerUnit, 0)
+      const hasCostData = costPerUnit > 0
+      const totalCost = hasCostData ? Math.round(costPerUnit * min * 100) / 100 : null
+
+      return {
+        id: r.id, name: r.name, estimatedProduced: min, avgEstimate: avg, maxEstimate: max,
+        bottleneckName: bottleneck?.name || null, components,
+        costPerUnit: hasCostData ? Math.round(costPerUnit * 100) / 100 : null,
+        totalCost,
+      }
     })
 
     return NextResponse.json({ hasData: true, recipes: report })

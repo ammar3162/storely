@@ -634,6 +634,16 @@ export default function AIToolsPage() {
               <span style={{fontSize:11}}>اضغط "+ وصفة جديدة" وأضف اسمها ومكوناتها أولاً</span>
             </div>
           ) : (
+            <>
+              {(()=>{
+                const grandTotal = recipeReconReport.recipes.reduce((s:number,r:any)=>s+(r.totalCost||0),0)
+                return grandTotal>0 && (
+                  <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:10,padding:'12px 14px',marginBottom:12,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <span style={{fontSize:12,fontWeight:700,color:'#166534'}}>💰 إجمالي تكلفة الإنتاج التقديرية</span>
+                    <span style={{fontSize:18,fontWeight:900,color:'#16a34a'}}>{grandTotal.toFixed(2)} ر.س</span>
+                  </div>
+                )
+              })()}
             <div style={{display:'flex',flexDirection:'column' as const,gap:12}}>
               {recipeReconReport.recipes.map((r:any)=>(
                 <div key={r.id} style={{background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,padding:'12px 14px'}}>
@@ -641,6 +651,12 @@ export default function AIToolsPage() {
                     <span style={{fontSize:13,fontWeight:700,color:C.text}}>{r.name}</span>
                     <span style={{fontSize:16,fontWeight:900,color:'#7c3aed'}}>{r.estimatedProduced} وحدة</span>
                   </div>
+                  {r.totalCost!==null && r.totalCost!==undefined && (
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,background:'#f0fdf4',borderRadius:7,padding:'6px 10px'}}>
+                      <span style={{fontSize:10,color:'#166534'}}>تكلفة الوحدة: {r.costPerUnit} ر.س</span>
+                      <span style={{fontSize:12,fontWeight:800,color:'#16a34a'}}>الإجمالي: {r.totalCost} ر.س</span>
+                    </div>
+                  )}
                   {r.bottleneckName && (
                     <div style={{fontSize:9,color:'#b45309',marginBottom:8}}>⚠️ محدَّد بواسطة: {r.bottleneckName} (المكوّن الأقل توفراً)</div>
                   )}
@@ -662,6 +678,7 @@ export default function AIToolsPage() {
                 </div>
               ))}
             </div>
+            </>
           )}
         </div>
       )}
