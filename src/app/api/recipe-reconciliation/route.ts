@@ -42,10 +42,26 @@ export async function POST(req: Request) {
     const compMap: Record<string, any> = {}
     for (const c of (componentProducts || [])) compMap[(c as any).id] = c
 
+    // كل فرع يقدّر إنتاجه من مخزونه الخاص — الوصفة مرتبطة بمنتج فرع معيّن وقت إنشائها،
+    // فنحوّل كل مكوّن لصف المنتج المطابق بنفس الاسم بالفرع المختار حالياً (لو محدد فرع)
+    const resolveMap: Record<string, string> = {}
+    for (const id of componentIds as string[]) resolveMap[id] = id
+    if (branch_id) {
+      const compNames = [...new Set(Object.values(compMap).map((c: any) => c.name))]
+      const { data: branchProducts } = await db.from('products').select('id,name').eq('org_id', org_id).eq('branch_id', branch_id).in('name', compNames as string[])
+      const nameToBranchId: Record<string, string> = {}
+      for (const bp of (branchProducts || []) as any[]) nameToBranchId[bp.name] = bp.id
+      for (const id of componentIds as string[]) {
+        const nm = compMap[id]?.name
+        if (nm && nameToBranchId[nm]) resolveMap[id] = nameToBranchId[nm]
+      }
+    }
+    const resolvedIds = [...new Set(Object.values(resolveMap))]
+
     let movesQ = (db as any).from('stock_movements')
       .select('product_id,qty_change,products!inner(org_id,branch_id)')
       .eq('type', 'out')
-      .in('product_id', componentIds as string[])
+      .in('product_id', resolvedIds)
       .eq('products.org_id', org_id)
       .gte('created_at', since30)
     if (untilDate) movesQ = movesQ.lte('created_at', untilDate)
@@ -76,7 +92,7 @@ export async function POST(req: Request) {
       const items = recipeItems.filter((ri: any) => ri.recipe_id === r.id)
       const components = items.map((ri: any) => {
         const comp = compMap[ri.component_product_id]
-        const totalConsumed = consumed[ri.component_product_id] || 0
+        const totalConsumed = consumed[resolveMap[ri.component_product_id] || ri.component_product_id] || 0
         const impliedCount = ri.qty > 0 ? Math.round((totalConsumed / ri.qty) * 10) / 10 : 0
         const unitPrice = comp ? (priceMap[comp.name] || 0) : 0
         return {
