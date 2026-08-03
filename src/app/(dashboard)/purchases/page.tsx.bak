@@ -32,7 +32,6 @@ export default function PurchasesPage() {
   const [payables, setPayables]     = useState<any[]>([])
   const [showPayables, setShowPayables] = useState(false)
   const [payingId, setPayingId]     = useState<string|null>(null)
-  const [deletingId, setDeletingId] = useState<string|null>(null)
   const [products, setProducts]     = useState<any[]>([])
   const [isExisting, setIsExisting] = useState<boolean|null>(null)
   const [orgId, setOrgId]           = useState('')
@@ -123,34 +122,6 @@ export default function PurchasesPage() {
     if(error){toast('فشل تحديث الحالة — حاول مرة أخرى','error');return}
     toast('✅ تم تسجيل الدفع')
     setPayables(prev=>prev.filter((p:any)=>p.id!==id))
-  }
-
-  async function deletePurchase(purchase:any) {
-    const confirmMsg = purchase.category==='مخزون' && purchase.qty
-      ? `تأكيد حذف فاتورة "${purchase.name}"؟\n\nسيتم أيضاً طرح ${purchase.qty} ${purchase.unit||''} من المخزون (لأن الفاتورة أضافتها سابقاً).`
-      : `تأكيد حذف فاتورة "${purchase.name}"؟`
-    if(!window.confirm(confirmMsg)) return
-    setDeletingId(purchase.id)
-
-    if(purchase.category==='مخزون' && purchase.name && Number(purchase.qty)>0){
-      const bid=sessionStorage.getItem('s_branch_id')
-      let pq=sb.from('products').select('id').eq('org_id',orgId).eq('name',purchase.name)
-      if(bid) pq=pq.eq('branch_id',bid)
-      const{data:matched}=await pq.limit(1)
-      if(matched && matched.length>0){
-        await (sb.from('stock_movements') as any).insert({
-          product_id:matched[0].id, profile_id:userId, type:'out',
-          qty_change:-Number(purchase.qty), note:`إلغاء فاتورة شراء محذوفة (${purchase.supplier||'—'})`,
-        })
-      }
-    }
-
-    const{error}=await sb.from('purchases').delete().eq('id',purchase.id)
-    setDeletingId(null)
-    if(error){toast('فشل حذف الفاتورة — حاول مرة أخرى','error');return}
-    toast('🗑️ تم حذف الفاتورة')
-    setHistory(prev=>prev.filter((p:any)=>p.id!==purchase.id))
-    cache.invalidate('purchases:');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
   }
 
   async function compressImage(file:File): Promise<Blob> {
@@ -804,16 +775,10 @@ export default function PurchasesPage() {
                         <span>{new Date(p.created_at).toLocaleDateString('ar-SA',{day:'numeric',month:'short'})}</span>
                       </div>
                     </div>
-                    <div style={{textAlign:'left',flexShrink:0,display:'flex',flexDirection:'column' as const,alignItems:'flex-end',gap:6}}>
-                      <div>
-                        <div style={{fontSize:15,fontWeight:700,color:C.primary,fontVariantNumeric:'tabular-nums'}}>{Number(p.total_amount||0).toFixed(0)}</div>
-                        <div style={{fontSize:10,color:C.text4}}>{curr}</div>
-                        {Number(p.vat_amount||0)>0&&<div style={{fontSize:10,color:C.warning,marginTop:1}}>+{Number(p.vat_amount||0).toFixed(0)} ض</div>}
-                      </div>
-                      <button onClick={()=>deletePurchase(p)} disabled={deletingId===p.id}
-                        style={{padding:'3px 9px',borderRadius:6,border:`1px solid ${C.dangerB}`,background:C.dangerL,color:C.danger,fontSize:10,fontWeight:700,cursor:deletingId===p.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:deletingId===p.id?.6:1}}>
-                        {deletingId===p.id?'...':'🗑️ حذف'}
-                      </button>
+                    <div style={{textAlign:'left',flexShrink:0}}>
+                      <div style={{fontSize:15,fontWeight:700,color:C.primary,fontVariantNumeric:'tabular-nums'}}>{Number(p.total_amount||0).toFixed(0)}</div>
+                      <div style={{fontSize:10,color:C.text4}}>{curr}</div>
+                      {Number(p.vat_amount||0)>0&&<div style={{fontSize:10,color:C.warning,marginTop:1}}>+{Number(p.vat_amount||0).toFixed(0)} ض</div>}
                     </div>
                   </div>
                 </div>
