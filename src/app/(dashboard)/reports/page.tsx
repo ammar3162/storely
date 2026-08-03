@@ -581,6 +581,16 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
           { label: 'ضريبة 15%', value: totalVat.toFixed(0) + ' ' + curr, color: colors.warning },
           { label: 'الإجمالي', value: totalWithVat.toFixed(0) + ' ' + curr, color: colors.primary },
         ],
+        totalsRow: {
+          date: '',
+          name: `الإجمالي (${filtered.length} فاتورة)`,
+          category: '',
+          amount: totalAmount.toFixed(2) + ' ' + curr,
+          vat: totalVat.toFixed(2) + ' ' + curr,
+          total: totalWithVat.toFixed(2) + ' ' + curr,
+          supplier: '',
+          invoice: '',
+        },
         fileName: `تقرير-المشتريات-${new Date().toISOString().slice(0,10)}.pdf`,
       })
     } catch { alert('تعذر تصدير التقرير') }
