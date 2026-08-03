@@ -946,17 +946,39 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
   const [customSubCount,setCustomSubCount]=useState('')
   const [saving,setSaving]=useState(false)
   const [loadingEdit,setLoadingEdit]=useState(!!editingRecipeId)
+  const [priceMap,setPriceMap]=useState<Record<string,number>>({})
+  const [sellPrice,setSellPrice]=useState('')
 
   useEffect(()=>{
     if(!editingRecipeId) return
     ;(async()=>{
-      const{data:recipe}=await (sb.from('recipes' as any) as any).select('name').eq('id',editingRecipeId).single()
-      if(recipe) setName(recipe.name)
+      const{data:recipe}=await (sb.from('recipes' as any) as any).select('name,sell_price').eq('id',editingRecipeId).single()
+      if(recipe){ setName(recipe.name); if(recipe.sell_price) setSellPrice(String(recipe.sell_price)) }
       const{data:items}=await sb.from('recipe_items').select('component_product_id,qty').eq('recipe_id',editingRecipeId)
       setComponents((items||[]).map((it:any)=>({component_product_id:it.component_product_id,qty:String(it.qty)})))
       setLoadingEdit(false)
     })()
   },[editingRecipeId])
+
+  // متوسط سعر الشراء لكل مادة خام (نفس منهج تقرير الهدر) — يُستخدم لتقدير تكلفة الوصفة
+  useEffect(()=>{
+    if(!orgId) return
+    ;(async()=>{
+      let purQ = sb.from('purchases').select('name,qty,total_amount').eq('org_id',orgId).not('total_amount','is',null).not('qty','is',null)
+      if(branchId) purQ = purQ.eq('branch_id',branchId)
+      const{data:purchases}=await purQ
+      const totals:Record<string,{total:number,qty:number}>={}
+      for(const p of (purchases||[]) as any[]){
+        const nm=p.name; const qty=Number(p.qty)||0; const amt=Number(p.total_amount)||0
+        if(!nm||qty<=0) continue
+        if(!totals[nm]) totals[nm]={total:0,qty:0}
+        totals[nm].total+=amt; totals[nm].qty+=qty
+      }
+      const map:Record<string,number>={}
+      for(const nm in totals) map[nm]=totals[nm].qty>0 ? totals[nm].total/totals[nm].qty : 0
+      setPriceMap(map)
+    })()
+  },[orgId])
 
   function subUnitOptions(component:any) {
     const u=(component?.unit||'').trim()
@@ -1012,12 +1034,13 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
     }
 
     let recipeId = editingRecipeId
+    const sellPriceVal = sellPrice ? Number(sellPrice) : null
     if(editingRecipeId){
-      const{error:updErr}=await (sb.from('recipes' as any) as any).update({name:name.trim()}).eq('id',editingRecipeId)
+      const{error:updErr}=await (sb.from('recipes' as any) as any).update({name:name.trim(),sell_price:sellPriceVal}).eq('id',editingRecipeId)
       if(updErr){toast('فشل تحديث الوصفة — حاول مرة أخرى','error');setSaving(false);return}
       await sb.from('recipe_items').delete().eq('recipe_id',editingRecipeId)
     } else {
-      const{data:nr,error}=await (sb.from('recipes' as any) as any).insert({org_id:orgId,branch_id:branchId||null,name:name.trim()}).select().single()
+      const{data:nr,error}=await (sb.from('recipes' as any) as any).insert({org_id:orgId,branch_id:branchId||null,name:name.trim(),sell_price:sellPriceVal}).select().single()
       if(error||!nr){toast('فشل حفظ الوصفة — حاول مرة أخرى','error');setSaving(false);return}
       recipeId = nr.id
     }
@@ -1050,10 +1073,15 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
         <div style={{display:'flex',flexDirection:'column' as const,gap:6,marginBottom:8}}>
           {components.map(c=>{
             const comp=rawMaterials.find(r=>r.id===c.component_product_id)
+            const unitPrice = comp ? (priceMap[comp.name]||0) : 0
+            const compCost = unitPrice * Number(c.qty)
             return (
               <div key={c.component_product_id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'#f9fafb',border:'1px solid #e5e7eb',borderRadius:8,padding:'6px 10px'}}>
                 <span style={{fontSize:11}}>{comp?.name||'—'} — {c.qty} {comp?.unit}</span>
-                <button onClick={()=>setComponents(prev=>prev.filter(x=>x.component_product_id!==c.component_product_id))} style={{background:'none',border:'none',color:'#ef4444',cursor:'pointer',fontSize:14}}>×</button>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  {unitPrice>0 && <span style={{fontSize:10,color:'#16a34a',fontWeight:700}}>{compCost.toFixed(2)} ر.س</span>}
+                  <button onClick={()=>setComponents(prev=>prev.filter(x=>x.component_product_id!==c.component_product_id))} style={{background:'none',border:'none',color:'#ef4444',cursor:'pointer',fontSize:14}}>×</button>
+                </div>
               </div>
             )
           })}
@@ -1087,6 +1115,39 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
         )})()}
         <button onClick={addComp} style={{padding:'0 12px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:16,fontWeight:700,cursor:'pointer'}}>+</button>
       </div>
+
+      {(()=>{
+        const totalCost = components.reduce((s,c)=>{
+          const comp=rawMaterials.find(r=>r.id===c.component_product_id)
+          const unitPrice = comp ? (priceMap[comp.name]||0) : 0
+          return s + unitPrice*Number(c.qty)
+        },0)
+        const hasCostData = totalCost>0
+        const foodCostPct = hasCostData && sellPrice && Number(sellPrice)>0 ? (totalCost/Number(sellPrice))*100 : null
+        return (
+          <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:10,padding:12,marginBottom:16}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:hasCostData?10:0}}>
+              <span style={{fontSize:11,fontWeight:700,color:'#166534'}}>💰 التكلفة التقديرية</span>
+              <span style={{fontSize:15,fontWeight:900,color:'#16a34a'}}>{hasCostData ? totalCost.toFixed(2)+' ر.س' : 'لا توجد بيانات أسعار'}</span>
+            </div>
+            {hasCostData && (
+              <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                <div style={{flex:1}}>
+                  <label style={{fontSize:10,color:'#166534',display:'block',marginBottom:4}}>سعر البيع (اختياري)</label>
+                  <input type="number" min="0" step="0.01" value={sellPrice} onChange={(e:any)=>setSellPrice(e.target.value)} placeholder="مثال: 25" style={{width:'100%',padding:'7px 10px',border:'1px solid #bbf7d0',borderRadius:7,fontSize:12}}/>
+                </div>
+                {foodCostPct!==null && (
+                  <div style={{textAlign:'center' as const,padding:'4px 12px'}}>
+                    <div style={{fontSize:16,fontWeight:900,color:foodCostPct<=30?'#16a34a':foodCostPct<=35?'#d97706':'#dc2626'}}>{foodCostPct.toFixed(0)}%</div>
+                    <div style={{fontSize:9,color:'#6b7280'}}>Food Cost</div>
+                  </div>
+                )}
+              </div>
+            )}
+            {!hasCostData && <div style={{fontSize:10,color:'#6b7280'}}>سجّل مشتريات لهذي المكوّنات عشان تظهر التكلفة تلقائياً</div>}
+          </div>
+        )
+      })()}
 
       <div style={{display:'flex',gap:8}}>
         <button onClick={onClose} style={{flex:1,padding:'11px',background:'#f9fafb',color:'#374151',border:'1px solid #e5e7eb',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
