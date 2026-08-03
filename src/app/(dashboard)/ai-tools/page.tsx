@@ -564,7 +564,7 @@ export default function AIToolsPage() {
       <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
         <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <span style={{fontSize:18}}>🍔</span>
+            <span style={{fontSize:18}}>📋</span>
             <div style={{flex:1}}>
               <div style={{fontSize:13,fontWeight:700,color:C.text}}>الوصفات وتقدير الإنتاج</div>
               <div style={{fontSize:11,color:C.text3}}>عرّف وصفة (اسم + مكوناتها)، والنظام يقدّر كم وحدة تم تحضيرها بناءً على استهلاك موظفيك الفعلي للمواد الخام</div>
@@ -625,7 +625,7 @@ export default function AIToolsPage() {
 
       {recipeReconReport && (
         <div style={{marginTop:16,background:C.surface,borderRadius:14,padding:'20px',border:'1.5px solid #ddd6fe'}}>
-          <div style={{fontSize:14,fontWeight:800,color:'#5b21b6',marginBottom:4}}>🍔 تقدير الإنتاج ({reconFrom||reconTo ? `${reconFrom||'البداية'} إلى ${reconTo||'اليوم'}` : 'آخر 30 يوم'})</div>
+          <div style={{fontSize:14,fontWeight:800,color:'#5b21b6',marginBottom:4}}>📋 تقدير الإنتاج ({reconFrom||reconTo ? `${reconFrom||'البداية'} إلى ${reconTo||'اليوم'}` : 'آخر 30 يوم'})</div>
           <div style={{fontSize:11,color:'#7c3aed',marginBottom:16}}>محسوب من استهلاك المواد الخام الفعلي ÷ مكونات كل وصفة</div>
 
           {!recipeReconReport.hasData ? (
@@ -1041,9 +1041,9 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
 
   return (
     <div onClick={(e:any)=>e.stopPropagation()} style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,maxHeight:'85vh',overflowY:'auto',padding:20,fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl' as const}}>
-      <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>🍔 {editingRecipeId?'تعديل الوصفة':'وصفة جديدة'}</div>
+      <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>📋 {editingRecipeId?'تعديل الوصفة':'وصفة جديدة'}</div>
       <label style={{fontSize:11,fontWeight:700,color:'#6b7280',display:'block',marginBottom:5}}>اسم الوصفة *</label>
-      <input value={name} onChange={(e:any)=>setName(e.target.value)} placeholder="مثال: برجر بالجبن" style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e7eb',borderRadius:9,fontSize:13,marginBottom:14,fontFamily:'inherit'}}/>
+      <input value={name} onChange={(e:any)=>setName(e.target.value)} placeholder="مثال: اسم المنتج النهائي" style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e7eb',borderRadius:9,fontSize:13,marginBottom:14,fontFamily:'inherit'}}/>
 
       <div style={{fontSize:12,fontWeight:700,marginBottom:8}}>مكوّنات الوصفة</div>
       {components.length>0 && (
