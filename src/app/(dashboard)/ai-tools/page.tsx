@@ -90,7 +90,10 @@ export default function AIToolsPage() {
   async function openEditRecipe(id:string) {
     const orgId=sessionStorage.getItem('s_org_id')
     if(!orgId) return
-    const{data}=await sb.from('products').select('id,name,unit,recipe_unit,recipe_unit_factor').eq('org_id',orgId).eq('is_active',true)
+    const bid=sessionStorage.getItem('s_branch_id')
+    let rmQ=sb.from('products').select('id,name,unit,recipe_unit,recipe_unit_factor').eq('org_id',orgId).eq('is_active',true)
+    if(bid) rmQ=rmQ.eq('branch_id',bid)
+    const{data}=await rmQ
     setRawMaterials(data||[])
     setEditingRecipeId(id)
     setShowRecipeModal(true)
@@ -583,7 +586,10 @@ export default function AIToolsPage() {
             <button onClick={async()=>{
               const orgId=sessionStorage.getItem('s_org_id')
               if(!orgId) return
-              const{data}=await sb.from('products').select('id,name,unit,recipe_unit,recipe_unit_factor').eq('org_id',orgId).eq('is_active',true)
+              const bid2=sessionStorage.getItem('s_branch_id')
+              let rmQ2=sb.from('products').select('id,name,unit,recipe_unit,recipe_unit_factor').eq('org_id',orgId).eq('is_active',true)
+              if(bid2) rmQ2=rmQ2.eq('branch_id',bid2)
+              const{data}=await rmQ2
               setRawMaterials(data||[])
               setShowRecipeModal(true)
             }} style={{flex:1,padding:'8px 14px',background:'white',color:'#7c3aed',border:'1.5px solid #ddd6fe',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
