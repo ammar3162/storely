@@ -633,7 +633,7 @@ export default function PurchasesPage() {
             <div style={{marginBottom:10}}>
               <label style={lbl}>حالة الدفع</label>
               <div style={{display:'flex',gap:8}}>
-                <button type="button" onClick={()=>setForm({...form,payment_status:'paid'})}
+                <button type="button" onClick={()=>setForm({...form,payment_status:'unpaid'})}
                   style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.payment_status==='unpaid'?C.danger:C.border}`,background:form.payment_status==='unpaid'?C.dangerL:'white',color:form.payment_status==='unpaid'?C.danger:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                   <Clock size={13} strokeWidth={2.3}/> غير مدفوعة
                 </button>
