@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { createClient } from '@/lib/supabase/client'
 import { colors as dsColors } from '@/lib/ds'
+import { toast } from '@/components/toast'
 
 // موحّد مع نظام التصميم المشترك (@/lib/ds)
 const C = {
@@ -58,6 +59,45 @@ export default function AIToolsPage() {
   const [wasteReport, setWasteReport] = useState<any[]>([])
   const [wasteLoading, setWasteLoading] = useState(false)
   const [realWasteReport, setRealWasteReport] = useState<any>(null)
+  const [recipeReconReport, setRecipeReconReport] = useState<any>(null)
+  const [reconLoading, setReconLoading] = useState(false)
+  const [showRecipeModal, setShowRecipeModal] = useState(false)
+  const [rawMaterials, setRawMaterials] = useState<any[]>([])
+  const [recipesList, setRecipesList] = useState<any[]>([])
+  const [showRecipesList, setShowRecipesList] = useState(false)
+  const [editingRecipeId, setEditingRecipeId] = useState<string|null>(null)
+  const [deletingRecipeId, setDeletingRecipeId] = useState<string|null>(null)
+  const [reconFrom, setReconFrom] = useState('')
+  const [reconTo, setReconTo] = useState('')
+
+  async function loadRecipesList() {
+    const orgId=sessionStorage.getItem('s_org_id')
+    if(!orgId) return
+    const{data}=await (sb.from('recipes' as any) as any).select('id,name').eq('org_id',orgId).order('created_at',{ascending:false})
+    setRecipesList(data||[])
+  }
+
+  async function deleteRecipe(id:string) {
+    if(!confirm('حذف هذي الوصفة؟ هذا الإجراء لا يمكن التراجع عنه.')) return
+    setDeletingRecipeId(id)
+    const{error}=await (sb.from('recipes' as any) as any).delete().eq('id',id)
+    setDeletingRecipeId(null)
+    if(error){toast('فشل حذف الوصفة — حاول مرة أخرى','error');return}
+    toast('✅ تم حذف الوصفة')
+    setRecipesList(prev=>prev.filter(r=>r.id!==id))
+  }
+
+  async function openEditRecipe(id:string) {
+    const orgId=sessionStorage.getItem('s_org_id')
+    if(!orgId) return
+    const bid=sessionStorage.getItem('s_branch_id')
+    let rmQ=sb.from('products').select('id,name,unit,recipe_unit,recipe_unit_factor').eq('org_id',orgId).eq('is_active',true)
+    if(bid) rmQ=rmQ.eq('branch_id',bid)
+    const{data}=await rmQ
+    setRawMaterials(data||[])
+    setEditingRecipeId(id)
+    setShowRecipeModal(true)
+  }
   const [realWasteLoading, setRealWasteLoading] = useState(false)
   const [reorderSuggestions, setReorderSuggestions] = useState<any>(null)
   const [reorderLoading, setReorderLoading] = useState(false)
@@ -523,6 +563,132 @@ export default function AIToolsPage() {
       </div>
       )}
 
+      {/* إدارة الوصفات وتقدير الإنتاج */}
+      <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
+        <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <span style={{fontSize:18}}>📋</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.text}}>الوصفات وتقدير الإنتاج</div>
+              <div style={{fontSize:11,color:C.text3}}>عرّف وصفة (اسم + مكوناتها)، والنظام يقدّر كم وحدة تم تحضيرها بناءً على استهلاك موظفيك الفعلي للمواد الخام</div>
+            </div>
+          </div>
+          <div style={{display:'flex',gap:6,alignItems:'center'}}>
+            <span style={{fontSize:10,color:C.text4,whiteSpace:'nowrap' as const}}>من</span>
+            <input type="date" value={reconFrom} onChange={e=>setReconFrom(e.target.value)} style={{flex:1,padding:'6px 8px',border:`1px solid ${C.border2}`,borderRadius:7,fontSize:10,fontFamily:'inherit'}}/>
+            <span style={{fontSize:10,color:C.text4,whiteSpace:'nowrap' as const}}>إلى</span>
+            <input type="date" value={reconTo} onChange={e=>setReconTo(e.target.value)} style={{flex:1,padding:'6px 8px',border:`1px solid ${C.border2}`,borderRadius:7,fontSize:10,fontFamily:'inherit'}}/>
+            {(reconFrom||reconTo) && (
+              <button onClick={()=>{setReconFrom('');setReconTo('')}} style={{padding:'4px 8px',background:'none',border:'none',color:'#7c3aed',fontSize:10,cursor:'pointer',fontFamily:'inherit',textDecoration:'underline',whiteSpace:'nowrap' as const}}>تصفير</button>
+            )}
+          </div>
+          <div style={{display:'flex',gap:8}}>
+            <button onClick={async()=>{
+              const orgId=sessionStorage.getItem('s_org_id')
+              if(!orgId) return
+              const bid2=sessionStorage.getItem('s_branch_id')
+              let rmQ2=sb.from('products').select('id,name,unit,recipe_unit,recipe_unit_factor').eq('org_id',orgId).eq('is_active',true)
+              if(bid2) rmQ2=rmQ2.eq('branch_id',bid2)
+              const{data}=await rmQ2
+              setRawMaterials(data||[])
+              setShowRecipeModal(true)
+            }} style={{flex:1,padding:'8px 14px',background:'white',color:'#7c3aed',border:'1.5px solid #ddd6fe',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+              + وصفة جديدة
+            </button>
+            <button onClick={async()=>{
+              const orgId=sessionStorage.getItem('s_org_id')
+              if(!orgId) return
+              setReconLoading(true)
+              const res=await fetch('/api/recipe-reconciliation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id'),from:reconFrom||undefined,to:reconTo||undefined})})
+              const data=await res.json()
+              setRecipeReconReport(data)
+              setReconLoading(false)
+            }} style={{flex:1,padding:'8px 14px',background:'#7c3aed',color:'white',border:'none',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+              {reconLoading?'⏳ جاري...':'تقدير الإنتاج'}
+            </button>
+          </div>
+          <button onClick={async()=>{ if(!showRecipesList) await loadRecipesList(); setShowRecipesList(v=>!v) }}
+            style={{padding:'6px 0',background:'none',border:'none',color:'#7c3aed',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textDecoration:'underline'}}>
+            {showRecipesList?'إخفاء الوصفات المسجّلة':'إدارة الوصفات (تعديل/حذف)'}
+          </button>
+          {showRecipesList && (
+            <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
+              {recipesList.length===0 ? (
+                <div style={{fontSize:11,color:C.text4,textAlign:'center' as const,padding:8}}>ما فيه وصفات مسجّلة بعد</div>
+              ) : recipesList.map((r:any)=>(
+                <div key={r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'white',border:`1px solid ${C.border2}`,borderRadius:8,padding:'8px 12px'}}>
+                  <span style={{fontSize:12,fontWeight:600,color:C.text}}>{r.name}</span>
+                  <div style={{display:'flex',gap:6}}>
+                    <button onClick={()=>openEditRecipe(r.id)} style={{padding:'4px 10px',background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:7,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>✏️ تعديل</button>
+                    <button onClick={()=>deleteRecipe(r.id)} disabled={deletingRecipeId===r.id} style={{padding:'4px 10px',background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:7,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:deletingRecipeId===r.id?.6:1}}>{deletingRecipeId===r.id?'...':'🗑️ حذف'}</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {recipeReconReport && (
+        <div style={{marginTop:16,background:C.surface,borderRadius:14,padding:'20px',border:'1.5px solid #ddd6fe'}}>
+          <div style={{fontSize:14,fontWeight:800,color:'#5b21b6',marginBottom:4}}>📋 تقدير الإنتاج ({reconFrom||reconTo ? `${reconFrom||'البداية'} إلى ${reconTo||'اليوم'}` : 'آخر 30 يوم'})</div>
+          <div style={{fontSize:11,color:'#7c3aed',marginBottom:16}}>محسوب من استهلاك المواد الخام الفعلي ÷ مكونات كل وصفة</div>
+
+          {!recipeReconReport.hasData ? (
+            <div style={{textAlign:'center',padding:'24px',color:'#9ca3af',fontSize:13}}>
+              ما فيه أي وصفة معرّفة بعد<br/>
+              <span style={{fontSize:11}}>اضغط "+ وصفة جديدة" وأضف اسمها ومكوناتها أولاً</span>
+            </div>
+          ) : (
+            <>
+              {(()=>{
+                const grandTotal = recipeReconReport.recipes.reduce((s:number,r:any)=>s+(r.totalCost||0),0)
+                return grandTotal>0 && (
+                  <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:10,padding:'12px 14px',marginBottom:12,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <span style={{fontSize:12,fontWeight:700,color:'#166534'}}>💰 إجمالي تكلفة الإنتاج التقديرية</span>
+                    <span style={{fontSize:18,fontWeight:900,color:'#16a34a'}}>{grandTotal.toFixed(2)} ر.س</span>
+                  </div>
+                )
+              })()}
+            <div style={{display:'flex',flexDirection:'column' as const,gap:12}}>
+              {recipeReconReport.recipes.map((r:any)=>(
+                <div key={r.id} style={{background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,padding:'12px 14px'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+                    <span style={{fontSize:13,fontWeight:700,color:C.text}}>{r.name}</span>
+                    <span style={{fontSize:16,fontWeight:900,color:'#7c3aed'}}>{r.estimatedProduced} وحدة</span>
+                  </div>
+                  {r.totalCost!==null && r.totalCost!==undefined && (
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,background:'#f0fdf4',borderRadius:7,padding:'6px 10px'}}>
+                      <span style={{fontSize:10,color:'#166534'}}>تكلفة الوحدة: {r.costPerUnit} ر.س</span>
+                      <span style={{fontSize:12,fontWeight:800,color:'#16a34a'}}>الإجمالي: {r.totalCost} ر.س</span>
+                    </div>
+                  )}
+                  {r.bottleneckName && (
+                    <div style={{fontSize:9,color:'#b45309',marginBottom:8}}>⚠️ محدَّد بواسطة: {r.bottleneckName} (المكوّن الأقل توفراً)</div>
+                  )}
+                  {r.components.length>0 ? (
+                    <div style={{display:'flex',flexDirection:'column' as const,gap:4}}>
+                      {r.components.map((c:any,i:number)=>{
+                        const isBottleneck = c.name===r.bottleneckName
+                        return (
+                          <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:10,color:isBottleneck?'#b45309':C.text4,fontWeight:isBottleneck?700:400}}>
+                            <span>{isBottleneck?'🔻 ':''}{c.name}: استهلاك {c.consumed} {c.unit}</span>
+                            <span>يكفي لـ {c.impliedCount} وحدة</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{fontSize:10,color:C.text4}}>هذي الوصفة بدون مكوّنات بعد</div>
+                  )}
+                </div>
+              ))}
+            </div>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Coming soon — أدوات متاحة للمتوسطة والمتقدمة */}
       <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`,animationDelay:'.2s'}}>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
@@ -776,6 +942,243 @@ export default function AIToolsPage() {
         </div>
       )}
 
+      {showRecipeModal && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:16,backdropFilter:'blur(4px)'}} onClick={()=>{setShowRecipeModal(false);setEditingRecipeId(null)}}>
+          <RecipeCreateModal
+            onClose={()=>{setShowRecipeModal(false);setEditingRecipeId(null)}}
+            onSaved={()=>{setShowRecipeModal(false);setEditingRecipeId(null);if(showRecipesList)loadRecipesList()}}
+            rawMaterials={rawMaterials}
+            sb={sb}
+            orgId={typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null}
+            branchId={typeof window!=='undefined'?sessionStorage.getItem('s_branch_id'):null}
+            editingRecipeId={editingRecipeId}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editingRecipeId}:{onClose:()=>void,onSaved:()=>void,rawMaterials:any[],sb:any,orgId:string|null,branchId:string|null,editingRecipeId?:string|null}) {
+  const [name,setName]=useState('')
+  const [components,setComponents]=useState<{component_product_id:string,qty:string}[]>([])
+  const [newCompId,setNewCompId]=useState('')
+  const [newCompQty,setNewCompQty]=useState('')
+  const [newCompSubUnit,setNewCompSubUnit]=useState(1)
+  const [customSubLabel,setCustomSubLabel]=useState('')
+  const [customSubCount,setCustomSubCount]=useState('')
+  const [saving,setSaving]=useState(false)
+  const [loadingEdit,setLoadingEdit]=useState(!!editingRecipeId)
+  const [priceMap,setPriceMap]=useState<Record<string,number>>({})
+  const [sellPrice,setSellPrice]=useState('')
+
+  useEffect(()=>{
+    if(!editingRecipeId) return
+    ;(async()=>{
+      const{data:recipe}=await (sb.from('recipes' as any) as any).select('name,sell_price').eq('id',editingRecipeId).single()
+      if(recipe){ setName(recipe.name); if(recipe.sell_price) setSellPrice(String(recipe.sell_price)) }
+      const{data:items}=await sb.from('recipe_items').select('component_product_id,qty').eq('recipe_id',editingRecipeId)
+      setComponents((items||[]).map((it:any)=>({component_product_id:it.component_product_id,qty:String(it.qty)})))
+      setLoadingEdit(false)
+    })()
+  },[editingRecipeId])
+
+  // متوسط سعر الشراء لكل مادة خام (نفس منهج تقرير الهدر) — يُستخدم لتقدير تكلفة الوصفة
+  useEffect(()=>{
+    if(!orgId) return
+    ;(async()=>{
+      let purQ = sb.from('purchases').select('name,qty,total_amount').eq('org_id',orgId).not('total_amount','is',null).not('qty','is',null)
+      if(branchId) purQ = purQ.eq('branch_id',branchId)
+      const{data:purchases}=await purQ
+      const totals:Record<string,{total:number,qty:number}>={}
+      for(const p of (purchases||[]) as any[]){
+        const nm=p.name; const qty=Number(p.qty)||0; const amt=Number(p.total_amount)||0
+        if(!nm||qty<=0) continue
+        if(!totals[nm]) totals[nm]={total:0,qty:0}
+        totals[nm].total+=amt; totals[nm].qty+=qty
+      }
+      const map:Record<string,number>={}
+      for(const nm in totals) map[nm]=totals[nm].qty>0 ? totals[nm].total/totals[nm].qty : 0
+      setPriceMap(map)
+    })()
+  },[orgId])
+
+  function subUnitOptions(component:any) {
+    const u=(component?.unit||'').trim()
+    if(['كيلو','كجم','كيلوجرام','كيلو جرام'].includes(u)) return [{label:'جرام',factor:1000},{label:'كيلو',factor:1}]
+    if(['لتر','ليتر'].includes(u)) return [{label:'مل',factor:1000},{label:'لتر',factor:1}]
+    if(component?.recipe_unit_factor) return [{label:component.recipe_unit||'وحدة',factor:component.recipe_unit_factor},{label:u||'وحدة',factor:1}]
+    return [{label:u||'وحدة',factor:1}]
+  }
+  function hasKnownConversion(component:any) {
+    const u=(component?.unit||'').trim()
+    return ['كيلو','كجم','كيلوجرام','كيلو جرام','لتر','ليتر'].includes(u) || !!component?.recipe_unit_factor
+  }
+
+  async function addComp() {
+    if(!newCompId||!newCompQty||Number(newCompQty)<=0) return
+    if(components.some(c=>c.component_product_id===newCompId)) return
+    const comp = rawMaterials.find((r:any)=>r.id===newCompId)
+    const customFactor=Number(customSubCount)
+    if(!hasKnownConversion(comp) && !(customFactor>0)){
+      toast(`لازم تحدد "كم قطعة/وحدة بكل ${comp?.unit||'وحدة'} واحد؟" بالمربع الأصفر قبل الإضافة — وإلا الحساب بيكون غلط`,'error')
+      return
+    }
+    const factor = customFactor>0 ? customFactor : newCompSubUnit
+    const baseQty=Number(newCompQty)/factor
+    setComponents(prev=>[...prev,{component_product_id:newCompId,qty:String(baseQty)}])
+    if(customFactor>0 && customSubLabel.trim()){
+      // نحفظ التحويل بالمنتج نفسه عشان ما نسأل عنه مرة ثانية بأي وصفة جاية
+      await sb.from('products').update({recipe_unit:customSubLabel.trim(),recipe_unit_factor:customFactor}).eq('id',newCompId)
+    }
+    setNewCompId('');setNewCompQty('');setNewCompSubUnit(1);setCustomSubLabel('');setCustomSubCount('')
+  }
+
+  async function save() {
+    if(!name.trim()||!orgId) return
+    setSaving(true)
+
+    // حماية: لو المستخدم كتب مكوّن بالحقول لكن نسي يضغط "+"، نضيفه تلقائياً هنا قبل الحفظ
+    let finalComponents = [...components]
+    if(newCompId && newCompQty && Number(newCompQty)>0 && !components.some(c=>c.component_product_id===newCompId)){
+      const pendingComp = rawMaterials.find((r:any)=>r.id===newCompId)
+      const customFactor=Number(customSubCount)
+      if(!hasKnownConversion(pendingComp) && !(customFactor>0)){
+        toast(`تعذّر الحفظ — حدد "كم قطعة/وحدة بكل ${pendingComp?.unit||'وحدة'} واحد؟" للمكوّن ${pendingComp?.name||''} أولاً`,'error')
+        setSaving(false)
+        return
+      }
+      const factor = customFactor>0 ? customFactor : newCompSubUnit
+      const baseQty=Number(newCompQty)/factor
+      finalComponents.push({component_product_id:newCompId,qty:String(baseQty)})
+      if(customFactor>0 && customSubLabel.trim()){
+        await sb.from('products').update({recipe_unit:customSubLabel.trim(),recipe_unit_factor:customFactor}).eq('id',newCompId)
+      }
+    }
+
+    let recipeId = editingRecipeId
+    const sellPriceVal = sellPrice ? Number(sellPrice) : null
+    if(editingRecipeId){
+      const{error:updErr}=await (sb.from('recipes' as any) as any).update({name:name.trim(),sell_price:sellPriceVal}).eq('id',editingRecipeId)
+      if(updErr){toast('فشل تحديث الوصفة — حاول مرة أخرى','error');setSaving(false);return}
+      await sb.from('recipe_items').delete().eq('recipe_id',editingRecipeId)
+    } else {
+      // الوصفات مشتركة على مستوى الشركة كاملة (مو حصرية بفرع واحد) — تُعرَّف مرة وتشتغل بكل الفروع تلقائياً
+      const{data:nr,error}=await (sb.from('recipes' as any) as any).insert({org_id:orgId,branch_id:null,name:name.trim(),sell_price:sellPriceVal}).select().single()
+      if(error||!nr){toast('فشل حفظ الوصفة — حاول مرة أخرى','error');setSaving(false);return}
+      recipeId = nr.id
+    }
+    if(finalComponents.length>0 && recipeId){
+      const rows=finalComponents.map(c=>({recipe_id:recipeId,component_product_id:c.component_product_id,qty:Number(c.qty)}))
+      const{error:itemsErr}=await sb.from('recipe_items').insert(rows)
+      if(itemsErr){toast('تم حفظ اسم الوصفة لكن فشل حفظ المكوّنات: '+itemsErr.message,'error');setSaving(false);return}
+    } else if(finalComponents.length===0) {
+      toast('⚠️ تنبيه: الوصفة اتحفظت بدون أي مكوّنات — أضف مكوّناتها لاحقاً من "تعديل"','warning')
+    }
+    setSaving(false)
+    if(finalComponents.length>0) toast(editingRecipeId?'✅ تم تحديث الوصفة':'✅ تم حفظ الوصفة بمكوناتها')
+    onSaved()
+  }
+
+  if(loadingEdit) return (
+    <div onClick={(e:any)=>e.stopPropagation()} style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,padding:40,textAlign:'center' as const,fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
+      <div style={{fontSize:13,color:'#6b7280'}}>⏳ جاري تحميل بيانات الوصفة...</div>
+    </div>
+  )
+
+  return (
+    <div onClick={(e:any)=>e.stopPropagation()} style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,maxHeight:'85vh',overflowY:'auto',padding:20,fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl' as const}}>
+      <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>📋 {editingRecipeId?'تعديل الوصفة':'وصفة جديدة'}</div>
+      <label style={{fontSize:11,fontWeight:700,color:'#6b7280',display:'block',marginBottom:5}}>اسم الوصفة *</label>
+      <input value={name} onChange={(e:any)=>setName(e.target.value)} placeholder="مثال: اسم المنتج النهائي" style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e7eb',borderRadius:9,fontSize:13,marginBottom:14,fontFamily:'inherit'}}/>
+
+      <div style={{fontSize:12,fontWeight:700,marginBottom:8}}>مكوّنات الوصفة</div>
+      {components.length>0 && (
+        <div style={{display:'flex',flexDirection:'column' as const,gap:6,marginBottom:8}}>
+          {components.map(c=>{
+            const comp=rawMaterials.find(r=>r.id===c.component_product_id)
+            const unitPrice = comp ? (priceMap[comp.name]||0) : 0
+            const compCost = unitPrice * Number(c.qty)
+            return (
+              <div key={c.component_product_id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'#f9fafb',border:'1px solid #e5e7eb',borderRadius:8,padding:'6px 10px'}}>
+                <span style={{fontSize:11}}>{comp?.name||'—'} — {c.qty} {comp?.unit}</span>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  {unitPrice>0 && <span style={{fontSize:10,color:'#16a34a',fontWeight:700}}>{compCost.toFixed(2)} ر.س</span>}
+                  <button onClick={()=>setComponents(prev=>prev.filter(x=>x.component_product_id!==c.component_product_id))} style={{background:'none',border:'none',color:'#ef4444',cursor:'pointer',fontSize:14}}>×</button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      <div style={{display:'flex',gap:6,marginBottom:6}}>
+        <select value={newCompId} onChange={(e:any)=>{const id=e.target.value;setNewCompId(id);const r=rawMaterials.find(x=>x.id===id);const opts=subUnitOptions(r);setNewCompSubUnit(opts[0].factor)}} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}>
+          <option value="">اختر مكوّن...</option>
+          {rawMaterials.filter(r=>!components.some(c=>c.component_product_id===r.id)).map(r=>(
+            <option key={r.id} value={r.id}>{r.name} ({r.unit})</option>
+          ))}
+        </select>
+      </div>
+      {newCompId && !hasKnownConversion(rawMaterials.find(x=>x.id===newCompId)) && (
+        <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:8,padding:8,marginBottom:8}}>
+          <div style={{fontSize:10,color:'#92400e',marginBottom:6}}>كم قطعة/وحدة بكل {rawMaterials.find(x=>x.id===newCompId)?.unit} واحد؟ (اختياري)</div>
+          <div style={{display:'flex',gap:6}}>
+            <input value={customSubLabel} onChange={(e:any)=>setCustomSubLabel(e.target.value)} placeholder="اسم الوحدة (مثال: رغيف)" style={{flex:2,padding:'7px',border:'1.5px solid #fde68a',borderRadius:7,fontSize:10}}/>
+            <input type="number" min="1" value={customSubCount} onChange={(e:any)=>setCustomSubCount(e.target.value)} placeholder="العدد" style={{flex:1,padding:'7px',border:'1.5px solid #fde68a',borderRadius:7,fontSize:10}}/>
+          </div>
+        </div>
+      )}
+      <div style={{display:'flex',gap:6,marginBottom:16}}>
+        <input type="number" step="0.01" min="0" value={newCompQty} onChange={(e:any)=>setNewCompQty(e.target.value)} placeholder={customSubCount?`الكمية بـ${customSubLabel||'وحدة'}`:'الكمية'} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}/>
+        {newCompId && (()=>{const r=rawMaterials.find(x=>x.id===newCompId);const opts=subUnitOptions(r);return opts.length>1 ? (
+          <select value={newCompSubUnit} onChange={(e:any)=>setNewCompSubUnit(Number(e.target.value))} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}>
+            {opts.map(o=>(<option key={o.label} value={o.factor}>{o.label}</option>))}
+          </select>
+        ) : (
+          <div style={{flex:1,padding:'8px',fontSize:11,color:'#6b7280',display:'flex',alignItems:'center',justifyContent:'center'}}>{customSubLabel||opts[0].label}</div>
+        )})()}
+        <button onClick={addComp} style={{padding:'0 12px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:16,fontWeight:700,cursor:'pointer'}}>+</button>
+      </div>
+
+      {(()=>{
+        const totalCost = components.reduce((s,c)=>{
+          const comp=rawMaterials.find(r=>r.id===c.component_product_id)
+          const unitPrice = comp ? (priceMap[comp.name]||0) : 0
+          return s + unitPrice*Number(c.qty)
+        },0)
+        const hasCostData = totalCost>0
+        const foodCostPct = hasCostData && sellPrice && Number(sellPrice)>0 ? (totalCost/Number(sellPrice))*100 : null
+        return (
+          <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:10,padding:12,marginBottom:16}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:hasCostData?10:0}}>
+              <span style={{fontSize:11,fontWeight:700,color:'#166534'}}>💰 التكلفة التقديرية</span>
+              <span style={{fontSize:15,fontWeight:900,color:'#16a34a'}}>{hasCostData ? totalCost.toFixed(2)+' ر.س' : 'لا توجد بيانات أسعار'}</span>
+            </div>
+            {hasCostData && (
+              <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                <div style={{flex:1}}>
+                  <label style={{fontSize:10,color:'#166534',display:'block',marginBottom:4}}>سعر البيع (اختياري)</label>
+                  <input type="number" min="0" step="0.01" value={sellPrice} onChange={(e:any)=>setSellPrice(e.target.value)} placeholder="مثال: 25" style={{width:'100%',padding:'7px 10px',border:'1px solid #bbf7d0',borderRadius:7,fontSize:12}}/>
+                </div>
+                {foodCostPct!==null && (
+                  <div style={{textAlign:'center' as const,padding:'4px 12px'}}>
+                    <div style={{fontSize:16,fontWeight:900,color:foodCostPct<=30?'#16a34a':foodCostPct<=35?'#d97706':'#dc2626'}}>{foodCostPct.toFixed(0)}%</div>
+                    <div style={{fontSize:9,color:'#6b7280'}}>Food Cost</div>
+                  </div>
+                )}
+              </div>
+            )}
+            {!hasCostData && <div style={{fontSize:10,color:'#6b7280'}}>سجّل مشتريات لهذي المكوّنات عشان تظهر التكلفة تلقائياً</div>}
+          </div>
+        )
+      })()}
+
+      <div style={{display:'flex',gap:8}}>
+        <button onClick={onClose} style={{flex:1,padding:'11px',background:'#f9fafb',color:'#374151',border:'1px solid #e5e7eb',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+        <button onClick={save} disabled={saving||!name.trim()} style={{flex:2,padding:'11px',background:'#7c3aed',color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:saving||!name.trim()?.6:1}}>
+          {saving?'جاري الحفظ...':(editingRecipeId?'حفظ التعديلات':'حفظ الوصفة')}
+        </button>
+      </div>
     </div>
   )
 }

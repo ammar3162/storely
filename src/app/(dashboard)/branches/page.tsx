@@ -26,6 +26,11 @@ export default function BranchesPage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [deletingBranch, setDeletingBranch] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  const [showCopyProducts, setShowCopyProducts] = useState(false)
+  const [newBranchId, setNewBranchId] = useState('')
+  const [sourceProducts, setSourceProducts] = useState<any[]>([])
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set())
+  const [copyingProducts, setCopyingProducts] = useState(false)
 
   async function deleteBranchPermanently() {
     if (!confirmDeleteBranch) return
@@ -68,11 +73,38 @@ export default function BranchesPage() {
   async function addBranch() {
     if(!newBranch.name.trim()) return
     setBranchSaving(true)
-    const{error}=await sb.from('branches').insert({ org_id:orgId, name:newBranch.name.trim(), location:newBranch.location.trim()||null })
-    if(error){toast('فشل إضافة الفرع — حاول مرة أخرى','error');setBranchSaving(false);return}
+    const{data:created,error}=await sb.from('branches').insert({ org_id:orgId, name:newBranch.name.trim(), location:newBranch.location.trim()||null }).select().single()
+    if(error||!created){toast('فشل إضافة الفرع — حاول مرة أخرى','error');setBranchSaving(false);return}
     const{data:bList}=await sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',orgId).eq('is_active',true).order('created_at')
     setBranches(bList||[]); setNewBranch({name:'',location:''}); setBranchSaving(false)
     toast('✅ تم إضافة الفرع')
+
+    // نعرض عليه منتجات الفرع الأساسي (الأقدم) عشان يختار أيها يبيها بالفرع الجديد — بدون كميات
+    const mainBranch = ((bList||[]) as any[]).find((b:any)=>b.id!==created.id)
+    if(mainBranch){
+      const{data:prods}=await sb.from('products').select('id,name,unit,category,reorder_point,recipe_unit,recipe_unit_factor').eq('org_id',orgId).eq('branch_id',mainBranch.id).eq('is_active',true).order('name')
+      if(prods && prods.length>0){
+        setSourceProducts(prods)
+        setSelectedProductIds(new Set(prods.map((p:any)=>p.id)))
+        setNewBranchId(created.id)
+        setShowCopyProducts(true)
+      }
+    }
+  }
+
+  async function confirmCopyProducts() {
+    if(selectedProductIds.size===0){ setShowCopyProducts(false); return }
+    setCopyingProducts(true)
+    const rows = sourceProducts.filter(p=>selectedProductIds.has(p.id)).map(p=>({
+      org_id:orgId, branch_id:newBranchId, name:p.name, unit:p.unit, category:p.category,
+      reorder_point:p.reorder_point, recipe_unit:p.recipe_unit, recipe_unit_factor:p.recipe_unit_factor,
+      qty:0, is_active:true,
+    }))
+    const{error}=await sb.from('products').insert(rows as any)
+    setCopyingProducts(false)
+    if(error){toast('فشل نسخ المنتجات — حاول تضيفها يدوياً من صفحة المخزون','error');setShowCopyProducts(false);return}
+    toast(`✅ تم نسخ ${rows.length} منتج للفرع الجديد (بدون كميات)`)
+    setShowCopyProducts(false)
   }
 
   async function deleteBranch(id:string) {
@@ -290,6 +322,52 @@ export default function BranchesPage() {
               <button onClick={deleteBranchPermanently} disabled={deletingBranch || deleteConfirmText!==confirmDeleteBranch.name}
                 style={{flex:2,padding:'11px',background:colors.danger,color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:(deletingBranch||deleteConfirmText!==confirmDeleteBranch.name)?'not-allowed':'pointer',fontFamily:font.family,opacity:(deleteConfirmText!==confirmDeleteBranch.name)?.5:1}}>
                 {deletingBranch?'جاري الحذف...':'تأكيد الحذف النهائي'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCopyProducts && (
+        <div style={{position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div style={{position:'absolute',inset:0,background:'rgba(15,23,42,.4)',backdropFilter:'blur(6px)'}} onClick={()=>{if(!copyingProducts)setShowCopyProducts(false)}}/>
+          <div style={{background:'white',borderRadius:16,padding:22,width:'100%',maxWidth:420,maxHeight:'80vh',display:'flex',flexDirection:'column' as const,position:'relative',boxShadow:'0 24px 60px rgba(0,0,0,.2)'}}>
+            <div style={{fontSize:15,fontWeight:800,color:colors.text,marginBottom:4}}>📦 نسخ منتجات للفرع الجديد</div>
+            <div style={{fontSize:11,color:colors.text3,marginBottom:14,lineHeight:1.6}}>اختر المنتجات اللي تحب تضيفها لهذا الفرع (بنفس الاسم والوحدة، بدون أي كمية — يبدأ الفرع بمخزون صفر)</div>
+
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,paddingBottom:8,borderBottom:`1px solid ${colors.border2}`}}>
+              <span style={{fontSize:11,color:colors.text3}}>{selectedProductIds.size} من {sourceProducts.length} محدد</span>
+              <button onClick={()=>setSelectedProductIds(selectedProductIds.size===sourceProducts.length?new Set():new Set(sourceProducts.map((p:any)=>p.id)))}
+                style={{fontSize:11,color:colors.primary,background:'none',border:'none',cursor:'pointer',fontWeight:700,fontFamily:font.family}}>
+                {selectedProductIds.size===sourceProducts.length?'إلغاء تحديد الكل':'تحديد الكل'}
+              </button>
+            </div>
+
+            <div style={{overflowY:'auto' as const,flex:1,display:'flex',flexDirection:'column' as const,gap:6,marginBottom:14}}>
+              {sourceProducts.map((p:any)=>{
+                const checked = selectedProductIds.has(p.id)
+                return (
+                  <label key={p.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 10px',background:checked?colors.primaryLight:colors.bg,border:`1px solid ${checked?colors.primaryBorder:colors.border2}`,borderRadius:8,cursor:'pointer'}}>
+                    <input type="checkbox" checked={checked} onChange={()=>{
+                      const next=new Set(selectedProductIds)
+                      if(checked) next.delete(p.id); else next.add(p.id)
+                      setSelectedProductIds(next)
+                    }} style={{width:16,height:16}}/>
+                    <span style={{fontSize:12,fontWeight:600,color:colors.text,flex:1}}>{p.name}</span>
+                    <span style={{fontSize:10,color:colors.text4}}>{p.unit}</span>
+                  </label>
+                )
+              })}
+            </div>
+
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>setShowCopyProducts(false)} disabled={copyingProducts}
+                style={{flex:1,padding:'11px',background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border}`,borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
+                تخطّي
+              </button>
+              <button onClick={confirmCopyProducts} disabled={copyingProducts}
+                style={{flex:2,padding:'11px',background:colors.primary,color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:copyingProducts?'not-allowed':'pointer',fontFamily:font.family,opacity:copyingProducts?.6:1}}>
+                {copyingProducts?'جاري النسخ...':`إضافة ${selectedProductIds.size} منتج`}
               </button>
             </div>
           </div>

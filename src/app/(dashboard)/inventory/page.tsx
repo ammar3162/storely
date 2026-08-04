@@ -86,7 +86,8 @@ export default function InventoryPage() {
   const [editItem, setEditItem]   = useState<Product|null>(null)
   const [addQty, setAddQty]       = useState(0)
   const [confirm, setConfirm]     = useState<{id:string,name:string}|null>(null)
-  const [form, setForm]           = useState({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:''})
+  const [form, setForm]           = useState({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:'',recipe_unit:'',recipe_unit_factor:'' as string|number})
+  const [showAudit, setShowAudit] = useState(false)
   const [showScan, setShowScan]   = useState(false)
   const [showJardScan, setShowJardScan] = useState(false)
   const [showImport, setShowImport] = useState(false)
@@ -149,10 +150,10 @@ export default function InventoryPage() {
     const { count } = await cq
     setTotalCount(count||0)
     
-    let q = sb.from('products').select('id,name,sku,unit,qty,reorder_point,category,org_id,is_active,created_at,updated_at').eq('org_id',oid).eq('is_active',true)
+    let q: any = sb.from('products').select('id,name,sku,unit,qty,reorder_point,category,org_id,is_active,created_at,updated_at,recipe_unit,recipe_unit_factor').eq('org_id',oid).eq('is_active',true)
     if (bid) q = q.eq('branch_id',bid)
     const{data}=await q.order('name')
-    setProducts(data||[])
+    setProducts((data||[]) as Product[])
     setHasMore(false)
     setCurrentPage(0)
     if(oid) cache.set('inventory:'+oid, data||[])
@@ -163,13 +164,18 @@ export default function InventoryPage() {
   }
 
   async function handleSave(e:React.FormEvent) {
-    e.preventDefault(); setSaving(true)
+    e.preventDefault()
+    if(form.recipe_unit_factor && Number(form.recipe_unit_factor)<=0){
+      toast('معامل التحويل لازم يكون رقم أكبر من صفر','warning')
+      return
+    }
+    setSaving(true)
     const{data:{user}}=await sb.auth.getUser()
     if(!user){setSaving(false);return}
     const oid=sessionStorage.getItem('s_org_id')
     if(!oid){setSaving(false);return}
     if(editItem){
-      const{error:updErr}=await sb.from('products').update({name:form.name.trim(),sku:form.sku||null,unit:form.unit,reorder_point:Number(form.reorder_point),category:form.category?.trim()||null,expiry_date:form.expiry_date||null} as any).eq('id',editItem.id)
+      const{error:updErr}=await sb.from('products').update({name:form.name.trim(),sku:form.sku||null,unit:form.unit,reorder_point:Number(form.reorder_point),category:form.category?.trim()||null,expiry_date:form.expiry_date||null,recipe_unit:form.recipe_unit||null,recipe_unit_factor:form.recipe_unit_factor?Number(form.recipe_unit_factor):null} as any).eq('id',editItem.id)
       if(updErr){toast('فشل حفظ التعديلات — حاول مرة أخرى','error');setSaving(false);return}
       if(addQty>0){
         const{error:moveErr}=await sb.from('stock_movements').insert({product_id:editItem.id,profile_id:user.id,type:'in',qty_change:addQty,note:'إضافة مخزون'})
@@ -183,7 +189,7 @@ export default function InventoryPage() {
         const{data:b}=await sb.from('branches').select('id').eq('org_id',oid).eq('is_active',true).order('created_at').limit(1).single()
         bid=b?.id||null
       }
-      const{data:np,error:insErr}=await sb.from('products').insert({org_id:oid,branch_id:bid,name:form.name.trim(),sku:form.sku||null,unit:form.unit,qty:Number(form.qty),reorder_point:Number(form.reorder_point),category:form.category?.trim()||null,expiry_date:form.expiry_date||null,is_active:true} as any).select().single()
+      const{data:np,error:insErr}=await sb.from('products').insert({org_id:oid,branch_id:bid,name:form.name.trim(),sku:form.sku||null,unit:form.unit,qty:Number(form.qty),reorder_point:Number(form.reorder_point),category:form.category?.trim()||null,expiry_date:form.expiry_date||null,recipe_unit:form.recipe_unit||null,recipe_unit_factor:form.recipe_unit_factor?Number(form.recipe_unit_factor):null,is_active:true} as any).select().single()
       if(insErr||!np){toast('فشل إضافة المنتج — حاول مرة أخرى','error');setSaving(false);return}
       const{error:moveErr}=await sb.from('stock_movements').insert({product_id:np.id,profile_id:user.id,type:'in',qty_change:Number(form.qty),note:'إضافة أولية'})
       if(moveErr){toast('تمت إضافة المنتج لكن فشل تسجيل الكمية الابتدائية — عدّلها يدوياً','warning')}
@@ -191,7 +197,7 @@ export default function InventoryPage() {
       fetch('/api/sync-product-to-staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:np.id})}).catch(()=>{})
     }
     setShowAdd(false);setEditItem(null);setAddQty(0)
-    setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:''})
+    setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:'',recipe_unit:'',recipe_unit_factor:''})
     cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:');setSaving(false);load()
   }
 
@@ -285,7 +291,8 @@ export default function InventoryPage() {
 
   function openEdit(p:Product) {
     setEditItem(p);setAddQty(0)
-    setForm({name:p.name,sku:p.sku||'',unit:p.unit,qty:p.qty,reorder_point:p.reorder_point,category:p.category||'',expiry_date:(p as any).expiry_date||''})
+    const pAny = p as any
+    setForm({name:p.name,sku:p.sku||'',unit:p.unit,qty:p.qty,reorder_point:p.reorder_point,category:p.category||'',expiry_date:pAny.expiry_date||'',recipe_unit:pAny.recipe_unit||'',recipe_unit_factor:pAny.recipe_unit_factor||''})
     setShowAdd(true)
   }
 
@@ -485,6 +492,34 @@ export default function InventoryPage() {
                     <label style={lbl}>تاريخ انتهاء الصلاحية (اختياري)</label>
                     <input type="date" value={form.expiry_date} onChange={e=>setForm({...form,expiry_date:e.target.value})} style={inp()}/>
                   </div>
+
+                  {/* تحويل الوحدة الدقيقة — لدقة استخدام هذا المنتج بالوصفات */}
+                  <div style={{background:'#faf5ff',border:`1px solid #e9d5ff`,borderRadius:10,padding:12}}>
+                    <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
+                      <span style={{fontSize:13}}>📏</span>
+                      <div style={{fontSize:11,fontWeight:700,color:'#6b21a8'}}>تحويل الوحدة الدقيقة (اختياري)</div>
+                      {form.recipe_unit && form.recipe_unit_factor && Number(form.recipe_unit_factor)>0 && (
+                        <span style={{fontSize:9,fontWeight:700,color:'#16a34a',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:99,padding:'1px 8px',marginRight:'auto'}}>✅ محدد</span>
+                      )}
+                    </div>
+                    <div style={{fontSize:10,color:'#7c3aed',marginBottom:8}}>مفيد لو تستخدم هذا المنتج بوصفات — مثال: الكيس فيه كم جرام، الكرتون فيه كم علبة</div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                      <div>
+                        <label style={lbl}>الوحدة الدقيقة</label>
+                        <input value={form.recipe_unit} onChange={e=>setForm({...form,recipe_unit:e.target.value})} style={{...inp(),fontSize:11,borderColor:'#e9d5ff'}} placeholder="مثال: جرام"/>
+                      </div>
+                      <div>
+                        <label style={lbl}>الكمية بالوحدة الدقيقة</label>
+                        <input type="number" min="0" step="any" value={form.recipe_unit_factor} onChange={e=>setForm({...form,recipe_unit_factor:e.target.value})} style={{...inp(),fontSize:11,borderColor:'#e9d5ff'}} placeholder={`1 ${form.unit} = ؟ ${form.recipe_unit||'وحدة'}`}/>
+                      </div>
+                    </div>
+                    {form.recipe_unit && form.recipe_unit_factor && Number(form.recipe_unit_factor)>0 && (
+                      <div style={{fontSize:10,fontWeight:600,color:'#6b21a8',marginTop:8,textAlign:'center' as const}}>
+                        1 {form.unit} = {form.recipe_unit_factor} {form.recipe_unit}
+                      </div>
+                    )}
+                  </div>
+
                   {editItem?(
                     <div style={{background:C.primaryL,border:`1px solid ${C.primaryB}`,borderRadius:10,padding:12}}>
                       <div style={{fontSize:12,color:C.primary,marginBottom:8,fontWeight:600}}>الكمية الحالية: <b style={{fontSize:18}}>{editItem.qty} {form.unit}</b></div>
@@ -539,7 +574,7 @@ export default function InventoryPage() {
             style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'white',border:`1px solid ${C.border2}`,borderRadius:8,cursor:'pointer',color:C.text3,flexShrink:0}}>
             <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M3 15v4a2 2 0 002 2h14a2 2 0 002-2v-4M17 9l-5-5-5 5M12 4v12"/></svg>
           </button>
-          <button onClick={()=>{setEditItem(null);setAddQty(0);setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:''});setShowAdd(true)}}
+          <button onClick={()=>{setEditItem(null);setAddQty(0);setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:'',recipe_unit:'',recipe_unit_factor:''});setShowAdd(true)}}
             style={{height:32,padding:'0 12px',background:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4,flexShrink:0,whiteSpace:'nowrap'}}>
             <svg width="11" height="11" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
             إضافة
@@ -564,6 +599,32 @@ export default function InventoryPage() {
           </button>
         ))}
       </div>
+
+      {/* بانر تدقيق الوحدات الدقيقة — يعرض المنتجات اللي ماعندها تحويل محدد بعد */}
+      {(()=>{
+        const missing = products.filter((p:any)=>!p.recipe_unit_factor)
+        if(missing.length===0) return null
+        return (
+          <div className="u" style={{marginBottom:12,background:'#faf5ff',border:'1px solid #e9d5ff',borderRadius:12,padding:12,animationDelay:'.09s'}}>
+            <button type="button" onClick={()=>setShowAudit(v=>!v)} style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',padding:0}}>
+              <span style={{fontSize:12,fontWeight:700,color:'#6b21a8'}}>📏 {missing.length} منتج بدون تحويل وحدة دقيقة محدد</span>
+              <span style={{fontSize:11,color:'#7c3aed'}}>{showAudit?'إخفاء ▲':'عرض ▼'}</span>
+            </button>
+            {showAudit && (
+              <div style={{marginTop:10,display:'flex',flexDirection:'column' as const,gap:6}}>
+                <div style={{fontSize:10,color:'#7c3aed',marginBottom:2}}>لو تستخدم أي منها بوصفات، حدد لها تحويل عشان تكون الحسابات دقيقة</div>
+                {missing.map((p:any)=>(
+                  <button key={p.id} type="button" onClick={()=>openEdit(p)} className="tap"
+                    style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'white',border:'1px solid #e9d5ff',borderRadius:8,padding:'8px 12px',cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
+                    <span style={{fontSize:11,fontWeight:600,color:C.text}}>{p.name}</span>
+                    <span style={{fontSize:10,color:'#7c3aed',fontWeight:700}}>حدّد التحويل ←</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Filters row */}
       <div className="u" style={{display:'flex',gap:8,marginBottom:12,alignItems:'center',animationDelay:'.08s',flexWrap:'wrap'}}>
@@ -644,9 +705,16 @@ export default function InventoryPage() {
                     <div style={{position:'absolute',top:0,right:0,left:0,height:3,background:sc}}/>
 
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
-                      <span style={{background:sb2,color:sc,padding:'3px 9px',borderRadius:99,fontSize:10,fontWeight:700,border:`1px solid ${sbb}`}}>
-                        {isOut?'نفد':isLow?'ناقص':'كافٍ'}
-                      </span>
+                      <div style={{display:'flex',alignItems:'center',gap:5}}>
+                        <span style={{background:sb2,color:sc,padding:'3px 9px',borderRadius:99,fontSize:10,fontWeight:700,border:`1px solid ${sbb}`}}>
+                          {isOut?'نفد':isLow?'ناقص':'كافٍ'}
+                        </span>
+                        {(p as any).recipe_unit_factor ? (
+                          <span title={`تحويل محدد: 1 ${p.unit} = ${(p as any).recipe_unit_factor} ${(p as any).recipe_unit}`} style={{fontSize:9,color:'#7c3aed',background:'#faf5ff',border:'1px solid #e9d5ff',borderRadius:99,padding:'3px 6px',fontWeight:700}}>📏</span>
+                        ) : (
+                          <span title="ما فيه تحويل وحدة دقيقة محدد" style={{fontSize:9,color:C.text4,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:99,padding:'3px 6px',fontWeight:700,opacity:.5}}>📏</span>
+                        )}
+                      </div>
                       {p.category && (
                         <span style={{fontSize:9,color:C.text4,background:C.bg,padding:'3px 7px',borderRadius:6,maxWidth:70,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.category}</span>
                       )}

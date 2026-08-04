@@ -90,6 +90,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [unread])
   const [branches, setBranches]     = useState<any[]>([])
+  const [orgPlan, setOrgPlan]       = useState<string>('basic')
   const [showMore, setShowMore]     = useState(false)
   const [showBranch, setShowBranch] = useState(false)
   const [branchLowCounts, setBranchLowCounts] = useState<Record<string, number>>({})
@@ -190,6 +191,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
     const{data:orgData}=await (sb as any).from('organizations').select('plan,max_staff,max_suppliers,country_code').eq('id',p.org_id).single()
     const orgPlan=(orgData as any)?.plan||'basic'
+    setOrgPlan(orgPlan)
     sessionStorage.setItem('s_plan',orgPlan)
     sessionStorage.setItem('s_country_code',(orgData as any)?.country_code||'+966')
     sessionStorage.setItem('s_max_staff',String((orgData as any)?.max_staff||1))
@@ -550,7 +552,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* Nav items */}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
-              {[...NAV_MAIN,...NAV_MORE].filter(item=>(item.href!=='/branches'&&item.href!=='/branch-compare')||branches.length>1).map(item=>{
+              {[...NAV_MAIN,...NAV_MORE].filter(item=>(item.href!=='/branches'&&item.href!=='/branch-compare')||orgPlan!=='basic').map(item=>{
                 const active=isActive(item.href)
                 return (
                   <button key={item.href} onClick={()=>{router.push(item.href);setShowMore(false)}} onMouseEnter={()=>router.prefetch(item.href)}
@@ -745,7 +747,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {NAV_GROUPS.map((group,gi)=>(
                 <div key={gi} style={{marginBottom:4}}>
                   <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.25)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{group.label}</div>
-                  {group.items.filter(item=>(item.href!=='/branches'&&item.href!=='/branch-compare')||branches.length>1).map(item=>{
+                  {group.items.filter(item=>(item.href!=='/branches'&&item.href!=='/branch-compare')||orgPlan!=='basic').map(item=>{
                     const active=isActive(item.href)
                     const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
                     const isExternal=item.href.startsWith('http')

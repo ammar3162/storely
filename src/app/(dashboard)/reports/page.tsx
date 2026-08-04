@@ -506,8 +506,66 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
   const [deleting, setDeleting] = useState(false)
   const [exportingPdf, setExportingPdf] = useState(false)
   const [curr, setCurr] = useState('ر.س')
+  const [showDeletedLog, setShowDeletedLog] = useState(false)
+  const [deletedList, setDeletedList] = useState<any[]>([])
+  const [loadingDeleted, setLoadingDeleted] = useState(false)
+  const [restoringId, setRestoringId] = useState<string|null>(null)
   const sb = createClient()
   useEffect(()=>{ load() },[period,from,to])
+
+  async function loadDeletedLog() {
+    const orgId=sessionStorage.getItem('s_org_id'); if(!orgId) return
+    setLoadingDeleted(true)
+    const{data}=await (sb.from('purchases') as any)
+      .select('id,name,category,qty,unit,total_amount,supplier,deleted_at,deleted_by')
+      .eq('org_id',orgId).not('deleted_at','is',null)
+      .order('deleted_at',{ascending:false}).limit(100)
+    const rows = data||[]
+    const deleterIds = [...new Set(rows.map((r:any)=>r.deleted_by).filter(Boolean))]
+    let namesMap: Record<string,string> = {}
+    if(deleterIds.length>0){
+      const{data:profs}=await sb.from('profiles').select('id,full_name').in('id',deleterIds as string[])
+      for(const p of (profs||[]) as any[]) namesMap[p.id]=p.full_name
+    }
+    setDeletedList(rows.map((r:any)=>({...r, deleterName: namesMap[r.deleted_by]||'—'})))
+    setLoadingDeleted(false)
+  }
+
+  function relativeTime(iso:string) {
+    const diffMs = Date.now() - new Date(iso).getTime()
+    const mins = Math.floor(diffMs/60000)
+    if(mins<1) return 'الآن'
+    if(mins<60) return `قبل ${mins} دقيقة`
+    const hrs = Math.floor(mins/60)
+    if(hrs<24) return `قبل ${hrs} ساعة`
+    const days = Math.floor(hrs/24)
+    if(days<30) return `قبل ${days} يوم`
+    return new Date(iso).toLocaleDateString('ar-SA')
+  }
+
+  async function restorePurchase(item:any) {
+    setRestoringId(item.id)
+    if(item.category==='مخزون' && item.name && Number(item.qty)>0){
+      const orgId=sessionStorage.getItem('s_org_id')||''
+      const bid=sessionStorage.getItem('s_branch_id')
+      let pq=sb.from('products').select('id').eq('org_id',orgId).eq('name',item.name)
+      if(bid) pq=(pq as any).eq('branch_id',bid)
+      const{data:matched}=await pq.limit(1)
+      if(matched && matched.length>0){
+        const{data:{user}}=await sb.auth.getUser()
+        await (sb.from('stock_movements') as any).insert({
+          product_id:matched[0].id, profile_id:user?.id, type:'in',
+          qty_change:Number(item.qty), note:`استعادة فاتورة شراء (${item.supplier||'—'})`,
+        })
+      }
+    }
+    const{error}=await (sb.from('purchases') as any).update({deleted_at:null,deleted_by:null}).eq('id',item.id)
+    setRestoringId(null)
+    if(error){ toast('فشلت الاستعادة — حاول مرة أخرى','error'); return }
+    toast('↩️ تمت استعادة الفاتورة')
+    setDeletedList(prev=>prev.filter(d=>d.id!==item.id))
+    load()
+  }
   useEffect(()=>{
     const oid = sessionStorage.getItem('s_org_id')
     if(!oid) return
@@ -521,7 +579,23 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     if (!user?.email) { setDeleteError('تعذر التحقق من الحساب'); setDeleting(false); return }
     const { error } = await sb.auth.signInWithPassword({ email: user.email, password: deletePassword })
     if (error) { setDeleteError('كلمة المرور غير صحيحة'); setDeleting(false); return }
-    const{error:delErr}=await sb.from('purchases').delete().eq('id', confirmDelete.id)
+
+    // تعويض المخزون: لو الفاتورة أضافت كمية لمنتج مخزون، نطرحها الآن (نلغي أثر الفاتورة)
+    if(confirmDelete.category==='مخزون' && confirmDelete.name && Number(confirmDelete.qty)>0){
+      const orgId=sessionStorage.getItem('s_org_id')||''
+      const bid=sessionStorage.getItem('s_branch_id')
+      let pq=sb.from('products').select('id').eq('org_id',orgId).eq('name',confirmDelete.name)
+      if(bid) pq=(pq as any).eq('branch_id',bid)
+      const{data:matched}=await pq.limit(1)
+      if(matched && matched.length>0){
+        await (sb.from('stock_movements') as any).insert({
+          product_id:matched[0].id, profile_id:user.id, type:'out',
+          qty_change:-Number(confirmDelete.qty), note:`إلغاء فاتورة شراء محذوفة (${confirmDelete.supplier||'—'})`,
+        })
+      }
+    }
+
+    const{error:delErr}=await (sb.from('purchases') as any).update({deleted_at:new Date().toISOString(),deleted_by:user.id}).eq('id', confirmDelete.id)
     if(delErr){setDeleteError('فشل الحذف — حاول مرة أخرى');setDeleting(false);return}
     setPurchases(prev => prev.filter(p => p.id !== confirmDelete.id))
     setConfirmDelete(null); setDeletePassword(''); setDeleting(false)
@@ -531,7 +605,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setLoading(false);return}
     const purchBid=sessionStorage.getItem('s_branch_id')
     const{start,end}=getRange(period,from,to)
-    let purchQ=sb.from('purchases').select('id,created_at,name,category,amount,vat_amount,total_amount,supplier,invoice_image,qty').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
+    let purchQ=sb.from('purchases').select('id,created_at,name,category,amount,vat_amount,total_amount,supplier,invoice_image,qty,unit').eq('org_id',orgId).is('deleted_at',null).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
     if(purchBid) purchQ=(purchQ as any).eq('branch_id',purchBid)
     const{data}=await purchQ.order('created_at',{ascending:false})
     setPurchases(data||[]); setLoading(false)
@@ -690,6 +764,46 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
         )}
       </div>
 
+      {/* سجل الفواتير المحذوفة — تدقيق واسترجاع */}
+      <div style={{marginTop:20,background:'white',borderRadius:14,border:`1px solid ${colors.border2}`,overflow:'hidden'}}>
+        <button type="button" onClick={()=>{ if(!showDeletedLog) loadDeletedLog(); setShowDeletedLog(v=>!v) }}
+          style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:16}}>🗑️</span>
+            <span style={{fontSize:13,fontWeight:700,color:colors.text}}>سجل الفواتير المحذوفة</span>
+          </div>
+          <span style={{fontSize:12,color:colors.text3}}>{showDeletedLog?'إخفاء ▲':'عرض ▼'}</span>
+        </button>
+        {showDeletedLog && (
+          <div style={{borderTop:`1px solid ${colors.border2}`,padding:'12px 18px 18px'}}>
+            {loadingDeleted ? (
+              <div style={{textAlign:'center' as const,padding:20,fontSize:12,color:colors.text3}}>⏳ جاري التحميل...</div>
+            ) : deletedList.length===0 ? (
+              <div style={{textAlign:'center' as const,padding:20,fontSize:12,color:colors.text4}}>ما فيه فواتير محذوفة 🎉</div>
+            ) : (
+              <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                {deletedList.map((d:any)=>(
+                  <div key={d.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'#fef2f2',border:'1px solid #fecaca',borderRight:'3px solid #dc2626',borderRadius:9,padding:'10px 14px'}}>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:700,color:colors.text}}>{d.name}
+                        <span style={{fontSize:10,fontWeight:600,color:colors.text4,marginRight:6}}>({d.category||'—'})</span>
+                      </div>
+                      <div style={{fontSize:10,color:'#991b1b',marginTop:2}}>
+                        {Number(d.total_amount||0).toFixed(0)} {curr} — حُذفت {relativeTime(d.deleted_at)} بواسطة {d.deleterName}
+                      </div>
+                    </div>
+                    <button onClick={()=>restorePurchase(d)} disabled={restoringId===d.id}
+                      style={{padding:'6px 14px',background:'white',color:'#16a34a',border:'1.5px solid #bbf7d0',borderRadius:8,fontSize:11,fontWeight:700,cursor:restoringId===d.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:restoringId===d.id?.6:1,whiteSpace:'nowrap' as const}}>
+                      {restoringId===d.id?'...':'↩️ استعادة'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {confirmDelete && (
         <div style={{position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
           <div style={{position:'absolute',inset:0,background:'rgba(15,23,42,.4)',backdropFilter:'blur(6px)'}} onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}/>
@@ -697,7 +811,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
             <div style={{width:48,height:48,borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:22}}>🔒</div>
             <div style={{fontSize:15,fontWeight:800,color:colors.text,textAlign:'center',marginBottom:6}}>تأكيد حذف العملية</div>
             <div style={{fontSize:12,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
-              سيتم حذف <b style={{color:colors.text}}>{confirmDelete.name}</b> ({Number(confirmDelete.total_amount||0).toFixed(0)} {curr}) نهائياً.<br/>أدخل كلمة مرور حسابك للتأكيد
+              سيتم حذف <b style={{color:colors.text}}>{confirmDelete.name}</b> ({Number(confirmDelete.total_amount||0).toFixed(0)} {curr}) من السجل الحالي (تقدر تسترجعها لاحقاً من "سجل المحذوفات").<br/>أدخل كلمة مرور حسابك للتأكيد
             </div>
             <input type="password" value={deletePassword} onChange={e=>setDeletePassword(e.target.value)}
               onKeyDown={e=>{if(e.key==='Enter'&&deletePassword&&!deleting) confirmDeletePurchase()}}
@@ -751,7 +865,7 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
     const{data:mvs}=await mq
 
     // purchases in period
-    let puq=sb.from('purchases').select('name,qty,unit,category').eq('org_id',orgId).eq('category','مخزون').gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
+    let puq=sb.from('purchases').select('name,qty,unit,category').eq('org_id',orgId).eq('category','مخزون').is('deleted_at',null).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
     if(branchId) puq=(puq as any).eq('branch_id',branchId)
     const{data:pus}=await puq
 
@@ -1300,7 +1414,7 @@ export default function ReportsPage() {
     const{start,end}=getRange(period,from,to)
     const[{data:mv},{data:pu},{data:wv}]=await Promise.all([
       (()=>{const _bid2=sessionStorage.getItem('s_branch_id');let _mq2=sb.from('stock_movements').select('qty_change,created_at,products!inner(name,org_id,branch_id)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bid2)_mq2=_mq2.eq('products.branch_id',_bid2);return _mq2})(),
-      (()=>{const _bidP=sessionStorage.getItem('s_branch_id');let _pq=sb.from('purchases').select('amount,total_amount,vat_amount,created_at,branch_id').eq('org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bidP)_pq=_pq.eq('branch_id',_bidP);return _pq})(),
+      (()=>{const _bidP=sessionStorage.getItem('s_branch_id');let _pq=sb.from('purchases').select('amount,total_amount,vat_amount,created_at,branch_id').eq('org_id',orgId).is('deleted_at',null).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bidP)_pq=_pq.eq('branch_id',_bidP);return _pq})(),
       (()=>{const _bidW=sessionStorage.getItem('s_branch_id');let _wq=sb.from('stock_movements').select('qty_change,created_at,products!inner(name,org_id,branch_id)').eq('type','waste').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bidW)_wq=_wq.eq('products.branch_id',_bidW);return _wq})(),
     ])
     const wasteItems=new Set((wv||[]).map((m:any)=>m.products?.name)).size
