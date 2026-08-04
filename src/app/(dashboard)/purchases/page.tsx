@@ -60,7 +60,7 @@ export default function PurchasesPage() {
     category:'مخزون', name:'', sku:'', qty:'', unit:'قطعة',
     reorder_point:'5', total_amount:'', supplier:'',
     note:'', invoice_image:'', hasVat:'', invoice_date: todayRiyadh(),
-    payment_status:'unpaid', due_date:'',
+    payment_status:'paid', due_date:'',
   })
   const sb = createClient()
 
@@ -114,6 +114,7 @@ export default function PurchasesPage() {
       return a.due_date.localeCompare(b.due_date)
     })
     setPayables(sorted)
+    if(sorted.length>0) setShowPayables(true)
   }
 
   async function markPaid(id:string) {
@@ -296,7 +297,7 @@ export default function PurchasesPage() {
 
     toast(`✅ تم حفظ ${selectedIndexes.length} صنف بنجاح، بكل تفاصيل السعر والضريبة`)
     setOcrItems([]); setOcrSelected([] as any); setOcrPrices({})
-    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'unpaid',due_date:''})
+    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:''})
     setPreviewUrl(null)
     setBulkSaving(false)
     loadHistory(orgId)
@@ -322,6 +323,15 @@ export default function PurchasesPage() {
       created_at:invoiceTs,payment_status:form.payment_status,due_date:form.due_date||null,
     })
     if(insErr){toast('خطأ: '+insErr.message,'error');setLoading(false);submitting.current=false;return}
+
+    // إشعار فوري بالنظام عند حفظ أي فاتورة مشتريات (بغض النظر عن حالة الدفع)
+    await (sb.from('notifications') as any).insert({
+      org_id: orgId, branch_id: sessionStorage.getItem('s_branch_id') || null,
+      title: `فاتورة جديدة: ${form.name || form.category}`,
+      message: `${inputTotal.toFixed(2)} ${curr} — ${form.supplier}${form.payment_status==='unpaid' ? ' (غير مدفوعة)' : ''}`,
+      type: 'success', read: false,
+    })
+
     let matchedProductId:string|null=null
     if(form.category==='مخزون'&&form.name){
       const qty=form.qty?Number(form.qty):0
@@ -379,7 +389,7 @@ export default function PurchasesPage() {
       }
     }
 
-    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'unpaid',due_date:''})
+    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:''})
     setPreviewUrl(null);setLoading(false);submitting.current=false
     cache.invalidate('purchases:');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
     loadHistory(orgId);loadPayables(orgId)
@@ -623,7 +633,7 @@ export default function PurchasesPage() {
             <div style={{marginBottom:10}}>
               <label style={lbl}>حالة الدفع</label>
               <div style={{display:'flex',gap:8}}>
-                <button type="button" onClick={()=>setForm({...form,payment_status:'unpaid'})}
+                <button type="button" onClick={()=>setForm({...form,payment_status:'paid'})}
                   style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.payment_status==='unpaid'?C.danger:C.border}`,background:form.payment_status==='unpaid'?C.dangerL:'white',color:form.payment_status==='unpaid'?C.danger:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                   <Clock size={13} strokeWidth={2.3}/> غير مدفوعة
                 </button>
