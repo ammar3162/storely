@@ -32,6 +32,23 @@ export async function POST(req: Request) {
       } as any)
       done++
 
+      // ── تذكير بالنظام لأي فاتورة غير مدفوعة يستحق موعدها اليوم بالضبط ──
+      try {
+        const { data: dueToday } = await db.from('purchases')
+          .select('id,name,total_amount,supplier,branch_id')
+          .eq('org_id', org.id).eq('payment_status', 'unpaid').is('deleted_at', null).eq('due_date', today)
+        for (const inv of (dueToday || []) as any[]) {
+          await (db as any).from('notifications').insert({
+            org_id: org.id, branch_id: inv.branch_id || null,
+            title: 'تذكير: فاتورة مستحقة اليوم',
+            message: `${inv.name || 'فاتورة'} — ${Number(inv.total_amount||0).toFixed(2)} ر.س — المورد: ${inv.supplier||'—'}`,
+            type: 'danger', read: false,
+          })
+        }
+      } catch (e) {
+        console.log('due-date reminder error for org', org.id, e)
+      }
+
       // ── نسخة احتياطية كاملة يومية (بيانات فقط، بدون أي واجهة استعادة بعد) ──
       try {
         const since30 = new Date(Date.now() - 30*24*60*60*1000).toISOString()

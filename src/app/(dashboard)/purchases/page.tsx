@@ -60,7 +60,7 @@ export default function PurchasesPage() {
     category:'مخزون', name:'', sku:'', qty:'', unit:'قطعة',
     reorder_point:'5', total_amount:'', supplier:'',
     note:'', invoice_image:'', hasVat:'', invoice_date: todayRiyadh(),
-    payment_status:'unpaid', due_date:'',
+    payment_status:'paid', due_date:'',
   })
   const sb = createClient()
 
@@ -114,6 +114,7 @@ export default function PurchasesPage() {
       return a.due_date.localeCompare(b.due_date)
     })
     setPayables(sorted)
+    if(sorted.length>0) setShowPayables(true)
   }
 
   async function markPaid(id:string) {
@@ -296,7 +297,7 @@ export default function PurchasesPage() {
 
     toast(`✅ تم حفظ ${selectedIndexes.length} صنف بنجاح، بكل تفاصيل السعر والضريبة`)
     setOcrItems([]); setOcrSelected([] as any); setOcrPrices({})
-    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'unpaid',due_date:''})
+    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:''})
     setPreviewUrl(null)
     setBulkSaving(false)
     loadHistory(orgId)
@@ -322,6 +323,15 @@ export default function PurchasesPage() {
       created_at:invoiceTs,payment_status:form.payment_status,due_date:form.due_date||null,
     })
     if(insErr){toast('خطأ: '+insErr.message,'error');setLoading(false);submitting.current=false;return}
+
+    // إشعار فوري بالنظام عند حفظ أي فاتورة مشتريات (بغض النظر عن حالة الدفع)
+    await (sb.from('notifications') as any).insert({
+      org_id: orgId, branch_id: sessionStorage.getItem('s_branch_id') || null,
+      title: `فاتورة جديدة: ${form.name || form.category}`,
+      message: `${inputTotal.toFixed(2)} ${curr} — ${form.supplier}${form.payment_status==='unpaid' ? ' (غير مدفوعة)' : ''}`,
+      type: 'success', read: false,
+    })
+
     let matchedProductId:string|null=null
     if(form.category==='مخزون'&&form.name){
       const qty=form.qty?Number(form.qty):0
@@ -379,7 +389,7 @@ export default function PurchasesPage() {
       }
     }
 
-    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'unpaid',due_date:''})
+    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:''})
     setPreviewUrl(null);setLoading(false);submitting.current=false
     cache.invalidate('purchases:');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
     loadHistory(orgId);loadPayables(orgId)
