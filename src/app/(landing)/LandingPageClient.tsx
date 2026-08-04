@@ -108,6 +108,7 @@ export default function LandingPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitMsg, setSubmitMsg] = useState<{ok:boolean,text:string}|null>(null)
   const [partners, setPartners] = useState<any[]>([])
+  const [marqueeMsgs, setMarqueeMsgs] = useState<string[]>(['📦 Storely — نظام إدارة المخزون والموظفين للمطاعم والمتاجر'])
 
   useEffect(()=>{
     import('@/lib/supabase/client').then(({createClient})=>{
@@ -125,6 +126,13 @@ export default function LandingPage() {
 
   useEffect(()=>{
     fetch('/api/partners').then(r=>r.json()).then(d=>setPartners(d.partners||[])).catch(()=>{})
+  },[])
+
+  useEffect(()=>{
+    fetch('/api/marquee-messages').then(r=>r.json()).then(d=>{
+      const msgs = (d.messages||[]).map((m:any)=>m.message)
+      if(msgs.length>0) setMarqueeMsgs(msgs)
+    }).catch(()=>{})
   },[])
 
   async function submitDemoRequest(e: React.FormEvent) {
@@ -184,12 +192,12 @@ export default function LandingPage() {
 
       {/* MARQUEE */}
       <div style={{position:'fixed',top:0,right:0,left:0,zIndex:1001,height:36,background:'#16a34a',overflow:'hidden',display:'flex',alignItems:'center'}}>
-        <div style={{display:'flex',whiteSpace:'nowrap' as const,animation:'marqueeScroll 22s linear infinite'}}>
+        <div style={{display:'flex',whiteSpace:'nowrap' as const,animation:'marqueeScroll 55s linear infinite'}}>
           {[...Array(2)].map((_,i)=>(
             <div key={i} style={{display:'flex',alignItems:'center'}}>
-              {[...Array(6)].map((_,j)=>(
+              {marqueeMsgs.map((m,j)=>(
                 <span key={j} style={{color:'white',fontSize:13,fontWeight:700,padding:'0 24px',display:'flex',alignItems:'center',gap:8}}>
-                  🔥 انضم لآلاف التجار الأذكياء على Storely — أطلق متجرك، أدره، ونمّه بسهولة
+                  {m}
                   <span style={{opacity:.5}}>•</span>
                 </span>
               ))}
