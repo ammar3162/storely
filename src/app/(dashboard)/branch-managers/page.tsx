@@ -48,9 +48,19 @@ export default function BranchManagersPage() {
 
   async function loadManagers(oid:string) {
     setLoading(true)
-    const res = await fetch(`/api/branch-managers?org_id=${oid}`)
-    const j = await res.json()
-    setManagers(j.managers||[])
+    try {
+      const res = await fetch(`/api/branch-managers?org_id=${oid}`)
+      const j = await res.json()
+      if(!res.ok || j.error){
+        toast(j.error||'تعذر تحميل قائمة المديرين','error')
+        setManagers([])
+      } else {
+        setManagers(j.managers||[])
+      }
+    } catch {
+      toast('خطأ بالاتصال — حاول تحدّث الصفحة','error')
+      setManagers([])
+    }
     setLoading(false)
   }
 
