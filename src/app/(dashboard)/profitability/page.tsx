@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { colors, radius, shadow, font, card, btnPrimary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
+import { cache } from '@/lib/cache'
 
 function currentMonth() {
   const now = new Date()
@@ -45,15 +46,19 @@ export default function ProfitabilityPage() {
   }
 
   async function loadAll() {
-    setLoading(true)
     const bid = sessionStorage.getItem('s_branch_id')
+    const cacheKey = `profitability:${orgId}:${month}:${bid||''}`
+    const cached = cache.get(cacheKey)
+    if(cached){ setData(cached); setLocked(false); setLoading(false) }
+    else setLoading(true)
+
     const url = `/api/profitability?org_id=${orgId}&month=${month}${bid?`&branch_id=${bid}`:''}`
     const res = await fetch(url)
     const json = await res.json()
     if(json.error === 'upgrade_required'){ setLocked(true); setData(null); setLoading(false); return }
     setLocked(false)
-    if(json.success) setData(json)
-    else { toast(json.error||'تعذر تحميل البيانات','error'); setData(null) }
+    if(json.success){ setData(json); cache.set(cacheKey, json) }
+    else if(!cached) { toast(json.error||'تعذر تحميل البيانات','error'); setData(null) }
     setLoading(false)
   }
 
@@ -63,7 +68,7 @@ export default function ProfitabilityPage() {
     const res = await fetch('/api/fixed-expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,name:newTplName.trim(),amount:Number(newTplAmount),month:`${month}-01`})})
     const j = await res.json()
     setSavingTpl(false)
-    if(j.success){ setNewTplName(''); setNewTplAmount(''); toast('✅ تمت الإضافة'); loadAll() }
+    if(j.success){ setNewTplName(''); setNewTplAmount(''); toast('✅ تمت الإضافة'); cache.invalidate('profitability:'); loadAll() }
     else toast(j.error||'خطأ','error')
   }
 
@@ -71,7 +76,7 @@ export default function ProfitabilityPage() {
     if(!confirm('حذف هذا المصروف الثابت نهائياً؟ (لن يتكرر بالشهور القادمة)')) return
     const res = await fetch(`/api/fixed-expenses?id=${fixedExpenseId}`,{method:'DELETE'})
     const j = await res.json()
-    if(j.success){ toast('🗑️ تم الحذف'); loadAll() }
+    if(j.success){ toast('🗑️ تم الحذف'); cache.invalidate('profitability:'); loadAll() }
     else toast(j.error||'خطأ','error')
   }
 
@@ -81,7 +86,7 @@ export default function ProfitabilityPage() {
     const res = await fetch('/api/monthly-fixed-expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,month:`${month}-01`,name:newVarName.trim(),amount:Number(newVarAmount)})})
     const j = await res.json()
     setSavingVar(false)
-    if(j.success){ setNewVarName(''); setNewVarAmount(''); toast('✅ تمت الإضافة'); loadAll() }
+    if(j.success){ setNewVarName(''); setNewVarAmount(''); toast('✅ تمت الإضافة'); cache.invalidate('profitability:'); loadAll() }
     else toast(j.error||'خطأ','error')
   }
 
@@ -89,7 +94,7 @@ export default function ProfitabilityPage() {
     if(!confirm('حذف هذا المصروف؟')) return
     const res = await fetch(`/api/monthly-fixed-expenses?id=${id}`,{method:'DELETE'})
     const j = await res.json()
-    if(j.success){ toast('🗑️ تم الحذف'); loadAll() }
+    if(j.success){ toast('🗑️ تم الحذف'); cache.invalidate('profitability:'); loadAll() }
     else toast(j.error||'خطأ','error')
   }
 
