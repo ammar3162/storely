@@ -35,6 +35,7 @@ const NAV_GROUPS = [
     label: 'إدارة الفريق',
     items: [
       { href:'/staff-management', label:'الموظفون', icon:'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8zm6 0a4 4 0 11-8 0' },
+      { href:'/branch-managers', label:'مديرو الفروع', icon:'M12 4.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zM5.5 20a6.5 6.5 0 0113 0' },
       { href:'/branches', label:'إدارة الفروع', icon:'M3 21h18M5 21V7l8-4v18M19 21V11l-6-4' },
       { href:'/branch-compare', label:'مقارنة الفروع', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
       { href:'/suppliers',  label:'الموردين', icon:'M3 7h13l3 5v5h-3m-10 0H3v-7m13-3v10m-13 0a2 2 0 104 0m-4 0a2 2 0 114 0m9 0a2 2 0 104 0m-4 0a2 2 0 114 0' },
@@ -45,6 +46,7 @@ const NAV_GROUPS = [
     label: 'نمّ أعمالك',
     items: [
       { href:'/ai-tools',   label:'أدوات الذكاء', icon:'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z' },
+      { href:'/profitability', label:'الربحية', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
     ]
   },
   {
@@ -91,6 +93,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [unread])
   const [branches, setBranches]     = useState<any[]>([])
   const [orgPlan, setOrgPlan]       = useState<string>('basic')
+  const [userRole, setUserRole]     = useState<string>('owner')
+  const [managerPermissions, setManagerPermissions] = useState<Record<string,boolean>|null>(null)
   const [showMore, setShowMore]     = useState(false)
   const [showBranch, setShowBranch] = useState(false)
   const [branchLowCounts, setBranchLowCounts] = useState<Record<string, number>>({})
@@ -154,7 +158,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const ms = await fetch('/api/platform-settings').then(r=>r.json())
       if (ms.maintenanceMode) { setMaintenanceMsg(ms.maintenanceMessage); setShowMaintenance(true); return }
     } catch {}
-    const{data:p}=await (sb as any).from('profiles').select('id,full_name,org_id,role,whatsapp_consent,whatsapp_first_contact_confirmed,terms_accepted_at,terms_version_accepted,organizations(name,logo_url,deletion_scheduled_at)').eq('id',user.id).single()
+    const{data:p}=await (sb as any).from('profiles').select('id,full_name,org_id,role,branch_id,permissions,whatsapp_consent,whatsapp_first_contact_confirmed,terms_accepted_at,terms_version_accepted,organizations(name,logo_url,deletion_scheduled_at)').eq('id',user.id).single()
     if(!p){router.replace('/login');return}
     if(!p.org_id){router.replace('/pending');return}
     // فحص انتهاء الاشتراك
@@ -172,6 +176,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const orgLogoUrl=(p.organizations as any)?.logo_url||null
     const userN=p.full_name||''
     setOrgName(orgN); setUserName(userN); setUserInit(userN[0]||'م'); setOrgLogo(orgLogoUrl)
+    setUserRole((p as any).role||'owner')
+    if((p as any).role==='manager') setManagerPermissions((p as any).permissions||{})
     sessionStorage.setItem('s_org_id',p.org_id)
     sessionStorage.setItem('s_profile_id',p.id)
     setProfileId(p.id)
@@ -197,7 +203,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     sessionStorage.setItem('s_max_staff',String((orgData as any)?.max_staff||1))
     sessionStorage.setItem('s_max_suppliers',String((orgData as any)?.max_suppliers||1))
     const{data:bList}=await sb.from('branches').select('id,name,location').eq('org_id',p.org_id).eq('is_active',true).order('created_at')
-    const bl=bList||[]
+    let bl=bList||[]
+    if((p as any).role==='manager' && (p as any).branch_id){
+      bl = bl.filter((b:any)=>b.id===(p as any).branch_id)
+    }
     setBranches(bl)
     sessionStorage.setItem('s_branches',JSON.stringify(bl))
     if(bl.length<=1){
@@ -376,6 +385,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     window.location.reload()
   }
 
+  const PERM_MAP: Record<string,string> = {
+    '/inventory':'inventory', '/dispense':'dispense', '/purchases':'purchases',
+    '/reports':'reports', '/profitability':'profitability', '/suppliers':'suppliers', '/staff-management':'staff',
+  }
+  const MANAGER_HIDDEN = ['/branches','/branch-compare','/settings','/ai-tools','/marketplace','/branch-managers']
+  function navVisible(href:string) {
+    if(userRole!=='manager') return true
+    if(MANAGER_HIDDEN.includes(href)) return false
+    if(PERM_MAP[href]) return !!managerPermissions?.[PERM_MAP[href]]
+    return true
+  }
+
   const isActive=(href:string)=>pathname===href||(href!=='/dashboard'&&pathname.startsWith(href))
 
   // Bottom nav items
@@ -552,7 +573,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* Nav items */}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
-              {[...NAV_MAIN,...NAV_MORE].filter(item=>(item.href!=='/branches'&&item.href!=='/branch-compare')||orgPlan!=='basic').map(item=>{
+              {[...NAV_MAIN,...NAV_MORE].filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability')||orgPlan!=='basic')&&navVisible(item.href)).map(item=>{
                 const active=isActive(item.href)
                 return (
                   <button key={item.href} onClick={()=>{router.push(item.href);setShowMore(false)}} onMouseEnter={()=>router.prefetch(item.href)}
@@ -747,7 +768,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {NAV_GROUPS.map((group,gi)=>(
                 <div key={gi} style={{marginBottom:4}}>
                   <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.25)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{group.label}</div>
-                  {group.items.filter(item=>(item.href!=='/branches'&&item.href!=='/branch-compare')||orgPlan!=='basic').map(item=>{
+                  {group.items.filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability')||orgPlan!=='basic')&&navVisible(item.href)).map(item=>{
                     const active=isActive(item.href)
                     const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
                     const isExternal=item.href.startsWith('http')

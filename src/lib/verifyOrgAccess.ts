@@ -22,7 +22,7 @@ export async function verifyOrgAccess(requestedOrgId: string) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('org_id')
+    .select('org_id, role, branch_id')
     .eq('id', user.id)
     .single()
 
@@ -30,5 +30,20 @@ export async function verifyOrgAccess(requestedOrgId: string) {
     return { authorized: false, error: 'غير مصرح بالوصول لهذا الحساب', status: 403 as const }
   }
 
-  return { authorized: true, userId: user.id, orgId: profile.org_id }
+  return {
+    authorized: true, userId: user.id, orgId: profile.org_id,
+    role: (profile as any).role as string | null,
+    branchId: (profile as any).branch_id as string | null,
+  }
+}
+
+/**
+ * يرجّع الفرع اللي المستخدم مقيّد فيه — null لو "owner" (يشوف كل الفروع)،
+ * أو معرّف الفرع الثابت له لو "manager" (مدير فرع مقيّد).
+ * يُستخدم بأي API route عشان يفرض تصفية الفرع تلقائياً لمدير الفرع،
+ * حتى لو الطلب نفسه أرسل branch_id مختلف.
+ */
+export function enforcedBranchId(access: { role?: string | null; branchId?: string | null }, requestedBranchId?: string | null) {
+  if (access.role === 'manager') return access.branchId || null
+  return requestedBranchId || null
 }

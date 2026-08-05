@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,18 +16,22 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const org_id = searchParams.get('org_id')
+    const branch_id = searchParams.get('branch_id')
     if (!org_id) return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    const effectiveBranchId = enforcedBranchId(access, branch_id)
 
     const supabase = sb()
-    const { data, error } = await supabase
+    let q = supabase
       .from('fixed_expenses')
-      .select('id,org_id,name,amount,is_active,created_at,updated_at')
+      .select('id,org_id,branch_id,name,amount,is_active,created_at,updated_at')
       .eq('org_id', org_id)
       .eq('is_active', true)
       .order('created_at', { ascending: true })
+    if (effectiveBranchId) q = q.eq('branch_id', effectiveBranchId)
+    const { data, error } = await q
 
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
     return NextResponse.json({ success: true, expenses: data || [] })
@@ -38,17 +42,19 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { org_id, name, amount, month } = await req.json()
+    const { org_id, name, amount, month, branch_id } = await req.json()
     if (!org_id || !name || amount === undefined) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    const effectiveBranchId = enforcedBranchId(access, branch_id)
+    if (!effectiveBranchId) return NextResponse.json({ error: 'يلزم تحديد الفرع' }, { status: 400 })
 
     const supabase = sb()
     const { data, error } = await supabase
       .from('fixed_expenses')
-      .insert({ org_id, name, amount: Number(amount), is_active: true })
+      .insert({ org_id, branch_id: effectiveBranchId, name, amount: Number(amount), is_active: true })
       .select()
       .single()
 
@@ -57,7 +63,7 @@ export async function POST(req: Request) {
     // أضفه أيضاً للشهر المعروض حالياً مباشرة لو ما كان موجود
     const targetMonth = month || currentMonthStart()
     await supabase.from('monthly_fixed_expenses').upsert({
-      org_id, month: targetMonth, fixed_expense_id: (data as any).id,
+      org_id, branch_id: effectiveBranchId, month: targetMonth, fixed_expense_id: (data as any).id,
       name: (data as any).name, amount: (data as any).amount,
     }, { onConflict: 'org_id,month,fixed_expense_id' })
 
@@ -72,10 +78,13 @@ export async function PUT(req: Request) {
     const { id, name, amount } = await req.json()
     if (!id) return NextResponse.json({ error: 'id مطلوب' }, { status: 400 })
     const supabase = sb()
-    const { data: existingRow } = await supabase.from('fixed_expenses').select('org_id').eq('id', id).single()
+    const { data: existingRow } = await supabase.from('fixed_expenses').select('org_id,branch_id').eq('id', id).single()
     if (!existingRow) return NextResponse.json({ error: 'غير موجود' }, { status: 404 })
     const access = await verifyOrgAccess((existingRow as any).org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    if (access.role === 'manager' && access.branchId !== (existingRow as any).branch_id) {
+      return NextResponse.json({ error: 'غير مصرح لك بتعديل مصروفات فرع آخر' }, { status: 403 })
+    }
     const update: any = { updated_at: new Date().toISOString() }
     if (name !== undefined) update.name = name
     if (amount !== undefined) update.amount = Number(amount)
@@ -93,10 +102,13 @@ export async function DELETE(req: Request) {
     const id = searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'id مطلوب' }, { status: 400 })
     const supabase = sb()
-    const { data: existingRow } = await supabase.from('fixed_expenses').select('org_id').eq('id', id).single()
+    const { data: existingRow } = await supabase.from('fixed_expenses').select('org_id,branch_id').eq('id', id).single()
     if (!existingRow) return NextResponse.json({ error: 'غير موجود' }, { status: 404 })
     const access = await verifyOrgAccess((existingRow as any).org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    if (access.role === 'manager' && access.branchId !== (existingRow as any).branch_id) {
+      return NextResponse.json({ error: 'غير مصرح لك بحذف مصروفات فرع آخر' }, { status: 403 })
+    }
     const { error } = await supabase.from('fixed_expenses').update({ is_active: false }).eq('id', id)
     if (error) return NextResponse.json({ error: 'حدث خطأ أثناء الحذف' }, { status: 500 })
     return NextResponse.json({ success: true })

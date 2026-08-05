@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { sendPushToOrg } from '@/lib/push'
+import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -191,6 +192,7 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const org_id = searchParams.get('org_id')
+    const branch_id = searchParams.get('branch_id')
     const from = searchParams.get('from')
     const to = searchParams.get('to')
 
@@ -198,14 +200,19 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
     }
 
+    const access = await verifyOrgAccess(org_id)
+    if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    const effectiveBranchId = enforcedBranchId(access, branch_id)
+
     const supabase = sb()
     let query = supabase
       .from('cashier_closings')
-      .select('id,closing_date,staff_name,total_sales,network_amount,cash_amount,total_purchases,difference,status,sales_image,network_image,purchases')
+      .select('id,branch_id,closing_date,staff_name,total_sales,network_amount,cash_amount,total_purchases,difference,status,sales_image,network_image,purchases')
       .eq('org_id', org_id)
       .order('closing_date', { ascending: false })
       .order('created_at', { ascending: false })
 
+    if (effectiveBranchId) query = query.eq('branch_id', effectiveBranchId)
     if (from) query = query.gte('closing_date', from)
     if (to) query = query.lte('closing_date', to)
 
