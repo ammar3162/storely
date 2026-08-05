@@ -194,7 +194,7 @@ export default function LandingPage() {
       {/* MARQUEE */}
       {hasMarquee && (
         <div style={{position:'fixed',top:0,right:0,left:0,zIndex:1001,height:36,background:'#16a34a',overflow:'hidden',display:'flex',alignItems:'center'}}>
-          <div style={{display:'flex',whiteSpace:'nowrap' as const,animation:'marqueeScroll 55s linear infinite'}}>
+          <div style={{display:'flex',whiteSpace:'nowrap' as const,animation:'marqueeScroll 35s linear infinite'}}>
             {[...Array(2)].map((_,i)=>(
               <div key={i} style={{display:'flex',alignItems:'center'}}>
                 {marqueeMsgs.map((m,j)=>(
