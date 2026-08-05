@@ -45,6 +45,7 @@ const NAV_GROUPS = [
     label: 'نمّ أعمالك',
     items: [
       { href:'/ai-tools',   label:'أدوات الذكاء', icon:'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z' },
+      { href:'/profitability', label:'الربحية', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
     ]
   },
   {
@@ -552,7 +553,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* Nav items */}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
-              {[...NAV_MAIN,...NAV_MORE].filter(item=>(item.href!=='/branches'&&item.href!=='/branch-compare')||orgPlan!=='basic').map(item=>{
+              {[...NAV_MAIN,...NAV_MORE].filter(item=>(item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability')||orgPlan!=='basic').map(item=>{
                 const active=isActive(item.href)
                 return (
                   <button key={item.href} onClick={()=>{router.push(item.href);setShowMore(false)}} onMouseEnter={()=>router.prefetch(item.href)}
@@ -747,7 +748,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {NAV_GROUPS.map((group,gi)=>(
                 <div key={gi} style={{marginBottom:4}}>
                   <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.25)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{group.label}</div>
-                  {group.items.filter(item=>(item.href!=='/branches'&&item.href!=='/branch-compare')||orgPlan!=='basic').map(item=>{
+                  {group.items.filter(item=>(item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability')||orgPlan!=='basic').map(item=>{
                     const active=isActive(item.href)
                     const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
                     const isExternal=item.href.startsWith('http')
