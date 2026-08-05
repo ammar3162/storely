@@ -1189,7 +1189,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
     if(!orgId){setLoading(false);return}
     const{start,end}=getRange(period,from,to)
     try {
-      const res = await fetch(`/api/cashier-closing?org_id=${orgId}&from=${start.toISOString().slice(0,10)}&to=${end.toISOString().slice(0,10)}`)
+      const bidCC=sessionStorage.getItem('s_branch_id'); const res = await fetch(`/api/cashier-closing?org_id=${orgId}&from=${start.toISOString().slice(0,10)}&to=${end.toISOString().slice(0,10)}${bidCC?`&branch_id=${bidCC}`:''}`)
       const data = await res.json()
       setClosings(data.closings||[])
     } catch { setClosings([]) }
