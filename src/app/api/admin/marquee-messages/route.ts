@@ -22,16 +22,18 @@ export async function POST(req: Request) {
   if (!(await requirePermission(adminKey, 'manage_users'))) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
-  const { message } = await req.json()
-  if (!message || !message.trim()) return NextResponse.json({ error: 'الرسالة مطلوبة' }, { status: 400 })
+  const { messages } = await req.json()
+  const list: string[] = Array.isArray(messages) ? messages.map((m: string) => String(m).trim()).filter(Boolean) : []
+  if (list.length === 0) return NextResponse.json({ error: 'الرسالة مطلوبة' }, { status: 400 })
 
   const db = sb()
   const { data: existing } = await db.from('marquee_messages').select('display_order').order('display_order', { ascending: false }).limit(1)
-  const nextOrder = existing && existing.length ? (existing[0] as any).display_order + 1 : 0
+  let nextOrder = existing && existing.length ? (existing[0] as any).display_order + 1 : 0
+  const rows = list.map((message) => ({ message, display_order: nextOrder++ }))
 
-  const { error } = await db.from('marquee_messages').insert({ message: message.trim(), display_order: nextOrder } as any)
+  const { error } = await db.from('marquee_messages').insert(rows as any)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true, count: rows.length })
 }
 
 export async function PATCH(req: Request) {
@@ -39,9 +41,13 @@ export async function PATCH(req: Request) {
   if (!(await requirePermission(adminKey, 'manage_users'))) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
-  const { id, is_active } = await req.json()
+  const { id, is_active, message } = await req.json()
   if (!id) return NextResponse.json({ error: 'id مطلوب' }, { status: 400 })
-  const { error } = await sb().from('marquee_messages').update({ is_active } as any).eq('id', id)
+  const updates: any = {}
+  if (typeof is_active === 'boolean') updates.is_active = is_active
+  if (typeof message === 'string' && message.trim()) updates.message = message.trim()
+  if (Object.keys(updates).length === 0) return NextResponse.json({ error: 'لا يوجد تحديث' }, { status: 400 })
+  const { error } = await sb().from('marquee_messages').update(updates).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })
 }
