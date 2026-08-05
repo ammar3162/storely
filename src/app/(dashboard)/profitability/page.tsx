@@ -65,7 +65,7 @@ export default function ProfitabilityPage() {
   async function addTemplate() {
     if(!newTplName.trim()||!newTplAmount) return
     setSavingTpl(true)
-    const res = await fetch('/api/fixed-expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,name:newTplName.trim(),amount:Number(newTplAmount),month:`${month}-01`})})
+    const res = await fetch('/api/fixed-expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id'),name:newTplName.trim(),amount:Number(newTplAmount),month:`${month}-01`})})
     const j = await res.json()
     setSavingTpl(false)
     if(j.success){ setNewTplName(''); setNewTplAmount(''); toast('✅ تمت الإضافة'); cache.invalidate('profitability:'); loadAll() }
@@ -83,7 +83,7 @@ export default function ProfitabilityPage() {
   async function addVariable() {
     if(!newVarName.trim()||!newVarAmount) return
     setSavingVar(true)
-    const res = await fetch('/api/monthly-fixed-expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,month:`${month}-01`,name:newVarName.trim(),amount:Number(newVarAmount)})})
+    const res = await fetch('/api/monthly-fixed-expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id'),month:`${month}-01`,name:newVarName.trim(),amount:Number(newVarAmount)})})
     const j = await res.json()
     setSavingVar(false)
     if(j.success){ setNewVarName(''); setNewVarAmount(''); toast('✅ تمت الإضافة'); cache.invalidate('profitability:'); loadAll() }

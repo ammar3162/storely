@@ -1,24 +1,20 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-async function ensureGenerated(supabase: any, org_id: string, month: string) {
-  const { data: templates } = await supabase
-    .from('fixed_expenses')
-    .select('id,name,amount')
-    .eq('org_id', org_id)
-    .eq('is_active', true)
+async function ensureGenerated(supabase: any, org_id: string, month: string, branchId: string | null) {
+  let tplQ = supabase.from('fixed_expenses').select('id,name,amount,branch_id').eq('org_id', org_id).eq('is_active', true)
+  if (branchId) tplQ = tplQ.eq('branch_id', branchId)
+  const { data: templates } = await tplQ
 
-  const { data: existing } = await supabase
-    .from('monthly_fixed_expenses')
-    .select('fixed_expense_id')
-    .eq('org_id', org_id)
-    .eq('month', month)
+  let existQ = supabase.from('monthly_fixed_expenses').select('fixed_expense_id').eq('org_id', org_id).eq('month', month)
+  if (branchId) existQ = existQ.eq('branch_id', branchId)
+  const { data: existing } = await existQ
 
   const existingIds = new Set((existing || []).map((e: any) => e.fixed_expense_id))
   const missing = (templates || []).filter((t: any) => !existingIds.has(t.id))
@@ -26,7 +22,7 @@ async function ensureGenerated(supabase: any, org_id: string, month: string) {
   if (missing.length > 0) {
     await supabase.from('monthly_fixed_expenses').insert(
       missing.map((t: any) => ({
-        org_id, month, fixed_expense_id: t.id, name: t.name, amount: t.amount,
+        org_id, month, fixed_expense_id: t.id, name: t.name, amount: t.amount, branch_id: t.branch_id,
       }))
     )
   }
@@ -42,6 +38,7 @@ export async function GET(req: Request) {
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    const effectiveBranchId = enforcedBranchId(access, branch_id)
 
     const [year, monthNum] = monthParam.split('-').map(Number)
     const monthStart = `${monthParam}-01`
@@ -60,7 +57,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'upgrade_required', message: 'ميزة الربحية متاحة فقط بالباقة المتوسطة أو المتقدمة' }, { status: 403 })
     }
 
-    await ensureGenerated(supabase, org_id, monthStart)
+    await ensureGenerated(supabase, org_id, monthStart, effectiveBranchId)
 
     // 1) دخلت — كل مبيعات إقفالات الكاشير هالشهر (شامل الضريبة، رقم حقيقي)
     let closingsQ = supabase
@@ -69,7 +66,7 @@ export async function GET(req: Request) {
       .eq('org_id', org_id)
       .gte('closing_date', monthStart)
       .lte('closing_date', monthEndDate)
-    if (branch_id) closingsQ = (closingsQ as any).eq('branch_id', branch_id)
+    if (effectiveBranchId) closingsQ = (closingsQ as any).eq('branch_id', effectiveBranchId)
     const { data: closings } = await closingsQ
 
     const totalIn = (closings || []).reduce((s: number, c: any) => s + Number(c.total_sales || 0), 0)
@@ -82,7 +79,7 @@ export async function GET(req: Request) {
       .eq('org_id', org_id)
       .gte('created_at', monthStartTs)
       .lte('created_at', monthEndTs)
-    if (branch_id) purchasesQ = (purchasesQ as any).eq('branch_id', branch_id)
+    if (effectiveBranchId) purchasesQ = (purchasesQ as any).eq('branch_id', effectiveBranchId)
     const { data: purchases } = await purchasesQ
 
     const purchasesList = purchases || []
@@ -91,12 +88,14 @@ export async function GET(req: Request) {
     const totalPurchases = inventoryPurchases + otherPurchases
 
     // 3) المصروفات الثابتة لهذا الشهر (رواتب، إيجار...)
-    const { data: fixedExpensesData } = await supabase
+    let fixedExpensesQ = supabase
       .from('monthly_fixed_expenses')
-      .select('id,name,amount,fixed_expense_id,month,org_id,created_at')
+      .select('id,name,amount,fixed_expense_id,month,org_id,branch_id,created_at')
       .eq('org_id', org_id)
       .eq('month', monthStart)
       .order('created_at', { ascending: true })
+    if (effectiveBranchId) fixedExpensesQ = fixedExpensesQ.eq('branch_id', effectiveBranchId)
+    const { data: fixedExpensesData } = await fixedExpensesQ
 
     const fixedExpensesList = fixedExpensesData || []
     const fixedExpensesTotal = fixedExpensesList.reduce((s: number, e: any) => s + Number(e.amount || 0), 0)
