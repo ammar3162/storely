@@ -108,7 +108,8 @@ export default function LandingPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitMsg, setSubmitMsg] = useState<{ok:boolean,text:string}|null>(null)
   const [partners, setPartners] = useState<any[]>([])
-  const [marqueeMsgs, setMarqueeMsgs] = useState<string[]>(['📦 Storely — نظام إدارة المخزون والموظفين للمطاعم والمتاجر'])
+  const [marqueeMsgs, setMarqueeMsgs] = useState<string[]>([])
+  const hasMarquee = marqueeMsgs.length>0
 
   useEffect(()=>{
     import('@/lib/supabase/client').then(({createClient})=>{
@@ -191,23 +192,25 @@ export default function LandingPage() {
       `}</style>
 
       {/* MARQUEE */}
-      <div style={{position:'fixed',top:0,right:0,left:0,zIndex:1001,height:36,background:'#16a34a',overflow:'hidden',display:'flex',alignItems:'center'}}>
-        <div style={{display:'flex',whiteSpace:'nowrap' as const,animation:'marqueeScroll 55s linear infinite'}}>
-          {[...Array(2)].map((_,i)=>(
-            <div key={i} style={{display:'flex',alignItems:'center'}}>
-              {marqueeMsgs.map((m,j)=>(
-                <span key={j} style={{color:'white',fontSize:13,fontWeight:700,padding:'0 24px',display:'flex',alignItems:'center',gap:8}}>
-                  {m}
-                  <span style={{opacity:.5}}>•</span>
-                </span>
-              ))}
-            </div>
-          ))}
+      {hasMarquee && (
+        <div style={{position:'fixed',top:0,right:0,left:0,zIndex:1001,height:36,background:'#16a34a',overflow:'hidden',display:'flex',alignItems:'center'}}>
+          <div style={{display:'flex',whiteSpace:'nowrap' as const,animation:'marqueeScroll 55s linear infinite'}}>
+            {[...Array(2)].map((_,i)=>(
+              <div key={i} style={{display:'flex',alignItems:'center'}}>
+                {marqueeMsgs.map((m,j)=>(
+                  <span key={j} style={{color:'white',fontSize:13,fontWeight:700,padding:'0 24px',display:'flex',alignItems:'center',gap:8}}>
+                    {m}
+                    <span style={{opacity:.5}}>•</span>
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* NAVBAR */}
-      <nav style={{position:'fixed',top:36,right:0,left:0,zIndex:1000,background:scrolled?'rgba(255,255,255,.97)':'white',borderBottom:scrolled?'1px solid #f3f4f6':'1px solid transparent',backdropFilter:scrolled?'blur(10px)':'none',transition:'all .3s',padding:'0 40px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+      <nav style={{position:'fixed',top:hasMarquee?36:0,right:0,left:0,zIndex:1000,background:scrolled?'rgba(255,255,255,.97)':'white',borderBottom:scrolled?'1px solid #f3f4f6':'1px solid transparent',backdropFilter:scrolled?'blur(10px)':'none',transition:'all .3s',padding:'0 40px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           <img src="/storely-logo.png" alt="Storely" style={{width:38,height:38,borderRadius:10,objectFit:'cover'}}/>
           <span style={{fontSize:18,fontWeight:800,color:'#111827',letterSpacing:'-0.3px'}}>Storely</span>
@@ -228,7 +231,7 @@ export default function LandingPage() {
       </nav>
 
       {menuOpen && (
-        <div className="mob-menu" style={{position:'fixed',top:100,right:0,left:0,zIndex:999,background:'white',borderBottom:'1px solid #f3f4f6',padding:'20px 24px',display:'flex',flexDirection:'column',gap:16}}>
+        <div className="mob-menu" style={{position:'fixed',top:hasMarquee?100:64,right:0,left:0,zIndex:999,background:'white',borderBottom:'1px solid #f3f4f6',padding:'20px 24px',display:'flex',flexDirection:'column',gap:16}}>
           {[['المميزات','#features'],['الأسعار','#pricing'],['الأسئلة','#faq']].map(([l,h])=>(
             <a key={h} href={h} onClick={()=>setMenuOpen(false)} style={{color:'#374151',textDecoration:'none',fontSize:16,fontWeight:500,padding:'8px 0',borderBottom:'1px solid #f9fafb'}}>{l}</a>
           ))}
@@ -237,7 +240,7 @@ export default function LandingPage() {
       )}
 
       {/* HERO */}
-      <section style={{paddingTop:166,paddingBottom:60,padding:'166px 40px 60px',maxWidth:1240,margin:'0 auto',textAlign:'center' as const}}>
+      <section style={{paddingTop:hasMarquee?166:130,paddingBottom:60,padding:hasMarquee?'166px 40px 60px':'130px 40px 60px',maxWidth:1240,margin:'0 auto',textAlign:'center' as const}}>
         <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:99,padding:'6px 16px',fontSize:13,fontWeight:600,color:'#16a34a',marginBottom:24}}>
           ✓ تجربة مجانية 14 يوماً — لا يتطلب بطاقة ائتمانية
         </div>
