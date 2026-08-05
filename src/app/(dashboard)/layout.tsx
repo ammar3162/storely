@@ -137,6 +137,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const sb = createClient()
 
   useEffect(()=>{
+    const onPageShow = (e: PageTransitionEvent) => { if (e.persisted) window.location.reload() }
+    window.addEventListener('pageshow', onPageShow)
+    return () => window.removeEventListener('pageshow', onPageShow)
+  },[])
+
+  useEffect(()=>{
     const saved = localStorage.getItem('storely_theme') as 'light'|'dark' || 'light'
     setTheme(saved)
     document.documentElement.setAttribute('data-theme', saved)
@@ -592,7 +598,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <button onClick={toggleTheme} style={{flex:1,padding:'11px',background:'#f9fafb',border:'1.5px solid #e5e7eb',borderRadius:12,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:C.text2,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                 {theme==='light'?'🌙 داكن':'☀️ فاتح'}
               </button>
-              <button onClick={async()=>{await sb.auth.signOut();_cache=null;sessionStorage.clear();router.replace('/login')}}
+              <button onClick={async()=>{await sb.auth.signOut();_cache=null;sessionStorage.clear();window.location.href='/login'}}
                 style={{flex:1,padding:'11px',background:'#fef2f2',border:'1.5px solid #fecaca',borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',color:'#ef4444',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                 <Icon d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" size={15} stroke="#ef4444" width={2.5}/>
                 خروج
@@ -795,7 +801,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,.8)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{userName}</div>
               </div>
               <button onClick={toggleTheme} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,.5)',fontSize:14,padding:4}}>{theme==='light'?'🌙':'☀️'}</button>
-              <button onClick={async()=>{await sb.auth.signOut();_cache=null;sessionStorage.clear();router.replace('/login')}} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,.5)',padding:4}}>
+              <button onClick={async()=>{await sb.auth.signOut();_cache=null;sessionStorage.clear();window.location.href='/login'}} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,.5)',padding:4}}>
                 <Icon d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" size={15} stroke="rgba(255,255,255,.5)" width={2}/>
               </button>
             </div>
