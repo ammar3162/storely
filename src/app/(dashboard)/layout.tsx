@@ -725,7 +725,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Mobile Bottom Nav — Zid style */}
           <nav className="mob-bottom-nav" style={{position:'fixed',bottom:0,right:0,left:0,zIndex:100,background:'white',borderTop:'1px solid #f0f0f0',paddingBottom:'env(safe-area-inset-bottom)',justifyContent:'space-around',alignItems:'stretch',boxShadow:'0 -4px 20px rgba(0,0,0,.06)'}}>
-            {BOT_NAV.map(item=>{
+            {BOT_NAV.filter(item=>navVisible(item.href)).map(item=>{
               const active=isActive(item.href)
               return(
                 <button key={item.href} onClick={()=>router.push(item.href)} onMouseEnter={()=>router.prefetch(item.href)}
