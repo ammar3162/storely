@@ -43,6 +43,11 @@ export default function SupplierDashboardPage() {
     setQuoteRequests(data || [])
   }
 
+  async function markFulfilled(reqId: string) {
+    await sb.from('quote_requests' as any).update({ status: 'fulfilled' }).eq('id', reqId)
+    loadQuoteRequests(profile.id)
+  }
+
   function startRespond(reqId: string) {
     setRespondingId(reqId); setRespondPrice(''); setRespondNote('')
   }
@@ -208,14 +213,26 @@ export default function SupplierDashboardPage() {
                 <div key={r.id} style={{padding:'12px 14px',background:'#f5f5f4',borderRadius:10}}>
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
                     <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{r.org_name || 'عميل'}</span>
-                    <span style={{fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:20,background:r.status==='quoted'?'#dcfce7':'#fef3c7',color:r.status==='quoted'?'#16a34a':'#92400e'}}>
-                      {r.status==='quoted'?'✅ تم الرد':'⏳ بانتظار ردك'}
+                    <span style={{fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:20,
+                      background:r.status==='fulfilled'?'#dbeafe':r.status==='accepted'?'#dcfce7':r.status==='quoted'?'#fef3c7':'#f1f5f9',
+                      color:r.status==='fulfilled'?'#1d4ed8':r.status==='accepted'?'#16a34a':r.status==='quoted'?'#92400e':'#64748b'}}>
+                      {r.status==='fulfilled'?'📦 منفَّذ':r.status==='accepted'?'✅ العميل وافق':r.status==='quoted'?'💬 تم الرد':'⏳ بانتظار ردك'}
                     </span>
                   </div>
                   <div style={{fontSize:12,color:'#5f5e5a',marginBottom:8}}>
                     {(r.items||[]).map((i:any)=>`${i.name} (${i.qty} ${i.unit||''})`).join('، ')}
                   </div>
-                  {r.status==='quoted' ? (
+                  {r.status==='accepted' ? (
+                    <div>
+                      <div style={{fontSize:12,color:'#16a34a',fontWeight:700,marginBottom:8}}>سعرك المرسل: {r.quoted_price} ر.س — العميل وافق عليه</div>
+                      <button onClick={()=>markFulfilled(r.id)}
+                        style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#2563eb',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                        📦 تأكيد التنفيذ (تم التوريد)
+                      </button>
+                    </div>
+                  ) : r.status==='fulfilled' ? (
+                    <div style={{fontSize:12,color:'#1d4ed8',fontWeight:700}}>سعرك المرسل: {r.quoted_price} ر.س — تم التنفيذ ✅</div>
+                  ) : r.status==='quoted' ? (
                     <div style={{fontSize:12,color:'#16a34a',fontWeight:700}}>سعرك المرسل: {r.quoted_price} ر.س</div>
                   ) : respondingId===r.id ? (
                     <div style={{display:'flex',gap:6,alignItems:'center'}}>

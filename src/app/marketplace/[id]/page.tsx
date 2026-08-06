@@ -64,6 +64,17 @@ export default function SupplierStorefrontPage() {
     setSelected(prev => ({ ...prev, [itemId]: qty }))
   }
 
+  async function acceptOffer(reqId: string, supplierName: string, supplierPhone: string) {
+    if (!confirm('تأكيد قبول العرض؟ سيتم إضافة المورد تلقائياً لقائمة موردينك')) return
+    const sb = createClient()
+    const { data: existingSupplier } = await (sb as any).from('suppliers').select('id').eq('org_id', orgId).eq('name', supplierName).maybeSingle()
+    if (!existingSupplier) {
+      await (sb as any).from('suppliers').insert({ org_id: orgId, name: supplierName, phone: supplierPhone || null })
+    }
+    await (sb as any).from('quote_requests').update({ status: 'accepted' }).eq('id', reqId)
+    load()
+  }
+
   async function submitQuoteRequest() {
     const chosenIds = Object.keys(selected)
     if (chosenIds.length === 0) return
@@ -198,18 +209,26 @@ export default function SupplierStorefrontPage() {
                 <div key={r.id} style={{background:'white',borderRadius:12,padding:'14px 16px',border:'1px solid #f1f5f9'}}>
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
                     <span style={{fontSize:12,color:'#64748b'}}>{new Date(r.created_at).toLocaleDateString('ar-SA')}</span>
-                    <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:20,background:r.status==='quoted'?'#dcfce7':'#fef3c7',color:r.status==='quoted'?'#16a34a':'#92400e'}}>
-                      {r.status==='quoted'?'✅ تم التسعير':'⏳ بانتظار رد المورد'}
+                    <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:20,
+                      background:r.status==='fulfilled'?'#dbeafe':r.status==='accepted'?'#dcfce7':r.status==='quoted'?'#fef3c7':'#f1f5f9',
+                      color:r.status==='fulfilled'?'#1d4ed8':r.status==='accepted'?'#16a34a':r.status==='quoted'?'#92400e':'#64748b'}}>
+                      {r.status==='fulfilled'?'📦 تم التنفيذ':r.status==='accepted'?'✅ مقبول':r.status==='quoted'?'💰 تم التسعير':'⏳ بانتظار رد المورد'}
                     </span>
                   </div>
                   <div style={{fontSize:12,color:'#475569',marginBottom:6}}>
                     {(r.items||[]).map((i:any,idx:number)=>`${i.name} (${i.qty} ${i.unit||''})`).join('، ')}
                   </div>
-                  {r.status==='quoted' && (
+                  {(r.status==='quoted'||r.status==='accepted'||r.status==='fulfilled') && (
                     <div style={{background:'#f0fdf4',borderRadius:8,padding:'8px 12px',marginTop:8}}>
                       <div style={{fontSize:14,fontWeight:900,color:'#16a34a'}}>السعر المقترح: {r.quoted_price} ر.س</div>
                       {r.quoted_note && <div style={{fontSize:11,color:'#5f6b66',marginTop:4}}>{r.quoted_note}</div>}
                     </div>
+                  )}
+                  {r.status==='quoted' && (
+                    <button onClick={()=>acceptOffer(r.id, supplier.business_name, supplier.phone)}
+                      style={{marginTop:8,padding:'8px 16px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>
+                      ✅ قبول العرض
+                    </button>
                   )}
                 </div>
               ))}
