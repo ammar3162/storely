@@ -21,6 +21,8 @@ export default function MarketplacePage() {
   const [filter, setFilter] = useState('الكل')
   const [search, setSearch] = useState('')
   const [orgType, setOrgType] = useState<string|null>(null)
+  const [newSuppliers, setNewSuppliers] = useState<any[]>([])
+  const [expandedId, setExpandedId] = useState<string|null>(null)
 
   useEffect(()=>{
     loadSuppliers()
@@ -38,6 +40,21 @@ export default function MarketplacePage() {
       .eq('marketplace_consent',true)
       .order('created_at',{ascending:false})
     setSuppliers(data || [])
+
+    const { data: profiles } = await (sb as any).from('supplier_profiles')
+      .select('id,business_name,phone,location')
+      .eq('status','active')
+    if (profiles?.length) {
+      const { data: allItems } = await (sb as any).from('supplier_catalog_items')
+        .select('id,supplier_id,name,unit,price,image_url')
+        .eq('is_available', true)
+        .in('supplier_id', profiles.map((p:any)=>p.id))
+      const withItems = (profiles||[]).map((p:any)=>({
+        ...p,
+        items: (allItems||[]).filter((it:any)=>it.supplier_id===p.id),
+      })).filter((p:any)=>p.items.length>0)
+      setNewSuppliers(withItems)
+    }
     setLoading(false)
   }
 
@@ -168,6 +185,64 @@ export default function MarketplacePage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* موردون جدد — من بوابة المورد المستقلة */}
+        {newSuppliers.length > 0 && (
+          <div style={{marginTop: filtered.length>0 ? 32 : 0}}>
+            <h2 style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:14}}>✨ موردون جدد على Storely</h2>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:16}}>
+              {newSuppliers.map((s:any)=>{
+                const isOpen = expandedId===s.id
+                const phone = (s.phone||'').replace(/^0/,'966').replace(/[^0-9]/g,'')
+                const waMsg = encodeURIComponent(`مرحباً، أنا عميل Storely وأود الاستفسار عن أصنافكم 🙌`)
+                return (
+                  <div key={s.id} style={{background:'white',borderRadius:16,overflow:'hidden',boxShadow:'0 2px 8px rgba(0,0,0,.06)',border:'1px solid #f1f5f9'}}>
+                    <div style={{background:'linear-gradient(135deg,#0d2818,#1a4731)',padding:'20px',display:'flex',alignItems:'center',gap:12}}>
+                      <div style={{width:48,height:48,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22}}>🚚</div>
+                      <div>
+                        <div style={{fontSize:15,fontWeight:800,color:'white'}}>{s.business_name}</div>
+                        {s.location && <div style={{fontSize:11,color:'rgba(255,255,255,.7)',marginTop:2}}>📍 {s.location}</div>}
+                      </div>
+                      <div style={{marginRight:'auto'}}>
+                        <span style={{background:'#16a34a',color:'white',fontSize:9,fontWeight:700,padding:'3px 8px',borderRadius:20}}>{s.items.length} صنف</span>
+                      </div>
+                    </div>
+                    <div style={{padding:'16px'}}>
+                      <button onClick={()=>setExpandedId(isOpen?null:s.id)}
+                        style={{width:'100%',padding:'8px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',marginBottom:isOpen?12:0,fontFamily:'inherit'}}>
+                        {isOpen?'إخفاء الأصناف ▲':'عرض الأصناف ▼'}
+                      </button>
+                      {isOpen && (
+                        <div style={{display:'flex',flexDirection:'column' as const,gap:8,marginBottom:12}}>
+                          {s.items.map((it:any)=>(
+                            <div key={it.id} style={{display:'flex',alignItems:'center',gap:8,padding:'8px',background:'#f8fafc',borderRadius:8}}>
+                              {it.image_url ? (
+                                <img src={it.image_url} alt="" style={{width:36,height:36,borderRadius:6,objectFit:'cover'}}/>
+                              ) : (
+                                <div style={{width:36,height:36,borderRadius:6,background:'#e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>📦</div>
+                              )}
+                              <div style={{flex:1}}>
+                                <div style={{fontSize:12,fontWeight:700,color:'#0f172a'}}>{it.name}</div>
+                                <div style={{fontSize:10,color:'#64748b'}}>{it.unit}</div>
+                              </div>
+                              <div style={{fontSize:13,fontWeight:800,color:'#16a34a'}}>{it.price} ر.س</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {phone && (
+                        <a href={`https://wa.me/${phone}?text=${waMsg}`} target="_blank" rel="noopener noreferrer"
+                          style={{display:'block',padding:'10px',background:'#16a34a',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none',textAlign:'center'}}>
+                          📲 تواصل مع المورد
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )}
 

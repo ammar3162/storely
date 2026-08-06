@@ -11,6 +11,10 @@ export default function SupplierDashboardPage() {
   const [price, setPrice] = useState('')
   const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState<string|null>(null)
+  const [imageFile, setImageFile] = useState<File|null>(null)
+  const [imagePreview, setImagePreview] = useState<string>('')
+  const [existingImageUrl, setExistingImageUrl] = useState<string>('')
+  const [uploading, setUploading] = useState(false)
 
   const sb = createClient()
 
@@ -33,19 +37,42 @@ export default function SupplierDashboardPage() {
 
   function resetForm() {
     setName(''); setUnit(''); setPrice(''); setEditingId(null)
+    setImageFile(null); setImagePreview(''); setExistingImageUrl('')
   }
 
   function startEdit(item: any) {
     setEditingId(item.id); setName(item.name); setUnit(item.unit||''); setPrice(String(item.price||''))
+    setExistingImageUrl(item.image_url||''); setImageFile(null); setImagePreview('')
+  }
+
+  function onPickImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
   }
 
   async function saveItem() {
     if (!name.trim() || !price) return
     setSaving(true)
+
+    let imageUrl = existingImageUrl || null
+    if (imageFile) {
+      setUploading(true)
+      const ext = imageFile.name.split('.').pop()
+      const path = `${profile.id}/${Date.now()}.${ext}`
+      const { error: upErr } = await sb.storage.from('supplier-items').upload(path, imageFile, { upsert: true })
+      if (!upErr) {
+        const { data: pub } = sb.storage.from('supplier-items').getPublicUrl(path)
+        imageUrl = pub.publicUrl
+      }
+      setUploading(false)
+    }
+
     if (editingId) {
-      await sb.from('supplier_catalog_items' as any).update({ name: name.trim(), unit: unit.trim()||null, price: Number(price), updated_at: new Date().toISOString() }).eq('id', editingId)
+      await sb.from('supplier_catalog_items' as any).update({ name: name.trim(), unit: unit.trim()||null, price: Number(price), image_url: imageUrl, updated_at: new Date().toISOString() }).eq('id', editingId)
     } else {
-      await sb.from('supplier_catalog_items' as any).insert({ supplier_id: profile.id, name: name.trim(), unit: unit.trim()||null, price: Number(price) })
+      await sb.from('supplier_catalog_items' as any).insert({ supplier_id: profile.id, name: name.trim(), unit: unit.trim()||null, price: Number(price), image_url: imageUrl })
     }
     setSaving(false)
     resetForm()
@@ -96,9 +123,18 @@ export default function SupplierDashboardPage() {
             <input type="number" value={price} onChange={e=>setPrice(e.target.value)} placeholder="السعر"
               style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
           </div>
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+            {(imagePreview || existingImageUrl) && (
+              <img src={imagePreview || existingImageUrl} alt="" style={{width:48,height:48,borderRadius:8,objectFit:'cover',border:'1px solid #e5e5e3'}}/>
+            )}
+            <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',padding:'8px 12px',borderRadius:8,border:'1px dashed #cbd5e1',cursor:'pointer'}}>
+              📷 {imagePreview||existingImageUrl?'تغيير الصورة':'إضافة صورة (اختياري)'}
+              <input type="file" accept="image/*" onChange={onPickImage} style={{display:'none'}}/>
+            </label>
+          </div>
           <div style={{display:'flex',gap:8}}>
             <button onClick={saveItem} disabled={saving} style={{padding:'10px 20px',borderRadius:8,border:'none',background:'#16a34a',color:'white',fontWeight:700,fontSize:13,cursor:'pointer'}}>
-              {saving?'⏳ جاري الحفظ...':editingId?'حفظ التعديل':'إضافة'}
+              {saving?(uploading?'⏳ جاري رفع الصورة...':'⏳ جاري الحفظ...'):editingId?'حفظ التعديل':'إضافة'}
             </button>
             {editingId && <button onClick={resetForm} style={{padding:'10px 20px',borderRadius:8,border:'1px solid #e5e5e3',background:'white',fontWeight:700,fontSize:13,cursor:'pointer',color:'#5f5e5a'}}>إلغاء</button>}
           </div>
@@ -112,9 +148,12 @@ export default function SupplierDashboardPage() {
             <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
               {items.map((item:any)=>(
                 <div key={item.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'#f5f5f4',borderRadius:10,opacity:item.is_available?1:.5}}>
-                  <div>
-                    <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{item.name}</span>
-                    <span style={{fontSize:11,color:'#888780',marginRight:8}}>{item.unit}</span>
+                  <div style={{display:'flex',alignItems:'center',gap:10}}>
+                    {item.image_url && <img src={item.image_url} alt="" style={{width:36,height:36,borderRadius:6,objectFit:'cover'}}/>}
+                    <div>
+                      <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{item.name}</span>
+                      <span style={{fontSize:11,color:'#888780',marginRight:8}}>{item.unit}</span>
+                    </div>
                   </div>
                   <div style={{display:'flex',alignItems:'center',gap:8}}>
                     <span style={{fontSize:13,fontWeight:800,color:'#16a34a'}}>{item.price} ر.س</span>
