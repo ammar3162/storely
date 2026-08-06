@@ -100,7 +100,10 @@ export default function SupplierStorefrontPage() {
                 <div style={{padding:'12px 14px'}}>
                   <div style={{fontSize:14,fontWeight:800,color:'#0f172a'}}>{it.name}</div>
                   <div style={{fontSize:11,color:'#64748b',marginTop:2}}>{it.unit}</div>
-                  <div style={{fontSize:16,fontWeight:900,color:'#16a34a',marginTop:8}}>{it.price} ر.س</div>
+                  <div style={{fontSize:16,fontWeight:900,color:'#16a34a',marginTop:8}}>{Number(it.price).toFixed(2)} ر.س</div>
+                  <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>
+                    الأساسي {(Number(it.price)/1.15).toFixed(2)} + ضريبة {(Number(it.price)-Number(it.price)/1.15).toFixed(2)} ر.س
+                  </div>
                 </div>
               </div>
             ))}
