@@ -17,6 +17,9 @@ export default function SupplierStorefrontPage() {
   const [selected, setSelected] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [myRequests, setMyRequests] = useState<any[]>([])
+  const [chatMessages, setChatMessages] = useState<any[]>([])
+  const [chatInput, setChatInput] = useState('')
+  const [chatSending, setChatSending] = useState(false)
 
   useEffect(()=>{ load() },[supplierId])
 
@@ -46,6 +49,12 @@ export default function SupplierStorefrontPage() {
           .eq('supplier_id', supplierId).eq('org_id', p.org_id)
           .order('created_at', { ascending: false })
         setMyRequests(reqs || [])
+
+        const { data: msgs } = await (sb as any).from('chat_messages')
+          .select('id,sender_type,message,created_at')
+          .eq('supplier_id', supplierId).eq('org_id', p.org_id)
+          .order('created_at', { ascending: true })
+        setChatMessages(msgs || [])
       }
     }
     setLoading(false)
@@ -73,6 +82,20 @@ export default function SupplierStorefrontPage() {
     }
     await (sb as any).from('quote_requests').update({ status: 'accepted' }).eq('id', reqId)
     load()
+  }
+
+  async function sendChatMessage() {
+    if (!chatInput.trim()) return
+    const sb = createClient()
+    const { data: { user } } = await sb.auth.getUser()
+    if (!user || !orgId) { alert('لازم تسجّل دخول بحسابك بستوريلي أول عشان تراسل المورد'); router.push('/login'); return }
+    setChatSending(true)
+    const { data } = await (sb as any).from('chat_messages').insert({
+      supplier_id: supplierId, org_id: orgId, org_name: orgName, sender_type: 'customer', message: chatInput.trim(),
+    }).select().single()
+    if (data) setChatMessages(prev => [...prev, data])
+    setChatInput('')
+    setChatSending(false)
   }
 
   async function submitQuoteRequest() {
@@ -198,6 +221,34 @@ export default function SupplierStorefrontPage() {
               style={{padding:'10px 20px',background:'#16a34a',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>
               {submitting?'⏳ جاري الإرسال...':'📩 إرسال طلب التسعير'}
             </button>
+          </div>
+        )}
+
+        {orgId && (
+          <div style={{marginTop:32,background:'white',borderRadius:16,border:'1px solid #f1f5f9',overflow:'hidden'}}>
+            <div style={{padding:'14px 18px',borderBottom:'1px solid #f1f5f9',fontSize:15,fontWeight:800,color:'#0f172a'}}>💬 تواصل مع المورد</div>
+            <div style={{maxHeight:280,overflowY:'auto' as const,padding:16,display:'flex',flexDirection:'column' as const,gap:8,background:'#f8fafc'}}>
+              {chatMessages.length===0 ? (
+                <div style={{textAlign:'center' as const,color:'#94a3b8',fontSize:12,padding:20}}>ما فيه رسائل بعد — ابدأ المحادثة</div>
+              ) : chatMessages.map((m:any)=>(
+                <div key={m.id} style={{alignSelf:m.sender_type==='customer'?'flex-end':'flex-start',maxWidth:'75%'}}>
+                  <div style={{padding:'8px 12px',borderRadius:12,fontSize:13,background:m.sender_type==='customer'?'#16a34a':'white',color:m.sender_type==='customer'?'white':'#0f172a',border:m.sender_type==='customer'?'none':'1px solid #e2e8f0'}}>
+                    {m.message}
+                  </div>
+                  <div style={{fontSize:9,color:'#94a3b8',marginTop:2,textAlign:m.sender_type==='customer'?'left' as const:'right' as const}}>
+                    {new Date(m.created_at).toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'})}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{display:'flex',gap:8,padding:12,borderTop:'1px solid #f1f5f9'}}>
+              <input value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') sendChatMessage()}}
+                placeholder="اكتب رسالتك..." style={{flex:1,padding:'10px 14px',borderRadius:10,border:'1px solid #e2e8f0',fontSize:13,fontFamily:'inherit'}}/>
+              <button onClick={sendChatMessage} disabled={chatSending}
+                style={{padding:'10px 20px',background:'#16a34a',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>
+                {chatSending?'...':'إرسال'}
+              </button>
+            </div>
           </div>
         )}
 
