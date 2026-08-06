@@ -19,6 +19,7 @@ export default function TransferStockPage() {
   const [filterTo, setFilterTo] = useState('')
   const [filterBranch, setFilterBranch] = useState('')
   const [filterProduct, setFilterProduct] = useState('')
+  const [exportingPdf, setExportingPdf] = useState(false)
 
   const sb = createClient()
 
@@ -85,6 +86,62 @@ export default function TransferStockPage() {
 
   const branchName = (id:string) => branches.find((b:any)=>b.id===id)?.name || '—'
 
+  function destBranchFromNote(note:string) {
+    return (note||'').replace('نقل إلى فرع ', '').trim() || '—'
+  }
+
+  function exportCSV() {
+    const csv = '\ufeff' + [
+      ['التاريخ','المنتج','من فرع','إلى فرع','الكمية','الوحدة'],
+      ...filteredHistory.map((h:any)=>[
+        new Date(h.created_at).toLocaleDateString('en-GB'),
+        (h.products as any)?.name || '',
+        branchName(h.branch_id),
+        destBranchFromNote(h.note),
+        Math.abs(h.qty_change),
+        (h.products as any)?.unit || '',
+      ])
+    ].map(r=>r.map(c=>'"'+c+'"').join(',')).join('\n')
+    Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })),
+      download: 'تقرير_نقل_المخزون.csv',
+    }).click()
+  }
+
+  async function handleExportPdf() {
+    setExportingPdf(true)
+    try {
+      const { data: org } = orgId ? await sb.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      const { exportReportPdf } = await import('@/lib/pdfExport')
+      await exportReportPdf({
+        title: 'تقرير نقل المخزون بين الفروع',
+        subtitle: filterFrom || filterTo ? `${filterFrom||'البداية'} — ${filterTo||'اليوم'}` : 'كل الفترات',
+        orgName: (org as any)?.name || 'Storely',
+        logoUrl: '/storely-logo.png',
+        columns: [
+          { header: 'التاريخ', key: 'date' },
+          { header: 'المنتج', key: 'product' },
+          { header: 'من فرع', key: 'from' },
+          { header: 'إلى فرع', key: 'to' },
+          { header: 'الكمية', key: 'qty', align: 'left' },
+        ],
+        rows: filteredHistory.map((h:any) => ({
+          date: new Date(h.created_at).toLocaleDateString('ar-SA'),
+          product: (h.products as any)?.name || '—',
+          from: branchName(h.branch_id),
+          to: destBranchFromNote(h.note),
+          qty: Math.abs(h.qty_change) + ' ' + ((h.products as any)?.unit || ''),
+        })),
+        summaryStats: [
+          { label: 'عمليات النقل', value: String(totalOps), color: colors.primary },
+          { label: 'إجمالي الكمية', value: String(totalQty), color: colors.info },
+        ],
+        fileName: `تقرير-نقل-المخزون-${new Date().toISOString().slice(0,10)}.pdf`,
+      })
+    } catch { toast('تعذر تصدير التقرير','error') }
+    setExportingPdf(false)
+  }
+
   const filteredHistory = history.filter((h:any)=>{
     if(filterBranch && h.branch_id!==filterBranch) return false
     if(filterProduct && !((h.products as any)?.name||'').includes(filterProduct.trim())) return false
@@ -138,7 +195,15 @@ export default function TransferStockPage() {
       </div>
 
       <div style={{...card,padding:'18px 20px'}}>
-        <div style={{fontSize:font.base,fontWeight:800,color:colors.text,marginBottom:14}}>تقرير التحويلات</div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14,flexWrap:'wrap' as const,gap:8}}>
+          <div style={{fontSize:font.base,fontWeight:800,color:colors.text}}>تقرير التحويلات</div>
+          <div style={{display:'flex',gap:8}}>
+            <button onClick={exportCSV} disabled={filteredHistory.length===0} style={{...btnPrimary,padding:'8px 14px',fontSize:font.xs,opacity:filteredHistory.length===0?0.6:1}}>📥 تصدير CSV</button>
+            <button onClick={handleExportPdf} disabled={exportingPdf||filteredHistory.length===0} style={{...btnPrimary,padding:'8px 14px',fontSize:font.xs,opacity:exportingPdf||filteredHistory.length===0?0.6:1}}>
+              {exportingPdf?'⏳ جاري التصدير...':'📄 تصدير PDF'}
+            </button>
+          </div>
+        </div>
 
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8,marginBottom:12}}>
           <div>
