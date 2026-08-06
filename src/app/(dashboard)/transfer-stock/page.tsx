@@ -15,11 +15,16 @@ export default function TransferStockPage() {
   const [saving, setSaving] = useState(false)
   const [history, setHistory] = useState<any[]>([])
   const [loadingHistory, setLoadingHistory] = useState(true)
+  const [filterFrom, setFilterFrom] = useState('')
+  const [filterTo, setFilterTo] = useState('')
+  const [filterBranch, setFilterBranch] = useState('')
+  const [filterProduct, setFilterProduct] = useState('')
 
   const sb = createClient()
 
   useEffect(()=>{ init() },[])
   useEffect(()=>{ if(orgId && fromBranch) loadProducts() },[orgId, fromBranch])
+  useEffect(()=>{ if(orgId) loadHistory(orgId) },[filterFrom, filterTo])
 
   async function init() {
     let oid = sessionStorage.getItem('s_org_id')
@@ -45,7 +50,10 @@ export default function TransferStockPage() {
   async function loadHistory(oid:string) {
     setLoadingHistory(true)
     try {
-      const res = await fetch(`/api/branch-transfer?org_id=${oid}`)
+      const params = new URLSearchParams({ org_id: oid })
+      if(filterFrom) params.set('from', filterFrom)
+      if(filterTo) params.set('to', filterTo)
+      const res = await fetch(`/api/branch-transfer?${params.toString()}`)
       const j = await res.json()
       if(j.success) setHistory(j.transfers||[])
       else { toast(j.error||'تعذر تحميل السجل','error'); setHistory([]) }
@@ -76,6 +84,14 @@ export default function TransferStockPage() {
   }
 
   const branchName = (id:string) => branches.find((b:any)=>b.id===id)?.name || '—'
+
+  const filteredHistory = history.filter((h:any)=>{
+    if(filterBranch && h.branch_id!==filterBranch) return false
+    if(filterProduct && !((h.products as any)?.name||'').includes(filterProduct.trim())) return false
+    return true
+  })
+  const totalOps = filteredHistory.length
+  const totalQty = filteredHistory.reduce((s:number,h:any)=>s+Math.abs(h.qty_change),0)
 
   return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto'}}>
@@ -122,18 +138,52 @@ export default function TransferStockPage() {
       </div>
 
       <div style={{...card,padding:'18px 20px'}}>
-        <div style={{fontSize:font.base,fontWeight:800,color:colors.text,marginBottom:14}}>سجل التحويلات الأخيرة</div>
+        <div style={{fontSize:font.base,fontWeight:800,color:colors.text,marginBottom:14}}>تقرير التحويلات</div>
+
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8,marginBottom:12}}>
+          <div>
+            <label style={{fontSize:10,fontWeight:700,color:colors.text4,display:'block',marginBottom:3}}>من تاريخ</label>
+            <input type="date" value={filterFrom} onChange={e=>setFilterFrom(e.target.value)} style={{...inp(),fontSize:12}}/>
+          </div>
+          <div>
+            <label style={{fontSize:10,fontWeight:700,color:colors.text4,display:'block',marginBottom:3}}>إلى تاريخ</label>
+            <input type="date" value={filterTo} onChange={e=>setFilterTo(e.target.value)} style={{...inp(),fontSize:12}}/>
+          </div>
+          <div>
+            <label style={{fontSize:10,fontWeight:700,color:colors.text4,display:'block',marginBottom:3}}>الفرع المصدر</label>
+            <select value={filterBranch} onChange={e=>setFilterBranch(e.target.value)} style={{...inp(),fontSize:12}}>
+              <option value="">الكل</option>
+              {branches.map((b:any)=>(<option key={b.id} value={b.id}>{b.name}</option>))}
+            </select>
+          </div>
+          <div>
+            <label style={{fontSize:10,fontWeight:700,color:colors.text4,display:'block',marginBottom:3}}>بحث بالصنف</label>
+            <input value={filterProduct} onChange={e=>setFilterProduct(e.target.value)} placeholder="اسم الصنف" style={{...inp(),fontSize:12}}/>
+          </div>
+        </div>
+
+        <div style={{display:'flex',gap:10,marginBottom:14}}>
+          <div style={{...card,padding:'8px 14px',background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`,flex:1,textAlign:'center' as const}}>
+            <div style={{fontSize:16,fontWeight:900,color:colors.primary}}>{totalOps}</div>
+            <div style={{fontSize:10,color:colors.primary,fontWeight:600}}>عدد عمليات النقل</div>
+          </div>
+          <div style={{...card,padding:'8px 14px',background:colors.infoLight,border:`1px solid ${colors.infoBorder}`,flex:1,textAlign:'center' as const}}>
+            <div style={{fontSize:16,fontWeight:900,color:colors.info}}>{totalQty.toLocaleString('ar')}</div>
+            <div style={{fontSize:10,color:colors.info,fontWeight:600}}>إجمالي الكمية المنقولة</div>
+          </div>
+        </div>
+
         {loadingHistory ? (
           <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
-        ) : history.length===0 ? (
-          <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:16}}>ما فيه عمليات نقل مسجّلة بعد</div>
+        ) : filteredHistory.length===0 ? (
+          <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:16}}>ما فيه عمليات نقل مطابقة</div>
         ) : (
           <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
-            {history.filter((h:any)=>h.type==='transfer_out').map((h:any)=>(
+            {filteredHistory.map((h:any)=>(
               <div key={h.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 12px',background:colors.bg,borderRadius:8}}>
                 <div>
                   <span style={{fontSize:12,fontWeight:700,color:colors.text}}>{(h.products as any)?.name}</span>
-                  <span style={{fontSize:11,color:colors.text4,marginRight:8}}>{h.note}</span>
+                  <span style={{fontSize:11,color:colors.text4,marginRight:8}}>{branchName(h.branch_id)} ← {h.note}</span>
                 </div>
                 <div style={{display:'flex',alignItems:'center',gap:8}}>
                   <span style={{fontSize:12,fontWeight:700,color:colors.danger}}>-{Math.abs(h.qty_change)} {(h.products as any)?.unit}</span>

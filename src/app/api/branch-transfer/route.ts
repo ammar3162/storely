@@ -10,18 +10,23 @@ const sb = () => createClient(
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const org_id = searchParams.get('org_id')
+  const from = searchParams.get('from') // YYYY-MM-DD
+  const to = searchParams.get('to')     // YYYY-MM-DD
   if (!org_id) return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
   const db = sb()
-  const { data, error } = await db
+  let q = db
     .from('stock_movements')
     .select('id,type,qty_change,note,created_at,branch_id,products!inner(name,unit,org_id)')
     .eq('products.org_id', org_id)
-    .in('type', ['transfer_out', 'transfer_in'])
+    .eq('type', 'transfer_out')
     .order('created_at', { ascending: false })
-    .limit(100)
+    .limit(500)
+  if (from) q = q.gte('created_at', `${from}T00:00:00`)
+  if (to) q = q.lte('created_at', `${to}T23:59:59`)
+  const { data, error } = await q
 
   if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   return NextResponse.json({ success: true, transfers: data || [] })
