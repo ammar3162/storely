@@ -20,6 +20,10 @@ export default function SupplierDashboardPage() {
   const [respondPrice, setRespondPrice] = useState('')
   const [respondNote, setRespondNote] = useState('')
   const [respondSaving, setRespondSaving] = useState(false)
+  const [chatMessages, setChatMessages] = useState<any[]>([])
+  const [openChatOrgId, setOpenChatOrgId] = useState<string|null>(null)
+  const [chatReply, setChatReply] = useState('')
+  const [chatSending, setChatSending] = useState(false)
 
   const sb = createClient()
 
@@ -33,7 +37,28 @@ export default function SupplierDashboardPage() {
     setProfile(p)
     await loadItems(user.id)
     await loadQuoteRequests(user.id)
+    await loadChatMessages(user.id)
     setLoading(false)
+  }
+
+  async function loadChatMessages(supplierId: string) {
+    const { data } = await sb.from('chat_messages' as any)
+      .select('id,org_id,org_name,sender_type,message,created_at')
+      .eq('supplier_id', supplierId).order('created_at', { ascending: true })
+    setChatMessages(data || [])
+  }
+
+  async function sendChatReply(orgId: string) {
+    if (!chatReply.trim()) return
+    setChatSending(true)
+    const { data } = await sb.from('chat_messages' as any).insert({
+      supplier_id: profile.id, org_id: orgId,
+      org_name: chatMessages.find((m:any)=>m.org_id===orgId)?.org_name || 'عميل',
+      sender_type: 'supplier', message: chatReply.trim(),
+    }).select().single()
+    if (data) setChatMessages(prev => [...prev, data])
+    setChatReply('')
+    setChatSending(false)
   }
 
   async function loadQuoteRequests(supplierId: string) {
@@ -259,6 +284,53 @@ export default function SupplierDashboardPage() {
               ))}
             </div>
           )}
+        </div>
+
+        <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea',marginTop:16}}>
+          <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>💬 المحادثات</div>
+          {(() => {
+            const orgIds = Array.from(new Set(chatMessages.map((m:any)=>m.org_id)))
+            if (orgIds.length===0) return <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه محادثات بعد</div>
+            return (
+              <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                {orgIds.map((oid:any) => {
+                  const orgMsgs = chatMessages.filter((m:any)=>m.org_id===oid)
+                  const orgName = orgMsgs[orgMsgs.length-1]?.org_name || 'عميل'
+                  const isOpen = openChatOrgId===oid
+                  return (
+                    <div key={oid} style={{border:'1px solid #e5e5e3',borderRadius:12,overflow:'hidden'}}>
+                      <button onClick={()=>setOpenChatOrgId(isOpen?null:oid)}
+                        style={{width:'100%',padding:'12px 14px',background:'#f5f5f4',border:'none',display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer',fontFamily:'inherit'}}>
+                        <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{orgName}</span>
+                        <span style={{fontSize:11,color:'#888780'}}>{orgMsgs.length} رسالة {isOpen?'▲':'▼'}</span>
+                      </button>
+                      {isOpen && (
+                        <div>
+                          <div style={{maxHeight:240,overflowY:'auto' as const,padding:14,display:'flex',flexDirection:'column' as const,gap:8}}>
+                            {orgMsgs.map((m:any)=>(
+                              <div key={m.id} style={{alignSelf:m.sender_type==='supplier'?'flex-end':'flex-start',maxWidth:'75%'}}>
+                                <div style={{padding:'8px 12px',borderRadius:12,fontSize:13,background:m.sender_type==='supplier'?'#16a34a':'#f1f5f9',color:m.sender_type==='supplier'?'white':'#1c1c1a'}}>
+                                  {m.message}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <div style={{display:'flex',gap:6,padding:10,borderTop:'1px solid #f1f5f9'}}>
+                            <input value={chatReply} onChange={e=>setChatReply(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') sendChatReply(oid)}}
+                              placeholder="اكتب ردك..." style={{flex:1,padding:'8px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:12,fontFamily:'inherit'}}/>
+                            <button onClick={()=>sendChatReply(oid)} disabled={chatSending}
+                              style={{padding:'8px 16px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>
+                              {chatSending?'...':'إرسال'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
         </div>
       </div>
     </div>
