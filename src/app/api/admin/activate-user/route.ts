@@ -18,10 +18,13 @@ export async function POST(req: Request) {
 
   const { data: profile } = await supabase.from('profiles').select('org_id,full_name,organizations(name,max_branches)').eq('id', userId).maybeSingle()
 
-  const { error } = await supabase
+  const orgIdForUpdate = (profile as any)?.org_id
+  const updateQuery = supabase
     .from('profiles')
     .update({ status: 'active', subscription_type: type, subscription_ends_at: ends })
-    .eq('id', userId)
+  const { error } = orgIdForUpdate
+    ? await updateQuery.eq('org_id', orgIdForUpdate)
+    : await updateQuery.eq('id', userId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

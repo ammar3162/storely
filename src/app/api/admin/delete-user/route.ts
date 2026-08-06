@@ -22,6 +22,7 @@ export async function POST(req: Request) {
     }
 
     const deleteErrors: string[] = []
+    let relatedUserIds: string[] = []
 
     if (orgId) {
       // حذف بترتيب صحيح يحترم قيود الربط (Foreign Keys) — الجداول التابعة أول، ثم الأساسية، ثم المؤسسة نفسها
@@ -63,7 +64,10 @@ export async function POST(req: Request) {
       const r7 = await supabase.from('branches').delete().eq('org_id', orgId)
       if (r7.error) deleteErrors.push(`branches: ${r7.error.message}`)
 
-      // 6) الملف الشخصي
+      // 6) الملف الشخصي — خذ نسخة من كل حسابات الدخول التابعة (المالك + مديرو الفروع) قبل حذفها من الجدول
+      const { data: relatedProfiles } = await supabase.from('profiles').select('id').eq('org_id', orgId)
+      relatedUserIds = (relatedProfiles || []).map((p: any) => p.id)
+
       const { error: profileErr } = await supabase.from('profiles').delete().eq('org_id', orgId)
       if (profileErr) deleteErrors.push(`profiles: ${profileErr.message}`)
 
@@ -87,7 +91,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'حذف جزئي — راجع التفاصيل', details: deleteErrors }, { status: 500 })
     }
 
-    await supabase.auth.admin.deleteUser(userId).catch(() => {})
+    const idsToDelete = new Set<string>([userId, ...relatedUserIds])
+    for (const uid of idsToDelete) {
+      await supabase.auth.admin.deleteUser(uid).catch(() => {})
+    }
     await logAdminAction(admin, 'delete_user', orgId || null, orgNameForLog, { userId })
     return NextResponse.json({ success: true })
   } catch (err: any) {
