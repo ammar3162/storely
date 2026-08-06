@@ -13,6 +13,38 @@ function formatPhone(raw: string): string {
   return clean
 }
 
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url)
+    const token = searchParams.get('token')
+    if (!token) return NextResponse.json({ error: 'رابط غير صالح' }, { status: 400 })
+
+    const db = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const { data: order } = await (db as any)
+      .from('supplier_orders')
+      .select('status,supplier_name,items,org_id')
+      .eq('token', token)
+      .single()
+    if (!order) return NextResponse.json({ error: 'رابط غير صالح' }, { status: 404 })
+
+    const { data: org } = await db.from('organizations').select('name').eq('id', order.org_id).single()
+
+    return NextResponse.json({
+      success: true,
+      status: order.status,
+      supplier_name: order.supplier_name,
+      items: order.items,
+      org_name: (org as any)?.name || null,
+    })
+  } catch {
+    return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const { token } = await req.json()
@@ -23,8 +55,12 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    const { data: order } = await (db as any).from('supplier_orders').select('id,org_id,branch_id,supplier_id,supplier_name,items,created_at').eq('token', token).single()
+    const { data: order } = await (db as any).from('supplier_orders').select('id,org_id,branch_id,supplier_id,supplier_name,items,created_at,status').eq('token', token).single()
     if (!order) return NextResponse.json({ success: false })
+
+    if (order.status !== 'confirmed') {
+      await (db as any).from('supplier_orders').update({ status: 'confirmed', confirmed_at: new Date().toISOString() }).eq('token', token)
+    }
 
     await logConfirmation(order).catch(()=>{})
 
@@ -39,7 +75,7 @@ export async function POST(req: Request) {
     sendPushToOrg(order.org_id, `تأكيد مورد: ${order.supplier_name}`, `تم تأكيد الطلب — سيتم التوصيل قريباً`, '/purchases').catch(()=>{})
 
     const { data: ownerProfile } = await db.from('profiles').select('whatsapp_consent').eq('org_id', order.org_id).eq('role', 'owner').maybeSingle()
-    if ((ownerProfile as any)?.whatsapp_consent !== true) return NextResponse.json({ success: false, message: 'لا يوجد موافقة واتساب' })
+    if ((ownerProfile as any)?.whatsapp_consent !== true) return NextResponse.json({ success: true, skipped: 'whatsapp_consent' })
     // احترام تفضيلات المالك — تأكيد استلام مورد مو حرج، يُوقف عادي بوضع الملخص أو التعطيل
     if ((org as any).notify_supplier_wa === false || (org as any).digest_mode === true) {
       return NextResponse.json({ success: true, skipped: 'notify_preference' })

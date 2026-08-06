@@ -1,11 +1,5 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
-
-const sb = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
 
 export default function ConfirmPage({ params }: { params: { token: string } }) {
   const [status, setStatus] = useState<'loading'|'confirm'|'done'|'error'>('loading')
@@ -14,17 +8,23 @@ export default function ConfirmPage({ params }: { params: { token: string } }) {
   useEffect(()=>{ load() },[])
 
   async function load() {
-    const{data}=await (sb as any).from('supplier_orders').select('status,supplier_name,org_name,items').eq('token',params.token).single()
-    if(!data){ setStatus('error'); return }
-    if(data.status==='confirmed'){ setStatus('done'); return }
-    setOrder(data); setStatus('confirm')
+    try {
+      const res = await fetch(`/api/supplier-confirmed?token=${params.token}`)
+      const data = await res.json()
+      if(!res.ok || !data.success){ setStatus('error'); return }
+      if(data.status==='confirmed'){ setStatus('done'); return }
+      setOrder({ supplier_name: data.supplier_name, items: data.items, org_name: data.org_name })
+      setStatus('confirm')
+    } catch {
+      setStatus('error')
+    }
   }
 
   async function confirm() {
     setStatus('loading')
-    await (sb as any).from('supplier_orders').update({status:'confirmed',confirmed_at:new Date().toISOString()}).eq('token',params.token)
-    // إشعار العميل
-    await fetch('/api/supplier-confirmed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:params.token})})
+    const res = await fetch('/api/supplier-confirmed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:params.token})})
+    const data = await res.json()
+    if(!res.ok || data.success===false){ setStatus('error'); return }
     setStatus('done')
   }
 
