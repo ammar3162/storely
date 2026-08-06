@@ -12,6 +12,11 @@ export default function SupplierStorefrontPage() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [orgId, setOrgId] = useState<string|null>(null)
+  const [orgName, setOrgName] = useState('')
+  const [selected, setSelected] = useState<Record<string, string>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [myRequests, setMyRequests] = useState<any[]>([])
 
   useEffect(()=>{ load() },[supplierId])
 
@@ -29,7 +34,62 @@ export default function SupplierStorefrontPage() {
       .eq('supplier_id', supplierId).eq('is_available', true)
       .order('created_at', { ascending: false })
     setItems(it || [])
+
+    const { data: { user } } = await sb.auth.getUser()
+    if (user) {
+      const { data: p } = await sb.from('profiles').select('org_id,organizations(name)').eq('id', user.id).maybeSingle()
+      if (p?.org_id) {
+        setOrgId(p.org_id)
+        setOrgName((p.organizations as any)?.name || '')
+        const { data: reqs } = await (sb as any).from('quote_requests')
+          .select('id,items,status,quoted_price,quoted_note,created_at')
+          .eq('supplier_id', supplierId).eq('org_id', p.org_id)
+          .order('created_at', { ascending: false })
+        setMyRequests(reqs || [])
+      }
+    }
     setLoading(false)
+  }
+
+  function toggleSelect(itemId: string) {
+    setSelected(prev => {
+      const next = { ...prev }
+      if (next[itemId] !== undefined) delete next[itemId]
+      else next[itemId] = '1'
+      return next
+    })
+  }
+
+  function setQty(itemId: string, qty: string) {
+    setSelected(prev => ({ ...prev, [itemId]: qty }))
+  }
+
+  async function submitQuoteRequest() {
+    const chosenIds = Object.keys(selected)
+    if (chosenIds.length === 0) return
+    const sb = createClient()
+    const { data: { user } } = await sb.auth.getUser()
+    if (!user || !orgId) {
+      alert('لازم تسجّل دخول بحسابك بستوريلي أول عشان تطلب تسعير')
+      router.push('/login')
+      return
+    }
+    setSubmitting(true)
+    const requestItems = chosenIds.map(id => {
+      const it = items.find((x:any)=>x.id===id)
+      return { name: it?.name, unit: it?.unit, qty: Number(selected[id])||1 }
+    })
+    const { error } = await (sb as any).from('quote_requests').insert({
+      supplier_id: supplierId, org_id: orgId, org_name: orgName, items: requestItems,
+    })
+    setSubmitting(false)
+    if (!error) {
+      setSelected({})
+      alert('✅ تم إرسال طلب التسعير للمورد')
+      load()
+    } else {
+      alert('حدث خطأ أثناء إرسال الطلب')
+    }
   }
 
   function getWhatsAppLink() {
@@ -104,9 +164,56 @@ export default function SupplierStorefrontPage() {
                   <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>
                     الأساسي {(Number(it.price)/1.15).toFixed(2)} + ضريبة {(Number(it.price)-Number(it.price)/1.15).toFixed(2)} ر.س
                   </div>
+                  <div style={{display:'flex',alignItems:'center',gap:6,marginTop:10,paddingTop:10,borderTop:'1px solid #f1f5f9'}}>
+                    <label style={{display:'flex',alignItems:'center',gap:4,fontSize:11,color:'#475569',cursor:'pointer'}}>
+                      <input type="checkbox" checked={selected[it.id]!==undefined} onChange={()=>toggleSelect(it.id)}/>
+                      طلب تسعير
+                    </label>
+                    {selected[it.id]!==undefined && (
+                      <input type="number" min="1" value={selected[it.id]} onChange={e=>setQty(it.id, e.target.value)}
+                        style={{width:50,padding:'4px 6px',borderRadius:6,border:'1px solid #e2e8f0',fontSize:11,marginRight:'auto'}}/>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {Object.keys(selected).length > 0 && (
+          <div style={{position:'sticky' as const,bottom:16,marginTop:20,background:'#0d2818',borderRadius:14,padding:'14px 18px',display:'flex',justifyContent:'space-between',alignItems:'center',boxShadow:'0 8px 24px rgba(0,0,0,.2)'}}>
+            <span style={{color:'white',fontSize:13,fontWeight:700}}>{Object.keys(selected).length} صنف محدّد للتسعير</span>
+            <button onClick={submitQuoteRequest} disabled={submitting}
+              style={{padding:'10px 20px',background:'#16a34a',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>
+              {submitting?'⏳ جاري الإرسال...':'📩 إرسال طلب التسعير'}
+            </button>
+          </div>
+        )}
+
+        {myRequests.length > 0 && (
+          <div style={{marginTop:32}}>
+            <h2 style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:14}}>طلبات التسعير السابقة</h2>
+            <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
+              {myRequests.map((r:any)=>(
+                <div key={r.id} style={{background:'white',borderRadius:12,padding:'14px 16px',border:'1px solid #f1f5f9'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                    <span style={{fontSize:12,color:'#64748b'}}>{new Date(r.created_at).toLocaleDateString('ar-SA')}</span>
+                    <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:20,background:r.status==='quoted'?'#dcfce7':'#fef3c7',color:r.status==='quoted'?'#16a34a':'#92400e'}}>
+                      {r.status==='quoted'?'✅ تم التسعير':'⏳ بانتظار رد المورد'}
+                    </span>
+                  </div>
+                  <div style={{fontSize:12,color:'#475569',marginBottom:6}}>
+                    {(r.items||[]).map((i:any,idx:number)=>`${i.name} (${i.qty} ${i.unit||''})`).join('، ')}
+                  </div>
+                  {r.status==='quoted' && (
+                    <div style={{background:'#f0fdf4',borderRadius:8,padding:'8px 12px',marginTop:8}}>
+                      <div style={{fontSize:14,fontWeight:900,color:'#16a34a'}}>السعر المقترح: {r.quoted_price} ر.س</div>
+                      {r.quoted_note && <div style={{fontSize:11,color:'#5f6b66',marginTop:4}}>{r.quoted_note}</div>}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
