@@ -29,6 +29,7 @@ const NAV_GROUPS = [
       { href:'/inventory',  label:'المخزون',  icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
       { href:'/dispense',   label:'الصرف',   icon:'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
       { href:'/purchases',  label:'مشتريات', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
+      { href:'/transfer-stock', label:'نقل بين الفروع', icon:'M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5' },
     ]
   },
   {
@@ -395,7 +396,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     '/inventory':'inventory', '/dispense':'dispense', '/purchases':'purchases',
     '/reports':'reports', '/profitability':'profitability', '/suppliers':'suppliers', '/staff-management':'staff',
   }
-  const MANAGER_HIDDEN = ['/branches','/branch-compare','/settings','/ai-tools','/marketplace','/branch-managers']
+  const MANAGER_HIDDEN = ['/branches','/branch-compare','/settings','/ai-tools','/marketplace','/branch-managers','/transfer-stock']
   function navVisible(href:string) {
     if(userRole!=='manager') return true
     if(MANAGER_HIDDEN.includes(href)) return false
@@ -579,7 +580,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* Nav items */}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
-              {[...NAV_MAIN,...NAV_MORE].filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability'&&item.href!=='/branch-managers')||orgPlan!=='basic')&&navVisible(item.href)).map(item=>{
+              {[...NAV_MAIN,...NAV_MORE].filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic')&&navVisible(item.href)).map(item=>{
                 const active=isActive(item.href)
                 return (
                   <button key={item.href} onClick={()=>{router.push(item.href);setShowMore(false)}} onMouseEnter={()=>router.prefetch(item.href)}
@@ -774,7 +775,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {NAV_GROUPS.map((group,gi)=>(
                 <div key={gi} style={{marginBottom:4}}>
                   <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.25)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{group.label}</div>
-                  {group.items.filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability'&&item.href!=='/branch-managers')||orgPlan!=='basic')&&navVisible(item.href)).map(item=>{
+                  {group.items.filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic')&&navVisible(item.href)).map(item=>{
                     const active=isActive(item.href)
                     const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
                     const isExternal=item.href.startsWith('http')
