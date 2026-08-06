@@ -1,0 +1,30 @@
+import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { requirePermission, logAdminAction } from '@/lib/adminAuth'
+
+export async function POST(req: Request) {
+  const adminKey = req.headers.get('x-admin-key')
+  const admin = await requirePermission(adminKey, 'manage_users')
+  if (!admin) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { orgId, maxBranches, maxStaff, maxSuppliers, planName, orgName } = await req.json()
+  if (!orgId || !maxBranches) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+
+  const { error } = await supabase
+    .from('organizations')
+    .update({ max_branches: maxBranches, plan: planName, max_staff: maxStaff, max_suppliers: maxSuppliers })
+    .eq('id', orgId)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  await logAdminAction(admin, 'update_plan', orgId, orgName || null, { new_plan: planName, maxBranches })
+
+  return NextResponse.json({ success: true })
+}

@@ -304,26 +304,32 @@ export default function AdminPage() {
   }
 
   async function suspend(userId: string) {
+    if (!confirm('متأكد تبي توقف هذا الحساب؟ (يشمل كل مديري الفروع التابعين له)')) return
     setSaving(userId)
-    const target = users.find(u=>u.id===userId)
-    await sb.from('profiles').update({status:'suspended'}).eq('id',userId)
-    logAction('suspend_user', target?.org_id, target?.org_name, { userId })
-    if (target?.org_id) {
-      try { await (sb as any).from('subscription_events').insert({ org_id: target.org_id, event_type: 'cancelled', plan: null, amount: 0 }) } catch {}
-    }
+    const adminPass = sessionStorage.getItem('storely_admin_pass') || ''
+    const res = await fetch('/api/admin/suspend-user', {
+      method:'POST', headers:{'Content-Type':'application/json','x-admin-key':adminPass},
+      body: JSON.stringify({ userId })
+    })
+    const data = await res.json()
+    if (!data.success) { alert('خطأ: ' + (data.error||'unknown')); setSaving(null); return }
     await loadUsers(); setSaving(null); setSelected(null)
   }
 
   async function updatePlan(orgId: string, value: number) {
-    setSaving(orgId)
     const plan = PLANS.find(p=>p.v===value)!
+    if (!confirm(`تأكيد الترقية/التغيير لباقة "${plan.label}" (${plan.price})؟`)) return
+    setSaving(orgId)
     const target = users.find(u=>u.org_id===orgId)
     const oldBranches = target?.max_branches || 1
-    await (sb.from('organizations') as any).update({
-      max_branches:value, plan:value===1?'basic':value<=3?'pro':'advanced',
-      max_staff:plan.maxStaff, max_suppliers:plan.maxSup
-    }).eq('id',orgId)
-    logAction('update_plan', orgId, target?.org_name, { new_plan: plan.label })
+    const planName = value===1?'basic':value<=3?'pro':'advanced'
+    const adminPass = sessionStorage.getItem('storely_admin_pass') || ''
+    const res = await fetch('/api/admin/update-plan', {
+      method:'POST', headers:{'Content-Type':'application/json','x-admin-key':adminPass},
+      body: JSON.stringify({ orgId, maxBranches:value, maxStaff:plan.maxStaff, maxSuppliers:plan.maxSup, planName, orgName: target?.org_name })
+    })
+    const data = await res.json()
+    if (!data.success) { alert('خطأ: ' + (data.error||'unknown')); setSaving(null); return }
     const newAmount = value===1?149:value<=3?249:399
     const oldAmount = oldBranches===1?149:oldBranches<=3?249:399
     if (value !== oldBranches) {
@@ -331,7 +337,7 @@ export default function AdminPage() {
         await (sb as any).from('subscription_events').insert({
           org_id: orgId,
           event_type: newAmount > oldAmount ? 'upgraded' : 'downgraded',
-          plan: value===1?'basic':value<=3?'pro':'advanced',
+          plan: planName,
           amount: newAmount,
         })
       } catch {}
