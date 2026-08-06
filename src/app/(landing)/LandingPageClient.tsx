@@ -280,7 +280,7 @@ export default function LandingPage() {
       {partners.length > 0 && (
         <section style={{padding:'50px 40px',textAlign:'center' as const}}>
           <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8}}>نبني شراكات مع منشآت في كل مكان</h2>
-          <p style={{fontSize:14,color:'#9ca3af',marginBottom:36}}>منشآت حقيقية تدير مخزونها عبر Storely يومياً</p>
+          <p style={{fontSize:14,color:'#9ca3af',marginBottom:36}}>منشآت تدير مخزونها عبر Storely يومياً</p>
           <div style={{display:'flex',gap:32,justifyContent:'center',flexWrap:'wrap' as const}}>
             {partners.map((p:any)=>(
               <div key={p.id} style={{width:180,height:90,borderRadius:14,background:'#fafafa',border:'1px solid #f3f4f6',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
