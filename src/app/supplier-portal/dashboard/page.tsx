@@ -15,6 +15,11 @@ export default function SupplierDashboardPage() {
   const [imagePreview, setImagePreview] = useState<string>('')
   const [existingImageUrl, setExistingImageUrl] = useState<string>('')
   const [uploading, setUploading] = useState(false)
+  const [quoteRequests, setQuoteRequests] = useState<any[]>([])
+  const [respondingId, setRespondingId] = useState<string|null>(null)
+  const [respondPrice, setRespondPrice] = useState('')
+  const [respondNote, setRespondNote] = useState('')
+  const [respondSaving, setRespondSaving] = useState(false)
 
   const sb = createClient()
 
@@ -27,7 +32,31 @@ export default function SupplierDashboardPage() {
     if (!p) { window.location.href = '/supplier-portal'; return }
     setProfile(p)
     await loadItems(user.id)
+    await loadQuoteRequests(user.id)
     setLoading(false)
+  }
+
+  async function loadQuoteRequests(supplierId: string) {
+    const { data } = await sb.from('quote_requests' as any)
+      .select('id,org_name,items,status,quoted_price,quoted_note,created_at')
+      .eq('supplier_id', supplierId).order('created_at', { ascending: false })
+    setQuoteRequests(data || [])
+  }
+
+  function startRespond(reqId: string) {
+    setRespondingId(reqId); setRespondPrice(''); setRespondNote('')
+  }
+
+  async function submitResponse(reqId: string) {
+    if (!respondPrice) return
+    setRespondSaving(true)
+    await sb.from('quote_requests' as any).update({
+      status: 'quoted', quoted_price: Number(respondPrice), quoted_note: respondNote.trim() || null,
+      responded_at: new Date().toISOString(),
+    }).eq('id', reqId)
+    setRespondSaving(false)
+    setRespondingId(null)
+    loadQuoteRequests(profile.id)
   }
 
   async function loadItems(supplierId: string) {
@@ -163,6 +192,52 @@ export default function SupplierDashboardPage() {
                     <button onClick={()=>startEdit(item)} style={{padding:'5px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:10,cursor:'pointer',color:'#3b82f6'}}>✏️</button>
                     <button onClick={()=>deleteItem(item.id)} style={{padding:'5px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:10,cursor:'pointer',color:'#dc2626'}}>🗑️</button>
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea',marginTop:16}}>
+          <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>طلبات التسعير الواردة ({quoteRequests.length})</div>
+          {quoteRequests.length===0 ? (
+            <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه طلبات تسعير بعد</div>
+          ) : (
+            <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
+              {quoteRequests.map((r:any)=>(
+                <div key={r.id} style={{padding:'12px 14px',background:'#f5f5f4',borderRadius:10}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                    <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{r.org_name || 'عميل'}</span>
+                    <span style={{fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:20,background:r.status==='quoted'?'#dcfce7':'#fef3c7',color:r.status==='quoted'?'#16a34a':'#92400e'}}>
+                      {r.status==='quoted'?'✅ تم الرد':'⏳ بانتظار ردك'}
+                    </span>
+                  </div>
+                  <div style={{fontSize:12,color:'#5f5e5a',marginBottom:8}}>
+                    {(r.items||[]).map((i:any)=>`${i.name} (${i.qty} ${i.unit||''})`).join('، ')}
+                  </div>
+                  {r.status==='quoted' ? (
+                    <div style={{fontSize:12,color:'#16a34a',fontWeight:700}}>سعرك المرسل: {r.quoted_price} ر.س</div>
+                  ) : respondingId===r.id ? (
+                    <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                      <input type="number" value={respondPrice} onChange={e=>setRespondPrice(e.target.value)} placeholder="السعر"
+                        style={{width:90,padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',fontSize:12}}/>
+                      <input value={respondNote} onChange={e=>setRespondNote(e.target.value)} placeholder="ملاحظة (اختياري)"
+                        style={{flex:1,padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',fontSize:12}}/>
+                      <button onClick={()=>submitResponse(r.id)} disabled={respondSaving}
+                        style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#16a34a',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                        {respondSaving?'...':'إرسال'}
+                      </button>
+                      <button onClick={()=>setRespondingId(null)}
+                        style={{padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:11,cursor:'pointer',color:'#5f5e5a'}}>
+                        إلغاء
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={()=>startRespond(r.id)}
+                      style={{padding:'7px 14px',borderRadius:6,border:'1px solid #16a34a',background:'white',color:'#16a34a',fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                      💬 الرد بسعر
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
