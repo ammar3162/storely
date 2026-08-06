@@ -210,10 +210,10 @@ export default function MarketplacePage() {
                       </div>
                     </div>
                     <div style={{padding:'16px'}}>
-                      <button onClick={()=>setExpandedId(isOpen?null:s.id)}
-                        style={{width:'100%',padding:'8px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',marginBottom:isOpen?12:0,fontFamily:'inherit'}}>
-                        {isOpen?'إخفاء الأصناف ▲':'عرض الأصناف ▼'}
-                      </button>
+                      <a href={`/marketplace/${s.id}`}
+                        style={{display:'block',width:'100%',padding:'8px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',marginBottom:12,fontFamily:'inherit',textDecoration:'none',textAlign:'center' as const}}>
+                        زيارة صفحة المورد ←
+                      </a>
                       {isOpen && (
                         <div style={{display:'flex',flexDirection:'column' as const,gap:8,marginBottom:12}}>
                           {s.items.map((it:any)=>(
