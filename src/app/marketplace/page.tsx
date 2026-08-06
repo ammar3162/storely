@@ -126,13 +126,13 @@ export default function MarketplacePage() {
       <div style={{maxWidth:900,margin:'0 auto',padding:'20px'}}>
         {loading ? (
           <div style={{textAlign:'center',padding:60,color:'#94a3b8'}}>جاري التحميل...</div>
-        ) : filtered.length===0 ? (
+        ) : filtered.length===0 && newSuppliers.length===0 ? (
           <div style={{textAlign:'center',padding:60}}>
             <div style={{fontSize:48,marginBottom:12}}>🔍</div>
             <div style={{fontSize:16,fontWeight:700,color:'#0f172a',marginBottom:8}}>لا يوجد موردون في هذا المجال</div>
             <div style={{fontSize:13,color:'#64748b'}}>جرّب تصفية مختلفة أو تواصل معنا لإضافة موردين</div>
           </div>
-        ) : (
+        ) : filtered.length===0 ? null : (
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:16}}>
             {filtered.map(s=>(
               <div key={s.id} style={{background:'white',borderRadius:16,overflow:'hidden',boxShadow:'0 2px 8px rgba(0,0,0,.06)',border:'1px solid #f1f5f9',transition:'transform .15s,box-shadow .15s'}}>
