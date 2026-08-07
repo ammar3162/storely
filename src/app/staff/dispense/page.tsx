@@ -459,7 +459,7 @@ export default function StaffPage() {
                   {mostUsed.map((p:any,i:number)=>(
                     <button key={p.id} className="mu-btn" onClick={()=>setSelected(p)} style={{animationDelay:`${i*0.06}s`,flexShrink:0,background:'white',border:'1.5px solid #e2e8f0',borderRadius:14,padding:'10px 14px',cursor:'pointer',fontFamily:'inherit',minWidth:110,textAlign:'right' as const,boxShadow:'0 2px 6px rgba(0,0,0,.05)'}}>
                       <div style={{fontSize:12,fontWeight:700,color:'#0f172a',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis',maxWidth:110}}>{tx(p.name)}</div>
-                      <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>{p.qty} {p.unit}</div>
+                      <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>صُرف {p.dispense_count} مرة (آخر 14 يوم)</div>
                     </button>
                   ))}
                 </div>

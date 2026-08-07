@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     const mostUsed = Object.values(freqMap)
       .sort((a, b) => b.count - a.count)
       .slice(0, 3)
-      .map(f => f.product)
+      .map(f => ({ ...f.product, dispense_count: f.count }))
 
     // عدد عمليات الصرف اليوم لهذا الموظف
     let todayCount = 0
