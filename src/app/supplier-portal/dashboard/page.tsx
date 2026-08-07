@@ -2,9 +2,13 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+type Tab = 'products' | 'orders' | 'chats'
+
 export default function SupplierDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
+  const [activeTab, setActiveTab] = useState<Tab>('products')
+
   const [items, setItems] = useState<any[]>([])
   const [name, setName] = useState('')
   const [unit, setUnit] = useState('')
@@ -15,11 +19,13 @@ export default function SupplierDashboardPage() {
   const [imagePreview, setImagePreview] = useState<string>('')
   const [existingImageUrl, setExistingImageUrl] = useState<string>('')
   const [uploading, setUploading] = useState(false)
+
   const [quoteRequests, setQuoteRequests] = useState<any[]>([])
   const [respondingId, setRespondingId] = useState<string|null>(null)
   const [respondPrice, setRespondPrice] = useState('')
   const [respondNote, setRespondNote] = useState('')
   const [respondSaving, setRespondSaving] = useState(false)
+
   const [chatMessages, setChatMessages] = useState<any[]>([])
   const [openChatOrgId, setOpenChatOrgId] = useState<string|null>(null)
   const [chatReply, setChatReply] = useState('')
@@ -161,176 +167,218 @@ export default function SupplierDashboardPage() {
     </div>
   )
 
+  const pendingOrdersCount = quoteRequests.filter((r:any)=>r.status==='pending').length
+  const openChatsCount = Array.from(new Set(chatMessages.map((m:any)=>m.org_id))).length
+
+  const NAV_ITEMS: {id:Tab; label:string; icon:string; badge?:number}[] = [
+    { id:'products', label:'المنتجات', icon:'📦' },
+    { id:'orders', label:'الطلبات', icon:'📋', badge: pendingOrdersCount || undefined },
+    { id:'chats', label:'المحادثات', icon:'💬', badge: openChatsCount || undefined },
+  ]
+
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',background:'#f5f5f4',padding:20}}>
-      <div style={{maxWidth:700,margin:'0 auto'}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
-          <div>
-            <div style={{fontSize:20,fontWeight:800,color:'#1c1c1a'}}>{profile?.business_name}</div>
-            <div style={{fontSize:12,color:'#888780'}}>{profile?.location || '—'}</div>
-          </div>
-          <button onClick={logout} style={{padding:'8px 16px',borderRadius:8,border:'1px solid #e5e5e3',background:'white',fontSize:12,fontWeight:700,cursor:'pointer',color:'#5f5e5a'}}>خروج</button>
+    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',background:'#f5f5f4'}}>
+      {/* Header */}
+      <div style={{background:'white',borderBottom:'1px solid #ebebea',padding:'14px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div>
+          <div style={{fontSize:18,fontWeight:800,color:'#1c1c1a'}}>{profile?.business_name}</div>
+          <div style={{fontSize:12,color:'#888780'}}>{profile?.location || '—'}</div>
         </div>
+        <button onClick={logout} style={{padding:'8px 16px',borderRadius:8,border:'1px solid #e5e5e3',background:'white',fontSize:12,fontWeight:700,cursor:'pointer',color:'#5f5e5a'}}>خروج</button>
+      </div>
 
-        <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea',marginBottom:16}}>
-          <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:12}}>{editingId?'✏️ تعديل صنف':'➕ إضافة صنف جديد'}</div>
-          <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr',gap:8,marginBottom:10}}>
-            <input value={name} onChange={e=>setName(e.target.value)} placeholder="اسم الصنف"
-              style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
-            <input value={unit} onChange={e=>setUnit(e.target.value)} placeholder="الوحدة (كيلو، قطعة...)"
-              style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
-            <input type="number" value={price} onChange={e=>setPrice(e.target.value)} placeholder="السعر"
-              style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
-          </div>
-          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
-            {(imagePreview || existingImageUrl) && (
-              <img src={imagePreview || existingImageUrl} alt="" style={{width:48,height:48,borderRadius:8,objectFit:'cover',border:'1px solid #e5e5e3'}}/>
-            )}
-            <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',padding:'8px 12px',borderRadius:8,border:'1px dashed #cbd5e1',cursor:'pointer'}}>
-              📷 {imagePreview||existingImageUrl?'تغيير الصورة':'إضافة صورة (اختياري)'}
-              <input type="file" accept="image/*" onChange={onPickImage} style={{display:'none'}}/>
-            </label>
-          </div>
-          <div style={{display:'flex',gap:8}}>
-            <button onClick={saveItem} disabled={saving} style={{padding:'10px 20px',borderRadius:8,border:'none',background:'#16a34a',color:'white',fontWeight:700,fontSize:13,cursor:'pointer'}}>
-              {saving?(uploading?'⏳ جاري رفع الصورة...':'⏳ جاري الحفظ...'):editingId?'حفظ التعديل':'إضافة'}
-            </button>
-            {editingId && <button onClick={resetForm} style={{padding:'10px 20px',borderRadius:8,border:'1px solid #e5e5e3',background:'white',fontWeight:700,fontSize:13,cursor:'pointer',color:'#5f5e5a'}}>إلغاء</button>}
+      <div style={{display:'flex',maxWidth:900,margin:'0 auto',alignItems:'flex-start'}}>
+        {/* Sidebar */}
+        <div style={{width:180,flexShrink:0,padding:'20px 12px',position:'sticky' as const,top:0}}>
+          <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
+            {NAV_ITEMS.map(item=>(
+              <button key={item.id} onClick={()=>setActiveTab(item.id)}
+                style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 14px',borderRadius:10,border:'none',
+                  background:activeTab===item.id?'#16a34a':'transparent',color:activeTab===item.id?'white':'#5f5e5a',
+                  fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
+                <span style={{display:'flex',alignItems:'center',gap:8}}><span>{item.icon}</span>{item.label}</span>
+                {item.badge && (
+                  <span style={{background:activeTab===item.id?'rgba(255,255,255,.25)':'#dc2626',color:'white',fontSize:10,fontWeight:800,borderRadius:20,padding:'1px 7px',minWidth:18,textAlign:'center' as const}}>
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
-          <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>أصنافي ({items.length})</div>
-          {items.length===0 ? (
-            <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه أصناف مضافة بعد</div>
-          ) : (
-            <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
-              {items.map((item:any)=>(
-                <div key={item.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'#f5f5f4',borderRadius:10,opacity:item.is_available?1:.5}}>
-                  <div style={{display:'flex',alignItems:'center',gap:10}}>
-                    {item.image_url && <img src={item.image_url} alt="" style={{width:36,height:36,borderRadius:6,objectFit:'cover'}}/>}
-                    <div>
-                      <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{item.name}</span>
-                      <span style={{fontSize:11,color:'#888780',marginRight:8}}>{item.unit}</span>
-                    </div>
-                  </div>
-                  <div style={{display:'flex',alignItems:'center',gap:8}}>
-                    <span style={{fontSize:13,fontWeight:800,color:'#16a34a'}}>{item.price} ر.س</span>
-                    <button onClick={()=>toggleAvailable(item)} style={{padding:'5px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:10,cursor:'pointer',color:item.is_available?'#16a34a':'#888780'}}>
-                      {item.is_available?'✅ متوفر':'⏸ غير متوفر'}
-                    </button>
-                    <button onClick={()=>startEdit(item)} style={{padding:'5px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:10,cursor:'pointer',color:'#3b82f6'}}>✏️</button>
-                    <button onClick={()=>deleteItem(item.id)} style={{padding:'5px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:10,cursor:'pointer',color:'#dc2626'}}>🗑️</button>
-                  </div>
+        {/* Content */}
+        <div style={{flex:1,padding:'20px 20px 20px 0',minWidth:0}}>
+
+          {activeTab==='products' && (
+            <>
+              <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea',marginBottom:16}}>
+                <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:12}}>{editingId?'✏️ تعديل صنف':'➕ إضافة صنف جديد'}</div>
+                <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr',gap:8,marginBottom:10}}>
+                  <input value={name} onChange={e=>setName(e.target.value)} placeholder="اسم الصنف"
+                    style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
+                  <input value={unit} onChange={e=>setUnit(e.target.value)} placeholder="الوحدة (كيلو، قطعة...)"
+                    style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
+                  <input type="number" value={price} onChange={e=>setPrice(e.target.value)} placeholder="السعر"
+                    style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea',marginTop:16}}>
-          <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>طلبات التسعير الواردة ({quoteRequests.length})</div>
-          {quoteRequests.length===0 ? (
-            <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه طلبات تسعير بعد</div>
-          ) : (
-            <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
-              {quoteRequests.map((r:any)=>(
-                <div key={r.id} style={{padding:'12px 14px',background:'#f5f5f4',borderRadius:10}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-                    <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{r.org_name || 'عميل'}</span>
-                    <span style={{fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:20,
-                      background:r.status==='fulfilled'?'#dbeafe':r.status==='accepted'?'#dcfce7':r.status==='quoted'?'#fef3c7':'#f1f5f9',
-                      color:r.status==='fulfilled'?'#1d4ed8':r.status==='accepted'?'#16a34a':r.status==='quoted'?'#92400e':'#64748b'}}>
-                      {r.status==='fulfilled'?'📦 منفَّذ':r.status==='accepted'?'✅ العميل وافق':r.status==='quoted'?'💬 تم الرد':'⏳ بانتظار ردك'}
-                    </span>
-                  </div>
-                  <div style={{fontSize:12,color:'#5f5e5a',marginBottom:8}}>
-                    {(r.items||[]).map((i:any)=>`${i.name} (${i.qty} ${i.unit||''})`).join('، ')}
-                  </div>
-                  {r.status==='accepted' ? (
-                    <div>
-                      <div style={{fontSize:12,color:'#16a34a',fontWeight:700,marginBottom:8}}>سعرك المرسل: {r.quoted_price} ر.س — العميل وافق عليه</div>
-                      <button onClick={()=>markFulfilled(r.id)}
-                        style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#2563eb',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
-                        📦 تأكيد التنفيذ (تم التوريد)
-                      </button>
-                    </div>
-                  ) : r.status==='fulfilled' ? (
-                    <div style={{fontSize:12,color:'#1d4ed8',fontWeight:700}}>سعرك المرسل: {r.quoted_price} ر.س — تم التنفيذ ✅</div>
-                  ) : r.status==='quoted' ? (
-                    <div style={{fontSize:12,color:'#16a34a',fontWeight:700}}>سعرك المرسل: {r.quoted_price} ر.س</div>
-                  ) : respondingId===r.id ? (
-                    <div style={{display:'flex',gap:6,alignItems:'center'}}>
-                      <input type="number" value={respondPrice} onChange={e=>setRespondPrice(e.target.value)} placeholder="السعر"
-                        style={{width:90,padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',fontSize:12}}/>
-                      <input value={respondNote} onChange={e=>setRespondNote(e.target.value)} placeholder="ملاحظة (اختياري)"
-                        style={{flex:1,padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',fontSize:12}}/>
-                      <button onClick={()=>submitResponse(r.id)} disabled={respondSaving}
-                        style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#16a34a',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
-                        {respondSaving?'...':'إرسال'}
-                      </button>
-                      <button onClick={()=>setRespondingId(null)}
-                        style={{padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:11,cursor:'pointer',color:'#5f5e5a'}}>
-                        إلغاء
-                      </button>
-                    </div>
-                  ) : (
-                    <button onClick={()=>startRespond(r.id)}
-                      style={{padding:'7px 14px',borderRadius:6,border:'1px solid #16a34a',background:'white',color:'#16a34a',fontSize:11,fontWeight:700,cursor:'pointer'}}>
-                      💬 الرد بسعر
-                    </button>
+                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+                  {(imagePreview || existingImageUrl) && (
+                    <img src={imagePreview || existingImageUrl} alt="" style={{width:48,height:48,borderRadius:8,objectFit:'cover',border:'1px solid #e5e5e3'}}/>
                   )}
+                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',padding:'8px 12px',borderRadius:8,border:'1px dashed #cbd5e1',cursor:'pointer'}}>
+                    📷 {imagePreview||existingImageUrl?'تغيير الصورة':'إضافة صورة (اختياري)'}
+                    <input type="file" accept="image/*" onChange={onPickImage} style={{display:'none'}}/>
+                  </label>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                <div style={{display:'flex',gap:8}}>
+                  <button onClick={saveItem} disabled={saving} style={{padding:'10px 20px',borderRadius:8,border:'none',background:'#16a34a',color:'white',fontWeight:700,fontSize:13,cursor:'pointer'}}>
+                    {saving?(uploading?'⏳ جاري رفع الصورة...':'⏳ جاري الحفظ...'):editingId?'حفظ التعديل':'إضافة'}
+                  </button>
+                  {editingId && <button onClick={resetForm} style={{padding:'10px 20px',borderRadius:8,border:'1px solid #e5e5e3',background:'white',fontWeight:700,fontSize:13,cursor:'pointer',color:'#5f5e5a'}}>إلغاء</button>}
+                </div>
+              </div>
 
-        <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea',marginTop:16}}>
-          <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>💬 المحادثات</div>
-          {(() => {
-            const orgIds = Array.from(new Set(chatMessages.map((m:any)=>m.org_id)))
-            if (orgIds.length===0) return <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه محادثات بعد</div>
-            return (
-              <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
-                {orgIds.map((oid:any) => {
-                  const orgMsgs = chatMessages.filter((m:any)=>m.org_id===oid)
-                  const orgName = orgMsgs[orgMsgs.length-1]?.org_name || 'عميل'
-                  const isOpen = openChatOrgId===oid
-                  return (
-                    <div key={oid} style={{border:'1px solid #e5e5e3',borderRadius:12,overflow:'hidden'}}>
-                      <button onClick={()=>setOpenChatOrgId(isOpen?null:oid)}
-                        style={{width:'100%',padding:'12px 14px',background:'#f5f5f4',border:'none',display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer',fontFamily:'inherit'}}>
-                        <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{orgName}</span>
-                        <span style={{fontSize:11,color:'#888780'}}>{orgMsgs.length} رسالة {isOpen?'▲':'▼'}</span>
-                      </button>
-                      {isOpen && (
-                        <div>
-                          <div style={{maxHeight:240,overflowY:'auto' as const,padding:14,display:'flex',flexDirection:'column' as const,gap:8}}>
-                            {orgMsgs.map((m:any)=>(
-                              <div key={m.id} style={{alignSelf:m.sender_type==='supplier'?'flex-end':'flex-start',maxWidth:'75%'}}>
-                                <div style={{padding:'8px 12px',borderRadius:12,fontSize:13,background:m.sender_type==='supplier'?'#16a34a':'#f1f5f9',color:m.sender_type==='supplier'?'white':'#1c1c1a'}}>
-                                  {m.message}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          <div style={{display:'flex',gap:6,padding:10,borderTop:'1px solid #f1f5f9'}}>
-                            <input value={chatReply} onChange={e=>setChatReply(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') sendChatReply(oid)}}
-                              placeholder="اكتب ردك..." style={{flex:1,padding:'8px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:12,fontFamily:'inherit'}}/>
-                            <button onClick={()=>sendChatReply(oid)} disabled={chatSending}
-                              style={{padding:'8px 16px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>
-                              {chatSending?'...':'إرسال'}
-                            </button>
+              <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
+                <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>أصنافي ({items.length})</div>
+                {items.length===0 ? (
+                  <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه أصناف مضافة بعد</div>
+                ) : (
+                  <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                    {items.map((item:any)=>(
+                      <div key={item.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'#f5f5f4',borderRadius:10,opacity:item.is_available?1:.5}}>
+                        <div style={{display:'flex',alignItems:'center',gap:10}}>
+                          {item.image_url && <img src={item.image_url} alt="" style={{width:36,height:36,borderRadius:6,objectFit:'cover'}}/>}
+                          <div>
+                            <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{item.name}</span>
+                            <span style={{fontSize:11,color:'#888780',marginRight:8}}>{item.unit}</span>
                           </div>
                         </div>
+                        <div style={{display:'flex',alignItems:'center',gap:8}}>
+                          <span style={{fontSize:13,fontWeight:800,color:'#16a34a'}}>{item.price} ر.س</span>
+                          <button onClick={()=>toggleAvailable(item)} style={{padding:'5px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:10,cursor:'pointer',color:item.is_available?'#16a34a':'#888780'}}>
+                            {item.is_available?'✅ متوفر':'⏸ غير متوفر'}
+                          </button>
+                          <button onClick={()=>startEdit(item)} style={{padding:'5px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:10,cursor:'pointer',color:'#3b82f6'}}>✏️</button>
+                          <button onClick={()=>deleteItem(item.id)} style={{padding:'5px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:10,cursor:'pointer',color:'#dc2626'}}>🗑️</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {activeTab==='orders' && (
+            <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
+              <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>طلبات التسعير الواردة ({quoteRequests.length})</div>
+              {quoteRequests.length===0 ? (
+                <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه طلبات تسعير بعد</div>
+              ) : (
+                <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
+                  {quoteRequests.map((r:any)=>(
+                    <div key={r.id} style={{padding:'12px 14px',background:'#f5f5f4',borderRadius:10}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                        <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{r.org_name || 'عميل'}</span>
+                        <span style={{fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:20,
+                          background:r.status==='fulfilled'?'#dbeafe':r.status==='accepted'?'#dcfce7':r.status==='quoted'?'#fef3c7':'#f1f5f9',
+                          color:r.status==='fulfilled'?'#1d4ed8':r.status==='accepted'?'#16a34a':r.status==='quoted'?'#92400e':'#64748b'}}>
+                          {r.status==='fulfilled'?'📦 منفَّذ':r.status==='accepted'?'✅ العميل وافق':r.status==='quoted'?'💬 تم الرد':'⏳ بانتظار ردك'}
+                        </span>
+                      </div>
+                      <div style={{fontSize:12,color:'#5f5e5a',marginBottom:8}}>
+                        {(r.items||[]).map((i:any)=>`${i.name} (${i.qty} ${i.unit||''})`).join('، ')}
+                      </div>
+                      {r.status==='accepted' ? (
+                        <div>
+                          <div style={{fontSize:12,color:'#16a34a',fontWeight:700,marginBottom:8}}>سعرك المرسل: {r.quoted_price} ر.س — العميل وافق عليه</div>
+                          <button onClick={()=>markFulfilled(r.id)}
+                            style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#2563eb',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                            📦 تأكيد التنفيذ (تم التوريد)
+                          </button>
+                        </div>
+                      ) : r.status==='fulfilled' ? (
+                        <div style={{fontSize:12,color:'#1d4ed8',fontWeight:700}}>سعرك المرسل: {r.quoted_price} ر.س — تم التنفيذ ✅</div>
+                      ) : r.status==='quoted' ? (
+                        <div style={{fontSize:12,color:'#16a34a',fontWeight:700}}>سعرك المرسل: {r.quoted_price} ر.س</div>
+                      ) : respondingId===r.id ? (
+                        <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                          <input type="number" value={respondPrice} onChange={e=>setRespondPrice(e.target.value)} placeholder="السعر"
+                            style={{width:90,padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',fontSize:12}}/>
+                          <input value={respondNote} onChange={e=>setRespondNote(e.target.value)} placeholder="ملاحظة (اختياري)"
+                            style={{flex:1,padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',fontSize:12}}/>
+                          <button onClick={()=>submitResponse(r.id)} disabled={respondSaving}
+                            style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#16a34a',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                            {respondSaving?'...':'إرسال'}
+                          </button>
+                          <button onClick={()=>setRespondingId(null)}
+                            style={{padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:11,cursor:'pointer',color:'#5f5e5a'}}>
+                            إلغاء
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={()=>startRespond(r.id)}
+                          style={{padding:'7px 14px',borderRadius:6,border:'1px solid #16a34a',background:'white',color:'#16a34a',fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                          💬 الرد بسعر
+                        </button>
                       )}
                     </div>
-                  )
-                })}
-              </div>
-            )
-          })()}
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab==='chats' && (
+            <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
+              <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>💬 المحادثات</div>
+              {(() => {
+                const orgIds = Array.from(new Set(chatMessages.map((m:any)=>m.org_id)))
+                if (orgIds.length===0) return <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه محادثات بعد</div>
+                return (
+                  <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                    {orgIds.map((oid:any) => {
+                      const orgMsgs = chatMessages.filter((m:any)=>m.org_id===oid)
+                      const orgName = orgMsgs[orgMsgs.length-1]?.org_name || 'عميل'
+                      const isOpen = openChatOrgId===oid
+                      return (
+                        <div key={oid} style={{border:'1px solid #e5e5e3',borderRadius:12,overflow:'hidden'}}>
+                          <button onClick={()=>setOpenChatOrgId(isOpen?null:oid)}
+                            style={{width:'100%',padding:'12px 14px',background:'#f5f5f4',border:'none',display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer',fontFamily:'inherit'}}>
+                            <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{orgName}</span>
+                            <span style={{fontSize:11,color:'#888780'}}>{orgMsgs.length} رسالة {isOpen?'▲':'▼'}</span>
+                          </button>
+                          {isOpen && (
+                            <div>
+                              <div style={{maxHeight:240,overflowY:'auto' as const,padding:14,display:'flex',flexDirection:'column' as const,gap:8}}>
+                                {orgMsgs.map((m:any)=>(
+                                  <div key={m.id} style={{alignSelf:m.sender_type==='supplier'?'flex-end':'flex-start',maxWidth:'75%'}}>
+                                    <div style={{padding:'8px 12px',borderRadius:12,fontSize:13,background:m.sender_type==='supplier'?'#16a34a':'#f1f5f9',color:m.sender_type==='supplier'?'white':'#1c1c1a'}}>
+                                      {m.message}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div style={{display:'flex',gap:6,padding:10,borderTop:'1px solid #f1f5f9'}}>
+                                <input value={chatReply} onChange={e=>setChatReply(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') sendChatReply(oid)}}
+                                  placeholder="اكتب ردك..." style={{flex:1,padding:'8px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:12,fontFamily:'inherit'}}/>
+                                <button onClick={()=>sendChatReply(oid)} disabled={chatSending}
+                                  style={{padding:'8px 16px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>
+                                  {chatSending?'...':'إرسال'}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
+            </div>
+          )}
+
         </div>
       </div>
     </div>
