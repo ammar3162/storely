@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-type Tab = 'products' | 'orders' | 'chats'
+type Tab = 'products' | 'orders' | 'chats' | 'reps'
 
 export default function SupplierDashboardPage() {
   const [loading, setLoading] = useState(true)
@@ -31,6 +31,11 @@ export default function SupplierDashboardPage() {
   const [chatReply, setChatReply] = useState('')
   const [chatSending, setChatSending] = useState(false)
 
+  const [reps, setReps] = useState<any[]>([])
+  const [repName, setRepName] = useState('')
+  const [repPhone, setRepPhone] = useState('')
+  const [repSaving, setRepSaving] = useState(false)
+
   const sb = createClient()
 
   useEffect(()=>{ init() },[])
@@ -44,7 +49,28 @@ export default function SupplierDashboardPage() {
     await loadItems(user.id)
     await loadQuoteRequests(user.id)
     await loadChatMessages(user.id)
+    await loadReps(user.id)
     setLoading(false)
+  }
+
+  async function loadReps(supplierId: string) {
+    const { data } = await sb.from('supplier_reps' as any)
+      .select('id,name,phone').eq('supplier_id', supplierId).order('created_at', { ascending: false })
+    setReps(data || [])
+  }
+
+  async function addRep() {
+    if (!repName.trim() || !repPhone.trim()) return
+    setRepSaving(true)
+    await sb.from('supplier_reps' as any).insert({ supplier_id: profile.id, name: repName.trim(), phone: repPhone.trim() })
+    setRepName(''); setRepPhone(''); setRepSaving(false)
+    loadReps(profile.id)
+  }
+
+  async function deleteRep(id: string) {
+    if (!confirm('حذف هذا المندوب؟')) return
+    await sb.from('supplier_reps' as any).delete().eq('id', id)
+    loadReps(profile.id)
   }
 
   async function loadChatMessages(supplierId: string) {
@@ -174,6 +200,7 @@ export default function SupplierDashboardPage() {
     { id:'products', label:'المنتجات', icon:'📦' },
     { id:'orders', label:'الطلبات', icon:'📋', badge: pendingOrdersCount || undefined },
     { id:'chats', label:'المحادثات', icon:'💬', badge: openChatsCount || undefined },
+    { id:'reps', label:'المناديب', icon:'🚴' },
   ]
 
   return (
@@ -377,6 +404,42 @@ export default function SupplierDashboardPage() {
                 )
               })()}
             </div>
+          )}
+
+          {activeTab==='reps' && (
+            <>
+              <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea',marginBottom:16}}>
+                <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:12}}>➕ إضافة مندوب توصيل</div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
+                  <input value={repName} onChange={e=>setRepName(e.target.value)} placeholder="اسم المندوب"
+                    style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
+                  <input value={repPhone} onChange={e=>setRepPhone(e.target.value)} placeholder="رقم جواله"
+                    style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
+                </div>
+                <button onClick={addRep} disabled={repSaving} style={{padding:'10px 20px',borderRadius:8,border:'none',background:'#16a34a',color:'white',fontWeight:700,fontSize:13,cursor:'pointer'}}>
+                  {repSaving?'⏳ جاري الإضافة...':'إضافة مندوب'}
+                </button>
+              </div>
+
+              <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
+                <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>مناديبي ({reps.length})</div>
+                {reps.length===0 ? (
+                  <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه مناديب مضافين بعد</div>
+                ) : (
+                  <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                    {reps.map((rep:any)=>(
+                      <div key={rep.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'#f5f5f4',borderRadius:10}}>
+                        <div>
+                          <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{rep.name}</span>
+                          <span style={{fontSize:12,color:'#888780',marginRight:10}}>{rep.phone}</span>
+                        </div>
+                        <button onClick={()=>deleteRep(rep.id)} style={{padding:'5px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:10,cursor:'pointer',color:'#dc2626'}}>🗑️</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
         </div>
