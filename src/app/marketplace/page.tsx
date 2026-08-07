@@ -44,6 +44,7 @@ export default function MarketplacePage() {
     const { data: profiles } = await (sb as any).from('supplier_profiles')
       .select('id,business_name,phone,location')
       .eq('status','active')
+      .eq('is_visible', true)
     if (profiles?.length) {
       const { data: allItems } = await (sb as any).from('supplier_catalog_items')
         .select('id,supplier_id,name,unit,price,image_url')

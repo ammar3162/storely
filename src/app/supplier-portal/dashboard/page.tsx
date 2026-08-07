@@ -211,6 +211,12 @@ export default function SupplierDashboardPage() {
     loadItems(profile.id)
   }
 
+  async function toggleVisibility() {
+    const newValue = !profile.is_visible
+    await sb.from('supplier_profiles' as any).update({ is_visible: newValue }).eq('id', profile.id)
+    setProfile((prev:any) => ({ ...prev, is_visible: newValue }))
+  }
+
   async function logout() {
     await sb.auth.signOut()
     window.location.href = '/supplier-portal'
@@ -241,7 +247,14 @@ export default function SupplierDashboardPage() {
           <div style={{fontSize:18,fontWeight:800,color:'#1c1c1a'}}>{profile?.business_name}</div>
           <div style={{fontSize:12,color:'#888780'}}>{profile?.location || '—'}</div>
         </div>
-        <button onClick={logout} style={{padding:'8px 16px',borderRadius:8,border:'1px solid #e5e5e3',background:'white',fontSize:12,fontWeight:700,cursor:'pointer',color:'#5f5e5a'}}>خروج</button>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <button onClick={toggleVisibility}
+            style={{padding:'8px 16px',borderRadius:8,border:'1px solid',borderColor:profile?.is_visible!==false?'#bbf7d0':'#fecaca',background:profile?.is_visible!==false?'#f0fdf4':'#fef2f2',fontSize:12,fontWeight:700,cursor:'pointer',color:profile?.is_visible!==false?'#16a34a':'#dc2626',display:'flex',alignItems:'center',gap:6}}>
+            <span style={{width:8,height:8,borderRadius:'50%',background:profile?.is_visible!==false?'#16a34a':'#dc2626'}}/>
+            {profile?.is_visible!==false?'ظاهر للعملاء':'مخفي عن العملاء'}
+          </button>
+          <button onClick={logout} style={{padding:'8px 16px',borderRadius:8,border:'1px solid #e5e5e3',background:'white',fontSize:12,fontWeight:700,cursor:'pointer',color:'#5f5e5a'}}>خروج</button>
+        </div>
       </div>
 
       <div style={{display:'flex',maxWidth:900,margin:'0 auto',alignItems:'flex-start'}}>
