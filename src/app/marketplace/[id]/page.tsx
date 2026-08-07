@@ -45,7 +45,7 @@ export default function SupplierStorefrontPage() {
         setOrgId(p.org_id)
         setOrgName((p.organizations as any)?.name || '')
         const { data: reqs } = await (sb as any).from('quote_requests')
-          .select('id,items,status,quoted_price,quoted_note,created_at')
+          .select('id,items,status,quoted_price,quoted_note,created_at,delivery_date,rep_name,rep_phone')
           .eq('supplier_id', supplierId).eq('org_id', p.org_id)
           .order('created_at', { ascending: false })
         setMyRequests(reqs || [])
@@ -261,18 +261,24 @@ export default function SupplierStorefrontPage() {
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
                     <span style={{fontSize:12,color:'#64748b'}}>{new Date(r.created_at).toLocaleDateString('ar-SA')}</span>
                     <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:20,
-                      background:r.status==='fulfilled'?'#dbeafe':r.status==='accepted'?'#dcfce7':r.status==='quoted'?'#fef3c7':'#f1f5f9',
-                      color:r.status==='fulfilled'?'#1d4ed8':r.status==='accepted'?'#16a34a':r.status==='quoted'?'#92400e':'#64748b'}}>
-                      {r.status==='fulfilled'?'📦 تم التنفيذ':r.status==='accepted'?'✅ مقبول':r.status==='quoted'?'💰 تم التسعير':'⏳ بانتظار رد المورد'}
+                      background:r.status==='fulfilled'?'#dbeafe':r.status==='confirmed'?'#e0f2fe':r.status==='accepted'?'#dcfce7':r.status==='quoted'?'#fef3c7':'#f1f5f9',
+                      color:r.status==='fulfilled'?'#1d4ed8':r.status==='confirmed'?'#0369a1':r.status==='accepted'?'#16a34a':r.status==='quoted'?'#92400e':'#64748b'}}>
+                      {r.status==='fulfilled'?'📦 تم التنفيذ':r.status==='confirmed'?'🚚 جاري التوريد':r.status==='accepted'?'✅ مقبول — بانتظار موافقة المورد':r.status==='quoted'?'💰 تم التسعير':'⏳ بانتظار رد المورد'}
                     </span>
                   </div>
                   <div style={{fontSize:12,color:'#475569',marginBottom:6}}>
                     {(r.items||[]).map((i:any,idx:number)=>`${i.name} (${i.qty} ${i.unit||''})`).join('، ')}
                   </div>
-                  {(r.status==='quoted'||r.status==='accepted'||r.status==='fulfilled') && (
+                  {(r.status==='quoted'||r.status==='accepted'||r.status==='confirmed'||r.status==='fulfilled') && (
                     <div style={{background:'#f0fdf4',borderRadius:8,padding:'8px 12px',marginTop:8}}>
                       <div style={{fontSize:14,fontWeight:900,color:'#16a34a'}}>السعر المقترح: {r.quoted_price} ر.س</div>
                       {r.quoted_note && <div style={{fontSize:11,color:'#5f6b66',marginTop:4}}>{r.quoted_note}</div>}
+                    </div>
+                  )}
+                  {(r.status==='confirmed'||r.status==='fulfilled') && r.rep_name && (
+                    <div style={{background:'#eff6ff',borderRadius:8,padding:'8px 12px',marginTop:8}}>
+                      <div style={{fontSize:12,fontWeight:700,color:'#1d4ed8'}}>🚚 المندوب: {r.rep_name} — {r.rep_phone}</div>
+                      {r.delivery_date && <div style={{fontSize:11,color:'#64748b',marginTop:2}}>موعد التوريد: {r.delivery_date}</div>}
                     </div>
                   )}
                   {r.status==='quoted' && (
