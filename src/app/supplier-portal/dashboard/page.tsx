@@ -95,13 +95,43 @@ export default function SupplierDashboardPage() {
 
   async function loadQuoteRequests(supplierId: string) {
     const { data } = await sb.from('quote_requests' as any)
-      .select('id,org_name,items,status,quoted_price,quoted_note,created_at')
+      .select('id,org_id,org_name,items,status,quoted_price,quoted_note,created_at,delivery_date,rep_name,rep_phone')
       .eq('supplier_id', supplierId).order('created_at', { ascending: false })
     setQuoteRequests(data || [])
   }
 
   async function markFulfilled(reqId: string) {
     await sb.from('quote_requests' as any).update({ status: 'fulfilled' }).eq('id', reqId)
+    loadQuoteRequests(profile.id)
+  }
+
+  const [approvingId, setApprovingId] = useState<string|null>(null)
+  const [selectedRepId, setSelectedRepId] = useState('')
+  const [deliveryDate, setDeliveryDate] = useState('')
+  const [approveSaving, setApproveSaving] = useState(false)
+
+  function startApprove(reqId: string) {
+    setApprovingId(reqId); setSelectedRepId(''); setDeliveryDate('')
+  }
+
+  async function approveDelivery(req: any) {
+    if (!selectedRepId || !deliveryDate) return
+    const rep = reps.find((r:any)=>r.id===selectedRepId)
+    if (!rep) return
+    setApproveSaving(true)
+    await sb.from('quote_requests' as any).update({
+      status: 'confirmed', delivery_date: deliveryDate, rep_name: rep.name, rep_phone: rep.phone,
+    }).eq('id', req.id)
+    if (req.org_id) {
+      await sb.from('notifications' as any).insert({
+        org_id: req.org_id,
+        title: 'مورد وافق على التوريد',
+        message: `${profile.business_name} وافق على توريد طلبك — المندوب: ${rep.name} (${rep.phone}) — موعد التوريد: ${deliveryDate}`,
+        type: 'supplier_order',
+      })
+    }
+    setApproveSaving(false)
+    setApprovingId(null)
     loadQuoteRequests(profile.id)
   }
 
@@ -309,24 +339,60 @@ export default function SupplierDashboardPage() {
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
                         <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{r.org_name || 'عميل'}</span>
                         <span style={{fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:20,
-                          background:r.status==='fulfilled'?'#dbeafe':r.status==='accepted'?'#dcfce7':r.status==='quoted'?'#fef3c7':'#f1f5f9',
-                          color:r.status==='fulfilled'?'#1d4ed8':r.status==='accepted'?'#16a34a':r.status==='quoted'?'#92400e':'#64748b'}}>
-                          {r.status==='fulfilled'?'📦 منفَّذ':r.status==='accepted'?'✅ العميل وافق':r.status==='quoted'?'💬 تم الرد':'⏳ بانتظار ردك'}
+                          background:r.status==='fulfilled'?'#dbeafe':r.status==='confirmed'?'#e0f2fe':r.status==='accepted'?'#dcfce7':r.status==='quoted'?'#fef3c7':'#f1f5f9',
+                          color:r.status==='fulfilled'?'#1d4ed8':r.status==='confirmed'?'#0369a1':r.status==='accepted'?'#16a34a':r.status==='quoted'?'#92400e':'#64748b'}}>
+                          {r.status==='fulfilled'?'📦 منفَّذ':r.status==='confirmed'?'🚚 جدولة توريد':r.status==='accepted'?'✅ العميل وافق — بانتظار موافقتك':r.status==='quoted'?'💬 تم الرد':'⏳ بانتظار ردك'}
                         </span>
                       </div>
                       <div style={{fontSize:12,color:'#5f5e5a',marginBottom:8}}>
                         {(r.items||[]).map((i:any)=>`${i.name} (${i.qty} ${i.unit||''})`).join('، ')}
                       </div>
                       {r.status==='accepted' ? (
+                        approvingId===r.id ? (
+                          <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
+                            <select value={selectedRepId} onChange={e=>setSelectedRepId(e.target.value)}
+                              style={{padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',fontSize:12,fontFamily:'inherit'}}>
+                              <option value="">اختر المندوب...</option>
+                              {reps.map((rep:any)=>(<option key={rep.id} value={rep.id}>{rep.name} — {rep.phone}</option>))}
+                            </select>
+                            <input type="date" value={deliveryDate} onChange={e=>setDeliveryDate(e.target.value)}
+                              style={{padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',fontSize:12,fontFamily:'inherit'}}/>
+                            <div style={{display:'flex',gap:6}}>
+                              <button onClick={()=>approveDelivery(r)} disabled={approveSaving || !selectedRepId || !deliveryDate}
+                                style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#16a34a',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                                {approveSaving?'...':'✅ تأكيد الموافقة'}
+                              </button>
+                              <button onClick={()=>setApprovingId(null)}
+                                style={{padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:11,cursor:'pointer',color:'#5f5e5a'}}>
+                                إلغاء
+                              </button>
+                            </div>
+                            {reps.length===0 && <div style={{fontSize:10,color:'#dc2626'}}>ما فيه مناديب مضافين — روح تبويب "المناديب" وأضف واحد أول</div>}
+                          </div>
+                        ) : (
+                          <div>
+                            <div style={{fontSize:12,color:'#16a34a',fontWeight:700,marginBottom:8}}>سعرك المرسل: {r.quoted_price} ر.س — العميل وافق عليه</div>
+                            <button onClick={()=>startApprove(r.id)}
+                              style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#2563eb',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                              🚚 الموافقة على التوريد
+                            </button>
+                          </div>
+                        )
+                      ) : r.status==='confirmed' ? (
                         <div>
-                          <div style={{fontSize:12,color:'#16a34a',fontWeight:700,marginBottom:8}}>سعرك المرسل: {r.quoted_price} ر.س — العميل وافق عليه</div>
+                          <div style={{fontSize:12,color:'#0369a1',fontWeight:700,marginBottom:8}}>
+                            المندوب: {r.rep_name} ({r.rep_phone}) — موعد التوريد: {r.delivery_date}
+                          </div>
                           <button onClick={()=>markFulfilled(r.id)}
                             style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#2563eb',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
                             📦 تأكيد التنفيذ (تم التوريد)
                           </button>
                         </div>
                       ) : r.status==='fulfilled' ? (
-                        <div style={{fontSize:12,color:'#1d4ed8',fontWeight:700}}>سعرك المرسل: {r.quoted_price} ر.س — تم التنفيذ ✅</div>
+                        <div style={{fontSize:12,color:'#1d4ed8',fontWeight:700}}>
+                          سعرك المرسل: {r.quoted_price} ر.س — تم التنفيذ ✅
+                          {r.rep_name && <div style={{fontSize:11,color:'#64748b',marginTop:2}}>المندوب: {r.rep_name} ({r.rep_phone})</div>}
+                        </div>
                       ) : r.status==='quoted' ? (
                         <div style={{fontSize:12,color:'#16a34a',fontWeight:700}}>سعرك المرسل: {r.quoted_price} ر.س</div>
                       ) : respondingId===r.id ? (
