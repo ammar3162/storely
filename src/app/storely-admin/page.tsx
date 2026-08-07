@@ -330,18 +330,6 @@ export default function AdminPage() {
     })
     const data = await res.json()
     if (!data.success) { alert('خطأ: ' + (data.error||'unknown')); setSaving(null); return }
-    const newAmount = value===1?149:value<=3?249:399
-    const oldAmount = oldBranches===1?149:oldBranches<=3?249:399
-    if (value !== oldBranches) {
-      try {
-        await (sb as any).from('subscription_events').insert({
-          org_id: orgId,
-          event_type: newAmount > oldAmount ? 'upgraded' : 'downgraded',
-          plan: planName,
-          amount: newAmount,
-        })
-      } catch {}
-    }
     setUsers(prev=>prev.map(u=>u.org_id===orgId?{...u,max_branches:value}:u))
     setSelected(prev=>prev&&prev.org_id===orgId?{...prev,max_branches:value}:prev)
     setSaving(null)

@@ -17,6 +17,9 @@ export async function POST(req: Request) {
   const { orgId, maxBranches, maxStaff, maxSuppliers, planName, orgName } = await req.json()
   if (!orgId || !maxBranches) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
+  const { data: oldOrg } = await supabase.from('organizations').select('max_branches').eq('id', orgId).maybeSingle()
+  const oldBranches = (oldOrg as any)?.max_branches || 1
+
   const { error } = await supabase
     .from('organizations')
     .update({ max_branches: maxBranches, plan: planName, max_staff: maxStaff, max_suppliers: maxSuppliers })
@@ -25,6 +28,19 @@ export async function POST(req: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   await logAdminAction(admin, 'update_plan', orgId, orgName || null, { new_plan: planName, maxBranches })
+
+  if (maxBranches !== oldBranches) {
+    const newAmount = maxBranches===1?149:maxBranches<=3?249:399
+    const oldAmount = oldBranches===1?149:oldBranches<=3?249:399
+    try {
+      await (supabase as any).from('subscription_events').insert({
+        org_id: orgId,
+        event_type: newAmount > oldAmount ? 'upgraded' : 'downgraded',
+        plan: planName,
+        amount: newAmount,
+      })
+    } catch {}
+  }
 
   return NextResponse.json({ success: true })
 }
