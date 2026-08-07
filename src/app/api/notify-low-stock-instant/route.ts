@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     if (!subActive) return NextResponse.json({ success: false, message: 'الاشتراك منتهي — لا يتم إرسال إشعارات' })
 
     const { data: product } = await db.from('products')
-      .select('id,name,qty,unit,reorder_point,supplier_id,supplier_order_qty,supplier_notes,branch_id')
+      .select('id,name,qty,unit,reorder_point,supplier_id,supplier_order_qty,supplier_notes,branch_id,marketplace_catalog_item_id')
       .eq('id', product_id).single()
     console.log('product:', product)
     if (!product) return NextResponse.json({ success: false })
@@ -72,12 +72,31 @@ export async function POST(req: Request) {
 
     // إرسال للمورد إذا موجود ووافق على استلام الرسائل
     let sentToSupplier = false
+    let sentAsMarketplaceOrder = false
     console.log('supplier_id:', (product as any).supplier_id)
     if ((product as any).supplier_id) {
       const { data: supplier } = await (db as any).from('suppliers')
-        .select('name,phone,whatsapp_consent').eq('id', (product as any).supplier_id).single()
+        .select('name,phone,whatsapp_consent,marketplace_supplier_id').eq('id', (product as any).supplier_id).single()
 
-      if ((supplier as any)?.phone && (supplier as any)?.whatsapp_consent === true) {
+      if ((supplier as any)?.marketplace_supplier_id && (product as any).marketplace_catalog_item_id) {
+        const { data: catalogItem } = await (db as any).from('supplier_catalog_items')
+          .select('name,unit,price').eq('id', (product as any).marketplace_catalog_item_id).maybeSingle()
+        if (catalogItem) {
+          const unitPrice = Number((catalogItem as any).price) || 0
+          await (db as any).from('quote_requests').insert({
+            supplier_id: (supplier as any).marketplace_supplier_id,
+            org_id, org_name: (org as any).name,
+            items: [{ name: (product as any).name, qty: orderQty, unit: (product as any).unit }],
+            status: 'accepted',
+            quoted_price: unitPrice * orderQty,
+            quoted_note: 'طلب توريد تلقائي — وصل المخزون للحد الأدنى',
+          })
+          sentToSupplier = true
+          sentAsMarketplaceOrder = true
+        }
+      }
+
+      if (!sentAsMarketplaceOrder && (supplier as any)?.phone && (supplier as any)?.whatsapp_consent === true) {
         const notesLine = (product as any).supplier_notes ? `\n📝 ${(product as any).supplier_notes}\n` : ''
 
         // تحقق: فيه طلب معلّق لنفس الصنف ونفس المورد؟ لو فيه، نرسل تذكير بس بدل طلب جديد مكرر

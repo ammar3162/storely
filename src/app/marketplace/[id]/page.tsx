@@ -78,7 +78,9 @@ export default function SupplierStorefrontPage() {
     const sb = createClient()
     const { data: existingSupplier } = await (sb as any).from('suppliers').select('id').eq('org_id', orgId).eq('name', supplierName).maybeSingle()
     if (!existingSupplier) {
-      await (sb as any).from('suppliers').insert({ org_id: orgId, name: supplierName, phone: supplierPhone || null })
+      await (sb as any).from('suppliers').insert({ org_id: orgId, name: supplierName, phone: supplierPhone || null, marketplace_supplier_id: supplierId })
+    } else {
+      await (sb as any).from('suppliers').update({ marketplace_supplier_id: supplierId }).eq('id', existingSupplier.id)
     }
     await (sb as any).from('quote_requests').update({ status: 'accepted' }).eq('id', reqId)
     load()

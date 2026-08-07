@@ -140,7 +140,18 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
   const [editPhoneVal, setEditPhoneVal] = useState(s.phone || '')
   const [savingPhone, setSavingPhone]   = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [catalogItems, setCatalogItems] = useState<any[]>([])
+  const [selectedCatalogItem, setSelectedCatalogItem] = useState('')
   const sb = createClient()
+
+  useEffect(()=>{
+    if (!s.marketplace_supplier_id) { setCatalogItems([]); return }
+    (async () => {
+      const { data } = await (sb as any).from('supplier_catalog_items')
+        .select('id,name,unit,price').eq('supplier_id', s.marketplace_supplier_id).eq('is_available', true)
+      setCatalogItems(data || [])
+    })()
+  },[s.marketplace_supplier_id])
 
   async function savePhone() {
     if (!editPhoneVal.trim()) { toast('أدخل رقم صحيح', 'warning'); return }
@@ -190,6 +201,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
       supplier_reorder_point: Number(reorderPoint),
       supplier_order_qty: Number(orderQty) || Number(reorderPoint),
       supplier_notes: supplierNotes.trim() || null,
+      marketplace_catalog_item_id: selectedCatalogItem || null,
     }).eq('id', selectedProduct)
     if(prodErr){toast('فشل ربط المنتج بالمورد','error');return}
     // مزامنة الأولوية 1 بجدول سلسلة التصعيد
@@ -203,7 +215,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
     }, { onConflict: 'product_id,priority' })
     if(chainErr){toast('تم ربط المنتج، لكن فشل تحديث سلسلة التصعيد','warning')}
     else toast('✅ تم ربط المنتج')
-    setSelectedProduct(''); setReorderPoint(''); setOrderQty(''); setSupplierNotes('')
+    setSelectedProduct(''); setReorderPoint(''); setOrderQty(''); setSupplierNotes(''); setSelectedCatalogItem('')
     onRefresh()
   }
 
@@ -361,6 +373,18 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
                     style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box' as const }} placeholder="20" />
                 </div>
               </div>
+              {s.marketplace_supplier_id && catalogItems.length > 0 && (
+                <div style={{marginBottom:8}}>
+                  <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:4 }}>🛒 الصنف المقابل بكتالوج المورد (لطلب التوريد التلقائي)</label>
+                  <select value={selectedCatalogItem} onChange={e=>setSelectedCatalogItem(e.target.value)}
+                    style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box' as const, background:'white' }}>
+                    <option value="">— بدون ربط (إشعار واتساب فقط) —</option>
+                    {catalogItems.map((ci:any)=>(
+                      <option key={ci.id} value={ci.id}>{ci.name} — {ci.price} ر.س / {ci.unit}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <input value={supplierNotes} onChange={e=>setSupplierNotes(e.target.value)}
                 style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', outline:'none', marginBottom:8, boxSizing:'border-box' as const }} 
                 placeholder="📝 ملاحظات لهذا المنتج — مثال: يرجى التوريد مبرداً (اختياري)" />
