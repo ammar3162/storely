@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-type Tab = 'products' | 'orders' | 'chats' | 'reps' | 'reports'
+type Tab = 'products' | 'orders' | 'chats' | 'reps' | 'reports' | 'activity'
 
 export default function SupplierDashboardPage() {
   const [loading, setLoading] = useState(true)
@@ -246,7 +246,19 @@ export default function SupplierDashboardPage() {
     { id:'chats', label:'المحادثات', icon:'💬', badge: openChatsCount || undefined },
     { id:'reps', label:'المناديب', icon:'🚴' },
     { id:'reports', label:'التقارير', icon:'📊' },
+    { id:'activity', label:'الإشعارات', icon:'🔔' },
   ]
+
+  const activityFeed = [
+    ...quoteRequests.map((r:any)=>({
+      type:'order', at: r.created_at, org: r.org_name || 'عميل',
+      text: `طلب تسعير جديد من ${r.org_name || 'عميل'} (${(r.items||[]).length} صنف)`,
+    })),
+    ...chatMessages.filter((m:any)=>m.sender_type==='customer').map((m:any)=>({
+      type:'chat', at: m.created_at, org: m.org_name || 'عميل',
+      text: `رسالة جديدة من ${m.org_name || 'عميل'}: "${m.message.slice(0,40)}${m.message.length>40?'...':''}"`,
+    })),
+  ].sort((a,b)=> new Date(b.at).getTime() - new Date(a.at).getTime())
 
   const fulfilledRequests = quoteRequests.filter((r:any)=>r.status==='fulfilled')
   const totalRevenue = fulfilledRequests.reduce((sum:number,r:any)=>sum + (Number(r.quoted_price)||0), 0)
@@ -660,6 +672,27 @@ export default function SupplierDashboardPage() {
                 )}
               </div>
             </>
+          )}
+
+          {activeTab==='activity' && (
+            <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
+              <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>🔔 سجل الأحداث</div>
+              {activityFeed.length===0 ? (
+                <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه أحداث بعد</div>
+              ) : (
+                <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
+                  {activityFeed.map((ev:any,i:number)=>(
+                    <div key={i} style={{display:'flex',gap:10,alignItems:'flex-start',padding:'10px 12px',background:'#f5f5f4',borderRadius:10}}>
+                      <span style={{fontSize:16}}>{ev.type==='order'?'📋':'💬'}</span>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:12,color:'#1c1c1a'}}>{ev.text}</div>
+                        <div style={{fontSize:10,color:'#888780',marginTop:2}}>{new Date(ev.at).toLocaleString('ar-SA')}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
         </div>
