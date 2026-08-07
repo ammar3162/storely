@@ -77,7 +77,7 @@ export default function MarketplacePage() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700;800&display=swap');*{box-sizing:border-box}`}</style>
       <div style={{background:'linear-gradient(135deg,#0d2818,#1a4731)',padding:'32px 20px 24px'}}>
         <div style={{maxWidth:900,margin:'0 auto'}}>
-          <button onClick={()=>window.history.back()} style={{background:'rgba(255,255,255,.1)',border:'none',color:'white',borderRadius:10,padding:'8px 14px',cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:700}}>← رجوع</button>
+          <button onClick={()=>window.location.href='/dashboard'} style={{background:'rgba(255,255,255,.1)',border:'none',color:'white',borderRadius:10,padding:'8px 14px',cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:700}}>← رجوع</button>
         </div>
       </div>
       <div style={{maxWidth:600,margin:'80px auto',textAlign:'center' as const,padding:'0 20px'}}>
@@ -99,7 +99,7 @@ export default function MarketplacePage() {
       <div style={{background:'linear-gradient(135deg,#0d2818,#1a4731)',padding:'32px 20px 24px'}}>
         <div style={{maxWidth:900,margin:'0 auto'}}>
           <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
-            <button onClick={()=>window.history.back()} style={{background:'rgba(255,255,255,.1)',border:'none',color:'white',borderRadius:10,padding:'8px 14px',cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:700}}>← رجوع</button>
+            <button onClick={()=>window.location.href='/dashboard'} style={{background:'rgba(255,255,255,.1)',border:'none',color:'white',borderRadius:10,padding:'8px 14px',cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:700}}>← رجوع</button>
             <div>
               <h1 style={{fontSize:22,fontWeight:900,color:'white',margin:0}}>🤝 الموردون المعتمدون</h1>
               <p style={{fontSize:12,color:'rgba(255,255,255,.6)',margin:'4px 0 0'}}>موردون معتمدون من Storely مع عروض وأولوية توصيل حصرية</p>
