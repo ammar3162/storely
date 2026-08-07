@@ -95,13 +95,21 @@ export default function SupplierDashboardPage() {
 
   async function loadQuoteRequests(supplierId: string) {
     const { data } = await sb.from('quote_requests' as any)
-      .select('id,org_id,org_name,items,status,quoted_price,quoted_note,created_at,delivery_date,rep_name,rep_phone')
+      .select('id,org_id,org_name,items,status,quoted_price,quoted_note,created_at,delivery_date,rep_name,rep_phone,payment_status,paid_at')
       .eq('supplier_id', supplierId).order('created_at', { ascending: false })
     setQuoteRequests(data || [])
   }
 
   async function markFulfilled(reqId: string) {
     await sb.from('quote_requests' as any).update({ status: 'fulfilled' }).eq('id', reqId)
+    loadQuoteRequests(profile.id)
+  }
+
+  async function togglePaymentStatus(reqId: string, current: string) {
+    const newStatus = current==='paid' ? 'unpaid' : 'paid'
+    await sb.from('quote_requests' as any).update({
+      payment_status: newStatus, paid_at: newStatus==='paid' ? new Date().toISOString() : null,
+    }).eq('id', reqId)
     loadQuoteRequests(profile.id)
   }
 
@@ -265,6 +273,11 @@ export default function SupplierDashboardPage() {
     if ((r.status==='confirmed'||r.status==='fulfilled') && r.rep_name) repAgg[r.rep_name] = (repAgg[r.rep_name]||0) + 1
   })
   const repStats = Object.entries(repAgg).sort((a,b)=>b[1]-a[1])
+
+  const unpaidInvoices = fulfilledRequests.filter((r:any)=>r.payment_status!=='paid')
+  const paidInvoices = fulfilledRequests.filter((r:any)=>r.payment_status==='paid')
+  const unpaidTotal = unpaidInvoices.reduce((sum:number,r:any)=>sum+(Number(r.quoted_price)||0),0)
+  const paidTotal = paidInvoices.reduce((sum:number,r:any)=>sum+(Number(r.quoted_price)||0),0)
 
   return (
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',background:'#f5f5f4'}}>
@@ -602,6 +615,45 @@ export default function SupplierDashboardPage() {
                       <div key={name} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',background:'#f5f5f4',borderRadius:8,fontSize:12}}>
                         <span style={{color:'#1c1c1a',fontWeight:700}}>{name}</span>
                         <span style={{color:'#16a34a',fontWeight:700}}>{count} توريد</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea',marginTop:16}}>
+                <div style={{fontSize:14,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>🧾 الفواتير</div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16}}>
+                  <div style={{background:'#fef2f2',borderRadius:10,padding:14}}>
+                    <div style={{fontSize:11,color:'#991b1b',marginBottom:4}}>فواتير آجلة (لسا ما تسدّدت)</div>
+                    <div style={{fontSize:18,fontWeight:900,color:'#dc2626'}}>{unpaidTotal.toFixed(0)} ر.س</div>
+                    <div style={{fontSize:10,color:'#991b1b',marginTop:2}}>{unpaidInvoices.length} فاتورة</div>
+                  </div>
+                  <div style={{background:'#f0fdf4',borderRadius:10,padding:14}}>
+                    <div style={{fontSize:11,color:'#15803d',marginBottom:4}}>فواتير مسدَّدة</div>
+                    <div style={{fontSize:18,fontWeight:900,color:'#16a34a'}}>{paidTotal.toFixed(0)} ر.س</div>
+                    <div style={{fontSize:10,color:'#15803d',marginTop:2}}>{paidInvoices.length} فاتورة</div>
+                  </div>
+                </div>
+
+                {fulfilledRequests.length===0 ? (
+                  <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه فواتير بعد — تظهر هنا بعد تأكيد التنفيذ لأي طلب</div>
+                ) : (
+                  <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                    {fulfilledRequests.map((r:any)=>(
+                      <div key={r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'#f5f5f4',borderRadius:10}}>
+                        <div>
+                          <div style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{r.org_name || 'عميل'}</div>
+                          <div style={{fontSize:11,color:'#888780'}}>{r.delivery_date || new Date(r.created_at).toLocaleDateString('ar-SA')}</div>
+                        </div>
+                        <div style={{display:'flex',alignItems:'center',gap:10}}>
+                          <span style={{fontSize:13,fontWeight:800,color:'#1c1c1a'}}>{r.quoted_price} ر.س</span>
+                          <button onClick={()=>togglePaymentStatus(r.id, r.payment_status)}
+                            style={{padding:'5px 12px',borderRadius:20,border:'none',fontSize:10,fontWeight:700,cursor:'pointer',
+                              background:r.payment_status==='paid'?'#dcfce7':'#fee2e2',color:r.payment_status==='paid'?'#16a34a':'#dc2626'}}>
+                            {r.payment_status==='paid'?'✅ مسدَّدة':'⏳ آجلة'}
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
