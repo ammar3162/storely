@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-type Tab = 'products' | 'orders' | 'chats' | 'reps'
+type Tab = 'products' | 'orders' | 'chats' | 'reps' | 'reports'
 
 export default function SupplierDashboardPage() {
   const [loading, setLoading] = useState(true)
@@ -237,7 +237,34 @@ export default function SupplierDashboardPage() {
     { id:'orders', label:'الطلبات', icon:'📋', badge: pendingOrdersCount || undefined },
     { id:'chats', label:'المحادثات', icon:'💬', badge: openChatsCount || undefined },
     { id:'reps', label:'المناديب', icon:'🚴' },
+    { id:'reports', label:'التقارير', icon:'📊' },
   ]
+
+  const fulfilledRequests = quoteRequests.filter((r:any)=>r.status==='fulfilled')
+  const totalRevenue = fulfilledRequests.reduce((sum:number,r:any)=>sum + (Number(r.quoted_price)||0), 0)
+  const totalOrders = quoteRequests.length
+  const fulfilledCount = fulfilledRequests.length
+
+  const itemFreq: Record<string, number> = {}
+  quoteRequests.forEach((r:any)=>{
+    (r.items||[]).forEach((it:any)=>{ itemFreq[it.name] = (itemFreq[it.name]||0) + (Number(it.qty)||1) })
+  })
+  const topItems = Object.entries(itemFreq).sort((a,b)=>b[1]-a[1]).slice(0,5)
+
+  const customerAgg: Record<string, {count:number; total:number}> = {}
+  quoteRequests.forEach((r:any)=>{
+    const key = r.org_name || 'عميل'
+    if (!customerAgg[key]) customerAgg[key] = { count:0, total:0 }
+    customerAgg[key].count += 1
+    if (r.status==='fulfilled') customerAgg[key].total += Number(r.quoted_price)||0
+  })
+  const topCustomers = Object.entries(customerAgg).sort((a,b)=>b[1].count-a[1].count).slice(0,5)
+
+  const repAgg: Record<string, number> = {}
+  quoteRequests.forEach((r:any)=>{
+    if ((r.status==='confirmed'||r.status==='fulfilled') && r.rep_name) repAgg[r.rep_name] = (repAgg[r.rep_name]||0) + 1
+  })
+  const repStats = Object.entries(repAgg).sort((a,b)=>b[1]-a[1])
 
   return (
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',background:'#f5f5f4'}}>
@@ -513,6 +540,68 @@ export default function SupplierDashboardPage() {
                           <span style={{fontSize:12,color:'#888780',marginRight:10}}>{rep.phone}</span>
                         </div>
                         <button onClick={()=>deleteRep(rep.id)} style={{padding:'5px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:10,cursor:'pointer',color:'#dc2626'}}>🗑️</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {activeTab==='reports' && (
+            <>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:16}}>
+                <div style={{background:'white',borderRadius:16,padding:18,border:'1px solid #ebebea'}}>
+                  <div style={{fontSize:11,color:'#888780',marginBottom:6}}>إجمالي المبيعات (منفَّذ)</div>
+                  <div style={{fontSize:22,fontWeight:900,color:'#16a34a'}}>{totalRevenue.toFixed(0)} ر.س</div>
+                </div>
+                <div style={{background:'white',borderRadius:16,padding:18,border:'1px solid #ebebea'}}>
+                  <div style={{fontSize:11,color:'#888780',marginBottom:6}}>إجمالي الطلبات</div>
+                  <div style={{fontSize:22,fontWeight:900,color:'#1c1c1a'}}>{totalOrders}</div>
+                </div>
+                <div style={{background:'white',borderRadius:16,padding:18,border:'1px solid #ebebea'}}>
+                  <div style={{fontSize:11,color:'#888780',marginBottom:6}}>طلبات منفَّذة</div>
+                  <div style={{fontSize:22,fontWeight:900,color:'#2563eb'}}>{fulfilledCount}</div>
+                </div>
+              </div>
+
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16}}>
+                <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
+                  <div style={{fontSize:14,fontWeight:800,color:'#1c1c1a',marginBottom:12}}>🔥 أكثر الأصناف طلباً</div>
+                  {topItems.length===0 ? <div style={{fontSize:12,color:'#888780'}}>ما فيه بيانات بعد</div> : (
+                    <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                      {topItems.map(([name,qty])=>(
+                        <div key={name} style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
+                          <span style={{color:'#1c1c1a',fontWeight:700}}>{name}</span>
+                          <span style={{color:'#888780'}}>{qty} وحدة</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
+                  <div style={{fontSize:14,fontWeight:800,color:'#1c1c1a',marginBottom:12}}>🏪 أكثر العملاء طلباً</div>
+                  {topCustomers.length===0 ? <div style={{fontSize:12,color:'#888780'}}>ما فيه بيانات بعد</div> : (
+                    <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                      {topCustomers.map(([name,agg])=>(
+                        <div key={name} style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
+                          <span style={{color:'#1c1c1a',fontWeight:700}}>{name}</span>
+                          <span style={{color:'#888780'}}>{agg.count} طلب — {agg.total.toFixed(0)} ر.س</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
+                <div style={{fontSize:14,fontWeight:800,color:'#1c1c1a',marginBottom:12}}>🚚 تقرير التوصيل حسب المندوب</div>
+                {repStats.length===0 ? <div style={{fontSize:12,color:'#888780'}}>ما فيه توريدات مسندة بعد</div> : (
+                  <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                    {repStats.map(([name,count])=>(
+                      <div key={name} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',background:'#f5f5f4',borderRadius:8,fontSize:12}}>
+                        <span style={{color:'#1c1c1a',fontWeight:700}}>{name}</span>
+                        <span style={{color:'#16a34a',fontWeight:700}}>{count} توريد</span>
                       </div>
                     ))}
                   </div>
