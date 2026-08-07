@@ -139,7 +139,6 @@ export default function StaffPage() {
     if(!saved){router.push('/staff');return}
     const s = JSON.parse(saved) as StaffSession
     const p = s.permissions
-    if(p && !p.dispense && !p.inventory && !p.purchases && !p.reports){router.push('/staff');return}
     setSession(s)
     if(p && !p.dispense){
       if(p.inventory) setTab('inventory')
@@ -301,6 +300,21 @@ export default function StaffPage() {
   const invCategories = Object.keys(invCategoriesMap).sort((a,b)=>{ if(a===OTHER_CATEGORY)return 1; if(b===OTHER_CATEGORY)return -1; return invCategoriesMap[b]-invCategoriesMap[a] })
 
   if(!session) return null
+
+  const hasAnyPermission = !!(session.permissions?.dispense || session.permissions?.inventory || session.permissions?.purchases || session.permissions?.reports)
+  if (!hasAnyPermission) {
+    return (
+      <div style={{minHeight:'100vh',display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',background:'#f5f5f4',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:20,textAlign:'center' as const}}>
+        <div style={{fontSize:48,marginBottom:16}}>🔒</div>
+        <div style={{fontSize:16,fontWeight:800,color:'#1c1c1a',marginBottom:8}}>ما عندك أي صلاحية مفعّلة</div>
+        <div style={{fontSize:13,color:'#5f5e5a',marginBottom:20}}>تواصل مع صاحب المنشأة عشان يفعّل لك صلاحية دخول</div>
+        <button onClick={()=>{localStorage.removeItem('staff_session');localStorage.removeItem('staff_token');router.push('/staff')}}
+          style={{padding:'10px 24px',borderRadius:10,border:'1px solid #e5e5e3',background:'white',fontSize:13,fontWeight:700,cursor:'pointer',color:'#5f5e5a'}}>
+          خروج
+        </button>
+      </div>
+    )
+  }
 
   const isRTL = lang==='ar'||lang==='ur'
   const tabs = [
