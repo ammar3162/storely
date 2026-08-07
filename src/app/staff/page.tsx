@@ -114,12 +114,16 @@ export default function StaffLoginPage() {
     if(!phone||phone.length<requiredLen){setError('أدخل رقم الجوال');doShake();return}
     if(!pin||pin.length<4){setError('أدخل رمز PIN');doShake();return}
     setLoading(true)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(()=>controller.abort(), 15000)
     try {
       const res = await fetch('/api/staff-login',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({phone:phone.trim(),pin:pin.trim()}),
+        signal: controller.signal,
       })
+      clearTimeout(timeoutId)
       const data = await res.json()
       if(!res.ok){
         setError(data.error||'رقم الجوال أو PIN غير صحيح')
@@ -130,6 +134,7 @@ export default function StaffLoginPage() {
       }
       localStorage.setItem('staff_session',JSON.stringify(data.staff))
       localStorage.setItem('staff_token',data.token)
+      setLoading(false)
       // لو كاشير وعنده صلاحية الصرف → يختار
       if(data.staff.role === 'cashier' && data.staff.permissions?.dispense) {
         router.push('/staff/choose')
@@ -138,8 +143,10 @@ export default function StaffLoginPage() {
       } else {
         router.push('/staff/dispense')
       }
-    } catch {
-      setError('حدث خطأ — حاول مرة أخرى')
+    } catch (err: any) {
+      clearTimeout(timeoutId)
+      setError(err?.name === 'AbortError' ? 'الاتصال بطيء جداً — حاول مرة أخرى' : 'حدث خطأ — حاول مرة أخرى')
+      setPin('')
       setLoading(false)
     }
   }
