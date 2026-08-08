@@ -17,6 +17,13 @@ export default function SupplierStorefrontPage() {
   const [selected, setSelected] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [myRequests, setMyRequests] = useState<any[]>([])
+  const [avgRating, setAvgRating] = useState<number|null>(null)
+  const [reviewCount, setReviewCount] = useState(0)
+  const [myReviewedIds, setMyReviewedIds] = useState<string[]>([])
+  const [reviewingId, setReviewingId] = useState<string|null>(null)
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewComment, setReviewComment] = useState('')
+  const [reviewSaving, setReviewSaving] = useState(false)
   const [chatMessages, setChatMessages] = useState<any[]>([])
   const [chatInput, setChatInput] = useState('')
   const [chatSending, setChatSending] = useState(false)
@@ -52,6 +59,12 @@ export default function SupplierStorefrontPage() {
       .order('created_at', { ascending: false })
     setItems(it || [])
 
+    const { data: reviews } = await (sb as any).from('supplier_reviews').select('rating,quote_request_id').eq('supplier_id', supplierId)
+    if (reviews && reviews.length > 0) {
+      setAvgRating(reviews.reduce((s:number,r:any)=>s+r.rating,0) / reviews.length)
+      setReviewCount(reviews.length)
+    }
+
     const { data: { user } } = await sb.auth.getUser()
     if (user) {
       const { data: p } = await sb.from('profiles').select('org_id,organizations(name)').eq('id', user.id).maybeSingle()
@@ -63,6 +76,9 @@ export default function SupplierStorefrontPage() {
           .eq('supplier_id', supplierId).eq('org_id', p.org_id)
           .order('created_at', { ascending: false })
         setMyRequests(reqs || [])
+
+        const { data: myReviews } = await (sb as any).from('supplier_reviews').select('quote_request_id').eq('org_id', p.org_id).eq('supplier_id', supplierId)
+        setMyReviewedIds((myReviews||[]).map((r:any)=>r.quote_request_id))
 
         const { data: msgs } = await (sb as any).from('chat_messages')
           .select('id,sender_type,message,created_at')
@@ -85,6 +101,20 @@ export default function SupplierStorefrontPage() {
 
   function setQty(itemId: string, qty: string) {
     setSelected(prev => ({ ...prev, [itemId]: qty }))
+  }
+
+  async function submitReview(reqId: string) {
+    if (!orgId) return
+    setReviewSaving(true)
+    const { error } = await (createClient() as any).from('supplier_reviews').insert({
+      supplier_id: supplierId, org_id: orgId, org_name: orgName,
+      quote_request_id: reqId, rating: reviewRating, comment: reviewComment.trim() || null,
+    })
+    setReviewSaving(false)
+    if (!error) {
+      setReviewingId(null); setReviewRating(5); setReviewComment('')
+      load()
+    }
   }
 
   async function acceptOffer(reqId: string, supplierName: string, supplierPhone: string) {
@@ -172,7 +202,19 @@ export default function SupplierStorefrontPage() {
           <div style={{display:'flex',alignItems:'center',gap:16}}>
             <div style={{width:64,height:64,borderRadius:16,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:30}}>🚚</div>
             <div>
-              <h1 style={{fontSize:22,fontWeight:900,color:'white',margin:0}}>{supplier.business_name}</h1>
+              <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap' as const}}>
+                <h1 style={{fontSize:22,fontWeight:900,color:'white',margin:0}}>{supplier.business_name}</h1>
+                {reviewCount > 0 && (
+                  <span style={{fontSize:12,fontWeight:700,color:'#facc15',background:'rgba(255,255,255,.15)',padding:'3px 10px',borderRadius:20}}>
+                    ⭐ {avgRating?.toFixed(1)} ({reviewCount})
+                  </span>
+                )}
+                {reviewCount >= 3 && (
+                  <span style={{fontSize:11,fontWeight:700,color:'#16a34a',background:'white',padding:'3px 10px',borderRadius:20}}>
+                    ✅ موثّق عبر Storely
+                  </span>
+                )}
+              </div>
               {supplier.location && <p style={{fontSize:13,color:'rgba(255,255,255,.7)',margin:'6px 0 0'}}>📍 {supplier.location}</p>}
             </div>
           </div>
@@ -345,6 +387,34 @@ export default function SupplierStorefrontPage() {
                         style={{width:'100%',padding:'10px',background:'#16a34a',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>
                         ✅ قبول العرض
                       </button>
+                    )}
+                    {r.status==='fulfilled' && !myReviewedIds.includes(r.id) && (
+                      reviewingId===r.id ? (
+                        <div style={{background:'#fffbeb',borderRadius:10,padding:'12px',marginTop:4}}>
+                          <div style={{display:'flex',gap:4,marginBottom:8,justifyContent:'center'}}>
+                            {[1,2,3,4,5].map(n=>(
+                              <button key={n} onClick={()=>setReviewRating(n)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',padding:0,opacity:n<=reviewRating?1:.3}}>⭐</button>
+                            ))}
+                          </div>
+                          <input value={reviewComment} onChange={e=>setReviewComment(e.target.value)} placeholder="تعليق (اختياري)"
+                            style={{width:'100%',padding:'8px 12px',borderRadius:8,border:'1px solid #fde68a',fontSize:12,marginBottom:8,boxSizing:'border-box' as const}}/>
+                          <div style={{display:'flex',gap:6}}>
+                            <button onClick={()=>submitReview(r.id)} disabled={reviewSaving}
+                              style={{flex:1,padding:'8px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>
+                              {reviewSaving?'...':'إرسال التقييم'}
+                            </button>
+                            <button onClick={()=>setReviewingId(null)}
+                              style={{padding:'8px 14px',background:'white',border:'1px solid #e2e8f0',borderRadius:8,fontSize:12,cursor:'pointer',color:'#64748b'}}>
+                              إلغاء
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button onClick={()=>setReviewingId(r.id)}
+                          style={{width:'100%',padding:'10px',background:'white',color:'#b45309',border:'1px solid #fde68a',borderRadius:10,fontSize:12,fontWeight:700,cursor:'pointer'}}>
+                          ⭐ قيّم المورد
+                        </button>
+                      )
                     )}
                   </div>
                 </div>
