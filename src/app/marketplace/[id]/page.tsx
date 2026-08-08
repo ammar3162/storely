@@ -388,6 +388,12 @@ export default function SupplierStorefrontPage() {
                         ✅ قبول العرض
                       </button>
                     )}
+                    {(r.status==='accepted'||r.status==='confirmed'||r.status==='fulfilled') && (
+                      <button onClick={()=>router.push(`/suppliers?ms=${supplierId}`)}
+                        style={{width:'100%',padding:'10px',background:'#eff6ff',color:'#1d4ed8',border:'1px solid #bfdbfe',borderRadius:10,fontSize:12,fontWeight:700,cursor:'pointer',marginTop:8}}>
+                        🔗 اعتماد المورد وربط منتج (توريد تلقائي عند نقص المخزون)
+                      </button>
+                    )}
                     {r.status==='fulfilled' && !myReviewedIds.includes(r.id) && (
                       reviewingId===r.id ? (
                         <div style={{background:'#fffbeb',borderRadius:10,padding:'12px',marginTop:4}}>

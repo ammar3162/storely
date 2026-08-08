@@ -1,7 +1,7 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { colors, font, pageTitle, pageSub, card, btnPrimary, btnSecondary, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
@@ -109,7 +109,7 @@ function EscalationChain({ productId, allSuppliers, primarySupplierId, refreshKe
   )
 }
 
-function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, curr }: any) {
+function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, curr, autoOpen }: any) {
   const [showTimeline, setShowTimeline] = useState(false)
   const [timelineEvents, setTimelineEvents] = useState<any[]>([])
   const [timelineLoading, setTimelineLoading] = useState(false)
@@ -123,7 +123,14 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
     } catch { setTimelineEvents([]) }
     setTimelineLoading(false)
   }
-  const [open, setOpen]           = useState(false)
+  const [open, setOpen]           = useState(!!autoOpen)
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  useEffect(()=>{
+    if (autoOpen && cardRef.current) {
+      setTimeout(()=>cardRef.current?.scrollIntoView({ behavior:'smooth', block:'center' }), 300)
+    }
+  },[autoOpen])
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [mode, setMode]           = useState(s.notify_mode || 'daily')
   const [time, setTime]           = useState(s.notify_time || '08:00')
@@ -237,7 +244,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
   }
 
   return (
-    <div style={{ background:'white', border:'1.5px solid #e2e8f0', borderRadius:16, overflow:'hidden', boxShadow:'0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)', transition:'box-shadow .2s' }}>
+    <div ref={cardRef} style={{ background:'white', border: autoOpen ? '2px solid #16a34a' : '1.5px solid #e2e8f0', borderRadius:16, overflow:'hidden', boxShadow:'0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)', transition:'box-shadow .2s' }}>
       {/* Header */}
       <div style={{ padding:'16px 20px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <div style={{ display:'flex', alignItems:'center', gap:12, cursor:'pointer', flex:1 }} onClick={()=>setOpen(o=>!o)}>
@@ -453,6 +460,8 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
 }
 
 export default function SuppliersPage() {
+  const searchParams = useSearchParams()
+  const msParam = searchParams.get('ms')
   const [maxSuppliers, setMaxSuppliers] = useState<number>(999)
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [products, setProducts]   = useState<any[]>([])
@@ -646,7 +655,7 @@ export default function SuppliersPage() {
       ) : (
         <div style={{ display:'flex', flexDirection:'column' as const, gap:12 }}>
           {suppliers.map(s => (
-            <SupplierCard key={s.id} s={s} products={products} orgId={orgId} onRefresh={refresh} allSuppliers={suppliers} rating={supplierRatings[s.id]} curr={curr} />
+            <SupplierCard key={s.id} s={s} products={products} orgId={orgId} onRefresh={refresh} allSuppliers={suppliers} rating={supplierRatings[s.id]} curr={curr} autoOpen={!!msParam && s.marketplace_supplier_id===msParam} />
           ))}
         </div>
       )}
