@@ -120,11 +120,12 @@ export default function SupplierStorefrontPage() {
   async function acceptOffer(reqId: string, supplierName: string, supplierPhone: string) {
     if (!confirm('تأكيد قبول العرض؟ سيتم إضافة المورد تلقائياً لقائمة موردينك')) return
     const sb = createClient()
+    const activeBranch = typeof window !== 'undefined' ? sessionStorage.getItem('s_branch_id') : null
     const { data: existingSupplier } = await (sb as any).from('suppliers').select('id').eq('org_id', orgId).eq('name', supplierName).maybeSingle()
     if (!existingSupplier) {
-      await (sb as any).from('suppliers').insert({ org_id: orgId, name: supplierName, phone: supplierPhone || null, marketplace_supplier_id: supplierId })
+      await (sb as any).from('suppliers').insert({ org_id: orgId, branch_id: activeBranch || null, name: supplierName, phone: supplierPhone || null, marketplace_supplier_id: supplierId })
     } else {
-      await (sb as any).from('suppliers').update({ marketplace_supplier_id: supplierId }).eq('id', existingSupplier.id)
+      await (sb as any).from('suppliers').update({ marketplace_supplier_id: supplierId, branch_id: activeBranch || null }).eq('id', existingSupplier.id)
     }
     await (sb as any).from('quote_requests').update({ status: 'accepted' }).eq('id', reqId)
     load()
