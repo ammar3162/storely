@@ -164,17 +164,13 @@ export default function SupplierDashboardPage() {
     const rep = reps.find((r:any)=>r.id===selectedRepId)
     if (!rep) return
     setApproveSaving(true)
-    await sb.from('quote_requests' as any).update({
-      status: 'confirmed', delivery_date: deliveryDate, rep_name: rep.name, rep_phone: rep.phone,
-    }).eq('id', req.id)
-    if (req.org_id) {
-      await sb.from('notifications' as any).insert({
-        org_id: req.org_id,
-        title: 'مورد وافق على التوريد',
-        message: `${profile.business_name} وافق على توريد طلبك — المندوب: ${rep.name} (${rep.phone}) — موعد التوريد: ${deliveryDate}`,
-        type: 'supplier_order',
-      })
-    }
+    await fetch('/api/supplier-approve-delivery', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        quote_request_id: req.id, rep_name: rep.name, rep_phone: rep.phone,
+        delivery_date: deliveryDate, supplier_business_name: profile.business_name, org_id: req.org_id,
+      }),
+    })
     setApproveSaving(false)
     setApprovingId(null)
     loadQuoteRequests(profile.id)
