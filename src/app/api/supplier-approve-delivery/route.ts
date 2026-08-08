@@ -18,12 +18,13 @@ export async function POST(req: Request) {
       .eq('id', quote_request_id)
     if (updateErr) return NextResponse.json({ success: false, error: updateErr.message }, { status: 500 })
 
-    await db.from('notifications').insert({
+    const { error: notifErr } = await db.from('notifications').insert({
       org_id,
       title: 'مورد وافق على التوريد',
       message: `${supplier_business_name || 'المورد'} وافق على توريد طلبك — المندوب: ${rep_name} (${rep_phone || ''}) — موعد التوريد: ${delivery_date}`,
-      type: 'supplier_order',
+      type: 'success',
     })
+    if (notifErr) console.error('notif insert failed:', notifErr.message)
 
     return NextResponse.json({ success: true })
   } catch (err: any) {
