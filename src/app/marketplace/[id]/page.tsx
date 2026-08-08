@@ -268,41 +268,78 @@ export default function SupplierStorefrontPage() {
 
         {myRequests.length > 0 && (
           <div style={{marginTop:32}}>
-            <h2 style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:14}}>طلبات التسعير السابقة</h2>
-            <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
-              {myRequests.map((r:any)=>(
-                <div key={r.id} style={{background:'white',borderRadius:12,padding:'14px 16px',border:'1px solid #f1f5f9'}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-                    <span style={{fontSize:12,color:'#64748b'}}>{new Date(r.created_at).toLocaleDateString('ar-SA')}</span>
-                    <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:20,
+            <h2 style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:14}}>📋 طلبات التسعير السابقة</h2>
+            <div style={{display:'flex',flexDirection:'column' as const,gap:14}}>
+              {myRequests.map((r:any, idx:number)=>{
+                const STAGES = ['pending','quoted','accepted','confirmed','fulfilled']
+                const stageIdx = STAGES.indexOf(r.status)
+                const orderNo = `#${String(myRequests.length - idx).padStart(3,'0')}`
+                return (
+                <div key={r.id} style={{background:'white',borderRadius:14,overflow:'hidden',border:'1px solid #eef2f7',boxShadow:'0 1px 4px rgba(15,23,42,.04)'}}>
+                  <div style={{padding:'12px 16px',background:'#f8fafc',borderBottom:'1px solid #eef2f7',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                      <span style={{fontSize:12,fontWeight:800,color:'#0f172a'}}>{orderNo}</span>
+                      <span style={{fontSize:11,color:'#94a3b8'}}>{new Date(r.created_at).toLocaleDateString('ar-SA')}</span>
+                    </div>
+                    <span style={{fontSize:11,fontWeight:700,padding:'4px 12px',borderRadius:20,
                       background:r.status==='fulfilled'?'#dbeafe':r.status==='confirmed'?'#e0f2fe':r.status==='accepted'?'#dcfce7':r.status==='quoted'?'#fef3c7':'#f1f5f9',
                       color:r.status==='fulfilled'?'#1d4ed8':r.status==='confirmed'?'#0369a1':r.status==='accepted'?'#16a34a':r.status==='quoted'?'#92400e':'#64748b'}}>
-                      {r.status==='fulfilled'?'📦 تم التنفيذ':r.status==='confirmed'?'🚚 جاري التوريد':r.status==='accepted'?'✅ مقبول — بانتظار موافقة المورد':r.status==='quoted'?'💰 تم التسعير':'⏳ بانتظار رد المورد'}
+                      {r.status==='fulfilled'?'📦 تم التنفيذ':r.status==='confirmed'?'🚚 جاري التوريد':r.status==='accepted'?'✅ مقبول':r.status==='quoted'?'💰 تم التسعير':'⏳ بانتظار الرد'}
                     </span>
                   </div>
-                  <div style={{fontSize:12,color:'#475569',marginBottom:6}}>
-                    {(r.items||[]).map((i:any,idx:number)=>`${i.name} (${i.qty} ${i.unit||''})`).join('، ')}
+
+                  <div style={{display:'flex',alignItems:'center',padding:'14px 16px 4px'}}>
+                    {STAGES.map((stg,i)=>(
+                      <div key={stg} style={{display:'flex',alignItems:'center',flex:i<STAGES.length-1?1:0}}>
+                        <div style={{width:9,height:9,borderRadius:'50%',flexShrink:0,background:i<=stageIdx?'#16a34a':'#e2e8f0'}}/>
+                        {i<STAGES.length-1 && <div style={{flex:1,height:2,background:i<stageIdx?'#16a34a':'#e2e8f0'}}/>}
+                      </div>
+                    ))}
                   </div>
-                  {(r.status==='quoted'||r.status==='accepted'||r.status==='confirmed'||r.status==='fulfilled') && (
-                    <div style={{background:'#f0fdf4',borderRadius:8,padding:'8px 12px',marginTop:8}}>
-                      <div style={{fontSize:14,fontWeight:900,color:'#16a34a'}}>السعر المقترح: {r.quoted_price} ر.س</div>
-                      {r.quoted_note && <div style={{fontSize:11,color:'#5f6b66',marginTop:4}}>{r.quoted_note}</div>}
+
+                  <div style={{padding:'8px 16px 16px'}}>
+                    <div style={{display:'flex',flexDirection:'column' as const,gap:4,marginBottom:10,marginTop:6}}>
+                      {(r.items||[]).map((i:any,ii:number)=>(
+                        <div key={ii} style={{display:'flex',justifyContent:'space-between',fontSize:12,color:'#334155'}}>
+                          <span>• {i.name}</span>
+                          <span style={{color:'#94a3b8'}}>{i.qty} {i.unit||''}</span>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                  {(r.status==='confirmed'||r.status==='fulfilled') && r.rep_name && (
-                    <div style={{background:'#eff6ff',borderRadius:8,padding:'8px 12px',marginTop:8}}>
-                      <div style={{fontSize:12,fontWeight:700,color:'#1d4ed8'}}>🚚 المندوب: {r.rep_name} — {r.rep_phone}</div>
-                      {r.delivery_date && <div style={{fontSize:11,color:'#64748b',marginTop:2}}>موعد التوريد: {r.delivery_date}</div>}
-                    </div>
-                  )}
-                  {r.status==='quoted' && (
-                    <button onClick={()=>acceptOffer(r.id, supplier.business_name, supplier.phone)}
-                      style={{marginTop:8,padding:'8px 16px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>
-                      ✅ قبول العرض
-                    </button>
-                  )}
+
+                    {(r.status==='quoted'||r.status==='accepted'||r.status==='confirmed'||r.status==='fulfilled') && (
+                      <div style={{background:'#f0fdf4',borderRadius:10,padding:'10px 14px',marginBottom:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                        <span style={{fontSize:12,color:'#15803d',fontWeight:700}}>💰 السعر المقترح</span>
+                        <span style={{fontSize:16,fontWeight:900,color:'#16a34a'}}>{r.quoted_price} ر.س</span>
+                      </div>
+                    )}
+                    {r.quoted_note && (r.status==='quoted'||r.status==='accepted'||r.status==='confirmed'||r.status==='fulfilled') && (
+                      <div style={{fontSize:11,color:'#64748b',marginBottom:8,paddingRight:2}}>📝 {r.quoted_note}</div>
+                    )}
+                    {(r.status==='confirmed'||r.status==='fulfilled') && r.rep_name && (
+                      <div style={{background:'#eff6ff',borderRadius:10,padding:'10px 14px',marginBottom:8}}>
+                        <div style={{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:r.delivery_date?4:0}}>
+                          <span style={{color:'#1d4ed8',fontWeight:700}}>🚚 المندوب</span>
+                          <span style={{color:'#1e3a8a'}}>{r.rep_name} — {r.rep_phone}</span>
+                        </div>
+                        {r.delivery_date && (
+                          <div style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
+                            <span style={{color:'#1d4ed8',fontWeight:700}}>📅 موعد التوريد</span>
+                            <span style={{color:'#1e3a8a'}}>{r.delivery_date}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {r.status==='quoted' && (
+                      <button onClick={()=>acceptOffer(r.id, supplier.business_name, supplier.phone)}
+                        style={{width:'100%',padding:'10px',background:'#16a34a',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>
+                        ✅ قبول العرض
+                      </button>
+                    )}
+                  </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
