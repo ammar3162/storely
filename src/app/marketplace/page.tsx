@@ -23,6 +23,7 @@ export default function MarketplacePage() {
   const [orgType, setOrgType] = useState<string|null>(null)
   const [newSuppliers, setNewSuppliers] = useState<any[]>([])
   const [expandedId, setExpandedId] = useState<string|null>(null)
+  const [ratings, setRatings] = useState<Record<string,{avg:number;count:number}>>({})
 
   useEffect(()=>{
     loadSuppliers()
@@ -55,6 +56,15 @@ export default function MarketplacePage() {
         items: (allItems||[]).filter((it:any)=>it.supplier_id===p.id),
       })).filter((p:any)=>p.items.length>0)
       setNewSuppliers(withItems)
+
+      const { data: reviews } = await (sb as any).from('supplier_reviews').select('supplier_id,rating').in('supplier_id', profiles.map((p:any)=>p.id))
+      if (reviews?.length) {
+        const grouped: Record<string, number[]> = {}
+        reviews.forEach((r:any)=>{ (grouped[r.supplier_id] ||= []).push(r.rating) })
+        const computed: Record<string,{avg:number;count:number}> = {}
+        Object.entries(grouped).forEach(([sid, arr])=>{ computed[sid] = { avg: arr.reduce((a,b)=>a+b,0)/arr.length, count: arr.length } })
+        setRatings(computed)
+      }
     }
     setLoading(false)
   }
@@ -64,6 +74,10 @@ export default function MarketplacePage() {
     const matchSearch = !search || s.company_name?.includes(search) || s.description?.includes(search)
     return matchType && matchSearch
   })
+
+  const filteredNewSuppliers = newSuppliers.filter((s:any)=>
+    !search || s.business_name?.includes(search) || s.items.some((it:any)=>it.name?.includes(search))
+  )
 
   function getWhatsAppLink(s: any) {
     const phone = (s.whatsapp||s.phone||'').replace(/^0/,'966').replace(/[^0-9]/g,'')
@@ -190,25 +204,38 @@ export default function MarketplacePage() {
         )}
 
         {/* موردون جدد — من بوابة المورد المستقلة */}
-        {newSuppliers.length > 0 && (
+        {filteredNewSuppliers.length > 0 && (
           <div style={{marginTop: filtered.length>0 ? 32 : 0}}>
             <h2 style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:14}}>✨ موردون جدد على Storely</h2>
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:16}}>
-              {newSuppliers.map((s:any)=>{
+              {filteredNewSuppliers.map((s:any)=>{
                 const isOpen = expandedId===s.id
                 const phone = (s.phone||'').replace(/^0/,'966').replace(/[^0-9]/g,'')
                 const waMsg = encodeURIComponent(`مرحباً، أنا عميل Storely وأود الاستفسار عن أصنافكم 🙌`)
+                const rating = ratings[s.id]
+                const firstItemImg = s.items.find((it:any)=>it.image_url)?.image_url
                 return (
                   <div key={s.id} style={{background:'white',borderRadius:16,overflow:'hidden',boxShadow:'0 2px 8px rgba(0,0,0,.06)',border:'1px solid #f1f5f9'}}>
-                    <div style={{background:'linear-gradient(135deg,#0d2818,#1a4731)',padding:'20px',display:'flex',alignItems:'center',gap:12}}>
-                      <div style={{width:48,height:48,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22}}>🚚</div>
-                      <div>
-                        <div style={{fontSize:15,fontWeight:800,color:'white'}}>{s.business_name}</div>
-                        {s.location && <div style={{fontSize:11,color:'rgba(255,255,255,.7)',marginTop:2}}>📍 {s.location}</div>}
+                    <div style={{position:'relative' as const,height:120,background: firstItemImg ? undefined : 'linear-gradient(135deg,#0d2818,#1a4731)'}}>
+                      {firstItemImg ? (
+                        <>
+                          <img src={firstItemImg} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                          <div style={{position:'absolute' as const,inset:0,background:'linear-gradient(to top,rgba(13,40,24,.85),rgba(13,40,24,.15))'}}/>
+                        </>
+                      ) : null}
+                      <div style={{position:'absolute' as const,bottom:0,right:0,left:0,padding:'12px 16px',display:'flex',alignItems:'center',gap:10}}>
+                        <div style={{width:40,height:40,borderRadius:10,background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>🚚</div>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:14,fontWeight:800,color:'white',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{s.business_name}</div>
+                          {s.location && <div style={{fontSize:10,color:'rgba(255,255,255,.75)',marginTop:1}}>📍 {s.location}</div>}
+                        </div>
                       </div>
-                      <div style={{marginRight:'auto'}}>
-                        <span style={{background:'#16a34a',color:'white',fontSize:9,fontWeight:700,padding:'3px 8px',borderRadius:20}}>{s.items.length} صنف</span>
-                      </div>
+                      <span style={{position:'absolute' as const,top:10,left:10,background:'#16a34a',color:'white',fontSize:9,fontWeight:700,padding:'3px 8px',borderRadius:20}}>{s.items.length} صنف</span>
+                      {rating && (
+                        <span style={{position:'absolute' as const,top:10,right:10,background:'rgba(255,255,255,.95)',color:'#b45309',fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:20}}>
+                          ⭐ {rating.avg.toFixed(1)} ({rating.count})
+                        </span>
+                      )}
                     </div>
                     <div style={{padding:'16px'}}>
                       <a href={`/marketplace/${s.id}`}
