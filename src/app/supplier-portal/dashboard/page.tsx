@@ -13,6 +13,7 @@ export default function SupplierDashboardPage() {
   const [name, setName] = useState('')
   const [unit, setUnit] = useState('')
   const [price, setPrice] = useState('')
+  const [priceIncludesVat, setPriceIncludesVat] = useState(true)
   const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState<string|null>(null)
   const [imageFile, setImageFile] = useState<File|null>(null)
@@ -178,12 +179,13 @@ export default function SupplierDashboardPage() {
   }
 
   function resetForm() {
-    setName(''); setUnit(''); setPrice(''); setEditingId(null)
+    setName(''); setUnit(''); setPrice(''); setEditingId(null); setPriceIncludesVat(true)
     setImageFile(null); setImagePreview(''); setExistingImageUrl('')
   }
 
   function startEdit(item: any) {
     setEditingId(item.id); setName(item.name); setUnit(item.unit||''); setPrice(String(item.price||''))
+    setPriceIncludesVat(item.price_includes_vat !== false)
     setExistingImageUrl(item.image_url||''); setImageFile(null); setImagePreview('')
   }
 
@@ -212,9 +214,9 @@ export default function SupplierDashboardPage() {
     }
 
     if (editingId) {
-      await sb.from('supplier_catalog_items' as any).update({ name: name.trim(), unit: unit.trim()||null, price: Number(price), image_url: imageUrl, updated_at: new Date().toISOString() }).eq('id', editingId)
+      await sb.from('supplier_catalog_items' as any).update({ name: name.trim(), unit: unit.trim()||null, price: Number(price), price_includes_vat: priceIncludesVat, image_url: imageUrl, updated_at: new Date().toISOString() }).eq('id', editingId)
     } else {
-      await sb.from('supplier_catalog_items' as any).insert({ supplier_id: profile.id, name: name.trim(), unit: unit.trim()||null, price: Number(price), image_url: imageUrl })
+      await sb.from('supplier_catalog_items' as any).insert({ supplier_id: profile.id, name: name.trim(), unit: unit.trim()||null, price: Number(price), price_includes_vat: priceIncludesVat, image_url: imageUrl })
     }
     setSaving(false)
     resetForm()
@@ -357,6 +359,18 @@ export default function SupplierDashboardPage() {
                   <input type="number" value={price} onChange={e=>setPrice(e.target.value)} placeholder="السعر"
                     style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
                 </div>
+                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10,background:'#f5f5f4',borderRadius:8,padding:'8px 10px'}}>
+                  <span style={{fontSize:12,fontWeight:700,color:'#5f5e5a'}}>هل السعر شامل الضريبة؟</span>
+                  <div style={{display:'flex',gap:6,marginRight:'auto'}}>
+                    <button onClick={()=>setPriceIncludesVat(true)} style={{padding:'5px 14px',borderRadius:6,border:'1px solid',borderColor:priceIncludesVat?'#16a34a':'#e5e5e3',background:priceIncludesVat?'#16a34a':'white',color:priceIncludesVat?'white':'#5f5e5a',fontSize:11,fontWeight:700,cursor:'pointer'}}>نعم</button>
+                    <button onClick={()=>setPriceIncludesVat(false)} style={{padding:'5px 14px',borderRadius:6,border:'1px solid',borderColor:!priceIncludesVat?'#dc2626':'#e5e5e3',background:!priceIncludesVat?'#dc2626':'white',color:!priceIncludesVat?'white':'#5f5e5a',fontSize:11,fontWeight:700,cursor:'pointer'}}>لا</button>
+                  </div>
+                </div>
+                {price && !priceIncludesVat && (
+                  <div style={{fontSize:11,color:'#0369a1',background:'#eff6ff',borderRadius:8,padding:'8px 12px',marginBottom:10}}>
+                    السعر النهائي اللي بيشوفه العميل (بعد إضافة 15% ضريبة): <b>{(Number(price)*1.15).toFixed(2)} ر.س</b>
+                  </div>
+                )}
                 <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
                   {(imagePreview || existingImageUrl) && (
                     <img src={imagePreview || existingImageUrl} alt="" style={{width:48,height:48,borderRadius:8,objectFit:'cover',border:'1px solid #e5e5e3'}}/>

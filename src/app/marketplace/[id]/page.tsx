@@ -47,7 +47,7 @@ export default function SupplierStorefrontPage() {
     setSupplier(s)
 
     const { data: it } = await (sb as any).from('supplier_catalog_items')
-      .select('id,name,unit,price,image_url')
+      .select('id,name,unit,price,image_url,price_includes_vat')
       .eq('supplier_id', supplierId).eq('is_available', true)
       .order('created_at', { ascending: false })
     setItems(it || [])
@@ -208,10 +208,20 @@ export default function SupplierStorefrontPage() {
                 <div style={{padding:'12px 14px'}}>
                   <div style={{fontSize:14,fontWeight:800,color:'#0f172a'}}>{it.name}</div>
                   <div style={{fontSize:11,color:'#64748b',marginTop:2}}>{it.unit}</div>
-                  <div style={{fontSize:16,fontWeight:900,color:'#16a34a',marginTop:8}}>{Number(it.price).toFixed(2)} ر.س</div>
-                  <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>
-                    الأساسي {(Number(it.price)/1.15).toFixed(2)} + ضريبة {(Number(it.price)-Number(it.price)/1.15).toFixed(2)} ر.س
-                  </div>
+                  {(() => {
+                    const includesVat = it.price_includes_vat !== false
+                    const finalPrice = includesVat ? Number(it.price) : Number(it.price) * 1.15
+                    const basePrice = includesVat ? Number(it.price) / 1.15 : Number(it.price)
+                    const vatAmount = finalPrice - basePrice
+                    return (
+                      <>
+                        <div style={{fontSize:16,fontWeight:900,color:'#16a34a',marginTop:8}}>{finalPrice.toFixed(2)} ر.س</div>
+                        <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>
+                          الأساسي {basePrice.toFixed(2)} + ضريبة {vatAmount.toFixed(2)} ر.س
+                        </div>
+                      </>
+                    )
+                  })()}
                   <div style={{display:'flex',alignItems:'center',gap:6,marginTop:10,paddingTop:10,borderTop:'1px solid #f1f5f9'}}>
                     <label style={{display:'flex',alignItems:'center',gap:4,fontSize:11,color:'#475569',cursor:'pointer'}}>
                       <input type="checkbox" checked={selected[it.id]!==undefined} onChange={()=>toggleSelect(it.id)}/>
