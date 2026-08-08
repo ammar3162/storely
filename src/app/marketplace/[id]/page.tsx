@@ -71,19 +71,22 @@ export default function SupplierStorefrontPage() {
       if (p?.org_id) {
         setOrgId(p.org_id)
         setOrgName((p.organizations as any)?.name || '')
-        const { data: reqs } = await (sb as any).from('quote_requests')
-          .select('id,items,status,quoted_price,quoted_note,created_at,delivery_date,rep_name,rep_phone')
+        const activeBranch = typeof window !== 'undefined' ? sessionStorage.getItem('s_branch_id') : null
+        let reqsQuery = (sb as any).from('quote_requests')
+          .select('id,items,status,quoted_price,quoted_note,created_at,delivery_date,rep_name,rep_phone,branch_id')
           .eq('supplier_id', supplierId).eq('org_id', p.org_id)
-          .order('created_at', { ascending: false })
+        if (activeBranch) reqsQuery = reqsQuery.eq('branch_id', activeBranch)
+        const { data: reqs } = await reqsQuery.order('created_at', { ascending: false })
         setMyRequests(reqs || [])
 
         const { data: myReviews } = await (sb as any).from('supplier_reviews').select('quote_request_id').eq('org_id', p.org_id).eq('supplier_id', supplierId)
         setMyReviewedIds((myReviews||[]).map((r:any)=>r.quote_request_id))
 
-        const { data: msgs } = await (sb as any).from('chat_messages')
-          .select('id,sender_type,message,created_at')
+        let msgsQuery = (sb as any).from('chat_messages')
+          .select('id,sender_type,message,created_at,branch_id')
           .eq('supplier_id', supplierId).eq('org_id', p.org_id)
-          .order('created_at', { ascending: true })
+        if (activeBranch) msgsQuery = msgsQuery.eq('branch_id', activeBranch)
+        const { data: msgs } = await msgsQuery.order('created_at', { ascending: true })
         setChatMessages(msgs || [])
       }
     }
@@ -136,8 +139,9 @@ export default function SupplierStorefrontPage() {
     if (!orgId) { alert('لازم تسجّل دخول بحسابك بستوريلي أول عشان تراسل المورد'); router.push('/login'); return }
     const sb = createClient()
     setChatSending(true)
+    const activeBranch = typeof window !== 'undefined' ? sessionStorage.getItem('s_branch_id') : null
     const { data } = await (sb as any).from('chat_messages').insert({
-      supplier_id: supplierId, org_id: orgId, org_name: orgName, sender_type: 'customer', message: chatInput.trim(),
+      supplier_id: supplierId, org_id: orgId, org_name: orgName, sender_type: 'customer', message: chatInput.trim(), branch_id: activeBranch || null,
     }).select().single()
     if (data) setChatMessages(prev => [...prev, data])
     setChatInput('')
@@ -158,8 +162,9 @@ export default function SupplierStorefrontPage() {
       const it = items.find((x:any)=>x.id===id)
       return { name: it?.name, unit: it?.unit, qty: Number(selected[id])||1 }
     })
+    const activeBranch = typeof window !== 'undefined' ? sessionStorage.getItem('s_branch_id') : null
     const { error } = await (sb as any).from('quote_requests').insert({
-      supplier_id: supplierId, org_id: orgId, org_name: orgName, items: requestItems,
+      supplier_id: supplierId, org_id: orgId, org_name: orgName, items: requestItems, branch_id: activeBranch || null,
     })
     setSubmitting(false)
     if (!error) {

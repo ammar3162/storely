@@ -86,6 +86,7 @@ export async function POST(req: Request) {
           await (db as any).from('quote_requests').insert({
             supplier_id: (supplier as any).marketplace_supplier_id,
             org_id, org_name: (org as any).name,
+            branch_id: (product as any).branch_id || null,
             items: [{ name: (product as any).name, qty: orderQty, unit: (product as any).unit }],
             status: 'accepted',
             quoted_price: unitPrice * orderQty,
