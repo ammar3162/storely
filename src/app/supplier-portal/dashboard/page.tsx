@@ -63,6 +63,7 @@ export default function SupplierDashboardPage() {
     await loadItems(user.id)
     await loadQuoteRequests(user.id)
     await loadChatMessages(user.id)
+    await loadGivenReviews(user.id)
     await loadReps(user.id)
     setLoading(false)
   }
@@ -105,6 +106,28 @@ export default function SupplierDashboardPage() {
     if (data) setChatMessages(prev => [...prev, data])
     setChatReply('')
     setChatSending(false)
+  }
+
+  const [myGivenReviewIds, setMyGivenReviewIds] = useState<string[]>([])
+  const [ratingCustomerId, setRatingCustomerId] = useState<string|null>(null)
+  const [customerRating, setCustomerRating] = useState(5)
+  const [ratingSaving, setRatingSaving] = useState(false)
+
+  async function loadGivenReviews(supplierId: string) {
+    const { data } = await sb.from('org_reviews' as any).select('quote_request_id').eq('supplier_id', supplierId)
+    setMyGivenReviewIds((data||[]).map((r:any)=>r.quote_request_id))
+  }
+
+  async function submitCustomerRating(reqId: string, orgId: string) {
+    setRatingSaving(true)
+    const { error } = await sb.from('org_reviews' as any).insert({
+      org_id: orgId, supplier_id: profile.id, quote_request_id: reqId, rating: customerRating,
+    })
+    setRatingSaving(false)
+    if (!error) {
+      setRatingCustomerId(null); setCustomerRating(5)
+      loadGivenReviews(profile.id)
+    }
   }
 
   async function loadQuoteRequests(supplierId: string) {
@@ -488,9 +511,37 @@ export default function SupplierDashboardPage() {
                           </button>
                         </div>
                       ) : r.status==='fulfilled' ? (
-                        <div style={{fontSize:12,color:'#1d4ed8',fontWeight:700}}>
-                          سعرك المرسل: {r.quoted_price} ر.س — تم التنفيذ ✅
-                          {r.rep_name && <div style={{fontSize:11,color:'#64748b',marginTop:2}}>المندوب: {r.rep_name} ({r.rep_phone})</div>}
+                        <div>
+                          <div style={{fontSize:12,color:'#1d4ed8',fontWeight:700}}>
+                            سعرك المرسل: {r.quoted_price} ر.س — تم التنفيذ ✅
+                            {r.rep_name && <div style={{fontSize:11,color:'#64748b',marginTop:2}}>المندوب: {r.rep_name} ({r.rep_phone})</div>}
+                          </div>
+                          {!myGivenReviewIds.includes(r.id) && (
+                            ratingCustomerId===r.id ? (
+                              <div style={{background:'#fffbeb',borderRadius:10,padding:'12px',marginTop:8}}>
+                                <div style={{display:'flex',gap:4,marginBottom:8,justifyContent:'center'}}>
+                                  {[1,2,3,4,5].map(n=>(
+                                    <button key={n} onClick={()=>setCustomerRating(n)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',padding:0,opacity:n<=customerRating?1:.3}}>⭐</button>
+                                  ))}
+                                </div>
+                                <div style={{display:'flex',gap:6}}>
+                                  <button onClick={()=>submitCustomerRating(r.id, r.org_id)} disabled={ratingSaving}
+                                    style={{flex:1,padding:'8px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>
+                                    {ratingSaving?'...':'إرسال التقييم'}
+                                  </button>
+                                  <button onClick={()=>setRatingCustomerId(null)}
+                                    style={{padding:'8px 14px',background:'white',border:'1px solid #e2e8f0',borderRadius:8,fontSize:12,cursor:'pointer',color:'#64748b'}}>
+                                    إلغاء
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button onClick={()=>setRatingCustomerId(r.id)}
+                                style={{width:'100%',padding:'8px',background:'white',color:'#b45309',border:'1px solid #fde68a',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',marginTop:8}}>
+                                ⭐ قيّم العميل
+                              </button>
+                            )
+                          )}
                         </div>
                       ) : r.status==='quoted' ? (
                         <div style={{fontSize:12,color:'#16a34a',fontWeight:700}}>سعرك المرسل: {r.quoted_price} ر.س</div>
