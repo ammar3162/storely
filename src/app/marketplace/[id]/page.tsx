@@ -88,9 +88,8 @@ export default function SupplierStorefrontPage() {
 
   async function sendChatMessage() {
     if (!chatInput.trim()) return
+    if (!orgId) { alert('لازم تسجّل دخول بحسابك بستوريلي أول عشان تراسل المورد'); router.push('/login'); return }
     const sb = createClient()
-    const { data: { user } } = await sb.auth.getUser()
-    if (!user || !orgId) { alert('لازم تسجّل دخول بحسابك بستوريلي أول عشان تراسل المورد'); router.push('/login'); return }
     setChatSending(true)
     const { data } = await (sb as any).from('chat_messages').insert({
       supplier_id: supplierId, org_id: orgId, org_name: orgName, sender_type: 'customer', message: chatInput.trim(),
@@ -103,13 +102,12 @@ export default function SupplierStorefrontPage() {
   async function submitQuoteRequest() {
     const chosenIds = Object.keys(selected)
     if (chosenIds.length === 0) return
-    const sb = createClient()
-    const { data: { user } } = await sb.auth.getUser()
-    if (!user || !orgId) {
+    if (!orgId) {
       alert('لازم تسجّل دخول بحسابك بستوريلي أول عشان تطلب تسعير')
       router.push('/login')
       return
     }
+    const sb = createClient()
     setSubmitting(true)
     const requestItems = chosenIds.map(id => {
       const it = items.find((x:any)=>x.id===id)
