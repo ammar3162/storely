@@ -379,23 +379,30 @@ export default function SupplierDashboardPage() {
                 {items.length===0 ? (
                   <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه أصناف مضافة بعد</div>
                 ) : (
-                  <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(190px,1fr))',gap:14}}>
                     {items.map((item:any)=>(
-                      <div key={item.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'#f5f5f4',borderRadius:10,opacity:item.is_available?1:.5}}>
-                        <div style={{display:'flex',alignItems:'center',gap:10}}>
-                          {item.image_url && <img src={item.image_url} alt="" style={{width:36,height:36,borderRadius:6,objectFit:'cover'}}/>}
-                          <div>
-                            <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{item.name}</span>
-                            <span style={{fontSize:11,color:'#888780',marginRight:8}}>{item.unit}</span>
-                          </div>
+                      <div key={item.id} style={{border:'1px solid #ebebea',borderRadius:14,overflow:'hidden',opacity:item.is_available?1:.55,transition:'opacity .15s',background:'white'}}>
+                        <div style={{width:'100%',height:110,background:'#f5f5f4',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
+                          {item.image_url ? (
+                            <img src={item.image_url} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                          ) : (
+                            <span style={{fontSize:32}}>📦</span>
+                          )}
                         </div>
-                        <div style={{display:'flex',alignItems:'center',gap:8}}>
-                          <span style={{fontSize:13,fontWeight:800,color:'#16a34a'}}>{item.price} ر.س</span>
-                          <button onClick={()=>toggleAvailable(item)} style={{padding:'5px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:10,cursor:'pointer',color:item.is_available?'#16a34a':'#888780'}}>
-                            {item.is_available?'✅ متوفر':'⏸ غير متوفر'}
-                          </button>
-                          <button onClick={()=>startEdit(item)} style={{padding:'5px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:10,cursor:'pointer',color:'#3b82f6'}}>✏️</button>
-                          <button onClick={()=>deleteItem(item.id)} style={{padding:'5px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:10,cursor:'pointer',color:'#dc2626'}}>🗑️</button>
+                        <div style={{padding:'12px 14px'}}>
+                          <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{item.name}</div>
+                          <div style={{fontSize:11,color:'#888780',marginTop:2}}>{item.unit}</div>
+                          <div style={{fontSize:15,fontWeight:900,color:'#16a34a',marginTop:6}}>{item.price} ر.س</div>
+                          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:10,paddingTop:10,borderTop:'1px solid #f1f1f0'}}>
+                            <button onClick={()=>toggleAvailable(item)} aria-label="toggle availability"
+                              style={{width:38,height:21,borderRadius:20,border:'none',cursor:'pointer',position:'relative' as const,background:item.is_available?'#16a34a':'#dcdcda',transition:'background .2s',padding:0}}>
+                              <span style={{position:'absolute' as const,top:2,left:item.is_available?18:2,width:17,height:17,borderRadius:'50%',background:'white',transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,.25)'}}/>
+                            </button>
+                            <div style={{display:'flex',gap:4}}>
+                              <button onClick={()=>startEdit(item)} style={{width:26,height:26,borderRadius:7,border:'1px solid #e5e5e3',background:'white',fontSize:11,cursor:'pointer',color:'#3b82f6'}}>✏️</button>
+                              <button onClick={()=>deleteItem(item.id)} style={{width:26,height:26,borderRadius:7,border:'1px solid #e5e5e3',background:'white',fontSize:11,cursor:'pointer',color:'#dc2626'}}>🗑️</button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}
