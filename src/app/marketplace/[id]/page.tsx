@@ -23,6 +23,20 @@ export default function SupplierStorefrontPage() {
 
   useEffect(()=>{ load() },[supplierId])
 
+  useEffect(()=>{
+    if (!orgId || !supplierId) return
+    const sb = createClient()
+    const channel = sb.channel(`customer-supplier-${supplierId}-${orgId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `supplier_id=eq.${supplierId}` }, (payload:any) => {
+        if (payload.new.org_id === orgId) setChatMessages(prev => [...prev, payload.new])
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'quote_requests', filter: `supplier_id=eq.${supplierId}` }, (payload:any) => {
+        if (payload.new.org_id === orgId) setMyRequests(prev => prev.map((r:any) => r.id === payload.new.id ? payload.new : r))
+      })
+      .subscribe()
+    return () => { sb.removeChannel(channel) }
+  },[orgId, supplierId])
+
   async function load() {
     setLoading(true)
     const sb = createClient()

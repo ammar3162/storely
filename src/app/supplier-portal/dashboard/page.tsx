@@ -40,6 +40,19 @@ export default function SupplierDashboardPage() {
 
   useEffect(()=>{ init() },[])
 
+  useEffect(()=>{
+    if (!profile?.id) return
+    const channel = sb.channel(`supplier-updates-${profile.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'quote_requests', filter: `supplier_id=eq.${profile.id}` }, () => {
+        loadQuoteRequests(profile.id)
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `supplier_id=eq.${profile.id}` }, () => {
+        loadChatMessages(profile.id)
+      })
+      .subscribe()
+    return () => { sb.removeChannel(channel) }
+  },[profile?.id])
+
   async function init() {
     const { data: { user } } = await sb.auth.getUser()
     if (!user) { window.location.href = '/supplier-portal'; return }
