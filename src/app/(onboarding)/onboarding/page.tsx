@@ -79,6 +79,33 @@ export default function OnboardingPage() {
   const [orgName, setOrgName]         = useState('')
   const [whatsapp, setWhatsapp]       = useState('')
   const [orgId, setOrgId]             = useState('')
+  const [pushEnabled, setPushEnabled] = useState(false)
+  const [pushLoading, setPushLoading] = useState(false)
+
+  async function enablePushOnboarding() {
+    setPushLoading(true)
+    try {
+      if (typeof Notification === 'undefined') { alert('⚠️ متصفحك لا يدعم الإشعارات إطلاقاً'); setPushLoading(false); return }
+      const perm = await Notification.requestPermission()
+      if (perm !== 'granted') { setPushLoading(false); return }
+      await navigator.serviceWorker.register('/sw.js')
+      const reg = await navigator.serviceWorker.ready
+      const existing = await reg.pushManager.getSubscription()
+      if (existing) await existing.unsubscribe().catch(()=>{})
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+      })
+      await fetch('/api/push-subscribe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub, org_id: orgId }),
+      })
+      setPushEnabled(true)
+    } catch (e) {
+      console.log('push onboarding error:', e)
+    }
+    setPushLoading(false)
+  }
   const [branchId, setBranchId]       = useState('')
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([])
   const [staffList, setStaffList]     = useState<{name:string;phone:string}[]>([{name:'',phone:''}])
@@ -366,6 +393,26 @@ export default function OnboardingPage() {
                 </div>
               ))}
             </div>
+            {!pushEnabled ? (
+              <div style={{background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`,borderRadius:16,padding:20,marginBottom:16,textAlign:'right' as const}}>
+                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+                  <span style={{fontSize:24}}>🔔</span>
+                  <div style={{fontSize:15,fontWeight:800,color:colors.text}}>فعّل الإشعارات الفورية</div>
+                </div>
+                <p style={{fontSize:13,color:'#64748b',lineHeight:1.8,marginBottom:14}}>
+                  توصلك تنبيهات نقص المخزون وإقفال الكاشير وتوريدات الموردين فوراً — حتى لو التطبيق مقفول بالكامل.
+                </p>
+                <button onClick={enablePushOnboarding} disabled={pushLoading}
+                  style={{...btnPrimary,width:'100%',padding:'13px',fontSize:14}}>
+                  {pushLoading?'⏳ جاري التفعيل...':'🔔 فعّل الإشعارات الآن'}
+                </button>
+              </div>
+            ) : (
+              <div style={{background:'#f0fdf4',border:'1.5px solid #bbf7d0',borderRadius:16,padding:14,marginBottom:16,display:'flex',alignItems:'center',gap:8,justifyContent:'center'}}>
+                <span style={{fontSize:16}}>✅</span>
+                <span style={{fontSize:13,fontWeight:700,color:'#16a34a'}}>تم تفعيل الإشعارات بنجاح</span>
+              </div>
+            )}
             <button onClick={()=>router.push('/dashboard')}
               style={{...btnPrimary,width:'100%',padding:'16px',fontSize:17,boxShadow:`0 8px 24px ${colors.primary}33`}}>
               ابدأ استخدام Storely ←
