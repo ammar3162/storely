@@ -73,7 +73,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [pathname, router])
 
   if (!ready) return null
-  if (!hasAuth) return <>{children}</>
+  if (!hasAuth || pathname === '/storely-admin') return <>{children}</>
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'IBM Plex Sans Arabic',system-ui", direction: 'rtl' as const, background: '#f8fafc' }}>
