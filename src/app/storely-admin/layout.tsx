@@ -44,13 +44,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [hasAuth, setHasAuth] = useState(false)
 
   useEffect(() => {
-    const pass = typeof window !== 'undefined' ? sessionStorage.getItem('storely_admin_pass') : ''
-    if (!pass && pathname !== '/storely-admin') {
-      router.push('/storely-admin')
-      return
+    let cancelled = false
+    async function check() {
+      const pass = typeof window !== 'undefined' ? sessionStorage.getItem('storely_admin_pass') : ''
+      if (!pass) {
+        if (!cancelled) { setHasAuth(false); setReady(true) }
+        if (pathname !== '/storely-admin') router.push('/storely-admin')
+        return
+      }
+      try {
+        const res = await fetch('/api/admin/whoami', { headers: { 'x-admin-key': pass } })
+        const data = await res.json()
+        if (cancelled) return
+        if (data.authenticated) {
+          setHasAuth(true)
+        } else {
+          sessionStorage.removeItem('storely_admin_pass')
+          setHasAuth(false)
+          if (pathname !== '/storely-admin') router.push('/storely-admin')
+        }
+      } catch {
+        if (!cancelled) setHasAuth(false)
+      }
+      if (!cancelled) setReady(true)
     }
-    setHasAuth(!!pass)
-    setReady(true)
+    check()
+    return () => { cancelled = true }
   }, [pathname, router])
 
   if (!ready) return null
