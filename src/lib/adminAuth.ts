@@ -52,29 +52,23 @@ export async function logAdminAction(
 }
 
 /**
- * يتحقق من مفتاح الأدمن المُرسل بهيدر x-admin-key — يقبل الاثنين:
- * كلمة مرور الأدمن القديمة الثابتة (للتوافق)، أو رمز جلسة صالح من نظام تسجيل الدخول الجديد.
+ * يتحقق من مفتاح الأدمن المُرسل بهيدر x-admin-key — رمز جلسة صالح من نظام تسجيل الدخول فقط.
+ * (أُلغيت كلمة المرور الثابتة القديمة — كانت تعطي وصول super_admin كامل لأي شخص يعرفها بدون أي تتبّع)
  */
 export async function isValidAdminKey(key: string | null): Promise<boolean> {
   if (!key) return false
-  const legacyPassword = process.env.ADMIN_PASSWORD || 'storely@2026'
-  if (key === legacyPassword) return true
   const session = await verifyAdminSession(key)
   return !!session
 }
 
 /**
  * يتحقق من صلاحية محددة (زي manage_users، manage_suppliers...).
- * يقبل: كلمة مرور الأدمن القديمة الثابتة (تعتبر صلاحية كاملة دائماً، للتوافق مع أدوات قديمة)،
- * أو رمز جلسة لمشرف super_admin (كل الصلاحيات تلقائياً)، أو مشرف عادي عنده هذي الصلاحية بالتحديد.
+ * يقبل: رمز جلسة لمشرف super_admin (كل الصلاحيات تلقائياً)، أو مشرف عادي عنده هذي الصلاحية بالتحديد.
+ * (أُلغيت كلمة المرور الثابتة القديمة — كانت تعطي وصول super_admin كامل لأي شخص يعرفها بدون أي تتبّع)
  * يرجع بيانات المشرف لو مصرّح له، أو null لو لا.
  */
 export async function requirePermission(key: string | null, permission: string): Promise<AdminSession | null> {
   if (!key) return null
-  const legacyPassword = process.env.ADMIN_PASSWORD || 'storely@2026'
-  if (key === legacyPassword) {
-    return { id: 'legacy', email: 'legacy@storely.dev', full_name: 'مفتاح النظام القديم', role: 'super_admin' }
-  }
   const session = await verifyAdminSession(key)
   if (!session) return null
   if (session.role === 'super_admin') return session

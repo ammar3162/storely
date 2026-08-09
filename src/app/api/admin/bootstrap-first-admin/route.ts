@@ -12,8 +12,8 @@ export async function POST(req: Request) {
   try {
     const { email, password, full_name, setupSecret } = await req.json()
 
-    // حماية إضافية: يتطلب كلمة سر إعداد من متغير البيئة (تحمي من إساءة الاستخدام حتى لو الجدول فاضي)
-    if (setupSecret !== (process.env.ADMIN_PASSWORD || 'storely@2026')) {
+    // حماية إضافية: يتطلب كلمة سر إعداد من متغير البيئة فقط (بدون قيمة افتراضية مكشوفة بالكود)
+    if (!process.env.ADMIN_PASSWORD || setupSecret !== process.env.ADMIN_PASSWORD) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
 
