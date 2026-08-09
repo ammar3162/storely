@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendPushToOrg } from '@/lib/push'
 
 export async function POST(req: Request) {
   try {
@@ -18,13 +19,17 @@ export async function POST(req: Request) {
       .eq('id', quote_request_id)
     if (updateErr) return NextResponse.json({ success: false, error: updateErr.message }, { status: 500 })
 
+    const notifTitle = 'مورد وافق على التوريد'
+    const notifMsg = `${supplier_business_name || 'المورد'} وافق على توريد طلبك — المندوب: ${rep_name} (${rep_phone || ''}) — موعد التوريد: ${delivery_date}`
     const { error: notifErr } = await db.from('notifications').insert({
       org_id,
-      title: 'مورد وافق على التوريد',
-      message: `${supplier_business_name || 'المورد'} وافق على توريد طلبك — المندوب: ${rep_name} (${rep_phone || ''}) — موعد التوريد: ${delivery_date}`,
+      title: notifTitle,
+      message: notifMsg,
       type: 'success',
     })
     if (notifErr) console.error('notif insert failed:', notifErr.message)
+
+    sendPushToOrg(org_id, notifTitle, notifMsg, '/marketplace').catch(()=>{})
 
     return NextResponse.json({ success: true })
   } catch (err: any) {
