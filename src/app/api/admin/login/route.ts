@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     const db = sb()
     const { data: admin } = await db
       .from('admin_users')
-      .select('id,email,password_hash,full_name,role,is_active,permissions')
+      .select('id,email,password_hash,full_name,role,is_active,permissions,totp_enabled')
       .eq('email', String(email).trim().toLowerCase())
       .maybeSingle()
 
@@ -29,6 +29,13 @@ export async function POST(req: Request) {
     const valid = await bcrypt.compare(password, (admin as any).password_hash)
     if (!valid) {
       return NextResponse.json({ error: 'بيانات الدخول غير صحيحة' }, { status: 401 })
+    }
+
+    if ((admin as any).totp_enabled) {
+      const pendingToken = crypto.randomBytes(24).toString('hex')
+      const pendingExpires = new Date(Date.now() + 5 * 60 * 1000).toISOString()
+      await (db as any).from('admin_2fa_pending').insert({ token: pendingToken, admin_id: admin.id, expires_at: pendingExpires })
+      return NextResponse.json({ success: true, needs2FA: true, pendingToken })
     }
 
     const token = crypto.randomBytes(32).toString('hex')
@@ -43,7 +50,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       token,
-      admin: { id: admin.id, email: admin.email, full_name: admin.full_name, role: admin.role, permissions: (admin as any).permissions || {} },
+      admin: { id: admin.id, email: admin.email, full_name: admin.full_name, role: admin.role, permissions: (admin as any).permissions || {}, totp_enabled: (admin as any).totp_enabled || false },
     })
   } catch (err: any) {
     return NextResponse.json({ error: 'حدث خطأ، حاول مرة أخرى' }, { status: 500 })

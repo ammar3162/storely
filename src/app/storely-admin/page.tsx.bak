@@ -34,53 +34,6 @@ export default function AdminPage() {
   const [currentAdmin, setCurrentAdmin] = useState<{id:string;email:string;full_name:string;role?:string;permissions?:Record<string,boolean>}|null>(null)
   const [pass, setPass]         = useState('')
   const [passErr, setPassErr]   = useState(false)
-  const [needs2FA, setNeeds2FA] = useState(false)
-  const [pendingToken, setPendingToken] = useState('')
-  const [twoFACode, setTwoFACode] = useState('')
-  const [twoFAErr, setTwoFAErr] = useState(false)
-  const [setup2FAOpen, setSetup2FAOpen] = useState(false)
-  const [setup2FAQr, setSetup2FAQr] = useState('')
-  const [setup2FACode, setSetup2FACode] = useState('')
-  const [setup2FAMsg, setSetup2FAMsg] = useState('')
-  const [setup2FALoading, setSetup2FALoading] = useState(false)
-
-  async function start2FASetup() {
-    setSetup2FAOpen(true); setSetup2FAMsg(''); setSetup2FACode('')
-    const res = await fetch('/api/admin/2fa-setup', { method:'POST', headers:{'x-admin-key':sessionStorage.getItem('storely_admin_pass')||''} })
-    const data = await res.json()
-    if (data.qrDataUrl) setSetup2FAQr(data.qrDataUrl)
-  }
-
-  async function confirm2FASetup() {
-    setSetup2FALoading(true)
-    const res = await fetch('/api/admin/2fa-confirm', { method:'POST', headers:{'Content-Type':'application/json','x-admin-key':sessionStorage.getItem('storely_admin_pass')||''}, body: JSON.stringify({ code: setup2FACode }) })
-    const data = await res.json()
-    setSetup2FALoading(false)
-    if (data.success) {
-      setSetup2FAOpen(false)
-      const updated = { ...(currentAdmin as any), totp_enabled: true }
-      setCurrentAdmin(updated as any)
-      sessionStorage.setItem('storely_admin_info', JSON.stringify(updated))
-      setSetup2FAMsg('✅ تم تفعيل التحقق بخطوتين بنجاح')
-    } else {
-      setSetup2FAMsg(`❌ ${data.error || 'خطأ غير متوقع'}`)
-    }
-  }
-
-  async function disable2FA() {
-    const code = prompt('أدخل الرمز الحالي من التطبيق لتأكيد إلغاء التحقق بخطوتين')
-    if (!code) return
-    const res = await fetch('/api/admin/2fa-disable', { method:'POST', headers:{'Content-Type':'application/json','x-admin-key':sessionStorage.getItem('storely_admin_pass')||''}, body: JSON.stringify({ code }) })
-    const data = await res.json()
-    if (data.success) {
-      const updated = { ...(currentAdmin as any), totp_enabled: false }
-      setCurrentAdmin(updated as any)
-      sessionStorage.setItem('storely_admin_info', JSON.stringify(updated))
-      alert('تم إلغاء التحقق بخطوتين')
-    } else {
-      alert(data.error || 'فشل الإلغاء')
-    }
-  }
   const [users, setUsers]       = useState<User[]>([])
   const [loading, setLoading]   = useState(false)
   const [search, setSearch]     = useState('')
@@ -233,43 +186,25 @@ export default function AdminPage() {
     loadMaintenance()
   }, [])
 
-  function finalizeLogin(data: any) {
-    document.cookie = `storely_admin_token=${data.token};path=/;max-age=86400;SameSite=Strict;Secure`
-    document.cookie = `storely_admin_auth=true;path=/;max-age=86400;SameSite=Strict;Secure`
-    sessionStorage.setItem('storely_admin_pass', data.token)
-    sessionStorage.setItem('storely_admin_session_token', data.token)
-    sessionStorage.setItem('storely_admin_info', JSON.stringify(data.admin))
-    setCurrentAdmin(data.admin)
-    const perms = data.admin.permissions || {}
-    if (data.admin.role !== 'super_admin' && !perms.manage_users && !perms.view_analytics) {
-      if (perms.manage_suppliers) { setTab('suppliers'); loadSupplierApps() }
-      else if (perms.manage_packages) setTab('packages')
-    }
-    setAuthed(true); loadUsers()
-  }
-
   async function login(e: React.FormEvent) {
     e.preventDefault()
     const res = await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:adminEmail,password:pass})})
     const data = await res.json()
-    if (res.ok && data.success && data.needs2FA) {
-      setPendingToken(data.pendingToken)
-      setNeeds2FA(true)
-      return
-    }
     if (res.ok && data.success) {
-      finalizeLogin(data)
+      document.cookie = `storely_admin_token=${data.token};path=/;max-age=86400;SameSite=Strict;Secure`
+      document.cookie = `storely_admin_auth=true;path=/;max-age=86400;SameSite=Strict;Secure`
+      sessionStorage.setItem('storely_admin_pass', data.token) // رمز الجلسة الآمن، يُستخدم كمفتاح تحقق لكل الإجراءات
+      sessionStorage.setItem('storely_admin_session_token', data.token)
+      sessionStorage.setItem('storely_admin_info', JSON.stringify(data.admin))
+      setCurrentAdmin(data.admin)
+      // نوجّهه لأول تبويب مسموح له فيه (لو ما عنده صلاحية Dashboard)
+      const perms = data.admin.permissions || {}
+      if (data.admin.role !== 'super_admin' && !perms.manage_users && !perms.view_analytics) {
+        if (perms.manage_suppliers) { setTab('suppliers'); loadSupplierApps() }
+        else if (perms.manage_packages) setTab('packages')
+      }
+      setAuthed(true); loadUsers()
     } else { setPassErr(true); setTimeout(()=>setPassErr(false),2000) }
-  }
-
-  async function verify2FALogin(e: React.FormEvent) {
-    e.preventDefault()
-    setTwoFAErr(false)
-    const res = await fetch('/api/admin/2fa-login-verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pendingToken,code:twoFACode})})
-    const data = await res.json()
-    if (res.ok && data.success) {
-      finalizeLogin(data)
-    } else { setTwoFAErr(true); setTimeout(()=>setTwoFAErr(false),2000) }
   }
 
   async function logAction(action: string, targetOrgId?: string|null, targetOrgName?: string|null, details?: any) {
@@ -369,32 +304,38 @@ export default function AdminPage() {
   }
 
   async function suspend(userId: string) {
-    if (!confirm('متأكد تبي توقف هذا الحساب؟ (يشمل كل مديري الفروع التابعين له)')) return
     setSaving(userId)
-    const adminPass = sessionStorage.getItem('storely_admin_pass') || ''
-    const res = await fetch('/api/admin/suspend-user', {
-      method:'POST', headers:{'Content-Type':'application/json','x-admin-key':adminPass},
-      body: JSON.stringify({ userId })
-    })
-    const data = await res.json()
-    if (!data.success) { alert('خطأ: ' + (data.error||'unknown')); setSaving(null); return }
+    const target = users.find(u=>u.id===userId)
+    await sb.from('profiles').update({status:'suspended'}).eq('id',userId)
+    logAction('suspend_user', target?.org_id, target?.org_name, { userId })
+    if (target?.org_id) {
+      try { await (sb as any).from('subscription_events').insert({ org_id: target.org_id, event_type: 'cancelled', plan: null, amount: 0 }) } catch {}
+    }
     await loadUsers(); setSaving(null); setSelected(null)
   }
 
   async function updatePlan(orgId: string, value: number) {
-    const plan = PLANS.find(p=>p.v===value)!
-    if (!confirm(`تأكيد الترقية/التغيير لباقة "${plan.label}" (${plan.price})؟`)) return
     setSaving(orgId)
+    const plan = PLANS.find(p=>p.v===value)!
     const target = users.find(u=>u.org_id===orgId)
     const oldBranches = target?.max_branches || 1
-    const planName = value===1?'basic':value<=3?'pro':'advanced'
-    const adminPass = sessionStorage.getItem('storely_admin_pass') || ''
-    const res = await fetch('/api/admin/update-plan', {
-      method:'POST', headers:{'Content-Type':'application/json','x-admin-key':adminPass},
-      body: JSON.stringify({ orgId, maxBranches:value, maxStaff:plan.maxStaff, maxSuppliers:plan.maxSup, planName, orgName: target?.org_name })
-    })
-    const data = await res.json()
-    if (!data.success) { alert('خطأ: ' + (data.error||'unknown')); setSaving(null); return }
+    await (sb.from('organizations') as any).update({
+      max_branches:value, plan:value===1?'basic':value<=3?'pro':'advanced',
+      max_staff:plan.maxStaff, max_suppliers:plan.maxSup
+    }).eq('id',orgId)
+    logAction('update_plan', orgId, target?.org_name, { new_plan: plan.label })
+    const newAmount = value===1?149:value<=3?249:399
+    const oldAmount = oldBranches===1?149:oldBranches<=3?249:399
+    if (value !== oldBranches) {
+      try {
+        await (sb as any).from('subscription_events').insert({
+          org_id: orgId,
+          event_type: newAmount > oldAmount ? 'upgraded' : 'downgraded',
+          plan: value===1?'basic':value<=3?'pro':'advanced',
+          amount: newAmount,
+        })
+      } catch {}
+    }
     setUsers(prev=>prev.map(u=>u.org_id===orgId?{...u,max_branches:value}:u))
     setSelected(prev=>prev&&prev.org_id===orgId?{...prev,max_branches:value}:prev)
     setSaving(null)
@@ -456,21 +397,6 @@ export default function AdminPage() {
         <div style={{width:72,height:72,background:'linear-gradient(135deg,#16a34a,#15803d)',borderRadius:20,display:'flex',alignItems:'center',justifyContent:'center',fontSize:32,margin:'0 auto 20px',boxShadow:'0 8px 24px rgba(22,163,74,.25)'}}>🔐</div>
         <h1 style={{fontSize:24,fontWeight:900,color:'#0f172a',marginBottom:6}}>Storely Admin</h1>
         <p style={{fontSize:13,color:'#94a3b8',marginBottom:32}}>لوحة تحكم المشرف — وصول خاص</p>
-        {needs2FA ? (
-          <form onSubmit={verify2FALogin}>
-            <div style={{fontSize:13,color:'#64748b',marginBottom:14,lineHeight:1.7}}>افتح تطبيق المصادقة (Google Authenticator) وأدخل الرمز المكوّن من 6 أرقام</div>
-            <input type="text" inputMode="numeric" maxLength={6} required value={twoFACode} onChange={e=>setTwoFACode(e.target.value.replace(/\D/g,''))} dir="ltr" autoFocus
-              style={{width:'100%',padding:'16px',border:`2px solid ${twoFAErr?'#ef4444':'#e2e8f0'}`,borderRadius:14,fontSize:28,textAlign:'center',letterSpacing:12,outline:'none',fontFamily:'inherit',marginBottom:14,boxSizing:'border-box',transition:'all .2s',background:'#f8fafc',animation:twoFAErr?'shake .3s ease':'none'}}
-              placeholder="000000"/>
-            {twoFAErr && <div style={{fontSize:12,color:'#ef4444',marginBottom:14,fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>⚠️ الرمز غير صحيح</div>}
-            <button type="submit" style={{width:'100%',padding:'15px',background:'linear-gradient(135deg,#16a34a,#15803d)',color:'white',border:'none',borderRadius:14,fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 6px 20px rgba(22,163,74,.3)',transition:'all .2s',marginBottom:10}}>
-              تأكيد ←
-            </button>
-            <button type="button" onClick={()=>{setNeeds2FA(false);setTwoFACode('')}} style={{width:'100%',padding:'8px',background:'none',border:'none',color:'#94a3b8',fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>
-              رجوع
-            </button>
-          </form>
-        ) : (
         <form onSubmit={login}>
           <input type="email" required value={adminEmail} onChange={e=>setAdminEmail(e.target.value)} dir="ltr"
             style={{width:'100%',padding:'14px 16px',border:`2px solid ${passErr?'#ef4444':'#e2e8f0'}`,borderRadius:14,fontSize:15,outline:'none',fontFamily:'inherit',marginBottom:10,boxSizing:'border-box',transition:'all .2s',background:'#f8fafc'}}
@@ -483,7 +409,6 @@ export default function AdminPage() {
             دخول ←
           </button>
         </form>
-        )}
       </div>
     </div>
   )
@@ -698,11 +623,6 @@ export default function AdminPage() {
           {currentAdmin?.role==='super_admin' && (
             <a href="/storely-admin/partners" style={{padding:'7px 14px',background:'#ffffff',color:'#475569',border:'1px solid #e5e7eb',borderRadius:9,fontSize:12,fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:6}}>
               🤝 الشركاء
-            </a>
-          )}
-          {currentAdmin?.role==='super_admin' && (
-            <a href="/storely-admin/marquee-messages" style={{padding:'7px 14px',background:'#ffffff',color:'#475569',border:'1px solid #e5e7eb',borderRadius:9,fontSize:12,fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:6}}>
-              📢 الشريط المتحرك
             </a>
           )}
           {currentAdmin?.role==='super_admin' && (
@@ -1070,38 +990,6 @@ export default function AdminPage() {
       {/* ═══ Admins Tab ═══ */}
       {tab==='admins' && (
         <div style={{padding:'0 24px 24px',maxWidth:900,margin:'0 auto'}}>
-
-          <div style={{background:'#ffffff',borderRadius:14,padding:20,border:'1px solid #e5e7eb',marginBottom:20}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:setup2FAOpen?16:0}}>
-              <div>
-                <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>🔐 التحقق بخطوتين لحسابك</div>
-                <div style={{fontSize:12,color:'#64748b',marginTop:2}}>
-                  {(currentAdmin as any)?.totp_enabled ? 'مفعّل حالياً — حسابك محمي إضافياً' : 'غير مفعّل — يوصى بتفعيله لحماية إضافية'}
-                </div>
-              </div>
-              {(currentAdmin as any)?.totp_enabled ? (
-                <button onClick={disable2FA} style={{padding:'8px 16px',background:'#fee2e2',color:'#dc2626',border:'none',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>إلغاء التفعيل</button>
-              ) : (
-                <button onClick={start2FASetup} style={{padding:'8px 16px',background:'#16a34a',color:'white',border:'none',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>تفعيل الآن</button>
-              )}
-            </div>
-            {setup2FAOpen && (
-              <div style={{marginTop:16,paddingTop:16,borderTop:'1px solid #f1f5f9',textAlign:'center' as const}}>
-                <p style={{fontSize:12,color:'#64748b',marginBottom:12}}>امسح الرمز بتطبيق المصادقة (Google Authenticator)، بعدها أدخل الرمز المكوّن من 6 أرقام:</p>
-                {setup2FAQr && <img src={setup2FAQr} alt="QR" style={{width:180,height:180,margin:'0 auto 12px',display:'block',borderRadius:8,border:'1px solid #e5e7eb'}}/>}
-                <input type="text" inputMode="numeric" maxLength={6} value={setup2FACode} onChange={e=>setSetup2FACode(e.target.value.replace(/\D/g,''))} dir="ltr"
-                  style={{width:200,padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:20,textAlign:'center' as const,letterSpacing:8,outline:'none',fontFamily:'inherit',marginBottom:10}}
-                  placeholder="000000"/>
-                <br/>
-                <button onClick={confirm2FASetup} disabled={setup2FALoading || setup2FACode.length!==6}
-                  style={{padding:'10px 24px',background:'#16a34a',color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:setup2FACode.length!==6?.5:1}}>
-                  {setup2FALoading?'⏳ جاري التأكيد...':'تأكيد وتفعيل'}
-                </button>
-                {setup2FAMsg && <div style={{marginTop:10,fontSize:12,fontWeight:700,color:setup2FAMsg.startsWith('✅')?'#16a34a':'#dc2626'}}>{setup2FAMsg}</div>}
-              </div>
-            )}
-          </div>
-
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
             <div style={{fontSize:16,fontWeight:800,color:'#0f172a'}}>🛡️ إدارة المشرفين</div>
             <button onClick={()=>setShowAddAdmin(v=>!v)} style={{padding:'8px 16px',background:'#0f172a',color:'white',border:'none',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
