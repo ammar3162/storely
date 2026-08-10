@@ -454,7 +454,7 @@ export default function LandingPage() {
                 <img src="/storely-logo.png" alt="Storely" style={{width:32,height:32,borderRadius:8}}/>
                 <span style={{fontSize:18,fontWeight:800,color:'white'}}>Storely</span>
               </div>
-              <p style={{fontSize:13,color:'#6b7280',lineHeight:1.7,maxWidth:220}}>منصة إدارة المخزون الذكية لكل المنشآت</p>
+              <p style={{fontSize:13,color:'white',lineHeight:1.7,maxWidth:220}}>منصة إدارة المخزون الذكية لكل المنشآت</p>
             </div>
             {[
               {title:'المنصة',links:[['تسجيل الدخول','/login'],['إنشاء حساب','/login?mode=register'],['الأسعار','#pricing']]},
@@ -474,8 +474,8 @@ export default function LandingPage() {
             ))}
           </div>
           <div style={{borderTop:'1px solid #1f2937',paddingTop:24,display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12}}>
-            <div style={{fontSize:13,color:'#4b5563'}}>© {new Date().getFullYear()} Storely — جميع الحقوق محفوظة</div>
-            <div style={{fontSize:13,color:'#4b5563'}}>storely.dev</div>
+            <div style={{fontSize:13,color:'white'}}>© {new Date().getFullYear()} Storely — جميع الحقوق محفوظة</div>
+            <div style={{fontSize:13,color:'white'}}>storely.dev</div>
           </div>
         </div>
       </footer>
