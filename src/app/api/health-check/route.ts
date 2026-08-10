@@ -52,12 +52,12 @@ async function checkOrgsWithoutActiveBranch(supabase: any): Promise<Issue | null
 }
 
 async function checkDuplicateProducts(supabase: any): Promise<Issue | null> {
-  const { data } = await supabase.from('products').select('org_id, name').eq('is_active', true)
+  const { data } = await supabase.from('products').select('org_id, branch_id, name').eq('is_active', true)
   if (!data) return null
 
   const seen: Record<string, number> = {}
   for (const p of data) {
-    const key = `${p.org_id}::${p.name}`
+    const key = `${p.org_id}::${p.branch_id || 'none'}::${p.name}`
     seen[key] = (seen[key] || 0) + 1
   }
   const duplicates = Object.entries(seen).filter(([, c]) => c > 1)
@@ -66,7 +66,7 @@ async function checkDuplicateProducts(supabase: any): Promise<Issue | null> {
   return {
     type: 'منتجات مكررة بنفس الاسم',
     severity: 'warning',
-    detail: `${duplicates.length} اسم منتج مكرر داخل نفس المؤسسة`,
+    detail: `${duplicates.length} اسم منتج مكرر داخل نفس الفرع`,
     count: duplicates.length,
   }
 }
