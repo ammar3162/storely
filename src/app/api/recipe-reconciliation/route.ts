@@ -122,13 +122,20 @@ export async function POST(req: Request) {
     const priceMap: Record<string, number> = {}
     for (const nm in priceTotals) priceMap[nm] = priceTotals[nm].qty > 0 ? priceTotals[nm].total / priceTotals[nm].qty : 0
 
+    const { data: stockRows } = await db.from('products').select('id,qty').in('id', resolvedIds as string[])
+    const stockMap: Record<string, number> = {}
+    for (const s of (stockRows || []) as any[]) stockMap[s.id] = Number(s.qty) || 0
+
     const report = recipes.map((r: any) => {
       const items = recipeItems.filter((ri: any) => ri.recipe_id === r.id)
       const components = items.map((ri: any) => {
         const comp = compMap[ri.component_product_id]
-        const totalConsumed = consumed[resolveMap[ri.component_product_id] || ri.component_product_id] || 0
+        const pid = resolveMap[ri.component_product_id] || ri.component_product_id
+        const totalConsumed = consumed[pid] || 0
         const impliedCount = ri.qty > 0 ? Math.round((totalConsumed / ri.qty) * 10) / 10 : 0
         const unitPrice = comp ? (priceMap[comp.name] || 0) : 0
+        const currentStock = stockMap[pid] ?? null
+        const untracked = totalConsumed === 0 && currentStock !== null && currentStock > 0
         return {
           name: comp?.name || '—',
           unit: comp?.unit || '',
@@ -136,14 +143,15 @@ export async function POST(req: Request) {
           qtyPerUnit: ri.qty,
           impliedCount,
           costPerUnit: Math.round(unitPrice * ri.qty * 100) / 100,
+          untracked,
         }
       })
-      const allCounts = components.map((c: any) => c.impliedCount)
-      // الرقم الصحيح = أقل مكوّن متوفر (العنق الزجاجي) — ما تقدر تسوي وصفات أكتر من أضعف مكوّن عندك
+      const trackedComponents = components.filter((c: any) => !c.untracked)
+      const allCounts = trackedComponents.map((c: any) => c.impliedCount)
       const min = allCounts.length ? Math.min(...allCounts) : 0
       const avg = allCounts.length ? Math.round((allCounts.reduce((s: number, n: number) => s + n, 0) / allCounts.length) * 10) / 10 : 0
       const max = allCounts.length ? Math.max(...allCounts) : 0
-      const bottleneck = components.find((c: any) => c.impliedCount === min)
+      const bottleneck = trackedComponents.find((c: any) => c.impliedCount === min)
 
       // تكلفة الوحدة = مجموع تكلفة كل مكوّن بمكونات الوصفة (بغض النظر عن الاستهلاك الفعلي)
       const costPerUnit = components.reduce((s: number, c: any) => s + c.costPerUnit, 0)
