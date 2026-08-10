@@ -465,9 +465,9 @@ export default function LandingPage() {
                 <div style={{fontSize:12,fontWeight:700,color:'#9ca3af',marginBottom:14,letterSpacing:'.08em',textTransform:'uppercase'}}>{col.title}</div>
                 <div style={{display:'flex',flexDirection:'column',gap:10}}>
                   {col.links.map(([l,h])=>(
-                    <a key={l} href={h} style={{color:'#6b7280',textDecoration:'none',fontSize:14,transition:'color .2s'}}
-                      onMouseEnter={e=>(e.currentTarget.style.color='white')}
-                      onMouseLeave={e=>(e.currentTarget.style.color='#6b7280')}>{l}</a>
+                    <a key={l} href={h} style={{color:'white',textDecoration:'none',fontSize:14,transition:'color .2s'}}
+                      onMouseEnter={e=>(e.currentTarget.style.color='#4ade80')}
+                      onMouseLeave={e=>(e.currentTarget.style.color='white')}>{l}</a>
                   ))}
                 </div>
               </div>
