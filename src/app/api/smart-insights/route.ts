@@ -138,19 +138,27 @@ ${branchSummary ? `═══ مقارنة الفروع ═══\n${branchSummar
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2000,
+      max_tokens: 3000,
       system: systemPrompt,
-      messages: [{ role: 'user', content: 'حلّل بيانات منشأتي الآن وأعطني التقرير بصيغة JSON المطلوبة.' }],
+      messages: [{ role: 'user', content: 'حلّل بيانات منشأتي الآن وأعطني التقرير بصيغة JSON المطلوبة، بدون أي نص قبل أو بعد الـJSON.' }],
     }),
   })
 
   const data = await response.json()
+  if (!response.ok) {
+    console.error('anthropic api error:', JSON.stringify(data))
+    return NextResponse.json({ error: `خطأ من خدمة الذكاء الاصطناعي: ${data.error?.message || response.status}` }, { status: 500 })
+  }
   const raw = data.content?.[0]?.text || ''
   try {
-    const cleaned = raw.replace(/```json|```/g, '').trim()
-    const parsed = JSON.parse(cleaned)
+    const firstBrace = raw.indexOf('{')
+    const lastBrace = raw.lastIndexOf('}')
+    if (firstBrace === -1 || lastBrace === -1) throw new Error('no JSON braces found')
+    const jsonSlice = raw.slice(firstBrace, lastBrace + 1)
+    const parsed = JSON.parse(jsonSlice)
     return NextResponse.json({ success: true, insights: parsed })
   } catch (e) {
-    return NextResponse.json({ error: 'فشل تحليل رد الذكاء الاصطناعي', raw }, { status: 500 })
+    console.error('smart-insights parse error. raw response:', raw)
+    return NextResponse.json({ error: 'فشل تحليل رد الذكاء الاصطناعي — جرّب مرة ثانية', raw }, { status: 500 })
   }
 }
