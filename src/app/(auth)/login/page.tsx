@@ -601,18 +601,14 @@ function LoginPage() {
             {/* صورة حقيقية بدل المعاينة المزيّفة */}
             <div style={{position:'relative',borderRadius:16,overflow:'hidden',boxShadow:'0 16px 40px rgba(15,23,42,.12)',marginBottom:24}}>
               <img src="/storely-team.jpg" alt="Storely" style={{width:'100%',display:'block',objectFit:'cover'}}/>
-              <div style={{position:'absolute',bottom:-12,left:-10,background:'white',borderRadius:10,border:'1px solid #eef0f2',boxShadow:'0 8px 20px rgba(15,23,42,.12)',padding:'8px 10px',display:'flex',alignItems:'center',gap:7}}>
-                <div style={{width:22,height:22,borderRadius:6,background:'#25d366',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11}}>📲</div>
-                <span style={{fontSize:9,fontWeight:800,color:'#111827'}}>تنبيه واتساب فوري</span>
-              </div>
             </div>
 
             <div style={{display:'flex',flexDirection:'column',gap:11,marginTop:24}}>
               {[
-                {icon:'📦',text:'تتبع المخزون لحظة بلحظة'},
-                {icon:'📲',text:'تنبيهات واتساب تلقائية'},
-                {icon:'👥',text:'إدارة الموظفين والفروع'},
-                {icon:'📊',text:'تقارير وإحصائيات احترافية'},
+                {icon:'📦',text:'مراقبة مخزونك لحظياً من أي مكان'},
+                {icon:'📲',text:'تنبيهات فورية قبل نفاد أي صنف'},
+                {icon:'👥',text:'تحكّم كامل بموظفيك وفروعك المتعددة'},
+                {icon:'📊',text:'تقارير وتحليلات تدعم قراراتك'},
               ].map((f,i)=>(
                 <div key={i} style={{display:'flex',alignItems:'center',gap:11}}>
                   <div style={{width:32,height:32,borderRadius:9,background:'white',border:'1px solid #e5e7eb',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>{f.icon}</div>
