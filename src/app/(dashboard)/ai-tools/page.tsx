@@ -671,9 +671,9 @@ export default function AIToolsPage() {
                       {r.components.map((c:any,i:number)=>{
                         const isBottleneck = c.name===r.bottleneckName
                         return (
-                          <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:10,color:isBottleneck?'#b45309':C.text4,fontWeight:isBottleneck?700:400}}>
+                          <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:10,color:isBottleneck?'#b45309':c.untracked?'#94a3b8':C.text4,fontWeight:isBottleneck?700:400}}>
                             <span>{isBottleneck?'🔻 ':''}{c.name}: استهلاك {c.consumed} {c.unit}</span>
-                            <span>يكفي لـ {c.impliedCount} وحدة</span>
+                            <span>{c.untracked ? 'غير متابَع بالصرف — تم استثناؤه' : `يكفي لـ ${c.impliedCount} وحدة`}</span>
                           </div>
                         )
                       })}
