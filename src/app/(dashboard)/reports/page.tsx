@@ -921,9 +921,8 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
   const dispensedMap:Record<string,number>={}
   movements.filter(m=>m.type==='out').forEach(m=>{const n=(m.products as any)?.name||'—';dispensedMap[n]=(dispensedMap[n]||0)+Math.abs(m.qty_change)})
 
-  // purchased map
   const purchasedMap:Record<string,number>={}
-  purchases.forEach(p=>{if(p.name&&p.qty) purchasedMap[p.name]=(purchasedMap[p.name]||0)+Number(p.qty)})
+  movements.filter(m=>m.type==='in').forEach(m=>{const n=(m.products as any)?.name||'—';purchasedMap[n]=(purchasedMap[n]||0)+Math.abs(m.qty_change)})
 
   const filtered=products
     .filter(p=>!search||p.name?.includes(search)||p.category?.includes(search))
