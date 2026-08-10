@@ -159,7 +159,7 @@ export async function GET(req: Request) {
     const checks = await Promise.all([
       checkProductsWithoutBranch(supabase),
       checkOrgsWithoutActiveBranch(supabase),
-      checkDuplicateProducts(supabase),
+      // checkDuplicateProducts(supabase), — أُلغي هذا الفحص بطلب المالك؛ الدالة موجودة بالأسفل بدون استخدام
       checkStalePendingUsers(supabase),
       checkExpiredButActiveSubs(supabase),
     ])
