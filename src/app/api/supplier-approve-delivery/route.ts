@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import { sendPushToOrg } from '@/lib/push'
 
 export async function POST(req: Request) {
@@ -9,10 +10,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'بيانات ناقصة' }, { status: 400 })
     }
 
+    // تحقق من هوية المورد المتصل عبر جلسته الموثوقة (كوكيز) — لا نثق بأي معرف قادم من body
+    const authClient = await createServerClient()
+    const { data: { user: authedSupplier } } = await authClient.auth.getUser()
+    if (!authedSupplier) {
+      return NextResponse.json({ success: false, error: 'غير مصرح — سجّل الدخول أولاً' }, { status: 401 })
+    }
+
     const db = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
+
+    // تأكد إن طلب العرض ده فعلاً يخص المورد المتصل نفسه
+    const { data: quoteRequest } = await db.from('quote_requests').select('id,supplier_id').eq('id', quote_request_id).maybeSingle()
+    if (!quoteRequest || (quoteRequest as any).supplier_id !== authedSupplier.id) {
+      return NextResponse.json({ success: false, error: 'هذا الطلب لا يخصك' }, { status: 403 })
+    }
 
     const { error: updateErr } = await db.from('quote_requests')
       .update({ status: 'confirmed', delivery_date, rep_name, rep_phone })

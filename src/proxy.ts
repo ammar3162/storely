@@ -32,7 +32,9 @@ export async function proxy(request: NextRequest) {
   const isStaff    = path.startsWith('/staff')
   const isLanding  = path === '/' || path.startsWith('/privacy') || path.startsWith('/terms')
   const isReset    = path.startsWith('/reset-password')
-  const isPublic   = isLogin || isPending || isApi || isStaff || isStatic || isLanding || isReset
+  const isSupplierPortalAuth = path === '/supplier-portal' || path === '/supplier-portal/'
+  const isSupplierDashboard  = path.startsWith('/supplier-portal/dashboard')
+  const isPublic   = isLogin || isPending || isApi || isStaff || isStatic || isLanding || isReset || isSupplierPortalAuth
 
   if (isAdminPanel) {
     const adminToken  = request.cookies.get('storely_admin_token')?.value
@@ -47,6 +49,19 @@ export async function proxy(request: NextRequest) {
 
   if (!user && !isPublic) {
     return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  if (user && isSupplierPortalAuth) {
+    const { data: supplierProfile } = await supabase
+      .from('supplier_profiles' as any).select('id').eq('id', user.id).single()
+    if (supplierProfile) return NextResponse.redirect(new URL('/supplier-portal/dashboard', request.url))
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  if (user && isSupplierDashboard) {
+    const { data: supplierProfile } = await supabase
+      .from('supplier_profiles' as any).select('id').eq('id', user.id).single()
+    if (!supplierProfile) return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   if (user && isLogin) {

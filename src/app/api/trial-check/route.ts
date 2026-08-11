@@ -4,8 +4,16 @@ import { sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const cronSecret = req.headers.get('x-cron-secret')
+    const authHeader = req.headers.get('authorization')
+    const isManualAuth = cronSecret === process.env.ADMIN_PASSWORD
+    const isVercelCron = authHeader === `Bearer ${process.env.CRON_SECRET}`
+    if (!isManualAuth && !isVercelCron) {
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+    }
+
     const supabase = sb()
     const now = new Date()
     const in3days = new Date(now.getTime() + 3*24*60*60*1000).toISOString()

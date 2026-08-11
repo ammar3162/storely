@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,6 +11,10 @@ export async function POST(req: Request) {
   try {
     const { org_id, user_id } = await req.json()
     if (!org_id || !user_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+
+    // تحقق من هوية المتصل الفعلية عبر الجلسة الموثوقة (مو من قيم الطلب)
+    const access = await verifyOrgAccess(org_id)
+    if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
     // بدل الحذف الفوري — نحدد موعد حذف بعد 15 يوم (فترة سماح)
     const deletionDate = new Date()
