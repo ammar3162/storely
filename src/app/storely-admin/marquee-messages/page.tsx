@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { confirmDialog } from '@/components/ConfirmDialog'
 
 const C = { bg:'#0f172a', card:'#1e293b', border:'#334155', text:'#f1f5f9', text2:'#94a3b8', text3:'#64748b', green:'#22c55e', red:'#ef4444', blue:'#3b82f6' }
 
@@ -82,7 +83,7 @@ export default function MarqueeMessagesPage() {
   }
 
   async function deleteMessage(id: string) {
-    if (!confirm('حذف هذي الرسالة من الشريط؟')) return
+    if (!(await confirmDialog({ title: 'حذف الرسالة', message: 'حذف هذي الرسالة من الشريط؟' }))) return
     await fetch('/api/admin/marquee-messages', {
       method: 'DELETE', headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
       body: JSON.stringify({ id })

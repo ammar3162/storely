@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { confirmDialog } from '@/components/ConfirmDialog'
 
 type Tab = 'products' | 'orders' | 'chats' | 'reps' | 'reports' | 'activity' | 'account'
 
@@ -99,7 +100,7 @@ export default function SupplierDashboardShared() {
   }
 
   async function deleteRep(id: string) {
-    if (!confirm('حذف هذا المندوب؟')) return
+    if (!(await confirmDialog({ title: 'حذف المندوب', message: 'حذف هذا المندوب؟' }))) return
     await sb.from('supplier_reps' as any).delete().eq('id', id)
     loadReps(profile.id)
   }
@@ -264,7 +265,7 @@ export default function SupplierDashboardShared() {
   }
 
   async function deleteItem(id: string) {
-    if (!confirm('حذف هذا الصنف نهائياً؟')) return
+    if (!(await confirmDialog({ title: 'حذف الصنف', message: 'حذف هذا الصنف نهائياً؟' }))) return
     await sb.from('supplier_catalog_items' as any).delete().eq('id', id)
     loadItems(profile.id)
   }

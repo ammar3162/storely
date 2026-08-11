@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { confirmDialog } from '@/components/ConfirmDialog'
 
 // حماية أمنية: يمنع عرض روابط خبيثة (javascript:, data:, إلخ) كرابط قابل للنقر
 function isSafeUrl(url?: string | null): boolean {
@@ -369,7 +370,7 @@ export default function AdminPage() {
   }
 
   async function suspend(userId: string) {
-    if (!confirm('متأكد تبي توقف هذا الحساب؟ (يشمل كل مديري الفروع التابعين له)')) return
+    if (!(await confirmDialog({ title: 'إيقاف الحساب', message: 'متأكد تبي توقف هذا الحساب؟ (يشمل كل مديري الفروع التابعين له)' }))) return
     setSaving(userId)
     const adminPass = sessionStorage.getItem('storely_admin_pass') || ''
     const res = await fetch('/api/admin/suspend-user', {
@@ -383,7 +384,7 @@ export default function AdminPage() {
 
   async function updatePlan(orgId: string, value: number) {
     const plan = PLANS.find(p=>p.v===value)!
-    if (!confirm(`تأكيد الترقية/التغيير لباقة "${plan.label}" (${plan.price})؟`)) return
+    if (!(await confirmDialog({ title: 'تغيير الباقة', message: `تأكيد الترقية/التغيير لباقة "${plan.label}" (${plan.price})؟` }))) return
     setSaving(orgId)
     const target = users.find(u=>u.org_id===orgId)
     const oldBranches = target?.max_branches || 1

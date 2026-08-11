@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { confirmDialog } from '@/components/ConfirmDialog'
 
 export default function SupplierStorefrontPage() {
   const params = useParams()
@@ -121,7 +122,7 @@ export default function SupplierStorefrontPage() {
   }
 
   async function acceptOffer(reqId: string, supplierName: string, supplierPhone: string) {
-    if (!confirm('تأكيد قبول العرض؟ سيتم إضافة المورد تلقائياً لقائمة موردينك')) return
+    if (!(await confirmDialog({ title: 'قبول العرض', message: 'تأكيد قبول العرض؟ سيتم إضافة المورد تلقائياً لقائمة موردينك', type: 'success' }))) return
     const sb = createClient()
     const activeBranch = typeof window !== 'undefined' ? sessionStorage.getItem('s_branch_id') : null
     const { data: existingSupplier } = await (sb as any).from('suppliers').select('id').eq('org_id', orgId).eq('name', supplierName).maybeSingle()

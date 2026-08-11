@@ -6,6 +6,7 @@ import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, page
 import { toast } from '@/components/toast'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { currencySymbol } from '@/lib/currencySymbol'
+import { confirmDialog } from '@/components/ConfirmDialog'
 
 function generatePin() { return String(Math.floor(1000 + Math.random() * 9000)) }
 const COUNTRY_CODES = ['+966','+971','+965','+973','+974','+968','+20','+962','+1','+44','+91','+92','+880','+63']
@@ -257,7 +258,7 @@ export default function StaffManagementPage() {
   }
 
   async function deleteStaff(id:string) {
-    if(!confirm('حذف هذا الموظف نهائياً؟')) return
+    if(!(await confirmDialog({ title: 'حذف الموظف', message: 'حذف هذا الموظف نهائياً؟' }))) return
     await (sb.from('staff_members' as any) as any).delete().eq('id',id)
     toast('تم الحذف'); loadStaff(orgId)
   }

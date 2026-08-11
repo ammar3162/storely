@@ -6,6 +6,7 @@ import { colors, radius, font, card, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { cache } from '@/lib/cache'
 import { exportReportPdf } from '@/lib/pdfExport'
+import { confirmDialog } from '@/components/ConfirmDialog'
 
 const ARABIC_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
 
@@ -98,7 +99,7 @@ export default function ProfitabilityPage() {
   }
 
   async function closeMonth() {
-    if(!confirm(`تأكيد إقفال شهر ${monthLabel(month)}؟\n\nبعد الإقفال ما راح تقدر تضيف أو تحذف مصروفات لهذا الشهر، وأرقامه بتصير ثابتة حتى لو تغيّرت بيانات المشتريات لاحقاً.`)) return
+    if(!(await confirmDialog({ title: 'إقفال الشهر', message: `تأكيد إقفال شهر ${monthLabel(month)}؟\n\nبعد الإقفال ما راح تقدر تضيف أو تحذف مصروفات لهذا الشهر، وأرقامه بتصير ثابتة حتى لو تغيّرت بيانات المشتريات لاحقاً.`, type: 'warning' }))) return
     setClosing(true)
     const res = await fetch('/api/profitability', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -174,7 +175,7 @@ export default function ProfitabilityPage() {
   }
 
   async function deleteTemplate(fixedExpenseId:string) {
-    if(!confirm('حذف هذا المصروف الثابت نهائياً؟ (لن يتكرر بالشهور القادمة)')) return
+    if(!(await confirmDialog({ title: 'حذف المصروف الثابت', message: 'حذف هذا المصروف الثابت نهائياً؟ (لن يتكرر بالشهور القادمة)' }))) return
     const res = await fetch(`/api/fixed-expenses?id=${fixedExpenseId}`,{method:'DELETE'})
     const j = await res.json()
     if(j.success){ toast('🗑️ تم الحذف'); cache.invalidate('profitability:'); loadAll() }
@@ -192,7 +193,7 @@ export default function ProfitabilityPage() {
   }
 
   async function deleteVariable(id:string) {
-    if(!confirm('حذف هذا المصروف؟')) return
+    if(!(await confirmDialog({ title: 'حذف المصروف', message: 'حذف هذا المصروف؟' }))) return
     const res = await fetch(`/api/monthly-fixed-expenses?id=${id}`,{method:'DELETE'})
     const j = await res.json()
     if(j.success){ toast('🗑️ تم الحذف'); cache.invalidate('profitability:'); loadAll() }

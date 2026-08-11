@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { colors, font, card, btnPrimary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
+import { confirmDialog } from '@/components/ConfirmDialog'
 
 const PERMS = [
   { key:'inventory', label:'المخزون' },
@@ -86,7 +87,7 @@ export default function BranchManagersPage() {
   }
 
   async function deleteManager(id:string) {
-    if(!confirm('حذف حساب مدير الفرع هذا نهائياً؟ لن يقدر يدخل النظام بعدها.')) return
+    if(!(await confirmDialog({ title: 'حذف مدير الفرع', message: 'حذف حساب مدير الفرع هذا نهائياً؟ لن يقدر يدخل النظام بعدها.' }))) return
     const res = await fetch(`/api/branch-managers?id=${id}&org_id=${orgId}`,{method:'DELETE'})
     const j = await res.json()
     if(j.success){ toast('🗑️ تم الحذف'); loadManagers(orgId) }

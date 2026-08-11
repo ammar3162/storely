@@ -1,4 +1,5 @@
 'use client'
+import { useState, useEffect } from 'react'
 
 interface Props {
   title: string
@@ -40,5 +41,51 @@ export default function ConfirmDialog({ title, message, confirmText='تأكيد'
         </div>
       </div>
     </div>
+  )
+}
+
+
+// ═══════════════════════════════════════
+// نسخة قابلة للنداء المباشر (نفس فلسفة toast()) — تحل محل confirm() الأصلي بالمتصفح
+// الاستخدام: if (!(await confirmDialog({ title, message }))) return
+// ═══════════════════════════════════════
+
+interface ConfirmOptions {
+  title: string
+  message?: string
+  confirmText?: string
+  cancelText?: string
+  type?: 'danger' | 'warning' | 'success'
+}
+
+let _openConfirm: ((opts: ConfirmOptions & { resolve: (v: boolean) => void }) => void) | null = null
+
+export function confirmDialog(opts: ConfirmOptions): Promise<boolean> {
+  return new Promise((resolve) => {
+    _openConfirm?.({ ...opts, resolve })
+  })
+}
+
+export function ConfirmDialogContainer() {
+  const [state, setState] = useState<(ConfirmOptions & { resolve: (v: boolean) => void }) | null>(null)
+
+  useEffect(() => {
+    _openConfirm = (opts: any) => setState(opts)
+    return () => { _openConfirm = null }
+  }, [])
+
+  if (!state) return null
+  const { resolve, ...dialogProps } = state
+
+  return (
+    <ConfirmDialog
+      title={dialogProps.title}
+      message={dialogProps.message || ''}
+      confirmText={dialogProps.confirmText}
+      cancelText={dialogProps.cancelText}
+      type={dialogProps.type}
+      onConfirm={() => { resolve(true); setState(null) }}
+      onCancel={() => { resolve(false); setState(null) }}
+    />
   )
 }

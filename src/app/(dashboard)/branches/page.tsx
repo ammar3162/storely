@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { colors, radius, font, card, btnPrimary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
+import { confirmDialog } from '@/components/ConfirmDialog'
 
 export default function BranchesPage() {
   const sb = createClient()
@@ -109,7 +110,7 @@ export default function BranchesPage() {
 
   async function deleteBranch(id:string) {
     if(branches.length<=1){toast('لا يمكن حذف الفرع الوحيد','warning');return}
-    if(!confirm('إيقاف هذا الفرع؟ بياناته تبقى محفوظة ويمكن تفعيله لاحقاً.')) return
+    if(!(await confirmDialog({ title: 'إيقاف الفرع', message: 'إيقاف هذا الفرع؟ بياناته تبقى محفوظة ويمكن تفعيله لاحقاً.', type: 'warning' }))) return
     const{error}=await sb.from('branches').update({is_active:false} as any).eq('id',id)
     if(error){toast('فشل إيقاف الفرع — حاول مرة أخرى','error');return}
     const stopped = branches.find((b:any)=>b.id===id)

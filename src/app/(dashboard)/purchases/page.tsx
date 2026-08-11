@@ -9,6 +9,7 @@ const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/components/toast'
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh'
+import { confirmDialog } from '@/components/ConfirmDialog'
 
 // موحّد مع نظام التصميم المشترك (@/lib/ds) — نفس أسماء المفاتيح المستخدمة بالملف، قيم موحدة
 const C = {
@@ -130,7 +131,7 @@ export default function PurchasesPage() {
     const confirmMsg = purchase.category==='مخزون' && purchase.qty
       ? `تأكيد حذف فاتورة "${purchase.name}"؟\n\nسيتم أيضاً طرح ${purchase.qty} ${purchase.unit||''} من المخزون (لأن الفاتورة أضافتها سابقاً).`
       : `تأكيد حذف فاتورة "${purchase.name}"؟`
-    if(!window.confirm(confirmMsg)) return
+    if(!(await confirmDialog({ title: 'حذف الفاتورة', message: confirmMsg }))) return
     setDeletingId(purchase.id)
 
     if(purchase.category==='مخزون' && purchase.name && Number(purchase.qty)>0){

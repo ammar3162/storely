@@ -1,4 +1,5 @@
 import { ToastContainer } from '@/components/toast'
+import { ConfirmDialogContainer } from '@/components/ConfirmDialog'
 import PWAInstall from '@/components/PWAInstall'
 import FeatureAnnouncement from '@/components/FeatureAnnouncement'
 import PullToRefresh from '@/components/PullToRefresh'
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ToastContainer/>
+        <ConfirmDialogContainer/>
         <PWAInstall/>
         <FeatureAnnouncement/>
         <PullToRefresh/>

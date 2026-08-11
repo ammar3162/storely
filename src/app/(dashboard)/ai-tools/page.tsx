@@ -5,6 +5,7 @@ import { currencySymbol } from '@/lib/currencySymbol'
 import { createClient } from '@/lib/supabase/client'
 import { colors as dsColors } from '@/lib/ds'
 import { toast } from '@/components/toast'
+import { confirmDialog } from '@/components/ConfirmDialog'
 
 // موحّد مع نظام التصميم المشترك (@/lib/ds)
 const C = {
@@ -97,7 +98,7 @@ export default function AIToolsPage() {
   }
 
   async function deleteRecipe(id:string) {
-    if(!confirm('حذف هذي الوصفة؟ هذا الإجراء لا يمكن التراجع عنه.')) return
+    if(!(await confirmDialog({ title: 'حذف الوصفة', message: 'حذف هذي الوصفة؟ هذا الإجراء لا يمكن التراجع عنه.' }))) return
     setDeletingRecipeId(id)
     const{error}=await (sb.from('recipes' as any) as any).delete().eq('id',id)
     setDeletingRecipeId(null)
