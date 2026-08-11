@@ -89,7 +89,7 @@ export default function AuditLogPage() {
                   <div style={{fontSize:12,color:C.text2,marginTop:3}}>👤 {l.admin_name}{l.target_org_name ? ` — على مؤسسة: ${l.target_org_name}` : ''}</div>
                   {l.details && <div style={{fontSize:11,color:C.text3,marginTop:4,fontFamily:'monospace'}}>{JSON.stringify(l.details)}</div>}
                 </div>
-                <div style={{fontSize:11,color:C.text3,whiteSpace:'nowrap' as const}}>{new Date(l.created_at).toLocaleString('ar-SA')}</div>
+                <div style={{fontSize:11,color:C.text3,whiteSpace:'nowrap' as const}}>{new Date(l.created_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
               </div>
             </div>
           ))}

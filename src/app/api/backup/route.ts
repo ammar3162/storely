@@ -41,9 +41,9 @@ export async function POST(req: Request) {
         supabase.from('profiles').select('id,full_name,phone,role,status,created_at').eq('org_id', org_id),
       ])
       const date = new Date().toISOString().split('T')[0]
-      const productsCsv  = toCSV(['اسم المنتج','الباركود','الكمية','الوحدة','الحد الأدنى','الفئة','الحالة','تاريخ الإنشاء'],(products||[]).map(p=>[p.name,p.sku||'',p.qty,p.unit,p.reorder_point,p.category||'',p.is_active?'نشط':'محذوف',new Date(p.created_at).toLocaleDateString('ar-SA')]))
-      const purchasesCsv = toCSV(['التاريخ','الصنف','النوع','بدون ضريبة','الضريبة 15%','الإجمالي','المورد','ملاحظة'],(purchases||[]).map(p=>[new Date(p.created_at).toLocaleDateString('ar-SA'),p.name||'',p.category||'',Number(p.amount||0).toFixed(2),Number(p.vat_amount||0).toFixed(2),Number(p.total_amount||0).toFixed(2),p.supplier||'',p.note||'']))
-      const movementsCsv = toCSV(['التاريخ','المنتج','النوع','الكمية','الوحدة','الملاحظة'],(movements||[]).map(m=>[new Date(m.created_at).toLocaleDateString('ar-SA'),(m.products as any)?.name||'',m.type==='in'?'وارد':'صادر',Math.abs(m.qty_change),(m.products as any)?.unit||'',m.note||'']))
+      const productsCsv  = toCSV(['اسم المنتج','الباركود','الكمية','الوحدة','الحد الأدنى','الفئة','الحالة','تاريخ الإنشاء'],(products||[]).map(p=>[p.name,p.sku||'',p.qty,p.unit,p.reorder_point,p.category||'',p.is_active?'نشط':'محذوف',new Date(p.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'})]))
+      const purchasesCsv = toCSV(['التاريخ','الصنف','النوع','بدون ضريبة','الضريبة 15%','الإجمالي','المورد','ملاحظة'],(purchases||[]).map(p=>[new Date(p.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'}),p.name||'',p.category||'',Number(p.amount||0).toFixed(2),Number(p.vat_amount||0).toFixed(2),Number(p.total_amount||0).toFixed(2),p.supplier||'',p.note||'']))
+      const movementsCsv = toCSV(['التاريخ','المنتج','النوع','الكمية','الوحدة','الملاحظة'],(movements||[]).map(m=>[new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'}),(m.products as any)?.name||'',m.type==='in'?'وارد':'صادر',Math.abs(m.qty_change),(m.products as any)?.unit||'',m.note||'']))
       const files = [
         { name:`${org_id}/${date}_products.csv`,  content:productsCsv  },
         { name:`${org_id}/${date}_purchases.csv`, content:purchasesCsv },

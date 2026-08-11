@@ -60,7 +60,7 @@ export async function GET() {
         .filter(p => p.daysLeft !== null && p.daysLeft <= 7)
         .sort((a,b) => (a.daysLeft||99) - (b.daysLeft||99))
 
-      const day = new Date().toLocaleDateString('ar-SA', { weekday:'long', day:'numeric', month:'long' })
+      const day = new Date().toLocaleDateString('ar-SA', {numberingSystem:'latn', weekday:'long', day:'numeric', month:'long' })
 
       let report = `📊 *التقرير الأسبوعي الذكي*\n`
       report += `🏪 ${org.name}\n`

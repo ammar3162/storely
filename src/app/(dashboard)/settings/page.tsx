@@ -376,7 +376,7 @@ export default function SettingsPage() {
                   <span style={{fontSize:16}}>💎</span>
                 </div>
                 {subEndsAt&&(
-                  <div style={{fontSize:font.xs,color:colors.text3}}>ينتهي الاشتراك بتاريخ: <b style={{color:colors.text}}>{new Date(subEndsAt).toLocaleDateString('ar-SA',{year:'numeric',month:'long',day:'numeric'})}</b></div>
+                  <div style={{fontSize:font.xs,color:colors.text3}}>ينتهي الاشتراك بتاريخ: <b style={{color:colors.text}}>{new Date(subEndsAt).toLocaleDateString('ar-SA', {numberingSystem:'latn',year:'numeric',month:'long',day:'numeric'})}</b></div>
                 )}
               </div>
             </div>
@@ -441,7 +441,7 @@ export default function SettingsPage() {
                     {subEndsAt && (
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:10,borderTop:`1px solid ${colors.border}`}}>
                         <span style={{fontSize:font.sm,color:colors.text3}}>ينتهي في</span>
-                        <span style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{new Date(subEndsAt).toLocaleDateString('ar-SA',{year:'numeric',month:'long',day:'numeric'})}</span>
+                        <span style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{new Date(subEndsAt).toLocaleDateString('ar-SA', {numberingSystem:'latn',year:'numeric',month:'long',day:'numeric'})}</span>
                       </div>
                     )}
                   </div>
@@ -561,7 +561,7 @@ export default function SettingsPage() {
               )}
               {lastSent&&(
                 <div style={{fontSize:font.xs,color:colors.text4,marginTop:10,display:'flex',alignItems:'center',gap:4}}>
-                  <span>📅</span> آخر إرسال: <span style={{fontWeight:600,color:colors.text2}}>{new Date(lastSent).toLocaleDateString('ar-SA',{weekday:'long',hour:'2-digit',minute:'2-digit'})}</span>
+                  <span>📅</span> آخر إرسال: <span style={{fontWeight:600,color:colors.text2}}>{new Date(lastSent).toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'long',hour:'2-digit',minute:'2-digit'})}</span>
                 </div>
               )}
             </form>
@@ -575,7 +575,7 @@ export default function SettingsPage() {
                   <span style={{fontSize:18}}>💾</span>
                   <div>
                     <div style={{fontSize:font.xs,color:colors.primary,fontWeight:700}}>آخر نسخة احتياطية</div>
-                    <div style={{fontSize:font.xs,color:colors.primary,opacity:.8,marginTop:1}}>{new Date(lastBackup).toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
+                    <div style={{fontSize:font.xs,color:colors.primary,opacity:.8,marginTop:1}}>{new Date(lastBackup).toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
                   </div>
                 </div>
               )}

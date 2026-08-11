@@ -577,8 +577,8 @@ export default function AdminPage() {
               {/* Info Grid */}
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:20}}>
                 {[
-                  {label:'تاريخ التسجيل', value:new Date(selected.created_at).toLocaleDateString('ar-SA')},
-                  {label:'انتهاء الاشتراك', value:selected.subscription_ends_at?new Date(selected.subscription_ends_at).toLocaleDateString('ar-SA'):'—'},
+                  {label:'تاريخ التسجيل', value:new Date(selected.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'})},
+                  {label:'انتهاء الاشتراك', value:selected.subscription_ends_at?new Date(selected.subscription_ends_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'}):'—'},
                   {label:'الباقة المطلوبة', value:selected.requested_plan==='basic'?'الأساسية':selected.requested_plan==='pro'?'المتوسطة':selected.requested_plan==='advanced'?'المتقدمة':selected.requested_plan},
                   {label:'الفروع المسموحة', value:`${selected.max_branches} ${selected.max_branches===1?'فرع':'فروع'}`},
                 ].map((item,i)=>(
@@ -899,7 +899,7 @@ export default function AdminPage() {
                             </div>
                             <div>
                               <div style={{fontWeight:700,color:'#0f172a',fontSize:13}}>{u.full_name}</div>
-                              <div style={{fontSize:10,color:'#94a3b8',marginTop:1}}>{new Date(u.created_at).toLocaleDateString('ar-SA')}</div>
+                              <div style={{fontSize:10,color:'#94a3b8',marginTop:1}}>{new Date(u.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'})}</div>
                             </div>
                           </div>
                         </td>
@@ -979,7 +979,7 @@ export default function AdminPage() {
                 {(dashStats.expiringSoon||[]).map((u:any,i:number)=>(
                   <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'#fffbeb',borderRadius:10,border:'1px solid #fde68a'}}>
                     <span style={{fontSize:13,fontWeight:700,color:'#0f172a'}}>{u.full_name}</span>
-                    <span style={{fontSize:12,color:'#d97706'}}>{new Date(u.subscription_ends_at).toLocaleDateString('ar-SA')}</span>
+                    <span style={{fontSize:12,color:'#d97706'}}>{new Date(u.subscription_ends_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'})}</span>
                   </div>
                 ))}
               </div>
@@ -1291,7 +1291,7 @@ export default function AdminPage() {
                       </button>
                     </div>
                   </div>
-                  <div style={{fontSize:10,color:'#cbd5e1',marginTop:8}}>{new Date(s.created_at).toLocaleDateString('ar-SA',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                  <div style={{fontSize:10,color:'#cbd5e1',marginTop:8}}>{new Date(s.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
                 </div>
               ))}
             </div>

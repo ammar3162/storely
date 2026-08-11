@@ -62,7 +62,7 @@ export async function exportReportPdf(opts: PdfExportOptions) {
         </div>
       </div>
       <div style="font-size:11px;color:#94a3b8">
-        تاريخ الإصدار: ${new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })}
+        تاريخ الإصدار: ${new Date().toLocaleDateString('ar-SA', {numberingSystem:'latn', year: 'numeric', month: 'long', day: 'numeric' })}
       </div>
     </div>
   `

@@ -111,7 +111,7 @@ export default function MetricsPage() {
                         {e.plan && <span style={{fontSize:11,color:C.text3}}> ({e.plan})</span>}
                       </div>
                     </div>
-                    <div style={{fontSize:11,color:C.text3}}>{new Date(e.created_at).toLocaleString('ar-SA')}</div>
+                    <div style={{fontSize:11,color:C.text3}}>{new Date(e.created_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
                   </div>
                 )
               })}

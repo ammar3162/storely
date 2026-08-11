@@ -72,7 +72,7 @@ export default function HealthPage() {
           <div style={{fontSize:14,fontWeight:800,color: latest.issues_count>0 ? '#fca5a5' : C.green}}>
             {latest.issues_count>0 ? `⚠️ ${latest.issues_count} مشكلة مكتشفة` : '✅ كل شي سليم'}
           </div>
-          <div style={{fontSize:11,color:C.text3,marginTop:4}}>آخر فحص: {new Date(latest.checked_at).toLocaleString('ar-SA')}</div>
+          <div style={{fontSize:11,color:C.text3,marginTop:4}}>آخر فحص: {new Date(latest.checked_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
         </div>
       )}
 
@@ -91,7 +91,7 @@ export default function HealthPage() {
                 <div style={{fontSize:12,fontWeight:700,color: log.issues_count>0?C.red:C.green}}>
                   {log.issues_count>0 ? `${log.issues_count} مشكلة` : 'سليم ✅'}
                 </div>
-                <div style={{fontSize:11,color:C.text3}}>{new Date(log.checked_at).toLocaleString('ar-SA')}</div>
+                <div style={{fontSize:11,color:C.text3}}>{new Date(log.checked_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
               </div>
               {(log.issues||[]).map((issue:any,i:number)=>(
                 <div key={i} style={{fontSize:12,color:issue.severity==='critical'?'#fca5a5':'#fcd34d',padding:'6px 10px',background:'#0f172a',borderRadius:8,marginTop:6}}>

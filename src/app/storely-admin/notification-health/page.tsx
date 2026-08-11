@@ -82,7 +82,7 @@ export default function NotificationHealthPage() {
                     <div style={{fontSize:11,fontWeight:700,color:allFailed?C.red:C.green}}>
                       {allFailed?'⚠️':'✅'} {o.sent}/{total} وصلت
                     </div>
-                    <div style={{fontSize:10,color:C.text3,marginTop:2}}>آخر محاولة: {new Date(o.last_at).toLocaleString('ar-SA')}</div>
+                    <div style={{fontSize:10,color:C.text3,marginTop:2}}>آخر محاولة: {new Date(o.last_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
                   </div>
                 </div>
               )

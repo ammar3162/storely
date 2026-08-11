@@ -33,7 +33,7 @@ async function sendForOrg(supabase: any, org: any) {
   }
   const multiBranch = (branches||[]).length > 1
 
-  const now = new Date().toLocaleString('ar-SA',{timeZone:'Asia/Riyadh',hour:'2-digit',minute:'2-digit',hour12:true,weekday:'long'})
+  const now = new Date().toLocaleString('ar-SA', {numberingSystem:'latn',timeZone:'Asia/Riyadh',hour:'2-digit',minute:'2-digit',hour12:true,weekday:'long'})
   let totalSent = 0
   const details: any[] = []
 

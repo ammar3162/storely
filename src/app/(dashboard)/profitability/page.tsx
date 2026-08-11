@@ -140,7 +140,7 @@ export default function ProfitabilityPage() {
             {label:'صافي الربح',value:data.netProfit,color:data.netProfit>=0?colors.primary:colors.danger,bg:data.netProfit>=0?colors.primaryLight:colors.dangerLight,border:data.netProfit>=0?colors.primaryBorder:colors.dangerBorder},
           ].map((s,i)=>(
             <div key={i} style={{...card,padding:'14px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
-              <div style={{fontSize:16,fontWeight:900,color:s.color}}>{Math.round(s.value).toLocaleString('ar')} {curr}</div>
+              <div style={{fontSize:16,fontWeight:900,color:s.color}}>{Math.round(s.value).toLocaleString('ar-SA', {numberingSystem:'latn'})} {curr}</div>
               <div style={{fontSize:font.xs,color:s.color,marginTop:4,fontWeight:600,opacity:.8}}>{s.label}</div>
             </div>
           ))}

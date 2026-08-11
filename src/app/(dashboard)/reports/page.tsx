@@ -21,7 +21,7 @@ function getRange(period: FilterPeriod, from: string, to: string) {
 function formatRange(period: FilterPeriod, from: string, to: string) {
   if (period==='today') return 'اليوم'
   if (period==='week')  return 'آخر 7 أيام'
-  if (period==='month') return new Date().toLocaleDateString('ar-SA',{month:'long',year:'numeric'})
+  if (period==='month') return new Date().toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'long',year:'numeric'})
   if (period==='year')  return new Date().getFullYear().toString()
   if (from&&to) return `${from} — ${to}`
   if (from) return `من ${from}`
@@ -204,7 +204,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
           { header: 'الملاحظة', key: 'note' },
         ],
         rows: filtered.map((m:any) => ({
-          date: new Date(m.created_at).toLocaleDateString('ar-SA'),
+          date: new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'}),
           product: (m.products as any)?.name || '—',
           qty: Math.abs(m.qty_change) + ' ' + ((m.products as any)?.unit || ''),
           staff: (m.profiles as any)?.full_name || (m.staff_members as any)?.name || (m.note?.match(/بواسطة الموظف: (.+)/)?.[1]) || '—',
@@ -296,7 +296,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
               <tbody>
                 {filtered.map((m,i)=>(
                   <tr key={m.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}>
-                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA',{month:'short',day:'numeric'})}</td>
+                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
                     <td style={{padding:'11px 16px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td>
                     <td style={{padding:'11px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:900}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
                     <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f0fdf4',color:'#16a34a',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #bbf7d0'}}>
@@ -372,7 +372,7 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
           { header: 'الموظف', key: 'staff' },
         ],
         rows: filtered.map((m:any) => ({
-          date: new Date(m.created_at).toLocaleDateString('ar-SA'),
+          date: new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'}),
           product: (m.products as any)?.name || '—',
           qty: Math.abs(m.qty_change) + ' ' + ((m.products as any)?.unit || ''),
           reason: (m as any).waste_reason || '—',
@@ -467,7 +467,7 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
               <tbody>
                 {filtered.map((m,i)=>(
                   <tr key={m.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}>
-                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA',{month:'short',day:'numeric'})}</td>
+                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
                     <td style={{padding:'11px 16px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td>
                     <td style={{padding:'11px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:900}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
                     <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#fffbeb',color:'#b45309',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #fde68a'}}>
@@ -540,7 +540,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     if(hrs<24) return `قبل ${hrs} ساعة`
     const days = Math.floor(hrs/24)
     if(days<30) return `قبل ${days} يوم`
-    return new Date(iso).toLocaleDateString('ar-SA')
+    return new Date(iso).toLocaleDateString('ar-SA', {numberingSystem:'latn'})
   }
 
   async function restorePurchase(item:any) {
@@ -641,7 +641,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
           { header: 'فاتورة', key: 'invoice' },
         ],
         rows: filtered.map((p:any) => ({
-          date: new Date(p.created_at).toLocaleDateString('ar-SA'),
+          date: new Date(p.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'}),
           name: p.name || '—',
           category: p.category || '—',
           amount: Number(p.amount || 0).toFixed(2) + ' ' + curr,
@@ -728,7 +728,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
               <tbody>
                 {filtered.map((p,i)=>(
                   <tr key={p.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}>
-                    <td style={{padding:'11px 12px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(p.created_at).toLocaleDateString('ar-SA',{month:'short',day:'numeric'})}</td>
+                    <td style={{padding:'11px 12px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(p.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
                     <td style={{padding:'11px 12px',fontSize:font.sm,fontWeight:700,color:colors.text,maxWidth:140,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.name}</td>
                     <td style={{padding:'11px 12px'}}><span style={catTag(p.category)}>{p.category}</span></td>
                     <td style={{padding:'11px 12px',fontSize:font.sm}}>{Number(p.amount||0).toFixed(0)} {curr}</td>
@@ -1034,7 +1034,7 @@ function RecentOpsSection({ recentOps, colors }: { recentOps:any[]; colors:any }
                 </div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:700,color:'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(m.products as any)?.name}</div>
-                  <div style={{fontSize:11,color:'#9ca3af',marginTop:2}}>{new Date(m.created_at).toLocaleDateString('ar-SA',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                  <div style={{fontSize:11,color:'#9ca3af',marginTop:2}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
                 </div>
                 <span style={{fontSize:13,fontWeight:800,color,flexShrink:0}}>{m.type==='out'?'-':'+'}{Math.abs(m.qty_change)} <span style={{fontSize:10,fontWeight:400,color:'#9ca3af'}}>{(m.products as any)?.unit}</span></span>
               </div>
@@ -1122,7 +1122,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
           { header: 'النتيجة', key: 'result' },
         ],
         rows: closings.map((c: any) => ({
-          date: new Date(c.closing_date).toLocaleDateString('ar-SA'),
+          date: new Date(c.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn'}),
           staff: c.staff_name || '—',
           sales: Number(c.total_sales || 0).toFixed(2) + ' ' + curr,
           network: Number(c.network_amount || 0).toFixed(2) + ' ' + curr,
@@ -1284,7 +1284,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                         </div>
                       ) : (
                         <div onClick={()=>{setEditingDateId(c.id);setEditDateValue(c.closing_date)}} style={{cursor:'pointer',display:'flex',alignItems:'center',gap:6}}>
-                          {new Date(c.closing_date).toLocaleDateString('ar-SA')}
+                          {new Date(c.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn'})}
                           <span style={{fontSize:11,opacity:.4}}>✏️</span>
                         </div>
                       )}
@@ -1360,7 +1360,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
             <div style={{width:48,height:48,borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:22}}>🔒</div>
             <div style={{fontSize:15,fontWeight:800,color:colors.text,textAlign:'center',marginBottom:6}}>تأكيد حذف تقرير الإقفال</div>
             <div style={{fontSize:12,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
-              سيتم حذف إقفال <b style={{color:colors.text}}>{confirmDelete.staff_name}</b> بتاريخ {confirmDelete?.closing_date ? new Date(confirmDelete.closing_date).toLocaleDateString('ar-SA') : ''} نهائياً.<br/>أدخل كلمة مرور حسابك للتأكيد
+              سيتم حذف إقفال <b style={{color:colors.text}}>{confirmDelete.staff_name}</b> بتاريخ {confirmDelete?.closing_date ? new Date(confirmDelete.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn'}) : ''} نهائياً.<br/>أدخل كلمة مرور حسابك للتأكيد
             </div>
             <input type="password" value={deletePassword} onChange={e=>setDeletePassword(e.target.value)}
               onKeyDown={e=>{if(e.key==='Enter'&&deletePassword&&!deleting) confirmDeleteClosing()}}
@@ -1659,7 +1659,7 @@ export default function ReportsPage() {
                   const maxM=Math.max(...months.map(m=>m[1]),1)
                   return months.map(([key,val],i)=>{
                     const [y,m]=key.split('-')
-                    const mn=new Date(Number(y),Number(m)-1).toLocaleDateString('ar-SA',{month:'short'})
+                    const mn=new Date(Number(y),Number(m)-1).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short'})
                     return (
                       <div key={key} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
                         <span style={{fontSize:9,color:colors.text4,fontWeight:700}}>{val}</span>

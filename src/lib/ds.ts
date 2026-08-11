@@ -21,16 +21,16 @@ export const colors = {
   infoLight:    '#eff6ff',
   infoBorder:   '#dbeafe',
 
-  // Neutral — لوحة دافئة (warm neutrals) بدل الرمادي البارد المسطّح
-  bg:           '#faf9f6',
-  surface:      '#fbfaf8',
-  border:       '#e8e6e0',
-  border2:      '#d9d6ce',
-  text:         '#14140f',
-  text2:        '#3a382f',
-  text3:        '#6b6a5f',
-  text4:        '#9a9789',
-  text5:        '#cbc8bb',
+  // Neutral
+  bg:           '#f5f7fa',
+  surface:      '#ffffff',
+  border:       '#f1f5f9',
+  border2:      '#e2e8f0',
+  text:         '#0f172a',
+  text2:        '#334155',
+  text3:        '#64748b',
+  text4:        '#94a3b8',
+  text5:        '#cbd5e1',
 }
 
 export const radius = {
@@ -50,7 +50,6 @@ export const shadow = {
 
 export const font = {
   family: "'IBM Plex Sans Arabic', system-ui, sans-serif",
-  mono:   "'IBM Plex Mono', monospace",
   xs:  '10px',
   sm:  '12px',
   base:'14px',

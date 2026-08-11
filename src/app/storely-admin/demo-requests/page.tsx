@@ -63,7 +63,7 @@ export default function DemoRequestsPage() {
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12}}>
                     <div>
                       <div style={{color:C.text, fontSize:16, fontWeight:700}}>{r.first_name} {r.last_name}</div>
-                      <div style={{color:C.text3, fontSize:12, marginTop:2}}>{new Date(r.created_at).toLocaleString('ar-SA')}</div>
+                      <div style={{color:C.text3, fontSize:12, marginTop:2}}>{new Date(r.created_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
                     </div>
                     {r.matched_org_id ? (
                       <div style={{background:isPaid?'#f0fdf4':'#eff6ff', border:`1px solid ${isPaid?'#bbf7d0':'#bfdbfe'}`, borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:800, color:isPaid?C.green:C.blue}}>

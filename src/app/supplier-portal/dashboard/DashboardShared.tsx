@@ -766,7 +766,7 @@ export default function SupplierDashboardShared() {
                       <div key={r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'#f5f5f4',borderRadius:10}}>
                         <div>
                           <div style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{r.org_name || 'عميل'}</div>
-                          <div style={{fontSize:11,color:'#888780'}}>{r.delivery_date || new Date(r.created_at).toLocaleDateString('ar-SA')}</div>
+                          <div style={{fontSize:11,color:'#888780'}}>{r.delivery_date || new Date(r.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'})}</div>
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:10}}>
                           <span style={{fontSize:13,fontWeight:800,color:'#1c1c1a'}}>{r.quoted_price} ر.س</span>
@@ -796,7 +796,7 @@ export default function SupplierDashboardShared() {
                       <span style={{fontSize:16}}>{ev.type==='order'?'📋':'💬'}</span>
                       <div style={{flex:1}}>
                         <div style={{fontSize:12,color:'#1c1c1a'}}>{ev.text}</div>
-                        <div style={{fontSize:10,color:'#888780',marginTop:2}}>{new Date(ev.at).toLocaleString('ar-SA')}</div>
+                        <div style={{fontSize:10,color:'#888780',marginTop:2}}>{new Date(ev.at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
                       </div>
                     </div>
                   ))}

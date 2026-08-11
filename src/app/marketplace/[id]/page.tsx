@@ -337,7 +337,7 @@ export default function SupplierStorefrontPage() {
                   <div style={{padding:'12px 16px',background:'#f8fafc',borderBottom:'1px solid #eef2f7',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                     <div style={{display:'flex',alignItems:'center',gap:8}}>
                       <span style={{fontSize:12,fontWeight:800,color:'#0f172a'}}>{orderNo}</span>
-                      <span style={{fontSize:11,color:'#94a3b8'}}>{new Date(r.created_at).toLocaleDateString('ar-SA')}</span>
+                      <span style={{fontSize:11,color:'#94a3b8'}}>{new Date(r.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'})}</span>
                     </div>
                     <span style={{fontSize:11,fontWeight:700,padding:'4px 12px',borderRadius:20,
                       background:r.status==='fulfilled'?'#dbeafe':r.status==='confirmed'?'#e0f2fe':r.status==='accepted'?'#dcfce7':r.status==='quoted'?'#fef3c7':'#f1f5f9',

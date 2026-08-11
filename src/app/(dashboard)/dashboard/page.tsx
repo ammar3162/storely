@@ -168,18 +168,14 @@ export default function DashboardPage() {
     <ErrorBoundary>
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',maxWidth:'100%',opacity:visible?1:0,transition:'opacity .3s'}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&display=swap');
         *{box-sizing:border-box}
         @keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
         .u{animation:up .35s ease both}
         .r{border-radius:14px}
-        .s{background:#fbfaf8;border:1px solid #e8e6e0;box-shadow:0 1px 3px rgba(20,20,15,.05),0 1px 2px rgba(20,20,15,.03)}
+        .s{background:#fff;border:1px solid #ebebea;box-shadow:0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)}
         .tap{transition:transform .12s,opacity .12s;cursor:pointer}
         .tap:active{transform:scale(.97);opacity:.85}
-        .rh:hover{background:#f7f6f2}
-        .mono{font-family:'IBM Plex Mono',monospace}
-        .stat-card{position:relative;overflow:hidden}
-        .stat-card::before{content:'';position:absolute;top:0;right:0;left:0;height:3px;background:var(--accent)}
+        .rh:hover{background:#f9f9f8}
         /* grid */
         .g4{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
         .g2{display:grid;grid-template-columns:1fr;gap:10px}
@@ -193,11 +189,11 @@ export default function DashboardPage() {
 
       {/* ── Header ── */}
       <div className="u" style={{marginBottom:20,animationDelay:'.04s'}}>
-        <div style={{fontSize:22,fontWeight:700,color:'#14140f',letterSpacing:'-0.4px',marginBottom:3}}>
+        <div style={{fontSize:22,fontWeight:700,color:'#1c1c1a',letterSpacing:'-0.4px',marginBottom:3}}>
           {greeting}، {userName||'مرحباً'}
         </div>
         <div style={{fontSize:12,color:'#888780'}}>
-          {orgName} · {new Date().toLocaleDateString('ar-SA',{weekday:'long',month:'long',day:'numeric'})}
+          {orgName} · {new Date().toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'})}
         </div>
       </div>
 
@@ -277,15 +273,15 @@ export default function DashboardPage() {
           {label:'شراء اليوم',val:stats.todayPurchases,  note:'فاتورة',       href:'/purchases', accent:'#378add', Icon:ShoppingCart},
           {label:'صرف اليوم', val:stats.todayDispenses,  note:'عملية',        href:'/dispense',  accent:'#ba7517', Icon:TrendingUp},
         ].map((s,i)=>(
-          <button key={i} onClick={()=>router.push(s.href)} className="s r tap stat-card"
-            style={{padding:'16px',textAlign:'right',fontFamily:'inherit',cursor:'pointer',animationDelay:`${.12+i*.04}s`,['--accent' as any]:s.accent}}>
+          <button key={i} onClick={()=>router.push(s.href)} className="s r tap"
+            style={{padding:'16px',textAlign:'right',fontFamily:'inherit',cursor:'pointer',animationDelay:`${.12+i*.04}s`}}>
             <div style={{width:32,height:32,borderRadius:9,background:s.accent+'14',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:10}}>
               <s.Icon size={16} color={s.accent} strokeWidth={2.2}/>
             </div>
-            <div className="mono" style={{fontSize:24,fontWeight:700,color:s.accent,letterSpacing:'-0.5px',lineHeight:1,marginBottom:6}}>
+            <div style={{fontSize:24,fontWeight:700,color:s.accent,letterSpacing:'-0.5px',lineHeight:1,marginBottom:6,fontVariantNumeric:'tabular-nums'}}>
               <Num value={s.val}/>
             </div>
-            <div style={{fontSize:12,fontWeight:500,color:'#14140f',marginBottom:2}}>{s.label}</div>
+            <div style={{fontSize:12,fontWeight:500,color:'#1c1c1a',marginBottom:2}}>{s.label}</div>
             <div style={{fontSize:10,color:'#888780'}}>{s.note}</div>
           </button>
         ))}
@@ -293,7 +289,7 @@ export default function DashboardPage() {
 
       {monthComp?.success&&(
         <div className="s r u" style={{padding:'14px 16px',marginBottom:14,animationDelay:'.16s'}}>
-          <div style={{fontSize:12,fontWeight:700,color:'#14140f',marginBottom:12}}>📈 أداء هذا الشهر مقارنة بالشهر الماضي</div>
+          <div style={{fontSize:12,fontWeight:700,color:'#1c1c1a',marginBottom:12}}>📈 أداء هذا الشهر مقارنة بالشهر الماضي</div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:10}}>
             {[
               {label:'المبيعات', value:monthComp.current.sales, change:monthComp.changes.sales, isMoney:true},
@@ -303,8 +299,8 @@ export default function DashboardPage() {
             ].map((m,i)=>(
               <div key={i} style={{padding:'10px 12px',background:'#f9f9f8',borderRadius:9}}>
                 <div style={{fontSize:10,color:'#888780',marginBottom:4}}>{m.label}</div>
-                <div className="mono" style={{fontSize:15,fontWeight:700,color:'#14140f'}}>
-                  {m.isMoney?Number(m.value).toLocaleString('ar-SA',{maximumFractionDigits:0})+' '+curr:m.value}
+                <div className="mono" style={{fontSize:15,fontWeight:700,color:'#1c1c1a'}}>
+                  {m.isMoney?Number(m.value).toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0})+' '+curr:m.value}
                 </div>
                 {m.change!==null&&(
                   <div style={{fontSize:10,fontWeight:600,color:m.change>=0?'#16a34a':'#e24b4a',marginTop:3}}>
@@ -373,7 +369,7 @@ export default function DashboardPage() {
               <div style={{width:8,height:8,borderRadius:'50%',background:m.type==='out'?'#e24b4a':'#16a34a',flexShrink:0}}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:12,fontWeight:500,color:'#1c1c1a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(m.products as any)?.name||'—'}</div>
-                <div style={{fontSize:10,color:'#888780',marginTop:1}}>{new Date(m.created_at).toLocaleDateString('ar-SA',{month:'short',day:'numeric'})}</div>
+                <div style={{fontSize:10,color:'#888780',marginTop:1}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric'})}</div>
               </div>
               <span style={{fontSize:12,fontWeight:600,color:m.type==='out'?'#e24b4a':'#16a34a',flexShrink:0,fontVariantNumeric:'tabular-nums'}}>
                 {m.qty_change>0?'+':''}{m.qty_change} <span style={{fontSize:10,fontWeight:400,color:'#888780'}}>{(m.products as any)?.unit}</span>

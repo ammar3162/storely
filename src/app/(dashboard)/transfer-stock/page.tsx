@@ -126,7 +126,7 @@ export default function TransferStockPage() {
           { header: 'الكمية', key: 'qty', align: 'left' },
         ],
         rows: filteredHistory.map((h:any) => ({
-          date: new Date(h.created_at).toLocaleDateString('ar-SA'),
+          date: new Date(h.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'}),
           product: (h.products as any)?.name || '—',
           from: branchName(h.branch_id),
           to: destBranchFromNote(h.note),
@@ -233,7 +233,7 @@ export default function TransferStockPage() {
             <div style={{fontSize:10,color:colors.primary,fontWeight:600}}>عدد عمليات النقل</div>
           </div>
           <div style={{...card,padding:'8px 14px',background:colors.infoLight,border:`1px solid ${colors.infoBorder}`,flex:1,textAlign:'center' as const}}>
-            <div style={{fontSize:16,fontWeight:900,color:colors.info}}>{totalQty.toLocaleString('ar')}</div>
+            <div style={{fontSize:16,fontWeight:900,color:colors.info}}>{totalQty.toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
             <div style={{fontSize:10,color:colors.info,fontWeight:600}}>إجمالي الكمية المنقولة</div>
           </div>
         </div>
@@ -252,7 +252,7 @@ export default function TransferStockPage() {
                 </div>
                 <div style={{display:'flex',alignItems:'center',gap:8}}>
                   <span style={{fontSize:12,fontWeight:700,color:colors.danger}}>-{Math.abs(h.qty_change)} {(h.products as any)?.unit}</span>
-                  <span style={{fontSize:10,color:colors.text4}}>{new Date(h.created_at).toLocaleDateString('ar-SA')}</span>
+                  <span style={{fontSize:10,color:colors.text4}}>{new Date(h.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'})}</span>
                 </div>
               </div>
             ))}

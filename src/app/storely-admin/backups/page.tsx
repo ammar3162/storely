@@ -72,7 +72,7 @@ export default function BackupsPage() {
                   <div key={j} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',background:'#0f172a',borderRadius:8}}>
                     <div>
                       <div style={{fontSize:13,color:C.text,fontWeight:600}}>{f.name}</div>
-                      <div style={{fontSize:11,color:C.text3,marginTop:2}}>{new Date(f.created_at).toLocaleString('ar-SA')} · {fmtSize(f.size)}</div>
+                      <div style={{fontSize:11,color:C.text3,marginTop:2}}>{new Date(f.created_at).toLocaleString('ar-SA', {numberingSystem:'latn'})} · {fmtSize(f.size)}</div>
                     </div>
                     {f.url && <a href={f.url} target="_blank" rel="noopener noreferrer" style={{padding:'6px 14px',background:C.green+'22',color:C.green,border:`1px solid ${C.green}44`,borderRadius:8,fontSize:12,fontWeight:700,textDecoration:'none'}}>⬇ تحميل</a>}
                   </div>
