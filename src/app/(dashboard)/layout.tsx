@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 
 import AIAssistant from '@/components/AIAssistant'
+import { toast } from '@/components/toast'
 import { colors as dsColors } from '@/lib/ds'
 
 // موحّد مع نظام التصميم المشترك (@/lib/ds)
@@ -194,7 +195,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     // إلغاء تلقائي لحذف الحساب المجدول — مجرد تسجيل الدخول يعتبر تراجع عن طلب الحذف
     if((p as any).organizations?.deletion_scheduled_at){
       await sb.from('organizations').update({ deletion_scheduled_at: null } as any).eq('id', (p as any).org_id)
-      alert('✅ تم إلغاء حذف حسابك المجدول تلقائياً — حسابك آمن ومستمر بشكل طبيعي.')
+      toast('✅ تم إلغاء حذف حسابك المجدول تلقائياً — حسابك آمن ومستمر بشكل طبيعي', 'success')
     }
     if((p as any).role==='owner'){
       try {
