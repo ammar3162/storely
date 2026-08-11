@@ -19,7 +19,16 @@ export default function SupplierPortalAuthPage() {
     e.preventDefault(); setLoading(true); setError('')
     const { error, data } = await sb.auth.signInWithPassword({ email, password })
     if (error) { setError('البريد أو كلمة المرور غير صحيحة'); setLoading(false); return }
-    if (data.session) window.location.href = '/supplier-portal/dashboard'
+    if (data.session) {
+      const { data: supplierProfile } = await sb
+        .from('supplier_profiles' as any).select('id').eq('id', data.session.user.id).single()
+      if (!supplierProfile) {
+        await sb.auth.signOut()
+        setError('هذا الحساب غير مسجّل كمورد — تأكد من البريد أو أنشئ حساب مورد جديد')
+        setLoading(false); return
+      }
+      window.location.href = '/supplier-portal/dashboard'
+    }
   }
 
   async function handleRegister(e: React.FormEvent) {
