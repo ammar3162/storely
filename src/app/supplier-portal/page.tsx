@@ -175,7 +175,7 @@ export default function SupplierPortalAuthPage() {
             </p>
 
             <div style={{position:'relative',borderRadius:16,overflow:'hidden',boxShadow:'0 16px 40px rgba(15,23,42,.12)',marginBottom:24}}>
-              <img src="/storely-team.jpg" alt="Storely" style={{width:'100%',display:'block',objectFit:'cover'}}/>
+              <img src="/supplier-team.jpg" alt="Storely" style={{width:'100%',display:'block',objectFit:'cover'}}/>
             </div>
 
             <div style={{display:'flex',flexDirection:'column',gap:11,marginTop:24}}>
