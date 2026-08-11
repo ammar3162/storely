@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import { sanitizeShortText } from '@/lib/sanitize'
 import { formatPhone } from '@/lib/whatsapp'
 import { currencyForDialCode } from '@/lib/currencyByCountry'
@@ -11,9 +12,23 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
-    let { userId, orgName, fullPhone, businessType, branchCount, phone, trialEnds, countryCode, termsAcceptedAt } = await req.json()
+    // تحقق من هوية المتصل الفعلية عبر جلسته الموثوقة (كوكيز) — لا نثق بأي userId قادم من body
+    const authClient = await createServerClient()
+    const { data: { user: authedUser } } = await authClient.auth.getUser()
+    if (!authedUser) {
+      return NextResponse.json({ error: 'غير مصرح — سجّل الدخول أولاً' }, { status: 401 })
+    }
+
+    let { orgName, fullPhone, businessType, branchCount, phone, trialEnds, countryCode, termsAcceptedAt } = await req.json()
+    const userId = authedUser.id
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null
     const userAgent = req.headers.get('user-agent') || null
+
+    // امنع إعادة التسجيل فوق حساب مربوط بمنشأة موجودة فعلاً
+    const { data: existingProfile } = await sb().from('profiles').select('org_id').eq('id', userId).maybeSingle()
+    if (existingProfile?.org_id) {
+      return NextResponse.json({ error: 'هذا الحساب مسجّل بمنشأة بالفعل' }, { status: 400 })
+    }
 
     orgName = sanitizeShortText(orgName, 150)
     fullPhone = formatPhone(sanitizeShortText(fullPhone, 20))
