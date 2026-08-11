@@ -115,25 +115,31 @@ export default function ProfitabilityPage() {
     setExporting(true)
     try {
       const rows = [
-        ...fixedList.map((e:any)=>({name:e.name, type:'ثابت', amount: Number(e.amount).toFixed(0)+' '+curr})),
-        ...variableList.map((e:any)=>({name:e.name, type:'متغيّر', amount: Number(e.amount).toFixed(0)+' '+curr})),
+        {name:`المبيعات (${data.closingsCount} إقفال كاشير)`, type:'إيرادات', amount: Math.round(data.totalIn).toLocaleString('en-US')+' '+curr},
+        {name:'الضريبة على المبيعات (تقديري)', type:'إيرادات', amount: Math.round(vatAmount).toLocaleString('en-US')+' '+curr},
+        {name:'مشتريات المخزون', type:'مشتريات', amount: Math.round(data.inventoryPurchases).toLocaleString('en-US')+' '+curr},
+        {name:'مشتريات أخرى', type:'مشتريات', amount: Math.round(data.otherPurchases).toLocaleString('en-US')+' '+curr},
+        ...fixedList.map((e:any)=>({name:e.name, type:'مصروف ثابت', amount: Number(e.amount).toFixed(0)+' '+curr})),
+        ...variableList.map((e:any)=>({name:e.name, type:'مصروف متغيّر', amount: Number(e.amount).toFixed(0)+' '+curr})),
       ]
       await exportReportPdf({
         title: 'تقرير الربحية الشهرية',
-        subtitle: monthLabel(month),
+        subtitle: `${monthLabel(month)}${data.closed?' — مقفل '+new Date(data.closedAt).toLocaleDateString('ar-SA',{numberingSystem:'latn',day:'numeric',month:'long',year:'numeric'}):''}`,
         orgName: '',
         columns: [
-          {header:'اسم المصروف', key:'name', align:'right'},
-          {header:'النوع', key:'type', align:'center'},
+          {header:'البند', key:'name', align:'right'},
+          {header:'التصنيف', key:'type', align:'center'},
           {header:'المبلغ', key:'amount', align:'left'},
         ],
         rows,
         summaryStats: [
           {label:'المبيعات', value: Math.round(data.totalIn).toLocaleString('en-US')+' '+curr},
-          {label:'المشتريات', value: Math.round(data.totalPurchases).toLocaleString('en-US')+' '+curr},
+          {label:'إجمالي المشتريات', value: Math.round(data.totalPurchases).toLocaleString('en-US')+' '+curr},
           {label:'إجمالي المصروفات', value: Math.round(fixedTotal+variableTotal).toLocaleString('en-US')+' '+curr},
+          {label:'الضريبة (تقديري)', value: Math.round(vatAmount).toLocaleString('en-US')+' '+curr},
           {label:'صافي الربح', value: Math.round(data.netProfit).toLocaleString('en-US')+' '+curr, color: data.netProfit>=0?'#16a34a':'#dc2626'},
         ],
+        totalsRow: {name:'الصافي', type:'', amount: Math.round(data.netProfit).toLocaleString('en-US')+' '+curr},
         fileName: `الربحية_${month}.pdf`,
       })
     } finally { setExporting(false) }
@@ -142,9 +148,11 @@ export default function ProfitabilityPage() {
   function exportCsv() {
     if(!data) return
     const rows: string[][] = [
-      ['البند','النوع','المبلغ'],
-      ['المبيعات','—', Math.round(data.totalIn).toString()],
-      ['المشتريات','—', Math.round(data.totalPurchases).toString()],
+      ['البند','التصنيف','المبلغ'],
+      [`المبيعات (${data.closingsCount} إقفال كاشير)`,'إيرادات', Math.round(data.totalIn).toString()],
+      ['الضريبة على المبيعات (تقديري)','إيرادات', Math.round(vatAmount).toString()],
+      ['مشتريات المخزون','مشتريات', Math.round(data.inventoryPurchases).toString()],
+      ['مشتريات أخرى','مشتريات', Math.round(data.otherPurchases).toString()],
       ...fixedList.map((e:any)=>[e.name,'مصروف ثابت', Number(e.amount).toFixed(0)]),
       ...variableList.map((e:any)=>[e.name,'مصروف متغيّر', Number(e.amount).toFixed(0)]),
       ['صافي الربح','—', Math.round(data.netProfit).toString()],
