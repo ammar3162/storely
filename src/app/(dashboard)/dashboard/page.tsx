@@ -266,10 +266,10 @@ export default function DashboardPage() {
       )}
 
       {/* ── Stats (Bento) ── */}
-      <div className="u" style={{display:'grid',gridTemplateColumns:'1.3fr 1fr',gap:8,marginBottom:14,animationDelay:'.1s'}}>
+      <div className="u" style={{display:'grid',gridTemplateColumns:'1.3fr 1fr',gap:8,marginBottom:14,animationDelay:'.1s',alignItems:'stretch'}}>
         {/* Hero card — الأصناف */}
         <button onClick={()=>router.push('/inventory')} className="tap"
-          style={{background:'#14140f',borderRadius:20,padding:20,position:'relative',overflow:'hidden',border:'none',textAlign:'right',fontFamily:'inherit',cursor:'pointer'}}>
+          style={{background:'#14140f',borderRadius:20,padding:20,position:'relative',overflow:'hidden',border:'none',textAlign:'right',fontFamily:'inherit',cursor:'pointer',display:'flex',flexDirection:'column',justifyContent:'center'}}>
           <div style={{position:'absolute',top:-30,left:-30,width:120,height:120,borderRadius:'50%',background:'rgba(22,163,74,.18)'}}/>
           <div style={{position:'relative'}}>
             <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:14}}>
