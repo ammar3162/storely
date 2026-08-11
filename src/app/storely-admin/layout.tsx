@@ -31,6 +31,7 @@ const NAV_GROUPS = [
     items: [
       { href: '/storely-admin/audit-log', label: 'سجل التدقيق', icon: '📜' },
       { href: '/storely-admin/consent-logs', label: 'سجلات الموافقة', icon: '✅' },
+      { href: '/storely-admin/duplicate-registrations', label: 'تسجيلات مشبوهة', icon: '🕵️' },
       { href: '/storely-admin/health', label: 'صحة النظام', icon: '🩺' },
       { href: '/storely-admin/monitoring', label: 'المراقبة', icon: '👁️' },
     ],

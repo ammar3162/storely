@@ -39,6 +39,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
 
+    // منع رقم الجوال المكرر — تحقق حقيقي على مستوى الخادم (مو بس بالواجهة اللي ممكن تتجاوز)
+    const { data: existingPhoneProfile } = await sb().from('profiles').select('id').eq('phone', phone).maybeSingle()
+    if (existingPhoneProfile) {
+      return NextResponse.json({ error: 'رقم الجوال هذا مرتبط بحساب آخر — استخدم رقماً مختلفاً' }, { status: 409 })
+    }
+
     const supabase = sb()
     const { data: settingsRow } = await supabase.from('platform_settings').select('terms_version').eq('id', 1).single()
     const TERMS_VERSION = (settingsRow as any)?.terms_version || '2026-06-b'
