@@ -57,10 +57,6 @@ export async function deleteOrgCompletely(orgId: string, userId?: string): Promi
   const r7 = await supabase.from('branches').delete().eq('org_id', orgId)
   if (r7.error) errors.push(`branches: ${r7.error.message}`)
 
-  // 6) الملف الشخصي
-  const { error: profileErr } = await supabase.from('profiles').delete().eq('org_id', orgId)
-  if (profileErr) errors.push(`profiles: ${profileErr.message}`)
-
   // حذف ملفات النسخ الاحتياطي من التخزين قبل حذف المؤسسة
   try {
     const { data: backupFiles } = await supabase.storage.from('backups').list(orgId)
@@ -69,7 +65,14 @@ export async function deleteOrgCompletely(orgId: string, userId?: string): Promi
     }
   } catch (e: any) { errors.push(`backups storage: ${e.message}`) }
 
-  // 7) المؤسسة نفسها — آخر خطوة، وبس لو كل شي قبلها نجح
+  // 6+7) الملف الشخصي والمؤسسة نفسها — خطوتين أخيرتين مترابطتين، وبس لو كل شي قبلهم نجح
+  // (قبل هذا الإصلاح: كان حذف profiles ينفّذ بدون شرط، فلو فشلت خطوة سابقة كان يبقى صف
+  // organizations "يتيم" بدون صاحب حساب يقدر يعيد محاولة الحذف — راجع سجل الحوادث)
+  if (errors.length === 0) {
+    const { error: profileErr } = await supabase.from('profiles').delete().eq('org_id', orgId)
+    if (profileErr) errors.push(`profiles: ${profileErr.message}`)
+  }
+
   if (errors.length === 0) {
     const { error: orgErr } = await supabase.from('organizations').delete().eq('id', orgId)
     if (orgErr) errors.push(`organizations: ${orgErr.message}`)
