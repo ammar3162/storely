@@ -265,43 +265,26 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── Stats (Bento) ── */}
-      <div className="u" style={{display:'grid',gridTemplateColumns:'1.3fr 1fr',gap:8,marginBottom:14,animationDelay:'.1s',alignItems:'stretch'}}>
-        {/* Hero card — الأصناف */}
-        <button onClick={()=>router.push('/inventory')} className="tap"
-          style={{background:'#14140f',borderRadius:20,padding:20,position:'relative',overflow:'hidden',border:'none',textAlign:'right',fontFamily:'inherit',cursor:'pointer',display:'flex',flexDirection:'column',justifyContent:'center'}}>
-          <div style={{position:'absolute',top:-30,left:-30,width:120,height:120,borderRadius:'50%',background:'rgba(22,163,74,.18)'}}/>
-          <div style={{position:'relative'}}>
-            <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:14}}>
-              <Package size={14} color="#8fd67f" strokeWidth={2}/>
-              <span style={{fontSize:12,color:'rgba(255,255,255,.6)'}}>الأصناف بالمخزون</span>
+      {/* ── Stats ── */}
+      <div className="g4 u" style={{marginBottom:14,animationDelay:'.1s'}}>
+        {[
+          {label:'الأصناف',    val:stats.products,       note:'في المخزون',   href:'/inventory', accent:'#16a34a', Icon:Package},
+          {label:'ناقص',      val:stats.lowStock,        note:`${stats.outOfStock} نفدت`,href:'/inventory',accent:'#e24b4a', Icon:AlertTriangle},
+          {label:'شراء اليوم',val:stats.todayPurchases,  note:'فاتورة',       href:'/purchases', accent:'#378add', Icon:ShoppingCart},
+          {label:'صرف اليوم', val:stats.todayDispenses,  note:'عملية',        href:'/dispense',  accent:'#ba7517', Icon:TrendingUp},
+        ].map((s,i)=>(
+          <button key={i} onClick={()=>router.push(s.href)} className="s r tap"
+            style={{padding:'16px',textAlign:'right',fontFamily:'inherit',cursor:'pointer',animationDelay:`${.12+i*.04}s`}}>
+            <div style={{width:30,height:30,borderRadius:8,background:s.accent+'14',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:10}}>
+              <s.Icon size={15} color={s.accent} strokeWidth={2}/>
             </div>
-            <div style={{fontSize:34,fontWeight:700,color:'white',letterSpacing:'-1px',lineHeight:1,fontVariantNumeric:'tabular-nums'}}>
-              <Num value={stats.products}/>
+            <div style={{fontSize:24,fontWeight:700,color:'#1c1c1a',letterSpacing:'-0.5px',lineHeight:1,marginBottom:6,fontVariantNumeric:'tabular-nums'}}>
+              <Num value={s.val}/>
             </div>
-            <div style={{fontSize:12,color:'rgba(255,255,255,.45)',marginTop:6}}>صنف نشط بهذا الفرع</div>
-          </div>
-        </button>
-
-        {/* عمود جانبي — 3 بطاقات مكدّسة */}
-        <div style={{display:'flex',flexDirection:'column',gap:8}}>
-          {[
-            {label:'ناقص',      val:stats.lowStock,       href:'/inventory', accent:'#e24b4a', bg:'#fef2f2', Icon:AlertTriangle},
-            {label:'شراء اليوم',val:stats.todayPurchases, href:'/purchases', accent:'#378add', bg:'#eff6ff', Icon:ShoppingCart},
-            {label:'صرف اليوم', val:stats.todayDispenses, href:'/dispense',  accent:'#ba7517', bg:'#fffbeb', Icon:TrendingUp},
-          ].map((s,i)=>(
-            <button key={i} onClick={()=>router.push(s.href)} className="tap"
-              style={{background:s.bg,borderRadius:16,padding:'12px 14px',flex:1,display:'flex',flexDirection:'column',justifyContent:'space-between',border:'none',textAlign:'right',fontFamily:'inherit',cursor:'pointer',animationDelay:`${.12+i*.04}s`}}>
-              <s.Icon size={16} color={s.accent} strokeWidth={2}/>
-              <div>
-                <div className="mono" style={{fontSize:20,fontWeight:700,color:s.accent,lineHeight:1}}>
-                  <Num value={s.val}/>
-                </div>
-                <div style={{fontSize:10,color:s.accent,marginTop:4,opacity:.85}}>{s.label}</div>
-              </div>
-            </button>
-          ))}
-        </div>
+            <div style={{fontSize:12,fontWeight:500,color:'#1c1c1a',marginBottom:2}}>{s.label}</div>
+            <div style={{fontSize:10,color:'#888780'}}>{s.note}</div>
+          </button>
+        ))}
       </div>
 
       {monthComp?.success&&(
@@ -366,7 +349,7 @@ export default function DashboardPage() {
                   <span style={{fontSize:12,fontWeight:500,color:'#1c1c1a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:160}}>{p.name}</span>
                   <span style={{fontSize:11,fontWeight:600,color:col,flexShrink:0,fontVariantNumeric:'tabular-nums'}}>{p.qty}/{p.reorder_point} {p.unit}</span>
                 </div>
-                <div style={{height:6,background:'#f0f0ee',borderRadius:99,overflow:'hidden'}}>
+                <div style={{height:3,background:'#f0f0ee',borderRadius:99,overflow:'hidden'}}>
                   <div style={{height:'100%',width:pct+'%',background:col,borderRadius:99,transition:'width .5s'}}/>
                 </div>
               </div>
@@ -396,19 +379,21 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Quick actions (pills) ── */}
-      <div className="u" style={{display:'flex',gap:8,overflowX:'auto',animationDelay:'.28s',paddingBottom:2}}>
+      {/* ── Quick actions ── */}
+      <div className="gq u" style={{animationDelay:'.28s'}}>
         {[
           {label:'إضافة منتج',  href:'/inventory', icon:'M12 4v16m8-8H4',            color:'#16a34a'},
           {label:'تسجيل شراء', href:'/purchases', icon:'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z', color:'#378add'},
           {label:'تسجيل صرف',  href:'/dispense',  icon:'M17 8l4 4m0 0l-4 4m4-4H3',  color:'#e24b4a'},
           {label:'التقارير',   href:'/reports',   icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',color:'#ba7517'},
         ].map((b,i)=>(
-          <button key={i} onClick={()=>router.push(b.href)} className="s tap"
-            style={{borderRadius:99,padding:'10px 16px',display:'flex',alignItems:'center',gap:8,fontFamily:'inherit',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
-            <svg width={15} height={15} fill="none" stroke={b.color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-              {b.icon.split(' M').map((d,j)=><path key={j} d={(j===0?'':' M')+d}/>)}
-            </svg>
+          <button key={i} onClick={()=>router.push(b.href)} className="s r tap"
+            style={{padding:'13px 16px',display:'flex',alignItems:'center',gap:12,textAlign:'right',fontFamily:'inherit',cursor:'pointer'}}>
+            <div style={{width:32,height:32,borderRadius:8,background:b.color+'12',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <svg width={15} height={15} fill="none" stroke={b.color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                {b.icon.split(' M').map((d,j)=><path key={j} d={(j===0?'':' M')+d}/>)}
+              </svg>
+            </div>
             <span style={{fontSize:12,fontWeight:500,color:'#1c1c1a'}}>{b.label}</span>
           </button>
         ))}
