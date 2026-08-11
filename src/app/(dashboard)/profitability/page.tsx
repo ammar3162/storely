@@ -2,10 +2,12 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { currencySymbol } from '@/lib/currencySymbol'
-import { colors, radius, shadow, font, card, btnPrimary, inp, pageTitle, pageSub } from '@/lib/ds'
+import { colors, radius, font, card, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { cache } from '@/lib/cache'
 import { exportReportPdf } from '@/lib/pdfExport'
+
+const ARABIC_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
 
 function currentMonth() {
   const now = new Date()
@@ -23,6 +25,11 @@ function pctChange(curr: number, prev: number): number | null {
   return Math.round(((curr - prev) / Math.abs(prev)) * 100)
 }
 
+function monthLabel(m: string) {
+  const [y, mo] = m.split('-').map(Number)
+  return `${ARABIC_MONTHS[mo-1]} ${y}`
+}
+
 export default function ProfitabilityPage() {
   const [month, setMonth] = useState(currentMonth())
   const [orgId, setOrgId] = useState('')
@@ -33,6 +40,7 @@ export default function ProfitabilityPage() {
   const [prevData, setPrevData] = useState<any>(null)
   const [closing, setClosing] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [closedMonths, setClosedMonths] = useState<any[]>([])
 
   const [newTplName, setNewTplName] = useState('')
   const [newTplAmount, setNewTplAmount] = useState('')
@@ -45,7 +53,7 @@ export default function ProfitabilityPage() {
   const sb = createClient()
 
   useEffect(()=>{ init() },[])
-  useEffect(()=>{ if(orgId) loadAll() },[orgId, month])
+  useEffect(()=>{ if(orgId) { loadAll(); loadClosedMonths() } },[orgId, month])
 
   async function init() {
     let oid = sessionStorage.getItem('s_org_id')
@@ -58,6 +66,13 @@ export default function ProfitabilityPage() {
     }
     setOrgId(oid!)
     sb.from('organizations').select('currency').eq('id',oid!).single().then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
+  }
+
+  async function loadClosedMonths() {
+    const bid = sessionStorage.getItem('s_branch_id')
+    const res = await fetch(`/api/profitability/closed-months?org_id=${orgId}${bid?`&branch_id=${bid}`:''}`)
+    const j = await res.json()
+    if(j.success) setClosedMonths(j.months||[])
   }
 
   async function loadAll() {
@@ -76,7 +91,6 @@ export default function ProfitabilityPage() {
     else if(!cached) { toast(json.error||'تعذر تحميل البيانات','error'); setData(null) }
     setLoading(false)
 
-    // جيب بيانات الشهر السابق بصمت للمقارنة (بدون تأثير على شاشة التحميل)
     const pm = prevMonthOf(month)
     fetch(`/api/profitability?org_id=${orgId}&month=${pm}${bid?`&branch_id=${bid}`:''}`)
       .then(r=>r.json()).then(pj=>{ if(pj.success) setPrevData(pj); else setPrevData(null) })
@@ -84,7 +98,7 @@ export default function ProfitabilityPage() {
   }
 
   async function closeMonth() {
-    if(!confirm(`تأكيد إقفال شهر ${month}؟\n\nبعد الإقفال ما راح تقدر تضيف أو تحذف مصروفات لهذا الشهر، وأرقامه بتصير ثابتة حتى لو تغيّرت بيانات المشتريات لاحقاً.`)) return
+    if(!confirm(`تأكيد إقفال شهر ${monthLabel(month)}؟\n\nبعد الإقفال ما راح تقدر تضيف أو تحذف مصروفات لهذا الشهر، وأرقامه بتصير ثابتة حتى لو تغيّرت بيانات المشتريات لاحقاً.`)) return
     setClosing(true)
     const res = await fetch('/api/profitability', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -92,7 +106,7 @@ export default function ProfitabilityPage() {
     })
     const j = await res.json()
     setClosing(false)
-    if(j.success){ toast('🔒 تم إقفال الشهر بنجاح'); cache.invalidate('profitability:'); loadAll() }
+    if(j.success){ toast('🔒 تم إقفال الشهر بنجاح'); cache.invalidate('profitability:'); loadAll(); loadClosedMonths() }
     else toast(j.error||'خطأ','error')
   }
 
@@ -106,7 +120,7 @@ export default function ProfitabilityPage() {
       ]
       await exportReportPdf({
         title: 'تقرير الربحية الشهرية',
-        subtitle: `شهر ${month}`,
+        subtitle: monthLabel(month),
         orgName: '',
         columns: [
           {header:'اسم المصروف', key:'name', align:'right'},
@@ -190,41 +204,38 @@ export default function ProfitabilityPage() {
   const fixedTotal = fixedList.reduce((s:number,e:any)=>s+Number(e.amount||0),0)
   const variableTotal = variableList.reduce((s:number,e:any)=>s+Number(e.amount||0),0)
   const vatAmount = data ? data.totalIn - (data.totalIn/1.15) : 0
+  const totalExpenses = fixedTotal + variableTotal
+  const netColor = data && data.netProfit>=0 ? '#16a34a' : '#dc2626'
 
   return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <div style={{marginBottom:20}}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} .pf-scroll::-webkit-scrollbar{height:0}`}</style>
+      <div style={{marginBottom:16}}>
         <h1 style={{...pageTitle}}>الربحية الشهرية</h1>
-        <p style={{...pageSub}}>المبيعات، المشتريات، والمصروفات الثابتة والمتغيرة — كلها تتحدّث تلقائياً</p>
+        <p style={{...pageSub}}>المبيعات، المشتريات، والمصروفات — تتحدّث تلقائياً</p>
       </div>
 
-      <div style={{marginBottom:20,display:'flex',alignItems:'flex-end',gap:10,flexWrap:'wrap' as const}}>
-        <div>
-          <label style={{fontSize:12,fontWeight:700,color:colors.text4,display:'block',marginBottom:6}}>الشهر</label>
-          <input type="month" value={month} onChange={e=>setMonth(e.target.value)} style={{...inp(),width:200}}/>
-        </div>
-
-        {data && (
-          <>
-            {data.closed ? (
-              <div style={{display:'flex',alignItems:'center',gap:6,padding:'10px 14px',background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`,borderRadius:radius.md,fontSize:12,fontWeight:700,color:colors.primary}}>
-                🔒 مقفل — {new Date(data.closedAt).toLocaleDateString('ar-SA', {numberingSystem:'latn',day:'numeric',month:'long',year:'numeric'})}
+      {/* شريط الأشهر المقفلة */}
+      <div className="pf-scroll" style={{display:'flex',gap:8,overflowX:'auto',marginBottom:16,paddingBottom:2}}>
+        {closedMonths.map((cm:any)=>{
+          const cmMonth = cm.month.slice(0,7)
+          const active = cmMonth === month
+          const positive = cm.net_profit >= 0
+          return (
+            <button key={cm.month} onClick={()=>setMonth(cmMonth)}
+              style={{background: active ? '#14140f' : colors.surface, border:`1px solid ${active?'#14140f':colors.border2}`,borderRadius:14,padding:'10px 16px',flexShrink:0,minWidth:110,textAlign:'right' as const,cursor:'pointer',fontFamily:font.family}}>
+              <div style={{fontSize:11,color:active?'rgba(255,255,255,.55)':colors.text4}}>{monthLabel(cmMonth)}</div>
+              <div style={{fontSize:14,fontWeight:700,color:active?'white':(positive?colors.primary:colors.danger),marginTop:4}}>
+                {Math.round(cm.net_profit).toLocaleString('en-US')} {curr}
               </div>
-            ) : (
-              <button onClick={closeMonth} disabled={closing} style={{...btnPrimary,padding:'10px 16px'}}>
-                {closing?'⏳ جاري الإقفال...':'🔒 إقفال الشهر'}
-              </button>
-            )}
-
-            <button onClick={exportPdf} disabled={exporting} style={{display:'flex',alignItems:'center',gap:6,padding:'10px 16px',background:colors.surface,border:`1.5px solid ${colors.border2}`,borderRadius:radius.md,fontSize:12,fontWeight:700,color:colors.text2,cursor:'pointer',fontFamily:font.family}}>
-              📄 PDF
+              <div style={{fontSize:9,color:active?'rgba(255,255,255,.45)':colors.text4,marginTop:2}}>🔒 مقفل</div>
             </button>
-            <button onClick={exportCsv} style={{display:'flex',alignItems:'center',gap:6,padding:'10px 16px',background:colors.surface,border:`1.5px solid ${colors.border2}`,borderRadius:radius.md,fontSize:12,fontWeight:700,color:colors.text2,cursor:'pointer',fontFamily:font.family}}>
-              📊 CSV
-            </button>
-          </>
-        )}
+          )
+        })}
+        <div>
+          <label style={{fontSize:9,color:colors.text4,display:'block',marginBottom:2}}>اختر شهر آخر</label>
+          <input type="month" value={month} onChange={e=>setMonth(e.target.value)} style={{...inp(),padding:'9px 10px',fontSize:12,minWidth:130}}/>
+        </div>
       </div>
 
       {loading ? (
@@ -233,42 +244,72 @@ export default function ProfitabilityPage() {
         </div>
       ) : data && (
         <>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:10,marginBottom:20}}>
+        {/* بطاقة صافي الربح الرئيسية */}
+        <div style={{...card,padding:20,marginBottom:10,display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap' as const,gap:14}}>
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6,flexWrap:'wrap' as const}}>
+              <span style={{fontSize:13,color:colors.text3}}>صافي الربح — {monthLabel(month)}</span>
+              {data.closed ? (
+                <span style={{fontSize:10,fontWeight:700,color:colors.danger,background:colors.dangerLight,padding:'2px 8px',borderRadius:99}}>
+                  🔒 مقفل {new Date(data.closedAt).toLocaleDateString('ar-SA', {numberingSystem:'latn',day:'numeric',month:'long'})}
+                </span>
+              ) : (
+                <button onClick={closeMonth} disabled={closing} style={{fontSize:10,fontWeight:700,color:colors.text2,background:colors.bg,border:`1px solid ${colors.border2}`,padding:'3px 10px',borderRadius:99,cursor:'pointer',fontFamily:font.family}}>
+                  {closing?'⏳ جاري الإقفال...':'🔒 إقفال الشهر'}
+                </button>
+              )}
+            </div>
+            <div style={{fontSize:30,fontWeight:800,color:netColor,letterSpacing:'-0.5px'}}>
+              {Math.round(data.netProfit).toLocaleString('en-US')} {curr}
+            </div>
+          </div>
+          <div style={{display:'flex',gap:8}}>
+            <button onClick={exportPdf} disabled={exporting} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 16px',background:colors.surface,border:`1px solid ${colors.border2}`,borderRadius:99,fontSize:12,fontWeight:600,color:colors.text2,cursor:'pointer',fontFamily:font.family}}>
+              📄 PDF
+            </button>
+            <button onClick={exportCsv} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 16px',background:colors.surface,border:`1px solid ${colors.border2}`,borderRadius:99,fontSize:12,fontWeight:600,color:colors.text2,cursor:'pointer',fontFamily:font.family}}>
+              📊 CSV
+            </button>
+          </div>
+        </div>
+
+        {/* صف المقاييس */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:16,alignItems:'start'}}>
           {[
-            {label:'المبيعات',value:data.totalIn,prev:prevData?.totalIn,color:colors.primary,bg:colors.primaryLight,border:colors.primaryBorder},
-            {label:'الضريبة (تقديري)',value:vatAmount,prev:prevData?(prevData.totalIn-(prevData.totalIn/1.15)):undefined,color:colors.warning,bg:colors.warningLight,border:colors.warningBorder},
-            {label:'المشتريات',value:data.totalPurchases,prev:prevData?.totalPurchases,color:colors.info,bg:colors.infoLight,border:colors.infoBorder},
-            {label:'إجمالي المصروفات',value:fixedTotal+variableTotal,prev:prevData?(prevData.fixedExpensesTotal):undefined,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
-            {label:'صافي الربح',value:data.netProfit,prev:prevData?.netProfit,color:data.netProfit>=0?colors.primary:colors.danger,bg:data.netProfit>=0?colors.primaryLight:colors.dangerLight,border:data.netProfit>=0?colors.primaryBorder:colors.dangerBorder},
+            {label:'المبيعات',value:data.totalIn,prev:prevData?.totalIn},
+            {label:'المشتريات',value:data.totalPurchases,prev:prevData?.totalPurchases},
+            {label:'إجمالي المصروفات',value:totalExpenses,prev:prevData?(prevData.fixedExpensesTotal):undefined},
+            {label:'الضريبة (تقديري)',value:vatAmount,prev:prevData?(prevData.totalIn-(prevData.totalIn/1.15)):undefined},
           ].map((s,i)=>{
             const change = (prevData && s.prev!==undefined) ? pctChange(s.value, s.prev) : null
             return (
-            <div key={i} style={{...card,padding:'14px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
-              <div style={{fontSize:16,fontWeight:900,color:s.color}}>{Math.round(s.value).toLocaleString('en-US')} {curr}</div>
-              <div style={{fontSize:font.xs,color:s.color,marginTop:4,fontWeight:600,opacity:.8}}>{s.label}</div>
-              {change!==null && (
-                <div style={{fontSize:10,fontWeight:700,marginTop:6,color:change>=0?colors.primary:colors.danger,background:colors.surface,display:'inline-block',padding:'2px 8px',borderRadius:99}}>
-                  {change>=0?'▲':'▼'} {Math.abs(change)}% عن الشهر الماضي
-                </div>
-              )}
-            </div>
+              <div key={i} style={{...card,padding:14}}>
+                <div style={{fontSize:11,color:colors.text3,marginBottom:6}}>{s.label}</div>
+                <div style={{fontSize:17,fontWeight:700,color:colors.text}}>{Math.round(s.value).toLocaleString('en-US')} {curr}</div>
+                {change!==null && (
+                  <div style={{fontSize:10,fontWeight:600,marginTop:5,color:change>=0?colors.primary:colors.danger}}>
+                    {change>=0?'▲':'▼'} {Math.abs(change)}% عن {monthLabel(prevMonthOf(month))}
+                  </div>
+                )}
+              </div>
             )
           })}
         </div>
 
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+        {/* المصروفات */}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,alignItems:'start'}}>
           <div style={{...card,padding:'16px 18px'}}>
-            <div style={{fontSize:font.base,fontWeight:800,color:colors.text,marginBottom:4}}>🏠 المصروفات الثابتة الدائمة</div>
+            <div style={{fontSize:font.base,fontWeight:700,color:colors.text,marginBottom:2}}>المصروفات الثابتة</div>
             <div style={{fontSize:11,color:colors.text4,marginBottom:14}}>رواتب، إيجار... تتكرر تلقائياً كل شهر</div>
             {!data.closed && (
             <div style={{display:'flex',gap:6,marginBottom:12}}>
               <input value={newTplName} onChange={e=>setNewTplName(e.target.value)} placeholder="اسم المصروف" style={{...inp(),flex:1}}/>
               <input type="number" value={newTplAmount} onChange={e=>setNewTplAmount(e.target.value)} placeholder="المبلغ" style={{...inp(),width:100}}/>
-              <button onClick={addTemplate} disabled={savingTpl} style={{...btnPrimary,padding:'0 14px'}}>{savingTpl?'...':'+'}</button>
+              <button onClick={addTemplate} disabled={savingTpl} style={{padding:'0 16px',background:colors.primary,color:'white',border:'none',borderRadius:radius.md,fontSize:14,fontWeight:700,cursor:'pointer'}}>{savingTpl?'...':'+'}</button>
             </div>
             )}
             {fixedList.length===0 ? (
-              <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>ما فيه مصروفات ثابتة مسجّلة</div>
+              <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:16}}>ما فيه مصروفات ثابتة مسجّلة</div>
             ) : (
               <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
                 {fixedList.map((e:any)=>(
@@ -285,17 +326,17 @@ export default function ProfitabilityPage() {
           </div>
 
           <div style={{...card,padding:'16px 18px'}}>
-            <div style={{fontSize:font.base,fontWeight:800,color:colors.text,marginBottom:4}}>⚡ مصروفات متغيرة لهذا الشهر</div>
+            <div style={{fontSize:font.base,fontWeight:700,color:colors.text,marginBottom:2}}>مصروفات متغيّرة</div>
             <div style={{fontSize:11,color:colors.text4,marginBottom:14}}>كهرباء، صيانة... تُدخل يدوياً كل شهر لحاله</div>
             {!data.closed && (
             <div style={{display:'flex',gap:6,marginBottom:12}}>
               <input value={newVarName} onChange={e=>setNewVarName(e.target.value)} placeholder="اسم المصروف" style={{...inp(),flex:1}}/>
               <input type="number" value={newVarAmount} onChange={e=>setNewVarAmount(e.target.value)} placeholder="المبلغ" style={{...inp(),width:100}}/>
-              <button onClick={addVariable} disabled={savingVar} style={{...btnPrimary,padding:'0 14px'}}>{savingVar?'...':'+'}</button>
+              <button onClick={addVariable} disabled={savingVar} style={{padding:'0 16px',background:colors.primary,color:'white',border:'none',borderRadius:radius.md,fontSize:14,fontWeight:700,cursor:'pointer'}}>{savingVar?'...':'+'}</button>
             </div>
             )}
             {variableList.length===0 ? (
-              <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>ما فيه مصروفات متغيرة هالشهر</div>
+              <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:16}}>ما فيه مصروفات متغيرة هالشهر</div>
             ) : (
               <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
                 {variableList.map((e:any)=>(
