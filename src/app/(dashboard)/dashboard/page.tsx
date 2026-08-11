@@ -172,7 +172,7 @@ export default function DashboardPage() {
         @keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
         .u{animation:up .35s ease both}
         .r{border-radius:14px}
-        .s{background:#fff;border:1px solid #ebebea;box-shadow:0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)}
+        .s{background:#fff;border:1px solid #e5e5e3}
         .tap{transition:transform .12s,opacity .12s;cursor:pointer}
         .tap:active{transform:scale(.97);opacity:.85}
         .rh:hover{background:#f9f9f8}
@@ -275,10 +275,10 @@ export default function DashboardPage() {
         ].map((s,i)=>(
           <button key={i} onClick={()=>router.push(s.href)} className="s r tap"
             style={{padding:'16px',textAlign:'right',fontFamily:'inherit',cursor:'pointer',animationDelay:`${.12+i*.04}s`}}>
-            <div style={{width:32,height:32,borderRadius:9,background:s.accent+'14',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:10}}>
-              <s.Icon size={16} color={s.accent} strokeWidth={2.2}/>
+            <div style={{width:30,height:30,borderRadius:8,background:s.accent+'14',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:10}}>
+              <s.Icon size={15} color={s.accent} strokeWidth={2}/>
             </div>
-            <div style={{fontSize:24,fontWeight:700,color:s.accent,letterSpacing:'-0.5px',lineHeight:1,marginBottom:6,fontVariantNumeric:'tabular-nums'}}>
+            <div style={{fontSize:24,fontWeight:700,color:'#1c1c1a',letterSpacing:'-0.5px',lineHeight:1,marginBottom:6,fontVariantNumeric:'tabular-nums'}}>
               <Num value={s.val}/>
             </div>
             <div style={{fontSize:12,fontWeight:500,color:'#1c1c1a',marginBottom:2}}>{s.label}</div>

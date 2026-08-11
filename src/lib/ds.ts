@@ -73,19 +73,18 @@ export const inp = (extra?: object): React.CSSProperties => ({
 export const card: React.CSSProperties = {
   background: colors.surface,
   borderRadius: radius.lg,
-  border: `1px solid ${colors.border}`,
-  boxShadow: shadow.sm,
+  border: `1px solid ${colors.border2}`,
   overflow: 'hidden',
 }
 
 export const btnPrimary: React.CSSProperties = {
   display:'flex', alignItems:'center', justifyContent:'center', gap:8,
   padding:'11px 20px',
-  background:`linear-gradient(135deg,${colors.primary},${colors.primaryDark})`,
+  background:colors.primary,
   color:'white', border:'none', borderRadius:radius.md,
   fontSize:font.base, fontWeight:700, cursor:'pointer',
   fontFamily:font.family,
-  boxShadow:shadow.green, transition:'all .15s',
+  transition:'background .15s',
 }
 
 export const btnSecondary: React.CSSProperties = {
