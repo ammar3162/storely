@@ -225,7 +225,7 @@ export default function StaffLoginPage() {
       </div>
 
       <div style={{fontSize:42,fontWeight:300,color:C.text,letterSpacing:2,marginBottom:8,fontVariantNumeric:'tabular-nums'}}>{time}</div>
-      <div style={{fontSize:13,color:C.text4,marginBottom:24}}>{new Date().toLocaleDateString('ar-SA',{weekday:'long',day:'numeric',month:'long'})}</div>
+      <div style={{fontSize:13,color:C.text4,marginBottom:24}}>{new Date().toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'long',day:'numeric',month:'long'})}</div>
 
       <div className={shake?'shake':''} style={{width:260,marginBottom:8}}>
         <div style={{fontSize:11,fontWeight:700,color:C.text3,marginBottom:8,textAlign:'center',textTransform:'uppercase',letterSpacing:'.06em'}}>

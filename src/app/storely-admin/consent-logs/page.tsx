@@ -73,7 +73,7 @@ export default function ConsentLogsPage() {
     if (logs.length === 0) return
     const headers = ['التاريخ والوقت', 'المؤسسة', 'الاسم', 'الجوال', 'نسخة الشروط', 'عنوان IP', 'الجهاز']
     const rows = logs.map(l => [
-      new Date(l.accepted_at).toLocaleString('ar-SA'),
+      new Date(l.accepted_at).toLocaleString('ar-SA', {numberingSystem:'latn'}),
       l.org_name, l.profile_name, l.profile_phone, l.terms_version, l.ip_address || '—', l.user_agent || '—',
     ])
     const csv = '\ufeff' + [headers, ...rows].map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n')
@@ -156,7 +156,7 @@ export default function ConsentLogsPage() {
               <tbody>
                 {logs.map((l,i)=>(
                   <tr key={l.id} style={{borderBottom:i<logs.length-1?`1px solid ${C.border}`:'none'}}>
-                    <td style={{padding:'10px 14px',color:C.text2,whiteSpace:'nowrap' as const}}>{new Date(l.accepted_at).toLocaleString('ar-SA')}</td>
+                    <td style={{padding:'10px 14px',color:C.text2,whiteSpace:'nowrap' as const}}>{new Date(l.accepted_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</td>
                     <td style={{padding:'10px 14px',color:C.text,fontWeight:600}}>{l.org_name}</td>
                     <td style={{padding:'10px 14px',color:C.text2}}>{l.profile_name}</td>
                     <td style={{padding:'10px 14px',color:C.text2,direction:'ltr' as const,textAlign:'right' as const}}>{l.profile_phone}</td>

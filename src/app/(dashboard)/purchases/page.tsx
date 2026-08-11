@@ -701,7 +701,7 @@ export default function PurchasesPage() {
                 <div style={{display:'flex',alignItems:'center',gap:8}}>
                   <span style={{fontSize:16}}>💰</span>
                   <div style={{textAlign:'right'}}>
-                    <div style={{fontSize:13,fontWeight:800,color:overdueCount>0?C.danger:C.text}}>{payables.length} فاتورة غير مدفوعة — {totalOwed.toLocaleString('ar',{maximumFractionDigits:0})} {curr}</div>
+                    <div style={{fontSize:13,fontWeight:800,color:overdueCount>0?C.danger:C.text}}>{payables.length} فاتورة غير مدفوعة — {totalOwed.toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0})} {curr}</div>
                     {overdueCount>0 && <div style={{fontSize:11,color:C.danger,fontWeight:700,marginTop:2}}>⚠️ {overdueCount} متأخرة عن موعد الاستحقاق</div>}
                   </div>
                 </div>
@@ -715,7 +715,7 @@ export default function PurchasesPage() {
                       <div key={supplierName} style={{border:`1px solid ${C.border}`,borderRadius:10,overflow:'hidden'}}>
                         <div style={{display:'flex',justifyContent:'space-between',padding:'8px 12px',background:C.bg,fontSize:12,fontWeight:700,color:C.text}}>
                           <span>{supplierName}</span>
-                          <span>{subtotal.toLocaleString('ar',{maximumFractionDigits:0})} {curr}</span>
+                          <span>{subtotal.toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0})} {curr}</span>
                         </div>
                         {items.map((p:any)=>{
                           const isOverdue = p.due_date && p.due_date < todayStr
@@ -731,7 +731,7 @@ export default function PurchasesPage() {
                                 )}
                               </div>
                               <div style={{display:'flex',alignItems:'center',gap:8}}>
-                                <span style={{fontWeight:700,color:C.text}}>{(p.total_amount||0).toLocaleString('ar',{maximumFractionDigits:0})} {curr}</span>
+                                <span style={{fontWeight:700,color:C.text}}>{(p.total_amount||0).toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0})} {curr}</span>
                                 <button onClick={()=>markPaid(p.id)} disabled={payingId===p.id}
                                   style={{padding:'4px 10px',borderRadius:7,border:`1px solid ${C.primaryB}`,background:C.primaryL,color:C.primary,fontSize:10,fontWeight:700,cursor:payingId===p.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:payingId===p.id?.6:1}}>
                                   {payingId===p.id?'...':'✓ دُفعت'}
@@ -811,7 +811,7 @@ export default function PurchasesPage() {
                       {p.qty&&<div style={{fontSize:11,color:C.text4,marginBottom:1}}>{p.qty} {p.unit}</div>}
                       <div style={{fontSize:10,color:C.text4,display:'flex',gap:8,flexWrap:'wrap'}}>
                         {p.supplier&&<span>🏪 {p.supplier}</span>}
-                        <span>{new Date(p.created_at).toLocaleDateString('ar-SA',{day:'numeric',month:'short'})}</span>
+                        <span>{new Date(p.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',day:'numeric',month:'short'})}</span>
                       </div>
                     </div>
                     <div style={{textAlign:'left',flexShrink:0,display:'flex',flexDirection:'column' as const,alignItems:'flex-end',gap:6}}>

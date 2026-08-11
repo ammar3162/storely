@@ -206,7 +206,7 @@ export default function AdminNotificationsPage() {
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
                       <span style={{background:tc.bg,color:tc.color,border:`1px solid ${tc.border}`,padding:'2px 8px',borderRadius:99,fontSize:10,fontWeight:600}}>{tc.label}</span>
-                      <span style={{fontSize:10,color:C.text4}}>{new Date(n.created_at).toLocaleDateString('ar-SA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span>
+                      <span style={{fontSize:10,color:C.text4}}>{new Date(n.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span>
                     </div>
                     <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:2}}>{n.title}</div>
                     <div style={{fontSize:11,color:C.text3}}>{n.message}</div>

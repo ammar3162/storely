@@ -445,7 +445,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:12,fontWeight:700,color:colors[e.type]||'#334155'}}>{e.title}</div>
                         {e.detail && <div style={{fontSize:11,color:'#64748b',marginTop:2}}>{e.detail}</div>}
-                        <div style={{fontSize:10,color:'#94a3b8',marginTop:3}}>{new Date(e.at).toLocaleDateString('ar-SA',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                        <div style={{fontSize:10,color:'#94a3b8',marginTop:3}}>{new Date(e.at).toLocaleDateString('ar-SA', {numberingSystem:'latn',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
                       </div>
                     </div>
                   )

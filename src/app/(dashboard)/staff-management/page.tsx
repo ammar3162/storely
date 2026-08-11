@@ -709,7 +709,7 @@ export default function StaffManagementPage() {
                       <span style={{fontSize:16}}>{c.status==='balanced'?'✅':c.status==='deficit'?'⚠️':'📈'}</span>
                     </div>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:13,fontWeight:600,color:'#1c1c1a'}}>{new Date(c.closing_date).toLocaleDateString('ar-SA',{weekday:'short',month:'short',day:'numeric'})}</div>
+                      <div style={{fontSize:13,fontWeight:600,color:'#1c1c1a'}}>{new Date(c.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'short',month:'short',day:'numeric'})}</div>
                       <div style={{fontSize:10,color:'#888780',marginTop:1}}>مبيعات {Number(c.total_sales).toFixed(0)} {curr} · شبكة {Number(c.network_amount).toFixed(0)} {curr}</div>
                     </div>
                     <div style={{fontSize:11,fontWeight:700,color:statusColor[c.status],flexShrink:0}}>
@@ -761,7 +761,7 @@ export default function StaffManagementPage() {
                   </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:600,color:'#1c1c1a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(m.products as any)?.name||'—'}</div>
-                    <div style={{fontSize:10,color:'#888780',marginTop:1}}>{new Date(m.created_at).toLocaleDateString('ar-SA',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                    <div style={{fontSize:10,color:'#888780',marginTop:1}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
                   </div>
                   <div style={{fontSize:11,fontWeight:600,color:'#e24b4a',flexShrink:0}}>
                     -{Math.abs(m.qty_change)} <span style={{fontSize:10,color:'#888780',fontWeight:400}}>{(m.products as any)?.unit}</span>

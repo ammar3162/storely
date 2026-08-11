@@ -67,7 +67,7 @@ export async function POST(req: Request) {
 
     const now = new Date()
     const timeStr = now.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Riyadh'})
-    const dateStr = now.toLocaleDateString('ar-SA',{weekday:'long',day:'numeric',month:'long',timeZone:'Asia/Riyadh'})
+    const dateStr = now.toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'long',day:'numeric',month:'long',timeZone:'Asia/Riyadh'})
     const msg = `🟠 *Storely — تنبيه هدر*\n\nمرحباً ${(org as any).name}،\n${branchLine}\n👤 *${staff_name}* سجّل هدر:\n• ${product_name} — *${qty} ${unit}*\n📋 السبب: *${waste_reason}*\n\n🕐 ${timeStr} · ${dateStr}`
 
     await fetch('https://www.wasenderapi.com/api/send-message', {
