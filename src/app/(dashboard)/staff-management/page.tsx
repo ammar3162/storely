@@ -193,7 +193,11 @@ export default function StaffManagementPage() {
   async function loadBranches(oid:string) {
     const{data}=await sb.from('branches').select('id,name').eq('org_id',oid).eq('is_active',true).order('created_at')
     setBranches(data||[])
-    if(data&&data.length>0) setNewBranch(data[0].id)
+    // خلّي الفرع الافتراضي هو الفرع النشط بالجلسة (اللي شغّال فيه المالك حالياً) —
+    // لا تفرض دايماً أول فرع بالقائمة (كان يوقع الموظفين دايماً بالفرع الرئيسي)
+    const activeBid = typeof window!=='undefined' ? sessionStorage.getItem('s_branch_id') : null
+    if (activeBid && (data||[]).some((b:any)=>b.id===activeBid)) setNewBranch(activeBid)
+    else if(data&&data.length>0) setNewBranch(data[0].id)
   }
 
   async function addStaff() {
