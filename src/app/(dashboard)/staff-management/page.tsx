@@ -449,7 +449,7 @@ export default function StaffManagementPage() {
                   <input value={newPhone} onChange={e=>setNewPhone(e.target.value)} style={{...inp(),direction:'ltr' as const,flex:1}} placeholder={staffCountry==='+966'?'5xxxxxxxx':staffCountry==='+20'?'1xxxxxxxxx':'xxxxxxxxxx'}/>
                 </div>
               </div>
-              {branches.length>1 && !(typeof window!=='undefined' && sessionStorage.getItem('s_branch_id')) && (
+              {branches.length>1 && (
                 <div>
                   <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>الفرع</label>
                   <select value={newBranch} onChange={e=>setNewBranch(e.target.value)} style={inp()}>
