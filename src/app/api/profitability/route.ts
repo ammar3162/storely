@@ -77,8 +77,19 @@ async function computeLive(supabase: any, org_id: string, monthParam: string, ef
   const fixedExpensesList = fixedExpensesData || []
   const fixedExpensesTotal = fixedExpensesList.reduce((s: number, e: any) => s + Number(e.amount || 0), 0)
 
+  let deliveryQ = supabase
+    .from('delivery_income')
+    .select('id,platform,amount,created_at')
+    .eq('org_id', org_id)
+    .eq('month', monthStart)
+    .order('created_at', { ascending: true })
+  if (effectiveBranchId) deliveryQ = deliveryQ.eq('branch_id', effectiveBranchId)
+  const { data: deliveryData } = await deliveryQ
+  const deliveryIncomeList = deliveryData || []
+  const deliveryIncomeTotal = deliveryIncomeList.reduce((s: number, e: any) => s + Number(e.amount || 0), 0)
+
   const totalOut = totalPurchases + fixedExpensesTotal
-  const netProfit = totalIn - totalOut
+  const netProfit = (totalIn + deliveryIncomeTotal) - totalOut
   const vatAmount = totalIn - (totalIn / 1.15)
 
   return {
@@ -86,6 +97,7 @@ async function computeLive(supabase: any, org_id: string, monthParam: string, ef
     totalIn, closingsCount,
     inventoryPurchases, otherPurchases, totalPurchases,
     fixedExpensesTotal, fixedExpensesList,
+    deliveryIncomeTotal, deliveryIncomeList,
     totalOut, netProfit, vatAmount,
   }
 }
@@ -128,6 +140,8 @@ export async function GET(req: Request) {
         totalPurchases: (closedRow as any).total_purchases,
         fixedExpensesTotal: (closedRow as any).fixed_expenses_total,
         fixedExpensesList: (closedRow as any).fixed_expenses_list,
+        deliveryIncomeTotal: (closedRow as any).delivery_income_total,
+        deliveryIncomeList: (closedRow as any).delivery_income_list,
         totalOut: (closedRow as any).total_out,
         netProfit: (closedRow as any).net_profit,
         vatAmount: (closedRow as any).vat_amount,
@@ -183,6 +197,8 @@ export async function POST(req: Request) {
       total_purchases: live.totalPurchases,
       fixed_expenses_total: live.fixedExpensesTotal,
       fixed_expenses_list: live.fixedExpensesList,
+      delivery_income_total: live.deliveryIncomeTotal,
+      delivery_income_list: live.deliveryIncomeList,
       total_out: live.totalOut,
       net_profit: live.netProfit,
       vat_amount: live.vatAmount,

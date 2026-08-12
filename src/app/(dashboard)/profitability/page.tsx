@@ -51,6 +51,11 @@ export default function ProfitabilityPage() {
   const [newVarAmount, setNewVarAmount] = useState('')
   const [savingVar, setSavingVar] = useState(false)
 
+  const [hasDelivery, setHasDelivery] = useState(false)
+  const [newDeliveryPlatform, setNewDeliveryPlatform] = useState('')
+  const [newDeliveryAmount, setNewDeliveryAmount] = useState('')
+  const [savingDelivery, setSavingDelivery] = useState(false)
+
   const sb = createClient()
 
   useEffect(()=>{ init() },[])
@@ -88,7 +93,7 @@ export default function ProfitabilityPage() {
     const json = await res.json()
     if(json.error === 'upgrade_required'){ setLocked(true); setData(null); setLoading(false); return }
     setLocked(false)
-    if(json.success){ setData(json); cache.set(cacheKey, json) }
+    if(json.success){ setData(json); cache.set(cacheKey, json); setHasDelivery((json.deliveryIncomeList||[]).length > 0) }
     else if(!cached) { toast(json.error||'تعذر تحميل البيانات','error'); setData(null) }
     setLoading(false)
 
@@ -117,6 +122,7 @@ export default function ProfitabilityPage() {
     try {
       const rows = [
         {name:`المبيعات (${data.closingsCount} إقفال كاشير)`, type:'إيرادات', amount: Math.round(data.totalIn).toLocaleString('en-US')+' '+curr},
+        ...(data.deliveryIncomeList||[]).map((e:any)=>({name:`دخل توصيل — ${e.platform}`, type:'إيرادات', amount: Number(e.amount).toFixed(0)+' '+curr})),
         {name:'الضريبة على المبيعات (تقديري)', type:'إيرادات', amount: Math.round(vatAmount).toLocaleString('en-US')+' '+curr},
         {name:'مشتريات المخزون', type:'مشتريات', amount: Math.round(data.inventoryPurchases).toLocaleString('en-US')+' '+curr},
         {name:'مشتريات أخرى', type:'مشتريات', amount: Math.round(data.otherPurchases).toLocaleString('en-US')+' '+curr},
@@ -151,6 +157,7 @@ export default function ProfitabilityPage() {
     const rows: string[][] = [
       ['البند','التصنيف','المبلغ'],
       [`المبيعات (${data.closingsCount} إقفال كاشير)`,'إيرادات', Math.round(data.totalIn).toString()],
+      ...(data.deliveryIncomeList||[]).map((e:any)=>[`دخل توصيل — ${e.platform}`,'إيرادات', Number(e.amount).toFixed(0)]),
       ['الضريبة على المبيعات (تقديري)','إيرادات', Math.round(vatAmount).toString()],
       ['مشتريات المخزون','مشتريات', Math.round(data.inventoryPurchases).toString()],
       ['مشتريات أخرى','مشتريات', Math.round(data.otherPurchases).toString()],
@@ -195,6 +202,25 @@ export default function ProfitabilityPage() {
   async function deleteVariable(id:string) {
     if(!(await confirmDialog({ title: 'حذف المصروف', message: 'حذف هذا المصروف؟' }))) return
     const res = await fetch(`/api/monthly-fixed-expenses?id=${id}`,{method:'DELETE'})
+    const j = await res.json()
+    if(j.success){ toast('🗑️ تم الحذف'); cache.invalidate('profitability:'); loadAll() }
+    else toast(j.error||'خطأ','error')
+  }
+
+  async function addDeliveryIncome(platform?: string) {
+    const p = (platform || newDeliveryPlatform).trim()
+    if(!p || !newDeliveryAmount) return
+    setSavingDelivery(true)
+    const res = await fetch('/api/delivery-income',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id'),month:`${month}-01`,platform:p,amount:Number(newDeliveryAmount)})})
+    const j = await res.json()
+    setSavingDelivery(false)
+    if(j.success){ setNewDeliveryPlatform(''); setNewDeliveryAmount(''); toast('✅ تمت الإضافة'); cache.invalidate('profitability:'); loadAll() }
+    else toast(j.error||'خطأ','error')
+  }
+
+  async function deleteDeliveryIncome(id:string) {
+    if(!(await confirmDialog({ title: 'حذف دخل التوصيل', message: 'حذف هذا السجل؟' }))) return
+    const res = await fetch(`/api/delivery-income?id=${id}`,{method:'DELETE'})
     const j = await res.json()
     if(j.success){ toast('🗑️ تم الحذف'); cache.invalidate('profitability:'); loadAll() }
     else toast(j.error||'خطأ','error')
@@ -283,9 +309,10 @@ export default function ProfitabilityPage() {
         </div>
 
         {/* صف المقاييس */}
-        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:16,alignItems:'start'}}>
+        <div style={{display:'grid',gridTemplateColumns:`repeat(${hasDelivery?5:4},1fr)`,gap:8,marginBottom:16,alignItems:'start'}}>
           {[
             {label:'المبيعات',value:data.totalIn,prev:prevData?.totalIn},
+            ...(hasDelivery?[{label:'دخل التوصيل',value:data.deliveryIncomeTotal||0,prev:prevData?.deliveryIncomeTotal}]:[]),
             {label:'المشتريات',value:data.totalPurchases,prev:prevData?.totalPurchases},
             {label:'إجمالي المصروفات',value:totalExpenses,prev:prevData?(prevData.fixedExpensesTotal):undefined},
             {label:'الضريبة (تقديري)',value:vatAmount,prev:prevData?(prevData.totalIn-(prevData.totalIn/1.15)):undefined},
@@ -360,6 +387,47 @@ export default function ProfitabilityPage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* مصادر دخل خارجية (تطبيقات توصيل) */}
+        <div style={{...card,padding:'16px 18px',marginTop:10}}>
+          <label style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',marginBottom:hasDelivery?14:0}}>
+            <input type="checkbox" checked={hasDelivery} onChange={e=>setHasDelivery(e.target.checked)} style={{width:16,height:16,cursor:'pointer'}}/>
+            <span style={{fontSize:font.base,fontWeight:700,color:colors.text}}>عندك دخل خارجي من تطبيقات توصيل؟ (هنقرستيشن، جاهز...)</span>
+          </label>
+
+          {hasDelivery && (
+            <>
+              {!data.closed && (
+              <div style={{display:'flex',gap:6,marginBottom:10,flexWrap:'wrap' as const}}>
+                <input value={newDeliveryPlatform} onChange={e=>setNewDeliveryPlatform(e.target.value)} placeholder="اسم التطبيق" style={{...inp(),flex:1,minWidth:140}}/>
+                <input type="number" value={newDeliveryAmount} onChange={e=>setNewDeliveryAmount(e.target.value)} placeholder="المبلغ" style={{...inp(),width:100}}/>
+                <button onClick={()=>addDeliveryIncome()} disabled={savingDelivery} style={{padding:'0 16px',background:colors.primary,color:'white',border:'none',borderRadius:radius.md,fontSize:14,fontWeight:700,cursor:'pointer'}}>{savingDelivery?'...':'+'}</button>
+              </div>
+              )}
+              {!data.closed && (
+              <div style={{display:'flex',gap:6,marginBottom:14}}>
+                <button onClick={()=>setNewDeliveryPlatform('هنقرستيشن')} style={{fontSize:11,fontWeight:600,color:colors.text2,background:colors.bg,border:`1px solid ${colors.border2}`,padding:'5px 12px',borderRadius:99,cursor:'pointer',fontFamily:font.family}}>هنقرستيشن</button>
+                <button onClick={()=>setNewDeliveryPlatform('جاهز')} style={{fontSize:11,fontWeight:600,color:colors.text2,background:colors.bg,border:`1px solid ${colors.border2}`,padding:'5px 12px',borderRadius:99,cursor:'pointer',fontFamily:font.family}}>جاهز</button>
+              </div>
+              )}
+              {(data.deliveryIncomeList||[]).length===0 ? (
+                <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>ما فيه دخل توصيل مسجّل هالشهر</div>
+              ) : (
+                <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
+                  {(data.deliveryIncomeList||[]).map((e:any)=>(
+                    <div key={e.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 10px',background:colors.bg,borderRadius:8}}>
+                      <span style={{fontSize:12,fontWeight:600,color:colors.text}}>{e.platform}</span>
+                      <div style={{display:'flex',alignItems:'center',gap:8}}>
+                        <span style={{fontSize:12,fontWeight:700,color:colors.primary}}>{Number(e.amount).toFixed(0)} {curr}</span>
+                        {!data.closed && <button onClick={()=>deleteDeliveryIncome(e.id)} style={{background:'none',border:'none',color:colors.danger,cursor:'pointer',fontSize:12}}>🗑️</button>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
         </>
       )}
