@@ -78,24 +78,35 @@ export async function exportReportPdf(opts: PdfExportOptions) {
       </div>`
     : ''
 
-  const tableHeaderHtml = columns.map(c => `<th style="padding:10px 12px;background:#0f172a;color:white;font-size:11px;font-weight:700;text-align:${c.align || 'right'}">${c.header}</th>`).join('')
+  // نستخدم صفوف div بدل <table> — html2canvas كثيراً ما يفشل بالتقاط
+  // خلفيات وحدود عناصر الجداول (th/td) بشكل صحيح مع border-collapse
+  const colWidth = (100 / columns.length).toFixed(4)
+  const colDivsHeader = columns.map(c =>
+    `<div style="flex:1 1 ${colWidth}%;padding:10px 12px;font-size:11px;font-weight:700;text-align:${c.align || 'right'};box-sizing:border-box">${c.header}</div>`
+  ).join('')
+
+  function rowDivs(r: Record<string, any>, extra: string) {
+    return columns.map(c =>
+      `<div style="flex:1 1 ${colWidth}%;padding:9px 12px;font-size:11px;box-sizing:border-box;text-align:${c.align || 'right'};${extra}">${r[c.key] ?? '—'}</div>`
+    ).join('')
+  }
 
   function rowsTableHtml(rowsChunk: Record<string, any>[], includeTotals: boolean) {
     const bodyHtml = rowsChunk.map((r, i) => `
-      <tr style="background:${i % 2 === 0 ? 'white' : '#f8fafc'}">
-        ${columns.map(c => `<td style="padding:9px 12px;font-size:11px;color:#1e293b;border-bottom:1px solid #f1f5f9;text-align:${c.align || 'right'}">${r[c.key] ?? '—'}</td>`).join('')}
-      </tr>
+      <div style="display:flex;background:${i % 2 === 0 ? '#ffffff' : '#f8fafc'};border-bottom:1px solid #e2e8f0">
+        ${rowDivs(r, 'color:#1e293b')}
+      </div>
     `).join('')
     const totalsHtml = includeTotals && totalsRow
-      ? `<tr style="background:#f0fdf4;border-top:2px solid #16a34a">
-          ${columns.map(c => `<td style="padding:11px 12px;font-size:11px;font-weight:800;color:#16a34a;text-align:${c.align || 'right'}">${totalsRow[c.key] ?? ''}</td>`).join('')}
-        </tr>`
+      ? `<div style="display:flex;background:#f0fdf4;border-top:2px solid #16a34a">
+          ${rowDivs(totalsRow, 'color:#16a34a;font-weight:800')}
+        </div>`
       : ''
     return `
-      <table style="width:100%;border-collapse:collapse">
-        <thead><tr>${tableHeaderHtml}</tr></thead>
-        <tbody>${bodyHtml}${totalsHtml}</tbody>
-      </table>
+      <div style="width:100%;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">
+        <div style="display:flex;background:#0f172a;color:white">${colDivsHeader}</div>
+        ${bodyHtml}${totalsHtml}
+      </div>
     `
   }
 
