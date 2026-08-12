@@ -103,10 +103,13 @@ export default function PurchasesPage() {
   }
 
   async function loadPayables(oid:string) {
-    const{data,error}=await (sb.from('purchases') as any)
+    const bid=sessionStorage.getItem('s_branch_id')
+    let payQ=(sb.from('purchases') as any)
       .select('id,name,supplier,total_amount,due_date,created_at')
       .eq('org_id',oid).eq('payment_status','unpaid').is('deleted_at',null)
       .order('created_at',{ascending:false}).limit(200)
+    if(bid) payQ=payQ.eq('branch_id',bid)
+    const{data,error}=await payQ
     if(error){ console.error('loadPayables error:', error); setPayables([]); return }
     const sorted = (data||[]).slice().sort((a:any,b:any)=>{
       if(!a.due_date && !b.due_date) return 0
