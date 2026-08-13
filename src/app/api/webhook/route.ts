@@ -263,6 +263,14 @@ export async function POST(req: Request) {
 
     for (const msg of msgs) {
       if (msg?.key?.fromMe===true) continue
+
+      // منع معالجة نفس الرسالة مرتين — Wasender أحياناً يعيد إرسال نفس الحدث (webhook retry)
+      const msgId = msg?.key?.id
+      if (msgId) {
+        const { error: dupErr } = await sb().from('processed_messages' as any).insert({ message_id: msgId })
+        if (dupErr) continue
+      }
+
       const to   = (msg?.key?.cleanedSenderPn||msg?.key?.remoteJid?.replace('@s.whatsapp.net','')?.replace('@c.us','')||'')
       const text = (msg?.messageBody||msg?.message?.conversation||'').trim()
       if (!to||!text) continue
@@ -422,7 +430,7 @@ export async function POST(req: Request) {
             continue
           }
           if (t==='3') { await send(to,GUEST_V['1']); continue }
-          if (t==='4') { await pauseBot(to, 20); await send(to,GUEST_V['4']+'\n\n⏸️ تم إيقاف الردود التلقائية 20 دقيقة عشان يتواصل معك فريقنا مباشرة.'); continue }
+          if (t==='4') { await pauseBot(to, 20); await send(to,'👋 تم استلام طلبك\n\nراح يتواصل معك أحد أعضاء فريقنا خلال دقائق 🙏\n\nاكتب 0 في أي وقت للرجوع للقائمة'); continue }
           // بحث عن منتج
           if (t.length>1 && isNaN(Number(t))) {
             await searchProduct(to, user.org_id, t)
@@ -515,7 +523,7 @@ export async function POST(req: Request) {
       } else {
         // زائر غير مسجل
         await setState(to,'main')
-        if (t==='4') { await pauseBot(to, 20); await send(to,GUEST_V['4']+'\n\n⏸️ تم إيقاف الردود التلقائية 20 دقيقة عشان يتواصل معك فريقنا مباشرة.') }
+        if (t==='4') { await pauseBot(to, 20); await send(to,'👋 تم استلام طلبك\n\nراح يتواصل معك أحد أعضاء فريقنا خلال دقائق 🙏\n\nاكتب 0 في أي وقت للرجوع للقائمة') }
         else await send(to, GUEST_V[t]||GUEST_MENU)
       }
     }
