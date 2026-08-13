@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { cache } from '@/lib/cache'
 import { createClient } from '@/lib/supabase/client'
@@ -924,6 +925,7 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
   const purchasedMap:Record<string,number>={}
   movements.filter(m=>m.type==='in').forEach(m=>{const n=(m.products as any)?.name||'—';purchasedMap[n]=(purchasedMap[n]||0)+Math.abs(m.qty_change)})
 
+  const router = useRouter()
   const transferOutMap:Record<string,number>={}
   movements.filter(m=>m.type==='transfer_out').forEach(m=>{const n=(m.products as any)?.name||'—';transferOutMap[n]=(transferOutMap[n]||0)+Math.abs(m.qty_change)})
 
@@ -953,13 +955,14 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
       </div>
       <div style={{display:'grid',gridTemplateColumns:(totalTransferredOut+totalTransferredIn)>0?'repeat(5,1fr)':'repeat(4,1fr)',gap:10,marginBottom:16,marginTop:12}}>
         {[
-          {label:'إجمالي الأصناف',value:products.length,color:'#7c3aed',bg:'#f5f3ff',border:'#ddd6fe'},
-          {label:'وحدات مصروفة',value:totalDispensed,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
-          {label:'وحدات مشتراة',value:totalPurchased,color:colors.primary,bg:colors.primaryLight,border:colors.primaryBorder},
-          {label:'أصناف ناقصة',value:lowCount+outCount,color:colors.warning,bg:colors.warningLight,border:colors.warningBorder},
-          ...((totalTransferredOut+totalTransferredIn)>0?[{label:'نقل بين الفروع (صادر/وارد)',value:`${totalTransferredOut}/${totalTransferredIn}`,color:colors.info,bg:colors.infoLight,border:colors.infoBorder}]:[]),
+          {label:'إجمالي الأصناف',value:products.length,color:'#7c3aed',bg:'#f5f3ff',border:'#ddd6fe',clickable:false},
+          {label:'وحدات مصروفة',value:totalDispensed,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder,clickable:false},
+          {label:'وحدات مشتراة',value:totalPurchased,color:colors.primary,bg:colors.primaryLight,border:colors.primaryBorder,clickable:false},
+          {label:'أصناف ناقصة',value:lowCount+outCount,color:colors.warning,bg:colors.warningLight,border:colors.warningBorder,clickable:false},
+          ...((totalTransferredOut+totalTransferredIn)>0?[{label:'نقل بين الفروع (صادر/وارد) — التفاصيل ←',value:`${totalTransferredOut}/${totalTransferredIn}`,color:colors.info,bg:colors.infoLight,border:colors.infoBorder,clickable:true}]:[]),
         ].map((s,i)=>(
-          <div key={i} style={{...card,padding:'14px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
+          <div key={i} onClick={()=>{if((s as any).clickable) router.push('/transfer-stock')}}
+            style={{...card,padding:'14px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`,cursor:(s as any).clickable?'pointer':'default'}}>
             <div style={{fontSize:24,fontWeight:900,color:s.color}}>{s.value}</div>
             <div style={{fontSize:font.xs,color:s.color,marginTop:4,fontWeight:600,opacity:.8}}>{s.label}</div>
           </div>
