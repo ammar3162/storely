@@ -64,11 +64,31 @@ async function findUser(phone: string) {
   try {
     const clean = phone.replace(/^\+/,'')
     for (const p of [clean, '0'+clean.slice(3), '+'+clean]) {
-      const { data } = await sb().from('profiles').select('id,full_name,org_id,status,whatsapp_consent').eq('phone',p).maybeSingle()
+      const { data } = await sb().from('profiles').select('id,full_name,org_id,status,whatsapp_consent,organizations(name)').eq('phone',p).maybeSingle()
       if (data) return data
     }
   } catch {}
   return null
+}
+
+// تحية احترافية حسب وقت السعودية + اسم المنشأة (لو متوفر)
+function greeting(orgName?: string) {
+  const hour = (new Date().getUTCHours() + 3) % 24
+  const timeGreeting = hour < 12 ? 'صباح الخير' : hour < 17 ? 'مساءً طاب يومك' : 'مساء الخير'
+  return orgName ? `${timeGreeting}، *${orgName}* 👋` : `${timeGreeting} 👋`
+}
+
+// فهم كلمات طبيعية بدل الاعتماد بس على الأرقام — يخلي البوت يحس أذكى واحترافي أكثر
+function normalizeInput(raw: string): string {
+  const t = raw.trim().toLowerCase()
+  const map: Record<string,string> = {
+    'مخزون':'1','المخزون':'1','حالة المخزون':'1',
+    'ناقص':'2','النواقص':'2','نواقص':'2','ناقصة':'2',
+    'اشتراك':'3','الاشتراك':'3','باقة':'3','باقات':'3','الباقات':'3','اشتراكات':'3',
+    'دعم':'4','الدعم':'4','تواصل':'4','التواصل':'4','مساعدة':'4','مساعده':'4','موظف':'4','بشري':'4',
+    'رجوع':'0','رجعني':'0','القائمة':'0','قائمة':'0','menu':'0',
+  }
+  return map[t] || raw.trim()
 }
 
 async function getProducts(orgId: string, branchId?: string|null) {
@@ -247,7 +267,7 @@ export async function POST(req: Request) {
       const text = (msg?.messageBody||msg?.message?.conversation||'').trim()
       if (!to||!text) continue
 
-      const t = text.trim()
+      const t = normalizeInput(text.trim())
 
       // البوت موقوف مؤقتاً لهذا الرقم (طلب تواصل بشري) — نتجاهل أي رسالة إلا لو طلب "0" للرجوع يدوياً
       if (t !== '0' && await isBotPaused(to)) continue
@@ -371,7 +391,7 @@ export async function POST(req: Request) {
         // رجوع للقائمة
         if (t==='0'||t==='قائمة'||t==='رجوع') {
           await setState(to,'main')
-          await send(to, MAIN_MENU)
+          await send(to, `${greeting((user as any).organizations?.name)}\n\n${MAIN_MENU}`)
           continue
         }
 
@@ -408,7 +428,8 @@ export async function POST(req: Request) {
             await searchProduct(to, user.org_id, t)
             continue
           }
-          await send(to, MAIN_MENU)
+          const orgNameForGreet = (user as any).organizations?.name
+          await send(to, `${greeting(orgNameForGreet)}\n\nما فهمت طلبك بالضبط 🤔 تقدر تكتب رقم أو حتى الكلمة نفسها (مثلاً: "مخزون" أو "دعم")\n\n${MAIN_MENU}`)
         }
 
         // ── اختيار الفرع ──
