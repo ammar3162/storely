@@ -79,6 +79,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [subDaysLeft, setSubDaysLeft] = useState<number|null>(null)
   const [orgLogo, setOrgLogo]       = useState<string|null>(null)
   const [branchName, setBranchName] = useState('')
+  const [advancedNavOpen, setAdvancedNavOpen] = useState(false)
   const [userName, setUserName]     = useState('')
   const [userInit, setUserInit]     = useState('م')
   const [lowCount, setLowCount]     = useState(0)
@@ -406,6 +407,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const isActive=(href:string)=>pathname===href||(href!=='/dashboard'&&pathname.startsWith(href))
+
+  // افتح مجموعة "نمّ أعمالك" تلقائياً لو الصفحة الحالية جوّاها — عشان العنصر النشط يفضل ظاهر بالقائمة
+  useEffect(()=>{
+    const advancedGroup = NAV_GROUPS.find(g=>g.label==='نمّ أعمالك')
+    if(advancedGroup?.items.some(item=>isActive(item.href))) setAdvancedNavOpen(true)
+  },[pathname])
 
   // Bottom nav items
   const BOT_NAV = [
@@ -782,10 +789,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 transition:'top .38s cubic-bezier(0.34,1.56,0.64,1), height .3s cubic-bezier(0.34,1.56,0.64,1), opacity .2s ease',
                 pointerEvents:'none' as const, zIndex:0,
               }}/>
-              {NAV_GROUPS.map((group,gi)=>(
+              {NAV_GROUPS.map((group,gi)=>{
+                const isAdvancedGroup = group.label==='نمّ أعمالك'
+                const groupCollapsed = isAdvancedGroup && !advancedNavOpen
+                return (
                 <div key={gi} style={{marginBottom:4}}>
-                  <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.25)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{group.label}</div>
-                  {group.items.filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic')&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
+                  {isAdvancedGroup ? (
+                    <button onClick={()=>setAdvancedNavOpen(v=>!v)}
+                      style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',cursor:'pointer',padding:'8px 10px 4px',fontFamily:'inherit'}}>
+                      <span style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.25)',letterSpacing:'.1em',textTransform:'uppercase'}}>{group.label}</span>
+                      <span style={{fontSize:10,color:'rgba(255,255,255,.35)',transition:'transform .2s',transform:advancedNavOpen?'rotate(180deg)':'none'}}>▾</span>
+                    </button>
+                  ) : (
+                    <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.25)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{group.label}</div>
+                  )}
+                  {!groupCollapsed && group.items.filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic')&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
                     const active=isActive(item.href)
                     const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
                     const isExternal=item.href.startsWith('http')
@@ -803,7 +821,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     )
                   })}
                 </div>
-              ))}
+                )
+              })}
             </nav>
 
             <div style={{padding:'12px 14px',borderTop:'1px solid rgba(255,255,255,.06)',display:'flex',alignItems:'center',gap:8}}>
