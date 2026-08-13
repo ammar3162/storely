@@ -796,9 +796,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div key={gi} style={{marginBottom:4}}>
                   {isAdvancedGroup ? (
                     <button onClick={()=>setAdvancedNavOpen(v=>!v)}
-                      style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',cursor:'pointer',padding:'8px 10px 4px',fontFamily:'inherit'}}>
-                      <span style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.25)',letterSpacing:'.1em',textTransform:'uppercase'}}>{group.label}</span>
-                      <span style={{fontSize:10,color:'rgba(255,255,255,.35)',transition:'transform .2s',transform:advancedNavOpen?'rotate(180deg)':'none'}}>▾</span>
+                      style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',background:'rgba(255,255,255,.07)',border:'1px solid rgba(255,255,255,.1)',borderRadius:8,cursor:'pointer',padding:'8px 10px',margin:'4px 0 6px',fontFamily:'inherit'}}>
+                      <span style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,.7)'}}>✨ {group.label}</span>
+                      <span style={{fontSize:11,color:'rgba(255,255,255,.6)',transition:'transform .2s',transform:advancedNavOpen?'rotate(180deg)':'none'}}>▾</span>
                     </button>
                   ) : (
                     <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.25)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{group.label}</div>
