@@ -694,8 +694,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div style={{fontSize:13,fontWeight:800,color:'white',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName||'Storely'}</div>
                 {branchName&&(
                   <button onClick={()=>branches.length>1&&openBranchSelector()}
-                    style={{fontSize:10,color:'rgba(255,255,255,.8)',background:'none',border:'none',cursor:branches.length>1?'pointer':'default',padding:0,fontFamily:'inherit',display:'flex',alignItems:'center',gap:2}}>
-                    {branchName}{branches.length>1&&' ▾'}
+                    style={{marginTop:2,display:'flex',alignItems:'center',gap:5,fontSize:10,fontWeight:700,color:'white',background:'rgba(255,255,255,.22)',border:'1px solid rgba(255,255,255,.35)',borderRadius:99,padding:'2px 9px',cursor:branches.length>1?'pointer':'default',fontFamily:'inherit',width:'fit-content'}}>
+                    <span style={{width:5,height:5,borderRadius:'50%',background:'white',flexShrink:0}}/>
+                    <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:100}}>{branchName}</span>
+                    {branches.length>1&&<span style={{fontSize:8}}>▾</span>}
                   </button>
                 )}
               </div>
@@ -761,7 +763,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div style={{width:44,height:44,borderRadius:'50%',background:'rgba(255,255,255,.92)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:5}}><img src={orgLogo||"/storely-logo.png"} alt="Storely" style={{maxWidth:'100%',maxHeight:'100%',width:'auto',height:'auto',objectFit:'contain'}}/></div>
               <div style={{minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:800,color:'rgba(255,255,255,.9)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName||'Storely'}</div>
-                {branchName&&<button onClick={()=>branches.length>1&&openBranchSelector()} style={{fontSize:10,color:C.primary,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit'}}>{branchName}{branches.length>1&&' ▾'}</button>}
+                {branchName&&(
+                  <button onClick={()=>branches.length>1&&openBranchSelector()}
+                    style={{marginTop:4,display:'flex',alignItems:'center',gap:5,fontSize:11,fontWeight:700,color:C.primary,background:'rgba(22,163,74,.14)',border:'1px solid rgba(22,163,74,.35)',borderRadius:99,padding:'4px 10px',cursor:branches.length>1?'pointer':'default',fontFamily:'inherit'}}>
+                    <span style={{width:6,height:6,borderRadius:'50%',background:C.primary,flexShrink:0}}/>
+                    <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:110}}>{branchName}</span>
+                    {branches.length>1&&<span style={{fontSize:9}}>▾</span>}
+                  </button>
+                )}
               </div>
             </div>
 
