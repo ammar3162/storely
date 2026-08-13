@@ -15,6 +15,9 @@ export default function BranchesPage() {
   const [inactiveBranches, setInactiveBranches] = useState<any[]>([])
   const [newBranch, setNewBranch] = useState({name:'',location:''})
   const [branchSaving, setBranchSaving] = useState(false)
+  const [editingNameId, setEditingNameId] = useState<string|null>(null)
+  const [editNameValue, setEditNameValue] = useState('')
+  const [savingName, setSavingName] = useState(false)
   const [editingPhoneId, setEditingPhoneId] = useState<string|null>(null)
   const [editPhoneValue, setEditPhoneValue] = useState('')
   const [savingPhone, setSavingPhone] = useState(false)
@@ -52,6 +55,18 @@ export default function BranchesPage() {
     setBranches(prev=>prev.filter((b:any)=>b.id!==confirmDeleteBranch.id))
     setInactiveBranches(prev=>prev.filter((b:any)=>b.id!==confirmDeleteBranch.id))
     setConfirmDeleteBranch(null); setDeleteConfirmText('')
+  }
+
+  async function saveBranchName(id:string) {
+    const trimmed = editNameValue.trim()
+    if(!trimmed){ toast('أدخل اسم الفرع','warning'); return }
+    setSavingName(true)
+    const{error}=await sb.from('branches').update({name:trimmed} as any).eq('id',id)
+    setSavingName(false)
+    if(error){ toast('فشل تعديل الاسم — حاول مرة أخرى','error'); return }
+    setBranches(prev=>prev.map((br:any)=>br.id===id?{...br,name:trimmed}:br))
+    toast('✅ تم تعديل اسم الفرع')
+    setEditingNameId(null)
   }
 
   useEffect(()=>{ init() },[])
@@ -196,9 +211,32 @@ export default function BranchesPage() {
                   style={{width:36,height:36,borderRadius:10,background:i===0?colors.primaryLight:colors.bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0,border:`1px solid ${i===0?colors.primaryBorder:colors.border}`,cursor:'pointer'}}>
                   {i===0?'🏠':'🏪'}
                 </button>
-                <div style={{flex:1,cursor:'pointer'}} onClick={()=>selectBranch(b)}>
-                  <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{b.name}</div>
-                  {b.location&&<div style={{fontSize:font.xs,color:colors.text4,marginTop:1}}>📍 {b.location}</div>}
+                <div style={{flex:1}}>
+                  {editingNameId===b.id ? (
+                    <div style={{display:'flex',gap:6,alignItems:'center'}} onClick={e=>e.stopPropagation()}>
+                      <input value={editNameValue} onChange={e=>setEditNameValue(e.target.value)} autoFocus
+                        style={{...inp(),padding:'6px 10px',fontSize:font.sm,flex:1,fontWeight:700}}/>
+                      <button onClick={()=>saveBranchName(b.id)} disabled={savingName}
+                        style={{background:colors.primary,color:'white',border:'none',borderRadius:6,padding:'6px 12px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:font.family,flexShrink:0}}>
+                        {savingName?'...':'حفظ'}
+                      </button>
+                      <button onClick={()=>setEditingNameId(null)}
+                        style={{background:colors.bg,color:colors.text3,border:'none',borderRadius:6,padding:'6px 12px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:font.family,flexShrink:0}}>
+                        إلغاء
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{cursor:'pointer'}} onClick={()=>selectBranch(b)}>
+                      <div style={{fontSize:font.sm,fontWeight:700,color:colors.text,display:'flex',alignItems:'center',gap:6}}>
+                        {b.name}
+                        <button onClick={e=>{e.stopPropagation();setEditingNameId(b.id);setEditNameValue(b.name)}}
+                          style={{background:'none',border:'none',color:colors.text4,fontSize:11,cursor:'pointer',padding:0}}>
+                          ✏️
+                        </button>
+                      </div>
+                      {b.location&&<div style={{fontSize:font.xs,color:colors.text4,marginTop:1}}>📍 {b.location}</div>}
+                    </div>
+                  )}
                 </div>
                 <button onClick={()=>selectBranch(b)} style={{background:colors.primaryLight,color:colors.primary,border:`1px solid ${colors.primaryBorder}`,borderRadius:radius.sm,padding:'6px 12px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
                   دخول ←
