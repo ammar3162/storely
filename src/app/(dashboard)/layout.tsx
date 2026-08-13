@@ -45,7 +45,7 @@ const NAV_GROUPS = [
     ]
   },
   {
-    label: 'نمّ أعمالك',
+    label: 'أدوات متقدمة',
     items: [
       { href:'/ai-tools',   label:'أدوات الذكاء', icon:'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z' },
       { href:'/profitability', label:'الربحية', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
@@ -408,9 +408,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const isActive=(href:string)=>pathname===href||(href!=='/dashboard'&&pathname.startsWith(href))
 
-  // افتح مجموعة "نمّ أعمالك" تلقائياً لو الصفحة الحالية جوّاها — عشان العنصر النشط يفضل ظاهر بالقائمة
+  // افتح مجموعة "أدوات متقدمة" تلقائياً لو الصفحة الحالية جوّاها — عشان العنصر النشط يفضل ظاهر بالقائمة
   useEffect(()=>{
-    const advancedGroup = NAV_GROUPS.find(g=>g.label==='نمّ أعمالك')
+    const advancedGroup = NAV_GROUPS.find(g=>g.label==='أدوات متقدمة')
     if(advancedGroup?.items.some(item=>isActive(item.href))) setAdvancedNavOpen(true)
   },[pathname])
 
@@ -790,7 +790,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 pointerEvents:'none' as const, zIndex:0,
               }}/>
               {NAV_GROUPS.map((group,gi)=>{
-                const isAdvancedGroup = group.label==='نمّ أعمالك'
+                const isAdvancedGroup = group.label==='أدوات متقدمة'
                 const groupCollapsed = isAdvancedGroup && !advancedNavOpen
                 return (
                 <div key={gi} style={{marginBottom:4}}>
