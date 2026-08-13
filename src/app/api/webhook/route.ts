@@ -440,7 +440,7 @@ export async function POST(req: Request) {
             continue
           }
           if (t==='3') { await send(to,GUEST_V['1']); continue }
-          if (t==='4') { await pauseBot(to, 20); await send(to,'👋 تم استلام طلبك\n\nراح يتواصل معك أحد أعضاء فريقنا خلال دقائق 🙏\n\nاكتب 0 في أي وقت للرجوع للقائمة'); continue }
+          if (t==='4') { await pauseBot(to, 5); await send(to,'👋 تم استلام طلبك\n\nراح يتواصل معك أحد أعضاء فريقنا خلال دقائق 🙏\n\nاكتب 0 في أي وقت للرجوع للقائمة'); continue }
           // بحث عن منتج
           if (t.length>1 && isNaN(Number(t))) {
             await searchProduct(to, user.org_id, t)
@@ -533,7 +533,7 @@ export async function POST(req: Request) {
       } else {
         // زائر غير مسجل
         await setState(to,'main')
-        if (t==='4') { await pauseBot(to, 20); await send(to,'👋 تم استلام طلبك\n\nراح يتواصل معك أحد أعضاء فريقنا خلال دقائق 🙏\n\nاكتب 0 في أي وقت للرجوع للقائمة') }
+        if (t==='4') { await pauseBot(to, 5); await send(to,'👋 تم استلام طلبك\n\nراح يتواصل معك أحد أعضاء فريقنا خلال دقائق 🙏\n\nاكتب 0 في أي وقت للرجوع للقائمة') }
         else await send(to, GUEST_V[t]||GUEST_MENU)
       }
     }
