@@ -103,6 +103,22 @@ export async function POST(req: Request) {
     } as any)
     if (inErr) return NextResponse.json({ error: 'فشل تسجيل حركة الفرع الوجهة' }, { status: 500 })
 
+    // إشعارات النظام لكل فرع بما يخصّه — يظهر بجرس الإشعارات فوراً
+    const productName = (sourceProduct as any).name
+    const unit = (sourceProduct as any).unit
+    await db.from('notifications').insert([
+      {
+        org_id, branch_id: from_branch_id, type: 'info',
+        title: 'نقل مخزون صادر',
+        message: `تم نقل ${transferQty} ${unit} من "${productName}" إلى فرع ${(toBranch as any).name}`,
+      },
+      {
+        org_id, branch_id: to_branch_id, type: 'success',
+        title: 'نقل مخزون وارد',
+        message: `استلم هذا الفرع ${transferQty} ${unit} من "${productName}" من فرع ${(fromBranch as any).name}`,
+      },
+    ] as any)
+
     return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })

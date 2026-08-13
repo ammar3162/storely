@@ -924,6 +924,12 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
   const purchasedMap:Record<string,number>={}
   movements.filter(m=>m.type==='in').forEach(m=>{const n=(m.products as any)?.name||'—';purchasedMap[n]=(purchasedMap[n]||0)+Math.abs(m.qty_change)})
 
+  const transferOutMap:Record<string,number>={}
+  movements.filter(m=>m.type==='transfer_out').forEach(m=>{const n=(m.products as any)?.name||'—';transferOutMap[n]=(transferOutMap[n]||0)+Math.abs(m.qty_change)})
+
+  const transferInMap:Record<string,number>={}
+  movements.filter(m=>m.type==='transfer_in').forEach(m=>{const n=(m.products as any)?.name||'—';transferInMap[n]=(transferInMap[n]||0)+Math.abs(m.qty_change)})
+
   const filtered=products
     .filter(p=>!search||p.name?.includes(search)||p.category?.includes(search))
     .filter(p=>filter==='all'||(filter==='out'?p.qty===0:p.qty<=p.reorder_point))
@@ -932,6 +938,8 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
   const outCount=products.filter(p=>p.qty===0).length
   const totalDispensed=Object.values(dispensedMap).reduce((s,v)=>s+v,0)
   const totalPurchased=Object.values(purchasedMap).reduce((s,v)=>s+v,0)
+  const totalTransferredOut=Object.values(transferOutMap).reduce((s,v)=>s+v,0)
+  const totalTransferredIn=Object.values(transferInMap).reduce((s,v)=>s+v,0)
 
   return (
     <div>
@@ -943,12 +951,13 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
           {exportingPdf?'⏳ جاري التصدير...':'📄 تصدير PDF'}
         </button>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16,marginTop:12}}>
+      <div style={{display:'grid',gridTemplateColumns:(totalTransferredOut+totalTransferredIn)>0?'repeat(5,1fr)':'repeat(4,1fr)',gap:10,marginBottom:16,marginTop:12}}>
         {[
           {label:'إجمالي الأصناف',value:products.length,color:'#7c3aed',bg:'#f5f3ff',border:'#ddd6fe'},
           {label:'وحدات مصروفة',value:totalDispensed,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
           {label:'وحدات مشتراة',value:totalPurchased,color:colors.primary,bg:colors.primaryLight,border:colors.primaryBorder},
           {label:'أصناف ناقصة',value:lowCount+outCount,color:colors.warning,bg:colors.warningLight,border:colors.warningBorder},
+          ...((totalTransferredOut+totalTransferredIn)>0?[{label:'نقل بين الفروع (صادر/وارد)',value:`${totalTransferredOut}/${totalTransferredIn}`,color:colors.info,bg:colors.infoLight,border:colors.infoBorder}]:[]),
         ].map((s,i)=>(
           <div key={i} style={{...card,padding:'14px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
             <div style={{fontSize:24,fontWeight:900,color:s.color}}>{s.value}</div>

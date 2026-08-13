@@ -11,6 +11,8 @@ export default function TransferStockPage() {
   const [toBranch, setToBranch] = useState('')
   const [products, setProducts] = useState<any[]>([])
   const [productId, setProductId] = useState('')
+  const [productSearch, setProductSearch] = useState('')
+  const [showProductList, setShowProductList] = useState(false)
   const [qty, setQty] = useState('')
   const [saving, setSaving] = useState(false)
   const [history, setHistory] = useState<any[]>([])
@@ -46,6 +48,12 @@ export default function TransferStockPage() {
     const{data}=await sb.from('products').select('id,name,unit,qty').eq('org_id',orgId).eq('branch_id',fromBranch).eq('is_active',true).order('name')
     setProducts(data||[])
     setProductId('')
+    setProductSearch('')
+  }
+
+  function swapBranches() {
+    const f=fromBranch, t=toBranch
+    setFromBranch(t); setToBranch(f)
   }
 
   async function loadHistory(oid:string) {
@@ -157,16 +165,21 @@ export default function TransferStockPage() {
         <p style={{...pageSub}}>انقل كمية من صنف من فرع لفرع ثاني — تُخصم من المصدر وتُضاف للوجهة تلقائياً، وتُسجّل بسجل التحويلات</p>
       </div>
 
-      <div style={{...card,padding:'18px 20px',marginBottom:20}}>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
-          <div>
+      <div style={{...card,padding:'20px 22px',marginBottom:20}}>
+        <div style={{display:'flex',alignItems:'flex-end',gap:8,marginBottom:16}}>
+          <div style={{flex:1}}>
             <label style={{fontSize:11,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>من فرع</label>
             <select value={fromBranch} onChange={e=>setFromBranch(e.target.value)} style={inp()}>
               <option value="">اختر الفرع المصدر</option>
               {branches.filter((b:any)=>b.id!==toBranch).map((b:any)=>(<option key={b.id} value={b.id}>{b.name}</option>))}
             </select>
           </div>
-          <div>
+          <button type="button" onClick={swapBranches} disabled={!fromBranch&&!toBranch}
+            title="بدّل الفرعين"
+            style={{width:38,height:38,borderRadius:10,border:`1.5px solid ${colors.border2}`,background:colors.surface,color:colors.primary,fontSize:16,cursor:(!fromBranch&&!toBranch)?'default':'pointer',opacity:(!fromBranch&&!toBranch)?0.4:1,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit'}}>
+            ⇄
+          </button>
+          <div style={{flex:1}}>
             <label style={{fontSize:11,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>إلى فرع</label>
             <select value={toBranch} onChange={e=>setToBranch(e.target.value)} style={inp()}>
               <option value="">اختر الفرع الوجهة</option>
@@ -176,12 +189,32 @@ export default function TransferStockPage() {
         </div>
 
         <div style={{display:'grid',gridTemplateColumns:'2fr 1fr',gap:12,marginBottom:14}}>
-          <div>
+          <div style={{position:'relative'}}>
             <label style={{fontSize:11,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>الصنف</label>
-            <select value={productId} onChange={e=>setProductId(e.target.value)} style={inp()} disabled={!fromBranch}>
-              <option value="">{fromBranch ? 'اختر الصنف' : 'اختر الفرع المصدر أول'}</option>
-              {products.map((p:any)=>(<option key={p.id} value={p.id}>{p.name} — متوفر: {p.qty} {p.unit}</option>))}
-            </select>
+            <input
+              value={selectedProduct ? `${selectedProduct.name} — متوفر: ${selectedProduct.qty} ${selectedProduct.unit}` : productSearch}
+              onChange={e=>{ setProductSearch(e.target.value); setProductId(''); setShowProductList(true) }}
+              onFocus={()=>setShowProductList(true)}
+              onBlur={()=>setTimeout(()=>setShowProductList(false),150)}
+              disabled={!fromBranch}
+              placeholder={fromBranch ? 'ابحث عن صنف...' : 'اختر الفرع المصدر أول'}
+              style={inp()}
+            />
+            {showProductList && fromBranch && (
+              <div style={{position:'absolute',top:'100%',right:0,left:0,marginTop:4,background:colors.surface,border:`1px solid ${colors.border2}`,borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.1)',zIndex:20,maxHeight:220,overflowY:'auto' as const}}>
+                {products.filter((p:any)=>!productSearch||p.name.includes(productSearch)).length===0 ? (
+                  <div style={{padding:'12px 14px',fontSize:12,color:colors.text4}}>ما فيه أصناف مطابقة</div>
+                ) : products.filter((p:any)=>!productSearch||p.name.includes(productSearch)).map((p:any)=>(
+                  <div key={p.id} onMouseDown={()=>{ setProductId(p.id); setProductSearch(''); setShowProductList(false) }}
+                    style={{padding:'10px 14px',cursor:'pointer',fontSize:13,color:colors.text,borderBottom:`1px solid ${colors.border}`,display:'flex',justifyContent:'space-between'}}
+                    onMouseEnter={e=>(e.currentTarget.style.background=colors.bg)}
+                    onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
+                    <span style={{fontWeight:600}}>{p.name}</span>
+                    <span style={{color:colors.text4,fontSize:11}}>متوفر: {p.qty} {p.unit}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div>
             <label style={{fontSize:11,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>الكمية{selectedProduct?` (${selectedProduct.unit})`:''}</label>
