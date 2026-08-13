@@ -22,12 +22,15 @@ export async function POST(req: Request) {
     const db = sb()
     const since180 = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString()
 
-    const [{ data: orders }, { data: purchases }] = await Promise.all([
+    const [{ data: orders }, { data: purchases }, { data: failedLogs }] = await Promise.all([
       (db as any).from('supplier_orders').select('id,status,items,created_at,confirmed_at,escalated_at')
         .eq('org_id', org_id).eq('supplier_id', supplier_id).gte('created_at', since180).order('created_at', { ascending: false }),
       supplier_name
         ? db.from('purchases').select('name,qty,unit,total_amount,created_at').eq('org_id', org_id).ilike('supplier', supplier_name.trim()).gte('created_at', since180).order('created_at', { ascending: false })
         : Promise.resolve({ data: [] as any[] }),
+      // سجلات فشل إرسال واتساب الفعلية — منفصلة عن مجرد إنشاء الطلب بقاعدة البيانات
+      (db as any).from('supplier_order_logs').select('id,status,created_at,products(name)')
+        .eq('supplier_id', supplier_id).eq('status', 'failed').gte('created_at', since180).order('created_at', { ascending: false }),
     ])
 
     const events: any[] = []
@@ -41,6 +44,15 @@ export async function POST(req: Request) {
       if (o.status === 'escalated' && o.escalated_at) {
         events.push({ type: 'order_escalated', at: o.escalated_at, title: 'انتهت المهلة بدون رد — تم التصعيد', detail: itemsText })
       }
+    }
+
+    for (const f of (failedLogs || [])) {
+      events.push({
+        type: 'order_failed',
+        at: f.created_at,
+        title: '❌ فشل إرسال رسالة واتساب للمورد',
+        detail: (f.products as any)?.name ? `الصنف: ${(f.products as any).name} — تحقق من رقم واتساب المورد` : 'تحقق من رقم واتساب المورد',
+      })
     }
 
     for (const p of (purchases || [])) {

@@ -93,6 +93,7 @@ export async function POST(req: Request) {
     }
 
     let totalSent = 0
+    let totalFailed = 0
 
     for (const groupKey of Object.keys(bySupplierBranch)) {
       const items = bySupplierBranch[groupKey]
@@ -167,10 +168,11 @@ export async function POST(req: Request) {
       }
 
       if (ok) totalSent += items.length
+      else totalFailed += items.length
       await delay(600) // فاصل زمني يحمي من تجاوز حدود إرسال Wasender API
     }
 
-    return NextResponse.json({ success: true, sent: totalSent })
+    return NextResponse.json({ success: true, sent: totalSent, failed: totalFailed, due: due.length })
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 })
   }

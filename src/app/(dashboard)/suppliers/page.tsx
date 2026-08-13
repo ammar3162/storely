@@ -197,7 +197,9 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
     })
     const data = await res.json()
     setSending(false)
-    if (data.sent > 0) toast(`✅ تم إرسال طلب توريد للمورد ${s.name}`)
+    if (data.sent > 0 && data.failed > 0) toast(`⚠️ تم إرسال ${data.sent} صنف، وفشل إرسال ${data.failed} — تحقق من رقم واتساب المورد وحاول مرة أخرى`, 'warning')
+    else if (data.sent > 0) toast(`✅ تم إرسال طلب توريد للمورد ${s.name}`)
+    else if (data.failed > 0) toast(`❌ فشل إرسال طلب التوريد للمورد ${s.name} — تحقق من رقم واتساب المورد وحاول مرة أخرى`, 'error')
     else toast('لا توجد منتجات تحتاج طلب توريد الآن', 'warning')
   }
 
@@ -437,8 +439,8 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
             ) : (
               <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
                 {timelineEvents.map((e:any,i:number)=>{
-                  const icons: Record<string,string> = { order_sent:'🟢', order_confirmed:'✅', order_escalated:'⚠️', purchase:'💰' }
-                  const colors: Record<string,string> = { order_sent:'#16a34a', order_confirmed:'#16a34a', order_escalated:'#d97706', purchase:'#2563eb' }
+                  const icons: Record<string,string> = { order_sent:'🟢', order_confirmed:'✅', order_escalated:'⚠️', purchase:'💰', order_failed:'❌' }
+                  const colors: Record<string,string> = { order_sent:'#16a34a', order_confirmed:'#16a34a', order_escalated:'#d97706', purchase:'#2563eb', order_failed:'#dc2626' }
                   return (
                     <div key={i} style={{display:'flex',gap:10,paddingBottom:10,borderBottom:i<timelineEvents.length-1?'1px solid #f1f5f9':'none'}}>
                       <div style={{fontSize:16,flexShrink:0}}>{icons[e.type]||'•'}</div>
