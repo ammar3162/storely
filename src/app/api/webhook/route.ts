@@ -32,6 +32,23 @@ async function setState(phone: string, state: string) {
   } catch {}
 }
 
+// ── إيقاف مؤقت للبوت (لما شخص يطلب التواصل مع فريق الدعم البشري) ──
+async function pauseBot(phone: string, minutes: number) {
+  try {
+    const until = new Date(Date.now() + minutes * 60 * 1000).toISOString()
+    await sb().from('whatsapp_sessions').upsert({ phone, paused_until: until, updated_at: new Date().toISOString() } as any, { onConflict: 'phone' })
+  } catch {}
+}
+
+async function isBotPaused(phone: string): Promise<boolean> {
+  try {
+    const { data } = await sb().from('whatsapp_sessions').select('paused_until').eq('phone', phone).maybeSingle()
+    const until = (data as any)?.paused_until
+    if (!until) return false
+    return new Date(until).getTime() > Date.now()
+  } catch { return false }
+}
+
 const MAIN_MENU  = `أهلاً بك في *Storely* 🏪\n\n1️⃣ حالة المخزون\n2️⃣ المنتجات الناقصة\n3️⃣ الاشتراكات والباقات\n4️⃣ التواصل مع الفريق\n\n💡 أو اكتب اسم منتج مباشرة للبحث عنه\n👇 أرسل رقم الخيار`
 const STOCK_MENU = `📦 *حالة المخزون*\n\n1️⃣ المخزون الناقص\n2️⃣ المخزون الحالي\n3️⃣ عمليات الصرف اليومية\n4️⃣ تقارير المشتريات اليومية\n\nاكتب 0 للقائمة الرئيسية`
 const GUEST_MENU = `مرحباً بك في *Storely* 🏪\n\nنظام إدارة المخزون الذكي\n\n1️⃣ الاشتراكات والباقات\n2️⃣ طريقة الاستخدام\n3️⃣ الدعم الفني\n4️⃣ التواصل مع الفريق\n\n👇 أرسل رقم الخيار`
@@ -232,6 +249,9 @@ export async function POST(req: Request) {
 
       const t = text.trim()
 
+      // البوت موقوف مؤقتاً لهذا الرقم (طلب تواصل بشري) — نتجاهل أي رسالة إلا لو طلب "0" للرجوع يدوياً
+      if (t !== '0' && await isBotPaused(to)) continue
+
       // كشف تأكيد المورد — كلمة "تم" أو "موافق" أو "تأكيد"
       if (['تم','موافق','تأكيد','confirmed','ok','okay'].includes(t.toLowerCase())) {
         // ابحث عن آخر طلب معلق لهذا الرقم
@@ -382,7 +402,7 @@ export async function POST(req: Request) {
             continue
           }
           if (t==='3') { await send(to,GUEST_V['1']); continue }
-          if (t==='4') { await send(to,GUEST_V['4']); continue }
+          if (t==='4') { await pauseBot(to, 20); await send(to,GUEST_V['4']+'\n\n⏸️ تم إيقاف الردود التلقائية 20 دقيقة عشان يتواصل معك فريقنا مباشرة.'); continue }
           // بحث عن منتج
           if (t.length>1 && isNaN(Number(t))) {
             await searchProduct(to, user.org_id, t)
@@ -474,7 +494,8 @@ export async function POST(req: Request) {
       } else {
         // زائر غير مسجل
         await setState(to,'main')
-        await send(to, GUEST_V[t]||GUEST_MENU)
+        if (t==='4') { await pauseBot(to, 20); await send(to,GUEST_V['4']+'\n\n⏸️ تم إيقاف الردود التلقائية 20 دقيقة عشان يتواصل معك فريقنا مباشرة.') }
+        else await send(to, GUEST_V[t]||GUEST_MENU)
       }
     }
     return NextResponse.json({ok:true})
