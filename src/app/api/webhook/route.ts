@@ -269,23 +269,10 @@ export async function POST(req: Request) {
     if (!msgs.length) return NextResponse.json({ok:true})
 
     for (const msg of msgs) {
-      if (msg?.key?.fromMe===true) {
-        // أي رسالة صادرة من رقم Storely — نتحقق هل هي رسالة البوت نفسه (متسجّلة مسبقاً)
-        // أو رسالة إنسان كتبها يدوياً من واتساب ويب — بس اليدوية توقف الرد التلقائي للعميل
-        try {
-          const outMsgId = msg?.key?.id
-          let isBotOwnMessage = false
-          if (outMsgId) {
-            const { data: botMsg } = await sb().from('bot_sent_messages' as any).select('message_id').eq('message_id', String(outMsgId)).maybeSingle()
-            isBotOwnMessage = !!botMsg
-          }
-          if (!isBotOwnMessage) {
-            const outTo = (msg?.key?.remoteJid?.replace('@s.whatsapp.net','')?.replace('@c.us','')||'')
-            if (outTo) await pauseBot(outTo, 20)
-          }
-        } catch {}
-        continue
-      }
+      if (msg?.key?.fromMe===true) continue
+      // ملاحظة: جرّبنا تمييز رسائل البوت عن الرد البشري اليدوي لإيقاف تلقائي أذكى،
+      // بس رجعناها مؤقتاً — رد Wasender API ما رجّع معرّف الرسالة بالشكل المتوقع،
+      // فكان يوقف البوت نفسه غلط بعد كل رد. نحتاج نتأكد من شكل الرد الفعلي قبل نعيد المحاولة.
 
       // منع معالجة نفس الرسالة مرتين — Wasender أحياناً يعيد إرسال نفس الحدث (webhook retry)
       const msgId = msg?.key?.id
