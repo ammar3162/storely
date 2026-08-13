@@ -10,11 +10,18 @@ const sb = () => createClient(SUPABASE_URL, SERVICE_KEY)
 
 async function send(to: string, text: string) {
   try {
-    await fetch('https://www.wasenderapi.com/api/send-message', {
+    const res = await fetch('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${API_KEY}`, 'X-Session-Id':SESSION },
       body: JSON.stringify({ to, text }),
     })
+    // نسجّل معرّف الرسالة اللي أرسلها البوت نفسه — عشان لما توصلنا نفس الرسالة بحدث fromMe
+    // نقدر نميّزها عن رسالة إنسان يكتب يدوياً من واتساب ويب (اللي المفروض توقف الرد التلقائي)
+    const data = await res.json().catch(() => null)
+    const sentMsgId = data?.data?.msgId || data?.msgId
+    if (sentMsgId) {
+      try { await sb().from('bot_sent_messages' as any).insert({ message_id: String(sentMsgId) }) } catch {}
+    }
   } catch {}
 }
 
@@ -262,7 +269,23 @@ export async function POST(req: Request) {
     if (!msgs.length) return NextResponse.json({ok:true})
 
     for (const msg of msgs) {
-      if (msg?.key?.fromMe===true) continue
+      if (msg?.key?.fromMe===true) {
+        // أي رسالة صادرة من رقم Storely — نتحقق هل هي رسالة البوت نفسه (متسجّلة مسبقاً)
+        // أو رسالة إنسان كتبها يدوياً من واتساب ويب — بس اليدوية توقف الرد التلقائي للعميل
+        try {
+          const outMsgId = msg?.key?.id
+          let isBotOwnMessage = false
+          if (outMsgId) {
+            const { data: botMsg } = await sb().from('bot_sent_messages' as any).select('message_id').eq('message_id', String(outMsgId)).maybeSingle()
+            isBotOwnMessage = !!botMsg
+          }
+          if (!isBotOwnMessage) {
+            const outTo = (msg?.key?.remoteJid?.replace('@s.whatsapp.net','')?.replace('@c.us','')||'')
+            if (outTo) await pauseBot(outTo, 20)
+          }
+        } catch {}
+        continue
+      }
 
       // منع معالجة نفس الرسالة مرتين — Wasender أحياناً يعيد إرسال نفس الحدث (webhook retry)
       const msgId = msg?.key?.id
