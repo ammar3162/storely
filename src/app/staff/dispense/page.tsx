@@ -245,14 +245,17 @@ export default function StaffPage() {
   }
 
   async function updateQty() {
-    if(!editingProduct||!editQty) return
+    if(!editingProduct||!editQty||!session) return
     setSavingQty(true)
-    const newQty = Number(editQty)
-    const diff = newQty - editingProduct.qty
-    await (sb as any).from('products').update({qty:newQty}).eq('id',editingProduct.id)
-    if(diff!==0) await (sb as any).from('stock_movements').insert({product_id:editingProduct.id,type:diff>0?'in':'out',qty_change:diff,note:`تعديل يدوي بواسطة الموظف: ${session?.name}`})
-    setSavingQty(false); setEditingProduct(null)
-    if(session) loadProducts(session)
+    try {
+      const staffToken = localStorage.getItem('staff_token')
+      const res = await fetch('/api/staff-edit-inventory',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},body:JSON.stringify({productId:editingProduct.id,newQty:Number(editQty),staffName:session.name})})
+      const j = await res.json()
+      if(!res.ok||!j.success){ showMsg(j.error||T('error',lang),'error'); setSavingQty(false); return }
+      setEditingProduct(null)
+      loadProducts(session)
+    } catch { showMsg(T('error',lang),'error') }
+    setSavingQty(false)
   }
 
   async function addProduct() {
