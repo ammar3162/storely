@@ -38,12 +38,7 @@ export default function StaffLoginPage() {
   useEffect(()=>{
     const saved = localStorage.getItem('staff_session')
     if(saved) {
-      try {
-        const parsed = JSON.parse(saved)
-        router.push(parsed.role === 'cashier' && !parsed.permissions?.dispense ? '/staff/cashier-closing' : '/staff/dispense')
-      } catch {
-        router.push('/staff/dispense')
-      }
+      router.push('/staff/choose')
     }
 
     const pwa = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true
@@ -135,14 +130,8 @@ export default function StaffLoginPage() {
       localStorage.setItem('staff_session',JSON.stringify(data.staff))
       localStorage.setItem('staff_token',data.token)
       setLoading(false)
-      // لو كاشير وعنده صلاحية الصرف → يختار
-      if(data.staff.role === 'cashier' && data.staff.permissions?.dispense) {
-        router.push('/staff/choose')
-      } else if(data.staff.role === 'cashier') {
-        router.push('/staff/cashier-closing')
-      } else {
-        router.push('/staff/dispense')
-      }
+      // كل الموظفين يمرّون بصفحة "اختر الوظيفة" أول — فيها تسجيل الحضور والانصراف
+      router.push('/staff/choose')
     } catch (err: any) {
       clearTimeout(timeoutId)
       setError(err?.name === 'AbortError' ? 'الاتصال بطيء جداً — حاول مرة أخرى' : 'حدث خطأ — حاول مرة أخرى')
