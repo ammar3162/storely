@@ -50,13 +50,61 @@ export async function POST(req: Request) {
       }, { status: 403 })
     }
 
+    let lateMinutes: number | null = null
+    let penaltyAmount: number | null = null
+
+    // حساب التأخير — بس عند تسجيل الحضور، ولو الموظف مرتبط بشفت له وقت بداية محدد
+    if (type === 'check_in') {
+      const { data: staffShift } = await supabase.from('staff_members').select('shift_id').eq('id', staff_id).single()
+      const shiftId = (staffShift as any)?.shift_id
+      if (shiftId) {
+        const { data: shift } = await supabase.from('shifts').select('start_time,is_24h').eq('id', shiftId).maybeSingle()
+        if (shift && !(shift as any).is_24h) {
+          const now = new Date()
+          const nowMinutes = ((now.getUTCHours() + 3) % 24) * 60 + now.getUTCMinutes()
+          const [sh, sm] = String((shift as any).start_time).split(':').map(Number)
+          const shiftStartMinutes = sh * 60 + sm
+          const diff = nowMinutes - shiftStartMinutes
+          lateMinutes = diff > 0 ? diff : 0
+
+          if (lateMinutes > 0) {
+            const { data: rules } = await supabase.from('late_penalty_rules').select('*').eq('org_id', org_id).order('min_minutes')
+            const match = (rules || []).find((r: any) => lateMinutes! >= r.min_minutes && (r.max_minutes === null || lateMinutes! <= r.max_minutes))
+            if (match) penaltyAmount = Number((match as any).penalty_amount)
+          }
+        }
+      }
+    }
+
     const { error: insErr } = await supabase.from('staff_attendance').insert({
       org_id, branch_id, staff_id, type,
       latitude, longitude, distance_m: Math.round(dist), within_range: true,
+      late_minutes: lateMinutes, penalty_amount: penaltyAmount,
     } as any)
     if (insErr) return NextResponse.json({ error: 'فشل تسجيل الحضور — حاول مرة أخرى' }, { status: 500 })
 
-    return NextResponse.json({ success: true, distance: Math.round(dist) })
+    // إشعارات المالك — عند الحضور فقط
+    if (type === 'check_in') {
+      if (lateMinutes && lateMinutes > 0) {
+        const hrs = Math.floor(lateMinutes / 60)
+        const mins = lateMinutes % 60
+        const durationText = hrs > 0 ? `${hrs} ساعة${mins > 0 ? ` و${mins} دقيقة` : ''}` : `${mins} دقيقة`
+        const penaltyText = penaltyAmount ? ` — الغرامة المقترحة: ${penaltyAmount} ر.س` : ''
+        await supabase.from('notifications').insert({
+          org_id, branch_id, type: 'warning',
+          title: 'تأخير موظف',
+          message: `${(staff as any).name} سجّل حضوره متأخراً بـ${durationText}${penaltyText}`,
+        } as any)
+      } else {
+        await supabase.from('notifications').insert({
+          org_id, branch_id, type: 'success',
+          title: 'حضور موظف',
+          message: `${(staff as any).name} سجّل حضوره الآن`,
+        } as any)
+      }
+    }
+
+    return NextResponse.json({ success: true, distance: Math.round(dist), late_minutes: lateMinutes, penalty_amount: penaltyAmount })
   } catch (err: any) {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
