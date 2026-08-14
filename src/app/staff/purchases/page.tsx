@@ -60,19 +60,29 @@ export default function StaffPurchasesPage() {
   }
 
   async function loadSuppliers(orgId: string) {
-    const{data}=await (sb as any).from('suppliers').select('id,name').eq('org_id',orgId).eq('is_active',true).order('name')
-    setSuppliers(data||[])
+    try {
+      const staffToken = localStorage.getItem('staff_token')
+      const res = await fetch('/api/staff-suppliers',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},body:JSON.stringify({})})
+      const j = await res.json()
+      if(j.success) setSuppliers(j.suppliers||[])
+    } catch {}
   }
 
   async function handleImage(file: File) {
     setUploading(true)
-    const ext = file.name.split('.').pop()
-    const path = `invoices/${session!.org_id}-${Date.now()}.${ext}`
-    const{error}=await sb.storage.from('invoices').upload(path, file, {upsert:true})
-    if(error){showToast('فشل رفع الصورة');setUploading(false);return}
-    const{data:{publicUrl}}=sb.storage.from('invoices').getPublicUrl(path)
-    setForm(f=>({...f,invoice_image:publicUrl}));setPreviewUrl(publicUrl)
-    setUploading(false);showToast('تم رفع الفاتورة ✓')
+    try {
+      const staffToken = localStorage.getItem('staff_token')
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/staff-upload-invoice',{method:'POST',headers:{'Authorization':`Bearer ${staffToken}`},body:fd})
+      const j = await res.json()
+      if(!res.ok||!j.success){showToast(j.error||'فشل رفع الصورة');setUploading(false);return}
+      setForm(f=>({...f,invoice_image:j.url}));setPreviewUrl(j.url)
+      showToast('تم رفع الفاتورة ✓')
+    } catch {
+      showToast('فشل رفع الصورة')
+    }
+    setUploading(false)
   }
 
   async function handleSubmit(e: React.FormEvent) {
