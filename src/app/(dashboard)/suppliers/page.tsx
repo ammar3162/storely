@@ -109,7 +109,7 @@ function EscalationChain({ productId, allSuppliers, primarySupplierId, refreshKe
   )
 }
 
-function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, curr, autoOpen }: any) {
+function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, curr, autoOpen, recentFailedCount }: any) {
   const [showTimeline, setShowTimeline] = useState(false)
   const [timelineEvents, setTimelineEvents] = useState<any[]>([])
   const [timelineLoading, setTimelineLoading] = useState(false)
@@ -263,6 +263,11 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
               )}
               {linked.length>0 && <span style={{fontSize:11,fontWeight:700,background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',borderRadius:20,padding:'2px 8px'}}>{linked.length} منتج مرتبط</span>}
               {linked.length===0 && <span style={{fontSize:11,fontWeight:700,background:'#fef3c7',color:'#92400e',border:'1px solid #fcd34d',borderRadius:20,padding:'2px 8px'}}>⚠️ لا منتجات مرتبطة</span>}
+              {recentFailedCount>0 && (
+                <span onClick={e=>{e.stopPropagation();openTimeline()}} title="اضغط لمشاهدة سجل التواصل" style={{fontSize:11,fontWeight:700,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:20,padding:'2px 8px',cursor:'pointer'}}>
+                  ❌ فشل إرسال ({recentFailedCount})
+                </span>
+              )}
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:3, flexWrap:'wrap' as const }}>
               {editingPhone ? (
@@ -479,6 +484,7 @@ export default function SuppliersPage() {
   const [priceComparisons, setPriceComparisons] = useState<any[]>([])
   const [showPriceComparison, setShowPriceComparison] = useState(false)
   const [supplierRatings, setSupplierRatings] = useState<Record<string,any>>({})
+  const [failedRecentMap, setFailedRecentMap] = useState<Record<string,number>>({})
   const sb = createClient()
 
   useEffect(() => { init() }, [])
@@ -508,6 +514,14 @@ export default function SuppliersPage() {
     if (bid) q = q.eq('branch_id', bid)
     const { data } = await q.order('created_at', { ascending: false })
     setSuppliers(data || [])
+    const ids = (data || []).map((s:any)=>s.id)
+    if (ids.length) {
+      const since24h = new Date(Date.now() - 24*60*60*1000).toISOString()
+      const { data: failedLogs } = await (sb as any).from('supplier_order_logs').select('supplier_id').eq('status','failed').gte('created_at', since24h).in('supplier_id', ids)
+      const map: Record<string,number> = {}
+      ;(failedLogs||[]).forEach((r:any)=>{ map[r.supplier_id] = (map[r.supplier_id]||0) + 1 })
+      setFailedRecentMap(map)
+    } else setFailedRecentMap({})
   }
 
   async function loadProducts(oid: string) {
@@ -563,6 +577,24 @@ export default function SuppliersPage() {
           )}
           <button onClick={()=>setShowAdd(true)} style={{ ...btnPrimary, padding:'10px 18px', fontSize:font.sm }}>+ مورد جديد</button>
         </div>
+      </div>
+
+      {/* شريط إحصائية سريعة */}
+      <div style={{display:'grid',gridTemplateColumns:`repeat(${Object.keys(failedRecentMap).length>0?3:2},1fr)`,gap:8,marginBottom:18}}>
+        <div style={{...card,padding:'12px 14px',textAlign:'center' as const}}>
+          <div style={{fontSize:20,fontWeight:900,color:colors.text}}>{suppliers.length}</div>
+          <div style={{fontSize:10,color:colors.text4,fontWeight:600,marginTop:2}}>إجمالي الموردين</div>
+        </div>
+        <div style={{...card,padding:'12px 14px',textAlign:'center' as const,background:unlinkedProducts.length>0?'#fffbeb':undefined,border:unlinkedProducts.length>0?'1px solid #fde68a':undefined}}>
+          <div style={{fontSize:20,fontWeight:900,color:unlinkedProducts.length>0?'#92400e':colors.text}}>{unlinkedProducts.length}</div>
+          <div style={{fontSize:10,color:unlinkedProducts.length>0?'#92400e':colors.text4,fontWeight:600,marginTop:2}}>منتجات بدون مورد</div>
+        </div>
+        {Object.keys(failedRecentMap).length>0 && (
+          <div style={{...card,padding:'12px 14px',textAlign:'center' as const,background:'#fef2f2',border:'1px solid #fecaca'}}>
+            <div style={{fontSize:20,fontWeight:900,color:'#dc2626'}}>{Object.values(failedRecentMap).reduce((a,b)=>a+b,0)}</div>
+            <div style={{fontSize:10,color:'#dc2626',fontWeight:600,marginTop:2}}>رسائل فشل إرسالها (٢٤ ساعة)</div>
+          </div>
+        )}
       </div>
 
       {/* نافذة مقارنة الأسعار */}
@@ -657,7 +689,7 @@ export default function SuppliersPage() {
       ) : (
         <div style={{ display:'flex', flexDirection:'column' as const, gap:12 }}>
           {suppliers.map(s => (
-            <SupplierCard key={s.id} s={s} products={products} orgId={orgId} onRefresh={refresh} allSuppliers={suppliers} rating={supplierRatings[s.id]} curr={curr} autoOpen={!!msParam && s.marketplace_supplier_id===msParam} />
+            <SupplierCard key={s.id} s={s} products={products} orgId={orgId} onRefresh={refresh} allSuppliers={suppliers} rating={supplierRatings[s.id]} curr={curr} autoOpen={!!msParam && s.marketplace_supplier_id===msParam} recentFailedCount={failedRecentMap[s.id]||0} />
           ))}
         </div>
       )}
