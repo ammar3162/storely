@@ -141,15 +141,20 @@ export default function CashierClosingPage() {
   async function uploadImage(file: File, kind: 'network'|'sales') {
     if(!session) return
     kind==='network'?setUploadingNetwork(true):setUploadingSales(true)
-    const ext = file.name.split('.').pop()
-    const path = `cashier-closings/${session.org_id}-${kind}-${Date.now()}.${ext}`
-    const { error } = await sb.storage.from('invoices').upload(path, file, { upsert: true })
-    if(error){ showToast('فشل رفع الصورة','error'); kind==='network'?setUploadingNetwork(false):setUploadingSales(false); return }
-    const { data: { publicUrl } } = sb.storage.from('invoices').getPublicUrl(path)
-    if(kind==='network') setNetworkImage(publicUrl)
-    else setSalesImage(publicUrl)
+    try {
+      const staffToken = localStorage.getItem('staff_token')
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/staff-upload-invoice',{method:'POST',headers:{'Authorization':`Bearer ${staffToken}`},body:fd})
+      const j = await res.json()
+      if(!res.ok||!j.success){ showToast(j.error||'فشل رفع الصورة','error'); kind==='network'?setUploadingNetwork(false):setUploadingSales(false); return }
+      if(kind==='network') setNetworkImage(j.url)
+      else setSalesImage(j.url)
+      showToast('تم رفع الصورة ✓')
+    } catch {
+      showToast('فشل رفع الصورة','error')
+    }
     kind==='network'?setUploadingNetwork(false):setUploadingSales(false)
-    showToast('تم رفع الصورة ✓')
   }
 
   function addPurchaseRow() { setPurchases(prev=>[...prev,{amount:'',reason:''}]) }
