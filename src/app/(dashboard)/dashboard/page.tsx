@@ -23,7 +23,7 @@ function Num({ value }: { value:number }) {
     const t = setInterval(() => { s+=step; if(s>=value){setD(value);clearInterval(t)}else setD(Math.floor(s)) }, 16)
     return () => clearInterval(t)
   }, [value])
-  return <>{d.toLocaleString()}</>
+  return <>{d.toLocaleString('en-US')}</>
 }
 
 function Bar({ data, color }: { data:{label:string;value:number}[]; color:string }) {
