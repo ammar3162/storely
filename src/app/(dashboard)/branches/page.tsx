@@ -15,6 +15,7 @@ export default function BranchesPage() {
   const [inactiveBranches, setInactiveBranches] = useState<any[]>([])
   const [newBranch, setNewBranch] = useState({name:'',location:''})
   const [branchSaving, setBranchSaving] = useState(false)
+  const [savingLocationId, setSavingLocationId] = useState<string|null>(null)
   const [editingNameId, setEditingNameId] = useState<string|null>(null)
   const [editNameValue, setEditNameValue] = useState('')
   const [savingName, setSavingName] = useState(false)
@@ -69,6 +70,23 @@ export default function BranchesPage() {
     setEditingNameId(null)
   }
 
+  async function saveBranchLocation(id:string) {
+    if(!navigator.geolocation){ toast('المتصفح ما يدعم تحديد الموقع','error'); return }
+    setSavingLocationId(id)
+    navigator.geolocation.getCurrentPosition(async (pos)=>{
+      const{error}=await sb.from('branches').update({
+        latitude: pos.coords.latitude, longitude: pos.coords.longitude,
+      } as any).eq('id', id)
+      setSavingLocationId(null)
+      if(error){ toast('فشل حفظ الموقع — حاول مرة أخرى','error'); return }
+      setBranches(prev=>prev.map((br:any)=>br.id===id?{...br,latitude:pos.coords.latitude,longitude:pos.coords.longitude}:br))
+      toast('✅ تم حفظ موقع الفرع — الموظفون الآن يقدروا يسجّلوا حضورهم')
+    }, ()=>{
+      setSavingLocationId(null)
+      toast('تعذر الوصول لموقعك — تأكد من السماح للمتصفح بالوصول للموقع','error')
+    }, { enableHighAccuracy:true, timeout:10000 })
+  }
+
   useEffect(()=>{ init() },[])
 
   async function init() {
@@ -79,9 +97,9 @@ export default function BranchesPage() {
     setOrgId(profile.org_id)
     const{data:org}=await (sb.from('organizations' as any) as any).select('max_branches').eq('id',profile.org_id).single()
     setMaxBranches((org as any)?.max_branches||1)
-    const{data:bList}=await sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',profile.org_id).eq('is_active',true).order('created_at')
+    const{data:bList}=await sb.from('branches').select('id,name,location,whatsapp_number,latitude,longitude').eq('org_id',profile.org_id).eq('is_active',true).order('created_at')
     setBranches(bList||[])
-    const{data:iList}=await sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',profile.org_id).eq('is_active',false).order('created_at')
+    const{data:iList}=await sb.from('branches').select('id,name,location,whatsapp_number,latitude,longitude').eq('org_id',profile.org_id).eq('is_active',false).order('created_at')
     setInactiveBranches(iList||[])
     setLoading(false)
   }
@@ -91,7 +109,7 @@ export default function BranchesPage() {
     setBranchSaving(true)
     const{data:created,error}=await sb.from('branches').insert({ org_id:orgId, name:newBranch.name.trim(), location:newBranch.location.trim()||null }).select().single()
     if(error||!created){toast('فشل إضافة الفرع — حاول مرة أخرى','error');setBranchSaving(false);return}
-    const{data:bList}=await sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',orgId).eq('is_active',true).order('created_at')
+    const{data:bList}=await sb.from('branches').select('id,name,location,whatsapp_number,latitude,longitude').eq('org_id',orgId).eq('is_active',true).order('created_at')
     setBranches(bList||[]); setNewBranch({name:'',location:''}); setBranchSaving(false)
     toast('✅ تم إضافة الفرع')
 
@@ -297,6 +315,12 @@ export default function BranchesPage() {
                     <span style={{textDecoration:'underline'}}>تعديل</span>
                   </button>
                 )}
+              </div>
+              <div style={{marginTop:8,marginRight:48}}>
+                <button onClick={()=>saveBranchLocation(b.id)} disabled={savingLocationId===b.id}
+                  style={{background:'none',border:'none',color:b.latitude?colors.primary:colors.text4,fontSize:11,cursor:'pointer',fontFamily:font.family,padding:0,display:'flex',alignItems:'center',gap:4}}>
+                  📍 {savingLocationId===b.id ? 'جاري تحديد الموقع...' : b.latitude ? 'تم تحديد موقع الفرع — إعادة الضبط' : 'حدّد موقع الفرع (لتفعيل تسجيل الحضور)'}
+                </button>
               </div>
             </div>
           ))}
