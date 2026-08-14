@@ -6,6 +6,7 @@ import { cache } from '@/lib/cache'
 import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { Package, AlertTriangle, ShoppingCart, TrendingUp } from 'lucide-react'
+import { colors as dsColors } from '@/lib/ds'
 
 class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|null}> {
   state = { error: null }
@@ -200,10 +201,10 @@ export default function DashboardPage() {
       {/* ── Notifications ── */}
       {notifs.map((n:any,i:number)=>{
         const tc:{[k:string]:{bg:string,border:string,color:string}} = {
-          info:    {bg:'#eff6ff',border:'#bfdbfe',color:'#378add'},
-          warning: {bg:'#fffbeb',border:'#fde68a',color:'#ba7517'},
-          success: {bg:'#f0fdf4',border:'#bbf7d0',color:'#16a34a'},
-          danger:  {bg:'#fef2f2',border:'#fecaca',color:'#e24b4a'},
+          info:    {bg:dsColors.infoLight,border:dsColors.infoBorder,color:'#378add'},
+          warning: {bg:dsColors.warningLight,border:dsColors.warningBorder,color:'#ba7517'},
+          success: {bg:dsColors.primaryLight,border:dsColors.primaryBorder,color:dsColors.primary},
+          danger:  {bg:dsColors.dangerLight,border:dsColors.dangerBorder,color:'#e24b4a'},
         }
         const t=tc[n.type]||tc.info
         return(
@@ -222,7 +223,7 @@ export default function DashboardPage() {
 
       {/* ── Sub alert ── */}
       {subAlert&&(
-        <div className="u r" style={{padding:'10px 14px',marginBottom:14,background:subExpired?'#fef2f2':'#fffbeb',border:`1px solid ${subExpired?'#f7c1c1':'#fac775'}`,display:'flex',alignItems:'center',gap:10,animationDelay:'.06s'}}>
+        <div className="u r" style={{padding:'10px 14px',marginBottom:14,background:subExpired?dsColors.dangerLight:dsColors.warningLight,border:`1px solid ${subExpired?'#f7c1c1':'#fac775'}`,display:'flex',alignItems:'center',gap:10,animationDelay:'.06s'}}>
           <svg width={14} height={14} fill="none" stroke={subExpired?'#a32d2d':'#854f0b'} strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
           <span style={{fontSize:12,fontWeight:600,color:subExpired?'#a32d2d':'#633806'}}>{subAlert}</span>
         </div>
@@ -231,7 +232,7 @@ export default function DashboardPage() {
       {/* ── Low stock banner ── */}
       {stats.lowStock>0&&(
         <button onClick={()=>router.push('/inventory')} className="u r tap"
-          style={{width:'100%',padding:'12px 16px',marginBottom:16,background:'#fffbeb',border:'1px solid #fac775',display:'flex',alignItems:'center',gap:12,textAlign:'right',fontFamily:'inherit',animationDelay:'.08s'}}>
+          style={{width:'100%',padding:'12px 16px',marginBottom:16,background:dsColors.warningLight,border:'1px solid #fac775',display:'flex',alignItems:'center',gap:12,textAlign:'right',fontFamily:'inherit',animationDelay:'.08s'}}>
           <div style={{flex:1}}>
             <div style={{fontSize:13,fontWeight:600,color:'#633806'}}>{stats.lowStock} صنف وصل للحد الأدنى</div>
             <div style={{fontSize:11,color:'#854f0b',marginTop:2}}>اضغط للتفاصيل</div>
@@ -242,21 +243,21 @@ export default function DashboardPage() {
 
       {/* ── Smart Reorder Timing ── */}
       {smartSuggestions.length>0&&(
-        <div className="s r u" style={{padding:'16px',marginBottom:16,animationDelay:'.09s',border:'1px solid #bfdbfe',background:'#eff6ff'}}>
+        <div className="s r u" style={{padding:'16px',marginBottom:16,animationDelay:'.09s',border:'1px solid #bfdbfe',background:dsColors.infoLight}}>
           <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
             <span style={{fontSize:16}}>🔔</span>
             <span style={{fontSize:13,fontWeight:800,color:'#1c1c1a'}}>توقيت الطلب الذكي</span>
           </div>
           <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
             {smartSuggestions.slice(0,4).map((s,i)=>(
-              <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 10px',background:'white',borderRadius:9,border:`1px solid ${s.urgency==='now'?'#fecaca':'#e5e7eb'}`}}>
+              <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 10px',background:'white',borderRadius:9,border:`1px solid ${s.urgency==='now'?dsColors.dangerBorder:'#e5e7eb'}`}}>
                 <div>
                   <div style={{fontSize:12,fontWeight:700,color:'#1c1c1a'}}>{s.name}</div>
                   <div style={{fontSize:10,color:'#6b7280',marginTop:2}}>
                     استهلاك {s.dailyRate} {s.unit}/يوم · توريد يستغرق {s.avgLeadTimeDays} يوم عادة
                   </div>
                 </div>
-                <span style={{fontSize:10,fontWeight:800,padding:'4px 9px',borderRadius:99,background:s.urgency==='now'?'#fef2f2':'#fffbeb',color:s.urgency==='now'?'#dc2626':'#b45309',whiteSpace:'nowrap' as const}}>
+                <span style={{fontSize:10,fontWeight:800,padding:'4px 9px',borderRadius:99,background:s.urgency==='now'?dsColors.dangerLight:dsColors.warningLight,color:s.urgency==='now'?dsColors.danger:'#b45309',whiteSpace:'nowrap' as const}}>
                   {s.urgency==='now'?'⚠️ اطلب الآن':`اطلب خلال ${Math.max(s.suggestedOrderInDays,0)} يوم`}
                 </span>
               </div>
@@ -268,7 +269,7 @@ export default function DashboardPage() {
       {/* ── Stats ── */}
       <div className="g4 u" style={{marginBottom:14,animationDelay:'.1s'}}>
         {[
-          {label:'الأصناف',    val:stats.products,       note:'في المخزون',   href:'/inventory', accent:'#16a34a', Icon:Package},
+          {label:'الأصناف',    val:stats.products,       note:'في المخزون',   href:'/inventory', accent:dsColors.primary, Icon:Package},
           {label:'ناقص',      val:stats.lowStock,        note:`${stats.outOfStock} نفدت`,href:'/inventory',accent:'#e24b4a', Icon:AlertTriangle},
           {label:'شراء اليوم',val:stats.todayPurchases,  note:'فاتورة',       href:'/purchases', accent:'#378add', Icon:ShoppingCart},
           {label:'صرف اليوم', val:stats.todayDispenses,  note:'عملية',        href:'/dispense',  accent:'#ba7517', Icon:TrendingUp},
@@ -303,7 +304,7 @@ export default function DashboardPage() {
                   {m.isMoney?Number(m.value).toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0})+' '+curr:m.value}
                 </div>
                 {m.change!==null&&(
-                  <div style={{fontSize:10,fontWeight:600,color:m.change>=0?'#16a34a':'#e24b4a',marginTop:3}}>
+                  <div style={{fontSize:10,fontWeight:600,color:m.change>=0?dsColors.primary:'#e24b4a',marginTop:3}}>
                     {m.change>=0?'▲':'▼'} {Math.abs(m.change)}% عن الشهر الماضي
                   </div>
                 )}
@@ -342,7 +343,7 @@ export default function DashboardPage() {
             <div style={{padding:'28px 16px',textAlign:'center',fontSize:12,color:'#888780'}}>كل المخزون بحالة جيدة</div>
           ):lowItems.map((p,i)=>{
             const pct=Math.min(Math.round((p.qty/Math.max(p.reorder_point,1))*100),100)
-            const col=pct<30?'#e24b4a':pct<70?'#ba7517':'#16a34a'
+            const col=pct<30?'#e24b4a':pct<70?'#ba7517':dsColors.primary
             return(
               <div key={i} className="rh" style={{padding:'11px 16px',borderBottom:i<lowItems.length-1?'1px solid #f5f5f4':'none',cursor:'pointer'}} onClick={()=>router.push('/inventory')}>
                 <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
@@ -366,12 +367,12 @@ export default function DashboardPage() {
             <div style={{padding:'28px 16px',textAlign:'center',fontSize:12,color:'#888780'}}>لا توجد حركات بعد</div>
           ):activity.map((m,i)=>(
             <div key={i} className="rh" style={{display:'flex',alignItems:'center',gap:10,padding:'10px 16px',borderBottom:i<activity.length-1?'1px solid #f5f5f4':'none'}}>
-              <div style={{width:8,height:8,borderRadius:'50%',background:m.type==='out'?'#e24b4a':'#16a34a',flexShrink:0}}/>
+              <div style={{width:8,height:8,borderRadius:'50%',background:m.type==='out'?'#e24b4a':dsColors.primary,flexShrink:0}}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:12,fontWeight:500,color:'#1c1c1a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(m.products as any)?.name||'—'}</div>
                 <div style={{fontSize:10,color:'#888780',marginTop:1}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric'})}</div>
               </div>
-              <span style={{fontSize:12,fontWeight:600,color:m.type==='out'?'#e24b4a':'#16a34a',flexShrink:0,fontVariantNumeric:'tabular-nums'}}>
+              <span style={{fontSize:12,fontWeight:600,color:m.type==='out'?'#e24b4a':dsColors.primary,flexShrink:0,fontVariantNumeric:'tabular-nums'}}>
                 {m.qty_change>0?'+':''}{m.qty_change} <span style={{fontSize:10,fontWeight:400,color:'#888780'}}>{(m.products as any)?.unit}</span>
               </span>
             </div>
@@ -382,7 +383,7 @@ export default function DashboardPage() {
       {/* ── Quick actions ── */}
       <div className="gq u" style={{animationDelay:'.28s'}}>
         {[
-          {label:'إضافة منتج',  href:'/inventory', icon:'M12 4v16m8-8H4',            color:'#16a34a'},
+          {label:'إضافة منتج',  href:'/inventory', icon:'M12 4v16m8-8H4',            color:dsColors.primary},
           {label:'تسجيل شراء', href:'/purchases', icon:'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z', color:'#378add'},
           {label:'تسجيل صرف',  href:'/dispense',  icon:'M17 8l4 4m0 0l-4 4m4-4H3',  color:'#e24b4a'},
           {label:'التقارير',   href:'/reports',   icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',color:'#ba7517'},
