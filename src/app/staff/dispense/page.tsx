@@ -37,8 +37,11 @@ const UI: Record<string,Record<string,string>> = {
 
 const T = (key: string, lang: string) => UI[key]?.[lang] || UI[key]?.ar || key
 
-function colorFor(cat: string, cats: string[]) {
-  return CATEGORY_COLORS[cats.indexOf(cat) % CATEGORY_COLORS.length]
+function colorFor(cat: string) {
+  // لون ثابت حسب اسم الفئة نفسه — مو حسب ترتيبها بقائمة متغيّرة (كانت تتغيّر مع تغيّر نمط الاستخدام)
+  let hash = 0
+  for (let i = 0; i < cat.length; i++) hash = (hash * 31 + cat.charCodeAt(i)) >>> 0
+  return CATEGORY_COLORS[hash % CATEGORY_COLORS.length]
 }
 
 function iconFor(cat: string) {
@@ -488,7 +491,7 @@ export default function StaffPage() {
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
               {categories.map((cat,i)=>(
                 <button key={cat} className="cat-card" onClick={()=>setActiveCategory(cat)}
-                  style={{animationDelay:`${i*0.06}s`,background:colorFor(cat,categories),color:'white',border:'none',borderRadius:20,padding:'28px 16px',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:8,boxShadow:`0 8px 24px ${colorFor(cat,categories)}44`,minHeight:120}}>
+                  style={{animationDelay:`${i*0.06}s`,background:colorFor(cat),color:'white',border:'none',borderRadius:20,padding:'28px 16px',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:8,boxShadow:`0 8px 24px ${colorFor(cat)}44`,minHeight:120}}>
                   <div style={{fontSize:30}}>{iconFor(cat)}</div>
                   <div style={{fontSize:18,fontWeight:800}}>{tx(cat)}</div>
                   {lang!=='ar'&&<div style={{fontSize:11,opacity:.7}}>{cat}</div>}
