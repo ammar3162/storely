@@ -5,14 +5,21 @@ import { createClient } from '@/lib/supabase/client'
 import { colors, font, card, btnPrimary, pageTitle, pageSub, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
+import { exportReportPdf } from '@/lib/pdfExport'
 
 export default function AttendancePage() {
   const [tab, setTab] = useState<'report'|'settings'>('report')
   const [orgId, setOrgId] = useState('')
+  const [orgName, setOrgName] = useState('')
   const [branchId, setBranchId] = useState<string|null>(null)
+  const [periodMode, setPeriodMode] = useState<'day'|'range'>('day')
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [rangeFrom, setRangeFrom] = useState(() => { const d=new Date(); d.setDate(1); return d.toISOString().slice(0,10) })
+  const [rangeTo, setRangeTo] = useState(() => new Date().toISOString().slice(0, 10))
   const [rows, setRows] = useState<any[]>([])
+  const [rangeRows, setRangeRows] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [exporting, setExporting] = useState(false)
 
   // إعدادات — شفتات
   const [shifts, setShifts] = useState<any[]>([])
@@ -35,20 +42,64 @@ export default function AttendancePage() {
   const sb = createClient()
 
   useEffect(() => { init() }, [])
-  useEffect(() => { if (orgId) load(orgId, date) }, [date])
+  useEffect(() => { if (orgId && periodMode === 'day') load(orgId, date) }, [date, periodMode])
+  useEffect(() => { if (orgId && periodMode === 'range') loadRange(orgId, rangeFrom, rangeTo) }, [rangeFrom, rangeTo, periodMode])
 
   async function init() {
     const { data: { user } } = await sb.auth.getUser()
     if (!user) return
-    const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
+    const { data: profile } = await sb.from('profiles').select('org_id,organizations(name)').eq('id', user.id).single()
     if (!profile?.org_id) return
     setOrgId(profile.org_id)
+    setOrgName((profile as any)?.organizations?.name || '')
     const bid = sessionStorage.getItem('s_branch_id')
     setBranchId(bid)
     load(profile.org_id, date)
     loadShifts(profile.org_id, bid)
     loadStaff(profile.org_id, bid)
     loadRules(profile.org_id)
+  }
+
+  async function loadRange(oid: string, from: string, to: string) {
+    setLoading(true)
+    try {
+      const bid = sessionStorage.getItem('s_branch_id')
+      const params = new URLSearchParams({ org_id: oid, from, to })
+      if (bid) params.set('branch_id', bid)
+      const res = await fetch(`/api/attendance-report?${params.toString()}`)
+      const j = await res.json()
+      if (j.success) setRangeRows(j.rows || [])
+      else toast(j.error || 'تعذر تحميل السجل', 'error')
+    } catch { toast('خطأ بالاتصال', 'error') }
+    setLoading(false)
+  }
+
+  async function exportRangePdf() {
+    setExporting(true)
+    try {
+      await exportReportPdf({
+        title: 'تقرير الحضور والانصراف',
+        subtitle: `من ${rangeFrom} إلى ${rangeTo}`,
+        orgName,
+        columns: [
+          { header: 'الموظف', key: 'name' },
+          { header: 'أيام الحضور', key: 'days_present', align: 'center' },
+          { header: 'أيام الغياب', key: 'days_absent', align: 'center' },
+          { header: 'إجمالي دقائق التأخير', key: 'total_late_minutes', align: 'center' },
+          { header: 'إجمالي الخصومات (ر.س)', key: 'total_penalty', align: 'center' },
+        ],
+        rows: rangeRows,
+        totalsRow: {
+          name: 'الإجمالي',
+          days_present: rangeRows.reduce((s,r)=>s+r.days_present,0),
+          days_absent: rangeRows.reduce((s,r)=>s+r.days_absent,0),
+          total_late_minutes: rangeRows.reduce((s,r)=>s+r.total_late_minutes,0),
+          total_penalty: Math.round(rangeRows.reduce((s,r)=>s+r.total_penalty,0)*100)/100,
+        },
+        fileName: `تقرير-الحضور-${rangeFrom}-${rangeTo}`,
+      })
+    } catch { toast('فشل التصدير', 'error') }
+    setExporting(false)
   }
 
   async function load(oid: string, d: string) {
@@ -168,61 +219,125 @@ export default function AttendancePage() {
 
       {tab === 'report' && (
         <>
-          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ ...inp(), width: 170 }} />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8, marginBottom: 16 }}>
-            <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}` }}>
-              <div style={{ fontSize: 22, fontWeight: 900, color: colors.primary }}>{presentCount}</div>
-              <div style={{ fontSize: 11, color: colors.primary, fontWeight: 600, marginTop: 2 }}>حضروا اليوم</div>
+          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: 10 }}>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {[{ id: 'day', label: 'يوم واحد' }, { id: 'range', label: 'فترة مخصصة' }].map(m => (
+                <button key={m.id} onClick={() => setPeriodMode(m.id as any)}
+                  style={{ padding: '7px 14px', borderRadius: 99, border: `1.5px solid ${periodMode === m.id ? colors.primary : colors.border2}`, background: periodMode === m.id ? colors.primaryLight : colors.surface, color: periodMode === m.id ? colors.primary : colors.text3, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
+                  {m.label}
+                </button>
+              ))}
             </div>
-            <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: colors.dangerLight, border: `1px solid ${colors.dangerBorder}` }}>
-              <div style={{ fontSize: 22, fontWeight: 900, color: colors.danger }}>{absentCount}</div>
-              <div style={{ fontSize: 11, color: colors.danger, fontWeight: 600, marginTop: 2 }}>لم يحضروا</div>
-            </div>
-          </div>
-
-          <div style={{ ...card, overflow: 'hidden' }}>
-            {loading ? (
-              <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>جاري التحميل...</div>
-            ) : rows.length === 0 ? (
-              <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>ما فيه موظفين نشطين بهذا الفرع</div>
+            {periodMode === 'day' ? (
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ ...inp(), width: 170 }} />
             ) : (
-              <div style={{ overflowX: 'auto' as const }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 }}>
-                  <thead>
-                    <tr style={{ background: colors.bg, borderBottom: `1px solid ${colors.border2}` }}>
-                      <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الموظف</th>
-                      <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الحالة</th>
-                      <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>وقت الحضور</th>
-                      <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>وقت الانصراف</th>
-                      <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجمالي الساعات</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((r, i) => (
-                      <tr key={r.staff_id} style={{ borderBottom: i < rows.length - 1 ? `1px solid ${colors.border}` : 'none' }}>
-                        <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}</td>
-                        <td style={{ padding: '11px 14px' }}>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(r.status), background: statusBg(r.status), padding: '3px 10px', borderRadius: 99 }}>{r.status}</span>
-                        </td>
-                        <td style={{ padding: '11px 14px', color: colors.text2 }}>
-                          {r.check_in ? new Date(r.check_in).toLocaleTimeString('ar-SA', { numberingSystem: 'latn', hour: '2-digit', minute: '2-digit' }) : '—'}
-                        </td>
-                        <td style={{ padding: '11px 14px', color: colors.text2 }}>
-                          {r.check_out ? new Date(r.check_out).toLocaleTimeString('ar-SA', { numberingSystem: 'latn', hour: '2-digit', minute: '2-digit' }) : '—'}
-                        </td>
-                        <td style={{ padding: '11px 14px', color: colors.text2, fontWeight: 600 }}>
-                          {r.hours_worked !== null ? `${r.hours_worked} ساعة` : '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input type="date" value={rangeFrom} onChange={e => setRangeFrom(e.target.value)} style={{ ...inp(), width: 150 }} />
+                <span style={{ color: colors.text4, fontSize: 12 }}>إلى</span>
+                <input type="date" value={rangeTo} onChange={e => setRangeTo(e.target.value)} style={{ ...inp(), width: 150 }} />
+                <button onClick={exportRangePdf} disabled={exporting || rangeRows.length===0} style={{ ...btnPrimary, padding: '9px 16px', fontSize: 13 }}>
+                  {exporting ? '...' : '📄 تصدير PDF'}
+                </button>
               </div>
             )}
           </div>
+
+          {periodMode === 'day' ? (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8, marginBottom: 16 }}>
+                <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}` }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: colors.primary }}>{presentCount}</div>
+                  <div style={{ fontSize: 11, color: colors.primary, fontWeight: 600, marginTop: 2 }}>حضروا اليوم</div>
+                </div>
+                <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: colors.dangerLight, border: `1px solid ${colors.dangerBorder}` }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: colors.danger }}>{absentCount}</div>
+                  <div style={{ fontSize: 11, color: colors.danger, fontWeight: 600, marginTop: 2 }}>لم يحضروا</div>
+                </div>
+              </div>
+
+              <div style={{ ...card, overflow: 'hidden' }}>
+                {loading ? (
+                  <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>جاري التحميل...</div>
+                ) : rows.length === 0 ? (
+                  <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>ما فيه موظفين نشطين بهذا الفرع</div>
+                ) : (
+                  <div style={{ overflowX: 'auto' as const }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ background: colors.bg, borderBottom: `1px solid ${colors.border2}` }}>
+                          <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الموظف</th>
+                          <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الحالة</th>
+                          <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>وقت الحضور</th>
+                          <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>وقت الانصراف</th>
+                          <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجمالي الساعات</th>
+                          <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>التأخير</th>
+                          <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الخصم</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((r, i) => (
+                          <tr key={r.staff_id} style={{ borderBottom: i < rows.length - 1 ? `1px solid ${colors.border}` : 'none' }}>
+                            <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}</td>
+                            <td style={{ padding: '11px 14px' }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(r.status), background: statusBg(r.status), padding: '3px 10px', borderRadius: 99 }}>{r.status}</span>
+                            </td>
+                            <td style={{ padding: '11px 14px', color: colors.text2 }}>
+                              {r.check_in ? new Date(r.check_in).toLocaleTimeString('ar-SA', { numberingSystem: 'latn', hour: '2-digit', minute: '2-digit' }) : '—'}
+                            </td>
+                            <td style={{ padding: '11px 14px', color: colors.text2 }}>
+                              {r.check_out ? new Date(r.check_out).toLocaleTimeString('ar-SA', { numberingSystem: 'latn', hour: '2-digit', minute: '2-digit' }) : '—'}
+                            </td>
+                            <td style={{ padding: '11px 14px', color: colors.text2, fontWeight: 600 }}>
+                              {r.hours_worked !== null ? `${r.hours_worked} ساعة` : '—'}
+                            </td>
+                            <td style={{ padding: '11px 14px', color: r.late_minutes ? colors.warning : colors.text4 }}>
+                              {r.late_minutes ? `${r.late_minutes} دقيقة` : '—'}
+                            </td>
+                            <td style={{ padding: '11px 14px', color: r.penalty_amount ? colors.danger : colors.text4, fontWeight: 700 }}>
+                              {r.penalty_amount ? `${r.penalty_amount} ر.س` : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div style={{ ...card, overflow: 'hidden' }}>
+              {loading ? (
+                <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>جاري التحميل...</div>
+              ) : rangeRows.length === 0 ? (
+                <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>ما فيه بيانات لهذي الفترة</div>
+              ) : (
+                <div style={{ overflowX: 'auto' as const }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ background: colors.bg, borderBottom: `1px solid ${colors.border2}` }}>
+                        <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الموظف</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>أيام الحضور</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>أيام الغياب</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجمالي التأخير</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجمالي الخصومات</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rangeRows.map((r, i) => (
+                        <tr key={r.staff_id} style={{ borderBottom: i < rangeRows.length - 1 ? `1px solid ${colors.border}` : 'none' }}>
+                          <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}</td>
+                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: colors.primary, fontWeight: 700 }}>{r.days_present}</td>
+                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: colors.danger, fontWeight: 700 }}>{r.days_absent}</td>
+                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_late_minutes ? colors.warning : colors.text4 }}>{r.total_late_minutes ? `${r.total_late_minutes} دقيقة` : '—'}</td>
+                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_penalty ? colors.danger : colors.text4, fontWeight: 700 }}>{r.total_penalty ? `${r.total_penalty} ر.س` : '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
 
