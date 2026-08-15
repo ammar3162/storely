@@ -395,6 +395,9 @@ export default function StaffPage() {
               <div style={{fontSize:11,color:'rgba(255,255,255,.6)',marginTop:1}}>{session.org_name}{session.branch_name?` · ${session.branch_name}`:''}</div>
             </div>
           </div>
+          <button onClick={()=>router.push('/staff/choose')} style={{background:'rgba(255,255,255,.1)',color:'white',border:'1px solid rgba(255,255,255,.2)',borderRadius:10,padding:'7px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',gap:5}}>
+            📍 الحضور
+          </button>
           <button onClick={logout} style={{background:'rgba(255,255,255,.1)',color:'white',border:'1px solid rgba(255,255,255,.2)',borderRadius:10,padding:'7px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',backdropFilter:'blur(4px)'}}>
             {T('logout',lang)}
           </button>
