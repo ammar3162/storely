@@ -47,11 +47,11 @@ export async function POST(req: Request) {
     }
 
     const dist = distanceMeters(Number(latitude), Number(longitude), Number(branch.latitude), Number(branch.longitude))
-    const withinRange = dist <= (branch.attendance_radius_m || 150)
+    const withinRange = dist <= (branch.attendance_radius_m || 50)
 
     if (!withinRange) {
       return NextResponse.json({
-        error: `أنت بعيد عن الفرع بمسافة ${Math.round(dist)} متر — يجب أن تكون داخل نطاق ${branch.attendance_radius_m || 150} متر لتسجيل ${type==='check_in'?'الحضور':'الانصراف'}`,
+        error: `أنت بعيد عن الفرع بمسافة ${Math.round(dist)} متر — يجب أن تكون داخل نطاق ${branch.attendance_radius_m || 50} متر لتسجيل ${type==='check_in'?'الحضور':'الانصراف'}`,
       }, { status: 403 })
     }
 
