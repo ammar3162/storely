@@ -30,6 +30,11 @@ export async function POST(req: Request) {
 
     const supabase = sb()
 
+    const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
+    if ((orgCheck as any)?.plan === 'basic') {
+      return NextResponse.json({ error: 'ميزة الحضور والانصراف متاحة فقط بالباقة المتوسطة أو المتقدمة — يرجى إبلاغ صاحب المنشأة' }, { status: 403 })
+    }
+
     // تأكد الموظف فعلاً تابع لهذا الفرع/المنشأة
     const { data: staff } = await supabase.from('staff_members').select('id,name,branch_id').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
     if (!staff) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })

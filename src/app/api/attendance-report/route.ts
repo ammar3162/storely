@@ -34,6 +34,11 @@ export async function GET(req: Request) {
 
     const supabase = sb()
 
+    const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
+    if ((orgCheck as any)?.plan === 'basic') {
+      return NextResponse.json({ error: 'upgrade_required', message: 'ميزة الحضور والانصراف متاحة فقط بالباقة المتوسطة أو المتقدمة' }, { status: 403 })
+    }
+
     let staffQ = supabase.from('staff_members').select('id,name,branch_id').eq('org_id', org_id).eq('is_active', true)
     if (effectiveBranchId) staffQ = staffQ.eq('branch_id', effectiveBranchId)
     const { data: staffList } = await staffQ.order('name')

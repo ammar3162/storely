@@ -11,6 +11,7 @@ export default function AttendancePage() {
   const [tab, setTab] = useState<'report'|'settings'>('report')
   const [orgId, setOrgId] = useState('')
   const [orgName, setOrgName] = useState('')
+  const [locked, setLocked] = useState(false)
   const [branchId, setBranchId] = useState<string|null>(null)
   const [periodMode, setPeriodMode] = useState<'day'|'range'>('day')
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
@@ -49,10 +50,11 @@ export default function AttendancePage() {
   async function init() {
     const { data: { user } } = await sb.auth.getUser()
     if (!user) return
-    const { data: profile } = await sb.from('profiles').select('org_id,organizations(name)').eq('id', user.id).single()
+    const { data: profile } = await sb.from('profiles').select('org_id,organizations(name,plan)').eq('id', user.id).single()
     if (!profile?.org_id) return
     setOrgId(profile.org_id)
     setOrgName((profile as any)?.organizations?.name || '')
+    if ((profile as any)?.organizations?.plan === 'basic') { setLocked(true); return }
     const bid = sessionStorage.getItem('s_branch_id')
     setBranchId(bid)
     load(profile.org_id, date)
@@ -223,6 +225,14 @@ export default function AttendancePage() {
     s === 'حاضر' ? colors.primary : s === 'انصرف' ? colors.info : colors.text4
   const statusBg = (s: string) =>
     s === 'حاضر' ? colors.primaryLight : s === 'انصرف' ? colors.infoLight : colors.bg
+
+  if (locked) return (
+    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:680,margin:'40px auto',textAlign:'center' as const}}>
+      <div style={{fontSize:44,marginBottom:12}}>🔒</div>
+      <div style={{fontSize:16,fontWeight:800,color:colors.text,marginBottom:8}}>ميزة الحضور والانصراف متاحة بالباقة المتوسطة أو المتقدمة</div>
+      <div style={{fontSize:13,color:colors.text3}}>رقّي باقتك عشان تتابع حضور فريقك وتراقب التأخير تلقائياً بالـGPS</div>
+    </div>
+  )
 
   return (
     <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 900, margin: '0 auto' }}>
