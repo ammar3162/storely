@@ -20,6 +20,7 @@ export default function AttendancePage() {
   const [rangeRows, setRangeRows] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState(false)
+  const [monthStats, setMonthStats] = useState<{totalPenalty:number; attendanceRate:number|null; mostLate:{name:string;minutes:number}|null}|null>(null)
 
   // إعدادات — شفتات
   const [shifts, setShifts] = useState<any[]>([])
@@ -58,6 +59,28 @@ export default function AttendancePage() {
     loadShifts(profile.org_id, bid)
     loadStaff(profile.org_id, bid)
     loadRules(profile.org_id)
+    loadMonthOverview(profile.org_id)
+  }
+
+  async function loadMonthOverview(oid: string) {
+    try {
+      const now = new Date()
+      const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
+      const to = now.toISOString().slice(0, 10)
+      const bid = sessionStorage.getItem('s_branch_id')
+      const params = new URLSearchParams({ org_id: oid, from, to })
+      if (bid) params.set('branch_id', bid)
+      const res = await fetch(`/api/attendance-report?${params.toString()}`)
+      const j = await res.json()
+      if (!j.success || !j.rows?.length) { setMonthStats({ totalPenalty: 0, attendanceRate: null, mostLate: null }); return }
+      const totalPenalty = Math.round(j.rows.reduce((s:number,r:any)=>s+r.total_penalty,0)*100)/100
+      const totalPresent = j.rows.reduce((s:number,r:any)=>s+r.days_present,0)
+      const totalPossible = j.rows.length * j.totalDays
+      const attendanceRate = totalPossible > 0 ? Math.round((totalPresent/totalPossible)*100) : null
+      const withLate = j.rows.filter((r:any)=>r.total_late_minutes>0).sort((a:any,b:any)=>b.total_late_minutes-a.total_late_minutes)
+      const mostLate = withLate[0] ? { name: withLate[0].name, minutes: withLate[0].total_late_minutes } : null
+      setMonthStats({ totalPenalty, attendanceRate, mostLate })
+    } catch { setMonthStats({ totalPenalty: 0, attendanceRate: null, mostLate: null }) }
   }
 
   async function loadRange(oid: string, from: string, to: string) {
@@ -207,6 +230,23 @@ export default function AttendancePage() {
         <h1 style={pageTitle}>الحضور والانصراف</h1>
         <p style={pageSub}>سجل حضور الفريق اليومي — يتحقق تلقائياً من موقعهم الجغرافي ويحسب التأخير</p>
       </div>
+
+      {monthStats && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 18 }}>
+          <div style={{ ...card, padding: '14px', textAlign: 'center' as const }}>
+            <div style={{ fontSize: 10, color: colors.text4, fontWeight: 600, marginBottom: 4 }}>معدّل الحضور — هذا الشهر</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: colors.text }}>{monthStats.attendanceRate !== null ? `${monthStats.attendanceRate}%` : '—'}</div>
+          </div>
+          <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: monthStats.totalPenalty>0?colors.dangerLight:undefined, border: monthStats.totalPenalty>0?`1px solid ${colors.dangerBorder}`:undefined }}>
+            <div style={{ fontSize: 10, color: monthStats.totalPenalty>0?colors.danger:colors.text4, fontWeight: 600, marginBottom: 4 }}>إجمالي الخصومات — هذا الشهر</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: monthStats.totalPenalty>0?colors.danger:colors.text }}>{monthStats.totalPenalty>0?`${monthStats.totalPenalty} ر.س`:'—'}</div>
+          </div>
+          <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: monthStats.mostLate?colors.warningLight:undefined, border: monthStats.mostLate?`1px solid ${colors.warningBorder}`:undefined }}>
+            <div style={{ fontSize: 10, color: monthStats.mostLate?colors.warning:colors.text4, fontWeight: 600, marginBottom: 4 }}>الأكثر تأخيراً — هذا الشهر</div>
+            <div style={{ fontSize: monthStats.mostLate?15:22, fontWeight: 900, color: monthStats.mostLate?colors.warning:colors.text }}>{monthStats.mostLate ? `${monthStats.mostLate.name} (${monthStats.mostLate.minutes} د)` : '—'}</div>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {[{ id: 'report', label: '📋 التقرير' }, { id: 'settings', label: '⚙️ الشفتات والغرامات' }].map(t => (
