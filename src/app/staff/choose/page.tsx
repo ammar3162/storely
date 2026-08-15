@@ -73,28 +73,61 @@ export default function ChoosePage() {
 
         {/* تسجيل الحضور والانصراف */}
         {!loadingToday && (
-          <div style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:16,padding:16,marginBottom:24,textAlign:'right'}}>
-            <div style={{fontSize:12,fontWeight:700,color:'#334155',marginBottom:10,display:'flex',alignItems:'center',gap:6}}>
-              📍 الحضور والانصراف
+          <div style={{
+            background: isCheckedIn ? 'linear-gradient(135deg,#f0fdf4,#ecfdf5)' : '#f8fafc',
+            border: `1.5px solid ${isCheckedIn ? '#bbf7d0' : '#e2e8f0'}`,
+            borderRadius: 18, padding: 18, marginBottom: 24, textAlign: 'right'
+          }}>
+            {/* حالة الموظف الآن */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:8,marginBottom:14}}>
+              <span style={{fontSize:12,fontWeight:800,color: isCheckedIn ? '#15803d' : '#64748b'}}>
+                {isCheckedIn ? 'أنت حاضر الآن' : lastCheckOut ? 'انصرفت اليوم' : 'ما سجّلت حضورك بعد'}
+              </span>
+              <span style={{
+                width:9,height:9,borderRadius:'50%',
+                background: isCheckedIn ? '#16a34a' : lastCheckOut ? '#94a3b8' : '#f59e0b',
+                boxShadow: isCheckedIn ? '0 0 0 4px rgba(22,163,74,.15)' : 'none',
+              }}/>
             </div>
-            {lastCheckIn && (
-              <div style={{fontSize:11,color:'#64748b',marginBottom:8}}>
-                🟢 حضور: {new Date(lastCheckIn.recorded_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit'})}
-                {lastCheckOut && <span> — 🔴 انصراف: {new Date(lastCheckOut.recorded_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit'})}</span>}
+
+            {/* أوقات الحضور والانصراف */}
+            {(lastCheckIn || lastCheckOut) && (
+              <div style={{display:'flex',gap:8,marginBottom:16}}>
+                {lastCheckIn && (
+                  <div style={{flex:1,background:'white',borderRadius:12,padding:'10px 12px',border:'1px solid #e2e8f0'}}>
+                    <div style={{fontSize:9,color:'#94a3b8',fontWeight:700,marginBottom:3}}>وقت الحضور</div>
+                    <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>{new Date(lastCheckIn.recorded_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit'})}</div>
+                  </div>
+                )}
+                {lastCheckOut && (
+                  <div style={{flex:1,background:'white',borderRadius:12,padding:'10px 12px',border:'1px solid #e2e8f0'}}>
+                    <div style={{fontSize:9,color:'#94a3b8',fontWeight:700,marginBottom:3}}>وقت الانصراف</div>
+                    <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>{new Date(lastCheckOut.recorded_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit'})}</div>
+                  </div>
+                )}
               </div>
             )}
-            {!isCheckedIn ? (
-              <button onClick={()=>markAttendance('check_in')} disabled={marking!==null}
-                style={{width:'100%',padding:'12px',background:'#16a34a',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                {marking==='check_in' ? '⏳ جاري تحديد موقعك...' : '🟢 تسجيل حضور'}
-              </button>
-            ) : (
-              <button onClick={()=>markAttendance('check_out')} disabled={marking!==null}
-                style={{width:'100%',padding:'12px',background:'#dc2626',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                {marking==='check_out' ? '⏳ جاري تحديد موقعك...' : '🔴 تسجيل انصراف'}
-              </button>
+
+            {/* الزر الرئيسي */}
+            {!lastCheckOut && (
+              !isCheckedIn ? (
+                <button onClick={()=>markAttendance('check_in')} disabled={marking!==null}
+                  style={{width:'100%',padding:'15px',background:'linear-gradient(135deg,#16a34a,#15803d)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow:'0 6px 16px rgba(22,163,74,.3)'}}>
+                  <span style={{width:26,height:26,borderRadius:'50%',background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>📍</span>
+                  {marking==='check_in' ? 'جاري تحديد موقعك...' : 'تسجيل حضور'}
+                </button>
+              ) : (
+                <button onClick={()=>markAttendance('check_out')} disabled={marking!==null}
+                  style={{width:'100%',padding:'15px',background:'linear-gradient(135deg,#ef4444,#dc2626)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow:'0 6px 16px rgba(220,38,38,.3)'}}>
+                  <span style={{width:26,height:26,borderRadius:'50%',background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>📍</span>
+                  {marking==='check_out' ? 'جاري تحديد موقعك...' : 'تسجيل انصراف'}
+                </button>
+              )
             )}
-            {attError && <div style={{fontSize:11,color:'#dc2626',marginTop:8,lineHeight:1.6}}>{attError}</div>}
+            {lastCheckOut && (
+              <div style={{textAlign:'center' as const,fontSize:11,color:'#94a3b8',fontWeight:600,padding:'6px 0'}}>✓ اكتمل دوامك لهذا اليوم</div>
+            )}
+            {attError && <div style={{fontSize:11,color:'#dc2626',marginTop:10,lineHeight:1.6,textAlign:'center' as const}}>{attError}</div>}
           </div>
         )}
 
