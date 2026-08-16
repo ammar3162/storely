@@ -401,6 +401,21 @@ export default function AdminPage() {
     setSaving(null)
   }
 
+  async function sendInvoice(planLabel: string, amount: number) {
+    if (!selected?.org_id || !selected?.phone) return
+    if (!(await confirmDialog({ title: 'إرسال فاتورة', message: `إرسال فاتورة بمبلغ ${amount} ر.س لـ"${selected.org_name}" عبر واتساب (${selected.phone})؟` }))) return
+    setSaving(selected.org_id)
+    const adminPass = sessionStorage.getItem('storely_admin_pass') || ''
+    const res = await fetch('/api/admin/send-invoice', {
+      method:'POST', headers:{'Content-Type':'application/json','x-admin-key':adminPass},
+      body: JSON.stringify({ orgId: selected.org_id, orgName: selected.org_name, phone: selected.phone, planLabel, amount })
+    })
+    const data = await res.json()
+    setSaving(null)
+    if (!data.success) { alert('خطأ: ' + (data.error||'unknown')); return }
+    alert(`✅ تم إرسال الفاتورة #${data.invoiceNumber} عبر واتساب`)
+  }
+
   async function doDelete(u: User) {
     setSaving(u.id)
     const res = await fetch('/api/admin/delete-user', {
@@ -633,6 +648,21 @@ export default function AdminPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Send Invoice */}
+              <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:14,padding:16,marginBottom:16}}>
+                <div style={{fontSize:12,fontWeight:700,color:'#b45309',marginBottom:12}}>🧾 إرسال فاتورة دفع (عبر واتساب)</div>
+                <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                  {PLANS.map(p=>(
+                    <button key={p.v} onClick={()=>sendInvoice(p.label, Number(p.price.replace(/[^0-9]/g,'')))} disabled={!!saving||!selected.org_id||!selected.phone}
+                      style={{padding:'10px 14px',borderRadius:10,border:'1.5px solid #fde68a',background:'#ffffff',cursor:(!selected.org_id||!selected.phone||!!saving)?'not-allowed':'pointer',fontFamily:'inherit',display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:12,fontWeight:700,color:'#92400e'}}>
+                      <span>فاتورة "{p.label}" — {p.price}</span>
+                      <span>📤</span>
+                    </button>
+                  ))}
+                </div>
+                {!selected.phone && <div style={{fontSize:11,color:'#dc2626',marginTop:8}}>ما فيه رقم جوال مسجّل لهذا العميل</div>}
               </div>
 
               {/* Actions */}
