@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
-import { sendWhatsAppMessage } from '@/lib/whatsapp'
+import { sendWhatsAppDocument } from '@/lib/whatsapp'
+import { generateInvoicePdf } from '@/lib/generateInvoicePdf'
 
 export async function POST(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
@@ -30,16 +31,24 @@ export async function POST(req: Request) {
   const invoiceNumber = (inv as any)?.invoice_number
   const today = new Date().toLocaleDateString('ar-SA', { numberingSystem: 'latn', year: 'numeric', month: 'long', day: 'numeric' })
 
-  const text = `🧾 *فاتورة اشتراك — Storely*\n\n` +
-    `رقم الفاتورة: #${invoiceNumber}\n` +
-    `التاريخ: ${today}\n\n` +
-    `المنشأة: ${orgName || '—'}\n` +
-    `الباقة: ${planLabel}\n` +
-    `المبلغ المدفوع: ${amount} ر.س\n\n` +
-    `✅ تم استلام الدفعة بنجاح، شكراً لاشتراكك معنا 🌿\n` +
-    `storely.dev`
+  // توليد ملف PDF احترافي للفاتورة
+  let pdfBuffer: Buffer
+  try {
+    pdfBuffer = await generateInvoicePdf({ invoiceNumber, date: today, orgName: orgName || '—', planLabel, amount })
+  } catch (err: any) {
+    return NextResponse.json({ error: 'فشل توليد ملف الفاتورة' }, { status: 500 })
+  }
 
-  const result = await sendWhatsAppMessage(phone, text)
+  // رفع الملف للتخزين وجلب رابط عام
+  const fileName = `invoice-${invoiceNumber}.pdf`
+  const { error: upErr } = await supabase.storage.from('invoice-pdfs').upload(fileName, pdfBuffer, {
+    contentType: 'application/pdf', upsert: true,
+  })
+  if (upErr) return NextResponse.json({ error: 'فشل رفع ملف الفاتورة' }, { status: 500 })
+
+  const { data: { publicUrl } } = supabase.storage.from('invoice-pdfs').getPublicUrl(fileName)
+
+  const result = await sendWhatsAppDocument(phone, publicUrl, fileName, `🧾 فاتورة اشتراك #${invoiceNumber} — ${orgName || ''}`)
   if (!result.ok) return NextResponse.json({ error: 'فشل إرسال الفاتورة عبر واتساب' }, { status: 500 })
 
   await logAdminAction(admin, 'send_invoice', orgId, orgName || null, { invoice_number: invoiceNumber, amount })

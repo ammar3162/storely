@@ -60,6 +60,49 @@ export async function sendWhatsAppMessage(phone: string, text: string, retries =
 }
 
 /**
+ * يرسل رسالة تحتوي مستند (PDF مثلاً) عبر رابط عام — بنفس منطق إعادة المحاولة.
+ */
+export async function sendWhatsAppDocument(phone: string, documentUrl: string, fileName: string, text?: string, retries = 2): Promise<SendResult> {
+  const apiKey  = process.env.WASENDER_API_KEY!
+  const session = process.env.WASENDER_SESSION_ID!
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch('https://www.wasenderapi.com/api/send-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+          'X-Session-Id': session,
+        },
+        body: JSON.stringify({ to: phone, documentUrl, fileName, text: text || '' }),
+      })
+
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}))
+        return { ok: true, status: res.status, data }
+      }
+
+      const shouldRetry = (res.status === 429 || res.status >= 500) && attempt < retries
+      if (shouldRetry) {
+        await delay(1200 * (attempt + 1))
+        continue
+      }
+
+      const data = await res.json().catch(() => ({}))
+      return { ok: false, status: res.status, data }
+    } catch (err: any) {
+      if (attempt < retries) {
+        await delay(1200 * (attempt + 1))
+        continue
+      }
+      return { ok: false, data: { error: err.message } }
+    }
+  }
+  return { ok: false, data: { error: 'exhausted retries' } }
+}
+
+/**
  * يرسل رسائل متعددة بالتسلسل مع تأخير آمن بين كل رسالة (افتراضياً 600ms)
  * — يحمي من تجاوز حدود إرسال Wasender API عند الإرسال الجماعي (broadcast).
  * يرجع مصفوفة نتائج بنفس ترتيب المدخلات.
