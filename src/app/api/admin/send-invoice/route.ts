@@ -36,7 +36,8 @@ export async function POST(req: Request) {
   try {
     pdfBuffer = await generateInvoicePdf({ invoiceNumber, date: today, orgName: orgName || '—', planLabel, amount })
   } catch (err: any) {
-    return NextResponse.json({ error: 'فشل توليد ملف الفاتورة' }, { status: 500 })
+    console.error('PDF_GENERATION_FAILED:', err?.message || err, err?.stack || '')
+    return NextResponse.json({ error: 'فشل توليد ملف الفاتورة: ' + String(err?.message || err) }, { status: 500 })
   }
 
   // رفع الملف للتخزين وجلب رابط عام
