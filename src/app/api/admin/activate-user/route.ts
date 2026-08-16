@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   const orgIdForUpdate = (profile as any)?.org_id
   const updateQuery = supabase
     .from('profiles')
-    .update({ status: 'active', subscription_type: type, subscription_ends_at: ends })
+    .update({ status: 'active', subscription_type: type, subscription_ends_at: ends, trial_reminder_sent: false, expiry_notice_sent: false } as any)
   const { error } = orgIdForUpdate
     ? await updateQuery.eq('org_id', orgIdForUpdate)
     : await updateQuery.eq('id', userId)
