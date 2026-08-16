@@ -26,6 +26,7 @@ export async function proxy(request: NextRequest) {
   const path       = request.nextUrl.pathname
   const isLogin    = path.startsWith('/login')
   const isPending  = path.startsWith('/pending')
+  const isExpiredPage = path.startsWith('/expired')
   const isApi      = path.startsWith('/api')
   const isStatic   = path.startsWith('/_next') || path.startsWith('/favicon') || path.includes('.')
   const isAdminPanel = path.startsWith('/storely-admin')
@@ -34,7 +35,7 @@ export async function proxy(request: NextRequest) {
   const isReset    = path.startsWith('/reset-password')
   const isSupplierPortalAuth = path === '/supplier-portal' || path === '/supplier-portal/'
   const isSupplierDashboard  = path.startsWith('/supplier-portal/dashboard')
-  const isPublic   = isLogin || isPending || isApi || isStaff || isStatic || isLanding || isReset || isSupplierPortalAuth
+  const isPublic   = isLogin || isPending || isExpiredPage || isApi || isStaff || isStatic || isLanding || isReset || isSupplierPortalAuth
 
   if (isAdminPanel) {
     const adminToken  = request.cookies.get('storely_admin_token')?.value
@@ -83,8 +84,7 @@ export async function proxy(request: NextRequest) {
     }
     if (profile?.subscription_type === 'paid' && profile?.subscription_ends_at) {
       if (new Date(profile.subscription_ends_at).getTime() < Date.now()) {
-        await supabase.auth.signOut()
-        return NextResponse.redirect(new URL('/login?reason=expired', request.url))
+        return NextResponse.redirect(new URL('/expired', request.url))
       }
     }
   }
