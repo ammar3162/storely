@@ -12,6 +12,7 @@ export default function OnlineStorePage() {
   const [slug, setSlug] = useState('')
   const [enabled, setEnabled] = useState(false)
   const [tagline, setTagline] = useState('')
+  const [shopColor, setShopColor] = useState('#15803d')
   const [products, setProducts] = useState<any[]>([])
   const [uploadingId, setUploadingId] = useState<string|null>(null)
   const sb = createClient()
@@ -38,6 +39,7 @@ export default function OnlineStorePage() {
       setSlug(j.org?.shop_slug || '')
       setEnabled(!!j.org?.shop_enabled)
       setTagline(j.org?.shop_tagline || '')
+      setShopColor(j.org?.shop_color || '#15803d')
       setProducts(j.products || [])
     }
     setLoading(false)
@@ -47,7 +49,7 @@ export default function OnlineStorePage() {
     setSaving(true)
     const res = await fetch('/api/shop-settings', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, shop_slug: slug, shop_enabled: enabled, shop_tagline: tagline }),
+      body: JSON.stringify({ org_id: orgId, shop_slug: slug, shop_enabled: enabled, shop_tagline: tagline, shop_color: shopColor }),
     })
     const j = await res.json()
     setSaving(false)
@@ -109,6 +111,16 @@ export default function OnlineStorePage() {
         <div style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }}>وصف قصير (اختياري)</label>
           <input value={tagline} onChange={e => setTagline(e.target.value)} placeholder="مثال: أشهى المخبوزات الطازجة يومياً" style={{ ...inp(), width: '100%' }} />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 8 }}>لون المتجر</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, alignItems: 'center' }}>
+            {['#15803d', '#0369a1', '#b91c1c', '#7c2d12', '#7c3aed', '#0f172a', '#be185d', '#a16207'].map(c => (
+              <button key={c} onClick={() => setShopColor(c)} style={{ width: 32, height: 32, borderRadius: 10, background: c, border: shopColor === c ? '3px solid #0f172a' : '1px solid #e2e8f0', cursor: 'pointer', boxShadow: shopColor === c ? '0 0 0 2px white inset' : 'none' }} />
+            ))}
+            <input type="color" value={shopColor} onChange={e => setShopColor(e.target.value)} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid #e2e8f0', cursor: 'pointer', padding: 0 }} />
+          </div>
         </div>
 
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: colors.text2 }}>

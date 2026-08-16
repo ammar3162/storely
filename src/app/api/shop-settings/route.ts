@@ -19,7 +19,7 @@ function slugify(input: string) {
 
 export async function POST(req: Request) {
   try {
-    const { org_id, shop_slug, shop_enabled, shop_tagline, checkOnly } = await req.json()
+    const { org_id, shop_slug, shop_enabled, shop_tagline, shop_color, checkOnly } = await req.json()
     if (!org_id) return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
 
     const access = await verifyOrgAccess(org_id)
@@ -39,6 +39,7 @@ export async function POST(req: Request) {
 
     const { error } = await supabase.from('organizations').update({
       shop_slug: cleanSlug, shop_enabled: !!shop_enabled, shop_tagline: shop_tagline?.trim() || null,
+      shop_color: shop_color || '#15803d',
     } as any).eq('id', org_id)
 
     if (error) return NextResponse.json({ error: 'فشل الحفظ — الاسم مستخدم بالفعل غالباً' }, { status: 500 })
@@ -59,7 +60,7 @@ export async function GET(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
     const supabase = sb()
-    const { data: org } = await supabase.from('organizations').select('shop_slug,shop_enabled,shop_tagline,name,logo_url').eq('id', org_id).maybeSingle()
+    const { data: org } = await supabase.from('organizations').select('shop_slug,shop_enabled,shop_tagline,shop_color,name,logo_url').eq('id', org_id).maybeSingle()
     const bid = searchParams.get('branch_id')
     let q = supabase.from('products').select('id,name,unit,category,show_on_shop,public_price,public_description,public_image_url').eq('org_id', org_id).eq('is_active', true)
     if (bid) q = q.eq('branch_id', bid)
