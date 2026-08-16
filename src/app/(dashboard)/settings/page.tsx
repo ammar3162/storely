@@ -201,9 +201,10 @@ export default function SettingsPage() {
     const ext = file.name.split('.').pop()
     const path = `logos/${orgId}-${Date.now()}.${ext}`
     const { error: upErr } = await sb.storage.from('invoices').upload(path, file, { upsert: true })
-    if (upErr) { setLogoUploading(false); return }
+    if (upErr) { alert('فشل رفع الصورة: ' + upErr.message); setLogoUploading(false); return }
     const { data: pub } = sb.storage.from('invoices').getPublicUrl(path)
-    await sb.from('organizations').update({ logo_url: pub.publicUrl } as any).eq('id', orgId)
+    const { error: updErr } = await sb.from('organizations').update({ logo_url: pub.publicUrl } as any).eq('id', orgId)
+    if (updErr) { alert('فشل حفظ رابط الصورة: ' + updErr.message); setLogoUploading(false); return }
     setLogoUrl(pub.publicUrl)
     setLogoUploading(false)
     // تحديث الـ sidebar تلقائياً
