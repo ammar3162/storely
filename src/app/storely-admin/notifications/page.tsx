@@ -24,6 +24,7 @@ export default function AdminNotificationsPage() {
   const [sent, setSent]         = useState<any[]>([])
   const [loading, setLoading]   = useState(true)
   const [tab, setTab]           = useState<'send'|'history'>('send')
+  const [orgSearch, setOrgSearch] = useState('')
   const [authChecked, setAuthChecked] = useState(false)
   const sb = createClient()
 
@@ -42,8 +43,12 @@ export default function AdminNotificationsPage() {
 
   async function load() {
     setLoading(true)
-    const{data:orgsData}=await sb.from('organizations').select('id,name,created_at').order('name')
-    setOrgs(orgsData||[])
+    const adminKey = sessionStorage.getItem('storely_admin_pass') || ''
+    try {
+      const res = await fetch('/api/admin/list-orgs', { headers: { 'x-admin-key': adminKey } })
+      const j = await res.json()
+      setOrgs(j.orgs || [])
+    } catch { setOrgs([]) }
     const{data:notifsData}=await (sb as any).from('admin_notifications').select('id,type,created_at,title,message,sent_to_count').order('created_at',{ascending:false}).limit(50)
     setSent(notifsData||[])
     setLoading(false)
@@ -171,14 +176,20 @@ export default function AdminNotificationsPage() {
                 <button onClick={()=>setSelected([])} style={{padding:'3px 9px',borderRadius:6,border:`1px solid ${C.border2}`,background:C.bg,fontSize:10,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:C.text2}}>إلغاء</button>
               </div>
             </div>
-            <div style={{maxHeight:380,overflowY:'auto'}}>
+            <div style={{padding:'8px 14px',borderBottom:`1px solid ${C.border}`}}>
+              <input value={orgSearch} onChange={e=>setOrgSearch(e.target.value)} placeholder="🔍 بحث بالاسم..."
+                style={{width:'100%',padding:'6px 10px',border:`1px solid ${C.border2}`,borderRadius:7,fontSize:11,fontFamily:'inherit',color:C.text,boxSizing:'border-box' as const}}/>
+            </div>
+            <div style={{maxHeight:340,overflowY:'auto'}}>
               {loading?(
                 <div style={{padding:'24px',textAlign:'center',color:C.text4,fontSize:12}}>جاري التحميل...</div>
-              ):orgs.map((org,i)=>{
+              ):orgs.length===0?(
+                <div style={{padding:'24px',textAlign:'center',color:C.text4,fontSize:12}}>ما فيه منشآت — تأكد من صلاحياتك أو حاول تحديث الصفحة</div>
+              ):orgs.filter((o:any)=>o.name?.includes(orgSearch)).map((org,i,arr)=>{
                 const isSel=selected.includes(org.id)
                 return(
                   <div key={org.id} className="rh" onClick={()=>toggleOrg(org.id)}
-                    style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',borderBottom:i<orgs.length-1?`1px solid ${C.border}`:'none',cursor:'pointer',background:isSel?C.primaryL:'white',transition:'background .1s'}}>
+                    style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',borderBottom:i<arr.length-1?`1px solid ${C.border}`:'none',cursor:'pointer',background:isSel?C.primaryL:'white',transition:'background .1s'}}>
                     <div style={{width:18,height:18,borderRadius:5,border:`2px solid ${isSel?C.primary:C.border2}`,background:isSel?C.primary:'white',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                       {isSel&&<span style={{color:'white',fontSize:10,fontWeight:900}}>✓</span>}
                     </div>
