@@ -109,7 +109,14 @@ export default async function ShopPage({ params }: { params: Promise<{ slug: str
   }
 
   return (
-    <div style={{minHeight:'100vh',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',background:'#faf8f5',color:'#1c1917'}}>
+    <div style={{minHeight:'100vh',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',background:'#faf8f5',color:'#1c1917',overflowX:'hidden' as const}}>
+      <style>{`
+        @media (max-width: 480px) {
+          .shop-row-img { width: 84px !important; height: 84px !important; }
+          .shop-row-name { font-size: 14px !important; }
+          .shop-row-cat-title { font-size: 26px !important; }
+        }
+      `}</style>
       <div style={{background:'white',borderBottom:'1px solid #ece8e2'}}>
         <div style={{maxWidth:1100,margin:'0 auto',padding:'20px 24px',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap' as const,gap:12}}>
           <div style={{display:'flex',alignItems:'center',gap:12}}>
@@ -153,14 +160,14 @@ export default async function ShopPage({ params }: { params: Promise<{ slug: str
         ) : categories.map((cat) => (
           <div key={cat as string} style={{marginBottom:72}}>
             <div style={{textAlign:'center' as const,marginBottom:44}}>
-              <h2 style={{fontSize:34,fontWeight:900,color:'#1c1917',margin:0,letterSpacing:'-0.5px'}}>{cat as string}</h2>
+              <h2 className="shop-row-cat-title" style={{fontSize:34,fontWeight:900,color:'#1c1917',margin:0,letterSpacing:'-0.5px'}}>{cat as string}</h2>
               <div style={{width:52,height:3,background:color,borderRadius:99,margin:'16px auto 0'}}/>
             </div>
 
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(420px,1fr))',gap:'40px 56px'}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(420px,100%),1fr))',gap:'40px 56px'}}>
               {products.filter((p: any) => p.category === cat).map((p: any, pi: number) => (
                 <div key={pi} style={{display:'flex',gap:20,alignItems:'flex-start'}}>
-                  <div style={{width:118,height:118,borderRadius:14,background:'#f0ece5',flexShrink:0,overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',position:'relative' as const}}>
+                  <div className="shop-row-img" style={{width:118,height:118,borderRadius:14,background:'#f0ece5',flexShrink:0,overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',position:'relative' as const}}>
                     {p.image_url ? (
                       <img src={p.image_url} alt={p.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
                     ) : (
@@ -169,7 +176,7 @@ export default async function ShopPage({ params }: { params: Promise<{ slug: str
                   </div>
                   <div style={{flex:1,minWidth:0,paddingTop:6}}>
                     <div style={{display:'flex',alignItems:'baseline',gap:10,flexWrap:'wrap' as const}}>
-                      <span style={{fontSize:16,fontWeight:800,color:'#1c1917',whiteSpace:'nowrap' as const}}>{p.name}</span>
+                      <span className="shop-row-name" style={{fontSize:16,fontWeight:800,color:'#1c1917',whiteSpace:'nowrap' as const}}>{p.name}</span>
                       {p.is_featured && (
                         <span style={{fontSize:9,fontWeight:800,color:'#b45309',background:'#fffbeb',border:'1px solid #fde68a',borderRadius:99,padding:'2px 8px',whiteSpace:'nowrap' as const}}>⭐ الأكثر مبيعاً</span>
                       )}
