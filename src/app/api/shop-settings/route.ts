@@ -19,7 +19,7 @@ function slugify(input: string) {
 
 export async function POST(req: Request) {
   try {
-    const { org_id, shop_slug, shop_enabled, shop_tagline, shop_color, checkOnly } = await req.json()
+    const { org_id, shop_slug, shop_enabled, shop_tagline, shop_color, shop_display_name, shop_links, checkOnly } = await req.json()
     if (!org_id) return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
 
     const access = await verifyOrgAccess(org_id)
@@ -37,9 +37,14 @@ export async function POST(req: Request) {
 
     if (checkOnly) return NextResponse.json({ success: true, available: true, slug: cleanSlug })
 
+    const cleanLinks = Array.isArray(shop_links)
+      ? shop_links.filter((l: any) => l?.label?.trim() && l?.url?.trim()).map((l: any) => ({ label: l.label.trim(), url: l.url.trim() })).slice(0, 8)
+      : []
+
     const { error } = await supabase.from('organizations').update({
       shop_slug: cleanSlug, shop_enabled: !!shop_enabled, shop_tagline: shop_tagline?.trim() || null,
-      shop_color: shop_color || '#15803d',
+      shop_color: shop_color || '#15803d', shop_display_name: shop_display_name?.trim() || null,
+      shop_links: cleanLinks,
     } as any).eq('id', org_id)
 
     if (error) return NextResponse.json({ error: 'فشل الحفظ — الاسم مستخدم بالفعل غالباً' }, { status: 500 })
@@ -60,13 +65,14 @@ export async function GET(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
     const supabase = sb()
-    const { data: org } = await supabase.from('organizations').select('shop_slug,shop_enabled,shop_tagline,shop_color,name,logo_url').eq('id', org_id).maybeSingle()
+    const { data: org } = await supabase.from('organizations').select('shop_slug,shop_enabled,shop_tagline,shop_color,shop_display_name,shop_links,name,logo_url').eq('id', org_id).maybeSingle()
     const bid = searchParams.get('branch_id')
     let q = supabase.from('products').select('id,name,unit,category,show_on_shop,public_price,public_description,public_image_url').eq('org_id', org_id).eq('is_active', true)
     if (bid) q = q.eq('branch_id', bid)
     const { data: products } = await q.order('name')
+    const { data: shopItems } = await supabase.from('shop_items').select('id,name,category,price,description,image_url').eq('org_id', org_id).order('created_at')
 
-    return NextResponse.json({ success: true, org, products: products || [] })
+    return NextResponse.json({ success: true, org, products: products || [], shopItems: shopItems || [] })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }

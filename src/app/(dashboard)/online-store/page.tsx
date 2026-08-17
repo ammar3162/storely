@@ -12,11 +12,18 @@ export default function OnlineStorePage() {
   const [slug, setSlug] = useState('')
   const [enabled, setEnabled] = useState(false)
   const [tagline, setTagline] = useState('')
-  const [shopColor, setShopColor] = useState('#15803d')
+  const [displayName, setDisplayName] = useState('')
+  const [orgName, setOrgName] = useState('')
+  const [links, setLinks] = useState<{label:string;url:string}[]>([])
   const [products, setProducts] = useState<any[]>([])
+  const [shopItems, setShopItems] = useState<any[]>([])
   const [uploadingId, setUploadingId] = useState<string|null>(null)
   const [logoUrl, setLogoUrl] = useState<string|null>(null)
   const [suggestingColor, setSuggestingColor] = useState(false)
+  const [shopColor, setShopColor] = useState('#15803d')
+  const [newItem, setNewItem] = useState({ name:'', category:'', price:'', description:'', image_url:'' })
+  const [addingItem, setAddingItem] = useState(false)
+  const [uploadingNewItem, setUploadingNewItem] = useState(false)
   const sb = createClient()
 
   useEffect(() => { init() }, [])
@@ -42,8 +49,12 @@ export default function OnlineStorePage() {
       setEnabled(!!j.org?.shop_enabled)
       setTagline(j.org?.shop_tagline || '')
       setShopColor(j.org?.shop_color || '#15803d')
+      setDisplayName(j.org?.shop_display_name || '')
+      setOrgName(j.org?.name || '')
+      setLinks(Array.isArray(j.org?.shop_links) ? j.org.shop_links : [])
       setLogoUrl(j.org?.logo_url || null)
       setProducts(j.products || [])
+      setShopItems(j.shopItems || [])
     }
     setLoading(false)
   }
@@ -52,7 +63,7 @@ export default function OnlineStorePage() {
     setSaving(true)
     const res = await fetch('/api/shop-settings', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, shop_slug: slug, shop_enabled: enabled, shop_tagline: tagline, shop_color: shopColor }),
+      body: JSON.stringify({ org_id: orgId, shop_slug: slug, shop_enabled: enabled, shop_tagline: tagline, shop_color: shopColor, shop_display_name: displayName, shop_links: links }),
     })
     const j = await res.json()
     setSaving(false)
@@ -79,7 +90,6 @@ export default function OnlineStorePage() {
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3]
           if (a < 200) continue
-          // نتجاهل الأبيض/الأسود شبه الخالص — نبي لون العلامة الفعلي
           if (r > 235 && g > 235 && b > 235) continue
           if (r < 20 && g < 20 && b < 20) continue
           const max = Math.max(r, g, b), min = Math.min(r, g, b)
@@ -132,6 +142,46 @@ export default function OnlineStorePage() {
     setUploadingId(null)
   }
 
+  async function uploadNewItemImage(file: File) {
+    setUploadingNewItem(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `${orgId}/external-${Date.now()}.${ext}`
+      const { error } = await sb.storage.from('shop-product-images').upload(path, file, { upsert: true })
+      if (error) { toast('فشل رفع الصورة', 'error'); setUploadingNewItem(false); return }
+      const { data: { publicUrl } } = sb.storage.from('shop-product-images').getPublicUrl(path)
+      setNewItem(prev => ({ ...prev, image_url: publicUrl }))
+    } catch { toast('فشل رفع الصورة', 'error') }
+    setUploadingNewItem(false)
+  }
+
+  async function addShopItem() {
+    if (!newItem.name.trim()) { toast('اكتب اسم المنتج أول', 'warning'); return }
+    setAddingItem(true)
+    const res = await fetch('/api/shop-items', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ org_id: orgId, ...newItem }),
+    })
+    const j = await res.json()
+    setAddingItem(false)
+    if (!j.success) { toast(j.error || 'فشل الإضافة', 'error'); return }
+    toast('✅ تمت إضافة المنتج')
+    setNewItem({ name:'', category:'', price:'', description:'', image_url:'' })
+    load(orgId)
+  }
+
+  async function deleteShopItem(item_id: string) {
+    setShopItems(prev => prev.filter(x => x.id !== item_id))
+    await fetch('/api/shop-items', {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ org_id: orgId, item_id }),
+    })
+  }
+
+  function addLink() { setLinks(prev => [...prev, { label: '', url: '' }]) }
+  function updateLink(i: number, patch: any) { setLinks(prev => prev.map((l, idx) => idx === i ? { ...l, ...patch } : l)) }
+  function removeLink(i: number) { setLinks(prev => prev.filter((_, idx) => idx !== i)) }
+
   const shownCount = products.filter(p => p.show_on_shop).length
   const previewUrl = slug ? `${typeof window!=='undefined'?window.location.origin:''}/shop/${slug}` : ''
 
@@ -156,6 +206,12 @@ export default function OnlineStorePage() {
         </div>
 
         <div style={{ marginBottom: 14 }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }}>اسم يظهر بالمتجر (اختياري)</label>
+          <input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder={orgName || 'اسم منشأتك التجاري'} style={{ ...inp(), width: '100%' }} />
+          <div style={{ fontSize: 10, color: colors.text4, marginTop: 4 }}>لو تركته فاضي، بيظهر اسم منشأتك المسجّل ({orgName})</div>
+        </div>
+
+        <div style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }}>وصف قصير (اختياري)</label>
           <input value={tagline} onChange={e => setTagline(e.target.value)} placeholder="مثال: أشهى المخبوزات الطازجة يومياً" style={{ ...inp(), width: '100%' }} />
         </div>
@@ -173,6 +229,27 @@ export default function OnlineStorePage() {
           </div>
         </div>
 
+        {/* روابط خارجية */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3 }}>روابط خارجية (اختياري)</label>
+            <button onClick={addLink} style={{ fontSize: 11, fontWeight: 700, color: colors.primary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family }}>+ إضافة رابط</button>
+          </div>
+          {links.length === 0 ? (
+            <div style={{ fontSize: 11, color: colors.text4 }}>مافيش روابط — مثل موقعك، إنستقرام، تويتر</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+              {links.map((l, i) => (
+                <div key={i} style={{ display: 'flex', gap: 6 }}>
+                  <input value={l.label} onChange={e => updateLink(i, { label: e.target.value })} placeholder="الاسم (مثال: إنستقرام)" style={{ ...inp(), width: 140 }} />
+                  <input value={l.url} onChange={e => updateLink(i, { url: e.target.value })} placeholder="https://..." style={{ ...inp(), flex: 1 }} dir="ltr" />
+                  <button onClick={() => removeLink(i)} style={{ padding: '0 10px', borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', fontSize: 12 }}>✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: colors.text2 }}>
           <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} />
           تفعيل المتجر ونشره للعامة
@@ -188,9 +265,10 @@ export default function OnlineStorePage() {
         </div>
       </div>
 
-      <div style={{ ...card, padding: '20px' }}>
+      {/* منتجات المخزون */}
+      <div style={{ ...card, padding: '20px', marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text }}>المنتجات</div>
+          <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text }}>منتجات المخزون</div>
           <span style={{ fontSize: 11, color: colors.text4 }}>{shownCount} من {products.length} معروض بالمتجر</span>
         </div>
 
@@ -225,6 +303,53 @@ export default function OnlineStorePage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* منتجات خارجية */}
+      <div style={{ ...card, padding: '20px' }}>
+        <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>منتجات خارجية</div>
+        <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>منتجات تضيفها مباشرة للمتجر — بدون ما تأثر على مخزونك (مثل خدمات أو باقات)</div>
+
+        {shopItems.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10, marginBottom: 16 }}>
+            {shopItems.map((it: any) => (
+              <div key={it.id} style={{ display: 'flex', alignItems: 'center', gap: 12, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 12 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 8, background: colors.surface, flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {it.image_url ? <img src={it.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 16, opacity: .3 }}>📦</span>}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{it.name}</div>
+                  <div style={{ fontSize: 11, color: colors.text4 }}>{it.category}{it.price != null ? ` · ${it.price} ر.س` : ''}</div>
+                </div>
+                <button onClick={() => deleteShopItem(it.id)} style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>حذف</button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ border: `1.5px dashed ${colors.border2}`, borderRadius: 12, padding: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: colors.text2, marginBottom: 10 }}>+ إضافة منتج خارجي جديد</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 12, marginBottom: 10 }}>
+            <div>
+              <div style={{ width: 80, height: 80, borderRadius: 10, background: colors.surface, border: `1px dashed ${colors.border2}`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: 6 }}>
+                {newItem.image_url ? <img src={newItem.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 20, opacity: .3 }}>📦</span>}
+              </div>
+              <label style={{ fontSize: 10, color: colors.info, cursor: 'pointer', textDecoration: 'underline' }}>
+                {uploadingNewItem ? 'جاري الرفع...' : 'رفع صورة'}
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadNewItemImage(f) }} />
+              </label>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+              <input placeholder="اسم المنتج *" value={newItem.name} onChange={e => setNewItem(prev => ({ ...prev, name: e.target.value }))} style={{ ...inp(), width: '100%' }} />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input placeholder="الفئة (اختياري)" value={newItem.category} onChange={e => setNewItem(prev => ({ ...prev, category: e.target.value }))} style={{ ...inp(), flex: 1 }} />
+                <input type="number" placeholder="السعر" value={newItem.price} onChange={e => setNewItem(prev => ({ ...prev, price: e.target.value }))} style={{ ...inp(), width: 100 }} />
+              </div>
+            </div>
+          </div>
+          <textarea placeholder="وصف قصير..." value={newItem.description} onChange={e => setNewItem(prev => ({ ...prev, description: e.target.value }))} rows={2} style={{ ...inp(), width: '100%', resize: 'vertical' as const, marginBottom: 10 }} />
+          <button onClick={addShopItem} disabled={addingItem} style={{ ...btnPrimary, width: '100%' }}>{addingItem ? 'جاري الإضافة...' : '+ إضافة المنتج'}</button>
+        </div>
       </div>
     </div>
   )
