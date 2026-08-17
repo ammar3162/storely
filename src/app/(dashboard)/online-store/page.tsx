@@ -299,50 +299,10 @@ export default function OnlineStorePage() {
         </div>
       </div>
 
-      {/* منتجات المخزون */}
-      <div style={{ ...card, padding: '20px', marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text }}>منتجات المخزون</div>
-          <span style={{ fontSize: 11, color: colors.text4 }}>{shownCount} من {products.length} معروض بالمتجر</span>
-        </div>
-
-        {products.length === 0 ? (
-          <div style={{ padding: 30, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>ما فيه منتجات نشطة</div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
-            {products.map((p: any) => (
-              <div key={p.id} style={{ border: `1px solid ${p.show_on_shop ? colors.primaryBorder : colors.border}`, borderRadius: 12, padding: 14, background: p.show_on_shop ? colors.primaryLight : colors.bg }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: p.show_on_shop ? 12 : 0 }}>
-                  <input type="checkbox" checked={!!p.show_on_shop} onChange={e => updateProduct(p, { show_on_shop: e.target.checked })} />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: colors.text, flex: 1 }}>{p.name}</span>
-                </div>
-                {p.show_on_shop && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 12 }}>
-                    <div>
-                      <div style={{ width: 80, height: 80, borderRadius: 10, background: colors.surface, border: `1px dashed ${colors.border2}`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: 6 }}>
-                        {p.public_image_url ? <img src={p.public_image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 20, opacity: .3 }}>📦</span>}
-                      </div>
-                      <label style={{ fontSize: 10, color: colors.info, cursor: 'pointer', textDecoration: 'underline' }}>
-                        {uploadingId === p.id ? 'جاري الرفع...' : 'رفع صورة'}
-                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(p, f) }} />
-                      </label>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
-                      <input type="number" placeholder="السعر (ر.س)" value={p.public_price ?? ''} onChange={e => updateProduct(p, { public_price: e.target.value })} style={{ ...inp(), width: '100%' }} />
-                      <textarea placeholder="وصف قصير للمنتج..." value={p.public_description ?? ''} onChange={e => updateProduct(p, { public_description: e.target.value })} rows={2} style={{ ...inp(), width: '100%', resize: 'vertical' as const }} />
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* منتجات خارجية */}
+      {/* منتجات المتجر */}
       <div style={{ ...card, padding: '20px' }}>
-        <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>منتجات خارجية</div>
-        <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>منتجات تضيفها مباشرة للمتجر — بدون ما تأثر على مخزونك (مثل خدمات أو باقات)</div>
+        <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>منتجات المتجر</div>
+        <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>أنشئ قسم (مثل "مشروبات حارة")، وأضف كل منتج جواه بصورته واسمه وسعره ووصفه</div>
 
         {shopItems.length > 0 && (() => {
           const grouped: Record<string, any[]> = {}
