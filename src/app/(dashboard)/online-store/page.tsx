@@ -14,7 +14,15 @@ export default function OnlineStorePage() {
   const [tagline, setTagline] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [orgName, setOrgName] = useState('')
-  const [links, setLinks] = useState<{label:string;url:string}[]>([])
+  const [links, setLinks] = useState<{type:string;label:string;url:string}[]>([])
+  const PLATFORMS = [
+    { v: 'instagram', l: '📷 إنستقرام' },
+    { v: 'tiktok', l: '🎵 تيك توك' },
+    { v: 'snapchat', l: '👻 سناب شات' },
+    { v: 'whatsapp', l: '💬 واتساب' },
+    { v: 'google_maps', l: '📍 قوقل ماب' },
+    { v: 'website', l: '🔗 رابط مخصص' },
+  ]
   const [products, setProducts] = useState<any[]>([])
   const [shopItems, setShopItems] = useState<any[]>([])
   const [uploadingId, setUploadingId] = useState<string|null>(null)
@@ -51,7 +59,7 @@ export default function OnlineStorePage() {
       setShopColor(j.org?.shop_color || '#15803d')
       setDisplayName(j.org?.shop_display_name || '')
       setOrgName(j.org?.name || '')
-      setLinks(Array.isArray(j.org?.shop_links) ? j.org.shop_links : [])
+      setLinks(Array.isArray(j.org?.shop_links) ? j.org.shop_links.map((l:any)=>({type:l.type||'website',label:l.label||'',url:l.url||''})) : [])
       setLogoUrl(j.org?.logo_url || null)
       setProducts(j.products || [])
       setShopItems(j.shopItems || [])
@@ -178,7 +186,7 @@ export default function OnlineStorePage() {
     })
   }
 
-  function addLink() { setLinks(prev => [...prev, { label: '', url: '' }]) }
+  function addLink() { setLinks(prev => [...prev, { type: 'instagram', label: '', url: '' }]) }
   function updateLink(i: number, patch: any) { setLinks(prev => prev.map((l, idx) => idx === i ? { ...l, ...patch } : l)) }
   function removeLink(i: number) { setLinks(prev => prev.filter((_, idx) => idx !== i)) }
 
@@ -236,14 +244,21 @@ export default function OnlineStorePage() {
             <button onClick={addLink} style={{ fontSize: 11, fontWeight: 700, color: colors.primary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family }}>+ إضافة رابط</button>
           </div>
           {links.length === 0 ? (
-            <div style={{ fontSize: 11, color: colors.text4 }}>مافيش روابط — مثل موقعك، إنستقرام، تويتر</div>
+            <div style={{ fontSize: 11, color: colors.text4 }}>مافيش روابط — أضف إنستقرام، تيك توك، سناب شات، واتساب، أو قوقل ماب</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
               {links.map((l, i) => (
-                <div key={i} style={{ display: 'flex', gap: 6 }}>
-                  <input value={l.label} onChange={e => updateLink(i, { label: e.target.value })} placeholder="الاسم (مثال: إنستقرام)" style={{ ...inp(), width: 140 }} />
-                  <input value={l.url} onChange={e => updateLink(i, { url: e.target.value })} placeholder="https://..." style={{ ...inp(), flex: 1 }} dir="ltr" />
-                  <button onClick={() => removeLink(i)} style={{ padding: '0 10px', borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', fontSize: 12 }}>✕</button>
+                <div key={i} style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <select value={l.type} onChange={e => updateLink(i, { type: e.target.value })} style={{ ...inp(), width: 150 }}>
+                      {PLATFORMS.map(p => <option key={p.v} value={p.v}>{p.l}</option>)}
+                    </select>
+                    <input value={l.url} onChange={e => updateLink(i, { url: e.target.value })} placeholder={l.type==='whatsapp'?'https://wa.me/9665xxxxxxxx':'https://...'} style={{ ...inp(), flex: 1 }} dir="ltr" />
+                    <button onClick={() => removeLink(i)} style={{ padding: '0 10px', borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', fontSize: 12 }}>✕</button>
+                  </div>
+                  {l.type === 'website' && (
+                    <input value={l.label} onChange={e => updateLink(i, { label: e.target.value })} placeholder="اسم يظهر للرابط (مثال: الموقع الرسمي)" style={{ ...inp(), width: '100%' }} />
+                  )}
                 </div>
               ))}
             </div>
