@@ -32,6 +32,7 @@ export default function OnlineStorePage() {
   const [newItem, setNewItem] = useState({ name:'', category:'', price:'', description:'', image_url:'' })
   const [addingItem, setAddingItem] = useState(false)
   const [catEdits, setCatEdits] = useState<Record<string,string>>({})
+  const [creatingNewCat, setCreatingNewCat] = useState(false)
   const [savingCat, setSavingCat] = useState<string|null>(null)
   const [uploadingNewItem, setUploadingNewItem] = useState(false)
   const sb = createClient()
@@ -177,6 +178,7 @@ export default function OnlineStorePage() {
     if (!j.success) { toast(j.error || 'فشل الإضافة', 'error'); return }
     toast('✅ تمت إضافة المنتج')
     setNewItem({ name:'', category:'', price:'', description:'', image_url:'' })
+    setCreatingNewCat(false)
     load(orgId)
   }
 
@@ -375,29 +377,53 @@ export default function OnlineStorePage() {
           )
         })()}
 
-        <div style={{ border: `1.5px dashed ${colors.border2}`, borderRadius: 12, padding: 14 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: colors.text2, marginBottom: 10 }}>+ إضافة منتج خارجي جديد</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 12, marginBottom: 10 }}>
-            <div>
-              <div style={{ width: 80, height: 80, borderRadius: 10, background: colors.surface, border: `1px dashed ${colors.border2}`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: 6 }}>
-                {newItem.image_url ? <img src={newItem.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 20, opacity: .3 }}>📦</span>}
+        {(() => {
+          const existingCats = Array.from(new Set(shopItems.map((it: any) => it.category || 'منتجات خارجية')))
+          return (
+            <div style={{ border: `1.5px dashed ${colors.border2}`, borderRadius: 12, padding: 14 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: colors.text2, marginBottom: 10 }}>+ إضافة منتج خارجي جديد</div>
+
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 10, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 5 }}>١) اختر القسم أو أنشئ قسم جديد *</label>
+                {!creatingNewCat ? (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <select value={newItem.category} onChange={e => setNewItem(prev => ({ ...prev, category: e.target.value }))} style={{ ...inp(), flex: 1 }}>
+                      <option value="">— اختر قسم —</option>
+                      {existingCats.map(c => <option key={c as string} value={c as string}>{c as string}</option>)}
+                    </select>
+                    <button onClick={() => { setCreatingNewCat(true); setNewItem(prev => ({ ...prev, category: '' })) }} style={{ padding: '0 14px', borderRadius: 8, border: `1.5px solid ${colors.primaryBorder}`, background: colors.primaryLight, color: colors.primary, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>+ قسم جديد</button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input autoFocus placeholder="اسم القسم الجديد (مثال: المشروبات الباردة)" value={newItem.category} onChange={e => setNewItem(prev => ({ ...prev, category: e.target.value }))} style={{ ...inp(), flex: 1 }} />
+                    {existingCats.length > 0 && (
+                      <button onClick={() => setCreatingNewCat(false)} style={{ padding: '0 14px', borderRadius: 8, border: `1px solid ${colors.border2}`, background: colors.bg, color: colors.text2, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>إلغاء</button>
+                    )}
+                  </div>
+                )}
               </div>
-              <label style={{ fontSize: 10, color: colors.info, cursor: 'pointer', textDecoration: 'underline' }}>
-                {uploadingNewItem ? 'جاري الرفع...' : 'رفع صورة'}
-                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadNewItemImage(f) }} />
-              </label>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
-              <input placeholder="اسم المنتج *" value={newItem.name} onChange={e => setNewItem(prev => ({ ...prev, name: e.target.value }))} style={{ ...inp(), width: '100%' }} />
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input placeholder="الفئة (اختياري)" value={newItem.category} onChange={e => setNewItem(prev => ({ ...prev, category: e.target.value }))} style={{ ...inp(), flex: 1 }} />
-                <input type="number" placeholder="السعر" value={newItem.price} onChange={e => setNewItem(prev => ({ ...prev, price: e.target.value }))} style={{ ...inp(), width: 100 }} />
+
+              <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 12, marginBottom: 10 }}>
+                <div>
+                  <div style={{ width: 80, height: 80, borderRadius: 10, background: colors.surface, border: `1px dashed ${colors.border2}`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: 6 }}>
+                    {newItem.image_url ? <img src={newItem.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 20, opacity: .3 }}>📦</span>}
+                  </div>
+                  <label style={{ fontSize: 10, color: colors.info, cursor: 'pointer', textDecoration: 'underline' }}>
+                    {uploadingNewItem ? 'جاري الرفع...' : 'رفع صورة'}
+                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadNewItemImage(f) }} />
+                  </label>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+                  <label style={{ fontSize: 10, fontWeight: 700, color: colors.text3 }}>٢) تفاصيل المنتج</label>
+                  <input placeholder="اسم المنتج *" value={newItem.name} onChange={e => setNewItem(prev => ({ ...prev, name: e.target.value }))} style={{ ...inp(), width: '100%' }} />
+                  <input type="number" placeholder="السعر (ر.س)" value={newItem.price} onChange={e => setNewItem(prev => ({ ...prev, price: e.target.value }))} style={{ ...inp(), width: '100%' }} />
+                </div>
               </div>
+              <textarea placeholder="وصف قصير..." value={newItem.description} onChange={e => setNewItem(prev => ({ ...prev, description: e.target.value }))} rows={2} style={{ ...inp(), width: '100%', resize: 'vertical' as const, marginBottom: 10 }} />
+              <button onClick={() => { if (!newItem.category.trim()) { toast('اختر أو اكتب اسم القسم أول', 'warning'); return } addShopItem() }} disabled={addingItem} style={{ ...btnPrimary, width: '100%' }}>{addingItem ? 'جاري الإضافة...' : '+ إضافة المنتج للقسم'}</button>
             </div>
-          </div>
-          <textarea placeholder="وصف قصير..." value={newItem.description} onChange={e => setNewItem(prev => ({ ...prev, description: e.target.value }))} rows={2} style={{ ...inp(), width: '100%', resize: 'vertical' as const, marginBottom: 10 }} />
-          <button onClick={addShopItem} disabled={addingItem} style={{ ...btnPrimary, width: '100%' }}>{addingItem ? 'جاري الإضافة...' : '+ إضافة المنتج'}</button>
-        </div>
+          )
+        })()}
       </div>
     </div>
   )
