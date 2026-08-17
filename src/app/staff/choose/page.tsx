@@ -12,6 +12,7 @@ export default function ChoosePage() {
   const [loadingToday, setLoadingToday] = useState(true)
   const [marking, setMarking] = useState<'check_in'|'check_out'|null>(null)
   const [attError, setAttError] = useState('')
+  const [shift, setShift] = useState<any>(null)
 
   useEffect(()=>{
     const s = localStorage.getItem('staff_session')
@@ -28,7 +29,7 @@ export default function ChoosePage() {
     try {
       const res = await fetch(`/api/staff-attendance?staff_id=${parsed.id}&org_id=${parsed.org_id}`)
       const j = await res.json()
-      if(j.success) setTodayEvents(j.today||[])
+      if(j.success) { setTodayEvents(j.today||[]); setShift(j.shift||null) }
     } catch {}
     setLoadingToday(false)
   }
@@ -36,6 +37,18 @@ export default function ChoosePage() {
   const lastCheckIn = todayEvents.find(e=>e.type==='check_in')
   const lastCheckOut = todayEvents.find(e=>e.type==='check_out')
   const isCheckedIn = !!lastCheckIn && !lastCheckOut
+
+  // يمنع الانصراف قبل الوقت المحدد بالشفت (إلا لو الشفت 24 ساعة أو ما فيه شفت مخصص)
+  let canCheckOut = true
+  let checkOutHint = ''
+  if (shift && !shift.is_24h && shift.end_time) {
+    const now = new Date()
+    const saudiMinutes = ((now.getUTCHours()+3)%24)*60 + now.getUTCMinutes()
+    const [eh, em] = String(shift.end_time).slice(0,5).split(':').map(Number)
+    const endMinutes = eh*60 + em
+    canCheckOut = saudiMinutes >= endMinutes
+    if (!canCheckOut) checkOutHint = `زر الانصراف يفعّل الساعة ${String(shift.end_time).slice(0,5)}`
+  }
 
   async function markAttendance(type:'check_in'|'check_out') {
     if(!staffData) return
@@ -117,11 +130,16 @@ export default function ChoosePage() {
                   {marking==='check_in' ? 'جاري تحديد موقعك...' : 'تسجيل حضور'}
                 </button>
               ) : (
-                <button onClick={()=>markAttendance('check_out')} disabled={marking!==null}
-                  style={{width:'100%',padding:'15px',background:'linear-gradient(135deg,#ef4444,#dc2626)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow:'0 6px 16px rgba(220,38,38,.3)'}}>
-                  <span style={{width:26,height:26,borderRadius:'50%',background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>📍</span>
-                  {marking==='check_out' ? 'جاري تحديد موقعك...' : 'تسجيل انصراف'}
-                </button>
+                <>
+                  <button onClick={()=>markAttendance('check_out')} disabled={marking!==null || !canCheckOut}
+                    style={{width:'100%',padding:'15px',background: canCheckOut ? 'linear-gradient(135deg,#ef4444,#dc2626)' : '#cbd5e1',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor: canCheckOut ? 'pointer' : 'not-allowed',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow: canCheckOut ? '0 6px 16px rgba(220,38,38,.3)' : 'none'}}>
+                    <span style={{width:26,height:26,borderRadius:'50%',background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>📍</span>
+                    {marking==='check_out' ? 'جاري تحديد موقعك...' : 'تسجيل انصراف'}
+                  </button>
+                  {!canCheckOut && checkOutHint && (
+                    <div style={{textAlign:'center' as const,fontSize:11,color:'#94a3b8',fontWeight:600,marginTop:8}}>⏰ {checkOutHint}</div>
+                  )}
+                </>
               )
             )}
             {lastCheckOut && (

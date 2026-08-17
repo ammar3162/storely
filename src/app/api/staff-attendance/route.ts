@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     }
 
     // تأكد الموظف فعلاً تابع لهذا الفرع/المنشأة
-    const { data: staff } = await supabase.from('staff_members').select('id,name,branch_id').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
+    const { data: staff } = await supabase.from('staff_members').select('id,name,branch_id,shift_id').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
     if (!staff) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
 
     const { data: branch } = await supabase.from('branches').select('latitude,longitude,attendance_radius_m,name').eq('id', branch_id).maybeSingle()
@@ -53,6 +53,20 @@ export async function POST(req: Request) {
       return NextResponse.json({
         error: `أنت بعيد عن الفرع بمسافة ${Math.round(dist)} متر — يجب أن تكون داخل نطاق ${branch.attendance_radius_m || 50} متر لتسجيل ${type==='check_in'?'الحضور':'الانصراف'}`,
       }, { status: 403 })
+    }
+
+    // يمنع تسجيل الانصراف قبل الوقت المحدد بشفت الموظف (تحقق من السيرفر — لا يعتمد فقط على الواجهة)
+    if (type === 'check_out' && (staff as any).shift_id) {
+      const { data: shiftRow } = await supabase.from('shifts').select('end_time,is_24h').eq('id', (staff as any).shift_id).maybeSingle()
+      if (shiftRow && !(shiftRow as any).is_24h && (shiftRow as any).end_time) {
+        const now = new Date()
+        const saudiMinutes = ((now.getUTCHours()+3)%24)*60 + now.getUTCMinutes()
+        const [eh, em] = String((shiftRow as any).end_time).slice(0,5).split(':').map(Number)
+        const endMinutes = eh*60 + em
+        if (saudiMinutes < endMinutes) {
+          return NextResponse.json({ error: `ما يصير تسجّل انصراف قبل الساعة ${String((shiftRow as any).end_time).slice(0,5)} (نهاية شفتك)` }, { status: 403 })
+        }
+      }
     }
 
     let lateMinutes: number | null = null
@@ -131,7 +145,15 @@ export async function GET(req: Request) {
       .gte('recorded_at', todayStart.toISOString())
       .order('recorded_at', { ascending: false })
 
-    return NextResponse.json({ success: true, today: data || [] })
+    // نجيب شفت الموظف عشان نعرف الوقت المحدد للانصراف (يمنع الانصراف المبكر)
+    let shift: any = null
+    const { data: staffRow } = await supabase.from('staff_members').select('shift_id').eq('id', staff_id).maybeSingle()
+    if ((staffRow as any)?.shift_id) {
+      const { data: shiftRow } = await supabase.from('shifts').select('end_time,is_24h').eq('id', (staffRow as any).shift_id).maybeSingle()
+      shift = shiftRow
+    }
+
+    return NextResponse.json({ success: true, today: data || [], shift })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
