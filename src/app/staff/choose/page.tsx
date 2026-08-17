@@ -13,6 +13,10 @@ export default function ChoosePage() {
   const [marking, setMarking] = useState<'check_in'|'check_out'|null>(null)
   const [attError, setAttError] = useState('')
   const [shift, setShift] = useState<any>(null)
+  const [permReq, setPermReq] = useState<any>(null)
+  const [showPermForm, setShowPermForm] = useState(false)
+  const [permReason, setPermReason] = useState('')
+  const [submittingPerm, setSubmittingPerm] = useState(false)
 
   useEffect(()=>{
     const s = localStorage.getItem('staff_session')
@@ -31,7 +35,28 @@ export default function ChoosePage() {
       const j = await res.json()
       if(j.success) { setTodayEvents(j.today||[]); setShift(j.shift||null) }
     } catch {}
+    try {
+      const pr = await fetch(`/api/attendance-permission-request?staff_id=${parsed.id}`)
+      const pj = await pr.json()
+      if (pj.success) setPermReq(pj.request)
+    } catch {}
     setLoadingToday(false)
+  }
+
+  async function submitPermissionRequest() {
+    if (!staffData) return
+    setSubmittingPerm(true)
+    try {
+      const res = await fetch('/api/attendance-permission-request', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ org_id: staffData.org_id, branch_id: staffData.branch_id, staff_id: staffData.id, staff_name: staffData.name, reason: permReason }),
+      })
+      const j = await res.json()
+      if (!j.success) { setAttError(j.error || 'فشل إرسال الطلب'); setSubmittingPerm(false); return }
+      setPermReq({ status: 'pending', reason: permReason })
+      setShowPermForm(false); setPermReason('')
+    } catch { setAttError('حدث خطأ بالاتصال') }
+    setSubmittingPerm(false)
   }
 
   const lastCheckIn = todayEvents.find(e=>e.type==='check_in')
@@ -47,6 +72,7 @@ export default function ChoosePage() {
     const [eh, em] = String(shift.end_time).slice(0,5).split(':').map(Number)
     const endMinutes = eh*60 + em
     canCheckOut = saudiMinutes >= endMinutes
+    if (!canCheckOut && permReq?.status === 'approved') canCheckOut = true
     if (!canCheckOut) checkOutHint = `زر الانصراف يفعّل الساعة ${String(shift.end_time).slice(0,5)}`
   }
 
@@ -138,6 +164,29 @@ export default function ChoosePage() {
                   </button>
                   {!canCheckOut && checkOutHint && (
                     <div style={{textAlign:'center' as const,fontSize:11,color:'#94a3b8',fontWeight:600,marginTop:8}}>⏰ {checkOutHint}</div>
+                  )}
+                  {!canCheckOut && (
+                    permReq?.status === 'pending' ? (
+                      <div style={{textAlign:'center' as const,fontSize:12,color:'#d97706',fontWeight:700,marginTop:10,background:'#fffbeb',border:'1px solid #fde68a',borderRadius:10,padding:'8px 10px'}}>⏳ طلب الاستئذان بانتظار رد المالك</div>
+                    ) : permReq?.status === 'rejected' ? (
+                      <div style={{textAlign:'center' as const,fontSize:12,color:'#dc2626',fontWeight:700,marginTop:10,background:'#fef2f2',border:'1px solid #fecaca',borderRadius:10,padding:'8px 10px'}}>🚫 تم رفض طلب الاستئذان</div>
+                    ) : showPermForm ? (
+                      <div style={{marginTop:10}}>
+                        <textarea value={permReason} onChange={e=>setPermReason(e.target.value)} placeholder="سبب الاستئذان (اختياري)..." rows={2}
+                          style={{width:'100%',padding:'10px 12px',border:'1px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',resize:'vertical' as const,marginBottom:8,boxSizing:'border-box' as const}}/>
+                        <div style={{display:'flex',gap:8}}>
+                          <button onClick={submitPermissionRequest} disabled={submittingPerm}
+                            style={{flex:1,padding:'10px',background:'#16a34a',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                            {submittingPerm ? 'جاري الإرسال...' : 'إرسال الطلب'}
+                          </button>
+                          <button onClick={()=>setShowPermForm(false)} style={{padding:'10px 16px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button onClick={()=>setShowPermForm(true)} style={{width:'100%',marginTop:10,padding:'11px',background:'#fffbeb',color:'#b45309',border:'1.5px solid #fde68a',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                        🙋 طلب استئذان (ظرف طارئ)
+                      </button>
+                    )
                   )}
                 </>
               )

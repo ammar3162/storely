@@ -55,7 +55,8 @@ export async function POST(req: Request) {
       }, { status: 403 })
     }
 
-    // يمنع تسجيل الانصراف قبل الوقت المحدد بشفت الموظف (تحقق من السيرفر — لا يعتمد فقط على الواجهة)
+    // يمنع تسجيل الانصراف قبل الوقت المحدد بشفت الموظف — إلا لو عنده استئذان موافق عليه اليوم
+    let isExcused = false
     if (type === 'check_out' && (staff as any).shift_id) {
       const { data: shiftRow } = await supabase.from('shifts').select('end_time,is_24h').eq('id', (staff as any).shift_id).maybeSingle()
       if (shiftRow && !(shiftRow as any).is_24h && (shiftRow as any).end_time) {
@@ -64,7 +65,15 @@ export async function POST(req: Request) {
         const [eh, em] = String((shiftRow as any).end_time).slice(0,5).split(':').map(Number)
         const endMinutes = eh*60 + em
         if (saudiMinutes < endMinutes) {
-          return NextResponse.json({ error: `ما يصير تسجّل انصراف قبل الساعة ${String((shiftRow as any).end_time).slice(0,5)} (نهاية شفتك)` }, { status: 403 })
+          const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+          const { data: approvedReq } = await supabase.from('attendance_permission_requests')
+            .select('id').eq('staff_id', staff_id).eq('status', 'approved')
+            .gte('requested_at', todayStart.toISOString()).maybeSingle()
+          if (approvedReq) {
+            isExcused = true
+          } else {
+            return NextResponse.json({ error: `ما يصير تسجّل انصراف قبل الساعة ${String((shiftRow as any).end_time).slice(0,5)} (نهاية شفتك)` }, { status: 403 })
+          }
         }
       }
     }
@@ -96,7 +105,7 @@ export async function POST(req: Request) {
     }
 
     const { error: insErr } = await supabase.from('staff_attendance').insert({
-      org_id, branch_id, staff_id, type,
+      org_id, branch_id, staff_id, type, is_excused: isExcused,
       latitude, longitude, distance_m: Math.round(dist), within_range: true,
       late_minutes: lateMinutes, penalty_amount: penaltyAmount,
     } as any)

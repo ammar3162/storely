@@ -85,7 +85,7 @@ export async function GET(req: Request) {
     const dayStart = `${targetDate}T00:00:00.000Z`
     const dayEnd = `${targetDate}T23:59:59.999Z`
 
-    let attQ = supabase.from('staff_attendance').select('staff_id,type,recorded_at,within_range,distance_m,late_minutes,penalty_amount')
+    let attQ = supabase.from('staff_attendance').select('staff_id,type,recorded_at,within_range,distance_m,late_minutes,penalty_amount,is_excused')
       .eq('org_id', org_id).gte('recorded_at', dayStart).lte('recorded_at', dayEnd).order('recorded_at')
     if (effectiveBranchId) attQ = attQ.eq('branch_id', effectiveBranchId)
     const { data: events } = await attQ
@@ -106,6 +106,7 @@ export async function GET(req: Request) {
         hours_worked: hoursWorked !== null ? Math.round(hoursWorked * 10) / 10 : null,
         late_minutes: checkIn?.late_minutes ?? null,
         penalty_amount: checkIn?.penalty_amount ?? null,
+        is_excused: !!checkOut?.is_excused,
         status: checkIn ? (checkOut ? 'انصرف' : 'حاضر') : 'لم يحضر',
       }
     })

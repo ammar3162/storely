@@ -336,6 +336,7 @@ export default function AttendancePage() {
                             </td>
                             <td style={{ padding: '11px 14px', color: colors.text2 }}>
                               {r.check_out ? new Date(r.check_out).toLocaleTimeString('ar-SA', { numberingSystem: 'latn', hour: '2-digit', minute: '2-digit' }) : '—'}
+                              {r.is_excused && <span style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px' }}>مستأذن</span>}
                             </td>
                             <td style={{ padding: '11px 14px', color: colors.text2, fontWeight: 600 }}>
                               {r.hours_worked !== null ? `${r.hours_worked} ساعة` : '—'}
