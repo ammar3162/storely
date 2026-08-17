@@ -40,7 +40,7 @@ export default async function ShopPage({ params }: { params: Promise<{ slug: str
       <div style={{height:4,background:color}}/>
 
       {/* الهيدر — أنيق وهادئ */}
-      <div style={{padding:'56px 20px 40px',textAlign:'center' as const,background:'#fff',borderBottom:'1px solid #f0efed'}}>
+      <div style={{padding:'36px 20px 32px',textAlign:'center' as const,background:'#fff',borderBottom:'1px solid #f0efed'}}>
         {(org as any).logo_url ? (
           <img src={(org as any).logo_url} alt={(org as any).name} style={{width:76,height:76,borderRadius:'50%',objectFit:'cover',marginBottom:18,boxShadow:'0 4px 16px rgba(0,0,0,.08)',border:`3px solid ${color}22`}}/>
         ) : (
@@ -65,7 +65,7 @@ export default async function ShopPage({ params }: { params: Promise<{ slug: str
               <h2 style={{fontSize:19,fontWeight:800,color:'#1c1917',margin:0,letterSpacing:'-0.3px'}}>{cat as string}</h2>
               <div style={{flex:1,height:1,background:'#f0efed'}}/>
             </div>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(250px,1fr))',gap:20}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,280px))',gap:20,justifyContent:'start' as const}}>
               {products.filter((p: any) => (p.category || 'المنتجات') === cat).map((p: any) => (
                 <div key={p.id} style={{background:'white',borderRadius:20,overflow:'hidden',border:'1px solid #f0efed',transition:'all .2s'}}>
                   <div style={{width:'100%',aspectRatio:'4/3',background:'#f5f5f4',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',position:'relative' as const}}>
