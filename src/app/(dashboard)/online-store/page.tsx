@@ -33,6 +33,10 @@ export default function OnlineStorePage() {
   const [addingItem, setAddingItem] = useState(false)
   const [catEdits, setCatEdits] = useState<Record<string,string>>({})
   const [creatingNewCat, setCreatingNewCat] = useState(false)
+  const [editingId, setEditingId] = useState<string|null>(null)
+  const [editForm, setEditForm] = useState<any>({})
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [uploadingEditImg, setUploadingEditImg] = useState(false)
   const [savingCat, setSavingCat] = useState<string|null>(null)
   const [uploadingNewItem, setUploadingNewItem] = useState(false)
   const sb = createClient()
@@ -190,6 +194,39 @@ export default function OnlineStorePage() {
     })
   }
 
+  function startEdit(it: any) {
+    setEditingId(it.id)
+    setEditForm({ name: it.name, category: it.category, price: it.price ?? '', description: it.description ?? '', image_url: it.image_url ?? '' })
+  }
+
+  async function uploadEditImage(file: File) {
+    setUploadingEditImg(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `${orgId}/edit-${Date.now()}.${ext}`
+      const { error } = await sb.storage.from('shop-product-images').upload(path, file, { upsert: true })
+      if (error) { toast('فشل رفع الصورة', 'error'); setUploadingEditImg(false); return }
+      const { data: { publicUrl } } = sb.storage.from('shop-product-images').getPublicUrl(path)
+      setEditForm((prev: any) => ({ ...prev, image_url: publicUrl }))
+    } catch { toast('فشل رفع الصورة', 'error') }
+    setUploadingEditImg(false)
+  }
+
+  async function saveEdit() {
+    if (!editForm.name?.trim()) { toast('اكتب اسم المنتج', 'warning'); return }
+    setSavingEdit(true)
+    const res = await fetch('/api/shop-items', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ org_id: orgId, item_id: editingId, ...editForm }),
+    })
+    const j = await res.json()
+    setSavingEdit(false)
+    if (!j.success) { toast(j.error || 'فشل الحفظ', 'error'); return }
+    toast('✅ تم حفظ التعديل')
+    setEditingId(null)
+    load(orgId)
+  }
+
   async function renameCategory(oldCat: string) {
     const newCat = (catEdits[oldCat] ?? oldCat).trim()
     if (!newCat || newCat === oldCat) return
@@ -319,16 +356,42 @@ export default function OnlineStorePage() {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
                     {items.map((it: any) => (
-                      <div key={it.id} style={{ display: 'flex', alignItems: 'center', gap: 12, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 12 }}>
-                        <div style={{ width: 48, height: 48, borderRadius: 8, background: colors.surface, flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          {it.image_url ? <img src={it.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 16, opacity: .3 }}>📦</span>}
+                      editingId === it.id ? (
+                        <div key={it.id} style={{ border: `1.5px solid ${colors.primaryBorder}`, borderRadius: 12, padding: 14, background: colors.primaryLight }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 12, marginBottom: 10 }}>
+                            <div>
+                              <div style={{ width: 80, height: 80, borderRadius: 10, background: colors.surface, border: `1px dashed ${colors.border2}`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: 6 }}>
+                                {editForm.image_url ? <img src={editForm.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 20, opacity: .3 }}>📦</span>}
+                              </div>
+                              <label style={{ fontSize: 10, color: colors.info, cursor: 'pointer', textDecoration: 'underline' }}>
+                                {uploadingEditImg ? 'جاري الرفع...' : 'تغيير الصورة'}
+                                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadEditImage(f) }} />
+                              </label>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+                              <input placeholder="اسم المنتج" value={editForm.name} onChange={e => setEditForm((p:any) => ({ ...p, name: e.target.value }))} style={{ ...inp(), width: '100%' }} />
+                              <input type="number" placeholder="السعر" value={editForm.price} onChange={e => setEditForm((p:any) => ({ ...p, price: e.target.value }))} style={{ ...inp(), width: '100%' }} />
+                            </div>
+                          </div>
+                          <textarea placeholder="وصف قصير..." value={editForm.description} onChange={e => setEditForm((p:any) => ({ ...p, description: e.target.value }))} rows={2} style={{ ...inp(), width: '100%', resize: 'vertical' as const, marginBottom: 10 }} />
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button onClick={saveEdit} disabled={savingEdit} style={{ ...btnPrimary, flex: 1 }}>{savingEdit ? 'جاري الحفظ...' : 'حفظ التعديل'}</button>
+                            <button onClick={() => setEditingId(null)} style={{ padding: '10px 18px', borderRadius: 10, border: `1px solid ${colors.border2}`, background: 'white', color: colors.text2, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>إلغاء</button>
+                          </div>
                         </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{it.name}</div>
-                          {it.price != null && <div style={{ fontSize: 11, color: colors.text4 }}>{it.price} ر.س</div>}
+                      ) : (
+                        <div key={it.id} style={{ display: 'flex', alignItems: 'center', gap: 12, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 12 }}>
+                          <div style={{ width: 48, height: 48, borderRadius: 8, background: colors.surface, flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {it.image_url ? <img src={it.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 16, opacity: .3 }}>📦</span>}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{it.name}</div>
+                            {it.price != null && <div style={{ fontSize: 11, color: colors.text4 }}>{it.price} ر.س</div>}
+                          </div>
+                          <button onClick={() => startEdit(it)} style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${colors.infoBorder}`, background: colors.infoLight, color: colors.info, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>تعديل</button>
+                          <button onClick={() => deleteShopItem(it.id)} style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>حذف</button>
                         </div>
-                        <button onClick={() => deleteShopItem(it.id)} style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>حذف</button>
-                      </div>
+                      )
                     ))}
                   </div>
                 </div>
