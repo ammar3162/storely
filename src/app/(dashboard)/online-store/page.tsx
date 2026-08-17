@@ -8,6 +8,7 @@ import { toast } from '@/components/toast'
 export default function OnlineStorePage() {
   const [orgId, setOrgId] = useState('')
   const [loading, setLoading] = useState(true)
+  const [hasSubscription, setHasSubscription] = useState<boolean|null>(null)
   const [saving, setSaving] = useState(false)
   const [slug, setSlug] = useState('')
   const [enabled, setEnabled] = useState(false)
@@ -53,7 +54,14 @@ export default function OnlineStorePage() {
     const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
     if (!profile?.org_id) return
     setOrgId(profile.org_id)
-    load(profile.org_id)
+    try {
+      const subRes = await fetch(`/api/addons-market?org_id=${profile.org_id}`)
+      const subJ = await subRes.json()
+      const menuAddon = (subJ.addons || []).find((a: any) => a.slug === 'online_menu')
+      setHasSubscription(!!menuAddon?.subscription?.isValid)
+      if (menuAddon?.subscription?.isValid) load(profile.org_id)
+      else setLoading(false)
+    } catch { setHasSubscription(false); setLoading(false) }
   }
 
   async function load(oid: string) {
@@ -257,10 +265,23 @@ export default function OnlineStorePage() {
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontFamily: font.family }}>جاري التحميل...</div>
 
+  if (hasSubscription === false) {
+    return (
+      <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 480, margin: '80px auto', textAlign: 'center' as const, ...card, padding: 40 }}>
+        <div style={{ fontSize: 44, marginBottom: 14 }}>📋</div>
+        <div style={{ fontSize: 18, fontWeight: 800, color: colors.text, marginBottom: 8 }}>ميزة "المنيو" غير مفعّلة</div>
+        <div style={{ fontSize: 13, color: colors.text3, lineHeight: 1.8, marginBottom: 20 }}>
+          اشترك بميزة المنيو الإلكتروني من سوق الإضافات عشان تقدر تبني صفحة منتجاتك العامة
+        </div>
+        <a href="/addons-market" style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '12px 28px' }}>روح لسوق الإضافات</a>
+      </div>
+    )
+  }
+
   return (
     <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 900, margin: '0 auto' }}>
       <div style={{ marginBottom: 20 }}>
-        <h1 style={pageTitle}>متجري الإلكتروني</h1>
+        <h1 style={pageTitle}>المنيو الإلكتروني</h1>
         <p style={pageSub}>ابنِ صفحة عامة تعرض منتجاتك للعملاء — بالسعر والوصف والصورة</p>
       </div>
 

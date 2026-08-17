@@ -13,6 +13,12 @@ async function getShopData(slug: string) {
   const { data: org } = await supabase.from('organizations').select('id,name,logo_url,shop_tagline,shop_enabled,shop_color,shop_display_name,shop_links,shop_hours').eq('shop_slug', slug).maybeSingle()
   if (!org || !(org as any).shop_enabled) return null
 
+  // لازم اشتراك فعّال بإضافة "المنيو" — وإلا الصفحة العامة تختفي حتى لو مفعّلة داخلياً
+  const { data: addon } = await supabase.from('marketplace_addons').select('id').eq('slug', 'online_menu').maybeSingle()
+  if (!addon) return null
+  const { data: sub } = await supabase.from('org_addon_subscriptions').select('status,expires_at').eq('org_id', (org as any).id).eq('addon_id', (addon as any).id).eq('status', 'active').maybeSingle()
+  if (!sub || new Date((sub as any).expires_at) <= new Date()) return null
+
   const { data: invProducts } = await supabase.from('products').select('name,category,public_price,public_description,public_image_url').eq('org_id', (org as any).id).eq('show_on_shop', true)
   const { data: shopItems } = await supabase.from('shop_items').select('name,category,price,description,image_url,is_featured').eq('org_id', (org as any).id)
 

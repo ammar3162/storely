@@ -88,6 +88,9 @@ export default function AdminPage() {
   const [filter, setFilter]     = useState('all')
   const [saving, setSaving]     = useState<string|null>(null)
   const [selected, setSelected] = useState<User|null>(null)
+  const [addonsList, setAddonsList] = useState<any[]>([])
+  const [loadingAddons, setLoadingAddons] = useState(false)
+  const [togglingAddon, setTogglingAddon] = useState<string|null>(null)
   const [renewDays, setRenewDays] = useState(30)
   const [confirmDel, setConfirmDel] = useState<User|null>(null)
   const [tab, setTab]           = useState<'users'|'stats'|'suppliers'|'dashboard'|'packages'|'analytics'|'admins'>('dashboard')
@@ -416,6 +419,35 @@ export default function AdminPage() {
     alert(`✅ تم إرسال الفاتورة #${data.invoiceNumber} عبر واتساب`)
   }
 
+  useEffect(() => {
+    if (!selected?.org_id) { setAddonsList([]); return }
+    loadAddons(selected.org_id)
+  }, [selected?.org_id])
+
+  async function loadAddons(orgId: string) {
+    setLoadingAddons(true)
+    const adminPass = sessionStorage.getItem('storely_admin_pass') || ''
+    const res = await fetch(`/api/admin/addon-subscriptions?org_id=${orgId}`, { headers: { 'x-admin-key': adminPass } })
+    const j = await res.json()
+    if (j.success) setAddonsList(j.addons)
+    setLoadingAddons(false)
+  }
+
+  async function toggleAddon(addon: any, activate: boolean) {
+    if (!selected?.org_id) return
+    setTogglingAddon(addon.id)
+    const adminPass = sessionStorage.getItem('storely_admin_pass') || ''
+    const res = await fetch('/api/admin/addon-subscriptions', {
+      method: activate ? 'POST' : 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': adminPass },
+      body: JSON.stringify({ org_id: selected.org_id, addon_id: addon.id, org_name: selected.org_name, addon_name: addon.name, duration_days: 30 }),
+    })
+    const j = await res.json()
+    setTogglingAddon(null)
+    if (!j.success) { alert('خطأ: ' + (j.error || 'unknown')); return }
+    await loadAddons(selected.org_id)
+  }
+
   async function doDelete(u: User) {
     setSaving(u.id)
     const res = await fetch('/api/admin/delete-user', {
@@ -663,6 +695,38 @@ export default function AdminPage() {
                   ))}
                 </div>
                 {!selected.phone && <div style={{fontSize:11,color:'#dc2626',marginTop:8}}>ما فيه رقم جوال مسجّل لهذا العميل</div>}
+              </div>
+
+              {/* Addons */}
+              <div style={{background:'#faf5ff',border:'1px solid #e9d5ff',borderRadius:14,padding:16,marginBottom:16}}>
+                <div style={{fontSize:12,fontWeight:700,color:'#7c3aed',marginBottom:12}}>🧩 إضافات السوق</div>
+                {loadingAddons ? (
+                  <div style={{fontSize:11,color:'#94a3b8',textAlign:'center' as const}}>جاري التحميل...</div>
+                ) : addonsList.length === 0 ? (
+                  <div style={{fontSize:11,color:'#94a3b8',textAlign:'center' as const}}>ما فيه إضافات بالسوق بعد</div>
+                ) : (
+                  <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                    {addonsList.map((a:any) => {
+                      const active = a.subscription?.isValid
+                      return (
+                        <div key={a.id} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${active?'#c4b5fd':'#e9d5ff'}`,background:active?'#f5f3ff':'#ffffff'}}>
+                          <span style={{fontSize:18}}>{a.icon}</span>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:12,fontWeight:700,color:'#1e1b4b'}}>{a.name}</div>
+                            <div style={{fontSize:10,color:'#94a3b8'}}>
+                              {active ? `مفعّلة حتى ${new Date(a.subscription.expires_at).toLocaleDateString('ar-SA',{numberingSystem:'latn'})}` : `${a.monthly_price} ر.س/شهر — غير مفعّلة`}
+                            </div>
+                          </div>
+                          <button onClick={()=>toggleAddon(a, !active)} disabled={togglingAddon===a.id}
+                            style={{padding:'6px 14px',borderRadius:8,border:'none',cursor:'pointer',fontSize:11,fontWeight:700,fontFamily:'inherit',
+                              background:active?'#fef2f2':'#7c3aed',color:active?'#dc2626':'white'}}>
+                            {togglingAddon===a.id?'...':active?'إلغاء':'تفعيل 30 يوم'}
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Actions */}
