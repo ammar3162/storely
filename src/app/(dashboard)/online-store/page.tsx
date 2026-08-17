@@ -31,6 +31,8 @@ export default function OnlineStorePage() {
   const [shopColor, setShopColor] = useState('#15803d')
   const [newItem, setNewItem] = useState({ name:'', category:'', price:'', description:'', image_url:'' })
   const [addingItem, setAddingItem] = useState(false)
+  const [catEdits, setCatEdits] = useState<Record<string,string>>({})
+  const [savingCat, setSavingCat] = useState<string|null>(null)
   const [uploadingNewItem, setUploadingNewItem] = useState(false)
   const sb = createClient()
 
@@ -186,6 +188,21 @@ export default function OnlineStorePage() {
     })
   }
 
+  async function renameCategory(oldCat: string) {
+    const newCat = (catEdits[oldCat] ?? oldCat).trim()
+    if (!newCat || newCat === oldCat) return
+    setSavingCat(oldCat)
+    const res = await fetch('/api/shop-items', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ org_id: orgId, old_category: oldCat, new_category: newCat }),
+    })
+    const j = await res.json()
+    setSavingCat(null)
+    if (!j.success) { toast(j.error || 'فشل تغيير الاسم', 'error'); return }
+    toast('✅ تم تغيير اسم القسم لكل منتجاته')
+    load(orgId)
+  }
+
   function addLink() { setLinks(prev => [...prev, { type: 'instagram', label: '', url: '' }]) }
   function updateLink(i: number, patch: any) { setLinks(prev => prev.map((l, idx) => idx === i ? { ...l, ...patch } : l)) }
   function removeLink(i: number) { setLinks(prev => prev.filter((_, idx) => idx !== i)) }
@@ -325,22 +342,38 @@ export default function OnlineStorePage() {
         <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>منتجات خارجية</div>
         <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>منتجات تضيفها مباشرة للمتجر — بدون ما تأثر على مخزونك (مثل خدمات أو باقات)</div>
 
-        {shopItems.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10, marginBottom: 16 }}>
-            {shopItems.map((it: any) => (
-              <div key={it.id} style={{ display: 'flex', alignItems: 'center', gap: 12, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 12 }}>
-                <div style={{ width: 48, height: 48, borderRadius: 8, background: colors.surface, flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {it.image_url ? <img src={it.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 16, opacity: .3 }}>📦</span>}
+        {shopItems.length > 0 && (() => {
+          const grouped: Record<string, any[]> = {}
+          shopItems.forEach((it: any) => { const c = it.category || 'منتجات خارجية'; if (!grouped[c]) grouped[c] = []; grouped[c].push(it) })
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 18, marginBottom: 16 }}>
+              {Object.entries(grouped).map(([cat, items]) => (
+                <div key={cat}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                    <input value={catEdits[cat] ?? cat} onChange={e => setCatEdits(prev => ({ ...prev, [cat]: e.target.value }))}
+                      onBlur={() => renameCategory(cat)} onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                      style={{ ...inp(), fontWeight: 800, fontSize: 13, border: 'none', background: 'transparent', padding: '4px 6px', width: 220 }} />
+                    {savingCat === cat && <span style={{ fontSize: 10, color: colors.text4 }}>جاري الحفظ...</span>}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+                    {items.map((it: any) => (
+                      <div key={it.id} style={{ display: 'flex', alignItems: 'center', gap: 12, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 12 }}>
+                        <div style={{ width: 48, height: 48, borderRadius: 8, background: colors.surface, flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {it.image_url ? <img src={it.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 16, opacity: .3 }}>📦</span>}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{it.name}</div>
+                          {it.price != null && <div style={{ fontSize: 11, color: colors.text4 }}>{it.price} ر.س</div>}
+                        </div>
+                        <button onClick={() => deleteShopItem(it.id)} style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>حذف</button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{it.name}</div>
-                  <div style={{ fontSize: 11, color: colors.text4 }}>{it.category}{it.price != null ? ` · ${it.price} ر.س` : ''}</div>
-                </div>
-                <button onClick={() => deleteShopItem(it.id)} style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>حذف</button>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )
+        })()}
 
         <div style={{ border: `1.5px dashed ${colors.border2}`, borderRadius: 12, padding: 14 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: colors.text2, marginBottom: 10 }}>+ إضافة منتج خارجي جديد</div>

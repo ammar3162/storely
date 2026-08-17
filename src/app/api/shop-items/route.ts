@@ -38,6 +38,23 @@ export async function POST(req: Request) {
   }
 }
 
+export async function PUT(req: Request) {
+  try {
+    const { org_id, old_category, new_category } = await req.json()
+    if (!org_id || !old_category || !new_category?.trim()) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+
+    const access = await verifyOrgAccess(org_id)
+    if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+
+    const supabase = sb()
+    const { error } = await supabase.from('shop_items').update({ category: new_category.trim() } as any).eq('org_id', org_id).eq('category', old_category)
+    if (error) return NextResponse.json({ error: 'فشل تغيير اسم القسم' }, { status: 500 })
+    return NextResponse.json({ success: true })
+  } catch {
+    return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+  }
+}
+
 export async function DELETE(req: Request) {
   try {
     const { org_id, item_id } = await req.json()
