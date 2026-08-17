@@ -49,7 +49,7 @@ export async function GET(req: Request) {
       const rangeStart = `${from}T00:00:00.000Z`
       const rangeEnd = `${to}T23:59:59.999Z`
 
-      let attQ = supabase.from('staff_attendance').select('staff_id,type,recorded_at,late_minutes,penalty_amount')
+      let attQ = supabase.from('staff_attendance').select('staff_id,type,recorded_at,late_minutes,penalty_amount,is_excused')
         .eq('org_id', org_id).gte('recorded_at', rangeStart).lte('recorded_at', rangeEnd).order('recorded_at')
       if (effectiveBranchId) attQ = attQ.eq('branch_id', effectiveBranchId)
       const { data: events } = await attQ
@@ -59,6 +59,7 @@ export async function GET(req: Request) {
         let daysPresent = 0
         let totalLateMinutes = 0
         let totalPenalty = 0
+        let daysExcused = 0
         for (const d of days) {
           const dayCheckIn = staffEvents.find((e: any) => e.type === 'check_in' && e.recorded_at.slice(0, 10) === d)
           if (dayCheckIn) {
@@ -66,6 +67,8 @@ export async function GET(req: Request) {
             totalLateMinutes += Number(dayCheckIn.late_minutes || 0)
             totalPenalty += Number(dayCheckIn.penalty_amount || 0)
           }
+          const dayCheckOut = staffEvents.find((e: any) => e.type === 'check_out' && e.recorded_at.slice(0, 10) === d)
+          if (dayCheckOut?.is_excused) daysExcused++
         }
         return {
           staff_id: s.id,
@@ -74,6 +77,7 @@ export async function GET(req: Request) {
           days_absent: days.length - daysPresent,
           total_late_minutes: totalLateMinutes,
           total_penalty: Math.round(totalPenalty * 100) / 100,
+          days_excused: daysExcused,
         }
       })
 
