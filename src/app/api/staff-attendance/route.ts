@@ -58,13 +58,20 @@ export async function POST(req: Request) {
     // يمنع تسجيل الانصراف قبل الوقت المحدد بشفت الموظف — إلا لو عنده استئذان موافق عليه اليوم
     let isExcused = false
     if (type === 'check_out' && (staff as any).shift_id) {
-      const { data: shiftRow } = await supabase.from('shifts').select('end_time,is_24h').eq('id', (staff as any).shift_id).maybeSingle()
+      const { data: shiftRow } = await supabase.from('shifts').select('start_time,end_time,is_24h').eq('id', (staff as any).shift_id).maybeSingle()
       if (shiftRow && !(shiftRow as any).is_24h && (shiftRow as any).end_time) {
         const now = new Date()
         const saudiMinutes = ((now.getUTCHours()+3)%24)*60 + now.getUTCMinutes()
         const [eh, em] = String((shiftRow as any).end_time).slice(0,5).split(':').map(Number)
         const endMinutes = eh*60 + em
-        if (saudiMinutes < endMinutes) {
+        const [sh2, sm2] = String((shiftRow as any).start_time || '00:00').slice(0,5).split(':').map(Number)
+        const startMinutes = sh2*60 + sm2
+        // شفت يمتد لما بعد منتصف الليل (مثل مساءً 6 → صباحاً 2) — "انتهى الشفت" فقط بالنافذة بين وقت الانتهاء ووقت البداية التالي
+        const isOvernight = endMinutes <= startMinutes
+        const shiftEnded = isOvernight
+          ? (saudiMinutes >= endMinutes && saudiMinutes < startMinutes)
+          : (saudiMinutes >= endMinutes)
+        if (!shiftEnded) {
           const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
           const { data: approvedReq } = await supabase.from('attendance_permission_requests')
             .select('id').eq('staff_id', staff_id).eq('status', 'approved')
@@ -158,7 +165,7 @@ export async function GET(req: Request) {
     let shift: any = null
     const { data: staffRow } = await supabase.from('staff_members').select('shift_id').eq('id', staff_id).maybeSingle()
     if ((staffRow as any)?.shift_id) {
-      const { data: shiftRow } = await supabase.from('shifts').select('end_time,is_24h').eq('id', (staffRow as any).shift_id).maybeSingle()
+      const { data: shiftRow } = await supabase.from('shifts').select('start_time,end_time,is_24h').eq('id', (staffRow as any).shift_id).maybeSingle()
       shift = shiftRow
     }
 

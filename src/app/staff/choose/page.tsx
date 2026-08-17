@@ -71,7 +71,12 @@ export default function ChoosePage() {
     const saudiMinutes = ((now.getUTCHours()+3)%24)*60 + now.getUTCMinutes()
     const [eh, em] = String(shift.end_time).slice(0,5).split(':').map(Number)
     const endMinutes = eh*60 + em
-    canCheckOut = saudiMinutes >= endMinutes
+    const [sh2, sm2] = String(shift.start_time||'00:00').slice(0,5).split(':').map(Number)
+    const startMinutes = sh2*60 + sm2
+    const isOvernight = endMinutes <= startMinutes
+    canCheckOut = isOvernight
+      ? (saudiMinutes >= endMinutes && saudiMinutes < startMinutes)
+      : (saudiMinutes >= endMinutes)
     if (!canCheckOut && permReq?.status === 'approved') canCheckOut = true
     if (!canCheckOut) checkOutHint = `زر الانصراف يفعّل الساعة ${String(shift.end_time).slice(0,5)}`
   }
