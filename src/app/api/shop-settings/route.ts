@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     if (checkOnly) return NextResponse.json({ success: true, available: true, slug: cleanSlug })
 
     const cleanLinks = Array.isArray(shop_links)
-      ? shop_links.filter((l: any) => l?.label?.trim() && l?.url?.trim()).map((l: any) => ({ label: l.label.trim(), url: l.url.trim() })).slice(0, 8)
+      ? shop_links.filter((l: any) => l?.url?.trim() && l?.type).map((l: any) => ({ type: l.type, url: l.url.trim(), label: l.label?.trim() || '' })).slice(0, 8)
       : []
 
     const { error } = await supabase.from('organizations').update({
