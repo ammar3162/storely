@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,18 +10,46 @@ const sb = () => createClient(
 
 async function getShopData(slug: string) {
   const supabase = sb()
-  const { data: org } = await supabase.from('organizations').select('id,name,logo_url,shop_tagline,shop_enabled,shop_color,shop_display_name,shop_links').eq('shop_slug', slug).maybeSingle()
+  const { data: org } = await supabase.from('organizations').select('id,name,logo_url,shop_tagline,shop_enabled,shop_color,shop_display_name,shop_links,shop_hours').eq('shop_slug', slug).maybeSingle()
   if (!org || !(org as any).shop_enabled) return null
 
   const { data: invProducts } = await supabase.from('products').select('name,category,public_price,public_description,public_image_url').eq('org_id', (org as any).id).eq('show_on_shop', true)
-  const { data: shopItems } = await supabase.from('shop_items').select('name,category,price,description,image_url').eq('org_id', (org as any).id)
+  const { data: shopItems } = await supabase.from('shop_items').select('name,category,price,description,image_url,is_featured').eq('org_id', (org as any).id)
 
   const normalized = [
-    ...(invProducts || []).map((p: any) => ({ name: p.name, category: p.category || 'المنتجات', price: p.public_price, description: p.public_description, image_url: p.public_image_url })),
-    ...(shopItems || []).map((it: any) => ({ name: it.name, category: it.category || 'منتجات خارجية', price: it.price, description: it.description, image_url: it.image_url })),
+    ...(invProducts || []).map((p: any) => ({ name: p.name, category: p.category || 'المنتجات', price: p.public_price, description: p.public_description, image_url: p.public_image_url, is_featured: false })),
+    ...(shopItems || []).map((it: any) => ({ name: it.name, category: it.category || 'منتجات المتجر', price: it.price, description: it.description, image_url: it.image_url, is_featured: !!it.is_featured })),
   ]
 
   return { org, products: normalized }
+}
+
+function isOpenNow(hours: any): { known: boolean; open: boolean; label: string } {
+  if (!hours?.enabled) return { known: false, open: true, label: '' }
+  if (hours.is24h) return { known: true, open: true, label: 'مفتوح الآن · 24 ساعة' }
+  const now = new Date()
+  const saudiMinutes = ((now.getUTCHours() + 3) % 24) * 60 + now.getUTCMinutes()
+  const [oh, om] = String(hours.open || '09:00').split(':').map(Number)
+  const [ch, cm] = String(hours.close || '22:00').split(':').map(Number)
+  const openM = oh * 60 + om, closeM = ch * 60 + cm
+  const open = closeM > openM ? (saudiMinutes >= openM && saudiMinutes < closeM) : (saudiMinutes >= openM || saudiMinutes < closeM)
+  return { known: true, open, label: open ? `مفتوح الآن · يغلق ${hours.close}` : `مغلق الآن · يفتح ${hours.open}` }
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const data = await getShopData(slug)
+  if (!data) return { title: 'متجر غير متاح' }
+  const { org } = data
+  const displayName = (org as any).shop_display_name || (org as any).name
+  const description = (org as any).shop_tagline || `تصفّح منتجات ${displayName} — بواسطة Storely`
+  const image = (org as any).logo_url
+  return {
+    title: displayName,
+    description,
+    openGraph: { title: displayName, description, images: image ? [image] : [], type: 'website' },
+    twitter: { card: 'summary', title: displayName, description, images: image ? [image] : [] },
+  }
 }
 
 export default async function ShopPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -42,6 +71,8 @@ export default async function ShopPage({ params }: { params: Promise<{ slug: str
   const color = (org as any).shop_color || '#15803d'
   const displayName = (org as any).shop_display_name || (org as any).name
   const links: {type:string;label:string;url:string}[] = Array.isArray((org as any).shop_links) ? (org as any).shop_links : []
+  const categories = Array.from(new Set(products.map((p: any) => p.category)))
+  const status = isOpenNow((org as any).shop_hours)
 
   function PlatformIcon({ type }: { type: string }) {
     const common = { width: 22, height: 22, viewBox: '0 0 24 24' }
@@ -76,11 +107,9 @@ export default async function ShopPage({ params }: { params: Promise<{ slug: str
       </div>
     )
   }
-  const categories = Array.from(new Set(products.map((p: any) => p.category)))
 
   return (
     <div style={{minHeight:'100vh',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',background:'#faf8f5',color:'#1c1917'}}>
-      {/* شريط تنقّل علوي — بسيط وأنيق */}
       <div style={{background:'white',borderBottom:'1px solid #ece8e2'}}>
         <div style={{maxWidth:1100,margin:'0 auto',padding:'20px 24px',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap' as const,gap:12}}>
           <div style={{display:'flex',alignItems:'center',gap:12}}>
@@ -92,14 +121,22 @@ export default async function ShopPage({ params }: { params: Promise<{ slug: str
               </div>
             )}
             <div>
-              <div style={{fontSize:16,fontWeight:900,letterSpacing:'-0.3px'}}>{displayName}</div>
-              {(org as any).shop_tagline && <div style={{fontSize:11,color:'#a8a29e'}}>{(org as any).shop_tagline}</div>}
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <span style={{fontSize:16,fontWeight:900,letterSpacing:'-0.3px'}}>{displayName}</span>
+                {status.known && (
+                  <span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:10,fontWeight:700,padding:'3px 9px',borderRadius:99,background:status.open?'#f0fdf4':'#fef2f2',color:status.open?'#16a34a':'#dc2626',border:`1px solid ${status.open?'#bbf7d0':'#fecaca'}`}}>
+                    <span style={{width:6,height:6,borderRadius:'50%',background:status.open?'#16a34a':'#dc2626'}}/>
+                    {status.label}
+                  </span>
+                )}
+              </div>
+              {(org as any).shop_tagline && <div style={{fontSize:11,color:'#a8a29e',marginTop:2}}>{(org as any).shop_tagline}</div>}
             </div>
           </div>
           {links.length > 0 && (
             <div style={{display:'flex',gap:10,flexWrap:'wrap' as const}}>
               {links.map((l, i) => (
-                <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" title={l.type==='website'?l.label:undefined} style={{textDecoration:'none',transition:'transform .15s'}}>
+                <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" title={l.type==='website'?l.label:undefined} style={{textDecoration:'none'}}>
                   <PlatformIcon type={l.type} />
                 </a>
               ))}
@@ -123,7 +160,7 @@ export default async function ShopPage({ params }: { params: Promise<{ slug: str
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(420px,1fr))',gap:'40px 56px'}}>
               {products.filter((p: any) => p.category === cat).map((p: any, pi: number) => (
                 <div key={pi} style={{display:'flex',gap:20,alignItems:'flex-start'}}>
-                  <div style={{width:118,height:118,borderRadius:14,background:'#f0ece5',flexShrink:0,overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  <div style={{width:118,height:118,borderRadius:14,background:'#f0ece5',flexShrink:0,overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',position:'relative' as const}}>
                     {p.image_url ? (
                       <img src={p.image_url} alt={p.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
                     ) : (
@@ -131,9 +168,12 @@ export default async function ShopPage({ params }: { params: Promise<{ slug: str
                     )}
                   </div>
                   <div style={{flex:1,minWidth:0,paddingTop:6}}>
-                    <div style={{display:'flex',alignItems:'baseline',gap:10}}>
+                    <div style={{display:'flex',alignItems:'baseline',gap:10,flexWrap:'wrap' as const}}>
                       <span style={{fontSize:16,fontWeight:800,color:'#1c1917',whiteSpace:'nowrap' as const}}>{p.name}</span>
-                      <span style={{flex:1,borderBottom:'1.5px dotted #d6d0c8',position:'relative' as const,top:-3}}/>
+                      {p.is_featured && (
+                        <span style={{fontSize:9,fontWeight:800,color:'#b45309',background:'#fffbeb',border:'1px solid #fde68a',borderRadius:99,padding:'2px 8px',whiteSpace:'nowrap' as const}}>⭐ الأكثر مبيعاً</span>
+                      )}
+                      <span style={{flex:1,minWidth:20,borderBottom:'1.5px dotted #d6d0c8',position:'relative' as const,top:-3}}/>
                       {p.price != null && (
                         <span style={{fontSize:15,fontWeight:900,color,whiteSpace:'nowrap' as const}}>{p.price} ر.س</span>
                       )}

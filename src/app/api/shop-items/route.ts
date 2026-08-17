@@ -9,7 +9,7 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
-    const { org_id, item_id, name, category, price, description, image_url } = await req.json()
+    const { org_id, item_id, name, category, price, description, image_url, is_featured } = await req.json()
     if (!org_id || !name) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
     const access = await verifyOrgAccess(org_id)
@@ -20,6 +20,7 @@ export async function POST(req: Request) {
       org_id, name: name.trim(), category: category?.trim() || 'منتجات خارجية',
       price: price !== undefined && price !== '' ? Number(price) : null,
       description: description?.trim() || null, image_url: image_url || null,
+      is_featured: !!is_featured,
     }
 
     if (item_id) {

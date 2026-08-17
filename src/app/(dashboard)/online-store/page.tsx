@@ -29,7 +29,11 @@ export default function OnlineStorePage() {
   const [logoUrl, setLogoUrl] = useState<string|null>(null)
   const [suggestingColor, setSuggestingColor] = useState(false)
   const [shopColor, setShopColor] = useState('#15803d')
-  const [newItem, setNewItem] = useState({ name:'', category:'', price:'', description:'', image_url:'' })
+  const [hoursEnabled, setHoursEnabled] = useState(false)
+  const [hours24, setHours24] = useState(true)
+  const [openTime, setOpenTime] = useState('09:00')
+  const [closeTime, setCloseTime] = useState('22:00')
+  const [newItem, setNewItem] = useState({ name:'', category:'', price:'', description:'', image_url:'', is_featured:false })
   const [addingItem, setAddingItem] = useState(false)
   const [catEdits, setCatEdits] = useState<Record<string,string>>({})
   const [creatingNewCat, setCreatingNewCat] = useState(false)
@@ -67,6 +71,8 @@ export default function OnlineStorePage() {
       setDisplayName(j.org?.shop_display_name || '')
       setOrgName(j.org?.name || '')
       setLinks(Array.isArray(j.org?.shop_links) ? j.org.shop_links.map((l:any)=>({type:l.type||'website',label:l.label||'',url:l.url||''})) : [])
+      const h = j.org?.shop_hours || {}
+      setHoursEnabled(!!h.enabled); setHours24(h.is24h !== false); setOpenTime(h.open || '09:00'); setCloseTime(h.close || '22:00')
       setLogoUrl(j.org?.logo_url || null)
       setProducts(j.products || [])
       setShopItems(j.shopItems || [])
@@ -78,7 +84,7 @@ export default function OnlineStorePage() {
     setSaving(true)
     const res = await fetch('/api/shop-settings', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, shop_slug: slug, shop_enabled: enabled, shop_tagline: tagline, shop_color: shopColor, shop_display_name: displayName, shop_links: links }),
+      body: JSON.stringify({ org_id: orgId, shop_slug: slug, shop_enabled: enabled, shop_tagline: tagline, shop_color: shopColor, shop_display_name: displayName, shop_links: links, shop_hours: { enabled: hoursEnabled, is24h: hours24, open: openTime, close: closeTime } }),
     })
     const j = await res.json()
     setSaving(false)
@@ -181,7 +187,7 @@ export default function OnlineStorePage() {
     setAddingItem(false)
     if (!j.success) { toast(j.error || 'فشل الإضافة', 'error'); return }
     toast('✅ تمت إضافة المنتج')
-    setNewItem({ name:'', category:'', price:'', description:'', image_url:'' })
+    setNewItem({ name:'', category:'', price:'', description:'', image_url:'', is_featured:false })
     setCreatingNewCat(false)
     load(orgId)
   }
@@ -196,7 +202,7 @@ export default function OnlineStorePage() {
 
   function startEdit(it: any) {
     setEditingId(it.id)
-    setEditForm({ name: it.name, category: it.category, price: it.price ?? '', description: it.description ?? '', image_url: it.image_url ?? '' })
+    setEditForm({ name: it.name, category: it.category, price: it.price ?? '', description: it.description ?? '', image_url: it.image_url ?? '', is_featured: !!it.is_featured })
   }
 
   async function uploadEditImage(file: File) {
@@ -321,6 +327,31 @@ export default function OnlineStorePage() {
           )}
         </div>
 
+        <div style={{ marginBottom: 16, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: hoursEnabled ? 12 : 0, cursor: 'pointer', fontSize: 12, fontWeight: 700, color: colors.text2 }}>
+            <input type="checkbox" checked={hoursEnabled} onChange={e => setHoursEnabled(e.target.checked)} />
+            عرض حالة "مفتوح/مغلق" بالمتجر
+          </label>
+          {hoursEnabled && (
+            <div>
+              <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer' }}>
+                  <input type="radio" checked={hours24} onChange={() => setHours24(true)} /> يفتح 24 ساعة
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer' }}>
+                  <input type="radio" checked={!hours24} onChange={() => setHours24(false)} /> أوقات محددة
+                </label>
+              </div>
+              {!hours24 && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div><label style={{ fontSize: 10, color: colors.text4, display: 'block', marginBottom: 3 }}>يفتح</label><input type="time" value={openTime} onChange={e => setOpenTime(e.target.value)} style={{ ...inp() }} /></div>
+                  <div><label style={{ fontSize: 10, color: colors.text4, display: 'block', marginBottom: 3 }}>يغلق</label><input type="time" value={closeTime} onChange={e => setCloseTime(e.target.value)} style={{ ...inp() }} /></div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: colors.text2 }}>
           <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} />
           تفعيل المتجر ونشره للعامة
@@ -335,6 +366,19 @@ export default function OnlineStorePage() {
           )}
         </div>
       </div>
+
+      {previewUrl && enabled && (
+        <div style={{ ...card, padding: '20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' as const }}>
+          <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(previewUrl)}`} alt="QR" style={{ width: 130, height: 130, borderRadius: 12, border: `1px solid ${colors.border}` }} />
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 6 }}>رمز QR لمتجرك</div>
+            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 12, lineHeight: 1.7 }}>اطبعه وحطّه على الطاولات أو ملصقات المحل — العميل يمسحه ويوصل لمنتجاتك مباشرة</div>
+            <a href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(previewUrl)}`} download={`qr-${slug}.png`} style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '9px 18px', fontSize: 12 }}>
+              ⬇️ تحميل بجودة عالية
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* منتجات المتجر */}
       <div style={{ ...card, padding: '20px' }}>
@@ -374,6 +418,10 @@ export default function OnlineStorePage() {
                             </div>
                           </div>
                           <textarea placeholder="وصف قصير..." value={editForm.description} onChange={e => setEditForm((p:any) => ({ ...p, description: e.target.value }))} rows={2} style={{ ...inp(), width: '100%', resize: 'vertical' as const, marginBottom: 10 }} />
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: colors.text2 }}>
+                            <input type="checkbox" checked={!!editForm.is_featured} onChange={e => setEditForm((p:any) => ({ ...p, is_featured: e.target.checked }))} />
+                            ⭐ وسم "الأكثر مبيعاً"
+                          </label>
                           <div style={{ display: 'flex', gap: 8 }}>
                             <button onClick={saveEdit} disabled={savingEdit} style={{ ...btnPrimary, flex: 1 }}>{savingEdit ? 'جاري الحفظ...' : 'حفظ التعديل'}</button>
                             <button onClick={() => setEditingId(null)} style={{ padding: '10px 18px', borderRadius: 10, border: `1px solid ${colors.border2}`, background: 'white', color: colors.text2, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>إلغاء</button>
@@ -385,7 +433,7 @@ export default function OnlineStorePage() {
                             {it.image_url ? <img src={it.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 16, opacity: .3 }}>📦</span>}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{it.name}</div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{it.name}{it.is_featured && ' ⭐'}</div>
                             {it.price != null && <div style={{ fontSize: 11, color: colors.text4 }}>{it.price} ر.س</div>}
                           </div>
                           <button onClick={() => startEdit(it)} style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${colors.infoBorder}`, background: colors.infoLight, color: colors.info, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>تعديل</button>
@@ -443,6 +491,10 @@ export default function OnlineStorePage() {
                 </div>
               </div>
               <textarea placeholder="وصف قصير..." value={newItem.description} onChange={e => setNewItem(prev => ({ ...prev, description: e.target.value }))} rows={2} style={{ ...inp(), width: '100%', resize: 'vertical' as const, marginBottom: 10 }} />
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: colors.text2 }}>
+                <input type="checkbox" checked={newItem.is_featured} onChange={e => setNewItem(prev => ({ ...prev, is_featured: e.target.checked }))} />
+                ⭐ وسم "الأكثر مبيعاً"
+              </label>
               <button onClick={() => { if (!newItem.category.trim()) { toast('اختر أو اكتب اسم القسم أول', 'warning'); return } addShopItem() }} disabled={addingItem} style={{ ...btnPrimary, width: '100%' }}>{addingItem ? 'جاري الإضافة...' : '+ إضافة المنتج للقسم'}</button>
             </div>
           )
