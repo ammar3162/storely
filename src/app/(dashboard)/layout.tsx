@@ -769,7 +769,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Desktop Sidebar */}
           <aside className="desk-sidebar">
             <div style={{padding:'18px 16px',borderBottom:'1px solid rgba(255,255,255,.06)',display:'flex',alignItems:'center',gap:10}}>
-              <div style={{width:44,height:44,borderRadius:'50%',background:'rgba(255,255,255,.92)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:5}}><img src={orgLogo||"/storely-logo.png"} alt="Storely" style={{maxWidth:'100%',maxHeight:'100%',width:'auto',height:'auto',objectFit:'contain'}}/></div>
+              <div style={{width:44,height:44,borderRadius:'50%',background:'rgba(255,255,255,.92)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:5,overflow:'hidden'}}><img src={orgLogo||"/storely-logo.png"} alt="Storely" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/></div>
               <div style={{minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:800,color:'rgba(255,255,255,.9)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName||'Storely'}</div>
                 {branchName&&(
