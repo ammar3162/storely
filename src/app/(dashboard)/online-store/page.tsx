@@ -15,6 +15,8 @@ export default function OnlineStorePage() {
   const [shopColor, setShopColor] = useState('#15803d')
   const [products, setProducts] = useState<any[]>([])
   const [uploadingId, setUploadingId] = useState<string|null>(null)
+  const [logoUrl, setLogoUrl] = useState<string|null>(null)
+  const [suggestingColor, setSuggestingColor] = useState(false)
   const sb = createClient()
 
   useEffect(() => { init() }, [])
@@ -40,6 +42,7 @@ export default function OnlineStorePage() {
       setEnabled(!!j.org?.shop_enabled)
       setTagline(j.org?.shop_tagline || '')
       setShopColor(j.org?.shop_color || '#15803d')
+      setLogoUrl(j.org?.logo_url || null)
       setProducts(j.products || [])
     }
     setLoading(false)
@@ -56,6 +59,50 @@ export default function OnlineStorePage() {
     if (!j.success) { toast(j.error || 'فشل الحفظ', 'error'); return }
     setSlug(j.slug || '')
     toast('✅ تم حفظ إعدادات المتجر')
+  }
+
+  function suggestColorFromLogo() {
+    if (!logoUrl) { toast('ما فيه شعار مرفوع للمنشأة — ارفعه أول من صفحة الإعدادات', 'warning'); return }
+    setSuggestingColor(true)
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      try {
+        const size = 48
+        const canvas = document.createElement('canvas')
+        canvas.width = size; canvas.height = size
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { setSuggestingColor(false); return }
+        ctx.drawImage(img, 0, 0, size, size)
+        const data = ctx.getImageData(0, 0, size, size).data
+        const buckets: Record<string, { count: number; r: number; g: number; b: number; sat: number }> = {}
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3]
+          if (a < 200) continue
+          // نتجاهل الأبيض/الأسود شبه الخالص — نبي لون العلامة الفعلي
+          if (r > 235 && g > 235 && b > 235) continue
+          if (r < 20 && g < 20 && b < 20) continue
+          const max = Math.max(r, g, b), min = Math.min(r, g, b)
+          const sat = max === 0 ? 0 : (max - min) / max
+          const key = `${Math.round(r / 20) * 20}-${Math.round(g / 20) * 20}-${Math.round(b / 20) * 20}`
+          if (!buckets[key]) buckets[key] = { count: 0, r, g, b, sat }
+          buckets[key].count++
+        }
+        const sorted = Object.values(buckets).sort((a, b) => (b.count * (1 + b.sat)) - (a.count * (1 + a.sat)))
+        if (sorted[0]) {
+          const hex = '#' + [sorted[0].r, sorted[0].g, sorted[0].b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('')
+          setShopColor(hex)
+          toast('✅ تم اقتراح لون من شعارك — قدر تعدّله لو حبيت')
+        } else {
+          toast('ما قدرنا نحدد لون واضح من الشعار', 'warning')
+        }
+      } catch {
+        toast('تعذّر تحليل الشعار', 'error')
+      }
+      setSuggestingColor(false)
+    }
+    img.onerror = () => { setSuggestingColor(false); toast('تعذّر تحميل الشعار', 'error') }
+    img.src = logoUrl
   }
 
   async function updateProduct(p: any, patch: any) {
@@ -120,6 +167,9 @@ export default function OnlineStorePage() {
               <button key={c} onClick={() => setShopColor(c)} style={{ width: 32, height: 32, borderRadius: 10, background: c, border: shopColor === c ? '3px solid #0f172a' : '1px solid #e2e8f0', cursor: 'pointer', boxShadow: shopColor === c ? '0 0 0 2px white inset' : 'none' }} />
             ))}
             <input type="color" value={shopColor} onChange={e => setShopColor(e.target.value)} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid #e2e8f0', cursor: 'pointer', padding: 0 }} />
+            <button onClick={suggestColorFromLogo} disabled={suggestingColor} style={{ padding: '0 14px', height: 32, borderRadius: 10, border: `1.5px solid ${colors.infoBorder}`, background: colors.infoLight, color: colors.info, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
+              {suggestingColor ? '⏳ جاري التحليل...' : '🎨 اقترح من الشعار'}
+            </button>
           </div>
         </div>
 
