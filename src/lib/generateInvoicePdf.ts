@@ -31,6 +31,7 @@ function buildInvoiceHtml(data: InvoiceData): string {
   .header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #15803d; padding-bottom:24px; margin-bottom:32px; }
   .brand { font-size:28px; font-weight:900; color:#15803d; letter-spacing:-0.5px; }
   .brand-sub { font-size:11px; color:#94a3b8; margin-top:4px; }
+  .brand-legal { font-size:10px; color:#cbd5e1; margin-top:2px; }
   .meta { text-align:left; }
   .meta-title { font-size:20px; font-weight:800; color:#0f172a; margin-bottom:6px; }
   .meta-row { font-size:12px; color:#64748b; margin-top:2px; }
@@ -53,6 +54,7 @@ function buildInvoiceHtml(data: InvoiceData): string {
     <div>
       <div class="brand">Storely</div>
       <div class="brand-sub">نظام إدارة المخزون الاحترافي</div>
+      <div class="brand-legal">مؤسسة باسم علي خلوي لتقنية المعلومات — س.ت 7055023522</div>
     </div>
     <div class="meta">
       <div class="meta-title">فاتورة اشتراك</div>
@@ -79,6 +81,7 @@ function buildInvoiceHtml(data: InvoiceData): string {
   <div class="footer">
     <div class="footer-thanks">✅ تم استلام الدفعة بنجاح — شكراً لاشتراكك معنا 🌿</div>
     <div class="footer-note">هذه الفاتورة غير خاضعة لضريبة القيمة المضافة · storely.dev</div>
+    <div class="footer-note" style="margin-top:4px">مؤسسة باسم علي خلوي لتقنية المعلومات · س.ت 7055023522</div>
   </div>
 </body>
 </html>`
