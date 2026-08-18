@@ -206,12 +206,35 @@ export default function AdminPage() {
   const [maintenanceMsgInput, setMaintenanceMsgInput] = useState('')
   const [maintenanceSaving, setMaintenanceSaving] = useState(false)
   const [maintenanceStatusMsg, setMaintenanceStatusMsg] = useState('')
+  const [waCapacity, setWaCapacity] = useState(3)
+  const [waCapacityInput, setWaCapacityInput] = useState('3')
+  const [waCapacitySaving, setWaCapacitySaving] = useState(false)
+  const [waCapacityMsg, setWaCapacityMsg] = useState('')
+  const [waUsedCount, setWaUsedCount] = useState(0)
 
   async function loadMaintenance() {
     try {
       const data = await fetch('/api/platform-settings').then(r=>r.json())
       setMaintenanceMode(data.maintenanceMode); setMaintenanceMsgInput(data.maintenanceMessage)
+      setWaCapacity(data.waSessionCapacity ?? 3); setWaCapacityInput(String(data.waSessionCapacity ?? 3))
     } catch {}
+  }
+
+  async function saveWaCapacity() {
+    const n = Number(waCapacityInput)
+    if (!n || n < 0) return
+    setWaCapacitySaving(true); setWaCapacityMsg('')
+    try {
+      const key = sessionStorage.getItem('storely_admin_pass') || ''
+      const res = await fetch('/api/platform-settings', {
+        method: 'POST', headers: { 'Content-Type':'application/json', 'x-admin-key': key },
+        body: JSON.stringify({ waSessionCapacity: n })
+      })
+      if (!res.ok) { setWaCapacityMsg('حدث خطأ'); setWaCapacitySaving(false); return }
+      setWaCapacity(n)
+      setWaCapacityMsg('✅ تم التحديث')
+    } catch { setWaCapacityMsg('حدث خطأ') }
+    setWaCapacitySaving(false)
   }
 
   async function toggleMaintenance(next: boolean) {
@@ -912,6 +935,21 @@ export default function AdminPage() {
             {maintenanceStatusMsg && <div style={{fontSize:11,color:'#16a34a',marginTop:8}}>{maintenanceStatusMsg}</div>}
           </div>
         )}
+
+        <div style={{background:'#faf5ff',border:'1.5px solid #e9d5ff',borderRadius:14,padding:'16px 18px',marginBottom:20,display:'flex',alignItems:'center',gap:12,flexWrap:'wrap' as const}}>
+          <div style={{fontSize:24}}>📲</div>
+          <div style={{flex:1,minWidth:180}}>
+            <div style={{fontSize:13,fontWeight:800,color:'#0f172a'}}>سعة جلسات واتساب (إضافة الحجوزات)</div>
+            <div style={{fontSize:11,color:'#7c3aed',marginTop:2}}>حدّد هذا الرقم حسب عدد الجلسات المتاحة فعلياً بباقتك بـWasenderAPI</div>
+          </div>
+          <input type="number" value={waCapacityInput} onChange={e=>setWaCapacityInput(e.target.value)}
+            style={{width:70,padding:'8px 10px',border:'1px solid #e9d5ff',borderRadius:8,fontSize:13,fontFamily:'inherit',textAlign:'center' as const}}/>
+          <button onClick={saveWaCapacity} disabled={waCapacitySaving}
+            style={{padding:'8px 18px',background:'#7c3aed',color:'white',border:'none',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:waCapacitySaving?.6:1}}>
+            {waCapacitySaving?'...':'حفظ'}
+          </button>
+          {waCapacityMsg && <div style={{fontSize:11,color:'#16a34a',width:'100%'}}>{waCapacityMsg}</div>}
+        </div>
 
         {/* Alert: pending users */}
         {stats.pending > 0 && (

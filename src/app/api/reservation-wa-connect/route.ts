@@ -37,6 +37,14 @@ export async function POST(req: Request) {
 
     // ننشئ جلسة جديدة بس أول مرة — لو موجودة نعيد استخدامها
     if (!sessionId) {
+      // فحص السقف — يمنع تجاوز عدد الجلسات المتاحة فعلياً بباقة WasenderAPI
+      const { data: settings } = await supabase.from('platform_settings').select('wa_session_capacity').eq('id', 1).single()
+      const capacity = (settings as any)?.wa_session_capacity ?? 3
+      const { count } = await supabase.from('organizations').select('id', { count: 'exact', head: true }).not('res_wa_session_id', 'is', null)
+      if ((count || 0) >= capacity) {
+        return NextResponse.json({ error: 'الخدمة ممتلئة حالياً — تواصل معنا وراح نفعّلها لك بأقرب وقت' }, { status: 409 })
+      }
+
       const { data: owner } = await supabase.from('profiles').select('phone').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
       const phone = (owner as any)?.phone || '+966500000000'
 

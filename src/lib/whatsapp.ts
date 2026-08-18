@@ -103,6 +103,34 @@ export async function sendWhatsAppDocument(phone: string, documentUrl: string, f
 }
 
 /**
+ * يرسل رسالة عبر جلسة واتساب خاصة بمنشأة معيّنة (مثل جلسات الحجوزات) —
+ * يستخدم مفتاح الجلسة نفسه كـ Bearer token بدل مفتاح المنصة الرئيسي.
+ */
+export async function sendWhatsAppMessageWithKey(apiKey: string, phone: string, text: string, retries = 2): Promise<SendResult> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch('https://www.wasenderapi.com/api/send-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({ to: phone, text }),
+      })
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}))
+        return { ok: true, status: res.status, data }
+      }
+      const shouldRetry = (res.status === 429 || res.status >= 500) && attempt < retries
+      if (shouldRetry) { await delay(1200 * (attempt + 1)); continue }
+      const data = await res.json().catch(() => ({}))
+      return { ok: false, status: res.status, data }
+    } catch (err: any) {
+      if (attempt < retries) { await delay(1200 * (attempt + 1)); continue }
+      return { ok: false, data: { error: err.message } }
+    }
+  }
+  return { ok: false, data: { error: 'exhausted retries' } }
+}
+
+/**
  * يرسل رسائل متعددة بالتسلسل مع تأخير آمن بين كل رسالة (افتراضياً 600ms)
  * — يحمي من تجاوز حدود إرسال Wasender API عند الإرسال الجماعي (broadcast).
  * يرجع مصفوفة نتائج بنفس ترتيب المدخلات.

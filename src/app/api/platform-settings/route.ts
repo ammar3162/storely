@@ -8,10 +8,11 @@ const sb = () => createClient(
 )
 
 export async function GET() {
-  const { data } = await sb().from('platform_settings').select('maintenance_mode,maintenance_message').eq('id', 1).single()
+  const { data } = await sb().from('platform_settings').select('maintenance_mode,maintenance_message,wa_session_capacity').eq('id', 1).single()
   return NextResponse.json({
     maintenanceMode: (data as any)?.maintenance_mode || false,
     maintenanceMessage: (data as any)?.maintenance_message || 'الموقع بصيانة مؤقتة، بنرجع قريباً 🛠️',
+    waSessionCapacity: (data as any)?.wa_session_capacity ?? 3,
   })
 }
 
@@ -20,10 +21,11 @@ export async function POST(req: Request) {
   if (!(await requirePermission(adminKey, 'view_consent_logs'))) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
-  const { maintenanceMode, maintenanceMessage } = await req.json()
+  const { maintenanceMode, maintenanceMessage, waSessionCapacity } = await req.json()
   const update: any = {}
   if (typeof maintenanceMode === 'boolean') update.maintenance_mode = maintenanceMode
   if (typeof maintenanceMessage === 'string') update.maintenance_message = maintenanceMessage
+  if (typeof waSessionCapacity === 'number') update.wa_session_capacity = waSessionCapacity
   const { error } = await sb().from('platform_settings').update(update).eq('id', 1)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { randomBytes } from 'crypto'
+import { sendWhatsAppMessageWithKey } from '@/lib/whatsapp'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
     }
 
     const supabase = sb()
-    const { data: org } = await supabase.from('organizations').select('id,res_enabled').eq('res_slug', slug).maybeSingle()
+    const { data: org } = await supabase.from('organizations').select('id,name,res_enabled,res_display_name,res_wa_status,res_wa_api_key').eq('res_slug', slug).maybeSingle()
     if (!org || !(org as any).res_enabled) return NextResponse.json({ error: 'الحجز غير متاح حالياً' }, { status: 404 })
 
     if (!(await hasActiveReservationAddon(supabase, (org as any).id))) {
@@ -41,6 +42,21 @@ export async function POST(req: Request) {
     } as any).select().single()
 
     if (error) return NextResponse.json({ error: 'فشل إنشاء الحجز' }, { status: 500 })
+
+    // إشعار واتساب تلقائي — بس لو المنشأة ربطت رقمها
+    if ((org as any).res_wa_status === 'connected' && (org as any).res_wa_api_key) {
+      const orgName = (org as any).res_display_name || (org as any).name
+      const text = `مرحباً ${name} 👋
+
+تم تأكيد استلام حجزك بـ${orgName}
+
+📅 ${booking_date}
+🕐 ${booking_time}
+👥 ${guests || 2} أشخاص
+
+رقم الحجز: #${id}`
+      sendWhatsAppMessageWithKey((org as any).res_wa_api_key, phone.trim(), text).catch(() => {})
+    }
 
     return NextResponse.json({ success: true, reservation: data })
   } catch {
