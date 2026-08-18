@@ -81,6 +81,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [orgName, setOrgName]       = useState('')
   const [subDaysLeft, setSubDaysLeft] = useState<number|null>(null)
   const [orgLogo, setOrgLogo]       = useState<string|null>(null)
+  const [hasMenuAddon, setHasMenuAddon] = useState(true)
   const [branchName, setBranchName] = useState('')
   const [advancedNavOpen, setAdvancedNavOpen] = useState(false)
   const [userName, setUserName]     = useState('')
@@ -188,6 +189,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const orgLogoUrl=(p.organizations as any)?.logo_url||null
     const userN=p.full_name||''
     setOrgName(orgN); setUserName(userN); setUserInit(userN[0]||'م'); setOrgLogo(orgLogoUrl)
+    if (p.org_id) {
+      fetch(`/api/addons-market?org_id=${p.org_id}`).then(r=>r.json()).then(j=>{
+        if (j.success) {
+          const menuAddon = (j.addons||[]).find((a:any)=>a.slug==='online_menu')
+          setHasMenuAddon(!!menuAddon?.subscription?.isValid)
+        }
+      }).catch(()=>{})
+    }
     setUserRole((p as any).role||'owner')
     if((p as any).role==='manager') setManagerPermissions((p as any).permissions||{})
     sessionStorage.setItem('s_org_id',p.org_id)
@@ -793,6 +802,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 pointerEvents:'none' as const, zIndex:0,
               }}/>
               {NAV_GROUPS.map((group,gi)=>{
+                group = { ...group, items: group.items.filter(it => it.href !== '/online-store' || hasMenuAddon) }
                 const isAdvancedGroup = group.label==='أدوات متقدمة'
                 const groupCollapsed = isAdvancedGroup && !advancedNavOpen
                 return (
