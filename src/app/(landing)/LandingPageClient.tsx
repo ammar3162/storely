@@ -23,6 +23,8 @@ const FEATURES = [
   { icon:'📊', title:'تقارير ذكية', desc:'تقارير الصرف والمشتريات والجرد وإقفال الكاشير. صدّرها بـ PDF أو CSV بضغطة واحدة.' },
   { icon:'🏪', title:'متعدد الفروع', desc:'أدر جميع فروعك من لوحة تحكم واحدة مع مخزون مستقل لكل فرع.' },
   { icon:'🤖', title:'أدوات الذكاء الاصطناعي', desc:'اقتراح الشراء الذكي بناءً على اتجاه استهلاكك الفعلي، ومقارنة أداء الفروع تلقائياً.' },
+  { icon:'🛍️', title:'صفحة عرض إلكترونية', desc:'صفحة أنيقة تعرض منتجاتك للعملاء بالسعر والوصف والصورة — رابط جاهز أو رمز QR تشاركه بسهولة.' },
+  { icon:'📅', title:'الحجوزات الإلكترونية', desc:'صفحة حجز أنيقة لعملائك + لوحة إدارة للكاشير تتابع كل حجز وتحدّث حالته لحظياً، مع إشعارات واتساب تلقائية.' },
 ]
 
 const TRUST_POINTS = [
@@ -245,11 +247,11 @@ export default function LandingPage() {
           ✓ تجربة مجانية 14 يوماً — لا يتطلب بطاقة ائتمانية
         </div>
         <h1 className="hero-h1" style={{fontSize:52,fontWeight:900,color:'#111827',lineHeight:1.15,marginBottom:20,letterSpacing:'-2px',maxWidth:820,margin:'0 auto 20px'}}>
-          نصمّم مستقبل تشغيل المطاعم<br/>
-          <span style={{color:'#15803d'}}>ومنشآت المنطقة</span>
+          نصمّم مستقبل الإدارة الذكية<br/>
+          <span style={{color:'#15803d'}}>لمنشآت المنطقة</span>
         </h1>
         <p style={{fontSize:18,color:'#6b7280',maxWidth:620,margin:'0 auto 32px',lineHeight:1.7}}>
-          من المخزون والمشتريات، للمنيو الإلكتروني وحجز الطاولات، وإدارة الموظفين والفروع — كل شي بمكان واحد
+          من المخزون والمشتريات، لصفحة عرض منتجاتك والحجوزات الإلكترونية، وإدارة الموظفين والفروع — كل شي بمكان واحد
         </p>
         <div className="hero-btns" style={{display:'flex',gap:12,justifyContent:'center',marginBottom:56}}>
           <a href="#demo" className="btn-outline" style={{fontSize:16,padding:'14px 28px'}}>جرب نظام Storely</a>
@@ -392,10 +394,11 @@ export default function LandingPage() {
             <div key={i} className={`plan-card${p.popular?' popular':''}`} style={{position:'relative'}}>
               {p.popular && <div style={{position:'absolute',top:-13,right:24,background:'#15803d',color:'white',fontSize:11,fontWeight:800,padding:'4px 12px',borderRadius:99}}>الأكثر شيوعاً</div>}
               <div style={{fontSize:16,fontWeight:800,color:'#111827',marginBottom:8}}>{p.name}</div>
-              <div style={{display:'flex',alignItems:'baseline',gap:6,marginBottom:16}}>
+              <div style={{display:'flex',alignItems:'baseline',gap:6,marginBottom:10}}>
                 <span style={{fontSize:34,fontWeight:900,color:'#111827'}}>{p.price}</span>
                 <span style={{fontSize:14,color:'#9ca3af'}}>ر.س / شهرياً</span>
               </div>
+              <div style={{display:'inline-block',background:'#f0fdf4',color:'#15803d',fontSize:11,fontWeight:800,padding:'3px 10px',borderRadius:99,marginBottom:16}}>{p.features.length} ميزة متاحة</div>
               <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:16,paddingBottom:16,borderBottom:'1px solid #f3f4f6'}}>
                 {p.limits.map((l,j)=><div key={j} style={{fontSize:13,color:'#6b7280'}}>• {l}</div>)}
               </div>
@@ -475,8 +478,8 @@ export default function LandingPage() {
           </div>
           <div style={{borderTop:'1px solid #1f2937',paddingTop:24,display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12}}>
             <div>
-              <div style={{fontSize:13,color:'white'}}>© {new Date().getFullYear()} Storely — جميع الحقوق محفوظة</div>
-              <div style={{fontSize:11,color:'#6b7280',marginTop:4}}>مؤسسة باسم علي خلوي لتقنية المعلومات — س.ت 7055023522</div>
+              <div style={{fontSize:13,color:'white'}}>جميع الحقوق محفوظة لدى Storely {new Date().getFullYear()} ©</div>
+              <div style={{fontSize:11,color:'#6b7280',marginTop:6}}>مؤسسة باسم علي خلوي لتقنية المعلومات، رقم السجل التجاري 7055023522</div>
             </div>
             <div style={{fontSize:13,color:'white'}}>storely.dev</div>
           </div>
