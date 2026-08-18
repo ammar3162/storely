@@ -7,6 +7,7 @@ import { toast } from '@/components/toast'
 
 export default function ReservationSettingsPage() {
   const [orgId, setOrgId] = useState('')
+  const [orgName, setOrgName] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [hasSubscription, setHasSubscription] = useState<boolean|null>(null)
@@ -34,9 +35,10 @@ export default function ReservationSettingsPage() {
   async function init() {
     const { data: { user } } = await sb.auth.getUser()
     if (!user) return
-    const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
+    const { data: profile } = await sb.from('profiles').select('org_id,organizations(name)').eq('id', user.id).single()
     if (!profile?.org_id) return
     setOrgId(profile.org_id)
+    setOrgName((profile.organizations as any)?.name || '')
     try {
       const subRes = await fetch(`/api/addons-market?org_id=${profile.org_id}`)
       const subJ = await subRes.json()
@@ -255,8 +257,11 @@ export default function ReservationSettingsPage() {
 
         {!hasWaAddon ? (
           <div style={{ textAlign: 'center' as const, padding: 20, background: colors.bg, borderRadius: 12 }}>
-            <div style={{ fontSize: 13, color: colors.text3, marginBottom: 14 }}>هذي الميزة مو مفعّلة — اشترك بها من سوق الإضافات</div>
-            <a href="/addons-market" style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '10px 24px', fontSize: 13 }}>روح لسوق الإضافات</a>
+            <div style={{ fontSize: 13, color: colors.text3, marginBottom: 14 }}>هذي الميزة مو مفعّلة (30 ر.س/شهر) — تُضاف تلقائياً بفاتورتك القادمة بعد التفعيل</div>
+            <a href={`https://wa.me/966594351667?text=${encodeURIComponent(`مرحباً، أبي أفعّل "إشعارات واتساب للحجوزات" (30 ر.س/شهر) لمنشأة: ${orgName}`)}`} target="_blank" rel="noopener noreferrer"
+              style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '10px 24px', fontSize: 13 }}>
+              📤 طلب تفعيل عبر واتساب
+            </a>
           </div>
         ) : waStatus === 'connected' ? (
           <div style={{ textAlign: 'center' as const, padding: 20, background: colors.primaryLight, borderRadius: 12, border: `1px solid ${colors.primaryBorder}` }}>
