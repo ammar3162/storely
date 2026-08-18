@@ -22,6 +22,11 @@ export default function ReservationSettingsPage() {
   const [openTime, setOpenTime] = useState('08:00')
   const [closeTime, setCloseTime] = useState('23:00')
   const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [hasWaAddon, setHasWaAddon] = useState(false)
+  const [waStatus, setWaStatus] = useState('disconnected')
+  const [waQr, setWaQr] = useState('')
+  const [connectingWa, setConnectingWa] = useState(false)
+  const [waPolling, setWaPolling] = useState(false)
   const sb = createClient()
 
   useEffect(() => { init() }, [])
@@ -37,8 +42,11 @@ export default function ReservationSettingsPage() {
       const subJ = await subRes.json()
       const addon = (subJ.addons || []).find((a: any) => a.slug === 'table_reservations')
       setHasSubscription(!!addon?.subscription?.isValid)
+      const waAddon = (subJ.addons || []).find((a: any) => a.slug === 'reservations_whatsapp')
+      setHasWaAddon(!!waAddon?.subscription?.isValid)
       if (addon?.subscription?.isValid) load(profile.org_id)
       else setLoading(false)
+      if (waAddon?.subscription?.isValid) checkWaStatus(profile.org_id)
     } catch { setHasSubscription(false); setLoading(false) }
   }
 
@@ -89,6 +97,45 @@ export default function ReservationSettingsPage() {
     setSlug(j.slug || '')
     toast('✅ تم حفظ إعدادات الحجوزات')
   }
+
+  async function checkWaStatus(oid: string) {
+    const res = await fetch(`/api/reservation-wa-status?org_id=${oid}`)
+    const j = await res.json()
+    if (j.success) setWaStatus(j.status)
+  }
+
+  async function connectWa() {
+    setConnectingWa(true)
+    const res = await fetch('/api/reservation-wa-connect', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ org_id: orgId }),
+    })
+    const j = await res.json()
+    setConnectingWa(false)
+    if (!j.success) { toast(j.error || 'فشل بدء الربط', 'error'); return }
+    fetchQr()
+    setWaPolling(true)
+  }
+
+  async function fetchQr() {
+    const res = await fetch(`/api/reservation-wa-qrcode?org_id=${orgId}`)
+    const j = await res.json()
+    if (j.success && j.qrCode) setWaQr(j.qrCode)
+  }
+
+  useEffect(() => {
+    if (!waPolling) return
+    const interval = setInterval(async () => {
+      const res = await fetch(`/api/reservation-wa-status?org_id=${orgId}`)
+      const j = await res.json()
+      if (j.success) {
+        setWaStatus(j.status)
+        if (j.status === 'connected') { setWaPolling(false); toast('✅ تم ربط واتساب بنجاح') }
+        else if (j.status === 'need_scan' && !waQr) fetchQr()
+      }
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [waPolling, orgId])
 
   const previewUrl = slug ? `${typeof window !== 'undefined' ? window.location.origin : ''}/book/${slug}` : ''
 
@@ -199,6 +246,34 @@ export default function ReservationSettingsPage() {
             </a>
           )}
         </div>
+      </div>
+
+      {/* إشعارات واتساب */}
+      <div style={{ ...card, padding: '20px', marginTop: 16 }}>
+        <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>📲 إشعارات واتساب للحجوزات</div>
+        <div style={{ fontSize: 11, color: colors.text4, marginBottom: 16 }}>رقم واتساب خاص بمنشأتك يرسل تلقائياً تأكيد الحجز وتحديثات الحالة للعميل</div>
+
+        {!hasWaAddon ? (
+          <div style={{ textAlign: 'center' as const, padding: 20, background: colors.bg, borderRadius: 12 }}>
+            <div style={{ fontSize: 13, color: colors.text3, marginBottom: 14 }}>هذي الميزة مو مفعّلة — اشترك بها من سوق الإضافات</div>
+            <a href="/addons-market" style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '10px 24px', fontSize: 13 }}>روح لسوق الإضافات</a>
+          </div>
+        ) : waStatus === 'connected' ? (
+          <div style={{ textAlign: 'center' as const, padding: 20, background: colors.primaryLight, borderRadius: 12, border: `1px solid ${colors.primaryBorder}` }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: colors.primary }}>واتساب متصل ويرسل الإشعارات تلقائياً</div>
+          </div>
+        ) : waQr ? (
+          <div style={{ textAlign: 'center' as const }}>
+            <img src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(waQr)}`} alt="QR" style={{ width: 200, height: 200, borderRadius: 12, border: `1px solid ${colors.border}`, marginBottom: 14 }} />
+            <div style={{ fontSize: 12, color: colors.text3, marginBottom: 4 }}>افتح واتساب على جوالك التجاري → الأجهزة المرتبطة → مسح رمز</div>
+            <div style={{ fontSize: 11, color: colors.text4 }}>جاري الانتظار... ({waStatus === 'need_scan' ? 'بانتظار المسح' : waStatus})</div>
+          </div>
+        ) : (
+          <button onClick={connectWa} disabled={connectingWa} style={{ ...btnPrimary, width: '100%' }}>
+            {connectingWa ? 'جاري البدء...' : '🔗 ربط رقم واتساب'}
+          </button>
+        )}
       </div>
     </div>
   )
