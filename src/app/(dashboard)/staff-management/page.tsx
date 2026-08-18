@@ -44,9 +44,9 @@ export default function StaffManagementPage() {
   const [orgNotifyClosingWA, setOrgNotifyClosingWA] = useState(true)
   const [loading, setLoading]       = useState(true)
   const [showAdd, setShowAdd]       = useState(false)
-  const [newPermissions, setNewPermissions] = useState({dispense:false,inventory:false,purchases:false,reports:false})
+  const [newPermissions, setNewPermissions] = useState({dispense:false,inventory:false,purchases:false,reports:false,reservations:false})
   const [editingPerms, setEditingPerms] = useState<string|null>(null)
-  const [editPerms, setEditPerms] = useState({dispense:true,inventory:false,purchases:false,reports:false})
+  const [editPerms, setEditPerms] = useState({dispense:true,inventory:false,purchases:false,reports:false,reservations:false})
   const [newName, setNewName]       = useState('')
   const [newPhone, setNewPhone]     = useState('')
   const [staffCountry, setStaffCountry] = useState(()=>sessionStorage.getItem('s_country_code')||'+966')
@@ -518,6 +518,7 @@ export default function StaffManagementPage() {
                     {key:'inventory',  label:'المخزون',    icon:'📦', locked:false},
                     {key:'purchases',  label:'المشتريات',  icon:'🛒', locked:false},
                     {key:'reports',    label:'التقارير',   icon:'📊', locked:false},
+                    {key:'reservations', label:'الحجوزات', icon:'🗓️', locked:false},
                   ].map(p=>(
                     <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:'white',borderRadius:8,border:`1.5px solid ${(newPermissions as any)[p.key]?colors.primary:colors.border}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                       <input type="checkbox" checked={(newPermissions as any)[p.key]} disabled={p.locked}
@@ -654,6 +655,7 @@ export default function StaffManagementPage() {
                 {key:'inventory',  label:'المخزون',    icon:'📦', locked:false},
                 {key:'purchases',  label:'المشتريات',  icon:'🛒', locked:false},
                 {key:'reports',    label:'التقارير',   icon:'📊', locked:false},
+                {key:'reservations', label:'الحجوزات', icon:'🗓️', locked:false},
               ].map(p=>(
                 <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'12px',background:(editPerms as any)[p.key]?'#f0fdf4':'#f9fafb',borderRadius:10,border:`1.5px solid ${(editPerms as any)[p.key]?'#16a34a':'#e5e7eb'}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                   <input type="checkbox" checked={(editPerms as any)[p.key]} disabled={p.locked}

@@ -31,7 +31,7 @@ export async function proxy(request: NextRequest) {
   const isStatic   = path.startsWith('/_next') || path.startsWith('/favicon') || path.includes('.')
   const isAdminPanel = path.startsWith('/storely-admin')
   const isStaff    = path.startsWith('/staff')
-  const isLanding  = path === '/' || path.startsWith('/privacy') || path.startsWith('/terms') || path.startsWith('/shop') || path.startsWith('/permission')
+  const isLanding  = path === '/' || path.startsWith('/privacy') || path.startsWith('/terms') || path.startsWith('/shop') || path.startsWith('/permission') || path.startsWith('/book')
   const isReset    = path.startsWith('/reset-password')
   const isSupplierPortalAuth = path === '/supplier-portal' || path === '/supplier-portal/'
   const isSupplierDashboard  = path.startsWith('/supplier-portal/dashboard')

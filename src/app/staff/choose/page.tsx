@@ -6,6 +6,7 @@ export default function ChoosePage() {
   const router = useRouter()
   const [name, setName] = useState('')
   const [canDispense, setCanDispense] = useState(false)
+  const [canReservations, setCanReservations] = useState(false)
   const [isCashier, setIsCashier] = useState(false)
   const [staffData, setStaffData] = useState<any>(null)
   const [todayEvents, setTodayEvents] = useState<any[]>([])
@@ -24,6 +25,7 @@ export default function ChoosePage() {
     const parsed = JSON.parse(s)
     setName(parsed.name||'')
     setCanDispense(!!parsed.permissions?.dispense)
+    setCanReservations(!!parsed.permissions?.reservations)
     setIsCashier(parsed.role==='cashier')
     setStaffData(parsed)
     loadToday(parsed)
@@ -211,6 +213,16 @@ export default function ChoosePage() {
               <div style={{textAlign:'right'}}>
                 <div style={{fontSize:16,fontWeight:800}}>صرف المخزون</div>
                 <div style={{fontSize:12,opacity:.8}}>تسجيل صرف المنتجات</div>
+              </div>
+            </button>
+          )}
+          {canReservations && (
+            <button onClick={()=>router.push('/staff/reservations')}
+              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#78350f,#b45309)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
+              <span style={{fontSize:28}}>🗓️</span>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize:16,fontWeight:800}}>الحجوزات</div>
+                <div style={{fontSize:12,opacity:.8}}>متابعة حجوزات اليوم</div>
               </div>
             </button>
           )}

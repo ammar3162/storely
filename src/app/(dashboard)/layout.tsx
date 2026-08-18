@@ -39,6 +39,7 @@ const NAV_GROUPS = [
       { href:'/staff-management', label:'الموظفون', icon:'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8zm6 0a4 4 0 11-8 0' },
       { href:'/attendance', label:'الحضور والانصراف', icon:'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
       { href:'/online-store', label:'المنيو', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
+      { href:'/reservation-settings', label:'الحجوزات', icon:'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
       { href:'/addons-market', label:'سوق الإضافات', icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
       { href:'/branch-managers', label:'مديرو الفروع', icon:'M12 4.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zM5.5 20a6.5 6.5 0 0113 0' },
       { href:'/branches', label:'إدارة الفروع', icon:'M3 21h18M5 21V7l8-4v18M19 21V11l-6-4' },
@@ -82,6 +83,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [subDaysLeft, setSubDaysLeft] = useState<number|null>(null)
   const [orgLogo, setOrgLogo]       = useState<string|null>(null)
   const [hasMenuAddon, setHasMenuAddon] = useState(true)
+  const [hasResAddon, setHasResAddon] = useState(true)
   const [branchName, setBranchName] = useState('')
   const [advancedNavOpen, setAdvancedNavOpen] = useState(false)
   const [userName, setUserName]     = useState('')
@@ -194,6 +196,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         if (j.success) {
           const menuAddon = (j.addons||[]).find((a:any)=>a.slug==='online_menu')
           setHasMenuAddon(!!menuAddon?.subscription?.isValid)
+          const resAddon = (j.addons||[]).find((a:any)=>a.slug==='table_reservations')
+          setHasResAddon(!!resAddon?.subscription?.isValid)
         }
       }).catch(()=>{})
     }
@@ -802,7 +806,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 pointerEvents:'none' as const, zIndex:0,
               }}/>
               {NAV_GROUPS.map((group,gi)=>{
-                group = { ...group, items: group.items.filter(it => it.href !== '/online-store' || hasMenuAddon) }
+                group = { ...group, items: group.items.filter(it => (it.href !== '/online-store' || hasMenuAddon) && (it.href !== '/reservation-settings' || hasResAddon)) }
                 const isAdvancedGroup = group.label==='أدوات متقدمة'
                 const groupCollapsed = isAdvancedGroup && !advancedNavOpen
                 return (
