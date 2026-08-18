@@ -1,20 +1,24 @@
 /**
- * توليد فاتورة PDF احترافية (يدعم العربي صح) باستخدام متصفح Chrome
+ * توليد فاتورة PDF احترافية مفصّلة (يدعم العربي صح) باستخدام متصفح Chrome
  * مصغّر يعمل بالخلفية على السيرفر — يرسم الفاتورة بالضبط زي ما تظهر
  * بمتصفح حقيقي، ثم يحوّلها لملف PDF.
  */
 import chromium from '@sparticuz/chromium'
 import puppeteer from 'puppeteer-core'
 
+interface InvoiceItem { label: string; amount: number }
+
 interface InvoiceData {
   invoiceNumber: number | string
   date: string
   orgName: string
-  planLabel: string
-  amount: number
+  items: InvoiceItem[]
 }
 
 function buildInvoiceHtml(data: InvoiceData): string {
+  const total = data.items.reduce((s, it) => s + Number(it.amount || 0), 0)
+  const rows = data.items.map(it => `<tr><td>${it.label}</td><td>${it.amount} ر.س</td></tr>`).join('')
+
   return `
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -67,8 +71,8 @@ function buildInvoiceHtml(data: InvoiceData): string {
       <tr><th>الوصف</th><th>المبلغ</th></tr>
     </thead>
     <tbody>
-      <tr><td>اشتراك باقة "${data.planLabel}"</td><td>${data.amount} ر.س</td></tr>
-      <tr class="total-row"><td>الإجمالي</td><td>${data.amount} ر.س</td></tr>
+      ${rows}
+      <tr class="total-row"><td>الإجمالي</td><td>${total} ر.س</td></tr>
     </tbody>
   </table>
 

@@ -16,14 +16,18 @@ export async function POST(req: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { orgId, orgName, phone, planLabel, amount } = await req.json()
-  if (!orgId || !phone || !planLabel || !amount) {
+  const { orgId, orgName, phone, items } = await req.json()
+  if (!orgId || !phone || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
   }
 
+  const cleanItems = items.filter((it: any) => it?.label && it?.amount != null).map((it: any) => ({ label: String(it.label), amount: Number(it.amount) }))
+  if (cleanItems.length === 0) return NextResponse.json({ error: 'ما فيه بنود صالحة' }, { status: 400 })
+  const total = cleanItems.reduce((s: number, it: any) => s + it.amount, 0)
+
   const { data: inv, error: insErr } = await supabase.from('invoices').insert({
-    org_id: orgId, org_name: orgName || null, plan_label: planLabel,
-    amount: Number(amount), sent_to_phone: phone,
+    org_id: orgId, org_name: orgName || null, plan_label: cleanItems[0].label, amount: total,
+    sent_to_phone: phone, items: cleanItems,
   } as any).select('invoice_number').single()
 
   if (insErr) return NextResponse.json({ error: 'فشل إنشاء الفاتورة' }, { status: 500 })
@@ -31,10 +35,10 @@ export async function POST(req: Request) {
   const invoiceNumber = (inv as any)?.invoice_number
   const today = new Date().toLocaleDateString('ar-SA', { numberingSystem: 'latn', year: 'numeric', month: 'long', day: 'numeric' })
 
-  // توليد ملف PDF احترافي للفاتورة
+  // توليد ملف PDF احترافي مفصّل للفاتورة
   let pdfBuffer: Buffer
   try {
-    pdfBuffer = await generateInvoicePdf({ invoiceNumber, date: today, orgName: orgName || '—', planLabel, amount })
+    pdfBuffer = await generateInvoicePdf({ invoiceNumber, date: today, orgName: orgName || '—', items: cleanItems })
   } catch (err: any) {
     console.error('PDF_GENERATION_FAILED:', err?.message || err, err?.stack || '')
     return NextResponse.json({ error: 'فشل توليد ملف الفاتورة: ' + String(err?.message || err) }, { status: 500 })
@@ -52,7 +56,7 @@ export async function POST(req: Request) {
   const result = await sendWhatsAppDocument(phone, publicUrl, fileName, `🧾 فاتورة اشتراك #${invoiceNumber} — ${orgName || ''}`)
   if (!result.ok) return NextResponse.json({ error: 'فشل إرسال الفاتورة عبر واتساب' }, { status: 500 })
 
-  await logAdminAction(admin, 'send_invoice', orgId, orgName || null, { invoice_number: invoiceNumber, amount })
+  await logAdminAction(admin, 'send_invoice', orgId, orgName || null, { invoice_number: invoiceNumber, amount: total, items: cleanItems })
 
   return NextResponse.json({ success: true, invoiceNumber })
 }
