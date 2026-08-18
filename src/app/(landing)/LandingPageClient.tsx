@@ -245,11 +245,11 @@ export default function LandingPage() {
           ✓ تجربة مجانية 14 يوماً — لا يتطلب بطاقة ائتمانية
         </div>
         <h1 className="hero-h1" style={{fontSize:52,fontWeight:900,color:'#111827',lineHeight:1.15,marginBottom:20,letterSpacing:'-2px',maxWidth:820,margin:'0 auto 20px'}}>
-          نصمّم مستقبل إدارة المخزون<br/>
-          <span style={{color:'#15803d'}}>لمطاعم ومنشآت المنطقة</span>
+          نصمّم مستقبل تشغيل المطاعم<br/>
+          <span style={{color:'#15803d'}}>ومنشآت المنطقة</span>
         </h1>
-        <p style={{fontSize:18,color:'#6b7280',maxWidth:560,margin:'0 auto 32px',lineHeight:1.7}}>
-          تتبع مخزونك لحظة بلحظة، واستقبل تنبيهات واتساب عند نقص الأصناف، وأدر موظفيك وفروعك من مكان واحد
+        <p style={{fontSize:18,color:'#6b7280',maxWidth:620,margin:'0 auto 32px',lineHeight:1.7}}>
+          من المخزون والمشتريات، للمنيو الإلكتروني وحجز الطاولات، وإدارة الموظفين والفروع — كل شي بمكان واحد
         </p>
         <div className="hero-btns" style={{display:'flex',gap:12,justifyContent:'center',marginBottom:56}}>
           <a href="#demo" className="btn-outline" style={{fontSize:16,padding:'14px 28px'}}>جرب نظام Storely</a>
@@ -474,7 +474,10 @@ export default function LandingPage() {
             ))}
           </div>
           <div style={{borderTop:'1px solid #1f2937',paddingTop:24,display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12}}>
-            <div style={{fontSize:13,color:'white'}}>© {new Date().getFullYear()} Storely — جميع الحقوق محفوظة</div>
+            <div>
+              <div style={{fontSize:13,color:'white'}}>© {new Date().getFullYear()} Storely — جميع الحقوق محفوظة</div>
+              <div style={{fontSize:11,color:'#6b7280',marginTop:4}}>مؤسسة باسم علي خلوي لتقنية المعلومات — س.ت 7055023522</div>
+            </div>
             <div style={{fontSize:13,color:'white'}}>storely.dev</div>
           </div>
         </div>
