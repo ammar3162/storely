@@ -7,6 +7,26 @@ const sb = () => createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+export async function DELETE(req: Request) {
+  try {
+    const { org_id, addon_id } = await req.json()
+    if (!org_id || !addon_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+
+    const access = await verifyOrgAccess(org_id)
+    if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+
+    const supabase = sb()
+    const { error } = await supabase.from('org_addon_subscriptions')
+      .update({ status: 'cancelled', cancelled_at: new Date().toISOString() } as any)
+      .eq('org_id', org_id).eq('addon_id', addon_id)
+
+    if (error) return NextResponse.json({ error: 'فشل الإلغاء' }, { status: 500 })
+    return NextResponse.json({ success: true })
+  } catch {
+    return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+  }
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
