@@ -112,7 +112,7 @@ export async function sendWhatsAppMessageWithKey(apiKey: string, phone: string, 
       const res = await fetch('https://www.wasenderapi.com/api/send-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({ to: phone, text }),
+        body: JSON.stringify({ to: formatPhone(phone), text }),
       })
       if (res.ok) {
         const data = await res.json().catch(() => ({}))

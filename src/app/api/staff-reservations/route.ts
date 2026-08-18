@@ -52,7 +52,7 @@ export async function PATCH(req: Request) {
       const text = `${STATUS_AR[status]}
 
 ${orgName} — حجز #${reservation_id}`
-      sendWhatsAppMessageWithKey((org as any).res_wa_api_key, (existing as any).phone, text).catch(() => {})
+      sendWhatsAppMessageWithKey((org as any).res_wa_api_key, (existing as any).phone, text).catch((e) => console.error('WA_NOTIFY_FAILED:', e?.message || e))
     }
   }
 

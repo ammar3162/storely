@@ -55,7 +55,7 @@ export async function POST(req: Request) {
 👥 ${guests || 2} أشخاص
 
 رقم الحجز: #${id}`
-      sendWhatsAppMessageWithKey((org as any).res_wa_api_key, phone.trim(), text).catch(() => {})
+      sendWhatsAppMessageWithKey((org as any).res_wa_api_key, phone.trim(), text).catch((e) => console.error('WA_NOTIFY_FAILED:', e?.message || e))
     }
 
     return NextResponse.json({ success: true, reservation: data })
