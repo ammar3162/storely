@@ -43,12 +43,11 @@ export default function ReservationSettingsPage() {
       const subRes = await fetch(`/api/addons-market?org_id=${profile.org_id}`)
       const subJ = await subRes.json()
       const addon = (subJ.addons || []).find((a: any) => a.slug === 'table_reservations')
-      setHasSubscription(!!addon?.subscription?.isValid)
-      const waAddon = (subJ.addons || []).find((a: any) => a.slug === 'reservations_whatsapp')
-      setHasWaAddon(!!waAddon?.subscription?.isValid)
-      if (addon?.subscription?.isValid) load(profile.org_id)
+      const isSubscribed = !!addon?.subscription?.isValid
+      setHasSubscription(isSubscribed)
+      setHasWaAddon(isSubscribed) // إشعارات واتساب مدموجة بنفس اشتراك الحجوزات
+      if (isSubscribed) { load(profile.org_id); checkWaStatus(profile.org_id) }
       else setLoading(false)
-      if (waAddon?.subscription?.isValid) checkWaStatus(profile.org_id)
     } catch { setHasSubscription(false); setLoading(false) }
   }
 
@@ -257,11 +256,7 @@ export default function ReservationSettingsPage() {
 
         {!hasWaAddon ? (
           <div style={{ textAlign: 'center' as const, padding: 20, background: colors.bg, borderRadius: 12 }}>
-            <div style={{ fontSize: 13, color: colors.text3, marginBottom: 14 }}>هذي الميزة مو مفعّلة (30 ر.س/شهر) — تُضاف تلقائياً بفاتورتك القادمة بعد التفعيل</div>
-            <a href={`https://wa.me/966594351667?text=${encodeURIComponent(`مرحباً، أبي أفعّل "إشعارات واتساب للحجوزات" (30 ر.س/شهر) لمنشأة: ${orgName}`)}`} target="_blank" rel="noopener noreferrer"
-              style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '10px 24px', fontSize: 13 }}>
-              📤 طلب تفعيل عبر واتساب
-            </a>
+            <div style={{ fontSize: 13, color: colors.text3 }}>الإشعارات تلقائياً جزء من اشتراك نظام الحجوزات — فعّل الاشتراك من الأعلى وتقدر تربط رقمك فوراً</div>
           </div>
         ) : waStatus === 'connected' ? (
           <div style={{ textAlign: 'center' as const, padding: 20, background: colors.primaryLight, borderRadius: 12, border: `1px solid ${colors.primaryBorder}` }}>

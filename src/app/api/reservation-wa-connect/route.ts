@@ -8,7 +8,8 @@ const sb = () => createClient(
 )
 
 async function hasActiveWaAddon(supabase: any, orgId: string) {
-  const { data: addon } = await supabase.from('marketplace_addons').select('id').eq('slug', 'reservations_whatsapp').maybeSingle()
+  // إشعارات واتساب مدموجة بنفس اشتراك نظام الحجوزات — ما فيه إضافة منفصلة
+  const { data: addon } = await supabase.from('marketplace_addons').select('id').eq('slug', 'table_reservations').maybeSingle()
   if (!addon) return false
   const { data: sub } = await supabase.from('org_addon_subscriptions').select('status,expires_at').eq('org_id', orgId).eq('addon_id', addon.id).eq('status', 'active').maybeSingle()
   return !!sub && new Date(sub.expires_at) > new Date()
