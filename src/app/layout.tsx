@@ -7,7 +7,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Storely — منصة تشغيل المطاعم والمنشآت",
+  title: "Storely — نحوّل التعقيد إلى تحكّم",
   description: "من المخزون والمشتريات، للمنيو الإلكتروني وحجز الطاولات، وإدارة الموظفين والفروع — كل شي بمكان واحد",
   manifest: "/manifest.json",
   appleWebApp: { capable:true, statusBarStyle:"default", title:"Storely" },
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   openGraph: {
-    title: "Storely — منصة تشغيل المطاعم والمنشآت",
+    title: "Storely — نحوّل التعقيد إلى تحكّم",
     description: "من المخزون والمشتريات، للمنيو الإلكتروني وحجز الطاولات، وإدارة الموظفين والفروع — كل شي بمكان واحد",
     url: "https://www.storely.dev",
     siteName: "Storely",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "Storely — منصة تشغيل المطاعم والمنشآت",
+    title: "Storely — نحوّل التعقيد إلى تحكّم",
     description: "من المخزون والمشتريات، للمنيو الإلكتروني وحجز الطاولات، وإدارة الموظفين والفروع — كل شي بمكان واحد",
     images: ["https://www.storely.dev/icon-192.png"],
   },
