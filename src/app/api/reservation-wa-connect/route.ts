@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { formatPhone } from '@/lib/whatsapp'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
       }
 
       const { data: owner } = await supabase.from('profiles').select('phone').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
-      const phone = (owner as any)?.phone || '+966500000000'
+      const phone = '+' + formatPhone((owner as any)?.phone || '966500000000')
 
       const createRes = await fetch('https://www.wasenderapi.com/api/whatsapp-sessions', {
         method: 'POST',
