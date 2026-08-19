@@ -27,6 +27,7 @@ export default function ReservationSettingsPage() {
   const [waStatus, setWaStatus] = useState('disconnected')
   const [waQr, setWaQr] = useState('')
   const [connectingWa, setConnectingWa] = useState(false)
+  const [customWaPhone, setCustomWaPhone] = useState('')
   const [waPolling, setWaPolling] = useState(false)
   const sb = createClient()
 
@@ -109,7 +110,7 @@ export default function ReservationSettingsPage() {
     setConnectingWa(true)
     const res = await fetch('/api/reservation-wa-connect', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId }),
+      body: JSON.stringify({ org_id: orgId, phone: customWaPhone }),
     })
     const j = await res.json()
     setConnectingWa(false)
@@ -186,7 +187,7 @@ export default function ReservationSettingsPage() {
 
         <div style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }}>اسم يظهر بصفحة الحجز</label>
-          <input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="مثال: YUCCA" style={{ ...inp(), width: '100%' }} />
+          <input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder={orgName || 'اسم منشأتك'} style={{ ...inp(), width: '100%' }} />
         </div>
 
         <div style={{ marginBottom: 14 }}>
@@ -270,9 +271,13 @@ export default function ReservationSettingsPage() {
             <div style={{ fontSize: 11, color: colors.text4 }}>جاري الانتظار... ({waStatus === 'need_scan' ? 'بانتظار المسح' : waStatus})</div>
           </div>
         ) : (
-          <button onClick={connectWa} disabled={connectingWa} style={{ ...btnPrimary, width: '100%' }}>
-            {connectingWa ? 'جاري البدء...' : '🔗 ربط رقم واتساب'}
-          </button>
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }}>رقم الواتساب اللي بتربطه (أي رقم خارجي، مو شرط رقم حسابك)</label>
+            <input value={customWaPhone} onChange={e => setCustomWaPhone(e.target.value)} placeholder="05XXXXXXXX" dir="ltr" style={{ ...inp(), width: '100%', textAlign: 'right' as const, marginBottom: 10, boxSizing: 'border-box' as const }} />
+            <button onClick={connectWa} disabled={connectingWa} style={{ ...btnPrimary, width: '100%' }}>
+              {connectingWa ? 'جاري البدء...' : '🔗 ربط رقم واتساب'}
+            </button>
+          </div>
         )}
       </div>
     </div>

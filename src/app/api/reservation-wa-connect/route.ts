@@ -18,7 +18,7 @@ async function hasActiveWaAddon(supabase: any, orgId: string) {
 
 export async function POST(req: Request) {
   try {
-    const { org_id } = await req.json()
+    const { org_id, phone: customPhone } = await req.json()
     if (!org_id) return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
 
     const access = await verifyOrgAccess(org_id)
@@ -47,8 +47,13 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'الخدمة ممتلئة حالياً — تواصل معنا وراح نفعّلها لك بأقرب وقت' }, { status: 409 })
       }
 
-      const { data: owner } = await supabase.from('profiles').select('phone').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
-      const phone = '+' + formatPhone((owner as any)?.phone || '966500000000')
+      let phone: string
+      if (customPhone && String(customPhone).trim()) {
+        phone = '+' + formatPhone(String(customPhone).trim())
+      } else {
+        const { data: owner } = await supabase.from('profiles').select('phone').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
+        phone = '+' + formatPhone((owner as any)?.phone || '966500000000')
+      }
 
       const createRes = await fetch('https://www.wasenderapi.com/api/whatsapp-sessions', {
         method: 'POST',
