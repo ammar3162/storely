@@ -20,7 +20,8 @@ export default function PrivacyPage() {
 
       <div style={{maxWidth:800,margin:'0 auto',padding:'48px 24px'}}>
         <h1 style={{fontSize:32,fontWeight:900,color:'#0f172a',marginBottom:8}}>سياسة الخصوصية</h1>
-        <p style={{fontSize:14,color:'#64748b',marginBottom:40}}>آخر تحديث: يوليو 2026</p>
+        <p style={{fontSize:14,color:'#64748b',marginBottom:8}}>آخر تحديث: يوليو 2026</p>
+        <p style={{fontSize:13,color:'#94a3b8',marginBottom:40}}>مؤسسة باسم علي خلوي لتقنية المعلومات — رقم السجل التجاري 7055023522</p>
 
         {[
           {
@@ -83,7 +84,7 @@ export default function PrivacyPage() {
         ))}
 
         <div style={{marginTop:48,padding:'20px 24px',background:'#f0fdf4',borderRadius:16,border:'1px solid #bbf7d0',textAlign:'center'}}>
-          <p style={{fontSize:14,color:'#16a34a',fontWeight:600}}>Storely — منصة إدارة المخزون السعودية · storely.dev</p>
+          <p style={{fontSize:14,color:'#16a34a',fontWeight:600}}>Storely — نحوّل التعقيد إلى تحكّم · storely.dev</p>
         </div>
       </div>
     </div>
