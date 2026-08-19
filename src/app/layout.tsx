@@ -7,8 +7,8 @@ import type { Metadata } from "next"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Storely — نظام إدارة المخزون",
-  description: "نظام إدارة المخزون الاحترافي للمنشآت السعودية",
+  title: "Storely — منصة تشغيل المطاعم والمنشآت",
+  description: "من المخزون والمشتريات، للمنيو الإلكتروني وحجز الطاولات، وإدارة الموظفين والفروع — كل شي بمكان واحد",
   manifest: "/manifest.json",
   appleWebApp: { capable:true, statusBarStyle:"default", title:"Storely" },
   icons: {
@@ -19,8 +19,8 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   openGraph: {
-    title: "Storely — نظام إدارة المخزون",
-    description: "نظام إدارة المخزون الاحترافي للمنشآت السعودية",
+    title: "Storely — منصة تشغيل المطاعم والمنشآت",
+    description: "من المخزون والمشتريات، للمنيو الإلكتروني وحجز الطاولات، وإدارة الموظفين والفروع — كل شي بمكان واحد",
     url: "https://www.storely.dev",
     siteName: "Storely",
     images: [{ url: "https://www.storely.dev/icon-192.png", width: 192, height: 192, alt: "Storely" }],
@@ -29,8 +29,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "Storely — نظام إدارة المخزون",
-    description: "نظام إدارة المخزون الاحترافي",
+    title: "Storely — منصة تشغيل المطاعم والمنشآت",
+    description: "من المخزون والمشتريات، للمنيو الإلكتروني وحجز الطاولات، وإدارة الموظفين والفروع — كل شي بمكان واحد",
     images: ["https://www.storely.dev/icon-192.png"],
   },
 }
