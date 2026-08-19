@@ -76,6 +76,12 @@ export default function DashboardPage() {
     return()=>clearInterval(c)
   },[])
 
+  // تحديث تلقائي صامت للوحة الأداء كل 20 ثانية
+  useEffect(() => {
+    const interval = setInterval(() => load(), 20000)
+    return () => clearInterval(interval)
+  }, [])
+
   async function load() {
     // عرض الكاش فوراً إذا متوفر
     const orgId_cached = sessionStorage.getItem('s_org_id')

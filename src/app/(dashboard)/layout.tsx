@@ -282,13 +282,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
       } catch(e) { console.log("Push setup error:", e) }
     }
-    // polling للإشعارات كل 30 ثانية
+    // polling للإشعارات وتنبيه نقص المخزون كل 30 ثانية — بدون ما يحتاج المستخدم يحدّث الصفحة
     const orgId = p?.org_id
     if(orgId){
       const notifInterval = setInterval(async()=>{
         const _bidPoll = sessionStorage.getItem('s_branch_id')
         const{data:notifData}=await sb.from('notifications').select('id').eq('org_id',orgId).eq('read',false).or(_bidPoll?`branch_id.is.null,branch_id.eq.${_bidPoll}`:'branch_id.is.null,branch_id.not.is.null')
         setUnread(notifData?.length||0)
+        let _pollProdsQ = sb.from('products').select('qty,reorder_point').eq('org_id',orgId).eq('is_active',true)
+        if (_bidPoll) _pollProdsQ = _pollProdsQ.eq('branch_id', _bidPoll)
+        const {data: pollProds} = await _pollProdsQ
+        setLowCount((pollProds||[]).filter((x:any)=>x.qty<=x.reorder_point).length)
       }, 30000)
     }
     const _bidLayout = sessionStorage.getItem('s_branch_id')

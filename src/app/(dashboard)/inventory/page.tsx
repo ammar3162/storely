@@ -128,19 +128,25 @@ export default function InventoryPage() {
   useEffect(()=>{ load() },[])
   useVisibilityRefresh(load, 20*60*1000)
 
-  async function load() {
-    setLoading(true)
+  // تحديث صامت كل 20 ثانية — بدون شاشة تحميل، عشان يبان صرف موظف من فرع تاني بدون تحديث يدوي
+  useEffect(() => {
+    const interval = setInterval(() => load(true), 20000)
+    return () => clearInterval(interval)
+  }, [])
+
+  async function load(silent = false) {
+    if (!silent) setLoading(true)
     let oid = sessionStorage.getItem('s_org_id')
     // عرض الكاش فوراً
     if(oid){
       const cached = cache.get('inventory:'+oid)
-      if(cached){ setProducts(cached); setLoading(false) }
+      if(cached && !silent){ setProducts(cached); setLoading(false) }
     }
     if (!oid) {
       const{data:{user}}=await sb.auth.getUser()
-      if(!user){setLoading(false);return}
+      if(!user){if(!silent)setLoading(false);return}
       const{data:p}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
-      if(!p){setLoading(false);return}
+      if(!p){if(!silent)setLoading(false);return}
       oid=p.org_id; sessionStorage.setItem('s_org_id',oid!)
     }
     const bid = sessionStorage.getItem('s_branch_id')
@@ -159,8 +165,7 @@ export default function InventoryPage() {
     if(oid) cache.set('inventory:'+oid, data||[])
     const{data:org}=await (sb.from('organizations') as any).select('business_type').eq('id',oid).single()
     if((org as any)?.business_type) setBusinessType((org as any).business_type)
-    setLoading(false)
-    setTimeout(()=>setVisible(true),50)
+    if (!silent) { setLoading(false); setTimeout(()=>setVisible(true),50) }
   }
 
   async function handleSave(e:React.FormEvent) {
