@@ -588,14 +588,14 @@ function LoginPage() {
         <div className="right-panel" style={{width:'45%',background:'#f9fafb',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'48px 44px',borderRight:'1px solid #f3f4f6'}}>
           <div style={{maxWidth:400,width:'100%'}}>
             <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:99,padding:'6px 14px',fontSize:12,fontWeight:700,color:'#16a34a',marginBottom:20}}>
-              ✓ نظام إدارة مخزون سعودي
+              ✓ منصة سعودية لتشغيل الأعمال
             </div>
             <h2 style={{fontSize:30,fontWeight:900,color:'#111827',lineHeight:1.2,marginBottom:12,letterSpacing:'-1px'}}>
-              أدر مخزونك<br/>
-              <span style={{color:'#16a34a'}}>بذكاء وسهولة</span>
+              Storely<br/>
+              <span style={{color:'#16a34a'}}>نحوّل التعقيد إلى تحكّم</span>
             </h2>
             <p style={{fontSize:14,color:'#6b7280',lineHeight:1.75,marginBottom:24}}>
-              تتبع مخزونك لحظة بلحظة، واستقبل تنبيهات واتساب عند نقص الأصناف، وأدر موظفيك وفروعك من مكان واحد
+              من المخزون والمشتريات، لصفحة عرض منتجاتك والحجوزات الإلكترونية، وإدارة الموظفين والفروع — كل شي بمكان واحد
             </p>
 
             {/* صورة حقيقية بدل المعاينة المزيّفة */}
@@ -605,8 +605,8 @@ function LoginPage() {
 
             <div style={{display:'flex',flexDirection:'column',gap:11,marginTop:24}}>
               {[
-                {icon:'📦',text:'مراقبة مخزونك لحظياً من أي مكان'},
-                {icon:'📲',text:'تنبيهات فورية قبل نفاد أي صنف'},
+                {icon:'📦',text:'مخزون ومشتريات وموردين بمكان واحد'},
+                {icon:'📲',text:'تنبيهات واتساب تلقائية عند نقص الأصناف'},
                 {icon:'👥',text:'تحكّم كامل بموظفيك وفروعك المتعددة'},
                 {icon:'📊',text:'تقارير وتحليلات تدعم قراراتك'},
               ].map((f,i)=>(
