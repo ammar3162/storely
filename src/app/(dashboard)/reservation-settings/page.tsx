@@ -250,6 +250,19 @@ export default function ReservationSettingsPage() {
         </div>
       </div>
 
+      {previewUrl && enabled && (
+        <div style={{ ...card, padding: '20px', marginTop: 16, display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' as const }}>
+          <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(previewUrl)}`} alt="QR" style={{ width: 130, height: 130, borderRadius: 12, border: `1px solid ${colors.border}` }} />
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 6 }}>رمز QR لصفحة الحجز</div>
+            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 12, lineHeight: 1.7 }}>اطبعه وحطّه على الطاولات أو ملصقات المحل — العميل يمسحه ويحجز طاولته مباشرة</div>
+            <a href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(previewUrl)}`} download={`qr-${slug}-booking.png`} style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '9px 18px', fontSize: 12 }}>
+              ⬇️ تحميل بجودة عالية
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* إشعارات واتساب */}
       <div style={{ ...card, padding: '20px', marginTop: 16 }}>
         <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>📲 إشعارات واتساب للحجوزات</div>
