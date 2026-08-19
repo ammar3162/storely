@@ -67,10 +67,10 @@ export async function GET(req: Request) {
     const supabase = sb()
     const { data: org } = await supabase.from('organizations').select('shop_slug,shop_enabled,shop_tagline,shop_color,shop_display_name,shop_links,shop_hours,name,logo_url').eq('id', org_id).maybeSingle()
     const bid = searchParams.get('branch_id')
-    let q = supabase.from('products').select('id,name,unit,category,show_on_shop,public_price,public_description,public_image_url').eq('org_id', org_id).eq('is_active', true)
+    let q = supabase.from('products').select('id,name,unit,category,show_on_shop,public_price,public_description,public_image_url,sort_order').eq('org_id', org_id).eq('is_active', true)
     if (bid) q = q.eq('branch_id', bid)
-    const { data: products } = await q.order('name')
-    const { data: shopItems } = await supabase.from('shop_items').select('id,name,category,price,description,image_url,is_featured').eq('org_id', org_id).order('created_at')
+    const { data: products } = await q.order('sort_order').order('name')
+    const { data: shopItems } = await supabase.from('shop_items').select('id,name,category,price,description,image_url,is_featured,sort_order').eq('org_id', org_id).order('sort_order').order('created_at')
 
     return NextResponse.json({ success: true, org, products: products || [], shopItems: shopItems || [] })
   } catch {

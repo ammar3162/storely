@@ -19,13 +19,13 @@ async function getShopData(slug: string) {
   const { data: sub } = await supabase.from('org_addon_subscriptions').select('status,expires_at').eq('org_id', (org as any).id).eq('addon_id', (addon as any).id).eq('status', 'active').maybeSingle()
   if (!sub || new Date((sub as any).expires_at) <= new Date()) return null
 
-  const { data: invProducts } = await supabase.from('products').select('name,category,public_price,public_description,public_image_url').eq('org_id', (org as any).id).eq('show_on_shop', true)
-  const { data: shopItems } = await supabase.from('shop_items').select('name,category,price,description,image_url,is_featured').eq('org_id', (org as any).id)
+  const { data: invProducts } = await supabase.from('products').select('name,category,public_price,public_description,public_image_url,sort_order').eq('org_id', (org as any).id).eq('show_on_shop', true)
+  const { data: shopItems } = await supabase.from('shop_items').select('name,category,price,description,image_url,is_featured,sort_order').eq('org_id', (org as any).id)
 
   const normalized = [
-    ...(invProducts || []).map((p: any) => ({ name: p.name, category: p.category || 'المنتجات', price: p.public_price, description: p.public_description, image_url: p.public_image_url, is_featured: false })),
-    ...(shopItems || []).map((it: any) => ({ name: it.name, category: it.category || 'منتجات المتجر', price: it.price, description: it.description, image_url: it.image_url, is_featured: !!it.is_featured })),
-  ]
+    ...(invProducts || []).map((p: any) => ({ name: p.name, category: p.category || 'المنتجات', price: p.public_price, description: p.public_description, image_url: p.public_image_url, is_featured: false, sort_order: p.sort_order || 0 })),
+    ...(shopItems || []).map((it: any) => ({ name: it.name, category: it.category || 'منتجات المتجر', price: it.price, description: it.description, image_url: it.image_url, is_featured: !!it.is_featured, sort_order: it.sort_order || 0 })),
+  ].sort((a, b) => a.sort_order - b.sort_order)
 
   return { org, products: normalized }
 }

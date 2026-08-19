@@ -208,6 +208,27 @@ export default function OnlineStorePage() {
     })
   }
 
+  async function moveItem(cat: string, itemId: string, direction: 'up' | 'down') {
+    const catItems = shopItems.filter((it: any) => (it.category || 'منتجات خارجية') === cat)
+    const idx = catItems.findIndex((it: any) => it.id === itemId)
+    const swapWith = direction === 'up' ? idx - 1 : idx + 1
+    if (idx < 0 || swapWith < 0 || swapWith >= catItems.length) return
+
+    const reordered = [...catItems]
+    ;[reordered[idx], reordered[swapWith]] = [reordered[swapWith], reordered[idx]]
+
+    // نحدّث الترتيب محلياً فوراً لإحساس سلس
+    setShopItems(prev => {
+      const others = prev.filter((it: any) => (it.category || 'منتجات خارجية') !== cat)
+      return [...others, ...reordered]
+    })
+
+    await fetch('/api/shop-reorder', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ org_id: orgId, items: reordered.map((it: any) => ({ id: it.id, type: 'shop_item' })) }),
+    })
+  }
+
   function startEdit(it: any) {
     setEditingId(it.id)
     setEditForm({ name: it.name, category: it.category, price: it.price ?? '', description: it.description ?? '', image_url: it.image_url ?? '', is_featured: !!it.is_featured })
@@ -420,7 +441,7 @@ export default function OnlineStorePage() {
                     {savingCat === cat && <span style={{ fontSize: 10, color: colors.text4 }}>جاري الحفظ...</span>}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
-                    {items.map((it: any) => (
+                    {items.map((it: any, j: number) => (
                       editingId === it.id ? (
                         <div key={it.id} style={{ border: `1.5px solid ${colors.primaryBorder}`, borderRadius: 12, padding: 14, background: colors.primaryLight }}>
                           <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 12, marginBottom: 10 }}>
@@ -450,6 +471,12 @@ export default function OnlineStorePage() {
                         </div>
                       ) : (
                         <div key={it.id} style={{ display: 'flex', alignItems: 'center', gap: 12, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 12 }}>
+                          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 2, flexShrink: 0 }}>
+                            <button onClick={() => moveItem(cat, it.id, 'up')} disabled={j === 0}
+                              style={{ width: 22, height: 18, border: 'none', borderRadius: 5, background: j === 0 ? colors.bg : colors.surface, color: j === 0 ? colors.text4 : colors.text2, cursor: j === 0 ? 'not-allowed' : 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▲</button>
+                            <button onClick={() => moveItem(cat, it.id, 'down')} disabled={j === items.length - 1}
+                              style={{ width: 22, height: 18, border: 'none', borderRadius: 5, background: j === items.length - 1 ? colors.bg : colors.surface, color: j === items.length - 1 ? colors.text4 : colors.text2, cursor: j === items.length - 1 ? 'not-allowed' : 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▼</button>
+                          </div>
                           <div style={{ width: 48, height: 48, borderRadius: 8, background: colors.surface, flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             {it.image_url ? <img src={it.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 16, opacity: .3 }}>📦</span>}
                           </div>
