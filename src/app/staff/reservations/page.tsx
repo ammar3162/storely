@@ -41,13 +41,20 @@ export default function StaffReservationsPage() {
 
   useEffect(() => { if (session) load(dateFilter) }, [dateFilter])
 
-  async function load(date: string) {
-    setLoading(true)
+  // تحديث تلقائي كل 8 ثواني — بدون ما يحتاج الكاشير يحدّث الصفحة يدوياً
+  useEffect(() => {
+    if (!session) return
+    const interval = setInterval(() => load(dateFilter, true), 8000)
+    return () => clearInterval(interval)
+  }, [session, dateFilter])
+
+  async function load(date: string, silent = false) {
+    if (!silent) setLoading(true)
     const staffToken = localStorage.getItem('staff_token')
     const res = await fetch(`/api/staff-reservations?date=${date}`, { headers: { 'Authorization': `Bearer ${staffToken}` } })
     const j = await res.json()
     if (j.success) setReservations(j.reservations)
-    setLoading(false)
+    if (!silent) setLoading(false)
   }
 
   async function updateStatus(id: string, status: string) {

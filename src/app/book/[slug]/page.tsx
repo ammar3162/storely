@@ -36,8 +36,24 @@ function fmtTime12(t: string) {
   return `${h12}:${String(m).padStart(2,'0')} ${p}`
 }
 
-const ALL_TIMES: string[] = []
-for (let h = 8; h <= 23; h++) { ALL_TIMES.push(`${String(h).padStart(2,'0')}:00`); if (h < 23) ALL_TIMES.push(`${String(h).padStart(2,'0')}:30`) }
+function getTimeSlots(hours: any): string[] {
+  const slots: string[] = []
+  if (!hours?.enabled || hours.is24h) {
+    for (let h = 0; h < 24; h++) { slots.push(`${String(h).padStart(2,'0')}:00`); slots.push(`${String(h).padStart(2,'0')}:30`) }
+    return slots
+  }
+  const [oh, om] = String(hours.open || '08:00').split(':').map(Number)
+  const [ch, cm] = String(hours.close || '23:00').split(':').map(Number)
+  const openMin = oh * 60 + om, closeMin = ch * 60 + cm
+  for (let h = 0; h < 24; h++) {
+    for (const m of [0, 30]) {
+      const mins = h * 60 + m
+      const inRange = closeMin > openMin ? (mins >= openMin && mins < closeMin) : (mins >= openMin || mins < closeMin)
+      if (inRange) slots.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`)
+    }
+  }
+  return slots
+}
 
 export default function BookPage() {
   const params = useParams()
@@ -46,7 +62,7 @@ export default function BookPage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [screen, setScreen] = useState<'hero'|'book'>('hero')
-  const [tab, setTab] = useState<'book'|'track'>('book')
+
 
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -57,9 +73,7 @@ export default function BookPage() {
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState('')
 
-  const [trackPhone, setTrackPhone] = useState('')
-  const [trackResults, setTrackResults] = useState<any[]|null>(null)
-  const [tracking, setTracking] = useState(false)
+
 
   useEffect(() => { load() }, [])
 
@@ -88,15 +102,6 @@ export default function BookPage() {
     setSubmitting(false)
     if (!j.success) { setError(j.error || 'فشل الحجز'); return }
     setResult(j.reservation)
-  }
-
-  async function doTrack() {
-    if (!trackPhone.trim()) return
-    setTracking(true)
-    const res = await fetch(`/api/reservations?slug=${slug}&phone=${encodeURIComponent(trackPhone)}`)
-    const j = await res.json()
-    setTracking(false)
-    setTrackResults(j.success ? j.reservations : [])
   }
 
   function resetForm() {
@@ -145,12 +150,7 @@ export default function BookPage() {
               {org.res_logo_url && <img src={org.res_logo_url} style={{height:32,borderRadius:8}}/>}
             </div>
 
-            <div style={{display:'flex',gap:4,background:'#f0ece5',padding:4,borderRadius:12,marginBottom:20}}>
-              <button onClick={()=>{setTab('book')}} style={{flex:1,padding:'10px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',background:tab==='book'?'white':'transparent',color:tab==='book'?'#1c1917':'#78716c'}}>حجز جديد</button>
-              <button onClick={()=>{setTab('track')}} style={{flex:1,padding:'10px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',background:tab==='track'?'white':'transparent',color:tab==='track'?'#1c1917':'#78716c'}}>تتبع حجزي</button>
-            </div>
-
-            {tab === 'book' && !result && (
+            {!result && (
               <div style={{background:'white',borderRadius:20,padding:24,border:'1px solid #ece8e2'}}>
                 <div style={{marginBottom:16}}>
                   <label style={{fontSize:11,fontWeight:700,color:'#78716c',display:'block',marginBottom:6}}>الاسم الكامل</label>
@@ -171,7 +171,7 @@ export default function BookPage() {
                 <div style={{marginBottom:16}}>
                   <label style={{fontSize:11,fontWeight:700,color:'#78716c',display:'block',marginBottom:6}}>الوقت</label>
                   <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(72px,1fr))',gap:6}}>
-                    {ALL_TIMES.map(t=>{
+                    {getTimeSlots(org.res_hours).map(t=>{
                       const isPast = date===today() && (()=>{const now=new Date();const[h,m]=t.split(':').map(Number);return now.getHours()>h||(now.getHours()===h&&now.getMinutes()>=m)})()
                       return (
                         <button key={t} disabled={isPast} onClick={()=>setTime(t)} style={{padding:'9px 4px',borderRadius:9,border:`1.5px solid ${time===t?color:'#ece8e2'}`,background:time===t?color:isPast?'#f5f5f4':'white',color:time===t?'white':isPast?'#d6d0c8':'#4a3828',fontSize:12,fontWeight:700,cursor:isPast?'not-allowed':'pointer',textDecoration:isPast?'line-through':'none'}}>{fmtTime12(t)}</button>
@@ -192,45 +192,20 @@ export default function BookPage() {
               </div>
             )}
 
-            {tab === 'book' && result && (
+            {result && (
               <div style={{background:'white',borderRadius:20,padding:28,border:'1px solid #ece8e2',textAlign:'center' as const}}>
                 <div style={{fontSize:48,marginBottom:12}}>✅</div>
                 <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>تم الحجز بنجاح</div>
-                <div style={{fontSize:12,color:'#78716c',marginBottom:20}}>احتفظ برقم جوالك لتتبع حجزك</div>
+                <div style={{fontSize:12,color:'#78716c',marginBottom:20}}>راح نتواصل معك لتأكيد حجزك</div>
                 <div style={{background:'#faf8f5',borderRadius:14,padding:18,textAlign:'right' as const,marginBottom:20}}>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,fontSize:13}}>
-                    <div><div style={{fontSize:9,color:'#a8a29e',marginBottom:2}}>رقم الحجز</div><div style={{fontWeight:800,color}}>{result.id}</div></div>
                     <div><div style={{fontSize:9,color:'#a8a29e',marginBottom:2}}>الاسم</div><div style={{fontWeight:800}}>{result.customer_name}</div></div>
                     <div><div style={{fontSize:9,color:'#a8a29e',marginBottom:2}}>اليوم</div><div style={{fontWeight:800}}>{fmtDateLabel(result.booking_date)}</div></div>
                     <div><div style={{fontSize:9,color:'#a8a29e',marginBottom:2}}>الوقت</div><div style={{fontWeight:800}}>{fmtTime12(result.booking_time)}</div></div>
+                    <div><div style={{fontSize:9,color:'#a8a29e',marginBottom:2}}>الأشخاص</div><div style={{fontWeight:800}}>{result.guests}</div></div>
                   </div>
                 </div>
-                <div style={{display:'flex',gap:8}}>
-                  <button onClick={()=>{setTab('track');setTrackPhone(result.phone);setTimeout(doTrack,50)}} style={{flex:1,padding:'12px',background:color,color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>تتبع حجزي</button>
-                  <button onClick={resetForm} style={{flex:1,padding:'12px',background:'white',color:'#78716c',border:'1.5px solid #ece8e2',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>حجز جديد</button>
-                </div>
-              </div>
-            )}
-
-            {tab === 'track' && (
-              <div style={{background:'white',borderRadius:20,padding:24,border:'1px solid #ece8e2'}}>
-                <div style={{display:'flex',gap:8,marginBottom:20}}>
-                  <input value={trackPhone} onChange={e=>setTrackPhone(e.target.value)} placeholder="05XXXXXXXX" dir="ltr" style={{flex:1,padding:'12px 14px',border:'1.5px solid #ece8e2',borderRadius:10,fontSize:14,fontFamily:'inherit',textAlign:'right' as const,boxSizing:'border-box' as const}}/>
-                  <button onClick={doTrack} disabled={tracking} style={{padding:'0 20px',background:color,color:'white',border:'none',borderRadius:10,fontWeight:700,cursor:'pointer'}}>{tracking?'...':'بحث'}</button>
-                </div>
-                {trackResults && trackResults.length === 0 && <div style={{textAlign:'center' as const,color:'#a8a29e',fontSize:13,padding:20}}>ما فيه حجوزات بهذا الرقم</div>}
-                {trackResults && trackResults.map((r:any)=>{
-                  const st = STATUS_INFO[r.status] || STATUS_INFO.pending
-                  return (
-                    <div key={r.id} style={{background:'#faf8f5',borderRadius:14,padding:16,marginBottom:10}}>
-                      <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
-                        <span style={{fontSize:11,fontWeight:800,color}}>{r.id}</span>
-                        <span style={{background:st.bg,color:st.color,padding:'3px 10px',borderRadius:20,fontSize:10,fontWeight:700}}>{st.label}</span>
-                      </div>
-                      <div style={{fontSize:13,color:'#4a3828'}}>{fmtDateLabel(r.booking_date)} — {fmtTime12(r.booking_time)} — {r.guests} أشخاص</div>
-                    </div>
-                  )
-                })}
+                <button onClick={resetForm} style={{width:'100%',padding:'12px',background:color,color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>حجز جديد</button>
               </div>
             )}
           </div>
