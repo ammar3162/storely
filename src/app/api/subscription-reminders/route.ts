@@ -31,15 +31,17 @@ export async function POST(req: Request) {
     if (!p.phone) continue
     const endsAt = new Date(p.subscription_ends_at)
 
-    // تذكير قبل انتهاء التجربة المجانية بـ٣ أيام — مرة وحدة بس
+    // تذكير قبل انتهاء الاشتراك بـ٣ أيام — للتجربة المجانية والاشتراك المدفوع معاً، مرة وحدة بس
     if (
-      p.subscription_type === 'trial' &&
       !p.trial_reminder_sent &&
       endsAt > now &&
       endsAt <= in3Days
     ) {
       const daysLeft = Math.ceil((endsAt.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
-      const text = `مرحباً ${p.full_name || ''} 👋\n\nتجربتك المجانية بـ Storely راح تنتهي خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'} 📅\n\nلا تفوّت الفرصة — رقّي اشتراكك الآن واستمر بدون أي انقطاع في إدارة مخزونك:\nstorely.dev`
+      const isTrial = p.subscription_type === 'trial'
+      const text = isTrial
+        ? `مرحباً ${p.full_name || ''} 👋\n\nتجربتك المجانية بـ Storely راح تنتهي خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'} 📅\n\nلا تفوّت الفرصة — رقّي اشتراكك الآن واستمر بدون أي انقطاع في إدارة مخزونك:\nstorely.dev`
+        : `مرحباً ${p.full_name || ''} 👋\n\nاشتراكك بـ Storely راح ينتهي خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'} 📅\n\nجدّد اشتراكك الآن عشان تكمل إدارة مخزونك وفريقك بدون أي انقطاع:\nstorely.dev`
       const res = await sendWhatsAppMessage(p.phone, text)
       if (res.ok) {
         await db.from('profiles').update({ trial_reminder_sent: true } as any).eq('id', p.id)
