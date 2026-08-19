@@ -7,6 +7,7 @@ import { toast } from '@/components/toast'
 
 export default function ReservationSettingsPage() {
   const [orgId, setOrgId] = useState('')
+  const [showGuide, setShowGuide] = useState(false)
   const [orgName, setOrgName] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -161,6 +162,23 @@ export default function ReservationSettingsPage() {
       <div style={{ marginBottom: 20 }}>
         <h1 style={pageTitle}>إعدادات الحجوزات</h1>
         <p style={pageSub}>اضبط صفحة حجز الطاولات الخاصة بك — شعار، اسم، أوقات، ولون</p>
+      </div>
+
+      <div style={{ ...card, padding: '16px 20px', marginBottom: 16, border: `1px solid ${colors.infoBorder}`, background: colors.infoLight }}>
+        <button onClick={() => setShowGuide(s => !s)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', fontFamily: 'inherit' }}>
+          <span style={{ fontSize: 13, fontWeight: 800, color: colors.info }}>📖 دليل سريع — كيف تفعّل الحجوزات خطوة بخطوة</span>
+          <span style={{ fontSize: 12, color: colors.info, transform: showGuide ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▼</span>
+        </button>
+        {showGuide && (
+          <ol style={{ marginTop: 14, paddingRight: 20, display: 'flex', flexDirection: 'column' as const, gap: 10, fontSize: 12.5, color: colors.text2, lineHeight: 1.8 }}>
+            <li><b>الاسم اللي يظهر بصفحة الحجز:</b> اكتبه بحقل "اسم يظهر بصفحة الحجز" بالأسفل — هذا الاسم يشوفه العميل، مش شرط يطابق اسم منشأتك الرسمي.</li>
+            <li><b>الشعار:</b> ارفعه من قسم "رفع شعار الحجوزات" — يظهر بأعلى صفحة الحجز العامة للعميل.</li>
+            <li><b>رابط الحجز:</b> حدّد كلمة قصيرة بالإنجليزي بحقل "رابط صفحة الحجز" — هذا رابطك النهائي اللي تشاركه مع العملاء (storely.dev/book/رابطك).</li>
+            <li><b>تفعيل الحجز:</b> فعّل مربّع "تفعيل صفحة الحجز ونشرها للعامة" بالأسفل، ثم اضغط "حفظ الإعدادات" — بدون هذي الخطوة الصفحة تفضل مخفية عن العملاء.</li>
+            <li><b>رقم واتساب للإشعارات (اختياري):</b> بقسم "إشعارات واتساب"، اكتب رقم جوالك التجاري واضغط "ربط رقم واتساب"، ثم امسح رمز QR بجوالك.</li>
+            <li><b>مهم جداً — تفعيل الحجوزات لموظفينك:</b> الموظف ما يقدر يشوف قائمة الحجوزات إلا لو عنده صلاحية "الحجوزات" 🗓️. روح "الموظفون" بالقائمة الجانبية، افتح صلاحيات أي موظف، وفعّل مربع "الحجوزات". بعدها راح يطلع له زر "الحجوزات" بصفحة دخوله.</li>
+          </ol>
+        )}
       </div>
 
       <div style={{ ...card, padding: '20px' }}>
