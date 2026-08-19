@@ -1,6 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { colors, font, card, btnPrimary, pageTitle, pageSub, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
@@ -207,6 +207,91 @@ export default function OnlineStorePage() {
       body: JSON.stringify({ org_id: orgId, item_id }),
     })
   }
+
+  // ═══ السحب والإفلات (Pointer Events — يدعم الماوس واللمس معاً) ═══
+  const [draggingItem, setDraggingItem] = useState<{ id: string; cat: string } | null>(null)
+  const [dragOverItem, setDragOverItem] = useState<string | null>(null)
+  const [draggingCat, setDraggingCat] = useState<string | null>(null)
+  const [dragOverCat, setDragOverCat] = useState<string | null>(null)
+  const longPressTimer = useRef<any>(null)
+  const pointerStart = useRef<{ x: number; y: number } | null>(null)
+
+  function getGroupedCategories() {
+    const grouped: Record<string, any[]> = {}
+    shopItems.forEach((it: any) => { const c = it.category || 'منتجات خارجية'; if (!grouped[c]) grouped[c] = []; grouped[c].push(it) })
+    return grouped
+  }
+
+  function cancelLongPress() {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
+    pointerStart.current = null
+  }
+
+  function watchForScroll(e: React.PointerEvent) {
+    if (!pointerStart.current) return
+    const dx = Math.abs(e.clientX - pointerStart.current.x)
+    const dy = Math.abs(e.clientY - pointerStart.current.y)
+    if ((dx > 8 || dy > 8) && longPressTimer.current) cancelLongPress() // تحرك قبل انتهاء الضغطة المطوّلة = تمرير عادي، نلغي السحب
+  }
+
+  function startItemLongPress(e: React.PointerEvent, itemId: string, cat: string) {
+    pointerStart.current = { x: e.clientX, y: e.clientY }
+    longPressTimer.current = setTimeout(() => { setDraggingItem({ id: itemId, cat }); longPressTimer.current = null }, 400)
+  }
+
+  function startCatLongPress(e: React.PointerEvent, cat: string) {
+    pointerStart.current = { x: e.clientX, y: e.clientY }
+    longPressTimer.current = setTimeout(() => { setDraggingCat(cat); longPressTimer.current = null }, 400)
+  }
+
+  async function performItemReorder(cat: string, draggedId: string, targetId: string) {
+    const grouped = getGroupedCategories()
+    const items = grouped[cat] || []
+    const fromIdx = items.findIndex((it: any) => it.id === draggedId)
+    const toIdx = items.findIndex((it: any) => it.id === targetId)
+    if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return
+    const reordered = [...items]
+    const [moved] = reordered.splice(fromIdx, 1)
+    reordered.splice(toIdx, 0, moved)
+    const others = shopItems.filter((it: any) => (it.category || 'منتجات خارجية') !== cat)
+    setShopItems([...others, ...reordered])
+    await fetch('/api/shop-reorder', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ org_id: orgId, items: reordered.map((it: any) => ({ id: it.id, type: 'shop_item' })) }),
+    })
+  }
+
+  async function performCategoryReorder(draggedCat: string, targetCat: string) {
+    const grouped = getGroupedCategories()
+    const catNames = Object.keys(grouped)
+    const fromIdx = catNames.indexOf(draggedCat)
+    const toIdx = catNames.indexOf(targetCat)
+    if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return
+    const reorderedCats = [...catNames]
+    reorderedCats.splice(fromIdx, 1)
+    reorderedCats.splice(toIdx, 0, draggedCat)
+    const flatItems = reorderedCats.flatMap(c => grouped[c])
+    setShopItems(flatItems)
+    await fetch('/api/shop-reorder', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ org_id: orgId, items: flatItems.map((it: any) => ({ id: it.id, type: 'shop_item' })) }),
+    })
+  }
+
+  useEffect(() => {
+    function onGlobalPointerUp() {
+      if (draggingItem && dragOverItem && draggingItem.id !== dragOverItem) {
+        performItemReorder(draggingItem.cat, draggingItem.id, dragOverItem)
+      }
+      if (draggingCat && dragOverCat && draggingCat !== dragOverCat) {
+        performCategoryReorder(draggingCat, dragOverCat)
+      }
+      setDraggingItem(null); setDragOverItem(null); setDraggingCat(null); setDragOverCat(null)
+      cancelLongPress()
+    }
+    window.addEventListener('pointerup', onGlobalPointerUp)
+    return () => window.removeEventListener('pointerup', onGlobalPointerUp)
+  }, [draggingItem, dragOverItem, draggingCat, dragOverCat, shopItems, orgId])
 
   async function moveItem(cat: string, itemId: string, direction: 'up' | 'down') {
     const catItems = shopItems.filter((it: any) => (it.category || 'منتجات خارجية') === cat)
@@ -433,8 +518,12 @@ export default function OnlineStorePage() {
           return (
             <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 18, marginBottom: 16 }}>
               {Object.entries(grouped).map(([cat, items]) => (
-                <div key={cat}>
+                <div key={cat}
+                  onPointerEnter={() => { if (draggingCat && draggingCat !== cat) setDragOverCat(cat) }}
+                  style={{ opacity: draggingCat === cat ? 0.4 : 1, border: dragOverCat === cat && draggingCat ? `2px dashed ${colors.primary}` : '2px dashed transparent', borderRadius: 12, padding: dragOverCat === cat && draggingCat ? 6 : 0, transition: 'opacity .15s' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                    <span onPointerDown={e => startCatLongPress(e, cat)} onPointerMove={watchForScroll} onPointerUp={cancelLongPress}
+                      style={{ cursor: 'grab', fontSize: 16, color: colors.text4, touchAction: 'none', userSelect: 'none' as const, padding: '2px 4px' }}>⠿</span>
                     <input value={catEdits[cat] ?? cat} onChange={e => setCatEdits(prev => ({ ...prev, [cat]: e.target.value }))}
                       onBlur={() => renameCategory(cat)} onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
                       style={{ ...inp(), fontWeight: 800, fontSize: 13, border: 'none', background: 'transparent', padding: '4px 6px', width: 220 }} />
@@ -470,7 +559,11 @@ export default function OnlineStorePage() {
                           </div>
                         </div>
                       ) : (
-                        <div key={it.id} style={{ display: 'flex', alignItems: 'center', gap: 12, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 12 }}>
+                        <div key={it.id}
+                          onPointerEnter={() => { if (draggingItem && draggingItem.cat === cat && draggingItem.id !== it.id) setDragOverItem(it.id) }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 12, border: dragOverItem === it.id && draggingItem ? `1.5px dashed ${colors.primary}` : `1px solid ${colors.border}`, borderRadius: 12, padding: 12, opacity: draggingItem?.id === it.id ? 0.4 : 1, transition: 'opacity .15s' }}>
+                          <span onPointerDown={e => startItemLongPress(e, it.id, cat)} onPointerMove={watchForScroll} onPointerUp={cancelLongPress}
+                            style={{ cursor: 'grab', fontSize: 15, color: colors.text4, touchAction: 'none', userSelect: 'none' as const, flexShrink: 0 }}>⠿</span>
                           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 2, flexShrink: 0 }}>
                             <button onClick={() => moveItem(cat, it.id, 'up')} disabled={j === 0}
                               style={{ width: 22, height: 18, border: 'none', borderRadius: 5, background: j === 0 ? colors.bg : colors.surface, color: j === 0 ? colors.text4 : colors.text2, cursor: j === 0 ? 'not-allowed' : 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▲</button>
