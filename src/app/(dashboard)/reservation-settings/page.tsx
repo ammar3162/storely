@@ -139,7 +139,7 @@ export default function ReservationSettingsPage() {
     return () => clearInterval(interval)
   }, [waPolling, orgId])
 
-  const previewUrl = slug ? `${typeof window !== 'undefined' ? window.location.origin : ''}/book/${slug}` : ''
+  const previewUrl = slug ? `https://storely.dev/book/${slug}` : ''
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontFamily: font.family }}>جاري التحميل...</div>
 
