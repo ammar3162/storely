@@ -248,7 +248,7 @@ export default function LandingPage() {
         </div>
         <h1 className="hero-h1" style={{fontSize:52,fontWeight:900,color:'#111827',lineHeight:1.15,marginBottom:20,letterSpacing:'-2px',maxWidth:820,margin:'0 auto 20px'}}>
           نصمّم مستقبل الإدارة الذكية<br/>
-          <span style={{color:'#15803d'}}>لمنشآت المنطقة</span>
+          <span style={{color:'#15803d'}}>لكل منشأة تطمح للنمو</span>
         </h1>
         <p style={{fontSize:18,color:'#6b7280',maxWidth:620,margin:'0 auto 32px',lineHeight:1.7}}>
           من المخزون والمشتريات، لصفحة عرض منتجاتك والحجوزات الإلكترونية، وإدارة الموظفين والفروع — كل شي بمكان واحد
