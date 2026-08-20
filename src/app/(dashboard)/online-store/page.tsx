@@ -375,11 +375,11 @@ export default function OnlineStorePage() {
     return (
       <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 480, margin: '80px auto', textAlign: 'center' as const, ...card, padding: 40 }}>
         <div style={{ fontSize: 44, marginBottom: 14 }}>📋</div>
-        <div style={{ fontSize: 18, fontWeight: 800, color: colors.text, marginBottom: 8 }}>ميزة "المنيو" غير مفعّلة</div>
+        <div style={{ fontSize: 18, fontWeight: 800, color: colors.text, marginBottom: 8 }}>ميزة "المنتجات" غير مفعّلة</div>
         <div style={{ fontSize: 13, color: colors.text3, lineHeight: 1.8, marginBottom: 20 }}>
-          اشترك بميزة المنيو الإلكتروني من سوق الإضافات عشان تقدر تبني صفحة منتجاتك العامة
+          اشترك بميزة المنيو الإلكتروني من الإضافات عشان تقدر تبني صفحة منتجاتك العامة
         </div>
-        <a href="/addons-market" style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '12px 28px' }}>روح لسوق الإضافات</a>
+        <a href="/addons-market" style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '12px 28px' }}>روح لالإضافات</a>
       </div>
     )
   }

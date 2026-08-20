@@ -41,7 +41,7 @@ export default function AddonsMarketPage() {
   async function cancelAddon(addon: any) {
     if (!(await confirmDialog({
       title: 'إلغاء الاشتراك',
-      message: `متأكد إنك تبي تلغي اشتراكك بميزة "${addon.name}"؟ راح تفقد الوصول لها فوراً — بما في ذلك صفحة المنيو العامة وكل بياناتها المعروضة، بدون استرجاع.`,
+      message: `متأكد إنك تبي تلغي اشتراكك بميزة "${addon.name}"؟ راح تفقد الوصول لها فوراً — بما في ذلك صفحة المنتجات العامة وكل بياناتها المعروضة، بدون استرجاع.`,
     }))) return
 
     setCancelling(addon.id)
@@ -61,7 +61,7 @@ export default function AddonsMarketPage() {
   return (
     <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 900, margin: '0 auto' }}>
       <div style={{ marginBottom: 20 }}>
-        <h1 style={pageTitle}>سوق الإضافات</h1>
+        <h1 style={pageTitle}>الإضافات</h1>
         <p style={pageSub}>ميزات إضافية تساعدك تطوّر منشأتك — اشترك بأي وقت</p>
       </div>
 
