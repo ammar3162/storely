@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 
     const supabase = sb()
     if (!(await hasActiveWaAddon(supabase, org_id))) {
-      return NextResponse.json({ error: 'هذي الميزة غير مفعّلة — اشترك بها أول من سوق الإضافات' }, { status: 403 })
+      return NextResponse.json({ error: 'هذي الميزة غير مفعّلة — اشترك بها أول من الإضافات' }, { status: 403 })
     }
 
     const token = process.env.WASENDER_PERSONAL_ACCESS_TOKEN

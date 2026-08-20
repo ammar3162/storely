@@ -150,9 +150,9 @@ export default function ReservationSettingsPage() {
         <div style={{ fontSize: 44, marginBottom: 14 }}>🗓️</div>
         <div style={{ fontSize: 18, fontWeight: 800, color: colors.text, marginBottom: 8 }}>ميزة "الحجوزات" غير مفعّلة</div>
         <div style={{ fontSize: 13, color: colors.text3, lineHeight: 1.8, marginBottom: 20 }}>
-          اشترك بميزة نظام حجز الطاولات من سوق الإضافات عشان تقدر تبني صفحة الحجز الخاصة بك
+          اشترك بميزة نظام حجز الطاولات من الإضافات عشان تقدر تبني صفحة الحجز الخاصة بك
         </div>
-        <a href="/addons-market" style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '12px 28px' }}>روح لسوق الإضافات</a>
+        <a href="/addons-market" style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '12px 28px' }}>روح للإضافات</a>
       </div>
     )
   }
