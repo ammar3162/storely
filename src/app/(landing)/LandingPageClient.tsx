@@ -2,14 +2,16 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
+type Billing = 'monthly'|'yearly'
+
 const PLANS = [
-  { name:'الأساسية', price:'149', color:'#15803d', popular:false,
+  { name:'الأساسية', price:'149', yearlyPrice:'1430', color:'#15803d', popular:false,
     limits:['فرع واحد','2 موظفين','3 موردين'],
     features:['تتبع المخزون لحظياً','صرف يومي بصلاحيات موظفين','المشتريات وإدارة الموردين','تنبيهات واتساب تلقائية','كشف الهدر','تقارير أساسية قابلة للتصدير','نسخ احتياطي يومي','دعم عبر واتساب'] },
-  { name:'المتوسطة', price:'249', color:'#15803d', popular:true,
+  { name:'المتوسطة', price:'249', yearlyPrice:'2390', color:'#15803d', popular:true,
     limits:['3 فروع','10 موظفين','10 موردين'],
     features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين','تقارير متقدمة','إقفال الكاشير اليومي','الحضور والانصراف بـGPS 📍','اقتراح الشراء الذكي 🤖','توقع نفاد المخزون 🔮','تحليل الموسمية','تحسين نقطة إعادة الطلب 🎯'] },
-  { name:'المتقدمة', price:'399', color:'#15803d', popular:false,
+  { name:'المتقدمة', price:'399', yearlyPrice:'3830', color:'#15803d', popular:false,
     limits:['غير محدود','غير محدود','غير محدود'],
     features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين','تقارير متقدمة','إقفال الكاشير اليومي','الحضور والانصراف بـGPS 📍','اقتراح الشراء الذكي 🤖','توقع نفاد المخزون 🔮','تحليل الموسمية','تحسين نقطة إعادة الطلب 🎯','مقارنة الفروع 🤖','المخزون الراكد 🐌','كشف الهدر الحقيقي 🗑️','دعم ذو أولوية','دعم 24/7'] },
 ]
@@ -103,6 +105,7 @@ function MiniMockup({ variant }: { variant: 'stats'|'whatsapp'|'staff'|'chart' }
 
 export default function LandingPage() {
   const router = useRouter()
+  const [billing, setBilling] = useState<Billing>('monthly')
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [form, setForm] = useState({firstName:'',lastName:'',phone:'',email:'',businessName:'',branchCount:''})
@@ -385,9 +388,17 @@ export default function LandingPage() {
 
       {/* PRICING */}
       <section id="pricing" className="section-pad" style={{padding:'90px 40px',maxWidth:1200,margin:'0 auto'}}>
-        <div style={{textAlign:'center',marginBottom:56}}>
+        <div style={{textAlign:'center',marginBottom:32}}>
           <p style={{fontSize:13,fontWeight:700,color:'#15803d',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>الأسعار</p>
           <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>باقة تناسب كل حجم منشأة</h2>
+        </div>
+        <div style={{display:'flex',justifyContent:'center',marginBottom:40}}>
+          <div style={{display:'inline-flex',gap:4,background:'#f3f4f6',padding:4,borderRadius:12}}>
+            <button onClick={()=>setBilling('monthly')} style={{padding:'9px 20px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',background:billing==='monthly'?'white':'transparent',color:billing==='monthly'?'#111827':'#6b7280',boxShadow:billing==='monthly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>شهري</button>
+            <button onClick={()=>setBilling('yearly')} style={{padding:'9px 20px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6,background:billing==='yearly'?'white':'transparent',color:billing==='yearly'?'#111827':'#6b7280',boxShadow:billing==='yearly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>
+              سنوي <span style={{background:'#f0fdf4',color:'#15803d',fontSize:10,fontWeight:800,padding:'2px 7px',borderRadius:99}}>وفّر 20%</span>
+            </button>
+          </div>
         </div>
         <div className="plan-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:20}}>
           {PLANS.map((p,i)=>(
@@ -395,8 +406,8 @@ export default function LandingPage() {
               {p.popular && <div style={{position:'absolute',top:-13,right:24,background:'#15803d',color:'white',fontSize:11,fontWeight:800,padding:'4px 12px',borderRadius:99}}>الأكثر شيوعاً</div>}
               <div style={{fontSize:16,fontWeight:800,color:'#111827',marginBottom:8}}>{p.name}</div>
               <div style={{display:'flex',alignItems:'baseline',gap:6,marginBottom:10}}>
-                <span style={{fontSize:34,fontWeight:900,color:'#111827'}}>{p.price}</span>
-                <span style={{fontSize:14,color:'#9ca3af'}}>ر.س / شهرياً</span>
+                <span style={{fontSize:34,fontWeight:900,color:'#111827'}}>{billing==='yearly'?p.yearlyPrice:p.price}</span>
+                <span style={{fontSize:14,color:'#9ca3af'}}>ر.س / {billing==='yearly'?'سنوياً':'شهرياً'}</span>
               </div>
               <div style={{display:'inline-block',background:'#f0fdf4',color:'#15803d',fontSize:11,fontWeight:800,padding:'3px 10px',borderRadius:99,marginBottom:16}}>{p.features.length} ميزة متاحة</div>
               <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:16,paddingBottom:16,borderBottom:'1px solid #f3f4f6'}}>
