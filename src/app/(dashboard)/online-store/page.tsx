@@ -363,7 +363,6 @@ export default function OnlineStorePage() {
   }
 
   function addLink() { setLinks(prev => [...prev, { type: 'instagram', label: '', url: '' }]) }
-  function addLinkOfType(t: string) { setLinks(prev => [...prev, { type: t, label: '', url: '' }]) }
   function updateLink(i: number, patch: any) { setLinks(prev => prev.map((l, idx) => idx === i ? { ...l, ...patch } : l)) }
   function removeLink(i: number) { setLinks(prev => prev.filter((_, idx) => idx !== i)) }
 
@@ -385,202 +384,128 @@ export default function OnlineStorePage() {
     )
   }
 
-  const now = new Date()
-  const curMin = now.getHours() * 60 + now.getMinutes()
-  const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
-  const isOpenNow = hours24 || (toMin(closeTime) > toMin(openTime) ? (curMin >= toMin(openTime) && curMin < toMin(closeTime)) : (curMin >= toMin(openTime) || curMin < toMin(closeTime)))
-
   return (
-    <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 1180, margin: '0 auto' }}>
+    <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 900, margin: '0 auto' }}>
       <div style={{ marginBottom: 20 }}>
         <h1 style={pageTitle}>المنيو الإلكتروني</h1>
         <p style={pageSub}>ابنِ صفحة عامة تعرض منتجاتك للعملاء — بالسعر والوصف والصورة</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 320px', gap: 20, alignItems: 'start', marginBottom: 16 }}>
-        {/* === عمود الإعدادات === */}
-        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 16, minWidth: 0 }}>
+      <div style={{ ...card, padding: '20px', marginBottom: 16 }}>
+        <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 14 }}>إعدادات المتجر</div>
 
-          {/* بيانات المتجر */}
-          <div style={{ ...card, padding: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <span style={{ fontSize: 17 }}>🏪</span>
-              <div style={{ fontSize: font.base, fontWeight: 800, color: colors.text }}>بيانات المتجر</div>
-            </div>
-
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }}>رابط المتجر</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 12, color: colors.text4, whiteSpace: 'nowrap' as const }}>storely.dev/shop/</span>
-                <input value={slug} onChange={e => setSlug(e.target.value)} placeholder="اسم-منشأتك" style={{ ...inp(), flex: 1 }} dir="ltr" />
-              </div>
-            </div>
-
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }}>اسم يظهر بالمتجر (اختياري)</label>
-              <input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder={orgName || 'اسم منشأتك التجاري'} style={{ ...inp(), width: '100%' }} />
-              <div style={{ fontSize: 10, color: colors.text4, marginTop: 4 }}>لو تركته فاضي، بيظهر اسم منشأتك المسجّل ({orgName})</div>
-            </div>
-
-            <div>
-              <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }}>وصف قصير (اختياري)</label>
-              <input value={tagline} onChange={e => setTagline(e.target.value)} placeholder="مثال: أشهى المخبوزات الطازجة يومياً" style={{ ...inp(), width: '100%' }} />
-            </div>
-          </div>
-
-          {/* التصميم واللون */}
-          <div style={{ ...card, padding: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <span style={{ fontSize: 17 }}>🎨</span>
-              <div style={{ fontSize: font.base, fontWeight: 800, color: colors.text }}>التصميم واللون</div>
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, alignItems: 'center' }}>
-              {['#15803d', '#0369a1', '#b91c1c', '#7c2d12', '#7c3aed', '#0f172a', '#be185d', '#a16207'].map(c => (
-                <button key={c} onClick={() => setShopColor(c)} style={{ width: 34, height: 34, borderRadius: 10, background: c, border: shopColor === c ? '3px solid #0f172a' : '1px solid #e2e8f0', cursor: 'pointer', boxShadow: shopColor === c ? '0 0 0 2px white inset' : 'none' }} />
-              ))}
-              <input type="color" value={shopColor} onChange={e => setShopColor(e.target.value)} style={{ width: 34, height: 34, borderRadius: 10, border: '1px solid #e2e8f0', cursor: 'pointer', padding: 0 }} />
-              <button onClick={suggestColorFromLogo} disabled={suggestingColor} style={{ padding: '0 14px', height: 34, borderRadius: 10, border: `1.5px solid ${colors.infoBorder}`, background: colors.infoLight, color: colors.info, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
-                {suggestingColor ? '⏳ جاري التحليل...' : '🎨 اقترح من الشعار'}
-              </button>
-            </div>
-          </div>
-
-          {/* الروابط الاجتماعية */}
-          <div style={{ ...card, padding: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <span style={{ fontSize: 17 }}>🔗</span>
-              <div style={{ fontSize: font.base, fontWeight: 800, color: colors.text }}>الروابط الاجتماعية</div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, marginBottom: 16 }}>
-              {PLATFORMS.map(p => (
-                <button key={p.v} onClick={() => addLinkOfType(p.v)} title={`إضافة ${p.l}`} style={{ width: 42, height: 42, borderRadius: 11, border: `1.5px solid ${colors.border}`, background: colors.bg, cursor: 'pointer', fontSize: 17, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s' }}>
-                  {p.l.split(' ')[0]}
-                </button>
-              ))}
-            </div>
-
-            {links.length === 0 ? (
-              <div style={{ fontSize: 11, color: colors.text4, textAlign: 'center' as const, padding: '16px 0', border: `1.5px dashed ${colors.border}`, borderRadius: 10 }}>اضغط على أيقونة فوق عشان تضيف رابط</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
-                {links.map((l, i) => (
-                  <div key={i} style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, background: colors.bg, borderRadius: 10, padding: 10 }}>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      <div style={{ width: 30, height: 30, borderRadius: 8, background: 'white', border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>
-                        {(PLATFORMS.find(p => p.v === l.type)?.l || '🔗').split(' ')[0]}
-                      </div>
-                      <select value={l.type} onChange={e => updateLink(i, { type: e.target.value })} style={{ ...inp(), width: 118, fontSize: 11 }}>
-                        {PLATFORMS.map(p => <option key={p.v} value={p.v}>{p.l}</option>)}
-                      </select>
-                      <input value={l.url} onChange={e => updateLink(i, { url: e.target.value })} placeholder={l.type==='whatsapp'?'https://wa.me/9665xxxxxxxx':'https://...'} style={{ ...inp(), flex: 1 }} dir="ltr" />
-                      <button onClick={() => removeLink(i)} style={{ padding: '0 10px', height: 32, borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', fontSize: 12, flexShrink: 0 }}>✕</button>
-                    </div>
-                    {l.type === 'website' && (
-                      <input value={l.label} onChange={e => updateLink(i, { label: e.target.value })} placeholder="اسم يظهر للرابط (مثال: الموقع الرسمي)" style={{ ...inp(), width: '100%' }} />
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ساعات العمل */}
-          <div style={{ ...card, padding: '20px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <span style={{ fontSize: 17 }}>🕐</span>
-              <input type="checkbox" checked={hoursEnabled} onChange={e => setHoursEnabled(e.target.checked)} />
-              <span style={{ fontSize: font.base, fontWeight: 800, color: colors.text }}>عرض حالة "مفتوح/مغلق" بالمتجر</span>
-            </label>
-            {hoursEnabled && (
-              <div style={{ marginTop: 14, paddingRight: 25 }}>
-                <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer' }}>
-                    <input type="radio" checked={hours24} onChange={() => setHours24(true)} /> يفتح 24 ساعة
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer' }}>
-                    <input type="radio" checked={!hours24} onChange={() => setHours24(false)} /> أوقات محددة
-                  </label>
-                </div>
-                {!hours24 && (
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <div><label style={{ fontSize: 10, color: colors.text4, display: 'block', marginBottom: 3 }}>يفتح</label><input type="time" value={openTime} onChange={e => setOpenTime(e.target.value)} style={{ ...inp() }} /></div>
-                    <div><label style={{ fontSize: 10, color: colors.text4, display: 'block', marginBottom: 3 }}>يغلق</label><input type="time" value={closeTime} onChange={e => setCloseTime(e.target.value)} style={{ ...inp() }} /></div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* النشر */}
-          <div style={{ ...card, padding: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <span style={{ fontSize: 17 }}>🚀</span>
-              <div style={{ fontSize: font.base, fontWeight: 800, color: colors.text }}>النشر</div>
-            </div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: colors.text2 }}>
-              <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} />
-              تفعيل المتجر ونشره للعامة
-            </label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={saveShopSettings} disabled={saving} style={{ ...btnPrimary, flex: 1 }}>{saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}</button>
-              {previewUrl && (
-                <a href={previewUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '10px 20px', borderRadius: 10, border: `1.5px solid ${colors.border2}`, color: colors.text2, fontSize: 13, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-                  👁️ معاينة
-                </a>
-              )}
-            </div>
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }}>رابط المتجر</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 12, color: colors.text4, whiteSpace: 'nowrap' as const }}>storely.dev/shop/</span>
+            <input value={slug} onChange={e => setSlug(e.target.value)} placeholder="اسم-منشأتك" style={{ ...inp(), flex: 1 }} dir="ltr" />
           </div>
         </div>
 
-        {/* === عمود المعاينة الحية === */}
-        <div style={{ position: 'sticky' as const, top: 20, display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
-          <div style={{ ...card, padding: 0, overflow: 'hidden' as const }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: colors.text3, padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: 6 }}>
-              👁️ معاينة حية
-            </div>
-            <div style={{ padding: '28px 20px', background: `${shopColor}0d`, minHeight: 300, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', textAlign: 'center' as const }}>
-              {logoUrl ? (
-                <img src={logoUrl} alt="logo" style={{ width: 64, height: 64, borderRadius: 16, objectFit: 'cover' as const, marginBottom: 12, boxShadow: '0 6px 16px rgba(0,0,0,.15)' }} />
-              ) : (
-                <div style={{ width: 64, height: 64, borderRadius: 16, background: shopColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 24, fontWeight: 900, marginBottom: 12, boxShadow: '0 6px 16px rgba(0,0,0,.15)' }}>
-                  {(displayName || orgName || 'S').slice(0, 1)}
-                </div>
-              )}
-              <div style={{ fontSize: 16, fontWeight: 900, color: colors.text, marginBottom: tagline ? 4 : 10 }}>{displayName || orgName || 'اسم منشأتك'}</div>
-              {tagline && <div style={{ fontSize: 12, color: colors.text3, marginBottom: 12, maxWidth: 220 }}>{tagline}</div>}
-              {hoursEnabled && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: isOpenNow ? colors.primaryLight : colors.dangerLight, color: isOpenNow ? colors.primary : colors.danger, fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 99, marginBottom: 14 }}>
-                  ● {hours24 ? 'مفتوح دائماً' : isOpenNow ? `مفتوح الآن · يغلق ${closeTime}` : `مغلق الآن · يفتح ${openTime}`}
-                </div>
-              )}
-              {links.length > 0 && (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, justifyContent: 'center' as const, marginBottom: 14 }}>
-                  {links.map((l, i) => (
-                    <div key={i} style={{ width: 30, height: 30, borderRadius: 9, background: 'white', border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
-                      {(PLATFORMS.find(p => p.v === l.type)?.l || '🔗').split(' ')[0]}
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div style={{ width: '100%', background: 'white', borderRadius: 10, border: `1px solid ${colors.border}`, padding: '9px 12px', fontSize: 10, color: colors.text4, direction: 'ltr' as const }}>
-                storely.dev/shop/{slug || '...'}
-              </div>
-            </div>
-          </div>
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }}>اسم يظهر بالمتجر (اختياري)</label>
+          <input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder={orgName || 'اسم منشأتك التجاري'} style={{ ...inp(), width: '100%' }} />
+          <div style={{ fontSize: 10, color: colors.text4, marginTop: 4 }}>لو تركته فاضي، بيظهر اسم منشأتك المسجّل ({orgName})</div>
+        </div>
 
-          {previewUrl && enabled && (
-            <div style={{ ...card, padding: '18px', textAlign: 'center' as const }}>
-              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(previewUrl)}`} alt="QR" style={{ width: '100%', maxWidth: 150, borderRadius: 12, border: `1px solid ${colors.border}`, marginBottom: 12 }} />
-              <div style={{ fontSize: 12, fontWeight: 700, color: colors.text, marginBottom: 4 }}>رمز QR لمتجرك</div>
-              <div style={{ fontSize: 10, color: colors.text4, marginBottom: 12, lineHeight: 1.7 }}>اطبعه وحطّه على الطاولات أو ملصقات المحل</div>
-              <a href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(previewUrl)}`} download={`qr-${slug}.png`} style={{ ...btnPrimary, display: 'block', textDecoration: 'none', padding: '9px 18px', fontSize: 12 }}>
-                ⬇️ تحميل بجودة عالية
-              </a>
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }}>وصف قصير (اختياري)</label>
+          <input value={tagline} onChange={e => setTagline(e.target.value)} placeholder="مثال: أشهى المخبوزات الطازجة يومياً" style={{ ...inp(), width: '100%' }} />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 8 }}>لون المتجر</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, alignItems: 'center' }}>
+            {['#15803d', '#0369a1', '#b91c1c', '#7c2d12', '#7c3aed', '#0f172a', '#be185d', '#a16207'].map(c => (
+              <button key={c} onClick={() => setShopColor(c)} style={{ width: 32, height: 32, borderRadius: 10, background: c, border: shopColor === c ? '3px solid #0f172a' : '1px solid #e2e8f0', cursor: 'pointer', boxShadow: shopColor === c ? '0 0 0 2px white inset' : 'none' }} />
+            ))}
+            <input type="color" value={shopColor} onChange={e => setShopColor(e.target.value)} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid #e2e8f0', cursor: 'pointer', padding: 0 }} />
+            <button onClick={suggestColorFromLogo} disabled={suggestingColor} style={{ padding: '0 14px', height: 32, borderRadius: 10, border: `1.5px solid ${colors.infoBorder}`, background: colors.infoLight, color: colors.info, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
+              {suggestingColor ? '⏳ جاري التحليل...' : '🎨 اقترح من الشعار'}
+            </button>
+          </div>
+        </div>
+
+        {/* روابط خارجية */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3 }}>روابط خارجية (اختياري)</label>
+            <button onClick={addLink} style={{ fontSize: 11, fontWeight: 700, color: colors.primary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family }}>+ إضافة رابط</button>
+          </div>
+          {links.length === 0 ? (
+            <div style={{ fontSize: 11, color: colors.text4 }}>مافيش روابط — أضف إنستقرام، تيك توك، سناب شات، واتساب، أو قوقل ماب</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+              {links.map((l, i) => (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <select value={l.type} onChange={e => updateLink(i, { type: e.target.value })} style={{ ...inp(), width: 150 }}>
+                      {PLATFORMS.map(p => <option key={p.v} value={p.v}>{p.l}</option>)}
+                    </select>
+                    <input value={l.url} onChange={e => updateLink(i, { url: e.target.value })} placeholder={l.type==='whatsapp'?'https://wa.me/9665xxxxxxxx':'https://...'} style={{ ...inp(), flex: 1 }} dir="ltr" />
+                    <button onClick={() => removeLink(i)} style={{ padding: '0 10px', borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', fontSize: 12 }}>✕</button>
+                  </div>
+                  {l.type === 'website' && (
+                    <input value={l.label} onChange={e => updateLink(i, { label: e.target.value })} placeholder="اسم يظهر للرابط (مثال: الموقع الرسمي)" style={{ ...inp(), width: '100%' }} />
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
+
+        <div style={{ marginBottom: 16, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: hoursEnabled ? 12 : 0, cursor: 'pointer', fontSize: 12, fontWeight: 700, color: colors.text2 }}>
+            <input type="checkbox" checked={hoursEnabled} onChange={e => setHoursEnabled(e.target.checked)} />
+            عرض حالة "مفتوح/مغلق" بالمتجر
+          </label>
+          {hoursEnabled && (
+            <div>
+              <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer' }}>
+                  <input type="radio" checked={hours24} onChange={() => setHours24(true)} /> يفتح 24 ساعة
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer' }}>
+                  <input type="radio" checked={!hours24} onChange={() => setHours24(false)} /> أوقات محددة
+                </label>
+              </div>
+              {!hours24 && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div><label style={{ fontSize: 10, color: colors.text4, display: 'block', marginBottom: 3 }}>يفتح</label><input type="time" value={openTime} onChange={e => setOpenTime(e.target.value)} style={{ ...inp() }} /></div>
+                  <div><label style={{ fontSize: 10, color: colors.text4, display: 'block', marginBottom: 3 }}>يغلق</label><input type="time" value={closeTime} onChange={e => setCloseTime(e.target.value)} style={{ ...inp() }} /></div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: colors.text2 }}>
+          <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} />
+          تفعيل المتجر ونشره للعامة
+        </label>
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={saveShopSettings} disabled={saving} style={{ ...btnPrimary, flex: 1 }}>{saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}</button>
+          {previewUrl && (
+            <a href={previewUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '10px 20px', borderRadius: 10, border: `1.5px solid ${colors.border2}`, color: colors.text2, fontSize: 13, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+              👁️ معاينة
+            </a>
+          )}
+        </div>
       </div>
+
+      {previewUrl && enabled && (
+        <div style={{ ...card, padding: '20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' as const }}>
+          <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(previewUrl)}`} alt="QR" style={{ width: 130, height: 130, borderRadius: 12, border: `1px solid ${colors.border}` }} />
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 6 }}>رمز QR لمتجرك</div>
+            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 12, lineHeight: 1.7 }}>اطبعه وحطّه على الطاولات أو ملصقات المحل — العميل يمسحه ويوصل لمنتجاتك مباشرة</div>
+            <a href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(previewUrl)}`} download={`qr-${slug}.png`} style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '9px 18px', fontSize: 12 }}>
+              ⬇️ تحميل بجودة عالية
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* منتجات المتجر */}
       <div style={{ ...card, padding: '20px' }}>
