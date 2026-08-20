@@ -88,6 +88,8 @@ export default function StaffManagementPage() {
   const [savingHours, setSavingHours] = useState(false)
   const sb = createClient()
 
+  const [hasReservationsAddon, setHasReservationsAddon] = useState(false)
+
   useEffect(() => { init() }, [])
 
   async function init() {
@@ -95,6 +97,10 @@ export default function StaffManagementPage() {
     const{data:{user}}=await sb.auth.getUser(); if(!user) return
     const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single(); if(!profile?.org_id) return
     setOrgId(profile.org_id)
+    fetch(`/api/addons-market?org_id=${profile.org_id}`).then(r=>r.json()).then(j=>{
+      const addon = (j.addons || []).find((a: any) => a.slug === 'table_reservations')
+      setHasReservationsAddon(!!addon?.subscription?.isValid)
+    }).catch(()=>{})
     sb.from('organizations' as any).select('currency').eq('id',profile.org_id).single()
       .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
     const{data:orgLimits}=await (sb as any).from('organizations').select('max_staff,shop_open_time,shop_close_time,notify_cashier_closing_wa').eq('id',profile.org_id).single()
@@ -518,7 +524,7 @@ export default function StaffManagementPage() {
                     {key:'inventory',  label:'المخزون',    icon:'📦', locked:false},
                     {key:'purchases',  label:'المشتريات',  icon:'🛒', locked:false},
                     {key:'reports',    label:'التقارير',   icon:'📊', locked:false},
-                    {key:'reservations', label:'الحجوزات', icon:'🗓️', locked:false},
+                    ...(hasReservationsAddon ? [{key:'reservations', label:'الحجوزات', icon:'🗓️', locked:false}] : []),
                   ].map(p=>(
                     <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:'white',borderRadius:8,border:`1.5px solid ${(newPermissions as any)[p.key]?colors.primary:colors.border}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                       <input type="checkbox" checked={(newPermissions as any)[p.key]} disabled={p.locked}
@@ -655,7 +661,7 @@ export default function StaffManagementPage() {
                 {key:'inventory',  label:'المخزون',    icon:'📦', locked:false},
                 {key:'purchases',  label:'المشتريات',  icon:'🛒', locked:false},
                 {key:'reports',    label:'التقارير',   icon:'📊', locked:false},
-                {key:'reservations', label:'الحجوزات', icon:'🗓️', locked:false},
+                ...(hasReservationsAddon ? [{key:'reservations', label:'الحجوزات', icon:'🗓️', locked:false}] : []),
               ].map(p=>(
                 <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'12px',background:(editPerms as any)[p.key]?'#f0fdf4':'#f9fafb',borderRadius:10,border:`1.5px solid ${(editPerms as any)[p.key]?'#16a34a':'#e5e7eb'}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                   <input type="checkbox" checked={(editPerms as any)[p.key]} disabled={p.locked}
