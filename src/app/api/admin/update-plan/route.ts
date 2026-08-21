@@ -14,15 +14,18 @@ export async function POST(req: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { orgId, maxBranches, maxStaff, maxSuppliers, planName, orgName } = await req.json()
+  const { orgId, maxBranches, maxStaff, maxSuppliers, planName, orgName, billingCycle } = await req.json()
   if (!orgId || !maxBranches) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
   const { data: oldOrg } = await supabase.from('organizations').select('max_branches').eq('id', orgId).maybeSingle()
   const oldBranches = (oldOrg as any)?.max_branches || 1
 
+  const updatePayload: any = { max_branches: maxBranches, plan: planName, max_staff: maxStaff, max_suppliers: maxSuppliers }
+  if (billingCycle === 'monthly' || billingCycle === 'yearly') updatePayload.billing_cycle = billingCycle
+
   const { error } = await supabase
     .from('organizations')
-    .update({ max_branches: maxBranches, plan: planName, max_staff: maxStaff, max_suppliers: maxSuppliers })
+    .update(updatePayload)
     .eq('id', orgId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

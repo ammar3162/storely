@@ -415,16 +415,37 @@ export default function AdminPage() {
     setSaving(orgId)
     const target = users.find(u=>u.org_id===orgId)
     const oldBranches = target?.max_branches || 1
+    const currentBilling = target?.billing_cycle || 'monthly'
     const planName = value===1?'basic':value<=3?'pro':'advanced'
     const adminPass = sessionStorage.getItem('storely_admin_pass') || ''
     const res = await fetch('/api/admin/update-plan', {
       method:'POST', headers:{'Content-Type':'application/json','x-admin-key':adminPass},
-      body: JSON.stringify({ orgId, maxBranches:value, maxStaff:plan.maxStaff, maxSuppliers:plan.maxSup, planName, orgName: target?.org_name })
+      body: JSON.stringify({ orgId, maxBranches:value, maxStaff:plan.maxStaff, maxSuppliers:plan.maxSup, planName, orgName: target?.org_name, billingCycle: currentBilling })
     })
     const data = await res.json()
     if (!data.success) { alert('خطأ: ' + (data.error||'unknown')); setSaving(null); return }
     setUsers(prev=>prev.map(u=>u.org_id===orgId?{...u,max_branches:value}:u))
     setSelected(prev=>prev&&prev.org_id===orgId?{...prev,max_branches:value}:prev)
+    setSaving(null)
+  }
+
+  async function updateBillingCycle(orgId: string, cycle: 'monthly'|'yearly') {
+    const target = users.find(u=>u.org_id===orgId)
+    if (!target) return
+    const currentPlanValue = target.max_branches || 1
+    const plan = PLANS.find(p=>p.v===currentPlanValue) || PLANS[0]
+    const planName = currentPlanValue===1?'basic':currentPlanValue<=3?'pro':'advanced'
+    if (!(await confirmDialog({ title: 'تغيير دورة الفوترة', message: `تأكيد تحويل دورة الفوترة إلى "${cycle==='yearly'?'سنوي':'شهري'}"؟` }))) return
+    setSaving(orgId)
+    const adminPass = sessionStorage.getItem('storely_admin_pass') || ''
+    const res = await fetch('/api/admin/update-plan', {
+      method:'POST', headers:{'Content-Type':'application/json','x-admin-key':adminPass},
+      body: JSON.stringify({ orgId, maxBranches:currentPlanValue, maxStaff:plan.maxStaff, maxSuppliers:plan.maxSup, planName, orgName: target?.org_name, billingCycle: cycle })
+    })
+    const data = await res.json()
+    if (!data.success) { alert('خطأ: ' + (data.error||'unknown')); setSaving(null); return }
+    setUsers(prev=>prev.map(u=>u.org_id===orgId?{...u,billing_cycle:cycle}:u))
+    setSelected(prev=>prev&&prev.org_id===orgId?{...prev,billing_cycle:cycle}:prev)
     setSaving(null)
   }
 
@@ -705,6 +726,21 @@ export default function AdminPage() {
                   </div>
                 </div>
               )}
+
+              {/* Billing Cycle */}
+              <div style={{background:'#fdf4ff',border:'1px solid #f5d0fe',borderRadius:14,padding:16,marginBottom:16}}>
+                <div style={{fontSize:12,fontWeight:700,color:'#a21caf',marginBottom:12}}>🔁 دورة الفوترة (مستقلة عن الباقة)</div>
+                <div style={{display:'flex',gap:8}}>
+                  <button onClick={()=>updateBillingCycle(selected.org_id,'monthly')} disabled={!!saving||!selected.org_id}
+                    style={{flex:1,padding:'11px',borderRadius:10,border:`1.5px solid ${(selected.billing_cycle||'monthly')==='monthly'?'#a21caf':'#e5e7eb'}`,background:(selected.billing_cycle||'monthly')==='monthly'?'#a21caf0d':'#ffffff',color:(selected.billing_cycle||'monthly')==='monthly'?'#a21caf':'#64748b',fontSize:13,fontWeight:700,cursor:(!selected.org_id||!!saving)?'not-allowed':'pointer',fontFamily:'inherit'}}>
+                    🗓️ شهري{(selected.billing_cycle||'monthly')==='monthly'?' ✓':''}
+                  </button>
+                  <button onClick={()=>updateBillingCycle(selected.org_id,'yearly')} disabled={!!saving||!selected.org_id}
+                    style={{flex:1,padding:'11px',borderRadius:10,border:`1.5px solid ${selected.billing_cycle==='yearly'?'#a21caf':'#e5e7eb'}`,background:selected.billing_cycle==='yearly'?'#a21caf0d':'#ffffff',color:selected.billing_cycle==='yearly'?'#a21caf':'#64748b',fontSize:13,fontWeight:700,cursor:(!selected.org_id||!!saving)?'not-allowed':'pointer',fontFamily:'inherit'}}>
+                    📅 سنوي{selected.billing_cycle==='yearly'?' ✓':''}
+                  </button>
+                </div>
+              </div>
 
               {/* Plan Selection */}
               <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:14,padding:16,marginBottom:16}}>
