@@ -367,7 +367,7 @@ export default function OnlineStorePage() {
   function removeLink(i: number) { setLinks(prev => prev.filter((_, idx) => idx !== i)) }
 
   const shownCount = products.filter(p => p.show_on_shop).length
-  const previewUrl = slug ? `https://storely.dev/shop/${slug}` : ''
+  const previewUrl = slug && typeof window !== 'undefined' ? `${window.location.origin}/shop/${slug}` : ''
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontFamily: font.family }}>جاري التحميل...</div>
 
