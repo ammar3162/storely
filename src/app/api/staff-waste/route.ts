@@ -27,6 +27,7 @@ export async function POST(req: Request) {
 
     const { error: mErr } = await supabase.from('stock_movements').insert({
       product_id: productId,
+      org_id: orgId,
       type: 'waste',
       qty_change: -qty,
       waste_reason: wasteReason,

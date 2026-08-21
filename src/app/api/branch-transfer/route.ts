@@ -90,14 +90,14 @@ export async function POST(req: Request) {
     }
 
     const { error: outErr } = await db.from('stock_movements').insert({
-      product_id: (sourceProduct as any).id, profile_id: access.userId,
+      product_id: (sourceProduct as any).id, org_id, profile_id: access.userId,
       type: 'transfer_out', qty_change: -transferQty, branch_id: from_branch_id,
       note: `نقل إلى فرع ${(toBranch as any).name}`,
     } as any)
     if (outErr) return NextResponse.json({ error: 'فشل تسجيل حركة الفرع المصدر' }, { status: 500 })
 
     const { error: inErr } = await db.from('stock_movements').insert({
-      product_id: destProductId, profile_id: access.userId,
+      product_id: destProductId, org_id, profile_id: access.userId,
       type: 'transfer_in', qty_change: transferQty, branch_id: to_branch_id,
       note: `نقل من فرع ${(fromBranch as any).name}`,
     } as any)

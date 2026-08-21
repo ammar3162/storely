@@ -25,6 +25,7 @@ export async function POST(req: Request) {
 
     const { error: mErr } = await supabase.from('stock_movements').insert({
       product_id: productId,
+      org_id: orgId,
       type: 'out',
       qty_change: -qty,
       note: `صرف بواسطة الموظف: ${staffName}`,

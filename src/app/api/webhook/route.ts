@@ -201,7 +201,7 @@ async function handleDispense(to: string, user: any, text: string) {
     return
   }
   const { error } = await sb().from('stock_movements').insert({
-    product_id: product.id, profile_id: user.id,
+    product_id: product.id, org_id: user.org_id, profile_id: user.id,
     type: 'out', qty_change: -qty, note: 'صرف عبر واتساب'
   })
   if (error) { await send(to, '❌ حدث خطأ، حاول مرة أخرى'); return }

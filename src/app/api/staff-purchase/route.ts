@@ -54,7 +54,7 @@ export async function POST(req: Request) {
           : 0
 
         await supabase.from('stock_movements').insert({
-          product_id: existing[0].id, type: 'in',
+          product_id: existing[0].id, org_id, type: 'in',
           qty_change: purchasedQty,
           note: `شراء من: ${supplier} بواسطة: ${staff_name}`
         } as any)
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
         } as any).select().single()
         if (np && purchasedQty > 0) {
           await supabase.from('stock_movements').insert({
-            product_id: np.id, type: 'in',
+            product_id: np.id, org_id, type: 'in',
             qty_change: purchasedQty,
             note: `شراء جديد من: ${supplier} بواسطة: ${staff_name}`
           } as any)

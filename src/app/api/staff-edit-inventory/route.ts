@@ -39,6 +39,7 @@ export async function POST(req: Request) {
     if (diff !== 0) {
       await supabase.from('stock_movements').insert({
         product_id: productId,
+        org_id: orgId,
         type: diff > 0 ? 'in' : 'out',
         qty_change: diff,
         note: `تعديل يدوي بواسطة الموظف: ${staffName || ''}`,
