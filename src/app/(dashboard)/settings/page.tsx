@@ -107,6 +107,7 @@ export default function SettingsPage() {
   const [logoUrl, setLogoUrl]           = useState<string|null>(null)
   const [logoUploading, setLogoUploading] = useState(false)
   const [planName, setPlanName]         = useState('')
+  const [billingCycle, setBillingCycle] = useState<'monthly'|'yearly'>('monthly')
   const [checkoutLoading, setCheckoutLoading] = useState<string|null>(null)
   const [userEmail, setUserEmail]       = useState('')
   const [userPhone, setUserPhone]       = useState('')
@@ -165,7 +166,7 @@ export default function SettingsPage() {
     setOrgId(profile.org_id)
     setUserFullName((profile as any).full_name||'')
     setUserPhone((profile as any).phone||'')
-    const{data:orgRaw}=await sb.from('organizations').select('whatsapp_number,name,notify_schedule,notify_time,notify_days,notify_cashier_closing_wa,notify_supplier_wa,last_notified_at,last_backup_at,max_branches,logo_url,plan,subscription_ends_at').eq('id',profile.org_id).single()
+    const{data:orgRaw}=await sb.from('organizations').select('whatsapp_number,name,notify_schedule,notify_time,notify_days,notify_cashier_closing_wa,notify_supplier_wa,last_notified_at,last_backup_at,max_branches,logo_url,plan,subscription_ends_at,billing_cycle').eq('id',profile.org_id).single()
     const org=orgRaw as any
     if(org){
       const parsed = parsePhone(org.whatsapp_number||'')
@@ -179,6 +180,7 @@ export default function SettingsPage() {
       setLogoUrl(org.logo_url||null)
       const planMap: Record<string,string> = {'basic':'الأساسية','pro':'المتوسطة','advanced':'المتقدمة'}
       setPlanName(planMap[org.plan||'']||org.plan||'')
+      setBillingCycle(org.billing_cycle==='yearly'?'yearly':'monthly')
       setSubEndsAt(org.subscription_ends_at||null)
       const{data:bList}=await sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',profile.org_id).eq('is_active',true).order('created_at')
       setBranches(bList||[])
@@ -285,7 +287,13 @@ export default function SettingsPage() {
     }
   }
 
-  const planLabel = planName==='الأساسية'?'الباقة الأساسية — 149 ر.س/شهر':planName==='المتوسطة'?'الباقة المتوسطة — 249 ر.س/شهر':planName==='المتقدمة'?'الباقة المتقدمة — 399 ر.س/شهر':maxBranches===1?'الباقة الأساسية — 149 ر.س/شهر':maxBranches<=3?'الباقة المتوسطة — 249 ر.س/شهر':'الباقة المتقدمة — 399 ر.س/شهر'
+  const planPrices: Record<string, {monthly:string; yearly:string}> = {
+    'الأساسية': { monthly:'149 ر.س/شهر', yearly:'1430 ر.س/سنة' },
+    'المتوسطة': { monthly:'249 ر.س/شهر', yearly:'2390 ر.س/سنة' },
+    'المتقدمة': { monthly:'399 ر.س/شهر', yearly:'3830 ر.س/سنة' },
+  }
+  const resolvedPlanName = planName || (maxBranches===1?'الأساسية':maxBranches<=3?'المتوسطة':'المتقدمة')
+  const planLabel = `الباقة ${resolvedPlanName} — ${planPrices[resolvedPlanName]?.[billingCycle] || planPrices['الأساسية'][billingCycle]}`
 
   if(loading) return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:640,margin:'0 auto'}}>
