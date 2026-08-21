@@ -7,13 +7,13 @@ type Billing = 'monthly'|'yearly'
 const PLAN_BRANCHES = [1, 3, 10]
 
 const PLANS = [
-  { name:'الأساسية', price:'149', yearlyPrice:'1430', color:'#15803d', popular:false,
+  { name:'الأساسية', price:'149', yearlyPrice:'1430', color:'#0F172A', popular:false,
     limits:['فرع واحد','2 موظفين','3 موردين'],
     features:['تتبع المخزون لحظياً','صرف يومي بصلاحيات موظفين','المشتريات وإدارة الموردين','تنبيهات واتساب تلقائية','كشف الهدر','تقارير أساسية قابلة للتصدير','نسخ احتياطي يومي','دعم عبر واتساب'] },
-  { name:'المتوسطة', price:'249', yearlyPrice:'2390', color:'#15803d', popular:true,
+  { name:'المتوسطة', price:'249', yearlyPrice:'2390', color:'#0F172A', popular:true,
     limits:['3 فروع','10 موظفين','10 موردين'],
     features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين','تقارير متقدمة','إقفال الكاشير اليومي','الحضور والانصراف بـGPS 📍','اقتراح الشراء الذكي 🤖','توقع نفاد المخزون 🔮','تحليل الموسمية','تحسين نقطة إعادة الطلب 🎯'] },
-  { name:'المتقدمة', price:'399', yearlyPrice:'3830', color:'#15803d', popular:false,
+  { name:'المتقدمة', price:'399', yearlyPrice:'3830', color:'#0F172A', popular:false,
     limits:['غير محدود','غير محدود','غير محدود'],
     features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين','تقارير متقدمة','إقفال الكاشير اليومي','الحضور والانصراف بـGPS 📍','اقتراح الشراء الذكي 🤖','توقع نفاد المخزون 🔮','تحليل الموسمية','تحسين نقطة إعادة الطلب 🎯','مقارنة الفروع 🤖','المخزون الراكد 🐌','كشف الهدر الحقيقي 🗑️','دعم ذو أولوية','دعم 24/7'] },
 ]
@@ -47,7 +47,7 @@ function FaqItem({ q, a }: { q:string; a:string }) {
     <div style={{borderBottom:'1px solid #f3f4f6'}}>
       <button onClick={()=>setOpen(o=>!o)} style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',padding:'20px 0',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
         <span style={{fontSize:16,fontWeight:600,color:'#111827'}}>{q}</span>
-        <span style={{fontSize:20,color:'#15803d',transition:'transform .25s',transform:open?'rotate(45deg)':'none',flexShrink:0,marginRight:16}}>+</span>
+        <span style={{fontSize:20,color:'#0F172A',transition:'transform .25s',transform:open?'rotate(45deg)':'none',flexShrink:0,marginRight:16}}>+</span>
       </button>
       {open && <p style={{paddingBottom:20,fontSize:14,color:'#6b7280',lineHeight:1.8}}>{a}</p>}
     </div>
@@ -70,7 +70,7 @@ function MiniMockup({ variant }: { variant: 'stats'|'whatsapp'|'staff'|'chart' }
     <div style={{background:'white',borderRadius:16,padding:16,height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:10}}>
       <div style={{fontSize:11,fontWeight:700,color:'#6b7280'}}>ادخل رمزك</div>
       <div style={{display:'flex',gap:6}}>
-        {[1,2,3,4].map(i=><div key={i} style={{width:22,height:26,borderRadius:6,background:'#f0fdf4',border:'1.5px solid #15803d'}}/>)}
+        {[1,2,3,4].map(i=><div key={i} style={{width:22,height:26,borderRadius:6,background:'#f0fdf4',border:'1.5px solid #0F172A'}}/>)}
       </div>
       <div style={{fontSize:9,color:'#9ca3af'}}>موظف: محمد أمين</div>
     </div>
@@ -79,14 +79,14 @@ function MiniMockup({ variant }: { variant: 'stats'|'whatsapp'|'staff'|'chart' }
     <div style={{background:'white',borderRadius:16,padding:16,height:'100%',display:'flex',flexDirection:'column',justifyContent:'center',gap:8}}>
       <div style={{fontSize:11,fontWeight:800,color:'#111827',marginBottom:2}}>اتجاه الاستهلاك الشهري</div>
       <div style={{display:'flex',alignItems:'flex-end',gap:5,height:50}}>
-        {[40,65,50,80,60,90].map((h,i)=><div key={i} style={{flex:1,height:`${h}%`,background:i===5?'#15803d':'#d1fae5',borderRadius:3}}/>)}
+        {[40,65,50,80,60,90].map((h,i)=><div key={i} style={{flex:1,height:`${h}%`,background:i===5?'#0F172A':'#d1fae5',borderRadius:3}}/>)}
       </div>
     </div>
   )
   return (
     <div style={{background:'white',borderRadius:16,padding:18,height:'100%'}}>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:12}}>
-        {[['15','صرف اليوم','#15803d'],['4','ناقص','#dc2626'],['72','بالمخزون','#2563eb']].map(([v,l,c])=>(
+        {[['15','صرف اليوم','#0F172A'],['4','ناقص','#dc2626'],['72','بالمخزون','#2563eb']].map(([v,l,c])=>(
           <div key={l} style={{background:'#f8fafc',borderRadius:10,padding:'10px 6px',textAlign:'center' as const}}>
             <div style={{fontSize:16,fontWeight:900,color:c}}>{v}</div>
             <div style={{fontSize:8,color:'#9ca3af',marginTop:2}}>{l}</div>
@@ -94,7 +94,7 @@ function MiniMockup({ variant }: { variant: 'stats'|'whatsapp'|'staff'|'chart' }
         ))}
       </div>
       <div style={{display:'flex',flexDirection:'column',gap:6}}>
-        {[['جبنة شيدر','−2','#dc2626'],['صوص باربكيو','−1','#dc2626'],['علبة مايونيز','+10','#15803d']].map(([n,q,c])=>(
+        {[['جبنة شيدر','−2','#dc2626'],['صوص باربكيو','−1','#dc2626'],['علبة مايونيز','+10','#0F172A']].map(([n,q,c])=>(
           <div key={n} style={{display:'flex',justifyContent:'space-between',padding:'7px 10px',background:'#fafafa',borderRadius:8}}>
             <span style={{fontSize:11,color:'#374151',fontWeight:600}}>{n}</span>
             <span style={{fontSize:11,fontWeight:800,color:c}}>{q}</span>
@@ -169,18 +169,18 @@ export default function LandingPage() {
         *{box-sizing:border-box;margin:0;padding:0}
         html{scroll-behavior:smooth}
         .nav-link{color:#4b5563;text-decoration:none;font-size:14px;font-weight:500;transition:color .2s}
-        .nav-link:hover{color:#15803d}
-        .btn-primary{background:#15803d;color:white;border:none;border-radius:8px;padding:12px 24px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s;text-decoration:none;display:inline-block}
-        .btn-primary:hover{background:#14532d}
+        .nav-link:hover{color:#0F172A}
+        .btn-primary{background:#0F172A;color:white;border:none;border-radius:8px;padding:12px 24px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s;text-decoration:none;display:inline-block}
+        .btn-primary:hover{background:#334155}
         .btn-outline{background:white;color:#111827;border:1.5px solid #e5e7eb;border-radius:8px;padding:11px 22px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;text-decoration:none;display:inline-block}
-        .btn-outline:hover{border-color:#15803d;color:#15803d}
+        .btn-outline:hover{border-color:#0F172A;color:#0F172A}
         .feat-card{background:white;border:1px solid #f3f4f6;border-radius:16px;padding:28px;transition:all .25s}
         .feat-card:hover{border-color:#e5e7eb;box-shadow:0 4px 20px rgba(0,0,0,.06)}
         .plan-card{border:1.5px solid #e5e7eb;border-radius:16px;padding:28px;transition:all .2s;background:white}
-        .plan-card:hover{border-color:#15803d}
-        .plan-card.popular{border-color:#15803d;border-width:2px}
+        .plan-card:hover{border-color:#0F172A}
+        .plan-card.popular{border-color:#0F172A;border-width:2px}
         .demo-input{width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}
-        .demo-input:focus{border-color:#15803d}
+        .demo-input:focus{border-color:#0F172A}
         @media(max-width:768px){
           .desk-nav{display:none!important}
           .mob-menu-btn{display:flex!important}
@@ -200,7 +200,7 @@ export default function LandingPage() {
 
       {/* MARQUEE */}
       {hasMarquee && (
-        <div style={{position:'fixed',top:0,right:0,left:0,zIndex:1001,height:36,background:'#15803d',overflow:'hidden',display:'flex',alignItems:'center'}}>
+        <div style={{position:'fixed',top:0,right:0,left:0,zIndex:1001,height:36,background:'#0F172A',overflow:'hidden',display:'flex',alignItems:'center'}}>
           <div style={{display:'flex',whiteSpace:'nowrap' as const,animation:'marqueeScroll 35s linear infinite'}}>
             {[...Array(2)].map((_,i)=>(
               <div key={i} style={{display:'flex',alignItems:'center'}}>
@@ -248,12 +248,12 @@ export default function LandingPage() {
 
       {/* HERO */}
       <section style={{paddingTop:hasMarquee?166:130,paddingBottom:60,padding:hasMarquee?'166px 40px 60px':'130px 40px 60px',maxWidth:1240,margin:'0 auto',textAlign:'center' as const}}>
-        <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:99,padding:'6px 16px',fontSize:13,fontWeight:600,color:'#15803d',marginBottom:24}}>
+        <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:99,padding:'6px 16px',fontSize:13,fontWeight:600,color:'#0F172A',marginBottom:24}}>
           ✓ تجربة مجانية 14 يوماً — لا يتطلب بطاقة ائتمانية
         </div>
         <h1 className="hero-h1" style={{fontSize:52,fontWeight:900,color:'#111827',lineHeight:1.15,marginBottom:20,letterSpacing:'-2px',maxWidth:820,margin:'0 auto 20px'}}>
           نصمّم مستقبل الإدارة الذكية<br/>
-          <span style={{color:'#15803d'}}>لكل منشأة تطمح للنمو</span>
+          <span style={{color:'#0F172A'}}>لكل منشأة تطمح للنمو</span>
         </h1>
         <p style={{fontSize:18,color:'#6b7280',maxWidth:620,margin:'0 auto 32px',lineHeight:1.7}}>
           من المخزون والمشتريات، لصفحة عرض منتجاتك والحجوزات الإلكترونية، وإدارة الموظفين والفروع — كل شي بمكان واحد
@@ -316,7 +316,7 @@ export default function LandingPage() {
       {/* FEATURES */}
       <section id="features" className="section-pad" style={{padding:'90px 40px',maxWidth:1200,margin:'0 auto'}}>
         <div style={{textAlign:'center',marginBottom:56}}>
-          <p style={{fontSize:13,fontWeight:700,color:'#15803d',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>المميزات</p>
+          <p style={{fontSize:13,fontWeight:700,color:'#0F172A',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>المميزات</p>
           <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>كل شي تحتاجه لإدارة مخزونك</h2>
         </div>
         <div className="feat-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:20}}>
@@ -337,7 +337,7 @@ export default function LandingPage() {
             <h2 style={{fontSize:24,fontWeight:900,color:'#111827',marginBottom:6}}>اطلب عرض النظام</h2>
             <p style={{fontSize:14,color:'#6b7280',marginBottom:24}}>عبّي بياناتك وبنتواصل معك خلال ساعات عبر واتساب</p>
             {submitMsg && (
-              <div style={{background:submitMsg.ok?'#f0fdf4':'#fef2f2',border:`1px solid ${submitMsg.ok?'#bbf7d0':'#fecaca'}`,borderRadius:8,padding:'10px 14px',marginBottom:16,fontSize:13,fontWeight:600,color:submitMsg.ok?'#15803d':'#dc2626'}}>
+              <div style={{background:submitMsg.ok?'#f0fdf4':'#fef2f2',border:`1px solid ${submitMsg.ok?'#bbf7d0':'#fecaca'}`,borderRadius:8,padding:'10px 14px',marginBottom:16,fontSize:13,fontWeight:600,color:submitMsg.ok?'#0F172A':'#dc2626'}}>
                 {submitMsg.text}
               </div>
             )}
@@ -374,13 +374,13 @@ export default function LandingPage() {
             </div>
             <label style={{display:'flex',alignItems:'flex-start',gap:8,fontSize:12,color:'#6b7280',marginBottom:20,cursor:'pointer'}}>
               <input type="checkbox" checked={agreed} onChange={e=>setAgreed(e.target.checked)} style={{marginTop:2}}/>
-              أؤكد أني قرأت وأوافق على <a href="/terms" target="_blank" style={{color:'#15803d'}}>الشروط والأحكام</a> و<a href="/privacy" target="_blank" style={{color:'#15803d'}}>سياسة الخصوصية</a>
+              أؤكد أني قرأت وأوافق على <a href="/terms" target="_blank" style={{color:'#0F172A'}}>الشروط والأحكام</a> و<a href="/privacy" target="_blank" style={{color:'#0F172A'}}>سياسة الخصوصية</a>
             </label>
             <button type="submit" disabled={submitting} className="btn-primary" style={{width:'100%',padding:'13px',fontSize:15,opacity:submitting?.6:1}}>
               {submitting?'⏳ جاري الإرسال...':'إرسال الطلب'}
             </button>
           </form>
-          <div style={{background:'linear-gradient(160deg,#15803d,#14532d)',padding:40,display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',textAlign:'center' as const}}>
+          <div style={{background:'linear-gradient(160deg,#0F172A,#334155)',padding:40,display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',textAlign:'center' as const}}>
             <div style={{width:70,height:70,borderRadius:18,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:32,marginBottom:20}}>📦</div>
             <h3 style={{fontSize:22,fontWeight:900,color:'white',marginBottom:12,lineHeight:1.4}}>اطلب تجربة نظام Storely لإدارة المخزون مجاناً</h3>
             <p style={{fontSize:14,color:'rgba(255,255,255,.85)',lineHeight:1.8}}>بنساعدك تختار الباقة الأنسب لمنشأتك، ونجاوب على كل أسئلتك مباشرة</p>
@@ -391,34 +391,34 @@ export default function LandingPage() {
       {/* PRICING */}
       <section id="pricing" className="section-pad" style={{padding:'90px 40px',maxWidth:1200,margin:'0 auto'}}>
         <div style={{textAlign:'center',marginBottom:32}}>
-          <p style={{fontSize:13,fontWeight:700,color:'#15803d',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>الأسعار</p>
+          <p style={{fontSize:13,fontWeight:700,color:'#0F172A',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>الأسعار</p>
           <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>باقة تناسب كل حجم منشأة</h2>
         </div>
         <div style={{display:'flex',justifyContent:'center',marginBottom:40}}>
           <div style={{display:'inline-flex',gap:4,background:'#f3f4f6',padding:4,borderRadius:12}}>
             <button onClick={()=>setBilling('monthly')} style={{padding:'9px 20px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',background:billing==='monthly'?'white':'transparent',color:billing==='monthly'?'#111827':'#6b7280',boxShadow:billing==='monthly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>شهري</button>
             <button onClick={()=>setBilling('yearly')} style={{padding:'9px 20px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6,background:billing==='yearly'?'white':'transparent',color:billing==='yearly'?'#111827':'#6b7280',boxShadow:billing==='yearly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>
-              سنوي <span style={{background:'#f0fdf4',color:'#15803d',fontSize:10,fontWeight:800,padding:'2px 7px',borderRadius:99}}>وفّر 20%</span>
+              سنوي <span style={{background:'#f0fdf4',color:'#0F172A',fontSize:10,fontWeight:800,padding:'2px 7px',borderRadius:99}}>وفّر 20%</span>
             </button>
           </div>
         </div>
         <div className="plan-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:20}}>
           {PLANS.map((p,i)=>(
             <div key={i} className={`plan-card${p.popular?' popular':''}`} style={{position:'relative'}}>
-              {p.popular && <div style={{position:'absolute',top:-13,right:24,background:'#15803d',color:'white',fontSize:11,fontWeight:800,padding:'4px 12px',borderRadius:99}}>الأكثر شيوعاً</div>}
+              {p.popular && <div style={{position:'absolute',top:-13,right:24,background:'#0F172A',color:'white',fontSize:11,fontWeight:800,padding:'4px 12px',borderRadius:99}}>الأكثر شيوعاً</div>}
               <div style={{fontSize:16,fontWeight:800,color:'#111827',marginBottom:8}}>{p.name}</div>
               <div style={{display:'flex',alignItems:'baseline',gap:6,marginBottom:10}}>
                 <span style={{fontSize:34,fontWeight:900,color:'#111827'}}>{billing==='yearly'?p.yearlyPrice:p.price}</span>
                 <span style={{fontSize:14,color:'#9ca3af'}}>ر.س / {billing==='yearly'?'سنوياً':'شهرياً'}</span>
               </div>
-              <div style={{display:'inline-block',background:'#f0fdf4',color:'#15803d',fontSize:11,fontWeight:800,padding:'3px 10px',borderRadius:99,marginBottom:16}}>{p.features.length} ميزة متاحة</div>
+              <div style={{display:'inline-block',background:'#f0fdf4',color:'#0F172A',fontSize:11,fontWeight:800,padding:'3px 10px',borderRadius:99,marginBottom:16}}>{p.features.length} ميزة متاحة</div>
               <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:16,paddingBottom:16,borderBottom:'1px solid #f3f4f6'}}>
                 {p.limits.map((l,j)=><div key={j} style={{fontSize:13,color:'#6b7280'}}>• {l}</div>)}
               </div>
               <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:24}}>
                 {p.features.map((f,j)=>(
                   <div key={j} style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#374151'}}>
-                    <span style={{color:'#15803d'}}>✓</span>{f}
+                    <span style={{color:'#0F172A'}}>✓</span>{f}
                   </div>
                 ))}
               </div>
@@ -429,12 +429,12 @@ export default function LandingPage() {
       </section>
 
       {/* CTA BANNER */}
-      <section style={{background:'linear-gradient(135deg,#15803d,#14532d)',padding:'70px 40px',textAlign:'center' as const}}>
+      <section style={{background:'linear-gradient(135deg,#0F172A,#334155)',padding:'70px 40px',textAlign:'center' as const}}>
         <h2 style={{fontSize:32,fontWeight:900,color:'white',marginBottom:14}}>جاهز تبدأ؟</h2>
         <p style={{fontSize:16,color:'rgba(255,255,255,.85)',marginBottom:32}}>جرّب Storely مجاناً 14 يوماً — بدون بطاقة ائتمانية</p>
         <div style={{display:'flex',gap:14,justifyContent:'center',flexWrap:'wrap' as const}}>
           <button onClick={()=>router.push('/login?mode=register')}
-            style={{background:'white',color:'#15803d',border:'none',borderRadius:9,padding:'14px 32px',fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+            style={{background:'white',color:'#0F172A',border:'none',borderRadius:9,padding:'14px 32px',fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
             سجّل مجاناً الآن
           </button>
           <a href="https://wa.me/966594351667" target="_blank" rel="noreferrer"
@@ -448,7 +448,7 @@ export default function LandingPage() {
       {/* FAQ */}
       <section id="faq" style={{padding:'80px 40px',maxWidth:700,margin:'0 auto'}}>
         <div style={{textAlign:'center',marginBottom:48}}>
-          <p style={{fontSize:13,fontWeight:700,color:'#15803d',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>الأسئلة الشائعة</p>
+          <p style={{fontSize:13,fontWeight:700,color:'#0F172A',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>الأسئلة الشائعة</p>
           <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>عندك سؤال؟</h2>
         </div>
         {[
