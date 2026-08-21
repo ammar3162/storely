@@ -7,7 +7,7 @@ import { toast } from '@/components/toast'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { confirmDialog } from '@/components/ConfirmDialog'
-import { UserPlus, Users, UserCheck, PauseCircle, Package, BarChart3, ShieldCheck, Clock, Bell, BellOff, RefreshCw, Copy, AlertTriangle, ChevronDown } from 'lucide-react'
+import { UserPlus, Users, UserCheck, PauseCircle, Package, BarChart3, ShieldCheck, Clock, Bell, BellOff, RefreshCw, Copy, AlertTriangle, ChevronDown, User, Lock, Wallet, Smartphone, Check, Send, ShoppingCart, CalendarDays, Save, CheckCircle2, AlertCircle, TrendingUp, Pencil } from 'lucide-react'
 
 function generatePin() { return String(Math.floor(1000 + Math.random() * 9000)) }
 const COUNTRY_CODES = ['+966','+971','+965','+973','+974','+968','+20','+962','+1','+44','+91','+92','+880','+63']
@@ -406,7 +406,7 @@ export default function StaffManagementPage() {
       {revealedPin && (
         <div className="su" style={{...card,padding:20,marginBottom:18,background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`,animationDelay:'.08s'}}>
           <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
-            <div style={{width:40,height:40,borderRadius:12,background:colors.primary,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>✅</div>
+            <div style={{width:40,height:40,borderRadius:12,background:colors.primary,display:'flex',alignItems:'center',justifyContent:'center'}}><CheckCircle2 size={19} color="white" strokeWidth={2}/></div>
             <div>
               <div style={{fontSize:font.base,fontWeight:800,color:colors.text}}>تم إضافة {revealedPin.name}</div>
               <div style={{fontSize:font.xs,color:colors.text3}}>شارك هذي البيانات مع الموظف</div>
@@ -427,8 +427,8 @@ export default function StaffManagementPage() {
               <div style={{fontSize:font.xs,color:colors.text4,fontWeight:700,marginBottom:6}}>رابط الدخول</div>
               <div style={{display:'flex',gap:8,alignItems:'center'}}>
                 <div style={{fontSize:font.xs,color:colors.text,background:colors.bg,padding:'8px 12px',borderRadius:8,border:`1px solid ${colors.border}`,flex:1,direction:'ltr',textAlign:'left' as const,overflowX:'auto',whiteSpace:'nowrap' as const}}>https://storely.dev/staff</div>
-                <button onClick={()=>{navigator.clipboard.writeText('https://storely.dev/staff');toast('تم نسخ الرابط ✓')}} style={{background:colors.primary,color:'white',border:'none',borderRadius:8,padding:'8px 14px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family,whiteSpace:'nowrap' as const}}>
-                  📋 نسخ الكل
+                <button onClick={()=>{navigator.clipboard.writeText('https://storely.dev/staff');toast('تم نسخ الرابط ✓')}} style={{background:colors.primary,color:'white',border:'none',borderRadius:8,padding:'8px 14px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family,whiteSpace:'nowrap' as const,display:'flex',alignItems:'center',gap:5}}>
+                  <Copy size={13} strokeWidth={2.25}/> نسخ الكل
                 </button>
               </div>
             </div>
@@ -477,7 +477,7 @@ export default function StaffManagementPage() {
                 <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>نوع الموظف</label>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                   <button type="button" onClick={()=>setNewRole('staff')} style={{padding:'12px 10px',borderRadius:10,border:`1.5px solid ${newRole==='staff'?colors.primary:colors.border}`,background:newRole==='staff'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='staff'?`0 2px 8px ${colors.primary}22`:'none'}}>
-                    <div style={{fontWeight:800,fontSize:font.sm,color:newRole==='staff'?colors.primary:colors.text2,marginBottom:3}}>👤 موظف عادي</div>
+                    <div style={{fontWeight:800,fontSize:font.sm,color:newRole==='staff'?colors.primary:colors.text2,marginBottom:3,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><User size={14} strokeWidth={2.25}/> موظف عادي</div>
                     <div style={{fontSize:10,color:newRole==='staff'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يستخدم نظام الصرف والمخزون</div>
                   </button>
                   <button type="button" onClick={()=>{
@@ -485,9 +485,9 @@ export default function StaffManagementPage() {
                       setNewRole('cashier')
                     }} style={{padding:'12px 10px',borderRadius:10,border:`1.5px solid ${newRole==='cashier'?colors.primary:colors.border}`,background:newRole==='cashier'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='cashier'?`0 2px 8px ${colors.primary}22`:'none',opacity:orgPlan==='basic'?.55:1,position:'relative' as const}}>
                     {orgPlan==='basic' && (
-                      <div style={{position:'absolute',top:-8,left:-6,background:'#1c1c1a',color:'white',fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:99}}>🔒 المتوسطة</div>
+                      <div style={{position:'absolute',top:-8,left:-6,background:'#1c1c1a',color:'white',fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:99,display:'flex',alignItems:'center',gap:4}}><Lock size={9} strokeWidth={2.5}/> المتوسطة</div>
                     )}
-                    <div style={{fontWeight:800,fontSize:font.sm,color:newRole==='cashier'?colors.primary:colors.text2,marginBottom:3}}>💰 كاشير</div>
+                    <div style={{fontWeight:800,fontSize:font.sm,color:newRole==='cashier'?colors.primary:colors.text2,marginBottom:3,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><Wallet size={14} strokeWidth={2.25}/> كاشير</div>
                     <div style={{fontSize:10,color:newRole==='cashier'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يقفل الصندوق يومياً فقط</div>
                   </button>
                 </div>
@@ -510,7 +510,7 @@ export default function StaffManagementPage() {
                     <input type="checkbox" checked={newSendClosingWA} onChange={e=>setNewSendClosingWA(e.target.checked)}
                       style={{accentColor:colors.primary,width:14,height:14}}/>
                     <div>
-                      <div style={{fontSize:12,fontWeight:700,color:newSendClosingWA?colors.primary:colors.text2}}>📲 إرسال تفاصيل الإقفال للمالك عبر واتساب</div>
+                      <div style={{fontSize:12,fontWeight:700,color:newSendClosingWA?colors.primary:colors.text2,display:'flex',alignItems:'center',gap:5}}><Smartphone size={13} strokeWidth={2.25}/> إرسال تفاصيل الإقفال للمالك عبر واتساب</div>
                       <div style={{fontSize:10,color:colors.text4,marginTop:2,lineHeight:1.4}}>{newSendClosingWA?'تفعّل: يوصل المالك تقرير الإقفال الكامل':'موقّف: يوصل المالك بس إشعار "الكاشير أقفل"، بدون تفاصيل'}</div>
                     </div>
                   </label>
@@ -519,24 +519,24 @@ export default function StaffManagementPage() {
             </div>
             <div style={{display:'flex',gap:10}}>
               <button onClick={()=>setShowAdd(false)} style={{...btnSecondary,flex:1,padding:'12px',fontSize:font.sm}}>إلغاء</button>
-              <button onClick={addStaff} style={{...btnPrimary,flex:2,padding:'12px',fontSize:font.sm}}>✓ إضافة وتوليد PIN</button>
+              <button onClick={addStaff} style={{...btnPrimary,flex:2,padding:'12px',fontSize:font.sm,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Check size={15} strokeWidth={2.5}/> إضافة وتوليد PIN</button>
             </div>
             {newRole==='staff' && (
               <div style={{background:colors.bg,borderRadius:radius.md,padding:'14px 16px',marginTop:12}}>
                 <div style={{fontSize:font.xs,fontWeight:700,color:colors.text3,marginBottom:10,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>صلاحيات الموظف</div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                   {[
-                    {key:'dispense',   label:'الصرف',      icon:'📤', locked:false},
-                    {key:'inventory',  label:'المخزون',    icon:'📦', locked:false},
-                    {key:'purchases',  label:'المشتريات',  icon:'🛒', locked:false},
-                    {key:'reports',    label:'التقارير',   icon:'📊', locked:false},
-                    ...(hasReservationsAddon ? [{key:'reservations', label:'الحجوزات', icon:'🗓️', locked:false}] : []),
+                    {key:'dispense',   label:'الصرف',      Icon:Send, locked:false},
+                    {key:'inventory',  label:'المخزون',    Icon:Package, locked:false},
+                    {key:'purchases',  label:'المشتريات',  Icon:ShoppingCart, locked:false},
+                    {key:'reports',    label:'التقارير',   Icon:BarChart3, locked:false},
+                    ...(hasReservationsAddon ? [{key:'reservations', label:'الحجوزات', Icon:CalendarDays, locked:false}] : []),
                   ].map(p=>(
                     <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:'white',borderRadius:8,border:`1.5px solid ${(newPermissions as any)[p.key]?colors.primary:colors.border}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                       <input type="checkbox" checked={(newPermissions as any)[p.key]} disabled={p.locked}
                         onChange={e=>!p.locked&&setNewPermissions(prev=>({...prev,[p.key]:e.target.checked}))}
                         style={{accentColor:colors.primary,width:14,height:14}}/>
-                      <span style={{fontSize:12,fontWeight:600,color:(newPermissions as any)[p.key]?colors.primary:colors.text2}}>{p.icon} {p.label}</span>
+                      <span style={{fontSize:12,fontWeight:600,color:(newPermissions as any)[p.key]?colors.primary:colors.text2,display:'flex',alignItems:'center',gap:5}}><p.Icon size={13} strokeWidth={2.25}/> {p.label}</span>
                       {p.locked&&<span style={{fontSize:9,color:colors.text4}}>(افتراضي)</span>}
                     </label>
                   ))}
@@ -587,7 +587,7 @@ export default function StaffManagementPage() {
                         <div style={{fontSize:font.sm,fontWeight:700,color:colors.text3}}>{p.name}</div>
                         <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit}</div>
                       </div>
-                      <span style={{fontSize:9,fontWeight:700,color:colors.warning||'#d97706',background:colors.warningLight||'#fffbeb',padding:'3px 8px',borderRadius:20,whiteSpace:'nowrap' as const,flexShrink:0}}>🔒 {takenBy}</span>
+                      <span style={{fontSize:9,fontWeight:700,color:colors.warning||'#d97706',background:colors.warningLight||'#fffbeb',padding:'3px 8px',borderRadius:20,whiteSpace:'nowrap' as const,flexShrink:0,display:'flex',alignItems:'center',gap:3}}><Lock size={9} strokeWidth={2.5}/> {takenBy}</span>
                     </div>
                   )
                 }
@@ -608,7 +608,7 @@ export default function StaffManagementPage() {
 
             <div style={{display:'flex',gap:10}}>
               <button onClick={()=>setAssigningId(null)} style={{...btnSecondary,flex:1,padding:'12px',fontSize:font.sm}}>إلغاء</button>
-              <button onClick={saveAssigned} style={{...btnPrimary,flex:2,padding:'12px',fontSize:font.sm}}>💾 حفظ التخصيص</button>
+              <button onClick={saveAssigned} style={{...btnPrimary,flex:2,padding:'12px',fontSize:font.sm,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Save size={15} strokeWidth={2.25}/> حفظ التخصيص</button>
             </div>
           </div>
         </div>
@@ -627,7 +627,7 @@ export default function StaffManagementPage() {
             </div>
             <div style={{display:'flex',gap:10}}>
               <button onClick={()=>setEditingNameId(null)} style={{...btnSecondary,flex:1,padding:'12px'}}>إلغاء</button>
-              <button onClick={saveName} disabled={savingName||!editNameValue.trim()} style={{...btnPrimary,flex:2,padding:'12px',opacity:savingName?.7:1}}>{savingName?'جاري الحفظ...':'✓ حفظ'}</button>
+              <button onClick={saveName} disabled={savingName||!editNameValue.trim()} style={{...btnPrimary,flex:2,padding:'12px',opacity:savingName?.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>{savingName?'جاري الحفظ...':(<><Check size={15} strokeWidth={2.5}/> حفظ</>)}</button>
             </div>
           </div>
         </div>
@@ -650,7 +650,7 @@ export default function StaffManagementPage() {
             </div>
             <div style={{display:'flex',gap:10}}>
               <button onClick={()=>setShowHoursModal(false)} style={{...btnSecondary,flex:1,padding:'12px'}}>إلغاء</button>
-              <button onClick={saveShopHours} disabled={savingHours} style={{...btnPrimary,flex:2,padding:'12px'}}>{savingHours?'جاري الحفظ...':'✓ حفظ'}</button>
+              <button onClick={saveShopHours} disabled={savingHours} style={{...btnPrimary,flex:2,padding:'12px',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>{savingHours?'جاري الحفظ...':(<><Check size={15} strokeWidth={2.5}/> حفظ</>)}</button>
             </div>
           </div>
         </div>
@@ -659,29 +659,29 @@ export default function StaffManagementPage() {
       {editingPerms && (
         <div style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={()=>setEditingPerms(null)}>
           <div style={{background:'white',borderRadius:20,padding:28,width:'100%',maxWidth:400,fontFamily:'inherit'}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:16,fontWeight:800,color:'#1c1c1a',marginBottom:4}}>🔐 صلاحيات الموظف</div>
+            <div style={{fontSize:16,fontWeight:800,color:'#1c1c1a',marginBottom:4,display:'flex',alignItems:'center',gap:6}}><ShieldCheck size={17} strokeWidth={2.25}/> صلاحيات الموظف</div>
             <div style={{fontSize:12,color:'#888780',marginBottom:20}}>{staff.find(s=>s.id===editingPerms)?.name}</div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
               {[
-                {key:'dispense',   label:'الصرف',      icon:'📤', locked:false},
-                {key:'inventory',  label:'المخزون',    icon:'📦', locked:false},
-                {key:'purchases',  label:'المشتريات',  icon:'🛒', locked:false},
-                {key:'reports',    label:'التقارير',   icon:'📊', locked:false},
-                ...(hasReservationsAddon ? [{key:'reservations', label:'الحجوزات', icon:'🗓️', locked:false}] : []),
+                {key:'dispense',   label:'الصرف',      Icon:Send, locked:false},
+                {key:'inventory',  label:'المخزون',    Icon:Package, locked:false},
+                {key:'purchases',  label:'المشتريات',  Icon:ShoppingCart, locked:false},
+                {key:'reports',    label:'التقارير',   Icon:BarChart3, locked:false},
+                ...(hasReservationsAddon ? [{key:'reservations', label:'الحجوزات', Icon:CalendarDays, locked:false}] : []),
               ].map(p=>(
                 <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'12px',background:(editPerms as any)[p.key]?'#f0fdf4':'#f9fafb',borderRadius:10,border:`1.5px solid ${(editPerms as any)[p.key]?'#16a34a':'#e5e7eb'}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                   <input type="checkbox" checked={(editPerms as any)[p.key]} disabled={p.locked}
                     onChange={e=>!p.locked&&setEditPerms(prev=>({...prev,[p.key]:e.target.checked}))}
                     style={{accentColor:'#16a34a',width:16,height:16}}/>
                   <div>
-                    <div style={{fontSize:13,fontWeight:700,color:(editPerms as any)[p.key]?'#16a34a':'#374151'}}>{p.icon} {p.label}</div>
+                    <div style={{fontSize:13,fontWeight:700,color:(editPerms as any)[p.key]?'#16a34a':'#374151',display:'flex',alignItems:'center',gap:5}}><p.Icon size={14} strokeWidth={2.25}/> {p.label}</div>
                     {p.locked&&<div style={{fontSize:10,color:'#9ca3af'}}>افتراضي</div>}
                   </div>
                 </label>
               ))}
             </div>
             <div style={{display:'flex',gap:8}}>
-              <button onClick={()=>savePermissions(editingPerms)} style={{flex:2,padding:'12px',background:'#16a34a',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>💾 حفظ الصلاحيات</button>
+              <button onClick={()=>savePermissions(editingPerms)} style={{flex:2,padding:'12px',background:'#16a34a',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Save size={15} strokeWidth={2.25}/> حفظ الصلاحيات</button>
               <button onClick={()=>setEditingPerms(null)} style={{flex:1,padding:'12px',background:'#f3f4f6',color:'#374151',border:'none',borderRadius:10,fontSize:14,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
             </div>
           </div>
@@ -725,7 +725,7 @@ export default function StaffManagementPage() {
                 return(
                   <div key={c.id} style={{display:'flex',alignItems:'center',gap:12,padding:'11px 20px',borderBottom:i<staffClosings.length-1?'1px solid #f5f5f4':'none'}}>
                     <div style={{width:36,height:36,borderRadius:10,background:statusColor[c.status]+'15',border:`1px solid ${statusColor[c.status]}44`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                      <span style={{fontSize:16}}>{c.status==='balanced'?'✅':c.status==='deficit'?'⚠️':'📈'}</span>
+                      {c.status==='balanced' ? <CheckCircle2 size={16} color={statusColor[c.status]} strokeWidth={2}/> : c.status==='deficit' ? <AlertCircle size={16} color={statusColor[c.status]} strokeWidth={2}/> : <TrendingUp size={16} color={statusColor[c.status]} strokeWidth={2}/>}
                     </div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:13,fontWeight:600,color:'#1c1c1a'}}>{new Date(c.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'short',month:'short',day:'numeric'})}</div>
@@ -866,7 +866,7 @@ export default function StaffManagementPage() {
                         </div>
                       ) : (
                         <div onClick={e=>{e.stopPropagation();setEditingStaffPhoneId(s.id);setEditStaffPhoneVal(s.phone||'')}} style={{fontSize:font.base,fontWeight:800,color:colors.text,direction:'ltr',textAlign:'right' as const,cursor:'pointer',display:'flex',alignItems:'center',gap:6,justifyContent:'flex-end'}}>
-                          <span style={{fontSize:12,opacity:.5}}>✏️</span>{toLocalPhone(s.phone)}
+                          <Pencil size={11} strokeWidth={2.25} style={{opacity:.5}}/>{toLocalPhone(s.phone)}
                         </div>
                       )}
                     </div>
@@ -875,8 +875,8 @@ export default function StaffManagementPage() {
                       {String(s.pin||'').startsWith('$2') ? (
                         <div>
                           <div style={{fontSize:13,fontWeight:700,color:colors.danger||'#dc2626',marginBottom:6}}>PIN قديم — لا يمكن استرجاعه</div>
-                          <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} style={{fontSize:11,fontWeight:700,color:'white',background:colors.primary,border:'none',borderRadius:6,padding:'6px 12px',cursor:'pointer',fontFamily:'inherit'}}>
-                            🔄 إعادة توليد PIN جديد
+                          <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} style={{fontSize:11,fontWeight:700,color:'white',background:colors.primary,border:'none',borderRadius:6,padding:'6px 12px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:5}}>
+                            <RefreshCw size={12} strokeWidth={2.25}/> إعادة توليد PIN جديد
                           </button>
                         </div>
                       ) : (
