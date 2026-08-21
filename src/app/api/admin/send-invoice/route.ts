@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
-import { sendWhatsAppDocument } from '@/lib/whatsapp'
+import { sendWhatsAppDocument, formatPhone } from '@/lib/whatsapp'
 import { generateInvoicePdf } from '@/lib/generateInvoicePdf'
 
 export async function POST(req: Request) {
@@ -16,9 +16,13 @@ export async function POST(req: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { orgId, orgName, phone, items } = await req.json()
-  if (!orgId || !phone || !Array.isArray(items) || items.length === 0) {
+  const { orgId, orgName, phone: rawPhone, items } = await req.json()
+  if (!orgId || !rawPhone || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+  }
+  const phone = formatPhone(rawPhone)
+  if (!/^\d{10,15}$/.test(phone)) {
+    return NextResponse.json({ error: `رقم جوال غير صالح: ${rawPhone}` }, { status: 400 })
   }
 
   const cleanItems = items.filter((it: any) => it?.label && it?.amount != null).map((it: any) => ({ label: String(it.label), amount: Number(it.amount) }))
