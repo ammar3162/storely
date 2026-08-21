@@ -7,7 +7,7 @@ import { toast } from '@/components/toast'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { confirmDialog } from '@/components/ConfirmDialog'
-import { UserPlus, Users, UserCheck, PauseCircle, Package, BarChart3, ShieldCheck, Clock, Bell, BellOff, RefreshCw, Copy, AlertTriangle, ChevronDown, User, Lock, Wallet, Smartphone, Check, Send, ShoppingCart, CalendarDays, Save, CheckCircle2, AlertCircle, TrendingUp, Pencil } from 'lucide-react'
+import { UserPlus, Users, UserCheck, PauseCircle, Package, BarChart3, ShieldCheck, Clock, Bell, BellOff, RefreshCw, Copy, AlertTriangle, ChevronDown, User, Lock, Wallet, Smartphone, Check, Send, ShoppingCart, CalendarDays, Save, CheckCircle2, AlertCircle, TrendingUp, Pencil, Search } from 'lucide-react'
 
 function generatePin() { return String(Math.floor(1000 + Math.random() * 9000)) }
 const COUNTRY_CODES = ['+966','+971','+965','+973','+974','+968','+20','+962','+1','+44','+91','+92','+880','+63']
@@ -82,6 +82,7 @@ export default function StaffManagementPage() {
   const [staffClosings, setStaffClosings] = useState<any[]>([])
   const [reportLoading, setReportLoading] = useState(false)
   const [selectedProds, setSelectedProds] = useState<string[]>([])
+  const [assignSearch, setAssignSearch] = useState('')
   const [takenProducts, setTakenProducts] = useState<Record<string,string>>({})
   const [shopOpenTime, setShopOpenTime] = useState('')
   const [shopCloseTime, setShopCloseTime] = useState('')
@@ -574,9 +575,18 @@ export default function StaffManagementPage() {
               </span>
             </div>
 
+            {/* بحث */}
+            <div style={{position:'relative',marginBottom:12}}>
+              <Search size={15} strokeWidth={2} color={colors.text4} style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}}/>
+              <input value={assignSearch} onChange={e=>setAssignSearch(e.target.value)} placeholder="ابحث عن منتج..."
+                style={{...inp(),paddingRight:36}}/>
+            </div>
+
             {/* قائمة المنتجات */}
             <div style={{overflowY:'auto',flex:1,display:'flex',flexDirection:'column' as const,gap:6,marginBottom:16}}>
-              {products.map((p:any)=>{
+              {products.filter((p:any)=>!assignSearch.trim()||p.name.includes(assignSearch.trim())).length===0 ? (
+                <div style={{padding:'20px',textAlign:'center' as const,fontSize:12,color:colors.text4}}>ما فيه منتجات مطابقة</div>
+              ) : products.filter((p:any)=>!assignSearch.trim()||p.name.includes(assignSearch.trim())).map((p:any)=>{
                 const selected = selectedProds.includes(p.id)
                 const takenBy = takenProducts[p.id]
                 if(takenBy){
