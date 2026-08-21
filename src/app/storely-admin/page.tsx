@@ -24,9 +24,9 @@ const STATUS: Record<string,{label:string;color:string;bg:string;dot:string}> = 
 }
 
 const PLANS = [
-  {v:1,  label:'الأساسية',  price:'149 ر.س', desc:'فرع · 2 موظف · 3 موردين',                    color:'#16a34a', maxStaff:2,   maxSup:3},
-  {v:3,  label:'المتوسطة',  price:'249 ر.س', desc:'3 فروع · 10 موظفين · 10 موردين',              color:'#2563eb', maxStaff:10,  maxSup:10},
-  {v:10, label:'المتقدمة',  price:'399 ر.س', desc:'فروع غير محدودة · موظفون وموردون غير محدودين', color:'#7c3aed', maxStaff:999, maxSup:999},
+  {v:1,  label:'الأساسية',  price:'149 ر.س', yearlyPrice:'1430 ر.س', desc:'فرع · 2 موظف · 3 موردين',                    color:'#16a34a', maxStaff:2,   maxSup:3},
+  {v:3,  label:'المتوسطة',  price:'249 ر.س', yearlyPrice:'2390 ر.س', desc:'3 فروع · 10 موظفين · 10 موردين',              color:'#2563eb', maxStaff:10,  maxSup:10},
+  {v:10, label:'المتقدمة',  price:'399 ر.س', yearlyPrice:'3830 ر.س', desc:'فروع غير محدودة · موظفون وموردون غير محدودين', color:'#7c3aed', maxStaff:999, maxSup:999},
 ]
 
 export default function AdminPage() {
@@ -452,8 +452,12 @@ export default function AdminPage() {
   function currentInvoiceItems() {
     if (!selected) return []
     const plan = PLANS.find(p => p.v === selected.max_branches)
+    const isYearly = selected.billing_cycle === 'yearly'
     const items: {label:string; amount:number}[] = []
-    if (plan) items.push({ label: `اشتراك باقة "${plan.label}"`, amount: Number(plan.price.replace(/[^0-9]/g, '')) })
+    if (plan) {
+      const priceStr = isYearly ? plan.yearlyPrice : plan.price
+      items.push({ label: `اشتراك باقة "${plan.label}" (${isYearly?'سنوياً':'شهرياً'})`, amount: Number(priceStr.replace(/[^0-9]/g, '')) })
+    }
     for (const a of addonsList) {
       if (a.subscription?.isValid) items.push({ label: `إضافة "${a.name}"`, amount: Number(a.monthly_price) })
     }
@@ -754,7 +758,7 @@ export default function AdminPage() {
                         <div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>{p.desc}</div>
                       </div>
                       <div style={{display:'flex',alignItems:'center',gap:8}}>
-                        <span style={{fontSize:13,fontWeight:800,color:selected.max_branches===p.v?p.color:'#64748b'}}>{p.price}</span>
+                        <span style={{fontSize:13,fontWeight:800,color:selected.max_branches===p.v?p.color:'#64748b'}}>{selected.billing_cycle==='yearly'?p.yearlyPrice+'/سنة':p.price+'/شهر'}</span>
                         {selected.max_branches===p.v&&<span style={{fontSize:16}}>✓</span>}
                       </div>
                     </button>
