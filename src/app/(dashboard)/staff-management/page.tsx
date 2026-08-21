@@ -7,6 +7,7 @@ import { toast } from '@/components/toast'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { confirmDialog } from '@/components/ConfirmDialog'
+import { UserPlus, Users, UserCheck, PauseCircle, Package, BarChart3, ShieldCheck, Clock, Bell, BellOff, RefreshCw, Copy, AlertTriangle, ChevronDown } from 'lucide-react'
 
 function generatePin() { return String(Math.floor(1000 + Math.random() * 9000)) }
 const COUNTRY_CODES = ['+966','+971','+965','+973','+974','+968','+20','+962','+1','+44','+91','+92','+880','+63']
@@ -316,19 +317,24 @@ export default function StaffManagementPage() {
 
       {/* Header */}
       <div style={{marginBottom:20,display:'flex',justifyContent:'space-between',alignItems:'flex-start'}} className="su">
-        <div>
-          <h1 style={pageTitle}>الموظفون</h1>
-          <p style={pageSub}>أضف موظفين بصلاحيات صرف فقط — يدخلون برقم جوالهم ورمز PIN</p>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <div style={{width:44,height:44,borderRadius:radius.md,background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <Users size={20} color={colors.primary} strokeWidth={1.75}/>
+          </div>
+          <div>
+            <h1 style={pageTitle}>الموظفون</h1>
+            <p style={pageSub}>أضف موظفين بصلاحيات صرف فقط — يدخلون برقم جوالهم ورمز PIN</p>
+          </div>
         </div>
         <button onClick={()=>setShowAdd(true)} style={{...btnPrimary,padding:'10px 18px',fontSize:font.sm,display:'flex',alignItems:'center',gap:6}}>
-          <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+          <UserPlus size={16} strokeWidth={2.25}/>
           موظف جديد
         </button>
       </div>
 
       {!orgNotifyClosingWA && staff.some((s:any)=>s.role==='cashier') && (
         <div style={{background:colors.warningLight,border:`1.5px solid ${colors.warningBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16,fontSize:font.sm,color:colors.warning,display:'flex',alignItems:'center',gap:10}}>
-          <span style={{fontSize:18}}>⚠️</span>
+          <AlertTriangle size={18} strokeWidth={2} style={{flexShrink:0}}/>
           <div>
             <b>تقارير إقفال الكاشير عبر واتساب موقّفة من الإعدادات العامة.</b> الخيارات تحت لكل موظف (مفعّل/موقّف) ما راح تشتغل حتى تفعّلها من <a href="/settings" style={{color:colors.warning,textDecoration:'underline',fontWeight:700}}>الإعدادات ← الإشعارات</a>.
           </div>
@@ -343,12 +349,12 @@ export default function StaffManagementPage() {
         return (
           <div className="su" style={{background:colors.infoLight,border:`1.5px solid ${colors.infoBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16}}>
             <div style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer'}} onClick={()=>setShowUnassigned(v=>!v)}>
-              <span style={{fontSize:18}}>📦</span>
+              <Package size={18} strokeWidth={2} color={colors.info} style={{flexShrink:0}}/>
               <div style={{flex:1}}>
                 <b style={{fontSize:font.sm,color:colors.info}}>{unassignedProducts.length} منتج غير مخصص لأي موظف</b>
                 <div style={{fontSize:font.xs,color:colors.text3,marginTop:2}}>هذي المنتجات يقدر يشوفها جميع الموظفين بدون تخصيص</div>
               </div>
-              <span style={{fontSize:12,color:colors.info,transform:showUnassigned?'rotate(180deg)':'none',transition:'transform .2s'}}>▾</span>
+              <ChevronDown size={16} color={colors.info} strokeWidth={2.25} style={{transform:showUnassigned?'rotate(180deg)':'none',transition:'transform .2s',flexShrink:0}}/>
             </div>
             {showUnassigned && (
               <div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${colors.infoBorder}`,display:'flex',flexDirection:'column' as const,gap:6}} onClick={e=>e.stopPropagation()}>
@@ -382,14 +388,14 @@ export default function StaffManagementPage() {
       {/* Stats */}
       <div className="su" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:20,animationDelay:'.05s'}}>
         {[
-          {label:'إجمالي الموظفين',value:staff.length,      color:colors.info,    bg:colors.infoLight,    border:colors.infoBorder,    icon:'👥'},
-          {label:'موظفون نشطون',   value:activeCount,         color:colors.primary, bg:colors.primaryLight, border:colors.primaryBorder, icon:'✅'},
-          {label:'موقوفون',        value:inactiveCount,       color:colors.danger,  bg:colors.dangerLight,  border:colors.dangerBorder,  icon:'⏸'},
+          {label:'إجمالي الموظفين',value:staff.length,      color:colors.info,    bg:colors.infoLight,    border:colors.infoBorder,    Icon:Users},
+          {label:'موظفون نشطون',   value:activeCount,         color:colors.primary, bg:colors.primaryLight, border:colors.primaryBorder, Icon:UserCheck},
+          {label:'موقوفون',        value:inactiveCount,       color:colors.danger,  bg:colors.dangerLight,  border:colors.dangerBorder,  Icon:PauseCircle},
         ].map((s,i)=>(
           <div key={i} style={{background:s.bg,borderRadius:radius.lg,padding:'16px',border:`1.5px solid ${s.border}`}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
               <div style={{fontSize:10,fontWeight:700,color:s.color,textTransform:'uppercase' as const,letterSpacing:'.06em'}}>{s.label}</div>
-              <span style={{fontSize:18}}>{s.icon}</span>
+              <s.Icon size={18} color={s.color} strokeWidth={1.75}/>
             </div>
             <div style={{fontSize:28,fontWeight:900,color:s.color}}>{s.value}</div>
           </div>
@@ -789,7 +795,7 @@ export default function StaffManagementPage() {
       {/* Staff list */}
       {staff.length===0 ? (
         <div style={{...card,padding:56,textAlign:'center'}} className="su">
-          <div style={{fontSize:52,marginBottom:14}}>👥</div>
+          <div style={{display:'flex',justifyContent:'center',marginBottom:14}}><Users size={52} strokeWidth={1.25} color={colors.text4}/></div>
           <div style={{fontSize:font.base,fontWeight:700,color:colors.text2,marginBottom:6}}>لا يوجد موظفين بعد</div>
           <div style={{fontSize:font.sm,color:colors.text4,marginBottom:20}}>أضف أول موظف وشارك معه بيانات الدخول</div>
           <button onClick={()=>setShowAdd(true)} style={{...btnPrimary,padding:'10px 24px',fontSize:font.sm}}>+ إضافة أول موظف</button>
@@ -815,29 +821,29 @@ export default function StaffManagementPage() {
                   </div>
                 </div>
                 <div style={{display:'flex',gap:6,alignItems:'center'}}>
-                  <button onClick={e=>{e.stopPropagation();openReport(s)}} className="act-btn" style={{background:'#eff6ff',color:'#2563eb'}}>
-                    📊 تقرير
+                  <button onClick={e=>{e.stopPropagation();openReport(s)}} className="act-btn" style={{background:'#eff6ff',color:'#2563eb',display:'flex',alignItems:'center',gap:5}}>
+                    <BarChart3 size={13} strokeWidth={2.25}/> تقرير
                   </button>
-                  <button onClick={e=>{e.stopPropagation();setEditingPerms(s.id);setEditPerms(s.permissions||{dispense:true,inventory:false,purchases:false,reports:false})}} className="act-btn" style={{background:'#f5f3ff',color:'#7c3aed'}}>
-                    🔐 صلاحيات
+                  <button onClick={e=>{e.stopPropagation();setEditingPerms(s.id);setEditPerms(s.permissions||{dispense:true,inventory:false,purchases:false,reports:false})}} className="act-btn" style={{background:'#f5f3ff',color:'#7c3aed',display:'flex',alignItems:'center',gap:5}}>
+                    <ShieldCheck size={13} strokeWidth={2.25}/> صلاحيات
                   </button>
                   {s.permissions?.dispense && (
-                    <button onClick={e=>{e.stopPropagation();openAssign(s)}} className="act-btn" style={{background:colors.warningLight||'#fffbeb',color:colors.warning||'#d97706'}}>
-                      📦 {s.assigned_products?.length>0?`${s.assigned_products.length} منتج`:'كل المنتجات'}
+                    <button onClick={e=>{e.stopPropagation();openAssign(s)}} className="act-btn" style={{background:colors.warningLight||'#fffbeb',color:colors.warning||'#d97706',display:'flex',alignItems:'center',gap:5}}>
+                      <Package size={13} strokeWidth={2.25}/> {s.assigned_products?.length>0?`${s.assigned_products.length} منتج`:'كل المنتجات'}
                     </button>
                   )}
                   {s.role==='cashier' && (
-                    <button onClick={e=>{e.stopPropagation();setShowHoursModal(true)}} className="act-btn" style={{background:'#ecfeff',color:'#0891b2'}}>
-                      ⏰ ساعات العمل
+                    <button onClick={e=>{e.stopPropagation();setShowHoursModal(true)}} className="act-btn" style={{background:'#ecfeff',color:'#0891b2',display:'flex',alignItems:'center',gap:5}}>
+                      <Clock size={13} strokeWidth={2.25}/> ساعات العمل
                     </button>
                   )}
                   {s.role==='cashier' && !WHATSAPP_PAUSED && (
                     <button onClick={e=>{e.stopPropagation();toggleSendClosingWA(s.id, s.send_closing_whatsapp!==false)}} className="act-btn"
-                      style={{background:s.send_closing_whatsapp!==false?'#f0fdf4':colors.bg,color:s.send_closing_whatsapp!==false?colors.primary:colors.text3,border:s.send_closing_whatsapp!==false?'none':`1.5px solid ${colors.border2}`}}>
-                      {s.send_closing_whatsapp!==false?'📲 تفاصيل الإقفال: مفعّل':'📴 تفاصيل الإقفال: موقّف'}
+                      style={{background:s.send_closing_whatsapp!==false?'#f0fdf4':colors.bg,color:s.send_closing_whatsapp!==false?colors.primary:colors.text3,border:s.send_closing_whatsapp!==false?'none':`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
+                      {s.send_closing_whatsapp!==false ? (<><Bell size={13} strokeWidth={2.25}/> تفاصيل الإقفال: مفعّل</>) : (<><BellOff size={13} strokeWidth={2.25}/> تفاصيل الإقفال: موقّف</>)}
                     </button>
                   )}
-                  <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} className="act-btn" style={{background:colors.infoLight,color:colors.info}}>PIN جديد</button>
+                  <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} className="act-btn" style={{background:colors.infoLight,color:colors.info,display:'flex',alignItems:'center',gap:5}}><RefreshCw size={13} strokeWidth={2.25}/> PIN جديد</button>
                   <button onClick={e=>{e.stopPropagation();toggleActive(s.id,s.is_active)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`}}>{s.is_active?'إيقاف':'تفعيل'}</button>
                   <button onClick={e=>{e.stopPropagation();deleteStaff(s.id)}} className="act-btn" style={{background:colors.dangerLight,color:colors.danger}}>حذف</button>
                   <svg width={14} height={14} fill="none" stroke={colors.text3} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" style={{transition:'transform .2s',transform:expandedId===s.id?'rotate(180deg)':'none',marginRight:4}}>
@@ -902,8 +908,8 @@ export default function StaffManagementPage() {
                     <div style={{fontSize:10,fontWeight:700,color:colors.text4,marginBottom:6,textTransform:'uppercase' as const}}>رابط دخول الموظف</div>
                     <div style={{display:'flex',gap:8,alignItems:'center'}}>
                       <div style={{fontSize:font.xs,color:colors.text,background:colors.bg,padding:'9px 12px',borderRadius:8,border:`1px solid ${colors.border}`,flex:1,direction:'ltr',textAlign:'left' as const,overflowX:'auto',whiteSpace:'nowrap' as const}}>https://storely.dev/staff</div>
-                      <button onClick={()=>{navigator.clipboard.writeText('https://storely.dev/staff');toast('تم نسخ الرابط ✓')}} style={{background:colors.primary,color:'white',border:'none',borderRadius:8,padding:'9px 14px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family,whiteSpace:'nowrap' as const}}>
-                        📋 نسخ الكل
+                      <button onClick={()=>{navigator.clipboard.writeText('https://storely.dev/staff');toast('تم نسخ الرابط ✓')}} style={{background:colors.primary,color:'white',border:'none',borderRadius:8,padding:'9px 14px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family,whiteSpace:'nowrap' as const,display:'flex',alignItems:'center',gap:5}}>
+                        <Copy size={13} strokeWidth={2.25}/> نسخ الكل
                       </button>
                     </div>
                   </div>
