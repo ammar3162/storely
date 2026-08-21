@@ -93,6 +93,7 @@ export default function CashierClosingPage() {
   const [uploadingSales, setUploadingSales] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [locked, setLocked] = useState(false)
   const [thankYouMsg, setThankYouMsg] = useState('')
   const [curr, setCurr] = useState('ر.س')
   const [toast, setToast] = useState<{msg:string,type:'success'|'error'}|null>(null)
@@ -105,8 +106,12 @@ export default function CashierClosingPage() {
     const s = JSON.parse(savedSession) as StaffSession
     if(s.role !== 'cashier'){router.push('/staff/dispense');return}
     setSession(s)
-    sb.from('organizations' as any).select('logo_url,currency').eq('id',s.org_id).single()
-      .then(({data}:any)=>{ if(data?.logo_url) setOrgLogo(data.logo_url); if(data?.currency) setCurr(currencySymbol(data.currency)) })
+    sb.from('organizations' as any).select('logo_url,currency,plan').eq('id',s.org_id).single()
+      .then(({data}:any)=>{
+        if(data?.logo_url) setOrgLogo(data.logo_url)
+        if(data?.currency) setCurr(currencySymbol(data.currency))
+        if(data?.plan==='basic') setLocked(true)
+      })
   },[])
 
   useEffect(()=>{
@@ -240,6 +245,16 @@ export default function CashierClosingPage() {
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
       <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:'#16a34a',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  )
+
+  if(locked) return (
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:20,textAlign:'center' as const}}>
+      <div>
+        <div style={{fontSize:44,marginBottom:12}}>🔒</div>
+        <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:8}}>ميزة إقفال الكاشير متاحة بالباقة المتوسطة أو المتقدمة</div>
+        <div style={{fontSize:13,color:'#78716c'}}>رقّي باقتك عشان تفعّل إقفال الكاشير اليومي وتتابع المبيعات والمصروفات تلقائياً</div>
+      </div>
     </div>
   )
 

@@ -53,6 +53,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
 
+    const { data: orgCheck } = await sb().from('organizations').select('plan').eq('id', org_id).single()
+    if ((orgCheck as any)?.plan === 'basic') {
+      return NextResponse.json({ error: 'ميزة إقفال الكاشير متاحة فقط بالباقة المتوسطة أو المتقدمة — يرجى إبلاغ صاحب المنشأة' }, { status: 403 })
+    }
+
     const sales = Number(total_sales) || 0
     const mada = Number(mada_amount) || 0
     const visa = Number(visa_amount) || 0

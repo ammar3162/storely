@@ -101,7 +101,14 @@ function LoginPage() {
     return 'monthly'
   })
   const [loading, setLoading]         = useState(false)
-  const [error, setError]             = useState('')
+  const [error, setError]             = useState(() => {
+    if (typeof window !== 'undefined') {
+      const reason = new URLSearchParams(window.location.search).get('reason')
+      if (reason === 'suspended') return '🔒 حسابك موقوف أو انتهى اشتراكك — تواصل معنا عبر واتساب لتفعيله من جديد: wa.me/966594351667'
+      if (reason === 'deleted')   return 'هذا الحساب غير متاح حالياً — تواصل معنا للمساعدة: wa.me/966594351667'
+    }
+    return ''
+  })
   const [agreedTerms, setAgreedTerms] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const supabase = createClient()
@@ -131,7 +138,18 @@ function LoginPage() {
       setLoading(false); return
     }
     if (data.session) {
-      const { data: profile } = await supabase.from('profiles').select('org_id').eq('id', data.session.user.id).single()
+      const { data: profile } = await supabase.from('profiles').select('org_id,status').eq('id', data.session.user.id).single()
+
+      if (profile?.status === 'suspended' || profile?.status === 'deleted') {
+        await supabase.auth.signOut()
+        setError(profile.status === 'suspended'
+          ? '🔒 حسابك موقوف أو انتهى اشتراكك — تواصل معنا عبر واتساب لتفعيله من جديد: wa.me/966594351667'
+          : 'هذا الحساب غير متاح حالياً — تواصل معنا للمساعدة: wa.me/966594351667')
+        setLoading(false)
+        return
+      }
+      if (profile?.status === 'pending') { window.location.href = '/pending'; return }
+
       if (profile?.org_id) {
         const { data: org } = await (supabase.from('organizations') as any).select('onboarding_done').eq('id', profile.org_id).single()
         if (org && !org.onboarding_done) { window.location.href = '/onboarding'; return }
