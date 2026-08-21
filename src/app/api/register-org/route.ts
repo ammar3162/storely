@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'غير مصرح — سجّل الدخول أولاً' }, { status: 401 })
     }
 
-    let { orgName, fullPhone, businessType, branchCount, phone, trialEnds, countryCode, termsAcceptedAt } = await req.json()
+    let { orgName, fullPhone, businessType, branchCount, billing, phone, trialEnds, countryCode, termsAcceptedAt } = await req.json()
     const userId = authedUser.id
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null
     const userAgent = req.headers.get('user-agent') || null
@@ -67,7 +67,8 @@ export async function POST(req: Request) {
         max_branches: maxB,
         max_staff: maxStaff,
         max_suppliers: maxSup,
-        plan: plan
+        plan: plan,
+        billing_cycle: billing === 'yearly' ? 'yearly' : 'monthly'
       })
       .select().single()
 

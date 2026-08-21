@@ -54,9 +54,9 @@ const PHONE_RULES: Record<string,{length:number, prefix:string, placeholder:stri
 }
 
 const PLANS = [
-  { v:1,  label:'الأساسية',  price:'149', desc:'فرع · 2 موظفين · 3 موردين',                    color:'#16a34a' },
-  { v:3,  label:'المتوسطة',  price:'249', desc:'3 فروع · 10 موظفين · 10 موردين',               color:'#0d9488' },
-  { v:10, label:'المتقدمة',  price:'399', desc:'فروع غير محدودة · موظفون وموردون غير محدودين', color:'#7c3aed' },
+  { v:1,  label:'الأساسية',  price:'149', yearlyPrice:'1430', desc:'فرع · 2 موظفين · 3 موردين',                    color:'#16a34a' },
+  { v:3,  label:'المتوسطة',  price:'249', yearlyPrice:'2390', desc:'3 فروع · 10 موظفين · 10 موردين',               color:'#0d9488' },
+  { v:10, label:'المتقدمة',  price:'399', yearlyPrice:'3830', desc:'فروع غير محدودة · موظفون وموردون غير محدودين', color:'#7c3aed' },
 ]
 
 const BUSINESS_TYPES = [
@@ -87,7 +87,19 @@ function LoginPage() {
   const [phone, setPhone]             = useState('')
   const [countryCode, setCountryCode] = useState('+966')
   const [businessType, setBusinessType] = useState('')
-  const [branchCount, setBranchCount] = useState<number|null>(null)
+  const [branchCount, setBranchCount] = useState<number|null>(() => {
+    if (typeof window !== 'undefined') {
+      const b = new URLSearchParams(window.location.search).get('branches')
+      if (b && [1,3,10].includes(Number(b))) return Number(b)
+    }
+    return null
+  })
+  const [billing, setBilling] = useState<'monthly'|'yearly'>(() => {
+    if (typeof window !== 'undefined') {
+      if (new URLSearchParams(window.location.search).get('billing') === 'yearly') return 'yearly'
+    }
+    return 'monthly'
+  })
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState('')
   const [agreedTerms, setAgreedTerms] = useState(false)
@@ -238,6 +250,7 @@ function LoginPage() {
           fullPhone,
           businessType: businessType||'مطعم',
           branchCount,
+          billing,
           phone: phone.trim(),
           countryCode,
           trialEnds,
@@ -460,6 +473,14 @@ function LoginPage() {
                 </div>
                 {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
                 <form onSubmit={handleRegister} style={{display:'flex',flexDirection:'column',gap:10}}>
+                  <div style={{display:'flex',justifyContent:'center',marginBottom:6}}>
+                    <div style={{display:'inline-flex',gap:4,background:'#f3f4f6',padding:4,borderRadius:12}}>
+                      <button type="button" onClick={()=>setBilling('monthly')} style={{padding:'8px 18px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',background:billing==='monthly'?'white':'transparent',color:billing==='monthly'?'#111827':'#6b7280',boxShadow:billing==='monthly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>شهري</button>
+                      <button type="button" onClick={()=>setBilling('yearly')} style={{padding:'8px 18px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6,background:billing==='yearly'?'white':'transparent',color:billing==='yearly'?'#111827':'#6b7280',boxShadow:billing==='yearly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>
+                        سنوي <span style={{background:'#f0fdf4',color:'#15803d',fontSize:10,fontWeight:800,padding:'2px 7px',borderRadius:99}}>وفّر 20%</span>
+                      </button>
+                    </div>
+                  </div>
                   {PLANS.map(p=>(
                     <button key={p.v} type="button" onClick={()=>setBranchCount(p.v)}
                       style={{padding:'16px 18px',borderRadius:12,border:`1.5px solid ${branchCount===p.v?p.color:'#e5e7eb'}`,background:branchCount===p.v?p.color+'08':'white',cursor:'pointer',fontFamily:'inherit',textAlign:'right',transition:'all .2s',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
@@ -468,8 +489,8 @@ function LoginPage() {
                         <div style={{fontSize:12,color:'#6b7280'}}>{p.desc}</div>
                       </div>
                       <div style={{flexShrink:0,marginRight:12,textAlign:'left'}}>
-                        <span style={{fontSize:20,fontWeight:800,color:branchCount===p.v?p.color:'#111827'}}>{p.price}</span>
-                        <span style={{fontSize:12,color:'#9ca3af'}}> ر.س/شهر</span>
+                        <span style={{fontSize:20,fontWeight:800,color:branchCount===p.v?p.color:'#111827'}}>{billing==='yearly'?p.yearlyPrice:p.price}</span>
+                        <span style={{fontSize:12,color:'#9ca3af'}}> ر.س/{billing==='yearly'?'سنة':'شهر'}</span>
                       </div>
                     </button>
                   ))}

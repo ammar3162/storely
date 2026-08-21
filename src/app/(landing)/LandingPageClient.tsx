@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 
 type Billing = 'monthly'|'yearly'
 
+const PLAN_BRANCHES = [1, 3, 10]
+
 const PLANS = [
   { name:'الأساسية', price:'149', yearlyPrice:'1430', color:'#15803d', popular:false,
     limits:['فرع واحد','2 موظفين','3 موردين'],
@@ -420,7 +422,7 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
-              <button onClick={()=>router.push('/login?mode=register')} className={p.popular?'btn-primary':'btn-outline'} style={{width:'100%',textAlign:'center' as const}}>ابدأ الآن</button>
+              <button onClick={()=>router.push(`/login?mode=register&branches=${PLAN_BRANCHES[i]}&billing=${billing}`)} className={p.popular?'btn-primary':'btn-outline'} style={{width:'100%',textAlign:'center' as const}}>ابدأ الآن</button>
             </div>
           ))}
         </div>

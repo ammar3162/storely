@@ -12,7 +12,7 @@ function isSafeUrl(url?: string | null): boolean {
 type User = {
   id:string; full_name:string; phone:string; role:string
   status:string; created_at:string; org_id:string; org_name:string
-  subscription_type:string; subscription_ends_at:string|null
+  subscription_type:string; subscription_ends_at:string|null; billing_cycle?:string
   max_branches:number; requested_plan:string
 }
 
@@ -372,6 +372,7 @@ export default function AdminPage() {
       subscription_ends_at:p.subscription_ends_at||null,
       max_branches:p.organizations?.max_branches||1,
       requested_plan:p.organizations?.requested_plan||'—',
+      billing_cycle:p.organizations?.billing_cycle||'monthly',
     })))
     setLoading(false)
   }
@@ -653,6 +654,11 @@ export default function AdminPage() {
                 <span style={{background:selected.subscription_type==='paid'?'#eff6ff':'#f5f3ff',color:selected.subscription_type==='paid'?'#2563eb':'#7c3aed',padding:'5px 12px',borderRadius:20,fontSize:12,fontWeight:700}}>
                   {selected.subscription_type==='paid'?'💳 مدفوع':'🎁 تجربة مجانية'}
                 </span>
+                {selected.billing_cycle && (
+                  <span style={{background:selected.billing_cycle==='yearly'?'#fdf4ff':'#f8fafc',color:selected.billing_cycle==='yearly'?'#a21caf':'#475569',padding:'5px 12px',borderRadius:20,fontSize:12,fontWeight:700}}>
+                    {selected.billing_cycle==='yearly'?'📅 اشتراك سنوي':'🗓️ اشتراك شهري'}
+                  </span>
+                )}
                 {(() => { const d = daysLeft(selected.subscription_ends_at); return d !== null ? (
                   <span style={{background:d<=0?'#fef2f2':d<=3?'#fffbeb':'#f0fdf4',color:d<=0?'#dc2626':d<=3?'#d97706':'#16a34a',padding:'5px 12px',borderRadius:20,fontSize:12,fontWeight:700}}>
                     {d<=0?'⚠️ منتهي':d<=3?`⏰ ${d} أيام`:d<=7?`${d} أيام`:`${d} يوم`}
