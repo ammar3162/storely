@@ -7,7 +7,7 @@ import { toast } from '@/components/toast'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { confirmDialog } from '@/components/ConfirmDialog'
-import { UserPlus, Users, UserCheck, PauseCircle, Package, BarChart3, ShieldCheck, Clock, Bell, BellOff, RefreshCw, Copy, AlertTriangle, ChevronDown, User, Lock, Wallet, Smartphone, Check, Send, ShoppingCart, CalendarDays, Save, CheckCircle2, AlertCircle, TrendingUp, Pencil, Search } from 'lucide-react'
+import { UserPlus, Users, UserCheck, PauseCircle, Package, BarChart3, ShieldCheck, Clock, Bell, BellOff, RefreshCw, Copy, AlertTriangle, ChevronDown, User, Lock, Wallet, Smartphone, Check, Send, ShoppingCart, CalendarDays, Save, CheckCircle2, AlertCircle, TrendingUp, Pencil, Search, X, ThumbsUp, ThumbsDown } from 'lucide-react'
 
 function generatePin() { return String(Math.floor(1000 + Math.random() * 9000)) }
 const COUNTRY_CODES = ['+966','+971','+965','+973','+974','+968','+20','+962','+1','+44','+91','+92','+880','+63']
@@ -83,6 +83,14 @@ export default function StaffManagementPage() {
   const [reportLoading, setReportLoading] = useState(false)
   const [selectedProds, setSelectedProds] = useState<string[]>([])
   const [assignSearch, setAssignSearch] = useState('')
+  const [salaryStaff, setSalaryStaff] = useState<any>(null)
+  const [salaryValue, setSalaryValue] = useState('')
+  const [savingSalary, setSavingSalary] = useState(false)
+  const [adjustments, setAdjustments] = useState<any[]>([])
+  const [loadingAdjustments, setLoadingAdjustments] = useState(false)
+  const [newAdjAmount, setNewAdjAmount] = useState('')
+  const [newAdjReason, setNewAdjReason] = useState('')
+  const [savingAdj, setSavingAdj] = useState(false)
   const [takenProducts, setTakenProducts] = useState<Record<string,string>>({})
   const [shopOpenTime, setShopOpenTime] = useState('')
   const [shopCloseTime, setShopCloseTime] = useState('')
@@ -128,6 +136,64 @@ export default function StaffManagementPage() {
     if (bidProd) pq = pq.eq('branch_id', bidProd)
     const{data}=await pq.order('name')
     setProducts(data||[])
+  }
+
+  async function openSalary(s:any) {
+    setSalaryStaff(s)
+    setSalaryValue(String(s.monthly_salary || 0))
+    setNewAdjAmount(''); setNewAdjReason('')
+    setLoadingAdjustments(true)
+    try {
+      const res = await fetch(`/api/staff-payroll-adjustments?org_id=${orgId}&staff_id=${s.id}`)
+      const j = await res.json()
+      setAdjustments(j.success ? (j.adjustments || []) : [])
+    } catch { setAdjustments([]) }
+    setLoadingAdjustments(false)
+  }
+
+  async function saveSalary() {
+    if (!salaryStaff) return
+    const val = Number(salaryValue)
+    if (!(val >= 0)) { toast('راتب غير صالح', 'warning'); return }
+    setSavingSalary(true)
+    const res = await fetch('/api/staff-salary', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ org_id: orgId, staff_id: salaryStaff.id, monthly_salary: val }),
+    })
+    const j = await res.json()
+    setSavingSalary(false)
+    if (!j.success) { toast(j.error || 'خطأ', 'error'); return }
+    toast('✅ تم حفظ الراتب')
+    setStaff(prev => prev.map((s: any) => s.id === salaryStaff.id ? { ...s, monthly_salary: val } : s))
+    setSalaryStaff((prev: any) => prev ? { ...prev, monthly_salary: val } : prev)
+  }
+
+  async function addDeduction() {
+    if (!salaryStaff) return
+    const amt = Number(newAdjAmount)
+    if (!(amt > 0)) { toast('أدخل مبلغ صحيح', 'warning'); return }
+    setSavingAdj(true)
+    const res = await fetch('/api/staff-payroll-adjustments', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ org_id: orgId, staff_id: salaryStaff.id, type: 'deduction', amount: amt, reason: newAdjReason || null }),
+    })
+    const j = await res.json()
+    setSavingAdj(false)
+    if (!j.success) { toast(j.error || 'خطأ', 'error'); return }
+    toast('✅ تم إضافة الخصم')
+    setNewAdjAmount(''); setNewAdjReason('')
+    openSalary(salaryStaff)
+  }
+
+  async function reviewAdvance(adjustmentId: string, decision: 'approved'|'rejected') {
+    const res = await fetch('/api/staff-payroll-adjustments', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ org_id: orgId, adjustment_id: adjustmentId, decision }),
+    })
+    const j = await res.json()
+    if (!j.success) { toast(j.error || 'خطأ', 'error'); return }
+    toast(decision === 'approved' ? '✅ تم قبول طلب السلفة' : 'تم رفض الطلب')
+    if (salaryStaff) openSalary(salaryStaff)
   }
 
   async function openReport(s:any) {
@@ -698,6 +764,88 @@ export default function StaffManagementPage() {
         </div>
       )}
 
+      {salaryStaff && (
+        <div style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={()=>setSalaryStaff(null)}>
+          <div style={{background:'white',borderRadius:20,padding:26,width:'100%',maxWidth:460,maxHeight:'85vh',overflowY:'auto' as const,fontFamily:'inherit'}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+              <div>
+                <div style={{fontSize:16,fontWeight:800,color:colors.text,display:'flex',alignItems:'center',gap:6}}><Wallet size={17} strokeWidth={2.25}/> الراتب والسلف</div>
+                <div style={{fontSize:12,color:colors.text4,marginTop:2}}>{salaryStaff.name}</div>
+              </div>
+              <button onClick={()=>setSalaryStaff(null)} style={{width:30,height:30,borderRadius:radius.sm,border:`1.5px solid ${colors.border2}`,background:colors.bg,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:colors.text3}}><X size={16} strokeWidth={2.25}/></button>
+            </div>
+
+            {/* الراتب الأساسي */}
+            <div style={{marginBottom:20}}>
+              <label style={{fontSize:11,fontWeight:700,color:colors.text4,display:'block',marginBottom:6,textTransform:'uppercase' as const}}>الراتب الأساسي الشهري</label>
+              <div style={{display:'flex',gap:8}}>
+                <input type="number" value={salaryValue} onChange={e=>setSalaryValue(e.target.value)} style={inp()} placeholder="0"/>
+                <button onClick={saveSalary} disabled={savingSalary} style={{...btnPrimary,padding:'0 18px',flexShrink:0,opacity:savingSalary?0.6:1}}>{savingSalary?'...':'حفظ'}</button>
+              </div>
+            </div>
+
+            {/* طلبات السلف المعلّقة */}
+            {adjustments.filter((a:any)=>a.type==='advance'&&a.status==='pending').length > 0 && (
+              <div style={{marginBottom:20}}>
+                <div style={{fontSize:12,fontWeight:700,color:colors.warning,marginBottom:8}}>طلبات سلفة بانتظار الموافقة</div>
+                <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                  {adjustments.filter((a:any)=>a.type==='advance'&&a.status==='pending').map((a:any)=>(
+                    <div key={a.id} style={{background:colors.warningLight,border:`1.5px solid ${colors.warningBorder}`,borderRadius:radius.md,padding:'12px 14px'}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                        <span style={{fontSize:15,fontWeight:800,color:colors.warning}}>{a.amount} {curr}</span>
+                        <span style={{fontSize:10,color:colors.text4}}>{new Date(a.created_at).toLocaleDateString('ar-SA',{numberingSystem:'latn'})}</span>
+                      </div>
+                      {a.reason && <div style={{fontSize:12,color:colors.text3,marginBottom:10}}>{a.reason}</div>}
+                      <div style={{display:'flex',gap:8}}>
+                        <button onClick={()=>reviewAdvance(a.id,'approved')} style={{flex:1,padding:'7px',background:colors.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><ThumbsUp size={13} strokeWidth={2.25}/> موافقة</button>
+                        <button onClick={()=>reviewAdvance(a.id,'rejected')} style={{flex:1,padding:'7px',background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><ThumbsDown size={13} strokeWidth={2.25}/> رفض</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* إضافة خصم */}
+            <div style={{marginBottom:20,background:colors.bg,borderRadius:radius.md,padding:'14px'}}>
+              <div style={{fontSize:12,fontWeight:700,color:colors.text3,marginBottom:10}}>إضافة خصم</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 2fr',gap:8,marginBottom:8}}>
+                <input type="number" value={newAdjAmount} onChange={e=>setNewAdjAmount(e.target.value)} placeholder="المبلغ" style={{...inp(),fontSize:13}}/>
+                <input value={newAdjReason} onChange={e=>setNewAdjReason(e.target.value)} placeholder="السبب (اختياري)" style={{...inp(),fontSize:13}}/>
+              </div>
+              <button onClick={addDeduction} disabled={savingAdj||!newAdjAmount} style={{...btnSecondary,width:'100%',padding:'9px',fontSize:13,opacity:(savingAdj||!newAdjAmount)?0.6:1}}>{savingAdj?'...':'+ إضافة خصم'}</button>
+            </div>
+
+            {/* سجل الحركات */}
+            <div>
+              <div style={{fontSize:12,fontWeight:700,color:colors.text3,marginBottom:8}}>سجل الحركات</div>
+              {loadingAdjustments ? (
+                <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
+              ) : adjustments.length===0 ? (
+                <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>ما فيه أي حركات بعد</div>
+              ) : (
+                <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
+                  {adjustments.map((a:any)=>(
+                    <div key={a.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'9px 12px',background:colors.bg,borderRadius:radius.sm,opacity:a.status==='rejected'?0.5:1}}>
+                      <div>
+                        <span style={{fontSize:12,fontWeight:700,color:colors.text}}>{a.type==='advance'?'سلفة':'خصم'}</span>
+                        {a.reason && <span style={{fontSize:11,color:colors.text4,marginRight:6}}>— {a.reason}</span>}
+                        {a.status==='pending' && <span style={{fontSize:9,color:colors.warning,marginRight:6,fontWeight:700}}>(معلّق)</span>}
+                        {a.status==='rejected' && <span style={{fontSize:9,color:colors.danger,marginRight:6,fontWeight:700}}>(مرفوض)</span>}
+                      </div>
+                      <div style={{display:'flex',alignItems:'center',gap:8}}>
+                        <span style={{fontSize:12,fontWeight:700,color:colors.danger}}>-{a.amount} {curr}</span>
+                        <span style={{fontSize:10,color:colors.text4}}>{new Date(a.created_at).toLocaleDateString('ar-SA',{numberingSystem:'latn'})}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {reportStaff && reportStaff.role==='cashier' && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
           <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:560,maxHeight:'85vh',display:'flex',flexDirection:'column',fontFamily:'inherit',direction:'rtl'}}>
@@ -852,6 +1000,9 @@ export default function StaffManagementPage() {
                       style={{background:s.send_closing_whatsapp!==false?'#f0fdf4':colors.bg,color:s.send_closing_whatsapp!==false?colors.primary:colors.text3,border:s.send_closing_whatsapp!==false?'none':`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
                       {s.send_closing_whatsapp!==false ? (<><Bell size={13} strokeWidth={2.25}/> تفاصيل الإقفال: مفعّل</>) : (<><BellOff size={13} strokeWidth={2.25}/> تفاصيل الإقفال: موقّف</>)}
                     </button>
+                  )}
+                  {orgPlan!=='basic' && (
+                    <button onClick={e=>{e.stopPropagation();openSalary(s)}} className="act-btn" style={{background:'#fdf4ff',color:'#a21caf',display:'flex',alignItems:'center',gap:5}}><Wallet size={13} strokeWidth={2.25}/> الراتب</button>
                   )}
                   <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} className="act-btn" style={{background:colors.infoLight,color:colors.info,display:'flex',alignItems:'center',gap:5}}><RefreshCw size={13} strokeWidth={2.25}/> PIN جديد</button>
                   <button onClick={e=>{e.stopPropagation();toggleActive(s.id,s.is_active)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`}}>{s.is_active?'إيقاف':'تفعيل'}</button>
