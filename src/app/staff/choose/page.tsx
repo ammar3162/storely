@@ -246,6 +246,12 @@ export default function ChoosePage() {
             </button>
           )}
         </div>
+        <button onClick={()=>router.push('/staff/tasks')}
+          style={{width:'100%',padding:'16px',marginTop:12,background:'white',color:'#1c1c1a',border:'1.5px solid #e5e7eb',borderRadius:16,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+          <span style={{fontSize:20}}>📋</span>
+          مهامي
+        </button>
+
         <button onClick={()=>{localStorage.removeItem('staff_session');router.replace('/staff')}}
           style={{marginTop:20,background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
           خروج
