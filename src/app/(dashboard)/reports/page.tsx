@@ -1397,6 +1397,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
 }
 
 export default function ReportsPage() {
+  const orgPlan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
   const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'|'cashier'|'waste'>('home')
   const [period, setPeriod]       = useState<FilterPeriod>('today')
   const [from, setFrom]           = useState('')
@@ -1492,6 +1493,8 @@ export default function ReportsPage() {
     </div>
   )
 
+  if (view==='cashier' && orgPlan==='basic') { setView('home'); return null }
+
   if (view==='cashier') return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
@@ -1581,6 +1584,7 @@ export default function ReportsPage() {
             onClick={()=>setView('inventory')}
           />
         </div>
+        {orgPlan!=='basic' && (
         <div className="su" style={{animationDelay:'.25s'}}>
           <ReportCard
             title="إقفال الكاشير اليومي"
@@ -1599,6 +1603,7 @@ export default function ReportsPage() {
             onClick={()=>setView('cashier')}
           />
         </div>
+        )}
         <div className="su" style={{animationDelay:'.3s'}}>
           <ReportCard
             title="تقرير الهدر"
