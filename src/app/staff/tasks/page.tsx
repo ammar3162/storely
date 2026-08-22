@@ -7,6 +7,11 @@ interface StaffSession {
   org_name: string; branch_name: string
 }
 
+const LANGUAGES = [
+  {code:'ar',label:'العربية'},{code:'en',label:'English'},{code:'ur',label:'اردو'},
+  {code:'hi',label:'हिन्दी'},{code:'tl',label:'Tagalog'},{code:'bn',label:'বাংলা'},{code:'fr',label:'Français'},
+]
+
 const STATUS_LABEL: Record<string, {label:string; color:string; bg:string}> = {
   pending:   { label: 'بانتظارك',     color: '#d97706', bg: '#fffbeb' },
   completed: { label: 'بانتظار تأكيد المدير', color: '#2563eb', bg: '#eff6ff' },
@@ -21,14 +26,34 @@ export default function StaffTasksPage() {
   const [loading, setLoading] = useState(true)
   const [completingId, setCompletingId] = useState<string|null>(null)
   const [uploadingId, setUploadingId] = useState<string|null>(null)
+  const [lang, setLang] = useState('ar')
+  const [showLangMenu, setShowLangMenu] = useState(false)
+  const [translating, setTranslating] = useState(false)
+  const [taskTranslations, setTaskTranslations] = useState<Record<string,{title:string,description:string|null}>>({})
 
   useEffect(()=>{
     const saved = localStorage.getItem('staff_session')
     if(!saved){ router.push('/staff'); return }
     const s = JSON.parse(saved) as StaffSession
     setSession(s)
-    loadTasks()
+    const savedLang = localStorage.getItem('staff_lang')
+    if (savedLang) setLang(savedLang)
+    loadTasks().then(()=>{ if (savedLang && savedLang!=='ar') fetchTranslation(savedLang) })
   },[])
+
+  async function fetchTranslation(targetLang: string) {
+    setTranslating(true)
+    try {
+      const token = localStorage.getItem('staff_token')
+      const res = await fetch('/api/translate-tasks', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ targetLang }),
+      })
+      const j = await res.json()
+      setTaskTranslations(j.translations || {})
+    } catch {}
+    setTranslating(false)
+  }
 
   async function loadTasks() {
     setLoading(true)
@@ -96,12 +121,31 @@ export default function StaffTasksPage() {
     <div style={{minHeight:'100vh',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',paddingBottom:40}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
-      <div style={{background:'white',borderBottom:'1px solid #ece8e2',padding:'16px 20px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-        <div>
-          <div style={{fontSize:16,fontWeight:800,color:'#1c1c1a'}}>مهامي</div>
-          <div style={{fontSize:12,color:'#888780',marginTop:2}}>{session.name}</div>
+      <div style={{background:'white',borderBottom:'1px solid #ece8e2',padding:'16px 20px'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+          <div>
+            <div style={{fontSize:16,fontWeight:800,color:'#1c1c1a'}}>مهامي</div>
+            <div style={{fontSize:12,color:'#888780',marginTop:2}}>{session.name}</div>
+          </div>
+          <button onClick={()=>router.back()} style={{background:'#f5f5f4',border:'none',borderRadius:8,padding:'8px 14px',fontSize:12,fontWeight:700,color:'#5f5e5a',cursor:'pointer',fontFamily:'inherit'}}>رجوع</button>
         </div>
-        <button onClick={()=>router.back()} style={{background:'#f5f5f4',border:'none',borderRadius:8,padding:'8px 14px',fontSize:12,fontWeight:700,color:'#5f5e5a',cursor:'pointer',fontFamily:'inherit'}}>رجوع</button>
+        <div style={{position:'relative' as const}}>
+          <button onClick={()=>setShowLangMenu(v=>!v)} disabled={translating}
+            style={{background:'#f5f5f4',color:'#1c1c1a',border:'none',borderRadius:20,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6,opacity:translating?0.6:1}}>
+            🌐 {LANGUAGES.find(l=>l.code===lang)?.label || 'العربية'} {showLangMenu?'▴':'▾'}
+          </button>
+          {showLangMenu && (
+            <div style={{position:'absolute' as const,top:'100%',right:0,marginTop:6,background:'white',border:'1px solid #ece8e2',borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.15)',overflow:'hidden',minWidth:140,zIndex:50}}>
+              {LANGUAGES.map(l=>(
+                <button key={l.code}
+                  onClick={()=>{setLang(l.code);localStorage.setItem('staff_lang',l.code);if(l.code!=='ar')fetchTranslation(l.code);setShowLangMenu(false)}}
+                  style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#f0fdf4':'white',color:lang===l.code?'#16a34a':'#1c1c1a',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
+                  {lang===l.code?'✓ ':''}{l.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div style={{maxWidth:520,margin:'0 auto',padding:'20px 16px'}}>
@@ -120,8 +164,8 @@ export default function StaffTasksPage() {
                 <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
                   {pendingTasks.map((t:any)=>(
                     <div key={t.id} style={{background:'white',border:'1.5px solid #fde68a',borderRadius:14,padding:'16px'}}>
-                      <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:6}}>{t.title}</div>
-                      {t.description && <div style={{fontSize:13,color:'#6b7280',marginBottom:12,lineHeight:1.6}}>{t.description}</div>}
+                      <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:6}}>{lang!=='ar'&&taskTranslations[t.id]?.title || t.title}</div>
+                      {(lang!=='ar'&&taskTranslations[t.id]?.description || t.description) && <div style={{fontSize:13,color:'#6b7280',marginBottom:12,lineHeight:1.6}}>{lang!=='ar'&&taskTranslations[t.id]?.description || t.description}</div>}
                       <input id={`photo-input-${t.id}`} type="file" accept="image/*" capture="environment" style={{display:'none'}}
                         onChange={e=>{ const f=e.target.files?.[0]; if(f) handlePhotoSelected(t.id, f) }}/>
                       <button onClick={()=>completeTask(t.id, t.requires_photo)} disabled={completingId===t.id||uploadingId===t.id}
@@ -143,7 +187,7 @@ export default function StaffTasksPage() {
                     return (
                       <div key={t.id} style={{background:st.bg,border:'1px solid #ece8e2',borderRadius:12,padding:'12px 14px'}}>
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-                          <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{t.title}</span>
+                          <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{lang!=='ar'&&taskTranslations[t.id]?.title || t.title}</span>
                           <span style={{fontSize:10,fontWeight:700,color:st.color}}>{st.label}</span>
                         </div>
                       </div>
