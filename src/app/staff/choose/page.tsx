@@ -10,6 +10,7 @@ export default function ChoosePage() {
   const [isCashier, setIsCashier] = useState(false)
   const [staffData, setStaffData] = useState<any>(null)
   const [todayEvents, setTodayEvents] = useState<any[]>([])
+  const [attendanceLocked, setAttendanceLocked] = useState(false)
   const [loadingToday, setLoadingToday] = useState(true)
   const [marking, setMarking] = useState<'check_in'|'check_out'|null>(null)
   const [attError, setAttError] = useState('')
@@ -35,7 +36,7 @@ export default function ChoosePage() {
     try {
       const res = await fetch(`/api/staff-attendance?staff_id=${parsed.id}&org_id=${parsed.org_id}`)
       const j = await res.json()
-      if(j.success) { setTodayEvents(j.today||[]); setShift(j.shift||null) }
+      if(j.success) { setTodayEvents(j.today||[]); setShift(j.shift||null); setAttendanceLocked(!!j.locked) }
     } catch {}
     try {
       const pr = await fetch(`/api/attendance-permission-request?staff_id=${parsed.id}`)
@@ -118,7 +119,7 @@ export default function ChoosePage() {
         <p style={{fontSize:13,color:'#64748b',marginBottom:24}}>اختر الوظيفة التي تريد القيام بها</p>
 
         {/* تسجيل الحضور والانصراف */}
-        {!loadingToday && (
+        {!loadingToday && !attendanceLocked && (
           <div style={{
             background: isCheckedIn ? 'linear-gradient(135deg,#f0fdf4,#ecfdf5)' : '#f8fafc',
             border: `1.5px solid ${isCheckedIn ? '#bbf7d0' : '#e2e8f0'}`,
