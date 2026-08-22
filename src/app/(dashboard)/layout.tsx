@@ -37,6 +37,7 @@ const NAV_GROUPS = [
     label: 'إدارة الفريق',
     items: [
       { href:'/staff-management', label:'الموظفون', icon:'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8zm6 0a4 4 0 11-8 0' },
+      { href:'/hr-management', label:'إدارة الموظفين', icon:'M12 8c-1.657 0-3 1.567-3 3.5S10.343 15 12 15s3-1.567 3-3.5S13.657 8 12 8zM3 21c0-3.314 3.582-6 8-6s8 2.686 8 6H3zm14-11h4m-2-2v4' },
       { href:'/attendance', label:'الحضور والانصراف', icon:'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
       { href:'/branch-managers', label:'مديرو الفروع', icon:'M12 4.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zM5.5 20a6.5 6.5 0 0113 0' },
     ]
@@ -618,7 +619,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* Nav items */}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
-              {[...NAV_MAIN,...NAV_MORE].filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock'&&item.href!=='/attendance')||orgPlan!=='basic')&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
+              {[...NAV_MAIN,...NAV_MORE].filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock'&&item.href!=='/attendance'&&item.href!=='/hr-management')||orgPlan!=='basic')&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
                 const active=isActive(item.href)
                 return (
                   <button key={item.href} onClick={()=>{router.push(item.href);setShowMore(false)}} onMouseEnter={()=>router.prefetch(item.href)}
@@ -834,7 +835,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   ) : (
                     <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.25)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{group.label}</div>
                   )}
-                  {!groupCollapsed && group.items.filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock'&&item.href!=='/attendance')||orgPlan!=='basic')&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
+                  {!groupCollapsed && group.items.filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock'&&item.href!=='/attendance'&&item.href!=='/hr-management')||orgPlan!=='basic')&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
                     const active=isActive(item.href)
                     const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
                     const isExternal=item.href.startsWith('http')
