@@ -309,12 +309,13 @@ export default function ProfitabilityPage() {
         </div>
 
         {/* صف المقاييس */}
-        <div style={{display:'grid',gridTemplateColumns:`repeat(${hasDelivery?5:4},1fr)`,gap:8,marginBottom:16,alignItems:'start'}}>
+        <div style={{display:'grid',gridTemplateColumns:`repeat(${hasDelivery?6:5},1fr)`,gap:8,marginBottom:16,alignItems:'start'}}>
           {[
             {label:'المبيعات',value:data.totalIn,prev:prevData?.totalIn},
             ...(hasDelivery?[{label:'دخل التوصيل',value:data.deliveryIncomeTotal||0,prev:prevData?.deliveryIncomeTotal}]:[]),
             {label:'المشتريات',value:data.totalPurchases,prev:prevData?.totalPurchases},
             {label:'إجمالي المصروفات',value:totalExpenses,prev:prevData?(prevData.fixedExpensesTotal):undefined},
+            {label:'تكلفة الرواتب',value:data.salaryExpenseTotal||0,prev:prevData?.salaryExpenseTotal},
             {label:'الضريبة (تقديري)',value:vatAmount,prev:prevData?(prevData.totalIn-(prevData.totalIn/1.15)):undefined},
           ].map((s,i)=>{
             const change = (prevData && s.prev!==undefined) ? pctChange(s.value, s.prev) : null

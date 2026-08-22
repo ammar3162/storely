@@ -88,7 +88,36 @@ async function computeLive(supabase: any, org_id: string, monthParam: string, ef
   const deliveryIncomeList = deliveryData || []
   const deliveryIncomeTotal = deliveryIncomeList.reduce((s: number, e: any) => s + Number(e.amount || 0), 0)
 
-  const totalOut = totalPurchases + fixedExpensesTotal
+  // تكلفة الرواتب الفعلية: الراتب الأساسي + البدلات لكل موظف نشط في المنشأة (أو الفرع)
+  let staffQ = supabase
+    .from('staff_members')
+    .select('id,monthly_salary,housing_allowance,transport_allowance,food_allowance')
+    .eq('org_id', org_id)
+    .eq('is_active', true)
+  if (effectiveBranchId) staffQ = staffQ.eq('branch_id', effectiveBranchId)
+  const { data: staffList } = await staffQ
+
+  const grossSalaryTotal = (staffList || []).reduce((s: number, m: any) =>
+    s + Number(m.monthly_salary || 0) + Number(m.housing_allowance || 0) + Number(m.transport_allowance || 0) + Number(m.food_allowance || 0), 0)
+
+  // خصومات الشهر الموافق عليها (مو السلف) — تقلل التكلفة الفعلية للمنشأة
+  const staffIds = (staffList || []).map((m: any) => m.id)
+  let deductionsTotal = 0
+  if (staffIds.length > 0) {
+    const { data: deductions } = await supabase
+      .from('staff_payroll_adjustments')
+      .select('amount')
+      .in('staff_id', staffIds)
+      .eq('type', 'deduction')
+      .eq('status', 'approved')
+      .gte('created_at', monthStartTs)
+      .lte('created_at', monthEndTs)
+    deductionsTotal = (deductions || []).reduce((s: number, d: any) => s + Number(d.amount || 0), 0)
+  }
+
+  const salaryExpenseTotal = Math.max(0, grossSalaryTotal - deductionsTotal)
+
+  const totalOut = totalPurchases + fixedExpensesTotal + salaryExpenseTotal
   const netProfit = (totalIn + deliveryIncomeTotal) - totalOut
   const vatAmount = totalIn - (totalIn / 1.15)
 
@@ -98,6 +127,7 @@ async function computeLive(supabase: any, org_id: string, monthParam: string, ef
     inventoryPurchases, otherPurchases, totalPurchases,
     fixedExpensesTotal, fixedExpensesList,
     deliveryIncomeTotal, deliveryIncomeList,
+    salaryExpenseTotal,
     totalOut, netProfit, vatAmount,
   }
 }
@@ -142,6 +172,7 @@ export async function GET(req: Request) {
         fixedExpensesList: (closedRow as any).fixed_expenses_list,
         deliveryIncomeTotal: (closedRow as any).delivery_income_total,
         deliveryIncomeList: (closedRow as any).delivery_income_list,
+        salaryExpenseTotal: (closedRow as any).salary_expense_total,
         totalOut: (closedRow as any).total_out,
         netProfit: (closedRow as any).net_profit,
         vatAmount: (closedRow as any).vat_amount,
@@ -199,6 +230,7 @@ export async function POST(req: Request) {
       fixed_expenses_list: live.fixedExpensesList,
       delivery_income_total: live.deliveryIncomeTotal,
       delivery_income_list: live.deliveryIncomeList,
+      salary_expense_total: live.salaryExpenseTotal,
       total_out: live.totalOut,
       net_profit: live.netProfit,
       vat_amount: live.vatAmount,
