@@ -815,7 +815,7 @@ export default function StaffManagementPage() {
         <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
           {staff.map((s:any,i)=>(
             <div key={s.id} className="staff-card su" style={{...card,padding:'16px 18px',animationDelay:`${i*0.05}s`}}>
-              <div onClick={()=>setExpandedId(expandedId===s.id?null:s.id)} style={{display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer'}}>
+              <div onClick={()=>setExpandedId(expandedId===s.id?null:s.id)} style={{display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer',flexWrap:'wrap' as const,gap:10}}>
                 <div style={{display:'flex',alignItems:'center',gap:12}}>
                   <Avatar name={s.name} active={s.is_active}/>
                   <div>
@@ -831,7 +831,7 @@ export default function StaffManagementPage() {
                     </div>
                   </div>
                 </div>
-                <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap' as const}}>
                   <button onClick={e=>{e.stopPropagation();openReport(s)}} className="act-btn" style={{background:'#eff6ff',color:'#2563eb',display:'flex',alignItems:'center',gap:5}}>
                     <BarChart3 size={13} strokeWidth={2.25}/> تقرير
                   </button>
