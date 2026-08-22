@@ -285,15 +285,19 @@ export default function LandingPage() {
 
       {/* PARTNERS */}
       {partners.length > 0 && (
-        <section style={{padding:'50px 40px',textAlign:'center' as const}}>
-          <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8}}>نبني شراكات مع منشآت في كل مكان</h2>
-          <p style={{fontSize:14,color:'#9ca3af',marginBottom:36}}>منشآت تدير مخزونها عبر Storely يومياً</p>
-          <div style={{display:'flex',gap:32,justifyContent:'center',flexWrap:'wrap' as const}}>
-            {partners.map((p:any)=>(
-              <div key={p.id} style={{width:180,height:90,borderRadius:14,background:'#fafafa',border:'1px solid #f3f4f6',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
-                <img src={p.logo_url} alt={p.name} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain'}}/>
-              </div>
-            ))}
+        <section style={{padding:'60px 40px'}}>
+          <div style={{maxWidth:1100,margin:'0 auto',background:'white',border:'1px solid #f3f4f6',borderRadius:24,padding:'40px 36px',boxShadow:'0 4px 24px rgba(0,0,0,.04)'}}>
+            <div style={{textAlign:'center',marginBottom:28}}>
+              <p style={{fontSize:12,fontWeight:700,color:'#15803d',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:8}}>شركاؤنا</p>
+              <h2 style={{fontSize:24,fontWeight:800,color:'#111827'}}>موثوق من قبل منشآت رائدة</h2>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:14}}>
+              {partners.map((p:any)=>(
+                <div key={p.id} style={{aspectRatio:'2/1',borderRadius:12,background:'#fafafa',border:'1px solid #f3f4f6',display:'flex',alignItems:'center',justifyContent:'center',padding:14,transition:'all .2s'}}>
+                  <img src={p.logo_url} alt={p.name} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain'}}/>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}
@@ -322,7 +326,7 @@ export default function LandingPage() {
         <div className="feat-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:20}}>
           {FEATURES.map((f,i)=>(
             <div key={i} className="feat-card">
-              <div style={{fontSize:28,marginBottom:14}}>{f.icon}</div>
+              <div style={{width:52,height:52,borderRadius:14,background:'linear-gradient(135deg,#f0fdf4,#dcfce7)',border:'1px solid #bbf7d0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,marginBottom:16}}>{f.icon}</div>
               <div style={{fontSize:17,fontWeight:800,color:'#111827',marginBottom:8}}>{f.title}</div>
               <div style={{fontSize:14,color:'#6b7280',lineHeight:1.7}}>{f.desc}</div>
             </div>
