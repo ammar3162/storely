@@ -478,7 +478,7 @@ export default function LandingPage() {
             </div>
             {[
               {title:'المنصة',links:[['تسجيل الدخول','/login'],['إنشاء حساب','/login?mode=register'],['الأسعار','#pricing']]},
-              {title:'قانوني',links:[['سياسة الخصوصية','/privacy'],['الشروط والأحكام','/terms']]},
+              {title:'قانوني',links:[['سياسة الخصوصية','/privacy'],['الشروط والأحكام','/terms'],['سياسة الأمان','/security']]},
               {title:'تواصل',links:[['واتساب','https://wa.me/966594351667'],['البريد الإلكتروني','mailto:support@storely.dev']]},
             ].map((col,i)=>(
               <div key={i}>
