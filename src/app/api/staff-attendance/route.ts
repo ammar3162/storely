@@ -153,6 +153,12 @@ export async function GET(req: Request) {
     if (!staff_id || !org_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
     const supabase = sb()
+
+    const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
+    if ((orgCheck as any)?.plan === 'basic') {
+      return NextResponse.json({ success: true, locked: true, today: [], shift: null })
+    }
+
     const todayStart = new Date(); todayStart.setHours(0,0,0,0)
     const { data } = await supabase
       .from('staff_attendance')
