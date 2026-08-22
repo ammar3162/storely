@@ -620,9 +620,24 @@ export default function StaffPage() {
               </>
             )}
             <div style={{fontSize:13,fontWeight:700,color:'#64748b',marginBottom:10}}>{T('qty',lang)}</div>
-            <input value={dispenseQty} onChange={e=>setDispenseQty(e.target.value.replace(/[^0-9.]/g,''))}
-              style={{width:'100%',padding:'16px',border:'2px solid #e2e8f0',borderRadius:14,fontSize:28,fontWeight:800,textAlign:'center',fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:16}}
-              placeholder="0" inputMode="decimal" autoFocus/>
+            <input value={dispenseQty} readOnly
+              style={{width:'100%',padding:'16px',border:'2px solid #e2e8f0',borderRadius:14,fontSize:28,fontWeight:800,textAlign:'center',fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:12,background:'#f8fafc',caretColor:'transparent'}}
+              placeholder="0"/>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:16}}>
+              {['1','2','3','4','5','6','7','8','9','.','0','⌫'].map(k=>(
+                <button key={k} type="button"
+                  onClick={()=>{
+                    if(k==='⌫'){ setDispenseQty(q=>q.slice(0,-1)); return }
+                    if(k==='.' && dispenseQty.includes('.')) return
+                    setDispenseQty(q=>(q+k).replace(/[^0-9.]/g,''))
+                  }}
+                  style={{padding:'16px 0',borderRadius:12,border:'1.5px solid #e2e8f0',background:'white',fontSize:20,fontWeight:800,color:k==='⌫'?'#dc2626':'#0f172a',cursor:'pointer',fontFamily:'inherit',transition:'background .1s'}}
+                  onTouchStart={e=>{(e.currentTarget as HTMLButtonElement).style.background='#f0fdf4'}}
+                  onTouchEnd={e=>{(e.currentTarget as HTMLButtonElement).style.background='white'}}>
+                  {k}
+                </button>
+              ))}
+            </div>
             {wasteMode ? (
               <button onClick={handleWaste} disabled={!dispenseQty||!wasteReason||submitting}
                 style={{width:'100%',padding:18,background:(!dispenseQty||!wasteReason||submitting)?'#94a3b8':'linear-gradient(135deg,#d97706,#b45309)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:800,cursor:(!dispenseQty||!wasteReason||submitting)?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:(!dispenseQty||!wasteReason||submitting)?'none':'0 8px 24px rgba(217,119,6,.35)'}}>
