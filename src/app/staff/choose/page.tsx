@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Bell, MapPin, Package, CalendarDays, Store, ClipboardList, Send, Wallet, Plane, UserCheck } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 const CS: Record<string, Record<'ar'|'en', string>> = {
   welcome:        { ar:'أهلاً', en:'Welcome' },
@@ -72,6 +73,8 @@ export default function ChoosePage() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
   const [showPermRequestModal, setShowPermRequestModal] = useState(false)
+  const [orgLogo, setOrgLogo] = useState('')
+  const sb = createClient()
 
   useEffect(()=>{
     const s = localStorage.getItem('staff_session')
@@ -85,6 +88,8 @@ export default function ChoosePage() {
     loadToday(parsed)
     loadTaskCount()
     loadNotifications()
+    sb.from('organizations' as any).select('logo_url').eq('id',parsed.org_id).single()
+      .then(({data}:any)=>{ if(data?.logo_url) setOrgLogo(data.logo_url) })
     const savedLang = localStorage.getItem('staff_lang')
     if (savedLang === 'en') setLang('en')
     const interval = setInterval(loadNotifications, 30000)
@@ -234,8 +239,12 @@ export default function ChoosePage() {
             )}
           </button>
         </div>
-        <div style={{width:60,height:60,borderRadius:18,background:'linear-gradient(135deg,#16a34a,#15803d)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px',boxShadow:'0 8px 20px rgba(22,163,74,.28)'}}>
-          <span style={{fontSize:24,fontWeight:800,color:'white'}}>{name?.trim()?.[0] || '👤'}</span>
+        <div style={{width:60,height:60,borderRadius:18,background: orgLogo ? 'white' : 'linear-gradient(135deg,#16a34a,#15803d)',border: orgLogo ? '1px solid #e5e7eb' : 'none',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px',boxShadow: orgLogo ? '0 4px 12px rgba(0,0,0,.08)' : '0 8px 20px rgba(22,163,74,.28)',overflow:'hidden' as const}}>
+          {orgLogo ? (
+            <img src={orgLogo} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+          ) : (
+            <span style={{fontSize:24,fontWeight:800,color:'white'}}>{name?.trim()?.[0] || '👤'}</span>
+          )}
         </div>
         <h2 style={{fontSize:21,fontWeight:800,color:'#0f172a',marginBottom:5,letterSpacing:'-.2px'}}>{t('welcome')} {name}</h2>
         <p style={{fontSize:13.5,color:'#94a3b8',marginBottom:28}}>{t('chooseTask')}</p>
