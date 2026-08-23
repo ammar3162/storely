@@ -128,7 +128,7 @@ export default function StaffTasksPage() {
   const isRtl = lang==='ar' || lang==='ur'
 
   const pendingTasks = tasks.filter((t:any)=>t.status==='pending')
-  const otherTasks = tasks.filter((t:any)=>t.status!=='pending')
+  const otherTasks = tasks.filter((t:any)=>t.status!=='pending' && t.status!=='confirmed')
 
   if (!session) return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>

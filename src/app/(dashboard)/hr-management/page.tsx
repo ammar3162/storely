@@ -233,6 +233,17 @@ export default function HRManagementPage() {
     loadTasks(staffId)
   }
 
+  async function toggleDaily(staffId:string, taskId:string) {
+    const res = await fetch('/api/staff-tasks', {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ org_id: orgId, task_id: taskId, toggle_daily: true }),
+    })
+    const j = await res.json()
+    if (!j.success) { toast(j.error||'خطأ','error'); return }
+    toast(j.is_daily ? '🔁 صارت مهمة يومية' : 'تم إيقاف التكرار اليومي')
+    loadTasks(staffId)
+  }
+
   const TASK_STATUS_LABEL:Record<string,{label:string,color:string,bg:string}> = {
     pending:   {label:'قيد الانتظار', color: colors.text3,   bg: colors.bg},
     completed: {label:'بانتظار تأكيدك', color: colors.warning, bg: colors.warningLight},
@@ -511,20 +522,28 @@ export default function HRManagementPage() {
                           {tasks.map((t:any)=>{
                             const st = TASK_STATUS_LABEL[t.status] || TASK_STATUS_LABEL.pending
                             return (
-                              <div key={t.id} style={{background:st.bg,border:`1px solid ${colors.border2}`,borderRadius:radius.md,padding:'12px 14px'}}>
+                              <div key={t.id} style={{background:t.is_daily?colors.primaryLight:st.bg,border:`1px solid ${t.is_daily?colors.primaryBorder:colors.border2}`,borderRadius:radius.md,padding:'12px 14px'}}>
                                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}>
-                                  <span style={{fontSize:13,fontWeight:700,color:colors.text}}>{t.title}</span>
-                                  <span style={{fontSize:10,fontWeight:700,color:st.color}}>{st.label}</span>
+                                  <span style={{fontSize:13,fontWeight:700,color:colors.text,display:'flex',alignItems:'center',gap:6}}>
+                                    {t.title}
+                                    {t.is_daily && <span style={{fontSize:9,fontWeight:800,color:colors.primary,background:'white',padding:'2px 6px',borderRadius:99}}>🔁 يومية</span>}
+                                  </span>
+                                  {!t.template_id && !t.is_daily && <span style={{fontSize:10,fontWeight:700,color:st.color}}>{st.label}</span>}
                                 </div>
                                 {t.description && <div style={{fontSize:12,color:colors.text3,marginBottom:8}}>{t.description}</div>}
                                 {t.photo_url && (
                                   <a href={t.photo_url} target="_blank" rel="noreferrer" style={{fontSize:11,color:colors.info,textDecoration:'underline',display:'inline-block',marginBottom:8}}>عرض صورة الإثبات</a>
                                 )}
                                 {t.status==='completed' && (
-                                  <div style={{display:'flex',gap:8,marginTop:6}}>
+                                  <div style={{display:'flex',gap:8,marginTop:6,marginBottom:6}}>
                                     <button onClick={()=>reviewTask(s.id,t.id,'confirmed')} style={{flex:1,padding:'7px',background:colors.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>تأكيد الإتمام</button>
                                     <button onClick={()=>reviewTask(s.id,t.id,'rejected')} style={{flex:1,padding:'7px',background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>رفض</button>
                                   </div>
+                                )}
+                                {!t.template_id && (
+                                  <button onClick={()=>toggleDaily(s.id,t.id)} style={{width:'100%',padding:'6px',marginTop:4,background:'transparent',border:`1px dashed ${t.is_daily?colors.primary:colors.border2}`,borderRadius:8,fontSize:11,fontWeight:700,color:t.is_daily?colors.primary:colors.text4,cursor:'pointer',fontFamily:'inherit'}}>
+                                    {t.is_daily ? 'إيقاف التكرار اليومي' : 'اجعلها مهمة يومية 🔁'}
+                                  </button>
                                 )}
                               </div>
                             )
