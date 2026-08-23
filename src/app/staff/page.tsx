@@ -2,12 +2,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-const C = {
-  primary:'#16a34a', primaryD:'#15803d', primaryL:'#f0fdf4',
-  danger:'#e24b4a', text:'#1c1c1a', text3:'#5f5e5a', text4:'#888780',
-  bg:'#f5f5f4', border:'#ebebea',
-}
-
 const COUNTRY_PHONE_LEN: {code:string;flag:string;name:string;len:number}[] = [
   {code:'966',flag:'🇸🇦',name:'السعودية',len:10},
   {code:'965',flag:'🇰🇼',name:'الكويت',len:8},
@@ -27,110 +21,63 @@ export default function StaffLoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [shake, setShake] = useState(false)
-  const [isPWA, setIsPWA] = useState(false)
-  const [time, setTime] = useState('')
   const [country, setCountry] = useState('السعودية')
   const [showCountryPicker, setShowCountryPicker] = useState(false)
   const router = useRouter()
 
-  const requiredLen = COUNTRY_PHONE_LEN.find(c=>c.name===country)?.len || 10
+  const selectedCountry = COUNTRY_PHONE_LEN.find(c=>c.name===country) || COUNTRY_PHONE_LEN[0]
+  const requiredLen = selectedCountry.len
 
   useEffect(()=>{
     const saved = localStorage.getItem('staff_session')
-    if(saved) {
-      router.push('/staff/choose')
-    }
-
-    const pwa = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true
-    setIsPWA(pwa)
-
-    document.title = 'Storely — موظف'
-
-    let manifestLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement
-    if (!manifestLink) {
-      manifestLink = document.createElement('link')
-      manifestLink.rel = 'manifest'
-      document.head.appendChild(manifestLink)
-    }
-    manifestLink.href = '/staff-app-v2.json'
-
-    function setMeta(name: string, content: string) {
-      let tag = document.querySelector('meta[name="' + name + '"]') as HTMLMetaElement
-      if (!tag) {
-        tag = document.createElement('meta')
-        tag.name = name
-        document.head.appendChild(tag)
-      }
-      tag.content = content
-    }
-    setMeta('apple-mobile-web-app-capable', 'yes')
-    setMeta('mobile-web-app-capable', 'yes')
-    setMeta('apple-mobile-web-app-title', 'Storely Staff')
-    setMeta('apple-mobile-web-app-status-bar-style', 'default')
-    setMeta('theme-color', '#16a34a')
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(regs) {
-        regs.forEach(function(reg) { reg.unregister() })
-      })
-    }
+    if(saved) { router.push('/staff/choose'); return }
+    document.title = 'Storely — دخول الموظف'
   },[])
 
-  useEffect(()=>{
-    const update = function() {
-      setTime(new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit',hour12:true}))
-    }
-    update()
-    const t = setInterval(update, 1000)
-    return function() { clearInterval(t) }
-  }, [])
+  function doShake() { setShake(true); setTimeout(()=>setShake(false), 500) }
 
-  function addDigit(d: string) {
-    if(step==='phone'){
-      if(phone.length<requiredLen) setPhone(function(p){ return p+d })
-    } else {
-      if(pin.length<4) setPin(function(p){ return p+d })
-    }
-    setError('')
+  function pressPhoneKey(k: string) {
+    if (k === '⌫') { setPhone(p=>p.slice(0,-1)); return }
+    if (phone.length >= requiredLen) return
+    setPhone(p=>(p+k).replace(/[^0-9]/g,''))
   }
 
-  function deleteDigit() {
-    if(step==='phone') setPhone(function(p){ return p.slice(0,-1) })
-    else setPin(function(p){ return p.slice(0,-1) })
-    setError('')
+  function pressPinKey(k: string) {
+    if (k === '⌫') { setPin(p=>p.slice(0,-1)); return }
+    if (pin.length >= 6) return
+    setPin(p=>(p+k).replace(/[^0-9]/g,''))
   }
 
-  function doShake() {
-    setShake(true)
-    setTimeout(function(){ setShake(false) },600)
+  function goToPin() {
+    if (!phone || phone.length < requiredLen) { setError('أدخل رقم الجوال كاملاً'); doShake(); return }
+    setError('')
+    setStep('pin')
   }
 
   async function handleLogin() {
-    if(!phone||phone.length<requiredLen){setError('أدخل رقم الجوال');doShake();return}
-    if(!pin||pin.length<4){setError('أدخل رمز PIN');doShake();return}
+    if (!pin || pin.length < 4) { setError('أدخل رمز PIN'); doShake(); return }
     setLoading(true)
+    setError('')
     const controller = new AbortController()
     const timeoutId = setTimeout(()=>controller.abort(), 15000)
     try {
-      const res = await fetch('/api/staff-login',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({phone:phone.trim(),pin:pin.trim()}),
+      const res = await fetch('/api/staff-login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phone.trim(), pin: pin.trim() }),
         signal: controller.signal,
       })
       clearTimeout(timeoutId)
       const data = await res.json()
-      if(!res.ok){
-        setError(data.error||'رقم الجوال أو PIN غير صحيح')
+      if (!res.ok) {
+        setError(data.error || 'رقم الجوال أو PIN غير صحيح')
         setPin('')
         doShake()
         setLoading(false)
         return
       }
-      localStorage.setItem('staff_session',JSON.stringify(data.staff))
-      localStorage.setItem('staff_token',data.token)
+      localStorage.setItem('staff_session', JSON.stringify(data.staff))
+      localStorage.setItem('staff_token', data.token)
       setLoading(false)
-      // كل الموظفين يمرّون بصفحة "اختر الوظيفة" أول — فيها تسجيل الحضور والانصراف
       router.push('/staff/choose')
     } catch (err: any) {
       clearTimeout(timeoutId)
@@ -140,168 +87,136 @@ export default function StaffLoginPage() {
     }
   }
 
+  // نضغط تلقائياً "دخول" لما نكمل 4 أرقام على الأقل — بدون ضغط زر إضافي، تجربة أسرع
   useEffect(()=>{
-    if(step==='pin'&&pin.length===4) handleLogin()
+    if (step === 'pin' && pin.length === 4 && !loading) handleLogin()
   },[pin])
 
-  if(!isPWA) return (
-    <div style={{
-      fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',
-      display:'flex',alignItems:'center',justifyContent:'center',padding:20,
-      backgroundImage:'linear-gradient(rgba(13,40,24,.55),rgba(13,40,24,.55)),url(/images/staff-login-bg.jpg)',
-      backgroundSize:'cover',backgroundPosition:'center',
-    }}>
-      <div style={{background:'white',borderRadius:18,padding:28,width:'100%',maxWidth:360,boxShadow:'0 20px 60px rgba(0,0,0,.35)'}}>
-        <div style={{fontSize:18,fontWeight:700,color:'#1c1c1a',marginBottom:4}}>دخول الموظف</div>
-        <div style={{fontSize:12,color:'#888780',marginBottom:20}}>أدخل رقم جوالك ورمز PIN</div>
-        <div style={{marginBottom:12}}>
-          <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:5}}>رقم الجوال</label>
-          <input value={phone} onChange={function(e){ setPhone(e.target.value.replace(/\D/g,'').slice(0,requiredLen)) }} inputMode="numeric" maxLength={requiredLen} placeholder={country==='السعودية'?'05xxxxxxxx':'رقم جوالك'}
-            style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0dd',borderRadius:8,fontSize:14,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr'}}/>
-          <div style={{marginTop:6,position:'relative'}}>
-            <button type="button" onClick={()=>setShowCountryPicker(v=>!v)} style={{background:'none',border:'none',padding:0,fontSize:11,color:'#16a34a',fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
-              {country==='السعودية' ? 'مو رقم سعودي؟' : `${COUNTRY_PHONE_LEN.find(c=>c.name===country)?.flag} ${country} — تغيير`}
-            </button>
-            {showCountryPicker && (
-              <div style={{position:'absolute',top:20,right:0,zIndex:10,background:'white',border:'1px solid #e0e0dd',borderRadius:8,boxShadow:'0 8px 24px rgba(0,0,0,.12)',padding:6,display:'flex',flexDirection:'column',gap:2,minWidth:140}}>
-                {COUNTRY_PHONE_LEN.map(c=>(
-                  <button key={c.name} type="button" onClick={()=>{setCountry(c.name);setPhone('');setShowCountryPicker(false)}}
-                    style={{background:c.name===country?'#f0fdf4':'transparent',border:'none',padding:'6px 8px',borderRadius:6,fontSize:12,textAlign:'right' as const,cursor:'pointer',fontFamily:'inherit',color:'#1c1c1a'}}>
-                    {c.flag} {c.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-        <div style={{marginBottom:16}}>
-          <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:5}}>رمز PIN</label>
-          <input type="password" value={pin} onChange={function(e){ setPin(e.target.value.replace(/\D/g,'').slice(0,4)) }} inputMode="numeric" maxLength={4} placeholder="••••"
-            style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0dd',borderRadius:8,fontSize:14,fontFamily:'inherit',outline:'none',boxSizing:'border-box'}}/>
-        </div>
-        {error&&<div style={{fontSize:12,color:'#e24b4a',marginBottom:10,fontWeight:600}}>{error}</div>}
-        <button onClick={handleLogin} disabled={loading}
-          style={{width:'100%',padding:'12px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-          {loading?'جاري التحقق...':'دخول'}
-        </button>
-      </div>
-    </div>
-  )
-
-  const digits = ['1','2','3','4','5','6','7','8','9','del','0','']
-  const display = step==='phone' ? phone : pin.replace(/./g,'●')
-  const placeholder = step==='phone' ? (country==='السعودية'?'05xxxxxxxx':'رقم جوالك') : '● ● ● ●'
-  const progress = step==='phone' ? phone.length/requiredLen : pin.length/4
+  const keypadKeys = ['1','2','3','4','5','6','7','8','9','','0','⌫']
 
   return (
-    <div style={{
-      fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',
-      display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
-      padding:'0 0 env(safe-area-inset-bottom)',
-      backgroundImage:'linear-gradient(rgba(255,255,255,.93),rgba(255,255,255,.93)),url(/images/staff-login-bg.jpg)',
-      backgroundSize:'cover',backgroundPosition:'center',
-    }}>
-      <style>{'@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}.shake{animation:shake .5s ease}.dkey{width:72px;height:72px;border-radius:50%;border:none;background:#f5f5f4;font-size:24px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#1c1c1a;transition:all .1s;-webkit-tap-highlight-color:transparent;font-family:inherit}.dkey:active{background:#e0e0dd;transform:scale(.93)}.dkey:disabled{opacity:.3;cursor:default}'}</style>
+    <div style={{minHeight:'100vh',background:'linear-gradient(160deg,#0a1f13,#0d2818 45%,#153524)',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap');
+        *{box-sizing:border-box}
+        @keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}
+        .shake{animation:shake .5s cubic-bezier(.36,.07,.19,.97) both}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .fade-up{animation:fadeUp .35s ease both}
+        @keyframes dotPulse{0%,100%{opacity:.25;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
+        .kp-btn{transition:background .12s ease, transform .08s ease}
+        .kp-btn:active{transform:scale(.94);background:rgba(255,255,255,.14) !important}
+      `}</style>
 
-      <div style={{marginBottom:32,textAlign:'center'}}>
-        <div style={{width:60,height:60,borderRadius:16,background:C.primary,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 12px',boxShadow:'0 8px 24px ' + C.primary + '30'}}>
-          <svg width="28" height="28" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-          </svg>
+      <div style={{width:'100%',maxWidth:440,minHeight:'100vh',display:'flex',flexDirection:'column' as const,padding:'0 24px'}}>
+
+        {/* الهيدر — شعار Storely */}
+        <div style={{display:'flex',flexDirection:'column' as const,alignItems:'center',paddingTop:'clamp(32px, 8vh, 64px)',paddingBottom:24}}>
+          <div style={{width:56,height:56,borderRadius:16,background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.12)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:14}}>
+            <img src="/storely-logo.png" alt="Storely" style={{width:34,height:34,borderRadius:8,objectFit:'cover'}}/>
+          </div>
+          <div style={{fontSize:13,fontWeight:700,color:'rgba(255,255,255,.5)',letterSpacing:'.5px'}}>STORELY</div>
         </div>
-        <div style={{fontSize:18,fontWeight:700,color:C.text}}>Storely</div>
-        <div style={{fontSize:12,color:C.text4,marginTop:2}}>بوابة الموظف</div>
-      </div>
 
-      <div style={{fontSize:42,fontWeight:300,color:C.text,letterSpacing:2,marginBottom:8,fontVariantNumeric:'tabular-nums'}}>{time}</div>
-      <div style={{fontSize:13,color:C.text4,marginBottom:24}}>{new Date().toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'long',day:'numeric',month:'long'})}</div>
+        {/* المحتوى الرئيسي */}
+        <div style={{flex:1,display:'flex',flexDirection:'column' as const,justifyContent:'center'}}>
 
-      <div className={shake?'shake':''} style={{width:260,marginBottom:8}}>
-        <div style={{fontSize:11,fontWeight:700,color:C.text3,marginBottom:8,textAlign:'center',textTransform:'uppercase',letterSpacing:'.06em'}}>
-          {step==='phone'?'رقم الجوال':'رمز PIN'}
-        </div>
-        {step==='phone' && (
-          <div style={{textAlign:'center',marginBottom:8,position:'relative'}}>
-            <button type="button" onClick={()=>setShowCountryPicker(v=>!v)} style={{background:'none',border:'none',padding:0,fontSize:11,color:C.primary,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
-              {country==='السعودية' ? 'مو رقم سعودي؟' : `${COUNTRY_PHONE_LEN.find(c=>c.name===country)?.flag} ${country} — تغيير`}
-            </button>
-            {showCountryPicker && (
-              <div style={{position:'absolute',top:20,left:'50%',transform:'translateX(-50%)',zIndex:10,background:'white',border:'1px solid #e0e0dd',borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.15)',padding:6,display:'flex',flexDirection:'column',gap:2,minWidth:150}}>
-                {COUNTRY_PHONE_LEN.map(c=>(
-                  <button key={c.name} type="button" onClick={()=>{setCountry(c.name);setPhone('');setShowCountryPicker(false)}}
-                    style={{background:c.name===country?'#f0fdf4':'transparent',border:'none',padding:'7px 10px',borderRadius:6,fontSize:12,textAlign:'right' as const,cursor:'pointer',fontFamily:'inherit',color:'#1c1c1a'}}>
-                    {c.flag} {c.name}
+          {step === 'phone' ? (
+            <div key="phone-step" className="fade-up">
+              <h1 style={{fontSize:'clamp(22px,5vw,26px)',fontWeight:800,color:'white',marginBottom:6,textAlign:'center' as const}}>مرحباً بك</h1>
+              <p style={{fontSize:14,color:'rgba(255,255,255,.55)',marginBottom:32,textAlign:'center' as const}}>سجّل دخولك برقم جوالك</p>
+
+              {/* حقل الجوال + اختيار الدولة */}
+              <div style={{position:'relative' as const,marginBottom:24}}>
+                <div className={shake?'shake':''} style={{display:'flex',alignItems:'center',background:'rgba(255,255,255,.06)',border:`1.5px solid ${shake?'#f87171':'rgba(255,255,255,.14)'}`,borderRadius:16,padding:'4px'}}>
+                  <button onClick={()=>setShowCountryPicker(v=>!v)}
+                    style={{background:'transparent',border:'none',color:'white',fontSize:15,fontWeight:700,padding:'12px 10px',cursor:'pointer',display:'flex',alignItems:'center',gap:6,fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
+                    <span style={{fontSize:18}}>{selectedCountry.flag}</span>
+                    <span style={{fontSize:13,opacity:.8}}>+{selectedCountry.code}</span>
+                    <span style={{fontSize:10,opacity:.6}}>{showCountryPicker?'▲':'▼'}</span>
+                  </button>
+                  <div style={{width:1,height:24,background:'rgba(255,255,255,.15)'}}/>
+                  <div style={{flex:1,padding:'12px 14px',fontSize:20,fontWeight:700,color:'white',textAlign:'left' as const,direction:'ltr' as const,minHeight:24,letterSpacing:'1px'}}>
+                    {phone || <span style={{color:'rgba(255,255,255,.3)'}}>{'0'.repeat(requiredLen)}</span>}
+                  </div>
+                </div>
+
+                {showCountryPicker && (
+                  <div style={{position:'absolute' as const,top:'calc(100% + 8px)',right:0,left:0,background:'#153524',border:'1px solid rgba(255,255,255,.15)',borderRadius:14,padding:6,zIndex:20,maxHeight:260,overflowY:'auto' as const,boxShadow:'0 20px 50px rgba(0,0,0,.4)'}}>
+                    {COUNTRY_PHONE_LEN.map(c=>(
+                      <button key={c.code} onClick={()=>{setCountry(c.name);setPhone('');setShowCountryPicker(false)}}
+                        style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'11px 12px',background:country===c.name?'rgba(22,163,74,.2)':'transparent',border:'none',borderRadius:10,color:'white',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
+                        <span style={{fontSize:18}}>{c.flag}</span>
+                        <span style={{flex:1}}>{c.name}</span>
+                        <span style={{opacity:.5,fontSize:12,direction:'ltr' as const}}>+{c.code}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {error && <div style={{textAlign:'center' as const,color:'#fca5a5',fontSize:13,fontWeight:600,marginBottom:16}}>{error}</div>}
+
+              {/* لوحة أرقام مخصصة لإدخال الجوال */}
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:20}}>
+                {keypadKeys.map((k,i)=> k==='' ? <div key={i}/> : (
+                  <button key={i} className="kp-btn" onClick={()=>pressPhoneKey(k)}
+                    style={{padding:'16px 0',borderRadius:14,border:'none',background:'rgba(255,255,255,.06)',fontSize:20,fontWeight:700,color:k==='⌫'?'#fca5a5':'white',cursor:'pointer',fontFamily:'inherit'}}>
+                    {k}
                   </button>
                 ))}
               </div>
-            )}
-          </div>
-        )}
-        <div style={{
-          fontSize:step==='phone'?28:36,fontWeight:700,color:display?C.text:C.text4,
-          textAlign:'center',letterSpacing:step==='pin'?12:2,
-          height:52,display:'flex',alignItems:'center',justifyContent:'center',
-          background:C.bg,borderRadius:12,border:'2px solid ' + (error?C.danger:C.border),
-          transition:'border .2s',fontVariantNumeric:'tabular-nums',
-        }}>
-          {display||placeholder}
+
+              <button onClick={goToPin} disabled={phone.length<requiredLen}
+                style={{width:'100%',padding:16,marginBottom:'clamp(24px,6vh,48px)',background:phone.length>=requiredLen?'linear-gradient(135deg,#16a34a,#15803d)':'rgba(255,255,255,.08)',color:phone.length>=requiredLen?'white':'rgba(255,255,255,.35)',border:'none',borderRadius:16,fontSize:15,fontWeight:800,cursor:phone.length>=requiredLen?'pointer':'not-allowed',fontFamily:'inherit',boxShadow:phone.length>=requiredLen?'0 10px 28px rgba(22,163,74,.35)':'none',transition:'all .2s'}}>
+                متابعة
+              </button>
+            </div>
+          ) : (
+            <div key="pin-step" className="fade-up">
+              <button onClick={()=>{setStep('phone');setPin('');setError('')}}
+                style={{background:'none',border:'none',color:'rgba(255,255,255,.55)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',marginBottom:20,display:'flex',alignItems:'center',gap:4}}>
+                ← تغيير الرقم
+              </button>
+
+              <h1 style={{fontSize:'clamp(20px,5vw,24px)',fontWeight:800,color:'white',marginBottom:6,textAlign:'center' as const}}>أدخل رمز PIN</h1>
+              <p style={{fontSize:13,color:'rgba(255,255,255,.5)',marginBottom:32,textAlign:'center' as const,direction:'ltr' as const}}>+{selectedCountry.code} {phone}</p>
+
+              {/* نقاط عرض PIN */}
+              <div className={shake?'shake':''} style={{display:'flex',justifyContent:'center',gap:14,marginBottom:32}}>
+                {[0,1,2,3,4,5].map(i=>(
+                  <div key={i} style={{
+                    width:14,height:14,borderRadius:'50%',
+                    background: i<pin.length ? '#22c55e' : 'rgba(255,255,255,.12)',
+                    border: i<pin.length ? 'none' : '1.5px solid rgba(255,255,255,.25)',
+                    animation: loading && i<pin.length ? 'dotPulse 1s ease infinite' : 'none',
+                    animationDelay: `${i*0.08}s`,
+                    transition:'all .15s',
+                  }}/>
+                ))}
+              </div>
+
+              {error && <div style={{textAlign:'center' as const,color:'#fca5a5',fontSize:13,fontWeight:600,marginBottom:20}}>{error}</div>}
+              {loading && <div style={{textAlign:'center' as const,color:'rgba(255,255,255,.5)',fontSize:12,marginBottom:20}}>جاري التحقق...</div>}
+
+              {/* لوحة أرقام PIN */}
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:24}}>
+                {keypadKeys.map((k,i)=> k==='' ? <div key={i}/> : (
+                  <button key={i} className="kp-btn" disabled={loading} onClick={()=>pressPinKey(k)}
+                    style={{padding:'18px 0',borderRadius:14,border:'none',background:'rgba(255,255,255,.06)',fontSize:22,fontWeight:700,color:k==='⌫'?'#fca5a5':'white',cursor:loading?'default':'pointer',fontFamily:'inherit',opacity:loading?.5:1}}>
+                    {k}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{textAlign:'center' as const,paddingBottom:'clamp(24px,6vh,48px)'}}>
+                <span style={{fontSize:12,color:'rgba(255,255,255,.4)'}}>ناسي رمز PIN؟ راجع صاحب العمل</span>
+              </div>
+            </div>
+          )}
+
         </div>
-        <div style={{height:3,background:C.border,borderRadius:99,overflow:'hidden',marginTop:8}}>
-          <div style={{height:'100%',width:(progress*100)+'%',background:C.primary,borderRadius:99,transition:'width .15s'}}/>
-        </div>
-        {error&&<div style={{fontSize:12,color:C.danger,textAlign:'center',marginTop:8,fontWeight:600}}>{error}</div>}
       </div>
-
-      <div style={{display:'flex',gap:6,marginBottom:28}}>
-        {['phone','pin'].map(function(s,i){
-          return <div key={i} style={{width:step===s?20:6,height:6,borderRadius:99,background:step===s?C.primary:C.border,transition:'all .3s'}}/>
-        })}
-      </div>
-
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,width:260,direction:'ltr'}}>
-        {digits.map(function(d,i){
-          return (
-            <button key={i} className="dkey"
-              disabled={d===''||loading}
-              onClick={function(){
-                if(d==='del') deleteDigit()
-                else if(d&&d!=='del') addDigit(d)
-              }}
-              style={{
-                margin:'0 auto',
-                background:d==='del'?'#fef2f2':d===''?'transparent':'#f5f5f4',
-                color:d==='del'?C.danger:C.text,
-                fontSize:d==='del'?20:24,
-                visibility:d===''?'hidden':'visible',
-              }}>
-              {d==='del'?'⌫':d}
-            </button>
-          )
-        })}
-      </div>
-
-      <div style={{marginTop:28,width:260}}>
-        {step==='phone'?(
-          <button onClick={function(){
-            if(phone.length<requiredLen){setError('أدخل رقم الجوال كاملاً');doShake();return}
-            setStep('pin');setError('')
-          }} style={{width:'100%',padding:'14px',background:phone.length>=requiredLen?C.primary:'#e0e0dd',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:phone.length>=requiredLen?'pointer':'default',fontFamily:'inherit',transition:'all .2s'}}>
-            التالي
-          </button>
-        ):(
-          <button onClick={function(){setStep('phone');setPin('');setError('')}}
-            style={{width:'100%',padding:'12px',background:'transparent',color:C.text3,border:'1px solid ' + C.border,borderRadius:12,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
-            تغيير رقم الجوال
-          </button>
-        )}
-      </div>
-
-      {loading&&(
-        <div style={{position:'fixed',inset:0,background:'rgba(255,255,255,.8)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100}}>
-          <div style={{width:36,height:36,border:'3px solid ' + C.primaryL,borderTopColor:C.primary,borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
-          <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
-        </div>
-      )}
     </div>
   )
 }
