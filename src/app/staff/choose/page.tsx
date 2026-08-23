@@ -2,7 +2,49 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+const CS: Record<string, Record<'ar'|'en', string>> = {
+  welcome:        { ar:'أهلاً', en:'Welcome' },
+  chooseTask:     { ar:'اختر الوظيفة التي تريد القيام بها', en:'Choose what you want to do' },
+  checkedIn:      { ar:'أنت حاضر الآن', en:"You're checked in" },
+  checkedOutToday:{ ar:'انصرفت اليوم', en:'You checked out today' },
+  notCheckedIn:   { ar:'ما سجّلت حضورك بعد', en:"You haven't checked in yet" },
+  checkInTime:    { ar:'وقت الحضور', en:'Check-in time' },
+  checkOutTime:   { ar:'وقت الانصراف', en:'Check-out time' },
+  checkIn:        { ar:'تسجيل حضور', en:'Check In' },
+  checkOut:       { ar:'تسجيل انصراف', en:'Check Out' },
+  markingLocation:{ ar:'جاري تحديد موقعك...', en:'Getting your location...' },
+  dispense:       { ar:'صرف المخزون', en:'Dispense Stock' },
+  dispenseSub:    { ar:'تسجيل صرف المنتجات', en:'Record product dispensing' },
+  reservations:   { ar:'الحجوزات', en:'Reservations' },
+  reservationsSub:{ ar:'متابعة حجوزات اليوم', en:"Track today's reservations" },
+  cashierClosing: { ar:'إقفال الكاشير', en:'Cashier Closing' },
+  cashierSub:     { ar:'تقرير نهاية اليوم', en:'End of day report' },
+  enterSystem:    { ar:'الدخول للنظام', en:'Enter System' },
+  myTasksLabel:   { ar:'مهامي', en:'My Tasks' },
+  myRequests:     { ar:'طلباتي', en:'My Requests' },
+  logout:         { ar:'خروج', en:'Logout' },
+  requestAdvance: { ar:'طلب سلفة', en:'Request Advance' },
+  requestLeave:   { ar:'طلب إجازة', en:'Request Leave' },
+  requestExcuse:  { ar:'طلب استئذان', en:'Request Early Leave' },
+  cancel:         { ar:'إلغاء', en:'Cancel' },
+  back:           { ar:'رجوع', en:'Back' },
+  advanceTitle:   { ar:'طلب سلفة', en:'Advance Request' },
+  amount:         { ar:'المبلغ', en:'Amount' },
+  reasonOptional: { ar:'السبب (اختياري)', en:'Reason (optional)' },
+  advanceReasonPh:{ ar:'سبب طلب السلفة...', en:'Reason for the advance...' },
+  sendRequest:    { ar:'إرسال الطلب', en:'Send Request' },
+  sending:        { ar:'جاري الإرسال...', en:'Sending...' },
+  excuseTitle:    { ar:'طلب استئذان', en:'Early Leave Request' },
+  excuseDesc:     { ar:'يوصل طلبك للمالك عبر واتساب ليوافق أو يرفض', en:'Your request will reach the owner via WhatsApp for approval' },
+  excusePending:  { ar:'⏳ عندك طلب استئذان بانتظار رد المالك بالفعل', en:'⏳ You already have a pending early-leave request' },
+  excuseReasonPh: { ar:'سبب الاستئذان (اختياري)...', en:'Reason for early leave (optional)...' },
+  notifications:  { ar:'الإشعارات', en:'Notifications' },
+  noNotifications:{ ar:'ما فيه إشعارات بعد', en:'No notifications yet' },
+}
+
 export default function ChoosePage() {
+  const [lang, setLang] = useState<'ar'|'en'>('ar')
+  function t(key: string) { return CS[key]?.[lang] || key }
   const router = useRouter()
   const [name, setName] = useState('')
   const [canDispense, setCanDispense] = useState(false)
@@ -26,6 +68,8 @@ export default function ChoosePage() {
   const [advanceReason, setAdvanceReason] = useState('')
   const [submittingAdvance, setSubmittingAdvance] = useState(false)
   const [advanceMsg, setAdvanceMsg] = useState('')
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [showNotifications, setShowNotifications] = useState(false)
   const [showPermRequestModal, setShowPermRequestModal] = useState(false)
 
   useEffect(()=>{
@@ -39,7 +83,28 @@ export default function ChoosePage() {
     setStaffData(parsed)
     loadToday(parsed)
     loadTaskCount()
+    loadNotifications()
+    const savedLang = localStorage.getItem('staff_lang')
+    if (savedLang === 'en') setLang('en')
   },[])
+
+  async function loadNotifications() {
+    try {
+      const token = localStorage.getItem('staff_token')
+      const res = await fetch('/api/staff-notifications', { headers: { 'Authorization': `Bearer ${token}` } })
+      const j = await res.json()
+      if (j.success) setNotifications(j.notifications||[])
+    } catch {}
+  }
+
+  async function markNotificationsRead() {
+    const token = localStorage.getItem('staff_token')
+    await fetch('/api/staff-notifications', {
+      method:'PATCH', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+      body: JSON.stringify({ markAll: true }),
+    })
+    setNotifications(prev => prev.map((n:any)=>({...n, is_read:true})))
+  }
 
   async function loadTaskCount() {
     try {
@@ -148,11 +213,24 @@ export default function ChoosePage() {
   }
 
   return (
-    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#0d2818,#1a4731)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:20}}>
-      <div style={{background:'white',borderRadius:24,padding:'40px 32px',maxWidth:400,width:'100%',textAlign:'center',boxShadow:'0 24px 60px rgba(0,0,0,.3)'}}>
+    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#0d2818,#1a4731)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl',padding:20}}>
+      <div style={{background:'white',borderRadius:24,padding:'40px 32px',maxWidth:400,width:'100%',textAlign:'center',boxShadow:'0 24px 60px rgba(0,0,0,.3)',position:'relative' as const}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+          <button onClick={()=>{const nl=lang==='ar'?'en':'ar';setLang(nl);localStorage.setItem('staff_lang',nl)}}
+            style={{background:'#f1f5f9',border:'none',borderRadius:20,padding:'6px 12px',fontSize:12,fontWeight:700,color:'#475569',cursor:'pointer',fontFamily:'inherit'}}>
+            {lang==='ar'?'EN':'عربي'}
+          </button>
+          <button onClick={()=>{ setShowNotifications(true); markNotificationsRead() }}
+            style={{position:'relative' as const,background:'#f1f5f9',border:'none',borderRadius:'50%',width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:16}}>
+            🔔
+            {notifications.some((n:any)=>!n.is_read) && (
+              <span style={{position:'absolute' as const,top:-2,left:-2,width:10,height:10,borderRadius:'50%',background:'#dc2626',border:'2px solid white'}}/>
+            )}
+          </button>
+        </div>
         <div style={{fontSize:48,marginBottom:12}}>👋</div>
-        <h2 style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:4}}>أهلاً {name}</h2>
-        <p style={{fontSize:13,color:'#64748b',marginBottom:24}}>اختر الوظيفة التي تريد القيام بها</p>
+        <h2 style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:4}}>{t('welcome')} {name}</h2>
+        <p style={{fontSize:13,color:'#64748b',marginBottom:24}}>{t('chooseTask')}</p>
 
         {/* تسجيل الحضور والانصراف */}
         {!loadingToday && !attendanceLocked && (
@@ -164,7 +242,7 @@ export default function ChoosePage() {
             {/* حالة الموظف الآن */}
             <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:8,marginBottom:14}}>
               <span style={{fontSize:12,fontWeight:800,color: isCheckedIn ? '#15803d' : '#64748b'}}>
-                {isCheckedIn ? 'أنت حاضر الآن' : lastCheckOut ? 'انصرفت اليوم' : 'ما سجّلت حضورك بعد'}
+                {isCheckedIn ? t('checkedIn') : lastCheckOut ? t('checkedOutToday') : t('notCheckedIn')}
               </span>
               <span style={{
                 width:9,height:9,borderRadius:'50%',
@@ -178,13 +256,13 @@ export default function ChoosePage() {
               <div style={{display:'flex',gap:8,marginBottom:16}}>
                 {lastCheckIn && (
                   <div style={{flex:1,background:'white',borderRadius:12,padding:'10px 12px',border:'1px solid #e2e8f0'}}>
-                    <div style={{fontSize:9,color:'#94a3b8',fontWeight:700,marginBottom:3}}>وقت الحضور</div>
+                    <div style={{fontSize:9,color:'#94a3b8',fontWeight:700,marginBottom:3}}>{t('checkInTime')}</div>
                     <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>{new Date(lastCheckIn.recorded_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit'})}</div>
                   </div>
                 )}
                 {lastCheckOut && (
                   <div style={{flex:1,background:'white',borderRadius:12,padding:'10px 12px',border:'1px solid #e2e8f0'}}>
-                    <div style={{fontSize:9,color:'#94a3b8',fontWeight:700,marginBottom:3}}>وقت الانصراف</div>
+                    <div style={{fontSize:9,color:'#94a3b8',fontWeight:700,marginBottom:3}}>{t('checkOutTime')}</div>
                     <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>{new Date(lastCheckOut.recorded_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit'})}</div>
                   </div>
                 )}
@@ -197,14 +275,14 @@ export default function ChoosePage() {
                 <button onClick={()=>markAttendance('check_in')} disabled={marking!==null}
                   style={{width:'100%',padding:'15px',background:'linear-gradient(135deg,#16a34a,#15803d)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow:'0 6px 16px rgba(22,163,74,.3)'}}>
                   <span style={{width:26,height:26,borderRadius:'50%',background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>📍</span>
-                  {marking==='check_in' ? 'جاري تحديد موقعك...' : 'تسجيل حضور'}
+                  {marking==='check_in' ? t('markingLocation') : t('checkIn')}
                 </button>
               ) : (
                 <>
                   <button onClick={()=>markAttendance('check_out')} disabled={marking!==null || !canCheckOut}
                     style={{width:'100%',padding:'15px',background: canCheckOut ? 'linear-gradient(135deg,#ef4444,#dc2626)' : '#cbd5e1',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor: canCheckOut ? 'pointer' : 'not-allowed',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow: canCheckOut ? '0 6px 16px rgba(220,38,38,.3)' : 'none'}}>
                     <span style={{width:26,height:26,borderRadius:'50%',background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>📍</span>
-                    {marking==='check_out' ? 'جاري تحديد موقعك...' : 'تسجيل انصراف'}
+                    {marking==='check_out' ? t('markingLocation') : t('checkOut')}
                   </button>
                   {!canCheckOut && checkOutHint && (
                     <div style={{textAlign:'center' as const,fontSize:11,color:'#94a3b8',fontWeight:600,marginTop:8}}>⏰ {checkOutHint}</div>
@@ -216,7 +294,7 @@ export default function ChoosePage() {
                       <div style={{textAlign:'center' as const,fontSize:12,color:'#dc2626',fontWeight:700,marginTop:10,background:'#fef2f2',border:'1px solid #fecaca',borderRadius:10,padding:'8px 10px'}}>🚫 تم رفض طلب الاستئذان</div>
                     ) : showPermForm ? (
                       <div style={{marginTop:10}}>
-                        <textarea value={permReason} onChange={e=>setPermReason(e.target.value)} placeholder="سبب الاستئذان (اختياري)..." rows={2}
+                        <textarea value={permReason} onChange={e=>setPermReason(e.target.value)} placeholder={t('excuseReasonPh')} rows={2}
                           style={{width:'100%',padding:'10px 12px',border:'1px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',resize:'vertical' as const,marginBottom:8,boxSizing:'border-box' as const}}/>
                         <div style={{display:'flex',gap:8}}>
                           <button onClick={submitPermissionRequest} disabled={submittingPerm}
@@ -248,8 +326,8 @@ export default function ChoosePage() {
               style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#0d2818,#16a34a)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
               <span style={{fontSize:28}}>📤</span>
               <div style={{textAlign:'right'}}>
-                <div style={{fontSize:16,fontWeight:800}}>صرف المخزون</div>
-                <div style={{fontSize:12,opacity:.8}}>تسجيل صرف المنتجات</div>
+                <div style={{fontSize:16,fontWeight:800}}>{t('dispense')}</div>
+                <div style={{fontSize:12,opacity:.8}}>{t('dispenseSub')}</div>
               </div>
             </button>
           )}
@@ -258,8 +336,8 @@ export default function ChoosePage() {
               style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#78350f,#b45309)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
               <span style={{fontSize:28}}>🗓️</span>
               <div style={{textAlign:'right'}}>
-                <div style={{fontSize:16,fontWeight:800}}>الحجوزات</div>
-                <div style={{fontSize:12,opacity:.8}}>متابعة حجوزات اليوم</div>
+                <div style={{fontSize:16,fontWeight:800}}>{t('reservations')}</div>
+                <div style={{fontSize:12,opacity:.8}}>{t('reservationsSub')}</div>
               </div>
             </button>
           )}
@@ -268,8 +346,8 @@ export default function ChoosePage() {
               style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#1e293b,#334155)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
               <span style={{fontSize:28}}>🏪</span>
               <div style={{textAlign:'right'}}>
-                <div style={{fontSize:16,fontWeight:800}}>إقفال الكاشير</div>
-                <div style={{fontSize:12,opacity:.8}}>تقرير نهاية اليوم</div>
+                <div style={{fontSize:16,fontWeight:800}}>{t('cashierClosing')}</div>
+                <div style={{fontSize:12,opacity:.8}}>{t('cashierSub')}</div>
               </div>
             </button>
           )}
@@ -278,7 +356,7 @@ export default function ChoosePage() {
               style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#0d2818,#16a34a)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
               <span style={{fontSize:28}}>📦</span>
               <div style={{textAlign:'right'}}>
-                <div style={{fontSize:16,fontWeight:800}}>الدخول للنظام</div>
+                <div style={{fontSize:16,fontWeight:800}}>{t('enterSystem')}</div>
               </div>
             </button>
           )}
@@ -290,18 +368,18 @@ export default function ChoosePage() {
               <span style={{position:'absolute' as const,top:6,left:6,background:'#dc2626',color:'white',fontSize:10,fontWeight:800,minWidth:18,height:18,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 4px'}}>{taskCount}</span>
             )}
             <span style={{fontSize:22}}>📋</span>
-            مهامي
+            {t('myTasksLabel')}
           </button>
           <button onClick={()=>setShowRequests(true)}
             style={{padding:'16px 8px',background:'white',color:'#1c1c1a',border:'1.5px solid #e5e7eb',borderRadius:16,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,alignItems:'center',gap:6}}>
             <span style={{fontSize:22}}>📨</span>
-            طلباتي
+            {t('myRequests')}
           </button>
         </div>
 
         <button onClick={()=>{localStorage.removeItem('staff_session');router.replace('/staff')}}
           style={{marginTop:20,background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
-          خروج
+          {t('logout')}
         </button>
       </div>
 
@@ -309,22 +387,22 @@ export default function ChoosePage() {
       {showRequests && !showAdvanceForm && (
         <div onClick={()=>setShowRequests(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:200,display:'flex',alignItems:'flex-end',justifyContent:'center',padding:0}}>
           <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:'24px 24px 0 0',padding:'24px 20px 32px',width:'100%',maxWidth:420,textAlign:'right' as const}}>
-            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>طلباتي</div>
+            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>{t('myRequests')}</div>
             <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
               <button onClick={()=>setShowAdvanceForm(true)}
                 style={{width:'100%',padding:'16px',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:14,fontSize:14,fontWeight:700,color:'#1c1c1a',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
-                <span style={{fontSize:20}}>💰</span> طلب سلفة
+                <span style={{fontSize:20}}>💰</span> {t('requestAdvance')}
               </button>
               <button onClick={()=>{setShowRequests(false);router.push('/staff/leave')}}
                 style={{width:'100%',padding:'16px',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:14,fontSize:14,fontWeight:700,color:'#1c1c1a',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
-                <span style={{fontSize:20}}>🗓️</span> طلب إجازة
+                <span style={{fontSize:20}}>🗓️</span> {t('requestLeave')}
               </button>
               <button onClick={()=>{setShowRequests(false);setShowPermRequestModal(true)}}
                 style={{width:'100%',padding:'16px',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:14,fontSize:14,fontWeight:700,color:'#1c1c1a',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
-                <span style={{fontSize:20}}>🙋</span> طلب استئذان
+                <span style={{fontSize:20}}>🙋</span> {t('requestExcuse')}
               </button>
             </div>
-            <button onClick={()=>setShowRequests(false)} style={{width:'100%',padding:'12px',marginTop:14,background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+            <button onClick={()=>setShowRequests(false)} style={{width:'100%',padding:'12px',marginTop:14,background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('cancel')}</button>
           </div>
         </div>
       )}
@@ -333,19 +411,19 @@ export default function ChoosePage() {
       {showAdvanceForm && (
         <div onClick={()=>{setShowAdvanceForm(false);setShowRequests(false)}} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:210,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
           <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:360,textAlign:'right' as const}}>
-            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>طلب سلفة</div>
-            <label style={{fontSize:12,color:'#64748b',display:'block',marginBottom:6}}>المبلغ</label>
+            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>{t('advanceTitle')}</div>
+            <label style={{fontSize:12,color:'#64748b',display:'block',marginBottom:6}}>{t('amount')}</label>
             <input type="number" value={advanceAmount} onChange={e=>setAdvanceAmount(e.target.value)} placeholder="0"
               style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:16,fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:12}}/>
-            <label style={{fontSize:12,color:'#64748b',display:'block',marginBottom:6}}>السبب (اختياري)</label>
-            <textarea value={advanceReason} onChange={e=>setAdvanceReason(e.target.value)} placeholder="سبب طلب السلفة..."
+            <label style={{fontSize:12,color:'#64748b',display:'block',marginBottom:6}}>{t('reasonOptional')}</label>
+            <textarea value={advanceReason} onChange={e=>setAdvanceReason(e.target.value)} placeholder={t('advanceReasonPh')}
               style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const,minHeight:60,resize:'none' as const,marginBottom:12}}/>
             {advanceMsg && <div style={{fontSize:12,color:'#dc2626',marginBottom:10}}>{advanceMsg}</div>}
             <button onClick={submitAdvanceRequest} disabled={submittingAdvance||!advanceAmount}
               style={{width:'100%',padding:'12px',background:(submittingAdvance||!advanceAmount)?'#94a3b8':'#16a34a',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:(submittingAdvance||!advanceAmount)?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
-              {submittingAdvance?'جاري الإرسال...':'إرسال الطلب'}
+              {submittingAdvance?t('sending'):t('sendRequest')}
             </button>
-            <button onClick={()=>setShowAdvanceForm(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>رجوع</button>
+            <button onClick={()=>setShowAdvanceForm(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
           </div>
         </div>
       )}
@@ -354,22 +432,48 @@ export default function ChoosePage() {
       {showPermRequestModal && (
         <div onClick={()=>setShowPermRequestModal(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:210,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
           <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:360,textAlign:'right' as const}}>
-            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:4}}>طلب استئذان</div>
-            <p style={{fontSize:12,color:'#64748b',marginBottom:16}}>يوصل طلبك للمالك عبر واتساب ليوافق أو يرفض</p>
+            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:4}}>{t('excuseTitle')}</div>
+            <p style={{fontSize:12,color:'#64748b',marginBottom:16}}>{t('excuseDesc')}</p>
             {permReq?.status === 'pending' ? (
-              <div style={{textAlign:'center' as const,fontSize:13,color:'#d97706',fontWeight:700,background:'#fffbeb',border:'1px solid #fde68a',borderRadius:10,padding:'12px'}}>⏳ عندك طلب استئذان بانتظار رد المالك بالفعل</div>
+              <div style={{textAlign:'center' as const,fontSize:13,color:'#d97706',fontWeight:700,background:'#fffbeb',border:'1px solid #fde68a',borderRadius:10,padding:'12px'}}>{t('excusePending')}</div>
             ) : (
               <>
-                <textarea value={permReason} onChange={e=>setPermReason(e.target.value)} placeholder="سبب الاستئذان (اختياري)..." rows={3}
+                <textarea value={permReason} onChange={e=>setPermReason(e.target.value)} placeholder={t('excuseReasonPh')} rows={3}
                   style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',resize:'none' as const,marginBottom:12,boxSizing:'border-box' as const}}/>
                 {attError && <div style={{fontSize:12,color:'#dc2626',marginBottom:10}}>{attError}</div>}
                 <button onClick={async ()=>{ await submitPermissionRequest(); setShowPermRequestModal(false) }} disabled={submittingPerm}
                   style={{width:'100%',padding:'12px',background:submittingPerm?'#94a3b8':'#16a34a',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:submittingPerm?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
-                  {submittingPerm?'جاري الإرسال...':'إرسال الطلب'}
+                  {submittingPerm?t('sending'):t('sendRequest')}
                 </button>
               </>
             )}
-            <button onClick={()=>setShowPermRequestModal(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>رجوع</button>
+            <button onClick={()=>setShowPermRequestModal(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
+          </div>
+        </div>
+      )}
+
+      {/* نافذة الإشعارات */}
+      {showNotifications && (
+        <div onClick={()=>setShowNotifications(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:220,display:'flex',alignItems:'flex-end',justifyContent:'center',padding:0}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:'24px 24px 0 0',padding:'24px 20px 32px',width:'100%',maxWidth:420,maxHeight:'75vh',overflowY:'auto' as const,textAlign:lang==='en'?'left' as const:'right' as const}}>
+            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>{t('notifications')}</div>
+            {notifications.length===0 ? (
+              <div style={{textAlign:'center' as const,padding:'30px 0',fontSize:13,color:'#94a3b8'}}>{t('noNotifications')}</div>
+            ) : (
+              <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                {notifications.map((n:any)=>{
+                  const bg = n.type==='success'?'#f0fdf4':n.type==='danger'?'#fef2f2':n.type==='warning'?'#fffbeb':'#f8fafc'
+                  const border = n.type==='success'?'#bbf7d0':n.type==='danger'?'#fecaca':n.type==='warning'?'#fde68a':'#e2e8f0'
+                  return (
+                    <div key={n.id} style={{background:bg,border:`1px solid ${border}`,borderRadius:14,padding:'12px 14px'}}>
+                      <div style={{fontSize:13,fontWeight:800,color:'#0f172a',marginBottom:4}}>{n.title}</div>
+                      <div style={{fontSize:12,color:'#475569',lineHeight:1.6}}>{n.message}</div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+            <button onClick={()=>setShowNotifications(false)} style={{width:'100%',padding:'12px',marginTop:16,background:'#f1f5f9',color:'#334155',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
           </div>
         </div>
       )}

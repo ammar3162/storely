@@ -130,16 +130,17 @@ export async function PATCH(req: Request) {
     } as any).eq('id', adjustment_id)
     if (error) return NextResponse.json({ error: 'فشل التحديث' }, { status: 500 })
 
-    // إشعار واتساب للموظف بالنتيجة (لو النوع سلفة)
+    // إشعار داخل النظام للموظف بالنتيجة (لو النوع سلفة)
     if ((adj as any).type === 'advance') {
-      const { data: staffRow } = await supabase.from('staff_members').select('phone,name').eq('id', (adj as any).staff_id).maybeSingle()
-      if ((staffRow as any)?.phone) {
-        const amount = (adj as any).amount
-        const text = decision === 'approved'
-          ? `✅ *تمت الموافقة على طلب سلفتك*\n\nالمبلغ: ${amount} ر.س\n\nراجع صاحب العمل لاستلامها.`
-          : `🚫 *تم رفض طلب سلفتك*\n\nالمبلغ: ${amount} ر.س`
-        await sendWhatsAppMessage(formatPhone((staffRow as any).phone), text)
-      }
+      const amount = (adj as any).amount
+      await supabase.from('staff_notifications').insert({
+        org_id, staff_id: (adj as any).staff_id,
+        type: decision === 'approved' ? 'success' : 'danger',
+        title: decision === 'approved' ? 'تمت الموافقة على طلب السلفة' : 'تم رفض طلب السلفة',
+        message: decision === 'approved'
+          ? `تمت الموافقة على سلفتك بمبلغ ${amount} ر.س — راجع صاحب العمل لاستلامها`
+          : `تم رفض طلب السلفة بمبلغ ${amount} ر.س`,
+      } as any)
     }
 
     return NextResponse.json({ success: true })
