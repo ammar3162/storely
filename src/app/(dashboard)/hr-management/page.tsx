@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
-import { Wallet, ThumbsUp, ThumbsDown, ClipboardList, ChevronDown, Plus, Camera } from 'lucide-react'
+import { Wallet, ThumbsUp, ThumbsDown, ClipboardList, ChevronDown, Plus, Camera, CalendarDays, BarChart3 } from 'lucide-react'
 
 export default function HRManagementPage() {
   const [orgId, setOrgId] = useState('')
@@ -29,9 +29,18 @@ export default function HRManagementPage() {
   const [newTaskPhoto, setNewTaskPhoto] = useState(false)
   const [savingTask, setSavingTask] = useState(false)
 
+  const [leaveRequests, setLeaveRequests] = useState<any[]>([])
+  const [loadingLeave, setLoadingLeave] = useState(false)
+
+  const [reportMonth, setReportMonth] = useState(() => new Date().toISOString().slice(0,7))
+  const [reportData, setReportData] = useState<any[]>([])
+  const [loadingReport, setLoadingReport] = useState(false)
+  const [showReport, setShowReport] = useState(false)
+
   const sb = createClient()
 
   useEffect(()=>{ init() },[])
+  useEffect(()=>{ if (showReport && orgId) loadReport() },[showReport, reportMonth, orgId])
 
   async function init() {
     let oid = sessionStorage.getItem('s_org_id')
@@ -65,6 +74,45 @@ export default function HRManagementPage() {
     })
     loadAdjustments(s.id)
     loadTasks(s.id)
+    loadLeave(s.id)
+  }
+
+  async function loadLeave(staffId:string) {
+    setLoadingLeave(true)
+    try {
+      const res = await fetch(`/api/staff-leave?org_id=${orgId}&staff_id=${staffId}`)
+      const j = await res.json()
+      setLeaveRequests(j.success ? (j.requests||[]) : [])
+    } catch { setLeaveRequests([]) }
+    setLoadingLeave(false)
+  }
+
+  async function reviewLeave(staffId:string, requestId:string, decision:'approved'|'rejected') {
+    const res = await fetch('/api/staff-leave', {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ org_id: orgId, request_id: requestId, decision }),
+    })
+    const j = await res.json()
+    if (!j.success) { toast(j.error||'خطأ','error'); return }
+    toast(decision==='approved' ? '✅ تم قبول طلب الإجازة' : 'تم رفض الطلب')
+    loadLeave(staffId)
+    if (decision==='approved') {
+      const res2 = await fetch(`/api/staff-leave?org_id=${orgId}&staff_id=${staffId}`)
+      const j2 = await res2.json()
+      const balance = j2.requests?.[0]?.staff_members?.leave_balance_days
+      if (balance !== undefined) setStaff(prev => prev.map((s:any)=> s.id===staffId ? {...s, leave_balance_days:balance} : s))
+    }
+  }
+
+  async function loadReport() {
+    setLoadingReport(true)
+    try {
+      const res = await fetch(`/api/staff-report?org_id=${orgId}&month=${reportMonth}`)
+      const j = await res.json()
+      setReportData(j.success ? (j.report||[]) : [])
+      if (!j.success && j.error) toast(j.error,'error')
+    } catch { setReportData([]) }
+    setLoadingReport(false)
   }
 
   const totalSalary = (Number(salaryForm.base)||0) + (Number(salaryForm.housing)||0) + (Number(salaryForm.transport)||0) + (Number(salaryForm.food)||0)
@@ -187,15 +235,67 @@ export default function HRManagementPage() {
 
   return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto'}}>
-      <div style={{marginBottom:20,display:'flex',alignItems:'center',gap:12}}>
-        <div style={{width:44,height:44,borderRadius:radius.md,background:'#fdf4ff',border:'1px solid #f5d0fe',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-          <Wallet size={20} color="#a21caf" strokeWidth={1.75}/>
+      <div style={{marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap' as const}}>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <div style={{width:44,height:44,borderRadius:radius.md,background:'#fdf4ff',border:'1px solid #f5d0fe',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <Wallet size={20} color="#a21caf" strokeWidth={1.75}/>
+          </div>
+          <div>
+            <h1 style={pageTitle}>إدارة الموظفين</h1>
+            <p style={pageSub}>الرواتب والبدلات، الخصومات والسلف، والمهام لكل موظف</p>
+          </div>
         </div>
-        <div>
-          <h1 style={pageTitle}>إدارة الموظفين</h1>
-          <p style={pageSub}>الرواتب والبدلات، الخصومات والسلف، والمهام لكل موظف</p>
-        </div>
+        <button onClick={()=>setShowReport(v=>!v)} style={{...btnSecondary,display:'flex',alignItems:'center',gap:6}}>
+          <BarChart3 size={15} strokeWidth={2.25}/> تقرير الموظفين
+        </button>
       </div>
+
+      {showReport && (
+        <div style={{...card,padding:'18px 20px',marginBottom:20}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,flexWrap:'wrap' as const,gap:10}}>
+            <div style={{fontSize:14,fontWeight:800,color:colors.text}}>تقرير الموظفين الشهري</div>
+            <input type="month" value={reportMonth} onChange={e=>setReportMonth(e.target.value)} style={{...inp(),width:'auto',fontSize:13,padding:'8px 12px'}}/>
+          </div>
+          {loadingReport ? (
+            <div style={{fontSize:12,color:colors.text4}}>جاري تحميل التقرير...</div>
+          ) : reportData.length===0 ? (
+            <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:16}}>ما فيه بيانات لهذا الشهر</div>
+          ) : (
+            <div style={{overflowX:'auto' as const}}>
+              <table style={{width:'100%',borderCollapse:'collapse' as const,fontSize:12,minWidth:820}}>
+                <thead>
+                  <tr style={{borderBottom:`2px solid ${colors.border}`}}>
+                    {['الموظف','الراتب الإجمالي','الخصومات','السلف','صافي الراتب','الحضور','التأخير','الإجازات','المهام','التقييم'].map(h=>(
+                      <th key={h} style={{padding:'8px 10px',textAlign:'right' as const,color:colors.text4,fontWeight:700,whiteSpace:'nowrap' as const}}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {reportData.map((r:any)=>{
+                    const ratingColor = r.rating>=80?colors.primary:r.rating>=50?colors.warning:colors.danger
+                    return (
+                      <tr key={r.staffId} style={{borderBottom:`1px solid ${colors.border}`}}>
+                        <td style={{padding:'10px',fontWeight:700,color:colors.text,whiteSpace:'nowrap' as const}}>{r.name}</td>
+                        <td style={{padding:'10px',color:colors.text2}}>{r.grossSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</td>
+                        <td style={{padding:'10px',color:colors.danger}}>{r.deductionsTotal>0?`-${r.deductionsTotal.toLocaleString('ar-SA',{numberingSystem:'latn'})}`:'—'}</td>
+                        <td style={{padding:'10px',color:colors.danger}}>{r.advancesTotal>0?`-${r.advancesTotal.toLocaleString('ar-SA',{numberingSystem:'latn'})}`:'—'}</td>
+                        <td style={{padding:'10px',fontWeight:800,color:colors.primary}}>{r.netSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</td>
+                        <td style={{padding:'10px',color:colors.text2,whiteSpace:'nowrap' as const}}>{r.daysPresent}/{r.daysInMonth} ({r.attendanceRate}%)</td>
+                        <td style={{padding:'10px',color:r.lateCount>0?colors.warning:colors.text2}}>{r.lateCount} مرة</td>
+                        <td style={{padding:'10px',color:colors.text2,whiteSpace:'nowrap' as const}}>{r.leaveDaysTaken} يوم (متبقي {r.leaveBalance})</td>
+                        <td style={{padding:'10px',color:colors.text2}}>{r.tasksConfirmed}/{r.tasksTotal} ({r.taskCompletionRate}%)</td>
+                        <td style={{padding:'10px'}}>
+                          <span style={{display:'inline-block',padding:'4px 10px',borderRadius:99,fontWeight:800,color:'white',background:ratingColor}}>{r.rating}</span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {staff.length===0 ? (
         <div style={{...card,padding:56,textAlign:'center' as const}}>
@@ -293,6 +393,49 @@ export default function HRManagementPage() {
                                     {a.status==='pending' && <span style={{fontSize:9,color:colors.warning,marginRight:6,fontWeight:700}}>(معلّق)</span>}
                                   </div>
                                   <span style={{fontSize:12,fontWeight:700,color:colors.danger}}>-{a.amount} {curr}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* الإجازات */}
+                    <div>
+                      <div style={{fontSize:12,fontWeight:700,color:colors.text3,marginBottom:10,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                        <span style={{display:'flex',alignItems:'center',gap:6}}><CalendarDays size={14} strokeWidth={2.25}/> الإجازات</span>
+                        <span style={{fontSize:11,color:colors.primary,fontWeight:800}}>الرصيد المتبقي: {s.leave_balance_days ?? 21} يوم</span>
+                      </div>
+                      {loadingLeave ? (
+                        <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
+                      ) : (
+                        <>
+                          {leaveRequests.filter((l:any)=>l.status==='pending').length>0 && (
+                            <div style={{display:'flex',flexDirection:'column' as const,gap:8,marginBottom:12}}>
+                              {leaveRequests.filter((l:any)=>l.status==='pending').map((l:any)=>(
+                                <div key={l.id} style={{background:colors.warningLight,border:`1.5px solid ${colors.warningBorder}`,borderRadius:radius.md,padding:'12px 14px'}}>
+                                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                                    <span style={{fontSize:13,fontWeight:800,color:colors.warning}}>{l.days_count} يوم</span>
+                                    <span style={{fontSize:10,color:colors.text4}}>{l.start_date} → {l.end_date}</span>
+                                  </div>
+                                  {l.reason && <div style={{fontSize:12,color:colors.text3,marginBottom:10}}>{l.reason}</div>}
+                                  <div style={{display:'flex',gap:8}}>
+                                    <button onClick={()=>reviewLeave(s.id,l.id,'approved')} style={{flex:1,padding:'7px',background:colors.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><ThumbsUp size={13} strokeWidth={2.25}/> موافقة</button>
+                                    <button onClick={()=>reviewLeave(s.id,l.id,'rejected')} style={{flex:1,padding:'7px',background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><ThumbsDown size={13} strokeWidth={2.25}/> رفض</button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {leaveRequests.length===0 ? (
+                            <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>ما فيه طلبات إجازة بعد</div>
+                          ) : (
+                            <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
+                              {leaveRequests.filter((l:any)=>l.status!=='pending').map((l:any)=>(
+                                <div key={l.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'9px 12px',background:colors.bg,borderRadius:radius.sm}}>
+                                  <span style={{fontSize:12,color:colors.text}}>{l.start_date} → {l.end_date} ({l.days_count} يوم)</span>
+                                  <span style={{fontSize:11,fontWeight:700,color:l.status==='approved'?colors.primary:colors.danger}}>{l.status==='approved'?'موافَق':'مرفوض'}</span>
                                 </div>
                               ))}
                             </div>

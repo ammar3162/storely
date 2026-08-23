@@ -19,6 +19,16 @@ export default function ChoosePage() {
   const [showPermForm, setShowPermForm] = useState(false)
   const [permReason, setPermReason] = useState('')
   const [submittingPerm, setSubmittingPerm] = useState(false)
+  const [permissions, setPermissions] = useState<any>({})
+  const [taskCount, setTaskCount] = useState(0)
+  const [showPermissions, setShowPermissions] = useState(false)
+  const [showRequests, setShowRequests] = useState(false)
+  const [showAdvanceForm, setShowAdvanceForm] = useState(false)
+  const [advanceAmount, setAdvanceAmount] = useState('')
+  const [advanceReason, setAdvanceReason] = useState('')
+  const [submittingAdvance, setSubmittingAdvance] = useState(false)
+  const [advanceMsg, setAdvanceMsg] = useState('')
+  const [showPermRequestModal, setShowPermRequestModal] = useState(false)
 
   useEffect(()=>{
     const s = localStorage.getItem('staff_session')
@@ -28,9 +38,38 @@ export default function ChoosePage() {
     setCanDispense(!!parsed.permissions?.dispense)
     setCanReservations(!!parsed.permissions?.reservations)
     setIsCashier(parsed.role==='cashier')
+    setPermissions(parsed.permissions||{})
     setStaffData(parsed)
     loadToday(parsed)
+    loadTaskCount()
   },[])
+
+  async function loadTaskCount() {
+    try {
+      const token = localStorage.getItem('staff_token')
+      const res = await fetch('/api/staff-tasks', { headers: { 'Authorization': `Bearer ${token}` } })
+      const j = await res.json()
+      if (j.success) setTaskCount((j.tasks||[]).filter((t:any)=>t.status==='pending').length)
+    } catch {}
+  }
+
+  async function submitAdvanceRequest() {
+    const amt = Number(advanceAmount)
+    if (!(amt>0)) { setAdvanceMsg('أدخل مبلغ صحيح'); return }
+    setSubmittingAdvance(true); setAdvanceMsg('')
+    try {
+      const token = localStorage.getItem('staff_token')
+      const res = await fetch('/api/staff-payroll-adjustments', {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body: JSON.stringify({ type:'advance', amount: amt, reason: advanceReason || null }),
+      })
+      const j = await res.json()
+      if (!j.success) { setAdvanceMsg(j.error||'حدث خطأ'); setSubmittingAdvance(false); return }
+      setShowAdvanceForm(false); setShowRequests(false)
+      setAdvanceAmount(''); setAdvanceReason('')
+    } catch { setAdvanceMsg('حدث خطأ بالاتصال') }
+    setSubmittingAdvance(false)
+  }
 
   async function loadToday(parsed:any) {
     try {
@@ -247,17 +286,126 @@ export default function ChoosePage() {
             </button>
           )}
         </div>
-        <button onClick={()=>router.push('/staff/tasks')}
-          style={{width:'100%',padding:'16px',marginTop:12,background:'white',color:'#1c1c1a',border:'1.5px solid #e5e7eb',borderRadius:16,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
-          <span style={{fontSize:20}}>📋</span>
-          مهامي
-        </button>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginTop:12}}>
+          <button onClick={()=>setShowPermissions(true)}
+            style={{padding:'16px 8px',background:'white',color:'#1c1c1a',border:'1.5px solid #e5e7eb',borderRadius:16,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,alignItems:'center',gap:6}}>
+            <span style={{fontSize:22}}>🔑</span>
+            صلاحياتي
+          </button>
+          <button onClick={()=>router.push('/staff/tasks')}
+            style={{position:'relative' as const,padding:'16px 8px',background:'white',color:'#1c1c1a',border:'1.5px solid #e5e7eb',borderRadius:16,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,alignItems:'center',gap:6}}>
+            {taskCount>0 && (
+              <span style={{position:'absolute' as const,top:6,left:6,background:'#dc2626',color:'white',fontSize:10,fontWeight:800,minWidth:18,height:18,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 4px'}}>{taskCount}</span>
+            )}
+            <span style={{fontSize:22}}>📋</span>
+            مهامي
+          </button>
+          <button onClick={()=>setShowRequests(true)}
+            style={{padding:'16px 8px',background:'white',color:'#1c1c1a',border:'1.5px solid #e5e7eb',borderRadius:16,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,alignItems:'center',gap:6}}>
+            <span style={{fontSize:22}}>📨</span>
+            طلباتي
+          </button>
+        </div>
 
         <button onClick={()=>{localStorage.removeItem('staff_session');router.replace('/staff')}}
           style={{marginTop:20,background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
           خروج
         </button>
       </div>
+
+      {/* نافذة صلاحياتي */}
+      {showPermissions && (
+        <div onClick={()=>setShowPermissions(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:360,textAlign:'right' as const}}>
+            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>صلاحياتي</div>
+            <div style={{display:'flex',flexDirection:'column' as const,gap:8,marginBottom:18}}>
+              {[
+                {key:'dispense',label:'الصرف'},{key:'inventory',label:'المخزون'},
+                {key:'purchases',label:'المشتريات'},{key:'reports',label:'التقارير'},
+                {key:'reservations',label:'الحجوزات'},
+              ].map(p=>{
+                const has = !!permissions?.[p.key]
+                return (
+                  <div key={p.key} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',background:has?'#f0fdf4':'#f8fafc',borderRadius:12,border:`1px solid ${has?'#bbf7d0':'#e2e8f0'}`}}>
+                    <span style={{fontSize:13,fontWeight:700,color:has?'#15803d':'#94a3b8'}}>{p.label}</span>
+                    <span style={{fontSize:13}}>{has?'✅':'—'}</span>
+                  </div>
+                )
+              })}
+            </div>
+            <button onClick={()=>setShowPermissions(false)} style={{width:'100%',padding:'12px',background:'#f1f5f9',color:'#334155',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>إغلاق</button>
+          </div>
+        </div>
+      )}
+
+      {/* نافذة طلباتي */}
+      {showRequests && !showAdvanceForm && (
+        <div onClick={()=>setShowRequests(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:200,display:'flex',alignItems:'flex-end',justifyContent:'center',padding:0}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:'24px 24px 0 0',padding:'24px 20px 32px',width:'100%',maxWidth:420,textAlign:'right' as const}}>
+            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>طلباتي</div>
+            <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
+              <button onClick={()=>setShowAdvanceForm(true)}
+                style={{width:'100%',padding:'16px',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:14,fontSize:14,fontWeight:700,color:'#1c1c1a',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
+                <span style={{fontSize:20}}>💰</span> طلب سلفة
+              </button>
+              <button onClick={()=>{setShowRequests(false);router.push('/staff/leave')}}
+                style={{width:'100%',padding:'16px',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:14,fontSize:14,fontWeight:700,color:'#1c1c1a',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
+                <span style={{fontSize:20}}>🗓️</span> طلب إجازة
+              </button>
+              <button onClick={()=>{setShowRequests(false);setShowPermRequestModal(true)}}
+                style={{width:'100%',padding:'16px',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:14,fontSize:14,fontWeight:700,color:'#1c1c1a',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
+                <span style={{fontSize:20}}>🙋</span> طلب استئذان
+              </button>
+            </div>
+            <button onClick={()=>setShowRequests(false)} style={{width:'100%',padding:'12px',marginTop:14,background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+          </div>
+        </div>
+      )}
+
+      {/* نموذج طلب السلفة */}
+      {showAdvanceForm && (
+        <div onClick={()=>{setShowAdvanceForm(false);setShowRequests(false)}} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:210,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:360,textAlign:'right' as const}}>
+            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>طلب سلفة</div>
+            <label style={{fontSize:12,color:'#64748b',display:'block',marginBottom:6}}>المبلغ</label>
+            <input type="number" value={advanceAmount} onChange={e=>setAdvanceAmount(e.target.value)} placeholder="0"
+              style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:16,fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:12}}/>
+            <label style={{fontSize:12,color:'#64748b',display:'block',marginBottom:6}}>السبب (اختياري)</label>
+            <textarea value={advanceReason} onChange={e=>setAdvanceReason(e.target.value)} placeholder="سبب طلب السلفة..."
+              style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const,minHeight:60,resize:'none' as const,marginBottom:12}}/>
+            {advanceMsg && <div style={{fontSize:12,color:'#dc2626',marginBottom:10}}>{advanceMsg}</div>}
+            <button onClick={submitAdvanceRequest} disabled={submittingAdvance||!advanceAmount}
+              style={{width:'100%',padding:'12px',background:(submittingAdvance||!advanceAmount)?'#94a3b8':'#16a34a',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:(submittingAdvance||!advanceAmount)?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
+              {submittingAdvance?'جاري الإرسال...':'إرسال الطلب'}
+            </button>
+            <button onClick={()=>setShowAdvanceForm(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>رجوع</button>
+          </div>
+        </div>
+      )}
+
+      {/* نموذج طلب استئذان مستقل (يشتغل بأي حالة، مو بس أثناء الحضور) */}
+      {showPermRequestModal && (
+        <div onClick={()=>setShowPermRequestModal(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:210,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:360,textAlign:'right' as const}}>
+            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:4}}>طلب استئذان</div>
+            <p style={{fontSize:12,color:'#64748b',marginBottom:16}}>يوصل طلبك للمالك عبر واتساب ليوافق أو يرفض</p>
+            {permReq?.status === 'pending' ? (
+              <div style={{textAlign:'center' as const,fontSize:13,color:'#d97706',fontWeight:700,background:'#fffbeb',border:'1px solid #fde68a',borderRadius:10,padding:'12px'}}>⏳ عندك طلب استئذان بانتظار رد المالك بالفعل</div>
+            ) : (
+              <>
+                <textarea value={permReason} onChange={e=>setPermReason(e.target.value)} placeholder="سبب الاستئذان (اختياري)..." rows={3}
+                  style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',resize:'none' as const,marginBottom:12,boxSizing:'border-box' as const}}/>
+                {attError && <div style={{fontSize:12,color:'#dc2626',marginBottom:10}}>{attError}</div>}
+                <button onClick={async ()=>{ await submitPermissionRequest(); setShowPermRequestModal(false) }} disabled={submittingPerm}
+                  style={{width:'100%',padding:'12px',background:submittingPerm?'#94a3b8':'#16a34a',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:submittingPerm?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
+                  {submittingPerm?'جاري الإرسال...':'إرسال الطلب'}
+                </button>
+              </>
+            )}
+            <button onClick={()=>setShowPermRequestModal(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>رجوع</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
