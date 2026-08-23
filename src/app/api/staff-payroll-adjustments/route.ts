@@ -130,16 +130,22 @@ export async function PATCH(req: Request) {
     } as any).eq('id', adjustment_id)
     if (error) return NextResponse.json({ error: 'فشل التحديث' }, { status: 500 })
 
-    // إشعار داخل النظام للموظف بالنتيجة (لو النوع سلفة)
+    // إشعار داخل النظام للموظف بالنتيجة (لو النوع سلفة) — بلغته المفضّلة
     if ((adj as any).type === 'advance') {
       const amount = (adj as any).amount
+      const { data: staffRow } = await supabase.from('staff_members').select('preferred_lang').eq('id', (adj as any).staff_id).maybeSingle()
+      const prefLang = (staffRow as any)?.preferred_lang === 'en' ? 'en' : 'ar'
+
+      const titleMap = { ar: decision==='approved'?'تمت الموافقة على طلب السلفة':'تم رفض طلب السلفة', en: decision==='approved'?'Advance Request Approved':'Advance Request Rejected' }
+      const messageMap = {
+        ar: decision==='approved' ? `تمت الموافقة على سلفتك بمبلغ ${amount} ر.س — راجع صاحب العمل لاستلامها` : `تم رفض طلب السلفة بمبلغ ${amount} ر.س`,
+        en: decision==='approved' ? `Your advance of ${amount} SAR was approved — check with your employer to collect it` : `Your advance request of ${amount} SAR was rejected`,
+      }
+
       await supabase.from('staff_notifications').insert({
         org_id, staff_id: (adj as any).staff_id,
         type: decision === 'approved' ? 'success' : 'danger',
-        title: decision === 'approved' ? 'تمت الموافقة على طلب السلفة' : 'تم رفض طلب السلفة',
-        message: decision === 'approved'
-          ? `تمت الموافقة على سلفتك بمبلغ ${amount} ر.س — راجع صاحب العمل لاستلامها`
-          : `تم رفض طلب السلفة بمبلغ ${amount} ر.س`,
+        title: titleMap[prefLang], message: messageMap[prefLang],
       } as any)
     }
 

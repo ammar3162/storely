@@ -86,6 +86,8 @@ export default function ChoosePage() {
     loadNotifications()
     const savedLang = localStorage.getItem('staff_lang')
     if (savedLang === 'en') setLang('en')
+    const interval = setInterval(loadNotifications, 30000)
+    return () => clearInterval(interval)
   },[])
 
   async function loadNotifications() {
@@ -216,7 +218,11 @@ export default function ChoosePage() {
     <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#0d2818,#1a4731)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl',padding:20}}>
       <div style={{background:'white',borderRadius:24,padding:'40px 32px',maxWidth:400,width:'100%',textAlign:'center',boxShadow:'0 24px 60px rgba(0,0,0,.3)',position:'relative' as const}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-          <button onClick={()=>{const nl=lang==='ar'?'en':'ar';setLang(nl);localStorage.setItem('staff_lang',nl)}}
+          <button onClick={()=>{
+              const nl=lang==='ar'?'en':'ar'; setLang(nl); localStorage.setItem('staff_lang',nl)
+              const token = localStorage.getItem('staff_token')
+              fetch('/api/staff-set-lang',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({lang:nl})}).catch(()=>{})
+            }}
             style={{background:'#f1f5f9',border:'none',borderRadius:20,padding:'6px 12px',fontSize:12,fontWeight:700,color:'#475569',cursor:'pointer',fontFamily:'inherit'}}>
             {lang==='ar'?'EN':'عربي'}
           </button>
