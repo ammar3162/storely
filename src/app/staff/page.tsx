@@ -158,7 +158,7 @@ export default function StaffLoginPage() {
               {error && <div style={{textAlign:'center' as const,color:'#fca5a5',fontSize:13,fontWeight:600,marginBottom:16}}>{error}</div>}
 
               {/* لوحة أرقام مخصصة لإدخال الجوال */}
-              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:20}}>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:20,direction:'ltr' as const}}>
                 {keypadKeys.map((k,i)=> k==='' ? <div key={i}/> : (
                   <button key={i} className="kp-btn" onClick={()=>pressPhoneKey(k)}
                     style={{padding:'16px 0',borderRadius:14,border:'none',background:'rgba(255,255,255,.06)',fontSize:20,fontWeight:700,color:k==='⌫'?'#fca5a5':'white',cursor:'pointer',fontFamily:'inherit'}}>
@@ -183,7 +183,7 @@ export default function StaffLoginPage() {
               <p style={{fontSize:13,color:'rgba(255,255,255,.5)',marginBottom:32,textAlign:'center' as const,direction:'ltr' as const}}>+{selectedCountry.code} {phone}</p>
 
               {/* نقاط عرض PIN */}
-              <div className={shake?'shake':''} style={{display:'flex',justifyContent:'center',gap:14,marginBottom:32}}>
+              <div className={shake?'shake':''} style={{display:'flex',justifyContent:'center',gap:14,marginBottom:32,direction:'ltr' as const}}>
                 {[0,1,2,3,4,5].map(i=>(
                   <div key={i} style={{
                     width:14,height:14,borderRadius:'50%',
@@ -200,7 +200,7 @@ export default function StaffLoginPage() {
               {loading && <div style={{textAlign:'center' as const,color:'rgba(255,255,255,.5)',fontSize:12,marginBottom:20}}>جاري التحقق...</div>}
 
               {/* لوحة أرقام PIN */}
-              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:24}}>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:24,direction:'ltr' as const}}>
                 {keypadKeys.map((k,i)=> k==='' ? <div key={i}/> : (
                   <button key={i} className="kp-btn" disabled={loading} onClick={()=>pressPinKey(k)}
                     style={{padding:'18px 0',borderRadius:14,border:'none',background:'rgba(255,255,255,.06)',fontSize:22,fontWeight:700,color:k==='⌫'?'#fca5a5':'white',cursor:loading?'default':'pointer',fontFamily:'inherit',opacity:loading?.5:1}}>
