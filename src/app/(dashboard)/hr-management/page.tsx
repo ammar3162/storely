@@ -31,6 +31,8 @@ export default function HRManagementPage() {
 
   const [leaveRequests, setLeaveRequests] = useState<any[]>([])
   const [loadingLeave, setLoadingLeave] = useState(false)
+  const [excuseRequests, setExcuseRequests] = useState<any[]>([])
+  const [loadingExcuse, setLoadingExcuse] = useState(false)
 
   const [reportMonth, setReportMonth] = useState(() => new Date().toISOString().slice(0,7))
   const [reportData, setReportData] = useState<any[]>([])
@@ -75,6 +77,7 @@ export default function HRManagementPage() {
     loadAdjustments(s.id)
     loadTasks(s.id)
     loadLeave(s.id)
+    loadExcuse(s.id)
   }
 
   async function loadLeave(staffId:string) {
@@ -102,6 +105,27 @@ export default function HRManagementPage() {
       const balance = j2.requests?.[0]?.staff_members?.leave_balance_days
       if (balance !== undefined) setStaff(prev => prev.map((s:any)=> s.id===staffId ? {...s, leave_balance_days:balance} : s))
     }
+  }
+
+  async function loadExcuse(staffId:string) {
+    setLoadingExcuse(true)
+    try {
+      const res = await fetch(`/api/attendance-permission-request?org_id=${orgId}`)
+      const j = await res.json()
+      setExcuseRequests(j.success ? (j.requests||[]).filter((r:any)=>r.staff_id===staffId) : [])
+    } catch { setExcuseRequests([]) }
+    setLoadingExcuse(false)
+  }
+
+  async function reviewExcuse(staffId:string, requestId:string, action:'approve'|'reject') {
+    const res = await fetch('/api/attendance-permission-request', {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ org_id: orgId, id: requestId, action }),
+    })
+    const j = await res.json()
+    if (!j.success) { toast(j.error||'خطأ','error'); return }
+    toast(action==='approve' ? '✅ تمت الموافقة على الاستئذان' : 'تم رفض الطلب')
+    loadExcuse(staffId)
   }
 
   async function loadReport() {
@@ -441,6 +465,28 @@ export default function HRManagementPage() {
                             </div>
                           )}
                         </>
+                      )}
+                    </div>
+
+                    {/* طلبات الاستئذان */}
+                    <div>
+                      <div style={{fontSize:12,fontWeight:700,color:colors.text3,marginBottom:10}}>طلبات الاستئذان (انصراف مبكر)</div>
+                      {loadingExcuse ? (
+                        <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
+                      ) : excuseRequests.filter((e:any)=>e.status==='pending').length===0 ? (
+                        <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>ما فيه طلبات استئذان معلّقة</div>
+                      ) : (
+                        <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                          {excuseRequests.filter((e:any)=>e.status==='pending').map((e:any)=>(
+                            <div key={e.id} style={{background:colors.warningLight,border:`1.5px solid ${colors.warningBorder}`,borderRadius:radius.md,padding:'12px 14px'}}>
+                              <div style={{fontSize:12,color:colors.text3,marginBottom:10}}>{e.reason || 'بدون سبب محدد'}</div>
+                              <div style={{display:'flex',gap:8}}>
+                                <button onClick={()=>reviewExcuse(s.id,e.id,'approve')} style={{flex:1,padding:'7px',background:colors.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><ThumbsUp size={13} strokeWidth={2.25}/> موافقة</button>
+                                <button onClick={()=>reviewExcuse(s.id,e.id,'reject')} style={{flex:1,padding:'7px',background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><ThumbsDown size={13} strokeWidth={2.25}/> رفض</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
 

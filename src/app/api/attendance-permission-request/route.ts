@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { randomBytes } from 'crypto'
-import { sendWhatsAppMessage } from '@/lib/whatsapp'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,14 +25,13 @@ export async function POST(req: Request) {
     } as any).select('id').single()
     if (error) return NextResponse.json({ error: 'فشل إرسال الطلب' }, { status: 500 })
 
-    // نجيب رقم واتساب المالك ونرسله رابط الموافقة
-    const { data: owner } = await supabase.from('profiles').select('phone').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
-    if ((owner as any)?.phone) {
-      const origin = new URL(req.url).origin
-      const link = `${origin}/permission/${token}`
-      const text = `🙋 طلب استئذان\n\n${staff_name || 'موظف'} يطلب الانصراف قبل نهاية شفته${reason ? `\nالسبب: ${reason}` : ''}\n\nللموافقة أو الرفض:\n${link}`
-      await sendWhatsAppMessage((owner as any).phone, text)
-    }
+    // إشعار داخل النظام للمالك (يظهر بجرس الإشعارات بلوحته)
+    const name = staff_name || 'موظف'
+    await supabase.from('notifications').insert({
+      org_id, branch_id, type: 'info',
+      title: 'طلب استئذان جديد',
+      message: `${name} يطلب الانصراف قبل نهاية شفته${reason ? ` — السبب: ${reason}` : ''}`,
+    } as any)
 
     return NextResponse.json({ success: true, id: (inserted as any)?.id })
   } catch {
@@ -43,18 +41,42 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
-    const { token, action } = await req.json()
-    if (!token || !['approve', 'reject'].includes(action)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+    const body = await req.json()
+    const { token, id, org_id, action } = body
+    if (!['approve', 'reject'].includes(action)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+    if (!token && !(id && org_id)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
     const supabase = sb()
-    const { data: reqRow } = await supabase.from('attendance_permission_requests').select('id,status').eq('token', token).maybeSingle()
+
+    let reqRow: any
+    if (token) {
+      const { data } = await supabase.from('attendance_permission_requests').select('id,status,org_id,staff_id').eq('token', token).maybeSingle()
+      reqRow = data
+    } else {
+      const { verifyOrgAccess } = await import('@/lib/verifyOrgAccess')
+      const access = await verifyOrgAccess(org_id)
+      if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+      const { data } = await supabase.from('attendance_permission_requests').select('id,status,org_id,staff_id').eq('id', id).eq('org_id', org_id).maybeSingle()
+      reqRow = data
+    }
     if (!reqRow) return NextResponse.json({ error: 'الطلب غير موجود' }, { status: 404 })
-    if ((reqRow as any).status !== 'pending') return NextResponse.json({ error: 'تم الرد على هذا الطلب مسبقاً' }, { status: 400 })
+    if (reqRow.status !== 'pending') return NextResponse.json({ error: 'تم الرد على هذا الطلب مسبقاً' }, { status: 400 })
 
     const { error } = await supabase.from('attendance_permission_requests').update({
       status: action === 'approve' ? 'approved' : 'rejected', resolved_at: new Date().toISOString(),
-    } as any).eq('token', token)
+    } as any).eq('id', reqRow.id)
     if (error) return NextResponse.json({ error: 'فشل التحديث' }, { status: 500 })
+
+    // إشعار داخل النظام للموظف بالنتيجة
+    const { data: staffRow } = await supabase.from('staff_members').select('preferred_lang').eq('id', (reqRow as any).staff_id).maybeSingle()
+    const prefLang = (staffRow as any)?.preferred_lang === 'en' ? 'en' : 'ar'
+    const titleMap = { ar: action==='approve'?'تمت الموافقة على طلب الاستئذان':'تم رفض طلب الاستئذان', en: action==='approve'?'Early Leave Request Approved':'Early Leave Request Rejected' }
+    const messageMap = { ar: action==='approve'?'تقدر تنصرف الآن قبل نهاية شفتك':'طلبك مرفوض — لازم تكمل شفتك المحددة', en: action==='approve'?'You may leave now before your shift ends':'Your request was rejected — please complete your scheduled shift' }
+    await supabase.from('staff_notifications').insert({
+      org_id: (reqRow as any).org_id, staff_id: (reqRow as any).staff_id,
+      type: action==='approve' ? 'success' : 'danger',
+      title: titleMap[prefLang], message: messageMap[prefLang],
+    } as any)
 
     return NextResponse.json({ success: true, status: action === 'approve' ? 'approved' : 'rejected' })
   } catch {
@@ -67,7 +89,17 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     const staff_id = searchParams.get('staff_id')
     const token = searchParams.get('token')
+    const org_id = searchParams.get('org_id')
     const supabase = sb()
+
+    if (org_id) {
+      const { verifyOrgAccess } = await import('@/lib/verifyOrgAccess')
+      const access = await verifyOrgAccess(org_id)
+      if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+      const { data } = await supabase.from('attendance_permission_requests')
+        .select('*').eq('org_id', org_id).order('requested_at', { ascending: false }).limit(50)
+      return NextResponse.json({ success: true, requests: data || [] })
+    }
 
     if (token) {
       const { data } = await supabase.from('attendance_permission_requests')
