@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Bell, MapPin, Package, CalendarDays, Store, ClipboardList, Send, Wallet, Plane, UserCheck } from 'lucide-react'
 
 const CS: Record<string, Record<'ar'|'en', string>> = {
   welcome:        { ar:'أهلاً', en:'Welcome' },
