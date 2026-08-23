@@ -214,40 +214,39 @@ export default function ChoosePage() {
   }
 
   return (
-    <div style={{minHeight:'100vh',background:'linear-gradient(160deg,#0a1f13,#0d2818 45%,#153524)',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl'}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap');*{box-sizing:border-box}`}</style>
-      <div style={{width:'100%',maxWidth:440,minHeight:'100vh',boxSizing:'border-box' as const,padding:'24px 24px 40px',textAlign:'center',position:'relative' as const}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#0d2818,#1a4731)',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl'}}>
+      <div style={{background:'white',borderRadius:0,padding:'32px 24px 40px',maxWidth:480,width:'100%',minHeight:'100vh',boxSizing:'border-box' as const,textAlign:'center',position:'relative' as const}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
           <button onClick={()=>{
               const nl=lang==='ar'?'en':'ar'; setLang(nl); localStorage.setItem('staff_lang',nl)
               const token = localStorage.getItem('staff_token')
               fetch('/api/staff-set-lang',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({lang:nl})}).catch(()=>{})
             }}
-            style={{background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.14)',borderRadius:20,padding:'7px 14px',fontSize:12,fontWeight:700,color:'rgba(255,255,255,.85)',cursor:'pointer',fontFamily:'inherit'}}>
+            style={{background:'#f1f5f9',border:'none',borderRadius:20,padding:'6px 12px',fontSize:12,fontWeight:700,color:'#475569',cursor:'pointer',fontFamily:'inherit'}}>
             {lang==='ar'?'EN':'عربي'}
           </button>
           <button onClick={()=>{ setShowNotifications(true); markNotificationsRead() }}
-            style={{position:'relative' as const,background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.14)',borderRadius:'50%',width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:16}}>
+            style={{position:'relative' as const,background:'#f1f5f9',border:'none',borderRadius:'50%',width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:16}}>
             🔔
             {notifications.some((n:any)=>!n.is_read) && (
-              <span style={{position:'absolute' as const,top:-2,left:-2,width:10,height:10,borderRadius:'50%',background:'#f87171',border:'2px solid #0d2818'}}/>
+              <span style={{position:'absolute' as const,top:-2,left:-2,width:10,height:10,borderRadius:'50%',background:'#dc2626',border:'2px solid white'}}/>
             )}
           </button>
         </div>
-        <div style={{width:64,height:64,borderRadius:18,background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.12)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px',fontSize:30}}>👋</div>
-        <h2 style={{fontSize:22,fontWeight:800,color:'white',marginBottom:6}}>{t('welcome')} {name}</h2>
-        <p style={{fontSize:13,color:'rgba(255,255,255,.55)',marginBottom:28}}>{t('chooseTask')}</p>
+        <div style={{fontSize:48,marginBottom:12}}>👋</div>
+        <h2 style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:4}}>{t('welcome')} {name}</h2>
+        <p style={{fontSize:13,color:'#64748b',marginBottom:24}}>{t('chooseTask')}</p>
 
         {/* تسجيل الحضور والانصراف */}
         {!loadingToday && !attendanceLocked && (
           <div style={{
-            background: isCheckedIn ? 'rgba(34,197,94,.12)' : 'rgba(255,255,255,.06)',
-            border: `1.5px solid ${isCheckedIn ? 'rgba(34,197,94,.35)' : 'rgba(255,255,255,.12)'}`,
+            background: isCheckedIn ? 'linear-gradient(135deg,#f0fdf4,#ecfdf5)' : '#f8fafc',
+            border: `1.5px solid ${isCheckedIn ? '#bbf7d0' : '#e2e8f0'}`,
             borderRadius: 18, padding: 18, marginBottom: 24, textAlign: 'right'
           }}>
             {/* حالة الموظف الآن */}
             <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:8,marginBottom:14}}>
-              <span style={{fontSize:12,fontWeight:800,color: isCheckedIn ? '#4ade80' : 'rgba(255,255,255,.6)'}}>
+              <span style={{fontSize:12,fontWeight:800,color: isCheckedIn ? '#15803d' : '#64748b'}}>
                 {isCheckedIn ? t('checkedIn') : lastCheckOut ? t('checkedOutToday') : t('notCheckedIn')}
               </span>
               <span style={{
@@ -261,13 +260,13 @@ export default function ChoosePage() {
             {(lastCheckIn || lastCheckOut) && (
               <div style={{display:'flex',gap:8,marginBottom:16}}>
                 {lastCheckIn && (
-                  <div style={{flex:1,background:'rgba(255,255,255,.9)',borderRadius:12,padding:'10px 12px',border:'1px solid rgba(255,255,255,.4)'}}>
+                  <div style={{flex:1,background:'white',borderRadius:12,padding:'10px 12px',border:'1px solid #e2e8f0'}}>
                     <div style={{fontSize:9,color:'#94a3b8',fontWeight:700,marginBottom:3}}>{t('checkInTime')}</div>
                     <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>{new Date(lastCheckIn.recorded_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit'})}</div>
                   </div>
                 )}
                 {lastCheckOut && (
-                  <div style={{flex:1,background:'rgba(255,255,255,.9)',borderRadius:12,padding:'10px 12px',border:'1px solid rgba(255,255,255,.4)'}}>
+                  <div style={{flex:1,background:'white',borderRadius:12,padding:'10px 12px',border:'1px solid #e2e8f0'}}>
                     <div style={{fontSize:9,color:'#94a3b8',fontWeight:700,marginBottom:3}}>{t('checkOutTime')}</div>
                     <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>{new Date(lastCheckOut.recorded_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit'})}</div>
                   </div>
@@ -369,7 +368,7 @@ export default function ChoosePage() {
         </div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:10,marginTop:12}}>
           <button onClick={()=>router.push('/staff/tasks')}
-            style={{position:'relative' as const,padding:'18px 8px',background:'rgba(255,255,255,.08)',color:'white',border:'1px solid rgba(255,255,255,.14)',borderRadius:16,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,alignItems:'center',gap:8}}>
+            style={{position:'relative' as const,padding:'16px 8px',background:'white',color:'#1c1c1a',border:'1.5px solid #e5e7eb',borderRadius:16,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,alignItems:'center',gap:6}}>
             {taskCount>0 && (
               <span style={{position:'absolute' as const,top:6,left:6,background:'#dc2626',color:'white',fontSize:10,fontWeight:800,minWidth:18,height:18,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 4px'}}>{taskCount}</span>
             )}
@@ -377,14 +376,14 @@ export default function ChoosePage() {
             {t('myTasksLabel')}
           </button>
           <button onClick={()=>setShowRequests(true)}
-            style={{padding:'18px 8px',background:'rgba(255,255,255,.08)',color:'white',border:'1px solid rgba(255,255,255,.14)',borderRadius:16,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,alignItems:'center',gap:8}}>
+            style={{padding:'16px 8px',background:'white',color:'#1c1c1a',border:'1.5px solid #e5e7eb',borderRadius:16,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,alignItems:'center',gap:6}}>
             <span style={{fontSize:22}}>📨</span>
             {t('myRequests')}
           </button>
         </div>
 
         <button onClick={()=>{localStorage.removeItem('staff_session');router.replace('/staff')}}
-          style={{marginTop:20,background:'none',border:'none',color:'rgba(255,255,255,.45)',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
+          style={{marginTop:20,background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
           {t('logout')}
         </button>
       </div>
