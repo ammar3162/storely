@@ -44,7 +44,7 @@ export default function StaffLoginPage() {
 
   function pressPinKey(k: string) {
     if (k === '⌫') { setPin(p=>p.slice(0,-1)); return }
-    if (pin.length >= 6) return
+    if (pin.length >= 4) return
     setPin(p=>(p+k).replace(/[^0-9]/g,''))
   }
 
@@ -184,7 +184,7 @@ export default function StaffLoginPage() {
 
               {/* نقاط عرض PIN */}
               <div className={shake?'shake':''} style={{display:'flex',justifyContent:'center',gap:14,marginBottom:32,direction:'ltr' as const}}>
-                {[0,1,2,3,4,5].map(i=>(
+                {[0,1,2,3].map(i=>(
                   <div key={i} style={{
                     width:14,height:14,borderRadius:'50%',
                     background: i<pin.length ? '#22c55e' : 'rgba(255,255,255,.12)',
