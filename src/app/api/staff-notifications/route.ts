@@ -30,23 +30,23 @@ export async function GET(req: Request) {
 }
 
 // تعليم إشعار (أو الكل) كمقروء
-export async function PATCH(req: Request) {
+// حذف الإشعارات فور رؤيتها من الموظف (بدل تعليمها مقروءة بس)
+export async function DELETE(req: Request) {
   try {
     const auth = verifyStaffToken(extractStaffToken(req))
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
     const { staff_id } = auth.data!
 
-    const { id, markAll } = await req.json()
+    const { searchParams } = new URL(req.url)
+    const id = searchParams.get('id')
     const supabase = sb()
 
-    if (markAll) {
-      const { error } = await supabase.from('staff_notifications').update({ is_read: true } as any).eq('staff_id', staff_id).eq('is_read', false)
-      if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
-    } else if (id) {
-      const { error } = await supabase.from('staff_notifications').update({ is_read: true } as any).eq('id', id).eq('staff_id', staff_id)
+    if (id) {
+      const { error } = await supabase.from('staff_notifications').delete().eq('id', id).eq('staff_id', staff_id)
       if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
     } else {
-      return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+      const { error } = await supabase.from('staff_notifications').delete().eq('staff_id', staff_id)
+      if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })

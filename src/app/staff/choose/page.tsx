@@ -100,12 +100,11 @@ export default function ChoosePage() {
   }
 
   async function markNotificationsRead() {
+    // نحذفها بالخلفية فور فتح النافذة — تفضل ظاهرة بالجلسة الحالية بس تختفي المرة الجاية
     const token = localStorage.getItem('staff_token')
     await fetch('/api/staff-notifications', {
-      method:'PATCH', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-      body: JSON.stringify({ markAll: true }),
-    })
-    setNotifications(prev => prev.map((n:any)=>({...n, is_read:true})))
+      method:'DELETE', headers:{'Authorization':`Bearer ${token}`},
+    }).catch(()=>{})
   }
 
   async function loadTaskCount() {
@@ -215,8 +214,8 @@ export default function ChoosePage() {
   }
 
   return (
-    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#0d2818,#1a4731)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl',padding:20}}>
-      <div style={{background:'white',borderRadius:24,padding:'40px 32px',maxWidth:400,width:'100%',textAlign:'center',boxShadow:'0 24px 60px rgba(0,0,0,.3)',position:'relative' as const}}>
+    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#0d2818,#1a4731)',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl'}}>
+      <div style={{background:'white',borderRadius:0,padding:'32px 24px 40px',maxWidth:480,width:'100%',minHeight:'100vh',boxSizing:'border-box' as const,textAlign:'center',position:'relative' as const}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
           <button onClick={()=>{
               const nl=lang==='ar'?'en':'ar'; setLang(nl); localStorage.setItem('staff_lang',nl)
