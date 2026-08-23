@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
+import { sendWhatsAppMessage, formatPhone } from '@/lib/whatsapp'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -76,11 +77,31 @@ export async function POST(req: Request) {
       if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
       const { org_id, staff_id } = auth.data!
 
+      const { data: staffRow } = await supabase.from('staff_members').select('name,branch_id').eq('id', staff_id).maybeSingle()
+
       const { error } = await supabase.from('staff_payroll_adjustments').insert({
         org_id, staff_id, type: 'advance', amount: amountNum, reason: reason || null,
         status: 'pending', requested_by: 'staff',
       } as any)
       if (error) return NextResponse.json({ error: 'فشل إرسال الطلب' }, { status: 500 })
+
+      // إشعار داخل النظام للمالك (يظهر بجرس الإشعارات)
+      const staffName = (staffRow as any)?.name || 'موظف'
+      const branchId = (staffRow as any)?.branch_id || null
+      await supabase.from('notifications').insert({
+        org_id, branch_id: branchId, type: 'info',
+        title: 'طلب سلفة جديد',
+        message: `${staffName} يطلب سلفة بمبلغ ${amountNum} ر.س${reason ? ` — السبب: ${reason}` : ''}`,
+      } as any)
+
+      // إشعار واتساب للمالك
+      const { data: owner } = await supabase.from('profiles').select('phone').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
+      if ((owner as any)?.phone) {
+        await sendWhatsAppMessage(formatPhone((owner as any).phone),
+          `💰 *طلب سلفة جديد*\n\n${staffName} يطلب سلفة بمبلغ *${amountNum} ر.س*${reason ? `\nالسبب: ${reason}` : ''}\n\nراجع الطلب من لوحة "إدارة الموظفين" بحساب Storely.`
+        )
+      }
+
       return NextResponse.json({ success: true })
     }
   } catch {
@@ -100,7 +121,7 @@ export async function PATCH(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
     const supabase = sb()
-    const { data: adj } = await supabase.from('staff_payroll_adjustments').select('id,status').eq('id', adjustment_id).eq('org_id', org_id).maybeSingle()
+    const { data: adj } = await supabase.from('staff_payroll_adjustments').select('id,status,type,amount,staff_id').eq('id', adjustment_id).eq('org_id', org_id).maybeSingle()
     if (!adj) return NextResponse.json({ error: 'الطلب غير موجود' }, { status: 404 })
     if ((adj as any).status !== 'pending') return NextResponse.json({ error: 'تم البت بهذا الطلب مسبقاً' }, { status: 400 })
 
@@ -108,6 +129,18 @@ export async function PATCH(req: Request) {
       status: decision, reviewed_by: 'owner', reviewed_at: new Date().toISOString(),
     } as any).eq('id', adjustment_id)
     if (error) return NextResponse.json({ error: 'فشل التحديث' }, { status: 500 })
+
+    // إشعار واتساب للموظف بالنتيجة (لو النوع سلفة)
+    if ((adj as any).type === 'advance') {
+      const { data: staffRow } = await supabase.from('staff_members').select('phone,name').eq('id', (adj as any).staff_id).maybeSingle()
+      if ((staffRow as any)?.phone) {
+        const amount = (adj as any).amount
+        const text = decision === 'approved'
+          ? `✅ *تمت الموافقة على طلب سلفتك*\n\nالمبلغ: ${amount} ر.س\n\nراجع صاحب العمل لاستلامها.`
+          : `🚫 *تم رفض طلب سلفتك*\n\nالمبلغ: ${amount} ر.س`
+        await sendWhatsAppMessage(formatPhone((staffRow as any).phone), text)
+      }
+    }
 
     return NextResponse.json({ success: true })
   } catch {

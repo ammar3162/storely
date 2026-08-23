@@ -19,9 +19,7 @@ export default function ChoosePage() {
   const [showPermForm, setShowPermForm] = useState(false)
   const [permReason, setPermReason] = useState('')
   const [submittingPerm, setSubmittingPerm] = useState(false)
-  const [permissions, setPermissions] = useState<any>({})
   const [taskCount, setTaskCount] = useState(0)
-  const [showPermissions, setShowPermissions] = useState(false)
   const [showRequests, setShowRequests] = useState(false)
   const [showAdvanceForm, setShowAdvanceForm] = useState(false)
   const [advanceAmount, setAdvanceAmount] = useState('')
@@ -38,7 +36,6 @@ export default function ChoosePage() {
     setCanDispense(!!parsed.permissions?.dispense)
     setCanReservations(!!parsed.permissions?.reservations)
     setIsCashier(parsed.role==='cashier')
-    setPermissions(parsed.permissions||{})
     setStaffData(parsed)
     loadToday(parsed)
     loadTaskCount()
@@ -286,12 +283,7 @@ export default function ChoosePage() {
             </button>
           )}
         </div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginTop:12}}>
-          <button onClick={()=>setShowPermissions(true)}
-            style={{padding:'16px 8px',background:'white',color:'#1c1c1a',border:'1.5px solid #e5e7eb',borderRadius:16,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,alignItems:'center',gap:6}}>
-            <span style={{fontSize:22}}>🔑</span>
-            صلاحياتي
-          </button>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:10,marginTop:12}}>
           <button onClick={()=>router.push('/staff/tasks')}
             style={{position:'relative' as const,padding:'16px 8px',background:'white',color:'#1c1c1a',border:'1.5px solid #e5e7eb',borderRadius:16,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,alignItems:'center',gap:6}}>
             {taskCount>0 && (
@@ -312,31 +304,6 @@ export default function ChoosePage() {
           خروج
         </button>
       </div>
-
-      {/* نافذة صلاحياتي */}
-      {showPermissions && (
-        <div onClick={()=>setShowPermissions(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:360,textAlign:'right' as const}}>
-            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>صلاحياتي</div>
-            <div style={{display:'flex',flexDirection:'column' as const,gap:8,marginBottom:18}}>
-              {[
-                {key:'dispense',label:'الصرف'},{key:'inventory',label:'المخزون'},
-                {key:'purchases',label:'المشتريات'},{key:'reports',label:'التقارير'},
-                {key:'reservations',label:'الحجوزات'},
-              ].map(p=>{
-                const has = !!permissions?.[p.key]
-                return (
-                  <div key={p.key} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',background:has?'#f0fdf4':'#f8fafc',borderRadius:12,border:`1px solid ${has?'#bbf7d0':'#e2e8f0'}`}}>
-                    <span style={{fontSize:13,fontWeight:700,color:has?'#15803d':'#94a3b8'}}>{p.label}</span>
-                    <span style={{fontSize:13}}>{has?'✅':'—'}</span>
-                  </div>
-                )
-              })}
-            </div>
-            <button onClick={()=>setShowPermissions(false)} style={{width:'100%',padding:'12px',background:'#f1f5f9',color:'#334155',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>إغلاق</button>
-          </div>
-        </div>
-      )}
 
       {/* نافذة طلباتي */}
       {showRequests && !showAdvanceForm && (
