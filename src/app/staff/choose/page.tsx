@@ -215,7 +215,7 @@ export default function ChoosePage() {
 
   return (
     <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#0d2818,#1a4731)',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl'}}>
-      <div style={{background:'white',borderRadius:0,padding:'32px 24px 40px',maxWidth:480,width:'100%',minHeight:'100vh',boxSizing:'border-box' as const,textAlign:'center',position:'relative' as const}}>
+      <div style={{background:'white',borderRadius:0,padding:'32px 24px 40px',maxWidth:480,width:'100%',minHeight:'100vh',boxSizing:'border-box' as const,textAlign:'center',position:'relative' as const,display:'flex',flexDirection:'column' as const,justifyContent:'center'}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
           <button onClick={()=>{
               const nl=lang==='ar'?'en':'ar'; setLang(nl); localStorage.setItem('staff_lang',nl)
@@ -227,15 +227,17 @@ export default function ChoosePage() {
           </button>
           <button onClick={()=>{ setShowNotifications(true); markNotificationsRead() }}
             style={{position:'relative' as const,background:'#f1f5f9',border:'none',borderRadius:'50%',width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:16}}>
-            🔔
+            <Bell size={17} strokeWidth={2.25}/>
             {notifications.some((n:any)=>!n.is_read) && (
               <span style={{position:'absolute' as const,top:-2,left:-2,width:10,height:10,borderRadius:'50%',background:'#dc2626',border:'2px solid white'}}/>
             )}
           </button>
         </div>
-        <div style={{fontSize:48,marginBottom:12}}>👋</div>
-        <h2 style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:4}}>{t('welcome')} {name}</h2>
-        <p style={{fontSize:13,color:'#64748b',marginBottom:24}}>{t('chooseTask')}</p>
+        <div style={{width:60,height:60,borderRadius:18,background:'linear-gradient(135deg,#16a34a,#15803d)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px',boxShadow:'0 8px 20px rgba(22,163,74,.28)'}}>
+          <span style={{fontSize:24,fontWeight:800,color:'white'}}>{name?.trim()?.[0] || '👤'}</span>
+        </div>
+        <h2 style={{fontSize:21,fontWeight:800,color:'#0f172a',marginBottom:5,letterSpacing:'-.2px'}}>{t('welcome')} {name}</h2>
+        <p style={{fontSize:13.5,color:'#94a3b8',marginBottom:28}}>{t('chooseTask')}</p>
 
         {/* تسجيل الحضور والانصراف */}
         {!loadingToday && !attendanceLocked && (
@@ -279,14 +281,14 @@ export default function ChoosePage() {
               !isCheckedIn ? (
                 <button onClick={()=>markAttendance('check_in')} disabled={marking!==null}
                   style={{width:'100%',padding:'15px',background:'linear-gradient(135deg,#16a34a,#15803d)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow:'0 6px 16px rgba(22,163,74,.3)'}}>
-                  <span style={{width:26,height:26,borderRadius:'50%',background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>📍</span>
+                  <span style={{width:26,height:26,borderRadius:'50%',background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center'}}><MapPin size={14} strokeWidth={2.25}/></span>
                   {marking==='check_in' ? t('markingLocation') : t('checkIn')}
                 </button>
               ) : (
                 <>
                   <button onClick={()=>markAttendance('check_out')} disabled={marking!==null || !canCheckOut}
                     style={{width:'100%',padding:'15px',background: canCheckOut ? 'linear-gradient(135deg,#ef4444,#dc2626)' : '#cbd5e1',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor: canCheckOut ? 'pointer' : 'not-allowed',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow: canCheckOut ? '0 6px 16px rgba(220,38,38,.3)' : 'none'}}>
-                    <span style={{width:26,height:26,borderRadius:'50%',background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>📍</span>
+                    <span style={{width:26,height:26,borderRadius:'50%',background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center'}}><MapPin size={14} strokeWidth={2.25}/></span>
                     {marking==='check_out' ? t('markingLocation') : t('checkOut')}
                   </button>
                   {!canCheckOut && checkOutHint && (
@@ -311,7 +313,7 @@ export default function ChoosePage() {
                       </div>
                     ) : (
                       <button onClick={()=>setShowPermForm(true)} style={{width:'100%',marginTop:10,padding:'11px',background:'#fffbeb',color:'#b45309',border:'1.5px solid #fde68a',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                        🙋 طلب استئذان (ظرف طارئ)
+                        <UserCheck size={13} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> طلب استئذان (ظرف طارئ)
                       </button>
                     )
                   )}
@@ -329,7 +331,7 @@ export default function ChoosePage() {
           {canDispense && (
             <button onClick={()=>router.push('/staff/dispense')}
               style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#0d2818,#16a34a)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
-              <span style={{fontSize:28}}>📤</span>
+              <span style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Package size={22} strokeWidth={2}/></span>
               <div style={{textAlign:'right'}}>
                 <div style={{fontSize:16,fontWeight:800}}>{t('dispense')}</div>
                 <div style={{fontSize:12,opacity:.8}}>{t('dispenseSub')}</div>
@@ -339,7 +341,7 @@ export default function ChoosePage() {
           {canReservations && (
             <button onClick={()=>router.push('/staff/reservations')}
               style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#78350f,#b45309)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
-              <span style={{fontSize:28}}>🗓️</span>
+              <span style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><CalendarDays size={22} strokeWidth={2}/></span>
               <div style={{textAlign:'right'}}>
                 <div style={{fontSize:16,fontWeight:800}}>{t('reservations')}</div>
                 <div style={{fontSize:12,opacity:.8}}>{t('reservationsSub')}</div>
@@ -349,7 +351,7 @@ export default function ChoosePage() {
           {isCashier && (
             <button onClick={()=>router.push('/staff/cashier-closing')}
               style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#1e293b,#334155)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
-              <span style={{fontSize:28}}>🏪</span>
+              <span style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Store size={22} strokeWidth={2}/></span>
               <div style={{textAlign:'right'}}>
                 <div style={{fontSize:16,fontWeight:800}}>{t('cashierClosing')}</div>
                 <div style={{fontSize:12,opacity:.8}}>{t('cashierSub')}</div>
@@ -372,12 +374,12 @@ export default function ChoosePage() {
             {taskCount>0 && (
               <span style={{position:'absolute' as const,top:6,left:6,background:'#dc2626',color:'white',fontSize:10,fontWeight:800,minWidth:18,height:18,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 4px'}}>{taskCount}</span>
             )}
-            <span style={{fontSize:22}}>📋</span>
+            <span style={{width:38,height:38,borderRadius:11,background:'#f0fdf4',display:'flex',alignItems:'center',justifyContent:'center',color:'#16a34a'}}><ClipboardList size={19} strokeWidth={2}/></span>
             {t('myTasksLabel')}
           </button>
           <button onClick={()=>setShowRequests(true)}
             style={{padding:'16px 8px',background:'white',color:'#1c1c1a',border:'1.5px solid #e5e7eb',borderRadius:16,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,alignItems:'center',gap:6}}>
-            <span style={{fontSize:22}}>📨</span>
+            <span style={{width:38,height:38,borderRadius:11,background:'#eff6ff',display:'flex',alignItems:'center',justifyContent:'center',color:'#2563eb'}}><Send size={19} strokeWidth={2}/></span>
             {t('myRequests')}
           </button>
         </div>
@@ -396,15 +398,15 @@ export default function ChoosePage() {
             <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
               <button onClick={()=>setShowAdvanceForm(true)}
                 style={{width:'100%',padding:'16px',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:14,fontSize:14,fontWeight:700,color:'#1c1c1a',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
-                <span style={{fontSize:20}}>💰</span> {t('requestAdvance')}
+                <Wallet size={18} strokeWidth={2}/> {t('requestAdvance')}
               </button>
               <button onClick={()=>{setShowRequests(false);router.push('/staff/leave')}}
                 style={{width:'100%',padding:'16px',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:14,fontSize:14,fontWeight:700,color:'#1c1c1a',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
-                <span style={{fontSize:20}}>🗓️</span> {t('requestLeave')}
+                <Plane size={18} strokeWidth={2}/> {t('requestLeave')}
               </button>
               <button onClick={()=>{setShowRequests(false);setShowPermRequestModal(true)}}
                 style={{width:'100%',padding:'16px',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:14,fontSize:14,fontWeight:700,color:'#1c1c1a',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
-                <span style={{fontSize:20}}>🙋</span> {t('requestExcuse')}
+                <UserCheck size={18} strokeWidth={2}/> {t('requestExcuse')}
               </button>
             </div>
             <button onClick={()=>setShowRequests(false)} style={{width:'100%',padding:'12px',marginTop:14,background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('cancel')}</button>
