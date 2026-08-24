@@ -165,7 +165,7 @@ export default function LandingPage() {
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',background:'white',color:'#111827'}}>
       <style>{`
         @keyframes marqueeScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&family=Noto+Naskh+Arabic:wght@500;600;700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
         html{scroll-behavior:smooth}
         .nav-link{color:#4b5563;text-decoration:none;font-size:14px;font-weight:500;transition:color .2s}
@@ -217,56 +217,76 @@ export default function LandingPage() {
       )}
 
       {/* NAVBAR */}
-      <nav style={{position:'fixed',top:hasMarquee?36:0,right:0,left:0,zIndex:1000,background:scrolled?'rgba(255,255,255,.97)':'white',borderBottom:scrolled?'1px solid #f3f4f6':'1px solid transparent',backdropFilter:scrolled?'blur(10px)':'none',transition:'all .3s',padding:'0 40px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-        <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <img src="/storely-logo.png" alt="Storely" style={{width:38,height:38,borderRadius:10,objectFit:'cover'}}/>
-          <span style={{fontSize:18,fontWeight:800,color:'#111827',letterSpacing:'-0.3px'}}>Storely</span>
-        </div>
-        <div className="desk-nav" style={{display:'flex',gap:28,alignItems:'center'}}>
-          {[['المميزات','#features'],['الأسعار','#pricing'],['الأسئلة','#faq']].map(([l,h])=>(
-            <a key={h} href={h} className="nav-link">{l}</a>
-          ))}
-        </div>
-        <div className="desk-nav" style={{display:'flex',gap:10,alignItems:'center'}}>
-          <button onClick={()=>router.push('/login')} className="btn-outline" style={{padding:'8px 18px',fontSize:14}}>دخول</button>
-          <a href="#demo" className="btn-primary" style={{padding:'9px 20px',fontSize:14}}>اطلب عرض النظام</a>
-        </div>
-        <button className="mob-menu-btn" onClick={()=>setMenuOpen(o=>!o)}
-          style={{background:'none',border:'none',cursor:'pointer',fontSize:22,color:'#111827',padding:4}}>
-          {menuOpen?'✕':'☰'}
-        </button>
-      </nav>
+      <div style={{background:'linear-gradient(155deg,#0a1f13 0%,#123822 45%,#1a4f31 100%)',paddingBottom:80,position:'relative' as const,overflow:'hidden'}}>
+        <div style={{position:'absolute' as const,top:-120,left:-120,width:400,height:400,borderRadius:'50%',background:'radial-gradient(circle,rgba(255,255,255,.06),transparent 70%)'}}/>
+        <div style={{position:'absolute' as const,bottom:-160,right:-100,width:500,height:500,borderRadius:'50%',background:'radial-gradient(circle,rgba(255,255,255,.05),transparent 70%)'}}/>
 
-      {menuOpen && (
-        <div className="mob-menu" style={{position:'fixed',top:hasMarquee?100:64,right:0,left:0,zIndex:999,background:'white',borderBottom:'1px solid #f3f4f6',padding:'20px 24px',display:'flex',flexDirection:'column',gap:16}}>
-          {[['المميزات','#features'],['الأسعار','#pricing'],['الأسئلة','#faq']].map(([l,h])=>(
-            <a key={h} href={h} onClick={()=>setMenuOpen(false)} style={{color:'#374151',textDecoration:'none',fontSize:16,fontWeight:500,padding:'8px 0',borderBottom:'1px solid #f9fafb'}}>{l}</a>
-          ))}
-          <a href="#demo" onClick={()=>setMenuOpen(false)} className="btn-primary" style={{textAlign:'center'}}>اطلب عرض النظام</a>
-        </div>
-      )}
-
-      {/* HERO */}
-      <section style={{paddingTop:hasMarquee?166:130,paddingBottom:60,padding:hasMarquee?'166px 40px 60px':'130px 40px 60px',maxWidth:1240,margin:'0 auto',textAlign:'center' as const}}>
-        <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:99,padding:'6px 16px',fontSize:13,fontWeight:600,color:'#15803d',marginBottom:24}}>
-          ✓ تجربة مجانية 14 يوماً — لا يتطلب بطاقة ائتمانية
-        </div>
-        <h1 className="hero-h1" style={{fontSize:52,fontWeight:900,color:'#111827',lineHeight:1.15,marginBottom:20,letterSpacing:'-2px',maxWidth:820,margin:'0 auto 20px'}}>
-          نصمّم مستقبل الإدارة الذكية<br/>
-          <span style={{color:'#15803d'}}>لكل منشأة تطمح للنمو</span>
-        </h1>
-        <p style={{fontSize:18,color:'#6b7280',maxWidth:620,margin:'0 auto 32px',lineHeight:1.7}}>
-          من المخزون والمشتريات، لصفحة عرض منتجاتك والحجوزات الإلكترونية، وإدارة الموظفين والفروع — كل شي بمكان واحد
-        </p>
-        <div className="hero-btns" style={{display:'flex',gap:12,justifyContent:'center',marginBottom:56}}>
-          <a href="#demo" className="btn-outline" style={{fontSize:16,padding:'14px 28px'}}>جرب نظام Storely</a>
-          <button onClick={()=>router.push('/login?mode=register')} className="btn-primary" style={{fontSize:16,padding:'14px 32px'}}>
-            ابدأ تجربتك المجانية
+        <nav style={{position:'fixed',top:hasMarquee?36:0,right:0,left:0,zIndex:1000,background:scrolled?'rgba(10,31,19,.92)':'transparent',borderBottom:scrolled?'1px solid rgba(255,255,255,.08)':'1px solid transparent',backdropFilter:scrolled?'blur(10px)':'none',transition:'all .3s',padding:'0 40px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <img src="/storely-logo.png" alt="Storely" style={{width:38,height:38,borderRadius:10,objectFit:'cover'}}/>
+            <span style={{fontSize:18,fontWeight:800,color:'white',letterSpacing:'-0.3px'}}>Storely</span>
+          </div>
+          <div className="desk-nav" style={{display:'flex',gap:28,alignItems:'center'}}>
+            {[['المميزات','#features'],['الأسعار','#pricing'],['الأسئلة','#faq']].map(([l,h])=>(
+              <a key={h} href={h} style={{color:'rgba(255,255,255,.75)',textDecoration:'none',fontSize:14,fontWeight:500,transition:'color .2s'}}>{l}</a>
+            ))}
+          </div>
+          <div className="desk-nav" style={{display:'flex',gap:10,alignItems:'center'}}>
+            <button onClick={()=>router.push('/login')} style={{padding:'8px 18px',fontSize:14,fontWeight:700,background:'transparent',color:'white',border:'1px solid rgba(255,255,255,.25)',borderRadius:99,cursor:'pointer',fontFamily:'inherit'}}>دخول</button>
+            <a href="#demo" style={{padding:'9px 20px',fontSize:14,fontWeight:700,background:'white',color:'#0a1f13',borderRadius:99,textDecoration:'none'}}>اطلب عرض النظام</a>
+          </div>
+          <button className="mob-menu-btn" onClick={()=>setMenuOpen(o=>!o)}
+            style={{background:'none',border:'none',cursor:'pointer',fontSize:22,color:'white',padding:4}}>
+            {menuOpen?'✕':'☰'}
           </button>
-        </div>
+        </nav>
 
-        {/* شبكة معاينات — تُستبدل بلقطات شاشة حقيقية لاحقاً */}
-        <div className="collage-grid" style={{display:'grid',gridTemplateColumns:'1.1fr 0.9fr 0.9fr 1.3fr',gap:14,height:340,maxWidth:1100,margin:'0 auto'}}>
+        {menuOpen && (
+          <div className="mob-menu" style={{position:'fixed',top:hasMarquee?100:64,right:0,left:0,zIndex:999,background:'#0a1f13',borderBottom:'1px solid rgba(255,255,255,.08)',padding:'20px 24px',display:'flex',flexDirection:'column',gap:16}}>
+            {[['المميزات','#features'],['الأسعار','#pricing'],['الأسئلة','#faq']].map(([l,h])=>(
+              <a key={h} href={h} onClick={()=>setMenuOpen(false)} style={{color:'rgba(255,255,255,.85)',textDecoration:'none',fontSize:16,fontWeight:500,padding:'8px 0',borderBottom:'1px solid rgba(255,255,255,.08)'}}>{l}</a>
+            ))}
+            <a href="#demo" onClick={()=>setMenuOpen(false)} style={{textAlign:'center',padding:'12px',background:'white',color:'#0a1f13',borderRadius:99,fontWeight:700,textDecoration:'none'}}>اطلب عرض النظام</a>
+          </div>
+        )}
+
+        {/* HERO */}
+        <section style={{paddingTop:hasMarquee?166:130,paddingBottom:8,padding:hasMarquee?'166px 40px 8px':'130px 40px 8px',maxWidth:1000,margin:'0 auto',textAlign:'center' as const,position:'relative' as const,zIndex:1}}>
+          <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.18)',borderRadius:99,padding:'7px 18px',fontSize:13,fontWeight:600,color:'white',marginBottom:28}}>
+            <span style={{width:6,height:6,borderRadius:'50%',background:'#4ade80'}}/>
+            تجربة مجانية 14 يوماً — بدون بطاقة ائتمانية
+          </div>
+          <h1 className="hero-h1" style={{fontFamily:"'Noto Naskh Arabic',serif",fontSize:58,fontWeight:600,color:'white',lineHeight:1.25,marginBottom:22,letterSpacing:'-0.5px',maxWidth:820,margin:'0 auto 22px'}}>
+            نصمّم مستقبل الإدارة الذكية<br/>
+            <span style={{color:'#86efac',fontStyle:'italic' as const}}>لكل منشأة تطمح للنمو</span>
+          </h1>
+          <p style={{fontSize:17,color:'rgba(255,255,255,.65)',maxWidth:580,margin:'0 auto 34px',lineHeight:1.7}}>
+            من المخزون والمشتريات، لصفحة عرض منتجاتك والحجوزات الإلكترونية، وإدارة الموظفين والفروع — كل شي بمكان واحد
+          </p>
+          <div className="hero-btns" style={{display:'flex',gap:12,justifyContent:'center',marginBottom:56}}>
+            <a href="#demo" style={{fontSize:16,padding:'14px 28px',background:'transparent',color:'white',border:'1.5px solid rgba(255,255,255,.3)',borderRadius:99,textDecoration:'none',fontWeight:700}}>جرب نظام Storely</a>
+            <button onClick={()=>router.push('/login?mode=register')} style={{fontSize:16,padding:'14px 32px',background:'white',color:'#0a1f13',border:'none',borderRadius:99,cursor:'pointer',fontFamily:'inherit',fontWeight:700}}>
+              ابدأ تجربتك المجانية
+            </button>
+          </div>
+        </section>
+
+        {/* شعارات العملاء — فوق الخلفية الملوّنة مباشرة، زي Tines */}
+        {partners.length > 0 && (
+          <div style={{maxWidth:1000,margin:'0 auto',padding:'0 40px',position:'relative' as const,zIndex:1}}>
+            <p style={{textAlign:'center' as const,fontSize:12,fontWeight:700,color:'rgba(255,255,255,.4)',letterSpacing:'.1em',textTransform:'uppercase' as const,marginBottom:24}}>موثوق من قبل منشآت رائدة</p>
+            <div style={{display:'flex',flexWrap:'wrap' as const,gap:36,justifyContent:'center',alignItems:'center',opacity:.85}}>
+              {partners.map((p:any)=>(
+                <img key={p.id} src={p.logo_url} alt={p.name} style={{height:26,maxWidth:110,objectFit:'contain',filter:'brightness(0) invert(1)',opacity:.75}}/>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* شبكة معاينات — تطفو فوق حافة الخلفية الملوّنة، زي بطاقات Tines */}
+      <div style={{maxWidth:1100,margin:'-60px auto 0',padding:'0 40px',position:'relative' as const,zIndex:2}}>
+        <div className="collage-grid" style={{display:'grid',gridTemplateColumns:'1.1fr 0.9fr 0.9fr 1.3fr',gap:14,height:340,boxShadow:'0 30px 70px rgba(0,0,0,.18)',borderRadius:24}}>
           <div style={{background:'linear-gradient(160deg,#f0fdf4,#dcfce7)',borderRadius:20,padding:10}}><MiniMockup variant="whatsapp"/></div>
           <div style={{background:'linear-gradient(160deg,#eff6ff,#dbeafe)',borderRadius:20,padding:10}}><MiniMockup variant="staff"/></div>
           <div style={{background:'linear-gradient(160deg,#fefce8,#fef9c3)',borderRadius:20,padding:10}}><MiniMockup variant="chart"/></div>
@@ -281,26 +301,7 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
-      </section>
-
-      {/* PARTNERS */}
-      {partners.length > 0 && (
-        <section style={{padding:'60px 40px'}}>
-          <div style={{maxWidth:1100,margin:'0 auto',background:'white',border:'1px solid #f3f4f6',borderRadius:24,padding:'40px 36px',boxShadow:'0 4px 24px rgba(0,0,0,.04)'}}>
-            <div style={{textAlign:'center',marginBottom:28}}>
-              <p style={{fontSize:12,fontWeight:700,color:'#15803d',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:8}}>شركاؤنا</p>
-              <h2 style={{fontSize:24,fontWeight:800,color:'#111827'}}>موثوق من قبل منشآت رائدة</h2>
-            </div>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:14}}>
-              {partners.map((p:any)=>(
-                <div key={p.id} style={{aspectRatio:'2/1',borderRadius:12,background:'#fafafa',border:'1px solid #f3f4f6',display:'flex',alignItems:'center',justifyContent:'center',padding:14,transition:'all .2s'}}>
-                  <img src={p.logo_url} alt={p.name} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain'}}/>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      </div>
 
       {/* TRUST */}
       <section style={{padding:'50px 40px',background:'#fafafa',borderTop:'1px solid #f3f4f6',borderBottom:'1px solid #f3f4f6'}}>
