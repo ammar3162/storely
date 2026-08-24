@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
+import { CalendarDays, FileText, Trophy, Inbox, Loader2, Paperclip, Trash2, PartyPopper, Lock, AlertTriangle, Download, Pencil, BarChart3, CreditCard, Upload, Receipt, ClipboardList, Wallet, Flame, X } from 'lucide-react'
 import { cache } from '@/lib/cache'
 import { createClient } from '@/lib/supabase/client'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
@@ -32,7 +33,7 @@ function formatRange(period: FilterPeriod, from: string, to: string) {
 
 function FilterBar({ period, setPeriod, from, setFrom, to, setTo }: any) {
   const PERIODS = [
-    {key:'custom',label:'مخصص',icon:'📅'},
+    {key:'custom',label:'مخصص',icon:<CalendarDays size={13} strokeWidth={2.25}/>},
     {key:'year',label:'هذه السنة'},
     {key:'month',label:'هذا الشهر'},
     {key:'week',label:'الأسبوع'},
@@ -147,7 +148,7 @@ function BackBtn({ onClick }: { onClick:()=>void }) {
 function PeriodBadge({ period, from, to }: any) {
   return (
     <div style={{...card,padding:'10px 16px',marginBottom:16,display:'flex',alignItems:'center',gap:8,background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`}}>
-      <span style={{fontSize:16}}>📅</span>
+      <span style={{display:'flex',alignItems:'center'}}><CalendarDays size={16} strokeWidth={2.25}/></span>
       <span style={{fontSize:font.sm,fontWeight:700,color:colors.primary}}>{formatRange(period,from,to)}</span>
     </div>
   )
@@ -234,7 +235,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
         <PeriodBadge period={period} from={from} to={to}/>
         <button onClick={handleExportPdf} disabled={exportingPdf || filtered.length===0}
           style={{...btnSecondary,padding:'8px 16px',fontSize:font.xs,opacity:exportingPdf||filtered.length===0?0.6:1,cursor:exportingPdf||filtered.length===0?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:6}}>
-          {exportingPdf?'⏳ جاري التصدير...':'📄 تصدير PDF'}
+          {exportingPdf?<span style={{display:'inline-flex',alignItems:'center',gap:6}}><Loader2 size={14} strokeWidth={2.25} className="spin-icon"/> جاري التصدير...</span>:<span style={{display:'inline-flex',alignItems:'center',gap:6}}><FileText size={14} strokeWidth={2.25}/> تصدير PDF</span>}
         </button>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16,marginTop:12}}>
@@ -251,7 +252,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
       </div>
       {topProducts.length>0&&(
         <div style={{...card,padding:'16px 18px',marginBottom:16}}>
-          <div style={{fontSize:font.base,fontWeight:800,color:colors.text,marginBottom:14}}>🏆 الأكثر صرفاً</div>
+          <div style={{fontSize:font.base,fontWeight:800,color:colors.text,marginBottom:14,display:'flex',alignItems:'center',gap:6}}><Trophy size={16} strokeWidth={2.25}/> الأكثر صرفاً</div>
           {topProducts.map(([name,qty],i)=>{
             const pct=Math.round((qty/topProducts[0][1])*100)
             return(
@@ -282,7 +283,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
           </button>
         </div>
         {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
-        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{fontSize:44,marginBottom:10}}>📭</div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
+        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><Inbox size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
         ):(
           <>
           <div style={{overflowX:'auto'}}>
@@ -404,7 +405,7 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
         <PeriodBadge period={period} from={from} to={to}/>
         <button onClick={handleExportPdf} disabled={exportingPdf || filtered.length===0}
           style={{...btnSecondary,padding:'8px 16px',fontSize:font.xs,opacity:exportingPdf||filtered.length===0?0.6:1,cursor:exportingPdf||filtered.length===0?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:6}}>
-          {exportingPdf?'⏳ جاري التصدير...':'📄 تصدير PDF'}
+          {exportingPdf?<span style={{display:'inline-flex',alignItems:'center',gap:6}}><Loader2 size={14} strokeWidth={2.25} className="spin-icon"/> جاري التصدير...</span>:<span style={{display:'inline-flex',alignItems:'center',gap:6}}><FileText size={14} strokeWidth={2.25}/> تصدير PDF</span>}
         </button>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16,marginTop:12}}>
@@ -421,7 +422,7 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
       </div>
       {Object.keys(reasonMap).length>0&&(
         <div style={{...card,padding:'16px 18px',marginBottom:16}}>
-          <div style={{fontSize:font.base,fontWeight:800,color:colors.text,marginBottom:14}}>🗑️ الهدر حسب السبب</div>
+          <div style={{fontSize:font.base,fontWeight:800,color:colors.text,marginBottom:14,display:'flex',alignItems:'center',gap:6}}><Trash2 size={16} strokeWidth={2.25}/> الهدر حسب السبب</div>
           {Object.entries(reasonMap).sort((a,b)=>b[1]-a[1]).map(([reason,qty],i)=>{
             const maxV = Math.max(...Object.values(reasonMap),1)
             const pct=Math.round((qty/maxV)*100)
@@ -453,7 +454,7 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
           </button>
         </div>
         {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
-        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{fontSize:44,marginBottom:10}}>📭</div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
+        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><Inbox size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
         ):(
           <>
           <div style={{overflowX:'auto'}}>
@@ -649,7 +650,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
           vat: Number(p.vat_amount || 0).toFixed(2) + ' ' + curr,
           total: Number(p.total_amount || 0).toFixed(2) + ' ' + curr,
           supplier: p.supplier || '—',
-          invoice: p.invoice_image ? '✅ مرفقة' : '❌ غير مرفقة',
+          invoice: p.invoice_image ? 'مرفقة' : 'غير مرفقة',
         })),
         summaryStats: [
           { label: 'بدون ضريبة', value: totalAmount.toFixed(0) + ' ' + curr, color: colors.text2 },
@@ -683,7 +684,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
         <PeriodBadge period={period} from={from} to={to}/>
         <button onClick={handleExportPdf} disabled={exportingPdf || filtered.length===0}
           style={{...btnSecondary,padding:'8px 16px',fontSize:font.xs,opacity:exportingPdf||filtered.length===0?0.6:1,cursor:exportingPdf||filtered.length===0?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:6}}>
-          {exportingPdf?'⏳ جاري التصدير...':'📄 تصدير PDF'}
+          {exportingPdf?<span style={{display:'inline-flex',alignItems:'center',gap:6}}><Loader2 size={14} strokeWidth={2.25} className="spin-icon"/> جاري التصدير...</span>:<span style={{display:'inline-flex',alignItems:'center',gap:6}}><FileText size={14} strokeWidth={2.25}/> تصدير PDF</span>}
         </button>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16,marginTop:12}}>
@@ -714,7 +715,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
           </button>
         </div>
         {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
-        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{fontSize:44,marginBottom:10}}>🧾</div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
+        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><Receipt size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
         ):(
           <>
           <div style={{overflowX:'auto'}}>
@@ -738,13 +739,13 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
                     <td style={{padding:'11px 12px',fontSize:font.xs,color:colors.text4,maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.supplier||'—'}</td>
                     <td style={{padding:'11px 12px',textAlign:'center' as const}}>
                       {p.invoice_image
-                        ? <a href={p.invoice_image} target="_blank" rel="noreferrer" style={{background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap' as const}}>📎 عرض</a>
+                        ? <a href={p.invoice_image} target="_blank" rel="noreferrer" style={{background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap' as const,display:'inline-flex',alignItems:'center',gap:4}}><Paperclip size={11} strokeWidth={2.25}/> عرض</a>
                         : <span style={{color:colors.border2}}>—</span>}
                     </td>
                     <td style={{padding:'11px 12px',textAlign:'center' as const}}>
                       <button onClick={()=>{setConfirmDelete(p);setDeletePassword('');setDeleteError('')}}
                         style={{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                        🗑️ حذف
+                        <Trash2 size={12} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> حذف
                       </button>
                     </td>
                   </tr>
@@ -770,7 +771,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
         <button type="button" onClick={()=>{ if(!showDeletedLog) loadDeletedLog(); setShowDeletedLog(v=>!v) }}
           style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <span style={{fontSize:16}}>🗑️</span>
+            <span style={{display:'flex',alignItems:'center'}}><Trash2 size={16} strokeWidth={2.25}/></span>
             <span style={{fontSize:13,fontWeight:700,color:colors.text}}>سجل الفواتير المحذوفة</span>
           </div>
           <span style={{fontSize:12,color:colors.text3}}>{showDeletedLog?'إخفاء ▲':'عرض ▼'}</span>
@@ -780,7 +781,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
             {loadingDeleted ? (
               <div style={{textAlign:'center' as const,padding:20,fontSize:12,color:colors.text3}}>⏳ جاري التحميل...</div>
             ) : deletedList.length===0 ? (
-              <div style={{textAlign:'center' as const,padding:20,fontSize:12,color:colors.text4}}>ما فيه فواتير محذوفة 🎉</div>
+              <div style={{textAlign:'center' as const,padding:20,fontSize:12,color:colors.text4,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><PartyPopper size={14} strokeWidth={2.25}/> ما فيه فواتير محذوفة</div>
             ) : (
               <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
                 {deletedList.map((d:any)=>(
@@ -809,7 +810,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
         <div style={{position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
           <div style={{position:'absolute',inset:0,background:'rgba(15,23,42,.4)',backdropFilter:'blur(6px)'}} onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}/>
           <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:360,position:'relative',boxShadow:'0 24px 60px rgba(0,0,0,.2)'}}>
-            <div style={{width:48,height:48,borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:22}}>🔒</div>
+            <div style={{width:48,height:48,borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',color:'#dc2626'}}><Lock size={22} strokeWidth={2}/></div>
             <div style={{fontSize:15,fontWeight:800,color:colors.text,textAlign:'center',marginBottom:6}}>تأكيد حذف العملية</div>
             <div style={{fontSize:12,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
               سيتم حذف <b style={{color:colors.text}}>{confirmDelete.name}</b> ({Number(confirmDelete.total_amount||0).toFixed(0)} {curr}) من السجل الحالي (تقدر تسترجعها لاحقاً من "سجل المحذوفات").<br/>أدخل كلمة مرور حسابك للتأكيد
@@ -818,7 +819,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
               onKeyDown={e=>{if(e.key==='Enter'&&deletePassword&&!deleting) confirmDeletePurchase()}}
               placeholder="كلمة المرور" autoFocus
               style={{...inp(),width:'100%',marginBottom:10,boxSizing:'border-box' as const}}/>
-            {deleteError && <div style={{fontSize:12,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const}}>⚠️ {deleteError}</div>}
+            {deleteError && <div style={{fontSize:12,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><AlertTriangle size={13} strokeWidth={2.25}/> {deleteError}</div>}
             <div style={{display:'flex',gap:8}}>
               <button onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}
                 style={{flex:1,padding:'11px',background:colors.bg,color:colors.text3,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
@@ -950,7 +951,7 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
         <PeriodBadge period={period} from={from} to={to}/>
         <button onClick={handleExportPdf} disabled={exportingPdf || filtered.length===0}
           style={{...btnSecondary,padding:'8px 16px',fontSize:font.xs,opacity:exportingPdf||filtered.length===0?0.6:1,cursor:exportingPdf||filtered.length===0?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:6}}>
-          {exportingPdf?'⏳ جاري التصدير...':'📄 تصدير PDF'}
+          {exportingPdf?<span style={{display:'inline-flex',alignItems:'center',gap:6}}><Loader2 size={14} strokeWidth={2.25} className="spin-icon"/> جاري التصدير...</span>:<span style={{display:'inline-flex',alignItems:'center',gap:6}}><FileText size={14} strokeWidth={2.25}/> تصدير PDF</span>}
         </button>
       </div>
       <div style={{display:'grid',gridTemplateColumns:(totalTransferredOut+totalTransferredIn)>0?'repeat(5,1fr)':'repeat(4,1fr)',gap:10,marginBottom:16,marginTop:12}}>
@@ -978,10 +979,10 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
               </button>
             ))}
           </div>
-          <button onClick={exportCSV} style={{...btnPrimary,padding:'9px 14px',fontSize:font.xs}}>📥 تصدير</button>
+          <button onClick={exportCSV} style={{...btnPrimary,padding:'9px 14px',fontSize:font.xs,display:'inline-flex',alignItems:'center',gap:6}}><Download size={13} strokeWidth={2.25}/> تصدير</button>
         </div>
         {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
-        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{fontSize:44,marginBottom:10}}>📋</div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
+        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><ClipboardList size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
         ):(
           <div style={{overflowX:'auto'}}>
             <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
@@ -1034,7 +1035,7 @@ function RecentOpsSection({ recentOps, colors }: { recentOps:any[]; colors:any }
           <div style={{padding:'14px 20px',borderBottom:`1px solid #f0f0f0`,display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
             <div style={{width:32,height:3,borderRadius:99,background:'#e5e7eb',position:'absolute',top:8,left:'50%',transform:'translateX(-50%)'}}/>
             <span style={{fontSize:15,fontWeight:800,color:'#111827'}}>{title}</span>
-            <button onClick={onClose} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:'#9ca3af',padding:4}}>✕</button>
+            <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',padding:4,display:'flex',alignItems:'center'}}><X size={18} strokeWidth={2.25}/></button>
           </div>
           <div style={{overflowY:'auto',flex:1}}>
             {items.length===0?(
@@ -1065,15 +1066,15 @@ function RecentOpsSection({ recentOps, colors }: { recentOps:any[]; colors:any }
 
       <div style={{marginTop:16,display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
         {[
-          {key:'dispense' as const, title:'آخر الصرف',    count:dispense.length,  color:colors.danger,  bg:colors.dangerLight,  border:colors.dangerBorder,  icon:'📤'},
-          {key:'add' as const,      title:'آخر الإضافات', count:additions.length, color:colors.primary, bg:colors.primaryLight, border:colors.primaryBorder, icon:'📥'},
-          {key:'purchase' as const, title:'آخر العمليات', count:recentOps.length, color:colors.info,    bg:colors.infoLight,    border:colors.infoBorder,    icon:'📋'},
+          {key:'dispense' as const, title:'آخر الصرف',    count:dispense.length,  color:colors.danger,  bg:colors.dangerLight,  border:colors.dangerBorder,  icon:<Upload size={24} strokeWidth={1.75}/>},
+          {key:'add' as const,      title:'آخر الإضافات', count:additions.length, color:colors.primary, bg:colors.primaryLight, border:colors.primaryBorder, icon:<Download size={24} strokeWidth={1.75}/>},
+          {key:'purchase' as const, title:'آخر العمليات', count:recentOps.length, color:colors.info,    bg:colors.infoLight,    border:colors.infoBorder,    icon:<ClipboardList size={24} strokeWidth={1.75}/>},
         ].map(s=>(
           <button key={s.key} onClick={()=>setSheet(s.key)}
             style={{background:'white',borderRadius:12,padding:'14px 10px',border:`1.5px solid ${s.border}`,cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all .15s',boxShadow:`0 2px 8px ${s.color}10`}}
             onMouseEnter={e=>(e.currentTarget as HTMLElement).style.transform='translateY(-2px)'}
             onMouseLeave={e=>(e.currentTarget as HTMLElement).style.transform='none'}>
-            <div style={{fontSize:24,marginBottom:8}}>{s.icon}</div>
+            <div style={{marginBottom:8,display:'flex',justifyContent:'center',color:s.color}}>{s.icon}</div>
             <div style={{fontSize:20,fontWeight:900,color:s.color,marginBottom:4}}>{s.count}</div>
             <div style={{fontSize:11,fontWeight:700,color:'#374151'}}>{s.title}</div>
           </button>
@@ -1218,7 +1219,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
         <PeriodBadge period={period} from={from} to={to}/>
         <button onClick={handleExportPdf} disabled={exportingPdf || closings.length===0}
           style={{...btnSecondary,padding:'8px 16px',fontSize:font.xs,opacity:exportingPdf||closings.length===0?0.6:1,cursor:exportingPdf||closings.length===0?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:6}}>
-          {exportingPdf?'⏳ جاري التصدير...':'📄 تصدير PDF'}
+          {exportingPdf?<span style={{display:'inline-flex',alignItems:'center',gap:6}}><Loader2 size={14} strokeWidth={2.25} className="spin-icon"/> جاري التصدير...</span>:<span style={{display:'inline-flex',alignItems:'center',gap:6}}><FileText size={14} strokeWidth={2.25}/> تصدير PDF</span>}
         </button>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16,marginTop:12}}>
@@ -1237,7 +1238,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
       {monthComp && (
         <div style={{...card,padding:'16px',marginBottom:16}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-            <span style={{fontSize:13,fontWeight:700,color:colors.text}}>📊 مقارنة الأداء الشهري</span>
+            <span style={{fontSize:13,fontWeight:700,color:colors.text,display:'inline-flex',alignItems:'center',gap:6}}><BarChart3 size={15} strokeWidth={2.25}/> مقارنة الأداء الشهري</span>
             <span style={{fontSize:10,color:colors.text4}}>مقابل الشهر السابق</span>
           </div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
@@ -1266,7 +1267,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
 
       <div style={{...card,overflow:'hidden'}}>
         {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
-        ):closings.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{fontSize:44,marginBottom:10}}>📭</div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد تقارير إقفال</div></div>
+        ):closings.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><Inbox size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد تقارير إقفال</div></div>
         ):(
           <div style={{overflowX:'auto',overflowY:'auto',maxHeight:480}}>
             <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
@@ -1297,7 +1298,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                       ) : (
                         <div onClick={()=>{setEditingDateId(c.id);setEditDateValue(c.closing_date)}} style={{cursor:'pointer',display:'flex',alignItems:'center',gap:6}}>
                           {new Date(c.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn'})}
-                          <span style={{fontSize:11,opacity:.4}}>✏️</span>
+                          <span style={{opacity:.4,display:'inline-flex',alignItems:'center'}}><Pencil size={11} strokeWidth={2.25}/></span>
                         </div>
                       )}
                     </td>
@@ -1328,10 +1329,10 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                     <td style={{padding:'12px 16px'}}>
                       <div style={{display:'flex',gap:6}}>
                         {c.sales_image && (
-                          <a href={c.sales_image} target="_blank" rel="noopener noreferrer" title="صورة تقرير المبيعات" style={{width:28,height:28,borderRadius:7,background:colors.infoLight,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,textDecoration:'none'}}>📊</a>
+                          <a href={c.sales_image} target="_blank" rel="noopener noreferrer" title="صورة تقرير المبيعات" style={{width:28,height:28,borderRadius:7,background:colors.infoLight,display:'flex',alignItems:'center',justifyContent:'center',textDecoration:'none',color:colors.info}}><BarChart3 size={13} strokeWidth={2.25}/></a>
                         )}
                         {c.network_image && (
-                          <a href={c.network_image} target="_blank" rel="noopener noreferrer" title="صورة موازنة الشبكة" style={{width:28,height:28,borderRadius:7,background:colors.primaryLight,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,textDecoration:'none'}}>💳</a>
+                          <a href={c.network_image} target="_blank" rel="noopener noreferrer" title="صورة موازنة الشبكة" style={{width:28,height:28,borderRadius:7,background:colors.primaryLight,display:'flex',alignItems:'center',justifyContent:'center',textDecoration:'none',color:colors.primary}}><CreditCard size={13} strokeWidth={2.25}/></a>
                         )}
                         {!c.sales_image && !c.network_image && (
                           <span style={{fontSize:11,color:colors.text4}}>—</span>
@@ -1341,7 +1342,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                     <td style={{padding:'12px 16px'}}>
                       <button onClick={()=>{setConfirmDelete(c);setDeletePassword('');setDeleteError('')}}
                         style={{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
-                        🗑️ حذف
+                        <Trash2 size={12} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> حذف
                       </button>
                     </td>
                   </tr>
@@ -1369,7 +1370,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
         <div style={{position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
           <div style={{position:'absolute',inset:0,background:'rgba(15,23,42,.4)',backdropFilter:'blur(6px)'}} onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}/>
           <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:360,position:'relative',boxShadow:'0 24px 60px rgba(0,0,0,.2)'}}>
-            <div style={{width:48,height:48,borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:22}}>🔒</div>
+            <div style={{width:48,height:48,borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',color:'#dc2626'}}><Lock size={22} strokeWidth={2}/></div>
             <div style={{fontSize:15,fontWeight:800,color:colors.text,textAlign:'center',marginBottom:6}}>تأكيد حذف تقرير الإقفال</div>
             <div style={{fontSize:12,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
               سيتم حذف إقفال <b style={{color:colors.text}}>{confirmDelete.staff_name}</b> بتاريخ {confirmDelete?.closing_date ? new Date(confirmDelete.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn'}) : ''} نهائياً.<br/>أدخل كلمة مرور حسابك للتأكيد
@@ -1378,7 +1379,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
               onKeyDown={e=>{if(e.key==='Enter'&&deletePassword&&!deleting) confirmDeleteClosing()}}
               placeholder="كلمة المرور" autoFocus
               style={{...inp(),width:'100%',marginBottom:10,boxSizing:'border-box' as const}}/>
-            {deleteError && <div style={{fontSize:12,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const}}>⚠️ {deleteError}</div>}
+            {deleteError && <div style={{fontSize:12,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><AlertTriangle size={13} strokeWidth={2.25}/> {deleteError}</div>}
             <div style={{display:'flex',gap:8}}>
               <button onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}
                 style={{flex:1,padding:'11px',background:colors.bg,color:colors.text3,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
@@ -1471,7 +1472,7 @@ export default function ReportsPage() {
 
   if (view==='inventory') return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} .spin-icon{animation:spin .8s linear infinite}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}>تقرير الجرد اليومي</h1>
       <InventoryDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
     </div>
@@ -1534,7 +1535,7 @@ export default function ReportsPage() {
           <ReportCard
             title="تقرير الصرف"
             subtitle="عمليات الصرف من المخزون"
-            icon="📤"
+            icon={<Upload size={20} strokeWidth={1.75}/>}
             color={colors.danger}
             bg={colors.dangerLight}
             border={colors.dangerBorder}
@@ -1552,7 +1553,7 @@ export default function ReportsPage() {
           <ReportCard
             title="تقرير المشتريات"
             subtitle="فواتير المشتريات مع الضريبة 15%"
-            icon="🧾"
+            icon={<Receipt size={20} strokeWidth={1.75}/>}
             color={colors.primary}
             bg={colors.primaryLight}
             border={colors.primaryBorder}
@@ -1570,7 +1571,7 @@ export default function ReportsPage() {
           <ReportCard
             title="تقرير الجرد اليومي"
             subtitle="ملخص المخزون الحالي والأصناف الناقصة"
-            icon="📋"
+            icon={<ClipboardList size={20} strokeWidth={1.75}/>}
             color={'#7c3aed'}
             bg={'#f5f3ff'}
             border={'#ddd6fe'}
@@ -1589,7 +1590,7 @@ export default function ReportsPage() {
           <ReportCard
             title="إقفال الكاشير اليومي"
             subtitle="تقارير إقفال الكاشير والفروقات"
-            icon="💰"
+            icon={<Wallet size={20} strokeWidth={1.75}/>}
             color={'#0891b2'}
             bg={'#ecfeff'}
             border={'#a5f3fc'}
@@ -1608,7 +1609,7 @@ export default function ReportsPage() {
           <ReportCard
             title="تقرير الهدر"
             subtitle="الأصناف المهدورة وأسبابها"
-            icon="🗑️"
+            icon={<Trash2 size={20} strokeWidth={1.75}/>}
             color={colors.danger}
             bg={colors.dangerLight}
             border={colors.dangerBorder}
@@ -1642,7 +1643,7 @@ export default function ReportsPage() {
         return (
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20}}>
             <div style={{...card,padding:'20px 24px'}}>
-              <div style={{fontSize:font.md,fontWeight:900,color:colors.text,marginBottom:4}}>🔥 أكثر المنتجات صرفاً</div>
+              <div style={{fontSize:font.md,fontWeight:900,color:colors.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><Flame size={17} strokeWidth={2.25}/> أكثر المنتجات صرفاً</div>
               <div style={{fontSize:font.xs,color:colors.text3,marginBottom:16}}>الفترة المحددة</div>
               <div style={{display:'flex',flexDirection:'column',gap:10}}>
                 {top.map((p,i)=>(
@@ -1662,7 +1663,7 @@ export default function ReportsPage() {
               </div>
             </div>
             <div style={{...card,padding:'20px 24px'}}>
-              <div style={{fontSize:font.md,fontWeight:900,color:colors.text,marginBottom:4}}>📊 الصرف الشهري</div>
+              <div style={{fontSize:font.md,fontWeight:900,color:colors.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><BarChart3 size={17} strokeWidth={2.25}/> الصرف الشهري</div>
               <div style={{fontSize:font.xs,color:colors.text3,marginBottom:16}}>توزيع الكميات</div>
               <div style={{display:'flex',alignItems:'flex-end',gap:6,height:120}}>
                 {(()=>{
