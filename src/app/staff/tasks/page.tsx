@@ -171,14 +171,14 @@ export default function StaffTasksPage() {
       <div style={{maxWidth:520,margin:'0 auto',padding:'20px 16px'}}>
         {loading ? (
           <div style={{textAlign:'center' as const,padding:40,fontSize:13,color:'#888780'}}>{t('loading')}</div>
-        ) : tasks.length===0 ? (
-          <div style={{textAlign:'center' as const,padding:'60px 20px'}}>
-            <div style={{fontSize:44,marginBottom:12,opacity:0.5}}>📋</div>
-            <div style={{fontSize:14,color:'#888780'}}>{t('noTasks')}</div>
-          </div>
         ) : (
           <>
-            {pendingTasks.length>0 && (
+            {pendingTasks.length===0 ? (
+              <div style={{textAlign:'center' as const,padding:'60px 20px'}}>
+                <div style={{fontSize:44,marginBottom:12,opacity:0.5}}>📋</div>
+                <div style={{fontSize:14,color:'#888780'}}>{t('noTasks')}</div>
+              </div>
+            ) : (
               <div style={{marginBottom:24}}>
                 <div style={{fontSize:12,fontWeight:700,color:'#d97706',marginBottom:10}}>{t('pendingTasks')} ({pendingTasks.length})</div>
                 <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
