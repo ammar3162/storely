@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
+import { Upload, Paperclip, X, AlertTriangle, Camera, Ruler, CheckCircle2, Trash2, Sparkles, Package, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cache } from '@/lib/cache'
 import { colors as dsColors } from '@/lib/ds'
@@ -381,7 +382,7 @@ export default function InventoryPage() {
       {showImport&&(
         <div style={{position:'fixed',inset:0,zIndex:3000,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
           <div style={{background:'white',borderRadius:16,width:'100%',maxWidth:520,maxHeight:'85vh',overflowY:'auto' as const,padding:20}}>
-            <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:4}}>📥 استيراد منتجات من ملف</div>
+            <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><Upload size={16} strokeWidth={2.25}/> استيراد منتجات من ملف</div>
             <div style={{fontSize:12,color:C.text4,marginBottom:16}}>ارفع ملف CSV بصيغة Excel — سيتم تحديث الأصناف الموجودة وإضافة الجديدة تلقائياً</div>
 
             {importPreview.length===0 ? (
@@ -391,7 +392,7 @@ export default function InventoryPage() {
                 </button>
                 <input ref={importFileRef} type="file" accept=".csv" style={{display:'none'}} onChange={e=>{if(e.target.files?.[0])handleImportFile(e.target.files[0])}}/>
                 <button onClick={()=>importFileRef.current?.click()} type="button" style={{width:'100%',padding:14,background:C.primaryL,border:`1.5px dashed ${C.primaryB}`,borderRadius:10,fontSize:13,fontWeight:700,color:C.primary,cursor:'pointer',fontFamily:'inherit'}}>
-                  📎 اختر ملف CSV للاستيراد
+                  <Paperclip size={13} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> اختر ملف CSV للاستيراد
                 </button>
               </>
             ) : (
@@ -429,7 +430,7 @@ export default function InventoryPage() {
                 <div style={{display:'flex',gap:8}}>
                   <button onClick={()=>setImportPreview([])} type="button" style={{flex:1,padding:11,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,fontSize:12,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
                   <button onClick={confirmImport} disabled={importing} type="button" style={{flex:2,padding:11,background:C.primary,border:'none',borderRadius:10,fontSize:12,fontWeight:700,color:'white',cursor:importing?'not-allowed':'pointer',fontFamily:'inherit',opacity:importing?.7:1}}>
-                    {importing?'جاري الاستيراد...':`✅ تأكيد استيراد ${importPreview.length} صنف`}
+                    {importing?'جاري الاستيراد...':<span style={{display:'inline-flex',alignItems:'center',gap:6}}><CheckCircle2 size={14} strokeWidth={2.25}/> تأكيد استيراد {importPreview.length} صنف</span>}
                   </button>
                 </div>
               </>
@@ -442,8 +443,8 @@ export default function InventoryPage() {
 
       {jardNotFound&&(
         <div style={{position:'fixed',bottom:20,left:'50%',transform:'translateX(-50%)',background:C.dangerL,color:C.danger,border:`1px solid ${C.dangerB}`,borderRadius:10,padding:'10px 16px',fontSize:12,fontWeight:600,zIndex:2000,boxShadow:'0 4px 16px rgba(0,0,0,.1)'}}>
-          ⚠️ لا يوجد منتج بهذا الباركود: {jardNotFound}
-          <button onClick={()=>setJardNotFound('')} style={{marginRight:8,background:'none',border:'none',color:C.danger,cursor:'pointer',fontWeight:700}}>✕</button>
+          <span style={{display:'inline-flex',alignItems:'center',gap:5}}><AlertTriangle size={13} strokeWidth={2.25}/> لا يوجد منتج بهذا الباركود: {jardNotFound}</span>
+          <button onClick={()=>setJardNotFound('')} style={{marginRight:8,background:'none',border:'none',color:C.danger,cursor:'pointer',display:'flex',alignItems:'center'}}><X size={15} strokeWidth={2.5}/></button>
         </div>
       )}
 
@@ -455,7 +456,7 @@ export default function InventoryPage() {
               <div style={{width:32,height:3,borderRadius:99,background:C.border2,margin:'0 auto 14px'}}/>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
                 <div style={{fontSize:15,fontWeight:700,color:C.text}}>{editItem?'تعديل المنتج':'منتج جديد'}</div>
-                <button onClick={()=>{setShowAdd(false);setEditItem(null)}} style={{width:28,height:28,borderRadius:'50%',border:`1px solid ${C.border2}`,background:C.bg,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}}>✕</button>
+                <button onClick={()=>{setShowAdd(false);setEditItem(null)}} style={{width:28,height:28,borderRadius:'50%',border:`1px solid ${C.border2}`,background:C.bg,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}}><X size={14} strokeWidth={2.25}/></button>
               </div>
             </div>
             <div style={{flex:1,overflowY:'auto',padding:'0 18px 18px'}}>
@@ -485,7 +486,7 @@ export default function InventoryPage() {
                       <label style={lbl}>باركود</label>
                       <div style={{display:'flex',gap:5}}>
                         <input value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} style={{...inp(),flex:1}} placeholder="اختياري"/>
-                        <button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 10px',background:C.primaryL,color:C.primary,border:`1px solid ${C.primaryB}`,borderRadius:8,fontSize:14,cursor:'pointer'}}>📷</button>
+                        <button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 10px',background:C.primaryL,color:C.primary,border:`1px solid ${C.primaryB}`,borderRadius:8,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><Camera size={15} strokeWidth={2.25}/></button>
                       </div>
                     </div>
                     <div>
@@ -501,10 +502,10 @@ export default function InventoryPage() {
                   {/* تحويل الوحدة الدقيقة — لدقة استخدام هذا المنتج بالوصفات */}
                   <div style={{background:'#faf5ff',border:`1px solid #e9d5ff`,borderRadius:10,padding:12}}>
                     <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
-                      <span style={{fontSize:13}}>📏</span>
+                      <span style={{display:'flex',alignItems:'center'}}><Ruler size={13} strokeWidth={2.25}/></span>
                       <div style={{fontSize:11,fontWeight:700,color:'#6b21a8'}}>تحويل الوحدة الدقيقة (اختياري)</div>
                       {form.recipe_unit && form.recipe_unit_factor && Number(form.recipe_unit_factor)>0 && (
-                        <span style={{fontSize:9,fontWeight:700,color:'#16a34a',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:99,padding:'1px 8px',marginRight:'auto'}}>✅ محدد</span>
+                        <span style={{fontSize:9,fontWeight:700,color:'#16a34a',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:99,padding:'1px 8px',marginRight:'auto',display:'inline-flex',alignItems:'center',gap:3}}><CheckCircle2 size={10} strokeWidth={2.5}/> محدد</span>
                       )}
                     </div>
                     <div style={{fontSize:10,color:'#7c3aed',marginBottom:8}}>مفيد لو تستخدم هذا المنتج بوصفات — مثال: الكيس فيه كم جرام، الكرتون فيه كم علبة</div>
@@ -542,7 +543,7 @@ export default function InventoryPage() {
                 {editItem && (
                   <button type="button" onClick={()=>{setConfirm({id:editItem.id,name:editItem.name});setShowAdd(false)}}
                     style={{width:'100%',padding:'10px',marginTop:16,background:C.dangerL,color:C.danger,border:`1px solid ${C.dangerB}`,borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                    🗑️ حذف هذا المنتج
+                    <Trash2 size={13} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> حذف هذا المنتج
                   </button>
                 )}
                 <div style={{display:'flex',gap:8,marginTop:editItem?8:16}}>
@@ -573,7 +574,7 @@ export default function InventoryPage() {
           </button>
           <button onClick={()=>setShowJardScan(true)} title="مسح للجرد"
             style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:C.primaryL,border:`1px solid ${C.primaryB}`,borderRadius:8,cursor:'pointer',color:C.primary,flexShrink:0,fontSize:14}}>
-            📷
+            <Camera size={16} strokeWidth={2.25}/>
           </button>
           <button onClick={()=>setShowImport(true)} title="استيراد من ملف"
             style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'white',border:`1px solid ${C.border2}`,borderRadius:8,cursor:'pointer',color:C.text3,flexShrink:0}}>
@@ -612,7 +613,7 @@ export default function InventoryPage() {
         return (
           <div className="u" style={{marginBottom:12,background:'#faf5ff',border:'1px solid #e9d5ff',borderRadius:12,padding:12,animationDelay:'.09s'}}>
             <button type="button" onClick={()=>setShowAudit(v=>!v)} style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',padding:0}}>
-              <span style={{fontSize:12,fontWeight:700,color:'#6b21a8'}}>📏 {missing.length} منتج بدون تحويل وحدة دقيقة محدد</span>
+              <span style={{fontSize:12,fontWeight:700,color:'#6b21a8',display:'inline-flex',alignItems:'center',gap:5}}><Ruler size={13} strokeWidth={2.25}/> {missing.length} منتج بدون تحويل وحدة دقيقة محدد</span>
               <span style={{fontSize:11,color:'#7c3aed'}}>{showAudit?'إخفاء ▲':'عرض ▼'}</span>
             </button>
             {showAudit && (
@@ -653,7 +654,7 @@ export default function InventoryPage() {
       {filtered.length===0 && !search && catFilter==='all' && STARTER_PRODUCTS[businessType] && !templateDismissed ? (
         <div className="u" style={{background:'white',borderRadius:14,padding:'28px 24px',border:`1.5px solid ${C.primaryB}`}}>
           <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
-            <div style={{fontSize:22}}>✨</div>
+            <div style={{display:'flex',justifyContent:'center'}}><Sparkles size={22} strokeWidth={1.75}/></div>
             <div style={{fontSize:15,fontWeight:800,color:C.text}}>نقترح عليك هذي الأصناف الشائعة لـ{businessType}</div>
           </div>
           <div style={{fontSize:12,color:C.text4,marginBottom:18}}>اختر اللي يناسبك وراح نضيفها لمخزونك بضغطة وحدة — أو تجاهل وابدأ يدوياً</div>
@@ -670,7 +671,7 @@ export default function InventoryPage() {
           <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap' as const}}>
             <button onClick={addTemplateProducts} disabled={addingTemplate||Object.values(selectedTemplate).every(v=>!v)}
               style={{padding:'10px 20px',background:Object.values(selectedTemplate).every(v=>!v)?C.border2:(C.primary),color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:Object.values(selectedTemplate).every(v=>!v)?'not-allowed':'pointer',fontFamily:'inherit'}}>
-              {addingTemplate?'⏳ جاري الإضافة...':`✓ أضف المحدد (${Object.values(selectedTemplate).filter(Boolean).length})`}
+              {addingTemplate?'جاري الإضافة...':<span style={{display:'inline-flex',alignItems:'center',gap:6}}><CheckCircle2 size={14} strokeWidth={2.25}/> أضف المحدد ({Object.values(selectedTemplate).filter(Boolean).length})</span>}
             </button>
             <button onClick={()=>{
                 const all: Record<string,boolean> = {}
@@ -688,7 +689,7 @@ export default function InventoryPage() {
         </div>
       ) : filtered.length===0?(
         <div className="u" style={{background:'white',borderRadius:12,padding:'48px 24px',textAlign:'center',border:`1px solid ${C.border}`}}>
-          <div style={{fontSize:36,marginBottom:8}}>📦</div>
+          <div style={{marginBottom:8,display:'flex',justifyContent:'center',color:C.text4}}><Package size={32} strokeWidth={1.5}/></div>
           <div style={{fontSize:14,fontWeight:600,color:C.text2,marginBottom:4}}>{search||catFilter!=='all'?'لا توجد نتائج':'المخزون فارغ'}</div>
           <div style={{fontSize:11,color:C.text4,marginBottom:12}}>{search||catFilter!=='all'?'جرب كلمة أو فئة أخرى':'ابدأ بإضافة أول منتج'}</div>
           {(search||catFilter!=='all')&&<button onClick={()=>{setSearch('');setCatFilter('all');setStatusFilter('all')}} style={{padding:'7px 16px',background:C.bg,color:C.text2,border:`1px solid ${C.border2}`,borderRadius:7,fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إزالة الفلاتر</button>}
@@ -715,9 +716,9 @@ export default function InventoryPage() {
                           {isOut?'نفد':isLow?'ناقص':'كافٍ'}
                         </span>
                         {(p as any).recipe_unit_factor ? (
-                          <span title={`تحويل محدد: 1 ${p.unit} = ${(p as any).recipe_unit_factor} ${(p as any).recipe_unit}`} style={{fontSize:9,color:'#7c3aed',background:'#faf5ff',border:'1px solid #e9d5ff',borderRadius:99,padding:'3px 6px',fontWeight:700}}>📏</span>
+                          <span title={`تحويل محدد: 1 ${p.unit} = ${(p as any).recipe_unit_factor} ${(p as any).recipe_unit}`} style={{color:'#7c3aed',background:'#faf5ff',border:'1px solid #e9d5ff',borderRadius:99,padding:'3px 6px',display:'inline-flex',alignItems:'center'}}><Ruler size={11} strokeWidth={2.25}/></span>
                         ) : (
-                          <span title="ما فيه تحويل وحدة دقيقة محدد" style={{fontSize:9,color:C.text4,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:99,padding:'3px 6px',fontWeight:700,opacity:.5}}>📏</span>
+                          <span title="ما فيه تحويل وحدة دقيقة محدد" style={{color:C.text4,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:99,padding:'3px 6px',opacity:.5,display:'inline-flex',alignItems:'center'}}><Ruler size={11} strokeWidth={2.25}/></span>
                         )}
                       </div>
                       {p.category && (
@@ -738,7 +739,7 @@ export default function InventoryPage() {
                     <div style={{fontSize:10,color:C.text4,fontWeight:600}}>الحد الأدنى: {p.reorder_point} {p.unit}</div>
                     {(p as any).expiry_date && (()=>{ const days=Math.ceil((new Date((p as any).expiry_date).getTime()-Date.now())/86400000); return days<=7 ? (
                       <div style={{marginTop:6,fontSize:10,fontWeight:700,color:days<0?C.danger:C.warning,background:days<0?C.dangerL:C.warningL,padding:'3px 8px',borderRadius:6,display:'inline-block'}}>
-                        {days<0?'⚠️ منتهي الصلاحية':days===0?'⚠️ ينتهي اليوم':`⏳ ينتهي خلال ${days} يوم`}
+                        {days<0?<span style={{display:'inline-flex',alignItems:'center',gap:4}}><AlertTriangle size={11} strokeWidth={2.25}/> منتهي الصلاحية</span>:days===0?<span style={{display:'inline-flex',alignItems:'center',gap:4}}><AlertTriangle size={11} strokeWidth={2.25}/> ينتهي اليوم</span>:<span style={{display:'inline-flex',alignItems:'center',gap:4}}><Clock size={11} strokeWidth={2.25}/> ينتهي خلال {days} يوم</span>}
                       </div>
                     ) : null })()}
                   </div>
@@ -770,7 +771,7 @@ export default function InventoryPage() {
                         {p.sku&&<div style={{fontSize:10,color:C.text4,marginTop:1,fontFamily:'monospace'}}>#{p.sku}</div>}
                         {(p as any).expiry_date && (()=>{ const days=Math.ceil((new Date((p as any).expiry_date).getTime()-Date.now())/86400000); return days<=7 ? (
                           <div style={{marginTop:4,fontSize:10,fontWeight:700,color:days<0?C.danger:C.warning,background:days<0?C.dangerL:C.warningL,padding:'2px 6px',borderRadius:5,display:'inline-block'}}>
-                            {days<0?'⚠️ منتهي':days===0?'⚠️ اليوم':`⏳ ${days} يوم`}
+                            {days<0?<span style={{display:'inline-flex',alignItems:'center',gap:4}}><AlertTriangle size={11} strokeWidth={2.25}/> منتهي</span>:days===0?<span style={{display:'inline-flex',alignItems:'center',gap:4}}><AlertTriangle size={11} strokeWidth={2.25}/> اليوم</span>:<span style={{display:'inline-flex',alignItems:'center',gap:4}}><Clock size={11} strokeWidth={2.25}/> {days} يوم</span>}
                           </div>
                         ) : null })()}
                         <div style={{height:2,background:C.border,borderRadius:99,overflow:'hidden',marginTop:6,width:80}}>
