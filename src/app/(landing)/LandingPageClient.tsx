@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Package, MessageCircle, Users, Wallet, Globe, BarChart3, Store, Bot, ShoppingBag } from 'lucide-react'
 
 type Billing = 'monthly'|'yearly'
 
@@ -19,16 +20,15 @@ const PLANS = [
 ]
 
 const FEATURES = [
-  { icon:'📦', title:'تتبع لحظي', desc:'راقب كل صنف في الوقت الحقيقي. كل صرف وكل شراء يُسجَّل فوراً.' },
-  { icon:'📲', title:'واتساب تلقائي', desc:'تنبيه فوري لك وللمورد لما يوصل أي صنف للحد الأدنى.' },
-  { icon:'👥', title:'إدارة الموظفين', desc:'كل موظف برمز PIN خاص يصرف من المخزون بدون وصول لبياناتك.' },
-  { icon:'💰', title:'إقفال الكاشير اليومي', desc:'تسوية الصندوق بخطوات بسيطة مع صور إثبات، وتنبيه واتساب فوري لك عند أي عجز أو زيادة.' },
-  { icon:'🌍', title:'7 لغات', desc:'واجهة موظفين بالعربي والإنجليزي والأردو والهندي والتاغالوغ والبنغالي والفرنسي.' },
-  { icon:'📊', title:'تقارير ذكية', desc:'تقارير الصرف والمشتريات والجرد وإقفال الكاشير. صدّرها بـ PDF أو CSV بضغطة واحدة.' },
-  { icon:'🏪', title:'متعدد الفروع', desc:'أدر جميع فروعك من لوحة تحكم واحدة مع مخزون مستقل لكل فرع.' },
-  { icon:'🤖', title:'أدوات الذكاء الاصطناعي', desc:'اقتراح الشراء الذكي بناءً على اتجاه استهلاكك الفعلي، ومقارنة أداء الفروع تلقائياً.' },
-  { icon:'🛍️', title:'صفحة عرض إلكترونية', desc:'صفحة أنيقة تعرض منتجاتك للعملاء بالسعر والوصف والصورة — رابط جاهز أو رمز QR تشاركه بسهولة.' },
-  { icon:'📅', title:'الحجوزات الإلكترونية', desc:'صفحة حجز أنيقة لعملائك + لوحة إدارة للكاشير تتابع كل حجز وتحدّث حالته لحظياً، مع إشعارات واتساب تلقائية.' },
+  { icon:Package, title:'تتبع لحظي', desc:'راقب كل صنف في الوقت الحقيقي. كل صرف وكل شراء يُسجَّل فوراً.' },
+  { icon:MessageCircle, title:'واتساب تلقائي', desc:'تنبيه فوري لك وللمورد لما يوصل أي صنف للحد الأدنى.' },
+  { icon:Users, title:'إدارة الموظفين', desc:'كل موظف برمز PIN خاص يصرف من المخزون بدون وصول لبياناتك.' },
+  { icon:Wallet, title:'إقفال الكاشير اليومي', desc:'تسوية الصندوق بخطوات بسيطة مع صور إثبات، وتنبيه واتساب فوري لك عند أي عجز أو زيادة.' },
+  { icon:Globe, title:'7 لغات', desc:'واجهة موظفين بالعربي والإنجليزي والأردو والهندي والتاغالوغ والبنغالي والفرنسي.' },
+  { icon:BarChart3, title:'تقارير ذكية', desc:'تقارير الصرف والمشتريات والجرد وإقفال الكاشير. صدّرها بـ PDF أو CSV بضغطة واحدة.' },
+  { icon:Store, title:'متعدد الفروع', desc:'أدر جميع فروعك من لوحة تحكم واحدة مع مخزون مستقل لكل فرع.' },
+  { icon:Bot, title:'أدوات الذكاء الاصطناعي', desc:'اقتراح الشراء الذكي بناءً على اتجاه استهلاكك الفعلي، ومقارنة أداء الفروع تلقائياً.' },
+  { icon:ShoppingBag, title:'المتجر — حل تقني متكامل', desc:'صفحة عرض منتجات أنيقة برابط أو QR + نظام حجوزات إلكتروني كامل بلوحة إدارة للكاشير وإشعارات واتساب تلقائية — كل شي تحت سقف واحد.', badge:'حل تقني' },
 ]
 
 const TRUST_POINTS = [
@@ -326,8 +326,15 @@ export default function LandingPage() {
         <div className="feat-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:20}}>
           {FEATURES.map((f,i)=>(
             <div key={i} className="feat-card">
-              <div style={{width:52,height:52,borderRadius:14,background:'linear-gradient(135deg,#f0fdf4,#dcfce7)',border:'1px solid #bbf7d0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,marginBottom:16}}>{f.icon}</div>
-              <div style={{fontSize:17,fontWeight:800,color:'#111827',marginBottom:8}}>{f.title}</div>
+              <div style={{width:52,height:52,borderRadius:14,background:'linear-gradient(135deg,#f0fdf4,#dcfce7)',border:'1px solid #bbf7d0',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:16,color:'#16a34a'}}>
+                <f.icon size={24} strokeWidth={2}/>
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8,flexWrap:'wrap' as const}}>
+                <div style={{fontSize:17,fontWeight:800,color:'#111827'}}>{f.title}</div>
+                {(f as any).badge && (
+                  <span style={{fontSize:11,fontWeight:800,color:'#16a34a',background:'#f0fdf4',border:'1px solid #bbf7d0',padding:'2px 9px',borderRadius:99}}>{(f as any).badge}</span>
+                )}
+              </div>
               <div style={{fontSize:14,color:'#6b7280',lineHeight:1.7}}>{f.desc}</div>
             </div>
           ))}
