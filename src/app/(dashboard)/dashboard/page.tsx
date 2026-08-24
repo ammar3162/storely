@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { cache } from '@/lib/cache'
 import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
-import { Package, AlertTriangle, ShoppingCart, TrendingUp } from 'lucide-react'
+import { Package, AlertTriangle, ShoppingCart, TrendingUp, Bell, X } from 'lucide-react'
 import { colors as dsColors } from '@/lib/ds'
 
 class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|null}> {
@@ -222,7 +222,7 @@ export default function DashboardPage() {
             <button onClick={async()=>{
               await (sb as any).from('notifications').update({read:true}).eq('id',n.id)
               setNotifs(prev=>prev.filter(x=>x.id!==n.id))
-            }} style={{background:'none',border:'none',cursor:'pointer',color:'#888780',fontSize:16,padding:2,flexShrink:0}}>✕</button>
+            }} style={{background:'none',border:'none',cursor:'pointer',color:'#888780',padding:2,flexShrink:0,display:'flex',alignItems:'center'}}><X size={16} strokeWidth={2.25}/></button>
           </div>
         )
       })}
@@ -251,7 +251,7 @@ export default function DashboardPage() {
       {smartSuggestions.length>0&&(
         <div className="s r u" style={{padding:'16px',marginBottom:16,animationDelay:'.09s',border:'1px solid #bfdbfe',background:dsColors.infoLight}}>
           <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
-            <span style={{fontSize:16}}>🔔</span>
+            <span style={{display:'flex',alignItems:'center'}}><Bell size={16} strokeWidth={2.25}/></span>
             <span style={{fontSize:13,fontWeight:800,color:'#1c1c1a'}}>توقيت الطلب الذكي</span>
           </div>
           <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
@@ -264,7 +264,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <span style={{fontSize:10,fontWeight:800,padding:'4px 9px',borderRadius:99,background:s.urgency==='now'?dsColors.dangerLight:dsColors.warningLight,color:s.urgency==='now'?dsColors.danger:'#b45309',whiteSpace:'nowrap' as const}}>
-                  {s.urgency==='now'?'⚠️ اطلب الآن':`اطلب خلال ${Math.max(s.suggestedOrderInDays,0)} يوم`}
+                  {s.urgency==='now'?<span style={{display:'inline-flex',alignItems:'center',gap:4}}><AlertTriangle size={12} strokeWidth={2.25}/> اطلب الآن</span>:`اطلب خلال ${Math.max(s.suggestedOrderInDays,0)} يوم`}
                 </span>
               </div>
             ))}
@@ -296,7 +296,7 @@ export default function DashboardPage() {
 
       {monthComp?.success&&(
         <div className="s r u" style={{padding:'14px 16px',marginBottom:14,animationDelay:'.16s'}}>
-          <div style={{fontSize:12,fontWeight:700,color:'#1c1c1a',marginBottom:12}}>📈 أداء هذا الشهر مقارنة بالشهر الماضي</div>
+          <div style={{fontSize:12,fontWeight:700,color:'#1c1c1a',marginBottom:12,display:'flex',alignItems:'center',gap:6}}><TrendingUp size={14} strokeWidth={2.25}/> أداء هذا الشهر مقارنة بالشهر الماضي</div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:10}}>
             {[
               {label:'المبيعات', value:monthComp.current.sales, change:monthComp.changes.sales, isMoney:true},
