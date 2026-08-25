@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import StoreMascot from '@/components/StoreMascot'
+import { LanguageProvider, useTranslation } from '@/lib/i18n/LanguageContext'
 
 const COUNTRY_CODES = [
   { code: '+966', flag: '🇸🇦', name: 'السعودية' },
@@ -66,6 +67,7 @@ const BUSINESS_TYPES = [
 ]
 
 function LoginPage() {
+  const { t, lang, setLang } = useTranslation()
   const [forgotMethod, setForgotMethod] = useState<'email'|'whatsapp'>('email')
   const [forgotPhone, setForgotPhone] = useState('')
   const [mode, setMode] = useState<'login'|'register'|'forgot'|'forgot-sent'|'forgot-sent-wa'>(() => {
@@ -329,12 +331,16 @@ function LoginPage() {
           <span style={{fontSize:18,fontWeight:800,color:'#111827',letterSpacing:'-0.3px'}}>Storely</span>
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
-          <span style={{fontSize:13,color:'#6b7280'}}>عندك حساب؟</span>
+          <button onClick={()=>setLang(lang==='ar'?'en':'ar')}
+            style={{padding:'8px 14px',background:'none',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',color:'#374151'}}>
+            {lang==='ar'?'EN':'عربي'}
+          </button>
+          <span style={{fontSize:13,color:'#6b7280'}}>{t('login.haveAccount')}</span>
           <button onClick={()=>{setMode('login');setError('');setStep(1)}}
             style={{padding:'8px 18px',background:'none',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:'#374151',transition:'border-color .2s'}}
             onMouseEnter={e=>e.currentTarget.style.borderColor='#16a34a'}
             onMouseLeave={e=>e.currentTarget.style.borderColor='#e5e7eb'}>
-            تسجيل الدخول
+            {t('login.loginNav')}
           </button>
         </div>
       </nav>
@@ -378,13 +384,13 @@ function LoginPage() {
               <>
                 <StoreMascot focused={mascotFocus} cursorRatio={cursorRatio}/>
                 <div style={{marginBottom:32,textAlign:'center' as const}}>
-                  <h1 style={{fontSize:28,fontWeight:800,color:'#111827',marginBottom:8,letterSpacing:'-0.5px'}}>أهلاً بعودتك</h1>
-                  <p style={{fontSize:15,color:'#6b7280'}}>سجّل دخولك لإدارة مخزونك</p>
+                  <h1 style={{fontSize:28,fontWeight:800,color:'#111827',marginBottom:8,letterSpacing:'-0.5px'}}>{t('login.welcomeBack')}</h1>
+                  <p style={{fontSize:15,color:'#6b7280'}}>{t('login.welcomeSub')}</p>
                 </div>
                 {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
                 <form onSubmit={handleLogin} style={{display:'flex',flexDirection:'column',gap:14}}>
                   <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني</label>
+                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.email')}</label>
                     <input className="inp" type="email" required value={email}
                       onChange={e=>{setEmail(e.target.value);const pos=e.target.selectionStart||e.target.value.length;setCursorRatio(e.target.value.length?Math.min(Math.max(pos/Math.max(e.target.value.length,8),0),1):0.5)}}
                       onFocus={()=>setMascotFocus('email')} onBlur={()=>setMascotFocus(null)}
@@ -392,10 +398,10 @@ function LoginPage() {
                   </div>
                   <div>
                     <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
-                      <label style={{fontSize:13,fontWeight:600,color:'#374151'}}>كلمة المرور</label>
+                      <label style={{fontSize:13,fontWeight:600,color:'#374151'}}>{t('login.password')}</label>
                       <button type="button" onClick={()=>{setMode('forgot');setError('')}}
                         style={{background:'none',border:'none',fontSize:13,color:'#16a34a',cursor:'pointer',fontFamily:'inherit',fontWeight:600,padding:0}}>
-                        نسيت كلمة المرور؟
+                        {t('login.forgotPassword')}
                       </button>
                     </div>
                     <input className="inp" type="password" required value={password} onChange={e=>setPassword(e.target.value)}
@@ -403,13 +409,13 @@ function LoginPage() {
                       placeholder="••••••••"/>
                   </div>
                   <button type="submit" disabled={loading} className="btn-main" style={{marginTop:8}}>
-                    {loading?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span style={{width:16,height:16,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block'}}/>جاري الدخول...</span>:'دخول'}
+                    {loading?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span style={{width:16,height:16,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block'}}/>{t('login.loggingIn')}</span>:t('login.loginBtn')}
                   </button>
                 </form>
                 <div style={{textAlign:'center',marginTop:24,fontSize:13,color:'#6b7280'}}>
-                  ما عندك حساب؟{' '}
+                  {t('login.noAccount')}{' '}
                   <button onClick={()=>{setMode('register');setError('');setStep(1)}} style={{background:'none',border:'none',color:'#16a34a',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
-                    سجّل الآن مجاناً
+                    {t('login.signupNow')}
                   </button>
                 </div>
               </>
@@ -655,14 +661,14 @@ function LoginPage() {
         <div className="right-panel" style={{width:'45%',background:'#f9fafb',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'48px 44px',borderRight:'1px solid #f3f4f6'}}>
           <div style={{maxWidth:400,width:'100%'}}>
             <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:99,padding:'6px 14px',fontSize:12,fontWeight:700,color:'#16a34a',marginBottom:20}}>
-              ✓ منصة سعودية لتشغيل الأعمال
+              ✓ {t('login.badge')}
             </div>
             <h2 style={{fontSize:30,fontWeight:900,color:'#111827',lineHeight:1.2,marginBottom:12,letterSpacing:'-1px'}}>
               Storely<br/>
-              <span style={{color:'#16a34a'}}>نحوّل التعقيد إلى تحكّم</span>
+              <span style={{color:'#16a34a'}}>{t('login.headline')}</span>
             </h2>
             <p style={{fontSize:14,color:'#6b7280',lineHeight:1.75,marginBottom:24}}>
-              من المخزون والمشتريات، لصفحة عرض منتجاتك والحجوزات الإلكترونية، وإدارة الموظفين والفروع — كل شي بمكان واحد
+              {t('login.subtitle')}
             </p>
 
             {/* صورة حقيقية بدل المعاينة المزيّفة */}
@@ -672,10 +678,10 @@ function LoginPage() {
 
             <div style={{display:'flex',flexDirection:'column',gap:11,marginTop:24}}>
               {[
-                {icon:'📦',text:'مخزون ومشتريات وموردين بمكان واحد'},
-                {icon:'📲',text:'تنبيهات واتساب تلقائية عند نقص الأصناف'},
-                {icon:'👥',text:'تحكّم كامل بموظفيك وفروعك المتعددة'},
-                {icon:'📊',text:'تقارير وتحليلات تدعم قراراتك'},
+                {icon:'📦',text:t('login.feature1')},
+                {icon:'📲',text:t('login.feature2')},
+                {icon:'👥',text:t('login.feature3')},
+                {icon:'📊',text:t('login.feature4')},
               ].map((f,i)=>(
                 <div key={i} style={{display:'flex',alignItems:'center',gap:11}}>
                   <div style={{width:32,height:32,borderRadius:9,background:'white',border:'1px solid #e5e7eb',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>{f.icon}</div>
@@ -685,7 +691,7 @@ function LoginPage() {
             </div>
             <div style={{marginTop:24,padding:'16px 18px',background:'white',borderRadius:12,border:'1px solid #e5e7eb'}}>
               <div style={{display:'flex',gap:22}}>
-                {[['149 ر.س','يبدأ من'],['14 يوم','تجربة مجانية'],['7','لغات مدعومة']].map(([n,l])=>(
+                {[['149 '+(lang==='ar'?'ر.س':'SAR'),t('login.statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('login.statTrial')],['7',t('login.statLangs')]].map(([n,l])=>(
                   <div key={l}>
                     <div style={{fontSize:18,fontWeight:900,color:'#16a34a'}}>{n}</div>
                     <div style={{fontSize:10,color:'#9ca3af',marginTop:2}}>{l}</div>
@@ -701,5 +707,5 @@ function LoginPage() {
 }
 
 export default function Page() {
-  return <Suspense fallback={null}><LoginPage /></Suspense>
+  return <LanguageProvider><Suspense fallback={null}><LoginPage /></Suspense></LanguageProvider>
 }

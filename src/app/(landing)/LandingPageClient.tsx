@@ -15,8 +15,18 @@ export default function LandingPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitMsg, setSubmitMsg] = useState<{ok:boolean,text:string}|null>(null)
   const [partners, setPartners] = useState<any[]>([])
-  const [lang, setLang] = useState<'ar'|'en'>('ar')
+  const [lang, setLangState] = useState<'ar'|'en'>('ar')
   function t(key: string) { return (LS as any)[key]?.[lang] || key }
+  function setLang(l: 'ar'|'en') {
+    setLangState(l)
+    try { localStorage.setItem('storely_lang', l) } catch {}
+  }
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('storely_lang')
+      if (saved === 'ar' || saved === 'en') setLangState(saved)
+    } catch {}
+  }, [])
   const [marqueeMsgs, setMarqueeMsgs] = useState<string[]>([])
   const hasMarquee = marqueeMsgs.length>0
 
@@ -134,7 +144,7 @@ export default function LandingPage() {
             ))}
           </div>
           <div className="desk-nav" style={{display:'flex',gap:10,alignItems:'center'}}>
-            <button onClick={()=>setLang(l=>l==='ar'?'en':'ar')} style={{padding:'8px 14px',fontSize:12,fontWeight:700,background:'rgba(255,255,255,.08)',color:'white',border:'1px solid rgba(255,255,255,.2)',borderRadius:99,cursor:'pointer',fontFamily:'inherit'}}>{lang==='ar'?'EN':'عربي'}</button>
+            <button onClick={()=>setLang(lang==='ar'?'en':'ar')} style={{padding:'8px 14px',fontSize:12,fontWeight:700,background:'rgba(255,255,255,.08)',color:'white',border:'1px solid rgba(255,255,255,.2)',borderRadius:99,cursor:'pointer',fontFamily:'inherit'}}>{lang==='ar'?'EN':'عربي'}</button>
             <button onClick={()=>router.push('/login')} style={{padding:'8px 18px',fontSize:14,fontWeight:700,background:'transparent',color:'white',border:'1px solid rgba(255,255,255,.25)',borderRadius:99,cursor:'pointer',fontFamily:'inherit'}}>{t('navLogin')}</button>
             <a href="#demo" style={{padding:'9px 20px',fontSize:14,fontWeight:700,background:'white',color:'#0a1f13',borderRadius:99,textDecoration:'none'}}>{t('navDemo')}</a>
           </div>
