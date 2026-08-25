@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import AIAssistant from '@/components/AIAssistant'
 import { toast } from '@/components/toast'
 import { colors as dsColors } from '@/lib/ds'
+import { LanguageProvider, useTranslation } from '@/lib/i18n/LanguageContext'
 
 // موحّد مع نظام التصميم المشترك (@/lib/ds)
 const C = {
@@ -17,66 +18,66 @@ const C = {
 
 const NAV_GROUPS = [
   {
-    label: 'راقب أداءك',
+    label: 'راقب أداءك', labelKey: 'nav.groupPerformance',
     items: [
-      { href:'/dashboard', label:'الرئيسية', icon:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-      { href:'/reports',    label:'التقارير', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-      { href:'/notifications', label:'الإشعارات', icon:'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
+      { href:'/dashboard', label:'الرئيسية', labelKey:'nav.dashboard', icon:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+      { href:'/reports',    label:'التقارير', labelKey:'nav.reports', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+      { href:'/notifications', label:'الإشعارات', labelKey:'nav.notifications', icon:'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
     ]
   },
   {
-    label: 'إدارة المخزون',
+    label: 'إدارة المخزون', labelKey: 'nav.groupInventory',
     items: [
-      { href:'/inventory',  label:'المخزون',  icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
-      { href:'/dispense',   label:'الصرف',   icon:'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
-      { href:'/purchases',  label:'مشتريات', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
-      { href:'/transfer-stock', label:'نقل بين الفروع', icon:'M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5' },
+      { href:'/inventory',  label:'المخزون',  labelKey:'nav.inventory', icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
+      { href:'/dispense',   label:'الصرف',   labelKey:'nav.dispense', icon:'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
+      { href:'/purchases',  label:'مشتريات', labelKey:'nav.purchases', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
+      { href:'/transfer-stock', label:'نقل بين الفروع', labelKey:'nav.transferStock', icon:'M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5' },
     ]
   },
   {
-    label: 'إدارة الفريق',
+    label: 'إدارة الفريق', labelKey: 'nav.groupTeam',
     items: [
-      { href:'/staff-management', label:'الموظفون', icon:'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8zm6 0a4 4 0 11-8 0' },
-      { href:'/hr-management', label:'إدارة الموظفين', icon:'M12 8c-1.657 0-3 1.567-3 3.5S10.343 15 12 15s3-1.567 3-3.5S13.657 8 12 8zM3 21c0-3.314 3.582-6 8-6s8 2.686 8 6H3zm14-11h4m-2-2v4' },
-      { href:'/attendance', label:'الحضور والانصراف', icon:'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
-      { href:'/branch-managers', label:'مديرو الفروع', icon:'M12 4.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zM5.5 20a6.5 6.5 0 0113 0' },
+      { href:'/staff-management', label:'الموظفون', labelKey:'nav.staffManagement', icon:'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8zm6 0a4 4 0 11-8 0' },
+      { href:'/hr-management', label:'إدارة الموظفين', labelKey:'nav.hrManagement', icon:'M12 8c-1.657 0-3 1.567-3 3.5S10.343 15 12 15s3-1.567 3-3.5S13.657 8 12 8zM3 21c0-3.314 3.582-6 8-6s8 2.686 8 6H3zm14-11h4m-2-2v4' },
+      { href:'/attendance', label:'الحضور والانصراف', labelKey:'nav.attendance', icon:'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+      { href:'/branch-managers', label:'مديرو الفروع', labelKey:'nav.branchManagers', icon:'M12 4.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zM5.5 20a6.5 6.5 0 0113 0' },
     ]
   },
   {
-    label: 'المتجر',
+    label: 'المتجر', labelKey: 'nav.groupStore',
     items: [
-      { href:'/online-store', label:'المنيو الإلكتروني', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
-      { href:'/reservation-settings', label:'الحجوزات', icon:'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-      { href:'/addons-market', label:'الإضافات', icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
+      { href:'/online-store', label:'المنيو الإلكتروني', labelKey:'nav.onlineStore', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
+      { href:'/reservation-settings', label:'الحجوزات', labelKey:'nav.reservationSettings', icon:'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+      { href:'/addons-market', label:'الإضافات', labelKey:'nav.addonsMarket', icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
     ]
   },
   {
-    label: 'الفروع والموردين',
+    label: 'الفروع والموردين', labelKey: 'nav.groupBranchesSuppliers',
     items: [
-      { href:'/branches', label:'إدارة الفروع', icon:'M3 21h18M5 21V7l8-4v18M19 21V11l-6-4' },
-      { href:'/branch-compare', label:'مقارنة الفروع', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-      { href:'/suppliers',  label:'الموردين', icon:'M3 7h13l3 5v5h-3m-10 0H3v-7m13-3v10m-13 0a2 2 0 104 0m-4 0a2 2 0 114 0m9 0a2 2 0 104 0m-4 0a2 2 0 114 0' },
-      { href:'/marketplace', label:'موردون معتمدون', icon:'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
+      { href:'/branches', label:'إدارة الفروع', labelKey:'nav.branches', icon:'M3 21h18M5 21V7l8-4v18M19 21V11l-6-4' },
+      { href:'/branch-compare', label:'مقارنة الفروع', labelKey:'nav.branchCompare', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+      { href:'/suppliers',  label:'الموردين', labelKey:'nav.suppliers', icon:'M3 7h13l3 5v5h-3m-10 0H3v-7m13-3v10m-13 0a2 2 0 104 0m-4 0a2 2 0 114 0m9 0a2 2 0 104 0m-4 0a2 2 0 114 0' },
+      { href:'/marketplace', label:'موردون معتمدون', labelKey:'nav.marketplace', icon:'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
     ]
   },
   {
-    label: 'أدوات متقدمة',
+    label: 'أدوات متقدمة', labelKey: 'nav.groupAdvancedTools',
     items: [
-      { href:'/ai-tools',   label:'أدوات الذكاء', icon:'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z' },
-      { href:'/profitability', label:'الربحية', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+      { href:'/ai-tools',   label:'أدوات الذكاء', labelKey:'nav.aiTools', icon:'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z' },
+      { href:'/profitability', label:'الربحية', labelKey:'nav.profitability', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
     ]
   },
   {
-    label: 'إدارة حسابك',
+    label: 'إدارة حسابك', labelKey: 'nav.groupAccount',
     items: [
-      { href:'/settings',   label:'الإعدادات', icon:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
-      { href:'https://wa.me/966594351667?text=أحتاج مساعدة في Storely', label:'الدعم الفني', icon:'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347' },
+      { href:'/settings',   label:'الإعدادات', labelKey:'nav.settings', icon:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
+      { href:'https://wa.me/966594351667?text=أحتاج مساعدة في Storely', label:'الدعم الفني', labelKey:'nav.support', icon:'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347' },
     ]
   },
 ]
 
 const NAV_MAIN = NAV_GROUPS.flatMap(g=>g.items)
-const NAV_MORE: {href:string;label:string;icon:string}[] = []
+const NAV_MORE: {href:string;label:string;labelKey:string;icon:string}[] = []
 
 let _cache: any = null
 
@@ -89,7 +90,8 @@ function Icon({ d, size=20, stroke='currentColor', width=2 }: { d:string; size?:
 }
 
 // لا نضيف شيء هنا — الإشعار سيكون في الداشبورد مباشرة
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
+  const { t, lang, setLang } = useTranslation()
   const [orgName, setOrgName]       = useState('')
   const [subDaysLeft, setSubDaysLeft] = useState<number|null>(null)
   const [orgLogo, setOrgLogo]       = useState<string|null>(null)
@@ -447,10 +449,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Bottom nav items
   const BOT_NAV = [
-    { href:'/dashboard', label:'الرئيسية', icon:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-    { href:'/inventory',  label:'المخزون',  icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', badge:lowCount },
-    { href:'/dispense',   label:'الصرف',   icon:'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
-    { href:'/purchases',  label:'مشتريات', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
+    { href:'/dashboard', label:'الرئيسية', labelKey:'nav.dashboard', icon:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+    { href:'/inventory',  label:'المخزون',  labelKey:'nav.inventory', icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', badge:lowCount },
+    { href:'/dispense',   label:'الصرف',   labelKey:'nav.dispense', icon:'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
+    { href:'/purchases',  label:'مشتريات', labelKey:'nav.purchases', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
   ]
 
   if (showMaintenance) return (
@@ -627,7 +629,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <div style={{width:32,height:32,borderRadius:9,background:active?C.primary:'#e5e7eb',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                       <Icon d={item.icon} size={15} stroke={active?'white':'#6b7280'} width={2}/>
                     </div>
-                    <span style={{fontSize:12,fontWeight:active?700:600,color:active?C.primary:C.text2}}>{item.label}</span>
+                    <span style={{fontSize:12,fontWeight:active?700:600,color:active?C.primary:C.text2}}>{t(item.labelKey)}</span>
                   </button>
                 )
               })}
@@ -777,7 +779,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <Icon d={item.icon} size={22} stroke={active?C.primary:'#9ca3af'} width={active?2.5:1.8}/>
                     {(item as any).badge>0&&<span style={{position:'absolute',top:-4,right:-6,background:'#ef4444',color:'white',fontSize:8,fontWeight:700,padding:'1px 4px',borderRadius:99,minWidth:14,textAlign:'center'}}>{(item as any).badge}</span>}
                   </div>
-                  <span style={{fontSize:9,fontWeight:active?700:400}}>{item.label}</span>
+                  <span style={{fontSize:9,fontWeight:active?700:400}}>{t(item.labelKey)}</span>
                 </button>
               )
             })}
@@ -822,18 +824,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               }}/>
               {NAV_GROUPS.map((group,gi)=>{
                 group = { ...group, items: group.items.filter(it => (it.href !== '/online-store' || hasMenuAddon) && (it.href !== '/reservation-settings' || hasResAddon)) }
-                const isAdvancedGroup = group.label==='أدوات متقدمة'
+                const isAdvancedGroup = group.labelKey==='nav.groupAdvancedTools'
                 const groupCollapsed = isAdvancedGroup && !advancedNavOpen
                 return (
                 <div key={gi} style={{marginBottom:4}}>
                   {isAdvancedGroup ? (
                     <button onClick={()=>setAdvancedNavOpen(v=>!v)}
                       style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',background:'rgba(255,255,255,.07)',border:'1px solid rgba(255,255,255,.1)',borderRadius:8,cursor:'pointer',padding:'8px 10px',margin:'4px 0 6px',fontFamily:'inherit'}}>
-                      <span style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,.7)'}}>✨ {group.label}</span>
+                      <span style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,.7)'}}>✨ {t(group.labelKey)}</span>
                       <span style={{fontSize:11,color:'rgba(255,255,255,.6)',transition:'transform .2s',transform:advancedNavOpen?'rotate(180deg)':'none'}}>▾</span>
                     </button>
                   ) : (
-                    <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.25)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{group.label}</div>
+                    <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.25)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{t(group.labelKey)}</div>
                   )}
                   {!groupCollapsed && group.items.filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock'&&item.href!=='/attendance'&&item.href!=='/hr-management')||orgPlan!=='basic')&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
                     const active=isActive(item.href)
@@ -847,7 +849,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <div style={{width:28,height:28,borderRadius:7,background:active?`${C.primary}33`:'rgba(255,255,255,.06)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'all .3s cubic-bezier(0.34,1.56,0.64,1)',transform:active?'scale(1.06)':'scale(1)'}}>
                           <Icon d={item.icon} size={15} stroke={active?C.primary:'rgba(255,255,255,.55)'} width={active?2.5:2}/>
                         </div>
-                        <span style={{fontSize:12,fontWeight:active?700:500,flex:1}}>{item.label}</span>
+                        <span style={{fontSize:12,fontWeight:active?700:500,flex:1}}>{t(item.labelKey)}</span>
                         {badge>0&&<span style={{background:C.danger,color:'white',fontSize:9,fontWeight:700,padding:'2px 6px',borderRadius:99,minWidth:18,textAlign:'center'}}>{badge}</span>}
                       </button>
                     )
@@ -875,6 +877,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="desk-topbar" style={{position:'fixed',top:0,right:220,left:0,zIndex:99,background:'white',borderBottom:'1px solid #f0f0ee',padding:'0 24px',height:52,alignItems:'center',justifyContent:'space-between'}}>
             <div style={{fontSize:13,color:'#94a3b8',fontWeight:500}}>مرحباً، {userName} 👋</div>
             <div style={{display:'flex',alignItems:'center',gap:4}}>
+              <button onClick={()=>setLang(lang==='ar'?'en':'ar')} title={t('common.language')} style={{padding:'0 12px',height:36,borderRadius:10,background:'none',border:'1px solid #e5e7eb',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:'#64748b',fontFamily:'inherit',transition:'background .15s'}}
+                onMouseEnter={e=>(e.currentTarget.style.background='#f5f5f4')} onMouseLeave={e=>(e.currentTarget.style.background='none')}>
+                {lang==='ar'?'EN':'عربي'}
+              </button>
               <button onClick={()=>router.push('/notifications')} style={{position:'relative',width:36,height:36,borderRadius:10,background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'background .15s'}}
                 onMouseEnter={e=>(e.currentTarget.style.background='#f5f5f4')} onMouseLeave={e=>(e.currentTarget.style.background='none')}>
                 <Icon d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" size={18} stroke="#64748b" width={2}/>
@@ -928,5 +934,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
       <AIAssistant/>
     </>
+  )
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <LanguageProvider>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </LanguageProvider>
   )
 }
