@@ -311,7 +311,7 @@ export default function LandingPage() {
 
       {/* MARQUEE */}
       {hasMarquee && (
-        <div style={{position:'fixed',top:0,right:0,left:0,zIndex:1001,height:36,background:'#15803d',overflow:'hidden',display:'flex',alignItems:'center'}}>
+        <div style={{position:'fixed',top:0,right:0,left:0,zIndex:1001,height:36,background:'#0a1f13',overflow:'hidden',display:'flex',alignItems:'center'}}>
           <div style={{display:'flex',whiteSpace:'nowrap' as const,animation:'marqueeScroll 35s linear infinite'}}>
             {[...Array(2)].map((_,i)=>(
               <div key={i} style={{display:'flex',alignItems:'center'}}>
