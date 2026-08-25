@@ -8,15 +8,21 @@ type Billing = 'monthly'|'yearly'
 const PLAN_BRANCHES = [1, 3, 10]
 
 const PLANS = [
-  { name:'الأساسية', price:'149', yearlyPrice:'1430', color:'#15803d', popular:false,
+  { name:'الأساسية', nameEn:'Basic', price:'149', yearlyPrice:'1430', color:'#15803d', popular:false,
     limits:['فرع واحد','2 موظفين','3 موردين'],
-    features:['تتبع المخزون لحظياً','صرف يومي بصلاحيات موظفين','المشتريات وإدارة الموردين','تنبيهات واتساب تلقائية','كشف الهدر','تقارير أساسية قابلة للتصدير','نسخ احتياطي يومي','دعم عبر واتساب'] },
-  { name:'المتوسطة', price:'249', yearlyPrice:'2390', color:'#15803d', popular:true,
+    limitsEn:['1 branch','2 staff','3 suppliers'],
+    features:['تتبع المخزون لحظياً','صرف يومي بصلاحيات موظفين','المشتريات وإدارة الموردين','تنبيهات واتساب تلقائية','كشف الهدر','تقارير أساسية قابلة للتصدير','نسخ احتياطي يومي','دعم عبر واتساب'],
+    featuresEn:['Real-time inventory tracking','Daily dispensing with staff permissions','Purchasing and supplier management','Automatic WhatsApp alerts','Waste detection','Exportable basic reports','Daily backups','Support via WhatsApp'] },
+  { name:'المتوسطة', nameEn:'Standard', price:'249', yearlyPrice:'2390', color:'#15803d', popular:true,
     limits:['3 فروع','10 موظفين','10 موردين'],
-    features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين','تقارير متقدمة','إقفال الكاشير اليومي','الحضور والانصراف بـGPS 📍','اقتراح الشراء الذكي 🤖','توقع نفاد المخزون 🔮','تحليل الموسمية','تحسين نقطة إعادة الطلب 🎯'] },
-  { name:'المتقدمة', price:'399', yearlyPrice:'3830', color:'#15803d', popular:false,
+    limitsEn:['3 branches','10 staff','10 suppliers'],
+    features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين','تقارير متقدمة','إقفال الكاشير اليومي','الحضور والانصراف بـGPS 📍','اقتراح الشراء الذكي 🤖','توقع نفاد المخزون 🔮','تحليل الموسمية','تحسين نقطة إعادة الطلب 🎯'],
+    featuresEn:['Inventory tracking','WhatsApp alerts','Staff management','Basic reports','Supplier management','Advanced reports','Daily cashier closing','GPS attendance 📍','Smart purchase suggestions 🤖','Stock-out prediction 🔮','Seasonality analysis','Reorder point optimization 🎯'] },
+  { name:'المتقدمة', nameEn:'Advanced', price:'399', yearlyPrice:'3830', color:'#15803d', popular:false,
     limits:['غير محدود','غير محدود','غير محدود'],
-    features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين','تقارير متقدمة','إقفال الكاشير اليومي','الحضور والانصراف بـGPS 📍','اقتراح الشراء الذكي 🤖','توقع نفاد المخزون 🔮','تحليل الموسمية','تحسين نقطة إعادة الطلب 🎯','مقارنة الفروع 🤖','المخزون الراكد 🐌','كشف الهدر الحقيقي 🗑️','دعم ذو أولوية','دعم 24/7'] },
+    limitsEn:['Unlimited','Unlimited','Unlimited'],
+    features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين','تقارير متقدمة','إقفال الكاشير اليومي','الحضور والانصراف بـGPS 📍','اقتراح الشراء الذكي 🤖','توقع نفاد المخزون 🔮','تحليل الموسمية','تحسين نقطة إعادة الطلب 🎯','مقارنة الفروع 🤖','المخزون الراكد 🐌','كشف الهدر الحقيقي 🗑️','دعم ذو أولوية','دعم 24/7'],
+    featuresEn:['Inventory tracking','WhatsApp alerts','Staff management','Basic reports','Supplier management','Advanced reports','Daily cashier closing','GPS attendance 📍','Smart purchase suggestions 🤖','Stock-out prediction 🔮','Seasonality analysis','Reorder point optimization 🎯','Branch comparison 🤖','Stagnant inventory 🐌','Real waste detection 🗑️','Priority support','24/7 support'] },
 ]
 
 const LS: Record<string, {ar:string, en:string}> = {
@@ -39,7 +45,73 @@ const LS: Record<string, {ar:string, en:string}> = {
   featuresTag:   { ar:'المميزات', en:'FEATURES' },
   featuresTitle: { ar:'كل أدوات إدارة منشأتك بمكان واحد', en:'Every tool to run your business, in one place' },
   trustTitle:    { ar:'نبني الثقة مع منشآت في كل مكان', en:'Building trust with businesses everywhere' },
+
+  demoTitle:     { ar:'اطلب عرض النظام', en:'Book a demo' },
+  demoSub:       { ar:'عبّي بياناتك وبنتواصل معك خلال ساعات عبر واتساب', en:"Fill in your details and we'll reach out within hours via WhatsApp" },
+  demoFirstName: { ar:'الاسم *', en:'First name *' },
+  demoLastName:  { ar:'اسم العائلة *', en:'Last name *' },
+  demoPhone:     { ar:'رقم الهاتف *', en:'Phone number *' },
+  demoEmail:     { ar:'البريد الإلكتروني *', en:'Email *' },
+  demoBusiness:  { ar:'اسم المنشأة *', en:'Business name *' },
+  demoBranches:  { ar:'عدد الفروع', en:'Number of branches' },
+  demoPleaseSelect: { ar:'يرجى التحديد', en:'Please select' },
+  demoAgree:     { ar:'أؤكد أني قرأت وأوافق على', en:'I confirm I have read and agree to the' },
+  demoTerms:     { ar:'الشروط والأحكام', en:'Terms & Conditions' },
+  demoAnd:       { ar:'و', en:'and' },
+  demoPrivacy:   { ar:'سياسة الخصوصية', en:'Privacy Policy' },
+  demoSending:   { ar:'جاري الإرسال...', en:'Sending...' },
+  demoSubmit:    { ar:'إرسال الطلب', en:'Send request' },
+  demoSideTitle: { ar:'اطلب تجربة نظام Storely لإدارة المخزون مجاناً', en:'Request a free trial of Storely inventory management' },
+  demoSideSub:   { ar:'بنساعدك تختار الباقة الأنسب لمنشأتك، ونجاوب على كل أسئلتك مباشرة', en:"We'll help you pick the right plan for your business and answer all your questions directly" },
+
+  pricingTag:    { ar:'الأسعار', en:'PRICING' },
+  pricingTitle:  { ar:'باقة تناسب كل حجم منشأة', en:'A plan for every business size' },
+  billMonthly:   { ar:'شهري', en:'Monthly' },
+  billYearly:    { ar:'سنوي', en:'Yearly' },
+  billSave:      { ar:'وفّر 20%', en:'Save 20%' },
+  mostPopular:   { ar:'الأكثر شيوعاً', en:'Most popular' },
+  perMonth:      { ar:'شهرياً', en:'/mo' },
+  perYear:       { ar:'سنوياً', en:'/yr' },
+  featuresAvail: { ar:'ميزة متاحة', en:'features included' },
+  startNow:      { ar:'ابدأ الآن', en:'Start now' },
+
+  ctaReady:      { ar:'جاهز تبدأ؟', en:'Ready to start?' },
+  ctaSub:        { ar:'جرّب Storely مجاناً 14 يوماً — بدون بطاقة ائتمانية', en:'Try Storely free for 14 days — no credit card required' },
+  ctaRegister:   { ar:'سجّل مجاناً الآن', en:'Sign up free now' },
+  ctaContact:    { ar:'تواصل معنا', en:'Contact us' },
+
+  faqTag:        { ar:'الأسئلة الشائعة', en:'FAQ' },
+  faqTitle:      { ar:'عندك سؤال؟', en:'Got a question?' },
+
+  footerTagline: { ar:'منصة إدارة المخزون الذكية لكل المنشآت', en:'The smart inventory management platform for every business' },
+  footerPlatform:{ ar:'المنصة', en:'Platform' },
+  footerLegal:   { ar:'قانوني', en:'Legal' },
+  footerContact: { ar:'تواصل', en:'Contact' },
+  footerLogin:   { ar:'تسجيل الدخول', en:'Log in' },
+  footerSignup:  { ar:'إنشاء حساب', en:'Create account' },
+  footerPricing: { ar:'الأسعار', en:'Pricing' },
+  footerPrivacy: { ar:'سياسة الخصوصية', en:'Privacy Policy' },
+  footerTerms:   { ar:'الشروط والأحكام', en:'Terms & Conditions' },
+  footerSecurity:{ ar:'سياسة الأمان', en:'Security Policy' },
+  footerWhatsapp:{ ar:'واتساب', en:'WhatsApp' },
+  footerEmail:   { ar:'البريد الإلكتروني', en:'Email' },
+  footerRights:  { ar:'جميع الحقوق محفوظة لدى Storely', en:'All rights reserved to Storely' },
 }
+
+const FAQ_ITEMS = [
+  {q:'هل فيه تجربة مجانية؟',a:'نعم — 14 يوماً مجانية كاملة بدون بطاقة ائتمانية. استكشف جميع المميزات من أول يوم.',
+   qEn:'Is there a free trial?',aEn:"Yes — a full 14 days free, no credit card required. Explore all the features from day one."},
+  {q:'كيف يتم الدفع؟',a:'الدفع عبر تحويل بنكي. بعد التحويل يتم تفعيل حسابك خلال 24 ساعة.',
+   qEn:'How does payment work?',aEn:'Payment is via bank transfer. Your account is activated within 24 hours after transfer.'},
+  {q:'كم عدد الموردين في كل باقة؟',a:'الأساسية: 3 موردين، المتوسطة: 10 موردين، المتقدمة: غير محدود.',
+   qEn:'How many suppliers per plan?',aEn:'Basic: 3 suppliers, Standard: 10 suppliers, Advanced: unlimited.'},
+  {q:'هل يدعم متعدد الفروع؟',a:'نعم — الأساسية: فرع واحد، المتوسطة: 3 فروع، المتقدمة: فروع غير محدودة.',
+   qEn:'Does it support multiple branches?',aEn:'Yes — Basic: 1 branch, Standard: 3 branches, Advanced: unlimited branches.'},
+  {q:'هل الموظفون يحتاجون تدريب؟',a:'لا — واجهة الموظفين بسيطة جداً بضغطة واحدة، وتدعم 7 لغات لأي جنسية.',
+   qEn:'Do staff need training?',aEn:'No — the staff interface is extremely simple (one-tap), and supports 7 languages for any nationality.'},
+  {q:'هل يمكن الإلغاء في أي وقت؟',a:'نعم — لا يوجد عقود. يمكنك إلغاء اشتراكك في أي وقت.',
+   qEn:'Can I cancel anytime?',aEn:'Yes — no contracts. You can cancel your subscription at any time.'},
+]
 
 const FEATURES = [
   { icon:Package, title:'تتبع لحظي', titleEn:'Real-time tracking', desc:'راقب كل صنف في الوقت الحقيقي. كل صرف وكل شراء يُسجَّل فوراً.', descEn:'Monitor every item in real time. Every dispense and purchase is logged instantly.' },
@@ -61,6 +133,7 @@ const TRUST_POINTS = [
 ]
 
 const BRANCH_OPTIONS = ['فرع واحد','2-3 فروع','4-10 فروع','أكثر من 10 فروع']
+const BRANCH_OPTIONS_EN = ['1 branch','2-3 branches','4-10 branches','More than 10 branches']
 
 
 function FaqItem({ q, a }: { q:string; a:string }) {
@@ -385,8 +458,8 @@ export default function LandingPage() {
       <section id="demo" className="section-pad" style={{padding:'90px 40px',background:'#fafafa'}}>
         <div className="demo-grid" style={{maxWidth:1000,margin:'0 auto',display:'grid',gridTemplateColumns:'1fr 1fr',gap:0,borderRadius:20,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.08)'}}>
           <form onSubmit={submitDemoRequest} style={{background:'white',padding:40}}>
-            <h2 style={{fontSize:24,fontWeight:900,color:'#111827',marginBottom:6}}>اطلب عرض النظام</h2>
-            <p style={{fontSize:14,color:'#6b7280',marginBottom:24}}>عبّي بياناتك وبنتواصل معك خلال ساعات عبر واتساب</p>
+            <h2 style={{fontSize:24,fontWeight:900,color:'#111827',marginBottom:6}}>{t('demoTitle')}</h2>
+            <p style={{fontSize:14,color:'#6b7280',marginBottom:24}}>{t('demoSub')}</p>
             {submitMsg && (
               <div style={{background:submitMsg.ok?'#f0fdf4':'#fef2f2',border:`1px solid ${submitMsg.ok?'#bbf7d0':'#fecaca'}`,borderRadius:8,padding:'10px 14px',marginBottom:16,fontSize:13,fontWeight:600,color:submitMsg.ok?'#15803d':'#dc2626'}}>
                 {submitMsg.text}
@@ -394,47 +467,47 @@ export default function LandingPage() {
             )}
             <div className="demo-fields" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
               <div>
-                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>الاسم *</label>
+                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoFirstName')}</label>
                 <input required className="demo-input" value={form.firstName} onChange={e=>setForm(f=>({...f,firstName:e.target.value}))}/>
               </div>
               <div>
-                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>اسم العائلة *</label>
+                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoLastName')}</label>
                 <input required className="demo-input" value={form.lastName} onChange={e=>setForm(f=>({...f,lastName:e.target.value}))}/>
               </div>
             </div>
             <div style={{marginBottom:12}}>
-              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>رقم الهاتف *</label>
+              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoPhone')}</label>
               <input required type="tel" placeholder="05xxxxxxxx" className="demo-input" value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))}/>
             </div>
             <div style={{marginBottom:12}}>
-              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني *</label>
+              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoEmail')}</label>
               <input required type="email" className="demo-input" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/>
             </div>
             <div className="demo-fields" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16}}>
               <div>
-                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>اسم المنشأة *</label>
+                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoBusiness')}</label>
                 <input required className="demo-input" value={form.businessName} onChange={e=>setForm(f=>({...f,businessName:e.target.value}))}/>
               </div>
               <div>
-                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>عدد الفروع</label>
+                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoBranches')}</label>
                 <select className="demo-input" value={form.branchCount} onChange={e=>setForm(f=>({...f,branchCount:e.target.value}))}>
-                  <option value="">يرجى التحديد</option>
-                  {BRANCH_OPTIONS.map(o=><option key={o} value={o}>{o}</option>)}
+                  <option value="">{t('demoPleaseSelect')}</option>
+                  {(lang==='ar'?BRANCH_OPTIONS:BRANCH_OPTIONS_EN).map((o,oi)=><option key={o} value={BRANCH_OPTIONS[oi]}>{o}</option>)}
                 </select>
               </div>
             </div>
             <label style={{display:'flex',alignItems:'flex-start',gap:8,fontSize:12,color:'#6b7280',marginBottom:20,cursor:'pointer'}}>
               <input type="checkbox" checked={agreed} onChange={e=>setAgreed(e.target.checked)} style={{marginTop:2}}/>
-              أؤكد أني قرأت وأوافق على <a href="/terms" target="_blank" style={{color:'#15803d'}}>الشروط والأحكام</a> و<a href="/privacy" target="_blank" style={{color:'#15803d'}}>سياسة الخصوصية</a>
+              {t('demoAgree')} <a href="/terms" target="_blank" style={{color:'#15803d'}}>{t('demoTerms')}</a> {t('demoAnd')}<a href="/privacy" target="_blank" style={{color:'#15803d'}}>{t('demoPrivacy')}</a>
             </label>
             <button type="submit" disabled={submitting} className="btn-primary" style={{width:'100%',padding:'13px',fontSize:15,opacity:submitting?.6:1}}>
-              {submitting?'⏳ جاري الإرسال...':'إرسال الطلب'}
+              {submitting?t('demoSending'):t('demoSubmit')}
             </button>
           </form>
           <div style={{background:'linear-gradient(160deg,#15803d,#14532d)',padding:40,display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',textAlign:'center' as const}}>
             <div style={{width:70,height:70,borderRadius:18,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:32,marginBottom:20}}>📦</div>
-            <h3 style={{fontSize:22,fontWeight:900,color:'white',marginBottom:12,lineHeight:1.4}}>اطلب تجربة نظام Storely لإدارة المخزون مجاناً</h3>
-            <p style={{fontSize:14,color:'rgba(255,255,255,.85)',lineHeight:1.8}}>بنساعدك تختار الباقة الأنسب لمنشأتك، ونجاوب على كل أسئلتك مباشرة</p>
+            <h3 style={{fontSize:22,fontWeight:900,color:'white',marginBottom:12,lineHeight:1.4}}>{t('demoSideTitle')}</h3>
+            <p style={{fontSize:14,color:'rgba(255,255,255,.85)',lineHeight:1.8}}>{t('demoSideSub')}</p>
           </div>
         </div>
       </section>
@@ -442,38 +515,38 @@ export default function LandingPage() {
       {/* PRICING */}
       <section id="pricing" className="section-pad" style={{padding:'90px 40px',maxWidth:1200,margin:'0 auto'}}>
         <div style={{textAlign:'center',marginBottom:32}}>
-          <p style={{fontSize:13,fontWeight:700,color:'#15803d',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>الأسعار</p>
-          <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>باقة تناسب كل حجم منشأة</h2>
+          <p style={{fontSize:13,fontWeight:700,color:'#15803d',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>{t('pricingTag')}</p>
+          <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>{t('pricingTitle')}</h2>
         </div>
         <div style={{display:'flex',justifyContent:'center',marginBottom:40}}>
           <div style={{display:'inline-flex',gap:4,background:'#f3f4f6',padding:4,borderRadius:12}}>
-            <button onClick={()=>setBilling('monthly')} style={{padding:'9px 20px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',background:billing==='monthly'?'white':'transparent',color:billing==='monthly'?'#111827':'#6b7280',boxShadow:billing==='monthly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>شهري</button>
+            <button onClick={()=>setBilling('monthly')} style={{padding:'9px 20px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',background:billing==='monthly'?'white':'transparent',color:billing==='monthly'?'#111827':'#6b7280',boxShadow:billing==='monthly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>{t('billMonthly')}</button>
             <button onClick={()=>setBilling('yearly')} style={{padding:'9px 20px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6,background:billing==='yearly'?'white':'transparent',color:billing==='yearly'?'#111827':'#6b7280',boxShadow:billing==='yearly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>
-              سنوي <span style={{background:'#f0fdf4',color:'#15803d',fontSize:10,fontWeight:800,padding:'2px 7px',borderRadius:99}}>وفّر 20%</span>
+              {t('billYearly')} <span style={{background:'#f0fdf4',color:'#15803d',fontSize:10,fontWeight:800,padding:'2px 7px',borderRadius:99}}>{t('billSave')}</span>
             </button>
           </div>
         </div>
         <div className="plan-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:20}}>
           {PLANS.map((p,i)=>(
             <div key={i} className={`plan-card${p.popular?' popular':''}`} style={{position:'relative'}}>
-              {p.popular && <div style={{position:'absolute',top:-13,right:24,background:'#15803d',color:'white',fontSize:11,fontWeight:800,padding:'4px 12px',borderRadius:99}}>الأكثر شيوعاً</div>}
-              <div style={{fontSize:16,fontWeight:800,color:'#111827',marginBottom:8}}>{p.name}</div>
+              {p.popular && <div style={{position:'absolute',top:-13,right:24,background:'#15803d',color:'white',fontSize:11,fontWeight:800,padding:'4px 12px',borderRadius:99}}>{t('mostPopular')}</div>}
+              <div style={{fontSize:16,fontWeight:800,color:'#111827',marginBottom:8}}>{lang==='ar'?p.name:p.nameEn}</div>
               <div style={{display:'flex',alignItems:'baseline',gap:6,marginBottom:10}}>
                 <span style={{fontSize:34,fontWeight:900,color:'#111827'}}>{billing==='yearly'?p.yearlyPrice:p.price}</span>
-                <span style={{fontSize:14,color:'#9ca3af'}}>ر.س / {billing==='yearly'?'سنوياً':'شهرياً'}</span>
+                <span style={{fontSize:14,color:'#9ca3af'}}>{lang==='ar'?'ر.س':'SAR'} {billing==='yearly'?t('perYear'):t('perMonth')}</span>
               </div>
-              <div style={{display:'inline-block',background:'#f0fdf4',color:'#15803d',fontSize:11,fontWeight:800,padding:'3px 10px',borderRadius:99,marginBottom:16}}>{p.features.length} ميزة متاحة</div>
+              <div style={{display:'inline-block',background:'#f0fdf4',color:'#15803d',fontSize:11,fontWeight:800,padding:'3px 10px',borderRadius:99,marginBottom:16}}>{p.features.length} {t('featuresAvail')}</div>
               <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:16,paddingBottom:16,borderBottom:'1px solid #f3f4f6'}}>
-                {p.limits.map((l,j)=><div key={j} style={{fontSize:13,color:'#6b7280'}}>• {l}</div>)}
+                {(lang==='ar'?p.limits:p.limitsEn).map((l,j)=><div key={j} style={{fontSize:13,color:'#6b7280'}}>• {l}</div>)}
               </div>
               <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:24}}>
-                {p.features.map((f,j)=>(
+                {(lang==='ar'?p.features:p.featuresEn).map((f,j)=>(
                   <div key={j} style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#374151'}}>
                     <span style={{color:'#15803d'}}>✓</span>{f}
                   </div>
                 ))}
               </div>
-              <button onClick={()=>router.push(`/login?mode=register&branches=${PLAN_BRANCHES[i]}&billing=${billing}`)} className={p.popular?'btn-primary':'btn-outline'} style={{width:'100%',textAlign:'center' as const}}>ابدأ الآن</button>
+              <button onClick={()=>router.push(`/login?mode=register&branches=${PLAN_BRANCHES[i]}&billing=${billing}`)} className={p.popular?'btn-primary':'btn-outline'} style={{width:'100%',textAlign:'center' as const}}>{t('startNow')}</button>
             </div>
           ))}
         </div>
@@ -481,17 +554,17 @@ export default function LandingPage() {
 
       {/* CTA BANNER */}
       <section style={{background:'linear-gradient(135deg,#15803d,#14532d)',padding:'70px 40px',textAlign:'center' as const}}>
-        <h2 style={{fontSize:32,fontWeight:900,color:'white',marginBottom:14}}>جاهز تبدأ؟</h2>
-        <p style={{fontSize:16,color:'rgba(255,255,255,.85)',marginBottom:32}}>جرّب Storely مجاناً 14 يوماً — بدون بطاقة ائتمانية</p>
+        <h2 style={{fontSize:32,fontWeight:900,color:'white',marginBottom:14}}>{t('ctaReady')}</h2>
+        <p style={{fontSize:16,color:'rgba(255,255,255,.85)',marginBottom:32}}>{t('ctaSub')}</p>
         <div style={{display:'flex',gap:14,justifyContent:'center',flexWrap:'wrap' as const}}>
           <button onClick={()=>router.push('/login?mode=register')}
             style={{background:'white',color:'#15803d',border:'none',borderRadius:9,padding:'14px 32px',fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
-            سجّل مجاناً الآن
+            {t('ctaRegister')}
           </button>
           <a href="https://wa.me/966594351667" target="_blank" rel="noreferrer"
             style={{display:'flex',alignItems:'center',gap:8,padding:'14px 24px',borderRadius:9,background:'rgba(255,255,255,.15)',color:'white',textDecoration:'none',fontSize:15,fontWeight:700,border:'1.5px solid rgba(255,255,255,.3)'}}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            تواصل معنا
+            {t('ctaContact')}
           </a>
         </div>
       </section>
@@ -499,17 +572,10 @@ export default function LandingPage() {
       {/* FAQ */}
       <section id="faq" style={{padding:'80px 40px',maxWidth:700,margin:'0 auto'}}>
         <div style={{textAlign:'center',marginBottom:48}}>
-          <p style={{fontSize:13,fontWeight:700,color:'#15803d',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>الأسئلة الشائعة</p>
-          <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>عندك سؤال؟</h2>
+          <p style={{fontSize:13,fontWeight:700,color:'#15803d',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>{t('faqTag')}</p>
+          <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>{t('faqTitle')}</h2>
         </div>
-        {[
-          {q:'هل فيه تجربة مجانية؟',a:'نعم — 14 يوماً مجانية كاملة بدون بطاقة ائتمانية. استكشف جميع المميزات من أول يوم.'},
-          {q:'كيف يتم الدفع؟',a:'الدفع عبر تحويل بنكي. بعد التحويل يتم تفعيل حسابك خلال 24 ساعة.'},
-          {q:'كم عدد الموردين في كل باقة؟',a:'الأساسية: 3 موردين، المتوسطة: 10 موردين، المتقدمة: غير محدود.'},
-          {q:'هل يدعم متعدد الفروع؟',a:'نعم — الأساسية: فرع واحد، المتوسطة: 3 فروع، المتقدمة: فروع غير محدودة.'},
-          {q:'هل الموظفون يحتاجون تدريب؟',a:'لا — واجهة الموظفين بسيطة جداً بضغطة واحدة، وتدعم 7 لغات لأي جنسية.'},
-          {q:'هل يمكن الإلغاء في أي وقت؟',a:'نعم — لا يوجد عقود. يمكنك إلغاء اشتراكك في أي وقت.'},
-        ].map((f,i)=><FaqItem key={i} q={f.q} a={f.a}/>)}
+        {FAQ_ITEMS.map((f,i)=><FaqItem key={i} q={lang==='ar'?f.q:f.qEn} a={lang==='ar'?f.a:f.aEn}/>)}
       </section>
 
       {/* FOOTER */}
@@ -521,12 +587,12 @@ export default function LandingPage() {
                 <img src="/storely-logo.png" alt="Storely" style={{width:32,height:32,borderRadius:8}}/>
                 <span style={{fontSize:18,fontWeight:800,color:'white'}}>Storely</span>
               </div>
-              <p style={{fontSize:13,color:'white',lineHeight:1.7,maxWidth:220}}>منصة إدارة المخزون الذكية لكل المنشآت</p>
+              <p style={{fontSize:13,color:'white',lineHeight:1.7,maxWidth:220}}>{t('footerTagline')}</p>
             </div>
             {[
-              {title:'المنصة',links:[['تسجيل الدخول','/login'],['إنشاء حساب','/login?mode=register'],['الأسعار','#pricing']]},
-              {title:'قانوني',links:[['سياسة الخصوصية','/privacy'],['الشروط والأحكام','/terms'],['سياسة الأمان','/security']]},
-              {title:'تواصل',links:[['واتساب','https://wa.me/966594351667'],['البريد الإلكتروني','mailto:support@storely.dev']]},
+              {title:t('footerPlatform'),links:[[t('footerLogin'),'/login'],[t('footerSignup'),'/login?mode=register'],[t('footerPricing'),'#pricing']]},
+              {title:t('footerLegal'),links:[[t('footerPrivacy'),'/privacy'],[t('footerTerms'),'/terms'],[t('footerSecurity'),'/security']]},
+              {title:t('footerContact'),links:[[t('footerWhatsapp'),'https://wa.me/966594351667'],[t('footerEmail'),'mailto:support@storely.dev']]},
             ].map((col,i)=>(
               <div key={i}>
                 <div style={{fontSize:12,fontWeight:700,color:'#9ca3af',marginBottom:14,letterSpacing:'.08em',textTransform:'uppercase'}}>{col.title}</div>
@@ -542,8 +608,8 @@ export default function LandingPage() {
           </div>
           <div style={{borderTop:'1px solid #1f2937',paddingTop:24,display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12}}>
             <div>
-              <div style={{fontSize:13,color:'white'}}>جميع الحقوق محفوظة لدى Storely {new Date().getFullYear()} ©</div>
-              <div style={{fontSize:11,color:'#6b7280',marginTop:6}}>مؤسسة باسم علي خلوي لتقنية المعلومات، رقم السجل التجاري 7055023522</div>
+              <div style={{fontSize:13,color:'white'}}>{t('footerRights')} {new Date().getFullYear()} ©</div>
+              <div style={{fontSize:11,color:'#6b7280',marginTop:6}}>{lang==='ar'?'مؤسسة باسم علي خلوي لتقنية المعلومات، رقم السجل التجاري 7055023522':'Basim Ali Khulwi Information Technology Est., Commercial Registration No. 7055023522'}</div>
             </div>
             <div style={{fontSize:13,color:'white'}}>storely.dev</div>
           </div>
