@@ -19,23 +19,45 @@ const PLANS = [
     features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين','تقارير متقدمة','إقفال الكاشير اليومي','الحضور والانصراف بـGPS 📍','اقتراح الشراء الذكي 🤖','توقع نفاد المخزون 🔮','تحليل الموسمية','تحسين نقطة إعادة الطلب 🎯','مقارنة الفروع 🤖','المخزون الراكد 🐌','كشف الهدر الحقيقي 🗑️','دعم ذو أولوية','دعم 24/7'] },
 ]
 
+const LS: Record<string, {ar:string, en:string}> = {
+  navFeatures:   { ar:'المميزات', en:'Features' },
+  navPricing:    { ar:'الأسعار', en:'Pricing' },
+  navFaq:        { ar:'الأسئلة', en:'FAQ' },
+  navLogin:      { ar:'دخول', en:'Log in' },
+  navDemo:       { ar:'اطلب عرض النظام', en:'Book a demo' },
+  heroBadge:     { ar:'تجربة مجانية 14 يوماً — بدون بطاقة ائتمانية', en:'14-day free trial — no credit card required' },
+  heroH1a:       { ar:'نصمّم مستقبل الإدارة الذكية', en:'We design the future of smart management' },
+  heroH1b:       { ar:'لكل منشأة تطمح للنمو', en:'for every business aiming to grow' },
+  heroSub:       { ar:'من المخزون والمشتريات، لصفحة عرض منتجاتك والحجوزات الإلكترونية، وإدارة الموظفين والفروع — كل شي بمكان واحد', en:'From inventory and purchasing, to your product showcase page and online reservations, to staff and branch management — all in one place' },
+  heroTry:       { ar:'جرب نظام Storely', en:'Try Storely' },
+  heroStart:     { ar:'ابدأ تجربتك المجانية', en:'Start your free trial' },
+  trustedBy:     { ar:'موثوق من قبل منشآت رائدة', en:'Trusted by leading businesses' },
+  statStart:     { ar:'يبدأ من', en:'starting at' },
+  statFree:      { ar:'مجاناً', en:'free' },
+  statLangs:     { ar:'لغات', en:'languages' },
+  statAlerts:    { ar:'تنبيهات', en:'alerts' },
+  featuresTag:   { ar:'المميزات', en:'FEATURES' },
+  featuresTitle: { ar:'كل أدوات إدارة منشأتك بمكان واحد', en:'Every tool to run your business, in one place' },
+  trustTitle:    { ar:'نبني الثقة مع منشآت في كل مكان', en:'Building trust with businesses everywhere' },
+}
+
 const FEATURES = [
-  { icon:Package, title:'تتبع لحظي', desc:'راقب كل صنف في الوقت الحقيقي. كل صرف وكل شراء يُسجَّل فوراً.' },
-  { icon:MessageCircle, title:'واتساب تلقائي', desc:'تنبيه فوري لك وللمورد لما يوصل أي صنف للحد الأدنى.' },
-  { icon:Users, title:'إدارة الموظفين', desc:'كل موظف برمز PIN خاص يصرف من المخزون بدون وصول لبياناتك.' },
-  { icon:Wallet, title:'إقفال الكاشير اليومي', desc:'تسوية الصندوق بخطوات بسيطة مع صور إثبات، وتنبيه واتساب فوري لك عند أي عجز أو زيادة.' },
-  { icon:Globe, title:'7 لغات', desc:'واجهة موظفين بالعربي والإنجليزي والأردو والهندي والتاغالوغ والبنغالي والفرنسي.' },
-  { icon:BarChart3, title:'تقارير ذكية', desc:'تقارير الصرف والمشتريات والجرد وإقفال الكاشير. صدّرها بـ PDF أو CSV بضغطة واحدة.' },
-  { icon:Store, title:'متعدد الفروع', desc:'أدر جميع فروعك من لوحة تحكم واحدة مع مخزون مستقل لكل فرع.' },
-  { icon:Bot, title:'أدوات الذكاء الاصطناعي', desc:'اقتراح الشراء الذكي بناءً على اتجاه استهلاكك الفعلي، ومقارنة أداء الفروع تلقائياً.' },
-  { icon:ShoppingBag, title:'المتجر — حل تقني متكامل', desc:'صفحة عرض منتجات أنيقة برابط أو QR + نظام حجوزات إلكتروني كامل بلوحة إدارة للكاشير وإشعارات واتساب تلقائية — كل شي تحت سقف واحد.', badge:'حل تقني' },
+  { icon:Package, title:'تتبع لحظي', titleEn:'Real-time tracking', desc:'راقب كل صنف في الوقت الحقيقي. كل صرف وكل شراء يُسجَّل فوراً.', descEn:'Monitor every item in real time. Every dispense and purchase is logged instantly.' },
+  { icon:MessageCircle, title:'واتساب تلقائي', titleEn:'Automatic WhatsApp alerts', desc:'تنبيه فوري لك وللمورد لما يوصل أي صنف للحد الأدنى.', descEn:'Instant alert to you and your supplier when any item hits its minimum level.' },
+  { icon:Users, title:'إدارة الموظفين', titleEn:'Staff management', desc:'كل موظف برمز PIN خاص يصرف من المخزون بدون وصول لبياناتك.', descEn:'Each employee gets a private PIN to dispense stock without access to your data.' },
+  { icon:Wallet, title:'إقفال الكاشير اليومي', titleEn:'Daily cashier closing', desc:'تسوية الصندوق بخطوات بسيطة مع صور إثبات، وتنبيه واتساب فوري لك عند أي عجز أو زيادة.', descEn:'Simple cash reconciliation with proof photos, and instant WhatsApp alerts for any shortage or surplus.' },
+  { icon:Globe, title:'7 لغات', titleEn:'7 languages', desc:'واجهة موظفين بالعربي والإنجليزي والأردو والهندي والتاغالوغ والبنغالي والفرنسي.', descEn:'Staff interface in Arabic, English, Urdu, Hindi, Tagalog, Bengali, and French.' },
+  { icon:BarChart3, title:'تقارير ذكية', titleEn:'Smart reports', desc:'تقارير الصرف والمشتريات والجرد وإقفال الكاشير. صدّرها بـ PDF أو CSV بضغطة واحدة.', descEn:'Dispense, purchase, inventory, and cashier closing reports. Export to PDF or CSV in one click.' },
+  { icon:Store, title:'متعدد الفروع', titleEn:'Multi-branch', desc:'أدر جميع فروعك من لوحة تحكم واحدة مع مخزون مستقل لكل فرع.', descEn:'Manage all your branches from one dashboard with independent inventory per branch.' },
+  { icon:Bot, title:'أدوات الذكاء الاصطناعي', titleEn:'AI tools', desc:'اقتراح الشراء الذكي بناءً على اتجاه استهلاكك الفعلي، ومقارنة أداء الفروع تلقائياً.', descEn:'Smart purchase suggestions based on your actual consumption trend, and automatic branch performance comparison.' },
+  { icon:ShoppingBag, title:'المتجر — حل تقني متكامل', titleEn:'The Store — a complete tech solution', desc:'صفحة عرض منتجات أنيقة برابط أو QR + نظام حجوزات إلكتروني كامل بلوحة إدارة للكاشير وإشعارات واتساب تلقائية — كل شي تحت سقف واحد.', descEn:'An elegant product showcase page via link or QR + a complete online reservation system with a cashier dashboard and automatic WhatsApp alerts — all under one roof.', badge:'حل تقني', badgeEn:'Tech Solution' },
 ]
 
 const TRUST_POINTS = [
-  { icon:'🔒', label:'بياناتك محمية بنسخ احتياطي يومي' },
-  { icon:'⚡', label:'إعداد حسابك خلال دقائق' },
-  { icon:'📱', label:'دعم عربي كامل عبر واتساب' },
-  { icon:'🌍', label:'واجهة موظفين بـ7 لغات' },
+  { icon:'🔒', label:'بياناتك محمية بنسخ احتياطي يومي', labelEn:'Your data is protected with daily backups' },
+  { icon:'⚡', label:'إعداد حسابك خلال دقائق', labelEn:'Set up your account in minutes' },
+  { icon:'📱', label:'دعم عربي كامل عبر واتساب', labelEn:'Full support via WhatsApp' },
+  { icon:'🌍', label:'واجهة موظفين بـ7 لغات', labelEn:'Staff interface in 7 languages' },
 ]
 
 const BRANCH_OPTIONS = ['فرع واحد','2-3 فروع','4-10 فروع','أكثر من 10 فروع']
@@ -129,6 +151,8 @@ export default function LandingPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitMsg, setSubmitMsg] = useState<{ok:boolean,text:string}|null>(null)
   const [partners, setPartners] = useState<any[]>([])
+  const [lang, setLang] = useState<'ar'|'en'>('ar')
+  function t(key: string) { return (LS as any)[key]?.[lang] || key }
   const [marqueeMsgs, setMarqueeMsgs] = useState<string[]>([])
   const hasMarquee = marqueeMsgs.length>0
 
@@ -241,13 +265,14 @@ export default function LandingPage() {
             <span style={{fontSize:18,fontWeight:800,color:'white',letterSpacing:'-0.3px'}}>Storely</span>
           </div>
           <div className="desk-nav" style={{display:'flex',gap:28,alignItems:'center'}}>
-            {[['المميزات','#features'],['الأسعار','#pricing'],['الأسئلة','#faq']].map(([l,h])=>(
+            {[[t('navFeatures'),'#features'],[t('navPricing'),'#pricing'],[t('navFaq'),'#faq']].map(([l,h])=>(
               <a key={h} href={h} style={{color:'rgba(255,255,255,.75)',textDecoration:'none',fontSize:14,fontWeight:500,transition:'color .2s'}}>{l}</a>
             ))}
           </div>
           <div className="desk-nav" style={{display:'flex',gap:10,alignItems:'center'}}>
-            <button onClick={()=>router.push('/login')} style={{padding:'8px 18px',fontSize:14,fontWeight:700,background:'transparent',color:'white',border:'1px solid rgba(255,255,255,.25)',borderRadius:99,cursor:'pointer',fontFamily:'inherit'}}>دخول</button>
-            <a href="#demo" style={{padding:'9px 20px',fontSize:14,fontWeight:700,background:'white',color:'#0a1f13',borderRadius:99,textDecoration:'none'}}>اطلب عرض النظام</a>
+            <button onClick={()=>setLang(l=>l==='ar'?'en':'ar')} style={{padding:'8px 14px',fontSize:12,fontWeight:700,background:'rgba(255,255,255,.08)',color:'white',border:'1px solid rgba(255,255,255,.2)',borderRadius:99,cursor:'pointer',fontFamily:'inherit'}}>{lang==='ar'?'EN':'عربي'}</button>
+            <button onClick={()=>router.push('/login')} style={{padding:'8px 18px',fontSize:14,fontWeight:700,background:'transparent',color:'white',border:'1px solid rgba(255,255,255,.25)',borderRadius:99,cursor:'pointer',fontFamily:'inherit'}}>{t('navLogin')}</button>
+            <a href="#demo" style={{padding:'9px 20px',fontSize:14,fontWeight:700,background:'white',color:'#0a1f13',borderRadius:99,textDecoration:'none'}}>{t('navDemo')}</a>
           </div>
           <button className="mob-menu-btn" onClick={()=>setMenuOpen(o=>!o)}
             style={{background:'none',border:'none',cursor:'pointer',fontSize:22,color:'white',padding:4}}>
@@ -257,10 +282,10 @@ export default function LandingPage() {
 
         {menuOpen && (
           <div className="mob-menu" style={{position:'fixed',top:hasMarquee?100:64,right:0,left:0,zIndex:999,background:'#0a1f13',borderBottom:'1px solid rgba(255,255,255,.08)',padding:'20px 24px',display:'flex',flexDirection:'column',gap:16}}>
-            {[['المميزات','#features'],['الأسعار','#pricing'],['الأسئلة','#faq']].map(([l,h])=>(
+            {[[t('navFeatures'),'#features'],[t('navPricing'),'#pricing'],[t('navFaq'),'#faq']].map(([l,h])=>(
               <a key={h} href={h} onClick={()=>setMenuOpen(false)} style={{color:'rgba(255,255,255,.85)',textDecoration:'none',fontSize:16,fontWeight:500,padding:'8px 0',borderBottom:'1px solid rgba(255,255,255,.08)'}}>{l}</a>
             ))}
-            <a href="#demo" onClick={()=>setMenuOpen(false)} style={{textAlign:'center',padding:'12px',background:'white',color:'#0a1f13',borderRadius:99,fontWeight:700,textDecoration:'none'}}>اطلب عرض النظام</a>
+            <a href="#demo" onClick={()=>setMenuOpen(false)} style={{textAlign:'center',padding:'12px',background:'white',color:'#0a1f13',borderRadius:99,fontWeight:700,textDecoration:'none'}}>{t('navDemo')}</a>
           </div>
         )}
 
@@ -268,19 +293,19 @@ export default function LandingPage() {
         <section style={{paddingTop:hasMarquee?166:130,paddingBottom:8,padding:hasMarquee?'166px 40px 8px':'130px 40px 8px',maxWidth:1000,margin:'0 auto',textAlign:'center' as const,position:'relative' as const,zIndex:1}}>
           <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.18)',borderRadius:99,padding:'7px 18px',fontSize:13,fontWeight:600,color:'white',marginBottom:28}}>
             <span style={{width:6,height:6,borderRadius:'50%',background:'#4ade80'}}/>
-            تجربة مجانية 14 يوماً — بدون بطاقة ائتمانية
+            {t('heroBadge')}
           </div>
-          <h1 className="hero-h1" style={{fontFamily:"'Noto Naskh Arabic',serif",fontSize:58,fontWeight:600,color:'white',lineHeight:1.25,marginBottom:22,letterSpacing:'-0.5px',maxWidth:820,margin:'0 auto 22px'}}>
-            نصمّم مستقبل الإدارة الذكية<br/>
-            <span style={{color:'#86efac',fontStyle:'italic' as const}}>لكل منشأة تطمح للنمو</span>
+          <h1 className="hero-h1" style={{fontFamily:lang==='ar'?"'Noto Naskh Arabic',serif":"'IBM Plex Sans Arabic',sans-serif",fontSize:58,fontWeight:600,color:'white',lineHeight:1.25,marginBottom:22,letterSpacing:'-0.5px',maxWidth:820,margin:'0 auto 22px'}}>
+            {t('heroH1a')}<br/>
+            <span style={{color:'#86efac',fontStyle:'italic' as const}}>{t('heroH1b')}</span>
           </h1>
           <p style={{fontSize:17,color:'rgba(255,255,255,.65)',maxWidth:580,margin:'0 auto 34px',lineHeight:1.7}}>
-            من المخزون والمشتريات، لصفحة عرض منتجاتك والحجوزات الإلكترونية، وإدارة الموظفين والفروع — كل شي بمكان واحد
+            {t('heroSub')}
           </p>
           <div className="hero-btns" style={{display:'flex',gap:12,justifyContent:'center',marginBottom:56}}>
-            <a href="#demo" style={{fontSize:16,padding:'14px 28px',background:'transparent',color:'white',border:'1.5px solid rgba(255,255,255,.3)',borderRadius:99,textDecoration:'none',fontWeight:700}}>جرب نظام Storely</a>
+            <a href="#demo" style={{fontSize:16,padding:'14px 28px',background:'transparent',color:'white',border:'1.5px solid rgba(255,255,255,.3)',borderRadius:99,textDecoration:'none',fontWeight:700}}>{t('heroTry')}</a>
             <button onClick={()=>router.push('/login?mode=register')} style={{fontSize:16,padding:'14px 32px',background:'white',color:'#0a1f13',border:'none',borderRadius:99,cursor:'pointer',fontFamily:'inherit',fontWeight:700}}>
-              ابدأ تجربتك المجانية
+              {t('heroStart')}
             </button>
           </div>
         </section>
@@ -288,7 +313,7 @@ export default function LandingPage() {
         {/* شعارات العملاء — فوق الخلفية الملوّنة مباشرة، زي Tines */}
         {partners.length > 0 && (
           <div style={{maxWidth:1000,margin:'0 auto',padding:'0 40px',position:'relative' as const,zIndex:1}}>
-            <p style={{textAlign:'center' as const,fontSize:12,fontWeight:700,color:'rgba(255,255,255,.4)',letterSpacing:'.1em',textTransform:'uppercase' as const,marginBottom:24}}>موثوق من قبل منشآت رائدة</p>
+            <p style={{textAlign:'center' as const,fontSize:12,fontWeight:700,color:'rgba(255,255,255,.4)',letterSpacing:'.1em',textTransform:'uppercase' as const,marginBottom:24}}>{t('trustedBy')}</p>
             <div style={{display:'flex',flexWrap:'wrap' as const,gap:36,justifyContent:'center',alignItems:'center',opacity:.85}}>
               {partners.map((p:any)=>(
                 <img key={p.id} src={p.logo_url} alt={p.name} style={{height:26,maxWidth:110,objectFit:'contain',filter:'brightness(0) invert(1)',opacity:.75}}/>
@@ -308,7 +333,7 @@ export default function LandingPage() {
         </div>
 
         <div className="stats-row" style={{display:'flex',gap:40,justifyContent:'center',marginTop:48}}>
-          {[['149 ر.س','يبدأ من'],['14 يوم','مجاناً'],['7','لغات'],['24/7','تنبيهات']].map(([n,l])=>(
+          {[['149 '+(lang==='ar'?'ر.س':'SAR'),t('statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('statFree')],['7',t('statLangs')],['24/7',t('statAlerts')]].map(([n,l])=>(
             <div key={l}>
               <div style={{fontSize:24,fontWeight:900,color:'#111827'}}>{n}</div>
               <div style={{fontSize:12,color:'#9ca3af',marginTop:3}}>{l}</div>
@@ -320,12 +345,12 @@ export default function LandingPage() {
       {/* TRUST */}
       <section style={{padding:'50px 40px',background:'#fafafa',borderTop:'1px solid #f3f4f6',borderBottom:'1px solid #f3f4f6'}}>
         <div style={{maxWidth:1000,margin:'0 auto',textAlign:'center' as const}}>
-          <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:32}}>نبني الثقة مع منشآت في كل مكان</h2>
+          <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:32}}>{t('trustTitle')}</h2>
           <div style={{display:'flex',flexWrap:'wrap' as const,gap:28,justifyContent:'center'}}>
-            {TRUST_POINTS.map((t,i)=>(
+            {TRUST_POINTS.map((tp,i)=>(
               <div key={i} style={{display:'flex',alignItems:'center',gap:8,background:'white',border:'1px solid #f3f4f6',borderRadius:99,padding:'10px 18px'}}>
-                <span style={{fontSize:16}}>{t.icon}</span>
-                <span style={{fontSize:13,fontWeight:600,color:'#374151'}}>{t.label}</span>
+                <span style={{fontSize:16}}>{tp.icon}</span>
+                <span style={{fontSize:13,fontWeight:600,color:'#374151'}}>{lang==='ar'?tp.label:tp.labelEn}</span>
               </div>
             ))}
           </div>
@@ -335,8 +360,8 @@ export default function LandingPage() {
       {/* FEATURES */}
       <section id="features" className="section-pad" style={{padding:'90px 40px',maxWidth:1200,margin:'0 auto'}}>
         <div style={{textAlign:'center',marginBottom:56}}>
-          <p style={{fontSize:13,fontWeight:700,color:'#15803d',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>المميزات</p>
-          <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>كل شي تحتاجه لإدارة مخزونك</h2>
+          <p style={{fontSize:13,fontWeight:700,color:'#15803d',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>{t('featuresTag')}</p>
+          <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>{t('featuresTitle')}</h2>
         </div>
         <div className="feat-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:20}}>
           {FEATURES.map((f,i)=>(
@@ -345,12 +370,12 @@ export default function LandingPage() {
                 <f.icon size={24} strokeWidth={2}/>
               </div>
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8,flexWrap:'wrap' as const}}>
-                <div style={{fontSize:17,fontWeight:800,color:'#111827'}}>{f.title}</div>
+                <div style={{fontSize:17,fontWeight:800,color:'#111827'}}>{lang==='ar'?f.title:(f as any).titleEn}</div>
                 {(f as any).badge && (
-                  <span style={{fontSize:11,fontWeight:800,color:'#16a34a',background:'#f0fdf4',border:'1px solid #bbf7d0',padding:'2px 9px',borderRadius:99}}>{(f as any).badge}</span>
+                  <span style={{fontSize:11,fontWeight:800,color:'#16a34a',background:'#f0fdf4',border:'1px solid #bbf7d0',padding:'2px 9px',borderRadius:99}}>{lang==='ar'?(f as any).badge:(f as any).badgeEn}</span>
                 )}
               </div>
-              <div style={{fontSize:14,color:'#6b7280',lineHeight:1.7}}>{f.desc}</div>
+              <div style={{fontSize:14,color:'#6b7280',lineHeight:1.7}}>{lang==='ar'?f.desc:(f as any).descEn}</div>
             </div>
           ))}
         </div>
