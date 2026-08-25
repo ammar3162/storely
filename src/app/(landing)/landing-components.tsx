@@ -17,7 +17,7 @@ export function FaqItem({ q, a }: { q:string; a:string }) {
 export function MiniMockup({ variant }: { variant: 'stats'|'whatsapp'|'staff'|'chart' }) {
   if (variant === 'staff') return (
     <div style={{background:'white',borderRadius:16,padding:14,height:'100%',display:'flex',flexDirection:'column',gap:8}}>
-      <div style={{fontSize:11,fontWeight:800,color:'#111827',textAlign:'center' as const}}>أهلاً عمار</div>
+      <div style={{fontSize:11,fontWeight:800,color:'#111827',textAlign:'center' as const}}>أهلاً محمد</div>
       <div style={{background:'#f8fafc',borderRadius:10,padding:8,textAlign:'center' as const}}>
         <div style={{fontSize:8,color:'#d97706',fontWeight:700,marginBottom:5}}>● ما سجّلت حضورك بعد</div>
         <div style={{background:'#16a34a',borderRadius:7,padding:'6px 0',fontSize:9,fontWeight:800,color:'white'}}>تسجيل حضور</div>
