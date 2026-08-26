@@ -1,20 +1,22 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { LanguageProvider, useTranslation } from '@/lib/i18n/LanguageContext'
 
-const COUNTRY_PHONE_LEN: {code:string;flag:string;name:string;len:number}[] = [
-  {code:'966',flag:'🇸🇦',name:'السعودية',len:10},
-  {code:'965',flag:'🇰🇼',name:'الكويت',len:8},
-  {code:'971',flag:'🇦🇪',name:'الإمارات',len:9},
-  {code:'973',flag:'🇧🇭',name:'البحرين',len:8},
-  {code:'974',flag:'🇶🇦',name:'قطر',len:8},
-  {code:'968',flag:'🇴🇲',name:'عُمان',len:8},
-  {code:'20',flag:'🇪🇬',name:'مصر',len:10},
-  {code:'962',flag:'🇯🇴',name:'الأردن',len:9},
-  {code:'other',flag:'🌍',name:'دولة أخرى',len:14},
+const COUNTRY_PHONE_LEN: {code:string;flag:string;name:string;key:string;len:number}[] = [
+  {code:'966',flag:'🇸🇦',name:'السعودية',key:'countrySaudi',len:10},
+  {code:'965',flag:'🇰🇼',name:'الكويت',key:'countryKuwait',len:8},
+  {code:'971',flag:'🇦🇪',name:'الإمارات',key:'countryUAE',len:9},
+  {code:'973',flag:'🇧🇭',name:'البحرين',key:'countryBahrain',len:8},
+  {code:'974',flag:'🇶🇦',name:'قطر',key:'countryQatar',len:8},
+  {code:'968',flag:'🇴🇲',name:'عُمان',key:'countryOman',len:8},
+  {code:'20',flag:'🇪🇬',name:'مصر',key:'countryEgypt',len:10},
+  {code:'962',flag:'🇯🇴',name:'الأردن',key:'countryJordan',len:9},
+  {code:'other',flag:'🌍',name:'دولة أخرى',key:'countryOther',len:14},
 ]
 
-export default function StaffLoginPage() {
+function StaffLoginInner() {
+  const { t, lang, setLang, dir } = useTranslation()
   const [phone, setPhone] = useState('')
   const [pin, setPin]     = useState('')
   const [step, setStep]   = useState<'phone'|'pin'>('phone')
@@ -31,7 +33,7 @@ export default function StaffLoginPage() {
   useEffect(()=>{
     const saved = localStorage.getItem('staff_session')
     if(saved) { router.push('/staff/choose'); return }
-    document.title = 'Storely — دخول الموظف'
+    document.title = t('staffLogin.pageTitle')
   },[])
 
   function doShake() { setShake(true); setTimeout(()=>setShake(false), 500) }
@@ -49,13 +51,13 @@ export default function StaffLoginPage() {
   }
 
   function goToPin() {
-    if (!phone || phone.length < requiredLen) { setError('أدخل رقم الجوال كاملاً'); doShake(); return }
+    if (!phone || phone.length < requiredLen) { setError(t('staffLogin.errPhoneRequired')); doShake(); return }
     setError('')
     setStep('pin')
   }
 
   async function handleLogin() {
-    if (!pin || pin.length < 4) { setError('أدخل رمز PIN'); doShake(); return }
+    if (!pin || pin.length < 4) { setError(t('staffLogin.errPinRequired')); doShake(); return }
     setLoading(true)
     setError('')
     const controller = new AbortController()
@@ -69,7 +71,7 @@ export default function StaffLoginPage() {
       clearTimeout(timeoutId)
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || 'رقم الجوال أو PIN غير صحيح')
+        setError(data.error || t('staffLogin.errWrongCreds'))
         setPin('')
         doShake()
         setLoading(false)
@@ -81,7 +83,7 @@ export default function StaffLoginPage() {
       router.push('/staff/choose')
     } catch (err: any) {
       clearTimeout(timeoutId)
-      setError(err?.name === 'AbortError' ? 'الاتصال بطيء جداً — حاول مرة أخرى' : 'حدث خطأ — حاول مرة أخرى')
+      setError(err?.name === 'AbortError' ? t('staffLogin.errSlowConn') : t('staffLogin.errGeneric'))
       setPin('')
       setLoading(false)
     }
@@ -95,7 +97,7 @@ export default function StaffLoginPage() {
   const keypadKeys = ['1','2','3','4','5','6','7','8','9','','0','⌫']
 
   return (
-    <div style={{minHeight:'100vh',background:'linear-gradient(160deg,#0a1f13,#0d2818 45%,#153524)',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+    <div style={{minHeight:'100vh',background:'linear-gradient(160deg,#0a1f13,#0d2818 45%,#153524)',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:dir}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap');
         *{box-sizing:border-box}
@@ -115,7 +117,10 @@ export default function StaffLoginPage() {
           <div style={{width:56,height:56,borderRadius:16,background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.12)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:14}}>
             <img src="/storely-logo.png" alt="Storely" style={{width:34,height:34,borderRadius:8,objectFit:'cover'}}/>
           </div>
-          <div style={{fontSize:13,fontWeight:700,color:'rgba(255,255,255,.5)',letterSpacing:'.5px'}}>STORELY</div>
+          <div style={{fontSize:13,fontWeight:700,color:'rgba(255,255,255,.5)',letterSpacing:'.5px',marginBottom:10}}>STORELY</div>
+          <button onClick={()=>setLang(lang==='ar'?'en':'ar')} style={{background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.15)',borderRadius:99,padding:'5px 12px',fontSize:11,fontWeight:700,color:'rgba(255,255,255,.7)',cursor:'pointer',fontFamily:'inherit'}}>
+            {lang==='ar'?'EN':'عربي'}
+          </button>
         </div>
 
         {/* المحتوى الرئيسي */}
@@ -123,8 +128,8 @@ export default function StaffLoginPage() {
 
           {step === 'phone' ? (
             <div key="phone-step" className="fade-up">
-              <h1 style={{fontSize:'clamp(22px,5vw,26px)',fontWeight:800,color:'white',marginBottom:6,textAlign:'center' as const}}>مرحباً بك</h1>
-              <p style={{fontSize:14,color:'rgba(255,255,255,.55)',marginBottom:32,textAlign:'center' as const}}>سجّل دخولك برقم جوالك</p>
+              <h1 style={{fontSize:'clamp(22px,5vw,26px)',fontWeight:800,color:'white',marginBottom:6,textAlign:'center' as const}}>{t('staffLogin.welcome')}</h1>
+              <p style={{fontSize:14,color:'rgba(255,255,255,.55)',marginBottom:32,textAlign:'center' as const}}>{t('staffLogin.subtitle')}</p>
 
               {/* حقل الجوال + اختيار الدولة */}
               <div style={{position:'relative' as const,marginBottom:24}}>
@@ -147,7 +152,7 @@ export default function StaffLoginPage() {
                       <button key={c.code} onClick={()=>{setCountry(c.name);setPhone('');setShowCountryPicker(false)}}
                         style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'11px 12px',background:country===c.name?'rgba(22,163,74,.2)':'transparent',border:'none',borderRadius:10,color:'white',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
                         <span style={{fontSize:18}}>{c.flag}</span>
-                        <span style={{flex:1}}>{c.name}</span>
+                        <span style={{flex:1}}>{t('staffLogin.'+c.key)}</span>
                         <span style={{opacity:.5,fontSize:12,direction:'ltr' as const}}>+{c.code}</span>
                       </button>
                     ))}
@@ -169,17 +174,17 @@ export default function StaffLoginPage() {
 
               <button onClick={goToPin} disabled={phone.length<requiredLen}
                 style={{width:'100%',padding:16,marginBottom:'clamp(24px,6vh,48px)',background:phone.length>=requiredLen?'linear-gradient(135deg,#16a34a,#15803d)':'rgba(255,255,255,.08)',color:phone.length>=requiredLen?'white':'rgba(255,255,255,.35)',border:'none',borderRadius:16,fontSize:15,fontWeight:800,cursor:phone.length>=requiredLen?'pointer':'not-allowed',fontFamily:'inherit',boxShadow:phone.length>=requiredLen?'0 10px 28px rgba(22,163,74,.35)':'none',transition:'all .2s'}}>
-                متابعة
+                {t('staffLogin.continueBtn')}
               </button>
             </div>
           ) : (
             <div key="pin-step" className="fade-up">
               <button onClick={()=>{setStep('phone');setPin('');setError('')}}
                 style={{background:'none',border:'none',color:'rgba(255,255,255,.55)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',marginBottom:20,display:'flex',alignItems:'center',gap:4}}>
-                ← تغيير الرقم
+                {t('staffLogin.changeNumber')}
               </button>
 
-              <h1 style={{fontSize:'clamp(20px,5vw,24px)',fontWeight:800,color:'white',marginBottom:6,textAlign:'center' as const}}>أدخل رمز PIN</h1>
+              <h1 style={{fontSize:'clamp(20px,5vw,24px)',fontWeight:800,color:'white',marginBottom:6,textAlign:'center' as const}}>{t('staffLogin.enterPin')}</h1>
               <p style={{fontSize:13,color:'rgba(255,255,255,.5)',marginBottom:32,textAlign:'center' as const,direction:'ltr' as const}}>+{selectedCountry.code} {phone}</p>
 
               {/* نقاط عرض PIN */}
@@ -197,7 +202,7 @@ export default function StaffLoginPage() {
               </div>
 
               {error && <div style={{textAlign:'center' as const,color:'#fca5a5',fontSize:13,fontWeight:600,marginBottom:20}}>{error}</div>}
-              {loading && <div style={{textAlign:'center' as const,color:'rgba(255,255,255,.5)',fontSize:12,marginBottom:20}}>جاري التحقق...</div>}
+              {loading && <div style={{textAlign:'center' as const,color:'rgba(255,255,255,.5)',fontSize:12,marginBottom:20}}>{t('staffLogin.verifying')}</div>}
 
               {/* لوحة أرقام PIN */}
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:24,direction:'ltr' as const}}>
@@ -210,7 +215,7 @@ export default function StaffLoginPage() {
               </div>
 
               <div style={{textAlign:'center' as const,paddingBottom:'clamp(24px,6vh,48px)'}}>
-                <span style={{fontSize:12,color:'rgba(255,255,255,.4)'}}>ناسي رمز PIN؟ راجع صاحب العمل</span>
+                <span style={{fontSize:12,color:'rgba(255,255,255,.4)'}}>{t('staffLogin.forgotPin')}</span>
               </div>
             </div>
           )}
@@ -219,4 +224,8 @@ export default function StaffLoginPage() {
       </div>
     </div>
   )
+}
+
+export default function StaffLoginPage() {
+  return <LanguageProvider><StaffLoginInner/></LanguageProvider>
 }
