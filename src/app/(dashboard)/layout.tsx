@@ -877,7 +877,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           <div className="desk-topbar" style={{position:'fixed',top:0,right:220,left:0,zIndex:99,background:'white',borderBottom:'1px solid #f0f0ee',padding:'0 24px',height:52,alignItems:'center',justifyContent:'space-between'}}>
             <div style={{fontSize:13,color:'#94a3b8',fontWeight:500}}>مرحباً، {userName} 👋</div>
             <div style={{display:'flex',alignItems:'center',gap:4}}>
-              <button onClick={()=>setLang(lang==='ar'?'en':'ar')} title={t('common.language')} style={{padding:'0 12px',height:36,borderRadius:10,background:'none',border:'1px solid #e5e7eb',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:'#64748b',fontFamily:'inherit',transition:'background .15s'}}
+              <button onClick={()=>setLang(lang==='ar'?'en':'ar')} title={t('common.language')} style={{display:'none',padding:'0 12px',height:36,borderRadius:10,background:'none',border:'1px solid #e5e7eb',cursor:'pointer',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:'#64748b',fontFamily:'inherit',transition:'background .15s'}}
                 onMouseEnter={e=>(e.currentTarget.style.background='#f5f5f4')} onMouseLeave={e=>(e.currentTarget.style.background='none')}>
                 {lang==='ar'?'EN':'عربي'}
               </button>

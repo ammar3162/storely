@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { Package, AlertTriangle, ShoppingCart, TrendingUp, Bell, X } from 'lucide-react'
 import { colors as dsColors } from '@/lib/ds'
+import { useTranslation } from '@/lib/i18n/LanguageContext'
 
 class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|null}> {
   state = { error: null }
@@ -47,6 +48,7 @@ function Bar({ data, color }: { data:{label:string;value:number}[]; color:string
 }
 
 export default function DashboardPage() {
+  const { t, lang, dir } = useTranslation()
   const [stats, setStats]       = useState({products:0,lowStock:0,outOfStock:0,todayPurchases:0,todayDispenses:0})
   const [lowItems, setLowItems] = useState<any[]>([])
   const [activity, setActivity] = useState<any[]>([])
@@ -102,8 +104,8 @@ export default function DashboardPage() {
       const endsAt=(profile as any).subscription_ends_at
       if(endsAt){
         const days=Math.ceil((new Date(endsAt).getTime()-Date.now())/(1000*60*60*24))
-        if(days<=0){ setSubExpired(true); setSubAlert('انتهى اشتراكك — يرجى التجديد لمتابعة استخدام النظام') }
-        else if(days<=7) setSubAlert(`ينتهي اشتراكك بعد ${days} أيام`)
+        if(days<=0){ setSubExpired(true); setSubAlert(lang==='ar'?'انتهى اشتراكك — يرجى التجديد لمتابعة استخدام النظام':'Your subscription has expired — please renew to continue using the system') }
+        else if(days<=7) setSubAlert(lang==='ar'?`ينتهي اشتراكك بعد ${days} أيام`:`Your subscription ends in ${days} days`)
       }
     }
     const orgId=profile?.org_id; if(!orgId)return
@@ -130,7 +132,7 @@ export default function DashboardPage() {
     })
     setLowItems(low.slice(0,5))
     setActivity((movements||[]).slice(0,5))
-    const dnames=['أحد','إثن','ثلث','أرب','خمس','جمع','سبت']
+    const dnames=lang==='ar'?['أحد','إثن','ثلث','أرب','خمس','جمع','سبت']:['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
     const wp:any[]=[],wd:any[]=[]
     for(let i=6;i>=0;i--){
       const d=new Date();d.setDate(d.getDate()-i)
@@ -158,10 +160,10 @@ export default function DashboardPage() {
   }
 
   const hour=new Date().getHours()
-  const greeting=hour<12?'صباح الخير':hour<17?'مساء الخير':'مساء النور'
+  const greeting=hour<12?t('dashboard.goodMorning'):hour<17?t('dashboard.goodAfternoon'):t('dashboard.goodEvening')
 
   if(loading) return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',maxWidth:'100%'}}>
+    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:dir,maxWidth:'100%'}}>
       <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.35}}.sk{animation:sk 1.4s ease infinite}`}</style>
       <div className="sk" style={{height:52,borderRadius:12,background:'#f0f0ee',marginBottom:20}}/>
       <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,marginBottom:16}}>
@@ -173,7 +175,7 @@ export default function DashboardPage() {
 
   return (
     <ErrorBoundary>
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',maxWidth:'100%',opacity:visible?1:0,transition:'opacity .3s'}}>
+    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:dir,maxWidth:'100%',opacity:visible?1:0,transition:'opacity .3s'}}>
       <style>{`
         *{box-sizing:border-box}
         @keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
@@ -197,10 +199,10 @@ export default function DashboardPage() {
       {/* ── Header ── */}
       <div className="u" style={{marginBottom:20,animationDelay:'.04s'}}>
         <div style={{fontSize:22,fontWeight:700,color:'#1c1c1a',letterSpacing:'-0.4px',marginBottom:3}}>
-          {greeting}، {userName||'مرحباً'}
+          {greeting}، {userName||t('dashboard.defaultGreeting')}
         </div>
         <div style={{fontSize:12,color:'#888780'}}>
-          {orgName} · {new Date().toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'})}
+          {orgName} · {new Date().toLocaleDateString(lang==='ar'?'ar-SA':'en-US', {numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'})}
         </div>
       </div>
 
@@ -240,8 +242,8 @@ export default function DashboardPage() {
         <button onClick={()=>router.push('/inventory')} className="u r tap"
           style={{width:'100%',padding:'12px 16px',marginBottom:16,background:dsColors.warningLight,border:'1px solid #fac775',display:'flex',alignItems:'center',gap:12,textAlign:'right',fontFamily:'inherit',animationDelay:'.08s'}}>
           <div style={{flex:1}}>
-            <div style={{fontSize:13,fontWeight:600,color:'#633806'}}>{stats.lowStock} صنف وصل للحد الأدنى</div>
-            <div style={{fontSize:11,color:'#854f0b',marginTop:2}}>اضغط للتفاصيل</div>
+            <div style={{fontSize:13,fontWeight:600,color:'#633806'}}>{stats.lowStock} {t('dashboard.lowStockBanner')}</div>
+            <div style={{fontSize:11,color:'#854f0b',marginTop:2}}>{t('dashboard.clickForDetails')}</div>
           </div>
           <svg width={13} height={13} fill="none" stroke="#854f0b" strokeWidth={2} viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
         </button>
@@ -252,7 +254,7 @@ export default function DashboardPage() {
         <div className="s r u" style={{padding:'16px',marginBottom:16,animationDelay:'.09s',border:'1px solid #bfdbfe',background:dsColors.infoLight}}>
           <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
             <span style={{display:'flex',alignItems:'center'}}><Bell size={16} strokeWidth={2.25}/></span>
-            <span style={{fontSize:13,fontWeight:800,color:'#1c1c1a'}}>توقيت الطلب الذكي</span>
+            <span style={{fontSize:13,fontWeight:800,color:'#1c1c1a'}}>{t('dashboard.smartReorderTitle')}</span>
           </div>
           <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
             {smartSuggestions.slice(0,4).map((s,i)=>(
@@ -260,11 +262,11 @@ export default function DashboardPage() {
                 <div>
                   <div style={{fontSize:12,fontWeight:700,color:'#1c1c1a'}}>{s.name}</div>
                   <div style={{fontSize:10,color:'#6b7280',marginTop:2}}>
-                    استهلاك {s.dailyRate} {s.unit}/يوم · توريد يستغرق {s.avgLeadTimeDays} يوم عادة
+                    {t('dashboard.dailyRate')} {s.dailyRate} {s.unit}/{t('dashboard.perDay')} · {t('dashboard.leadTime')} {s.avgLeadTimeDays} {t('dashboard.daysUsually')}
                   </div>
                 </div>
                 <span style={{fontSize:10,fontWeight:800,padding:'4px 9px',borderRadius:99,background:s.urgency==='now'?dsColors.dangerLight:dsColors.warningLight,color:s.urgency==='now'?dsColors.danger:'#b45309',whiteSpace:'nowrap' as const}}>
-                  {s.urgency==='now'?<span style={{display:'inline-flex',alignItems:'center',gap:4}}><AlertTriangle size={12} strokeWidth={2.25}/> اطلب الآن</span>:`اطلب خلال ${Math.max(s.suggestedOrderInDays,0)} يوم`}
+                  {s.urgency==='now'?<span style={{display:'inline-flex',alignItems:'center',gap:4}}><AlertTriangle size={12} strokeWidth={2.25}/> {t('dashboard.orderNow')}</span>:`${t('dashboard.orderWithin')} ${Math.max(s.suggestedOrderInDays,0)} ${t('dashboard.days')}`}
                 </span>
               </div>
             ))}
@@ -275,10 +277,10 @@ export default function DashboardPage() {
       {/* ── Stats ── */}
       <div className="g4 u" style={{marginBottom:14,animationDelay:'.1s'}}>
         {[
-          {label:'الأصناف',    val:stats.products,       note:'في المخزون',   href:'/inventory', accent:dsColors.primary, Icon:Package},
-          {label:'ناقص',      val:stats.lowStock,        note:`${stats.outOfStock} نفدت`,href:'/inventory',accent:'#e24b4a', Icon:AlertTriangle},
-          {label:'شراء اليوم',val:stats.todayPurchases,  note:'فاتورة',       href:'/purchases', accent:'#378add', Icon:ShoppingCart},
-          {label:'صرف اليوم', val:stats.todayDispenses,  note:'عملية',        href:'/dispense',  accent:'#ba7517', Icon:TrendingUp},
+          {label:t('dashboard.statItems'),    val:stats.products,       note:t('dashboard.inStock'),   href:'/inventory', accent:dsColors.primary, Icon:Package},
+          {label:t('dashboard.statLow'),      val:stats.lowStock,        note:`${stats.outOfStock} ${t('dashboard.outOfStockSuffix')}`,href:'/inventory',accent:'#e24b4a', Icon:AlertTriangle},
+          {label:t('dashboard.statTodayPurchase'),val:stats.todayPurchases,  note:t('dashboard.invoice'),       href:'/purchases', accent:'#378add', Icon:ShoppingCart},
+          {label:t('dashboard.statTodayDispense'), val:stats.todayDispenses,  note:t('dashboard.operation'),        href:'/dispense',  accent:'#ba7517', Icon:TrendingUp},
         ].map((s,i)=>(
           <button key={i} onClick={()=>router.push(s.href)} className="s r tap"
             style={{padding:'16px',textAlign:'right',fontFamily:'inherit',cursor:'pointer',animationDelay:`${.12+i*.04}s`}}>

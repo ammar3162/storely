@@ -332,7 +332,7 @@ function LoginPage() {
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           <button onClick={()=>setLang(lang==='ar'?'en':'ar')}
-            style={{padding:'8px 14px',background:'none',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',color:'#374151'}}>
+            style={{display:'none',padding:'8px 14px',background:'none',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',color:'#374151'}}>
             {lang==='ar'?'EN':'عربي'}
           </button>
           <span style={{fontSize:13,color:'#6b7280'}}>{t('login.haveAccount')}</span>
