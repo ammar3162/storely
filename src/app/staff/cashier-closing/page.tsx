@@ -11,12 +11,78 @@ interface StaffSession {
 
 interface Purchase { amount: string; reason: string }
 
-const STEPS = [
+const STEPS_AR = [
   { key: 1, label: 'البيانات' },
   { key: 2, label: 'المصاريف' },
   { key: 3, label: 'الصور' },
   { key: 4, label: 'المراجعة' },
 ]
+const STEPS_EN = [
+  { key: 1, label: 'Data' },
+  { key: 2, label: 'Expenses' },
+  { key: 3, label: 'Photos' },
+  { key: 4, label: 'Review' },
+]
+
+const CUI: Record<string,Record<'ar'|'en',string>> = {
+  thankYouTitle:    {ar:'شكراً لك {name} على مجهودك اليوم 🙏',en:'Thank you {name} for your effort today 🙏'},
+  logout:           {ar:'خروج',en:'Logout'},
+  cashierBadge:     {ar:'كاشير',en:'Cashier'},
+  lockedTitle:      {ar:'ميزة إقفال الكاشير متاحة بالباقة المتوسطة أو المتقدمة',en:'Cashier closing is available on the Standard or Advanced plan'},
+  lockedSub:        {ar:'رقّي باقتك عشان تفعّل إقفال الكاشير اليومي وتتابع المبيعات والمصروفات تلقائياً',en:'Upgrade your plan to enable daily cashier closing and automatically track sales and expenses'},
+  pageTitle:        {ar:'إقفال الكاشير اليومي',en:'Daily Cashier Closing'},
+  savedTitle:       {ar:'تم حفظ تقرير الإقفال بنجاح',en:'Closing report saved successfully'},
+  savedSub:         {ar:'يمكن للمالك مراجعة التقرير من صفحة التقارير',en:'The owner can review the report from the Reports page'},
+  newClosing:       {ar:'إقفال جديد',en:'New Closing'},
+  step1Title:       {ar:'بيانات اليوم',en:"Today's Data"},
+  totalSalesLabel:  {ar:'إجمالي المبيعات (النظام)',en:'Total Sales (System)'},
+  networkLabel:     {ar:'الشبكة — حسب تقرير جهاز مدى',en:'Network — per POS device report'},
+  mada:             {ar:'مدى',en:'Mada'},
+  visa:             {ar:'فيزا',en:'Visa'},
+  mastercard:       {ar:'ماستركارد',en:'Mastercard'},
+  networkTotal:     {ar:'إجمالي الشبكة',en:'Network Total'},
+  networkErrorMsg:  {ar:'إجمالي الشبكة أكبر من إجمالي المبيعات — راجع الأرقام',en:'Network total exceeds sales total — check the numbers'},
+  cashInDrawer:     {ar:'الكاش الفعلي بالدرج',en:'Actual Cash in Drawer'},
+  expectedCashPreview: {ar:'الكاش المتوقع (معاينة)',en:'Expected Cash (preview)'},
+  step2Title:       {ar:'هل فيه مبالغ اتسحبت من الكاش لمشتريات؟',en:'Was any cash withdrawn for purchases?'},
+  no:               {ar:'لا',en:'No'},
+  yes:              {ar:'نعم',en:'Yes'},
+  amountPh:         {ar:'المبلغ',en:'Amount'},
+  reasonPh:         {ar:'السبب',en:'Reason'},
+  addExpenseRow:    {ar:'+ إضافة مصروف آخر',en:'+ Add another expense'},
+  totalWithdrawals: {ar:'إجمالي المسحوبات',en:'Total Withdrawals'},
+  step3Title:       {ar:'صور الإثبات (إلزامي)',en:'Proof Photos (Required)'},
+  salesReportImg:   {ar:'صورة تقرير المبيعات',en:'Sales Report Photo'},
+  networkBalanceImg:{ar:'صورة موازنة الشبكة',en:'Network Balance Photo'},
+  uploadingImg:     {ar:'⏳ جاري الرفع...',en:'⏳ Uploading...'},
+  tapSalesUpload:   {ar:'📊 اضغط للرفع',en:'📊 Tap to upload'},
+  tapNetworkUpload: {ar:'💳 اضغط للرفع',en:'💳 Tap to upload'},
+  summaryTitle:     {ar:'ملخص الاحتساب',en:'Calculation Summary'},
+  totalSalesRow:    {ar:'إجمالي المبيعات',en:'Total Sales'},
+  expectedCashEq:   {ar:'= الكاش المتوقع',en:'= Expected Cash'},
+  actualCashRow:    {ar:'الكاش الفعلي بالدرج',en:'Actual Cash in Drawer'},
+  recordedWithdrawals: {ar:'📌 مسحوبات مسجّلة (للسجل فقط)',en:'📌 Recorded withdrawals (record only)'},
+  withdrawalsNote:  {ar:'ما تؤثر على حساب العجز/الزيادة — الكاش المُدخل مفروض أصلاً بعد خصمها',en:"Doesn't affect the deficit/surplus calculation — the entered cash is assumed to already be net of these"},
+  balanced:         {ar:'✅ مطابق تماماً',en:'✅ Exactly balanced'},
+  deficit:          {ar:'⚠️ يوجد عجز',en:'⚠️ There is a deficit'},
+  surplus:          {ar:'📈 يوجد زيادة',en:'📈 There is a surplus'},
+  salesReportCheck: {ar:'تقرير المبيعات ✓',en:'Sales report ✓'},
+  networkBalanceCheck: {ar:'موازنة الشبكة ✓',en:'Network balance ✓'},
+  back:             {ar:'رجوع',en:'Back'},
+  next:             {ar:'التالي',en:'Next'},
+  saving:           {ar:'جاري الحفظ...',en:'Saving...'},
+  confirmSave:       {ar:'✓ تأكيد وحفظ التقرير',en:'✓ Confirm and Save Report'},
+  imgUploadFailed:  {ar:'فشل رفع الصورة',en:'Failed to upload image'},
+  imgUploaded:      {ar:'تم رفع الصورة ✓',en:'Image uploaded ✓'},
+  fillSalesNetworkCash: {ar:'أدخل إجمالي المبيعات والشبكة والكاش',en:'Enter total sales, network, and cash'},
+  specifyWithdrawals: {ar:'حدد هل فيه مبالغ مسحوبة أم لا',en:'Specify whether any amount was withdrawn or not'},
+  uploadBothPhotos: {ar:'يرجى رفع صورتي تقرير المبيعات وموازنة الشبكة',en:'Please upload both the sales report and network balance photos'},
+  saveError:        {ar:'حدث خطأ أثناء الحفظ',en:'An error occurred while saving'},
+  savedClosingReport: {ar:'✅ تم حفظ تقرير الإقفال',en:'✅ Closing report saved'},
+  genericError:     {ar:'حدث خطأ، حاول مرة أخرى',en:'Something went wrong, try again'},
+  noReason:         {ar:'بدون سبب',en:'No reason given'},
+}
+const ct = (key: string, lang: 'ar'|'en') => CUI[key]?.[lang] || CUI[key]?.ar || key
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -41,7 +107,8 @@ function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconColor, err
   )
 }
 
-function ProgressBar({ step }: { step: number }) {
+function ProgressBar({ step, lang }: { step: number; lang: 'ar'|'en' }) {
+  const STEPS = lang==='en' ? STEPS_EN : STEPS_AR
   return (
     <div style={{display:'flex',alignItems:'center',marginBottom:26}}>
       {STEPS.map((s, i) => (
@@ -67,15 +134,23 @@ function ProgressBar({ step }: { step: number }) {
   )
 }
 
-const THANK_YOU_TEMPLATES = [
+const THANK_YOU_TEMPLATES_AR = [
   'شكراً لك {name} على مجهودك اليوم 🙏',
   'يومك كان طويل يا {name}، تسلم على تعبك 💪',
   'شكراً {name} — بدونك ما كان يمشي الشغل ✨',
   '{name}، تسلم إيدك على جهدك اليوم 🌟',
   'إنجاز تاني ليوم يا {name} — شكراً لك 🙌',
 ]
+const THANK_YOU_TEMPLATES_EN = [
+  'Thank you {name} for your effort today 🙏',
+  'It was a long day, {name} — well done 💪',
+  'Thanks {name} — the work wouldn\'t run without you ✨',
+  '{name}, great effort today 🌟',
+  'Another day, another win, {name} — thank you 🙌',
+]
 
 export default function CashierClosingPage() {
+  const [lang, setPageLang] = useState<'ar'|'en'>('ar')
   const [session, setSession] = useState<StaffSession|null>(null)
   const [orgLogo, setOrgLogo] = useState<string|null>(null)
   const [step, setStep] = useState(1)
@@ -101,6 +176,8 @@ export default function CashierClosingPage() {
   const sb = createClient()
 
   useEffect(()=>{
+    const savedLang = localStorage.getItem('staff_lang')
+    if(savedLang==='en') setPageLang('en')
     const savedSession = localStorage.getItem('staff_session')
     if(!savedSession){router.push('/staff');return}
     const s = JSON.parse(savedSession) as StaffSession
@@ -152,12 +229,12 @@ export default function CashierClosingPage() {
       fd.append('file', file)
       const res = await fetch('/api/staff-upload-invoice',{method:'POST',headers:{'Authorization':`Bearer ${staffToken}`},body:fd})
       const j = await res.json()
-      if(!res.ok||!j.success){ showToast(j.error||'فشل رفع الصورة','error'); kind==='network'?setUploadingNetwork(false):setUploadingSales(false); return }
+      if(!res.ok||!j.success){ showToast(j.error||ct('imgUploadFailed',lang),'error'); kind==='network'?setUploadingNetwork(false):setUploadingSales(false); return }
       if(kind==='network') setNetworkImage(j.url)
       else setSalesImage(j.url)
-      showToast('تم رفع الصورة ✓')
+      showToast(ct('imgUploaded',lang))
     } catch {
-      showToast('فشل رفع الصورة','error')
+      showToast(ct('imgUploadFailed',lang),'error')
     }
     kind==='network'?setUploadingNetwork(false):setUploadingSales(false)
   }
@@ -176,7 +253,7 @@ export default function CashierClosingPage() {
   const network = mada + visa + mastercard
   const cash = Number(cashAmount)||0
   const anyNetworkEntered = !!(madaAmount || visaAmount || mastercardAmount)
-  const networkError = (totalSales && anyNetworkEntered && network > sales) ? 'إجمالي الشبكة أكبر من إجمالي المبيعات — راجع الأرقام' : ''
+  const networkError = (totalSales && anyNetworkEntered && network > sales) ? ct('networkErrorMsg',lang) : ''
   const validPurchasesNow = hasPurchases==='yes' ? purchases.filter(p=>Number(p.amount)>0) : []
   const totalPurchasesNow = validPurchasesNow.reduce((sum,p)=>sum+(Number(p.amount)||0),0)
   const expectedCash = sales - network
@@ -191,15 +268,15 @@ export default function CashierClosingPage() {
 
   function goNext() {
     if(step===1 && !step1Valid){
-      showToast(networkError || 'أدخل إجمالي المبيعات والشبكة والكاش','error')
+      showToast(networkError || ct('fillSalesNetworkCash',lang),'error')
       return
     }
     if(step===2 && !step2Valid){
-      showToast('حدد هل فيه مبالغ مسحوبة أم لا','error')
+      showToast(ct('specifyWithdrawals',lang),'error')
       return
     }
     if(step===3 && !step3Valid){
-      showToast('يرجى رفع صورتي تقرير المبيعات وموازنة الشبكة','error')
+      showToast(ct('uploadBothPhotos',lang),'error')
       return
     }
     setStep(s=>Math.min(4,s+1))
@@ -210,7 +287,7 @@ export default function CashierClosingPage() {
     if(!session) return
     setSubmitting(true)
     try {
-      const validPurchases = validPurchasesNow.map(p=>({amount:Number(p.amount),reason:p.reason||'بدون سبب'}))
+      const validPurchases = validPurchasesNow.map(p=>({amount:Number(p.amount),reason:p.reason||ct('noReason',lang)}))
       const res = await fetch('/api/cashier-closing',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -223,13 +300,14 @@ export default function CashierClosingPage() {
           network_image: networkImage, sales_image: salesImage,
         })
       })
-      if(!res.ok){ showToast('حدث خطأ أثناء الحفظ','error'); setSubmitting(false); return }
-      const template = THANK_YOU_TEMPLATES[Math.floor(Math.random()*THANK_YOU_TEMPLATES.length)]
+      if(!res.ok){ showToast(ct('saveError',lang),'error'); setSubmitting(false); return }
+      const templates = lang==='en' ? THANK_YOU_TEMPLATES_EN : THANK_YOU_TEMPLATES_AR
+      const template = templates[Math.floor(Math.random()*templates.length)]
       setThankYouMsg(template.replace('{name}', session?.name || ''))
       setSaved(true)
-      showToast('✅ تم حفظ تقرير الإقفال')
+      showToast(ct('savedClosingReport',lang))
     } catch {
-      showToast('حدث خطأ، حاول مرة أخرى','error')
+      showToast(ct('genericError',lang),'error')
     }
     setSubmitting(false)
   }
@@ -249,17 +327,17 @@ export default function CashierClosingPage() {
   )
 
   if(locked) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:20,textAlign:'center' as const}}>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl',padding:20,textAlign:'center' as const}}>
       <div>
         <div style={{fontSize:44,marginBottom:12}}>🔒</div>
-        <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:8}}>ميزة إقفال الكاشير متاحة بالباقة المتوسطة أو المتقدمة</div>
-        <div style={{fontSize:13,color:'#78716c'}}>رقّي باقتك عشان تفعّل إقفال الكاشير اليومي وتتابع المبيعات والمصروفات تلقائياً</div>
+        <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:8}}>{ct('lockedTitle',lang)}</div>
+        <div style={{fontSize:13,color:'#78716c'}}>{ct('lockedSub',lang)}</div>
       </div>
     </div>
   )
 
   return (
-    <div style={{minHeight:'100vh',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',paddingBottom:50}}>
+    <div style={{minHeight:'100vh',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl',paddingBottom:50}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}} .fu{animation:fadeUp .3s ease both}`}</style>
 
       {toast && (
@@ -279,34 +357,34 @@ export default function CashierClosingPage() {
             <div style={{fontSize:15,fontWeight:800,color:'white'}}>{session.name}</div>
             <div style={{fontSize:11,color:'rgba(255,255,255,.55)',marginTop:2,display:'flex',alignItems:'center',gap:5}}>
               <span>{session.org_name}{session.branch_name?` · ${session.branch_name}`:''}</span>
-              <span style={{background:'rgba(255,255,255,.15)',padding:'1px 8px',borderRadius:20,fontWeight:700,fontSize:10}}>كاشير</span>
+              <span style={{background:'rgba(255,255,255,.15)',padding:'1px 8px',borderRadius:20,fontWeight:700,fontSize:10}}>{ct('cashierBadge',lang)}</span>
             </div>
           </div>
         </div>
         <button onClick={logout} style={{background:'rgba(255,255,255,.1)',color:'white',border:'1px solid rgba(255,255,255,.2)',borderRadius:10,padding:'8px 16px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-          خروج
+          {ct('logout',lang)}
         </button>
       </div>
 
       <div style={{maxWidth:520,margin:'0 auto',padding:'28px 16px'}}>
         {!saved && (
           <div className="fu" style={{marginBottom:6}}>
-            <div style={{fontSize:22,fontWeight:800,color:'#1c1c1a',marginBottom:4}}>إقفال الكاشير اليومي</div>
-            <div style={{fontSize:13,color:'#8b8a84',fontWeight:600,marginBottom:22}}>{new Date().toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
-            <ProgressBar step={step}/>
+            <div style={{fontSize:22,fontWeight:800,color:'#1c1c1a',marginBottom:4}}>{ct('pageTitle',lang)}</div>
+            <div style={{fontSize:13,color:'#8b8a84',fontWeight:600,marginBottom:22}}>{new Date().toLocaleDateString(lang==='en'?'en-US':'ar-SA', {numberingSystem:'latn',weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
+            <ProgressBar step={step} lang={lang}/>
           </div>
         )}
 
         {saved ? (
           <div className="fu" style={{background:'white',borderRadius:20,padding:36,textAlign:'center',boxShadow:'0 4px 24px rgba(0,0,0,.06)',border:'1px solid #eeeeeb'}}>
             <div style={{width:64,height:64,borderRadius:'50%',background:'#f0fdf4',display:'flex',alignItems:'center',justifyContent:'center',fontSize:30,margin:'0 auto 16px'}}>✅</div>
-            <div style={{fontSize:18,fontWeight:800,color:'#1c1c1a',marginBottom:10}}>تم حفظ تقرير الإقفال بنجاح</div>
+            <div style={{fontSize:18,fontWeight:800,color:'#1c1c1a',marginBottom:10}}>{ct('savedTitle',lang)}</div>
             <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:12,padding:'12px 16px',marginBottom:14}}>
               <div style={{fontSize:14,fontWeight:700,color:'#15803d'}}>{thankYouMsg}</div>
             </div>
-            <div style={{fontSize:13,color:'#8b8a84',marginBottom:24}}>يمكن للمالك مراجعة التقرير من صفحة التقارير</div>
+            <div style={{fontSize:13,color:'#8b8a84',marginBottom:24}}>{ct('savedSub',lang)}</div>
             <button onClick={resetForm} style={{padding:'13px 28px',background:'#16a34a',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>
-              إقفال جديد
+              {ct('newClosing',lang)}
             </button>
           </div>
         ) : (
@@ -316,46 +394,46 @@ export default function CashierClosingPage() {
               <div className="fu" style={{background:'white',borderRadius:18,padding:22,marginBottom:16,boxShadow:'0 2px 16px rgba(0,0,0,.05)',border:'1px solid #eeeeeb'}}>
                 <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',marginBottom:16,display:'flex',alignItems:'center',gap:8}}>
                   <span style={{width:24,height:24,borderRadius:7,background:'#f0fdf4',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12}}>📊</span>
-                  بيانات اليوم
+                  {ct('step1Title',lang)}
                 </div>
                 <div style={{marginBottom:16}}>
-                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>إجمالي المبيعات (النظام)</label>
+                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>{ct('totalSalesLabel',lang)}</label>
                   <MoneyInput value={totalSales} onChange={setTotalSales} placeholder="0.00" icon="📊" iconBg="#f0fdf4" iconColor="#16a34a" currency={curr}/>
                 </div>
                 <div style={{marginBottom:16}}>
-                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>الشبكة — حسب تقرير جهاز مدى</label>
+                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>{ct('networkLabel',lang)}</label>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
                     <div>
-                      <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>مدى</div>
+                      <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>{ct('mada',lang)}</div>
                       <input type="number" value={madaAmount} onChange={e=>setMadaAmount(e.target.value)} placeholder="0.00"
                         style={{width:'100%',padding:'11px 8px',border:`1.5px solid ${networkError?'#dc2626':'#e5e5e2'}`,borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'center' as const,background:networkError?'#fef7f7':'white'}}/>
                     </div>
                     <div>
-                      <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>فيزا</div>
+                      <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>{ct('visa',lang)}</div>
                       <input type="number" value={visaAmount} onChange={e=>setVisaAmount(e.target.value)} placeholder="0.00"
                         style={{width:'100%',padding:'11px 8px',border:`1.5px solid ${networkError?'#dc2626':'#e5e5e2'}`,borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'center' as const,background:networkError?'#fef7f7':'white'}}/>
                     </div>
                     <div>
-                      <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>ماستركارد</div>
+                      <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>{ct('mastercard',lang)}</div>
                       <input type="number" value={mastercardAmount} onChange={e=>setMastercardAmount(e.target.value)} placeholder="0.00"
                         style={{width:'100%',padding:'11px 8px',border:`1.5px solid ${networkError?'#dc2626':'#e5e5e2'}`,borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'center' as const,background:networkError?'#fef7f7':'white'}}/>
                     </div>
                   </div>
                   {anyNetworkEntered && (
                     <div style={{display:'flex',justifyContent:'space-between',marginTop:8,padding:'8px 10px',background:'#eff6ff',borderRadius:8,fontSize:11,fontWeight:700}}>
-                      <span style={{color:'#2563eb'}}>إجمالي الشبكة</span>
+                      <span style={{color:'#2563eb'}}>{ct('networkTotal',lang)}</span>
                       <span style={{color:'#2563eb',direction:'ltr' as const}}>{fmt(network)} {curr}</span>
                     </div>
                   )}
-                  {networkError && <div style={{fontSize:11,color:'#dc2626',fontWeight:700,marginTop:6,display:'flex',alignItems:'center',gap:4}}>⚠️ {networkError}</div>}
+                  {networkError && <div style={{fontSize:11,color:'#dc2626',fontWeight:700,marginTop:6,display:'flex',alignItems:'center',gap:4}}>⚠️ {ct('networkErrorMsg',lang)}</div>}
                 </div>
                 <div style={{marginBottom: (totalSales && anyNetworkEntered && !networkError) ? 16 : 0}}>
-                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>الكاش الفعلي بالدرج</label>
+                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>{ct('cashInDrawer',lang)}</label>
                   <MoneyInput value={cashAmount} onChange={setCashAmount} placeholder="0.00" icon="💵" iconBg="#fffbeb" iconColor="#d97706" currency={curr}/>
                 </div>
                 {totalSales && anyNetworkEntered && !networkError && (
                   <div style={{display:'flex',justifyContent:'space-between',padding:'12px 14px',background:'#f7f7f5',borderRadius:10,fontSize:12,fontWeight:700}}>
-                    <span style={{color:'#8b8a84'}}>الكاش المتوقع (معاينة)</span>
+                    <span style={{color:'#8b8a84'}}>{ct('expectedCashPreview',lang)}</span>
                     <span style={{color:'#1c1c1a',direction:'ltr' as const}}>{fmt(expectedCash)} {curr}</span>
                   </div>
                 )}
@@ -367,14 +445,14 @@ export default function CashierClosingPage() {
               <div className="fu" style={{background:'white',borderRadius:18,padding:22,marginBottom:16,boxShadow:'0 2px 16px rgba(0,0,0,.05)',border:'1px solid #eeeeeb'}}>
                 <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',marginBottom:14,display:'flex',alignItems:'center',gap:8}}>
                   <span style={{width:24,height:24,borderRadius:7,background:'#fef2f2',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12}}>🧾</span>
-                  هل فيه مبالغ اتسحبت من الكاش لمشتريات؟
+                  {ct('step2Title',lang)}
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:hasPurchases==='yes'?16:0}}>
                   <button onClick={()=>setHasPurchases('no')} style={{padding:'11px',borderRadius:10,border:`1.5px solid ${hasPurchases==='no'?'#16a34a':'#e5e5e2'}`,background:hasPurchases==='no'?'#f0fdf4':'white',color:hasPurchases==='no'?'#16a34a':'#5f5e5a',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
-                    لا
+                    {ct('no',lang)}
                   </button>
                   <button onClick={()=>setHasPurchases('yes')} style={{padding:'11px',borderRadius:10,border:`1.5px solid ${hasPurchases==='yes'?'#16a34a':'#e5e5e2'}`,background:hasPurchases==='yes'?'#f0fdf4':'white',color:hasPurchases==='yes'?'#16a34a':'#5f5e5a',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
-                    نعم
+                    {ct('yes',lang)}
                   </button>
                 </div>
 
@@ -383,11 +461,11 @@ export default function CashierClosingPage() {
                     {purchases.map((p,idx)=>(
                       <div key={idx} style={{display:'flex',gap:8,marginBottom:10,alignItems:'center',background:'#faf9f7',padding:10,borderRadius:12,border:'1px solid #f0efec'}}>
                         <div style={{flex:1}}>
-                          <input type="number" value={p.amount} onChange={e=>updatePurchase(idx,'amount',e.target.value)} placeholder="المبلغ"
+                          <input type="number" value={p.amount} onChange={e=>updatePurchase(idx,'amount',e.target.value)} placeholder={ct('amountPh',lang)}
                             style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e5e2',borderRadius:9,fontSize:14,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'right'}}/>
                         </div>
                         <div style={{flex:1.4}}>
-                          <input type="text" value={p.reason} onChange={e=>updatePurchase(idx,'reason',e.target.value)} placeholder="السبب"
+                          <input type="text" value={p.reason} onChange={e=>updatePurchase(idx,'reason',e.target.value)} placeholder={ct('reasonPh',lang)}
                             style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e5e2',borderRadius:9,fontSize:13,fontFamily:'inherit',outline:'none',boxSizing:'border-box'}}/>
                         </div>
                         {purchases.length>1 && (
@@ -396,11 +474,11 @@ export default function CashierClosingPage() {
                       </div>
                     ))}
                     <button onClick={addPurchaseRow} style={{width:'100%',padding:'11px',borderRadius:10,border:'1.5px dashed #d4d3ce',background:'transparent',color:'#5f5e5a',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginTop:2}}>
-                      + إضافة مصروف آخر
+                      {ct('addExpenseRow',lang)}
                     </button>
                     {totalPurchasesNow>0 && (
                       <div style={{display:'flex',justifyContent:'space-between',marginTop:12,padding:'10px 12px',background:'#fef2f2',borderRadius:9,fontSize:12,fontWeight:700}}>
-                        <span style={{color:'#dc2626'}}>إجمالي المسحوبات</span>
+                        <span style={{color:'#dc2626'}}>{ct('totalWithdrawals',lang)}</span>
                         <span style={{color:'#dc2626',direction:'ltr' as const}}>{fmt(totalPurchasesNow)} {curr}</span>
                       </div>
                     )}
@@ -414,34 +492,34 @@ export default function CashierClosingPage() {
               <div className="fu" style={{background:'white',borderRadius:18,padding:22,marginBottom:16,boxShadow:'0 2px 16px rgba(0,0,0,.05)',border:'1px solid #eeeeeb'}}>
                 <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',marginBottom:16,display:'flex',alignItems:'center',gap:8}}>
                   <span style={{width:24,height:24,borderRadius:7,background:'#eff6ff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12}}>📸</span>
-                  صور الإثبات (إلزامي)
+                  {ct('step3Title',lang)}
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
                   <div>
-                    <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}}>صورة تقرير المبيعات</label>
+                    <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}}>{ct('salesReportImg',lang)}</label>
                     {salesImage ? (
                       <div style={{position:'relative'}}>
-                        <img src={salesImage} alt="تقرير المبيعات" style={{width:'100%',height:130,borderRadius:10,objectFit:'cover'}}/>
+                        <img src={salesImage} alt="sales report" style={{width:'100%',height:130,borderRadius:10,objectFit:'cover'}}/>
                         <button type="button" onClick={()=>setSalesImage('')} style={{position:'absolute',top:6,left:6,background:'rgba(0,0,0,.55)',color:'white',border:'none',borderRadius:'50%',width:24,height:24,cursor:'pointer',fontSize:14}}>×</button>
                       </div>
                     ):(
                       <label style={{display:'flex',alignItems:'center',justifyContent:'center',height:130,border:'2px dashed #d4d3ce',borderRadius:10,cursor:'pointer',background:'#faf9f7',textAlign:'center' as const,padding:8}}>
                         <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>e.target.files?.[0]&&uploadImage(e.target.files[0],'sales')}/>
-                        <span style={{fontSize:12,color:'#8b8a84',fontWeight:600}}>{uploadingSales?'⏳ جاري الرفع...':'📊 اضغط للرفع'}</span>
+                        <span style={{fontSize:12,color:'#8b8a84',fontWeight:600}}>{uploadingSales?ct('uploadingImg',lang):ct('tapSalesUpload',lang)}</span>
                       </label>
                     )}
                   </div>
                   <div>
-                    <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}}>صورة موازنة الشبكة</label>
+                    <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}}>{ct('networkBalanceImg',lang)}</label>
                     {networkImage ? (
                       <div style={{position:'relative'}}>
-                        <img src={networkImage} alt="موازنة الشبكة" style={{width:'100%',height:130,borderRadius:10,objectFit:'cover'}}/>
+                        <img src={networkImage} alt="network balance" style={{width:'100%',height:130,borderRadius:10,objectFit:'cover'}}/>
                         <button type="button" onClick={()=>setNetworkImage('')} style={{position:'absolute',top:6,left:6,background:'rgba(0,0,0,.55)',color:'white',border:'none',borderRadius:'50%',width:24,height:24,cursor:'pointer',fontSize:14}}>×</button>
                       </div>
                     ):(
                       <label style={{display:'flex',alignItems:'center',justifyContent:'center',height:130,border:'2px dashed #d4d3ce',borderRadius:10,cursor:'pointer',background:'#faf9f7',textAlign:'center' as const,padding:8}}>
                         <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>e.target.files?.[0]&&uploadImage(e.target.files[0],'network')}/>
-                        <span style={{fontSize:12,color:'#8b8a84',fontWeight:600}}>{uploadingNetwork?'⏳ جاري الرفع...':'💳 اضغط للرفع'}</span>
+                        <span style={{fontSize:12,color:'#8b8a84',fontWeight:600}}>{uploadingNetwork?ct('uploadingImg',lang):ct('tapNetworkUpload',lang)}</span>
                       </label>
                     )}
                   </div>
@@ -452,12 +530,12 @@ export default function CashierClosingPage() {
             {/* خطوة 4: المراجعة */}
             {step===4 && (
               <div className="fu" style={{background:'white',borderRadius:18,padding:22,marginBottom:16,boxShadow:'0 2px 16px rgba(0,0,0,.05)',border:'1px solid #eeeeeb'}}>
-                <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>ملخص الاحتساب</div>
+                <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>{ct('summaryTitle',lang)}</div>
                 {[
-                  {label:'إجمالي المبيعات',value:sales,sign:''},
-                  ...(mada>0?[{label:'— مدى',value:mada,sign:'−'}]:[]),
-                  ...(visa>0?[{label:'— فيزا',value:visa,sign:'−'}]:[]),
-                  ...(mastercard>0?[{label:'— ماستركارد',value:mastercard,sign:'−'}]:[]),
+                  {label:ct('totalSalesRow',lang),value:sales,sign:''},
+                  ...(mada>0?[{label:`— ${ct('mada',lang)}`,value:mada,sign:'−'}]:[]),
+                  ...(visa>0?[{label:`— ${ct('visa',lang)}`,value:visa,sign:'−'}]:[]),
+                  ...(mastercard>0?[{label:`— ${ct('mastercard',lang)}`,value:mastercard,sign:'−'}]:[]),
                 ].map((r,i)=>(
                   <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:13,borderBottom:'1px dashed #eeeeeb'}}>
                     <span style={{color:'#8b8a84',fontWeight:600}}>{r.label}</span>
@@ -465,21 +543,21 @@ export default function CashierClosingPage() {
                   </div>
                 ))}
                 <div style={{display:'flex',justifyContent:'space-between',padding:'12px 0 16px',fontSize:14}}>
-                  <span style={{color:'#1c1c1a',fontWeight:800}}>= الكاش المتوقع</span>
+                  <span style={{color:'#1c1c1a',fontWeight:800}}>{ct('expectedCashEq',lang)}</span>
                   <span style={{color:'#1c1c1a',fontWeight:900,direction:'ltr' as const}}>{fmt(expectedCash)} {curr}</span>
                 </div>
                 <div style={{height:1,background:'#eeeeeb',margin:'4px 0 12px'}}/>
                 <div style={{display:'flex',justifyContent:'space-between',padding:'12px 0 16px',fontSize:14}}>
-                  <span style={{color:'#1c1c1a',fontWeight:800}}>الكاش الفعلي بالدرج</span>
+                  <span style={{color:'#1c1c1a',fontWeight:800}}>{ct('actualCashRow',lang)}</span>
                   <span style={{color:'#1c1c1a',fontWeight:900,direction:'ltr' as const}}>{fmt(cash)} {curr}</span>
                 </div>
                 {totalPurchasesNow>0 && (
                   <div style={{background:'#faf9f7',borderRadius:10,padding:'10px 12px',marginBottom:16}}>
                     <div style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
-                      <span style={{color:'#8b8a84',fontWeight:600}}>📌 مسحوبات مسجّلة (للسجل فقط)</span>
+                      <span style={{color:'#8b8a84',fontWeight:600}}>{ct('recordedWithdrawals',lang)}</span>
                       <span style={{color:'#8b8a84',fontWeight:700,direction:'ltr' as const}}>{fmt(totalPurchasesNow)} {curr}</span>
                     </div>
-                    <div style={{fontSize:10,color:'#a8a7a1',marginTop:4}}>ما تؤثر على حساب العجز/الزيادة — الكاش المُدخل مفروض أصلاً بعد خصمها</div>
+                    <div style={{fontSize:10,color:'#a8a7a1',marginTop:4}}>{ct('withdrawalsNote',lang)}</div>
                   </div>
                 )}
                 <div style={{
@@ -488,7 +566,7 @@ export default function CashierClosingPage() {
                   border: `1.5px solid ${status==='balanced' ? '#bbf7d0' : status==='deficit' ? '#fecaca' : '#bfdbfe'}`
                 }}>
                   <div style={{fontSize:13,fontWeight:800,color: status==='balanced' ? '#16a34a' : status==='deficit' ? '#dc2626' : '#2563eb',marginBottom:status!=='balanced'?6:0}}>
-                    {status==='balanced' ? '✅ مطابق تماماً' : status==='deficit' ? '⚠️ يوجد عجز' : '📈 يوجد زيادة'}
+                    {status==='balanced' ? ct('balanced',lang) : status==='deficit' ? ct('deficit',lang) : ct('surplus',lang)}
                   </div>
                   {status!=='balanced' && (
                     <div style={{fontSize:28,fontWeight:900,color: status==='deficit' ? '#dc2626' : '#2563eb'}}>
@@ -499,11 +577,11 @@ export default function CashierClosingPage() {
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                   <div style={{padding:8,borderRadius:9,background:'#f7f7f5',textAlign:'center' as const}}>
                     <img src={salesImage} alt="" style={{width:'100%',height:60,borderRadius:6,objectFit:'cover',marginBottom:4}}/>
-                    <span style={{fontSize:10,color:'#8b8a84',fontWeight:700}}>تقرير المبيعات ✓</span>
+                    <span style={{fontSize:10,color:'#8b8a84',fontWeight:700}}>{ct('salesReportCheck',lang)}</span>
                   </div>
                   <div style={{padding:8,borderRadius:9,background:'#f7f7f5',textAlign:'center' as const}}>
                     <img src={networkImage} alt="" style={{width:'100%',height:60,borderRadius:6,objectFit:'cover',marginBottom:4}}/>
-                    <span style={{fontSize:10,color:'#8b8a84',fontWeight:700}}>موازنة الشبكة ✓</span>
+                    <span style={{fontSize:10,color:'#8b8a84',fontWeight:700}}>{ct('networkBalanceCheck',lang)}</span>
                   </div>
                 </div>
               </div>
@@ -513,16 +591,16 @@ export default function CashierClosingPage() {
             <div className="fu" style={{display:'flex',gap:10}}>
               {step>1 && (
                 <button onClick={goBack} style={{flex:1,padding:'15px',background:'white',color:'#5f5e5a',border:'1.5px solid #e5e5e2',borderRadius:14,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                  رجوع
+                  {ct('back',lang)}
                 </button>
               )}
               {step<4 ? (
                 <button onClick={goNext} style={{flex:2,padding:'15px',background:'#16a34a',color:'white',border:'none',borderRadius:14,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 16px rgba(22,163,74,.28)'}}>
-                  التالي
+                  {ct('next',lang)}
                 </button>
               ) : (
                 <button onClick={saveClosing} disabled={submitting} style={{flex:2,padding:'15px',background:'#16a34a',color:'white',border:'none',borderRadius:14,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',opacity:submitting?.7:1,boxShadow:'0 4px 16px rgba(22,163,74,.28)'}}>
-                  {submitting ? 'جاري الحفظ...' : '✓ تأكيد وحفظ التقرير'}
+                  {submitting ? ct('saving',lang) : ct('confirmSave',lang)}
                 </button>
               )}
             </div>
