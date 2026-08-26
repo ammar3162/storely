@@ -1,6 +1,6 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 interface StaffSession {
@@ -57,7 +57,9 @@ function iconFor(cat: string) {
   return '🏷️'
 }
 
-export default function StaffPage() {
+function StaffPageInner() {
+  const searchParams = useSearchParams()
+  const forcedTab = searchParams.get('tab') as 'dispense'|'inventory'|'purchases'|'reports'|null
   const [session, setSession] = useState<StaffSession|null>(null)
   const [needsReauth, setNeedsReauth] = useState(false)
   const [reauthPin, setReauthPin] = useState('')
@@ -143,7 +145,9 @@ export default function StaffPage() {
     const s = JSON.parse(saved) as StaffSession
     const p = s.permissions
     setSession(s)
-    if(p && !p.dispense){
+    if(forcedTab && p && (p as any)[forcedTab]){
+      setTab(forcedTab)
+    } else if(p && !p.dispense){
       if(p.inventory) setTab('inventory')
       else if(p.purchases) setTab('purchases')
       else if(p.reports) setTab('reports')
@@ -406,8 +410,8 @@ export default function StaffPage() {
           </button>
         </div>
 
-        {/* Tabs */}
-        {tabs.length > 1 && (
+        {/* Tabs — تختفي لو وصلنا برابط مباشر لصلاحية محددة (?tab=) */}
+        {tabs.length > 1 && !forcedTab && (
           <div style={{display:'flex',gap:4,padding:'0 16px',overflowX:'auto'}}>
             {tabs.map(t=>(
               <button key={t.key} className="tab-btn" onClick={()=>{setTab(t.key as any);if(t.key==='inventory'&&session)loadProducts(session)}}
@@ -710,4 +714,8 @@ export default function StaffPage() {
       )}
     </div>
   )
+}
+
+export default function StaffPage() {
+  return <Suspense fallback={null}><StaffPageInner/></Suspense>
 }

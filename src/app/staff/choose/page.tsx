@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bell, MapPin, Package, CalendarDays, Store, ClipboardList, Send, Wallet, Plane, UserCheck } from 'lucide-react'
+import { Bell, MapPin, Package, CalendarDays, Store, ClipboardList, Send, Wallet, Plane, UserCheck, Boxes, ShoppingCart } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const CS: Record<string, Record<'ar'|'en', string>> = {
@@ -21,6 +21,10 @@ const CS: Record<string, Record<'ar'|'en', string>> = {
   reservationsSub:{ ar:'متابعة حجوزات اليوم', en:"Track today's reservations" },
   cashierClosing: { ar:'إقفال الكاشير', en:'Cashier Closing' },
   cashierSub:     { ar:'تقرير نهاية اليوم', en:'End of day report' },
+  inventory:      { ar:'المخزون', en:'Inventory' },
+  inventorySub:   { ar:'عرض وتعديل الأصناف', en:'View and edit items' },
+  purchases:      { ar:'المشتريات', en:'Purchases' },
+  purchasesSub:   { ar:'تسجيل فواتير الشراء', en:'Record purchase invoices' },
   enterSystem:    { ar:'الدخول للنظام', en:'Enter System' },
   myTasksLabel:   { ar:'مهامي', en:'My Tasks' },
   myRequests:     { ar:'طلباتي', en:'My Requests' },
@@ -52,6 +56,8 @@ export default function ChoosePage() {
   const [canDispense, setCanDispense] = useState(false)
   const [canReservations, setCanReservations] = useState(false)
   const [isCashier, setIsCashier] = useState(false)
+  const [canInventory, setCanInventory] = useState(false)
+  const [canPurchases, setCanPurchases] = useState(false)
   const [staffData, setStaffData] = useState<any>(null)
   const [todayEvents, setTodayEvents] = useState<any[]>([])
   const [attendanceLocked, setAttendanceLocked] = useState(false)
@@ -84,6 +90,8 @@ export default function ChoosePage() {
     setCanDispense(!!parsed.permissions?.dispense)
     setCanReservations(!!parsed.permissions?.reservations)
     setIsCashier(parsed.role==='cashier')
+    setCanInventory(!!parsed.permissions?.inventory)
+    setCanPurchases(!!parsed.permissions?.purchases)
     setStaffData(parsed)
     loadToday(parsed)
     loadTaskCount()
@@ -365,6 +373,26 @@ export default function ChoosePage() {
               <div style={{textAlign:'right'}}>
                 <div style={{fontSize:16,fontWeight:800}}>{t('cashierClosing')}</div>
                 <div style={{fontSize:12,opacity:.8}}>{t('cashierSub')}</div>
+              </div>
+            </button>
+          )}
+          {canInventory && (
+            <button onClick={()=>router.push('/staff/inventory')}
+              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#5b21b6,#7c3aed)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
+              <span style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Boxes size={22} strokeWidth={2}/></span>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize:16,fontWeight:800}}>{t('inventory')}</div>
+                <div style={{fontSize:12,opacity:.8}}>{t('inventorySub')}</div>
+              </div>
+            </button>
+          )}
+          {canPurchases && (
+            <button onClick={()=>router.push('/staff/purchases')}
+              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#1d4ed8,#2563eb)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
+              <span style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><ShoppingCart size={22} strokeWidth={2}/></span>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize:16,fontWeight:800}}>{t('purchases')}</div>
+                <div style={{fontSize:12,opacity:.8}}>{t('purchasesSub')}</div>
               </div>
             </button>
           )}
