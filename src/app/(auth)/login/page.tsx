@@ -430,17 +430,17 @@ function LoginPage() {
                       <div key={s} style={{flex:1,height:3,borderRadius:99,background:step>=s?'#16a34a':'#e5e7eb',transition:'background .3s'}}/>
                     ))}
                   </div>
-                  <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:6,letterSpacing:'-0.5px'}}>أنشئ حسابك مجاناً</h1>
-                  <p style={{fontSize:14,color:'#6b7280'}}>14 يوم تجربة مجانية — لا يتطلب بطاقة</p>
+                  <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:6,letterSpacing:'-0.5px'}}>{t('login.createAccountFree')}</h1>
+                  <p style={{fontSize:14,color:'#6b7280'}}>{t('login.freeTrialNoCard')}</p>
                 </div>
                 {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
                 <form onSubmit={nextStep} style={{display:'flex',flexDirection:'column',gap:14}}>
                   <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>اسم المؤسسة *</label>
-                    <input className="inp" type="text" required value={orgName} onChange={e=>setOrgName(e.target.value)} placeholder="مثال: مستودع النجمة"/>
+                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.orgNameLabel')}</label>
+                    <input className="inp" type="text" required value={orgName} onChange={e=>setOrgName(e.target.value)} placeholder={t('login.orgNamePlaceholder')}/>
                   </div>
                   <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:8}}>نوع النشاط</label>
+                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:8}}>{t('login.businessTypeLabel')}</label>
                     <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:7}}>
                       {BUSINESS_TYPES.map(b=>(
                         <button key={b.v} type="button" onClick={()=>setBusinessType(b.v)} className={`biz${businessType===b.v?' on':''}`}>
@@ -451,11 +451,11 @@ function LoginPage() {
                     </div>
                   </div>
                   <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني *</label>
+                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.email')} *</label>
                     <input className="inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
                   </div>
                   <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>رقم واتساب *</label>
+                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.whatsappLabel')}</label>
                     <div style={{display:'flex',border:'1.5px solid #e5e7eb',borderRadius:10,overflow:'hidden',background:'white',transition:'border-color .2s'}}
                       onFocusCapture={e=>(e.currentTarget as HTMLElement).style.borderColor='#16a34a'}
                       onBlurCapture={e=>(e.currentTarget as HTMLElement).style.borderColor='#e5e7eb'}>
@@ -473,12 +473,12 @@ function LoginPage() {
                     {/* واجهة تحقق OTP معطّلة مؤقتاً (2026-07-24) لحين حل مشكلة توصيل واتساب — راجع notification_logs */}
                   </div>
                   <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>كلمة المرور *</label>
+                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.passwordHintLabel')}</label>
                     <div style={{position:'relative'}}>
-                      <input className="inp" type={showPassword?'text':'password'} required value={password} onChange={e=>setPassword(e.target.value)} placeholder="8+ أحرف، أرقام، رموز (@#$)" style={{paddingLeft:44}}/>
+                      <input className="inp" type={showPassword?'text':'password'} required value={password} onChange={e=>setPassword(e.target.value)} placeholder={t('login.passwordPlaceholder')} style={{paddingLeft:44}}/>
                       <button type="button" onClick={()=>setShowPassword(s=>!s)}
                         style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',fontSize:16,color:'#9ca3af',padding:4}}
-                        aria-label={showPassword?'إخفاء كلمة المرور':'إظهار كلمة المرور'}>
+                        aria-label={showPassword?t('login.hidePassword'):t('login.showPassword')}>
                         {showPassword?'🙈':'👁️'}
                       </button>
                     </div>
@@ -491,17 +491,17 @@ function LoginPage() {
                           return <div key={l} style={{flex:1,height:3,borderRadius:99,background:score>=l?colors[score-1]:'#e5e7eb',transition:'background .3s'}}/>
                         })}
                         <span style={{fontSize:11,color:'#9ca3af',flexShrink:0}}>
-                          {(()=>{const c=[/[A-Z]/.test(password),/[a-z]/.test(password),/[0-9]/.test(password),/[@#$!%^&*]/.test(password)];const s=c.filter(Boolean).length;return s===0?'':s===1?'ضعيفة جداً':s===2?'ضعيفة':s===3?'متوسطة':'قوية'})()}
+                          {(()=>{const c=[/[A-Z]/.test(password),/[a-z]/.test(password),/[0-9]/.test(password),/[@#$!%^&*]/.test(password)];const s=c.filter(Boolean).length;return s===0?'':s===1?t('login.pwVeryWeak'):s===2?t('login.pwWeak'):s===3?t('login.pwMedium'):t('login.pwStrong')})()}
                         </span>
                       </div>
                     )}
                   </div>
-                  <button type="submit" className="btn-main" style={{marginTop:4}}>التالي — اختر الباقة →</button>
+                  <button type="submit" className="btn-main" style={{marginTop:4}}>{t('login.nextChoosePlan')}</button>
                 </form>
                 <div style={{textAlign:'center',marginTop:20,fontSize:13,color:'#6b7280'}}>
-                  عندك حساب؟{' '}
+                  {t('login.alreadyHaveAccount')}{' '}
                   <button onClick={()=>{setMode('login');setError('')}} style={{background:'none',border:'none',color:'#16a34a',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
-                    سجّل الدخول
+                    {t('login.loginNow')}
                   </button>
                 </div>
               </>
@@ -518,18 +518,18 @@ function LoginPage() {
                   </div>
                   <button type="button" onClick={()=>{setStep(1);setError('')}}
                     style={{background:'none',border:'none',color:'#6b7280',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:0,marginBottom:12,display:'flex',alignItems:'center',gap:4}}>
-                    ← رجوع
+                    {t('login.back')}
                   </button>
-                  <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:6,letterSpacing:'-0.5px'}}>اختر الباقة المناسبة</h1>
-                  <p style={{fontSize:14,color:'#6b7280'}}>يمكنك تغييرها لاحقاً</p>
+                  <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:6,letterSpacing:'-0.5px'}}>{t('login.choosePlanTitle')}</h1>
+                  <p style={{fontSize:14,color:'#6b7280'}}>{t('login.changePlanLater')}</p>
                 </div>
                 {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
                 <form onSubmit={handleRegister} style={{display:'flex',flexDirection:'column',gap:10}}>
                   <div style={{display:'flex',justifyContent:'center',marginBottom:6}}>
                     <div style={{display:'inline-flex',gap:4,background:'#f3f4f6',padding:4,borderRadius:12}}>
-                      <button type="button" onClick={()=>setBilling('monthly')} style={{padding:'8px 18px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',background:billing==='monthly'?'white':'transparent',color:billing==='monthly'?'#111827':'#6b7280',boxShadow:billing==='monthly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>شهري</button>
+                      <button type="button" onClick={()=>setBilling('monthly')} style={{padding:'8px 18px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',background:billing==='monthly'?'white':'transparent',color:billing==='monthly'?'#111827':'#6b7280',boxShadow:billing==='monthly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>{t('login.planMonthly')}</button>
                       <button type="button" onClick={()=>setBilling('yearly')} style={{padding:'8px 18px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6,background:billing==='yearly'?'white':'transparent',color:billing==='yearly'?'#111827':'#6b7280',boxShadow:billing==='yearly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>
-                        سنوي <span style={{background:'#f0fdf4',color:'#15803d',fontSize:10,fontWeight:800,padding:'2px 7px',borderRadius:99}}>وفّر 20%</span>
+                        {t('login.planYearly')} <span style={{background:'#f0fdf4',color:'#15803d',fontSize:10,fontWeight:800,padding:'2px 7px',borderRadius:99}}>{t('login.planSave')}</span>
                       </button>
                     </div>
                   </div>
@@ -542,14 +542,14 @@ function LoginPage() {
                       </div>
                       <div style={{flexShrink:0,marginRight:12,textAlign:'left'}}>
                         <span style={{fontSize:20,fontWeight:800,color:branchCount===p.v?p.color:'#111827'}}>{billing==='yearly'?p.yearlyPrice:p.price}</span>
-                        <span style={{fontSize:12,color:'#9ca3af'}}> ر.س/{billing==='yearly'?'سنة':'شهر'}</span>
+                        <span style={{fontSize:12,color:'#9ca3af'}}> {lang==='ar'?'ر.س':'SAR'}/{billing==='yearly'?(lang==='ar'?'سنة':'yr'):(lang==='ar'?'شهر':'mo')}</span>
                       </div>
                     </button>
                   ))}
 
                   {branchCount && (
                     <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:8,padding:'11px 14px',fontSize:13,color:'#16a34a',fontWeight:600,display:'flex',alignItems:'center',gap:8}}>
-                      ✓ 14 يوم تجربة مجانية — سيتم التواصل معك لإتمام الدفع
+                      ✓ {t('login.freeTrialConfirm')}
                     </div>
                   )}
 
@@ -557,15 +557,15 @@ function LoginPage() {
                     <input type="checkbox" checked={agreedTerms} onChange={e=>setAgreedTerms(e.target.checked)}
                       style={{marginTop:2,flexShrink:0,cursor:'pointer'}}/>
                     <span>
-                      أوافق على{' '}
-                      <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:'#16a34a',fontWeight:700,textDecoration:'underline'}}>الشروط والأحكام</a>
-                      {' '}و{' '}
-                      <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:'#16a34a',fontWeight:700,textDecoration:'underline'}}>سياسة الخصوصية</a>
+                      {t('login.agreeTo')}{' '}
+                      <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:'#16a34a',fontWeight:700,textDecoration:'underline'}}>{t('login.termsAndConditions')}</a>
+                      {' '}{t('login.andWord')}{' '}
+                      <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:'#16a34a',fontWeight:700,textDecoration:'underline'}}>{t('login.privacyPolicy')}</a>
                     </span>
                   </label>
 
                   <button type="submit" disabled={loading||!branchCount||!agreedTerms} className="btn-main" style={{marginTop:8,opacity:(!branchCount||!agreedTerms)?.6:1}}>
-                    {loading?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span style={{width:16,height:16,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block'}}/>جاري الإنشاء...</span>:'إنشاء الحساب'}
+                    {loading?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span style={{width:16,height:16,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block'}}/>{t('login.creatingAccount')}</span>:t('login.createAccountBtn')}
                   </button>
                 </form>
               </>
@@ -576,19 +576,19 @@ function LoginPage() {
               <>
                 <button onClick={()=>{setMode('login');setError('')}}
                   style={{background:'none',border:'none',color:'#6b7280',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:0,marginBottom:24,display:'flex',alignItems:'center',gap:4}}>
-                  ← رجوع
+                  {t('login.back')}
                 </button>
-                <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:8,letterSpacing:'-0.5px'}}>استعادة كلمة المرور</h1>
-                <p style={{fontSize:14,color:'#6b7280',marginBottom:20}}>اختر طريقة استلام رابط الاستعادة</p>
+                <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:8,letterSpacing:'-0.5px'}}>{t('login.restorePassword')}</h1>
+                <p style={{fontSize:14,color:'#6b7280',marginBottom:20}}>{t('login.chooseRecoveryMethod')}</p>
 
                 <div style={{display:'flex',gap:8,marginBottom:22,background:'#f3f4f6',borderRadius:10,padding:4}}>
                   <button type="button" onClick={()=>{setForgotMethod('email');setError('')}}
                     style={{flex:1,padding:'8px',border:'none',borderRadius:8,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',background:forgotMethod==='email'?'white':'transparent',color:forgotMethod==='email'?'#111827':'#6b7280',boxShadow:forgotMethod==='email'?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
-                    📧 البريد الإلكتروني
+                    📧 {t('login.viaEmail')}
                   </button>
                   <button type="button" onClick={()=>{setForgotMethod('whatsapp');setError('')}}
                     style={{flex:1,padding:'8px',border:'none',borderRadius:8,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',background:forgotMethod==='whatsapp'?'white':'transparent',color:forgotMethod==='whatsapp'?'#111827':'#6b7280',boxShadow:forgotMethod==='whatsapp'?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
-                    📲 واتساب
+                    📲 {t('login.viaWhatsapp')}
                   </button>
                 </div>
 
@@ -597,21 +597,21 @@ function LoginPage() {
                 {forgotMethod==='email' ? (
                   <form onSubmit={handleForgot} style={{display:'flex',flexDirection:'column',gap:14}}>
                     <div>
-                      <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني</label>
+                      <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.email')}</label>
                       <input className="inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
                     </div>
                     <button type="submit" disabled={loading} className="btn-main">
-                      {loading?'جاري الإرسال...':'إرسال رابط الاستعادة'}
+                      {loading?t('login.sending'):t('login.sendRecoveryLink')}
                     </button>
                   </form>
                 ) : (
                   <form onSubmit={handleForgotWhatsapp} style={{display:'flex',flexDirection:'column',gap:14}}>
                     <div>
-                      <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>رقم الجوال المسجّل بالحساب</label>
+                      <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.registeredPhone')}</label>
                       <input className="inp" type="tel" required dir="ltr" value={forgotPhone} onChange={e=>setForgotPhone(e.target.value)} placeholder="05xxxxxxxx"/>
                     </div>
                     <button type="submit" disabled={loading} className="btn-main">
-                      {loading?'جاري الإرسال...':'إرسال رابط عبر واتساب'}
+                      {loading?t('login.sending'):t('login.sendViaWhatsapp')}
                     </button>
                   </form>
                 )}
@@ -621,10 +621,10 @@ function LoginPage() {
             {mode==='forgot-sent-wa' && (
               <div style={{textAlign:'center',padding:'40px 0'}}>
                 <div style={{width:64,height:64,borderRadius:16,background:'#f0fdf4',border:'1px solid #bbf7d0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,margin:'0 auto 20px'}}>📲</div>
-                <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8}}>تحقق من واتساب</h2>
-                <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:8}}>إذا كان الرقم مسجّل، وصلتك رسالة فيها رابط الاستعادة</p>
-                <p style={{fontSize:12,color:'#9ca3af',marginBottom:28}}>الرابط صالح لمدة ساعة واحدة فقط</p>
-                <button onClick={()=>{setMode('login');setError('')}} className="btn-main">رجوع لتسجيل الدخول</button>
+                <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8}}>{t('login.checkWhatsapp')}</h2>
+                <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:8}}>{t('login.ifRegisteredMsg')}</p>
+                <p style={{fontSize:12,color:'#9ca3af',marginBottom:28}}>{t('login.linkValidHour')}</p>
+                <button onClick={()=>{setMode('login');setError('')}} className="btn-main">{t('login.backToLogin')}</button>
               </div>
             )}
 
@@ -632,26 +632,26 @@ function LoginPage() {
             {(mode as any)==='registered' && (
               <div style={{textAlign:'center',padding:'40px 20px'}}>
                 <div style={{fontSize:56,marginBottom:16}}>📬</div>
-                <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8}}>تحقق من بريدك الإلكتروني</h2>
+                <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8}}>{t('login.checkYourEmail')}</h2>
                 <p style={{fontSize:14,color:'#6b7280',lineHeight:1.8,marginBottom:8}}>
-                  أرسلنا رابط التفعيل إلى<br/>
+                  {t('login.activationLinkSent')}<br/>
                   <b style={{color:'#111827'}}>{email}</b>
                 </p>
                 <p style={{fontSize:13,color:'#9ca3af',marginBottom:28,lineHeight:1.7}}>
-                  اضغط الرابط في البريد لتفعيل حسابك والدخول.<br/>
-                  تأكد من مجلد Spam إذا ما وصلك البريد.
+                  {t('login.clickLinkToActivate')}<br/>
+                  {t('login.checkSpam')}
                 </p>
                 <button onClick={()=>setMode('login')} style={{background:'#16a34a',color:'white',border:'none',borderRadius:12,padding:'13px 32px',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                  رجوع لتسجيل الدخول
+                  {t('login.backToLogin')}
                 </button>
               </div>
             )}
             {mode==='forgot-sent' && (
               <div style={{textAlign:'center',padding:'40px 0'}}>
                 <div style={{width:64,height:64,borderRadius:16,background:'#f0fdf4',border:'1px solid #bbf7d0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,margin:'0 auto 20px'}}>📧</div>
-                <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8}}>تم الإرسال!</h2>
-                <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:28}}>تحقق من بريدك <b style={{color:'#111827'}}>{email}</b><br/>واضغط الرابط لإعادة تعيين كلمة المرور</p>
-                <button onClick={()=>{setMode('login');setError('')}} className="btn-main">رجوع لتسجيل الدخول</button>
+                <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8}}>{t('login.sentTitle')}</h2>
+                <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:28}}>{t('login.checkEmailMsg')} <b style={{color:'#111827'}}>{email}</b><br/>{t('login.clickToReset')}</p>
+                <button onClick={()=>{setMode('login');setError('')}} className="btn-main">{t('login.backToLogin')}</button>
               </div>
             )}
           </div>
