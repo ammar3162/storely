@@ -188,10 +188,10 @@ export default function LandingPage() {
         {partners.length > 0 && (
           <div style={{maxWidth:1000,margin:'0 auto',padding:'0 40px',position:'relative' as const,zIndex:1}}>
             <p style={{textAlign:'center' as const,fontSize:12,fontWeight:700,color:'rgba(255,255,255,.4)',letterSpacing:'.1em',textTransform:'uppercase' as const,marginBottom:24}}>{t('trustedBy')}</p>
-            <div style={{display:'flex',flexWrap:'wrap' as const,gap:16,justifyContent:'center',alignItems:'center'}}>
+            <div style={{display:'flex',flexWrap:'wrap' as const,gap:18,justifyContent:'center',alignItems:'center'}}>
               {partners.map((p:any)=>(
-                <div key={p.id} style={{background:'white',borderRadius:10,padding:'8px 16px',display:'flex',alignItems:'center',justifyContent:'center',height:44,boxShadow:'0 2px 10px rgba(0,0,0,.15)'}}>
-                  <img src={p.logo_url} alt={p.name} style={{height:22,maxWidth:100,objectFit:'contain'}}/>
+                <div key={p.id} style={{background:'white',borderRadius:14,padding:'14px 26px',display:'flex',alignItems:'center',justifyContent:'center',height:68,boxShadow:'0 4px 16px rgba(0,0,0,.18)'}}>
+                  <img src={p.logo_url} alt={p.name} style={{height:38,maxWidth:150,objectFit:'contain'}}/>
                 </div>
               ))}
             </div>
