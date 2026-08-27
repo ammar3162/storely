@@ -151,20 +151,17 @@ export default function InventoryPage() {
       oid=p.org_id; sessionStorage.setItem('s_org_id',oid!)
     }
     const bid = sessionStorage.getItem('s_branch_id')
-    // جيب العدد الكلي
-    let cq = sb.from('products').select('*',{count:'exact',head:true}).eq('org_id',oid).eq('is_active',true)
-    if (bid) cq = cq.eq('branch_id',bid)
-    const { count } = await cq
-    setTotalCount(count||0)
-    
     let q: any = sb.from('products').select('id,name,sku,unit,qty,reorder_point,category,org_id,is_active,created_at,updated_at,recipe_unit,recipe_unit_factor').eq('org_id',oid).eq('is_active',true)
     if (bid) q = q.eq('branch_id',bid)
-    const{data}=await q.order('name')
+    const [{data}, {data:org}] = await Promise.all([
+      q.order('name'),
+      (sb.from('organizations') as any).select('business_type').eq('id',oid).single(),
+    ])
     setProducts((data||[]) as Product[])
+    setTotalCount((data||[]).length)
     setHasMore(false)
     setCurrentPage(0)
     if(oid) cache.set('inventory:'+oid, data||[])
-    const{data:org}=await (sb.from('organizations') as any).select('business_type').eq('id',oid).single()
     if((org as any)?.business_type) setBusinessType((org as any).business_type)
     if (!silent) { setLoading(false); setTimeout(()=>setVisible(true),50) }
   }
