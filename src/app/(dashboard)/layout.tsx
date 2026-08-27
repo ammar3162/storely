@@ -193,7 +193,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     const{data:subData}=await (sb as any).from('profiles').select('subscription_ends_at,subscription_type').eq('id',user.id).single()
     if(subData?.subscription_ends_at){
       const ends=new Date(subData.subscription_ends_at)
-      if(ends<new Date()&&subData.subscription_type!=='paid'){
+      if(ends<new Date()){
         router.replace('/expired');return
       }
       // تحذير استباقي قبل انتهاء الاشتراك (خلال 7 أيام أو أقل)
