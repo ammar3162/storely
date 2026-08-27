@@ -188,9 +188,11 @@ export default function LandingPage() {
         {partners.length > 0 && (
           <div style={{maxWidth:1000,margin:'0 auto',padding:'0 40px',position:'relative' as const,zIndex:1}}>
             <p style={{textAlign:'center' as const,fontSize:12,fontWeight:700,color:'rgba(255,255,255,.4)',letterSpacing:'.1em',textTransform:'uppercase' as const,marginBottom:24}}>{t('trustedBy')}</p>
-            <div style={{display:'flex',flexWrap:'wrap' as const,gap:36,justifyContent:'center',alignItems:'center',opacity:.85}}>
+            <div style={{display:'flex',flexWrap:'wrap' as const,gap:16,justifyContent:'center',alignItems:'center'}}>
               {partners.map((p:any)=>(
-                <img key={p.id} src={p.logo_url} alt={p.name} style={{height:26,maxWidth:110,objectFit:'contain',filter:'brightness(0) invert(1)',opacity:.75}}/>
+                <div key={p.id} style={{background:'white',borderRadius:10,padding:'8px 16px',display:'flex',alignItems:'center',justifyContent:'center',height:44,boxShadow:'0 2px 10px rgba(0,0,0,.15)'}}>
+                  <img src={p.logo_url} alt={p.name} style={{height:22,maxWidth:100,objectFit:'contain'}}/>
+                </div>
               ))}
             </div>
           </div>
