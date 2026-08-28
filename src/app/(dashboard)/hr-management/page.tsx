@@ -54,13 +54,14 @@ export default function HRManagementPage() {
       oid=p.org_id; sessionStorage.setItem('s_org_id',oid!)
     }
     setOrgId(oid!)
-    const{data:org}=await sb.from('organizations' as any).select('plan,currency').eq('id',oid!).single()
-    setOrgPlan((org as any)?.plan || 'basic')
-
     const bid = sessionStorage.getItem('s_branch_id')
     let q = (sb.from('staff_members' as any) as any).select('*').eq('org_id',oid!)
     if (bid) q = q.eq('branch_id', bid)
-    const{data}=await q.order('created_at',{ascending:false})
+    const [{data:org}, {data}] = await Promise.all([
+      sb.from('organizations' as any).select('plan,currency').eq('id',oid!).single(),
+      q.order('created_at',{ascending:false}),
+    ])
+    setOrgPlan((org as any)?.plan || 'basic')
     setStaff(data||[])
     setLoading(false)
   }

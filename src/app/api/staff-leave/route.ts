@@ -50,7 +50,7 @@ export async function POST(req: Request) {
 
     const auth = verifyStaffToken(extractStaffToken(req))
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
-    const { org_id, staff_id } = auth.data!
+    const { org_id, staff_id, branch_id } = auth.data!
 
     const start = new Date(start_date)
     const end = new Date(end_date)
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     const daysCount = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
 
     const supabase = sb()
-    const { data: staffRow } = await supabase.from('staff_members').select('leave_balance_days').eq('id', staff_id).maybeSingle()
+    const { data: staffRow } = await supabase.from('staff_members').select('name,leave_balance_days').eq('id', staff_id).maybeSingle()
     const balance = Number((staffRow as any)?.leave_balance_days || 0)
     if (daysCount > balance) return NextResponse.json({ error: `رصيدك المتبقي ${balance} يوم فقط` }, { status: 400 })
 
@@ -66,6 +66,13 @@ export async function POST(req: Request) {
       org_id, staff_id, start_date, end_date, days_count: daysCount, reason: reason || null, status: 'pending',
     } as any)
     if (error) return NextResponse.json({ error: 'فشل إرسال الطلب' }, { status: 500 })
+
+    const staffName = (staffRow as any)?.name || 'موظف'
+    await supabase.from('notifications').insert({
+      org_id, branch_id: branch_id || null, type: 'info',
+      title: 'طلب إجازة جديد',
+      message: `${staffName} يطلب إجازة من ${start_date} إلى ${end_date} (${daysCount} يوم)${reason ? ` — السبب: ${reason}` : ''}`,
+    } as any)
 
     return NextResponse.json({ success: true })
   } catch {
