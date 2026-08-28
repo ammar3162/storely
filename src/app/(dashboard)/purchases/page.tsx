@@ -79,7 +79,7 @@ export default function PurchasesPage() {
     }
     setOrgId(oid!);setUserId(uid!)
     sb.from('organizations').select('currency').eq('id',oid!).single().then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
-    loadProducts(oid!);setTimeout(()=>{loadHistory(oid!);loadPayables(oid!)},300)
+    loadProducts(oid!);loadHistory(oid!);loadPayables(oid!)
   }
 
   async function loadProducts(oid:string) {
