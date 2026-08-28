@@ -116,10 +116,11 @@ export default function DashboardPage() {
     const ab=(q:any)=>bid?q.eq('branch_id',bid):q
     let movementsQuery = sb.from('stock_movements').select('qty_change,type,created_at,products!inner(name,unit,org_id,branch_id)').eq('products.org_id',orgId).order('created_at',{ascending:false}).limit(50)
     if (bid) movementsQuery = movementsQuery.eq('products.branch_id', bid)
-    const[{data:products},{data:purchases},{data:movements}]=await Promise.all([
+    const[{data:products},{data:purchases},{data:movements},{data:nData}]=await Promise.all([
       ab(sb.from('products').select('id,name,qty,reorder_point,unit').eq('org_id',orgId).eq('is_active',true)),
       ab(sb.from('purchases').select('amount,created_at').eq('org_id',orgId)),
       movementsQuery,
+      (sb as any).from('notifications').select('id,title,message,type').eq('org_id',orgId).eq('read',false).or(bid?`branch_id.is.null,branch_id.eq.${bid}`:'branch_id.is.null,branch_id.not.is.null').order('created_at',{ascending:false}).limit(5),
     ])
     const today=new Date().toDateString()
     const low=(products||[]).filter((p:any)=>p.qty<=p.reorder_point)
@@ -141,8 +142,6 @@ export default function DashboardPage() {
       wd.push({label:lbl,value:(movements||[]).filter((m:any)=>m.type==='out'&&new Date(m.created_at).toDateString()===ds).length})
     }
     setWeeklyP(wp);setWeeklyD(wd)
-    // جلب الإشعارات غير المقروءة
-    const{data:nData}=await (sb as any).from('notifications').select('id,title,message,type').eq('org_id',orgId).eq('read',false).or(bid?`branch_id.is.null,branch_id.eq.${bid}`:'branch_id.is.null,branch_id.not.is.null').order('created_at',{ascending:false}).limit(5)
     setNotifs(nData||[])
     // توقيت الطلب الذكي
     fetch('/api/smart-reorder-timing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:bid})}).then(r=>r.json()).then(d=>{ if(d.success) setSmartSuggestions(d.suggestions||[]) }).catch(()=>{})
