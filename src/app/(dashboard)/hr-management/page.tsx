@@ -31,6 +31,8 @@ export default function HRManagementPage() {
 
   const [leaveRequests, setLeaveRequests] = useState<any[]>([])
   const [loadingLeave, setLoadingLeave] = useState(false)
+  const [pendingLeaveCounts, setPendingLeaveCounts] = useState<Record<string, number>>({})
+  const [pendingAdvanceCounts, setPendingAdvanceCounts] = useState<Record<string, number>>({})
   const [excuseRequests, setExcuseRequests] = useState<any[]>([])
   const [loadingExcuse, setLoadingExcuse] = useState(false)
 
@@ -57,12 +59,28 @@ export default function HRManagementPage() {
     const bid = sessionStorage.getItem('s_branch_id')
     let q = (sb.from('staff_members' as any) as any).select('*').eq('org_id',oid!)
     if (bid) q = q.eq('branch_id', bid)
-    const [{data:org}, {data}] = await Promise.all([
+    const [{data:org}, {data}, leaveRes, advRes] = await Promise.all([
       sb.from('organizations' as any).select('plan,currency').eq('id',oid!).single(),
       q.order('created_at',{ascending:false}),
+      fetch(`/api/staff-leave?org_id=${oid}`).then(r=>r.json()).catch(()=>({success:false})),
+      fetch(`/api/staff-payroll-adjustments?org_id=${oid}`).then(r=>r.json()).catch(()=>({success:false})),
     ])
     setOrgPlan((org as any)?.plan || 'basic')
     setStaff(data||[])
+    if (leaveRes?.success) {
+      const counts: Record<string, number> = {}
+      for (const req of (leaveRes.requests||[])) {
+        if (req.status === 'pending') counts[req.staff_id] = (counts[req.staff_id]||0) + 1
+      }
+      setPendingLeaveCounts(counts)
+    }
+    if (advRes?.success) {
+      const counts2: Record<string, number> = {}
+      for (const req of (advRes.adjustments||advRes.requests||[])) {
+        if (req.status === 'pending') counts2[req.staff_id] = (counts2[req.staff_id]||0) + 1
+      }
+      setPendingAdvanceCounts(counts2)
+    }
     setLoading(false)
   }
 
@@ -100,6 +118,12 @@ export default function HRManagementPage() {
     if (!j.success) { toast(j.error||'خطأ','error'); return }
     toast(decision==='approved' ? '✅ تم قبول طلب الإجازة' : 'تم رفض الطلب')
     loadLeave(staffId)
+    setPendingLeaveCounts(prev => {
+      const next = { ...prev }
+      if (next[staffId] > 1) next[staffId] -= 1
+      else delete next[staffId]
+      return next
+    })
     if (decision==='approved') {
       const res2 = await fetch(`/api/staff-leave?org_id=${orgId}&staff_id=${staffId}`)
       const j2 = await res2.json()
@@ -196,6 +220,12 @@ export default function HRManagementPage() {
     if (!j.success) { toast(j.error||'خطأ','error'); return }
     toast(decision==='approved' ? '✅ تم قبول طلب السلفة' : 'تم رفض الطلب')
     loadAdjustments(staffId)
+    setPendingAdvanceCounts(prev => {
+      const next = { ...prev }
+      if (next[staffId] > 1) next[staffId] -= 1
+      else delete next[staffId]
+      return next
+    })
   }
 
   async function loadTasks(staffId:string) {
@@ -348,7 +378,19 @@ export default function HRManagementPage() {
               <div key={s.id} style={{...card,padding:'16px 18px'}}>
                 <div onClick={()=>toggleExpand(s)} style={{display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer'}}>
                   <div>
-                    <div style={{fontSize:font.base,fontWeight:700,color:colors.text}}>{s.name}</div>
+                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                      <div style={{fontSize:font.base,fontWeight:700,color:colors.text}}>{s.name}</div>
+                      {pendingLeaveCounts[s.id] > 0 && (
+                        <span style={{background:colors.danger,color:'white',fontSize:10,fontWeight:800,minWidth:18,height:18,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 5px'}} title="عنده طلب إجازة بانتظار الموافقة">
+                          {pendingLeaveCounts[s.id]}
+                        </span>
+                      )}
+                      {pendingAdvanceCounts[s.id] > 0 && (
+                        <span style={{background:colors.warning,color:'white',fontSize:10,fontWeight:800,minWidth:18,height:18,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 5px'}} title="عنده طلب سلفة/خصم بانتظار الموافقة">
+                          {pendingAdvanceCounts[s.id]}
+                        </span>
+                      )}
+                    </div>
                     <div style={{fontSize:11,color:colors.text4,marginTop:2}}>إجمالي الراتب: {savedTotal.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</div>
                   </div>
                   <ChevronDown size={16} color={colors.text3} strokeWidth={2.25} style={{transition:'transform .2s',transform:isOpen?'rotate(180deg)':'none'}}/>
