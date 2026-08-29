@@ -118,8 +118,8 @@ export async function exportReportPdf(opts: PdfExportOptions) {
   `
 
   // تقسيم الصفوف لمجموعات (صفحة = مجموعة صغيرة، آخر صفحة فيها الإجمالي دائماً)
-  const ROWS_PER_PAGE_FIRST = 16
-  const ROWS_PER_PAGE_OTHER = 24
+  const ROWS_PER_PAGE_FIRST = 9
+  const ROWS_PER_PAGE_OTHER = 12
   type PageChunk = { rowsChunk: Record<string, any>[]; includeHeader: boolean; includeTotals: boolean; isLast: boolean }
   const pages: PageChunk[] = []
   if (rows.length === 0) {
