@@ -667,7 +667,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           @media(min-width:768px){
             .desk-layout{display:flex;min-height:100vh}
             .mob-layout{display:none}
-            .desk-sidebar{display:flex;flex-direction:column;width:220px;position:fixed;top:0;right:0;bottom:0;background:#13254C;z-index:100;border-left:1px solid rgba(255,255,255,.06)}.desk-topbar{display:flex}
+            .desk-sidebar{display:flex;flex-direction:column;width:220px;position:fixed;top:0;right:0;bottom:0;background:#0C213B;z-index:100;border-left:1px solid rgba(255,255,255,.06)}.desk-topbar{display:flex}
             .desk-content{flex:1;margin-right:220px;padding:20px 20px;min-height:100vh;width:calc(100vw - 220px);max-width:calc(100vw - 220px)}
           }
         `}</style>
