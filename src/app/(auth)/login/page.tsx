@@ -382,9 +382,6 @@ function LoginPage() {
             {!accountStatus && mode==='login' && (
               <>
                 <StoreMascot focused={mascotFocus} cursorRatio={cursorRatio}/>
-                <div style={{display:'flex',justifyContent:'center',marginBottom:20}}>
-                  <img src="/storely-logo.png" alt="Storely" style={{width:88,height:88,objectFit:'contain'}}/>
-                </div>
                 <div style={{marginBottom:32,textAlign:'center' as const}}>
                   <h1 style={{fontSize:28,fontWeight:800,color:'#111827',marginBottom:8,letterSpacing:'-0.5px'}}>{t('login.welcomeBack')}</h1>
                   <p style={{fontSize:15,color:'#6b7280'}}>{t('login.welcomeSub')}</p>
