@@ -115,7 +115,7 @@ function StaffLoginInner() {
         {/* الهيدر — شعار Storely */}
         <div style={{display:'flex',flexDirection:'column' as const,alignItems:'center',paddingTop:'clamp(32px, 8vh, 64px)',paddingBottom:24}}>
           <div style={{width:56,height:56,borderRadius:16,background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.12)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:14}}>
-            <img src="/storely-logo.png" alt="Storely" style={{width:34,height:34,borderRadius:8,objectFit:'cover'}}/>
+            <img src="/storely-logo.png" alt="Storely" style={{width:52,height:52,objectFit:'contain'}}/>
           </div>
           <div style={{fontSize:13,fontWeight:700,color:'rgba(255,255,255,.5)',letterSpacing:'.5px',marginBottom:10}}>STORELY</div>
           <button onClick={()=>setLang(lang==='ar'?'en':'ar')} style={{background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.15)',borderRadius:99,padding:'5px 12px',fontSize:11,fontWeight:700,color:'rgba(255,255,255,.7)',cursor:'pointer',fontFamily:'inherit'}}>
