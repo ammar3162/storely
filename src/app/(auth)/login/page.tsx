@@ -312,23 +312,22 @@ function LoginPage() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
         @keyframes spin{to{transform:rotate(360deg)}}
         .inp{width:100%;padding:13px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;outline:none;background:white;color:#111827;font-family:inherit;transition:border-color .2s}
-        .inp:focus{border-color:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,.08)}
+        .inp:focus{border-color:#0d9488;box-shadow:0 0 0 3px rgba(13,148,136,.08)}
         .inp::placeholder{color:#9ca3af}
-        .btn-main{width:100%;padding:14px;background:#16a34a;color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
-        .btn-main:hover{background:#15803d}
+        .btn-main{width:100%;padding:14px;background:#16233f;color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
+        .btn-main:hover{background:#0f1729}
         .btn-main:disabled{opacity:.6;cursor:not-allowed}
         .tab{flex:1;padding:12px;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .2s}
         .biz{padding:12px 8px;border-radius:10px;border:1.5px solid #e5e7eb;background:white;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .15s;font-size:12px;font-weight:600;color:#374151}
-        .biz:hover{border-color:#16a34a}
-        .biz.on{border-color:#16a34a;background:#f0fdf4;color:#16a34a}
+        .biz:hover{border-color:#0d9488}
+        .biz.on{border-color:#0d9488;background:#f0fdfa;color:#0d9488}
         @media(max-width:768px){.right-panel{display:none!important}}
       `}</style>
 
       {/* Navbar */}
       <nav style={{padding:'0 40px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #f3f4f6'}}>
-        <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <img src="/storely-logo.png" alt="Storely" style={{width:38,height:38,borderRadius:10,objectFit:'cover'}}/>
-          <span style={{fontSize:18,fontWeight:800,color:'#111827',letterSpacing:'-0.3px'}}>Storely</span>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <img src="/storely-logo.png" alt="Storely" style={{width:44,height:44,objectFit:'contain'}}/>
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           <button onClick={()=>setLang(lang==='ar'?'en':'ar')}
@@ -383,6 +382,9 @@ function LoginPage() {
             {!accountStatus && mode==='login' && (
               <>
                 <StoreMascot focused={mascotFocus} cursorRatio={cursorRatio}/>
+                <div style={{display:'flex',justifyContent:'center',marginBottom:20}}>
+                  <img src="/storely-logo.png" alt="Storely" style={{width:88,height:88,objectFit:'contain'}}/>
+                </div>
                 <div style={{marginBottom:32,textAlign:'center' as const}}>
                   <h1 style={{fontSize:28,fontWeight:800,color:'#111827',marginBottom:8,letterSpacing:'-0.5px'}}>{t('login.welcomeBack')}</h1>
                   <p style={{fontSize:15,color:'#6b7280'}}>{t('login.welcomeSub')}</p>
@@ -400,7 +402,7 @@ function LoginPage() {
                     <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
                       <label style={{fontSize:13,fontWeight:600,color:'#374151'}}>{t('login.password')}</label>
                       <button type="button" onClick={()=>{setMode('forgot');setError('')}}
-                        style={{background:'none',border:'none',fontSize:13,color:'#16a34a',cursor:'pointer',fontFamily:'inherit',fontWeight:600,padding:0}}>
+                        style={{background:'none',border:'none',fontSize:13,color:'#0d9488',cursor:'pointer',fontFamily:'inherit',fontWeight:600,padding:0}}>
                         {t('login.forgotPassword')}
                       </button>
                     </div>
@@ -414,7 +416,7 @@ function LoginPage() {
                 </form>
                 <div style={{textAlign:'center',marginTop:24,fontSize:13,color:'#6b7280'}}>
                   {t('login.noAccount')}{' '}
-                  <button onClick={()=>{setMode('register');setError('');setStep(1)}} style={{background:'none',border:'none',color:'#16a34a',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
+                  <button onClick={()=>{setMode('register');setError('');setStep(1)}} style={{background:'none',border:'none',color:'#0d9488',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
                     {t('login.signupNow')}
                   </button>
                 </div>
