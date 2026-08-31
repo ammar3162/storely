@@ -90,7 +90,7 @@ export default function MarketplacePage() {
   if (COMING_SOON) return (
     <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700;800&display=swap');*{box-sizing:border-box}`}</style>
-      <div style={{background:'linear-gradient(135deg,#042f2e,#1a4731)',padding:'32px 20px 24px'}}>
+      <div style={{background:'linear-gradient(135deg,#042f2e,#0C213B)',padding:'32px 20px 24px'}}>
         <div style={{maxWidth:900,margin:'0 auto'}}>
           <button onClick={()=>window.location.href='/dashboard'} style={{background:'rgba(255,255,255,.1)',border:'none',color:'white',borderRadius:10,padding:'8px 14px',cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:700}}>← رجوع</button>
         </div>
@@ -111,7 +111,7 @@ export default function MarketplacePage() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700;800&display=swap');*{box-sizing:border-box}`}</style>
 
       {/* Header */}
-      <div style={{background:'linear-gradient(135deg,#042f2e,#1a4731)',padding:'32px 20px 24px'}}>
+      <div style={{background:'linear-gradient(135deg,#042f2e,#0C213B)',padding:'32px 20px 24px'}}>
         <div style={{maxWidth:900,margin:'0 auto'}}>
           <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
             <button onClick={()=>window.location.href='/dashboard'} style={{background:'rgba(255,255,255,.1)',border:'none',color:'white',borderRadius:10,padding:'8px 14px',cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:700}}>← رجوع</button>
@@ -152,7 +152,7 @@ export default function MarketplacePage() {
             {filtered.map(s=>(
               <div key={s.id} style={{background:'white',borderRadius:16,overflow:'hidden',boxShadow:'0 2px 8px rgba(0,0,0,.06)',border:'1px solid #f1f5f9',transition:'transform .15s,box-shadow .15s'}}>
                 {/* Card Header */}
-                <div style={{background:'linear-gradient(135deg,#042f2e,#1a4731)',padding:'20px',display:'flex',alignItems:'center',gap:12}}>
+                <div style={{background:'linear-gradient(135deg,#042f2e,#0C213B)',padding:'20px',display:'flex',alignItems:'center',gap:12}}>
                   {s.logo_url ? (
                     <img src={s.logo_url} alt={s.company_name} style={{width:48,height:48,borderRadius:12,objectFit:'cover',border:'2px solid rgba(255,255,255,.2)'}}/>
                   ) : (
@@ -216,7 +216,7 @@ export default function MarketplacePage() {
                 const firstItemImg = s.items.find((it:any)=>it.image_url)?.image_url
                 return (
                   <div key={s.id} style={{background:'white',borderRadius:16,overflow:'hidden',boxShadow:'0 2px 8px rgba(0,0,0,.06)',border:'1px solid #f1f5f9'}}>
-                    <div style={{position:'relative' as const,height:120,background: firstItemImg ? undefined : 'linear-gradient(135deg,#042f2e,#1a4731)'}}>
+                    <div style={{position:'relative' as const,height:120,background: firstItemImg ? undefined : 'linear-gradient(135deg,#042f2e,#0C213B)'}}>
                       {firstItemImg ? (
                         <>
                           <img src={firstItemImg} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
@@ -275,7 +275,7 @@ export default function MarketplacePage() {
         )}
 
         {/* CTA للموردين */}
-        <div style={{marginTop:32,background:'linear-gradient(135deg,#042f2e,#1a4731)',borderRadius:16,padding:'24px',textAlign:'center'}}>
+        <div style={{marginTop:32,background:'linear-gradient(135deg,#042f2e,#0C213B)',borderRadius:16,padding:'24px',textAlign:'center'}}>
           <div style={{fontSize:20,fontWeight:800,color:'white',marginBottom:8}}>هل أنت مورد؟</div>
           <div style={{fontSize:13,color:'rgba(255,255,255,.7)',marginBottom:16}}>انضم لشبكة موردينا المعتمدين واستفد من قاعدة عملائنا</div>
           <a href="/suppliers-join" style={{display:'inline-block',padding:'12px 28px',background:'#029FA2',color:'white',borderRadius:12,fontSize:14,fontWeight:700,textDecoration:'none',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>

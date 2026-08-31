@@ -346,7 +346,7 @@ export default function CashierClosingPage() {
         </div>
       )}
 
-      <div style={{background:'linear-gradient(135deg,#042f2e,#1a4731)',padding:'16px 20px',position:'sticky',top:0,zIndex:100,boxShadow:'0 4px 20px rgba(0,0,0,.2)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      <div style={{background:'linear-gradient(135deg,#042f2e,#0C213B)',padding:'16px 20px',position:'sticky',top:0,zIndex:100,boxShadow:'0 4px 20px rgba(0,0,0,.2)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
           {orgLogo ? (
             <img src={orgLogo} alt="" style={{width:42,height:42,borderRadius:12,objectFit:'cover',border:'2px solid rgba(255,255,255,.2)'}}/>

@@ -203,7 +203,7 @@ export default function SupplierStorefrontPage() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700;800&display=swap');*{box-sizing:border-box}`}</style>
 
       {/* Header */}
-      <div style={{background:'linear-gradient(135deg,#042f2e,#1a4731)',padding:'32px 20px'}}>
+      <div style={{background:'linear-gradient(135deg,#042f2e,#0C213B)',padding:'32px 20px'}}>
         <div style={{maxWidth:800,margin:'0 auto'}}>
           <button onClick={()=>router.push('/marketplace')} style={{background:'rgba(255,255,255,.1)',border:'none',color:'white',borderRadius:10,padding:'8px 14px',cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:700,marginBottom:20}}>← رجوع للموردين</button>
           <div style={{display:'flex',alignItems:'center',gap:16}}>

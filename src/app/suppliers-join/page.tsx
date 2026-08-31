@@ -39,7 +39,7 @@ export default function SuppliersJoinPage() {
   }
 
   if(done) return (
-    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#042f2e,#1a4731)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:20}}>
+    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#042f2e,#0C213B)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:20}}>
       <div style={{background:'white',borderRadius:24,padding:'48px 40px',maxWidth:460,width:'100%',textAlign:'center',boxShadow:'0 32px 80px rgba(0,0,0,.3)'}}>
         <div style={{fontSize:64,marginBottom:16}}>🎉</div>
         <h2 style={{fontSize:22,fontWeight:800,color:'#0f172a',marginBottom:8}}>تم استلام طلبك!</h2>
@@ -53,7 +53,7 @@ export default function SuppliersJoinPage() {
   )
 
   return (
-    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#042f2e,#1a4731)',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:20}}>
+    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#042f2e,#0C213B)',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:20}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap');*{box-sizing:border-box}.inp{width:100%;padding:12px 16px;border:1.5px solid #e5e7eb;borderRadius:10px;fontSize:14px;outline:none;fontFamily:inherit;transition:border-color .2s}.inp:focus{border-color:#029FA2;box-shadow:0 0 0 3px rgba(22,163,74,.08)}`}</style>
 
       <div style={{maxWidth:600,margin:'0 auto',paddingTop:40}}>

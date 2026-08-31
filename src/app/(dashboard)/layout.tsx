@@ -679,7 +679,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       {showOnboarding && (
         <div style={{position:'fixed',inset:0,zIndex:9999,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(4px)'}}>
           <div style={{background:'white',borderRadius:24,width:'100%',maxWidth:480,fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',overflow:'hidden',boxShadow:'0 24px 60px rgba(0,0,0,.3)'}}>
-            <div style={{background:'linear-gradient(135deg,#042f2e,#1a4731)',padding:'28px 28px 24px',textAlign:'center'}}>
+            <div style={{background:'linear-gradient(135deg,#042f2e,#0C213B)',padding:'28px 28px 24px',textAlign:'center'}}>
               <div style={{fontSize:48,marginBottom:12}}>{onboardingStep===0?'👋':onboardingStep===1?'📦':onboardingStep===2?'👥':onboardingStep===3?'🚚':'🎉'}</div>
               <div style={{fontSize:18,fontWeight:800,color:'white',marginBottom:6}}>
                 {onboardingStep===0?'أهلاً بك في Storely!':onboardingStep===1?'أضف منتجاتك':onboardingStep===2?'أضف موظفيك':onboardingStep===3?'أضف موردينك':'أنت جاهز!'}

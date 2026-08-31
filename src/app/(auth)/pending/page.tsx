@@ -13,7 +13,7 @@ export default function PendingPage() {
   }, [])
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(160deg,#042f2e,#1a4731)',fontFamily:"'Segoe UI',system-ui,sans-serif",direction:'rtl',padding:20}}>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(160deg,#042f2e,#0C213B)',fontFamily:"'Segoe UI',system-ui,sans-serif",direction:'rtl',padding:20}}>
       <style>{`
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
@@ -34,8 +34,8 @@ export default function PendingPage() {
           <div style={{marginBottom:28}}>
             <div style={{width:88,height:88,background:'linear-gradient(135deg,#f0fdfa,#ccfbf1)',borderRadius:24,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 0',border:'2px solid #5eead4',animation:'float 3s ease-in-out infinite'}}>
               <svg width="44" height="44" fill="none" viewBox="0 0 24 24">
-                <path d="M9 12l2 2 4-4" stroke="#1a4731" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="#1a4731" strokeWidth="2" fill="none"/>
+                <path d="M9 12l2 2 4-4" stroke="#0C213B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="#0C213B" strokeWidth="2" fill="none"/>
                 <circle cx="12" cy="12" r="3" fill="#4abe7a" opacity="0.3"/>
               </svg>
             </div>
@@ -78,7 +78,7 @@ export default function PendingPage() {
               { step:'3', text:'ستصلك رسالة تفعيل', done:false },
             ].map((s,i) => (
               <div key={i} style={{display:'flex',alignItems:'center',gap:10,marginBottom:i<2?10:0}}>
-                <div style={{width:24,height:24,borderRadius:'50%',background:s.done?'#1a4731':'#e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                <div style={{width:24,height:24,borderRadius:'50%',background:s.done?'#0C213B':'#e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                   {s.done ? (
                     <svg width="12" height="12" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   ) : (
@@ -91,7 +91,7 @@ export default function PendingPage() {
           </div>
 
           {/* زر العودة */}
-          <a href="/login" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'13px',background:'#1a4731',color:'white',borderRadius:12,fontSize:14,fontWeight:700,textDecoration:'none'}}>
+          <a href="/login" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'13px',background:'#0C213B',color:'white',borderRadius:12,fontSize:14,fontWeight:700,textDecoration:'none'}}>
             <svg width="16" height="16" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round"/></svg>
             العودة لتسجيل الدخول
           </a>

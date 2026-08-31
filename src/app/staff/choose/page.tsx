@@ -228,7 +228,7 @@ export default function ChoosePage() {
   }
 
   return (
-    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#042f2e,#1a4731)',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl'}}>
+    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#042f2e,#0C213B)',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl'}}>
       <div style={{background:'white',borderRadius:0,padding:'32px 24px 40px',maxWidth:480,width:'100%',minHeight:'100vh',boxSizing:'border-box' as const,textAlign:'center',position:'relative' as const,display:'flex',flexDirection:'column' as const,justifyContent:'center'}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
           <button onClick={()=>{

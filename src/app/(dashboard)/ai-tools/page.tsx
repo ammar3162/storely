@@ -173,7 +173,7 @@ export default function AIToolsPage() {
       </div>
 
       {/* التحليل الذكي الشامل */}
-      <div className="fu" style={{marginBottom:20,background:'linear-gradient(135deg,#042f2e,#1a4731)',borderRadius:18,padding:22}}>
+      <div className="fu" style={{marginBottom:20,background:'linear-gradient(135deg,#042f2e,#0C213B)',borderRadius:18,padding:22}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:insights||insightsError?16:0,flexWrap:'wrap' as const,gap:10}}>
           <div>
             <div style={{fontSize:16,fontWeight:800,color:'white',marginBottom:4}}>🧠 التحليل الذكي الشامل</div>
@@ -1029,7 +1029,7 @@ export default function AIToolsPage() {
       )}
 
       {plan==='basic' && (
-        <div className="fu" style={{marginTop:16,background:'linear-gradient(135deg,#042f2e,#1a4731)',borderRadius:16,padding:'28px 24px',textAlign:'center' as const}}>
+        <div className="fu" style={{marginTop:16,background:'linear-gradient(135deg,#042f2e,#0C213B)',borderRadius:16,padding:'28px 24px',textAlign:'center' as const}}>
           <div style={{fontSize:36,marginBottom:10}}>🔒✨</div>
           <div style={{fontSize:16,fontWeight:800,color:'white',marginBottom:6}}>أدوات ذكاء اصطناعي بانتظارك</div>
           <div style={{fontSize:12,color:'rgba(255,255,255,.65)',marginBottom:18,lineHeight:1.7,maxWidth:420,marginLeft:'auto',marginRight:'auto'}}>
