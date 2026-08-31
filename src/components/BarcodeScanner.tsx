@@ -83,7 +83,7 @@ export default function BarcodeScanner({ onScan, onClose }: Props) {
           <video ref={videoRef} style={{width:'100%',display:'block'}} autoPlay playsInline muted/>
           {ready && (
             <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'none'}}>
-              <div style={{width:'70%',height:80,border:'2.5px solid #4abe7a',borderRadius:10,boxShadow:'0 0 0 1000px rgba(0,0,0,0.4)'}}/>
+              <div style={{width:'70%',height:80,border:'2.5px solid #2dd4bf',borderRadius:10,boxShadow:'0 0 0 1000px rgba(0,0,0,0.4)'}}/>
             </div>
           )}
         </div>

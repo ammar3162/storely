@@ -689,7 +689,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               </div>
               <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:16}}>
                 {[0,1,2,3,4].map(i=>(
-                  <div key={i} style={{width:i===onboardingStep?20:6,height:6,borderRadius:99,background:i===onboardingStep?'#4abe7a':'rgba(255,255,255,.3)',transition:'all .3s'}}/>
+                  <div key={i} style={{width:i===onboardingStep?20:6,height:6,borderRadius:99,background:i===onboardingStep?'#2dd4bf':'rgba(255,255,255,.3)',transition:'all .3s'}}/>
                 ))}
               </div>
             </div>

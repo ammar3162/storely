@@ -36,14 +36,14 @@ export default function PendingPage() {
               <svg width="44" height="44" fill="none" viewBox="0 0 24 24">
                 <path d="M9 12l2 2 4-4" stroke="#0C213B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="#0C213B" strokeWidth="2" fill="none"/>
-                <circle cx="12" cy="12" r="3" fill="#4abe7a" opacity="0.3"/>
+                <circle cx="12" cy="12" r="3" fill="#2dd4bf" opacity="0.3"/>
               </svg>
             </div>
           </div>
 
           {/* Storely badge */}
           <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdfa',border:'1px solid #5eead4',borderRadius:20,padding:'4px 14px',marginBottom:20}}>
-            <div style={{width:6,height:6,borderRadius:'50%',background:'#4abe7a',animation:'pulse 2s infinite'}}/>
+            <div style={{width:6,height:6,borderRadius:'50%',background:'#2dd4bf',animation:'pulse 2s infinite'}}/>
             <span style={{fontSize:12,fontWeight:600,color:'#115e59'}}>Storely</span>
           </div>
 
