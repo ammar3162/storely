@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --green: #16a34a;
-  --green-dark: #15803d;
-  --green-light: #f0fdf4;
-  --green-border: #bbf7d0;
+  --green: #0d9488;
+  --green-dark: #0f766e;
+  --green-light: #f0fdfa;
+  --green-border: #99f6e4;
   --bg: #f5f7fa;
   --surface: #ffffff;
   --border: #f1f5f9;

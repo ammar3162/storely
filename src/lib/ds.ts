@@ -4,10 +4,10 @@
 
 export const colors = {
   // Brand — أخضر غامق
-  primary:      '#15803d',
-  primaryDark:  '#14532d',
-  primaryLight: '#f0fdf4',
-  primaryBorder:'#bbf7d0',
+  primary:      '#0f766e',
+  primaryDark:  '#134e4a',
+  primaryLight: '#f0fdfa',
+  primaryBorder:'#99f6e4',
 
   // Semantic
   // موحّد مع صفحة الهبوط التسويقية (LandingPageClient.tsx) — نفس القيم بالضبط

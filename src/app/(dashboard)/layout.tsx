@@ -471,7 +471,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       {showTermsConsent && (
         <div style={{position:'fixed',inset:0,zIndex:3100,background:'rgba(15,23,42,.55)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
           <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:440,boxShadow:'0 24px 60px rgba(0,0,0,.25)',overflow:'hidden'}}>
-            <div style={{height:5,background:'linear-gradient(90deg,#16a34a,#4ade80,#16a34a)'}}/>
+            <div style={{height:5,background:'linear-gradient(90deg,#0d9488,#2dd4bf,#0d9488)'}}/>
             <div style={{padding:'28px 26px 24px'}}>
               <div style={{textAlign:'center',marginBottom:20}}>
                 <div style={{fontSize:40,marginBottom:10}}>📋</div>
@@ -489,7 +489,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 </span>
               </label>
               <button onClick={acceptTermsConsent} disabled={!termsChecked||termsSaving}
-                style={{width:'100%',padding:14,background:termsChecked?'linear-gradient(135deg,#16a34a,#15803d)':'#e5e7eb',color:'white',border:'none',borderRadius:14,fontSize:14,fontWeight:800,cursor:termsChecked?'pointer':'not-allowed',fontFamily:'inherit',boxShadow:termsChecked?'0 6px 20px rgba(22,163,74,.3)':'none'}}>
+                style={{width:'100%',padding:14,background:termsChecked?'linear-gradient(135deg,#0d9488,#0f766e)':'#e5e7eb',color:'white',border:'none',borderRadius:14,fontSize:14,fontWeight:800,cursor:termsChecked?'pointer':'not-allowed',fontFamily:'inherit',boxShadow:termsChecked?'0 6px 20px rgba(22,163,74,.3)':'none'}}>
                 {termsSaving?'جاري الحفظ...':'أوافق وأكمل ←'}
               </button>
               <div style={{textAlign:'center',fontSize:10,color:C.text4,marginTop:12}}>لن تقدر تستخدم حسابك قبل الموافقة</div>
@@ -667,7 +667,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           @media(min-width:768px){
             .desk-layout{display:flex;min-height:100vh}
             .mob-layout{display:none}
-            .desk-sidebar{display:flex;flex-direction:column;width:220px;position:fixed;top:0;right:0;bottom:0;background:#0d2818;z-index:100;border-left:1px solid rgba(255,255,255,.06)}.desk-topbar{display:flex}
+            .desk-sidebar{display:flex;flex-direction:column;width:220px;position:fixed;top:0;right:0;bottom:0;background:#042f2e;z-index:100;border-left:1px solid rgba(255,255,255,.06)}.desk-topbar{display:flex}
             .desk-content{flex:1;margin-right:220px;padding:20px 20px;min-height:100vh;width:calc(100vw - 220px);max-width:calc(100vw - 220px)}
           }
         `}</style>
@@ -679,7 +679,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       {showOnboarding && (
         <div style={{position:'fixed',inset:0,zIndex:9999,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(4px)'}}>
           <div style={{background:'white',borderRadius:24,width:'100%',maxWidth:480,fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',overflow:'hidden',boxShadow:'0 24px 60px rgba(0,0,0,.3)'}}>
-            <div style={{background:'linear-gradient(135deg,#0d2818,#1a4731)',padding:'28px 28px 24px',textAlign:'center'}}>
+            <div style={{background:'linear-gradient(135deg,#042f2e,#1a4731)',padding:'28px 28px 24px',textAlign:'center'}}>
               <div style={{fontSize:48,marginBottom:12}}>{onboardingStep===0?'👋':onboardingStep===1?'📦':onboardingStep===2?'👥':onboardingStep===3?'🚚':'🎉'}</div>
               <div style={{fontSize:18,fontWeight:800,color:'white',marginBottom:6}}>
                 {onboardingStep===0?'أهلاً بك في Storely!':onboardingStep===1?'أضف منتجاتك':onboardingStep===2?'أضف موظفيك':onboardingStep===3?'أضف موردينك':'أنت جاهز!'}
@@ -712,16 +712,16 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   ))}
                 </div>
               )}
-              {onboardingStep===1 && <div style={{textAlign:'center' as const}}><p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:16}}>من صفحة <b>المخزون</b> اضغط <b>"+ إضافة منتج"</b> وأدخل اسم المنتج والكمية وحد إعادة الطلب</p><button onClick={()=>router.push('/inventory')} style={{padding:'10px 20px',background:'#f0fdf4',color:'#16a34a',border:'1.5px solid #bbf7d0',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>اذهب للمخزون ←</button></div>}
-              {onboardingStep===2 && <div style={{textAlign:'center' as const}}><p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:16}}>من صفحة <b>الموظفون</b> اضغط <b>"+ موظف جديد"</b> وأدخل اسمه ورقم جواله</p><button onClick={()=>router.push('/staff-management')} style={{padding:'10px 20px',background:'#f0fdf4',color:'#16a34a',border:'1.5px solid #bbf7d0',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>اذهب للموظفين ←</button></div>}
-              {onboardingStep===3 && <div style={{textAlign:'center' as const}}><p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:16}}>من صفحة <b>الموردين</b> أضف موردينك لطلبات تلقائية عبر واتساب</p><button onClick={()=>router.push('/suppliers')} style={{padding:'10px 20px',background:'#f0fdf4',color:'#16a34a',border:'1.5px solid #bbf7d0',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>اذهب للموردين ←</button></div>}
+              {onboardingStep===1 && <div style={{textAlign:'center' as const}}><p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:16}}>من صفحة <b>المخزون</b> اضغط <b>"+ إضافة منتج"</b> وأدخل اسم المنتج والكمية وحد إعادة الطلب</p><button onClick={()=>router.push('/inventory')} style={{padding:'10px 20px',background:'#f0fdfa',color:'#0d9488',border:'1.5px solid #99f6e4',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>اذهب للمخزون ←</button></div>}
+              {onboardingStep===2 && <div style={{textAlign:'center' as const}}><p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:16}}>من صفحة <b>الموظفون</b> اضغط <b>"+ موظف جديد"</b> وأدخل اسمه ورقم جواله</p><button onClick={()=>router.push('/staff-management')} style={{padding:'10px 20px',background:'#f0fdfa',color:'#0d9488',border:'1.5px solid #99f6e4',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>اذهب للموظفين ←</button></div>}
+              {onboardingStep===3 && <div style={{textAlign:'center' as const}}><p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:16}}>من صفحة <b>الموردين</b> أضف موردينك لطلبات تلقائية عبر واتساب</p><button onClick={()=>router.push('/suppliers')} style={{padding:'10px 20px',background:'#f0fdfa',color:'#0d9488',border:'1.5px solid #99f6e4',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>اذهب للموردين ←</button></div>}
               {onboardingStep===4 && <div style={{textAlign:'center' as const}}><p style={{fontSize:14,color:'#64748b',lineHeight:1.8}}>كل شيء جاهز! ابدأ بإدارة مخزونك الآن 🚀</p></div>}
             </div>
             <div style={{padding:'0 28px 24px',display:'flex',gap:8}}>
               {onboardingStep<4 ? <>
                 <button onClick={()=>{localStorage.setItem('onboarding_done','1');setShowOnboarding(false)}} style={{flex:1,padding:'11px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:10,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>تخطي</button>
-                <button onClick={()=>setOnboardingStep(s=>s+1)} style={{flex:2,padding:'11px',background:'#16a34a',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>التالي ←</button>
-              </> : <button onClick={()=>{localStorage.setItem('onboarding_done','1');setShowOnboarding(false)}} style={{flex:1,padding:'12px',background:'#16a34a',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>🚀 ابدأ الآن</button>}
+                <button onClick={()=>setOnboardingStep(s=>s+1)} style={{flex:2,padding:'11px',background:'#0d9488',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>التالي ←</button>
+              </> : <button onClick={()=>{localStorage.setItem('onboarding_done','1');setShowOnboarding(false)}} style={{flex:1,padding:'12px',background:'#0d9488',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>🚀 ابدأ الآن</button>}
             </div>
           </div>
         </div>

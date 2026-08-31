@@ -221,7 +221,7 @@ export default function ReservationSettingsPage() {
         <div style={{ marginBottom: 16 }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 8 }}>لون الصفحة</label>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, alignItems: 'center' }}>
-            {['#B86E3F', '#15803d', '#0369a1', '#b91c1c', '#7c3aed', '#0f172a', '#be185d', '#a16207'].map(c => (
+            {['#B86E3F', '#0f766e', '#0369a1', '#b91c1c', '#7c3aed', '#0f172a', '#be185d', '#a16207'].map(c => (
               <button key={c} onClick={() => setColor(c)} style={{ width: 32, height: 32, borderRadius: 10, background: c, border: color === c ? '3px solid #0f172a' : '1px solid #e2e8f0', cursor: 'pointer' }} />
             ))}
             <input type="color" value={color} onChange={e => setColor(e.target.value)} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid #e2e8f0', cursor: 'pointer', padding: 0 }} />

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 const C = {
-  primary:'#16a34a', primaryD:'#15803d', primaryL:'#f0fdf4', primaryB:'#bbf7d0',
+  primary:'#0d9488', primaryD:'#0f766e', primaryL:'#f0fdfa', primaryB:'#99f6e4',
   danger:'#e24b4a', dangerL:'#fef2f2', dangerB:'#fecaca',
   warning:'#ba7517', warningL:'#fffbeb', warningB:'#fde68a',
   info:'#378add', infoL:'#eff6ff', infoB:'#bfdbfe',

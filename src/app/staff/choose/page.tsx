@@ -228,7 +228,7 @@ export default function ChoosePage() {
   }
 
   return (
-    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#0d2818,#1a4731)',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl'}}>
+    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#042f2e,#1a4731)',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl'}}>
       <div style={{background:'white',borderRadius:0,padding:'32px 24px 40px',maxWidth:480,width:'100%',minHeight:'100vh',boxSizing:'border-box' as const,textAlign:'center',position:'relative' as const,display:'flex',flexDirection:'column' as const,justifyContent:'center'}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
           <button onClick={()=>{
@@ -247,7 +247,7 @@ export default function ChoosePage() {
             )}
           </button>
         </div>
-        <div style={{width:60,height:60,borderRadius:18,background: orgLogo ? 'white' : 'linear-gradient(135deg,#16a34a,#15803d)',border: orgLogo ? '1px solid #e5e7eb' : 'none',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px',boxShadow: orgLogo ? '0 4px 12px rgba(0,0,0,.08)' : '0 8px 20px rgba(22,163,74,.28)',overflow:'hidden' as const}}>
+        <div style={{width:60,height:60,borderRadius:18,background: orgLogo ? 'white' : 'linear-gradient(135deg,#0d9488,#0f766e)',border: orgLogo ? '1px solid #e5e7eb' : 'none',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px',boxShadow: orgLogo ? '0 4px 12px rgba(0,0,0,.08)' : '0 8px 20px rgba(22,163,74,.28)',overflow:'hidden' as const}}>
           {orgLogo ? (
             <img src={orgLogo} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
           ) : (
@@ -260,18 +260,18 @@ export default function ChoosePage() {
         {/* تسجيل الحضور والانصراف */}
         {!loadingToday && !attendanceLocked && (
           <div style={{
-            background: isCheckedIn ? 'linear-gradient(135deg,#f0fdf4,#ecfdf5)' : '#f8fafc',
-            border: `1.5px solid ${isCheckedIn ? '#bbf7d0' : '#e2e8f0'}`,
+            background: isCheckedIn ? 'linear-gradient(135deg,#f0fdfa,#f0fdfa)' : '#f8fafc',
+            border: `1.5px solid ${isCheckedIn ? '#99f6e4' : '#e2e8f0'}`,
             borderRadius: 18, padding: 18, marginBottom: 24, textAlign: 'right'
           }}>
             {/* حالة الموظف الآن */}
             <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:8,marginBottom:14}}>
-              <span style={{fontSize:12,fontWeight:800,color: isCheckedIn ? '#15803d' : '#64748b'}}>
+              <span style={{fontSize:12,fontWeight:800,color: isCheckedIn ? '#0f766e' : '#64748b'}}>
                 {isCheckedIn ? t('checkedIn') : lastCheckOut ? t('checkedOutToday') : t('notCheckedIn')}
               </span>
               <span style={{
                 width:9,height:9,borderRadius:'50%',
-                background: isCheckedIn ? '#16a34a' : lastCheckOut ? '#94a3b8' : '#f59e0b',
+                background: isCheckedIn ? '#0d9488' : lastCheckOut ? '#94a3b8' : '#f59e0b',
                 boxShadow: isCheckedIn ? '0 0 0 4px rgba(22,163,74,.15)' : 'none',
               }}/>
             </div>
@@ -298,7 +298,7 @@ export default function ChoosePage() {
             {!lastCheckOut && (
               !isCheckedIn ? (
                 <button onClick={()=>markAttendance('check_in')} disabled={marking!==null}
-                  style={{width:'100%',padding:'15px',background:'linear-gradient(135deg,#16a34a,#15803d)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow:'0 6px 16px rgba(22,163,74,.3)'}}>
+                  style={{width:'100%',padding:'15px',background:'linear-gradient(135deg,#0d9488,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow:'0 6px 16px rgba(22,163,74,.3)'}}>
                   <span style={{width:26,height:26,borderRadius:'50%',background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center'}}><MapPin size={14} strokeWidth={2.25}/></span>
                   {marking==='check_in' ? t('markingLocation') : t('checkIn')}
                 </button>
@@ -323,7 +323,7 @@ export default function ChoosePage() {
                           style={{width:'100%',padding:'10px 12px',border:'1px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',resize:'vertical' as const,marginBottom:8,boxSizing:'border-box' as const}}/>
                         <div style={{display:'flex',gap:8}}>
                           <button onClick={submitPermissionRequest} disabled={submittingPerm}
-                            style={{flex:1,padding:'10px',background:'#16a34a',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                            style={{flex:1,padding:'10px',background:'#0d9488',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                             {submittingPerm ? 'جاري الإرسال...' : 'إرسال الطلب'}
                           </button>
                           <button onClick={()=>setShowPermForm(false)} style={{padding:'10px 16px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
@@ -348,7 +348,7 @@ export default function ChoosePage() {
         <div style={{display:'flex',flexDirection:'column',gap:12}}>
           {canDispense && (
             <button onClick={()=>router.push('/staff/dispense')}
-              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#0d2818,#16a34a)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
+              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#042f2e,#0d9488)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
               <span style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Package size={22} strokeWidth={2}/></span>
               <div style={{textAlign:'right'}}>
                 <div style={{fontSize:16,fontWeight:800}}>{t('dispense')}</div>
@@ -398,7 +398,7 @@ export default function ChoosePage() {
           )}
           {!canDispense && !isCashier && (
             <button onClick={()=>router.push('/staff/dispense')}
-              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#0d2818,#16a34a)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
+              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#042f2e,#0d9488)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
               <span style={{fontSize:28}}>📦</span>
               <div style={{textAlign:'right'}}>
                 <div style={{fontSize:16,fontWeight:800}}>{t('enterSystem')}</div>
@@ -412,7 +412,7 @@ export default function ChoosePage() {
             {taskCount>0 && (
               <span style={{position:'absolute' as const,top:6,left:6,background:'#dc2626',color:'white',fontSize:10,fontWeight:800,minWidth:18,height:18,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 4px'}}>{taskCount}</span>
             )}
-            <span style={{width:38,height:38,borderRadius:11,background:'#f0fdf4',display:'flex',alignItems:'center',justifyContent:'center',color:'#16a34a'}}><ClipboardList size={19} strokeWidth={2}/></span>
+            <span style={{width:38,height:38,borderRadius:11,background:'#f0fdfa',display:'flex',alignItems:'center',justifyContent:'center',color:'#0d9488'}}><ClipboardList size={19} strokeWidth={2}/></span>
             {t('myTasksLabel')}
           </button>
           <button onClick={()=>setShowRequests(true)}
@@ -465,7 +465,7 @@ export default function ChoosePage() {
               style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const,minHeight:60,resize:'none' as const,marginBottom:12}}/>
             {advanceMsg && <div style={{fontSize:12,color:'#dc2626',marginBottom:10}}>{advanceMsg}</div>}
             <button onClick={submitAdvanceRequest} disabled={submittingAdvance||!advanceAmount}
-              style={{width:'100%',padding:'12px',background:(submittingAdvance||!advanceAmount)?'#94a3b8':'#16a34a',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:(submittingAdvance||!advanceAmount)?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
+              style={{width:'100%',padding:'12px',background:(submittingAdvance||!advanceAmount)?'#94a3b8':'#0d9488',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:(submittingAdvance||!advanceAmount)?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
               {submittingAdvance?t('sending'):t('sendRequest')}
             </button>
             <button onClick={()=>setShowAdvanceForm(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
@@ -487,7 +487,7 @@ export default function ChoosePage() {
                   style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',resize:'none' as const,marginBottom:12,boxSizing:'border-box' as const}}/>
                 {attError && <div style={{fontSize:12,color:'#dc2626',marginBottom:10}}>{attError}</div>}
                 <button onClick={async ()=>{ await submitPermissionRequest(); setShowPermRequestModal(false) }} disabled={submittingPerm}
-                  style={{width:'100%',padding:'12px',background:submittingPerm?'#94a3b8':'#16a34a',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:submittingPerm?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
+                  style={{width:'100%',padding:'12px',background:submittingPerm?'#94a3b8':'#0d9488',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:submittingPerm?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
                   {submittingPerm?t('sending'):t('sendRequest')}
                 </button>
               </>
@@ -507,8 +507,8 @@ export default function ChoosePage() {
             ) : (
               <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
                 {notifications.map((n:any)=>{
-                  const bg = n.type==='success'?'#f0fdf4':n.type==='danger'?'#fef2f2':n.type==='warning'?'#fffbeb':'#f8fafc'
-                  const border = n.type==='success'?'#bbf7d0':n.type==='danger'?'#fecaca':n.type==='warning'?'#fde68a':'#e2e8f0'
+                  const bg = n.type==='success'?'#f0fdfa':n.type==='danger'?'#fef2f2':n.type==='warning'?'#fffbeb':'#f8fafc'
+                  const border = n.type==='success'?'#99f6e4':n.type==='danger'?'#fecaca':n.type==='warning'?'#fde68a':'#e2e8f0'
                   return (
                     <div key={n.id} style={{background:bg,border:`1px solid ${border}`,borderRadius:14,padding:'12px 14px'}}>
                       <div style={{fontSize:13,fontWeight:800,color:'#0f172a',marginBottom:4}}>{n.title}</div>

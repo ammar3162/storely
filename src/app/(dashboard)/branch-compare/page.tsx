@@ -76,7 +76,7 @@ export default function BranchComparePage() {
     setExportingPdf(false)
   }
 
-  const barColors = ['#16a34a', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#0891b2']
+  const barColors = ['#0d9488', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#0891b2']
 
   if (loading) return (
     <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 800, margin: '0 auto' }}>

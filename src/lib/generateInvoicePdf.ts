@@ -28,8 +28,8 @@ function buildInvoiceHtml(data: InvoiceData): string {
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:'IBM Plex Sans Arabic', system-ui, sans-serif; direction:rtl; padding:48px; color:#0f172a; }
-  .header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #15803d; padding-bottom:24px; margin-bottom:32px; }
-  .brand { font-size:28px; font-weight:900; color:#15803d; letter-spacing:-0.5px; }
+  .header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #0f766e; padding-bottom:24px; margin-bottom:32px; }
+  .brand { font-size:28px; font-weight:900; color:#0f766e; letter-spacing:-0.5px; }
   .brand-sub { font-size:11px; color:#94a3b8; margin-top:4px; }
   .brand-legal { font-size:10px; color:#cbd5e1; margin-top:2px; }
   .meta { text-align:left; }
@@ -40,12 +40,12 @@ function buildInvoiceHtml(data: InvoiceData): string {
   .info-label { font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; }
   .info-value { font-size:15px; font-weight:700; color:#0f172a; }
   table { width:100%; border-collapse:collapse; margin-bottom:24px; }
-  th { background:#15803d; color:white; font-size:12px; font-weight:700; padding:12px 16px; text-align:right; }
+  th { background:#0f766e; color:white; font-size:12px; font-weight:700; padding:12px 16px; text-align:right; }
   th:last-child, td:last-child { text-align:left; }
   td { padding:14px 16px; font-size:13px; border-bottom:1px solid #e2e8f0; color:#334155; }
-  .total-row td { font-size:16px; font-weight:900; color:#15803d; border-top:2px solid #15803d; border-bottom:none; padding-top:16px; }
+  .total-row td { font-size:16px; font-weight:900; color:#0f766e; border-top:2px solid #0f766e; border-bottom:none; padding-top:16px; }
   .footer { margin-top:40px; text-align:center; padding-top:24px; border-top:1px solid #e2e8f0; }
-  .footer-thanks { font-size:14px; font-weight:700; color:#15803d; margin-bottom:6px; }
+  .footer-thanks { font-size:14px; font-weight:700; color:#0f766e; margin-bottom:6px; }
   .footer-note { font-size:11px; color:#94a3b8; }
 </style>
 </head>

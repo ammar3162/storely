@@ -43,7 +43,7 @@ export async function POST(req: Request) {
 
     const { error } = await supabase.from('organizations').update({
       shop_slug: cleanSlug, shop_enabled: !!shop_enabled, shop_tagline: shop_tagline?.trim() || null,
-      shop_color: shop_color || '#15803d', shop_display_name: shop_display_name?.trim() || null,
+      shop_color: shop_color || '#0f766e', shop_display_name: shop_display_name?.trim() || null,
       shop_links: cleanLinks, shop_hours: shop_hours || { enabled:false, is24h:true, open:'09:00', close:'22:00' },
     } as any).eq('id', org_id)
 

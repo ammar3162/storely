@@ -97,7 +97,7 @@ function StaffLoginInner() {
   const keypadKeys = ['1','2','3','4','5','6','7','8','9','','0','⌫']
 
   return (
-    <div style={{minHeight:'100vh',background:'linear-gradient(160deg,#0a1f13,#0d2818 45%,#153524)',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:dir}}>
+    <div style={{minHeight:'100vh',background:'linear-gradient(160deg,#042f2e,#042f2e 45%,#134e4a)',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:dir}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap');
         *{box-sizing:border-box}
@@ -147,7 +147,7 @@ function StaffLoginInner() {
                 </div>
 
                 {showCountryPicker && (
-                  <div style={{position:'absolute' as const,top:'calc(100% + 8px)',right:0,left:0,background:'#153524',border:'1px solid rgba(255,255,255,.15)',borderRadius:14,padding:6,zIndex:20,maxHeight:260,overflowY:'auto' as const,boxShadow:'0 20px 50px rgba(0,0,0,.4)'}}>
+                  <div style={{position:'absolute' as const,top:'calc(100% + 8px)',right:0,left:0,background:'#134e4a',border:'1px solid rgba(255,255,255,.15)',borderRadius:14,padding:6,zIndex:20,maxHeight:260,overflowY:'auto' as const,boxShadow:'0 20px 50px rgba(0,0,0,.4)'}}>
                     {COUNTRY_PHONE_LEN.map(c=>(
                       <button key={c.code} onClick={()=>{setCountry(c.name);setPhone('');setShowCountryPicker(false)}}
                         style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'11px 12px',background:country===c.name?'rgba(22,163,74,.2)':'transparent',border:'none',borderRadius:10,color:'white',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
@@ -173,7 +173,7 @@ function StaffLoginInner() {
               </div>
 
               <button onClick={goToPin} disabled={phone.length<requiredLen}
-                style={{width:'100%',padding:16,marginBottom:'clamp(24px,6vh,48px)',background:phone.length>=requiredLen?'linear-gradient(135deg,#16a34a,#15803d)':'rgba(255,255,255,.08)',color:phone.length>=requiredLen?'white':'rgba(255,255,255,.35)',border:'none',borderRadius:16,fontSize:15,fontWeight:800,cursor:phone.length>=requiredLen?'pointer':'not-allowed',fontFamily:'inherit',boxShadow:phone.length>=requiredLen?'0 10px 28px rgba(22,163,74,.35)':'none',transition:'all .2s'}}>
+                style={{width:'100%',padding:16,marginBottom:'clamp(24px,6vh,48px)',background:phone.length>=requiredLen?'linear-gradient(135deg,#0d9488,#0f766e)':'rgba(255,255,255,.08)',color:phone.length>=requiredLen?'white':'rgba(255,255,255,.35)',border:'none',borderRadius:16,fontSize:15,fontWeight:800,cursor:phone.length>=requiredLen?'pointer':'not-allowed',fontFamily:'inherit',boxShadow:phone.length>=requiredLen?'0 10px 28px rgba(22,163,74,.35)':'none',transition:'all .2s'}}>
                 {t('staffLogin.continueBtn')}
               </button>
             </div>
@@ -192,7 +192,7 @@ function StaffLoginInner() {
                 {[0,1,2,3].map(i=>(
                   <div key={i} style={{
                     width:14,height:14,borderRadius:'50%',
-                    background: i<pin.length ? '#22c55e' : 'rgba(255,255,255,.12)',
+                    background: i<pin.length ? '#14b8a6' : 'rgba(255,255,255,.12)',
                     border: i<pin.length ? 'none' : '1.5px solid rgba(255,255,255,.25)',
                     animation: loading && i<pin.length ? 'dotPulse 1s ease infinite' : 'none',
                     animationDelay: `${i*0.08}s`,

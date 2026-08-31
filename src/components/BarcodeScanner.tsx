@@ -75,7 +75,7 @@ export default function BarcodeScanner({ onScan, onClose }: Props) {
         {error ? (
           <div style={{background:'#fef2f2',border:'1.5px solid #fecaca',borderRadius:9,padding:'12px',fontSize:13,color:'#dc2626',fontWeight:600,textAlign:'center',marginBottom:12}}>⚠️ {error}</div>
         ) : (
-          <div style={{background:'#f0fdf4',border:'1px solid #86efac',borderRadius:8,padding:'8px 12px',marginBottom:12,fontSize:12,color:'#166534',fontWeight:600,textAlign:'center'}}>
+          <div style={{background:'#f0fdfa',border:'1px solid #5eead4',borderRadius:8,padding:'8px 12px',marginBottom:12,fontSize:12,color:'#115e59',fontWeight:600,textAlign:'center'}}>
             {ready ? '🎯 وجّه الكاميرا نحو الباركود' : '⏳ جاري تشغيل الكاميرا...'}
           </div>
         )}

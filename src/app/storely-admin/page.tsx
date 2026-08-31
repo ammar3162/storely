@@ -18,13 +18,13 @@ type User = {
 
 const STATUS: Record<string,{label:string;color:string;bg:string;dot:string}> = {
   pending:   {label:'بانتظار', color:'#92400e', bg:'#fef3c7', dot:'#f59e0b'},
-  active:    {label:'مفعّل',   color:'#166534', bg:'#dcfce7', dot:'#16a34a'},
+  active:    {label:'مفعّل',   color:'#115e59', bg:'#ccfbf1', dot:'#0d9488'},
   suspended: {label:'موقوف',  color:'#991b1b', bg:'#fee2e2', dot:'#ef4444'},
   deleted:   {label:'محذوف',  color:'#6b7280', bg:'#f3f4f6', dot:'#9ca3af'},
 }
 
 const PLANS = [
-  {v:1,  label:'الأساسية',  price:'149 ر.س', yearlyPrice:'1430 ر.س', desc:'فرع · 2 موظف · 3 موردين',                    color:'#16a34a', maxStaff:2,   maxSup:3},
+  {v:1,  label:'الأساسية',  price:'149 ر.س', yearlyPrice:'1430 ر.س', desc:'فرع · 2 موظف · 3 موردين',                    color:'#0d9488', maxStaff:2,   maxSup:3},
   {v:3,  label:'المتوسطة',  price:'249 ر.س', yearlyPrice:'2390 ر.س', desc:'3 فروع · 10 موظفين · 10 موردين',              color:'#2563eb', maxStaff:10,  maxSup:10},
   {v:10, label:'المتقدمة',  price:'399 ر.س', yearlyPrice:'3830 ر.س', desc:'فروع غير محدودة · موظفون وموردون غير محدودين', color:'#7c3aed', maxStaff:999, maxSup:999},
 ]
@@ -565,7 +565,7 @@ export default function AdminPage() {
         <div style={{position:'absolute',bottom:'-10%',left:'-5%',width:400,height:400,borderRadius:'50%',background:'radial-gradient(circle,rgba(22,163,74,.05),transparent 70%)',animation:'pulse 8s ease-in-out infinite 2s'}}/>
       </div>
       <div style={{background:'#ffffff',borderRadius:24,padding:'44px 40px',width:'100%',maxWidth:400,boxShadow:'0 24px 60px rgba(15,23,42,.1)',border:'1px solid #f1f5f9',animation:'fadeUp .4s ease',position:'relative',zIndex:1,textAlign:'center'}}>
-        <div style={{width:72,height:72,background:'linear-gradient(135deg,#16a34a,#15803d)',borderRadius:20,display:'flex',alignItems:'center',justifyContent:'center',fontSize:32,margin:'0 auto 20px',boxShadow:'0 8px 24px rgba(22,163,74,.25)'}}>🔐</div>
+        <div style={{width:72,height:72,background:'linear-gradient(135deg,#0d9488,#0f766e)',borderRadius:20,display:'flex',alignItems:'center',justifyContent:'center',fontSize:32,margin:'0 auto 20px',boxShadow:'0 8px 24px rgba(22,163,74,.25)'}}>🔐</div>
         <h1 style={{fontSize:24,fontWeight:900,color:'#0f172a',marginBottom:6}}>Storely Admin</h1>
         <p style={{fontSize:13,color:'#94a3b8',marginBottom:32}}>لوحة تحكم المشرف — وصول خاص</p>
         {needs2FA ? (
@@ -575,7 +575,7 @@ export default function AdminPage() {
               style={{width:'100%',padding:'16px',border:`2px solid ${twoFAErr?'#ef4444':'#e2e8f0'}`,borderRadius:14,fontSize:28,textAlign:'center',letterSpacing:12,outline:'none',fontFamily:'inherit',marginBottom:14,boxSizing:'border-box',transition:'all .2s',background:'#f8fafc',animation:twoFAErr?'shake .3s ease':'none'}}
               placeholder="000000"/>
             {twoFAErr && <div style={{fontSize:12,color:'#ef4444',marginBottom:14,fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>⚠️ الرمز غير صحيح</div>}
-            <button type="submit" style={{width:'100%',padding:'15px',background:'linear-gradient(135deg,#16a34a,#15803d)',color:'white',border:'none',borderRadius:14,fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 6px 20px rgba(22,163,74,.3)',transition:'all .2s',marginBottom:10}}>
+            <button type="submit" style={{width:'100%',padding:'15px',background:'linear-gradient(135deg,#0d9488,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 6px 20px rgba(22,163,74,.3)',transition:'all .2s',marginBottom:10}}>
               تأكيد ←
             </button>
             <button type="button" onClick={()=>{setNeeds2FA(false);setTwoFACode('')}} style={{width:'100%',padding:'8px',background:'none',border:'none',color:'#94a3b8',fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>
@@ -591,7 +591,7 @@ export default function AdminPage() {
             style={{width:'100%',padding:'16px',border:`2px solid ${passErr?'#ef4444':'#e2e8f0'}`,borderRadius:14,fontSize:24,textAlign:'center',letterSpacing:10,outline:'none',fontFamily:'inherit',marginBottom:14,boxSizing:'border-box',transition:'all .2s',background:'#f8fafc',animation:passErr?'shake .3s ease':'none'}}
             placeholder="••••••••"/>
           {passErr && <div style={{fontSize:12,color:'#ef4444',marginBottom:14,fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>⚠️ بيانات الدخول غير صحيحة</div>}
-          <button type="submit" style={{width:'100%',padding:'15px',background:'linear-gradient(135deg,#16a34a,#15803d)',color:'white',border:'none',borderRadius:14,fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 6px 20px rgba(22,163,74,.3)',transition:'all .2s'}}>
+          <button type="submit" style={{width:'100%',padding:'15px',background:'linear-gradient(135deg,#0d9488,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 6px 20px rgba(22,163,74,.3)',transition:'all .2s'}}>
             دخول ←
           </button>
         </form>
@@ -615,10 +615,10 @@ export default function AdminPage() {
         .stat-card:hover{border-color:#cbd5e1;box-shadow:0 4px 12px rgba(15,23,42,.06);transform:translateY(-2px)}
         .tab-btn{padding:8px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;border:none}
         .filt-btn{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;border:1px solid #e5e7eb;background:#ffffff;color:#64748b}
-        .filt-btn.act{background:#16a34a;color:white;border-color:#16a34a}
+        .filt-btn.act{background:#0d9488;color:white;border-color:#0d9488}
         .action-btn{padding:8px 16px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;border:1px solid #e5e7eb;background:#ffffff;color:#475569}
-        .action-btn:hover{border-color:#16a34a;color:#16a34a;background:#f0fdf4}
-        input:focus{outline:none!important;border-color:#16a34a!important;box-shadow:0 0 0 3px rgba(22,163,74,.1)!important}
+        .action-btn:hover{border-color:#0d9488;color:#0d9488;background:#f0fdfa}
+        input:focus{outline:none!important;border-color:#0d9488!important;box-shadow:0 0 0 3px rgba(22,163,74,.1)!important}
         @media(max-width:768px){.hide-mob{display:none!important}.stats-grid{grid-template-columns:repeat(2,1fr)!important}}
         ::-webkit-scrollbar{width:6px;height:6px}
         ::-webkit-scrollbar-track{background:#f1f5f9}
@@ -656,7 +656,7 @@ export default function AdminPage() {
           <div style={{background:'#ffffff',border:'1px solid #e5e7eb',borderRadius:24,width:'100%',maxWidth:480,position:'relative',animation:'modalIn .2s ease',boxShadow:'0 32px 80px rgba(15,23,42,.2)',overflow:'hidden',maxHeight:'90vh',overflowY:'auto'}}>
             {/* Modal Header */}
             <div style={{background:'#f8fafc',padding:'22px 24px',display:'flex',alignItems:'center',gap:14,borderBottom:'1px solid #e5e7eb',position:'sticky',top:0,zIndex:10}}>
-              <div style={{width:48,height:48,borderRadius:14,background:'linear-gradient(135deg,#16a34a,#15803d)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,fontWeight:900,color:'white',flexShrink:0}}>
+              <div style={{width:48,height:48,borderRadius:14,background:'linear-gradient(135deg,#0d9488,#0f766e)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,fontWeight:900,color:'white',flexShrink:0}}>
                 {selected.full_name[0]||'؟'}
               </div>
               <div style={{flex:1,minWidth:0}}>
@@ -685,7 +685,7 @@ export default function AdminPage() {
                   </span>
                 )}
                 {(() => { const d = daysLeft(selected.subscription_ends_at); return d !== null ? (
-                  <span style={{background:d<=0?'#fef2f2':d<=3?'#fffbeb':'#f0fdf4',color:d<=0?'#dc2626':d<=3?'#d97706':'#16a34a',padding:'5px 12px',borderRadius:20,fontSize:12,fontWeight:700}}>
+                  <span style={{background:d<=0?'#fef2f2':d<=3?'#fffbeb':'#f0fdfa',color:d<=0?'#dc2626':d<=3?'#d97706':'#0d9488',padding:'5px 12px',borderRadius:20,fontSize:12,fontWeight:700}}>
                     {d<=0?'⚠️ منتهي':d<=3?`⏰ ${d} أيام`:d<=7?`${d} أيام`:`${d} يوم`}
                   </span>
                 ) : null })()}
@@ -708,12 +708,12 @@ export default function AdminPage() {
 
               {/* Activate Section */}
               {(selected.status==='pending'||selected.status==='active'||selected.status==='suspended') && (
-                <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:14,padding:16,marginBottom:16}}>
-                  <div style={{fontSize:12,fontWeight:700,color:'#15803d',marginBottom:12}}>⚙️ تحديد مدة الاشتراك</div>
+                <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:14,padding:16,marginBottom:16}}>
+                  <div style={{fontSize:12,fontWeight:700,color:'#0f766e',marginBottom:12}}>⚙️ تحديد مدة الاشتراك</div>
                   <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,marginBottom:12}}>
                     {[7,30,90,365].map(d=>(
                       <button key={d} onClick={()=>setRenewDays(d)}
-                        style={{padding:'9px 4px',borderRadius:9,border:`1.5px solid ${renewDays===d?'#16a34a':'#e5e7eb'}`,background:renewDays===d?'#16a34a':'#ffffff',color:renewDays===d?'white':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
+                        style={{padding:'9px 4px',borderRadius:9,border:`1.5px solid ${renewDays===d?'#0d9488':'#e5e7eb'}`,background:renewDays===d?'#0d9488':'#ffffff',color:renewDays===d?'white':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
                         {d<30?d+' أيام':d===30?'شهر':d===90?'3 أشهر':'سنة'}
                       </button>
                     ))}
@@ -724,7 +724,7 @@ export default function AdminPage() {
                       {saving===selected.id?'...':'🎁 تجربة'}
                     </button>
                     <button onClick={()=>activate(selected.id,'paid',renewDays)} disabled={!!saving}
-                      style={{flex:2,padding:'11px',background:'linear-gradient(135deg,#16a34a,#15803d)',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 12px rgba(22,163,74,.25)'}}>
+                      style={{flex:2,padding:'11px',background:'linear-gradient(135deg,#0d9488,#0f766e)',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 12px rgba(22,163,74,.25)'}}>
                       {saving===selected.id?'...':'✅ تفعيل مدفوع'}
                     </button>
                   </div>
@@ -832,7 +832,7 @@ export default function AdminPage() {
                 )}
                 {selected.status==='suspended' && (
                   <button onClick={()=>activate(selected.id,selected.subscription_type,30)} disabled={!!saving}
-                    style={{flex:1,padding:'11px',background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                    style={{flex:1,padding:'11px',background:'#f0fdfa',color:'#0d9488',border:'1px solid #99f6e4',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                     {saving===selected.id?'...':'▶ إعادة تفعيل'}
                   </button>
                 )}
@@ -851,7 +851,7 @@ export default function AdminPage() {
       {/* Top Nav */}
       <div style={{background:'#ffffff',borderBottom:'1px solid #e5e7eb',padding:'0 24px',display:'flex',alignItems:'center',justifyContent:'space-between',height:60,position:'sticky',top:0,zIndex:100,boxShadow:'0 1px 3px rgba(15,23,42,.03)'}}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <div style={{width:36,height:36,background:'linear-gradient(135deg,#16a34a,#15803d)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>🏪</div>
+          <div style={{width:36,height:36,background:'linear-gradient(135deg,#0d9488,#0f766e)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>🏪</div>
           <div>
             <div style={{fontSize:14,fontWeight:800,color:'#0f172a'}}>Storely Admin</div>
             <div style={{fontSize:10,color:'#94a3b8'}}>لوحة التحكم</div>
@@ -919,7 +919,7 @@ export default function AdminPage() {
             </button>
           )}
           {(currentAdmin?.role==='super_admin' || currentAdmin?.permissions?.manage_suppliers) && (
-            <button onClick={()=>{setTab('suppliers');loadSupplierApps()}} style={{padding:'7px 14px',background:tab==='suppliers'?'#16a34a':'#ffffff',color:tab==='suppliers'?'white':'#475569',border:`1px solid ${tab==='suppliers'?'#16a34a':'#e5e7eb'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6}}>
+            <button onClick={()=>{setTab('suppliers');loadSupplierApps()}} style={{padding:'7px 14px',background:tab==='suppliers'?'#0d9488':'#ffffff',color:tab==='suppliers'?'white':'#475569',border:`1px solid ${tab==='suppliers'?'#0d9488':'#e5e7eb'}`,borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6}}>
               🤝 الموردون {supplierApps.filter(s=>s.status==='pending').length>0&&<span style={{background:'#ef4444',color:'white',borderRadius:99,padding:'1px 6px',fontSize:10}}>{supplierApps.filter(s=>s.status==='pending').length}</span>}
             </button>
           )}
@@ -964,7 +964,7 @@ export default function AdminPage() {
                 </div>
               </div>
               <button onClick={()=>toggleMaintenance(!maintenanceMode)} disabled={maintenanceSaving}
-                style={{padding:'8px 18px',background:maintenanceMode?'#16a34a':'#dc2626',color:'white',border:'none',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:maintenanceSaving?.6:1}}>
+                style={{padding:'8px 18px',background:maintenanceMode?'#0d9488':'#dc2626',color:'white',border:'none',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:maintenanceSaving?.6:1}}>
                 {maintenanceSaving?'...':maintenanceMode?'إيقاف الصيانة':'تفعيل الصيانة'}
               </button>
             </div>
@@ -978,7 +978,7 @@ export default function AdminPage() {
                 </button>
               </div>
             )}
-            {maintenanceStatusMsg && <div style={{fontSize:11,color:'#16a34a',marginTop:8}}>{maintenanceStatusMsg}</div>}
+            {maintenanceStatusMsg && <div style={{fontSize:11,color:'#0d9488',marginTop:8}}>{maintenanceStatusMsg}</div>}
           </div>
         )}
 
@@ -994,7 +994,7 @@ export default function AdminPage() {
             style={{padding:'8px 18px',background:'#7c3aed',color:'white',border:'none',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:waCapacitySaving?.6:1}}>
             {waCapacitySaving?'...':'حفظ'}
           </button>
-          {waCapacityMsg && <div style={{fontSize:11,color:'#16a34a',width:'100%'}}>{waCapacityMsg}</div>}
+          {waCapacityMsg && <div style={{fontSize:11,color:'#0d9488',width:'100%'}}>{waCapacityMsg}</div>}
         </div>
 
         {/* Alert: pending users */}
@@ -1025,7 +1025,7 @@ export default function AdminPage() {
         <div className="stats-grid ru" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:24}}>
           {[
             {label:'إجمالي المستخدمين', value:stats.total, sub:'مستخدم مسجل', icon:'👥', color:'#2563eb', glow:'#eff6ff'},
-            {label:'مفعّلون',           value:stats.active, sub:'نشط الآن',    icon:'✅', color:'#16a34a', glow:'#f0fdf4'},
+            {label:'مفعّلون',           value:stats.active, sub:'نشط الآن',    icon:'✅', color:'#0d9488', glow:'#f0fdfa'},
             {label:'في التجربة',        value:stats.trial,  sub:'مجانية',      icon:'🎁', color:'#7c3aed', glow:'#f5f3ff'},
             {label:'الإيراد الشهري',    value:stats.revenue+'﷼', sub:'مدفوع', icon:'💰', color:'#d97706', glow:'#fffbeb'},
           ].map((s,i)=>(
@@ -1065,7 +1065,7 @@ export default function AdminPage() {
         <div className="ru" style={{background:'#ffffff',borderRadius:16,border:'1px solid #e5e7eb',overflow:'hidden'}}>
           {loading ? (
             <div style={{padding:64,textAlign:'center'}}>
-              <div style={{width:36,height:36,border:'3px solid #e5e7eb',borderTopColor:'#16a34a',borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto 14px'}}/>
+              <div style={{width:36,height:36,border:'3px solid #e5e7eb',borderTopColor:'#0d9488',borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto 14px'}}/>
               <div style={{fontSize:13,color:'#94a3b8'}}>جاري تحميل البيانات...</div>
             </div>
           ) : filtered.length===0 ? (
@@ -1092,12 +1092,12 @@ export default function AdminPage() {
                     const isExp = days!==null&&days<=0
                     const isWarn = days!==null&&days>0&&days<=3
                     const planLabel = u.max_branches===1?'أساسية':u.max_branches<=3?'متوسطة':'متقدمة'
-                    const planColor = u.max_branches===1?'#16a34a':u.max_branches<=3?'#2563eb':'#7c3aed'
+                    const planColor = u.max_branches===1?'#0d9488':u.max_branches<=3?'#2563eb':'#7c3aed'
                     return (
                       <tr key={u.id} className="urow" onClick={()=>setSelected(u)}>
                         <td style={{padding:'14px 16px'}}>
                           <div style={{display:'flex',alignItems:'center',gap:10}}>
-                            <div style={{width:38,height:38,borderRadius:11,background:'linear-gradient(135deg,#16a34a,#15803d)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:800,color:'white',flexShrink:0}}>
+                            <div style={{width:38,height:38,borderRadius:11,background:'linear-gradient(135deg,#0d9488,#0f766e)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:800,color:'white',flexShrink:0}}>
                               {u.full_name[0]||'؟'}
                             </div>
                             <div>
@@ -1160,7 +1160,7 @@ export default function AdminPage() {
           <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:20}}>
             {[
               {label:'إجمالي المستخدمين',value:stats.total,icon:'👥',color:'#2563eb'},
-              {label:'مستخدمون جدد هذا الشهر',value:dashStats.newThisMonth||0,icon:'🆕',color:'#16a34a'},
+              {label:'مستخدمون جدد هذا الشهر',value:dashStats.newThisMonth||0,icon:'🆕',color:'#0d9488'},
               {label:'في التجربة المجانية',value:dashStats.trialUsers||0,icon:'⏳',color:'#d97706'},
               {label:'مشتركون مدفوعون',value:dashStats.paidUsers||0,icon:'💳',color:'#7c3aed'},
             ].map((s,i)=>(
@@ -1206,14 +1206,14 @@ export default function AdminPage() {
               {users.slice(0,5).map((u,i)=>(
                 <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid #f1f5f9'}}>
                   <span style={{fontSize:12,color:'#475569'}}>{u.org_name}</span>
-                  <span style={{fontSize:11,color:'#16a34a',fontWeight:700}}>{u.subscription_type}</span>
+                  <span style={{fontSize:11,color:'#0d9488',fontWeight:700}}>{u.subscription_type}</span>
                 </div>
               ))}
             </div>
             <div style={{background:'#ffffff',borderRadius:14,padding:'20px',border:'1px solid #e5e7eb'}}>
               <div style={{fontSize:14,fontWeight:800,color:'#0f172a',marginBottom:12}}>📊 توزيع الباقات</div>
               {[
-                {label:'الأساسية',count:users.filter(u=>u.max_branches===1).length,color:'#16a34a'},
+                {label:'الأساسية',count:users.filter(u=>u.max_branches===1).length,color:'#0d9488'},
                 {label:'المتوسطة',count:users.filter(u=>u.max_branches===3).length,color:'#2563eb'},
                 {label:'المتقدمة',count:users.filter(u=>u.max_branches>3).length,color:'#7c3aed'},
                 {label:'تجربة مجانية',count:users.filter(u=>u.subscription_type==='trial').length,color:'#d97706'},
@@ -1239,7 +1239,7 @@ export default function AdminPage() {
           <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>📦 إدارة الباقات</div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
             {[
-              {name:'الأساسية',price:'149',color:'#16a34a',branches:1,staff:2,suppliers:3},
+              {name:'الأساسية',price:'149',color:'#0d9488',branches:1,staff:2,suppliers:3},
               {name:'المتوسطة',price:'249',color:'#2563eb',branches:3,staff:10,suppliers:10},
               {name:'المتقدمة',price:'399',color:'#7c3aed',branches:999,staff:999,suppliers:999},
             ].map((p,i)=>(
@@ -1285,7 +1285,7 @@ export default function AdminPage() {
               {(currentAdmin as any)?.totp_enabled ? (
                 <button onClick={disable2FA} style={{padding:'8px 16px',background:'#fee2e2',color:'#dc2626',border:'none',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>إلغاء التفعيل</button>
               ) : (
-                <button onClick={start2FASetup} style={{padding:'8px 16px',background:'#16a34a',color:'white',border:'none',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>تفعيل الآن</button>
+                <button onClick={start2FASetup} style={{padding:'8px 16px',background:'#0d9488',color:'white',border:'none',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>تفعيل الآن</button>
               )}
             </div>
             {setup2FAOpen && (
@@ -1297,10 +1297,10 @@ export default function AdminPage() {
                   placeholder="000000"/>
                 <br/>
                 <button onClick={confirm2FASetup} disabled={setup2FALoading || setup2FACode.length!==6}
-                  style={{padding:'10px 24px',background:'#16a34a',color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:setup2FACode.length!==6?.5:1}}>
+                  style={{padding:'10px 24px',background:'#0d9488',color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:setup2FACode.length!==6?.5:1}}>
                   {setup2FALoading?'⏳ جاري التأكيد...':'تأكيد وتفعيل'}
                 </button>
-                {setup2FAMsg && <div style={{marginTop:10,fontSize:12,fontWeight:700,color:setup2FAMsg.startsWith('✅')?'#16a34a':'#dc2626'}}>{setup2FAMsg}</div>}
+                {setup2FAMsg && <div style={{marginTop:10,fontSize:12,fontWeight:700,color:setup2FAMsg.startsWith('✅')?'#0d9488':'#dc2626'}}>{setup2FAMsg}</div>}
               </div>
             )}
           </div>
@@ -1326,7 +1326,7 @@ export default function AdminPage() {
               <div style={{fontSize:12,fontWeight:700,color:'#475569',marginBottom:8}}>الصلاحيات:</div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
                 {Object.entries(PERMISSION_LABELS).map(([key,label])=>(
-                  <label key={key} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:newAdminPerms[key]?'#f0fdf4':'#f8fafc',border:`1px solid ${newAdminPerms[key]?'#bbf7d0':'#e2e8f0'}`,borderRadius:8,cursor:'pointer',fontSize:12}}>
+                  <label key={key} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:newAdminPerms[key]?'#f0fdfa':'#f8fafc',border:`1px solid ${newAdminPerms[key]?'#99f6e4':'#e2e8f0'}`,borderRadius:8,cursor:'pointer',fontSize:12}}>
                     <input type="checkbox" checked={!!newAdminPerms[key]} onChange={e=>setNewAdminPerms(prev=>({...prev,[key]:e.target.checked}))}/>
                     {label}
                   </label>
@@ -1335,7 +1335,7 @@ export default function AdminPage() {
 
               {addAdminError && <div style={{fontSize:12,color:'#dc2626',fontWeight:600,marginBottom:12}}>⚠️ {addAdminError}</div>}
               <button onClick={createAdmin} disabled={addAdminSaving}
-                style={{width:'100%',padding:'11px',background:'#16a34a',color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                style={{width:'100%',padding:'11px',background:'#0d9488',color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                 {addAdminSaving?'⏳ جاري الإضافة...':'إضافة المشرف'}
               </button>
             </div>
@@ -1351,7 +1351,7 @@ export default function AdminPage() {
                     <div>
                       <div style={{display:'flex',alignItems:'center',gap:8}}>
                         <span style={{fontSize:14,fontWeight:800,color:'#0f172a'}}>{a.full_name}</span>
-                        {a.role==='super_admin' && <span style={{fontSize:10,fontWeight:700,background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',borderRadius:20,padding:'2px 8px'}}>مشرف كامل</span>}
+                        {a.role==='super_admin' && <span style={{fontSize:10,fontWeight:700,background:'#f0fdfa',color:'#0d9488',border:'1px solid #99f6e4',borderRadius:20,padding:'2px 8px'}}>مشرف كامل</span>}
                         {!a.is_active && <span style={{fontSize:10,fontWeight:700,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:20,padding:'2px 8px'}}>معطّل</span>}
                       </div>
                       <div style={{fontSize:12,color:'#94a3b8',marginTop:3}} dir="ltr">{a.email}</div>
@@ -1368,7 +1368,7 @@ export default function AdminPage() {
                           {editingAdminId===a.id?'إغلاق':'تعديل'}
                         </button>
                         <button onClick={()=>toggleAdminActive(a.id, !a.is_active)}
-                          style={{padding:'6px 14px',background:a.is_active?'#fef2f2':'#f0fdf4',color:a.is_active?'#dc2626':'#16a34a',border:`1px solid ${a.is_active?'#fecaca':'#bbf7d0'}`,borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                          style={{padding:'6px 14px',background:a.is_active?'#fef2f2':'#f0fdfa',color:a.is_active?'#dc2626':'#0d9488',border:`1px solid ${a.is_active?'#fecaca':'#99f6e4'}`,borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                           {a.is_active?'تعطيل':'تفعيل'}
                         </button>
                         <button onClick={()=>setConfirmDeleteAdmin(a)}
@@ -1393,7 +1393,7 @@ export default function AdminPage() {
                       <div style={{fontSize:12,fontWeight:700,color:'#475569',marginBottom:8}}>الصلاحيات:</div>
                       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
                         {Object.entries(PERMISSION_LABELS).map(([key,label])=>(
-                          <label key={key} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:editAdminPerms[key]?'#f0fdf4':'#f8fafc',border:`1px solid ${editAdminPerms[key]?'#bbf7d0':'#e2e8f0'}`,borderRadius:8,cursor:'pointer',fontSize:12}}>
+                          <label key={key} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:editAdminPerms[key]?'#f0fdfa':'#f8fafc',border:`1px solid ${editAdminPerms[key]?'#99f6e4':'#e2e8f0'}`,borderRadius:8,cursor:'pointer',fontSize:12}}>
                             <input type="checkbox" checked={!!editAdminPerms[key]} onChange={e=>setEditAdminPerms(prev=>({...prev,[key]:e.target.checked}))}/>
                             {label}
                           </label>
@@ -1453,8 +1453,8 @@ export default function AdminPage() {
                       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
                         <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>{s.company_name}</div>
                         <span style={{padding:'2px 10px',borderRadius:99,fontSize:11,fontWeight:700,
-                          background:s.status==='pending'?'#fffbeb':s.status==='approved'?'#f0fdf4':'#fef2f2',
-                          color:s.status==='pending'?'#d97706':s.status==='approved'?'#16a34a':'#dc2626'}}>
+                          background:s.status==='pending'?'#fffbeb':s.status==='approved'?'#f0fdfa':'#fef2f2',
+                          color:s.status==='pending'?'#d97706':s.status==='approved'?'#0d9488':'#dc2626'}}>
                           {s.status==='pending'?'بانتظار':s.status==='approved'?'✅ موافق':'❌ مرفوض'}
                         </span>
                       </div>
@@ -1475,12 +1475,12 @@ export default function AdminPage() {
                     </div>
                     <div style={{display:'flex',gap:6,flexShrink:0}}>
                       <a href={`https://wa.me/${s.phone.replace(/[^0-9]/g,'')}`} target="_blank" rel="noopener noreferrer"
-                        style={{padding:'7px 12px',background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',borderRadius:8,fontSize:12,fontWeight:700,textDecoration:'none'}}>
+                        style={{padding:'7px 12px',background:'#f0fdfa',color:'#0d9488',border:'1px solid #99f6e4',borderRadius:8,fontSize:12,fontWeight:700,textDecoration:'none'}}>
                         📲 واتساب
                       </a>
                       {s.status==='pending'&&<>
                         <button onClick={()=>updateSupplierStatus(s.id,'approved')}
-                          style={{padding:'7px 12px',background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                          style={{padding:'7px 12px',background:'#f0fdfa',color:'#0d9488',border:'1px solid #99f6e4',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                           ✅ موافقة
                         </button>
                         <button onClick={()=>updateSupplierStatus(s.id,'rejected')}

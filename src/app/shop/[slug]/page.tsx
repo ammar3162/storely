@@ -74,7 +74,7 @@ export default async function ShopPage({ params }: { params: Promise<{ slug: str
   }
 
   const { org, products } = data
-  const color = (org as any).shop_color || '#15803d'
+  const color = (org as any).shop_color || '#0f766e'
   const displayName = (org as any).shop_display_name || (org as any).name
   const links: {type:string;label:string;url:string}[] = Array.isArray((org as any).shop_links) ? (org as any).shop_links : []
   const categories = Array.from(new Set(products.map((p: any) => p.category)))
@@ -137,8 +137,8 @@ export default async function ShopPage({ params }: { params: Promise<{ slug: str
               <div style={{display:'flex',alignItems:'center',gap:8}}>
                 <span style={{fontSize:16,fontWeight:900,letterSpacing:'-0.3px'}}>{displayName}</span>
                 {status.known && (
-                  <span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:10,fontWeight:700,padding:'3px 9px',borderRadius:99,background:status.open?'#f0fdf4':'#fef2f2',color:status.open?'#16a34a':'#dc2626',border:`1px solid ${status.open?'#bbf7d0':'#fecaca'}`}}>
-                    <span style={{width:6,height:6,borderRadius:'50%',background:status.open?'#16a34a':'#dc2626'}}/>
+                  <span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:10,fontWeight:700,padding:'3px 9px',borderRadius:99,background:status.open?'#f0fdfa':'#fef2f2',color:status.open?'#0d9488':'#dc2626',border:`1px solid ${status.open?'#99f6e4':'#fecaca'}`}}>
+                    <span style={{width:6,height:6,borderRadius:'50%',background:status.open?'#0d9488':'#dc2626'}}/>
                     {status.label}
                   </span>
                 )}

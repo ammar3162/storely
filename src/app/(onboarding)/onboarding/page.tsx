@@ -210,7 +210,7 @@ export default function OnboardingPage() {
       {/* Header */}
       <div style={{background:'white',borderBottom:'1px solid #e2e8f0',padding:'16px 24px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100,boxShadow:'0 1px 8px rgba(0,0,0,.06)'}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${colors.primary},#15803d)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:900,color:'white'}}>S</div>
+          <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${colors.primary},#0f766e)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:900,color:'white'}}>S</div>
           <span style={{fontSize:16,fontWeight:800,color:colors.text}}>إعداد Storely</span>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:16}}>
@@ -227,7 +227,7 @@ export default function OnboardingPage() {
 
       {/* Progress bar */}
       <div style={{height:3,background:'#e2e8f0'}}>
-        <div style={{height:'100%',width:progress+'%',background:`linear-gradient(90deg,${colors.primary},#4ade80)`,transition:'width .5s ease',borderRadius:99}}/>
+        <div style={{height:'100%',width:progress+'%',background:`linear-gradient(90deg,${colors.primary},#2dd4bf)`,transition:'width .5s ease',borderRadius:99}}/>
       </div>
 
       <div style={{maxWidth:640,margin:'0 auto',padding:'32px 20px'}}>
@@ -408,9 +408,9 @@ export default function OnboardingPage() {
                 </button>
               </div>
             ) : (
-              <div style={{background:'#f0fdf4',border:'1.5px solid #bbf7d0',borderRadius:16,padding:14,marginBottom:16,display:'flex',alignItems:'center',gap:8,justifyContent:'center'}}>
+              <div style={{background:'#f0fdfa',border:'1.5px solid #99f6e4',borderRadius:16,padding:14,marginBottom:16,display:'flex',alignItems:'center',gap:8,justifyContent:'center'}}>
                 <span style={{fontSize:16}}>✅</span>
-                <span style={{fontSize:13,fontWeight:700,color:'#16a34a'}}>تم تفعيل الإشعارات بنجاح</span>
+                <span style={{fontSize:13,fontWeight:700,color:'#0d9488'}}>تم تفعيل الإشعارات بنجاح</span>
               </div>
             )}
             <button onClick={()=>router.push('/dashboard')}

@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-const C = { bg:'#0f172a', card:'#1e293b', border:'#334155', text:'#f1f5f9', text2:'#94a3b8', text3:'#64748b', green:'#22c55e', red:'#ef4444' }
+const C = { bg:'#0f172a', card:'#1e293b', border:'#334155', text:'#f1f5f9', text2:'#94a3b8', text3:'#64748b', green:'#14b8a6', red:'#ef4444' }
 
 export default function NotificationHealthPage() {
   const [orgs, setOrgs] = useState<any[]>([])
@@ -73,7 +73,7 @@ export default function NotificationHealthPage() {
               const total = o.sent + o.failed
               const allFailed = o.sent === 0 && o.failed > 0
               return (
-                <div key={o.org_id} style={{background:C.card,border:`1px solid ${allFailed?'#7f1d1d':'#14532d'}`,borderRadius:10,padding:'12px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap' as const,gap:8}}>
+                <div key={o.org_id} style={{background:C.card,border:`1px solid ${allFailed?'#7f1d1d':'#134e4a'}`,borderRadius:10,padding:'12px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap' as const,gap:8}}>
                   <div>
                     <div style={{fontSize:13,fontWeight:700,color:C.text}}>{o.org_name}</div>
                     <div style={{fontSize:11,color:C.text3,marginTop:2}}>{o.phone}</div>

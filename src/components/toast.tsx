@@ -5,7 +5,7 @@ interface ToastItem { id: number; msg: string; type: ToastType }
 let _add: ((msg: string, type: ToastType) => void) | null = null
 export function toast(msg: string, type: ToastType = 'success') { _add?.(msg, type) }
 const C = {
-  success: { bg:'#f0fdf4', border:'#86efac', color:'#166534', icon:'✅' },
+  success: { bg:'#f0fdfa', border:'#5eead4', color:'#115e59', icon:'✅' },
   error:   { bg:'#fef2f2', border:'#fecaca', color:'#991b1b', icon:'❌' },
   warning: { bg:'#fffbeb', border:'#fde68a', color:'#92400e', icon:'⚠️' },
   info:    { bg:'#eff6ff', border:'#bfdbfe', color:'#1d4ed8', icon:'ℹ️' },

@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-const C = { bg:'#0f172a', card:'#1e293b', border:'#334155', text:'#f1f5f9', text2:'#94a3b8', text3:'#64748b', green:'#22c55e', blue:'#3b82f6' }
+const C = { bg:'#0f172a', card:'#1e293b', border:'#334155', text:'#f1f5f9', text2:'#94a3b8', text3:'#64748b', green:'#14b8a6', blue:'#3b82f6' }
 
 // حالات يدوية — تتحكم فيها أنت لمتابعة التواصل قبل التسجيل
 const STATUS_LABELS: Record<string,string> = { new:'جديد', contacted:'تم التواصل', rejected:'مرفوض' }
@@ -66,7 +66,7 @@ export default function DemoRequestsPage() {
                       <div style={{color:C.text3, fontSize:12, marginTop:2}}>{new Date(r.created_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
                     </div>
                     {r.matched_org_id ? (
-                      <div style={{background:isPaid?'#f0fdf4':'#eff6ff', border:`1px solid ${isPaid?'#bbf7d0':'#bfdbfe'}`, borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:800, color:isPaid?C.green:C.blue}}>
+                      <div style={{background:isPaid?'#f0fdfa':'#eff6ff', border:`1px solid ${isPaid?'#99f6e4':'#bfdbfe'}`, borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:800, color:isPaid?C.green:C.blue}}>
                         {isPaid ? '💳 مشترك مدفوع' : '🎁 أنشأ حساب — في فترة التجربة'}
                       </div>
                     ) : (
@@ -85,7 +85,7 @@ export default function DemoRequestsPage() {
                   {!r.matched_org_id && (
                     <a href={`https://wa.me/${r.phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent('مرحباً '+r.first_name+'! 🎉\\n\\nشكراً لطلبك عرض Storely لإدارة مخزون "'+r.business_name+'".\\n\\nودّي أوريك النظام مباشرة وأجاوب على أي سؤال عندك — متى يناسبك اتصال سريع 5 دقائق؟\\n\\nأو لو حاب تبدأ فوراً بنفسك، تقدر تسجّل حسابك المجاني (14 يوم بدون بطاقة ائتمان) من هنا:\\nhttps://storely.dev/login?mode=register')}`}
                       target="_blank" rel="noreferrer"
-                      style={{display:'inline-flex', alignItems:'center', gap:8, background:'#22c55e', color:'white', padding:'9px 16px', borderRadius:8, fontSize:13, fontWeight:700, textDecoration:'none'}}>
+                      style={{display:'inline-flex', alignItems:'center', gap:8, background:'#14b8a6', color:'white', padding:'9px 16px', borderRadius:8, fontSize:13, fontWeight:700, textDecoration:'none'}}>
                       📲 تواصل معه عبر واتساب
                     </a>
                   )}

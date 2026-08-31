@@ -89,7 +89,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 return (
                   <button key={item.href} onClick={() => router.push(item.href)}
                     style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 10px', borderRadius: 8, border: 'none',
-                      background: active ? '#16a34a' : 'transparent', color: active ? 'white' : '#cbd5e1',
+                      background: active ? '#0d9488' : 'transparent', color: active ? 'white' : '#cbd5e1',
                       fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'right' as const, width: '100%' }}>
                     <span>{item.icon}</span>{item.label}
                   </button>

@@ -16,7 +16,7 @@ function isOpenNow(hours: any): { known: boolean; open: boolean; label: string }
 
 const STATUS_INFO: Record<string,{label:string;color:string;bg:string}> = {
   pending:   { label:'قيد الانتظار', color:'#d97706', bg:'#fffbeb' },
-  confirmed: { label:'مؤكد',        color:'#16a34a', bg:'#f0fdf4' },
+  confirmed: { label:'مؤكد',        color:'#0d9488', bg:'#f0fdfa' },
   ready:     { label:'جاهزة',       color:'#0369a1', bg:'#eff6ff' },
   completed: { label:'مكتملة',      color:'#7c3aed', bg:'#f5f3ff' },
   cancelled: { label:'ملغية',       color:'#dc2626', bg:'#fef2f2' },
@@ -134,8 +134,8 @@ export default function BookPage() {
           <h1 style={{fontSize:32,fontWeight:900,color,letterSpacing:1,marginBottom:8}}>{displayName}</h1>
           {org.res_tagline && <p style={{fontSize:15,color:'#78716c',marginBottom:8}}>{org.res_tagline}</p>}
           {status.known && (
-            <span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:11,fontWeight:700,padding:'4px 12px',borderRadius:99,background:status.open?'#f0fdf4':'#fef2f2',color:status.open?'#16a34a':'#dc2626',marginBottom:20}}>
-              <span style={{width:6,height:6,borderRadius:'50%',background:status.open?'#16a34a':'#dc2626'}}/>{status.label}
+            <span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:11,fontWeight:700,padding:'4px 12px',borderRadius:99,background:status.open?'#f0fdfa':'#fef2f2',color:status.open?'#0d9488':'#dc2626',marginBottom:20}}>
+              <span style={{width:6,height:6,borderRadius:'50%',background:status.open?'#0d9488':'#dc2626'}}/>{status.label}
             </span>
           )}
           <button onClick={()=>setScreen('book')} style={{padding:'16px 48px',background:color,color:'white',border:'none',borderRadius:14,fontSize:16,fontWeight:800,cursor:'pointer',boxShadow:`0 8px 24px ${color}44`}}>

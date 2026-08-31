@@ -13,7 +13,7 @@ export default function PendingPage() {
   }, [])
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(160deg,#0d2818,#1a4731)',fontFamily:"'Segoe UI',system-ui,sans-serif",direction:'rtl',padding:20}}>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(160deg,#042f2e,#1a4731)',fontFamily:"'Segoe UI',system-ui,sans-serif",direction:'rtl',padding:20}}>
       <style>{`
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
@@ -32,7 +32,7 @@ export default function PendingPage() {
           
           {/* الأيقونة */}
           <div style={{marginBottom:28}}>
-            <div style={{width:88,height:88,background:'linear-gradient(135deg,#f0fdf4,#dcfce7)',borderRadius:24,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 0',border:'2px solid #86efac',animation:'float 3s ease-in-out infinite'}}>
+            <div style={{width:88,height:88,background:'linear-gradient(135deg,#f0fdfa,#ccfbf1)',borderRadius:24,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 0',border:'2px solid #5eead4',animation:'float 3s ease-in-out infinite'}}>
               <svg width="44" height="44" fill="none" viewBox="0 0 24 24">
                 <path d="M9 12l2 2 4-4" stroke="#1a4731" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="#1a4731" strokeWidth="2" fill="none"/>
@@ -42,9 +42,9 @@ export default function PendingPage() {
           </div>
 
           {/* Storely badge */}
-          <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdf4',border:'1px solid #86efac',borderRadius:20,padding:'4px 14px',marginBottom:20}}>
+          <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdfa',border:'1px solid #5eead4',borderRadius:20,padding:'4px 14px',marginBottom:20}}>
             <div style={{width:6,height:6,borderRadius:'50%',background:'#4abe7a',animation:'pulse 2s infinite'}}/>
-            <span style={{fontSize:12,fontWeight:600,color:'#166534'}}>Storely</span>
+            <span style={{fontSize:12,fontWeight:600,color:'#115e59'}}>Storely</span>
           </div>
 
           {/* العنوان */}

@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 
 const C = {
-  primary:'#16a34a', primaryD:'#15803d', primaryL:'#f0fdf4', primaryB:'#bbf7d0',
+  primary:'#0d9488', primaryD:'#0f766e', primaryL:'#f0fdfa', primaryB:'#99f6e4',
   text:'#111827', text2:'#374151', text3:'#6b7280', text4:'#9ca3af',
   bg:'#f9fafb', surface:'#ffffff', border:'#f3f4f6', border2:'#e5e7eb',
 }
@@ -40,8 +40,8 @@ function renderText(text: string): React.ReactNode {
         <div key={i} style={{overflowX:'auto',margin:'8px 0',borderRadius:10,border:'1px solid #e5e7eb',WebkitOverflowScrolling:'touch'}}>
           <table style={{borderCollapse:'collapse',fontSize:10,fontFamily:'inherit',direction:'rtl',minWidth:'100%'}}>
             <thead>
-              <tr style={{background:'#f0fdf4'}}>
-                {cols.map((h,j)=><th key={j} style={{padding:'6px 8px',color:'#16a34a',fontWeight:700,textAlign:'right',borderBottom:'1.5px solid #bbf7d0',whiteSpace:'nowrap',fontSize:10}}>{h}</th>)}
+              <tr style={{background:'#f0fdfa'}}>
+                {cols.map((h,j)=><th key={j} style={{padding:'6px 8px',color:'#0d9488',fontWeight:700,textAlign:'right',borderBottom:'1.5px solid #99f6e4',whiteSpace:'nowrap',fontSize:10}}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -50,10 +50,10 @@ function renderText(text: string): React.ReactNode {
                   {row.map((cell,ci)=>{
                     const isGood = cell.includes('آمن')
                     const isZero = cell==='0'
-                    const color = isGood?'#16a34a':isZero?'#9ca3af':'#111827'
+                    const color = isGood?'#0d9488':isZero?'#9ca3af':'#111827'
                     const cellParts = cell.replace(/\*\*(.*?)\*\*/g, '###BOLD###$1###BOLD###').split('###BOLD###')
                     return <td key={ci} style={{padding:'5px 8px',borderBottom:'1px solid #f3f4f6',textAlign:ci===0?'right':'center',color,fontWeight:ci===0?600:400,fontSize:10}}>
-                      {cellParts.map((cp,cpi)=>cpi%2===0?cp:<b key={cpi} style={{color:isGood?'#16a34a':'#111827'}}>{cp}</b>)}
+                      {cellParts.map((cp,cpi)=>cpi%2===0?cp:<b key={cpi} style={{color:isGood?'#0d9488':'#111827'}}>{cp}</b>)}
                     </td>
                   })}
                 </tr>
@@ -68,7 +68,7 @@ function renderText(text: string): React.ReactNode {
     // H2
     if (line.startsWith('## ')) {
       const t = line.replace(/^## /,'').replace(/\*\*(.*?)\*\*/g,'$1')
-      elements.push(<div key={i} style={{fontSize:13,fontWeight:800,color:'#111827',marginTop:i>0?14:4,marginBottom:6,paddingBottom:5,borderBottom:'1.5px solid #f0fdf4'}}>{t}</div>)
+      elements.push(<div key={i} style={{fontSize:13,fontWeight:800,color:'#111827',marginTop:i>0?14:4,marginBottom:6,paddingBottom:5,borderBottom:'1.5px solid #f0fdfa'}}>{t}</div>)
       i++; continue
     }
 
@@ -84,7 +84,7 @@ function renderText(text: string): React.ReactNode {
       const parts = num[2].split(/\*\*(.*?)\*\*/)
       elements.push(
         <div key={i} style={{display:'flex',gap:6,marginBottom:4}}>
-          <span style={{width:18,height:18,borderRadius:'50%',background:'#f0fdf4',border:'1px solid #bbf7d0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,color:'#16a34a',flexShrink:0,marginTop:2}}>{num[1]}</span>
+          <span style={{width:18,height:18,borderRadius:'50%',background:'#f0fdfa',border:'1px solid #99f6e4',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,color:'#0d9488',flexShrink:0,marginTop:2}}>{num[1]}</span>
           <span style={{fontSize:12,color:'#374151',lineHeight:1.6}}>{parts.map((p,j)=>j%2===0?p:<b key={j} style={{color:'#111827'}}>{p}</b>)}</span>
         </div>
       )
@@ -97,7 +97,7 @@ function renderText(text: string): React.ReactNode {
       const parts = txt.split(/\*\*(.*?)\*\*/)
       elements.push(
         <div key={i} style={{display:'flex',gap:6,marginBottom:3}}>
-          <span style={{color:'#16a34a',flexShrink:0,marginTop:3,fontSize:10}}>•</span>
+          <span style={{color:'#0d9488',flexShrink:0,marginTop:3,fontSize:10}}>•</span>
           <span style={{fontSize:12,color:'#374151',lineHeight:1.6,flex:1}}>{parts.map((p,j)=>j%2===0?p:<b key={j} style={{color:'#111827'}}>{p}</b>)}</span>
         </div>
       )
@@ -320,7 +320,7 @@ export default function AIAssistant() {
             <div style={{flex:1}}>
               <div style={{fontSize:14,fontWeight:800,color:'white',letterSpacing:'-0.2px'}}>مساعد Storely الذكي</div>
               <div style={{display:'flex',alignItems:'center',gap:4,marginTop:1}}>
-                <div style={{width:6,height:6,borderRadius:'50%',background:'#86efac'}}/>
+                <div style={{width:6,height:6,borderRadius:'50%',background:'#5eead4'}}/>
                 <span style={{fontSize:10,color:'rgba(255,255,255,.8)'}}>متصل دائماً</span>
               </div>
             </div>
@@ -384,7 +384,7 @@ export default function AIAssistant() {
               <div style={{fontSize:13,fontWeight:700,color:'#92400e',marginBottom:10}}>⏱️ هل تريد مواصلة المحادثة؟</div>
               <div style={{display:'flex',gap:8,justifyContent:'center'}}>
                 <button onClick={continueChat}
-                  style={{padding:'7px 16px',background:'#16a34a',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                  style={{padding:'7px 16px',background:'#0d9488',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                   مواصلة
                 </button>
                 <button onClick={closeChat}

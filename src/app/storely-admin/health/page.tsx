@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-const C = { bg:'#0f172a', card:'#1e293b', border:'#334155', text:'#f1f5f9', text2:'#94a3b8', text3:'#64748b', green:'#22c55e', red:'#ef4444', amber:'#f59e0b' }
+const C = { bg:'#0f172a', card:'#1e293b', border:'#334155', text:'#f1f5f9', text2:'#94a3b8', text3:'#64748b', green:'#14b8a6', red:'#ef4444', amber:'#f59e0b' }
 
 export default function HealthPage() {
   const [logs, setLogs] = useState<any[]>([])
@@ -68,7 +68,7 @@ export default function HealthPage() {
       {error && <div style={{background:'#7f1d1d33',color:'#fca5a5',padding:'10px 14px',borderRadius:10,fontSize:13,marginBottom:16}}>{error}</div>}
 
       {latest && (
-        <div style={{background: latest.issues_count>0 ? '#7f1d1d22' : '#14532d22', border:`1.5px solid ${latest.issues_count>0?'#7f1d1d':'#14532d'}`, borderRadius:14, padding:'16px 18px', marginBottom:20}}>
+        <div style={{background: latest.issues_count>0 ? '#7f1d1d22' : '#134e4a22', border:`1.5px solid ${latest.issues_count>0?'#7f1d1d':'#134e4a'}`, borderRadius:14, padding:'16px 18px', marginBottom:20}}>
           <div style={{fontSize:14,fontWeight:800,color: latest.issues_count>0 ? '#fca5a5' : C.green}}>
             {latest.issues_count>0 ? `⚠️ ${latest.issues_count} مشكلة مكتشفة` : '✅ كل شي سليم'}
           </div>

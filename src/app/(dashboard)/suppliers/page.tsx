@@ -27,7 +27,7 @@ function UpgradeBlock() {
           إدارة الموردين متاحة في الباقة المتوسطة وما فوق.
         </p>
         <button onClick={()=>router.push('/settings')}
-          style={{padding:'14px 32px',background:'linear-gradient(135deg,#16a34a,#15803d)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+          style={{padding:'14px 32px',background:'linear-gradient(135deg,#0d9488,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
           ترقية الباقة ←
         </button>
       </div>
@@ -96,7 +96,7 @@ function EscalationChain({ productId, allSuppliers, primarySupplierId, refreshKe
             <option value="">— اختر مورد —</option>
             {available.map((sup:any)=><option key={sup.id} value={sup.id}>{sup.name}</option>)}
           </select>
-          <button onClick={addBackup} disabled={!pickSupplier} style={{ padding:'6px 12px', background:'#16a34a', color:'white', border:'none', borderRadius:8, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>إضافة</button>
+          <button onClick={addBackup} disabled={!pickSupplier} style={{ padding:'6px 12px', background:'#0d9488', color:'white', border:'none', borderRadius:8, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>إضافة</button>
           <button onClick={()=>setAdding(false)} style={{ padding:'6px 10px', background:'none', border:'1.5px solid #e2e8f0', borderRadius:8, fontSize:11, cursor:'pointer', fontFamily:'inherit', color:'#64748b' }}>إلغاء</button>
         </div>
       ) : (
@@ -246,7 +246,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
   }
 
   return (
-    <div ref={cardRef} style={{ background:'white', border: autoOpen ? '2px solid #16a34a' : '1.5px solid #e2e8f0', borderRadius:16, overflow:'hidden', boxShadow:'0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)', transition:'box-shadow .2s' }}>
+    <div ref={cardRef} style={{ background:'white', border: autoOpen ? '2px solid #0d9488' : '1.5px solid #e2e8f0', borderRadius:16, overflow:'hidden', boxShadow:'0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)', transition:'box-shadow .2s' }}>
       {/* Header */}
       <div style={{ padding:'16px 20px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <div style={{ display:'flex', alignItems:'center', gap:12, cursor:'pointer', flex:1 }} onClick={()=>setOpen(o=>!o)}>
@@ -261,7 +261,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
                   {'⭐'.repeat(Math.round(rating.stars))}<span style={{color:'#92400e',marginRight:2}}>{rating.stars}</span>
                 </span>
               )}
-              {linked.length>0 && <span style={{fontSize:11,fontWeight:700,background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',borderRadius:20,padding:'2px 8px'}}>{linked.length} منتج مرتبط</span>}
+              {linked.length>0 && <span style={{fontSize:11,fontWeight:700,background:'#f0fdfa',color:'#0d9488',border:'1px solid #99f6e4',borderRadius:20,padding:'2px 8px'}}>{linked.length} منتج مرتبط</span>}
               {linked.length===0 && <span style={{fontSize:11,fontWeight:700,background:'#fef3c7',color:'#92400e',border:'1px solid #fcd34d',borderRadius:20,padding:'2px 8px'}}>⚠️ لا منتجات مرتبطة</span>}
               {recentFailedCount>0 && (
                 <span onClick={e=>{e.stopPropagation();openTimeline()}} title="اضغط لمشاهدة سجل التواصل" style={{fontSize:11,fontWeight:700,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:20,padding:'2px 8px',cursor:'pointer'}}>
@@ -273,8 +273,8 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
               {editingPhone ? (
                 <span onClick={e=>e.stopPropagation()} style={{display:'flex',alignItems:'center',gap:4}}>
                   <input value={editPhoneVal} onChange={e=>setEditPhoneVal(e.target.value)} dir="ltr" autoFocus
-                    style={{fontSize:11,padding:'3px 6px',border:'1.5px solid #16a34a',borderRadius:5,width:110,fontFamily:'inherit'}}/>
-                  <button onClick={savePhone} disabled={savingPhone} style={{fontSize:10,fontWeight:700,color:'white',background:'#16a34a',border:'none',borderRadius:5,padding:'3px 8px',cursor:'pointer',fontFamily:'inherit'}}>{savingPhone?'...':'حفظ'}</button>
+                    style={{fontSize:11,padding:'3px 6px',border:'1.5px solid #0d9488',borderRadius:5,width:110,fontFamily:'inherit'}}/>
+                  <button onClick={savePhone} disabled={savingPhone} style={{fontSize:10,fontWeight:700,color:'white',background:'#0d9488',border:'none',borderRadius:5,padding:'3px 8px',cursor:'pointer',fontFamily:'inherit'}}>{savingPhone?'...':'حفظ'}</button>
                   <button onClick={()=>{setEditingPhone(false);setEditPhoneVal(s.phone||'')}} style={{fontSize:10,fontWeight:700,color:'#64748b',background:'#f1f5f9',border:'none',borderRadius:5,padding:'3px 8px',cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
                 </span>
               ) : (
@@ -289,7 +289,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
         </div>
         <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
           <button onClick={sendNow} disabled={sending} title="إرسال طلب توريد الآن"
-            style={{ background:'#f0fdf4', color:'#16a34a', border:'1.5px solid #bbf7d0', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            style={{ background:'#f0fdfa', color:'#0d9488', border:'1.5px solid #99f6e4', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
             {sending ? '...' : <Send size={14} strokeWidth={2.3}/>}
           </button>
           <button onClick={openTimeline} title="سجل التواصل"
@@ -324,9 +324,9 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
                           <span style={{ fontSize:10, background:'#fef2f2', color:'#ef4444', border:'1px solid #fecaca', borderRadius:20, padding:'1px 7px', fontWeight:700 }}>⚠️ ناقص</span>
                         )}
                       </div>
-                      {p.supplier_notes && <div style={{ fontSize:11, color:'#16a34a', marginTop:3 }}>📝 {p.supplier_notes}</div>}
+                      {p.supplier_notes && <div style={{ fontSize:11, color:'#0d9488', marginTop:3 }}>📝 {p.supplier_notes}</div>}
                       <div style={{ fontSize:11, color:'#94a3b8', marginTop:3 }}>
-                        المتاح: <b style={{color:'#0f172a'}}>{p.qty} {p.unit}</b> · يُطلب عند: <b style={{color:'#0f172a'}}>{p.supplier_reorder_point}</b> · كمية الطلب: <b style={{color:'#16a34a'}}>{p.supplier_order_qty}</b>
+                        المتاح: <b style={{color:'#0f172a'}}>{p.qty} {p.unit}</b> · يُطلب عند: <b style={{color:'#0f172a'}}>{p.supplier_reorder_point}</b> · كمية الطلب: <b style={{color:'#0d9488'}}>{p.supplier_order_qty}</b>
                       </div>
                       <EscalationChain productId={p.id} allSuppliers={allSuppliers} primarySupplierId={s.id} refreshKey={chainRefreshKey} />
                     </div>
@@ -445,7 +445,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
               <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
                 {timelineEvents.map((e:any,i:number)=>{
                   const icons: Record<string,string> = { order_sent:'🟢', order_confirmed:'✅', order_escalated:'⚠️', purchase:'💰', order_failed:'❌' }
-                  const colors: Record<string,string> = { order_sent:'#16a34a', order_confirmed:'#16a34a', order_escalated:'#d97706', purchase:'#2563eb', order_failed:'#dc2626' }
+                  const colors: Record<string,string> = { order_sent:'#0d9488', order_confirmed:'#0d9488', order_escalated:'#d97706', purchase:'#2563eb', order_failed:'#dc2626' }
                   return (
                     <div key={i} style={{display:'flex',gap:10,paddingBottom:10,borderBottom:i<timelineEvents.length-1?'1px solid #f1f5f9':'none'}}>
                       <div style={{fontSize:16,flexShrink:0}}>{icons[e.type]||'•'}</div>
@@ -614,16 +614,16 @@ export default function SuppliersPage() {
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
                     <span style={{fontSize:13,fontWeight:700,color:'#0f172a'}}>{c.name}</span>
                     {c.savingsPct>0&&(
-                      <span style={{fontSize:10,fontWeight:800,color:'#16a34a',background:'#f0fdf4',padding:'2px 8px',borderRadius:99,border:'1px solid #bbf7d0'}}>
+                      <span style={{fontSize:10,fontWeight:800,color:'#0d9488',background:'#f0fdfa',padding:'2px 8px',borderRadius:99,border:'1px solid #99f6e4'}}>
                         وفّر حتى {c.savingsPct}%
                       </span>
                     )}
                   </div>
                   <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
                     {c.suppliers.map((s:any,si:number)=>(
-                      <div key={si} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 10px',background:si===0?'#f0fdf4':'#f8fafc',borderRadius:8,border:si===0?'1px solid #bbf7d0':'1px solid #e2e8f0'}}>
+                      <div key={si} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 10px',background:si===0?'#f0fdfa':'#f8fafc',borderRadius:8,border:si===0?'1px solid #99f6e4':'1px solid #e2e8f0'}}>
                         <span style={{fontSize:12,fontWeight:600,color:'#334155'}}>{si===0&&'🟢 '}{s.supplier}</span>
-                        <span style={{fontSize:12,fontWeight:800,color:si===0?'#16a34a':'#64748b'}}>{s.unitPrice} {curr||'ر.س'} / {s.unit||'وحدة'}</span>
+                        <span style={{fontSize:12,fontWeight:800,color:si===0?'#0d9488':'#64748b'}}>{s.unitPrice} {curr||'ر.س'} / {s.unit||'وحدة'}</span>
                       </div>
                     ))}
                   </div>
@@ -651,9 +651,9 @@ export default function SuppliersPage() {
             </div>
           </div>
           <input value={newNotes} onChange={e=>setNewNotes(e.target.value)} style={{...inp(), width:'100%', marginBottom:14, boxSizing:'border-box' as const}} placeholder="ملاحظات عامة للمورد (اختياري)" />
-          <label style={{display:'flex',alignItems:'flex-start',gap:8,padding:'10px 12px',background:'#f0fdf4',borderRadius:10,border:'1px solid #bbf7d0',cursor:'pointer',marginBottom:14}}>
+          <label style={{display:'flex',alignItems:'flex-start',gap:8,padding:'10px 12px',background:'#f0fdfa',borderRadius:10,border:'1px solid #99f6e4',cursor:'pointer',marginBottom:14}}>
             <input type="checkbox" checked={newConsent} onChange={e=>setNewConsent(e.target.checked)} style={{marginTop:2,width:16,height:16,flexShrink:0,cursor:'pointer'}}/>
-            <span style={{fontSize:11,color:'#166534',lineHeight:1.6}}>أقر بأن هذا المورد وافق على استلام رسائل واتساب مني بخصوص طلبات التوريد</span>
+            <span style={{fontSize:11,color:'#115e59',lineHeight:1.6}}>أقر بأن هذا المورد وافق على استلام رسائل واتساب مني بخصوص طلبات التوريد</span>
           </label>
           <div style={{ display:'flex', gap:8 }}>
             <button onClick={addSupplier} style={{ ...btnPrimary, padding:'10px 20px', fontSize:13 }}>حفظ المورد</button>

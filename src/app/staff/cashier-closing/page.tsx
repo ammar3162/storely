@@ -117,16 +117,16 @@ function ProgressBar({ step, lang }: { step: number; lang: 'ar'|'en' }) {
             <div style={{
               width:32,height:32,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',
               fontSize:13,fontWeight:800,transition:'all .2s',
-              background: step>s.key ? '#16a34a' : step===s.key ? '#16a34a' : '#e5e5e2',
+              background: step>s.key ? '#0d9488' : step===s.key ? '#0d9488' : '#e5e5e2',
               color: step>=s.key ? 'white' : '#a8a7a1',
-              boxShadow: step===s.key ? '0 0 0 4px #dcfce7' : 'none',
+              boxShadow: step===s.key ? '0 0 0 4px #ccfbf1' : 'none',
             }}>
               {step>s.key ? '✓' : s.key}
             </div>
             <span style={{fontSize:10,fontWeight:700,color: step>=s.key ? '#1c1c1a' : '#a8a7a1',whiteSpace:'nowrap'}}>{s.label}</span>
           </div>
           {i<STEPS.length-1 && (
-            <div style={{flex:1,height:2,background: step>s.key ? '#16a34a' : '#e5e5e2',margin:'0 6px 18px',transition:'background .3s'}}/>
+            <div style={{flex:1,height:2,background: step>s.key ? '#0d9488' : '#e5e5e2',margin:'0 6px 18px',transition:'background .3s'}}/>
           )}
         </div>
       ))}
@@ -321,7 +321,7 @@ export default function CashierClosingPage() {
 
   if(!session) return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
-      <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:'#16a34a',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
+      <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:'#0d9488',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -341,12 +341,12 @@ export default function CashierClosingPage() {
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}} .fu{animation:fadeUp .3s ease both}`}</style>
 
       {toast && (
-        <div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:9999,background:toast.type==='success'?'#16a34a':'#dc2626',color:'white',padding:'12px 24px',borderRadius:40,fontSize:14,fontWeight:700,boxShadow:'0 8px 24px rgba(0,0,0,.25)',whiteSpace:'nowrap'}}>
+        <div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:9999,background:toast.type==='success'?'#0d9488':'#dc2626',color:'white',padding:'12px 24px',borderRadius:40,fontSize:14,fontWeight:700,boxShadow:'0 8px 24px rgba(0,0,0,.25)',whiteSpace:'nowrap'}}>
           {toast.msg}
         </div>
       )}
 
-      <div style={{background:'linear-gradient(135deg,#0d2818,#1a4731)',padding:'16px 20px',position:'sticky',top:0,zIndex:100,boxShadow:'0 4px 20px rgba(0,0,0,.2)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      <div style={{background:'linear-gradient(135deg,#042f2e,#1a4731)',padding:'16px 20px',position:'sticky',top:0,zIndex:100,boxShadow:'0 4px 20px rgba(0,0,0,.2)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
           {orgLogo ? (
             <img src={orgLogo} alt="" style={{width:42,height:42,borderRadius:12,objectFit:'cover',border:'2px solid rgba(255,255,255,.2)'}}/>
@@ -377,13 +377,13 @@ export default function CashierClosingPage() {
 
         {saved ? (
           <div className="fu" style={{background:'white',borderRadius:20,padding:36,textAlign:'center',boxShadow:'0 4px 24px rgba(0,0,0,.06)',border:'1px solid #eeeeeb'}}>
-            <div style={{width:64,height:64,borderRadius:'50%',background:'#f0fdf4',display:'flex',alignItems:'center',justifyContent:'center',fontSize:30,margin:'0 auto 16px'}}>✅</div>
+            <div style={{width:64,height:64,borderRadius:'50%',background:'#f0fdfa',display:'flex',alignItems:'center',justifyContent:'center',fontSize:30,margin:'0 auto 16px'}}>✅</div>
             <div style={{fontSize:18,fontWeight:800,color:'#1c1c1a',marginBottom:10}}>{ct('savedTitle',lang)}</div>
-            <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:12,padding:'12px 16px',marginBottom:14}}>
-              <div style={{fontSize:14,fontWeight:700,color:'#15803d'}}>{thankYouMsg}</div>
+            <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:12,padding:'12px 16px',marginBottom:14}}>
+              <div style={{fontSize:14,fontWeight:700,color:'#0f766e'}}>{thankYouMsg}</div>
             </div>
             <div style={{fontSize:13,color:'#8b8a84',marginBottom:24}}>{ct('savedSub',lang)}</div>
-            <button onClick={resetForm} style={{padding:'13px 28px',background:'#16a34a',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>
+            <button onClick={resetForm} style={{padding:'13px 28px',background:'#0d9488',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>
               {ct('newClosing',lang)}
             </button>
           </div>
@@ -393,12 +393,12 @@ export default function CashierClosingPage() {
             {step===1 && (
               <div className="fu" style={{background:'white',borderRadius:18,padding:22,marginBottom:16,boxShadow:'0 2px 16px rgba(0,0,0,.05)',border:'1px solid #eeeeeb'}}>
                 <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',marginBottom:16,display:'flex',alignItems:'center',gap:8}}>
-                  <span style={{width:24,height:24,borderRadius:7,background:'#f0fdf4',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12}}>📊</span>
+                  <span style={{width:24,height:24,borderRadius:7,background:'#f0fdfa',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12}}>📊</span>
                   {ct('step1Title',lang)}
                 </div>
                 <div style={{marginBottom:16}}>
                   <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>{ct('totalSalesLabel',lang)}</label>
-                  <MoneyInput value={totalSales} onChange={setTotalSales} placeholder="0.00" icon="📊" iconBg="#f0fdf4" iconColor="#16a34a" currency={curr}/>
+                  <MoneyInput value={totalSales} onChange={setTotalSales} placeholder="0.00" icon="📊" iconBg="#f0fdfa" iconColor="#0d9488" currency={curr}/>
                 </div>
                 <div style={{marginBottom:16}}>
                   <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>{ct('networkLabel',lang)}</label>
@@ -448,10 +448,10 @@ export default function CashierClosingPage() {
                   {ct('step2Title',lang)}
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:hasPurchases==='yes'?16:0}}>
-                  <button onClick={()=>setHasPurchases('no')} style={{padding:'11px',borderRadius:10,border:`1.5px solid ${hasPurchases==='no'?'#16a34a':'#e5e5e2'}`,background:hasPurchases==='no'?'#f0fdf4':'white',color:hasPurchases==='no'?'#16a34a':'#5f5e5a',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
+                  <button onClick={()=>setHasPurchases('no')} style={{padding:'11px',borderRadius:10,border:`1.5px solid ${hasPurchases==='no'?'#0d9488':'#e5e5e2'}`,background:hasPurchases==='no'?'#f0fdfa':'white',color:hasPurchases==='no'?'#0d9488':'#5f5e5a',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
                     {ct('no',lang)}
                   </button>
-                  <button onClick={()=>setHasPurchases('yes')} style={{padding:'11px',borderRadius:10,border:`1.5px solid ${hasPurchases==='yes'?'#16a34a':'#e5e5e2'}`,background:hasPurchases==='yes'?'#f0fdf4':'white',color:hasPurchases==='yes'?'#16a34a':'#5f5e5a',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
+                  <button onClick={()=>setHasPurchases('yes')} style={{padding:'11px',borderRadius:10,border:`1.5px solid ${hasPurchases==='yes'?'#0d9488':'#e5e5e2'}`,background:hasPurchases==='yes'?'#f0fdfa':'white',color:hasPurchases==='yes'?'#0d9488':'#5f5e5a',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
                     {ct('yes',lang)}
                   </button>
                 </div>
@@ -562,10 +562,10 @@ export default function CashierClosingPage() {
                 )}
                 <div style={{
                   padding:'18px',borderRadius:14,textAlign:'center',marginBottom:16,
-                  background: status==='balanced' ? '#f0fdf4' : status==='deficit' ? '#fef2f2' : '#eff6ff',
-                  border: `1.5px solid ${status==='balanced' ? '#bbf7d0' : status==='deficit' ? '#fecaca' : '#bfdbfe'}`
+                  background: status==='balanced' ? '#f0fdfa' : status==='deficit' ? '#fef2f2' : '#eff6ff',
+                  border: `1.5px solid ${status==='balanced' ? '#99f6e4' : status==='deficit' ? '#fecaca' : '#bfdbfe'}`
                 }}>
-                  <div style={{fontSize:13,fontWeight:800,color: status==='balanced' ? '#16a34a' : status==='deficit' ? '#dc2626' : '#2563eb',marginBottom:status!=='balanced'?6:0}}>
+                  <div style={{fontSize:13,fontWeight:800,color: status==='balanced' ? '#0d9488' : status==='deficit' ? '#dc2626' : '#2563eb',marginBottom:status!=='balanced'?6:0}}>
                     {status==='balanced' ? ct('balanced',lang) : status==='deficit' ? ct('deficit',lang) : ct('surplus',lang)}
                   </div>
                   {status!=='balanced' && (
@@ -595,11 +595,11 @@ export default function CashierClosingPage() {
                 </button>
               )}
               {step<4 ? (
-                <button onClick={goNext} style={{flex:2,padding:'15px',background:'#16a34a',color:'white',border:'none',borderRadius:14,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 16px rgba(22,163,74,.28)'}}>
+                <button onClick={goNext} style={{flex:2,padding:'15px',background:'#0d9488',color:'white',border:'none',borderRadius:14,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 16px rgba(22,163,74,.28)'}}>
                   {ct('next',lang)}
                 </button>
               ) : (
-                <button onClick={saveClosing} disabled={submitting} style={{flex:2,padding:'15px',background:'#16a34a',color:'white',border:'none',borderRadius:14,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',opacity:submitting?.7:1,boxShadow:'0 4px 16px rgba(22,163,74,.28)'}}>
+                <button onClick={saveClosing} disabled={submitting} style={{flex:2,padding:'15px',background:'#0d9488',color:'white',border:'none',borderRadius:14,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',opacity:submitting?.7:1,boxShadow:'0 4px 16px rgba(22,163,74,.28)'}}>
                   {submitting ? ct('saving',lang) : ct('confirmSave',lang)}
                 </button>
               )}
