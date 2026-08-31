@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/components/toast'
 
 const C = {
-  primary:'#0d9488', primaryL:'#f0fdfa', primaryB:'#99f6e4',
+  primary:'#029FA2', primaryL:'#f0fdfa', primaryB:'#99f6e4',
   danger:'#e24b4a', dangerL:'#fef2f2', dangerB:'#fecaca',
   warning:'#ba7517', warningL:'#fffbeb', warningB:'#fde68a',
   info:'#378add', infoL:'#eff6ff', infoB:'#bfdbfe',
@@ -73,7 +73,7 @@ export default function AdminNotificationsPage() {
       await fetch('/api/admin/feature-announcement',{
         method:'POST',
         headers:{'Content-Type':'application/json','x-admin-key':sessionStorage.getItem('storely_admin_pass')||''},
-        body:JSON.stringify({version,title:title.trim(),description:message.trim(),type:'banner',color:type==='danger'?'#ef4444':type==='warning'?'#f59e0b':type==='success'?'#0d9488':'#7c3aed',target_orgs:targets})
+        body:JSON.stringify({version,title:title.trim(),description:message.trim(),type:'banner',color:type==='danger'?'#ef4444':type==='warning'?'#f59e0b':type==='success'?'#029FA2':'#7c3aed',target_orgs:targets})
       })
       toast('تم إرسال البانر'); setTitle(''); setMessage(''); setSending(false); return
     }
@@ -93,7 +93,7 @@ export default function AdminNotificationsPage() {
 
   return (
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',maxWidth:900,margin:'0 auto',padding:'24px 0'}}>
-      <style>{`input:focus,textarea:focus{border-color:#0d9488!important;outline:none!important;box-shadow:0 0 0 3px #f0fdfa!important}.rh:hover{background:#f9f9f8}`}</style>
+      <style>{`input:focus,textarea:focus{border-color:#029FA2!important;outline:none!important;box-shadow:0 0 0 3px #f0fdfa!important}.rh:hover{background:#f9f9f8}`}</style>
 
       <div style={{marginBottom:20}}>
         <h1 style={{fontSize:20,fontWeight:700,color:C.text,margin:0}}>إشعارات المنشآت</h1>
@@ -118,7 +118,7 @@ export default function AdminNotificationsPage() {
               <div style={{marginBottom:14}}>
                 <label style={{fontSize:10,fontWeight:700,color:C.text3,display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>طريقة الإرسال</label>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                  <button onClick={()=>setDeliveryType('internal')} style={{padding:'10px',borderRadius:8,border:`1.5px solid ${deliveryType==='internal'?'#0d9488':'#e2e8f0'}`,background:deliveryType==='internal'?'#f0fdfa':'white',color:deliveryType==='internal'?'#0d9488':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
+                  <button onClick={()=>setDeliveryType('internal')} style={{padding:'10px',borderRadius:8,border:`1.5px solid ${deliveryType==='internal'?'#029FA2':'#e2e8f0'}`,background:deliveryType==='internal'?'#f0fdfa':'white',color:deliveryType==='internal'?'#029FA2':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
                     🔔 إشعار داخلي<br/><span style={{fontSize:10,fontWeight:400}}>في جرس الإشعارات</span>
                   </button>
                   <button onClick={()=>setDeliveryType('banner')} style={{padding:'10px',borderRadius:8,border:`1.5px solid ${deliveryType==='banner'?'#7c3aed':'#e2e8f0'}`,background:deliveryType==='banner'?'#f5f3ff':'white',color:deliveryType==='banner'?'#7c3aed':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>

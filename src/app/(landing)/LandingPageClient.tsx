@@ -242,13 +242,13 @@ export default function LandingPage() {
         <div className="feat-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:20}}>
           {FEATURES.map((f,i)=>(
             <div key={i} className="feat-card">
-              <div style={{width:52,height:52,borderRadius:14,background:'linear-gradient(135deg,#f0fdfa,#ccfbf1)',border:'1px solid #99f6e4',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:16,color:'#0d9488'}}>
+              <div style={{width:52,height:52,borderRadius:14,background:'linear-gradient(135deg,#f0fdfa,#ccfbf1)',border:'1px solid #99f6e4',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:16,color:'#029FA2'}}>
                 <f.icon size={24} strokeWidth={2}/>
               </div>
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8,flexWrap:'wrap' as const}}>
                 <div style={{fontSize:17,fontWeight:800,color:'#111827'}}>{lang==='ar'?f.title:(f as any).titleEn}</div>
                 {(f as any).badge && (
-                  <span style={{fontSize:11,fontWeight:800,color:'#0d9488',background:'#f0fdfa',border:'1px solid #99f6e4',padding:'2px 9px',borderRadius:99}}>{lang==='ar'?(f as any).badge:(f as any).badgeEn}</span>
+                  <span style={{fontSize:11,fontWeight:800,color:'#029FA2',background:'#f0fdfa',border:'1px solid #99f6e4',padding:'2px 9px',borderRadius:99}}>{lang==='ar'?(f as any).badge:(f as any).badgeEn}</span>
                 )}
               </div>
               <div style={{fontSize:14,color:'#6b7280',lineHeight:1.7}}>{lang==='ar'?f.desc:(f as any).descEn}</div>

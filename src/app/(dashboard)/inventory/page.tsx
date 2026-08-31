@@ -502,7 +502,7 @@ export default function InventoryPage() {
                       <span style={{display:'flex',alignItems:'center'}}><Ruler size={13} strokeWidth={2.25}/></span>
                       <div style={{fontSize:11,fontWeight:700,color:'#6b21a8'}}>تحويل الوحدة الدقيقة (اختياري)</div>
                       {form.recipe_unit && form.recipe_unit_factor && Number(form.recipe_unit_factor)>0 && (
-                        <span style={{fontSize:9,fontWeight:700,color:'#0d9488',background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'1px 8px',marginRight:'auto',display:'inline-flex',alignItems:'center',gap:3}}><CheckCircle2 size={10} strokeWidth={2.5}/> محدد</span>
+                        <span style={{fontSize:9,fontWeight:700,color:'#029FA2',background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'1px 8px',marginRight:'auto',display:'inline-flex',alignItems:'center',gap:3}}><CheckCircle2 size={10} strokeWidth={2.5}/> محدد</span>
                       )}
                     </div>
                     <div style={{fontSize:10,color:'#7c3aed',marginBottom:8}}>مفيد لو تستخدم هذا المنتج بوصفات — مثال: الكيس فيه كم جرام، الكرتون فيه كم علبة</div>

@@ -58,7 +58,7 @@ export default function PermissionPage() {
           <div>
             <div style={{fontSize:40,marginBottom:12}}>🙋</div>
             <div style={{fontSize:17,fontWeight:800,color:'#0f172a',marginBottom:4}}>طلب استئذان</div>
-            <div style={{fontSize:14,fontWeight:700,color:'#0d9488',marginBottom:10}}>{req?.staff_name}</div>
+            <div style={{fontSize:14,fontWeight:700,color:'#029FA2',marginBottom:10}}>{req?.staff_name}</div>
             {req?.reason && (
               <div style={{background:'#f8fafc',borderRadius:12,padding:'12px 14px',fontSize:13,color:'#334155',marginBottom:20,lineHeight:1.7,textAlign:'right' as const}}>
                 {req.reason}
@@ -66,7 +66,7 @@ export default function PermissionPage() {
             )}
             <div style={{display:'flex',gap:10}}>
               <button onClick={() => respond('approve')} disabled={resolving}
-                style={{flex:1,padding:'13px',background:'#0d9488',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+                style={{flex:1,padding:'13px',background:'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
                 {resolving ? '...' : '✅ موافقة'}
               </button>
               <button onClick={() => respond('reject')} disabled={resolving}

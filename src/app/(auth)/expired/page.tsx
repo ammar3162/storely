@@ -30,7 +30,7 @@ export default function ExpiredPage() {
         <h1 style={{fontSize:24,fontWeight:900,color:'#111827',marginBottom:8}}>
           انتهت فترة الاشتراك
         </h1>
-        {orgName && <p style={{fontSize:14,color:'#0d9488',fontWeight:700,marginBottom:4}}>{orgName}</p>}
+        {orgName && <p style={{fontSize:14,color:'#029FA2',fontWeight:700,marginBottom:4}}>{orgName}</p>}
         {name && <p style={{fontSize:13,color:'#6b7280',marginBottom:24}}>مرحباً {name}</p>}
         <p style={{fontSize:14,color:'#6b7280',lineHeight:1.8,marginBottom:32}}>
           انتهت صلاحية اشتراكك في Storely.<br/>

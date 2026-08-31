@@ -32,7 +32,7 @@ const UI_STRINGS: Record<string, Record<string,string>> = {
 const STATUS_KEYS: Record<string, {key:string; color:string; bg:string}> = {
   pending:   { key: 'statusPending',   color: '#d97706', bg: '#fffbeb' },
   completed: { key: 'statusCompleted', color: '#2563eb', bg: '#eff6ff' },
-  confirmed: { key: 'statusConfirmed', color: '#0d9488', bg: '#f0fdfa' },
+  confirmed: { key: 'statusConfirmed', color: '#029FA2', bg: '#f0fdfa' },
   rejected:  { key: 'statusRejected',  color: '#dc2626', bg: '#fef2f2' },
 }
 
@@ -132,7 +132,7 @@ export default function StaffTasksPage() {
 
   if (!session) return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
-      <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:'#0d9488',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
+      <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:'#029FA2',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -159,7 +159,7 @@ export default function StaffTasksPage() {
               {LANGUAGES.map(l=>(
                 <button key={l.code}
                   onClick={()=>{setLang(l.code);localStorage.setItem('staff_lang',l.code);if(l.code!=='ar')fetchTranslation(l.code);setShowLangMenu(false)}}
-                  style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#f0fdfa':'white',color:lang===l.code?'#0d9488':'#1c1c1a',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
+                  style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#f0fdfa':'white',color:lang===l.code?'#029FA2':'#1c1c1a',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
                   {lang===l.code?'✓ ':''}{l.label}
                 </button>
               ))}
@@ -189,7 +189,7 @@ export default function StaffTasksPage() {
                       <input id={`photo-input-${tk.id}`} type="file" accept="image/*" capture="environment" style={{display:'none'}}
                         onChange={e=>{ const f=e.target.files?.[0]; if(f) handlePhotoSelected(tk.id, f) }}/>
                       <button onClick={()=>completeTask(tk.id, tk.requires_photo)} disabled={completingId===tk.id||uploadingId===tk.id}
-                        style={{width:'100%',padding:'12px',background:'#0d9488',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:(completingId===tk.id||uploadingId===tk.id)?0.6:1}}>
+                        style={{width:'100%',padding:'12px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:(completingId===tk.id||uploadingId===tk.id)?0.6:1}}>
                         {uploadingId===tk.id ? t('uploadingPhoto') : completingId===tk.id ? t('confirming') : tk.requires_photo ? `📷 ${t('completeWithPhoto')}` : `✓ ${t('completeTask')}`}
                       </button>
                     </div>

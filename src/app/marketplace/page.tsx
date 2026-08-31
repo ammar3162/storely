@@ -130,7 +130,7 @@ export default function MarketplacePage() {
         <div style={{maxWidth:900,margin:'0 auto',display:'flex',gap:8}}>
           {BUSINESS_TYPES.map(t=>(
             <button key={t.v} onClick={()=>setFilter(t.v)}
-              style={{padding:'7px 14px',borderRadius:20,border:`1.5px solid ${filter===t.v?'#0d9488':'#e2e8f0'}`,background:filter===t.v?'#f0fdfa':'white',color:filter===t.v?'#0d9488':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',flexShrink:0,transition:'all .15s'}}>
+              style={{padding:'7px 14px',borderRadius:20,border:`1.5px solid ${filter===t.v?'#029FA2':'#e2e8f0'}`,background:filter===t.v?'#f0fdfa':'white',color:filter===t.v?'#029FA2':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',flexShrink:0,transition:'all .15s'}}>
               {t.icon} {t.v}
             </button>
           ))}
@@ -167,7 +167,7 @@ export default function MarketplacePage() {
                     </div>
                   </div>
                   <div style={{marginRight:'auto'}}>
-                    <span style={{background:'#0d9488',color:'white',fontSize:9,fontWeight:700,padding:'3px 8px',borderRadius:20}}>✓ معتمد</span>
+                    <span style={{background:'#029FA2',color:'white',fontSize:9,fontWeight:700,padding:'3px 8px',borderRadius:20}}>✓ معتمد</span>
                   </div>
                 </div>
 
@@ -187,7 +187,7 @@ export default function MarketplacePage() {
                   )}
                   <div style={{display:'flex',gap:8}}>
                     <a href={getWhatsAppLink(s)} target="_blank" rel="noopener noreferrer"
-                      style={{flex:1,padding:'10px',background:'#0d9488',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none',textAlign:'center',display:'block'}}>
+                      style={{flex:1,padding:'10px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none',textAlign:'center',display:'block'}}>
                       📲 تواصل للحصول على العرض
                     </a>
                     {isSafeUrl(s.website) && (
@@ -230,7 +230,7 @@ export default function MarketplacePage() {
                           {s.location && <div style={{fontSize:10,color:'rgba(255,255,255,.75)',marginTop:1}}>📍 {s.location}</div>}
                         </div>
                       </div>
-                      <span style={{position:'absolute' as const,top:10,left:10,background:'#0d9488',color:'white',fontSize:9,fontWeight:700,padding:'3px 8px',borderRadius:20}}>{s.items.length} صنف</span>
+                      <span style={{position:'absolute' as const,top:10,left:10,background:'#029FA2',color:'white',fontSize:9,fontWeight:700,padding:'3px 8px',borderRadius:20}}>{s.items.length} صنف</span>
                       {rating && (
                         <span style={{position:'absolute' as const,top:10,right:10,background:'rgba(255,255,255,.95)',color:'#b45309',fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:20}}>
                           ⭐ {rating.avg.toFixed(1)} ({rating.count})
@@ -255,14 +255,14 @@ export default function MarketplacePage() {
                                 <div style={{fontSize:12,fontWeight:700,color:'#0f172a'}}>{it.name}</div>
                                 <div style={{fontSize:10,color:'#64748b'}}>{it.unit}</div>
                               </div>
-                              <div style={{fontSize:13,fontWeight:800,color:'#0d9488'}}>{it.price} ر.س</div>
+                              <div style={{fontSize:13,fontWeight:800,color:'#029FA2'}}>{it.price} ر.س</div>
                             </div>
                           ))}
                         </div>
                       )}
                       {phone && (
                         <a href={`https://wa.me/${phone}?text=${waMsg}`} target="_blank" rel="noopener noreferrer"
-                          style={{display:'block',padding:'10px',background:'#0d9488',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none',textAlign:'center'}}>
+                          style={{display:'block',padding:'10px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none',textAlign:'center'}}>
                           📲 تواصل مع المورد
                         </a>
                       )}
@@ -278,7 +278,7 @@ export default function MarketplacePage() {
         <div style={{marginTop:32,background:'linear-gradient(135deg,#042f2e,#1a4731)',borderRadius:16,padding:'24px',textAlign:'center'}}>
           <div style={{fontSize:20,fontWeight:800,color:'white',marginBottom:8}}>هل أنت مورد؟</div>
           <div style={{fontSize:13,color:'rgba(255,255,255,.7)',marginBottom:16}}>انضم لشبكة موردينا المعتمدين واستفد من قاعدة عملائنا</div>
-          <a href="/suppliers-join" style={{display:'inline-block',padding:'12px 28px',background:'#0d9488',color:'white',borderRadius:12,fontSize:14,fontWeight:700,textDecoration:'none',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>
+          <a href="/suppliers-join" style={{display:'inline-block',padding:'12px 28px',background:'#029FA2',color:'white',borderRadius:12,fontSize:14,fontWeight:700,textDecoration:'none',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>
             تقدم الآن ←
           </a>
         </div>

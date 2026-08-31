@@ -410,7 +410,7 @@ export default function OnboardingPage() {
             ) : (
               <div style={{background:'#f0fdfa',border:'1.5px solid #99f6e4',borderRadius:16,padding:14,marginBottom:16,display:'flex',alignItems:'center',gap:8,justifyContent:'center'}}>
                 <span style={{fontSize:16}}>✅</span>
-                <span style={{fontSize:13,fontWeight:700,color:'#0d9488'}}>تم تفعيل الإشعارات بنجاح</span>
+                <span style={{fontSize:13,fontWeight:700,color:'#029FA2'}}>تم تفعيل الإشعارات بنجاح</span>
               </div>
             )}
             <button onClick={()=>router.push('/dashboard')}

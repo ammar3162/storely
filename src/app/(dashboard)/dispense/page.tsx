@@ -15,7 +15,7 @@ const C = {
   bg:dsColors.bg, surface:dsColors.surface, border:dsColors.border, border2:dsColors.border2,
 }
 
-const CAT_COLORS = ['#0d9488','#2563eb','#dc2626','#d97706','#7c3aed','#0891b2','#db2777','#65a30d']
+const CAT_COLORS = ['#029FA2','#2563eb','#dc2626','#d97706','#7c3aed','#0891b2','#db2777','#65a30d']
 const OTHER = 'أخرى'
 
 export default function DispensePage() {
@@ -138,8 +138,8 @@ export default function DispensePage() {
         .chip{padding:5px 12px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;border:1.5px solid;transition:all .15s;font-family:inherit}
         .chip:active{transform:scale(.95)}
         .qbtn{width:44px;height:44px;border-radius:10px;border:1.5px solid #e5e7eb;background:#f9fafb;font-size:20px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit}
-        .qbtn:active{background:#f0fdfa;border-color:#0d9488;color:#0d9488}
-        input:focus{border-color:#0d9488!important;box-shadow:0 0 0 3px #f0fdfa!important;outline:none!important}
+        .qbtn:active{background:#f0fdfa;border-color:#029FA2;color:#029FA2}
+        input:focus{border-color:#029FA2!important;box-shadow:0 0 0 3px #f0fdfa!important;outline:none!important}
         /* Product card */
         .pcard{
           background:white;border-radius:12px;padding:10px 8px;
@@ -149,9 +149,9 @@ export default function DispensePage() {
           display:flex;flex-direction:column;align-items:center;
           text-align:center;gap:6px;
         }
-        .pcard:hover{border-color:#0d9488;transform:translateY(-1px);box-shadow:0 4px 12px rgba(22,163,74,.1)}
+        .pcard:hover{border-color:#029FA2;transform:translateY(-1px);box-shadow:0 4px 12px rgba(22,163,74,.1)}
         .pcard:active{transform:scale(.97)}
-        .pcard.selected{border-color:#0d9488;background:#f0fdfa;box-shadow:0 0 0 2px #0d948840}
+        .pcard.selected{border-color:#029FA2;background:#f0fdfa;box-shadow:0 0 0 2px #029FA240}
         .pcard.out{opacity:.45;cursor:not-allowed}
         .pcard.out:hover{transform:none;box-shadow:none;border-color:#f0f0f0}
         /* Grid — auto fill */

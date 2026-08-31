@@ -31,7 +31,7 @@ const TOOLS = [
     icon:'🛒',
     title:'اقتراح الشراء الذكي',
     desc:'يحسب الكمية المثلى لكل صنف بناءً على معدل الصرف الفعلي ويرسلها للمورد عبر واتساب',
-    color:'#0d9488',
+    color:'#029FA2',
     bg:'#f0fdfa',
     border:'#99f6e4',
     features:['حساب الكمية المثلى','إرسال للمورد واتساب','بناءً على 90 يوم صرف'],
@@ -195,7 +195,7 @@ export default function AIToolsPage() {
           <div style={{display:'flex',flexDirection:'column' as const,gap:14}}>
             <div style={{background:'rgba(255,255,255,.08)',borderRadius:12,padding:16}}>
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-                <span style={{fontSize:11,fontWeight:800,padding:'3px 10px',borderRadius:99,background:insights.status==='صحي'?'#0d9488':insights.status==='خطر'?'#dc2626':'#f59e0b',color:'white'}}>{insights.status}</span>
+                <span style={{fontSize:11,fontWeight:800,padding:'3px 10px',borderRadius:99,background:insights.status==='صحي'?'#029FA2':insights.status==='خطر'?'#dc2626':'#f59e0b',color:'white'}}>{insights.status}</span>
                 <span style={{fontSize:12,fontWeight:800,color:'white'}}>الملخص التنفيذي</span>
               </div>
               <div style={{fontSize:12,color:'rgba(255,255,255,.85)',lineHeight:1.9}}>{insights.summary}</div>
@@ -346,7 +346,7 @@ export default function AIToolsPage() {
                     color:
                     p.status==='critical'?'#dc2626':
                     p.status==='warning'?'#d97706':
-                    p.status==='watch'?'#2563eb':'#0d9488'}}>
+                    p.status==='watch'?'#2563eb':'#029FA2'}}>
                     {p.status==='critical'?'🔴 حرج':p.status==='warning'?'🟡 تحذير':p.status==='watch'?'🔵 مراقبة':'🟢 آمن'}
                   </span>
                 </div>
@@ -364,7 +364,7 @@ export default function AIToolsPage() {
                     <div style={{fontSize:9,color:C.text4}}>تكرار الصرف</div>
                   </div>
                   <div style={{background:p.status==='critical'?'#fee2e2':p.status==='warning'?'#fef3c7':'#f0fdfa',borderRadius:6,padding:'6px'}}>
-                    <div style={{fontSize:13,fontWeight:900,color:p.status==='critical'?'#dc2626':p.status==='warning'?'#d97706':'#0d9488'}}>
+                    <div style={{fontSize:13,fontWeight:900,color:p.status==='critical'?'#dc2626':p.status==='warning'?'#d97706':'#029FA2'}}>
                       {p.daysLeft===null?'∞':p.daysLeft+' يوم'}
                     </div>
                     <div style={{fontSize:9,color:C.text4}}>وقت النفاد</div>
@@ -471,7 +471,7 @@ export default function AIToolsPage() {
                     {p.name}
                     {p.noHistory && <span style={{fontSize:9,fontWeight:800,padding:'1px 6px',borderRadius:99,background:'#fee2e2',color:'#dc2626'}}>نافد بدون تاريخ صرف</span>}
                     {p.method==='trend' && p.growthPct!==null && (
-                      <span style={{fontSize:9,fontWeight:800,padding:'1px 6px',borderRadius:99,background:p.growthPct>=0?'#ccfbf1':'#fee2e2',color:p.growthPct>=0?'#0d9488':'#dc2626'}}>
+                      <span style={{fontSize:9,fontWeight:800,padding:'1px 6px',borderRadius:99,background:p.growthPct>=0?'#ccfbf1':'#fee2e2',color:p.growthPct>=0?'#029FA2':'#dc2626'}}>
                         {p.growthPct>=0?'↑':'↓'} اتجاه شهري {p.growthPct>=0?'+':''}{p.growthPct}%
                       </span>
                     )}
@@ -482,7 +482,7 @@ export default function AIToolsPage() {
                 <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'#7c3aed'}}>{p.dailyRate}</div>
                 <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'#2563eb'}}>{p.weeklyNeed}</div>
                 <div style={{textAlign:'center',fontSize:14,fontWeight:900,color:
-                  p.urgency==='urgent'?'#dc2626':p.urgency==='soon'?'#d97706':'#0d9488'}}>
+                  p.urgency==='urgent'?'#dc2626':p.urgency==='soon'?'#d97706':'#029FA2'}}>
                   {p.suggestedQty} {p.unit}
                 </div>
               </div>
@@ -592,7 +592,7 @@ export default function AIToolsPage() {
             ) : (
               <div style={{display:'flex',flexDirection:'column',gap:10}}>
                 {branchComp.map((b:any,i:number)=>(
-                  <div key={b.id} style={{padding:'14px',borderRadius:12,background:i===0?'#f0fdfa':'#f8fafc',border:`1.5px solid ${i===0?'#0d9488':'#e2e8f0'}`}}>
+                  <div key={b.id} style={{padding:'14px',borderRadius:12,background:i===0?'#f0fdfa':'#f8fafc',border:`1.5px solid ${i===0?'#029FA2':'#e2e8f0'}`}}>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
                       <div style={{display:'flex',alignItems:'center',gap:8}}>
                         {i===0&&<span style={{fontSize:16}}>🥇</span>}
@@ -600,7 +600,7 @@ export default function AIToolsPage() {
                         {i===2&&<span style={{fontSize:16}}>🥉</span>}
                         <span style={{fontSize:14,fontWeight:800,color:C.text}}>{b.name}</span>
                       </div>
-                      <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:99,background:i===0?'#0d9488':'#e2e8f0',color:i===0?'white':C.text3}}>
+                      <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:99,background:i===0?'#029FA2':'#e2e8f0',color:i===0?'white':C.text3}}>
                         كفاءة {b.efficiency}%
                       </span>
                     </div>
@@ -610,7 +610,7 @@ export default function AIToolsPage() {
                         <div style={{fontSize:9,color:C.text4}}>وحدات صُرفت</div>
                       </div>
                       <div style={{background:'white',borderRadius:8,padding:'8px'}}>
-                        <div style={{fontSize:16,fontWeight:900,color:'#0d9488'}}>{b.added}</div>
+                        <div style={{fontSize:16,fontWeight:900,color:'#029FA2'}}>{b.added}</div>
                         <div style={{fontSize:9,color:C.text4}}>وحدات أُضيفت</div>
                       </div>
                       <div style={{background:'white',borderRadius:8,padding:'8px'}}>
@@ -754,7 +754,7 @@ export default function AIToolsPage() {
                 return grandTotal>0 && (
                   <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:10,padding:'12px 14px',marginBottom:12,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                     <span style={{fontSize:12,fontWeight:700,color:'#115e59'}}>💰 إجمالي تكلفة الإنتاج التقديرية</span>
-                    <span style={{fontSize:18,fontWeight:900,color:'#0d9488'}}>{grandTotal.toFixed(2)} ر.س</span>
+                    <span style={{fontSize:18,fontWeight:900,color:'#029FA2'}}>{grandTotal.toFixed(2)} ر.س</span>
                   </div>
                 )
               })()}
@@ -768,7 +768,7 @@ export default function AIToolsPage() {
                   {r.totalCost!==null && r.totalCost!==undefined && (
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,background:'#f0fdfa',borderRadius:7,padding:'6px 10px'}}>
                       <span style={{fontSize:10,color:'#115e59'}}>تكلفة الوحدة: {r.costPerUnit} ر.س</span>
-                      <span style={{fontSize:12,fontWeight:800,color:'#0d9488'}}>الإجمالي: {r.totalCost} ر.س</span>
+                      <span style={{fontSize:12,fontWeight:800,color:'#029FA2'}}>الإجمالي: {r.totalCost} ر.س</span>
                     </div>
                   )}
                   {r.bottleneckName && (
@@ -860,7 +860,7 @@ export default function AIToolsPage() {
                     <div style={{fontSize:9,color:'#9ca3af'}}>أول المدة</div>
                   </div>
                   <div style={{background:'white',borderRadius:6,padding:'6px 4px'}}>
-                    <div style={{fontSize:13,fontWeight:900,color:'#0d9488'}}>+{p.added}</div>
+                    <div style={{fontSize:13,fontWeight:900,color:'#029FA2'}}>+{p.added}</div>
                     <div style={{fontSize:9,color:'#9ca3af'}}>أُضيف</div>
                   </div>
                   <div style={{background:'white',borderRadius:6,padding:'6px 4px'}}>
@@ -1035,7 +1035,7 @@ export default function AIToolsPage() {
           <div style={{fontSize:12,color:'rgba(255,255,255,.65)',marginBottom:18,lineHeight:1.7,maxWidth:420,marginLeft:'auto',marginRight:'auto'}}>
             توقع نفاد المخزون، اقتراح كميات الشراء، تحليل الموسمية، تحسين نقطة إعادة الطلب، والتقرير الأسبوعي التلقائي — مع الباقة المتوسطة أو المتقدمة.
           </div>
-          <a href="/settings" style={{display:'inline-block',padding:'12px 28px',background:'#0d9488',color:'white',borderRadius:10,fontSize:13,fontWeight:800,textDecoration:'none'}}>ترقية الباقة</a>
+          <a href="/settings" style={{display:'inline-block',padding:'12px 28px',background:'#029FA2',color:'white',borderRadius:10,fontSize:13,fontWeight:800,textDecoration:'none'}}>ترقية الباقة</a>
         </div>
       )}
 
@@ -1200,7 +1200,7 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
               <div key={c.component_product_id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'#f9fafb',border:'1px solid #e5e7eb',borderRadius:8,padding:'6px 10px'}}>
                 <span style={{fontSize:11}}>{comp?.name||'—'} — {c.qty} {comp?.unit}</span>
                 <div style={{display:'flex',alignItems:'center',gap:8}}>
-                  {unitPrice>0 && <span style={{fontSize:10,color:'#0d9488',fontWeight:700}}>{compCost.toFixed(2)} ر.س</span>}
+                  {unitPrice>0 && <span style={{fontSize:10,color:'#029FA2',fontWeight:700}}>{compCost.toFixed(2)} ر.س</span>}
                   <button onClick={()=>setComponents(prev=>prev.filter(x=>x.component_product_id!==c.component_product_id))} style={{background:'none',border:'none',color:'#ef4444',cursor:'pointer',fontSize:14}}>×</button>
                 </div>
               </div>
@@ -1234,7 +1234,7 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
         ) : (
           <div style={{flex:1,padding:'8px',fontSize:11,color:'#6b7280',display:'flex',alignItems:'center',justifyContent:'center'}}>{customSubLabel||opts[0].label}</div>
         )})()}
-        <button onClick={addComp} style={{padding:'0 12px',background:'#0d9488',color:'white',border:'none',borderRadius:8,fontSize:16,fontWeight:700,cursor:'pointer'}}>+</button>
+        <button onClick={addComp} style={{padding:'0 12px',background:'#029FA2',color:'white',border:'none',borderRadius:8,fontSize:16,fontWeight:700,cursor:'pointer'}}>+</button>
       </div>
 
       {(()=>{
@@ -1249,7 +1249,7 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
           <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:10,padding:12,marginBottom:16}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:hasCostData?10:0}}>
               <span style={{fontSize:11,fontWeight:700,color:'#115e59'}}>💰 التكلفة التقديرية</span>
-              <span style={{fontSize:15,fontWeight:900,color:'#0d9488'}}>{hasCostData ? totalCost.toFixed(2)+' ر.س' : 'لا توجد بيانات أسعار'}</span>
+              <span style={{fontSize:15,fontWeight:900,color:'#029FA2'}}>{hasCostData ? totalCost.toFixed(2)+' ر.س' : 'لا توجد بيانات أسعار'}</span>
             </div>
             {hasCostData && (
               <div style={{display:'flex',gap:8,alignItems:'center'}}>
@@ -1259,7 +1259,7 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
                 </div>
                 {foodCostPct!==null && (
                   <div style={{textAlign:'center' as const,padding:'4px 12px'}}>
-                    <div style={{fontSize:16,fontWeight:900,color:foodCostPct<=30?'#0d9488':foodCostPct<=35?'#d97706':'#dc2626'}}>{foodCostPct.toFixed(0)}%</div>
+                    <div style={{fontSize:16,fontWeight:900,color:foodCostPct<=30?'#029FA2':foodCostPct<=35?'#d97706':'#dc2626'}}>{foodCostPct.toFixed(0)}%</div>
                     <div style={{fontSize:9,color:'#6b7280'}}>Food Cost</div>
                   </div>
                 )}

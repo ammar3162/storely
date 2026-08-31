@@ -9,7 +9,7 @@ interface StaffSession {
   permissions: {dispense:boolean,inventory:boolean,purchases:boolean,reports:boolean}
 }
 
-const CATEGORY_COLORS = ['#0d9488','#2563eb','#dc2626','#d97706','#7c3aed','#0891b2','#db2777','#65a30d','#ea580c','#4f46e5']
+const CATEGORY_COLORS = ['#029FA2','#2563eb','#dc2626','#d97706','#7c3aed','#0891b2','#db2777','#65a30d','#ea580c','#4f46e5']
 const OTHER_CATEGORY = 'أخرى'
 const UNITS = ['قطعة','كيلو','كيس','كرتون','لتر','علبة','باكيت','رول','غرام']
 
@@ -345,7 +345,7 @@ function StaffPageInner() {
         .lang-btn{padding:6px 12px;border-radius:20px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;transition:all .2s}
         .prod-btn{background:white;border:none;border-radius:14px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-family:inherit;text-align:right;width:100%;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:all .15s}
         .prod-btn:active{transform:scale(.97);box-shadow:0 1px 4px rgba(0,0,0,.1)}
-        input:focus,select:focus{border-color:#0d9488!important;outline:none!important;box-shadow:0 0 0 3px rgba(22,163,74,.1)!important}
+        input:focus,select:focus{border-color:#029FA2!important;outline:none!important;box-shadow:0 0 0 3px rgba(22,163,74,.1)!important}
         @keyframes fadeUpStagger{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
         .cat-card{animation:fadeUpStagger .4s cubic-bezier(0.34,1.56,0.64,1) both;transition:transform .15s,box-shadow .15s}
         .cat-card:active{transform:scale(.94)}
@@ -370,7 +370,7 @@ function StaffPageInner() {
             />
             {reauthError && <div style={{fontSize:12,color:'#ef4444',fontWeight:600,marginBottom:10}}>{reauthError}</div>}
             <button onClick={submitReauth} disabled={!reauthPin||reauthLoading}
-              style={{width:'100%',padding:13,background:!reauthPin||reauthLoading?'#cbd5e1':'#0d9488',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:!reauthPin||reauthLoading?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:10}}>
+              style={{width:'100%',padding:13,background:!reauthPin||reauthLoading?'#cbd5e1':'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:!reauthPin||reauthLoading?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:10}}>
               {reauthLoading?'جاري التحقق...':'دخول'}
             </button>
             <button onClick={logout} style={{width:'100%',padding:10,background:'none',border:'none',fontSize:12,color:'#94a3b8',cursor:'pointer',fontFamily:'inherit'}}>
@@ -382,7 +382,7 @@ function StaffPageInner() {
 
       {/* Toast */}
       {toast && (
-        <div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:9999,background:toast.type==='success'?'#0d9488':'#ef4444',color:'white',padding:'12px 24px',borderRadius:40,fontSize:14,fontWeight:700,boxShadow:'0 8px 24px rgba(0,0,0,.2)',animation:'slideUp .3s ease',whiteSpace:'nowrap'}}>
+        <div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:9999,background:toast.type==='success'?'#029FA2':'#ef4444',color:'white',padding:'12px 24px',borderRadius:40,fontSize:14,fontWeight:700,boxShadow:'0 8px 24px rgba(0,0,0,.2)',animation:'slideUp .3s ease',whiteSpace:'nowrap'}}>
           {toast.msg}
         </div>
       )}
@@ -433,7 +433,7 @@ function StaffPageInner() {
               {LANGUAGES.map(l=>(
                 <button key={l.code}
                   onClick={()=>{setLang(l.code);localStorage.setItem('staff_lang',l.code);if(l.code!=='ar'&&session)fetchTranslation(session,l.code);setShowLangMenu(false)}}
-                  style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#f0fdfa':'white',color:lang===l.code?'#0d9488':'#1c1c1a',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
+                  style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#f0fdfa':'white',color:lang===l.code?'#029FA2':'#1c1c1a',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
                   {lang===l.code?'✓ ':''}{l.label}
                 </button>
               ))}
@@ -467,7 +467,7 @@ function StaffPageInner() {
                   <div style={{fontSize:15,fontWeight:700,color:'#0f172a'}}>{tx(p.name)}</div>
                   {lang!=='ar'&&<div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>{p.name}</div>}
                 </div>
-                <span style={{fontSize:13,fontWeight:800,color:p.qty<=p.reorder_point?'#ef4444':'#0d9488',background:p.qty<=p.reorder_point?'#fef2f2':'#f0fdfa',padding:'5px 12px',borderRadius:10}}>{p.qty} {p.unit}</span>
+                <span style={{fontSize:13,fontWeight:800,color:p.qty<=p.reorder_point?'#ef4444':'#029FA2',background:p.qty<=p.reorder_point?'#fef2f2':'#f0fdfa',padding:'5px 12px',borderRadius:10}}>{p.qty} {p.unit}</span>
               </button>
             ))}
           </div>
@@ -506,7 +506,7 @@ function StaffPageInner() {
           </div>
         ) : (
           <div style={{animation:'fadeIn .3s'}}>
-            <button onClick={()=>setActiveCategory(null)} style={{background:'none',border:'none',color:'#0d9488',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginBottom:16,padding:0,display:'flex',alignItems:'center',gap:6}}>
+            <button onClick={()=>setActiveCategory(null)} style={{background:'none',border:'none',color:'#029FA2',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginBottom:16,padding:0,display:'flex',alignItems:'center',gap:6}}>
               ← {T('back',lang)}
             </button>
             <div style={{marginBottom:16}}>
@@ -520,7 +520,7 @@ function StaffPageInner() {
                     <div style={{fontSize:15,fontWeight:700,color:'#0f172a'}}>{tx(p.name)}</div>
                     {lang!=='ar'&&<div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>{p.name}</div>}
                   </div>
-                  <span style={{fontSize:13,fontWeight:800,color:p.qty<=p.reorder_point?'#ef4444':'#0d9488',background:p.qty<=p.reorder_point?'#fef2f2':'#f0fdfa',padding:'5px 12px',borderRadius:10}}>{p.qty} {p.unit}</span>
+                  <span style={{fontSize:13,fontWeight:800,color:p.qty<=p.reorder_point?'#ef4444':'#029FA2',background:p.qty<=p.reorder_point?'#fef2f2':'#f0fdfa',padding:'5px 12px',borderRadius:10}}>{p.qty} {p.unit}</span>
                 </button>
               ))}
             </div>
@@ -534,7 +534,7 @@ function StaffPageInner() {
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
             <div style={{fontSize:18,fontWeight:800,color:'#0f172a'}}>📦 المخزون</div>
             <button onClick={()=>setShowAddProduct(true)}
-              style={{padding:'9px 16px',background:'#0d9488',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 12px rgba(22,163,74,.3)'}}>
+              style={{padding:'9px 16px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 12px rgba(22,163,74,.3)'}}>
               ＋ إضافة منتج
             </button>
           </div>
@@ -548,12 +548,12 @@ function StaffPageInner() {
                 <div style={{fontSize:14,fontWeight:700,color:'#0f172a',lineHeight:1.3}}>{tx(p.name)}</div>
                 <div style={{fontSize:11,color:'#64748b'}}>{p.category||'—'}</div>
                 <div style={{display:'flex',alignItems:'baseline',gap:4,margin:'4px 0'}}>
-                  <span style={{fontSize:30,fontWeight:900,color:p.qty<=p.reorder_point?'#ef4444':'#0d9488',lineHeight:1}}>{p.qty}</span>
+                  <span style={{fontSize:30,fontWeight:900,color:p.qty<=p.reorder_point?'#ef4444':'#029FA2',lineHeight:1}}>{p.qty}</span>
                   <span style={{fontSize:12,color:'#94a3b8'}}>{p.unit}</span>
                 </div>
                 {p.qty<=p.reorder_point && <div style={{fontSize:10,color:'#ef4444',fontWeight:700}}>⚠️ مخزون منخفض</div>}
                 <button onClick={()=>{setEditingProduct(p);setEditQty(String(p.qty))}}
-                  style={{width:'100%',padding:'8px',background:'#f0fdfa',color:'#0d9488',border:'1.5px solid #99f6e4',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginTop:'auto'}}>
+                  style={{width:'100%',padding:'8px',background:'#f0fdfa',color:'#029FA2',border:'1.5px solid #99f6e4',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginTop:'auto'}}>
                   ✏️ تعديل
                 </button>
               </div>
@@ -569,7 +569,7 @@ function StaffPageInner() {
           <div style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:8}}>تسجيل المشتريات</div>
           <div style={{fontSize:14,color:'#64748b',marginBottom:28,maxWidth:300,margin:'0 auto 28px'}}>سجّل فواتير الشراء مع الضريبة وصور الفواتير</div>
           <button onClick={()=>router.push('/staff/purchases')}
-            style={{padding:'16px 36px',background:'linear-gradient(135deg,#0d9488,#0f766e)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 8px 24px rgba(22,163,74,.35)',display:'inline-flex',alignItems:'center',gap:8}}>
+            style={{padding:'16px 36px',background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 8px 24px rgba(22,163,74,.35)',display:'inline-flex',alignItems:'center',gap:8}}>
             📝 تسجيل شراء جديد
           </button>
         </div>
@@ -594,12 +594,12 @@ function StaffPageInner() {
               <div>
                 <div style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{tx(selected.name)}</div>
                 {lang!=='ar'&&<div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>{selected.name}</div>}
-                <div style={{fontSize:13,color:'#64748b',marginTop:4}}>{T('available',lang)}: <b style={{color:selected.qty<=selected.reorder_point?'#ef4444':'#0d9488'}}>{selected.qty} {selected.unit}</b></div>
+                <div style={{fontSize:13,color:'#64748b',marginTop:4}}>{T('available',lang)}: <b style={{color:selected.qty<=selected.reorder_point?'#ef4444':'#029FA2'}}>{selected.qty} {selected.unit}</b></div>
               </div>
               <button onClick={()=>{setSelected(null);setDispenseQty('');setWasteMode(false);setWasteReason('');setWasteNote('')}} style={{background:'#f1f5f9',border:'none',borderRadius:'50%',width:36,height:36,color:'#64748b',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
             </div>
             <div style={{display:'flex',gap:8,marginBottom:20,background:'#f1f5f9',borderRadius:12,padding:4}}>
-              <button onClick={()=>setWasteMode(false)} style={{flex:1,padding:'10px',borderRadius:9,border:'none',background:!wasteMode?'white':'transparent',color:!wasteMode?'#0d9488':'#64748b',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:!wasteMode?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
+              <button onClick={()=>setWasteMode(false)} style={{flex:1,padding:'10px',borderRadius:9,border:'none',background:!wasteMode?'white':'transparent',color:!wasteMode?'#029FA2':'#64748b',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:!wasteMode?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
                 📤 صرف عادي
               </button>
               <button onClick={()=>setWasteMode(true)} style={{flex:1,padding:'10px',borderRadius:9,border:'none',background:wasteMode?'white':'transparent',color:wasteMode?'#d97706':'#64748b',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:wasteMode?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
@@ -649,7 +649,7 @@ function StaffPageInner() {
               </button>
             ) : (
               <button onClick={handleDispense} disabled={!dispenseQty||submitting}
-                style={{width:'100%',padding:18,background:(!dispenseQty||submitting)?'#94a3b8':'linear-gradient(135deg,#0d9488,#0f766e)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:800,cursor:(!dispenseQty||submitting)?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:(!dispenseQty||submitting)?'none':'0 8px 24px rgba(22,163,74,.35)'}}>
+                style={{width:'100%',padding:18,background:(!dispenseQty||submitting)?'#94a3b8':'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:800,cursor:(!dispenseQty||submitting)?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:(!dispenseQty||submitting)?'none':'0 8px 24px rgba(22,163,74,.35)'}}>
                 {submitting?T('saving',lang):T('confirm',lang)}
               </button>
             )}
@@ -668,7 +668,7 @@ function StaffPageInner() {
               style={{width:'100%',padding:'16px',border:'2px solid #e2e8f0',borderRadius:14,fontSize:28,fontWeight:800,textAlign:'center',fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:16}}/>
             <div style={{display:'flex',gap:8}}>
               <button onClick={updateQty} disabled={savingQty}
-                style={{flex:2,padding:16,background:'linear-gradient(135deg,#0d9488,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>
+                style={{flex:2,padding:16,background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>
                 {savingQty?'جاري الحفظ...':'✅ حفظ الكمية'}
               </button>
               <button onClick={()=>setEditingProduct(null)}
@@ -701,7 +701,7 @@ function StaffPageInner() {
             </div>
             <div style={{display:'flex',gap:8}}>
               <button onClick={addProduct} disabled={savingProduct||!newProduct.name||!newProduct.qty}
-                style={{flex:2,padding:16,background:'linear-gradient(135deg,#0d9488,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',opacity:savingProduct||!newProduct.name||!newProduct.qty?0.6:1}}>
+                style={{flex:2,padding:16,background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',opacity:savingProduct||!newProduct.name||!newProduct.qty?0.6:1}}>
                 {savingProduct?'جاري الإضافة...':'✅ إضافة'}
               </button>
               <button onClick={()=>setShowAddProduct(false)}

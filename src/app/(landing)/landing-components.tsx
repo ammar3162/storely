@@ -20,7 +20,7 @@ export function MiniMockup({ variant }: { variant: 'stats'|'whatsapp'|'staff'|'c
       <div style={{fontSize:11,fontWeight:800,color:'#111827',textAlign:'center' as const}}>أهلاً محمد</div>
       <div style={{background:'#f8fafc',borderRadius:10,padding:8,textAlign:'center' as const}}>
         <div style={{fontSize:8,color:'#d97706',fontWeight:700,marginBottom:5}}>● ما سجّلت حضورك بعد</div>
-        <div style={{background:'#0d9488',borderRadius:7,padding:'6px 0',fontSize:9,fontWeight:800,color:'white'}}>تسجيل حضور</div>
+        <div style={{background:'#029FA2',borderRadius:7,padding:'6px 0',fontSize:9,fontWeight:800,color:'white'}}>تسجيل حضور</div>
       </div>
       <div style={{background:'linear-gradient(135deg,#115e59,#0f766e)',borderRadius:9,padding:'8px 10px',fontSize:9,fontWeight:800,color:'white',textAlign:'center' as const}}>صرف المخزون</div>
       <div style={{display:'flex',gap:6}}>
@@ -43,7 +43,7 @@ export function MiniMockup({ variant }: { variant: 'stats'|'whatsapp'|'staff'|'c
   if (variant === 'chart') return (
     <div style={{background:'white',borderRadius:16,padding:14,height:'100%',display:'flex',flexDirection:'column',gap:6}}>
       <div style={{fontSize:10,fontWeight:800,color:'#111827',marginBottom:2}}>المخزون</div>
-      {[['اكواب ورقية','21 كيس','#0d9488','كافٍ'],['ورقية ميديم','1 كرتون','#d97706','ناقص'],['بابريكا','0 علبة','#dc2626','نفد']].map(([n,q,c,s])=>(
+      {[['اكواب ورقية','21 كيس','#029FA2','كافٍ'],['ورقية ميديم','1 كرتون','#d97706','ناقص'],['بابريكا','0 علبة','#dc2626','نفد']].map(([n,q,c,s])=>(
         <div key={n} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 9px',background:'#fafafa',borderRadius:7}}>
           <span style={{fontSize:9,fontWeight:700,color:'#374151'}}>{n}</span>
           <div style={{display:'flex',alignItems:'center',gap:5}}>

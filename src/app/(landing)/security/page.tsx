@@ -60,7 +60,7 @@ export default function SecurityPage() {
         ))}
 
         <div style={{marginTop:48,padding:'20px 24px',background:'#f0fdfa',borderRadius:16,border:'1px solid #99f6e4',textAlign:'center'}}>
-          <p style={{fontSize:14,color:'#0d9488',fontWeight:600}}>Storely — نحوّل التعقيد إلى تحكّم · storely.dev</p>
+          <p style={{fontSize:14,color:'#029FA2',fontWeight:600}}>Storely — نحوّل التعقيد إلى تحكّم · storely.dev</p>
         </div>
       </div>
     </div>

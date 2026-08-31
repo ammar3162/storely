@@ -45,7 +45,7 @@ export default function SuppliersJoinPage() {
         <h2 style={{fontSize:22,fontWeight:800,color:'#0f172a',marginBottom:8}}>تم استلام طلبك!</h2>
         <p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:24}}>شكراً لاهتمامك بالشراكة مع Storely. سيتواصل معك فريقنا خلال 24-48 ساعة.</p>
         <a href="https://wa.me/966594351667" target="_blank" rel="noopener noreferrer"
-          style={{display:'inline-flex',alignItems:'center',gap:8,padding:'12px 24px',background:'#0d9488',color:'white',borderRadius:12,fontSize:14,fontWeight:700,textDecoration:'none'}}>
+          style={{display:'inline-flex',alignItems:'center',gap:8,padding:'12px 24px',background:'#029FA2',color:'white',borderRadius:12,fontSize:14,fontWeight:700,textDecoration:'none'}}>
           📲 تواصل معنا مباشرة
         </a>
       </div>
@@ -54,7 +54,7 @@ export default function SuppliersJoinPage() {
 
   return (
     <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#042f2e,#1a4731)',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:20}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap');*{box-sizing:border-box}.inp{width:100%;padding:12px 16px;border:1.5px solid #e5e7eb;borderRadius:10px;fontSize:14px;outline:none;fontFamily:inherit;transition:border-color .2s}.inp:focus{border-color:#0d9488;box-shadow:0 0 0 3px rgba(22,163,74,.08)}`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap');*{box-sizing:border-box}.inp{width:100%;padding:12px 16px;border:1.5px solid #e5e7eb;borderRadius:10px;fontSize:14px;outline:none;fontFamily:inherit;transition:border-color .2s}.inp:focus{border-color:#029FA2;box-shadow:0 0 0 3px rgba(22,163,74,.08)}`}</style>
 
       <div style={{maxWidth:600,margin:'0 auto',paddingTop:40}}>
         {/* Header */}
@@ -110,9 +110,9 @@ export default function SuppliersJoinPage() {
               <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:6}}>
                 {BUSINESS_TYPES.map(b=>(
                   <button key={b.v} type="button" onClick={()=>toggleType(b.v)}
-                    style={{padding:'8px 4px',borderRadius:10,border:`1.5px solid ${form.business_type.includes(b.v)?'#0d9488':'#e5e7eb'}`,background:form.business_type.includes(b.v)?'#f0fdfa':'white',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:3,transition:'all .15s'}}>
+                    style={{padding:'8px 4px',borderRadius:10,border:`1.5px solid ${form.business_type.includes(b.v)?'#029FA2':'#e5e7eb'}`,background:form.business_type.includes(b.v)?'#f0fdfa':'white',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:3,transition:'all .15s'}}>
                     <span style={{fontSize:18}}>{b.icon}</span>
-                    <span style={{fontSize:9,fontWeight:600,color:form.business_type.includes(b.v)?'#0d9488':'#374151'}}>{b.v}</span>
+                    <span style={{fontSize:9,fontWeight:600,color:form.business_type.includes(b.v)?'#029FA2':'#374151'}}>{b.v}</span>
                   </button>
                 ))}
               </div>
@@ -132,14 +132,14 @@ export default function SuppliersJoinPage() {
 
             <label style={{display:'flex',alignItems:'flex-start',gap:10,marginBottom:20,cursor:'pointer',padding:'12px 14px',background:'#f9fafb',borderRadius:10,border:'1px solid #e5e7eb'}}>
               <input type="checkbox" checked={form.marketplace_consent} onChange={e=>setForm(f=>({...f,marketplace_consent:e.target.checked}))}
-                style={{marginTop:2,accentColor:'#0d9488',width:16,height:16,flexShrink:0}}/>
+                style={{marginTop:2,accentColor:'#029FA2',width:16,height:16,flexShrink:0}}/>
               <span style={{fontSize:12,color:'#4b5563',lineHeight:1.7}}>
-                أوافق على عرض اسم شركتي ورقم التواصل بمنصة "السوق" العامة داخل Storely في حال قبول طلبي — بحسب <a href="/privacy" target="_blank" style={{color:'#0d9488',textDecoration:'underline'}}>سياسة الخصوصية</a>
+                أوافق على عرض اسم شركتي ورقم التواصل بمنصة "السوق" العامة داخل Storely في حال قبول طلبي — بحسب <a href="/privacy" target="_blank" style={{color:'#029FA2',textDecoration:'underline'}}>سياسة الخصوصية</a>
               </span>
             </label>
 
             <button type="submit" disabled={loading}
-              style={{width:'100%',padding:'14px',background:loading?'#9ca3af':'linear-gradient(135deg,#0d9488,#0f766e)',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:800,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>
+              style={{width:'100%',padding:'14px',background:loading?'#9ca3af':'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:800,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>
               {loading?'⏳ جاري التسجيل...':'🤝 تقديم طلب الشراكة'}
             </button>
           </form>

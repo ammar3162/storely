@@ -13,7 +13,7 @@ export default function StoreMascot({ focused, cursorRatio = 0.5 }: StoreMascotP
   return (
     <svg viewBox="0 0 200 180" style={{ width: 130, height: 'auto', display: 'block', margin: '0 auto 12px', transition: 'transform .2s' }}>
       <ellipse cx="100" cy="168" rx="55" ry="8" fill="#000" opacity="0.06" />
-      <rect x="35" y="55" width="130" height="100" rx="10" fill="#0d9488" />
+      <rect x="35" y="55" width="130" height="100" rx="10" fill="#029FA2" />
       <rect x="35" y="55" width="130" height="100" rx="10" fill="none" stroke="#0f766e" strokeWidth="2" />
       <line x1="100" y1="55" x2="100" y2="155" stroke="#0f766e" strokeWidth="2" />
       <rect x="80" y="85" width="40" height="35" rx="4" fill="#ccfbf1" stroke="#0f766e" strokeWidth="2" />

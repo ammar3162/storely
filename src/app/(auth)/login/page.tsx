@@ -55,8 +55,8 @@ const PHONE_RULES: Record<string,{length:number, prefix:string, placeholder:stri
 }
 
 const PLANS = [
-  { v:1,  label:'الأساسية',  price:'149', yearlyPrice:'1430', desc:'فرع · 2 موظفين · 3 موردين',                    color:'#0d9488' },
-  { v:3,  label:'المتوسطة',  price:'249', yearlyPrice:'2390', desc:'3 فروع · 10 موظفين · 10 موردين',               color:'#0d9488' },
+  { v:1,  label:'الأساسية',  price:'149', yearlyPrice:'1430', desc:'فرع · 2 موظفين · 3 موردين',                    color:'#029FA2' },
+  { v:3,  label:'المتوسطة',  price:'249', yearlyPrice:'2390', desc:'3 فروع · 10 موظفين · 10 موردين',               color:'#029FA2' },
   { v:10, label:'المتقدمة',  price:'399', yearlyPrice:'3830', desc:'فروع غير محدودة · موظفون وموردون غير محدودين', color:'#7c3aed' },
 ]
 
@@ -312,15 +312,15 @@ function LoginPage() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
         @keyframes spin{to{transform:rotate(360deg)}}
         .inp{width:100%;padding:13px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;outline:none;background:white;color:#111827;font-family:inherit;transition:border-color .2s}
-        .inp:focus{border-color:#0d9488;box-shadow:0 0 0 3px rgba(13,148,136,.08)}
+        .inp:focus{border-color:#029FA2;box-shadow:0 0 0 3px rgba(13,148,136,.08)}
         .inp::placeholder{color:#9ca3af}
-        .btn-main{width:100%;padding:14px;background:#16233f;color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
+        .btn-main{width:100%;padding:14px;background:#13254C;color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
         .btn-main:hover{background:#0f1729}
         .btn-main:disabled{opacity:.6;cursor:not-allowed}
         .tab{flex:1;padding:12px;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .2s}
         .biz{padding:12px 8px;border-radius:10px;border:1.5px solid #e5e7eb;background:white;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .15s;font-size:12px;font-weight:600;color:#374151}
-        .biz:hover{border-color:#0d9488}
-        .biz.on{border-color:#0d9488;background:#f0fdfa;color:#0d9488}
+        .biz:hover{border-color:#029FA2}
+        .biz.on{border-color:#029FA2;background:#f0fdfa;color:#029FA2}
         @media(max-width:768px){.right-panel{display:none!important}}
       `}</style>
 
@@ -337,7 +337,7 @@ function LoginPage() {
           <span style={{fontSize:13,color:'#6b7280'}}>{t('login.haveAccount')}</span>
           <button onClick={()=>{setMode('login');setError('');setStep(1)}}
             style={{padding:'8px 18px',background:'none',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:'#374151',transition:'border-color .2s'}}
-            onMouseEnter={e=>e.currentTarget.style.borderColor='#0d9488'}
+            onMouseEnter={e=>e.currentTarget.style.borderColor='#029FA2'}
             onMouseLeave={e=>e.currentTarget.style.borderColor='#e5e7eb'}>
             {t('login.loginNav')}
           </button>
@@ -365,7 +365,7 @@ function LoginPage() {
                 </p>
                 <a href="https://wa.me/966594351667?text=مرحباً، حسابي في Storely موقوف وأحتاج مساعدة"
                   target="_blank" rel="noopener noreferrer"
-                  style={{display:'inline-flex',alignItems:'center',gap:8,background:'#0d9488',color:'white',padding:'13px 28px',borderRadius:12,fontSize:14,fontWeight:700,textDecoration:'none',boxShadow:'0 4px 14px rgba(22,163,74,.25)'}}>
+                  style={{display:'inline-flex',alignItems:'center',gap:8,background:'#029FA2',color:'white',padding:'13px 28px',borderRadius:12,fontSize:14,fontWeight:700,textDecoration:'none',boxShadow:'0 4px 14px rgba(22,163,74,.25)'}}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                   تواصل معنا عبر واتساب
                 </a>
@@ -399,7 +399,7 @@ function LoginPage() {
                     <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
                       <label style={{fontSize:13,fontWeight:600,color:'#374151'}}>{t('login.password')}</label>
                       <button type="button" onClick={()=>{setMode('forgot');setError('')}}
-                        style={{background:'none',border:'none',fontSize:13,color:'#0d9488',cursor:'pointer',fontFamily:'inherit',fontWeight:600,padding:0}}>
+                        style={{background:'none',border:'none',fontSize:13,color:'#029FA2',cursor:'pointer',fontFamily:'inherit',fontWeight:600,padding:0}}>
                         {t('login.forgotPassword')}
                       </button>
                     </div>
@@ -413,7 +413,7 @@ function LoginPage() {
                 </form>
                 <div style={{textAlign:'center',marginTop:24,fontSize:13,color:'#6b7280'}}>
                   {t('login.noAccount')}{' '}
-                  <button onClick={()=>{setMode('register');setError('');setStep(1)}} style={{background:'none',border:'none',color:'#0d9488',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
+                  <button onClick={()=>{setMode('register');setError('');setStep(1)}} style={{background:'none',border:'none',color:'#029FA2',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
                     {t('login.signupNow')}
                   </button>
                 </div>
@@ -426,7 +426,7 @@ function LoginPage() {
                 <div style={{marginBottom:28}}>
                   <div style={{display:'flex',gap:4,marginBottom:20}}>
                     {[1,2].map(s=>(
-                      <div key={s} style={{flex:1,height:3,borderRadius:99,background:step>=s?'#0d9488':'#e5e7eb',transition:'background .3s'}}/>
+                      <div key={s} style={{flex:1,height:3,borderRadius:99,background:step>=s?'#029FA2':'#e5e7eb',transition:'background .3s'}}/>
                     ))}
                   </div>
                   <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:6,letterSpacing:'-0.5px'}}>{t('login.createAccountFree')}</h1>
@@ -456,7 +456,7 @@ function LoginPage() {
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.whatsappLabel')}</label>
                     <div style={{display:'flex',border:'1.5px solid #e5e7eb',borderRadius:10,overflow:'hidden',background:'white',transition:'border-color .2s'}}
-                      onFocusCapture={e=>(e.currentTarget as HTMLElement).style.borderColor='#0d9488'}
+                      onFocusCapture={e=>(e.currentTarget as HTMLElement).style.borderColor='#029FA2'}
                       onBlurCapture={e=>(e.currentTarget as HTMLElement).style.borderColor='#e5e7eb'}>
                       <select value={countryCode} onChange={e=>setCountryCode(e.target.value)}
                         style={{background:'transparent',border:'none',borderLeft:'1.5px solid #e5e7eb',padding:'12px 8px',fontSize:13,fontFamily:'inherit',outline:'none',cursor:'pointer',direction:'ltr',color:'#111827',minWidth:100}}>
@@ -486,7 +486,7 @@ function LoginPage() {
                         {[1,2,3,4].map(l=>{
                           const checks = [/[A-Z]/.test(password),/[a-z]/.test(password),/[0-9]/.test(password),/[@#$!%^&*]/.test(password)]
                           const score = checks.filter(Boolean).length
-                          const colors = ['#ef4444','#f59e0b','#3b82f6','#0d9488']
+                          const colors = ['#ef4444','#f59e0b','#3b82f6','#029FA2']
                           return <div key={l} style={{flex:1,height:3,borderRadius:99,background:score>=l?colors[score-1]:'#e5e7eb',transition:'background .3s'}}/>
                         })}
                         <span style={{fontSize:11,color:'#9ca3af',flexShrink:0}}>
@@ -499,7 +499,7 @@ function LoginPage() {
                 </form>
                 <div style={{textAlign:'center',marginTop:20,fontSize:13,color:'#6b7280'}}>
                   {t('login.alreadyHaveAccount')}{' '}
-                  <button onClick={()=>{setMode('login');setError('')}} style={{background:'none',border:'none',color:'#0d9488',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
+                  <button onClick={()=>{setMode('login');setError('')}} style={{background:'none',border:'none',color:'#029FA2',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
                     {t('login.loginNow')}
                   </button>
                 </div>
@@ -512,7 +512,7 @@ function LoginPage() {
                 <div style={{marginBottom:28}}>
                   <div style={{display:'flex',gap:4,marginBottom:20}}>
                     {[1,2].map(s=>(
-                      <div key={s} style={{flex:1,height:3,borderRadius:99,background:step>=s?'#0d9488':'#e5e7eb',transition:'background .3s'}}/>
+                      <div key={s} style={{flex:1,height:3,borderRadius:99,background:step>=s?'#029FA2':'#e5e7eb',transition:'background .3s'}}/>
                     ))}
                   </div>
                   <button type="button" onClick={()=>{setStep(1);setError('')}}
@@ -547,7 +547,7 @@ function LoginPage() {
                   ))}
 
                   {branchCount && (
-                    <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:8,padding:'11px 14px',fontSize:13,color:'#0d9488',fontWeight:600,display:'flex',alignItems:'center',gap:8}}>
+                    <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:8,padding:'11px 14px',fontSize:13,color:'#029FA2',fontWeight:600,display:'flex',alignItems:'center',gap:8}}>
                       ✓ {t('login.freeTrialConfirm')}
                     </div>
                   )}
@@ -557,9 +557,9 @@ function LoginPage() {
                       style={{marginTop:2,flexShrink:0,cursor:'pointer'}}/>
                     <span>
                       {t('login.agreeTo')}{' '}
-                      <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:'#0d9488',fontWeight:700,textDecoration:'underline'}}>{t('login.termsAndConditions')}</a>
+                      <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:'#029FA2',fontWeight:700,textDecoration:'underline'}}>{t('login.termsAndConditions')}</a>
                       {' '}{t('login.andWord')}{' '}
-                      <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:'#0d9488',fontWeight:700,textDecoration:'underline'}}>{t('login.privacyPolicy')}</a>
+                      <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:'#029FA2',fontWeight:700,textDecoration:'underline'}}>{t('login.privacyPolicy')}</a>
                     </span>
                   </label>
 
@@ -640,7 +640,7 @@ function LoginPage() {
                   {t('login.clickLinkToActivate')}<br/>
                   {t('login.checkSpam')}
                 </p>
-                <button onClick={()=>setMode('login')} style={{background:'#0d9488',color:'white',border:'none',borderRadius:12,padding:'13px 32px',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                <button onClick={()=>setMode('login')} style={{background:'#029FA2',color:'white',border:'none',borderRadius:12,padding:'13px 32px',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                   {t('login.backToLogin')}
                 </button>
               </div>
@@ -659,12 +659,12 @@ function LoginPage() {
         {/* Right — Branding */}
         <div className="right-panel" style={{width:'45%',background:'#f9fafb',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'48px 44px',borderRight:'1px solid #f3f4f6'}}>
           <div style={{maxWidth:400,width:'100%'}}>
-            <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'6px 14px',fontSize:12,fontWeight:700,color:'#0d9488',marginBottom:20}}>
+            <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'6px 14px',fontSize:12,fontWeight:700,color:'#029FA2',marginBottom:20}}>
               ✓ {t('login.badge')}
             </div>
             <h2 style={{fontSize:30,fontWeight:900,color:'#111827',lineHeight:1.2,marginBottom:12,letterSpacing:'-1px'}}>
               Storely<br/>
-              <span style={{color:'#0d9488'}}>{t('login.headline')}</span>
+              <span style={{color:'#029FA2'}}>{t('login.headline')}</span>
             </h2>
             <p style={{fontSize:14,color:'#6b7280',lineHeight:1.75,marginBottom:24}}>
               {t('login.subtitle')}
@@ -692,7 +692,7 @@ function LoginPage() {
               <div style={{display:'flex',gap:22}}>
                 {[['149 '+(lang==='ar'?'ر.س':'SAR'),t('login.statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('login.statTrial')],['7',t('login.statLangs')]].map(([n,l])=>(
                   <div key={l}>
-                    <div style={{fontSize:18,fontWeight:900,color:'#0d9488'}}>{n}</div>
+                    <div style={{fontSize:18,fontWeight:900,color:'#029FA2'}}>{n}</div>
                     <div style={{fontSize:10,color:'#9ca3af',marginTop:2}}>{l}</div>
                   </div>
                 ))}

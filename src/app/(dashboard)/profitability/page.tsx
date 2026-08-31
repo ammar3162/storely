@@ -144,7 +144,7 @@ export default function ProfitabilityPage() {
           {label:'إجمالي المشتريات', value: Math.round(data.totalPurchases).toLocaleString('en-US')+' '+curr},
           {label:'إجمالي المصروفات', value: Math.round(fixedTotal+variableTotal).toLocaleString('en-US')+' '+curr},
           {label:'الضريبة (تقديري)', value: Math.round(vatAmount).toLocaleString('en-US')+' '+curr},
-          {label:'صافي الربح', value: Math.round(data.netProfit).toLocaleString('en-US')+' '+curr, color: data.netProfit>=0?'#0d9488':'#dc2626'},
+          {label:'صافي الربح', value: Math.round(data.netProfit).toLocaleString('en-US')+' '+curr, color: data.netProfit>=0?'#029FA2':'#dc2626'},
         ],
         totalsRow: {name:'الصافي', type:'', amount: Math.round(data.netProfit).toLocaleString('en-US')+' '+curr},
         fileName: `الربحية_${month}.pdf`,
@@ -240,7 +240,7 @@ export default function ProfitabilityPage() {
   const variableTotal = variableList.reduce((s:number,e:any)=>s+Number(e.amount||0),0)
   const vatAmount = data ? data.totalIn - (data.totalIn/1.15) : 0
   const totalExpenses = fixedTotal + variableTotal
-  const netColor = data && data.netProfit>=0 ? '#0d9488' : '#dc2626'
+  const netColor = data && data.netProfit>=0 ? '#029FA2' : '#dc2626'
 
   return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>

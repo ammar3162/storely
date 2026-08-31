@@ -173,7 +173,7 @@ function StaffLoginInner() {
               </div>
 
               <button onClick={goToPin} disabled={phone.length<requiredLen}
-                style={{width:'100%',padding:16,marginBottom:'clamp(24px,6vh,48px)',background:phone.length>=requiredLen?'linear-gradient(135deg,#0d9488,#0f766e)':'rgba(255,255,255,.08)',color:phone.length>=requiredLen?'white':'rgba(255,255,255,.35)',border:'none',borderRadius:16,fontSize:15,fontWeight:800,cursor:phone.length>=requiredLen?'pointer':'not-allowed',fontFamily:'inherit',boxShadow:phone.length>=requiredLen?'0 10px 28px rgba(22,163,74,.35)':'none',transition:'all .2s'}}>
+                style={{width:'100%',padding:16,marginBottom:'clamp(24px,6vh,48px)',background:phone.length>=requiredLen?'linear-gradient(135deg,#029FA2,#0f766e)':'rgba(255,255,255,.08)',color:phone.length>=requiredLen?'white':'rgba(255,255,255,.35)',border:'none',borderRadius:16,fontSize:15,fontWeight:800,cursor:phone.length>=requiredLen?'pointer':'not-allowed',fontFamily:'inherit',boxShadow:phone.length>=requiredLen?'0 10px 28px rgba(22,163,74,.35)':'none',transition:'all .2s'}}>
                 {t('staffLogin.continueBtn')}
               </button>
             </div>

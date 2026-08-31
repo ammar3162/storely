@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { colors, radius, shadow, font } from '@/lib/ds'
 
 const FEATURES = [
-  { icon:'📦', title:'المخزون',      desc:'أضف منتجاتك وحدد الحد الأدنى — سنبلّغك قبل أن ينفد أي صنف',    color:'#0d9488', page:'/inventory' },
+  { icon:'📦', title:'المخزون',      desc:'أضف منتجاتك وحدد الحد الأدنى — سنبلّغك قبل أن ينفد أي صنف',    color:'#029FA2', page:'/inventory' },
   { icon:'📤', title:'الصرف',        desc:'سجّل الصرف اليومي بضغطة واحدة — سريع ومرتب بالفئات',           color:'#dc2626', page:'/dispense' },
   { icon:'🛒', title:'المشتريات',    desc:'سجّل فواتير الشراء مع احتساب ضريبة 15% تلقائياً',               color:'#2563eb', page:'/purchases' },
   { icon:'📊', title:'التقارير',     desc:'تقارير الصرف والمشتريات والجرد — صدّر بـ CSV بضغطة',            color:'#7c3aed', page:'/reports' },
@@ -103,7 +103,7 @@ export default function FeatureAnnouncement() {
             animation:'tourIn .4s cubic-bezier(.4,0,.2,1)',
           }}>
             {/* Green top bar */}
-            <div style={{height:5,background:`linear-gradient(90deg,#0d9488,#2dd4bf,#0d9488)`}}/>
+            <div style={{height:5,background:`linear-gradient(90deg,#029FA2,#2dd4bf,#029FA2)`}}/>
 
             <div style={{padding:'28px 28px 24px'}}>
               {/* Header */}
@@ -138,7 +138,7 @@ export default function FeatureAnnouncement() {
 
               {/* Actions */}
               <button onClick={()=>{ dismiss(); router.push('/dashboard') }}
-                style={{width:'100%',padding:'14px',background:'linear-gradient(135deg,#0d9488,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:font.family,boxShadow:'0 6px 20px rgba(22,163,74,.3)',marginBottom:10}}>
+                style={{width:'100%',padding:'14px',background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:font.family,boxShadow:'0 6px 20px rgba(22,163,74,.3)',marginBottom:10}}>
                 ابدأ الاستخدام ←
               </button>
               <button onClick={dismiss}

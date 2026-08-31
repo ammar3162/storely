@@ -463,7 +463,7 @@ export default function SettingsPage() {
                       <div style={{fontSize:11,color:'#b45309'}}>الأساسية 149 · المتوسطة 249 · المتقدمة 399 ريال/شهر</div>
                     </div>
                     <a href="https://wa.me/966594351667?text=أريد الترقية في Storely" target="_blank" rel="noopener noreferrer"
-                      style={{marginRight:'auto',padding:'8px 16px',background:'#0d9488',color:'white',borderRadius:8,fontSize:12,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap'}}>
+                      style={{marginRight:'auto',padding:'8px 16px',background:'#029FA2',color:'white',borderRadius:8,fontSize:12,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap'}}>
                       تواصل معنا
                     </a>
                   </div>

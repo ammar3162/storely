@@ -30,7 +30,7 @@ export default function ConfirmPage({ params }: { params: { token: string } }) {
 
   if(status==='loading') return (
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4'}}>
-      <div style={{width:40,height:40,border:'3px solid #99f6e4',borderTopColor:'#0d9488',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
+      <div style={{width:40,height:40,border:'3px solid #99f6e4',borderTopColor:'#029FA2',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -49,7 +49,7 @@ export default function ConfirmPage({ params }: { params: { token: string } }) {
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f0fdfa'}}>
       <div style={{background:'white',borderRadius:16,padding:32,textAlign:'center',maxWidth:320,width:'100%',margin:16,border:'1px solid #99f6e4'}}>
         <div style={{fontSize:48,marginBottom:12}}>✅</div>
-        <div style={{fontSize:18,fontWeight:700,color:'#0d9488'}}>تم التأكيد</div>
+        <div style={{fontSize:18,fontWeight:700,color:'#029FA2'}}>تم التأكيد</div>
         <div style={{fontSize:12,color:'#5f5e5a',marginTop:8,lineHeight:1.6}}>شكراً — تم إبلاغ العميل بتأكيدك</div>
       </div>
     </div>
@@ -59,7 +59,7 @@ export default function ConfirmPage({ params }: { params: { token: string } }) {
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',background:'#f5f5f4',padding:16,display:'flex',alignItems:'center',justifyContent:'center'}}>
       <div style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,overflow:'hidden',border:'1px solid #ebebea'}}>
         {/* Header */}
-        <div style={{background:'#0d9488',padding:'20px 20px 16px',textAlign:'center'}}>
+        <div style={{background:'#029FA2',padding:'20px 20px 16px',textAlign:'center'}}>
           <div style={{fontSize:14,fontWeight:700,color:'white',opacity:.8,marginBottom:4}}>🟢 Storely</div>
           <div style={{fontSize:18,fontWeight:700,color:'white'}}>طلب توريد</div>
           <div style={{fontSize:12,color:'white',opacity:.7,marginTop:4}}>{order?.supplier_name}</div>
@@ -73,13 +73,13 @@ export default function ConfirmPage({ params }: { params: { token: string } }) {
             {(order?.items||[]).map((item:any,i:number)=>(
               <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:i<order.items.length-1?'1px solid #ebebea':'none'}}>
                 <span style={{fontSize:13,fontWeight:600,color:'#1c1c1a'}}>{item.name}</span>
-                <span style={{fontSize:13,fontWeight:700,color:'#0d9488'}}>{item.qty} {item.unit}</span>
+                <span style={{fontSize:13,fontWeight:700,color:'#029FA2'}}>{item.qty} {item.unit}</span>
               </div>
             ))}
           </div>
 
           <button onClick={confirm}
-            style={{width:'100%',padding:'14px',background:'#0d9488',color:'white',border:'none',borderRadius:10,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+            style={{width:'100%',padding:'14px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
             ✅ تأكيد الطلب
           </button>
           <div style={{fontSize:11,color:'#888780',textAlign:'center',marginTop:10}}>بالضغط على التأكيد سيتم إبلاغ العميل فوراً</div>

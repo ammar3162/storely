@@ -15,7 +15,7 @@ export default function ConfirmDialog({ title, message, confirmText='تأكيد'
   const colors = {
     danger:  { bg:'#fef2f2', border:'#fecaca', icon:'🗑️', btn:'#ef4444', btnHover:'#dc2626' },
     warning: { bg:'#fffbeb', border:'#fcd34d', icon:'⚠️', btn:'#f59e0b', btnHover:'#d97706' },
-    success: { bg:'#f0fdfa', border:'#5eead4', icon:'✅', btn:'#14b8a6', btnHover:'#0d9488' },
+    success: { bg:'#f0fdfa', border:'#5eead4', icon:'✅', btn:'#14b8a6', btnHover:'#029FA2' },
   }
   const c = colors[type]
 

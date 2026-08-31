@@ -61,9 +61,9 @@ export default function SupplierPortalAuthPage() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
         @keyframes spin{to{transform:rotate(360deg)}}
         .sp-inp{width:100%;padding:13px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;outline:none;background:white;color:#111827;font-family:inherit;transition:border-color .2s}
-        .sp-inp:focus{border-color:#0d9488;box-shadow:0 0 0 3px rgba(22,163,74,.08)}
+        .sp-inp:focus{border-color:#029FA2;box-shadow:0 0 0 3px rgba(22,163,74,.08)}
         .sp-inp::placeholder{color:#9ca3af}
-        .sp-btn-main{width:100%;padding:14px;background:#0d9488;color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
+        .sp-btn-main{width:100%;padding:14px;background:#029FA2;color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
         .sp-btn-main:hover{background:#0f766e}
         .sp-btn-main:disabled{opacity:.6;cursor:not-allowed}
         @media(max-width:768px){.sp-right-panel{display:none!important}}
@@ -74,13 +74,13 @@ export default function SupplierPortalAuthPage() {
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           <img src="/storely-logo.png" alt="Storely" style={{width:38,height:38,borderRadius:10,objectFit:'cover'}}/>
           <span style={{fontSize:18,fontWeight:800,color:'#111827',letterSpacing:'-0.3px'}}>Storely</span>
-          <span style={{fontSize:12,fontWeight:700,color:'#0d9488',background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'3px 10px',marginRight:4}}>بوابة الموردين</span>
+          <span style={{fontSize:12,fontWeight:700,color:'#029FA2',background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'3px 10px',marginRight:4}}>بوابة الموردين</span>
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           <span style={{fontSize:13,color:'#6b7280'}}>{mode==='login'?'ما عندك حساب؟':'عندك حساب؟'}</span>
           <button onClick={()=>{setMode(mode==='login'?'register':'login');setError('')}}
             style={{padding:'8px 18px',background:'none',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:'#374151',transition:'border-color .2s'}}
-            onMouseEnter={e=>e.currentTarget.style.borderColor='#0d9488'}
+            onMouseEnter={e=>e.currentTarget.style.borderColor='#029FA2'}
             onMouseLeave={e=>e.currentTarget.style.borderColor='#e5e7eb'}>
             {mode==='login'?'تسجيل جديد':'تسجيل الدخول'}
           </button>
@@ -114,7 +114,7 @@ export default function SupplierPortalAuthPage() {
                 </form>
                 <div style={{textAlign:'center',marginTop:24,fontSize:13,color:'#6b7280'}}>
                   ما عندك حساب مورد؟{' '}
-                  <button onClick={()=>{setMode('register');setError('')}} style={{background:'none',border:'none',color:'#0d9488',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
+                  <button onClick={()=>{setMode('register');setError('')}} style={{background:'none',border:'none',color:'#029FA2',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
                     سجّل الآن
                   </button>
                 </div>
@@ -160,7 +160,7 @@ export default function SupplierPortalAuthPage() {
                 </form>
                 <div style={{textAlign:'center',marginTop:20,fontSize:13,color:'#6b7280'}}>
                   عندك حساب؟{' '}
-                  <button onClick={()=>{setMode('login');setError('')}} style={{background:'none',border:'none',color:'#0d9488',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
+                  <button onClick={()=>{setMode('login');setError('')}} style={{background:'none',border:'none',color:'#029FA2',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
                     سجّل الدخول
                   </button>
                 </div>
@@ -172,12 +172,12 @@ export default function SupplierPortalAuthPage() {
         {/* Right — Branding */}
         <div className="sp-right-panel" style={{width:'45%',background:'#f9fafb',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'48px 44px',borderRight:'1px solid #f3f4f6'}}>
           <div style={{maxWidth:400,width:'100%'}}>
-            <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'6px 14px',fontSize:12,fontWeight:700,color:'#0d9488',marginBottom:20}}>
+            <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'6px 14px',fontSize:12,fontWeight:700,color:'#029FA2',marginBottom:20}}>
               🚚 بوابة الموردين
             </div>
             <h2 style={{fontSize:30,fontWeight:900,color:'#111827',lineHeight:1.2,marginBottom:12,letterSpacing:'-1px'}}>
               نظّم توريدك<br/>
-              <span style={{color:'#0d9488'}}>بذكاء وسهولة</span>
+              <span style={{color:'#029FA2'}}>بذكاء وسهولة</span>
             </h2>
             <p style={{fontSize:14,color:'#6b7280',lineHeight:1.75,marginBottom:24}}>
               استلم طلبات التوريد فورياً، حدّث أسعارك وأصنافك بضغطة، وتابع حالة كل طلب مع كل فرع من مكان واحد

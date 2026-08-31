@@ -9,7 +9,7 @@ interface StaffSession {
 
 const STATUS_LABEL: Record<string, {label:string; color:string; bg:string}> = {
   pending:  { label: 'بانتظار الموافقة', color: '#d97706', bg: '#fffbeb' },
-  approved: { label: 'موافَق عليها ✓',   color: '#0d9488', bg: '#f0fdfa' },
+  approved: { label: 'موافَق عليها ✓',   color: '#029FA2', bg: '#f0fdfa' },
   rejected: { label: 'مرفوضة',           color: '#dc2626', bg: '#fef2f2' },
 }
 
@@ -63,7 +63,7 @@ export default function StaffLeavePage() {
 
   if (!session) return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
-      <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:'#0d9488',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
+      <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:'#029FA2',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -80,7 +80,7 @@ export default function StaffLeavePage() {
 
       <div style={{maxWidth:520,margin:'0 auto',padding:'20px 16px'}}>
         {balance !== null && (
-          <div style={{background:'linear-gradient(135deg,#042f2e,#0d9488)',borderRadius:16,padding:'18px 20px',marginBottom:20,textAlign:'center' as const}}>
+          <div style={{background:'linear-gradient(135deg,#042f2e,#029FA2)',borderRadius:16,padding:'18px 20px',marginBottom:20,textAlign:'center' as const}}>
             <div style={{fontSize:12,color:'rgba(255,255,255,.8)',marginBottom:4}}>رصيدك المتبقي</div>
             <div style={{fontSize:32,fontWeight:900,color:'white'}}>{balance} <span style={{fontSize:15,fontWeight:600}}>يوم</span></div>
           </div>
@@ -104,7 +104,7 @@ export default function StaffLeavePage() {
             style={{width:'100%',padding:'10px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const,minHeight:60,resize:'none' as const,marginBottom:12}}/>
           {error && <div style={{fontSize:12,color:'#dc2626',marginBottom:10}}>{error}</div>}
           <button onClick={submitRequest} disabled={submitting||!startDate||!endDate}
-            style={{width:'100%',padding:'12px',background:(submitting||!startDate||!endDate)?'#94a3b8':'#0d9488',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:(submitting||!startDate||!endDate)?'not-allowed':'pointer',fontFamily:'inherit'}}>
+            style={{width:'100%',padding:'12px',background:(submitting||!startDate||!endDate)?'#94a3b8':'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:(submitting||!startDate||!endDate)?'not-allowed':'pointer',fontFamily:'inherit'}}>
             {submitting?'جاري الإرسال...':'إرسال الطلب'}
           </button>
         </div>

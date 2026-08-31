@@ -16,7 +16,7 @@ export default function Pagination({ total, page, perPage, onPage }: Props) {
       <div style={{display:'flex',gap:4}}>
         <button onClick={()=>onPage(page-1)} disabled={page===1} style={{width:32,height:32,borderRadius:8,border:'1.5px solid #e2e8f0',background:page===1?'#f8fafc':'white',color:page===1?'#cbd5e1':'#334155',cursor:page===1?'not-allowed':'pointer',fontSize:14,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center'}}>›</button>
         {nums.map(p=>(
-          <button key={p} onClick={()=>onPage(p)} style={{width:32,height:32,borderRadius:8,border:'1.5px solid '+(page===p?'#0d9488':'#e2e8f0'),background:page===p?'#0d9488':'white',color:page===p?'white':'#334155',cursor:'pointer',fontSize:13,fontWeight:700}}>
+          <button key={p} onClick={()=>onPage(p)} style={{width:32,height:32,borderRadius:8,border:'1.5px solid '+(page===p?'#029FA2':'#e2e8f0'),background:page===p?'#029FA2':'white',color:page===p?'white':'#334155',cursor:'pointer',fontSize:13,fontWeight:700}}>
             {p}
           </button>
         ))}

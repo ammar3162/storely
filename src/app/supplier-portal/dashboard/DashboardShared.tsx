@@ -295,7 +295,7 @@ export default function SupplierDashboardShared() {
 
   if (loading) return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4'}}>
-      <div style={{width:36,height:36,border:'3px solid #99f6e4',borderTopColor:'#0d9488',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
+      <div style={{width:36,height:36,border:'3px solid #99f6e4',borderTopColor:'#029FA2',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -365,8 +365,8 @@ export default function SupplierDashboardShared() {
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <button onClick={toggleVisibility}
-            style={{padding:'8px 16px',borderRadius:8,border:'1px solid',borderColor:profile?.is_visible!==false?'#99f6e4':'#fecaca',background:profile?.is_visible!==false?'#f0fdfa':'#fef2f2',fontSize:12,fontWeight:700,cursor:'pointer',color:profile?.is_visible!==false?'#0d9488':'#dc2626',display:'flex',alignItems:'center',gap:6}}>
-            <span style={{width:8,height:8,borderRadius:'50%',background:profile?.is_visible!==false?'#0d9488':'#dc2626'}}/>
+            style={{padding:'8px 16px',borderRadius:8,border:'1px solid',borderColor:profile?.is_visible!==false?'#99f6e4':'#fecaca',background:profile?.is_visible!==false?'#f0fdfa':'#fef2f2',fontSize:12,fontWeight:700,cursor:'pointer',color:profile?.is_visible!==false?'#029FA2':'#dc2626',display:'flex',alignItems:'center',gap:6}}>
+            <span style={{width:8,height:8,borderRadius:'50%',background:profile?.is_visible!==false?'#029FA2':'#dc2626'}}/>
             {profile?.is_visible!==false?'ظاهر للعملاء':'مخفي عن العملاء'}
           </button>
           <button onClick={logout} style={{padding:'8px 16px',borderRadius:8,border:'1px solid #e5e5e3',background:'white',fontSize:12,fontWeight:700,cursor:'pointer',color:'#5f5e5a'}}>خروج</button>
@@ -380,7 +380,7 @@ export default function SupplierDashboardShared() {
             {NAV_ITEMS.map(item=>(
               <button key={item.id} onClick={()=>router.push(TAB_PATHS[item.id])}
                 style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 14px',borderRadius:10,border:'none',
-                  background:activeTab===item.id?'#0d9488':'transparent',color:activeTab===item.id?'white':'#5f5e5a',
+                  background:activeTab===item.id?'#029FA2':'transparent',color:activeTab===item.id?'white':'#5f5e5a',
                   fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
                 <span style={{display:'flex',alignItems:'center',gap:8}}><span>{item.icon}</span>{item.label}</span>
                 {item.badge && (
@@ -411,7 +411,7 @@ export default function SupplierDashboardShared() {
                 <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10,background:'#f5f5f4',borderRadius:8,padding:'8px 10px'}}>
                   <span style={{fontSize:12,fontWeight:700,color:'#5f5e5a'}}>هل السعر شامل الضريبة؟</span>
                   <div style={{display:'flex',gap:6,marginRight:'auto'}}>
-                    <button onClick={()=>setPriceIncludesVat(true)} style={{padding:'5px 14px',borderRadius:6,border:'1px solid',borderColor:priceIncludesVat?'#0d9488':'#e5e5e3',background:priceIncludesVat?'#0d9488':'white',color:priceIncludesVat?'white':'#5f5e5a',fontSize:11,fontWeight:700,cursor:'pointer'}}>نعم</button>
+                    <button onClick={()=>setPriceIncludesVat(true)} style={{padding:'5px 14px',borderRadius:6,border:'1px solid',borderColor:priceIncludesVat?'#029FA2':'#e5e5e3',background:priceIncludesVat?'#029FA2':'white',color:priceIncludesVat?'white':'#5f5e5a',fontSize:11,fontWeight:700,cursor:'pointer'}}>نعم</button>
                     <button onClick={()=>setPriceIncludesVat(false)} style={{padding:'5px 14px',borderRadius:6,border:'1px solid',borderColor:!priceIncludesVat?'#dc2626':'#e5e5e3',background:!priceIncludesVat?'#dc2626':'white',color:!priceIncludesVat?'white':'#5f5e5a',fontSize:11,fontWeight:700,cursor:'pointer'}}>لا</button>
                   </div>
                 </div>
@@ -430,7 +430,7 @@ export default function SupplierDashboardShared() {
                   </label>
                 </div>
                 <div style={{display:'flex',gap:8}}>
-                  <button onClick={saveItem} disabled={saving} style={{padding:'10px 20px',borderRadius:8,border:'none',background:'#0d9488',color:'white',fontWeight:700,fontSize:13,cursor:'pointer'}}>
+                  <button onClick={saveItem} disabled={saving} style={{padding:'10px 20px',borderRadius:8,border:'none',background:'#029FA2',color:'white',fontWeight:700,fontSize:13,cursor:'pointer'}}>
                     {saving?(uploading?'⏳ جاري رفع الصورة...':'⏳ جاري الحفظ...'):editingId?'حفظ التعديل':'إضافة'}
                   </button>
                   {editingId && <button onClick={resetForm} style={{padding:'10px 20px',borderRadius:8,border:'1px solid #e5e5e3',background:'white',fontWeight:700,fontSize:13,cursor:'pointer',color:'#5f5e5a'}}>إلغاء</button>}
@@ -455,10 +455,10 @@ export default function SupplierDashboardShared() {
                         <div style={{padding:'12px 14px'}}>
                           <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{item.name}</div>
                           <div style={{fontSize:11,color:'#888780',marginTop:2}}>{item.unit}</div>
-                          <div style={{fontSize:15,fontWeight:900,color:'#0d9488',marginTop:6}}>{item.price} ر.س</div>
+                          <div style={{fontSize:15,fontWeight:900,color:'#029FA2',marginTop:6}}>{item.price} ر.س</div>
                           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:10,paddingTop:10,borderTop:'1px solid #f1f1f0'}}>
                             <button onClick={()=>toggleAvailable(item)} aria-label="toggle availability"
-                              style={{width:38,height:21,borderRadius:20,border:'none',cursor:'pointer',position:'relative' as const,background:item.is_available?'#0d9488':'#dcdcda',transition:'background .2s',padding:0}}>
+                              style={{width:38,height:21,borderRadius:20,border:'none',cursor:'pointer',position:'relative' as const,background:item.is_available?'#029FA2':'#dcdcda',transition:'background .2s',padding:0}}>
                               <span style={{position:'absolute' as const,top:2,left:item.is_available?18:2,width:17,height:17,borderRadius:'50%',background:'white',transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,.25)'}}/>
                             </button>
                             <div style={{display:'flex',gap:4}}>
@@ -488,7 +488,7 @@ export default function SupplierDashboardShared() {
                         <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{r.org_name || 'عميل'}</span>
                         <span style={{fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:20,
                           background:r.status==='fulfilled'?'#dbeafe':r.status==='confirmed'?'#e0f2fe':r.status==='accepted'?'#ccfbf1':r.status==='quoted'?'#fef3c7':'#f1f5f9',
-                          color:r.status==='fulfilled'?'#1d4ed8':r.status==='confirmed'?'#0369a1':r.status==='accepted'?'#0d9488':r.status==='quoted'?'#92400e':'#64748b'}}>
+                          color:r.status==='fulfilled'?'#1d4ed8':r.status==='confirmed'?'#0369a1':r.status==='accepted'?'#029FA2':r.status==='quoted'?'#92400e':'#64748b'}}>
                           {r.status==='fulfilled'?'📦 منفَّذ':r.status==='confirmed'?'🚚 جدولة توريد':r.status==='accepted'?'✅ العميل وافق — بانتظار موافقتك':r.status==='quoted'?'💬 تم الرد':'⏳ بانتظار ردك'}
                         </span>
                       </div>
@@ -507,7 +507,7 @@ export default function SupplierDashboardShared() {
                               style={{padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',fontSize:12,fontFamily:'inherit'}}/>
                             <div style={{display:'flex',gap:6}}>
                               <button onClick={()=>approveDelivery(r)} disabled={approveSaving || !selectedRepId || !deliveryDate}
-                                style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#0d9488',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                                style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#029FA2',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
                                 {approveSaving?'...':'✅ تأكيد الموافقة'}
                               </button>
                               <button onClick={()=>setApprovingId(null)}
@@ -519,7 +519,7 @@ export default function SupplierDashboardShared() {
                           </div>
                         ) : (
                           <div>
-                            <div style={{fontSize:12,color:'#0d9488',fontWeight:700,marginBottom:8}}>سعرك المرسل: {r.quoted_price} ر.س — العميل وافق عليه</div>
+                            <div style={{fontSize:12,color:'#029FA2',fontWeight:700,marginBottom:8}}>سعرك المرسل: {r.quoted_price} ر.س — العميل وافق عليه</div>
                             <button onClick={()=>startApprove(r.id)}
                               style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#2563eb',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
                               🚚 الموافقة على التوريد
@@ -552,7 +552,7 @@ export default function SupplierDashboardShared() {
                                 </div>
                                 <div style={{display:'flex',gap:6}}>
                                   <button onClick={()=>submitCustomerRating(r.id, r.org_id)} disabled={ratingSaving}
-                                    style={{flex:1,padding:'8px',background:'#0d9488',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>
+                                    style={{flex:1,padding:'8px',background:'#029FA2',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>
                                     {ratingSaving?'...':'إرسال التقييم'}
                                   </button>
                                   <button onClick={()=>setRatingCustomerId(null)}
@@ -570,7 +570,7 @@ export default function SupplierDashboardShared() {
                           )}
                         </div>
                       ) : r.status==='quoted' ? (
-                        <div style={{fontSize:12,color:'#0d9488',fontWeight:700}}>سعرك المرسل: {r.quoted_price} ر.س</div>
+                        <div style={{fontSize:12,color:'#029FA2',fontWeight:700}}>سعرك المرسل: {r.quoted_price} ر.س</div>
                       ) : respondingId===r.id ? (
                         <div style={{display:'flex',gap:6,alignItems:'center'}}>
                           <input type="number" value={respondPrice} onChange={e=>setRespondPrice(e.target.value)} placeholder="السعر"
@@ -578,7 +578,7 @@ export default function SupplierDashboardShared() {
                           <input value={respondNote} onChange={e=>setRespondNote(e.target.value)} placeholder="ملاحظة (اختياري)"
                             style={{flex:1,padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',fontSize:12}}/>
                           <button onClick={()=>submitResponse(r.id)} disabled={respondSaving}
-                            style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#0d9488',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                            style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#029FA2',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
                             {respondSaving?'...':'إرسال'}
                           </button>
                           <button onClick={()=>setRespondingId(null)}
@@ -588,7 +588,7 @@ export default function SupplierDashboardShared() {
                         </div>
                       ) : (
                         <button onClick={()=>startRespond(r.id)}
-                          style={{padding:'7px 14px',borderRadius:6,border:'1px solid #0d9488',background:'white',color:'#0d9488',fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                          style={{padding:'7px 14px',borderRadius:6,border:'1px solid #029FA2',background:'white',color:'#029FA2',fontSize:11,fontWeight:700,cursor:'pointer'}}>
                           💬 الرد بسعر
                         </button>
                       )}
@@ -623,7 +623,7 @@ export default function SupplierDashboardShared() {
                               <div style={{maxHeight:240,overflowY:'auto' as const,padding:14,display:'flex',flexDirection:'column' as const,gap:8}}>
                                 {orgMsgs.map((m:any)=>(
                                   <div key={m.id} style={{alignSelf:m.sender_type==='supplier'?'flex-end':'flex-start',maxWidth:'75%'}}>
-                                    <div style={{padding:'8px 12px',borderRadius:12,fontSize:13,background:m.sender_type==='supplier'?'#0d9488':'#f1f5f9',color:m.sender_type==='supplier'?'white':'#1c1c1a'}}>
+                                    <div style={{padding:'8px 12px',borderRadius:12,fontSize:13,background:m.sender_type==='supplier'?'#029FA2':'#f1f5f9',color:m.sender_type==='supplier'?'white':'#1c1c1a'}}>
                                       {m.message}
                                     </div>
                                   </div>
@@ -633,7 +633,7 @@ export default function SupplierDashboardShared() {
                                 <input value={chatReply} onChange={e=>setChatReply(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') sendChatReply(oid)}}
                                   placeholder="اكتب ردك..." style={{flex:1,padding:'8px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:12,fontFamily:'inherit'}}/>
                                 <button onClick={()=>sendChatReply(oid)} disabled={chatSending}
-                                  style={{padding:'8px 16px',background:'#0d9488',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>
+                                  style={{padding:'8px 16px',background:'#029FA2',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>
                                   {chatSending?'...':'إرسال'}
                                 </button>
                               </div>
@@ -658,7 +658,7 @@ export default function SupplierDashboardShared() {
                   <input value={repPhone} onChange={e=>setRepPhone(e.target.value)} placeholder="رقم جواله"
                     style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
                 </div>
-                <button onClick={addRep} disabled={repSaving} style={{padding:'10px 20px',borderRadius:8,border:'none',background:'#0d9488',color:'white',fontWeight:700,fontSize:13,cursor:'pointer'}}>
+                <button onClick={addRep} disabled={repSaving} style={{padding:'10px 20px',borderRadius:8,border:'none',background:'#029FA2',color:'white',fontWeight:700,fontSize:13,cursor:'pointer'}}>
                   {repSaving?'⏳ جاري الإضافة...':'إضافة مندوب'}
                 </button>
               </div>
@@ -689,7 +689,7 @@ export default function SupplierDashboardShared() {
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:16}}>
                 <div style={{background:'white',borderRadius:16,padding:18,border:'1px solid #ebebea'}}>
                   <div style={{fontSize:11,color:'#888780',marginBottom:6}}>إجمالي المبيعات (منفَّذ)</div>
-                  <div style={{fontSize:22,fontWeight:900,color:'#0d9488'}}>{totalRevenue.toFixed(0)} ر.س</div>
+                  <div style={{fontSize:22,fontWeight:900,color:'#029FA2'}}>{totalRevenue.toFixed(0)} ر.س</div>
                 </div>
                 <div style={{background:'white',borderRadius:16,padding:18,border:'1px solid #ebebea'}}>
                   <div style={{fontSize:11,color:'#888780',marginBottom:6}}>إجمالي الطلبات</div>
@@ -737,7 +737,7 @@ export default function SupplierDashboardShared() {
                     {repStats.map(([name,count])=>(
                       <div key={name} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',background:'#f5f5f4',borderRadius:8,fontSize:12}}>
                         <span style={{color:'#1c1c1a',fontWeight:700}}>{name}</span>
-                        <span style={{color:'#0d9488',fontWeight:700}}>{count} توريد</span>
+                        <span style={{color:'#029FA2',fontWeight:700}}>{count} توريد</span>
                       </div>
                     ))}
                   </div>
@@ -754,7 +754,7 @@ export default function SupplierDashboardShared() {
                   </div>
                   <div style={{background:'#f0fdfa',borderRadius:10,padding:14}}>
                     <div style={{fontSize:11,color:'#0f766e',marginBottom:4}}>فواتير مسدَّدة</div>
-                    <div style={{fontSize:18,fontWeight:900,color:'#0d9488'}}>{paidTotal.toFixed(0)} ر.س</div>
+                    <div style={{fontSize:18,fontWeight:900,color:'#029FA2'}}>{paidTotal.toFixed(0)} ر.س</div>
                     <div style={{fontSize:10,color:'#0f766e',marginTop:2}}>{paidInvoices.length} فاتورة</div>
                   </div>
                 </div>
@@ -773,7 +773,7 @@ export default function SupplierDashboardShared() {
                           <span style={{fontSize:13,fontWeight:800,color:'#1c1c1a'}}>{r.quoted_price} ر.س</span>
                           <button onClick={()=>togglePaymentStatus(r.id, r.payment_status)}
                             style={{padding:'5px 12px',borderRadius:20,border:'none',fontSize:10,fontWeight:700,cursor:'pointer',
-                              background:r.payment_status==='paid'?'#ccfbf1':'#fee2e2',color:r.payment_status==='paid'?'#0d9488':'#dc2626'}}>
+                              background:r.payment_status==='paid'?'#ccfbf1':'#fee2e2',color:r.payment_status==='paid'?'#029FA2':'#dc2626'}}>
                             {r.payment_status==='paid'?'✅ مسدَّدة':'⏳ آجلة'}
                           </button>
                         </div>
@@ -827,7 +827,7 @@ export default function SupplierDashboardShared() {
                   <div style={{fontSize:10,color:'#888780',marginTop:4}}>رقم الجوال مرتبط بحساب الدخول، للتواصل مع الدعم لتغييره</div>
                 </div>
                 <button onClick={saveAccountInfo} disabled={accountSaving}
-                  style={{padding:'10px 20px',borderRadius:8,border:'none',background:'#0d9488',color:'white',fontWeight:700,fontSize:13,cursor:'pointer',alignSelf:'flex-start' as const}}>
+                  style={{padding:'10px 20px',borderRadius:8,border:'none',background:'#029FA2',color:'white',fontWeight:700,fontSize:13,cursor:'pointer',alignSelf:'flex-start' as const}}>
                   {accountSaving?'⏳ جاري الحفظ...':'حفظ التعديلات'}
                 </button>
               </div>

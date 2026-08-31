@@ -13,7 +13,7 @@ interface StaffSession {
 }
 
 const C = {
-  primary:'#0d9488', primaryD:'#0f766e', primaryL:'#f0fdfa', primaryB:'#99f6e4',
+  primary:'#029FA2', primaryD:'#0f766e', primaryL:'#f0fdfa', primaryB:'#99f6e4',
   danger:'#e24b4a', dangerL:'#fef2f2',
   warning:'#ba7517', warningL:'#fffbeb',
   text:'#1c1c1a', text2:'#3d3d3a', text3:'#5f5e5a', text4:'#888780',

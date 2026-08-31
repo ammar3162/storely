@@ -185,7 +185,7 @@ export default function SupplierStorefrontPage() {
 
   if (loading) return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f0f4f8'}}>
-      <div style={{width:36,height:36,border:'3px solid #99f6e4',borderTopColor:'#0d9488',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
+      <div style={{width:36,height:36,border:'3px solid #99f6e4',borderTopColor:'#029FA2',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -194,7 +194,7 @@ export default function SupplierStorefrontPage() {
     <div style={{minHeight:'100vh',display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',background:'#f0f4f8',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:20}}>
       <div style={{fontSize:48,marginBottom:12}}>🔍</div>
       <div style={{fontSize:16,fontWeight:700,color:'#0f172a'}}>هذا المورد غير موجود</div>
-      <button onClick={()=>router.push('/marketplace')} style={{marginTop:16,padding:'10px 20px',background:'#0d9488',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>← رجوع للموردين</button>
+      <button onClick={()=>router.push('/marketplace')} style={{marginTop:16,padding:'10px 20px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>← رجوع للموردين</button>
     </div>
   )
 
@@ -217,7 +217,7 @@ export default function SupplierStorefrontPage() {
                   </span>
                 )}
                 {reviewCount >= 3 && (
-                  <span style={{fontSize:11,fontWeight:700,color:'#0d9488',background:'white',padding:'3px 10px',borderRadius:20}}>
+                  <span style={{fontSize:11,fontWeight:700,color:'#029FA2',background:'white',padding:'3px 10px',borderRadius:20}}>
                     ✅ موثّق عبر Storely
                   </span>
                 )}
@@ -234,7 +234,7 @@ export default function SupplierStorefrontPage() {
           <h2 style={{fontSize:16,fontWeight:800,color:'#0f172a',margin:0}}>الأصناف المتوفرة ({items.length})</h2>
           {supplier.phone && (
             <a href={getWhatsAppLink()} target="_blank" rel="noopener noreferrer"
-              style={{padding:'10px 18px',background:'#0d9488',color:'white',borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none'}}>
+              style={{padding:'10px 18px',background:'#029FA2',color:'white',borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none'}}>
               📲 تواصل مع المورد
             </a>
           )}
@@ -264,7 +264,7 @@ export default function SupplierStorefrontPage() {
                     const vatAmount = finalPrice - basePrice
                     return (
                       <>
-                        <div style={{fontSize:16,fontWeight:900,color:'#0d9488',marginTop:8}}>{finalPrice.toFixed(2)} ر.س</div>
+                        <div style={{fontSize:16,fontWeight:900,color:'#029FA2',marginTop:8}}>{finalPrice.toFixed(2)} ر.س</div>
                         <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>
                           الأساسي {basePrice.toFixed(2)} + ضريبة {vatAmount.toFixed(2)} ر.س
                         </div>
@@ -291,7 +291,7 @@ export default function SupplierStorefrontPage() {
           <div style={{position:'sticky' as const,bottom:16,marginTop:20,background:'#042f2e',borderRadius:14,padding:'14px 18px',display:'flex',justifyContent:'space-between',alignItems:'center',boxShadow:'0 8px 24px rgba(0,0,0,.2)'}}>
             <span style={{color:'white',fontSize:13,fontWeight:700}}>{Object.keys(selected).length} صنف محدّد للتسعير</span>
             <button onClick={submitQuoteRequest} disabled={submitting}
-              style={{padding:'10px 20px',background:'#0d9488',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>
+              style={{padding:'10px 20px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>
               {submitting?'⏳ جاري الإرسال...':'📩 إرسال طلب التسعير'}
             </button>
           </div>
@@ -305,7 +305,7 @@ export default function SupplierStorefrontPage() {
                 <div style={{textAlign:'center' as const,color:'#94a3b8',fontSize:12,padding:20}}>ما فيه رسائل بعد — ابدأ المحادثة</div>
               ) : chatMessages.map((m:any)=>(
                 <div key={m.id} style={{alignSelf:m.sender_type==='customer'?'flex-end':'flex-start',maxWidth:'75%'}}>
-                  <div style={{padding:'8px 12px',borderRadius:12,fontSize:13,background:m.sender_type==='customer'?'#0d9488':'white',color:m.sender_type==='customer'?'white':'#0f172a',border:m.sender_type==='customer'?'none':'1px solid #e2e8f0'}}>
+                  <div style={{padding:'8px 12px',borderRadius:12,fontSize:13,background:m.sender_type==='customer'?'#029FA2':'white',color:m.sender_type==='customer'?'white':'#0f172a',border:m.sender_type==='customer'?'none':'1px solid #e2e8f0'}}>
                     {m.message}
                   </div>
                   <div style={{fontSize:9,color:'#94a3b8',marginTop:2,textAlign:m.sender_type==='customer'?'left' as const:'right' as const}}>
@@ -318,7 +318,7 @@ export default function SupplierStorefrontPage() {
               <input value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') sendChatMessage()}}
                 placeholder="اكتب رسالتك..." style={{flex:1,padding:'10px 14px',borderRadius:10,border:'1px solid #e2e8f0',fontSize:13,fontFamily:'inherit'}}/>
               <button onClick={sendChatMessage} disabled={chatSending}
-                style={{padding:'10px 20px',background:'#0d9488',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>
+                style={{padding:'10px 20px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>
                 {chatSending?'...':'إرسال'}
               </button>
             </div>
@@ -342,7 +342,7 @@ export default function SupplierStorefrontPage() {
                     </div>
                     <span style={{fontSize:11,fontWeight:700,padding:'4px 12px',borderRadius:20,
                       background:r.status==='fulfilled'?'#dbeafe':r.status==='confirmed'?'#e0f2fe':r.status==='accepted'?'#ccfbf1':r.status==='quoted'?'#fef3c7':'#f1f5f9',
-                      color:r.status==='fulfilled'?'#1d4ed8':r.status==='confirmed'?'#0369a1':r.status==='accepted'?'#0d9488':r.status==='quoted'?'#92400e':'#64748b'}}>
+                      color:r.status==='fulfilled'?'#1d4ed8':r.status==='confirmed'?'#0369a1':r.status==='accepted'?'#029FA2':r.status==='quoted'?'#92400e':'#64748b'}}>
                       {r.status==='fulfilled'?'📦 تم التنفيذ':r.status==='confirmed'?'🚚 جاري التوريد':r.status==='accepted'?'✅ مقبول':r.status==='quoted'?'💰 تم التسعير':'⏳ بانتظار الرد'}
                     </span>
                   </div>
@@ -350,8 +350,8 @@ export default function SupplierStorefrontPage() {
                   <div style={{display:'flex',alignItems:'center',padding:'14px 16px 4px'}}>
                     {STAGES.map((stg,i)=>(
                       <div key={stg} style={{display:'flex',alignItems:'center',flex:i<STAGES.length-1?1:0}}>
-                        <div style={{width:9,height:9,borderRadius:'50%',flexShrink:0,background:i<=stageIdx?'#0d9488':'#e2e8f0'}}/>
-                        {i<STAGES.length-1 && <div style={{flex:1,height:2,background:i<stageIdx?'#0d9488':'#e2e8f0'}}/>}
+                        <div style={{width:9,height:9,borderRadius:'50%',flexShrink:0,background:i<=stageIdx?'#029FA2':'#e2e8f0'}}/>
+                        {i<STAGES.length-1 && <div style={{flex:1,height:2,background:i<stageIdx?'#029FA2':'#e2e8f0'}}/>}
                       </div>
                     ))}
                   </div>
@@ -369,7 +369,7 @@ export default function SupplierStorefrontPage() {
                     {(r.status==='quoted'||r.status==='accepted'||r.status==='confirmed'||r.status==='fulfilled') && (
                       <div style={{background:'#f0fdfa',borderRadius:10,padding:'10px 14px',marginBottom:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                         <span style={{fontSize:12,color:'#0f766e',fontWeight:700}}>💰 السعر المقترح</span>
-                        <span style={{fontSize:16,fontWeight:900,color:'#0d9488'}}>{r.quoted_price} ر.س</span>
+                        <span style={{fontSize:16,fontWeight:900,color:'#029FA2'}}>{r.quoted_price} ر.س</span>
                       </div>
                     )}
                     {r.quoted_note && (r.status==='quoted'||r.status==='accepted'||r.status==='confirmed'||r.status==='fulfilled') && (
@@ -391,7 +391,7 @@ export default function SupplierStorefrontPage() {
                     )}
                     {r.status==='quoted' && (
                       <button onClick={()=>acceptOffer(r.id, supplier.business_name, supplier.phone)}
-                        style={{width:'100%',padding:'10px',background:'#0d9488',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>
+                        style={{width:'100%',padding:'10px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>
                         ✅ قبول العرض
                       </button>
                     )}
@@ -413,7 +413,7 @@ export default function SupplierStorefrontPage() {
                             style={{width:'100%',padding:'8px 12px',borderRadius:8,border:'1px solid #fde68a',fontSize:12,marginBottom:8,boxSizing:'border-box' as const}}/>
                           <div style={{display:'flex',gap:6}}>
                             <button onClick={()=>submitReview(r.id)} disabled={reviewSaving}
-                              style={{flex:1,padding:'8px',background:'#0d9488',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>
+                              style={{flex:1,padding:'8px',background:'#029FA2',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>
                               {reviewSaving?'...':'إرسال التقييم'}
                             </button>
                             <button onClick={()=>setReviewingId(null)}

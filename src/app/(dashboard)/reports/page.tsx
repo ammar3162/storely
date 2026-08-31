@@ -301,7 +301,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
                     <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
                     <td style={{padding:'11px 16px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td>
                     <td style={{padding:'11px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:900}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
-                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f0fdfa',color:'#0d9488',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #99f6e4'}}>
+                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f0fdfa',color:'#029FA2',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #99f6e4'}}>
 {(m.profiles as any)?.full_name||(m.staff_members as any)?.name||(m.note?.match(/بواسطة[^:]*:\s*(.+)/)?.[1])||'—'}
 </span></td>
                     <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text4}}>
@@ -475,7 +475,7 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
                     <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#fffbeb',color:'#b45309',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #fde68a'}}>
 {(m as any).waste_reason||'—'}
 </span></td>
-                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f0fdfa',color:'#0d9488',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #99f6e4'}}>
+                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f0fdfa',color:'#029FA2',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #99f6e4'}}>
 {(m.profiles as any)?.full_name||(m.staff_members as any)?.name||(m.note?.match(/بواسطة[^:]*:\s*(.+)/)?.[1])||'—'}
 </span></td>
                     <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text4}}>
@@ -795,7 +795,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
                       </div>
                     </div>
                     <button onClick={()=>restorePurchase(d)} disabled={restoringId===d.id}
-                      style={{padding:'6px 14px',background:'white',color:'#0d9488',border:'1.5px solid #99f6e4',borderRadius:8,fontSize:11,fontWeight:700,cursor:restoringId===d.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:restoringId===d.id?.6:1,whiteSpace:'nowrap' as const}}>
+                      style={{padding:'6px 14px',background:'white',color:'#029FA2',border:'1.5px solid #99f6e4',borderRadius:8,fontSize:11,fontWeight:700,cursor:restoringId===d.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:restoringId===d.id?.6:1,whiteSpace:'nowrap' as const}}>
                       {restoringId===d.id?'...':'↩️ استعادة'}
                     </button>
                   </div>
