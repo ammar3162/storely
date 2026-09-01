@@ -33,6 +33,8 @@ export default function HRManagementPage() {
   const [loadingLeave, setLoadingLeave] = useState(false)
   const [pendingLeaveCounts, setPendingLeaveCounts] = useState<Record<string, number>>({})
   const [pendingAdvanceCounts, setPendingAdvanceCounts] = useState<Record<string, number>>({})
+  const [cashierSummary, setCashierSummary] = useState<Record<string, {deficit:number, surplus:number, count:number}>>({})
+  const [approvedAdvances, setApprovedAdvances] = useState<Record<string, number>>({})
   const [excuseRequests, setExcuseRequests] = useState<any[]>([])
   const [loadingExcuse, setLoadingExcuse] = useState(false)
 
@@ -59,11 +61,12 @@ export default function HRManagementPage() {
     const bid = sessionStorage.getItem('s_branch_id')
     let q = (sb.from('staff_members' as any) as any).select('*').eq('org_id',oid!)
     if (bid) q = q.eq('branch_id', bid)
-    const [{data:org}, {data}, leaveRes, advRes] = await Promise.all([
+    const [{data:org}, {data}, leaveRes, advRes, cashierRes] = await Promise.all([
       sb.from('organizations' as any).select('plan,currency').eq('id',oid!).single(),
       q.order('created_at',{ascending:false}),
       fetch(`/api/staff-leave?org_id=${oid}`).then(r=>r.json()).catch(()=>({success:false})),
       fetch(`/api/staff-payroll-adjustments?org_id=${oid}`).then(r=>r.json()).catch(()=>({success:false})),
+      (sb.from('cashier_closings' as any) as any).select('staff_id,difference,status').eq('org_id',oid!),
     ])
     setOrgPlan((org as any)?.plan || 'basic')
     setStaff(data||[])
@@ -76,10 +79,24 @@ export default function HRManagementPage() {
     }
     if (advRes?.success) {
       const counts2: Record<string, number> = {}
+      const approvedSums: Record<string, number> = {}
       for (const req of (advRes.adjustments||advRes.requests||[])) {
         if (req.status === 'pending') counts2[req.staff_id] = (counts2[req.staff_id]||0) + 1
+        if (req.status === 'approved' && req.type === 'advance') approvedSums[req.staff_id] = (approvedSums[req.staff_id]||0) + Number(req.amount||0)
       }
       setPendingAdvanceCounts(counts2)
+      setApprovedAdvances(approvedSums)
+    }
+    if (cashierRes?.data) {
+      const summary: Record<string, {deficit:number, surplus:number, count:number}> = {}
+      for (const c of (cashierRes.data as any[])) {
+        if (!c.staff_id) continue
+        if (!summary[c.staff_id]) summary[c.staff_id] = {deficit:0, surplus:0, count:0}
+        summary[c.staff_id].count += 1
+        if (c.status === 'deficit') summary[c.staff_id].deficit += Math.abs(Number(c.difference||0))
+        else if (c.status === 'surplus') summary[c.staff_id].surplus += Number(c.difference||0)
+      }
+      setCashierSummary(summary)
     }
     setLoading(false)
   }
@@ -395,6 +412,35 @@ export default function HRManagementPage() {
                   </div>
                   <ChevronDown size={16} color={colors.text3} strokeWidth={2.25} style={{transition:'transform .2s',transform:isOpen?'rotate(180deg)':'none'}}/>
                 </div>
+
+                {(() => {
+                  const cs = cashierSummary[s.id]
+                  const advDeducted = approvedAdvances[s.id] || 0
+                  const cashierDeficit = cs?.deficit || 0
+                  const netSalary = savedTotal - advDeducted - cashierDeficit
+                  const hasAnyDeduction = advDeducted > 0 || cashierDeficit > 0
+                  if (!hasAnyDeduction) return null
+                  return (
+                    <div style={{marginTop:10,padding:'10px 12px',background:colors.bg,borderRadius:10,display:'flex',flexDirection:'column' as const,gap:6}}>
+                      {advDeducted > 0 && (
+                        <div style={{display:'flex',justifyContent:'space-between',fontSize:11}}>
+                          <span style={{color:colors.text3}}>سلف مخصومة (معتمدة)</span>
+                          <span style={{color:colors.warning,fontWeight:700}}>−{advDeducted.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
+                        </div>
+                      )}
+                      {cashierDeficit > 0 && (
+                        <div style={{display:'flex',justifyContent:'space-between',fontSize:11}}>
+                          <span style={{color:colors.text3}}>عجز إقفال كاشير ({cs?.count} إقفال)</span>
+                          <span style={{color:colors.danger,fontWeight:700}}>−{cashierDeficit.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
+                        </div>
+                      )}
+                      <div style={{display:'flex',justifyContent:'space-between',fontSize:12,fontWeight:800,paddingTop:6,borderTop:`1px dashed ${colors.border}`}}>
+                        <span style={{color:colors.text}}>الصافي المتوقع</span>
+                        <span style={{color:colors.primary}}>{netSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 {isOpen && (
                   <div style={{marginTop:18,paddingTop:18,borderTop:`1px solid ${colors.border}`,display:'flex',flexDirection:'column' as const,gap:22}}>
