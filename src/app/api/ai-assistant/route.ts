@@ -14,6 +14,13 @@ export async function POST(req: NextRequest) {
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
+  // تحقق من الباقة server-side — أدوات الذكاء الاصطناعي مقفولة على الأساسية
+  // (إخفاء الأزرار بالواجهة وحده غير كافٍ، يقدر أي شخص يستدعي هالـAPI مباشرة)
+  const { data: orgPlan } = await sb.from('organizations').select('plan').eq('id', org_id).single()
+  if ((orgPlan as any)?.plan === 'basic') {
+    return NextResponse.json({ error: 'أدوات الذكاء الاصطناعي تتطلب الباقة المتوسطة فأعلى — يرجى ترقية الباقة' }, { status: 403 })
+  }
+
   // جلب كل المنتجات
   let pq = sb.from('products').select('id,name,qty,reorder_point,unit,category').eq('org_id', org_id).eq('is_active', true)
   if (branch_id) pq = pq.eq('branch_id', branch_id)
