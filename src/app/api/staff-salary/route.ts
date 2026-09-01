@@ -40,7 +40,7 @@ export async function POST(req: Request) {
       transport_allowance: transport,
       food_allowance: food,
     } as any).eq('id', staff_id)
-    if (error) return NextResponse.json({ error: 'فشل الحفظ' }, { status: 500 })
+    if (error) { console.error('STAFF_SALARY_UPDATE_ERROR:', error.message, error.details, error.hint); return NextResponse.json({ error: 'فشل الحفظ: ' + error.message }, { status: 500 }) }
 
     return NextResponse.json({ success: true })
   } catch {
