@@ -1,6 +1,18 @@
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 
+// تنظيف أي نص قبل حقنه بالـHTML — يمنع ثغرات XSS من بيانات المستخدمين
+// (أسماء موظفين، أسباب، ملاحظات) اللي تنعرض بالتقرير
+function escapeHtml(value: any): string {
+  const str = String(value ?? '—')
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 interface PdfTableColumn {
   header: string
   key: string
@@ -57,8 +69,8 @@ export async function exportReportPdf(opts: PdfExportOptions) {
       <div style="display:flex;align-items:center;gap:10px">
         ${logoUrl ? `<img src="${logoUrl}" style="width:36px;height:36px;border-radius:8px;object-fit:cover" crossorigin="anonymous" />` : ''}
         <div>
-          <div style="font-size:20px;font-weight:800;color:#0f172a">${orgName}</div>
-          <div style="font-size:12px;color:#64748b;margin-top:2px">${title}${subtitle ? ' — ' + subtitle : ''}</div>
+          <div style="font-size:20px;font-weight:800;color:#0f172a">${escapeHtml(orgName)}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">${escapeHtml(title)}${subtitle ? ' — ' + escapeHtml(subtitle) : ''}</div>
         </div>
       </div>
       <div style="font-size:11px;color:#94a3b8">
@@ -71,8 +83,8 @@ export async function exportReportPdf(opts: PdfExportOptions) {
     ? `<div style="display:flex;gap:12px;margin-bottom:20px">
         ${summaryStats.map(s => `
           <div style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;text-align:center">
-            <div style="font-size:20px;font-weight:800;color:${s.color || '#0f172a'}">${s.value}</div>
-            <div style="font-size:11px;color:#64748b;margin-top:4px">${s.label}</div>
+            <div style="font-size:20px;font-weight:800;color:${s.color || '#0f172a'}">${escapeHtml(s.value)}</div>
+            <div style="font-size:11px;color:#64748b;margin-top:4px">${escapeHtml(s.label)}</div>
           </div>
         `).join('')}
       </div>`
@@ -87,7 +99,7 @@ export async function exportReportPdf(opts: PdfExportOptions) {
 
   function rowDivs(r: Record<string, any>, extra: string) {
     return columns.map(c =>
-      `<div style="flex:1 1 ${colWidth}%;padding:9px 12px;font-size:11px;box-sizing:border-box;text-align:${c.align || 'right'};${extra}">${r[c.key] ?? '—'}</div>`
+      `<div style="flex:1 1 ${colWidth}%;padding:9px 12px;font-size:11px;box-sizing:border-box;text-align:${c.align || 'right'};${extra}">${escapeHtml(r[c.key])}</div>`
     ).join('')
   }
 

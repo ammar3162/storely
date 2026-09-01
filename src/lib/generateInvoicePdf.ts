@@ -6,6 +6,18 @@
 import chromium from '@sparticuz/chromium'
 import puppeteer from 'puppeteer-core'
 
+// تنظيف أي نص قبل حقنه بالـHTML — يمنع ثغرات XSS من بيانات يدخلها العملاء
+// (اسم المنشأة وقت التسجيل) قبل ما تُعرض بمتصفح Chromium الحقيقي على السيرفر
+function escapeHtml(value: any): string {
+  const str = String(value ?? '')
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 interface InvoiceItem { label: string; amount: number }
 
 interface InvoiceData {
@@ -17,7 +29,7 @@ interface InvoiceData {
 
 function buildInvoiceHtml(data: InvoiceData): string {
   const total = data.items.reduce((s, it) => s + Number(it.amount || 0), 0)
-  const rows = data.items.map(it => `<tr><td>${it.label}</td><td>${it.amount} ر.س</td></tr>`).join('')
+  const rows = data.items.map(it => `<tr><td>${escapeHtml(it.label)}</td><td>${escapeHtml(it.amount)} ر.س</td></tr>`).join('')
 
   return `
 <!DOCTYPE html>
@@ -58,14 +70,14 @@ function buildInvoiceHtml(data: InvoiceData): string {
     </div>
     <div class="meta">
       <div class="meta-title">فاتورة اشتراك</div>
-      <div class="meta-row">رقم الفاتورة: <b>#${data.invoiceNumber}</b></div>
-      <div class="meta-row">التاريخ: <b>${data.date}</b></div>
+      <div class="meta-row">رقم الفاتورة: <b>#${escapeHtml(data.invoiceNumber)}</b></div>
+      <div class="meta-row">التاريخ: <b>${escapeHtml(data.date)}</b></div>
     </div>
   </div>
 
   <div class="info-box">
     <div class="info-label">المنشأة</div>
-    <div class="info-value">${data.orgName}</div>
+    <div class="info-value">${escapeHtml(data.orgName)}</div>
   </div>
 
   <table>
