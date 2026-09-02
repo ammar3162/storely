@@ -35,6 +35,10 @@ export default function HRManagementPage() {
   const [pendingAdvanceCounts, setPendingAdvanceCounts] = useState<Record<string, number>>({})
   const [cashierSummary, setCashierSummary] = useState<Record<string, {deficit:number, surplus:number, count:number}>>({})
   const [approvedAdvances, setApprovedAdvances] = useState<Record<string, number>>({})
+  const [latePenalties, setLatePenalties] = useState<Record<string, number>>({})
+  const [applyingPenalty, setApplyingPenalty] = useState<string|null>(null)
+  const [latePenalties, setLatePenalties] = useState<Record<string, number>>({})
+  const [applyingPenalty, setApplyingPenalty] = useState<string|null>(null)
   const [excuseRequests, setExcuseRequests] = useState<any[]>([])
   const [loadingExcuse, setLoadingExcuse] = useState(false)
 
@@ -61,12 +65,13 @@ export default function HRManagementPage() {
     const bid = sessionStorage.getItem('s_branch_id')
     let q = (sb.from('staff_members' as any) as any).select('*').eq('org_id',oid!)
     if (bid) q = q.eq('branch_id', bid)
-    const [{data:org}, {data}, leaveRes, advRes, cashierRes] = await Promise.all([
+    const [{data:org}, {data}, leaveRes, advRes, cashierRes, penaltyRes] = await Promise.all([
       sb.from('organizations' as any).select('plan,currency').eq('id',oid!).single(),
       q.order('created_at',{ascending:false}),
       fetch(`/api/staff-leave?org_id=${oid}`).then(r=>r.json()).catch(()=>({success:false})),
       fetch(`/api/staff-payroll-adjustments?org_id=${oid}`).then(r=>r.json()).catch(()=>({success:false})),
       (sb.from('cashier_closings' as any) as any).select('staff_id,difference,status').eq('org_id',oid!),
+      fetch(`/api/apply-late-penalties?org_id=${oid}`).then(r=>r.json()).catch(()=>({success:false})),
     ])
     setOrgPlan((org as any)?.plan || 'basic')
     setStaff(data||[])
@@ -98,7 +103,29 @@ export default function HRManagementPage() {
       }
       setCashierSummary(summary)
     }
+    if (penaltyRes?.success) {
+      const penaltySums: Record<string, number> = {}
+      for (const r of (penaltyRes.records||[])) {
+        if (!r.staff_id) continue
+        penaltySums[r.staff_id] = (penaltySums[r.staff_id]||0) + Number(r.penalty_amount||0)
+      }
+      setLatePenalties(penaltySums)
+    }
     setLoading(false)
+  }
+
+  async function applyLatePenalty(staffId:string) {
+    setApplyingPenalty(staffId)
+    const res = await fetch('/api/apply-late-penalties', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ org_id: orgId, staff_id: staffId }),
+    })
+    const j = await res.json()
+    setApplyingPenalty(null)
+    if (!j.success) { toast(j.error || 'خطأ', 'error'); return }
+    toast(`✅ تم تسجيل خصم بقيمة ${j.total} ر.س (${j.count} غرامة تأخير)`)
+    setLatePenalties(prev => { const next = {...prev}; delete next[staffId]; return next })
+    loadAdjustments(staffId)
   }
 
   function toggleExpand(s:any) {
@@ -417,8 +444,9 @@ export default function HRManagementPage() {
                   const cs = cashierSummary[s.id]
                   const advDeducted = approvedAdvances[s.id] || 0
                   const cashierDeficit = cs?.deficit || 0
+                  const pendingPenalty = latePenalties[s.id] || 0
                   const netSalary = savedTotal - advDeducted - cashierDeficit
-                  const hasAnyDeduction = advDeducted > 0 || cashierDeficit > 0
+                  const hasAnyDeduction = advDeducted > 0 || cashierDeficit > 0 || pendingPenalty > 0
                   if (!hasAnyDeduction) return null
                   return (
                     <div style={{marginTop:10,padding:'10px 12px',background:colors.bg,borderRadius:10,display:'flex',flexDirection:'column' as const,gap:6}}>
@@ -432,6 +460,18 @@ export default function HRManagementPage() {
                         <div style={{display:'flex',justifyContent:'space-between',fontSize:11}}>
                           <span style={{color:colors.text3}}>عجز إقفال كاشير ({cs?.count} إقفال)</span>
                           <span style={{color:colors.danger,fontWeight:700}}>−{cashierDeficit.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
+                        </div>
+                      )}
+                      {pendingPenalty > 0 && (
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontSize:11}} onClick={e=>e.stopPropagation()}>
+                          <span style={{color:colors.text3}}>غرامات تأخير (لسه ما اتخصمت)</span>
+                          <div style={{display:'flex',alignItems:'center',gap:8}}>
+                            <span style={{color:colors.danger,fontWeight:700}}>{pendingPenalty.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
+                            <button onClick={()=>applyLatePenalty(s.id)} disabled={applyingPenalty===s.id}
+                              style={{padding:'3px 10px',background:colors.danger,color:'white',border:'none',borderRadius:99,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
+                              {applyingPenalty===s.id?'...':'طبّقها كخصم'}
+                            </button>
+                          </div>
                         </div>
                       )}
                       <div style={{display:'flex',justifyContent:'space-between',fontSize:12,fontWeight:800,paddingTop:6,borderTop:`1px dashed ${colors.border}`}}>
