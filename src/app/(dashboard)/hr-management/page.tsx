@@ -37,8 +37,6 @@ export default function HRManagementPage() {
   const [approvedAdvances, setApprovedAdvances] = useState<Record<string, number>>({})
   const [latePenalties, setLatePenalties] = useState<Record<string, number>>({})
   const [applyingPenalty, setApplyingPenalty] = useState<string|null>(null)
-  const [latePenalties, setLatePenalties] = useState<Record<string, number>>({})
-  const [applyingPenalty, setApplyingPenalty] = useState<string|null>(null)
   const [excuseRequests, setExcuseRequests] = useState<any[]>([])
   const [loadingExcuse, setLoadingExcuse] = useState(false)
 
