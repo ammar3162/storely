@@ -64,6 +64,7 @@ export default function ChoosePage() {
   const [loadingToday, setLoadingToday] = useState(true)
   const [marking, setMarking] = useState<'check_in'|'check_out'|null>(null)
   const [attError, setAttError] = useState('')
+  const [locatingHint, setLocatingHint] = useState('')
   const [shift, setShift] = useState<any>(null)
   const [permReq, setPermReq] = useState<any>(null)
   const [showPermForm, setShowPermForm] = useState(false)
@@ -200,31 +201,61 @@ export default function ChoosePage() {
     if (!canCheckOut) checkOutHint = `زر الانصراف يفعّل الساعة ${String(shift.end_time).slice(0,5)}`
   }
 
+  // حد أقصى مقبول لدقة GPS (بالمتر) — أي قراءة أسوأ من هذا نعتبرها غير موثوقة
+  const MAX_ACCEPTABLE_ACCURACY_M = 100
+
+  function getPositionOnce(): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy:true, timeout:10000, maximumAge:0 })
+    })
+  }
+
   async function markAttendance(type:'check_in'|'check_out') {
     if(!staffData) return
     setAttError('')
     if(!navigator.geolocation) { setAttError('المتصفح ما يدعم تحديد الموقع'); return }
     setMarking(type)
-    navigator.geolocation.getCurrentPosition(async (pos)=>{
-      try {
-        const res = await fetch('/api/staff-attendance', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({
-            staff_id: staffData.id, org_id: staffData.org_id, branch_id: staffData.branch_id,
-            type, latitude: pos.coords.latitude, longitude: pos.coords.longitude,
-          })
-        })
-        const j = await res.json()
-        if(!j.success) { setAttError(j.error||'حدث خطأ'); setMarking(null); return }
-        await loadToday(staffData)
-      } catch {
-        setAttError('حدث خطأ بالاتصال')
+
+    let bestPos: GeolocationPosition | null = null
+    const MAX_ATTEMPTS = 3
+    try {
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        setLocatingHint(attempt === 1 ? 'جاري تحديد موقعك...' : `جاري تحسين دقة الموقع (محاولة ${attempt}/${MAX_ATTEMPTS})...`)
+        const pos = await getPositionOnce()
+        if (!bestPos || pos.coords.accuracy < bestPos.coords.accuracy) bestPos = pos
+        if (pos.coords.accuracy <= MAX_ACCEPTABLE_ACCURACY_M) break
+        if (attempt < MAX_ATTEMPTS) await new Promise(r => setTimeout(r, 1500))
       }
-      setMarking(null)
-    }, ()=>{
+    } catch {
+      setLocatingHint('')
       setMarking(null)
       setAttError('تعذر الوصول لموقعك — تأكد من السماح للمتصفح بالوصول للموقع')
-    }, { enableHighAccuracy:true, timeout:10000 })
+      return
+    }
+    setLocatingHint('')
+
+    if (!bestPos) { setMarking(null); setAttError('تعذر تحديد موقعك'); return }
+    if (bestPos.coords.accuracy > MAX_ACCEPTABLE_ACCURACY_M) {
+      setMarking(null)
+      setAttError(`إشارة GPS ضعيفة (دقة ${Math.round(bestPos.coords.accuracy)} متر) — جرّب تطلع لمكان مفتوح بعيد عن الجدران وحاول مرة ثانية`)
+      return
+    }
+
+    try {
+      const res = await fetch('/api/staff-attendance', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          staff_id: staffData.id, org_id: staffData.org_id, branch_id: staffData.branch_id,
+          type, latitude: bestPos.coords.latitude, longitude: bestPos.coords.longitude, accuracy_m: bestPos.coords.accuracy,
+        })
+      })
+      const j = await res.json()
+      if(!j.success) { setAttError(j.error||'حدث خطأ'); setMarking(null); return }
+      await loadToday(staffData)
+    } catch {
+      setAttError('حدث خطأ بالاتصال')
+    }
+    setMarking(null)
   }
 
   return (
@@ -341,6 +372,7 @@ export default function ChoosePage() {
             {lastCheckOut && (
               <div style={{textAlign:'center' as const,fontSize:11,color:'#94a3b8',fontWeight:600,padding:'6px 0'}}>✓ اكتمل دوامك لهذا اليوم</div>
             )}
+            {locatingHint && <div style={{fontSize:11,color:'#64748b',marginTop:10,textAlign:'center' as const}}>📍 {locatingHint}</div>}
             {attError && <div style={{fontSize:11,color:'#dc2626',marginTop:10,lineHeight:1.6,textAlign:'center' as const}}>{attError}</div>}
           </div>
         )}

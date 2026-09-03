@@ -17,7 +17,7 @@ function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number) 
 
 export async function POST(req: Request) {
   try {
-    const { staff_id, org_id, branch_id, type, latitude, longitude } = await req.json()
+    const { staff_id, org_id, branch_id, type, latitude, longitude, accuracy_m } = await req.json()
     if (!staff_id || !org_id || !branch_id || !type) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
@@ -115,6 +115,7 @@ export async function POST(req: Request) {
       org_id, branch_id, staff_id, type, is_excused: isExcused,
       latitude, longitude, distance_m: Math.round(dist), within_range: true,
       late_minutes: lateMinutes, penalty_amount: penaltyAmount,
+      accuracy_m: accuracy_m != null ? Number(accuracy_m) : null,
     } as any)
     if (insErr) return NextResponse.json({ error: 'فشل تسجيل الحضور — حاول مرة أخرى' }, { status: 500 })
 
