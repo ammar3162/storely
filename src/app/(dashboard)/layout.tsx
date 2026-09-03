@@ -835,7 +835,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                       <span style={{fontSize:11,color:'rgba(255,255,255,.6)',transition:'transform .2s',transform:advancedNavOpen?'rotate(180deg)':'none'}}>▾</span>
                     </button>
                   ) : (
-                    <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.25)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{t(group.labelKey)}</div>
+                    <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.9)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{t(group.labelKey)}</div>
                   )}
                   {!groupCollapsed && group.items.filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock'&&item.href!=='/attendance'&&item.href!=='/hr-management')||orgPlan!=='basic')&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
                     const active=isActive(item.href)
@@ -845,7 +845,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                       <button key={item.href} data-active={active} data-navitem={item.href}
                         onClick={()=>isExternal?window.open(item.href,'_blank'):router.push(item.href)}
                         onMouseEnter={()=>!isExternal&&router.prefetch(item.href)}
-                        style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:9,border:'none',cursor:'pointer',fontFamily:'inherit',marginBottom:1,background:'transparent',color:'#ffffff',transition:'color .25s ease',textAlign:'right',position:'relative' as const,zIndex:1}}>
+                        style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:9,border:'none',cursor:'pointer',fontFamily:'inherit',marginBottom:1,background:'transparent',color:active?C.primary:'rgba(255,255,255,.55)',transition:'color .25s ease',textAlign:'right',position:'relative' as const,zIndex:1}}>
                         <div style={{width:28,height:28,borderRadius:7,background:active?`${C.primary}33`:'rgba(255,255,255,.06)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'all .3s cubic-bezier(0.34,1.56,0.64,1)',transform:active?'scale(1.06)':'scale(1)'}}>
                           <Icon d={item.icon} size={15} stroke={active?C.primary:'rgba(255,255,255,.55)'} width={active?2.5:2}/>
                         </div>
