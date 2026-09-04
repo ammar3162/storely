@@ -95,11 +95,14 @@ export default function BranchesPage() {
     const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
     if(!profile?.org_id){setLoading(false);return}
     setOrgId(profile.org_id)
-    const{data:org}=await (sb.from('organizations' as any) as any).select('max_branches').eq('id',profile.org_id).single()
+    // نطلق الاستعلامات الثلاثة بالتوازي — كلها تعتمد بس على profile.org_id
+    const [{data:org}, {data:bList}, {data:iList}] = await Promise.all([
+      (sb.from('organizations' as any) as any).select('max_branches').eq('id',profile.org_id).single(),
+      sb.from('branches').select('id,name,location,whatsapp_number,latitude,longitude').eq('org_id',profile.org_id).eq('is_active',true).order('created_at'),
+      sb.from('branches').select('id,name,location,whatsapp_number,latitude,longitude').eq('org_id',profile.org_id).eq('is_active',false).order('created_at'),
+    ])
     setMaxBranches((org as any)?.max_branches||1)
-    const{data:bList}=await sb.from('branches').select('id,name,location,whatsapp_number,latitude,longitude').eq('org_id',profile.org_id).eq('is_active',true).order('created_at')
     setBranches(bList||[])
-    const{data:iList}=await sb.from('branches').select('id,name,location,whatsapp_number,latitude,longitude').eq('org_id',profile.org_id).eq('is_active',false).order('created_at')
     setInactiveBranches(iList||[])
     setLoading(false)
   }

@@ -166,7 +166,12 @@ export default function SettingsPage() {
     setOrgId(profile.org_id)
     setUserFullName((profile as any).full_name||'')
     setUserPhone((profile as any).phone||'')
-    const{data:orgRaw}=await sb.from('organizations').select('whatsapp_number,name,notify_schedule,notify_time,notify_days,notify_cashier_closing_wa,notify_supplier_wa,last_notified_at,last_backup_at,max_branches,logo_url,plan,subscription_ends_at,billing_cycle').eq('id',profile.org_id).single()
+    // نطلق استعلامي المنشأة والفروع بالتوازي — الاثنين يعتمدون بس على profile.org_id
+    // (كانوا متتابعين قبل، وأيضاً كان فيه استدعاء auth.getUser() مكرر زايد بدون فايدة)
+    const [{data:orgRaw}, {data:bList}] = await Promise.all([
+      sb.from('organizations').select('whatsapp_number,name,notify_schedule,notify_time,notify_days,notify_cashier_closing_wa,notify_supplier_wa,last_notified_at,last_backup_at,max_branches,logo_url,plan,subscription_ends_at,billing_cycle').eq('id',profile.org_id).single(),
+      sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',profile.org_id).eq('is_active',true).order('created_at'),
+    ])
     const org=orgRaw as any
     if(org){
       const parsed = parsePhone(org.whatsapp_number||'')
@@ -175,14 +180,12 @@ export default function SettingsPage() {
       setLastSent(org.last_notified_at||null)
       setLastBackup(org.last_backup_at||null)
       setMaxBranches(org.max_branches||1)
-      const{data:{user}}=await sb.auth.getUser()
-      if(user){setUserEmail(user.email||'');setUserId(user.id)}
+      setUserEmail(user.email||'');setUserId(user.id)
       setLogoUrl(org.logo_url||null)
       const planMap: Record<string,string> = {'basic':'الأساسية','pro':'المتوسطة','advanced':'المتقدمة'}
       setPlanName(planMap[org.plan||'']||org.plan||'')
       setBillingCycle(org.billing_cycle==='yearly'?'yearly':'monthly')
       setSubEndsAt(org.subscription_ends_at||null)
-      const{data:bList}=await sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',profile.org_id).eq('is_active',true).order('created_at')
       setBranches(bList||[])
       loadInactiveBranches(profile.org_id)
     }
