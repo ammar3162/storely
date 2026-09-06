@@ -9,7 +9,7 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
-    const auth = verifyStaffToken(extractStaffToken(req))
+    const auth = await verifyStaffToken(extractStaffToken(req))
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
     const staff_id = auth.data!.staff_id
     if (!staff_id) return NextResponse.json({ error: 'staff_id required' }, { status: 400 })

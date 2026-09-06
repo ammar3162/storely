@@ -25,7 +25,7 @@ export async function GET(req: Request) {
       orgId = orgIdParam
       staffFilter = staffIdParam
     } else {
-      const auth = verifyStaffToken(extractStaffToken(req))
+      const auth = await verifyStaffToken(extractStaffToken(req))
       if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
       orgId = auth.data!.org_id
       staffFilter = auth.data!.staff_id
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     const { start_date, end_date, reason } = await req.json()
     if (!start_date || !end_date) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
-    const auth = verifyStaffToken(extractStaffToken(req))
+    const auth = await verifyStaffToken(extractStaffToken(req))
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
     const { org_id, staff_id, branch_id } = auth.data!
 

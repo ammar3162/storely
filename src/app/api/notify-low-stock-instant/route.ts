@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     if (!org_id || !product_id) return NextResponse.json({ success: false })
 
     // تحقق مزدوج: يقبل إما توكن موظف صالح، أو جلسة مالك صالحة — يخدم الاثنين
-    const staffAuth = verifyStaffToken(extractStaffToken(req))
+    const staffAuth = await verifyStaffToken(extractStaffToken(req))
     if (staffAuth.valid) {
       if (staffAuth.data!.org_id !== org_id) return NextResponse.json({ success: false, error: 'غير مصرح' }, { status: 403 })
     } else {

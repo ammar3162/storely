@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     if (!org_id || !product_id) return NextResponse.json({ success: false })
 
     // مسموح لطلبين: جلسة المالك (كوكيز) أو توكن موظف صالح (نداء سيرفر-لسيرفر بدون كوكيز)
-    const staffAuth = verifyStaffToken(extractStaffToken(req))
+    const staffAuth = await verifyStaffToken(extractStaffToken(req))
     if (!staffAuth.valid || staffAuth.data!.org_id !== org_id) {
       const access = await verifyOrgAccess(org_id)
       if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })

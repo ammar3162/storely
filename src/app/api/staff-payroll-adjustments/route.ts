@@ -26,7 +26,7 @@ export async function GET(req: Request) {
       orgId = orgIdParam
       staffFilter = staffIdParam
     } else {
-      const auth = verifyStaffToken(extractStaffToken(req))
+      const auth = await verifyStaffToken(extractStaffToken(req))
       if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
       orgId = auth.data!.org_id
       staffFilter = auth.data!.staff_id
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
     } else {
       // الموظف يطلب سلفة (بانتظار الموافقة) — نوع advance فقط
       if (type !== 'advance') return NextResponse.json({ error: 'الموظف يقدر يطلب سلفة فقط' }, { status: 400 })
-      const auth = verifyStaffToken(extractStaffToken(req))
+      const auth = await verifyStaffToken(extractStaffToken(req))
       if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
       const { org_id, staff_id } = auth.data!
 

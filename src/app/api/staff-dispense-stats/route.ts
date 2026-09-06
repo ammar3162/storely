@@ -9,7 +9,7 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
-    const auth = verifyStaffToken(extractStaffToken(req))
+    const auth = await verifyStaffToken(extractStaffToken(req))
     if (!auth.valid) return NextResponse.json({ mostUsed: [], todayCount: 0 })
     const { org_id, staff_id } = auth.data!
 

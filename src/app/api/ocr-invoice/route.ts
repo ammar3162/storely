@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     }
 
     // تحقق مزدوج: توكن موظف أو جلسة مالك
-    const staffAuth = verifyStaffToken(extractStaffToken(req))
+    const staffAuth = await verifyStaffToken(extractStaffToken(req))
     if (staffAuth.valid) {
       if (staffAuth.data!.org_id !== org_id) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
     } else {

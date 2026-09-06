@@ -20,7 +20,7 @@ const LANG_NAMES: Record<string, string> = {
 
 export async function POST(req: Request) {
   try {
-    const auth = verifyStaffToken(extractStaffToken(req))
+    const auth = await verifyStaffToken(extractStaffToken(req))
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
     const { org_id: orgId, staff_id: staffId } = auth.data!
 

@@ -1,4 +1,5 @@
 import crypto from 'crypto'
+import { createClient } from '@supabase/supabase-js'
 
 /**
  * نظام "تذكرة موظف موقّعة" (Signed Staff Token)
@@ -44,7 +45,7 @@ export function generateStaffToken(staff_id: string, org_id: string, branch_id: 
  * يتحقق من صحة التوكن ويرجّع بيانات الموظف الموثوقة منه (مو من الطلب).
  * يُستخدم بأول كل API خاص بالموظفين بدل الثقة بـ org_id من الـbody مباشرة.
  */
-export function verifyStaffToken(token: string | null): { valid: boolean; data?: StaffPayload; error?: string } {
+export async function verifyStaffToken(token: string | null): Promise<{ valid: boolean; data?: StaffPayload; error?: string }> {
   if (!token) return { valid: false, error: 'لا يوجد توكن — يرجى تسجيل الدخول' }
 
   const parts = token.split('.')
@@ -69,6 +70,23 @@ export function verifyStaffToken(token: string | null): { valid: boolean; data?:
 
   if (Date.now() > payload.exp) {
     return { valid: false, error: 'انتهت الجلسة — يرجى تسجيل الدخول من جديد' }
+  }
+
+  // فحص حالة اشتراك المنشأة — لو انتهت (تجريبية أو مدفوعة)، نمنع كل عمليات الموظفين
+  // بنفس صرامة منع دخول المالك للوحته. هذا مكان مركزي وحيد يغطي كل الـAPIs
+  // اللي تستخدم هذي الدالة تلقائياً، بدون ما نحتاج نضيف الفحص بكل ملف لحاله.
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    const { data: org } = await supabase.from('organizations').select('subscription_ends_at').eq('id', payload.org_id).maybeSingle()
+    if ((org as any)?.subscription_ends_at && new Date((org as any).subscription_ends_at) < new Date()) {
+      return { valid: false, error: 'انتهت صلاحية اشتراك المنشأة — يرجى إبلاغ صاحب العمل لتجديد الاشتراك' }
+    }
+  } catch {
+    // لو فشل فحص الاشتراك لأي سبب تقني، ما نمنع الموظف (فشل آمن نحو السماح)
+    // بدل ما نوقف كل عمليات الموظفين بسبب خطأ مؤقت بقاعدة البيانات
   }
 
   return { valid: true, data: payload }

@@ -36,7 +36,7 @@ export async function GET(req: Request) {
     }
 
     // طرف الموظف — نولّد نسخة اليوم لأي مهمة يومية أول، ثم نرجع مهامه (بدون القوالب نفسها)
-    const auth = verifyStaffToken(extractStaffToken(req))
+    const auth = await verifyStaffToken(extractStaffToken(req))
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
     const { org_id, staff_id } = auth.data!
 
@@ -144,7 +144,7 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ success: true })
     } else {
       // الموظف يكمّل مهمته
-      const auth = verifyStaffToken(extractStaffToken(req))
+      const auth = await verifyStaffToken(extractStaffToken(req))
       if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
       const { org_id, staff_id } = auth.data!
       const { task_id, photo_url } = body

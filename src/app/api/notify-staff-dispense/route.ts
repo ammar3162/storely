@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   if (WHATSAPP_PAUSED) return NextResponse.json({ success: true, skipped: 'paused' })
   try {
     const bodyForOwnerCheck = await req.clone().json().catch(()=>({}))
-    const staffAuth = verifyStaffToken(extractStaffToken(req))
+    const staffAuth = await verifyStaffToken(extractStaffToken(req))
 
     let org_id: string
     let branch_id: string | null = null

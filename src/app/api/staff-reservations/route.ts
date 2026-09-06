@@ -11,7 +11,7 @@ const sb = () => createClient(
 )
 
 export async function GET(req: Request) {
-  const auth = verifyStaffToken(extractStaffToken(req))
+  const auth = await verifyStaffToken(extractStaffToken(req))
   if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
   const { org_id: orgId } = auth.data!
 
@@ -27,7 +27,7 @@ export async function GET(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const auth = verifyStaffToken(extractStaffToken(req))
+  const auth = await verifyStaffToken(extractStaffToken(req))
   if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
   const { org_id: orgId } = auth.data!
 

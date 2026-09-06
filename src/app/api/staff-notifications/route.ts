@@ -10,7 +10,7 @@ const sb = () => createClient(
 // جلب إشعارات الموظف (بتوكنه)
 export async function GET(req: Request) {
   try {
-    const auth = verifyStaffToken(extractStaffToken(req))
+    const auth = await verifyStaffToken(extractStaffToken(req))
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
     const { staff_id } = auth.data!
 
@@ -33,7 +33,7 @@ export async function GET(req: Request) {
 // حذف الإشعارات فور رؤيتها من الموظف (بدل تعليمها مقروءة بس)
 export async function DELETE(req: Request) {
   try {
-    const auth = verifyStaffToken(extractStaffToken(req))
+    const auth = await verifyStaffToken(extractStaffToken(req))
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
     const { staff_id } = auth.data!
 
