@@ -161,9 +161,13 @@ function LoginPage() {
 
   async function handleForgot(e: React.FormEvent) {
     e.preventDefault(); setLoading(true); setError('')
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: 'https://storely.dev/reset-password' })
+    const res = await fetch('/api/forgot-password-email', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email }),
+    })
+    const data = await res.json()
     setLoading(false)
-    if (error) { setError('تأكد من صحة البريد'); return }
+    if (!res.ok) { setError(data.error || 'تأكد من صحة البريد'); return }
     setMode('forgot-sent')
   }
 
