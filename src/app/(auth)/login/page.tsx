@@ -127,17 +127,9 @@ function LoginPage() {
     e.preventDefault(); setLoading(true); setError('')
     const { error, data } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      try {
-        const res = await fetch('/api/check-email-exists', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email }) })
-        const checkData = await res.json()
-        if (checkData.exists === false) {
-          setError('هذا الحساب غير موجود — سجّل حساب جديد مجاناً')
-        } else {
-          setError('كلمة المرور غير صحيحة — تقدر تستخدم "نسيت كلمة المرور؟"')
-        }
-      } catch {
-        setError('البريد أو كلمة المرور غير صحيحة')
-      }
+      // رسالة واحدة موحّدة بغض النظر عن السبب الفعلي — نتجنب كشف
+      // أي إيميل مسجّل عندنا كعميل ولّا لأ (ثغرة "تعداد الإيميلات")
+      setError('البريد الإلكتروني أو كلمة المرور غير صحيحة — تقدر تستخدم "نسيت كلمة المرور؟"')
       setLoading(false); return
     }
     if (data.session) {
