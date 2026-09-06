@@ -80,7 +80,7 @@ export async function verifyStaffToken(token: string | null): Promise<{ valid: b
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
-    const { data: org } = await supabase.from('organizations').select('subscription_ends_at').eq('id', payload.org_id).maybeSingle()
+    const { data: org } = await supabase.from('profiles').select('subscription_ends_at').eq('org_id', payload.org_id).eq('role', 'owner').maybeSingle()
     if ((org as any)?.subscription_ends_at && new Date((org as any).subscription_ends_at) < new Date()) {
       return { valid: false, error: 'انتهت صلاحية اشتراك المنشأة — يرجى إبلاغ صاحب العمل لتجديد الاشتراك', reason: 'subscription_expired' }
     }

@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     // إعادة تعيين العداد عند النجاح
     attempts.delete(cleanPhone)
 
-    const { data: orgSub } = await supabase.from('organizations').select('subscription_ends_at').eq('id', staff.org_id).maybeSingle()
+    const { data: orgSub } = await supabase.from('profiles').select('subscription_ends_at').eq('org_id', staff.org_id).eq('role', 'owner').maybeSingle()
     if ((orgSub as any)?.subscription_ends_at && new Date((orgSub as any).subscription_ends_at) < new Date()) {
       return NextResponse.json({ error: 'انتهت فترة الاشتراك. يرجى إبلاغ صاحب المنشأة لتجديد الاشتراك', subscriptionExpired: true }, { status: 403 })
     }
