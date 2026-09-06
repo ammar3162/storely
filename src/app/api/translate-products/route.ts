@@ -21,7 +21,7 @@ const LANG_NAMES: Record<string, string> = {
 export async function POST(req: Request) {
   try {
     const auth = await verifyStaffToken(extractStaffToken(req))
-    if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
+    if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
     const orgId = auth.data!.org_id
 
     const { branchId, targetLang } = await req.json()

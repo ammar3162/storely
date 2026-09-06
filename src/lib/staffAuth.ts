@@ -45,7 +45,7 @@ export function generateStaffToken(staff_id: string, org_id: string, branch_id: 
  * يتحقق من صحة التوكن ويرجّع بيانات الموظف الموثوقة منه (مو من الطلب).
  * يُستخدم بأول كل API خاص بالموظفين بدل الثقة بـ org_id من الـbody مباشرة.
  */
-export async function verifyStaffToken(token: string | null): Promise<{ valid: boolean; data?: StaffPayload; error?: string }> {
+export async function verifyStaffToken(token: string | null): Promise<{ valid: boolean; data?: StaffPayload; error?: string; reason?: 'subscription_expired' }> {
   if (!token) return { valid: false, error: 'لا يوجد توكن — يرجى تسجيل الدخول' }
 
   const parts = token.split('.')
@@ -82,7 +82,7 @@ export async function verifyStaffToken(token: string | null): Promise<{ valid: b
     )
     const { data: org } = await supabase.from('organizations').select('subscription_ends_at').eq('id', payload.org_id).maybeSingle()
     if ((org as any)?.subscription_ends_at && new Date((org as any).subscription_ends_at) < new Date()) {
-      return { valid: false, error: 'انتهت صلاحية اشتراك المنشأة — يرجى إبلاغ صاحب العمل لتجديد الاشتراك' }
+      return { valid: false, error: 'انتهت صلاحية اشتراك المنشأة — يرجى إبلاغ صاحب العمل لتجديد الاشتراك', reason: 'subscription_expired' }
     }
   } catch {
     // لو فشل فحص الاشتراك لأي سبب تقني، ما نمنع الموظف (فشل آمن نحو السماح)

@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   try {
     const rawStaffToken = extractStaffToken(req)
     const auth = await verifyStaffToken(rawStaffToken)
-    if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
+    if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
     const { org_id, staff_id } = auth.data!
 
     const body = await req.json()

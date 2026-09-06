@@ -10,7 +10,7 @@ const sb = () => createClient(
 export async function POST(req: Request) {
   try {
     const auth = await verifyStaffToken(extractStaffToken(req))
-    if (!auth.valid) return NextResponse.json({ products: [], error: auth.error }, { status: 401 })
+    if (!auth.valid) return NextResponse.json({ products: [], error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
     const { org_id: orgId, staff_id: staffId } = auth.data!
 
     const { branchId } = await req.json()

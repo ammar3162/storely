@@ -26,7 +26,7 @@ export async function GET(req: Request) {
       staffFilter = staffIdParam
     } else {
       const auth = await verifyStaffToken(extractStaffToken(req))
-      if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
+      if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
       orgId = auth.data!.org_id
       staffFilter = auth.data!.staff_id
     }
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     if (!start_date || !end_date) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
     const auth = await verifyStaffToken(extractStaffToken(req))
-    if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
+    if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
     const { org_id, staff_id, branch_id } = auth.data!
 
     const start = new Date(start_date)

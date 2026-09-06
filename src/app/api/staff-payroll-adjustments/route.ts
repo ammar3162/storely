@@ -27,7 +27,7 @@ export async function GET(req: Request) {
       staffFilter = staffIdParam
     } else {
       const auth = await verifyStaffToken(extractStaffToken(req))
-      if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
+      if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
       orgId = auth.data!.org_id
       staffFilter = auth.data!.staff_id
     }
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
       // الموظف يطلب سلفة (بانتظار الموافقة) — نوع advance فقط
       if (type !== 'advance') return NextResponse.json({ error: 'الموظف يقدر يطلب سلفة فقط' }, { status: 400 })
       const auth = await verifyStaffToken(extractStaffToken(req))
-      if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
+      if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
       const { org_id, staff_id } = auth.data!
 
       const { data: staffRow } = await supabase.from('staff_members').select('name,branch_id').eq('id', staff_id).maybeSingle()

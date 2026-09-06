@@ -12,7 +12,7 @@ const sb = () => createClient(
 
 export async function GET(req: Request) {
   const auth = await verifyStaffToken(extractStaffToken(req))
-  if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
+  if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
   const { org_id: orgId } = auth.data!
 
   const supabase = sb()
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
 
 export async function PATCH(req: Request) {
   const auth = await verifyStaffToken(extractStaffToken(req))
-  if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: 401 })
+  if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
   const { org_id: orgId } = auth.data!
 
   const { reservation_id, status } = await req.json()

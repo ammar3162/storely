@@ -62,6 +62,7 @@ function StaffPageInner() {
   const forcedTab = searchParams.get('tab') as 'dispense'|'inventory'|'purchases'|'reports'|null
   const [session, setSession] = useState<StaffSession|null>(null)
   const [needsReauth, setNeedsReauth] = useState(false)
+  const [subscriptionExpired, setSubscriptionExpired] = useState(false)
   const [reauthPin, setReauthPin] = useState('')
   const [reauthError, setReauthError] = useState('')
   const [reauthLoading, setReauthLoading] = useState(false)
@@ -106,6 +107,11 @@ function StaffPageInner() {
       try {
         const permToken = localStorage.getItem('staff_token')
         const res = await fetch('/api/staff-permissions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${permToken}`},body:JSON.stringify({})})
+        if(res.status===403){
+          // انتهى اشتراك المنشأة — قفل كامل للصفحة، إعادة إدخال PIN ما بتحل شي هنا
+          setSubscriptionExpired(true)
+          return
+        }
         if(res.status===401){
           // انتهت الجلسة — نطلب PIN فقط بدل تسجيل خروج كامل
           setNeedsReauth(true)
@@ -353,6 +359,21 @@ function StaffPageInner() {
         .mu-btn{animation:fadeUpStagger .35s ease both;transition:transform .15s}
         .mu-btn:active{transform:scale(.95)}
       `}</style>
+
+      {subscriptionExpired && (
+        <div style={{position:'fixed',inset:0,zIndex:6000,background:'#0C213B',display:'flex',alignItems:'center',justifyContent:'center',padding:24,textAlign:'center' as const}}>
+          <div>
+            <div style={{fontSize:56,marginBottom:16}}>⏰</div>
+            <div style={{fontSize:18,fontWeight:800,color:'white',marginBottom:8}}>انتهت صلاحية اشتراك المنشأة</div>
+            <div style={{fontSize:13,color:'rgba(255,255,255,.7)',lineHeight:1.8,maxWidth:320,marginLeft:'auto',marginRight:'auto',marginBottom:24}}>
+              توقف النظام مؤقتاً لهذي المنشأة. يرجى إبلاغ صاحب العمل لتجديد الاشتراك قبل ما تقدر تكمل شغلك.
+            </div>
+            <button onClick={logout} style={{padding:'12px 28px',background:'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+              تسجيل خروج
+            </button>
+          </div>
+        </div>
+      )}
 
       {needsReauth && (
         <div style={{position:'fixed',inset:0,zIndex:5000,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,animation:'fadeIn .2s ease'}}>
