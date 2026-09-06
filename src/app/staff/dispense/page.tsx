@@ -100,7 +100,7 @@ function StaffPageInner() {
 
   // Permissions polling
   useEffect(()=>{
-    const interval = setInterval(async()=>{
+    async function checkPermissions() {
       const saved = localStorage.getItem('staff_session')
       if(!saved) return
       const s = JSON.parse(saved)
@@ -131,7 +131,9 @@ function StaffPageInner() {
           }
         }
       } catch {}
-    }, 5000)
+    }
+    checkPermissions()
+    const interval = setInterval(checkPermissions, 5000)
     return ()=>clearInterval(interval)
   },[])
 
@@ -366,7 +368,7 @@ function StaffPageInner() {
             <div style={{fontSize:56,marginBottom:16}}>⏰</div>
             <div style={{fontSize:18,fontWeight:800,color:'white',marginBottom:8}}>انتهت صلاحية اشتراك المنشأة</div>
             <div style={{fontSize:13,color:'rgba(255,255,255,.7)',lineHeight:1.8,maxWidth:320,marginLeft:'auto',marginRight:'auto',marginBottom:24}}>
-              توقف النظام مؤقتاً لهذي المنشأة. يرجى إبلاغ صاحب العمل لتجديد الاشتراك قبل ما تقدر تكمل شغلك.
+              انتهت فترة الاشتراك. يرجى إبلاغ صاحب المنشأة لتجديد الاشتراك
             </div>
             <button onClick={logout} style={{padding:'12px 28px',background:'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
               تسجيل خروج
