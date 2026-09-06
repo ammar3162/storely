@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { sendWhatsAppDocument, formatPhone } from '@/lib/whatsapp'
 import { generateInvoicePdf } from '@/lib/generateInvoicePdf'
+import { sendEmail } from '@/lib/email'
 
 export async function POST(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
@@ -61,6 +62,33 @@ export async function POST(req: Request) {
   if (!result.ok) {
     console.error('SEND_INVOICE_WA_FAILED:', JSON.stringify({ phone, status: result.status, data: result.data }))
     return NextResponse.json({ error: `فشل إرسال الفاتورة عبر واتساب: ${JSON.stringify(result.data || result.status || 'unknown')}` }, { status: 500 })
+  }
+
+  // نحاول نرسل إيميل كمان (أفضل جهد — لو فشل، ما نوقف العملية لأن واتساب نجح أصلاً)
+  try {
+    const { data: ownerProfile } = await supabase.from('profiles').select('id').eq('org_id', orgId).eq('role', 'owner').maybeSingle()
+    if (ownerProfile) {
+      const { data: authUser } = await supabase.auth.admin.getUserById((ownerProfile as any).id)
+      const ownerEmail = authUser?.user?.email
+      if (ownerEmail) {
+        const itemsHtml = cleanItems.map((it: any) => `<tr><td style="padding:8px 0">${it.label}</td><td style="padding:8px 0;text-align:left">${it.amount} ر.س</td></tr>`).join('')
+        const html = `
+          <div style="font-family:sans-serif;direction:rtl;text-align:right;max-width:480px;margin:0 auto;padding:24px">
+            <h2 style="color:#029FA2">🧾 فاتورة اشتراك #${invoiceNumber}</h2>
+            <p>مرحباً،</p>
+            <p>فاتورة اشتراكك بمنشأة "${orgName || ''}" جاهزة:</p>
+            <table style="width:100%;border-collapse:collapse;margin:16px 0">
+              ${itemsHtml}
+              <tr style="border-top:2px solid #029FA2;font-weight:700"><td style="padding:8px 0">الإجمالي</td><td style="padding:8px 0;text-align:left">${total} ر.س</td></tr>
+            </table>
+            <a href="${publicUrl}" style="display:inline-block;padding:12px 28px;background:#029FA2;color:white;border-radius:10px;text-decoration:none;font-weight:700">تحميل الفاتورة (PDF)</a>
+          </div>
+        `
+        await sendEmail({ to: ownerEmail, subject: `فاتورة اشتراك #${invoiceNumber} — Storely`, html })
+      }
+    }
+  } catch (emailErr) {
+    console.error('SEND_INVOICE_EMAIL_FAILED (non-fatal):', emailErr)
   }
 
   await logAdminAction(admin, 'send_invoice', orgId, orgName || null, { invoice_number: invoiceNumber, amount: total, items: cleanItems })
