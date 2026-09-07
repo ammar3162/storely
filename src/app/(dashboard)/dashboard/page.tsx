@@ -179,19 +179,19 @@ export default function DashboardPage() {
         *{box-sizing:border-box}
         @keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
         .u{animation:up .35s ease both}
-        .r{border-radius:18px}
-        .s{background:#fff;border:1px solid #f1f1ef;box-shadow:0 1px 3px rgba(20,20,18,.05),0 1px 2px rgba(20,20,18,.03)}
+        .r{border-radius:14px}
+        .s{background:#fff;border:1px solid #e5e5e3}
         .tap{transition:transform .12s,opacity .12s;cursor:pointer}
         .tap:active{transform:scale(.97);opacity:.85}
         .rh:hover{background:#f9f9f8}
         /* grid */
-        .g4{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-        .g2{display:grid;grid-template-columns:1fr;gap:14px}
-        .gq{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+        .g4{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+        .g2{display:grid;grid-template-columns:1fr;gap:10px}
+        .gq{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
         @media(min-width:600px){
-          .g4{grid-template-columns:repeat(4,1fr);gap:16px}
-          .g2{grid-template-columns:1.6fr 1fr;gap:16px}
-          .gq{grid-template-columns:repeat(4,1fr);gap:14px}
+          .g4{grid-template-columns:repeat(4,1fr);gap:12px}
+          .g2{grid-template-columns:1.6fr 1fr;gap:12px}
+          .gq{grid-template-columns:repeat(4,1fr);gap:10px}
         }
       `}</style>
 
@@ -203,21 +203,6 @@ export default function DashboardPage() {
         <div style={{fontSize:12,color:'#888780'}}>
           {orgName} · {new Date().toLocaleDateString(lang==='ar'?'ar-SA':'en-US', {numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'})}
         </div>
-      </div>
-
-      {/* ── إحصائيات سريعة — بطاقات بيضاء نظيفة، رقم كبير + تسمية، بدون خلفيات ملوّنة ── */}
-      <div className="u" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(120px,1fr))',gap:12,marginBottom:16,animationDelay:'.04s'}}>
-        {[
-          {label:'إجمالي المخزون',val:stats.products,unit:'صنف',color:'#1c1c1a'},
-          {label:'مشتريات اليوم',val:stats.todayPurchases,unit:'',color:'#1c1c1a'},
-          {label:'صرف اليوم',val:stats.todayDispenses,unit:'',color:'#1c1c1a'},
-          {label:'وصل للحد الأدنى',val:stats.lowStock,unit:'',color:stats.lowStock>0?'#e24b4a':'#1c1c1a'},
-        ].map((c,i)=>(
-          <div key={i} className="s r" style={{border:'1px solid #f1f1ef',padding:'16px 14px'}}>
-            <div style={{fontSize:24,fontWeight:800,color:c.color,marginBottom:4}}>{c.val}{c.unit&&<span style={{fontSize:12,fontWeight:600,color:'#94a3b8'}}> {c.unit}</span>}</div>
-            <div style={{fontSize:11,color:'#888780',borderTop:'2px solid #029FA2',paddingTop:6,marginTop:2,display:'inline-block'}}>{c.label}</div>
-          </div>
-        ))}
       </div>
 
       {/* ── Notifications ── */}

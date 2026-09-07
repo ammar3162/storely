@@ -667,7 +667,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           @media(min-width:768px){
             .desk-layout{display:flex;min-height:100vh}
             .mob-layout{display:none}
-            .desk-sidebar{display:flex;flex-direction:column;width:220px;position:fixed;top:0;right:0;bottom:0;background:#0C213B;z-index:100;border-left:1px solid rgba(255,255,255,.06)}.desk-topbar{display:flex}
+            .desk-sidebar{display:flex;flex-direction:column;width:220px;position:fixed;top:0;right:0;bottom:0;background:#042f2e;z-index:100;border-left:1px solid rgba(255,255,255,.06)}.desk-topbar{display:flex}
             .desk-content{flex:1;margin-right:220px;padding:20px 20px;min-height:100vh;width:calc(100vw - 220px);max-width:calc(100vw - 220px)}
           }
         `}</style>
@@ -816,9 +816,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
             <nav ref={navRef} style={{flex:1,padding:'8px 8px',overflowY:'auto',position:'relative' as const}}>
               <div style={{
-                position:'absolute' as const, right:0, width:3,
+                position:'absolute' as const, right:8, left:8,
                 top:pillStyle.top, height:pillStyle.height, opacity:pillStyle.opacity,
-                background:C.primary, borderRadius:'0 3px 3px 0',
+                background:`${C.primary}22`, borderRadius:9,
                 transition:'top .38s cubic-bezier(0.34,1.56,0.64,1), height .3s cubic-bezier(0.34,1.56,0.64,1), opacity .2s ease',
                 pointerEvents:'none' as const, zIndex:0,
               }}/>
