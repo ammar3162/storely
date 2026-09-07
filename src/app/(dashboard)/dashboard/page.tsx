@@ -206,17 +206,17 @@ export default function DashboardPage() {
       </div>
 
       {/* ── بطاقات الوصول السريع ── */}
-      <div className="u r" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:10,marginBottom:16,animationDelay:'.04s'}}>
+      <div className="u" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:12,marginBottom:16,animationDelay:'.04s'}}>
         {[
-          {label:'المخزون',icon:'📦',grad:'linear-gradient(135deg,#029FA2,#0C213B)',href:'/inventory'},
-          {label:'المشتريات',icon:'🛒',grad:'linear-gradient(135deg,#0C213B,#042f2e)',href:'/purchases'},
-          {label:'التقارير',icon:'📊',grad:'linear-gradient(135deg,#0d9488,#0C213B)',href:'/reports'},
-          {label:'الموظفون',icon:'👥',grad:'linear-gradient(135deg,#134e4a,#0C213B)',href:'/hr-management'},
+          {label:'المخزون',icon:'📦',accent:'#029FA2',href:'/inventory'},
+          {label:'المشتريات',icon:'🛒',accent:'#0d9488',href:'/purchases'},
+          {label:'التقارير',icon:'📊',accent:'#0C213B',href:'/reports'},
+          {label:'الموظفون',icon:'👥',accent:'#134e4a',href:'/hr-management'},
         ].map((c,i)=>(
-          <button key={i} onClick={()=>router.push(c.href)} className="tap"
-            style={{background:c.grad,border:'none',borderRadius:14,padding:'18px 14px',textAlign:'right' as const,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,gap:10,color:'white',minHeight:88}}>
-            <span style={{fontSize:22}}>{c.icon}</span>
-            <span style={{fontSize:13,fontWeight:700}}>{c.label}</span>
+          <button key={i} onClick={()=>router.push(c.href)} className="s r tap"
+            style={{border:'1px solid #f1f1ef',padding:'16px 14px',textAlign:'right' as const,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,gap:12,minHeight:92}}>
+            <span style={{width:38,height:38,borderRadius:11,background:`${c.accent}14`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>{c.icon}</span>
+            <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{c.label}</span>
           </button>
         ))}
       </div>
