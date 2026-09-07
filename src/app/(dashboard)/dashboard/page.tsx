@@ -208,10 +208,10 @@ export default function DashboardPage() {
       {/* ── بطاقات الوصول السريع ── */}
       <div className="u r" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:10,marginBottom:16,animationDelay:'.04s'}}>
         {[
-          {label:'المخزون',icon:'📦',grad:'linear-gradient(135deg,#029FA2,#0d6b6d)',href:'/inventory'},
-          {label:'المشتريات',icon:'🛒',grad:'linear-gradient(135deg,#7c3aed,#5b21b6)',href:'/purchases'},
-          {label:'التقارير',icon:'📊',grad:'linear-gradient(135deg,#2563eb,#1d4ed8)',href:'/reports'},
-          {label:'الموظفون',icon:'👥',grad:'linear-gradient(135deg,#d97706,#b45309)',href:'/hr-management'},
+          {label:'المخزون',icon:'📦',grad:'linear-gradient(135deg,#029FA2,#0C213B)',href:'/inventory'},
+          {label:'المشتريات',icon:'🛒',grad:'linear-gradient(135deg,#0C213B,#042f2e)',href:'/purchases'},
+          {label:'التقارير',icon:'📊',grad:'linear-gradient(135deg,#0d9488,#0C213B)',href:'/reports'},
+          {label:'الموظفون',icon:'👥',grad:'linear-gradient(135deg,#134e4a,#0C213B)',href:'/hr-management'},
         ].map((c,i)=>(
           <button key={i} onClick={()=>router.push(c.href)} className="tap"
             style={{background:c.grad,border:'none',borderRadius:14,padding:'18px 14px',textAlign:'right' as const,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,gap:10,color:'white',minHeight:88}}>
