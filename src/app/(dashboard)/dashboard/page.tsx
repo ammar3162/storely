@@ -179,19 +179,19 @@ export default function DashboardPage() {
         *{box-sizing:border-box}
         @keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
         .u{animation:up .35s ease both}
-        .r{border-radius:14px}
-        .s{background:#fff;border:1px solid #e5e5e3}
+        .r{border-radius:18px}
+        .s{background:#fff;border:1px solid #f1f1ef;box-shadow:0 1px 3px rgba(20,20,18,.05),0 1px 2px rgba(20,20,18,.03)}
         .tap{transition:transform .12s,opacity .12s;cursor:pointer}
         .tap:active{transform:scale(.97);opacity:.85}
         .rh:hover{background:#f9f9f8}
         /* grid */
-        .g4{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-        .g2{display:grid;grid-template-columns:1fr;gap:10px}
-        .gq{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+        .g4{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+        .g2{display:grid;grid-template-columns:1fr;gap:14px}
+        .gq{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
         @media(min-width:600px){
-          .g4{grid-template-columns:repeat(4,1fr);gap:12px}
-          .g2{grid-template-columns:1.6fr 1fr;gap:12px}
-          .gq{grid-template-columns:repeat(4,1fr);gap:10px}
+          .g4{grid-template-columns:repeat(4,1fr);gap:16px}
+          .g2{grid-template-columns:1.6fr 1fr;gap:16px}
+          .gq{grid-template-columns:repeat(4,1fr);gap:14px}
         }
       `}</style>
 
