@@ -57,7 +57,6 @@ export async function POST(req: Request) {
 
     for (const key of Object.keys(byBranch)) {
       const group = byBranch[key]
-      if (!group.phone) continue
 
       const sorted = [...group.items].sort((a, b) => new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime())
       const lines = sorted.map((p: any) => {
@@ -72,11 +71,23 @@ export async function POST(req: Request) {
         `المنتجات التالية قرب انتهاء صلاحيتها:\n\n${lines}\n\n` +
         `_راجع صفحة المخزون لاتخاذ الإجراء المناسب._`
 
-      const phone = formatPhone(group.phone)
-      const result = await sendWhatsAppMessage(phone, msg)
-      if (result.ok) totalSent++
-      results.push({ org: org.name, branch: group.name, count: sorted.length, sent: result.ok })
-      await delay(600)
+      // إشعار داخل النظام (يظهر بجرس الإشعارات بلوحة المالك) — بجانب واتساب
+      const branchKey = key !== 'none' ? key : null
+      await supabase.from('notifications').insert({
+        org_id: org.id, branch_id: branchKey, type: 'warning',
+        title: 'منتجات قربت تنتهي صلاحيتها',
+        message: `${sorted.length} منتج قرب ينتهي خلال 7 أيام: ${sorted.slice(0,3).map((p:any)=>p.name).join('، ')}${sorted.length>3?' وغيرها':''}`,
+      } as any)
+
+      if (group.phone) {
+        const phone = formatPhone(group.phone)
+        const result = await sendWhatsAppMessage(phone, msg)
+        if (result.ok) totalSent++
+        results.push({ org: org.name, branch: group.name, count: sorted.length, sent: result.ok })
+        await delay(600)
+      } else {
+        results.push({ org: org.name, branch: group.name, count: sorted.length, sent: false })
+      }
     }
   }
 
