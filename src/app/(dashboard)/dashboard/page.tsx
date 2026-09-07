@@ -205,20 +205,29 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── بطاقات الوصول السريع ── */}
-      <div className="u" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:12,marginBottom:16,animationDelay:'.04s'}}>
-        {[
-          {label:'المخزون',icon:'📦',accent:'#029FA2',href:'/inventory'},
-          {label:'المشتريات',icon:'🛒',accent:'#0d9488',href:'/purchases'},
-          {label:'التقارير',icon:'📊',accent:'#0C213B',href:'/reports'},
-          {label:'الموظفون',icon:'👥',accent:'#134e4a',href:'/hr-management'},
-        ].map((c,i)=>(
-          <button key={i} onClick={()=>router.push(c.href)} className="s r tap"
-            style={{border:'1px solid #f1f1ef',padding:'16px 14px',textAlign:'right' as const,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,gap:12,minHeight:92}}>
-            <span style={{width:38,height:38,borderRadius:11,background:`${c.accent}14`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>{c.icon}</span>
-            <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{c.label}</span>
-          </button>
-        ))}
+      {/* ── بطاقة بارزة (Hero Card) — نفس فكرة بطاقة Visa بالمرجع، بس ببياناتك الحقيقية ── */}
+      <div className="u r" style={{background:'linear-gradient(135deg,#0C213B,#042f2e)',padding:'22px 20px',marginBottom:16,animationDelay:'.04s',color:'white',position:'relative' as const,overflow:'hidden'}}>
+        <div style={{position:'absolute' as const,top:-30,left:-30,width:120,height:120,borderRadius:'50%',background:'rgba(2,159,162,.18)'}}/>
+        <div style={{position:'relative' as const,zIndex:1}}>
+          <div style={{fontSize:12,color:'rgba(255,255,255,.65)',marginBottom:4}}>إجمالي المخزون الحالي</div>
+          <div style={{fontSize:32,fontWeight:800,marginBottom:16}}>{stats.products} <span style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,.6)'}}>صنف</span></div>
+          <div style={{display:'flex',gap:20}}>
+            <div>
+              <div style={{fontSize:11,color:'rgba(255,255,255,.55)',marginBottom:2}}>مشتريات اليوم</div>
+              <div style={{fontSize:16,fontWeight:700}}>{stats.todayPurchases}</div>
+            </div>
+            <div>
+              <div style={{fontSize:11,color:'rgba(255,255,255,.55)',marginBottom:2}}>صرف اليوم</div>
+              <div style={{fontSize:16,fontWeight:700}}>{stats.todayDispenses}</div>
+            </div>
+            {stats.lowStock>0 && (
+              <div>
+                <div style={{fontSize:11,color:'rgba(255,255,255,.55)',marginBottom:2}}>وصل للحد الأدنى</div>
+                <div style={{fontSize:16,fontWeight:700,color:'#fca5a5'}}>{stats.lowStock}</div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* ── Notifications ── */}
