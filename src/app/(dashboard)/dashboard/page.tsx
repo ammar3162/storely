@@ -205,29 +205,19 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── بطاقة بارزة (Hero Card) — نفس فكرة بطاقة Visa بالمرجع، بس ببياناتك الحقيقية ── */}
-      <div className="u r" style={{background:'linear-gradient(135deg,#0C213B,#042f2e)',padding:'22px 20px',marginBottom:16,animationDelay:'.04s',color:'white',position:'relative' as const,overflow:'hidden'}}>
-        <div style={{position:'absolute' as const,top:-30,left:-30,width:120,height:120,borderRadius:'50%',background:'rgba(2,159,162,.18)'}}/>
-        <div style={{position:'relative' as const,zIndex:1}}>
-          <div style={{fontSize:12,color:'rgba(255,255,255,.65)',marginBottom:4}}>إجمالي المخزون الحالي</div>
-          <div style={{fontSize:32,fontWeight:800,marginBottom:16}}>{stats.products} <span style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,.6)'}}>صنف</span></div>
-          <div style={{display:'flex',gap:20}}>
-            <div>
-              <div style={{fontSize:11,color:'rgba(255,255,255,.55)',marginBottom:2}}>مشتريات اليوم</div>
-              <div style={{fontSize:16,fontWeight:700}}>{stats.todayPurchases}</div>
-            </div>
-            <div>
-              <div style={{fontSize:11,color:'rgba(255,255,255,.55)',marginBottom:2}}>صرف اليوم</div>
-              <div style={{fontSize:16,fontWeight:700}}>{stats.todayDispenses}</div>
-            </div>
-            {stats.lowStock>0 && (
-              <div>
-                <div style={{fontSize:11,color:'rgba(255,255,255,.55)',marginBottom:2}}>وصل للحد الأدنى</div>
-                <div style={{fontSize:16,fontWeight:700,color:'#fca5a5'}}>{stats.lowStock}</div>
-              </div>
-            )}
+      {/* ── إحصائيات سريعة — بطاقات بيضاء نظيفة، رقم كبير + تسمية، بدون خلفيات ملوّنة ── */}
+      <div className="u" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(120px,1fr))',gap:12,marginBottom:16,animationDelay:'.04s'}}>
+        {[
+          {label:'إجمالي المخزون',val:stats.products,unit:'صنف',color:'#1c1c1a'},
+          {label:'مشتريات اليوم',val:stats.todayPurchases,unit:'',color:'#1c1c1a'},
+          {label:'صرف اليوم',val:stats.todayDispenses,unit:'',color:'#1c1c1a'},
+          {label:'وصل للحد الأدنى',val:stats.lowStock,unit:'',color:stats.lowStock>0?'#e24b4a':'#1c1c1a'},
+        ].map((c,i)=>(
+          <div key={i} className="s r" style={{border:'1px solid #f1f1ef',padding:'16px 14px'}}>
+            <div style={{fontSize:24,fontWeight:800,color:c.color,marginBottom:4}}>{c.val}{c.unit&&<span style={{fontSize:12,fontWeight:600,color:'#94a3b8'}}> {c.unit}</span>}</div>
+            <div style={{fontSize:11,color:'#888780',borderTop:'2px solid #029FA2',paddingTop:6,marginTop:2,display:'inline-block'}}>{c.label}</div>
           </div>
-        </div>
+        ))}
       </div>
 
       {/* ── Notifications ── */}
