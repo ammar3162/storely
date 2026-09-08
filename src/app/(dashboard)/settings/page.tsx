@@ -199,7 +199,10 @@ export default function SettingsPage() {
     const { error } = await sb.from('organizations').update({ name:form.name, whatsapp_number:fullPhone, notify_schedule:form.notify_schedule, notify_time:form.notify_time, notify_days:form.notify_days, notify_cashier_closing_wa:form.notify_cashier_closing_wa, notify_supplier_wa:form.notify_supplier_wa } as any).eq('id',orgId)
     setSaving(false)
     if (error) { alert('فشل حفظ الإعدادات: ' + error.message); return }
-    setSaveOk(true); setTimeout(()=>setSaveOk(false),3000)
+    setSaveOk(true)
+    // القائمة الجانبية تجيب اسم المنشأة مرة وحدة بس وقت فتح الصفحة —
+    // نعيد تحميل الصفحة عشان تنعكس التغييرات فوراً بكل مكان يعرض اسم المنشأة
+    setTimeout(()=>window.location.reload(),900)
   }
 
   async function uploadLogo(file: File) {
