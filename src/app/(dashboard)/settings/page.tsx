@@ -113,6 +113,8 @@ export default function SettingsPage() {
   const [userPhone, setUserPhone]       = useState('')
   const [userFullName, setUserFullName] = useState('')
   const [userId, setUserId]             = useState('')
+  const [savingPersonal, setSavingPersonal] = useState(false)
+  const [personalSaveOk, setPersonalSaveOk] = useState(false)
   const [subEndsAt, setSubEndsAt]       = useState<string|null>(null)
   const [form, setForm] = useState({
     name:'', whatsapp_number:'',
@@ -125,6 +127,15 @@ export default function SettingsPage() {
   const sb = createClient()
 
   useEffect(()=>{ load() },[])
+
+  async function savePersonalInfo() {
+    if (!userId) return
+    setSavingPersonal(true)
+    const { error } = await sb.from('profiles').update({ full_name: userFullName.trim(), phone: userPhone.trim() } as any).eq('id', userId)
+    setSavingPersonal(false)
+    if (error) { alert('فشل حفظ البيانات الشخصية: ' + error.message); return }
+    setPersonalSaveOk(true); setTimeout(()=>setPersonalSaveOk(false),3000)
+  }
 
   async function changePassword(e:React.FormEvent) {
     e.preventDefault(); setPwMsg(null)
@@ -373,7 +384,7 @@ export default function SettingsPage() {
                 <div style={{display:'grid',gap:14}}>
                   <div>
                     <label style={lbl}>الاسم الكامل</label>
-                    <div style={{...inp(),display:'flex',alignItems:'center',background:colors.bg,color:colors.text2}}>{userFullName||'—'}</div>
+                    <input value={userFullName} onChange={e=>setUserFullName(e.target.value)} style={inp()} placeholder="اسمك الكامل"/>
                   </div>
                   <div>
                     <label style={lbl}>البريد الإلكتروني</label>
@@ -381,8 +392,11 @@ export default function SettingsPage() {
                   </div>
                   <div>
                     <label style={lbl}>رقم الجوال</label>
-                    <div style={{...inp(),display:'flex',alignItems:'center',background:colors.bg,color:colors.text2,direction:'ltr' as const,justifyContent:'flex-end'}}>{userPhone||'—'}</div>
+                    <input value={userPhone} onChange={e=>setUserPhone(e.target.value)} style={{...inp(),direction:'ltr' as const,textAlign:'right' as const}} placeholder="05xxxxxxxx"/>
                   </div>
+                  <button onClick={savePersonalInfo} disabled={savingPersonal} style={{...btnPrimary,opacity:savingPersonal?.6:1}}>
+                    {savingPersonal?'جاري الحفظ...':personalSaveOk?'✅ تم الحفظ':'حفظ البيانات الشخصية'}
+                  </button>
                 </div>
               </div>
 
