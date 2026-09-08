@@ -196,8 +196,10 @@ export default function SettingsPage() {
   async function handleSave(e:React.FormEvent) {
     e.preventDefault(); setSaving(true)
     const fullPhone = countryCode + form.whatsapp_number.replace(/^0+/, '')
-    await sb.from('organizations').update({ name:form.name, whatsapp_number:fullPhone, notify_schedule:form.notify_schedule, notify_time:form.notify_time, notify_days:form.notify_days, notify_cashier_closing_wa:form.notify_cashier_closing_wa, notify_supplier_wa:form.notify_supplier_wa } as any).eq('id',orgId)
-    setSaveOk(true); setSaving(false); setTimeout(()=>setSaveOk(false),3000)
+    const { error } = await sb.from('organizations').update({ name:form.name, whatsapp_number:fullPhone, notify_schedule:form.notify_schedule, notify_time:form.notify_time, notify_days:form.notify_days, notify_cashier_closing_wa:form.notify_cashier_closing_wa, notify_supplier_wa:form.notify_supplier_wa } as any).eq('id',orgId)
+    setSaving(false)
+    if (error) { alert('فشل حفظ الإعدادات: ' + error.message); return }
+    setSaveOk(true); setTimeout(()=>setSaveOk(false),3000)
   }
 
   async function uploadLogo(file: File) {
