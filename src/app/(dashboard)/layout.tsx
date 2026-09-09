@@ -100,6 +100,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [hasHrAddon, setHasHrAddon] = useState(false)
   const [hasProfitAddon, setHasProfitAddon] = useState(false)
   const [hasAiAddon, setHasAiAddon] = useState(false)
+  const [hasExtraBranchAddon, setHasExtraBranchAddon] = useState(false)
   const [branchName, setBranchName] = useState('')
   const [advancedNavOpen, setAdvancedNavOpen] = useState(false)
   const [userName, setUserName]     = useState('')
@@ -118,6 +119,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }, [unread])
   const [branches, setBranches]     = useState<any[]>([])
   const [orgPlan, setOrgPlan]       = useState<string>('basic')
+  const [orgMaxBranches, setOrgMaxBranches] = useState<number>(1)
   const [userRole, setUserRole]     = useState<string>('owner')
   const [managerPermissions, setManagerPermissions] = useState<Record<string,boolean>|null>(null)
   const [showMore, setShowMore]     = useState(false)
@@ -220,6 +222,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           setHasProfitAddon(!!profitAddon?.subscription?.isValid)
           const aiAddon = (j.addons||[]).find((a:any)=>a.slug==='ai_tools')
           setHasAiAddon(!!aiAddon?.subscription?.isValid)
+          const branchAddon = (j.addons||[]).find((a:any)=>a.slug==='extra_branch')
+          setHasExtraBranchAddon(!!branchAddon?.subscription?.isValid)
         }
       }).catch(()=>{})
     }
@@ -242,9 +246,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         if(!(p as any).terms_version_accepted || (p as any).terms_version_accepted !== tv.version){ setShowTermsConsent(true) }
       } catch {}
     }
-    const{data:orgData}=await (sb as any).from('organizations').select('plan,max_staff,max_suppliers,country_code').eq('id',p.org_id).single()
+    const{data:orgData}=await (sb as any).from('organizations').select('plan,max_staff,max_suppliers,max_branches,country_code').eq('id',p.org_id).single()
     const orgPlan=(orgData as any)?.plan||'basic'
     setOrgPlan(orgPlan)
+    setOrgMaxBranches((orgData as any)?.max_branches||1)
     sessionStorage.setItem('s_plan',orgPlan)
     sessionStorage.setItem('s_country_code',(orgData as any)?.country_code||'+966')
     sessionStorage.setItem('s_max_staff',String((orgData as any)?.max_staff||1))
@@ -630,7 +635,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
             {/* Nav items */}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
-              {[...NAV_MAIN,...NAV_MORE].filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic')&&(item.href!=='/attendance'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/hr-management'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/profitability'||orgPlan!=='basic'||hasProfitAddon)&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
+              {[...NAV_MAIN,...NAV_MORE].filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic'||hasExtraBranchAddon||orgMaxBranches>1)&&(item.href!=='/attendance'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/hr-management'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/profitability'||orgPlan!=='basic'||hasProfitAddon)&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
                 const active=isActive(item.href)
                 return (
                   <button key={item.href} onClick={()=>{router.push(item.href);setShowMore(false)}} onMouseEnter={()=>router.prefetch(item.href)}
@@ -846,7 +851,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   ) : (
                     <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.9)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{t(group.labelKey)}</div>
                   )}
-                  {!groupCollapsed && group.items.filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic')&&(item.href!=='/attendance'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/hr-management'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/profitability'||orgPlan!=='basic'||hasProfitAddon)&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
+                  {!groupCollapsed && group.items.filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic'||hasExtraBranchAddon||orgMaxBranches>1)&&(item.href!=='/attendance'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/hr-management'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/profitability'||orgPlan!=='basic'||hasProfitAddon)&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
                     const active=isActive(item.href)
                     const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
                     const isExternal=item.href.startsWith('http')
