@@ -54,7 +54,12 @@ export default function AttendancePage() {
     if (!profile?.org_id) return
     setOrgId(profile.org_id)
     setOrgName((profile as any)?.organizations?.name || '')
-    if ((profile as any)?.organizations?.plan === 'basic') { setLocked(true); return }
+    if ((profile as any)?.organizations?.plan === 'basic') {
+      // عميل الأساسية ممكن يكون اشترى إضافة "إدارة الموظفين الكاملة" من المتجر
+      const addonRes = await fetch(`/api/addons-market?org_id=${profile.org_id}`).then(r=>r.json()).catch(()=>null)
+      const hrAddon = (addonRes?.addons||[]).find((a:any)=>a.slug==='hr_full')
+      if (!hrAddon?.subscription?.isValid) { setLocked(true); return }
+    }
     const bid = sessionStorage.getItem('s_branch_id')
     setBranchId(bid)
     load(profile.org_id, date)

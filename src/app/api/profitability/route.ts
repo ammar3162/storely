@@ -149,7 +149,16 @@ export async function GET(req: Request) {
     const { data: org } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
     const plan = (org as any)?.plan
     if (plan === 'basic') {
-      return NextResponse.json({ error: 'upgrade_required', message: 'ميزة الربحية متاحة فقط بالباقة المتوسطة أو المتقدمة' }, { status: 403 })
+      // عميل الأساسية ممكن يكون اشترى إضافة "الربحية" من المتجر
+      const { data: addon } = await supabase.from('marketplace_addons').select('id').eq('slug', 'profitability').single()
+      let hasAddon = false
+      if (addon) {
+        const { data: sub } = await supabase.from('org_addon_subscriptions').select('expires_at').eq('org_id', org_id).eq('addon_id', (addon as any).id).eq('status', 'active').single()
+        hasAddon = !!sub && new Date((sub as any).expires_at) > new Date()
+      }
+      if (!hasAddon) {
+        return NextResponse.json({ error: 'upgrade_required', message: 'ميزة الربحية متاحة فقط بالباقة المتوسطة أو المتقدمة، أو عبر إضافة الربحية من المتجر' }, { status: 403 })
+      }
     }
 
     const monthStart = `${monthParam}-01`
@@ -205,7 +214,16 @@ export async function POST(req: Request) {
     const { data: org } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
     const plan = (org as any)?.plan
     if (plan === 'basic') {
-      return NextResponse.json({ error: 'upgrade_required', message: 'ميزة الربحية متاحة فقط بالباقة المتوسطة أو المتقدمة' }, { status: 403 })
+      // عميل الأساسية ممكن يكون اشترى إضافة "الربحية" من المتجر
+      const { data: addon } = await supabase.from('marketplace_addons').select('id').eq('slug', 'profitability').single()
+      let hasAddon = false
+      if (addon) {
+        const { data: sub } = await supabase.from('org_addon_subscriptions').select('expires_at').eq('org_id', org_id).eq('addon_id', (addon as any).id).eq('status', 'active').single()
+        hasAddon = !!sub && new Date((sub as any).expires_at) > new Date()
+      }
+      if (!hasAddon) {
+        return NextResponse.json({ error: 'upgrade_required', message: 'ميزة الربحية متاحة فقط بالباقة المتوسطة أو المتقدمة، أو عبر إضافة الربحية من المتجر' }, { status: 403 })
+      }
     }
 
     const monthStart = `${month}-01`

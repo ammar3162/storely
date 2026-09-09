@@ -97,6 +97,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [orgLogo, setOrgLogo]       = useState<string|null>(null)
   const [hasMenuAddon, setHasMenuAddon] = useState(false)
   const [hasResAddon, setHasResAddon] = useState(false)
+  const [hasHrAddon, setHasHrAddon] = useState(false)
+  const [hasProfitAddon, setHasProfitAddon] = useState(false)
+  const [hasAiAddon, setHasAiAddon] = useState(false)
   const [branchName, setBranchName] = useState('')
   const [advancedNavOpen, setAdvancedNavOpen] = useState(false)
   const [userName, setUserName]     = useState('')
@@ -211,6 +214,12 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           setHasMenuAddon(!!menuAddon?.subscription?.isValid)
           const resAddon = (j.addons||[]).find((a:any)=>a.slug==='table_reservations')
           setHasResAddon(!!resAddon?.subscription?.isValid)
+          const hrAddon = (j.addons||[]).find((a:any)=>a.slug==='hr_full')
+          setHasHrAddon(!!hrAddon?.subscription?.isValid)
+          const profitAddon = (j.addons||[]).find((a:any)=>a.slug==='profitability')
+          setHasProfitAddon(!!profitAddon?.subscription?.isValid)
+          const aiAddon = (j.addons||[]).find((a:any)=>a.slug==='ai_tools')
+          setHasAiAddon(!!aiAddon?.subscription?.isValid)
         }
       }).catch(()=>{})
     }
@@ -621,7 +630,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
             {/* Nav items */}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
-              {[...NAV_MAIN,...NAV_MORE].filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock'&&item.href!=='/attendance'&&item.href!=='/hr-management')||orgPlan!=='basic')&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
+              {[...NAV_MAIN,...NAV_MORE].filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic')&&(item.href!=='/attendance'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/hr-management'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/profitability'||orgPlan!=='basic'||hasProfitAddon)&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
                 const active=isActive(item.href)
                 return (
                   <button key={item.href} onClick={()=>{router.push(item.href);setShowMore(false)}} onMouseEnter={()=>router.prefetch(item.href)}
@@ -837,7 +846,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   ) : (
                     <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.9)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{t(group.labelKey)}</div>
                   )}
-                  {!groupCollapsed && group.items.filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/profitability'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock'&&item.href!=='/attendance'&&item.href!=='/hr-management')||orgPlan!=='basic')&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
+                  {!groupCollapsed && group.items.filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic')&&(item.href!=='/attendance'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/hr-management'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/profitability'||orgPlan!=='basic'||hasProfitAddon)&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
                     const active=isActive(item.href)
                     const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
                     const isExternal=item.href.startsWith('http')

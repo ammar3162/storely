@@ -50,8 +50,9 @@ const TOOLS = [
   },
 ]
 
-function planAllows(userPlan:string, minPlan:string){
-  const order = ['basic','pro','advanced']
+function planAllows(userPlan:string, minPlan:string, hasAiAddon:boolean){
+  if (userPlan === 'basic' && hasAiAddon) return true // عميل الأساسية اللي اشترى إضافة الذكاء الاصطناعي
+  const order = ['basic','basic_premium','pro','advanced']
   return order.indexOf(userPlan) >= order.indexOf(minPlan)
 }
 
@@ -154,6 +155,17 @@ export default function AIToolsPage() {
   }
   const [visible] = useState(true)
   const plan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
+  const [hasAiAddon, setHasAiAddon] = useState(false)
+  useEffect(() => {
+    const orgId = typeof window!=='undefined' ? sessionStorage.getItem('s_org_id') : null
+    if (!orgId) return
+    fetch(`/api/addons-market?org_id=${orgId}`).then(r=>r.json()).then(j=>{
+      if (j.success) {
+        const addon = (j.addons||[]).find((a:any)=>a.slug==='ai_tools')
+        setHasAiAddon(!!addon?.subscription?.isValid)
+      }
+    }).catch(()=>{})
+  }, [])
 
   return (
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',maxWidth:700,margin:'0 auto',opacity:visible?1:0,transition:'opacity .3s'}}>
@@ -264,11 +276,11 @@ export default function AIToolsPage() {
       <div style={{display:'flex',flexDirection:'column',gap:12}}>
         {TOOLS.map((tool,i)=>(
           <div key={i} className="fu" style={{animationDelay:`${i*.08}s`}}>
-            <button onClick={()=>planAllows(plan,tool.minPlan)?router.push(tool.href):router.push('/settings')}
-              style={{width:'100%',background:'white',border:`1.5px solid ${tool.border}`,borderRadius:16,padding:'20px',cursor:'pointer',fontFamily:'inherit',textAlign:'right',transition:'all .2s',boxShadow:`0 2px 8px ${tool.color}10`,opacity:planAllows(plan,tool.minPlan)?1:.6,position:'relative'}}
+            <button onClick={()=>planAllows(plan,tool.minPlan,hasAiAddon)?router.push(tool.href):router.push('/settings')}
+              style={{width:'100%',background:'white',border:`1.5px solid ${tool.border}`,borderRadius:16,padding:'20px',cursor:'pointer',fontFamily:'inherit',textAlign:'right',transition:'all .2s',boxShadow:`0 2px 8px ${tool.color}10`,opacity:planAllows(plan,tool.minPlan,hasAiAddon)?1:.6,position:'relative'}}
               onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow=`0 8px 24px ${tool.color}20`}}
               onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='none';(e.currentTarget as HTMLElement).style.boxShadow=`0 2px 8px ${tool.color}10`}}>
-              {!planAllows(plan,tool.minPlan) && (
+              {!planAllows(plan,tool.minPlan,hasAiAddon) && (
                 <div style={{position:'absolute',top:12,left:12,background:'#1c1c1a',color:'white',fontSize:10,fontWeight:700,padding:'4px 10px',borderRadius:99,display:'flex',alignItems:'center',gap:4,zIndex:1}}>
                   🔒 {tool.minPlan==='advanced'?'المتقدمة':'المتوسطة'}
                 </div>
@@ -297,7 +309,7 @@ export default function AIToolsPage() {
         ))}
       </div>
 
-      {(plan!=='basic') && (
+      {(plan!=='basic'||hasAiAddon) && (
         <>
       {/* توقع نفاد المخزون */}
       <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
@@ -565,7 +577,7 @@ export default function AIToolsPage() {
       </div>
 
       {/* مقارنة الفروع — الباقة المتوسطة أو المتقدمة */}
-      {(plan!=='basic') && (
+      {(plan!=='basic'||hasAiAddon) && (
       <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
           <div>
@@ -628,7 +640,7 @@ export default function AIToolsPage() {
       )}
 
       {/* أدوات الهدر — الباقة المتوسطة أو المتقدمة */}
-      {(plan!=='basic') && (
+      {(plan!=='basic'||hasAiAddon) && (
       <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
@@ -1028,7 +1040,7 @@ export default function AIToolsPage() {
         </>
       )}
 
-      {plan==='basic' && (
+      {plan==='basic' && !hasAiAddon && (
         <div className="fu" style={{marginTop:16,background:'linear-gradient(135deg,#042f2e,#0C213B)',borderRadius:16,padding:'28px 24px',textAlign:'center' as const}}>
           <div style={{fontSize:36,marginBottom:10}}>🔒✨</div>
           <div style={{fontSize:16,fontWeight:800,color:'white',marginBottom:6}}>أدوات ذكاء اصطناعي بانتظارك</div>

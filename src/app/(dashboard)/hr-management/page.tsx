@@ -9,6 +9,7 @@ export default function HRManagementPage() {
   const [orgId, setOrgId] = useState('')
   const [curr, setCurr] = useState('ر.س')
   const [orgPlan, setOrgPlan] = useState('basic')
+  const [hasHrAddon, setHasHrAddon] = useState(false)
   const [staff, setStaff] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string|null>(null)
@@ -63,15 +64,18 @@ export default function HRManagementPage() {
     const bid = sessionStorage.getItem('s_branch_id')
     let q = (sb.from('staff_members' as any) as any).select('*').eq('org_id',oid!)
     if (bid) q = q.eq('branch_id', bid)
-    const [{data:org}, {data}, leaveRes, advRes, cashierRes, penaltyRes] = await Promise.all([
+    const [{data:org}, {data}, leaveRes, advRes, cashierRes, penaltyRes, addonRes] = await Promise.all([
       sb.from('organizations' as any).select('plan,currency').eq('id',oid!).single(),
       q.order('created_at',{ascending:false}),
       fetch(`/api/staff-leave?org_id=${oid}`).then(r=>r.json()).catch(()=>({success:false})),
       fetch(`/api/staff-payroll-adjustments?org_id=${oid}`).then(r=>r.json()).catch(()=>({success:false})),
       (sb.from('cashier_closings' as any) as any).select('staff_id,difference,status').eq('org_id',oid!),
       fetch(`/api/apply-late-penalties?org_id=${oid}`).then(r=>r.json()).catch(()=>({success:false})),
+      fetch(`/api/addons-market?org_id=${oid}`).then(r=>r.json()).catch(()=>null),
     ])
     setOrgPlan((org as any)?.plan || 'basic')
+    const hrAddon = (addonRes?.addons||[]).find((a:any)=>a.slug==='hr_full')
+    setHasHrAddon(!!hrAddon?.subscription?.isValid)
     setStaff(data||[])
     if (leaveRes?.success) {
       const counts: Record<string, number> = {}
@@ -331,7 +335,7 @@ export default function HRManagementPage() {
     </div>
   )
 
-  if (orgPlan === 'basic') return (
+  if (orgPlan === 'basic' && !hasHrAddon) return (
     <div style={{minHeight:'50vh',display:'flex',alignItems:'center',justifyContent:'center',textAlign:'center' as const,padding:20}}>
       <div>
         <div style={{fontSize:44,marginBottom:12}}>🔒</div>
