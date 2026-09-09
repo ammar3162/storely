@@ -71,7 +71,7 @@ export default function ChoosePage() {
   const [permReason, setPermReason] = useState('')
   const [submittingPerm, setSubmittingPerm] = useState(false)
   const [taskCount, setTaskCount] = useState(0)
-  const [hasHrFeature, setHasHrFeature] = useState(true) // افتراضياً true عشان ما نخفي الأزرار قبل ما يوصل الفحص
+  const [hasHrFeature, setHasHrFeature] = useState(false) // مخفي افتراضياً لحد ما يتأكد الفحص — يمنع ظهور الأزرار للحظة ثم اختفائها
   const [showRequests, setShowRequests] = useState(false)
   const [showAdvanceForm, setShowAdvanceForm] = useState(false)
   const [advanceAmount, setAdvanceAmount] = useState('')
