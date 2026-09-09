@@ -66,6 +66,7 @@ export async function POST(req: Request) {
           name, unit: unit || 'قطعة', qty: 0,
           reorder_point: reorder_point || 5, is_active: true,
           avg_cost: unitCost,
+          requires_staff_assignment: true,
         } as any).select().single()
         if (np && purchasedQty > 0) {
           await supabase.from('stock_movements').insert({
@@ -73,11 +74,7 @@ export async function POST(req: Request) {
             qty_change: purchasedQty,
             note: `شراء جديد من: ${supplier} بواسطة: ${staff_name}`
           } as any)
-          if (staff_id) await addToAssignedProducts(supabase, staff_id, np.id)
-          fetch((process.env.NEXT_PUBLIC_APP_URL || 'https://storely.dev') + '/api/sync-product-to-staff', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${rawStaffToken}` },
-            body: JSON.stringify({ org_id, product_id: np.id }),
-          }).catch(() => {})
+          // منتج جديد كلياً — يبقى مخفي عن الكل لحد ما المالك يخصصه يدوياً من صفحة الموظفين
         }
       }
     }
