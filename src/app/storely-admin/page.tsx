@@ -13,7 +13,7 @@ type User = {
   id:string; full_name:string; phone:string; role:string
   status:string; created_at:string; org_id:string; org_name:string
   subscription_type:string; subscription_ends_at:string|null; billing_cycle?:string
-  max_branches:number; requested_plan:string
+  max_branches:number; plan:string; requested_plan:string
 }
 
 const STATUS: Record<string,{label:string;color:string;bg:string;dot:string}> = {
