@@ -196,8 +196,8 @@ export default function InventoryPage() {
       if(insErr||!np){toast('فشل إضافة المنتج — حاول مرة أخرى','error');setSaving(false);return}
       const{error:moveErr}=await sb.from('stock_movements').insert({product_id:np.id,profile_id:user.id,type:'in',qty_change:Number(form.qty),note:'إضافة أولية'})
       if(moveErr){toast('تمت إضافة المنتج لكن فشل تسجيل الكمية الابتدائية — عدّلها يدوياً','warning')}
-      else toast('تم إضافة المنتج ✓')
-      fetch('/api/sync-product-to-staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:np.id})}).catch(()=>{})
+      else toast('تم إضافة المنتج ✓ — يظهر بصفحة الموظفين لتخصيصه لمن تحب')
+      // ملاحظة: ما نزامنه تلقائياً لأي موظف — يفضل مخفي عن الكل لحد ما تخصصه يدوياً من صفحة "الموظفون"
     }
     setShowAdd(false);setEditItem(null);setAddQty(0)
     setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:'',recipe_unit:'',recipe_unit_factor:''})

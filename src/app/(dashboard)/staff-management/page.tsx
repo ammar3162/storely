@@ -85,6 +85,7 @@ export default function StaffManagementPage() {
   const [assignSearch, setAssignSearch] = useState('')
 
   const [takenProducts, setTakenProducts] = useState<Record<string,string>>({})
+  const [overrideTaken, setOverrideTaken] = useState<Set<string>>(new Set())
   const [shopOpenTime, setShopOpenTime] = useState('')
   const [shopCloseTime, setShopCloseTime] = useState('')
   const [showHoursModal, setShowHoursModal] = useState(false)
@@ -164,6 +165,7 @@ export default function StaffManagementPage() {
       ;(other.assigned_products||[]).forEach((pid:string)=>{ taken[pid] = other.name })
     })
     setTakenProducts(taken)
+    setOverrideTaken(new Set())
   }
 
   async function saveAssigned() {
@@ -172,12 +174,24 @@ export default function StaffManagementPage() {
       const{data:conflicting}=await (sb.from('staff_members' as any) as any)
         .select('id,name,assigned_products').eq('org_id',orgId).neq('id',assigningId)
       const conflictNames = new Set<string>()
+      const toStripFrom: {id:string, assigned_products:string[]}[] = []
       ;(conflicting||[]).forEach((s:any)=>{
-        if ((s.assigned_products||[]).some((pid:string)=>selectedProds.includes(pid))) conflictNames.add(s.name)
+        const overlap = (s.assigned_products||[]).filter((pid:string)=>selectedProds.includes(pid))
+        if (overlap.length) {
+          const explicitlyOverridden = overlap.every((pid:string)=>overrideTaken.has(pid))
+          if (explicitlyOverridden) {
+            toStripFrom.push({ id: s.id, assigned_products: (s.assigned_products||[]).filter((pid:string)=>!overlap.includes(pid)) })
+          } else {
+            conflictNames.add(s.name)
+          }
+        }
       })
       if (conflictNames.size) {
         toast(`تعذّر الحفظ — بعض المنتجات صارت مخصصة لموظف آخر (${Array.from(conflictNames).join('، ')}) بينما كانت النافذة مفتوحة. أعد المحاولة.`,'error')
         return
+      }
+      for (const s of toStripFrom) {
+        await (sb.from('staff_members' as any) as any).update({assigned_products:s.assigned_products}).eq('id',s.id)
       }
     }
     await (sb.from('staff_members' as any) as any).update({assigned_products:selectedProds}).eq('id',assigningId)
@@ -598,13 +612,14 @@ export default function StaffManagementPage() {
               ) : products.filter((p:any)=>!assignSearch.trim()||p.name.includes(assignSearch.trim())).map((p:any)=>{
                 const selected = selectedProds.includes(p.id)
                 const takenBy = takenProducts[p.id]
-                if(takenBy){
+                if(takenBy && !overrideTaken.has(p.id)){
                   return (
-                    <div key={p.id} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${colors.border}`,background:'#f5f5f4',opacity:.6,cursor:'not-allowed'}}>
+                    <div key={p.id} onClick={()=>{setOverrideTaken(prev=>new Set([...prev,p.id]));setSelectedProds(prev=>[...prev,p.id])}}
+                      style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${colors.border}`,background:'#f5f5f4',cursor:'pointer'}}>
                       <div style={{width:20,height:20,borderRadius:6,border:`2px solid ${colors.border2}`,background:'white',flexShrink:0}}/>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:font.sm,fontWeight:700,color:colors.text3}}>{p.name}</div>
-                        <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit}</div>
+                        <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit} · دوس لنقله من {takenBy}</div>
                       </div>
                       <span style={{fontSize:9,fontWeight:700,color:colors.warning||'#d97706',background:colors.warningLight||'#fffbeb',padding:'3px 8px',borderRadius:20,whiteSpace:'nowrap' as const,flexShrink:0,display:'flex',alignItems:'center',gap:3}}><Lock size={9} strokeWidth={2.5}/> {takenBy}</span>
                     </div>
