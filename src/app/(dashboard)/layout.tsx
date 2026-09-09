@@ -223,6 +223,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           const aiAddon = (j.addons||[]).find((a:any)=>a.slug==='ai_tools')
           setHasAiAddon(!!aiAddon?.subscription?.isValid)
           const branchAddon = (j.addons||[]).find((a:any)=>a.slug==='extra_branch')
+          console.log('DEBUG branchAddon:', branchAddon, 'isValid:', branchAddon?.subscription?.isValid, 'orgPlan:', orgPlan)
           setHasExtraBranchAddon(!!branchAddon?.subscription?.isValid)
         }
       }).catch(()=>{})
