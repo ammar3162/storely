@@ -71,6 +71,7 @@ export default function ChoosePage() {
   const [permReason, setPermReason] = useState('')
   const [submittingPerm, setSubmittingPerm] = useState(false)
   const [taskCount, setTaskCount] = useState(0)
+  const [hasHrFeature, setHasHrFeature] = useState(true) // افتراضياً true عشان ما نخفي الأزرار قبل ما يوصل الفحص
   const [showRequests, setShowRequests] = useState(false)
   const [showAdvanceForm, setShowAdvanceForm] = useState(false)
   const [advanceAmount, setAdvanceAmount] = useState('')
@@ -99,6 +100,14 @@ export default function ChoosePage() {
     loadNotifications()
     sb.from('organizations' as any).select('logo_url').eq('id',parsed.org_id).single()
       .then(({data}:any)=>{ if(data?.logo_url) setOrgLogo(data.logo_url) })
+    // مهامي وطلباتي جزء من ميزة "إدارة الموظفين" — ما نعرضهم إلا لو الباقة تشملها أو عندهم إضافة hr_full
+    sb.from('organizations' as any).select('plan').eq('id',parsed.org_id).single()
+      .then(async ({data:org}:any)=>{
+        if ((org as any)?.plan !== 'basic') { setHasHrFeature(true); return }
+        const j = await fetch(`/api/addons-market?org_id=${parsed.org_id}`).then(r=>r.json()).catch(()=>null)
+        const addon = (j?.addons||[]).find((a:any)=>a.slug==='hr_full')
+        setHasHrFeature(!!addon?.subscription?.isValid)
+      })
     const savedLang = localStorage.getItem('staff_lang')
     if (savedLang === 'en') setLang('en')
     const interval = setInterval(loadNotifications, 30000)
@@ -438,6 +447,7 @@ export default function ChoosePage() {
             </button>
           )}
         </div>
+        {hasHrFeature && (
         <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:10,marginTop:12}}>
           <button onClick={()=>router.push('/staff/tasks')}
             style={{position:'relative' as const,padding:'16px 8px',background:'white',color:'#1c1c1a',border:'1.5px solid #e5e7eb',borderRadius:16,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,alignItems:'center',gap:6}}>
@@ -453,6 +463,7 @@ export default function ChoosePage() {
             {t('myRequests')}
           </button>
         </div>
+        )}
 
         <button onClick={()=>{localStorage.removeItem('staff_session');router.replace('/staff')}}
           style={{marginTop:20,background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
