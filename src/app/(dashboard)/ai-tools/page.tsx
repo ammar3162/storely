@@ -297,7 +297,7 @@ export default function AIToolsPage() {
         ))}
       </div>
 
-      {(plan==='advanced'||plan==='pro') && (
+      {(plan!=='basic') && (
         <>
       {/* توقع نفاد المخزون */}
       <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
@@ -565,7 +565,7 @@ export default function AIToolsPage() {
       </div>
 
       {/* مقارنة الفروع — الباقة المتوسطة أو المتقدمة */}
-      {(plan==='advanced'||plan==='pro') && (
+      {(plan!=='basic') && (
       <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
           <div>
@@ -628,7 +628,7 @@ export default function AIToolsPage() {
       )}
 
       {/* أدوات الهدر — الباقة المتوسطة أو المتقدمة */}
-      {(plan==='advanced'||plan==='pro') && (
+      {(plan!=='basic') && (
       <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>

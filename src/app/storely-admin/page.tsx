@@ -23,10 +23,13 @@ const STATUS: Record<string,{label:string;color:string;bg:string;dot:string}> = 
   deleted:   {label:'محذوف',  color:'#6b7280', bg:'#f3f4f6', dot:'#9ca3af'},
 }
 
+// كل باقة عندها الآن مفتاح صريح (planKey) هو مصدر الحقيقة — مو عدد الفروع (v) بس،
+// لأن "الأساسية" و"الأساسية بريميم" الاثنين فرع واحد وما نقدر نفرّقهم بعدد الفروع
 const PLANS = [
-  {v:1,  label:'الأساسية',  price:'149 ر.س', yearlyPrice:'1430 ر.س', desc:'فرع · 2 موظف · 3 موردين',                    color:'#029FA2', maxStaff:2,   maxSup:3},
-  {v:3,  label:'المتوسطة',  price:'249 ر.س', yearlyPrice:'2390 ر.س', desc:'3 فروع · 10 موظفين · 10 موردين',              color:'#2563eb', maxStaff:10,  maxSup:10},
-  {v:10, label:'المتقدمة',  price:'399 ر.س', yearlyPrice:'3830 ر.س', desc:'فروع غير محدودة · موظفون وموردون غير محدودين', color:'#7c3aed', maxStaff:999, maxSup:999},
+  {v:1,  planKey:'basic',         label:'الأساسية',         price:'99 ر.س',  yearlyPrice:'990 ر.س',  desc:'فرع · 3 موظفين · 3 موردين · بدون حضور/انصراف أو إقفال كاشير', color:'#029FA2', maxStaff:3,   maxSup:3},
+  {v:1,  planKey:'basic_premium', label:'الأساسية بريميم',  price:'149 ر.س', yearlyPrice:'1490 ر.س', desc:'فرع · 5 موظفين · 5 موردين · كل المميزات',                    color:'#0d9488', maxStaff:5,   maxSup:5},
+  {v:3,  planKey:'pro',           label:'المتوسطة',         price:'249 ر.س', yearlyPrice:'2490 ر.س', desc:'3 فروع · 10 موظفين · 10 موردين · كل المميزات',               color:'#2563eb', maxStaff:10,  maxSup:10},
+  {v:10, planKey:'advanced',      label:'المتقدمة',         price:'449 ر.س', yearlyPrice:'4490 ر.س', desc:'كل شي غير محدود',                                            color:'#7c3aed', maxStaff:999, maxSup:999},
 ]
 
 export default function AdminPage() {
@@ -371,6 +374,7 @@ export default function AdminPage() {
       subscription_type:p.subscription_type||'trial',
       subscription_ends_at:p.subscription_ends_at||null,
       max_branches:p.organizations?.max_branches||1,
+      plan:p.organizations?.plan||'basic',
       requested_plan:p.organizations?.requested_plan||'—',
       billing_cycle:p.organizations?.billing_cycle||'monthly',
     })))
@@ -409,23 +413,23 @@ export default function AdminPage() {
     await loadUsers(); setSaving(null); setSelected(null)
   }
 
-  async function updatePlan(orgId: string, value: number) {
-    const plan = PLANS.find(p=>p.v===value)!
+  async function updatePlan(orgId: string, planKey: string) {
+    // planKey هو مصدر الحقيقة الآن (مو عدد الفروع) — لأن أكثر من باقة تشترك بنفس عدد الفروع
+    // (الأساسية والأساسية بريميم الاثنين فرع واحد)
+    const plan = PLANS.find(p=>p.planKey===planKey)!
     if (!(await confirmDialog({ title: 'تغيير الباقة', message: `تأكيد الترقية/التغيير لباقة "${plan.label}" (${plan.price})؟` }))) return
     setSaving(orgId)
     const target = users.find(u=>u.org_id===orgId)
-    const oldBranches = target?.max_branches || 1
     const currentBilling = target?.billing_cycle || 'monthly'
-    const planName = value===1?'basic':value<=3?'pro':'advanced'
     const adminPass = sessionStorage.getItem('storely_admin_pass') || ''
     const res = await fetch('/api/admin/update-plan', {
       method:'POST', headers:{'Content-Type':'application/json','x-admin-key':adminPass},
-      body: JSON.stringify({ orgId, maxBranches:value, maxStaff:plan.maxStaff, maxSuppliers:plan.maxSup, planName, orgName: target?.org_name, billingCycle: currentBilling })
+      body: JSON.stringify({ orgId, maxBranches:plan.v, maxStaff:plan.maxStaff, maxSuppliers:plan.maxSup, planName:plan.planKey, orgName: target?.org_name, billingCycle: currentBilling })
     })
     const data = await res.json()
     if (!data.success) { alert('خطأ: ' + (data.error||'unknown')); setSaving(null); return }
-    setUsers(prev=>prev.map(u=>u.org_id===orgId?{...u,max_branches:value}:u))
-    setSelected(prev=>prev&&prev.org_id===orgId?{...prev,max_branches:value}:prev)
+    setUsers(prev=>prev.map(u=>u.org_id===orgId?{...u,max_branches:plan.v,plan:plan.planKey}:u))
+    setSelected(prev=>prev&&prev.org_id===orgId?{...prev,max_branches:plan.v,plan:plan.planKey}:prev)
     setSaving(null)
   }
 
@@ -751,15 +755,15 @@ export default function AdminPage() {
                 <div style={{fontSize:12,fontWeight:700,color:'#1d4ed8',marginBottom:12}}>📦 تغيير الباقة</div>
                 <div style={{display:'flex',flexDirection:'column',gap:8}}>
                   {PLANS.map(p=>(
-                    <button key={p.v} onClick={()=>updatePlan(selected.org_id,p.v)} disabled={!!saving||!selected.org_id}
-                      style={{padding:'12px 14px',borderRadius:10,border:`1.5px solid ${selected.max_branches===p.v?p.color:'#e5e7eb'}`,background:selected.max_branches===p.v?p.color+'0d':'#ffffff',cursor:(!selected.org_id||!!saving)?'not-allowed':'pointer',fontFamily:'inherit',display:'flex',justifyContent:'space-between',alignItems:'center',transition:'all .15s'}}>
+                    <button key={p.planKey} onClick={()=>updatePlan(selected.org_id,p.planKey)} disabled={!!saving||!selected.org_id}
+                      style={{padding:'12px 14px',borderRadius:10,border:`1.5px solid ${selected.plan===p.planKey?p.color:'#e5e7eb'}`,background:selected.plan===p.planKey?p.color+'0d':'#ffffff',cursor:(!selected.org_id||!!saving)?'not-allowed':'pointer',fontFamily:'inherit',display:'flex',justifyContent:'space-between',alignItems:'center',transition:'all .15s'}}>
                       <div style={{textAlign:'right'}}>
-                        <div style={{fontSize:13,fontWeight:800,color:selected.max_branches===p.v?p.color:'#0f172a'}}>{p.label}</div>
+                        <div style={{fontSize:13,fontWeight:800,color:selected.plan===p.planKey?p.color:'#0f172a'}}>{p.label}</div>
                         <div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>{p.desc}</div>
                       </div>
                       <div style={{display:'flex',alignItems:'center',gap:8}}>
-                        <span style={{fontSize:13,fontWeight:800,color:selected.max_branches===p.v?p.color:'#64748b'}}>{selected.billing_cycle==='yearly'?p.yearlyPrice+'/سنة':p.price+'/شهر'}</span>
-                        {selected.max_branches===p.v&&<span style={{fontSize:16}}>✓</span>}
+                        <span style={{fontSize:13,fontWeight:800,color:selected.plan===p.planKey?p.color:'#64748b'}}>{selected.billing_cycle==='yearly'?p.yearlyPrice+'/سنة':p.price+'/شهر'}</span>
+                        {selected.plan===p.planKey&&<span style={{fontSize:16}}>✓</span>}
                       </div>
                     </button>
                   ))}
