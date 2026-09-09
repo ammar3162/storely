@@ -29,8 +29,11 @@ export async function POST(req: Request) {
     // لو عنده منتجات مخصصة استخدمها، وإلا أظهر كل منتجات الفرع
     if (assignedProducts.length > 0) {
       q = q.in('id', assignedProducts)
+    } else {
+      // ما عنده تخصيص صريح — نستثني المنتجات اللي تتطلب تحديد موظف صراحة (requires_staff_assignment)
+      // المنتجات القديمة تبقى تظهر تلقائياً زي العادة، بس أي منتج جديد لازم يُحدَّد له موظف قبل ما يظهر
+      q = q.eq('requires_staff_assignment', false)
     }
-    // لو assigned_products فارغة يظهر كل المنتجات تلقائياً
 
     const { data } = await q.order('name')
     return NextResponse.json({ products: data || [] })
