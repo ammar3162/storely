@@ -84,6 +84,18 @@ export default function DashboardPage() {
     return () => clearInterval(interval)
   }, [])
 
+  // اشتراك لحظي (Realtime) — إشعار جديد يضاف فوراً بدون انتظار دورة التحديث كل 20 ثانية
+  useEffect(() => {
+    const orgId = sessionStorage.getItem('s_org_id')
+    if (!orgId) return
+    const channel = sb.channel(`dashboard-notifs-${orgId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `org_id=eq.${orgId}` }, (payload:any) => {
+        setNotifs(prev => [payload.new, ...prev].slice(0, 5))
+      })
+      .subscribe()
+    return () => { sb.removeChannel(channel) }
+  }, [])
+
   async function load() {
     // عرض الكاش فوراً إذا متوفر
     const orgId_cached = sessionStorage.getItem('s_org_id')

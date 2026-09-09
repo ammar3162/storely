@@ -110,7 +110,7 @@ export default function ChoosePage() {
       })
     const savedLang = localStorage.getItem('staff_lang')
     if (savedLang === 'en') setLang('en')
-    const interval = setInterval(loadNotifications, 30000)
+    const interval = setInterval(loadNotifications, 5000) // مسرّع لـ5 ثوانٍ (شبه لحظي) بدل 30 — نظام الموظف يستخدم توكن مخصص مو حساب Supabase عادي، فما نقدر نستخدم Realtime مباشر بأمان هنا
     return () => clearInterval(interval)
   },[])
 
