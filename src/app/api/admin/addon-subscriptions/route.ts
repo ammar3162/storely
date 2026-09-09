@@ -25,6 +25,20 @@ export async function POST(req: Request) {
 
   if (error) return NextResponse.json({ error: 'فشل التفعيل' }, { status: 500 })
 
+  // تعديل حدود المنشأة تلقائياً حسب نوع الإضافة — بدون هذا، تفعيل الإضافة ما ينعكس فعلياً على أي صفحة
+  const { data: addonRow } = await supabase.from('marketplace_addons').select('slug').eq('id', addon_id).single()
+  const slug = (addonRow as any)?.slug
+  if (slug === 'extra_branch') {
+    const { data: org } = await supabase.from('organizations').select('max_branches').eq('id', org_id).single()
+    await supabase.from('organizations').update({ max_branches: ((org as any)?.max_branches || 1) + 1 } as any).eq('id', org_id)
+  } else if (slug === 'extra_staff_sup') {
+    const { data: org } = await supabase.from('organizations').select('max_staff,max_suppliers').eq('id', org_id).single()
+    await supabase.from('organizations').update({
+      max_staff: ((org as any)?.max_staff || 0) + 5,
+      max_suppliers: ((org as any)?.max_suppliers || 0) + 5,
+    } as any).eq('id', org_id)
+  }
+
   await logAdminAction(admin, 'activate_addon', org_id, org_name || null, { addon_id, addon_name, expires_at: expiresAt })
 
   return NextResponse.json({ success: true, expiresAt })
@@ -44,6 +58,20 @@ export async function DELETE(req: Request) {
     .eq('org_id', org_id).eq('addon_id', addon_id)
 
   if (error) return NextResponse.json({ error: 'فشل الإلغاء' }, { status: 500 })
+
+  // تراجع عن زيادة الحدود اللي صارت وقت التفعيل — نفس المنطق بالعكس
+  const { data: addonRow } = await supabase.from('marketplace_addons').select('slug').eq('id', addon_id).single()
+  const slug = (addonRow as any)?.slug
+  if (slug === 'extra_branch') {
+    const { data: org } = await supabase.from('organizations').select('max_branches').eq('id', org_id).single()
+    await supabase.from('organizations').update({ max_branches: Math.max(1, ((org as any)?.max_branches || 2) - 1) } as any).eq('id', org_id)
+  } else if (slug === 'extra_staff_sup') {
+    const { data: org } = await supabase.from('organizations').select('max_staff,max_suppliers').eq('id', org_id).single()
+    await supabase.from('organizations').update({
+      max_staff: Math.max(0, ((org as any)?.max_staff || 5) - 5),
+      max_suppliers: Math.max(0, ((org as any)?.max_suppliers || 5) - 5),
+    } as any).eq('id', org_id)
+  }
 
   await logAdminAction(admin, 'cancel_addon', org_id, org_name || null, { addon_id, addon_name })
 
