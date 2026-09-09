@@ -190,6 +190,14 @@ export default function StaffManagementPage() {
     setAssigning(true)
     const target = staff.find((s:any)=>s.id===staffId)
     if(!target){ setAssigning(false); return }
+    const{data:conflicting}=await (sb.from('staff_members' as any) as any)
+      .select('id,name,assigned_products').eq('org_id',orgId).neq('id',staffId)
+    const conflict = (conflicting||[]).find((s:any)=>(s.assigned_products||[]).includes(productId))
+    if (conflict) {
+      setAssigning(false)
+      toast(`تعذّر التخصيص — هذا المنتج مخصص أصلاً لـ${(conflict as any).name}`,'error')
+      return
+    }
     const updated = [...(target.assigned_products||[]), productId]
     const { error } = await (sb.from('staff_members' as any) as any).update({assigned_products:updated}).eq('id',staffId)
     setAssigning(false)
