@@ -65,6 +65,10 @@ export async function DELETE(req: Request) {
   if (slug === 'extra_branch') {
     const { data: org } = await supabase.from('organizations').select('max_branches').eq('id', org_id).single()
     await supabase.from('organizations').update({ max_branches: Math.max(1, ((org as any)?.max_branches || 2) - 1) } as any).eq('id', org_id)
+    const { data: latestBranch } = await supabase.from('branches').select('id').eq('org_id', org_id).eq('is_active', true).order('created_at', { ascending: false }).limit(1).maybeSingle()
+    if (latestBranch) {
+      await supabase.from('branches').update({ is_active: false } as any).eq('id', (latestBranch as any).id)
+    }
   } else if (slug === 'extra_staff_sup') {
     const { data: org } = await supabase.from('organizations').select('max_staff,max_suppliers').eq('id', org_id).single()
     await supabase.from('organizations').update({

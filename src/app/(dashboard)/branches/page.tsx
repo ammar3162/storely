@@ -32,10 +32,15 @@ export default function BranchesPage() {
   const [deletingBranch, setDeletingBranch] = useState(false)
   const [deleteError, setDeleteError] = useState('')
   const [showCopyProducts, setShowCopyProducts] = useState(false)
+  const [pendingBranchReload, setPendingBranchReload] = useState(false)
+  useEffect(() => {
+    if (pendingBranchReload && !showCopyProducts) window.location.reload()
+  }, [showCopyProducts, pendingBranchReload])
   const [newBranchId, setNewBranchId] = useState('')
   const [sourceProducts, setSourceProducts] = useState<any[]>([])
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set())
   const [copyingProducts, setCopyingProducts] = useState(false)
+  const [undoingBranch, setUndoingBranch] = useState(false)
 
   async function deleteBranchPermanently() {
     if (!confirmDeleteBranch) return
@@ -141,6 +146,7 @@ export default function BranchesPage() {
     const{data:bList}=await sb.from('branches').select('id,name,location,whatsapp_number,latitude,longitude').eq('org_id',orgId).eq('is_active',true).order('created_at')
     setBranches(bList||[]); setNewBranch({name:'',location:''}); setBranchSaving(false)
     toast('✅ تم إضافة الفرع')
+    setPendingBranchReload(true)
 
     // نعرض عليه منتجات الفرع الأساسي (الأقدم) عشان يختار أيها يبيها بالفرع الجديد — بدون كميات
     const mainBranch = ((bList||[]) as any[]).find((b:any)=>b.id!==created.id)
@@ -153,6 +159,20 @@ export default function BranchesPage() {
         setShowCopyProducts(true)
       }
     }
+  }
+
+  async function undoAddBranch() {
+    setUndoingBranch(true)
+    const{data:{user}}=await sb.auth.getUser()
+    if(!user){setUndoingBranch(false);return}
+    await fetch('/api/delete-branch', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ branch_id: newBranchId, org_id: orgId, user_id: user.id })
+    })
+    setBranches(prev=>prev.filter((b:any)=>b.id!==newBranchId))
+    setUndoingBranch(false)
+    setShowCopyProducts(false)
+    toast('تم التراجع عن إضافة الفرع')
   }
 
   async function confirmCopyProducts() {
@@ -453,9 +473,13 @@ export default function BranchesPage() {
             </div>
 
             <div style={{display:'flex',gap:8}}>
-              <button onClick={()=>setShowCopyProducts(false)} disabled={copyingProducts}
-                style={{flex:1,padding:'11px',background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border}`,borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
-                تخطّي
+              <button onClick={()=>setShowCopyProducts(false)} disabled={copyingProducts||undoingBranch}
+                style={{flex:1,padding:'11px',background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border}`,borderRadius:10,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
+                الفرع بدون نسخ منتجات
+              </button>
+              <button onClick={undoAddBranch} disabled={copyingProducts||undoingBranch}
+                style={{flex:1,padding:'11px',background:colors.dangerLight,color:colors.danger,border:`1.5px solid ${colors.dangerBorder}`,borderRadius:10,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
+                {undoingBranch?'جاري التراجع...':'تراجع عن الإضافة'}
               </button>
               <button onClick={confirmCopyProducts} disabled={copyingProducts}
                 style={{flex:2,padding:'11px',background:colors.primary,color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:copyingProducts?'not-allowed':'pointer',fontFamily:font.family,opacity:copyingProducts?.6:1}}>
