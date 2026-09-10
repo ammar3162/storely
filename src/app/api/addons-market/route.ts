@@ -21,6 +21,26 @@ export async function DELETE(req: Request) {
       .eq('org_id', org_id).eq('addon_id', addon_id)
 
     if (error) return NextResponse.json({ error: 'فشل الإلغاء' }, { status: 500 })
+
+    // تراجع عن زيادة الحدود اللي صارت وقت التفعيل — نفس المنطق الموجود بمسار الأدمن،
+    // كان ناقص هنا فقط (لما المالك نفسه يلغي من صفحة الإضافات)، فيفضل max_branches والفرع الزايد بدون تراجع
+    const { data: addonRow } = await supabase.from('marketplace_addons').select('slug').eq('id', addon_id).single()
+    const slug = (addonRow as any)?.slug
+    if (slug === 'extra_branch') {
+      const { data: org } = await supabase.from('organizations').select('max_branches').eq('id', org_id).single()
+      await supabase.from('organizations').update({ max_branches: Math.max(1, ((org as any)?.max_branches || 2) - 1) } as any).eq('id', org_id)
+      const { data: latestBranch } = await supabase.from('branches').select('id').eq('org_id', org_id).eq('is_active', true).order('created_at', { ascending: false }).limit(1).maybeSingle()
+      if (latestBranch) {
+        await supabase.from('branches').update({ is_active: false } as any).eq('id', (latestBranch as any).id)
+      }
+    } else if (slug === 'extra_staff_sup') {
+      const { data: org } = await supabase.from('organizations').select('max_staff,max_suppliers').eq('id', org_id).single()
+      await supabase.from('organizations').update({
+        max_staff: Math.max(0, ((org as any)?.max_staff || 5) - 5),
+        max_suppliers: Math.max(0, ((org as any)?.max_suppliers || 5) - 5),
+      } as any).eq('id', org_id)
+    }
+
     return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
