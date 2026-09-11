@@ -55,7 +55,15 @@ export async function POST(req: Request) {
 
     const { data: orgCheck } = await sb().from('organizations').select('plan').eq('id', org_id).single()
     if ((orgCheck as any)?.plan === 'basic') {
-      return NextResponse.json({ error: 'ميزة إقفال الكاشير متاحة فقط بالباقة المتوسطة أو المتقدمة — يرجى إبلاغ صاحب المنشأة' }, { status: 403 })
+      // عميل الأساسية يقدر يستخدم إقفال الكاشير لو اشترى إضافة cashier_closing تحديداً
+      const { data: cashierAddon } = await sb().from('marketplace_addons').select('id').eq('slug', 'cashier_closing').maybeSingle()
+      const now = new Date().toISOString()
+      const { data: sub } = cashierAddon
+        ? await sb().from('org_addon_subscriptions').select('id').eq('org_id', org_id).eq('addon_id', (cashierAddon as any).id).eq('status', 'active').gt('expires_at', now).maybeSingle()
+        : { data: null }
+      if (!sub) {
+        return NextResponse.json({ error: 'ميزة إقفال الكاشير متاحة بالباقة المتوسطة أو المتقدمة، أو عبر شراء إضافة "إقفال الكاشير اليومي" من متجر الإضافات' }, { status: 403 })
+      }
     }
 
     const sales = Number(total_sales) || 0

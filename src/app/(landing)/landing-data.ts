@@ -5,9 +5,9 @@ export type Billing = 'monthly'|'yearly'
 export const PLAN_BRANCHES = [1, 3, 10]
 
 export const PLANS = [
-  { name:'الأساسية', nameEn:'Basic', price:'149', yearlyPrice:'1430', color:'#0f766e', popular:false,
-    limits:['فرع واحد','2 موظفين','3 موردين'],
-    limitsEn:['1 branch','2 staff','3 suppliers'],
+  { name:'الأساسية', nameEn:'Basic', price:'99', yearlyPrice:'950', color:'#0f766e', popular:false,
+    limits:['فرع واحد','3 موظفين','3 موردين'],
+    limitsEn:['1 branch','3 staff','3 suppliers'],
     features:['تتبع المخزون لحظياً','صرف يومي بصلاحيات موظفين','المشتريات وإدارة الموردين','تنبيهات واتساب تلقائية','كشف الهدر','تقارير أساسية قابلة للتصدير','نسخ احتياطي يومي','دعم عبر واتساب'],
     featuresEn:['Real-time inventory tracking','Daily dispensing with staff permissions','Purchasing and supplier management','Automatic WhatsApp alerts','Waste detection','Exportable basic reports','Daily backups','Support via WhatsApp'] },
   { name:'المتوسطة', nameEn:'Standard', price:'249', yearlyPrice:'2390', color:'#0f766e', popular:true,

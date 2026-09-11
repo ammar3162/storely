@@ -52,7 +52,7 @@ const TOOLS = [
 
 function planAllows(userPlan:string, minPlan:string, hasAiAddon:boolean){
   if (userPlan === 'basic' && hasAiAddon) return true // عميل الأساسية اللي اشترى إضافة الذكاء الاصطناعي
-  const order = ['basic','basic_premium','pro','advanced']
+  const order = ['basic','pro','advanced']
   return order.indexOf(userPlan) >= order.indexOf(minPlan)
 }
 
