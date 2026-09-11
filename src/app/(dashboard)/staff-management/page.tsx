@@ -280,7 +280,12 @@ export default function StaffManagementPage() {
 
   async function deleteStaff(id:string) {
     if(!(await confirmDialog({ title: 'حذف الموظف', message: 'حذف هذا الموظف نهائياً؟' }))) return
-    await (sb.from('staff_members' as any) as any).delete().eq('id',id)
+    const { error } = await (sb.from('staff_members' as any) as any).delete().eq('id',id)
+    if (error) {
+      // غالباً قيد ربط بيانات (foreign key) -- الموظف له سجلات صرف/حضور/مهام مرتبطة، وقاعدة البيانات ترفض حذفه عشان ما تنكسر
+      toast('تعذّر الحذف النهائي — هذا الموظف له سجلات صرف أو حضور أو مهام مرتبطة به. استخدم زر "إيقاف" بدلاً من ذلك للحفاظ على السجلات', 'error')
+      return
+    }
     toast('تم الحذف'); loadStaff(orgId)
   }
 
