@@ -10,18 +10,15 @@ const sb = () => createClient(SUPABASE_URL, SERVICE_KEY)
 
 async function send(to: string, text: string) {
   try {
-    const res = await fetch('https://www.wasenderapi.com/api/send-message', {
+    await fetch('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${API_KEY}`, 'X-Session-Id':SESSION },
       body: JSON.stringify({ to, text }),
     })
-    // نسجّل معرّف الرسالة اللي أرسلها البوت نفسه — عشان لما توصلنا نفس الرسالة بحدث fromMe
-    // نقدر نميّزها عن رسالة إنسان يكتب يدوياً من واتساب ويب (اللي المفروض توقف الرد التلقائي)
-    const data = await res.json().catch(() => null)
-    const sentMsgId = data?.data?.msgId || data?.msgId
-    if (sentMsgId) {
-      try { await sb().from('bot_sent_messages' as any).insert({ message_id: String(sentMsgId) }) } catch {}
-    }
+    // نسجّل رقم المستلم + نص الرسالة (مش معرّف Wasender -- جرّبناه قبل وما رجع بشكل موثوق).
+    // لما توصلنا رسالة fromMe لاحقاً، نقارنها بهذا الجدول بنفس الرقم والنص وبفارق وقت قصير
+    // عشان نميّز رد البوت التلقائي عن رد إنسان حقيقي كتب يدوياً من واتساب ويب
+    try { await sb().from('bot_sent_messages' as any).insert({ phone: to, body: text }) } catch {}
   } catch {}
 }
 
@@ -269,10 +266,22 @@ export async function POST(req: Request) {
     if (!msgs.length) return NextResponse.json({ok:true})
 
     for (const msg of msgs) {
-      if (msg?.key?.fromMe===true) continue
-      // ملاحظة: جرّبنا تمييز رسائل البوت عن الرد البشري اليدوي لإيقاف تلقائي أذكى،
-      // بس رجعناها مؤقتاً — رد Wasender API ما رجّع معرّف الرسالة بالشكل المتوقع،
-      // فكان يوقف البوت نفسه غلط بعد كل رد. نحتاج نتأكد من شكل الرد الفعلي قبل نعيد المحاولة.
+      if (msg?.key?.fromMe===true) {
+        // رد صادر من رقم المنشأة نفسه -- إما رد تلقائي من البوت، أو رد يدوي حقيقي من ستورلي عبر واتساب ويب.
+        // نميّز بمقارنة النص + الرقم + فارق وقت قصير (15 ثانية) مع آخر شي أرسله البوت فعلياً
+        const feTo   = (msg?.key?.cleanedSenderPn||msg?.key?.remoteJid?.replace('@s.whatsapp.net','')?.replace('@c.us','')||'')
+        const feText = (msg?.messageBody||msg?.message?.conversation||'').trim()
+        if (feTo && feText) {
+          const since = new Date(Date.now() - 15*1000).toISOString()
+          const { data: recentBotMsg } = await sb().from('bot_sent_messages' as any)
+            .select('id').eq('phone', feTo).eq('body', feText).gte('created_at', since).limit(1).maybeSingle()
+          if (!recentBotMsg) {
+            // ما لقينا رسالة بوت مطابقة قريبة -- رد يدوي حقيقي من ستورلي، نوقف البوت لهذا العميل 10 دقايق
+            await pauseBot(feTo, 10)
+          }
+        }
+        continue
+      }
 
       // منع معالجة نفس الرسالة مرتين — Wasender أحياناً يعيد إرسال نفس الحدث (webhook retry)
       const msgId = msg?.key?.id
