@@ -72,6 +72,7 @@ export default function ChoosePage() {
   const [submittingPerm, setSubmittingPerm] = useState(false)
   const [taskCount, setTaskCount] = useState(0)
   const [hasHrFeature, setHasHrFeature] = useState(false) // مخفي افتراضياً لحد ما يتأكد الفحص — يمنع ظهور الأزرار للحظة ثم اختفائها
+  const [hasCashierFeature, setHasCashierFeature] = useState(false) // نفس المبدأ — مخفي لحد ما يتأكد الفحص
   const [showRequests, setShowRequests] = useState(false)
   const [showAdvanceForm, setShowAdvanceForm] = useState(false)
   const [advanceAmount, setAdvanceAmount] = useState('')
@@ -103,10 +104,12 @@ export default function ChoosePage() {
     // مهامي وطلباتي جزء من ميزة "إدارة الموظفين" — ما نعرضهم إلا لو الباقة تشملها أو عندهم إضافة hr_full
     sb.from('organizations' as any).select('plan').eq('id',parsed.org_id).single()
       .then(async ({data:org}:any)=>{
-        if ((org as any)?.plan !== 'basic') { setHasHrFeature(true); return }
+        if ((org as any)?.plan !== 'basic') { setHasHrFeature(true); setHasCashierFeature(true); return }
         const j = await fetch(`/api/addons-market?org_id=${parsed.org_id}`).then(r=>r.json()).catch(()=>null)
         const addon = (j?.addons||[]).find((a:any)=>a.slug==='hr_full')
         setHasHrFeature(!!addon?.subscription?.isValid)
+        const cashierAddon = (j?.addons||[]).find((a:any)=>a.slug==='cashier_closing')
+        setHasCashierFeature(!!cashierAddon?.subscription?.isValid)
       })
     const savedLang = localStorage.getItem('staff_lang')
     if (savedLang === 'en') setLang('en')
@@ -407,7 +410,7 @@ export default function ChoosePage() {
               </div>
             </button>
           )}
-          {isCashier && (
+          {isCashier && hasCashierFeature && (
             <button onClick={()=>router.push('/staff/cashier-closing')}
               style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#1e293b,#334155)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
               <span style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Store size={22} strokeWidth={2}/></span>

@@ -60,7 +60,7 @@ export async function GET(req: Request) {
     const { data: org } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
     const orgPlan = (org as any)?.plan || 'basic'
     // إضافات مضمّنة مجاناً ضمن مميزات الباقة المتوسطة والمتقدمة أصلاً -- ما نعرضها بالمتجر لعميل مشترك فيها
-    const INCLUDED_FROM_STANDARD = ['hr_full', 'profitability', 'ai_tools']
+    const INCLUDED_FROM_STANDARD = ['hr_full', 'profitability', 'ai_tools', 'cashier_closing']
 
     const { data: addonsRaw } = await supabase.from('marketplace_addons').select('*').eq('is_active', true).order('sort_order')
     const addons = orgPlan === 'basic'
