@@ -24,12 +24,10 @@ const STATUS: Record<string,{label:string;color:string;bg:string;dot:string}> = 
 }
 
 // كل باقة عندها الآن مفتاح صريح (planKey) هو مصدر الحقيقة — مو عدد الفروع (v) بس،
-// لأن "الأساسية" و"الأساسية بريميم" الاثنين فرع واحد وما نقدر نفرّقهم بعدد الفروع
 const PLANS = [
   {v:1,  planKey:'basic',         label:'الأساسية',         price:'99 ر.س',  yearlyPrice:'990 ر.س',  desc:'فرع · 3 موظفين · 3 موردين · بدون حضور/انصراف أو إقفال كاشير', color:'#029FA2', maxStaff:3,   maxSup:3},
-  {v:1,  planKey:'basic_premium', label:'الأساسية بريميم',  price:'149 ر.س', yearlyPrice:'1490 ر.س', desc:'فرع · 5 موظفين · 5 موردين · كل المميزات',                    color:'#0d9488', maxStaff:5,   maxSup:5},
   {v:3,  planKey:'pro',           label:'المتوسطة',         price:'249 ر.س', yearlyPrice:'2490 ر.س', desc:'3 فروع · 10 موظفين · 10 موردين · كل المميزات',               color:'#2563eb', maxStaff:10,  maxSup:10},
-  {v:10, planKey:'advanced',      label:'المتقدمة',         price:'449 ر.س', yearlyPrice:'4490 ر.س', desc:'كل شي غير محدود',                                            color:'#7c3aed', maxStaff:999, maxSup:999},
+  {v:10, planKey:'advanced',      label:'المتقدمة',         price:'399 ر.س', yearlyPrice:'3830 ر.س', desc:'كل شي غير محدود',                                            color:'#7c3aed', maxStaff:999, maxSup:999},
 ]
 
 export default function AdminPage() {
