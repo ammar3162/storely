@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     const TERMS_VERSION = (settingsRow as any)?.terms_version || '2026-06-b'
 
     const maxB = branchCount===1?1:branchCount<=3?3:10
-    const maxStaff = branchCount===1?2:branchCount<=3?10:999
+    const maxStaff = branchCount===1?3:branchCount<=3?10:999
     const maxSup = branchCount===1?3:branchCount<=3?10:999
     const plan = branchCount===1?'basic':branchCount<=3?'pro':'advanced'
 
