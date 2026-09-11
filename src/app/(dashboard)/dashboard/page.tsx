@@ -88,12 +88,17 @@ export default function DashboardPage() {
   useEffect(() => {
     const orgId = sessionStorage.getItem('s_org_id')
     if (!orgId) return
-    const channel = sb.channel(`dashboard-notifs-${orgId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `org_id=eq.${orgId}` }, (payload:any) => {
-        setNotifs(prev => [payload.new, ...prev].slice(0, 5))
-      })
-      .subscribe()
-    return () => { sb.removeChannel(channel) }
+    let channel: any = null
+    try {
+      channel = sb.channel(`dashboard-notifs-${orgId}-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `org_id=eq.${orgId}` }, (payload:any) => {
+          setNotifs(prev => [payload.new, ...prev].slice(0, 5))
+        })
+        .subscribe()
+    } catch {
+      // فشل الاشتراك اللحظي بالإشعارات ما لازم يكسر الصفحة كاملة -- الإشعارات تفضل تتحدث عادي كل 20 ثانية عبر load()
+    }
+    return () => { if (channel) sb.removeChannel(channel) }
   }, [])
 
   async function load() {
