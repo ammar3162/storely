@@ -10,15 +10,16 @@ const sb = () => createClient(SUPABASE_URL, SERVICE_KEY)
 
 async function send(to: string, text: string) {
   try {
+    // نسجّل رقم المستلم + نص الرسالة *قبل* الإرسال -- لو سجّلناها بعده، ممكن صدى الرسالة (فحص fromMe)
+    // يرجع من واتساب أسرع من ما يخلص التسجيل (سباق توقيت)، فيظن الكود إنه رد يدوي من إنسان ويوقف البوت غلط.
+    // لما توصلنا رسالة fromMe لاحقاً، نقارنها بهذا الجدول بنفس الرقم والنص وبفارق وقت قصير
+    // عشان نميّز رد البوت التلقائي عن رد إنسان حقيقي كتب يدوياً من واتساب ويب
+    try { await sb().from('bot_sent_messages' as any).insert({ phone: to, body: text }) } catch {}
     await fetch('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${API_KEY}`, 'X-Session-Id':SESSION },
       body: JSON.stringify({ to, text }),
     })
-    // نسجّل رقم المستلم + نص الرسالة (مش معرّف Wasender -- جرّبناه قبل وما رجع بشكل موثوق).
-    // لما توصلنا رسالة fromMe لاحقاً، نقارنها بهذا الجدول بنفس الرقم والنص وبفارق وقت قصير
-    // عشان نميّز رد البوت التلقائي عن رد إنسان حقيقي كتب يدوياً من واتساب ويب
-    try { await sb().from('bot_sent_messages' as any).insert({ phone: to, body: text }) } catch {}
   } catch {}
 }
 
