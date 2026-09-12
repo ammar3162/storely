@@ -21,31 +21,38 @@ export const colors = {
   infoLight:    '#eff6ff',
   infoBorder:   '#dbeafe',
 
-  // Neutral
-  bg:           '#f5f7fa',
-  surface:      '#ffffff',
-  border:       '#f1f5f9',
-  border2:      '#e2e8f0',
-  text:         '#0f172a',
-  text2:        '#334155',
-  text3:        '#64748b',
-  text4:        '#94a3b8',
-  text5:        '#cbd5e1',
+  // Neutral — درجة رمادية دافئة مخصصة (مو رمادي Tailwind الافتراضي) — تناسب طابع "دفتر/سجل" لتطبيق مخزون وبيع
+  bg:           '#F7F6F3',
+  surface:      '#FFFFFF',
+  border:       '#EDEBE4',
+  border2:      '#DEDACF',
+  text:         '#1C1A16',
+  text2:        '#4A453C',
+  text3:        '#79736A',
+  text4:        '#A39C8F',
+  text5:        '#D2CCBF',
 }
 
+// زوايا متدرجة حسب كثافة العنصر -- مو زاوية واحدة موحّدة على كل شي
 export const radius = {
-  sm:  '8px',
-  md:  '12px',
-  lg:  '16px',
-  xl:  '20px',
+  xs:  '6px',   // صفوف الجداول، الوسوم الصغيرة، عناصر داخل الجدول
+  sm:  '8px',   // الأزرار والحقول
+  md:  '10px',
+  lg:  '14px',  // البطاقات
+  xl:  '18px',  // النوافذ المنبثقة
   full:'999px',
 }
 
 export const shadow = {
-  sm:  '0 1px 3px rgba(0,0,0,.06)',
-  md:  '0 4px 16px rgba(0,0,0,.08)',
-  lg:  '0 8px 32px rgba(0,0,0,.12)',
-  green:'0 4px 14px rgba(22,163,74,.25)',
+  sm:  '0 1px 2px rgba(28,26,22,.05)',
+  md:  '0 2px 10px rgba(28,26,22,.06)',
+  lg:  '0 10px 28px rgba(28,26,22,.10)',
+  green:'0 4px 14px rgba(15,118,110,.22)',
+}
+
+// أرقام مصفوفة بعرض ثابت -- مهم فعلياً بتطبيق مخزون/مبيعات (أعمدة كميات وأسعار تترصّ بدقة بالجداول والتقارير)، مو ديكور
+export const numeric: React.CSSProperties = {
+  fontVariantNumeric: 'tabular-nums',
 }
 
 export const font = {
