@@ -78,7 +78,7 @@ function EscalationChain({ productId, allSuppliers, primarySupplierId, refreshKe
 
   return (
     <div style={{ marginTop:8, paddingTop:8, borderTop:'1px dashed #e2e8f0' }}>
-      <div style={{ fontSize:10, fontWeight:700, color:'#94a3b8', marginBottom:6, textTransform:'uppercase' as const, letterSpacing:'.05em' }}>🔄 سلسلة التصعيد (لو المورد الأساسي "غير متوفر")</div>
+      <div style={{ fontSize:11, fontWeight:700, color:'#94a3b8', marginBottom:6 }}>🔄 سلسلة التصعيد (لو المورد الأساسي "غير متوفر")</div>
       {chain.length===0 && !adding && (
         <div style={{ fontSize:11, color:'#94a3b8', marginBottom:6 }}>ما فيه موردين بديلين — يُرسل إشعار يدوي فقط عند عدم التوفر</div>
       )}
@@ -312,7 +312,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
           {/* المنتجات المرتبطة */}
           {linked.length > 0 && (
             <div style={{ marginBottom:18 }}>
-              <div style={{ fontSize:11, fontWeight:700, color:'#94a3b8', marginBottom:10, textTransform:'uppercase' as const, letterSpacing:'.06em' }}>المنتجات المرتبطة</div>
+              <div style={{ fontSize:12, fontWeight:700, color:'#94a3b8', marginBottom:10 }}>المنتجات المرتبطة</div>
               <div style={{ display:'flex', flexDirection:'column' as const, gap:8 }}>
                 {linked.length===0 && <div style={{textAlign:'center',padding:'20px',color:'#94a3b8',fontSize:13}}>لا توجد منتجات مرتبطة — أضف منتجاً من الأسفل</div>}
               {linked.map((p:any)=>(
@@ -343,7 +343,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
           {/* ربط منتج جديد */}
           {unlinked.length > 0 && (
             <div>
-              <div style={{ fontSize:11, fontWeight:700, color:'#94a3b8', marginBottom:10, textTransform:'uppercase' as const, letterSpacing:'.06em' }}>ربط منتج جديد</div>
+              <div style={{ fontSize:12, fontWeight:700, color:'#94a3b8', marginBottom:10 }}>ربط منتج جديد</div>
               <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:8, marginBottom:8 }}>
                 <div>
                   <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:4 }}>المنتج</label>
