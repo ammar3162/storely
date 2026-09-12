@@ -39,9 +39,17 @@ export async function DELETE(req: Request) {
     } else if (slug === 'extra_staff') {
       const { data: org } = await supabase.from('organizations').select('max_staff').eq('id', org_id).single()
       await supabase.from('organizations').update({ max_staff: Math.max(0, ((org as any)?.max_staff || existingQty) - existingQty) } as any).eq('id', org_id)
+      const { data: extraStaff } = await supabase.from('staff_members').select('id').eq('org_id', org_id).eq('is_active', true).order('created_at', { ascending: false }).limit(existingQty)
+      if (extraStaff && extraStaff.length) {
+        await supabase.from('staff_members').update({ is_active: false } as any).in('id', (extraStaff as any[]).map(s => s.id))
+      }
     } else if (slug === 'extra_suppliers') {
       const { data: org } = await supabase.from('organizations').select('max_suppliers').eq('id', org_id).single()
       await supabase.from('organizations').update({ max_suppliers: Math.max(0, ((org as any)?.max_suppliers || existingQty) - existingQty) } as any).eq('id', org_id)
+      const { data: extraSuppliers } = await supabase.from('suppliers').select('id').eq('org_id', org_id).eq('is_active', true).order('created_at', { ascending: false }).limit(existingQty)
+      if (extraSuppliers && extraSuppliers.length) {
+        await supabase.from('suppliers').update({ is_active: false } as any).in('id', (extraSuppliers as any[]).map(s => s.id))
+      }
     }
 
     return NextResponse.json({ success: true })
