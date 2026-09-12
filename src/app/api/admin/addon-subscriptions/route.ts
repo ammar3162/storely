@@ -54,7 +54,8 @@ export async function DELETE(req: Request) {
   if (!org_id || !addon_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
   const supabase = sb()
-  const { data: existingSub } = await supabase.from('org_addon_subscriptions').select('quantity').eq('org_id', org_id).eq('addon_id', addon_id).maybeSingle()
+  const { data: existingSub } = await supabase.from('org_addon_subscriptions').select('id,quantity').eq('org_id', org_id).eq('addon_id', addon_id).maybeSingle()
+  const existingSubId = (existingSub as any)?.id
   const existingQty = Math.max(1, (existingSub as any)?.quantity || 1)
 
   const { error } = await supabase.from('org_addon_subscriptions')
@@ -76,17 +77,15 @@ export async function DELETE(req: Request) {
   } else if (slug === 'extra_staff') {
     const { data: org } = await supabase.from('organizations').select('max_staff').eq('id', org_id).single()
     await supabase.from('organizations').update({ max_staff: Math.max(0, ((org as any)?.max_staff || existingQty) - existingQty) } as any).eq('id', org_id)
-    // نفس منطق الفرع الإضافي -- نوقف أحدث existingQty موظف نشط تلقائياً، بدل ما يفضلوا يقدرون يدخلون رغم انخفاض الحد
-    const { data: extraStaff } = await supabase.from('staff_members').select('id').eq('org_id', org_id).eq('is_active', true).order('created_at', { ascending: false }).limit(existingQty)
-    if (extraStaff && extraStaff.length) {
-      await supabase.from('staff_members').update({ is_active: false } as any).in('id', (extraStaff as any[]).map(s => s.id))
+    // نوقف بالضبط الموظفين المعلّمين بهذا الاشتراك (addon_subscription_id) -- تعليم دقيق وقت الإضافة، مو تخمين بالتاريخ
+    if (existingSubId) {
+      await supabase.from('staff_members').update({ is_active: false } as any).eq('addon_subscription_id', existingSubId)
     }
   } else if (slug === 'extra_suppliers') {
     const { data: org } = await supabase.from('organizations').select('max_suppliers').eq('id', org_id).single()
     await supabase.from('organizations').update({ max_suppliers: Math.max(0, ((org as any)?.max_suppliers || existingQty) - existingQty) } as any).eq('id', org_id)
-    const { data: extraSuppliers } = await supabase.from('suppliers').select('id').eq('org_id', org_id).eq('is_active', true).order('created_at', { ascending: false }).limit(existingQty)
-    if (extraSuppliers && extraSuppliers.length) {
-      await supabase.from('suppliers').update({ is_active: false } as any).in('id', (extraSuppliers as any[]).map(s => s.id))
+    if (existingSubId) {
+      await supabase.from('suppliers').update({ is_active: false } as any).eq('addon_subscription_id', existingSubId)
     }
   }
 

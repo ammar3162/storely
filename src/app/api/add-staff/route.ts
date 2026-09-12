@@ -60,9 +60,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'رقم الجوال مسجل مسبقاً' }, { status: 409 })
     }
 
+    // نحدد مصدر هذا الموظف: ضمن حد الباقة الأساسية، أو ضمن كمية إضافة "موظف إضافي" النشطة.
+    // نحسب حد الباقة الأصلي = max_staff الكلي ناقص كل كمية الإضافات النشطة، ونعلّم الموظف بمعرّف الاشتراك
+    // فقط لو تجاوز هذا الحد الأصلي -- عشان الإلغاء لاحقاً يعرف بالضبط أي موظف يوقفه، بدون أي تخمين بالتاريخ
+    let addonSubscriptionId: string | null = null
+    const { data: extraStaffSub } = await supabase
+      .from('org_addon_subscriptions')
+      .select('id,quantity,marketplace_addons!inner(slug)')
+      .eq('org_id', org_id)
+      .eq('status', 'active')
+      .eq('marketplace_addons.slug', 'extra_staff')
+      .maybeSingle()
+    if (extraStaffSub) {
+      const addonQty = (extraStaffSub as any).quantity || 0
+      const baselineLimit = Math.max(0, maxStaff - addonQty)
+      if ((count || 0) >= baselineLimit) {
+        addonSubscriptionId = (extraStaffSub as any).id
+      }
+    }
+
     const { data: newStaff, error } = await supabase
       .from('staff_members')
-      .insert({ org_id, branch_id: branch_id || null, name, phone, pin, is_active: true, permissions: permissions || {dispense:false,inventory:false,purchases:false,reports:false}, role: role === 'cashier' ? 'cashier' : 'staff', send_closing_whatsapp: send_closing_whatsapp !== false })
+      .insert({ org_id, branch_id: branch_id || null, name, phone, pin, is_active: true, permissions: permissions || {dispense:false,inventory:false,purchases:false,reports:false}, role: role === 'cashier' ? 'cashier' : 'staff', send_closing_whatsapp: send_closing_whatsapp !== false, addon_subscription_id: addonSubscriptionId })
       .select()
       .single()
 
