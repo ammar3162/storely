@@ -272,9 +272,18 @@ export default function StaffManagementPage() {
     setShowHoursModal(false)
   }
 
-  async function toggleActive(id:string,current:boolean) {
-    await (sb.from('staff_members' as any) as any).update({is_active:!current}).eq('id',id)
-    toast(current?'تم إيقاف الموظف':'تم تفعيل الموظف')
+  async function toggleActive(s:any) {
+    const activating = !s.is_active
+    if (activating && s.addon_subscription_id) {
+      const { data: sub } = await sb.from('org_addon_subscriptions' as any).select('status,expires_at').eq('id', s.addon_subscription_id).maybeSingle()
+      const stillActive = (sub as any)?.status === 'active' && new Date((sub as any)?.expires_at || 0) > new Date()
+      if (!stillActive) {
+        toast('هذا الموظف مرتبط بإضافة "موظف إضافي" ملغاة — جدّد الاشتراك من صفحة الإضافات أول عشان تقدر تفعّله من جديد','error')
+        return
+      }
+    }
+    await (sb.from('staff_members' as any) as any).update({is_active:activating}).eq('id',s.id)
+    toast(s.is_active?'تم إيقاف الموظف':'تم تفعيل الموظف')
     loadStaff(orgId)
   }
 
@@ -868,7 +877,7 @@ export default function StaffManagementPage() {
                     </button>
                   )}
                   <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} className="act-btn" style={{background:colors.infoLight,color:colors.info,display:'flex',alignItems:'center',gap:5}}><RefreshCw size={13} strokeWidth={2.25}/> PIN جديد</button>
-                  <button onClick={e=>{e.stopPropagation();toggleActive(s.id,s.is_active)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`}}>{s.is_active?'إيقاف':'تفعيل'}</button>
+                  <button onClick={e=>{e.stopPropagation();toggleActive(s)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`}}>{s.is_active?'إيقاف':'تفعيل'}</button>
                   <button onClick={e=>{e.stopPropagation();deleteStaff(s.id)}} className="act-btn" style={{background:colors.dangerLight,color:colors.danger}}>حذف</button>
                   <svg width={14} height={14} fill="none" stroke={colors.text3} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" style={{transition:'transform .2s',transform:expandedId===s.id?'rotate(180deg)':'none',marginRight:4}}>
                     <path d="M6 9l6 6 6-6"/>
