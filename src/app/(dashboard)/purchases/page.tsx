@@ -25,7 +25,7 @@ const CATS = ['مخزون','مشتريات','أخرى']
 const CAT_ICONS: Record<string,string> = {'مخزون':'📦','مشتريات':'🛒','أخرى':'📋'}
 const UNITS = ['قطعة','كيلو','كيس','كرتون','لتر','علبة','باكيت','درزن','رول','غرام','أخرى']
 
-const lbl: React.CSSProperties = {fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6,textTransform:'uppercase',letterSpacing:'.04em'}
+const lbl: React.CSSProperties = {fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}
 const inp: React.CSSProperties = {width:'100%',padding:'10px 12px',border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',background:'white',color:C.text,fontFamily:'inherit'}
 
 export default function PurchasesPage() {
@@ -468,7 +468,7 @@ export default function PurchasesPage() {
           {label:'الإجمالي',  value:totalSpent.toFixed(0)+' '+curr, color:C.primary},
         ].map((s,i)=>(
           <div key={i} style={{background:'white',borderRadius:12,padding:'12px 14px',border:`1px solid ${C.border}`,boxShadow:'0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)'}}>
-            <div style={{fontSize:10,color:C.text4,fontWeight:600,marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>{s.label}</div>
+            <div style={{fontSize:11,color:C.text4,fontWeight:600,marginBottom:5}}>{s.label}</div>
             <div style={{fontSize:18,fontWeight:700,color:s.color,fontVariantNumeric:'tabular-nums'}}>{s.value}</div>
           </div>
         ))}
