@@ -27,14 +27,19 @@ export default function AddonsMarketPage() {
     setLoading(false)
   }
 
+  const [qtyMap, setQtyMap] = useState<Record<string, number>>({})
+
   async function load(oid: string) {
     const res = await fetch(`/api/addons-market?org_id=${oid}`)
     const j = await res.json()
     if (j.success) setAddons(j.addons)
   }
 
-  function subscribeLink(addon: any) {
-    const text = `مرحباً، أبي أشترك بميزة "${addon.name}" (${addon.monthly_price} ر.س/شهر) لمنشأة: ${orgName}`
+  function subscribeLink(addon: any, qty: number = 1) {
+    const isQtyAddon = addon.slug === 'extra_staff' || addon.slug === 'extra_suppliers'
+    const text = isQtyAddon
+      ? `مرحباً، أبي أشترك بميزة "${addon.name}" — الكمية: ${qty} (${qty * addon.monthly_price} ر.س/شهر) لمنشأة: ${orgName}`
+      : `مرحباً، أبي أشترك بميزة "${addon.name}" (${addon.monthly_price} ر.س/شهر) لمنشأة: ${orgName}`
     return `https://wa.me/966594351667?text=${encodeURIComponent(text)}`
   }
 
@@ -83,18 +88,36 @@ export default function AddonsMarketPage() {
                 <div style={{ fontSize: 32, marginBottom: 10 }}>{a.icon}</div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
                 <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14, minHeight: 40 }}>{a.description}</div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 14 }}>{a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text4 }}>ر.س / شهر</span></div>
+                {(() => {
+                  const isQtyAddon = a.slug === 'extra_staff' || a.slug === 'extra_suppliers'
+                  const qty = qtyMap[a.id] || 1
+                  return (
+                    <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 14 }}>
+                      {isQtyAddon && !active ? qty * a.monthly_price : a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text4 }}>ر.س / شهر{isQtyAddon ? ` (${a.monthly_price} ر.س/وحدة)` : ''}</span>
+                    </div>
+                  )
+                })()}
 
                 {active ? (
                   <div style={{ textAlign: 'center' as const }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 4 }}>✅ مفعّلة</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 4 }}>✅ مفعّلة{(a.slug==='extra_staff'||a.slug==='extra_suppliers') ? ` (${a.subscription?.quantity||1})` : ''}</div>
                     <div style={{ fontSize: 10, color: colors.text4 }}>حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA', { numberingSystem: 'latn' })}</div>
                   </div>
                 ) : (
-                  <a href={subscribeLink(a)} target="_blank" rel="noopener noreferrer"
-                    style={{ display: 'block', textAlign: 'center' as const, padding: '11px', background: colors.primary, color: 'white', borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-                    اشتراك عبر واتساب
-                  </a>
+                  <>
+                    {(a.slug === 'extra_staff' || a.slug === 'extra_suppliers') && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 10 }}>
+                        <span style={{ fontSize: 11, color: colors.text3, fontWeight: 700 }}>الكمية:</span>
+                        <input type="number" min={1} max={20} value={qtyMap[a.id] || 1}
+                          onChange={e => setQtyMap(prev => ({ ...prev, [a.id]: Math.max(1, Math.min(20, Number(e.target.value) || 1)) }))}
+                          style={{ width: 56, padding: '6px 4px', borderRadius: 8, border: `1px solid ${colors.border2}`, fontSize: 12, textAlign: 'center' as const, fontFamily: 'inherit' }} />
+                      </div>
+                    )}
+                    <a href={subscribeLink(a, qtyMap[a.id] || 1)} target="_blank" rel="noopener noreferrer"
+                      style={{ display: 'block', textAlign: 'center' as const, padding: '11px', background: colors.primary, color: 'white', borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+                      اشتراك عبر واتساب
+                    </a>
+                  </>
                 )}
               </div>
             )
