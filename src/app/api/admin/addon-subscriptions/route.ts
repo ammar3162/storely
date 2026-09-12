@@ -104,7 +104,15 @@ export async function GET(req: Request) {
   if (!org_id) return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
 
   const supabase = sb()
-  const { data: addons } = await supabase.from('marketplace_addons').select('*').eq('is_active', true).order('sort_order')
+  const { data: org } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
+  const orgPlan = (org as any)?.plan || 'basic'
+  // نفس الفلترة الموجودة بمتجر العميل -- إضافات مضمّنة مجاناً بالمتوسطة/المتقدمة، ما داعي تظهر حتى بلوحة الأدمن لهذي الباقات
+  const INCLUDED_FROM_STANDARD = ['hr_full', 'profitability', 'ai_tools', 'cashier_closing']
+
+  const { data: addonsRaw } = await supabase.from('marketplace_addons').select('*').eq('is_active', true).order('sort_order')
+  const addons = orgPlan === 'basic'
+    ? addonsRaw
+    : (addonsRaw || []).filter((a: any) => !INCLUDED_FROM_STANDARD.includes(a.slug))
   const { data: subs } = await supabase.from('org_addon_subscriptions').select('addon_id,status,expires_at,quantity').eq('org_id', org_id)
 
   const now = new Date()
