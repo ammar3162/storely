@@ -12,15 +12,16 @@ export async function POST(req: Request) {
   const admin = await requirePermission(adminKey, 'manage_users')
   if (!admin) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
-  const { org_id, addon_id, duration_days, org_name, addon_name } = await req.json()
+  const { org_id, addon_id, duration_days, org_name, addon_name, quantity } = await req.json()
   if (!org_id || !addon_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
   const supabase = sb()
   const days = Number(duration_days) || 30
   const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
+  const qty = Math.max(1, Math.min(20, Number(quantity) || 1)) // موظف/مورد إضافي: حد أقصى 20 بالطلب الواحد
 
   const { error } = await supabase.from('org_addon_subscriptions').upsert({
-    org_id, addon_id, status: 'active', activated_at: new Date().toISOString(), expires_at: expiresAt, cancelled_at: null,
+    org_id, addon_id, status: 'active', activated_at: new Date().toISOString(), expires_at: expiresAt, cancelled_at: null, quantity: qty,
   } as any, { onConflict: 'org_id,addon_id' })
 
   if (error) return NextResponse.json({ error: 'فشل التفعيل' }, { status: 500 })
@@ -31,12 +32,12 @@ export async function POST(req: Request) {
   if (slug === 'extra_branch') {
     const { data: org } = await supabase.from('organizations').select('max_branches').eq('id', org_id).single()
     await supabase.from('organizations').update({ max_branches: ((org as any)?.max_branches || 1) + 1 } as any).eq('id', org_id)
-  } else if (slug === 'extra_staff_sup') {
-    const { data: org } = await supabase.from('organizations').select('max_staff,max_suppliers').eq('id', org_id).single()
-    await supabase.from('organizations').update({
-      max_staff: ((org as any)?.max_staff || 0) + 5,
-      max_suppliers: ((org as any)?.max_suppliers || 0) + 5,
-    } as any).eq('id', org_id)
+  } else if (slug === 'extra_staff') {
+    const { data: org } = await supabase.from('organizations').select('max_staff').eq('id', org_id).single()
+    await supabase.from('organizations').update({ max_staff: ((org as any)?.max_staff || 0) + qty } as any).eq('id', org_id)
+  } else if (slug === 'extra_suppliers') {
+    const { data: org } = await supabase.from('organizations').select('max_suppliers').eq('id', org_id).single()
+    await supabase.from('organizations').update({ max_suppliers: ((org as any)?.max_suppliers || 0) + qty } as any).eq('id', org_id)
   }
 
   await logAdminAction(admin, 'activate_addon', org_id, org_name || null, { addon_id, addon_name, expires_at: expiresAt })
@@ -53,13 +54,16 @@ export async function DELETE(req: Request) {
   if (!org_id || !addon_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
   const supabase = sb()
+  const { data: existingSub } = await supabase.from('org_addon_subscriptions').select('quantity').eq('org_id', org_id).eq('addon_id', addon_id).maybeSingle()
+  const existingQty = Math.max(1, (existingSub as any)?.quantity || 1)
+
   const { error } = await supabase.from('org_addon_subscriptions')
     .update({ status: 'cancelled', cancelled_at: new Date().toISOString() } as any)
     .eq('org_id', org_id).eq('addon_id', addon_id)
 
   if (error) return NextResponse.json({ error: 'فشل الإلغاء' }, { status: 500 })
 
-  // تراجع عن زيادة الحدود اللي صارت وقت التفعيل — نفس المنطق بالعكس
+  // تراجع عن زيادة الحدود اللي صارت وقت التفعيل — نفس المنطق بالعكس، بنفس الكمية المخزّنة وقتها
   const { data: addonRow } = await supabase.from('marketplace_addons').select('slug').eq('id', addon_id).single()
   const slug = (addonRow as any)?.slug
   if (slug === 'extra_branch') {
@@ -69,12 +73,12 @@ export async function DELETE(req: Request) {
     if (latestBranch) {
       await supabase.from('branches').update({ is_active: false } as any).eq('id', (latestBranch as any).id)
     }
-  } else if (slug === 'extra_staff_sup') {
-    const { data: org } = await supabase.from('organizations').select('max_staff,max_suppliers').eq('id', org_id).single()
-    await supabase.from('organizations').update({
-      max_staff: Math.max(0, ((org as any)?.max_staff || 5) - 5),
-      max_suppliers: Math.max(0, ((org as any)?.max_suppliers || 5) - 5),
-    } as any).eq('id', org_id)
+  } else if (slug === 'extra_staff') {
+    const { data: org } = await supabase.from('organizations').select('max_staff').eq('id', org_id).single()
+    await supabase.from('organizations').update({ max_staff: Math.max(0, ((org as any)?.max_staff || existingQty) - existingQty) } as any).eq('id', org_id)
+  } else if (slug === 'extra_suppliers') {
+    const { data: org } = await supabase.from('organizations').select('max_suppliers').eq('id', org_id).single()
+    await supabase.from('organizations').update({ max_suppliers: Math.max(0, ((org as any)?.max_suppliers || existingQty) - existingQty) } as any).eq('id', org_id)
   }
 
   await logAdminAction(admin, 'cancel_addon', org_id, org_name || null, { addon_id, addon_name })
@@ -93,7 +97,7 @@ export async function GET(req: Request) {
 
   const supabase = sb()
   const { data: addons } = await supabase.from('marketplace_addons').select('*').eq('is_active', true).order('sort_order')
-  const { data: subs } = await supabase.from('org_addon_subscriptions').select('addon_id,status,expires_at').eq('org_id', org_id)
+  const { data: subs } = await supabase.from('org_addon_subscriptions').select('addon_id,status,expires_at,quantity').eq('org_id', org_id)
 
   const now = new Date()
   const subsMap: Record<string, any> = {}

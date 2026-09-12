@@ -16,6 +16,9 @@ export async function DELETE(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
     const supabase = sb()
+    const { data: existingSub } = await supabase.from('org_addon_subscriptions').select('quantity').eq('org_id', org_id).eq('addon_id', addon_id).maybeSingle()
+    const existingQty = Math.max(1, (existingSub as any)?.quantity || 1)
+
     const { error } = await supabase.from('org_addon_subscriptions')
       .update({ status: 'cancelled', cancelled_at: new Date().toISOString() } as any)
       .eq('org_id', org_id).eq('addon_id', addon_id)
@@ -33,12 +36,12 @@ export async function DELETE(req: Request) {
       if (latestBranch) {
         await supabase.from('branches').update({ is_active: false } as any).eq('id', (latestBranch as any).id)
       }
-    } else if (slug === 'extra_staff_sup') {
-      const { data: org } = await supabase.from('organizations').select('max_staff,max_suppliers').eq('id', org_id).single()
-      await supabase.from('organizations').update({
-        max_staff: Math.max(0, ((org as any)?.max_staff || 5) - 5),
-        max_suppliers: Math.max(0, ((org as any)?.max_suppliers || 5) - 5),
-      } as any).eq('id', org_id)
+    } else if (slug === 'extra_staff') {
+      const { data: org } = await supabase.from('organizations').select('max_staff').eq('id', org_id).single()
+      await supabase.from('organizations').update({ max_staff: Math.max(0, ((org as any)?.max_staff || existingQty) - existingQty) } as any).eq('id', org_id)
+    } else if (slug === 'extra_suppliers') {
+      const { data: org } = await supabase.from('organizations').select('max_suppliers').eq('id', org_id).single()
+      await supabase.from('organizations').update({ max_suppliers: Math.max(0, ((org as any)?.max_suppliers || existingQty) - existingQty) } as any).eq('id', org_id)
     }
 
     return NextResponse.json({ success: true })
