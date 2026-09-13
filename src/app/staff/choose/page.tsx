@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bell, MapPin, Package, CalendarDays, Store, ClipboardList, Send, Wallet, Plane, UserCheck, Boxes, ShoppingCart } from 'lucide-react'
+import { Bell, MapPin, Package, Store, ClipboardList, Send, Wallet, Plane, UserCheck, Boxes, ShoppingCart } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const CS: Record<string, Record<'ar'|'en', string>> = {
@@ -17,8 +17,6 @@ const CS: Record<string, Record<'ar'|'en', string>> = {
   markingLocation:{ ar:'جاري تحديد موقعك...', en:'Getting your location...' },
   dispense:       { ar:'صرف المخزون', en:'Dispense Stock' },
   dispenseSub:    { ar:'تسجيل صرف المنتجات', en:'Record product dispensing' },
-  reservations:   { ar:'الحجوزات', en:'Reservations' },
-  reservationsSub:{ ar:'متابعة حجوزات اليوم', en:"Track today's reservations" },
   cashierClosing: { ar:'إقفال الكاشير', en:'Cashier Closing' },
   cashierSub:     { ar:'تقرير نهاية اليوم', en:'End of day report' },
   inventory:      { ar:'المخزون', en:'Inventory' },
@@ -54,7 +52,6 @@ export default function ChoosePage() {
   const router = useRouter()
   const [name, setName] = useState('')
   const [canDispense, setCanDispense] = useState(false)
-  const [canReservations, setCanReservations] = useState(false)
   const [isCashier, setIsCashier] = useState(false)
   const [canInventory, setCanInventory] = useState(false)
   const [canPurchases, setCanPurchases] = useState(false)
@@ -91,7 +88,6 @@ export default function ChoosePage() {
     const parsed = JSON.parse(s)
     setName(parsed.name||'')
     setCanDispense(!!parsed.permissions?.dispense)
-    setCanReservations(!!parsed.permissions?.reservations)
     setIsCashier(parsed.role==='cashier')
     setCanInventory(!!parsed.permissions?.inventory)
     setCanPurchases(!!parsed.permissions?.purchases)
@@ -397,16 +393,6 @@ export default function ChoosePage() {
               <div style={{textAlign:'right'}}>
                 <div style={{fontSize:16,fontWeight:800}}>{t('dispense')}</div>
                 <div style={{fontSize:12,opacity:.8}}>{t('dispenseSub')}</div>
-              </div>
-            </button>
-          )}
-          {canReservations && (
-            <button onClick={()=>router.push('/staff/reservations')}
-              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#78350f,#b45309)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
-              <span style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><CalendarDays size={22} strokeWidth={2}/></span>
-              <div style={{textAlign:'right'}}>
-                <div style={{fontSize:16,fontWeight:800}}>{t('reservations')}</div>
-                <div style={{fontSize:12,opacity:.8}}>{t('reservationsSub')}</div>
               </div>
             </button>
           )}

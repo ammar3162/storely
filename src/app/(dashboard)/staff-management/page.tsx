@@ -7,7 +7,7 @@ import { toast } from '@/components/toast'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { confirmDialog } from '@/components/ConfirmDialog'
-import { UserPlus, Users, UserCheck, PauseCircle, Package, BarChart3, ShieldCheck, Clock, Bell, BellOff, RefreshCw, Copy, AlertTriangle, ChevronDown, User, Lock, Wallet, Smartphone, Check, Send, ShoppingCart, CalendarDays, Save, CheckCircle2, AlertCircle, TrendingUp, Pencil, Search, X, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { UserPlus, Users, UserCheck, PauseCircle, Package, BarChart3, ShieldCheck, Clock, Bell, BellOff, RefreshCw, Copy, AlertTriangle, ChevronDown, User, Lock, Wallet, Smartphone, Check, Send, ShoppingCart, Save, CheckCircle2, AlertCircle, TrendingUp, Pencil, Search, X, ThumbsUp, ThumbsDown } from 'lucide-react'
 
 function generatePin() { return String(Math.floor(1000 + Math.random() * 9000)) }
 const COUNTRY_CODES = ['+966','+971','+965','+973','+974','+968','+20','+962','+1','+44','+91','+92','+880','+63']
@@ -45,9 +45,9 @@ export default function StaffManagementPage() {
   const [orgNotifyClosingWA, setOrgNotifyClosingWA] = useState(true)
   const [loading, setLoading]       = useState(true)
   const [showAdd, setShowAdd]       = useState(false)
-  const [newPermissions, setNewPermissions] = useState({dispense:false,inventory:false,purchases:false,reports:false,reservations:false})
+  const [newPermissions, setNewPermissions] = useState({dispense:false,inventory:false,purchases:false,reports:false})
   const [editingPerms, setEditingPerms] = useState<string|null>(null)
-  const [editPerms, setEditPerms] = useState({dispense:true,inventory:false,purchases:false,reports:false,reservations:false})
+  const [editPerms, setEditPerms] = useState({dispense:true,inventory:false,purchases:false,reports:false})
   const [newName, setNewName]       = useState('')
   const [newPhone, setNewPhone]     = useState('')
   const [staffCountry, setStaffCountry] = useState(()=>sessionStorage.getItem('s_country_code')||'+966')
@@ -91,7 +91,6 @@ export default function StaffManagementPage() {
   const [savingHours, setSavingHours] = useState(false)
   const sb = createClient()
 
-  const [hasReservationsAddon, setHasReservationsAddon] = useState(false)
 
   useEffect(() => { init() }, [])
 
@@ -100,10 +99,6 @@ export default function StaffManagementPage() {
     const{data:{user}}=await sb.auth.getUser(); if(!user) return
     const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single(); if(!profile?.org_id) return
     setOrgId(profile.org_id)
-    fetch(`/api/addons-market?org_id=${profile.org_id}`).then(r=>r.json()).then(j=>{
-      const addon = (j.addons || []).find((a: any) => a.slug === 'table_reservations')
-      setHasReservationsAddon(!!addon?.subscription?.isValid)
-    }).catch(()=>{})
     sb.from('organizations' as any).select('currency').eq('id',profile.org_id).single()
       .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
     const{data:orgLimits}=await (sb as any).from('organizations').select('max_staff,shop_open_time,shop_close_time,notify_cashier_closing_wa').eq('id',profile.org_id).single()
@@ -554,7 +549,6 @@ export default function StaffManagementPage() {
                     {key:'inventory',  label:'المخزون',    Icon:Package, locked:false},
                     {key:'purchases',  label:'المشتريات',  Icon:ShoppingCart, locked:false},
                     {key:'reports',    label:'التقارير',   Icon:BarChart3, locked:false},
-                    ...(hasReservationsAddon ? [{key:'reservations', label:'الحجوزات', Icon:CalendarDays, locked:false}] : []),
                   ].map(p=>(
                     <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:'white',borderRadius:8,border:`1.5px solid ${(newPermissions as any)[p.key]?colors.primary:colors.border}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                       <input type="checkbox" checked={(newPermissions as any)[p.key]} disabled={p.locked}
@@ -700,7 +694,6 @@ export default function StaffManagementPage() {
                 {key:'inventory',  label:'المخزون',    Icon:Package, locked:false},
                 {key:'purchases',  label:'المشتريات',  Icon:ShoppingCart, locked:false},
                 {key:'reports',    label:'التقارير',   Icon:BarChart3, locked:false},
-                ...(hasReservationsAddon ? [{key:'reservations', label:'الحجوزات', Icon:CalendarDays, locked:false}] : []),
               ].map(p=>(
                 <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'12px',background:(editPerms as any)[p.key]?'#f0fdfa':'#f9fafb',borderRadius:10,border:`1.5px solid ${(editPerms as any)[p.key]?'#029FA2':'#e5e7eb'}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                   <input type="checkbox" checked={(editPerms as any)[p.key]} disabled={p.locked}

@@ -31,7 +31,7 @@ export const LS: Record<string, {ar:string, en:string}> = {
   heroBadge:     { ar:'تجربة مجانية 14 يوماً — بدون بطاقة ائتمانية', en:'14-day free trial — no credit card required' },
   heroH1a:       { ar:'نصمّم مستقبل الإدارة الذكية', en:'We design the future of smart management' },
   heroH1b:       { ar:'لكل منشأة تطمح للنمو', en:'for every business aiming to grow' },
-  heroSub:       { ar:'من المخزون والمشتريات، لصفحة عرض منتجاتك والحجوزات الإلكترونية، وإدارة الموظفين والفروع — كل شي بمكان واحد', en:'From inventory and purchasing, to your product showcase page and online reservations, to staff and branch management — all in one place' },
+  heroSub:       { ar:'من المخزون والمشتريات، لصفحة عرض منتجاتك الإلكترونية، وإدارة الموظفين والفروع — كل شي بمكان واحد', en:'From inventory and purchasing, to your product showcase page, to staff and branch management — all in one place' },
   heroTry:       { ar:'جرب نظام Storely', en:'Try Storely' },
   heroStart:     { ar:'ابدأ تجربتك المجانية', en:'Start your free trial' },
   trustedBy:     { ar:'موثوق من قبل منشآت رائدة', en:'Trusted by leading businesses' },
@@ -129,5 +129,5 @@ export const FEATURES = [
   { icon:BarChart3, title:'تقارير ذكية', titleEn:'Smart reports', desc:'تقارير الصرف والمشتريات والجرد وإقفال الكاشير. صدّرها بـ PDF أو CSV بضغطة واحدة.', descEn:'Dispense, purchase, inventory, and cashier closing reports. Export to PDF or CSV in one click.' },
   { icon:Store, title:'متعدد الفروع', titleEn:'Multi-branch', desc:'أدر جميع فروعك من لوحة تحكم واحدة مع مخزون مستقل لكل فرع.', descEn:'Manage all your branches from one dashboard with independent inventory per branch.' },
   { icon:Bot, title:'أدوات الذكاء الاصطناعي', titleEn:'AI tools', desc:'اقتراح الشراء الذكي بناءً على اتجاه استهلاكك الفعلي، ومقارنة أداء الفروع تلقائياً.', descEn:'Smart purchase suggestions based on your actual consumption trend, and automatic branch performance comparison.' },
-  { icon:ShoppingBag, title:'المتجر — حل تقني متكامل', titleEn:'The Store — a complete tech solution', desc:'صفحة عرض منتجات أنيقة برابط أو QR + نظام حجوزات إلكتروني كامل بلوحة إدارة للكاشير وإشعارات واتساب تلقائية — كل شي تحت سقف واحد.', descEn:'An elegant product showcase page via link or QR + a complete online reservation system with a cashier dashboard and automatic WhatsApp alerts — all under one roof.', badge:'حل تقني', badgeEn:'Tech Solution' },
+  { icon:ShoppingBag, title:'المتجر — حل تقني متكامل', titleEn:'The Store — a complete tech solution', desc:'صفحة عرض منتجات أنيقة برابط أو QR، تشاركها بسهولة مع عملائك — كل شي تحت سقف واحد.', descEn:'An elegant product showcase page via link or QR, easy to share with your customers — all under one roof.', badge:'حل تقني', badgeEn:'Tech Solution' },
 ]
