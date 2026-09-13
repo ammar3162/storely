@@ -286,9 +286,18 @@ export default function StaffManagementPage() {
     setShowHoursModal(false)
   }
 
-  async function toggleActive(id:string,current:boolean) {
-    await (sb.from('staff_members' as any) as any).update({is_active:!current}).eq('id',id)
-    toast(current?'تم إيقاف الموظف':'تم تفعيل الموظف')
+  async function toggleActive(s:any) {
+    const activating = !s.is_active
+    if (activating && s.addon_subscription_id) {
+      const { data: sub } = await sb.from('org_addon_subscriptions' as any).select('status,expires_at').eq('id', s.addon_subscription_id).maybeSingle()
+      const stillActive = (sub as any)?.status === 'active' && new Date((sub as any)?.expires_at || 0) > new Date()
+      if (!stillActive) {
+        toast('هذا الموظف مرتبط بإضافة "موظف إضافي" ملغاة — جدّد الاشتراك من صفحة الإضافات أول عشان تقدر تفعّله من جديد','error')
+        return
+      }
+    }
+    await (sb.from('staff_members' as any) as any).update({is_active:activating}).eq('id',s.id)
+    toast(s.is_active?'تم إيقاف الموظف':'تم تفعيل الموظف')
     loadStaff(orgId)
   }
 
@@ -860,19 +869,19 @@ export default function StaffManagementPage() {
                   </div>
                 </div>
                 <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap' as const}}>
-                  <button onClick={e=>{e.stopPropagation();openReport(s)}} className="act-btn" style={{background:'#eff6ff',color:'#2563eb',display:'flex',alignItems:'center',gap:5}}>
+                  <button onClick={e=>{e.stopPropagation();openReport(s)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
                     <BarChart3 size={13} strokeWidth={2.25}/> تقرير
                   </button>
-                  <button onClick={e=>{e.stopPropagation();setEditingPerms(s.id);setEditPerms(s.permissions||{dispense:true,inventory:false,purchases:false,reports:false})}} className="act-btn" style={{background:'#f5f3ff',color:'#7c3aed',display:'flex',alignItems:'center',gap:5}}>
+                  <button onClick={e=>{e.stopPropagation();setEditingPerms(s.id);setEditPerms(s.permissions||{dispense:true,inventory:false,purchases:false,reports:false})}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
                     <ShieldCheck size={13} strokeWidth={2.25}/> صلاحيات
                   </button>
                   {s.permissions?.dispense && (
-                    <button onClick={e=>{e.stopPropagation();openAssign(s)}} className="act-btn" style={{background:colors.warningLight||'#fffbeb',color:colors.warning||'#d97706',display:'flex',alignItems:'center',gap:5}}>
+                    <button onClick={e=>{e.stopPropagation();openAssign(s)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
                       <Package size={13} strokeWidth={2.25}/> {s.assigned_products?.length>0?`${s.assigned_products.length} منتج`:'كل المنتجات'}
                     </button>
                   )}
                   {s.role==='cashier' && (
-                    <button onClick={e=>{e.stopPropagation();setShowHoursModal(true)}} className="act-btn" style={{background:'#ecfeff',color:'#0891b2',display:'flex',alignItems:'center',gap:5}}>
+                    <button onClick={e=>{e.stopPropagation();setShowHoursModal(true)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
                       <Clock size={13} strokeWidth={2.25}/> ساعات العمل
                     </button>
                   )}
@@ -882,8 +891,8 @@ export default function StaffManagementPage() {
                       {s.send_closing_whatsapp!==false ? (<><Bell size={13} strokeWidth={2.25}/> تفاصيل الإقفال: مفعّل</>) : (<><BellOff size={13} strokeWidth={2.25}/> تفاصيل الإقفال: موقّف</>)}
                     </button>
                   )}
-                  <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} className="act-btn" style={{background:colors.infoLight,color:colors.info,display:'flex',alignItems:'center',gap:5}}><RefreshCw size={13} strokeWidth={2.25}/> PIN جديد</button>
-                  <button onClick={e=>{e.stopPropagation();toggleActive(s.id,s.is_active)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`}}>{s.is_active?'إيقاف':'تفعيل'}</button>
+                  <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}><RefreshCw size={13} strokeWidth={2.25}/> PIN جديد</button>
+                  <button onClick={e=>{e.stopPropagation();toggleActive(s)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`}}>{s.is_active?'إيقاف':'تفعيل'}</button>
                   <button onClick={e=>{e.stopPropagation();deleteStaff(s.id)}} className="act-btn" style={{background:colors.dangerLight,color:colors.danger}}>حذف</button>
                   <svg width={14} height={14} fill="none" stroke={colors.text3} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" style={{transition:'transform .2s',transform:expandedId===s.id?'rotate(180deg)':'none',marginRight:4}}>
                     <path d="M6 9l6 6 6-6"/>

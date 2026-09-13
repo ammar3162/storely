@@ -38,9 +38,26 @@ export async function POST(req: Request) {
       }, { status: 403 })
     }
 
+    // نفس مبدأ الموظفين -- نعلّم المورد بمعرّف اشتراك "مورد إضافي" فقط لو تجاوز حد الباقة الأصلي
+    let addonSubscriptionId: string | null = null
+    const { data: extraSupSub } = await supabase
+      .from('org_addon_subscriptions')
+      .select('id,quantity,marketplace_addons!inner(slug)')
+      .eq('org_id', org_id)
+      .eq('status', 'active')
+      .eq('marketplace_addons.slug', 'extra_suppliers')
+      .maybeSingle()
+    if (extraSupSub) {
+      const addonQty = (extraSupSub as any).quantity || 0
+      const baselineLimit = Math.max(0, maxSup - addonQty)
+      if ((count || 0) >= baselineLimit) {
+        addonSubscriptionId = (extraSupSub as any).id
+      }
+    }
+
     const { data: newSup, error } = await supabase
       .from('suppliers')
-      .insert({ ...body, is_active: true })
+      .insert({ ...body, is_active: true, addon_subscription_id: addonSubscriptionId })
       .select()
       .single()
 

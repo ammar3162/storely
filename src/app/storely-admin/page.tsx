@@ -92,6 +92,7 @@ export default function AdminPage() {
   const [addonsList, setAddonsList] = useState<any[]>([])
   const [loadingAddons, setLoadingAddons] = useState(false)
   const [togglingAddon, setTogglingAddon] = useState<string|null>(null)
+  const [addonQty, setAddonQty] = useState<Record<string, number>>({})
   const [renewDays, setRenewDays] = useState(30)
   const [confirmDel, setConfirmDel] = useState<User|null>(null)
   const [tab, setTab]           = useState<'users'|'stats'|'suppliers'|'dashboard'|'packages'|'analytics'|'admins'>('dashboard')
@@ -503,10 +504,11 @@ export default function AdminPage() {
     if (!selected?.org_id) return
     setTogglingAddon(addon.id)
     const adminPass = sessionStorage.getItem('storely_admin_pass') || ''
+    const qty = addonQty[addon.id] || 1
     const res = await fetch('/api/admin/addon-subscriptions', {
       method: activate ? 'POST' : 'DELETE',
       headers: { 'Content-Type': 'application/json', 'x-admin-key': adminPass },
-      body: JSON.stringify({ org_id: selected.org_id, addon_id: addon.id, org_name: selected.org_name, addon_name: addon.name, duration_days: 30 }),
+      body: JSON.stringify({ org_id: selected.org_id, addon_id: addon.id, org_name: selected.org_name, addon_name: addon.name, duration_days: 30, quantity: qty }),
     })
     const j = await res.json()
     setTogglingAddon(null)
@@ -803,19 +805,30 @@ export default function AdminPage() {
                   <div style={{display:'flex',flexDirection:'column',gap:8}}>
                     {addonsList.map((a:any) => {
                       const active = a.subscription?.isValid
+                      const isQtyAddon = a.slug === 'extra_staff' || a.slug === 'extra_suppliers'
+                      const qty = addonQty[a.id] || (active ? (a.subscription?.quantity || 1) : 1)
                       return (
                         <div key={a.id} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${active?'#c4b5fd':'#e9d5ff'}`,background:active?'#f5f3ff':'#ffffff'}}>
                           <span style={{fontSize:18}}>{a.icon}</span>
                           <div style={{flex:1,minWidth:0}}>
                             <div style={{fontSize:12,fontWeight:700,color:'#1e1b4b'}}>{a.name}</div>
                             <div style={{fontSize:10,color:'#94a3b8'}}>
-                              {active ? `مفعّلة حتى ${new Date(a.subscription.expires_at).toLocaleDateString('ar-SA',{numberingSystem:'latn'})}` : `${a.monthly_price} ر.س/شهر — غير مفعّلة`}
+                              {active
+                                ? (isQtyAddon
+                                    ? `مفعّلة لـ${a.subscription?.quantity || 1} — حتى ${new Date(a.subscription.expires_at).toLocaleDateString('ar-SA',{numberingSystem:'latn'})}`
+                                    : `مفعّلة حتى ${new Date(a.subscription.expires_at).toLocaleDateString('ar-SA',{numberingSystem:'latn'})}`)
+                                : (isQtyAddon ? `${a.monthly_price} ر.س/وحدة/شهر — غير مفعّلة` : `${a.monthly_price} ر.س/شهر — غير مفعّلة`)}
                             </div>
                           </div>
+                          {isQtyAddon && !active && (
+                            <input type="number" min={1} max={20} value={qty}
+                              onChange={e=>setAddonQty(prev=>({...prev, [a.id]: Math.max(1, Math.min(20, Number(e.target.value)||1))}))}
+                              style={{width:48,padding:'6px 4px',borderRadius:8,border:'1px solid #e9d5ff',fontSize:11,textAlign:'center' as const,fontFamily:'inherit'}}/>
+                          )}
                           <button onClick={()=>toggleAddon(a, !active)} disabled={togglingAddon===a.id}
                             style={{padding:'6px 14px',borderRadius:8,border:'none',cursor:'pointer',fontSize:11,fontWeight:700,fontFamily:'inherit',
                               background:active?'#fef2f2':'#7c3aed',color:active?'#dc2626':'white'}}>
-                            {togglingAddon===a.id?'...':active?'إلغاء':'تفعيل 30 يوم'}
+                            {togglingAddon===a.id?'...':active?'إلغاء':(isQtyAddon?`تفعيل (${qty * a.monthly_price} ر.س)`:'تفعيل 30 يوم')}
                           </button>
                         </div>
                       )

@@ -589,16 +589,16 @@ export default function InventoryPage() {
       <div className="u" style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,marginBottom:14,animationDelay:'.05s'}} >
         <style>{`@media(min-width:640px){.sg{grid-template-columns:repeat(4,1fr)!important}}`}</style>
         {[
-          {label:'إجمالي الأصناف', value:products.length,   color:C.info,    key:'all'  as const},
-          {label:'مخزون ناقص',     value:lowCount,           color:C.danger,  key:'low'  as const},
-          {label:'مخزون كافٍ',     value:products.length-lowCount, color:C.primary, key:'ok' as const},
-          {label:'إجمالي الكميات', value:totalQty,           color:C.warning, key:'all'  as const},
+          {label:'إجمالي الأصناف', value:products.length,   color:C.info,    key:'all'  as const, critical:false},
+          {label:'مخزون ناقص',     value:lowCount,           color:C.danger,  key:'low'  as const, critical:lowCount>0},
+          {label:'مخزون كافٍ',     value:products.length-lowCount, color:C.primary, key:'ok' as const, critical:false},
+          {label:'إجمالي الكميات', value:totalQty,           color:C.warning, key:'all'  as const, critical:false},
         ].map((s,i)=>(
           <button key={i} onClick={()=>{if(s.key!=='all'||i===0){setStatusFilter(s.key);setCatFilter('all');setPage(1)}}}
             className="tap"
-            style={{background:'white',borderRadius:12,padding:'12px 14px',border:`1px solid ${statusFilter===s.key&&i<3?s.color:C.border}`,boxShadow:'0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)',textAlign:'right',cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
-            <div style={{fontSize:22,fontWeight:700,color:s.color,letterSpacing:'-0.5px',fontVariantNumeric:'tabular-nums'}}>{s.value.toLocaleString()}</div>
-            <div style={{fontSize:10,color:C.text4,marginTop:3,fontWeight:500}}>{s.label}</div>
+            style={{background:s.critical?C.dangerL:'white',borderRadius:12,padding:'12px 14px',border:`1px solid ${s.critical?C.dangerB:statusFilter===s.key&&i<3?s.color:C.border}`,boxShadow:'0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)',textAlign:'right',cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
+            <div style={{fontSize:s.critical?28:20,fontWeight:s.critical?800:600,color:s.critical?C.danger:C.text2,letterSpacing:'-0.5px',fontVariantNumeric:'tabular-nums'}}>{s.value.toLocaleString()}</div>
+            <div style={{fontSize:10,color:s.critical?C.danger:C.text4,marginTop:3,fontWeight:s.critical?700:500}}>{s.label}</div>
           </button>
         ))}
       </div>
@@ -762,7 +762,7 @@ export default function InventoryPage() {
                   const sbb=isOut?C.dangerB:isLow?C.warningB:C.primaryB
                   const pct=Math.min((p.qty/Math.max(p.reorder_point*2,p.qty,1))*100,100)
                   return (
-                    <tr key={p.id} className="rh" style={{borderBottom:`1px solid ${C.border}`}}>
+                    <tr key={p.id} className="rh" style={{borderBottom:`1px solid ${C.border}`, background: isOut?'rgba(220,38,38,.035)':isLow?'rgba(245,158,11,.045)':'transparent'}}>
                       <td style={{padding:'12px 16px',minWidth:180}}>
                         <div style={{fontWeight:600,fontSize:13,color:C.text}}>{p.name}</div>
                         {p.sku&&<div style={{fontSize:10,color:C.text4,marginTop:1,fontFamily:'monospace'}}>#{p.sku}</div>}
@@ -791,13 +791,13 @@ export default function InventoryPage() {
                         </span>
                       </td>
                       <td style={{padding:'12px 16px'}}>
-                        <div style={{display:'flex',gap:5,justifyContent:'center'}}>
+                        <div style={{display:'flex',gap:14,justifyContent:'center'}}>
                           <button onClick={()=>openEdit(p)}
-                            style={{padding:'5px 12px',borderRadius:7,fontSize:11,fontWeight:600,cursor:'pointer',border:`1px solid ${C.border2}`,background:'white',color:C.text2,fontFamily:'inherit'}}>
+                            style={{padding:'4px 2px',fontSize:12,fontWeight:600,cursor:'pointer',border:'none',background:'none',color:C.text2,fontFamily:'inherit',textDecoration:'underline',textUnderlineOffset:3}}>
                             تعديل
                           </button>
                           <button onClick={()=>setConfirm({id:p.id,name:p.name})}
-                            style={{padding:'5px 10px',borderRadius:7,fontSize:11,fontWeight:600,cursor:'pointer',border:`1px solid ${C.dangerB}`,background:C.dangerL,color:C.danger,fontFamily:'inherit'}}>
+                            style={{padding:'4px 2px',fontSize:12,fontWeight:600,cursor:'pointer',border:'none',background:'none',color:C.danger,fontFamily:'inherit',textDecoration:'underline',textUnderlineOffset:3}}>
                             حذف
                           </button>
                         </div>

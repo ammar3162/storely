@@ -293,21 +293,21 @@ export default function DashboardPage() {
       {/* ── Stats ── */}
       <div className="g4 u" style={{marginBottom:14,animationDelay:'.1s'}}>
         {[
-          {label:t('dashboard.statItems'),    val:stats.products,       note:t('dashboard.inStock'),   href:'/inventory', accent:dsColors.primary, Icon:Package},
-          {label:t('dashboard.statLow'),      val:stats.lowStock,        note:`${stats.outOfStock} ${t('dashboard.outOfStockSuffix')}`,href:'/inventory',accent:'#e24b4a', Icon:AlertTriangle},
-          {label:t('dashboard.statTodayPurchase'),val:stats.todayPurchases,  note:t('dashboard.invoice'),       href:'/purchases', accent:'#378add', Icon:ShoppingCart},
-          {label:t('dashboard.statTodayDispense'), val:stats.todayDispenses,  note:t('dashboard.operation'),        href:'/dispense',  accent:'#ba7517', Icon:TrendingUp},
+          {label:t('dashboard.statItems'),    val:stats.products,       note:t('dashboard.inStock'),   href:'/inventory', accent:dsColors.primary, Icon:Package, critical:false},
+          {label:t('dashboard.statLow'),      val:stats.lowStock,        note:`${stats.outOfStock} ${t('dashboard.outOfStockSuffix')}`,href:'/inventory',accent:'#e24b4a', Icon:AlertTriangle, critical:stats.lowStock>0},
+          {label:t('dashboard.statTodayPurchase'),val:stats.todayPurchases,  note:t('dashboard.invoice'),       href:'/purchases', accent:'#378add', Icon:ShoppingCart, critical:false},
+          {label:t('dashboard.statTodayDispense'), val:stats.todayDispenses,  note:t('dashboard.operation'),        href:'/dispense',  accent:'#ba7517', Icon:TrendingUp, critical:false},
         ].map((s,i)=>(
           <button key={i} onClick={()=>router.push(s.href)} className="s r tap"
-            style={{padding:'16px',textAlign:'right',fontFamily:'inherit',cursor:'pointer',animationDelay:`${.12+i*.04}s`}}>
+            style={{padding:'16px',textAlign:'right',fontFamily:'inherit',cursor:'pointer',animationDelay:`${.12+i*.04}s`, background:s.critical?'#fef2f2':undefined, border:s.critical?'1px solid #f7c1c1':undefined}}>
             <div style={{width:30,height:30,borderRadius:8,background:s.accent+'14',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:10}}>
               <s.Icon size={15} color={s.accent} strokeWidth={2}/>
             </div>
-            <div style={{fontSize:24,fontWeight:700,color:'#1c1c1a',letterSpacing:'-0.5px',lineHeight:1,marginBottom:6,fontVariantNumeric:'tabular-nums'}}>
+            <div style={{fontSize:s.critical?30:24,fontWeight:s.critical?800:700,color:s.critical?s.accent:'#1c1c1a',letterSpacing:'-0.5px',lineHeight:1,marginBottom:6,fontVariantNumeric:'tabular-nums'}}>
               <Num value={s.val}/>
             </div>
-            <div style={{fontSize:12,fontWeight:500,color:'#1c1c1a',marginBottom:2}}>{s.label}</div>
-            <div style={{fontSize:10,color:'#888780'}}>{s.note}</div>
+            <div style={{fontSize:12,fontWeight:s.critical?700:500,color:s.critical?s.accent:'#1c1c1a',marginBottom:2}}>{s.label}</div>
+            <div style={{fontSize:10,color:s.critical?s.accent:'#888780'}}>{s.note}</div>
           </button>
         ))}
       </div>
