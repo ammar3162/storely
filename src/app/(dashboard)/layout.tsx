@@ -192,16 +192,18 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     const{data:p}=await (sb as any).from('profiles').select('id,full_name,org_id,role,branch_id,permissions,whatsapp_consent,whatsapp_first_contact_confirmed,terms_accepted_at,terms_version_accepted,organizations(name,logo_url,deletion_scheduled_at)').eq('id',user.id).single()
     if(!p){router.replace('/login');return}
     if(!p.org_id){router.replace('/pending');return}
-    // فحص انتهاء الاشتراك
-    const{data:subData}=await (sb as any).from('profiles').select('subscription_ends_at,subscription_type').eq('id',user.id).single()
-    if(subData?.subscription_ends_at){
-      const ends=new Date(subData.subscription_ends_at)
-      if(ends<new Date()){
-        router.replace('/expired');return
+    // فحص انتهاء الاشتراك -- بوقت السيرفر عبر api/check-subscription، مو وقت جهاز العميل
+    // (وقت المتصفح لو مضبوط غلط كان يقفل حسابات عملاء اشتراكهم فعلياً ساري)
+    try {
+      const subRes = await fetch(`/api/check-subscription?profile_id=${user.id}`).then(r=>r.json())
+      if (subRes?.hasSubscription) {
+        if (subRes.expired) {
+          router.replace('/expired'); return
+        }
+        if (subRes.daysLeft!=null && subRes.daysLeft<=7 && subRes.daysLeft>=0) setSubDaysLeft(subRes.daysLeft)
       }
-      // تحذير استباقي قبل انتهاء الاشتراك (خلال 7 أيام أو أقل)
-      const daysLeft=Math.ceil((ends.getTime()-Date.now())/(1000*60*60*24))
-      if(daysLeft<=7&&daysLeft>=0) setSubDaysLeft(daysLeft)
+    } catch {
+      // فشل الفحص نفسه (مشكلة شبكة مثلاً) ما لازم يقفل حساب العميل بالخطأ -- نكمّل عادي
     }
     const orgN=(p.organizations as any)?.name||''
     const orgLogoUrl=(p.organizations as any)?.logo_url||null
