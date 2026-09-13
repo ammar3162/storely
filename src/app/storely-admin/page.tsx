@@ -195,8 +195,10 @@ export default function AdminPage() {
       headers: { 'Content-Type': 'application/json', 'x-admin-key': sessionStorage.getItem('storely_admin_pass') || '' },
       body: JSON.stringify({ admin_id: confirmDeleteAdmin.id }),
     })
+    const j = await res.json().catch(()=>({}))
     setDeleteAdminSaving(false)
-    if (res.ok) { setConfirmDeleteAdmin(null); loadAdmins() }
+    if (res.ok && j.success) { setConfirmDeleteAdmin(null); loadAdmins() }
+    else { alert('تعذّر الحذف: ' + (j.error || 'خطأ غير معروف')) }
   }
   const [dashStats, setDashStats] = useState<any>({})
   const [dashLoading, setDashLoading] = useState(false)
