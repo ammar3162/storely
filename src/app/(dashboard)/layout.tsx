@@ -47,7 +47,6 @@ const NAV_GROUPS = [
     label: 'المتجر', labelKey: 'nav.groupStore',
     items: [
       { href:'/online-store', label:'المنيو الإلكتروني', labelKey:'nav.onlineStore', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
-      { href:'/reservation-settings', label:'الحجوزات', labelKey:'nav.reservationSettings', icon:'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
       { href:'/addons-market', label:'الإضافات', labelKey:'nav.addonsMarket', icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
     ]
   },
@@ -96,7 +95,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [subDaysLeft, setSubDaysLeft] = useState<number|null>(null)
   const [orgLogo, setOrgLogo]       = useState<string|null>(null)
   const [hasMenuAddon, setHasMenuAddon] = useState(false)
-  const [hasResAddon, setHasResAddon] = useState(false)
   const [hasHrAddon, setHasHrAddon] = useState(false)
   const [hasProfitAddon, setHasProfitAddon] = useState(false)
   const [hasAiAddon, setHasAiAddon] = useState(false)
@@ -214,8 +212,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         if (j.success) {
           const menuAddon = (j.addons||[]).find((a:any)=>a.slug==='online_menu')
           setHasMenuAddon(!!menuAddon?.subscription?.isValid)
-          const resAddon = (j.addons||[]).find((a:any)=>a.slug==='table_reservations')
-          setHasResAddon(!!resAddon?.subscription?.isValid)
           const hrAddon = (j.addons||[]).find((a:any)=>a.slug==='hr_full')
           setHasHrAddon(!!hrAddon?.subscription?.isValid)
           const profitAddon = (j.addons||[]).find((a:any)=>a.slug==='profitability')
@@ -837,7 +833,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 pointerEvents:'none' as const, zIndex:0,
               }}/>
               {NAV_GROUPS.map((group,gi)=>{
-                group = { ...group, items: group.items.filter(it => (it.href !== '/online-store' || hasMenuAddon) && (it.href !== '/reservation-settings' || hasResAddon)) }
+                group = { ...group, items: group.items.filter(it => (it.href !== '/online-store' || hasMenuAddon)) }
                 const isAdvancedGroup = group.labelKey==='nav.groupAdvancedTools'
                 const groupCollapsed = isAdvancedGroup && !advancedNavOpen
                 return (
