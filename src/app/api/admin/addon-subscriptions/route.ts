@@ -49,6 +49,9 @@ export async function POST(req: Request) {
   if (slug === 'extra_branch') {
     const { data: org } = await supabase.from('organizations').select('max_branches').eq('id', org_id).single()
     await supabase.from('organizations').update({ max_branches: ((org as any)?.max_branches || 1) + 1 } as any).eq('id', org_id)
+  } else if (slug === 'extra_staff' && rowBranchId) {
+    const { data: br } = await supabase.from('branches').select('max_staff').eq('id', rowBranchId).single()
+    await supabase.from('branches').update({ max_staff: ((br as any)?.max_staff || 3) + qty } as any).eq('id', rowBranchId)
   } else if (slug === 'extra_suppliers') {
     const { data: org } = await supabase.from('organizations').select('max_suppliers').eq('id', org_id).single()
     await supabase.from('organizations').update({ max_suppliers: ((org as any)?.max_suppliers || 0) + qty } as any).eq('id', org_id)
@@ -94,6 +97,10 @@ export async function DELETE(req: Request) {
       await supabase.from('staff_members').update({ is_active: false } as any).eq('branch_id', deadBranchId).eq('is_active', true)
     }
   } else if (slug === 'extra_staff') {
+    if (branch_id) {
+      const { data: br } = await supabase.from('branches').select('max_staff').eq('id', branch_id).single()
+      await supabase.from('branches').update({ max_staff: Math.max(0, ((br as any)?.max_staff || existingQty) - existingQty) } as any).eq('id', branch_id)
+    }
     if (existingSubId) {
       await supabase.from('staff_members').update({ is_active: false } as any).eq('addon_subscription_id', existingSubId)
     }

@@ -101,11 +101,18 @@ export default function StaffManagementPage() {
     setOrgId(profile.org_id)
     sb.from('organizations' as any).select('currency').eq('id',profile.org_id).single()
       .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
-    const{data:orgLimits}=await (sb as any).from('organizations').select('max_staff,shop_open_time,shop_close_time,notify_cashier_closing_wa').eq('id',profile.org_id).single()
-    setMaxStaff((orgLimits as any)?.max_staff||1)
+    const{data:orgLimits}=await (sb as any).from('organizations').select('shop_open_time,shop_close_time,notify_cashier_closing_wa').eq('id',profile.org_id).single()
     setShopOpenTime(((orgLimits as any)?.shop_open_time||'').slice(0,5))
     setShopCloseTime(((orgLimits as any)?.shop_close_time||'').slice(0,5))
     setOrgNotifyClosingWA((orgLimits as any)?.notify_cashier_closing_wa!==false)
+    // حد الموظفين صار خاص بكل فرع لحاله -- نجيبه من الفرع الحالي المختار، مو من المؤسسة كاملة
+    const currentBranchId = sessionStorage.getItem('s_branch_id')
+    if (currentBranchId) {
+      const{data:branchLimits}=await (sb as any).from('branches').select('max_staff').eq('id',currentBranchId).maybeSingle()
+      setMaxStaff((branchLimits as any)?.max_staff||3)
+    } else {
+      setMaxStaff(999) // ما فيه فرع محدد (يشوف كل الفروع) -- ما نقدر نطبّق حد واحد، السيرفر هو اللي يتحقق أصلاً
+    }
     await Promise.all([loadStaff(profile.org_id),loadBranches(profile.org_id),loadProducts(profile.org_id)])
     setLoading(false); setTimeout(()=>setVisible(true),50)
   }
@@ -218,7 +225,7 @@ export default function StaffManagementPage() {
     const reqLen = phoneRules[staffCountry] || 9
     const cleanedPhone = newPhone.trim().replace(/^0+/,'')
     if(cleanedPhone.length !== reqLen){toast(`رقم الجوال يجب أن يكون ${reqLen} أرقام`,'warning');return}
-    if(staff.length>=maxStaff){toast(`باقتك تسمح بـ ${maxStaff} موظف فقط — يرجى الترقية`,'error');return}
+    if(staff.length>=maxStaff){toast(`هذا الفرع وصل حده الأقصى (${maxStaff} موظف) — رقّي الباقة أو أضف إضافة "موظف إضافي" لهذا الفرع`,'error');return}
     const cleanPhone=staffCountry + newPhone.trim().replace(/^0+/,'').replace(/\s/g,'')
     const pin=generatePin()
     const res = await fetch('/api/add-staff', {
