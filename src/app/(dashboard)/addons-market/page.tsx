@@ -8,6 +8,7 @@ import { toast } from '@/components/toast'
 
 export default function AddonsMarketPage() {
   const [addons, setAddons] = useState<any[]>([])
+  const [branches, setBranches] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [orgName, setOrgName] = useState('')
   const [orgId, setOrgId] = useState('')
@@ -28,31 +29,40 @@ export default function AddonsMarketPage() {
   }
 
   const [qtyMap, setQtyMap] = useState<Record<string, number>>({})
+  const [staffBranchMap, setStaffBranchMap] = useState<Record<string, string>>({})
 
   async function load(oid: string) {
     const res = await fetch(`/api/addons-market?org_id=${oid}`)
     const j = await res.json()
-    if (j.success) setAddons(j.addons)
+    if (j.success) {
+      setAddons(j.addons)
+      setBranches(j.branches || [])
+      if ((j.branches || []).length) setStaffBranchMap(prev => ({ 'extra_staff_default': prev['extra_staff_default'] || j.branches[0].id }))
+    }
   }
 
-  function subscribeLink(addon: any, qty: number = 1) {
+  function subscribeLink(addon: any, qty: number = 1, branchId?: string) {
+    const isStaffAddon = addon.slug === 'extra_staff'
     const isQtyAddon = addon.slug === 'extra_staff' || addon.slug === 'extra_suppliers'
-    const text = isQtyAddon
+    const branchName = branchId ? (branches.find(b => b.id === branchId)?.name || '') : ''
+    const text = isStaffAddon
+      ? `مرحباً، أبي أشترك بميزة "${addon.name}" لفرع "${branchName}" — الكمية: ${qty} (${qty * addon.monthly_price} ر.س/شهر) لمنشأة: ${orgName}`
+      : isQtyAddon
       ? `مرحباً، أبي أشترك بميزة "${addon.name}" — الكمية: ${qty} (${qty * addon.monthly_price} ر.س/شهر) لمنشأة: ${orgName}`
       : `مرحباً، أبي أشترك بميزة "${addon.name}" (${addon.monthly_price} ر.س/شهر) لمنشأة: ${orgName}`
     return `https://wa.me/966594351667?text=${encodeURIComponent(text)}`
   }
 
-  async function cancelAddon(addon: any) {
+  async function cancelAddon(addon: any, branchId?: string) {
     if (!(await confirmDialog({
       title: 'إلغاء الاشتراك',
-      message: `متأكد إنك تبي تلغي اشتراكك بميزة "${addon.name}"؟ راح تفقد الوصول لها فوراً — بما في ذلك صفحة المنتجات العامة وكل بياناتها المعروضة، بدون استرجاع.`,
+      message: `متأكد إنك تبي تلغي اشتراكك بميزة "${addon.name}"${branchId ? ` لفرع "${branches.find(b=>b.id===branchId)?.name||''}"` : ''}؟ راح تفقد الوصول لها فوراً — بما في ذلك صفحة المنتجات العامة وكل بياناتها المعروضة، بدون استرجاع.`,
     }))) return
 
-    setCancelling(addon.id)
+    setCancelling(addon.id + (branchId||''))
     const res = await fetch('/api/addons-market', {
       method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, addon_id: addon.id }),
+      body: JSON.stringify({ org_id: orgId, addon_id: addon.id, branch_id: branchId }),
     })
     const j = await res.json()
     setCancelling(null)
@@ -75,6 +85,62 @@ export default function AddonsMarketPage() {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 16 }}>
           {addons.map((a: any) => {
+            // "موظف إضافي" له بطاقة خاصة (يدعم عدة فروع بنفس الوقت)
+            if (a.slug === 'extra_staff') {
+              const subs = a.subscriptions || []
+              const selectedBranch = staffBranchMap['extra_staff_default'] || (branches[0]?.id || '')
+              const qty = qtyMap[a.id] || 1
+              return (
+                <div key={a.id} style={{ ...card, padding: 20 }}>
+                  <div style={{ fontSize: 32, marginBottom: 10 }}>{a.icon}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
+                  <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14 }}>{a.description}</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 14 }}>
+                    {a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text4 }}>ر.س / وحدة / شهر — لكل فرع لحاله</span>
+                  </div>
+
+                  {subs.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, marginBottom: 12 }}>
+                      {subs.map((s: any) => {
+                        const branchName = branches.find(b => b.id === s.branch_id)?.name || 'فرع'
+                        return (
+                          <div key={s.branch_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}` }}>
+                            <div style={{ flex: 1, fontSize: 11, color: colors.text }}>
+                              {branchName} — مفعّلة لـ{s.quantity} حتى {new Date(s.expires_at).toLocaleDateString('ar-SA', { numberingSystem: 'latn' })}
+                            </div>
+                            <button onClick={() => cancelAddon(a, s.branch_id)} disabled={cancelling === a.id + s.branch_id}
+                              style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              {cancelling === a.id + s.branch_id ? '...' : 'إلغاء'}
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {branches.length > 0 ? (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                        <select value={selectedBranch} onChange={e => setStaffBranchMap(prev => ({ ...prev, extra_staff_default: e.target.value }))}
+                          style={{ flex: 1, padding: '6px 8px', borderRadius: 8, border: `1px solid ${colors.border2}`, fontSize: 12, fontFamily: 'inherit', background: 'white' }}>
+                          {branches.map((b: any) => (<option key={b.id} value={b.id}>{b.name}</option>))}
+                        </select>
+                        <input type="number" min={1} max={20} value={qty}
+                          onChange={e => setQtyMap(prev => ({ ...prev, [a.id]: Math.max(1, Math.min(20, Number(e.target.value) || 1)) }))}
+                          style={{ width: 56, padding: '6px 4px', borderRadius: 8, border: `1px solid ${colors.border2}`, fontSize: 12, textAlign: 'center' as const, fontFamily: 'inherit' }} />
+                      </div>
+                      <a href={subscribeLink(a, qty, selectedBranch)} target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'block', textAlign: 'center' as const, padding: '11px', background: colors.primary, color: 'white', borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+                        اشتراك عبر واتساب ({qty * a.monthly_price} ر.س)
+                      </a>
+                    </>
+                  ) : (
+                    <div style={{ fontSize: 11, color: colors.text4, textAlign: 'center' as const }}>ما فيه فروع نشطة حالياً</div>
+                  )}
+                </div>
+              )
+            }
+
             const active = a.subscription?.isValid
             return (
               <div key={a.id} style={{ ...card, padding: 20, position: 'relative' as const, border: active ? `1.5px solid ${colors.primaryBorder}` : undefined, background: active ? colors.primaryLight : undefined }}>
@@ -89,7 +155,7 @@ export default function AddonsMarketPage() {
                 <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
                 <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14, minHeight: 40 }}>{a.description}</div>
                 {(() => {
-                  const isQtyAddon = a.slug === 'extra_staff' || a.slug === 'extra_suppliers'
+                  const isQtyAddon = a.slug === 'extra_suppliers'
                   const qty = qtyMap[a.id] || 1
                   return (
                     <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 14 }}>
@@ -100,12 +166,12 @@ export default function AddonsMarketPage() {
 
                 {active ? (
                   <div style={{ textAlign: 'center' as const }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 4 }}>✅ مفعّلة{(a.slug==='extra_staff'||a.slug==='extra_suppliers') ? ` (${a.subscription?.quantity||1})` : ''}</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 4 }}>✅ مفعّلة{a.slug==='extra_suppliers' ? ` (${a.subscription?.quantity||1})` : ''}</div>
                     <div style={{ fontSize: 10, color: colors.text4 }}>حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA', { numberingSystem: 'latn' })}</div>
                   </div>
                 ) : (
                   <>
-                    {(a.slug === 'extra_staff' || a.slug === 'extra_suppliers') && (
+                    {a.slug === 'extra_suppliers' && (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 10 }}>
                         <span style={{ fontSize: 11, color: colors.text3, fontWeight: 700 }}>الكمية:</span>
                         <input type="number" min={1} max={20} value={qtyMap[a.id] || 1}

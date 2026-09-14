@@ -20,15 +20,18 @@ export async function POST(req: Request) {
 
     const supabase = sb()
 
-    // تحقق من حد الباقة server-side
+    // حد الموظفين الآن مستقل لكل فرع (مو رصيد مشترك للمؤسسة كلها) -- كل فرع له حد الباقة الأساسي
+    // + أي إضافة "موظف إضافي" مخصصة له بالذات
+    const PLAN_BASE_STAFF: Record<string, number> = { basic: 3, pro: 5, advanced: 999 }
+
     const { data: org } = await supabase
       .from('organizations')
-      .select('max_staff,plan')
+      .select('plan')
       .eq('id', org_id)
       .single()
 
-    const maxStaff = (org as any)?.max_staff || 1
     const orgPlan = (org as any)?.plan || 'basic'
+    const planBaseStaff = PLAN_BASE_STAFF[orgPlan] ?? 3
 
     if (role === 'cashier' && orgPlan === 'basic') {
       return NextResponse.json({
@@ -36,15 +39,26 @@ export async function POST(req: Request) {
       }, { status: 403 })
     }
 
-    const { count } = await supabase
-      .from('staff_members')
-      .select('id', { count: 'exact', head: true })
+    // إضافة "موظف إضافي" النشطة المخصصة لهذا الفرع بالذات (لو موجودة)
+    const { data: extraStaffSub } = await supabase
+      .from('org_addon_subscriptions')
+      .select('id,quantity,marketplace_addons!inner(slug)')
       .eq('org_id', org_id)
-      .eq('is_active', true)
+      .eq('branch_id', branch_id || null)
+      .eq('status', 'active')
+      .eq('marketplace_addons.slug', 'extra_staff')
+      .maybeSingle()
+    const extraQty = extraStaffSub ? ((extraStaffSub as any).quantity || 0) : 0
+    const branchLimit = planBaseStaff + extraQty
 
-    if ((count || 0) >= maxStaff) {
+    // نعد الموظفين النشطين بنفس الفرع بس (مو كل المؤسسة)
+    let countQ = supabase.from('staff_members').select('id', { count: 'exact', head: true }).eq('org_id', org_id).eq('is_active', true)
+    countQ = branch_id ? countQ.eq('branch_id', branch_id) : countQ.is('branch_id', null)
+    const { count } = await countQ
+
+    if ((count || 0) >= branchLimit) {
       return NextResponse.json({
-        error: `وصلت للحد الأقصى (${maxStaff} موظف) — يرجى ترقية الباقة`
+        error: `وصلت للحد الأقصى لهذا الفرع (${branchLimit} موظف) — يرجى ترقية الباقة أو شراء إضافة "موظف إضافي" لهذا الفرع`
       }, { status: 403 })
     }
 
@@ -60,23 +74,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'رقم الجوال مسجل مسبقاً' }, { status: 409 })
     }
 
-    // نحدد مصدر هذا الموظف: ضمن حد الباقة الأساسية، أو ضمن كمية إضافة "موظف إضافي" النشطة.
-    // نحسب حد الباقة الأصلي = max_staff الكلي ناقص كل كمية الإضافات النشطة، ونعلّم الموظف بمعرّف الاشتراك
-    // فقط لو تجاوز هذا الحد الأصلي -- عشان الإلغاء لاحقاً يعرف بالضبط أي موظف يوقفه، بدون أي تخمين بالتاريخ
+    // نحدد مصدر هذا الموظف: ضمن حد الباقة الأساسي لهذا الفرع، أو ضمن كمية إضافة "موظف إضافي" الخاصة به.
+    // نعلّم الموظف بمعرّف الاشتراك فقط لو تجاوز حد الباقة الأصلي لنفس الفرع -- عشان الإلغاء لاحقاً
+    // يعرف بالضبط أي موظف يوقفه، بدون أي تخمين بالتاريخ
     let addonSubscriptionId: string | null = null
-    const { data: extraStaffSub } = await supabase
-      .from('org_addon_subscriptions')
-      .select('id,quantity,marketplace_addons!inner(slug)')
-      .eq('org_id', org_id)
-      .eq('status', 'active')
-      .eq('marketplace_addons.slug', 'extra_staff')
-      .maybeSingle()
-    if (extraStaffSub) {
-      const addonQty = (extraStaffSub as any).quantity || 0
-      const baselineLimit = Math.max(0, maxStaff - addonQty)
-      if ((count || 0) >= baselineLimit) {
-        addonSubscriptionId = (extraStaffSub as any).id
-      }
+    if (extraStaffSub && (count || 0) >= planBaseStaff) {
+      addonSubscriptionId = (extraStaffSub as any).id
     }
 
     const { data: newStaff, error } = await supabase
