@@ -314,7 +314,7 @@ export default function StaffManagementPage() {
 
   // نستثني من العرض بالكامل الموظفين الموقوفين بسبب إلغاء إضافة "موظف إضافي" (addon_subscription_id)
   // -- الموقوفين يدوياً من المالك (زي إجازة) يفضلون ظاهرين بقسم "موقوفون" عادي
-  const visibleStaff = staff.filter(s => !(!s.is_active && s.addon_subscription_id))
+  const visibleStaff = staff.filter(s => !s.hidden_from_list)
   const activeCount   = visibleStaff.filter(s=>s.is_active).length
   const inactiveCount = visibleStaff.filter(s=>!s.is_active).length
 
