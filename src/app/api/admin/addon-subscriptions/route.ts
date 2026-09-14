@@ -28,9 +28,13 @@ export async function POST(req: Request) {
   }
   const rowBranchId = slug === 'extra_staff' ? branch_id : null
 
-  let existingQuery = supabase.from('org_addon_subscriptions').select('id').eq('org_id', org_id).eq('addon_id', addon_id)
+  let existingQuery = supabase.from('org_addon_subscriptions').select('id,quantity,status').eq('org_id', org_id).eq('addon_id', addon_id)
   existingQuery = rowBranchId ? existingQuery.eq('branch_id', rowBranchId) : existingQuery.is('branch_id', null)
   const { data: existingRow } = await existingQuery.maybeSingle()
+  // الفرق بين الكمية الجديدة والقديمة -- لو كان الاشتراك أصلاً ملغى (مو نشط)، نعتبر قديمه صفر (نطبّق الكمية كاملة من جديد)
+  const wasActive = (existingRow as any)?.status === 'active'
+  const oldQty = wasActive ? ((existingRow as any)?.quantity || 0) : 0
+  const qtyDelta = qty - oldQty
 
   let saveError = null
   if (existingRow) {
@@ -46,15 +50,18 @@ export async function POST(req: Request) {
   }
   if (saveError) return NextResponse.json({ error: 'فشل التفعيل' }, { status: 500 })
 
+  // نطبّق الفرق بس -- لو كان أصلاً نشط وتم تفعيله من جديد (تحديث كمية)، ما نضيف الكمية الجديدة كاملة فوق القديمة
   if (slug === 'extra_branch') {
-    const { data: org } = await supabase.from('organizations').select('max_branches').eq('id', org_id).single()
-    await supabase.from('organizations').update({ max_branches: ((org as any)?.max_branches || 1) + 1 } as any).eq('id', org_id)
-  } else if (slug === 'extra_staff' && rowBranchId) {
+    if (!wasActive) {
+      const { data: org } = await supabase.from('organizations').select('max_branches').eq('id', org_id).single()
+      await supabase.from('organizations').update({ max_branches: ((org as any)?.max_branches || 1) + 1 } as any).eq('id', org_id)
+    }
+  } else if (slug === 'extra_staff' && rowBranchId && qtyDelta !== 0) {
     const { data: br } = await supabase.from('branches').select('max_staff').eq('id', rowBranchId).single()
-    await supabase.from('branches').update({ max_staff: ((br as any)?.max_staff || 3) + qty } as any).eq('id', rowBranchId)
-  } else if (slug === 'extra_suppliers') {
+    await supabase.from('branches').update({ max_staff: Math.max(0, ((br as any)?.max_staff || 3) + qtyDelta) } as any).eq('id', rowBranchId)
+  } else if (slug === 'extra_suppliers' && qtyDelta !== 0) {
     const { data: org } = await supabase.from('organizations').select('max_suppliers').eq('id', org_id).single()
-    await supabase.from('organizations').update({ max_suppliers: ((org as any)?.max_suppliers || 0) + qty } as any).eq('id', org_id)
+    await supabase.from('organizations').update({ max_suppliers: Math.max(0, ((org as any)?.max_suppliers || 0) + qtyDelta) } as any).eq('id', org_id)
   }
 
   await logAdminAction(admin, 'activate_addon', org_id, org_name || null, { addon_id, addon_name, expires_at: expiresAt, branch_id: rowBranchId })
