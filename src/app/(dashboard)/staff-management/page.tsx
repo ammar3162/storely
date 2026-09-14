@@ -277,9 +277,8 @@ export default function StaffManagementPage() {
   async function toggleActive(s:any) {
     const activating = !s.is_active
     if (activating && s.addon_subscription_id) {
-      const { data: sub } = await sb.from('org_addon_subscriptions' as any).select('status,expires_at').eq('id', s.addon_subscription_id).maybeSingle()
-      const stillActive = (sub as any)?.status === 'active' && new Date((sub as any)?.expires_at || 0) > new Date()
-      if (!stillActive) {
+      const res = await fetch(`/api/check-addon-subscription?id=${s.addon_subscription_id}`).then(r=>r.json()).catch(()=>null)
+      if (!res?.active) {
         toast('هذا الموظف مرتبط بإضافة "موظف إضافي" ملغاة — جدّد الاشتراك من صفحة الإضافات أول عشان تقدر تفعّله من جديد','error')
         return
       }
