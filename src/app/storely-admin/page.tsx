@@ -93,8 +93,6 @@ export default function AdminPage() {
   const [loadingAddons, setLoadingAddons] = useState(false)
   const [togglingAddon, setTogglingAddon] = useState<string|null>(null)
   const [addonQty, setAddonQty] = useState<Record<string, number>>({})
-  const [addonBranches, setAddonBranches] = useState<any[]>([])
-  const [staffBranchSel, setStaffBranchSel] = useState<string>('')
   const [renewDays, setRenewDays] = useState(30)
   const [confirmDel, setConfirmDel] = useState<User|null>(null)
   const [tab, setTab]           = useState<'users'|'stats'|'suppliers'|'dashboard'|'packages'|'analytics'|'admins'>('dashboard')
@@ -466,16 +464,7 @@ export default function AdminPage() {
       items.push({ label: `اشتراك باقة "${plan.label}" (${isYearly?'سنوياً':'شهرياً'})`, amount: Number(priceStr.replace(/[^0-9]/g, '')) })
     }
     for (const a of addonsList) {
-      if (a.slug === 'extra_staff') {
-        for (const s of (a.subscriptions || [])) {
-          if (s.isValid) {
-            const branchName = (addonBranches.find((b:any)=>b.id===s.branch_id)||{}).name || 'فرع'
-            items.push({ label: `إضافة "${a.name}" — ${branchName} (${s.quantity})`, amount: Number(a.monthly_price) * (s.quantity || 1) })
-          }
-        }
-      } else if (a.subscription?.isValid) {
-        items.push({ label: `إضافة "${a.name}"`, amount: Number(a.monthly_price) })
-      }
+      if (a.subscription?.isValid) items.push({ label: `إضافة "${a.name}"`, amount: Number(a.monthly_price) })
     }
     return items
   }
@@ -509,19 +498,19 @@ export default function AdminPage() {
     const adminPass = sessionStorage.getItem('storely_admin_pass') || ''
     const res = await fetch(`/api/admin/addon-subscriptions?org_id=${orgId}`, { headers: { 'x-admin-key': adminPass } })
     const j = await res.json()
-    if (j.success) { setAddonsList(j.addons); setAddonBranches(j.branches || []); if ((j.branches||[]).length) setStaffBranchSel((j.branches[0] as any).id) }
+    if (j.success) setAddonsList(j.addons)
     setLoadingAddons(false)
   }
 
-  async function toggleAddon(addon: any, activate: boolean, branchId?: string) {
+  async function toggleAddon(addon: any, activate: boolean) {
     if (!selected?.org_id) return
-    setTogglingAddon(addon.id + (branchId||''))
+    setTogglingAddon(addon.id)
     const adminPass = sessionStorage.getItem('storely_admin_pass') || ''
     const qty = addonQty[addon.id] || 1
     const res = await fetch('/api/admin/addon-subscriptions', {
       method: activate ? 'POST' : 'DELETE',
       headers: { 'Content-Type': 'application/json', 'x-admin-key': adminPass },
-      body: JSON.stringify({ org_id: selected.org_id, addon_id: addon.id, org_name: selected.org_name, addon_name: addon.name, duration_days: 30, quantity: qty, branch_id: branchId || undefined }),
+      body: JSON.stringify({ org_id: selected.org_id, addon_id: addon.id, org_name: selected.org_name, addon_name: addon.name, duration_days: 30, quantity: qty }),
     })
     const j = await res.json()
     setTogglingAddon(null)
@@ -817,58 +806,8 @@ export default function AdminPage() {
                 ) : (
                   <div style={{display:'flex',flexDirection:'column',gap:8}}>
                     {addonsList.map((a:any) => {
-                      // "موظف إضافي" له قسم خاص (يدعم عدة فروع بنفس الوقت) -- مو صف عادي
-                      if (a.slug === 'extra_staff') {
-                        const subs = a.subscriptions || []
-                        const qty = addonQty[a.id] || 1
-                        return (
-                          <div key={a.id} style={{padding:'10px 12px',borderRadius:10,border:'1.5px solid #e9d5ff',background:'#ffffff'}}>
-                            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
-                              <span style={{fontSize:18}}>{a.icon}</span>
-                              <div style={{flex:1,minWidth:0}}>
-                                <div style={{fontSize:12,fontWeight:700,color:'#1e1b4b'}}>{a.name}</div>
-                                <div style={{fontSize:10,color:'#94a3b8'}}>{a.monthly_price} ر.س/وحدة/شهر — لكل فرع لحاله</div>
-                              </div>
-                            </div>
-                            {subs.length > 0 && (
-                              <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:8}}>
-                                {subs.map((s:any) => {
-                                  const branchName = (addonBranches.find((b:any)=>b.id===s.branch_id)||{}).name || 'فرع محذوف'
-                                  return (
-                                    <div key={s.branch_id} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 10px',borderRadius:8,background:s.isValid?'#f5f3ff':'#f8fafc',border:`1px solid ${s.isValid?'#c4b5fd':'#e2e8f0'}`}}>
-                                      <div style={{flex:1,fontSize:11,color:'#1e1b4b'}}>
-                                        {branchName} — {s.isValid ? `مفعّلة لـ${s.quantity}` : 'ملغاة'}
-                                      </div>
-                                      {s.isValid && (
-                                        <button onClick={()=>toggleAddon(a, false, s.branch_id)} disabled={togglingAddon===a.id+s.branch_id}
-                                          style={{padding:'4px 10px',borderRadius:6,border:'none',cursor:'pointer',fontSize:10,fontWeight:700,fontFamily:'inherit',background:'#fef2f2',color:'#dc2626'}}>
-                                          {togglingAddon===a.id+s.branch_id?'...':'إلغاء'}
-                                        </button>
-                                      )}
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            )}
-                            <div style={{display:'flex',gap:6,alignItems:'center'}}>
-                              <select value={staffBranchSel} onChange={e=>setStaffBranchSel(e.target.value)}
-                                style={{flex:1,padding:'6px 8px',borderRadius:8,border:'1px solid #e9d5ff',fontSize:11,fontFamily:'inherit',background:'white'}}>
-                                {addonBranches.map((b:any)=>(<option key={b.id} value={b.id}>{b.name}</option>))}
-                              </select>
-                              <input type="number" min={1} max={20} value={qty}
-                                onChange={e=>setAddonQty(prev=>({...prev, [a.id]: Math.max(1, Math.min(20, Number(e.target.value)||1))}))}
-                                style={{width:48,padding:'6px 4px',borderRadius:8,border:'1px solid #e9d5ff',fontSize:11,textAlign:'center' as const,fontFamily:'inherit'}}/>
-                              <button onClick={()=>toggleAddon(a, true, staffBranchSel)} disabled={togglingAddon===a.id+staffBranchSel || !staffBranchSel}
-                                style={{padding:'6px 14px',borderRadius:8,border:'none',cursor:'pointer',fontSize:11,fontWeight:700,fontFamily:'inherit',background:'#7c3aed',color:'white',whiteSpace:'nowrap' as const}}>
-                                {togglingAddon===a.id+staffBranchSel?'...':`تفعيل (${qty * a.monthly_price} ر.س)`}
-                              </button>
-                            </div>
-                          </div>
-                        )
-                      }
-
                       const active = a.subscription?.isValid
-                      const isQtyAddon = a.slug === 'extra_suppliers'
+                      const isQtyAddon = a.slug === 'extra_staff' || a.slug === 'extra_suppliers'
                       const qty = addonQty[a.id] || (active ? (a.subscription?.quantity || 1) : 1)
                       return (
                         <div key={a.id} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${active?'#c4b5fd':'#e9d5ff'}`,background:active?'#f5f3ff':'#ffffff'}}>
