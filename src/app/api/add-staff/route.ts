@@ -20,9 +20,9 @@ export async function POST(req: Request) {
 
     const supabase = sb()
 
-    // حد الموظفين مستقل لكل فرع، ومخزّن مباشرة بعمود branches.max_staff (يتحدث تلقائياً وقت شراء/إلغاء
-    // إضافة "موظف إضافي" لهذا الفرع) -- بدون أي حساب ديناميكي وقت كل طلب
-    const { data: org } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
+    // حد الموظفين رصيد مشترك لكل المؤسسة (بكل فروعها معاً) -- مخزّن بـ organizations.max_staff
+    const { data: org } = await supabase.from('organizations').select('max_staff,plan').eq('id', org_id).single()
+    const maxStaff = (org as any)?.max_staff || 1
     const orgPlan = (org as any)?.plan || 'basic'
 
     if (role === 'cashier' && orgPlan === 'basic') {
@@ -31,17 +31,15 @@ export async function POST(req: Request) {
       }, { status: 403 })
     }
 
-    const { data: branchRow } = await supabase.from('branches').select('max_staff').eq('id', branch_id).maybeSingle()
-    const branchLimit = (branchRow as any)?.max_staff ?? 3
+    const { count } = await supabase
+      .from('staff_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('org_id', org_id)
+      .eq('is_active', true)
 
-    // نعد الموظفين النشطين بنفس الفرع بس (مو كل المؤسسة)
-    let countQ = supabase.from('staff_members').select('id', { count: 'exact', head: true }).eq('org_id', org_id).eq('is_active', true)
-    countQ = branch_id ? countQ.eq('branch_id', branch_id) : countQ.is('branch_id', null)
-    const { count } = await countQ
-
-    if ((count || 0) >= branchLimit) {
+    if ((count || 0) >= maxStaff) {
       return NextResponse.json({
-        error: `وصلت للحد الأقصى لهذا الفرع (${branchLimit} موظف) — يرجى ترقية الباقة أو شراء إضافة "موظف إضافي" لهذا الفرع`
+        error: `وصلت للحد الأقصى (${maxStaff} موظف) — يرجى ترقية الباقة أو شراء إضافة "موظف إضافي"`
       }, { status: 403 })
     }
 
@@ -58,20 +56,21 @@ export async function POST(req: Request) {
     }
 
     // نحدد مصدر هذا الموظف (باقة أساسية أو إضافة) بس لغرض التعليم -- عشان الإلغاء لاحقاً يعرف بالضبط
-    // أي موظف يوقفه بدون تخمين. نستخدم حد الباقة الأصلي (بدون الإضافة) كخط فاصل
-    const PLAN_BASE_STAFF: Record<string, number> = { basic: 3, pro: 5, advanced: 999 }
-    const planBaseStaff = PLAN_BASE_STAFF[orgPlan] ?? 3
+    // أي موظف يوقفه بدون تخمين بالتاريخ. حد الباقة الأصلي = الحد الكلي ناقص كمية الإضافة النشطة
     let addonSubscriptionId: string | null = null
-    if ((count || 0) >= planBaseStaff) {
-      const { data: extraStaffSub } = await supabase
-        .from('org_addon_subscriptions')
-        .select('id,marketplace_addons!inner(slug)')
-        .eq('org_id', org_id)
-        .eq('branch_id', branch_id || null)
-        .eq('status', 'active')
-        .eq('marketplace_addons.slug', 'extra_staff')
-        .maybeSingle()
-      if (extraStaffSub) addonSubscriptionId = (extraStaffSub as any).id
+    const { data: extraStaffSub } = await supabase
+      .from('org_addon_subscriptions')
+      .select('id,quantity,marketplace_addons!inner(slug)')
+      .eq('org_id', org_id)
+      .eq('status', 'active')
+      .eq('marketplace_addons.slug', 'extra_staff')
+      .maybeSingle()
+    if (extraStaffSub) {
+      const addonQty = (extraStaffSub as any).quantity || 0
+      const baselineLimit = Math.max(0, maxStaff - addonQty)
+      if ((count || 0) >= baselineLimit) {
+        addonSubscriptionId = (extraStaffSub as any).id
+      }
     }
 
     const { data: newStaff, error } = await supabase

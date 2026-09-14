@@ -312,8 +312,11 @@ export default function StaffManagementPage() {
     setRevealedPin({name,phone,pin}); loadStaff(orgId)
   }
 
-  const activeCount   = staff.filter(s=>s.is_active).length
-  const inactiveCount = staff.filter(s=>!s.is_active).length
+  // نستثني من العرض بالكامل الموظفين الموقوفين بسبب إلغاء إضافة "موظف إضافي" (addon_subscription_id)
+  // -- الموقوفين يدوياً من المالك (زي إجازة) يفضلون ظاهرين بقسم "موقوفون" عادي
+  const visibleStaff = staff.filter(s => !(!s.is_active && s.addon_subscription_id))
+  const activeCount   = visibleStaff.filter(s=>s.is_active).length
+  const inactiveCount = visibleStaff.filter(s=>!s.is_active).length
 
   if(loading) return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto'}}>
@@ -826,7 +829,7 @@ export default function StaffManagementPage() {
       )}
 
       {/* Staff list */}
-      {staff.length===0 ? (
+      {visibleStaff.length===0 ? (
         <div style={{...card,padding:56,textAlign:'center'}} className="su">
           <div style={{display:'flex',justifyContent:'center',marginBottom:14}}><Users size={52} strokeWidth={1.25} color={colors.text4}/></div>
           <div style={{fontSize:font.base,fontWeight:700,color:colors.text2,marginBottom:6}}>لا يوجد موظفين بعد</div>
@@ -835,7 +838,7 @@ export default function StaffManagementPage() {
         </div>
       ) : (
         <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
-          {staff.map((s:any,i)=>(
+          {visibleStaff.map((s:any,i)=>(
             <div key={s.id} className="staff-card su" style={{...card,padding:'16px 18px',animationDelay:`${i*0.05}s`}}>
               <div onClick={()=>setExpandedId(expandedId===s.id?null:s.id)} style={{display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer',flexWrap:'wrap' as const,gap:10}}>
                 <div style={{display:'flex',alignItems:'center',gap:12}}>
