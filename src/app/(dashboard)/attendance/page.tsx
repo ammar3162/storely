@@ -99,7 +99,7 @@ export default function AttendancePage() {
       const res = await fetch(`/api/attendance-report?${params.toString()}`)
       const j = await res.json()
       if (j.success) setRangeRows(j.rows || [])
-      else toast(j.error || 'تعذر تحميل السجل', 'error')
+      else toast(j.message || j.error || 'تعذر تحميل السجل', 'error')
     } catch { toast('خطأ بالاتصال', 'error') }
     setLoading(false)
   }
@@ -141,7 +141,7 @@ export default function AttendancePage() {
       const res = await fetch(`/api/attendance-report?${params.toString()}`)
       const j = await res.json()
       if (j.success) setRows(j.rows || [])
-      else toast(j.error || 'تعذر تحميل السجل', 'error')
+      else toast(j.message || j.error || 'تعذر تحميل السجل', 'error')
     } catch { toast('خطأ بالاتصال', 'error') }
     setLoading(false)
   }
