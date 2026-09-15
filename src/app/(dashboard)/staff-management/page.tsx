@@ -415,7 +415,7 @@ export default function StaffManagementPage() {
       {/* Stats */}
       <div className="su" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:20,animationDelay:'.05s'}}>
         {[
-          {label:'إجمالي الموظفين',value:staff.length,      color:colors.info,    bg:colors.infoLight,    border:colors.infoBorder,    Icon:Users},
+          {label:'إجمالي الموظفين',value:visibleStaff.length,      color:colors.info,    bg:colors.infoLight,    border:colors.infoBorder,    Icon:Users},
           {label:'موظفون نشطون',   value:activeCount,         color:colors.primary, bg:colors.primaryLight, border:colors.primaryBorder, Icon:UserCheck},
           {label:'موقوفون',        value:inactiveCount,       color:colors.danger,  bg:colors.dangerLight,  border:colors.dangerBorder,  Icon:PauseCircle},
         ].map((s,i)=>(
