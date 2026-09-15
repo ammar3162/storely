@@ -211,7 +211,7 @@ export default function StaffManagementPage() {
   }
 
   async function loadBranches(oid:string) {
-    const{data}=await sb.from('branches').select('id,name,latitude').eq('org_id',oid).eq('is_active',true).order('created_at')
+    const{data}=await (sb.from('branches' as any) as any).select('id,name,latitude').eq('org_id',oid).eq('is_active',true).order('created_at')
     setBranches(data||[])
     // خلّي الفرع الافتراضي هو الفرع النشط بالجلسة (اللي شغّال فيه المالك حالياً) —
     // لا تفرض دايماً أول فرع بالقائمة (كان يوقع الموظفين دايماً بالفرع الرئيسي)
