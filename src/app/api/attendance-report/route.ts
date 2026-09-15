@@ -36,7 +36,14 @@ export async function GET(req: Request) {
 
     const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
     if ((orgCheck as any)?.plan === 'basic') {
-      return NextResponse.json({ error: 'upgrade_required', message: 'ميزة الحضور والانصراف متاحة فقط بالباقة المتوسطة أو المتقدمة' }, { status: 403 })
+      const { data: hrAddon } = await supabase
+        .from('org_addon_subscriptions')
+        .select('status,expires_at,marketplace_addons!inner(slug)')
+        .eq('org_id', org_id).eq('status', 'active').eq('marketplace_addons.slug', 'hr_full').maybeSingle()
+      const hasHrAddon = !!hrAddon && new Date((hrAddon as any).expires_at) > new Date()
+      if (!hasHrAddon) {
+        return NextResponse.json({ error: 'upgrade_required', message: 'ميزة الحضور والانصراف متاحة فقط بالباقة المتوسطة أو المتقدمة، أو عبر إضافة "إدارة الموظفين الكاملة"' }, { status: 403 })
+      }
     }
 
     let staffQ = supabase.from('staff_members').select('id,name,branch_id').eq('org_id', org_id).eq('is_active', true)

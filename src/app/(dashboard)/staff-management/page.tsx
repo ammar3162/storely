@@ -102,11 +102,18 @@ export default function StaffManagementPage() {
     setOrgId(profile.org_id)
     sb.from('organizations' as any).select('currency').eq('id',profile.org_id).single()
       .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
-    const{data:orgLimits}=await (sb as any).from('organizations').select('max_staff,shop_open_time,shop_close_time,notify_cashier_closing_wa').eq('id',profile.org_id).single()
-    setMaxStaff((orgLimits as any)?.max_staff||1)
+    const{data:orgLimits}=await (sb as any).from('organizations').select('shop_open_time,shop_close_time,notify_cashier_closing_wa').eq('id',profile.org_id).single()
     setShopOpenTime(((orgLimits as any)?.shop_open_time||'').slice(0,5))
     setShopCloseTime(((orgLimits as any)?.shop_close_time||'').slice(0,5))
     setOrgNotifyClosingWA((orgLimits as any)?.notify_cashier_closing_wa!==false)
+    // حد الموظفين صار خاص بكل فرع لحاله -- نجيبه من الفرع الحالي المختار، مو من المؤسسة كاملة
+    const currentBranchId = sessionStorage.getItem('s_branch_id')
+    if (currentBranchId) {
+      const{data:branchLimits}=await (sb as any).from('branches').select('max_staff').eq('id',currentBranchId).maybeSingle()
+      setMaxStaff((branchLimits as any)?.max_staff||3)
+    } else {
+      setMaxStaff(999) // ما فيه فرع محدد (يشوف كل الفروع) -- ما نقدر نطبّق حد واحد، السيرفر هو اللي يتحقق أصلاً
+    }
     await Promise.all([loadStaff(profile.org_id),loadBranches(profile.org_id),loadProducts(profile.org_id)])
     setLoading(false); setTimeout(()=>setVisible(true),50)
   }
@@ -232,7 +239,6 @@ export default function StaffManagementPage() {
     const reqLen = phoneRules[staffCountry] || 9
     const cleanedPhone = newPhone.trim().replace(/^0+/,'')
     if(cleanedPhone.length !== reqLen){toast(`رقم الجوال يجب أن يكون ${reqLen} أرقام`,'warning');return}
-    if(staff.length>=maxStaff){toast(`باقتك تسمح بـ ${maxStaff} موظف فقط — يرجى الترقية`,'error');return}
     const cleanPhone=staffCountry + newPhone.trim().replace(/^0+/,'').replace(/\s/g,'')
     const pin=generatePin()
     const res = await fetch('/api/add-staff', {
@@ -284,9 +290,8 @@ export default function StaffManagementPage() {
   async function toggleActive(s:any) {
     const activating = !s.is_active
     if (activating && s.addon_subscription_id) {
-      const { data: sub } = await sb.from('org_addon_subscriptions' as any).select('status,expires_at').eq('id', s.addon_subscription_id).maybeSingle()
-      const stillActive = (sub as any)?.status === 'active' && new Date((sub as any)?.expires_at || 0) > new Date()
-      if (!stillActive) {
+      const res = await fetch(`/api/check-addon-subscription?id=${s.addon_subscription_id}`).then(r=>r.json()).catch(()=>null)
+      if (!res?.active) {
         toast('هذا الموظف مرتبط بإضافة "موظف إضافي" ملغاة — جدّد الاشتراك من صفحة الإضافات أول عشان تقدر تفعّله من جديد','error')
         return
       }
@@ -319,8 +324,11 @@ export default function StaffManagementPage() {
     setRevealedPin({name,phone,pin}); loadStaff(orgId)
   }
 
-  const activeCount   = staff.filter(s=>s.is_active).length
-  const inactiveCount = staff.filter(s=>!s.is_active).length
+  // نستثني من العرض بالكامل الموظفين الموقوفين بسبب إلغاء إضافة "موظف إضافي" (addon_subscription_id)
+  // -- الموقوفين يدوياً من المالك (زي إجازة) يفضلون ظاهرين بقسم "موقوفون" عادي
+  const visibleStaff = staff.filter(s => !s.hidden_from_list)
+  const activeCount   = visibleStaff.filter(s=>s.is_active).length
+  const inactiveCount = visibleStaff.filter(s=>!s.is_active).length
 
   if(loading) return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto'}}>
@@ -421,7 +429,7 @@ export default function StaffManagementPage() {
       {/* Stats */}
       <div className="su" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:20,animationDelay:'.05s'}}>
         {[
-          {label:'إجمالي الموظفين',value:staff.length,      color:colors.info,    bg:colors.infoLight,    border:colors.infoBorder,    Icon:Users},
+          {label:'إجمالي الموظفين',value:visibleStaff.length,      color:colors.info,    bg:colors.infoLight,    border:colors.infoBorder,    Icon:Users},
           {label:'موظفون نشطون',   value:activeCount,         color:colors.primary, bg:colors.primaryLight, border:colors.primaryBorder, Icon:UserCheck},
           {label:'موقوفون',        value:inactiveCount,       color:colors.danger,  bg:colors.dangerLight,  border:colors.dangerBorder,  Icon:PauseCircle},
         ].map((s,i)=>(
@@ -434,6 +442,7 @@ export default function StaffManagementPage() {
           </div>
         ))}
       </div>
+
 
       {/* Revealed PIN card */}
       {revealedPin && (
@@ -834,7 +843,7 @@ export default function StaffManagementPage() {
       )}
 
       {/* Staff list */}
-      {staff.length===0 ? (
+      {visibleStaff.length===0 ? (
         <div style={{...card,padding:56,textAlign:'center'}} className="su">
           <div style={{display:'flex',justifyContent:'center',marginBottom:14}}><Users size={52} strokeWidth={1.25} color={colors.text4}/></div>
           <div style={{fontSize:font.base,fontWeight:700,color:colors.text2,marginBottom:6}}>لا يوجد موظفين بعد</div>
@@ -843,7 +852,7 @@ export default function StaffManagementPage() {
         </div>
       ) : (
         <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
-          {staff.map((s:any,i)=>(
+          {visibleStaff.map((s:any,i)=>(
             <div key={s.id} className="staff-card su" style={{...card,padding:'16px 18px',animationDelay:`${i*0.05}s`}}>
               <div onClick={()=>setExpandedId(expandedId===s.id?null:s.id)} style={{display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer',flexWrap:'wrap' as const,gap:10}}>
                 <div style={{display:'flex',alignItems:'center',gap:12}}>

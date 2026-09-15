@@ -32,7 +32,15 @@ export async function POST(req: Request) {
 
     const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
     if ((orgCheck as any)?.plan === 'basic') {
-      return NextResponse.json({ error: 'ميزة الحضور والانصراف متاحة فقط بالباقة المتوسطة أو المتقدمة — يرجى إبلاغ صاحب المنشأة' }, { status: 403 })
+      // ميزة الحضور مضمّنة أيضاً بإضافة "إدارة الموظفين الكاملة" (hr_full) حتى للباقة الأساسية -- نتحقق منها كبديل
+      const { data: hrAddon } = await supabase
+        .from('org_addon_subscriptions')
+        .select('status,expires_at,marketplace_addons!inner(slug)')
+        .eq('org_id', org_id).eq('status', 'active').eq('marketplace_addons.slug', 'hr_full').maybeSingle()
+      const hasHrAddon = !!hrAddon && new Date((hrAddon as any).expires_at) > new Date()
+      if (!hasHrAddon) {
+        return NextResponse.json({ error: 'ميزة الحضور والانصراف متاحة فقط بالباقة المتوسطة أو المتقدمة، أو عبر إضافة "إدارة الموظفين الكاملة" — يرجى إبلاغ صاحب المنشأة' }, { status: 403 })
+      }
     }
 
     // تأكد الموظف فعلاً تابع لهذا الفرع/المنشأة
@@ -157,7 +165,14 @@ export async function GET(req: Request) {
 
     const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
     if ((orgCheck as any)?.plan === 'basic') {
-      return NextResponse.json({ success: true, locked: true, today: [], shift: null })
+      const { data: hrAddon } = await supabase
+        .from('org_addon_subscriptions')
+        .select('status,expires_at,marketplace_addons!inner(slug)')
+        .eq('org_id', org_id).eq('status', 'active').eq('marketplace_addons.slug', 'hr_full').maybeSingle()
+      const hasHrAddon = !!hrAddon && new Date((hrAddon as any).expires_at) > new Date()
+      if (!hasHrAddon) {
+        return NextResponse.json({ success: true, locked: true, today: [], shift: null })
+      }
     }
 
     const todayStart = new Date(); todayStart.setHours(0,0,0,0)

@@ -15,7 +15,6 @@ export default function BranchesPage() {
   const [inactiveBranches, setInactiveBranches] = useState<any[]>([])
   const [newBranch, setNewBranch] = useState({name:'',location:''})
   const [branchSaving, setBranchSaving] = useState(false)
-  const [savingLocationId, setSavingLocationId] = useState<string|null>(null)
   const [editingNameId, setEditingNameId] = useState<string|null>(null)
   const [editNameValue, setEditNameValue] = useState('')
   const [savingName, setSavingName] = useState(false)
@@ -73,49 +72,6 @@ export default function BranchesPage() {
     setBranches(prev=>prev.map((br:any)=>br.id===id?{...br,name:trimmed}:br))
     toast('✅ تم تعديل اسم الفرع')
     setEditingNameId(null)
-  }
-
-  const MAX_ACCEPTABLE_ACCURACY_M = 100
-
-  function getPositionOnce(): Promise<GeolocationPosition> {
-    return new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy:true, timeout:10000, maximumAge:0 })
-    })
-  }
-
-  async function saveBranchLocation(id:string) {
-    if(!navigator.geolocation){ toast('المتصفح ما يدعم تحديد الموقع','error'); return }
-    setSavingLocationId(id)
-
-    let bestPos: GeolocationPosition | null = null
-    const MAX_ATTEMPTS = 3
-    try {
-      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-        const pos = await getPositionOnce()
-        if (!bestPos || pos.coords.accuracy < bestPos.coords.accuracy) bestPos = pos
-        if (pos.coords.accuracy <= MAX_ACCEPTABLE_ACCURACY_M) break
-        if (attempt < MAX_ATTEMPTS) await new Promise(r => setTimeout(r, 1500))
-      }
-    } catch {
-      setSavingLocationId(null)
-      toast('تعذر الوصول لموقعك — تأكد من السماح للمتصفح بالوصول للموقع','error')
-      return
-    }
-
-    if (!bestPos) { setSavingLocationId(null); toast('تعذر تحديد موقعك','error'); return }
-    if (bestPos.coords.accuracy > MAX_ACCEPTABLE_ACCURACY_M) {
-      setSavingLocationId(null)
-      toast(`إشارة GPS ضعيفة (دقة ${Math.round(bestPos.coords.accuracy)} متر) — جرّب تطلع لمكان مفتوح وحاول مرة ثانية`,'error')
-      return
-    }
-
-    const{error}=await sb.from('branches').update({
-      latitude: bestPos.coords.latitude, longitude: bestPos.coords.longitude,
-    } as any).eq('id', id)
-    setSavingLocationId(null)
-    if(error){ toast('فشل حفظ الموقع — حاول مرة أخرى','error'); return }
-    setBranches(prev=>prev.map((br:any)=>br.id===id?{...br,latitude:bestPos!.coords.latitude,longitude:bestPos!.coords.longitude}:br))
-    toast('✅ تم حفظ موقع الفرع — الموظفون الآن يقدروا يسجّلوا حضورهم')
   }
 
   useEffect(()=>{ init() },[])
@@ -364,12 +320,6 @@ export default function BranchesPage() {
                     <span style={{textDecoration:'underline'}}>تعديل</span>
                   </button>
                 )}
-              </div>
-              <div style={{marginTop:8,marginRight:48}}>
-                <button onClick={()=>saveBranchLocation(b.id)} disabled={savingLocationId===b.id}
-                  style={{background:'none',border:'none',color:b.latitude?colors.primary:colors.text4,fontSize:11,cursor:'pointer',fontFamily:font.family,padding:0,display:'flex',alignItems:'center',gap:4}}>
-                  📍 {savingLocationId===b.id ? 'جاري تحديد الموقع...' : b.latitude ? 'تم تحديد موقع الفرع — إعادة الضبط' : 'حدّد موقع الفرع (لتفعيل تسجيل الحضور)'}
-                </button>
               </div>
             </div>
           ))}

@@ -20,24 +20,32 @@ export async function POST(req: Request) {
   const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
   const qty = Math.max(1, Math.min(20, Number(quantity) || 1)) // موظف/مورد إضافي: حد أقصى 20 بالطلب الواحد
 
+  const { data: existingRow } = await supabase.from('org_addon_subscriptions').select('id,quantity,status').eq('org_id', org_id).eq('addon_id', addon_id).maybeSingle()
+  // الفرق بين الكمية الجديدة والقديمة -- لو كان الاشتراك أصلاً ملغى، نعتبر قديمه صفر
+  const wasActive = (existingRow as any)?.status === 'active'
+  const oldQty = wasActive ? ((existingRow as any)?.quantity || 0) : 0
+  const qtyDelta = qty - oldQty
+
   const { error } = await supabase.from('org_addon_subscriptions').upsert({
     org_id, addon_id, status: 'active', activated_at: new Date().toISOString(), expires_at: expiresAt, cancelled_at: null, quantity: qty,
   } as any, { onConflict: 'org_id,addon_id' })
 
   if (error) return NextResponse.json({ error: 'فشل التفعيل' }, { status: 500 })
 
-  // تعديل حدود المنشأة تلقائياً حسب نوع الإضافة — بدون هذا، تفعيل الإضافة ما ينعكس فعلياً على أي صفحة
+  // نطبّق الفرق بس على حدود المنشأة -- لو كان أصلاً نشط وتم تفعيله من جديد (تحديث كمية)، ما نضيف الكمية كاملة فوق القديمة
   const { data: addonRow } = await supabase.from('marketplace_addons').select('slug').eq('id', addon_id).single()
   const slug = (addonRow as any)?.slug
   if (slug === 'extra_branch') {
-    const { data: org } = await supabase.from('organizations').select('max_branches').eq('id', org_id).single()
-    await supabase.from('organizations').update({ max_branches: ((org as any)?.max_branches || 1) + 1 } as any).eq('id', org_id)
-  } else if (slug === 'extra_staff') {
+    if (!wasActive) {
+      const { data: org } = await supabase.from('organizations').select('max_branches').eq('id', org_id).single()
+      await supabase.from('organizations').update({ max_branches: ((org as any)?.max_branches || 1) + 1 } as any).eq('id', org_id)
+    }
+  } else if (slug === 'extra_staff' && qtyDelta !== 0) {
     const { data: org } = await supabase.from('organizations').select('max_staff').eq('id', org_id).single()
-    await supabase.from('organizations').update({ max_staff: ((org as any)?.max_staff || 0) + qty } as any).eq('id', org_id)
-  } else if (slug === 'extra_suppliers') {
+    await supabase.from('organizations').update({ max_staff: Math.max(0, ((org as any)?.max_staff || 0) + qtyDelta) } as any).eq('id', org_id)
+  } else if (slug === 'extra_suppliers' && qtyDelta !== 0) {
     const { data: org } = await supabase.from('organizations').select('max_suppliers').eq('id', org_id).single()
-    await supabase.from('organizations').update({ max_suppliers: ((org as any)?.max_suppliers || 0) + qty } as any).eq('id', org_id)
+    await supabase.from('organizations').update({ max_suppliers: Math.max(0, ((org as any)?.max_suppliers || 0) + qtyDelta) } as any).eq('id', org_id)
   }
 
   await logAdminAction(admin, 'activate_addon', org_id, org_name || null, { addon_id, addon_name, expires_at: expiresAt })
@@ -64,7 +72,6 @@ export async function DELETE(req: Request) {
 
   if (error) return NextResponse.json({ error: 'فشل الإلغاء' }, { status: 500 })
 
-  // تراجع عن زيادة الحدود اللي صارت وقت التفعيل — نفس المنطق بالعكس، بنفس الكمية المخزّنة وقتها
   const { data: addonRow } = await supabase.from('marketplace_addons').select('slug').eq('id', addon_id).single()
   const slug = (addonRow as any)?.slug
   if (slug === 'extra_branch') {
@@ -72,14 +79,16 @@ export async function DELETE(req: Request) {
     await supabase.from('organizations').update({ max_branches: Math.max(1, ((org as any)?.max_branches || 2) - 1) } as any).eq('id', org_id)
     const { data: latestBranch } = await supabase.from('branches').select('id').eq('org_id', org_id).eq('is_active', true).order('created_at', { ascending: false }).limit(1).maybeSingle()
     if (latestBranch) {
-      await supabase.from('branches').update({ is_active: false } as any).eq('id', (latestBranch as any).id)
+      const deadBranchId = (latestBranch as any).id
+      await supabase.from('branches').update({ is_active: false } as any).eq('id', deadBranchId)
+      // الفرع نفسه صار غير موجود فعلياً -- نوقف كل موظفيه تلقائياً
+      await supabase.from('staff_members').update({ is_active: false, hidden_from_list: true } as any).eq('branch_id', deadBranchId).eq('is_active', true)
     }
   } else if (slug === 'extra_staff') {
     const { data: org } = await supabase.from('organizations').select('max_staff').eq('id', org_id).single()
     await supabase.from('organizations').update({ max_staff: Math.max(0, ((org as any)?.max_staff || existingQty) - existingQty) } as any).eq('id', org_id)
-    // نوقف بالضبط الموظفين المعلّمين بهذا الاشتراك (addon_subscription_id) -- تعليم دقيق وقت الإضافة، مو تخمين بالتاريخ
     if (existingSubId) {
-      await supabase.from('staff_members').update({ is_active: false } as any).eq('addon_subscription_id', existingSubId)
+      await supabase.from('staff_members').update({ is_active: false, hidden_from_list: true } as any).eq('addon_subscription_id', existingSubId)
     }
   } else if (slug === 'extra_suppliers') {
     const { data: org } = await supabase.from('organizations').select('max_suppliers').eq('id', org_id).single()
@@ -106,7 +115,6 @@ export async function GET(req: Request) {
   const supabase = sb()
   const { data: org } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
   const orgPlan = (org as any)?.plan || 'basic'
-  // نفس الفلترة الموجودة بمتجر العميل -- إضافات مضمّنة مجاناً بالمتوسطة/المتقدمة، ما داعي تظهر حتى بلوحة الأدمن لهذي الباقات
   const INCLUDED_FROM_STANDARD = ['hr_full', 'profitability', 'ai_tools', 'cashier_closing']
 
   const { data: addonsRaw } = await supabase.from('marketplace_addons').select('*').eq('is_active', true).order('sort_order')

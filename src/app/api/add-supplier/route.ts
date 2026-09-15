@@ -7,10 +7,13 @@ const sb = () => createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+// نفس مبدأ الموظفين -- حد الباقة الأساسي صارم لكل فرع لحاله، وإضافة "مورد إضافي" رصيد مشترك يُستخدم بأي فرع
+const PLAN_BASE_SUPPLIERS: Record<string, number> = { basic: 3, pro: 5, advanced: 999 }
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { org_id } = body
+    const { org_id, branch_id } = body
     if (!org_id) return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
 
     const access = await verifyOrgAccess(org_id)
@@ -18,41 +21,46 @@ export async function POST(req: Request) {
 
     const supabase = sb()
 
-    const { data: org } = await supabase
-      .from('organizations')
-      .select('max_suppliers')
-      .eq('id', org_id)
-      .single()
+    const { data: org } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
+    const orgPlan = (org as any)?.plan || 'basic'
+    const baseLimit = PLAN_BASE_SUPPLIERS[orgPlan] ?? 3
 
-    const maxSup = (org as any)?.max_suppliers || 1
+    let branchCountQ = supabase.from('suppliers').select('id', { count: 'exact', head: true }).eq('org_id', org_id).eq('is_active', true)
+    branchCountQ = branch_id ? branchCountQ.eq('branch_id', branch_id) : branchCountQ.is('branch_id', null)
+    const { count: branchCount } = await branchCountQ
 
-    const { count } = await supabase
-      .from('suppliers')
-      .select('id', { count: 'exact', head: true })
-      .eq('org_id', org_id)
-      .eq('is_active', true)
-
-    if ((count || 0) >= maxSup) {
-      return NextResponse.json({
-        error: `وصلت للحد الأقصى (${maxSup} مورد) — يرجى ترقية الباقة`
-      }, { status: 403 })
-    }
-
-    // نفس مبدأ الموظفين -- نعلّم المورد بمعرّف اشتراك "مورد إضافي" فقط لو تجاوز حد الباقة الأصلي
     let addonSubscriptionId: string | null = null
-    const { data: extraSupSub } = await supabase
-      .from('org_addon_subscriptions')
-      .select('id,quantity,marketplace_addons!inner(slug)')
-      .eq('org_id', org_id)
-      .eq('status', 'active')
-      .eq('marketplace_addons.slug', 'extra_suppliers')
-      .maybeSingle()
-    if (extraSupSub) {
-      const addonQty = (extraSupSub as any).quantity || 0
-      const baselineLimit = Math.max(0, maxSup - addonQty)
-      if ((count || 0) >= baselineLimit) {
-        addonSubscriptionId = (extraSupSub as any).id
+
+    if ((branchCount || 0) >= baseLimit) {
+      const { data: extraSupSub } = await supabase
+        .from('org_addon_subscriptions')
+        .select('id,quantity,marketplace_addons!inner(slug)')
+        .eq('org_id', org_id)
+        .eq('status', 'active')
+        .eq('marketplace_addons.slug', 'extra_suppliers')
+        .maybeSingle()
+
+      if (!extraSupSub) {
+        return NextResponse.json({
+          error: `هذا الفرع وصل حده الأساسي (${baseLimit} مورد) — يرجى ترقية الباقة أو شراء إضافة "مورد إضافي"`
+        }, { status: 403 })
       }
+
+      const addonQty = (extraSupSub as any).quantity || 0
+      const { count: usedAddonSlots } = await supabase
+        .from('suppliers')
+        .select('id', { count: 'exact', head: true })
+        .eq('org_id', org_id)
+        .eq('is_active', true)
+        .eq('addon_subscription_id', (extraSupSub as any).id)
+
+      if ((usedAddonSlots || 0) >= addonQty) {
+        return NextResponse.json({
+          error: `هذا الفرع وصل حده الأساسي (${baseLimit} مورد)، ورصيد إضافة "مورد إضافي" (${addonQty}) مستهلك بالكامل — زوّد الكمية من صفحة الإضافات`
+        }, { status: 403 })
+      }
+
+      addonSubscriptionId = (extraSupSub as any).id
     }
 
     const { data: newSup, error } = await supabase
