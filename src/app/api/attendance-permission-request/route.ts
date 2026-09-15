@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { randomBytes } from 'crypto'
+import { sendWhatsAppMessage, formatPhone } from '@/lib/whatsapp'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -32,6 +33,13 @@ export async function POST(req: Request) {
       title: 'طلب استئذان جديد',
       message: `${name} يطلب الانصراف قبل نهاية شفته${reason ? ` — السبب: ${reason}` : ''}`,
     } as any)
+
+    const { data: owner } = await supabase.from('profiles').select('phone').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
+    if ((owner as any)?.phone) {
+      await sendWhatsAppMessage(formatPhone((owner as any).phone),
+        `🚪 *طلب استئذان جديد*\n\n${name} يطلب الانصراف قبل نهاية شفته${reason ? `\nالسبب: ${reason}` : ''}\n\nراجع الطلب من لوحة "إدارة الموظفين" بحساب Storely.`
+      )
+    }
 
     return NextResponse.json({ success: true, id: (inserted as any)?.id })
   } catch {

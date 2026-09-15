@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
+import { sendWhatsAppMessage, formatPhone } from '@/lib/whatsapp'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -74,6 +75,13 @@ export async function POST(req: Request) {
       message: `${staffName} يطلب إجازة من ${start_date} إلى ${end_date} (${daysCount} يوم)${reason ? ` — السبب: ${reason}` : ''}`,
     } as any)
 
+    const { data: owner } = await supabase.from('profiles').select('phone').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
+    if ((owner as any)?.phone) {
+      await sendWhatsAppMessage(formatPhone((owner as any).phone),
+        `🏖️ *طلب إجازة جديد*\n\n${staffName} يطلب إجازة من ${start_date} إلى ${end_date} (${daysCount} يوم)${reason ? `\nالسبب: ${reason}` : ''}\n\nراجع الطلب من لوحة "إدارة الموظفين" بحساب Storely.`
+      )
+    }
+
     return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
@@ -107,6 +115,17 @@ export async function PATCH(req: Request) {
       status: decision, reviewed_by: 'owner', reviewed_at: new Date().toISOString(),
     } as any).eq('id', request_id)
     if (error) return NextResponse.json({ error: 'فشل التحديث' }, { status: 500 })
+
+    // إشعار داخل النظام للموظف بالنتيجة (كان ناقص تماماً قبل)
+    const { data: staffRow2 } = await supabase.from('staff_members').select('preferred_lang').eq('id', (reqRow as any).staff_id).maybeSingle()
+    const prefLang = (staffRow2 as any)?.preferred_lang === 'en' ? 'en' : 'ar'
+    const titleMap = { ar: decision==='approved'?'تمت الموافقة على طلب الإجازة':'تم رفض طلب الإجازة', en: decision==='approved'?'Leave Request Approved':'Leave Request Rejected' }
+    const messageMap = { ar: decision==='approved'?'استمتع بإجازتك 🌴':'طلبك مرفوض — راجع صاحب العمل لمزيد من التفاصيل', en: decision==='approved'?'Enjoy your leave 🌴':'Your request was rejected — check with your employer for details' }
+    await supabase.from('staff_notifications').insert({
+      org_id, staff_id: (reqRow as any).staff_id,
+      type: decision === 'approved' ? 'success' : 'danger',
+      title: titleMap[prefLang], message: messageMap[prefLang],
+    } as any)
 
     return NextResponse.json({ success: true })
   } catch {
