@@ -225,7 +225,6 @@ export default function StaffManagementPage() {
     const reqLen = phoneRules[staffCountry] || 9
     const cleanedPhone = newPhone.trim().replace(/^0+/,'')
     if(cleanedPhone.length !== reqLen){toast(`رقم الجوال يجب أن يكون ${reqLen} أرقام`,'warning');return}
-    if(staff.length>=maxStaff){toast(`هذا الفرع وصل حده الأقصى (${maxStaff} موظف) — رقّي الباقة أو أضف إضافة "موظف إضافي" لهذا الفرع`,'error');return}
     const cleanPhone=staffCountry + newPhone.trim().replace(/^0+/,'').replace(/\s/g,'')
     const pin=generatePin()
     const res = await fetch('/api/add-staff', {

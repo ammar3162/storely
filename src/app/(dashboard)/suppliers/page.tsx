@@ -533,7 +533,6 @@ export default function SuppliersPage() {
   }
 
   async function addSupplier() {
-    if (suppliers.length >= maxSuppliers) { toast(`باقتك تسمح بـ ${maxSuppliers} موردين فقط`, 'warning'); return }
     if (!newName.trim() || !newPhone.trim()) { toast('أدخل اسم المورد ورقمه', 'warning'); return }
     if (!newConsent) { toast('يرجى تأكيد إقرار موافقة المورد على استلام رسائل واتساب', 'warning'); return }
     const phoneRules2: Record<string,number> = {'+966':9,'+971':9,'+965':8,'+973':8,'+974':8,'+968':8,'+20':10,'+962':9,'+1':10,'+44':10,'+91':10,'+92':10}
