@@ -40,6 +40,7 @@ export default function StaffManagementPage() {
   const orgPlan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
   const [staff, setStaff]           = useState<any[]>([])
   const [branches, setBranches]     = useState<any[]>([])
+  const [savingLocationId, setSavingLocationId] = useState<string|null>(null)
   const [orgId, setOrgId]           = useState('')
   const [curr, setCurr]             = useState('ر.س')
   const [orgNotifyClosingWA, setOrgNotifyClosingWA] = useState(true)
@@ -210,13 +211,56 @@ export default function StaffManagementPage() {
   }
 
   async function loadBranches(oid:string) {
-    const{data}=await sb.from('branches').select('id,name').eq('org_id',oid).eq('is_active',true).order('created_at')
+    const{data}=await sb.from('branches').select('id,name,latitude').eq('org_id',oid).eq('is_active',true).order('created_at')
     setBranches(data||[])
     // خلّي الفرع الافتراضي هو الفرع النشط بالجلسة (اللي شغّال فيه المالك حالياً) —
     // لا تفرض دايماً أول فرع بالقائمة (كان يوقع الموظفين دايماً بالفرع الرئيسي)
     const activeBid = typeof window!=='undefined' ? sessionStorage.getItem('s_branch_id') : null
     if (activeBid && (data||[]).some((b:any)=>b.id===activeBid)) setNewBranch(activeBid)
     else if(data&&data.length>0) setNewBranch(data[0].id)
+  }
+
+  const MAX_ACCEPTABLE_ACCURACY_M = 100
+
+  function getPositionOnce(): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy:true, timeout:10000, maximumAge:0 })
+    })
+  }
+
+  async function saveBranchLocation(id:string) {
+    if(!navigator.geolocation){ toast('المتصفح ما يدعم تحديد الموقع','error'); return }
+    setSavingLocationId(id)
+
+    let bestPos: GeolocationPosition | null = null
+    const MAX_ATTEMPTS = 3
+    try {
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        const pos = await getPositionOnce()
+        if (!bestPos || pos.coords.accuracy < bestPos.coords.accuracy) bestPos = pos
+        if (pos.coords.accuracy <= MAX_ACCEPTABLE_ACCURACY_M) break
+        if (attempt < MAX_ATTEMPTS) await new Promise(r => setTimeout(r, 1500))
+      }
+    } catch {
+      setSavingLocationId(null)
+      toast('تعذر الوصول لموقعك — تأكد من السماح للمتصفح بالوصول للموقع','error')
+      return
+    }
+
+    if (!bestPos) { setSavingLocationId(null); toast('تعذر تحديد موقعك','error'); return }
+    if (bestPos.coords.accuracy > MAX_ACCEPTABLE_ACCURACY_M) {
+      setSavingLocationId(null)
+      toast(`إشارة GPS ضعيفة (دقة ${Math.round(bestPos.coords.accuracy)} متر) — جرّب تطلع لمكان مفتوح وحاول مرة ثانية`,'error')
+      return
+    }
+
+    const{error}=await sb.from('branches').update({
+      latitude: bestPos.coords.latitude, longitude: bestPos.coords.longitude,
+    } as any).eq('id', id)
+    setSavingLocationId(null)
+    if(error){ toast('فشل حفظ الموقع — حاول مرة أخرى','error'); return }
+    setBranches(prev=>prev.map((br:any)=>br.id===id?{...br,latitude:bestPos!.coords.latitude}:br))
+    toast('✅ تم حفظ موقع الفرع — الموظفون الآن يقدروا يسجّلوا حضورهم')
   }
 
   async function addStaff() {
@@ -428,6 +472,24 @@ export default function StaffManagementPage() {
           </div>
         ))}
       </div>
+
+      {/* مواقع الفروع -- لازمة لتفعيل تسجيل الحضور/الانصراف بكل فرع */}
+      {branches.length>0 && (
+        <div style={{...card,padding:14,marginBottom:20}}>
+          <div style={{fontSize:12,fontWeight:700,color:colors.text2,marginBottom:8}}>📍 مواقع الفروع (لتسجيل الحضور)</div>
+          <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
+            {branches.map((b:any)=>(
+              <button key={b.id} onClick={()=>saveBranchLocation(b.id)} disabled={savingLocationId===b.id}
+                style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:colors.bg,border:`1px solid ${colors.border2}`,borderRadius:8,padding:'8px 12px',cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
+                <span style={{fontSize:12,fontWeight:600,color:colors.text}}>{b.name}</span>
+                <span style={{fontSize:11,color:b.latitude?colors.primary:colors.text4}}>
+                  {savingLocationId===b.id ? 'جاري تحديد الموقع...' : b.latitude ? 'تم تحديد الموقع — إعادة الضبط' : 'حدّد موقع الفرع'}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Revealed PIN card */}
       {revealedPin && (
