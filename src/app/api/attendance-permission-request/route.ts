@@ -117,6 +117,15 @@ export async function GET(req: Request) {
     }
 
     if (!staff_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+
+    // history=true يرجّع كل طلبات الموظف السابقة (للسجل) -- بدون هذا يرجّع بس آخر طلب اليوم (للحالة الحالية)
+    if (searchParams.get('history') === 'true') {
+      const { data: hist } = await supabase.from('attendance_permission_requests')
+        .select('id,status,reason,requested_at,resolved_at')
+        .eq('staff_id', staff_id).order('requested_at', { ascending: false }).limit(30)
+      return NextResponse.json({ success: true, requests: hist || [] })
+    }
+
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
     const { data } = await supabase.from('attendance_permission_requests')
       .select('id,status,reason,requested_at')

@@ -71,6 +71,8 @@ export default function ChoosePage() {
   const [hasHrFeature, setHasHrFeature] = useState(false) // مخفي افتراضياً لحد ما يتأكد الفحص — يمنع ظهور الأزرار للحظة ثم اختفائها
   const [hasCashierFeature, setHasCashierFeature] = useState(false) // نفس المبدأ — مخفي لحد ما يتأكد الفحص
   const [showRequests, setShowRequests] = useState(false)
+  const [requestHistory, setRequestHistory] = useState<any[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
   const [showAdvanceForm, setShowAdvanceForm] = useState(false)
   const [advanceAmount, setAdvanceAmount] = useState('')
   const [advanceReason, setAdvanceReason] = useState('')
@@ -137,6 +139,33 @@ export default function ChoosePage() {
       const j = await res.json()
       if (j.success) setTaskCount((j.tasks||[]).filter((t:any)=>t.status==='pending').length)
     } catch {}
+  }
+
+  async function loadRequestHistory() {
+    if (!staffData) return
+    setLoadingHistory(true)
+    try {
+      const token = localStorage.getItem('staff_token')
+      const [advRes, leaveRes, excuseRes] = await Promise.all([
+        fetch('/api/staff-payroll-adjustments', { headers: { 'Authorization': `Bearer ${token}` } }).then(r=>r.json()).catch(()=>({success:false})),
+        fetch('/api/staff-leave', { headers: { 'Authorization': `Bearer ${token}` } }).then(r=>r.json()).catch(()=>({success:false})),
+        fetch(`/api/attendance-permission-request?staff_id=${staffData.id}&history=true`).then(r=>r.json()).catch(()=>({success:false})),
+      ])
+      const combined: any[] = []
+      if (advRes?.success) for (const a of (advRes.adjustments||[])) {
+        if (a.type !== 'advance') continue
+        combined.push({ kind:'advance', id:a.id, date:a.created_at, status:a.status, label:`طلب سلفة ${a.amount} ر.س` })
+      }
+      if (leaveRes?.success) for (const l of (leaveRes.requests||[])) {
+        combined.push({ kind:'leave', id:l.id, date:l.requested_at, status:l.status, label:`طلب إجازة ${l.days_count} يوم` })
+      }
+      if (excuseRes?.success) for (const ex of (excuseRes.requests||[])) {
+        combined.push({ kind:'excuse', id:ex.id, date:ex.requested_at, status:ex.status, label:'طلب استئذان' })
+      }
+      combined.sort((a,b)=> new Date(b.date).getTime() - new Date(a.date).getTime())
+      setRequestHistory(combined.slice(0,20))
+    } catch {}
+    setLoadingHistory(false)
   }
 
   async function submitAdvanceRequest() {
@@ -446,7 +475,7 @@ export default function ChoosePage() {
             <span style={{width:38,height:38,borderRadius:11,background:'#f0fdfa',display:'flex',alignItems:'center',justifyContent:'center',color:'#029FA2'}}><ClipboardList size={19} strokeWidth={2}/></span>
             {t('myTasksLabel')}
           </button>
-          <button onClick={()=>setShowRequests(true)}
+          <button onClick={()=>{setShowRequests(true);loadRequestHistory()}}
             style={{padding:'16px 8px',background:'white',color:'#1c1c1a',border:'1.5px solid #e5e7eb',borderRadius:16,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,alignItems:'center',gap:6}}>
             <span style={{width:38,height:38,borderRadius:11,background:'#eff6ff',display:'flex',alignItems:'center',justifyContent:'center',color:'#2563eb'}}><Send size={19} strokeWidth={2}/></span>
             {t('myRequests')}
@@ -479,6 +508,34 @@ export default function ChoosePage() {
                 <UserCheck size={18} strokeWidth={2}/> {t('requestExcuse')}
               </button>
             </div>
+
+            {/* سجل الطلبات السابقة -- كل الأنواع الثلاثة مع حالتها */}
+            <div style={{marginTop:18,paddingTop:16,borderTop:'1px solid #f1f5f9'}}>
+              <div style={{fontSize:12,fontWeight:700,color:'#64748b',marginBottom:10}}>سجل طلباتي</div>
+              {loadingHistory ? (
+                <div style={{fontSize:12,color:'#94a3b8',textAlign:'center' as const,padding:'12px 0'}}>جاري التحميل...</div>
+              ) : requestHistory.length===0 ? (
+                <div style={{fontSize:12,color:'#94a3b8',textAlign:'center' as const,padding:'12px 0'}}>ما فيه طلبات سابقة بعد</div>
+              ) : (
+                <div style={{display:'flex',flexDirection:'column' as const,gap:6,maxHeight:220,overflowY:'auto' as const}}>
+                  {requestHistory.map((r:any)=>{
+                    const statusStyle = r.status==='approved'||r.status==='approve' ? {bg:'#f0fdf4',color:'#16a34a',label:'مقبول'}
+                      : r.status==='rejected'||r.status==='reject' ? {bg:'#fef2f2',color:'#dc2626',label:'مرفوض'}
+                      : {bg:'#fffbeb',color:'#d97706',label:'قيد الانتظار'}
+                    return (
+                      <div key={r.kind+r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 10px',background:'#f8fafc',borderRadius:10}}>
+                        <div>
+                          <div style={{fontSize:12,fontWeight:600,color:'#1c1c1a'}}>{r.label}</div>
+                          <div style={{fontSize:10,color:'#94a3b8',marginTop:1}}>{new Date(r.date).toLocaleDateString('ar-SA',{numberingSystem:'latn',day:'numeric',month:'short'})}</div>
+                        </div>
+                        <span style={{fontSize:10,fontWeight:700,color:statusStyle.color,background:statusStyle.bg,padding:'3px 9px',borderRadius:99}}>{statusStyle.label}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
             <button onClick={()=>setShowRequests(false)} style={{width:'100%',padding:'12px',marginTop:14,background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('cancel')}</button>
           </div>
         </div>
