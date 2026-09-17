@@ -342,13 +342,18 @@ export default function LandingPage() {
               <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:16,paddingBottom:16,borderBottom:'1px solid #f3f4f6'}}>
                 {(lang==='ar'?p.limits:p.limitsEn).map((l,j)=><div key={j} style={{fontSize:13,color:'#6b7280'}}>• {l}</div>)}
               </div>
-              <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:24}}>
+              <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:(p as any).addonNote?12:24}}>
                 {(lang==='ar'?p.features:p.featuresEn).map((f,j)=>(
                   <div key={j} style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#374151'}}>
                     <span style={{color:'#0f766e'}}>✓</span>{f}
                   </div>
                 ))}
               </div>
+              {(p as any).addonNote && (
+                <div style={{display:'flex',alignItems:'flex-start',gap:8,background:'#faf5ff',border:'1px solid #e9d5ff',borderRadius:10,padding:'10px 12px',marginBottom:24,fontSize:12,color:'#6b21a8',lineHeight:1.6}}>
+                  {lang==='ar'?(p as any).addonNote:(p as any).addonNoteEn}
+                </div>
+              )}
               <button onClick={()=>router.push(`/login?mode=register&branches=${PLAN_BRANCHES[i]}&billing=${billing}`)} className={p.popular?'btn-primary':'btn-outline'} style={{width:'100%',textAlign:'center' as const}}>{t('startNow')}</button>
             </div>
           ))}
