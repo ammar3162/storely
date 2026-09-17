@@ -112,7 +112,9 @@ export default function ChoosePage() {
     const savedLang = localStorage.getItem('staff_lang')
     if (savedLang === 'en') setLang('en')
     const interval = setInterval(loadNotifications, 5000) // مسرّع لـ5 ثوانٍ (شبه لحظي) بدل 30 — نظام الموظف يستخدم توكن مخصص مو حساب Supabase عادي، فما نقدر نستخدم Realtime مباشر بأمان هنا
-    return () => clearInterval(interval)
+    // تحديث دوري لحالة الحضور وطلب الاستئذان -- بدونه الموظف يفضل يشوف "قيد الانتظار" حتى لو انوافق عليه فعلياً، لين يسوي رفرش يدوي
+    const attendanceInterval = setInterval(()=>loadToday(parsed), 15000)
+    return () => { clearInterval(interval); clearInterval(attendanceInterval) }
   },[])
 
   async function loadNotifications() {
