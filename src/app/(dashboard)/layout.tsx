@@ -633,7 +633,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
             {/* Nav items */}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
-              {[...NAV_MAIN,...NAV_MORE].filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic'||hasExtraBranchAddon||orgMaxBranches>1)&&(item.href!=='/attendance'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/hr-management'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/profitability'||orgPlan!=='basic'||hasProfitAddon)&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
+              {[...NAV_MAIN,...NAV_MORE].filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic'||hasExtraBranchAddon||orgMaxBranches>1)&&(item.href!=='/attendance'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/hr-management'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/profitability'||orgPlan!=='basic'||hasProfitAddon)&&(item.href!=='/online-store'||hasMenuAddon)&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
                 const active=isActive(item.href)
                 return (
                   <button key={item.href} onClick={()=>{router.push(item.href);setShowMore(false)}} onMouseEnter={()=>router.prefetch(item.href)}
@@ -849,7 +849,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   ) : (
                     <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.9)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{t(group.labelKey)}</div>
                   )}
-                  {!groupCollapsed && group.items.filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic'||hasExtraBranchAddon||orgMaxBranches>1)&&(item.href!=='/attendance'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/hr-management'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/profitability'||orgPlan!=='basic'||hasProfitAddon)&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
+                  {!groupCollapsed && group.items.filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic'||hasExtraBranchAddon||orgMaxBranches>1)&&(item.href!=='/attendance'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/hr-management'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/profitability'||orgPlan!=='basic'||hasProfitAddon)&&(item.href!=='/online-store'||hasMenuAddon)&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
                     const active=isActive(item.href)
                     const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
                     const isExternal=item.href.startsWith('http')
