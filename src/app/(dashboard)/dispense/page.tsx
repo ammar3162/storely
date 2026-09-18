@@ -83,7 +83,7 @@ export default function DispensePage() {
     if(error){toast('خطأ','error');setSaving(false);return}
     cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
     toast(`✅ تم صرف ${qn} ${selected.unit} من ${selected.name}`)
-    fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:selected.id,new_qty:selected.qty-qn,reorder_point:selected.reorder_point})}).catch(()=>{})
+    fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:selected.id,new_qty:selected.qty-qn,reorder_point:(selected.supplier_reorder_point ?? selected.reorder_point)})}).catch(()=>{})
     fetch('/api/notify-staff-dispense',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,branch_id:sessionStorage.getItem('s_branch_id')||null,staff_name:sessionStorage.getItem('s_full_name')||'المالك',product_name:selected.name,qty:qn,unit:selected.unit})}).catch(()=>{})
     setSelected(null);setQty('');setWasteMode(false);setWasteReason('')
     setSaving(false);loadProducts(oid);loadHistory(oid)
