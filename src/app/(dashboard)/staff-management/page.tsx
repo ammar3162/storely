@@ -7,6 +7,7 @@ import { toast } from '@/components/toast'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { confirmDialog } from '@/components/ConfirmDialog'
+import { cache } from '@/lib/cache'
 import { UserPlus, Users, UserCheck, PauseCircle, Package, BarChart3, ShieldCheck, Clock, Bell, BellOff, RefreshCw, Copy, AlertTriangle, ChevronDown, User, Lock, Wallet, Smartphone, Check, Send, ShoppingCart, Save, CheckCircle2, AlertCircle, TrendingUp, Pencil, Search, X, ThumbsUp, ThumbsDown } from 'lucide-react'
 
 function generatePin() { return String(Math.floor(1000 + Math.random() * 9000)) }
@@ -97,12 +98,21 @@ export default function StaffManagementPage() {
 
   async function init() {
     setLoading(true)
-    const{data:{user}}=await sb.auth.getUser(); if(!user) return
-    const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single(); if(!profile?.org_id) return
-    setOrgId(profile.org_id)
-    sb.from('organizations' as any).select('currency').eq('id',profile.org_id).single()
+    let oid = sessionStorage.getItem('s_org_id')
+    // عرض كاش الموظفين فوراً لو متوفر -- يخلي الصفحة تبان فوراً بدل ما تنتظر رحلتين شبكة (مستخدم ثم بروفايل)
+    if (oid) {
+      const cachedStaff = cache.get('staff:'+oid)
+      if (cachedStaff) { setStaff(cachedStaff); setLoading(false); setTimeout(()=>setVisible(true),50) }
+    }
+    if (!oid) {
+      const{data:{user}}=await sb.auth.getUser(); if(!user) return
+      const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single(); if(!profile?.org_id) return
+      oid = profile.org_id; sessionStorage.setItem('s_org_id', oid!)
+    }
+    setOrgId(oid!)
+    sb.from('organizations' as any).select('currency').eq('id',oid!).single()
       .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
-    const{data:orgLimits}=await (sb as any).from('organizations').select('shop_open_time,shop_close_time,notify_cashier_closing_wa').eq('id',profile.org_id).single()
+    const{data:orgLimits}=await (sb as any).from('organizations').select('shop_open_time,shop_close_time,notify_cashier_closing_wa').eq('id',oid!).single()
     setShopOpenTime(((orgLimits as any)?.shop_open_time||'').slice(0,5))
     setShopCloseTime(((orgLimits as any)?.shop_close_time||'').slice(0,5))
     setOrgNotifyClosingWA((orgLimits as any)?.notify_cashier_closing_wa!==false)
@@ -114,7 +124,7 @@ export default function StaffManagementPage() {
     } else {
       setMaxStaff(999) // ما فيه فرع محدد (يشوف كل الفروع) -- ما نقدر نطبّق حد واحد، السيرفر هو اللي يتحقق أصلاً
     }
-    await Promise.all([loadStaff(profile.org_id),loadBranches(profile.org_id),loadProducts(profile.org_id)])
+    await Promise.all([loadStaff(oid!),loadBranches(oid!),loadProducts(oid!)])
     setLoading(false); setTimeout(()=>setVisible(true),50)
   }
 
@@ -124,6 +134,7 @@ export default function StaffManagementPage() {
     if (bid) q = q.eq('branch_id', bid)
     const{data}=await q.order('created_at',{ascending:false})
     setStaff(data||[])
+    cache.set('staff:'+oid, data||[])
   }
 
   async function loadProducts(oid:string) {
