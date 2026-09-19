@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { colors, radius, font, card, btnSecondary, tag, pageTitle, pageSub } from '@/lib/ds'
+import { cache } from '@/lib/cache'
 
 const TYPE_CFG: Record<string,{icon:string;color:string;bg:string;border:string}> = {
   warning: { icon:'⚠️', color:colors.warning, bg:colors.warningLight, border:colors.warningBorder },
@@ -20,8 +21,14 @@ export default function NotificationsPage() {
   useEffect(() => { load() }, [])
 
   async function load() {
-    setLoading(true)
     let orgId = sessionStorage.getItem('s_org_id')
+    const bid = sessionStorage.getItem('s_branch_id')
+    // عرض كاش الإشعارات فوراً لو متوفر
+    if (orgId) {
+      const cached = cache.get('notifications:'+orgId+':'+(bid||'all'))
+      if (cached) { setNotifications(cached); setLoading(false) }
+      else setLoading(true)
+    } else setLoading(true)
     if (!orgId) {
       const { data:{ user } } = await sb.auth.getUser()
       if (!user) return
@@ -30,9 +37,9 @@ export default function NotificationsPage() {
       orgId = profile.org_id
       sessionStorage.setItem('s_org_id', orgId!)
     }
-    const bid = sessionStorage.getItem('s_branch_id')
     const { data } = await sb.from('notifications').select('id,type,read,title,message,created_at').eq('org_id', orgId).or(bid?`branch_id.is.null,branch_id.eq.${bid}`:'branch_id.is.null,branch_id.not.is.null').order('created_at', { ascending: false })
     setNotifications(data || [])
+    cache.set('notifications:'+orgId+':'+(bid||'all'), data || [])
     setLoading(false)
   }
 
