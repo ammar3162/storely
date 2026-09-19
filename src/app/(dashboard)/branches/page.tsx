@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { colors, radius, font, card, btnPrimary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
+import { cache } from '@/lib/cache'
 
 export default function BranchesPage() {
   const sb = createClient()
@@ -77,19 +78,29 @@ export default function BranchesPage() {
   useEffect(()=>{ init() },[])
 
   async function init() {
-    const{data:{user}}=await sb.auth.getUser()
-    if(!user){setLoading(false);return}
-    const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
-    if(!profile?.org_id){setLoading(false);return}
-    setOrgId(profile.org_id)
-    // نطلق الاستعلامات الثلاثة بالتوازي — كلها تعتمد بس على profile.org_id
+    let oid = sessionStorage.getItem('s_org_id')
+    // عرض كاش الفروع فوراً لو متوفر
+    if (oid) {
+      const cachedBranches = cache.get('branches:'+oid)
+      if (cachedBranches) { setBranches(cachedBranches); setLoading(false) }
+    }
+    if (!oid) {
+      const{data:{user}}=await sb.auth.getUser()
+      if(!user){setLoading(false);return}
+      const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
+      if(!profile?.org_id){setLoading(false);return}
+      oid = profile.org_id; sessionStorage.setItem('s_org_id', oid!)
+    }
+    setOrgId(oid!)
+    // نطلق الاستعلامات الثلاثة بالتوازي — كلها تعتمد بس على oid
     const [{data:org}, {data:bList}, {data:iList}] = await Promise.all([
-      (sb.from('organizations' as any) as any).select('max_branches').eq('id',profile.org_id).single(),
-      sb.from('branches').select('id,name,location,whatsapp_number,latitude,longitude').eq('org_id',profile.org_id).eq('is_active',true).order('created_at'),
-      sb.from('branches').select('id,name,location,whatsapp_number,latitude,longitude').eq('org_id',profile.org_id).eq('is_active',false).order('created_at'),
+      (sb.from('organizations' as any) as any).select('max_branches').eq('id',oid!).single(),
+      sb.from('branches').select('id,name,location,whatsapp_number,latitude,longitude').eq('org_id',oid!).eq('is_active',true).order('created_at'),
+      sb.from('branches').select('id,name,location,whatsapp_number,latitude,longitude').eq('org_id',oid!).eq('is_active',false).order('created_at'),
     ])
     setMaxBranches((org as any)?.max_branches||1)
     setBranches(bList||[])
+    cache.set('branches:'+oid, bList||[])
     setInactiveBranches(iList||[])
     setLoading(false)
   }
@@ -100,7 +111,7 @@ export default function BranchesPage() {
     const{data:created,error}=await sb.from('branches').insert({ org_id:orgId, name:newBranch.name.trim(), location:newBranch.location.trim()||null }).select().single()
     if(error||!created){toast('فشل إضافة الفرع — حاول مرة أخرى','error');setBranchSaving(false);return}
     const{data:bList}=await sb.from('branches').select('id,name,location,whatsapp_number,latitude,longitude').eq('org_id',orgId).eq('is_active',true).order('created_at')
-    setBranches(bList||[]); setNewBranch({name:'',location:''}); setBranchSaving(false)
+    setBranches(bList||[]); cache.set('branches:'+orgId, bList||[]); setNewBranch({name:'',location:''}); setBranchSaving(false)
     toast('✅ تم إضافة الفرع')
     setPendingBranchReload(true)
 
