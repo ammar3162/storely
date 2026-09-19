@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { colors, font, pageTitle, pageSub, card, btnPrimary, btnSecondary, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { Send, Clock, Trash2, Truck } from 'lucide-react'
+import { cache } from '@/lib/cache'
 export const dynamic = 'force-dynamic'
 
 const DAYS = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت']
@@ -491,18 +492,27 @@ export default function SuppliersPage() {
 
   async function init() {
     setLoading(true)
-    const { data: { user } } = await sb.auth.getUser()
-    if (!user) return
-    const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
-    if (!profile?.org_id) return
-    setOrgId(profile.org_id)
-    sb.from('organizations' as any).select('currency').eq('id',profile.org_id).single()
+    let oid = sessionStorage.getItem('s_org_id')
+    // عرض كاش الموردين فوراً لو متوفر
+    if (oid) {
+      const cachedSuppliers = cache.get('suppliers:'+oid)
+      if (cachedSuppliers) { setSuppliers(cachedSuppliers); setLoading(false) }
+    }
+    if (!oid) {
+      const { data: { user } } = await sb.auth.getUser()
+      if (!user) return
+      const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
+      if (!profile?.org_id) return
+      oid = profile.org_id; sessionStorage.setItem('s_org_id', oid!)
+    }
+    setOrgId(oid!)
+    sb.from('organizations' as any).select('currency').eq('id',oid!).single()
       .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
-    const { data: orgLimits } = await (sb as any).from('organizations').select('max_suppliers').eq('id', profile.org_id).single()
+    const { data: orgLimits } = await (sb as any).from('organizations').select('max_suppliers').eq('id', oid!).single()
     setMaxSuppliers((orgLimits as any)?.max_suppliers || 999)
-    await Promise.all([loadSuppliers(profile.org_id), loadProducts(profile.org_id)])
-    fetch('/api/supplier-price-comparison',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:profile.org_id})}).then(r=>r.json()).then(d=>{ if(d.success) setPriceComparisons(d.comparisons||[]) }).catch(()=>{})
-    fetch('/api/supplier-rating',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:profile.org_id})}).then(r=>r.json()).then(d=>{
+    await Promise.all([loadSuppliers(oid!), loadProducts(oid!)])
+    fetch('/api/supplier-price-comparison',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid})}).then(r=>r.json()).then(d=>{ if(d.success) setPriceComparisons(d.comparisons||[]) }).catch(()=>{})
+    fetch('/api/supplier-rating',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid})}).then(r=>r.json()).then(d=>{
       if(d.success){ const map:Record<string,any>={}; d.ratings.forEach((r:any)=>{ map[r.id]=r }); setSupplierRatings(map) }
     }).catch(()=>{})
     setLoading(false)
@@ -514,6 +524,7 @@ export default function SuppliersPage() {
     if (bid) q = q.eq('branch_id', bid)
     const { data } = await q.order('created_at', { ascending: false })
     setSuppliers(data || [])
+    cache.set('suppliers:'+oid, data || [])
     const ids = (data || []).map((s:any)=>s.id)
     if (ids.length) {
       const since24h = new Date(Date.now() - 24*60*60*1000).toISOString()
