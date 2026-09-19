@@ -172,14 +172,23 @@ export default function SettingsPage() {
 
   async function load() {
     setLoading(true)
-    const{data:{user}}=await sb.auth.getUser(); if(!user) return
+    // لو المعرّف محفوظ بالجلسة، نطلق استعلام المؤسسة/الفروع فوراً بالتوازي مع فحص المستخدم -- بدل ما ننتظره بالتتابع
+    const cachedOid = sessionStorage.getItem('s_org_id')
+    const [authResult, orgBranchesEarly] = await Promise.all([
+      sb.auth.getUser(),
+      cachedOid ? Promise.all([
+        sb.from('organizations').select('whatsapp_number,name,notify_schedule,notify_time,notify_days,notify_cashier_closing_wa,notify_supplier_wa,last_notified_at,last_backup_at,max_branches,logo_url,plan,subscription_ends_at,billing_cycle').eq('id',cachedOid).single(),
+        sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',cachedOid).eq('is_active',true).order('created_at'),
+      ]) : null
+    ])
+    const user = authResult.data.user
+    if (!user) return
     const{data:profile}=await sb.from('profiles').select('org_id,full_name,phone').eq('id',user.id).single(); if(!profile) return
     setOrgId(profile.org_id)
+    sessionStorage.setItem('s_org_id', profile.org_id)
     setUserFullName((profile as any).full_name||'')
     setUserPhone((profile as any).phone||'')
-    // نطلق استعلامي المنشأة والفروع بالتوازي — الاثنين يعتمدون بس على profile.org_id
-    // (كانوا متتابعين قبل، وأيضاً كان فيه استدعاء auth.getUser() مكرر زايد بدون فايدة)
-    const [{data:orgRaw}, {data:bList}] = await Promise.all([
+    const [{data:orgRaw}, {data:bList}] = orgBranchesEarly || await Promise.all([
       sb.from('organizations').select('whatsapp_number,name,notify_schedule,notify_time,notify_days,notify_cashier_closing_wa,notify_supplier_wa,last_notified_at,last_backup_at,max_branches,logo_url,plan,subscription_ends_at,billing_cycle').eq('id',profile.org_id).single(),
       sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',profile.org_id).eq('is_active',true).order('created_at'),
     ])
