@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
+import { cache } from '@/lib/cache'
 import { Wallet, ThumbsUp, ThumbsDown, ClipboardList, ChevronDown, Plus, Camera, CalendarDays, BarChart3 } from 'lucide-react'
 
 export default function HRManagementPage() {
@@ -55,6 +56,11 @@ export default function HRManagementPage() {
 
   async function init() {
     let oid = sessionStorage.getItem('s_org_id')
+    // عرض كاش الموظفين فوراً لو متوفر
+    if (oid) {
+      const cachedStaff = cache.get('hr-staff:'+oid)
+      if (cachedStaff) { setStaff(cachedStaff); setLoading(false) }
+    }
     if(!oid){
       const{data:{user}}=await sb.auth.getUser()
       if(!user) return
@@ -81,6 +87,7 @@ export default function HRManagementPage() {
     const hrAddon = (addonRes?.addons||[]).find((a:any)=>a.slug==='hr_full')
     setHasHrAddon(!!hrAddon?.subscription?.isValid)
     setStaff(data||[])
+    cache.set('hr-staff:'+oid, data||[])
     if (leaveRes?.success) {
       const counts: Record<string, number> = {}
       for (const req of (leaveRes.requests||[])) {
