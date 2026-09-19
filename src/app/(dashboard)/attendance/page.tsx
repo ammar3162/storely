@@ -48,25 +48,34 @@ export default function AttendancePage() {
   useEffect(() => { if (orgId && periodMode === 'range') loadRange(orgId, rangeFrom, rangeTo) }, [rangeFrom, rangeTo, periodMode])
 
   async function init() {
-    const { data: { user } } = await sb.auth.getUser()
-    if (!user) return
-    const { data: profile } = await sb.from('profiles').select('org_id,organizations(name,plan)').eq('id', user.id).single()
-    if (!profile?.org_id) return
-    setOrgId(profile.org_id)
-    setOrgName((profile as any)?.organizations?.name || '')
-    if ((profile as any)?.organizations?.plan === 'basic') {
+    let oid = sessionStorage.getItem('s_org_id')
+    let orgName = '', orgPlan = ''
+    if (oid) {
+      const { data: org } = await (sb.from('organizations' as any) as any).select('name,plan').eq('id', oid).single()
+      orgName = (org as any)?.name || ''; orgPlan = (org as any)?.plan || ''
+    } else {
+      const { data: { user } } = await sb.auth.getUser()
+      if (!user) return
+      const { data: profile } = await sb.from('profiles').select('org_id,organizations(name,plan)').eq('id', user.id).single()
+      if (!profile?.org_id) return
+      oid = profile.org_id; sessionStorage.setItem('s_org_id', oid!)
+      orgName = (profile as any)?.organizations?.name || ''; orgPlan = (profile as any)?.organizations?.plan || ''
+    }
+    setOrgId(oid!)
+    setOrgName(orgName)
+    if (orgPlan === 'basic') {
       // عميل الأساسية ممكن يكون اشترى إضافة "إدارة الموظفين الكاملة" من المتجر
-      const addonRes = await fetch(`/api/addons-market?org_id=${profile.org_id}`).then(r=>r.json()).catch(()=>null)
+      const addonRes = await fetch(`/api/addons-market?org_id=${oid}`).then(r=>r.json()).catch(()=>null)
       const hrAddon = (addonRes?.addons||[]).find((a:any)=>a.slug==='hr_full')
       if (!hrAddon?.subscription?.isValid) { setLocked(true); return }
     }
     const bid = sessionStorage.getItem('s_branch_id')
     setBranchId(bid)
-    load(profile.org_id, date)
-    loadShifts(profile.org_id, bid)
-    loadStaff(profile.org_id, bid)
-    loadRules(profile.org_id)
-    loadMonthOverview(profile.org_id)
+    load(oid!, date)
+    loadShifts(oid!, bid)
+    loadStaff(oid!, bid)
+    loadRules(oid!)
+    loadMonthOverview(oid!)
   }
 
   async function loadMonthOverview(oid: string) {
