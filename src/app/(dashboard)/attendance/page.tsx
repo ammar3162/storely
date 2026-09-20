@@ -67,7 +67,7 @@ export default function AttendancePage() {
       // عميل الأساسية ممكن يكون اشترى إضافة "إدارة الموظفين الكاملة" من المتجر
       const addonRes = await fetch(`/api/addons-market?org_id=${oid}`).then(r=>r.json()).catch(()=>null)
       const hrAddon = (addonRes?.addons||[]).find((a:any)=>a.slug==='hr_full')
-      if (!hrAddon?.subscription?.isValid) { setLocked(true); return }
+      if (!hrAddon?.subscription?.isValid) setLocked(true)  // ما نوقف التحميل -- نخلي المالك يشوف سجلاته القديمة، السيرفر أصلاً يرفض أي تسجيل جديد بدون اشتراك
     }
     const bid = sessionStorage.getItem('s_branch_id')
     setBranchId(bid)
@@ -240,20 +240,22 @@ export default function AttendancePage() {
   const statusBg = (s: string) =>
     s === 'حاضر' ? colors.primaryLight : s === 'انصرف' ? colors.infoLight : colors.bg
 
-  if (locked) return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:680,margin:'40px auto',textAlign:'center' as const}}>
-      <div style={{fontSize:44,marginBottom:12}}>🔒</div>
-      <div style={{fontSize:16,fontWeight:800,color:colors.text,marginBottom:8}}>ميزة الحضور والانصراف متاحة بالباقة المتوسطة أو المتقدمة</div>
-      <div style={{fontSize:13,color:colors.text3}}>رقّي باقتك عشان تتابع حضور فريقك وتراقب التأخير تلقائياً بالـGPS</div>
-    </div>
-  )
-
   return (
     <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 900, margin: '0 auto' }}>
       <div style={{ marginBottom: 16 }}>
         <h1 style={pageTitle}>الحضور والانصراف</h1>
         <p style={pageSub}>سجل حضور الفريق اليومي — يتحقق تلقائياً من موقعهم الجغرافي ويحسب التأخير</p>
       </div>
+
+      {locked && (
+        <div style={{...card,padding:14,marginBottom:18,background:colors.warningLight,border:`1px solid ${colors.warningBorder}`,display:'flex',alignItems:'center',gap:10}}>
+          <span style={{fontSize:20}}>🔒</span>
+          <div>
+            <div style={{fontSize:13,fontWeight:800,color:colors.text}}>وضع قراءة فقط — انتهى اشتراك ميزة "إدارة الموظفين الكاملة"</div>
+            <div style={{fontSize:12,color:colors.text3}}>سجلاتك القديمة محفوظة وتقدر تشوفها، بس ما تقدر تسجّل حضور جديد أو تعدّل الشفتات إلا بعد تجديد الاشتراك</div>
+          </div>
+        </div>
+      )}
 
       {monthStats && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 18 }}>
