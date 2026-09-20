@@ -1098,7 +1098,7 @@ function AttendanceDetail({ period, from, to, onBack }: { period:FilterPeriod; f
       const { start, end } = getRange(period, from, to)
       const bid = sessionStorage.getItem('s_branch_id')
       const sbA = createClient()
-      let q = sbA.from('staff_attendance').select('recorded_at,type,staff_name,staff_id').eq('org_id', orgId).gte('recorded_at', start.toISOString()).lte('recorded_at', end.toISOString()).order('recorded_at', { ascending: true })
+      let q = (sbA.from('staff_attendance' as any) as any).select('recorded_at,type,staff_name,staff_id').eq('org_id', orgId).gte('recorded_at', start.toISOString()).lte('recorded_at', end.toISOString()).order('recorded_at', { ascending: true })
       if (bid) q = (q as any).eq('branch_id', bid)
       const { data } = await q
       // نجمّع حسب الموظف + اليوم -- أول وقت حضور وآخر وقت انصراف بنفس اليوم
