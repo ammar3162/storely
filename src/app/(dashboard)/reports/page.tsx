@@ -1085,17 +1085,22 @@ function RecentOpsSection({ recentOps, colors }: { recentOps:any[]; colors:any }
 }
 
 
-function AttendanceDetail({ period, from, to, onBack }: { period:FilterPeriod; from:string; to:string; onBack:()=>void }) {
+function AttendanceDetail({ onBack }: { onBack:()=>void }) {
   const [rows, setRows] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const todayStr = new Date().toISOString().slice(0,10)
+  const monthAgoStr = new Date(Date.now()-30*24*60*60*1000).toISOString().slice(0,10)
+  const [dFrom, setDFrom] = useState(monthAgoStr)
+  const [dTo, setDTo] = useState(todayStr)
 
   useEffect(() => {
     async function load() {
       setLoading(true)
       const orgId = sessionStorage.getItem('s_org_id')
       if (!orgId) { setLoading(false); return }
-      const { start, end } = getRange(period, from, to)
+      const start = new Date(dFrom+'T00:00:00')
+      const end = new Date(dTo+'T23:59:59')
       const bid = sessionStorage.getItem('s_branch_id')
       const sbA = createClient()
       let q = (sbA.from('staff_attendance' as any) as any).select('recorded_at,type,staff_name,staff_id').eq('org_id', orgId).gte('recorded_at', start.toISOString()).lte('recorded_at', end.toISOString()).order('recorded_at', { ascending: true })
@@ -1115,7 +1120,7 @@ function AttendanceDetail({ period, from, to, onBack }: { period:FilterPeriod; f
       setLoading(false)
     }
     load()
-  }, [period, from, to])
+  }, [dFrom, dTo])
 
   const filtered = rows.filter((r:any)=> !search || r.staffName.includes(search))
   const fmtTime = (iso:string|null) => iso ? new Date(iso).toLocaleTimeString('ar-SA', { hour:'2-digit', minute:'2-digit', numberingSystem:'latn' }) : '—'
@@ -1125,9 +1130,17 @@ function AttendanceDetail({ period, from, to, onBack }: { period:FilterPeriod; f
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto'}}>
       <button onClick={onBack} style={{background:'none',border:'none',color:colors.primary,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginBottom:12,display:'flex',alignItems:'center',gap:4}}>→ رجوع</button>
       <h1 style={pageTitle}>تقرير الحضور والانصراف</h1>
-      <p style={pageSub}>{formatRange(period, from, to)}</p>
-      <div style={{marginTop:16,marginBottom:12}}>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="بحث باسم الموظف..." style={{...inp,maxWidth:280}}/>
+      <p style={pageSub}>سجل حضور وانصراف الموظفين حسب الفترة المحددة</p>
+      <div style={{display:'flex',gap:10,flexWrap:'wrap' as const,marginTop:16,marginBottom:12,alignItems:'flex-end'}}>
+        <div>
+          <label style={{fontSize:11,color:colors.text4,display:'block',marginBottom:4}}>من تاريخ</label>
+          <input type="date" value={dFrom} onChange={e=>setDFrom(e.target.value)} style={{...inp,width:160}}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,color:colors.text4,display:'block',marginBottom:4}}>إلى تاريخ</label>
+          <input type="date" value={dTo} onChange={e=>setDTo(e.target.value)} style={{...inp,width:160}}/>
+        </div>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="بحث باسم الموظف..." style={{...inp,maxWidth:220}}/>
       </div>
       {loading ? (
         <div style={{textAlign:'center' as const,padding:40,color:colors.text4}}>جاري التحميل...</div>
@@ -1572,7 +1585,7 @@ export default function ReportsPage() {
 
   if (view==='attendance') return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto',padding:'20px 16px'}}>
-      <AttendanceDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
+      <AttendanceDetail onBack={()=>setView('home')}/>
     </div>
   )
 
