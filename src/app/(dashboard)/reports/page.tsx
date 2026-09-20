@@ -1085,6 +1085,82 @@ function RecentOpsSection({ recentOps, colors }: { recentOps:any[]; colors:any }
 }
 
 
+function AttendanceDetail({ period, from, to, onBack }: { period:FilterPeriod; from:string; to:string; onBack:()=>void }) {
+  const [rows, setRows] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true)
+      const orgId = sessionStorage.getItem('s_org_id')
+      if (!orgId) { setLoading(false); return }
+      const { start, end } = getRange(period, from, to)
+      const bid = sessionStorage.getItem('s_branch_id')
+      const sbA = createClient()
+      let q = sbA.from('staff_attendance').select('recorded_at,type,staff_name,staff_id').eq('org_id', orgId).gte('recorded_at', start.toISOString()).lte('recorded_at', end.toISOString()).order('recorded_at', { ascending: true })
+      if (bid) q = (q as any).eq('branch_id', bid)
+      const { data } = await q
+      // نجمّع حسب الموظف + اليوم -- أول وقت حضور وآخر وقت انصراف بنفس اليوم
+      const grouped: Record<string, any> = {}
+      for (const r of ((data as any[])||[])) {
+        const day = new Date(r.recorded_at).toLocaleDateString('en-CA')
+        const key = (r.staff_id||r.staff_name||'')+'::'+day
+        if (!grouped[key]) grouped[key] = { date: day, staffName: r.staff_name||'موظف محذوف', checkIn: null, checkOut: null }
+        if (r.type === 'check_in' && !grouped[key].checkIn) grouped[key].checkIn = r.recorded_at
+        if (r.type === 'check_out') grouped[key].checkOut = r.recorded_at
+      }
+      const list = Object.values(grouped).sort((a:any,b:any)=> b.date.localeCompare(a.date))
+      setRows(list)
+      setLoading(false)
+    }
+    load()
+  }, [period, from, to])
+
+  const filtered = rows.filter((r:any)=> !search || r.staffName.includes(search))
+  const fmtTime = (iso:string|null) => iso ? new Date(iso).toLocaleTimeString('ar-SA', { hour:'2-digit', minute:'2-digit', numberingSystem:'latn' }) : '—'
+  const fmtDate = (d:string) => new Date(d).toLocaleDateString('ar-SA', { numberingSystem:'latn', day:'numeric', month:'short' })
+
+  return (
+    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto'}}>
+      <button onClick={onBack} style={{background:'none',border:'none',color:colors.primary,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginBottom:12,display:'flex',alignItems:'center',gap:4}}>→ رجوع</button>
+      <h1 style={pageTitle}>تقرير الحضور والانصراف</h1>
+      <p style={pageSub}>{formatRange(period, from, to)}</p>
+      <div style={{marginTop:16,marginBottom:12}}>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="بحث باسم الموظف..." style={{...inp,maxWidth:280}}/>
+      </div>
+      {loading ? (
+        <div style={{textAlign:'center' as const,padding:40,color:colors.text4}}>جاري التحميل...</div>
+      ) : filtered.length===0 ? (
+        <div style={{textAlign:'center' as const,padding:40,color:colors.text4}}>ما فيه سجلات حضور بهالفترة</div>
+      ) : (
+        <div style={{...card,padding:0,overflow:'hidden'}}>
+          <table style={{width:'100%',borderCollapse:'collapse' as const}}>
+            <thead>
+              <tr style={{background:colors.bg,borderBottom:`1px solid ${colors.border}`}}>
+                <th style={{padding:'10px 14px',textAlign:'right' as const,fontSize:11,fontWeight:700,color:colors.text3}}>الموظف</th>
+                <th style={{padding:'10px 14px',textAlign:'right' as const,fontSize:11,fontWeight:700,color:colors.text3}}>التاريخ</th>
+                <th style={{padding:'10px 14px',textAlign:'right' as const,fontSize:11,fontWeight:700,color:colors.text3}}>وقت الحضور</th>
+                <th style={{padding:'10px 14px',textAlign:'right' as const,fontSize:11,fontWeight:700,color:colors.text3}}>وقت الانصراف</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r:any,i:number)=>(
+                <tr key={i} style={{borderBottom:`1px solid ${colors.border}`}}>
+                  <td style={{padding:'10px 14px',fontSize:12,fontWeight:600,color:colors.text}}>{r.staffName}</td>
+                  <td style={{padding:'10px 14px',fontSize:12,color:colors.text2}}>{fmtDate(r.date)}</td>
+                  <td style={{padding:'10px 14px',fontSize:12,color:colors.text2}}>{fmtTime(r.checkIn)}</td>
+                  <td style={{padding:'10px 14px',fontSize:12,color:colors.text2}}>{fmtTime(r.checkOut)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPeriod; from:string; to:string; onBack:()=>void }) {
   const [closings, setClosings] = useState<any[]>([])
   const [expandedReasons, setExpandedReasons] = useState<Record<string,boolean>>({})
@@ -1399,7 +1475,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
 
 export default function ReportsPage() {
   const orgPlan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
-  const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'|'cashier'|'waste'>('home')
+  const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'|'cashier'|'waste'|'attendance'>('home')
   const [period, setPeriod]       = useState<FilterPeriod>('today')
   const [from, setFrom]           = useState('')
   const [to, setTo]               = useState('')
@@ -1491,6 +1567,12 @@ export default function ReportsPage() {
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}>تقرير المشتريات</h1>
       <PurchaseDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
+    </div>
+  )
+
+  if (view==='attendance') return (
+    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto',padding:'20px 16px'}}>
+      <AttendanceDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
     </div>
   )
 
@@ -1605,6 +1687,20 @@ export default function ReportsPage() {
           />
         </div>
         )}
+        <div className="su" style={{animationDelay:'.28s'}}>
+          <ReportCard
+            title="الحضور والانصراف"
+            subtitle="سجل حضور وانصراف الموظفين"
+            icon={<CalendarDays size={20} strokeWidth={1.75}/>}
+            color={'#0f766e'}
+            bg={'#f0fdfa'}
+            border={'#99f6e4'}
+            loading={false}
+            chartData={[]}
+            stats={[]}
+            onClick={()=>setView('attendance')}
+          />
+        </div>
         <div className="su" style={{animationDelay:'.3s'}}>
           <ReportCard
             title="تقرير الهدر"

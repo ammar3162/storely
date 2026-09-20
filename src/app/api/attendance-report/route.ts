@@ -34,18 +34,8 @@ export async function GET(req: Request) {
 
     const supabase = sb()
 
-    const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
-    if ((orgCheck as any)?.plan === 'basic') {
-      const { data: hrAddon } = await supabase
-        .from('org_addon_subscriptions')
-        .select('status,expires_at,marketplace_addons!inner(slug)')
-        .eq('org_id', org_id).eq('status', 'active').eq('marketplace_addons.slug', 'hr_full').maybeSingle()
-      const hasHrAddon = !!hrAddon && new Date((hrAddon as any).expires_at) > new Date()
-      if (!hasHrAddon) {
-        return NextResponse.json({ error: 'upgrade_required', message: 'ميزة الحضور والانصراف متاحة فقط بالباقة المتوسطة أو المتقدمة، أو عبر إضافة "إدارة الموظفين الكاملة"' }, { status: 403 })
-      }
-    }
-
+    // القراءة متاحة دايماً حتى بدون اشتراك فعّال -- المالك يقدر يشوف سجلاته القديمة (قراءة فقط)،
+    // الحماية الفعلية (منع تسجيل حضور جديد) موجودة بمسار POST /api/staff-attendance مو هنا
     let staffQ = supabase.from('staff_members').select('id,name,branch_id').eq('org_id', org_id).eq('is_active', true)
     if (effectiveBranchId) staffQ = staffQ.eq('branch_id', effectiveBranchId)
     const { data: staffList } = await staffQ.order('name')
