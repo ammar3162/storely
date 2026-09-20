@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { colors, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub, radius } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
+import { cache } from '@/lib/cache'
 
 type CartItem = { productId: string; name: string; unit: string; qty: number; available: number }
 
@@ -62,14 +63,17 @@ export default function TransferStockPage() {
   }
 
   async function loadHistory(oid:string) {
-    setLoadingHistory(true)
+    const cacheKey = 'transfer-history:'+oid+':'+(filterFrom||'')+':'+(filterTo||'')
+    const cached = cache.get(cacheKey)
+    if (cached) { setHistory(cached); setLoadingHistory(false) }
+    else setLoadingHistory(true)
     try {
       const params = new URLSearchParams({ org_id: oid })
       if(filterFrom) params.set('from', filterFrom)
       if(filterTo) params.set('to', filterTo)
       const res = await fetch(`/api/branch-transfer?${params.toString()}`)
       const j = await res.json()
-      if(j.success) setHistory(j.transfers||[])
+      if(j.success) { setHistory(j.transfers||[]); cache.set(cacheKey, j.transfers||[]) }
       else { toast(j.error||'تعذر تحميل السجل','error'); setHistory([]) }
     } catch {
       toast('خطأ بالاتصال','error'); setHistory([])
