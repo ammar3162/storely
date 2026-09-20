@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { colors, font, card, btnPrimary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
+import { cache } from '@/lib/cache'
 
 const PERMS = [
   { key:'inventory', label:'المخزون' },
@@ -44,11 +45,13 @@ export default function BranchManagersPage() {
     setOrgId(oid!)
     const{data:bList}=await sb.from('branches').select('id,name').eq('org_id',oid!).eq('is_active',true).order('created_at')
     setBranches(bList||[])
+    const cachedManagers = cache.get('branch-managers:'+oid)
+    if (cachedManagers) setManagers(cachedManagers)
     await loadManagers(oid!)
   }
 
   async function loadManagers(oid:string) {
-    setLoading(true)
+    if (!cache.get('branch-managers:'+oid)) setLoading(true)
     try {
       const res = await fetch(`/api/branch-managers?org_id=${oid}`)
       const j = await res.json()
@@ -57,6 +60,7 @@ export default function BranchManagersPage() {
         setManagers([])
       } else {
         setManagers(j.managers||[])
+        cache.set('branch-managers:'+oid, j.managers||[])
       }
     } catch {
       toast('خطأ بالاتصال — حاول تحدّث الصفحة','error')
