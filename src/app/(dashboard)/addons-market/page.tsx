@@ -18,13 +18,20 @@ export default function AddonsMarketPage() {
   useEffect(() => { init() }, [])
 
   async function init() {
-    const { data: { user } } = await sb.auth.getUser()
+    // لو المعرّف محفوظ بالجلسة، نبدأ جلب الإضافات فوراً بالتوازي مع فحص المستخدم بدل ما ننتظره
+    const cachedOid = sessionStorage.getItem('s_org_id')
+    const [authResult] = await Promise.all([
+      sb.auth.getUser(),
+      cachedOid ? load(cachedOid) : Promise.resolve(),
+    ])
+    const user = authResult.data.user
     if (!user) return
     const { data: profile } = await sb.from('profiles').select('org_id,organizations(name)').eq('id', user.id).single()
     if (!profile?.org_id) return
     setOrgId(profile.org_id)
     setOrgName((profile.organizations as any)?.name || '')
-    await load(profile.org_id)
+    sessionStorage.setItem('s_org_id', profile.org_id)
+    if (!cachedOid) await load(profile.org_id)
     setLoading(false)
   }
 
