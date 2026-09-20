@@ -49,17 +49,21 @@ export default function OnlineStorePage() {
   useEffect(() => { init() }, [])
 
   async function init() {
-    const { data: { user } } = await sb.auth.getUser()
-    if (!user) return
-    const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
-    if (!profile?.org_id) return
-    setOrgId(profile.org_id)
+    let oid = sessionStorage.getItem('s_org_id')
+    if (!oid) {
+      const { data: { user } } = await sb.auth.getUser()
+      if (!user) return
+      const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
+      if (!profile?.org_id) return
+      oid = profile.org_id; sessionStorage.setItem('s_org_id', oid!)
+    }
+    setOrgId(oid!)
     try {
-      const subRes = await fetch(`/api/addons-market?org_id=${profile.org_id}`)
+      const subRes = await fetch(`/api/addons-market?org_id=${oid}`)
       const subJ = await subRes.json()
       const menuAddon = (subJ.addons || []).find((a: any) => a.slug === 'online_menu')
       setHasSubscription(!!menuAddon?.subscription?.isValid)
-      if (menuAddon?.subscription?.isValid) load(profile.org_id)
+      if (menuAddon?.subscription?.isValid) load(oid!)
       else setLoading(false)
     } catch { setHasSubscription(false); setLoading(false) }
   }
