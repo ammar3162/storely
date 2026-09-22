@@ -51,27 +51,37 @@ export async function POST(req: Request) {
 
     const supabase = sb()
 
-    const { data: staff, error } = await supabase
+    // نفس الرقم ممكن يكون مسجّل لأكثر من موظف (مثلاً بمنشأتين) — نجيب كل المطابقين
+    // ونختار اللي الـ PIN حقه صحيح، بدل .maybeSingle() اللي يفشل بصمت لو فيه أكثر من واحد
+    const { data: candidates, error } = await supabase
       .from('staff_members')
       .select('id,name,org_id,branch_id,phone,pin,is_active,permissions,role,organizations(name),branches(name)')
       .ilike('phone', '%' + localDigits)
       .eq('is_active', true)
-      .maybeSingle()
+      .limit(10)
 
-    if (error || !staff) {
+    if (error || !candidates?.length) {
       return NextResponse.json({ error: 'رقم الجوال أو رمز PIN غير صحيح' }, { status: 401 })
     }
 
     // تحقق من الـ PIN مع دعم النصوص القديمة
     const pinStr = String(pin)
-    const storedPin = String((staff as any).pin)
-    const pinValid = storedPin.startsWith('$2') 
-      ? await bcrypt.compare(pinStr, storedPin)
-      : storedPin === pinStr
-    
-    if (!pinValid) {
+    const matches = []
+    for (const c of candidates) {
+      const storedPin = String((c as any).pin)
+      const pinValid = storedPin.startsWith('$2')
+        ? await bcrypt.compare(pinStr, storedPin)
+        : storedPin === pinStr
+      if (pinValid) matches.push(c)
+    }
+
+    if (matches.length === 0) {
       return NextResponse.json({ error: 'رقم الجوال أو رمز PIN غير صحيح' }, { status: 401 })
     }
+    if (matches.length > 1) {
+      return NextResponse.json({ error: 'هذا الرقم مسجّل بأكثر من منشأة بنفس رمز PIN — اطلب من صاحب العمل تغيير رمزك' }, { status: 409 })
+    }
+    const staff = matches[0]
 
     // إعادة تعيين العداد عند النجاح
     attempts.delete(cleanPhone)
