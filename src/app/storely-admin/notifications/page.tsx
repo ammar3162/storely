@@ -1,7 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/components/toast'
 
 const C = {
@@ -26,7 +25,6 @@ export default function AdminNotificationsPage() {
   const [tab, setTab]           = useState<'send'|'history'>('send')
   const [orgSearch, setOrgSearch] = useState('')
   const [authChecked, setAuthChecked] = useState(false)
-  const sb = createClient()
 
   useEffect(() => {
     const key = sessionStorage.getItem('storely_admin_pass') || ''
@@ -49,8 +47,11 @@ export default function AdminNotificationsPage() {
       const j = await res.json()
       setOrgs(j.orgs || [])
     } catch { setOrgs([]) }
-    const{data:notifsData}=await (sb as any).from('admin_notifications').select('id,type,created_at,title,message,sent_to_count').order('created_at',{ascending:false}).limit(50)
-    setSent(notifsData||[])
+    try {
+      const res = await fetch('/api/admin/notifications', { headers: { 'x-admin-key': adminKey } })
+      const j = await res.json()
+      setSent(j.notifications || [])
+    } catch { setSent([]) }
     setLoading(false)
   }
 
@@ -62,13 +63,18 @@ export default function AdminNotificationsPage() {
     if(!title.trim()||!message.trim()){toast('أدخل العنوان والرسالة','warning');return}
     setSending(true)
     const targets = selected.length===0 ? orgs.map(o=>o.id) : selected
-    const{error}=await (sb as any).from('admin_notifications').insert({
-      title:title.trim(), message:message.trim(), type,
-      target_orgs:selected.length===0?null:selected,
-      sent_to_count:targets.length,
-    })
-    if(error){toast('خطأ: '+error.message,'error');setSending(false);return}
-    if(deliveryType==='banner') {
+    const isBanner = deliveryType==='banner'
+    let j:any = {}
+    try {
+      const res = await fetch('/api/admin/notifications',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-admin-key':sessionStorage.getItem('storely_admin_pass')||''},
+        body:JSON.stringify({ title:title.trim(), message:message.trim(), type, target_orgs:selected.length===0?null:selected, org_ids:targets, with_org_notifications:!isBanner }),
+      })
+      j = await res.json()
+    } catch { j = { error: 'خطأ بالاتصال' } }
+    if(!j.success){toast((j.stage==='notifications'?'خطأ في الإشعارات: ':'خطأ: ')+(j.error||''),'error');setSending(false);return}
+    if(isBanner) {
       const version = 'admin-'+Date.now()
       await fetch('/api/admin/feature-announcement',{
         method:'POST',
@@ -77,9 +83,6 @@ export default function AdminNotificationsPage() {
       })
       toast('تم إرسال البانر'); setTitle(''); setMessage(''); setSending(false); return
     }
-    const inserts=targets.map((org_id:string)=>({org_id,title:title.trim(),message:message.trim(),type}))
-    const{error:nErr}=await (sb as any).from('notifications').insert(inserts)
-    if(nErr){toast('خطأ في الإشعارات: '+nErr.message,'error');setSending(false);return}
     toast(`تم الإرسال لـ ${targets.length} منشأة`)
     setTitle('');setMessage('');setSelected([]);setSending(false);load()
   }

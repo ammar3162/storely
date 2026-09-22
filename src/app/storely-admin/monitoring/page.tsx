@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 const C = { bg:'#0f172a', card:'#1e293b', border:'#334155', text:'#f1f5f9', text2:'#94a3b8', text3:'#64748b', green:'#14b8a6', yellow:'#f59e0b', red:'#ef4444' }
 type Status = 'ok'|'warn'|'error'|'loading'
@@ -11,7 +10,6 @@ export default function MonitoringPage() {
   const [loading, setLoading] = useState(true)
   const [lastCheck, setLastCheck] = useState<Date|null>(null)
   const [authChecked, setAuthChecked] = useState(false)
-  const sb = createClient()
 
   useEffect(() => {
     const key = sessionStorage.getItem('storely_admin_pass') || ''
@@ -28,13 +26,19 @@ export default function MonitoringPage() {
 
   async function runChecks() {
     setLoading(true); const r: Check[] = []
-    try { const{error}=await sb.from('organizations').select('count').single(); r.push({label:'Supabase اتصال',value:error?'فشل':'متصل',status:error?'error':'ok'}) } catch { r.push({label:'Supabase اتصال',value:'فشل',status:'error'}) }
-    try { const{data:orgs}=await sb.from('organizations').select('id'); const{data:profiles}=await sb.from('profiles').select('status'); const active=(profiles||[]).filter((p:any)=>p.status==='active').length; const pending=(profiles||[]).filter((p:any)=>p.status==='pending').length; r.push({label:'المستخدمون',value:`${active} نشط`,status:'ok',detail:`${pending} بانتظار | ${(orgs||[]).length} مؤسسة`}) } catch { r.push({label:'المستخدمون',value:'خطأ',status:'error'}) }
-    try { const{data:prods}=await sb.from('products').select('qty,reorder_point').eq('is_active',true); const total=(prods||[]).length,low=(prods||[]).filter((p:any)=>p.qty<=p.reorder_point).length; r.push({label:'المخزون',value:`${total} صنف`,status:low>10?'error':low>0?'warn':'ok',detail:low>0?`⚠️ ${low} صنف ناقص`:'جميع الأصناف كافية'}) } catch { r.push({label:'المخزون',value:'خطأ',status:'error'}) }
-    try { const{data:org}=await sb.from('organizations').select('last_notified_at').order('last_notified_at',{ascending:false}).limit(1).single(); const last=(org as any)?.last_notified_at; if(last){const h=Math.floor((Date.now()-new Date(last).getTime())/3600000);r.push({label:'آخر إشعار واتساب',value:h<24?`منذ ${h} ساعة`:`منذ ${Math.floor(h/24)} يوم`,status:h>48?'warn':'ok',detail:new Date(last).toLocaleString('en-GB')})}else r.push({label:'آخر إشعار واتساب',value:'لم يُرسل بعد',status:'warn'}) } catch { r.push({label:'آخر إشعار واتساب',value:'خطأ',status:'error'}) }
-    try { const{data:org}=await sb.from('organizations').select('last_backup_at').order('last_backup_at',{ascending:false}).limit(1).single(); const last=(org as any)?.last_backup_at; if(last){const d=Math.floor((Date.now()-new Date(last).getTime())/86400000);r.push({label:'آخر نسخة احتياطية',value:d===0?'اليوم':`منذ ${d} يوم`,status:d>14?'error':d>7?'warn':'ok',detail:new Date(last).toLocaleString('en-GB')})}else r.push({label:'آخر نسخة احتياطية',value:'لم تُنشأ بعد',status:'warn'}) } catch { r.push({label:'آخر نسخة احتياطية',value:'خطأ',status:'error'}) }
+    let m: any = null
+    try { const res=await fetch('/api/admin/monitoring',{headers:{'x-admin-key':sessionStorage.getItem('storely_admin_pass')||''}}); m=await res.json(); if(!m.success) m=null } catch {}
+    if(!m){ r.push({label:'Supabase اتصال',value:'فشل',status:'error'}) }
+    else {
+      r.push({label:'Supabase اتصال',value:m.db_ok?'متصل':'فشل',status:m.db_ok?'ok':'error'})
+      r.push({label:'المستخدمون',value:`${m.active_users} نشط`,status:'ok',detail:`${m.pending_users} بانتظار | ${m.orgs_count} مؤسسة`})
+      { const total=m.products_total,low=m.products_low; r.push({label:'المخزون',value:`${total} صنف`,status:low>10?'error':low>0?'warn':'ok',detail:low>0?`⚠️ ${low} صنف ناقص`:'جميع الأصناف كافية'}) }
+      { const last=m.last_notified_at; if(last){const h=Math.floor((Date.now()-new Date(last).getTime())/3600000);r.push({label:'آخر إشعار واتساب',value:h<24?`منذ ${h} ساعة`:`منذ ${Math.floor(h/24)} يوم`,status:h>48?'warn':'ok',detail:new Date(last).toLocaleString('en-GB')})}else r.push({label:'آخر إشعار واتساب',value:'لم يُرسل بعد',status:'warn'}) }
+      { const last=m.last_backup_at; if(last){const d=Math.floor((Date.now()-new Date(last).getTime())/86400000);r.push({label:'آخر نسخة احتياطية',value:d===0?'اليوم':`منذ ${d} يوم`,status:d>14?'error':d>7?'warn':'ok',detail:new Date(last).toLocaleString('en-GB')})}else r.push({label:'آخر نسخة احتياطية',value:'لم تُنشأ بعد',status:'warn'}) }
+    }
     try { const res=await fetch('/api/webhook'); const data=await res.json(); r.push({label:'بوت واتساب',value:data.status?'يعمل':'متوقف',status:data.status?'ok':'error'}) } catch { r.push({label:'بوت واتساب',value:'خطأ',status:'error'}) }
-    try { const yesterday=new Date(Date.now()-86400000).toISOString(); const{data:mv}=await sb.from('stock_movements').select('id').gte('created_at',yesterday); const{data:pu}=await sb.from('purchases').select('id').gte('created_at',yesterday); r.push({label:'النشاط (24 ساعة)',value:`${(mv||[]).length} حركة`,status:'ok',detail:`${(pu||[]).length} مشتريات`}) } catch { r.push({label:'النشاط (24 ساعة)',value:'خطأ',status:'error'}) }
+    if(m) r.push({label:'النشاط (24 ساعة)',value:`${m.movements_24h} حركة`,status:'ok',detail:`${m.purchases_24h} مشتريات`})
+    else r.push({label:'النشاط (24 ساعة)',value:'خطأ',status:'error'})
     try { const res=await fetch('/api/health-check'); const data=await res.json(); const n=data.issues_count||0; r.push({label:'فحص صحة البيانات',value:n===0?'سليم':`${n} مشكلة`,status:n===0?'ok':data.issues?.some((i:any)=>i.severity==='critical')?'error':'warn',detail:n===0?'لا توجد مشاكل هيكلية':data.issues.map((i:any)=>i.type).join('، ')}) } catch { r.push({label:'فحص صحة البيانات',value:'خطأ',status:'error'}) }
     setChecks(r); setLastCheck(new Date()); setLoading(false)
   }

@@ -313,9 +313,8 @@ export default function AdminPage() {
   }
 
   async function deleteSupplierApp(id: string) {
-    const sb = (await import('@/lib/supabase/client')).createClient()
     const app = supplierApps.find((a:any)=>a.id===id)
-    await (sb as any).from('supplier_applications').delete().eq('id', id)
+    await fetch(`/api/admin/supplier-applications?id=${encodeURIComponent(id)}`, { method:'DELETE', headers:{'x-admin-key':sessionStorage.getItem('storely_admin_pass')||''} })
     logAction('delete_supplier_application', null, null, { company_name: app?.company_name })
     loadSupplierApps()
   }
@@ -346,19 +345,21 @@ export default function AdminPage() {
 
   async function loadSupplierApps() {
     setSuppLoading(true)
-    const sb = createClient()
-    const { data } = await sb.from('supplier_applications' as any).select('id,company_name,status,contact_name,phone,email,website,business_type,description,created_at').order('created_at', {ascending:false})
-    setSupplierApps(data || [])
+    try {
+      const res = await fetch('/api/admin/supplier-applications', { headers:{'x-admin-key':sessionStorage.getItem('storely_admin_pass')||''} })
+      const j = await res.json()
+      setSupplierApps(j.data || [])
+    } catch { setSupplierApps([]) }
     setSuppLoading(false)
   }
 
   async function updateSupplierStatus(id: string, status: string) {
-    const sb = createClient()
     const app = supplierApps.find((a:any)=>a.id===id)
+    const adminKey = sessionStorage.getItem('storely_admin_pass')||''
     if(status==='rejected') {
-      await (sb as any).from('supplier_applications').delete().eq('id', id)
+      await fetch(`/api/admin/supplier-applications?id=${encodeURIComponent(id)}`, { method:'DELETE', headers:{'x-admin-key':adminKey} })
     } else {
-      await (sb as any).from('supplier_applications').update({status}).eq('id', id)
+      await fetch('/api/admin/supplier-applications', { method:'POST', headers:{'Content-Type':'application/json','x-admin-key':adminKey}, body: JSON.stringify({ id, status }) })
     }
     logAction(`supplier_application_${status}`, null, null, { company_name: app?.company_name })
     loadSupplierApps()

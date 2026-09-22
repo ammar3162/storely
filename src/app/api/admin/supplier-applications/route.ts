@@ -25,3 +25,14 @@ export async function POST(req: Request) {
   await sb().from('supplier_applications').update({ status }).eq('id', id)
   return NextResponse.json({ success: true })
 }
+
+export async function DELETE(req: Request) {
+  const adminKey = req.headers.get('x-admin-key')
+  if(!(await requirePermission(adminKey, 'manage_suppliers'))) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  }
+  const id = new URL(req.url).searchParams.get('id')
+  if (!id) return NextResponse.json({ error: 'id مطلوب' }, { status: 400 })
+  await sb().from('supplier_applications').delete().eq('id', id)
+  return NextResponse.json({ success: true })
+}
