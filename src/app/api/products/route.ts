@@ -13,6 +13,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     const org_id = searchParams.get('org_id')
     const branch_id = searchParams.get('branch_id')
+    const sort = searchParams.get('sort') === 'qty' ? 'qty' : 'name'
     if (!org_id) return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
 
     const access = await verifyOrgAccess(org_id)
@@ -21,7 +22,7 @@ export async function GET(req: Request) {
 
     let q = sb().from('products').select('id,name,sku,unit,qty,reorder_point,category,branch_id').eq('org_id', org_id).eq('is_active', true)
     if (effectiveBranchId) q = q.eq('branch_id', effectiveBranchId)
-    const { data, error } = await q.order('name')
+    const { data, error } = await q.order(sort, { ascending: true })
 
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
     return NextResponse.json({ success: true, products: data || [] })

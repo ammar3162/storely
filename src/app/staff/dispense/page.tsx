@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { getStaffOrg } from '@/lib/session'
 
 interface StaffSession {
   id: string; name: string; org_id: string; branch_id: string | null
@@ -96,7 +96,6 @@ function StaffPageInner() {
   const [invCategory, setInvCategory] = useState<string|null>(null)
 
   const router = useRouter()
-  const sb = createClient()
 
   // Permissions polling
   useEffect(()=>{
@@ -162,8 +161,7 @@ function StaffPageInner() {
     }
     loadProducts(s)
     loadStats(s)
-    sb.from('organizations' as any).select('logo_url').eq('id',s.org_id).single()
-      .then(({data}:any)=>{ if(data?.logo_url) setOrgLogo(data.logo_url) })
+    getStaffOrg().then(org=>{ if(org?.logo_url) setOrgLogo(org.logo_url) })
     const savedLang = localStorage.getItem('staff_lang')
     if(savedLang) setLang(savedLang)
   },[])

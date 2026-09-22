@@ -3,7 +3,8 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 import { toast } from '@/components/toast'
 import { cache } from '@/lib/cache'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
+import { getMe } from '@/lib/session'
 import { colors as dsColors } from '@/lib/ds'
 
 // موحّد مع نظام التصميم المشترك (@/lib/ds)
@@ -33,7 +34,6 @@ export default function DispensePage() {
   const [showHistory, setShowHistory] = useState(false)
   const orgRef  = useRef<string|null>(null)
   const profRef = useRef<string|null>(null)
-  const sb = createClient()
 
   useEffect(()=>{
     let a=0
@@ -49,28 +49,23 @@ export default function DispensePage() {
     setLoading(true)
     const co=sessionStorage.getItem('s_org_id'),cp=sessionStorage.getItem('s_profile_id')
     if(co&&cp){orgRef.current=co;profRef.current=cp;await Promise.all([loadProducts(co),loadHistory(co)]);setLoading(false);setTimeout(()=>setVisible(true),50);return}
-    const{data:{user}}=await sb.auth.getUser();if(!user)return
-    const{data:p}=await sb.from('profiles').select('id,org_id').eq('id',user.id).single();if(!p?.org_id)return
-    sessionStorage.setItem('s_org_id',p.org_id);sessionStorage.setItem('s_profile_id',p.id)
-    orgRef.current=p.org_id;profRef.current=p.id
-    await Promise.all([loadProducts(p.org_id),loadHistory(p.org_id)])
+    const me=await getMe();if(!me)return
+    sessionStorage.setItem('s_profile_id',me.user_id)
+    orgRef.current=me.org_id;profRef.current=me.user_id
+    await Promise.all([loadProducts(me.org_id),loadHistory(me.org_id)])
     setLoading(false);setTimeout(()=>setVisible(true),50)
   }
 
   async function loadProducts(oid:string) {
     const bid=sessionStorage.getItem('s_branch_id')
-    let q=sb.from('products').select('id,name,sku,unit,qty,reorder_point,category').eq('org_id',oid).eq('is_active',true)
-    if(bid) q=q.eq('branch_id',bid)
-    const{data}=await q.order('qty',{ascending:true})
-    if(data) setProducts(data)
+    const j=await api.get('/api/products',{org_id:oid,branch_id:bid,sort:'qty'})
+    if(j.success) setProducts(j.products||[])
   }
 
   async function loadHistory(oid:string) {
     const bid=sessionStorage.getItem('s_branch_id')
-    let q=sb.from('stock_movements').select('id,qty_change,type,waste_reason,created_at,products!inner(name,unit,org_id,branch_id)').in('type',['out','waste']).eq('products.org_id',oid)
-    if(bid) q=q.eq('products.branch_id',bid)
-    const{data}=await q.order('created_at',{ascending:false}).limit(30)
-    setHistory(data||[])
+    const j=await api.get('/api/stock-movements',{org_id:oid,branch_id:bid,limit:30})
+    setHistory(j.movements||[])
   }
 
   async function handleDispense() {
@@ -79,8 +74,8 @@ export default function DispensePage() {
     setSaving(true)
     const qn=Number(qty)
     if(selected.qty<qn){toast('الكمية أكبر من المتاح!','warning');setSaving(false);return}
-    const{error}=await sb.from('stock_movements').insert({product_id:selected.id,profile_id:pid,type:'out',qty_change:-qn,note:'استهلاك يومي'})
-    if(error){toast('خطأ','error');setSaving(false);return}
+    const r=await api.post('/api/stock-movements',{org_id:oid,product_id:selected.id,type:'out',qty:qn})
+    if(!r.success){toast(r.error||'خطأ','error');setSaving(false);return}
     cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
     toast(`✅ تم صرف ${qn} ${selected.unit} من ${selected.name}`)
     fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:selected.id,new_qty:selected.qty-qn,reorder_point:(selected.supplier_reorder_point ?? selected.reorder_point)})}).catch(()=>{})
@@ -95,8 +90,8 @@ export default function DispensePage() {
     setSaving(true)
     const qn=Number(qty)
     if(selected.qty<qn){toast('الكمية أكبر من المتاح!','warning');setSaving(false);return}
-    const{error}=await (sb as any).from('stock_movements').insert({product_id:selected.id,profile_id:pid,type:'waste',qty_change:-qn,waste_reason:wasteReason,note:`هدر: ${wasteReason}`})
-    if(error){toast('خطأ','error');setSaving(false);return}
+    const r=await api.post('/api/stock-movements',{org_id:oid,product_id:selected.id,type:'waste',qty:qn,waste_reason:wasteReason})
+    if(!r.success){toast(r.error||'خطأ','error');setSaving(false);return}
     cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
     fetch('/api/notify-waste',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,branch_id:sessionStorage.getItem('s_branch_id')||null,staff_name:sessionStorage.getItem('s_full_name')||'المالك',product_name:selected.name,qty:qn,unit:selected.unit,waste_reason:wasteReason})}).catch(()=>{})
     toast(`🗑️ تم تسجيل هدر ${qn} ${selected.unit} من ${selected.name}`)

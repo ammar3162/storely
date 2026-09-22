@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Bell, MapPin, Package, Store, ClipboardList, Send, Wallet, Plane, UserCheck, Boxes, ShoppingCart } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { getStaffOrg } from '@/lib/session'
 
 const CS: Record<string, Record<'ar'|'en', string>> = {
   welcome:        { ar:'أهلاً', en:'Welcome' },
@@ -82,7 +82,6 @@ export default function ChoosePage() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showPermRequestModal, setShowPermRequestModal] = useState(false)
   const [orgLogo, setOrgLogo] = useState('')
-  const sb = createClient()
 
   useEffect(()=>{
     const s = localStorage.getItem('staff_session')
@@ -97,12 +96,11 @@ export default function ChoosePage() {
     loadToday(parsed)
     loadTaskCount()
     loadNotifications()
-    sb.from('organizations' as any).select('logo_url').eq('id',parsed.org_id).single()
-      .then(({data}:any)=>{ if(data?.logo_url) setOrgLogo(data.logo_url) })
+    getStaffOrg().then(org=>{ if(org?.logo_url) setOrgLogo(org.logo_url) })
     // مهامي وطلباتي جزء من ميزة "إدارة الموظفين" — ما نعرضهم إلا لو الباقة تشملها أو عندهم إضافة hr_full
-    sb.from('organizations' as any).select('plan').eq('id',parsed.org_id).single()
-      .then(async ({data:org}:any)=>{
-        if ((org as any)?.plan !== 'basic') { setHasHrFeature(true); setHasCashierFeature(true); return }
+    getStaffOrg()
+      .then(async (org)=>{
+        if (org?.plan !== 'basic') { setHasHrFeature(true); setHasCashierFeature(true); return }
         const j = await fetch(`/api/addons-market?org_id=${parsed.org_id}`).then(r=>r.json()).catch(()=>null)
         const addon = (j?.addons||[]).find((a:any)=>a.slug==='hr_full')
         setHasHrFeature(!!addon?.subscription?.isValid)

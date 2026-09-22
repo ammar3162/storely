@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { getStaffOrg } from '@/lib/session'
 
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 
@@ -78,7 +78,6 @@ export default function StaffPurchasesPage() {
   })
   const submitting = useRef(false)
   const [curr, setCurr] = useState('ر.س')
-  const sb = createClient()
   const router = useRouter()
 
   useEffect(()=>{
@@ -90,8 +89,7 @@ export default function StaffPurchasesPage() {
     if (!s.permissions?.purchases) { router.push('/staff/dispense'); return }
     setSession(s)
     loadSuppliers(s.org_id)
-    sb.from('organizations' as any).select('currency').eq('id',s.org_id).single()
-      .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
+    getStaffOrg().then(org=>{ if(org?.currency) setCurr(currencySymbol(org.currency)) })
   },[])
 
   function showToast(msg: string) {

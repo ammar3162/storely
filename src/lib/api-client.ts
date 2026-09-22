@@ -28,10 +28,10 @@ function buildUrl(path: string, params?: Params) {
   return `${BASE_URL}${path}${q ? `?${q}` : ''}`
 }
 
-async function request<T>(method: string, path: string, params?: Params, body?: unknown): Promise<ApiResult<T>> {
-  const headers: Record<string, string> = {}
+async function request<T>(method: string, path: string, params?: Params, body?: unknown, extraHeaders?: Record<string, string>): Promise<ApiResult<T>> {
+  const headers: Record<string, string> = { ...extraHeaders }
   if (body !== undefined) headers['Content-Type'] = 'application/json'
-  if (apiToken) headers['Authorization'] = `Bearer ${apiToken}`
+  if (apiToken && !headers['Authorization']) headers['Authorization'] = `Bearer ${apiToken}`
   try {
     const res = await fetch(buildUrl(path, params), {
       method,
@@ -48,7 +48,7 @@ async function request<T>(method: string, path: string, params?: Params, body?: 
 }
 
 export const api = {
-  get:   <T = any>(path: string, params?: Params) => request<T>('GET', path, params),
+  get:   <T = any>(path: string, params?: Params, headers?: Record<string, string>) => request<T>('GET', path, params, undefined, headers),
   post:  <T = any>(path: string, body?: unknown, params?: Params) => request<T>('POST', path, params, body ?? {}),
   patch: <T = any>(path: string, body?: unknown, params?: Params) => request<T>('PATCH', path, params, body ?? {}),
   del:   <T = any>(path: string, params?: Params, body?: unknown) => request<T>('DELETE', path, params, body),

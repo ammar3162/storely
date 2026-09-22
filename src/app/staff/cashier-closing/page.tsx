@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { getStaffOrg } from '@/lib/session'
 
 interface StaffSession {
   id: string; name: string; org_id: string; branch_id: string | null
@@ -173,7 +173,6 @@ export default function CashierClosingPage() {
   const [curr, setCurr] = useState('ر.س')
   const [toast, setToast] = useState<{msg:string,type:'success'|'error'}|null>(null)
   const router = useRouter()
-  const sb = createClient()
 
   useEffect(()=>{
     const savedLang = localStorage.getItem('staff_lang')
@@ -183,11 +182,10 @@ export default function CashierClosingPage() {
     const s = JSON.parse(savedSession) as StaffSession
     if(s.role !== 'cashier'){router.push('/staff/dispense');return}
     setSession(s)
-    sb.from('organizations' as any).select('logo_url,currency,plan').eq('id',s.org_id).single()
-      .then(({data}:any)=>{
-        if(data?.logo_url) setOrgLogo(data.logo_url)
-        if(data?.currency) setCurr(currencySymbol(data.currency))
-        if(data?.plan==='basic') setLocked(true)
+    getStaffOrg().then(org=>{
+        if(org?.logo_url) setOrgLogo(org.logo_url)
+        if(org?.currency) setCurr(currencySymbol(org.currency))
+        if(org?.plan==='basic') setLocked(true)
       })
   },[])
 

@@ -11,7 +11,9 @@ import type { Database } from '@/lib/database.types'
  */
 export async function getCurrentProfile() {
   const auth = (await headers()).get('authorization')
-  const token = auth?.toLowerCase().startsWith('bearer ') ? auth.slice(7).trim() : ''
+  const bearer = auth?.toLowerCase().startsWith('bearer ') ? auth.slice(7).trim() : ''
+  // توكن Supabase (JWT) من 3 أجزاء؛ توكن الموظف (staffAuth) من جزأين — نتجاهله ونرجع للكوكيز
+  const token = bearer.split('.').length === 3 ? bearer : ''
 
   const supabase = token
     ? createSupabaseClient<Database>(

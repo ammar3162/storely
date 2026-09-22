@@ -31,3 +31,23 @@ export async function getOrgId(): Promise<string | null> {
   if (cached) return cached
   return (await getMe())?.org_id ?? null
 }
+
+/** بيانات عرض المنشأة لصفحات الموظفين (دخول الـ PIN) — تُجلب مرة وحدة لكل تحميل صفحة */
+export type StaffOrg = { logo_url: string | null; currency: string | null; plan: string | null }
+
+let staffOrgPromise: Promise<StaffOrg | null> | null = null
+let staffOrgToken: string | null = null
+
+export function getStaffOrg(): Promise<StaffOrg | null> {
+  const token = localStorage.getItem('staff_token')
+  // الجهاز ممكن يتشارك بين أكثر من موظف — لو تغيّر التوكن نجيب البيانات من جديد
+  if (!staffOrgPromise || token !== staffOrgToken) {
+    staffOrgToken = token
+    staffOrgPromise = api.get<StaffOrg>('/api/staff-org', undefined, token ? { Authorization: `Bearer ${token}` } : undefined)
+      .then(j => {
+        if (!j.success) { staffOrgPromise = null; return null }
+        return j
+      })
+  }
+  return staffOrgPromise
+}
