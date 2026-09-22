@@ -1,4 +1,45 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient as createCookieClient } from '@/lib/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { headers } from 'next/headers'
+import type { Database } from '@/lib/database.types'
+
+/**
+ * يرجّع المستخدم الحالي وملفه (المؤسسة، الدور، الفرع).
+ * - الموقع: يعتمد على الكوكيز (نفس السلوك القديم بالضبط).
+ * - تطبيق الجوال: يرسل "Authorization: Bearer <access_token>" بدل الكوكيز.
+ * لو ما فيه هيدر Authorization، يشتغل بالكوكيز بدون أي تغيير.
+ */
+export async function getCurrentProfile() {
+  const auth = (await headers()).get('authorization')
+  const token = auth?.toLowerCase().startsWith('bearer ') ? auth.slice(7).trim() : ''
+
+  const supabase = token
+    ? createSupabaseClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+          auth: { persistSession: false, autoRefreshToken: false },
+        }
+      )
+    : await createCookieClient()
+
+  const { data: { user } } = token ? await supabase.auth.getUser(token) : await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('org_id, role, branch_id')
+    .eq('id', user.id)
+    .single()
+
+  return {
+    userId: user.id,
+    orgId: (profile?.org_id as string | null) ?? null,
+    role: ((profile as any)?.role as string | null) ?? null,
+    branchId: ((profile as any)?.branch_id as string | null) ?? null,
+  }
+}
 
 /**
  * يتحقق إن المستخدم المسجل دخوله (عبر جلسة Supabase) فعلاً يملك org_id
@@ -13,27 +54,20 @@ export async function verifyOrgAccess(requestedOrgId: string) {
     return { authorized: false, error: 'org_id مطلوب', status: 400 as const }
   }
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const profile = await getCurrentProfile()
 
-  if (!user) {
+  if (!profile) {
     return { authorized: false, error: 'غير مسجل دخول', status: 401 as const }
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('org_id, role, branch_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || profile.org_id !== requestedOrgId) {
+  if (!profile.orgId || profile.orgId !== requestedOrgId) {
     return { authorized: false, error: 'غير مصرح بالوصول لهذا الحساب', status: 403 as const }
   }
 
   return {
-    authorized: true, userId: user.id, orgId: profile.org_id,
-    role: (profile as any).role as string | null,
-    branchId: (profile as any).branch_id as string | null,
+    authorized: true, userId: profile.userId, orgId: profile.orgId,
+    role: profile.role,
+    branchId: profile.branchId,
   }
 }
 

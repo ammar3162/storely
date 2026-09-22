@@ -1,7 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
 import { colors, font, card, btnPrimary, pageTitle, pageSub, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
@@ -41,41 +41,31 @@ export default function AttendancePage() {
   const [newRuleAmount, setNewRuleAmount] = useState('')
   const [savingRule, setSavingRule] = useState(false)
 
-  const sb = createClient()
-
   useEffect(() => { init() }, [])
   useEffect(() => { if (orgId && periodMode === 'day') load(orgId, date) }, [date, periodMode])
   useEffect(() => { if (orgId && periodMode === 'range') loadRange(orgId, rangeFrom, rangeTo) }, [rangeFrom, rangeTo, periodMode])
 
   async function init() {
-    let oid = sessionStorage.getItem('s_org_id')
-    let orgName = '', orgPlan = ''
-    if (oid) {
-      const { data: org } = await (sb.from('organizations' as any) as any).select('name,plan').eq('id', oid).single()
-      orgName = (org as any)?.name || ''; orgPlan = (org as any)?.plan || ''
-    } else {
-      const { data: { user } } = await sb.auth.getUser()
-      if (!user) return
-      const { data: profile } = await sb.from('profiles').select('org_id,organizations(name,plan)').eq('id', user.id).single()
-      if (!profile?.org_id) return
-      oid = profile.org_id; sessionStorage.setItem('s_org_id', oid!)
-      orgName = (profile as any)?.organizations?.name || ''; orgPlan = (profile as any)?.organizations?.plan || ''
-    }
-    setOrgId(oid!)
+    const me = await api.get('/api/me')
+    if (!me.success || !me.org_id) return
+    const oid: string = me.org_id
+    sessionStorage.setItem('s_org_id', oid)
+    const orgName = me.org?.name || '', orgPlan = me.org?.plan || ''
+    setOrgId(oid)
     setOrgName(orgName)
     if (orgPlan === 'basic') {
       // عميل الأساسية ممكن يكون اشترى إضافة "إدارة الموظفين الكاملة" من المتجر
-      const addonRes = await fetch(`/api/addons-market?org_id=${oid}`).then(r=>r.json()).catch(()=>null)
+      const addonRes = await api.get('/api/addons-market', { org_id: oid })
       const hrAddon = (addonRes?.addons||[]).find((a:any)=>a.slug==='hr_full')
       if (!hrAddon?.subscription?.isValid) setLocked(true)  // ما نوقف التحميل -- نخلي المالك يشوف سجلاته القديمة، السيرفر أصلاً يرفض أي تسجيل جديد بدون اشتراك
     }
     const bid = sessionStorage.getItem('s_branch_id')
     setBranchId(bid)
-    load(oid!, date)
-    loadShifts(oid!, bid)
-    loadStaff(oid!, bid)
-    loadRules(oid!)
-    loadMonthOverview(oid!)
+    load(oid, date)
+    loadShifts(oid, bid)
+    loadStaff(oid, bid)
+    loadRules(oid)
+    loadMonthOverview(oid)
   }
 
   async function loadMonthOverview(oid: string) {
@@ -84,10 +74,7 @@ export default function AttendancePage() {
       const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
       const to = now.toISOString().slice(0, 10)
       const bid = sessionStorage.getItem('s_branch_id')
-      const params = new URLSearchParams({ org_id: oid, from, to })
-      if (bid) params.set('branch_id', bid)
-      const res = await fetch(`/api/attendance-report?${params.toString()}`)
-      const j = await res.json()
+      const j = await api.get('/api/attendance-report', { org_id: oid, from, to, branch_id: bid })
       if (!j.success || !j.rows?.length) { setMonthStats({ totalPenalty: 0, attendanceRate: null, mostLate: null }); return }
       const totalPenalty = Math.round(j.rows.reduce((s:number,r:any)=>s+r.total_penalty,0)*100)/100
       const totalPresent = j.rows.reduce((s:number,r:any)=>s+r.days_present,0)
@@ -103,10 +90,7 @@ export default function AttendancePage() {
     setLoading(true)
     try {
       const bid = sessionStorage.getItem('s_branch_id')
-      const params = new URLSearchParams({ org_id: oid, from, to })
-      if (bid) params.set('branch_id', bid)
-      const res = await fetch(`/api/attendance-report?${params.toString()}`)
-      const j = await res.json()
+      const j = await api.get('/api/attendance-report', { org_id: oid, from, to, branch_id: bid })
       if (j.success) setRangeRows(j.rows || [])
       else toast(j.message || j.error || 'تعذر تحميل السجل', 'error')
     } catch { toast('خطأ بالاتصال', 'error') }
@@ -145,10 +129,7 @@ export default function AttendancePage() {
     setLoading(true)
     try {
       const bid = sessionStorage.getItem('s_branch_id')
-      const params = new URLSearchParams({ org_id: oid, date: d })
-      if (bid) params.set('branch_id', bid)
-      const res = await fetch(`/api/attendance-report?${params.toString()}`)
-      const j = await res.json()
+      const j = await api.get('/api/attendance-report', { org_id: oid, date: d, branch_id: bid })
       if (j.success) setRows(j.rows || [])
       else toast(j.message || j.error || 'تعذر تحميل السجل', 'error')
     } catch { toast('خطأ بالاتصال', 'error') }
@@ -156,34 +137,24 @@ export default function AttendancePage() {
   }
 
   async function loadShifts(oid: string, bid: string|null) {
-    const params = new URLSearchParams({ org_id: oid })
-    if (bid) params.set('branch_id', bid)
-    const res = await fetch(`/api/shifts?${params.toString()}`)
-    const j = await res.json()
+    const j = await api.get('/api/shifts', { org_id: oid, branch_id: bid })
     if (j.success) setShifts(j.shifts || [])
   }
 
   async function loadStaff(oid: string, bid: string|null) {
-    let q = (sb as any).from('staff_members').select('id,name,shift_id').eq('org_id', oid).eq('is_active', true)
-    if (bid) q = q.eq('branch_id', bid)
-    const { data } = await q.order('name')
-    setStaffList(data || [])
+    const j = await api.get('/api/staff-shifts', { org_id: oid, branch_id: bid })
+    if (j.success) setStaffList(j.staff || [])
   }
 
   async function loadRules(oid: string) {
-    const res = await fetch(`/api/late-penalty-rules?org_id=${oid}`)
-    const j = await res.json()
+    const j = await api.get('/api/late-penalty-rules', { org_id: oid })
     if (j.success) setRules(j.rules || [])
   }
 
   async function addShift() {
     if (!newShiftName.trim() || !branchId) { toast('أدخل اسم الشفت — وتأكد إنك حدّدت فرع نشط', 'warning'); return }
     setSavingShift(true)
-    const res = await fetch('/api/shifts', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, branch_id: branchId, name: newShiftName.trim(), start_time: newShiftStart, end_time: newShiftEnd, is_24h: newShift24h }),
-    })
-    const j = await res.json()
+    const j = await api.post('/api/shifts', { org_id: orgId, branch_id: branchId, name: newShiftName.trim(), start_time: newShiftStart, end_time: newShiftEnd, is_24h: newShift24h })
     setSavingShift(false)
     if (!j.success) { toast(j.error || 'فشل الإضافة', 'error'); return }
     setNewShiftName(''); setNewShift24h(false)
@@ -193,8 +164,7 @@ export default function AttendancePage() {
 
   async function deleteShift(id: string) {
     if (!(await confirmDialog({ title: 'حذف الشفت', message: 'حذف هذا الشفت؟ الموظفين المرتبطين فيه راح يفكّون منه تلقائياً' }))) return
-    const res = await fetch(`/api/shifts?id=${id}`, { method: 'DELETE' })
-    const j = await res.json()
+    const j = await api.del('/api/shifts', { id })
     if (!j.success) { toast(j.error || 'فشل الحذف', 'error'); return }
     toast('🗑️ تم الحذف')
     loadShifts(orgId, branchId)
@@ -202,8 +172,8 @@ export default function AttendancePage() {
   }
 
   async function assignShift(staffId: string, shiftId: string) {
-    const { error } = await (sb as any).from('staff_members').update({ shift_id: shiftId || null }).eq('id', staffId)
-    if (error) { toast('فشل الربط', 'error'); return }
+    const j = await api.patch('/api/staff-shifts', { org_id: orgId, staff_id: staffId, shift_id: shiftId || null })
+    if (!j.success) { toast(j.error || 'فشل الربط', 'error'); return }
     toast('✅ تم تحديد شفت الموظف')
     setStaffList(prev => prev.map(s => s.id === staffId ? { ...s, shift_id: shiftId || null } : s))
   }
@@ -211,11 +181,7 @@ export default function AttendancePage() {
   async function addRule() {
     if (!newRuleMin || !newRuleAmount) { toast('أدخل الحد الأدنى للدقائق والمبلغ', 'warning'); return }
     setSavingRule(true)
-    const res = await fetch('/api/late-penalty-rules', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, min_minutes: newRuleMin, max_minutes: newRuleMax || null, penalty_amount: newRuleAmount }),
-    })
-    const j = await res.json()
+    const j = await api.post('/api/late-penalty-rules', { org_id: orgId, min_minutes: newRuleMin, max_minutes: newRuleMax || null, penalty_amount: newRuleAmount })
     setSavingRule(false)
     if (!j.success) { toast(j.error || 'فشل الإضافة', 'error'); return }
     setNewRuleMin(''); setNewRuleMax(''); setNewRuleAmount('')
@@ -225,8 +191,7 @@ export default function AttendancePage() {
 
   async function deleteRule(id: string) {
     if (!(await confirmDialog({ title: 'حذف النطاق', message: 'حذف نطاق الغرامة هذا؟' }))) return
-    const res = await fetch(`/api/late-penalty-rules?id=${id}`, { method: 'DELETE' })
-    const j = await res.json()
+    const j = await api.del('/api/late-penalty-rules', { id })
     if (!j.success) { toast(j.error || 'فشل الحذف', 'error'); return }
     toast('🗑️ تم الحذف')
     loadRules(orgId)
