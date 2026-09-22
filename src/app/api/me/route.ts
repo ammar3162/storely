@@ -14,7 +14,7 @@ export async function GET() {
     if (!profile) return NextResponse.json({ error: 'غير مسجل دخول' }, { status: 401 })
     if (!profile.orgId) return NextResponse.json({ error: 'لا توجد مؤسسة مرتبطة بالحساب' }, { status: 404 })
 
-    const { data: org } = await sb().from('organizations').select('id,name,plan').eq('id', profile.orgId).single()
+    const { data: org } = await sb().from('organizations').select('id,name,plan,currency').eq('id', profile.orgId).single()
 
     return NextResponse.json({
       success: true,
@@ -22,7 +22,7 @@ export async function GET() {
       org_id: profile.orgId,
       role: profile.role,
       branch_id: profile.branchId,
-      org: org ? { name: (org as any).name || '', plan: (org as any).plan || '' } : null,
+      org: org ? { name: (org as any).name || '', plan: (org as any).plan || '', currency: (org as any).currency || null } : null,
     })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })

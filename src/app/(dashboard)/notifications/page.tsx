@@ -1,7 +1,8 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
+import { getOrgId } from '@/lib/session'
 import { colors, radius, font, card, btnSecondary, tag, pageTitle, pageSub } from '@/lib/ds'
 import { cache } from '@/lib/cache'
 
@@ -16,35 +17,31 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter]   = useState<'all'|'unread'|'warning'|'success'|'info'>('all')
-  const sb = createClient()
 
   useEffect(() => { load() }, [])
 
   async function load() {
-    let orgId = sessionStorage.getItem('s_org_id')
+    const cachedOrgId = sessionStorage.getItem('s_org_id')
     const bid = sessionStorage.getItem('s_branch_id')
     // عرض كاش الإشعارات فوراً لو متوفر
-    if (orgId) {
-      const cached = cache.get('notifications:'+orgId+':'+(bid||'all'))
+    if (cachedOrgId) {
+      const cached = cache.get('notifications:'+cachedOrgId+':'+(bid||'all'))
       if (cached) { setNotifications(cached); setLoading(false) }
       else setLoading(true)
     } else setLoading(true)
-    if (!orgId) {
-      const { data:{ user } } = await sb.auth.getUser()
-      if (!user) return
-      const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
-      if (!profile) return
-      orgId = profile.org_id
-      sessionStorage.setItem('s_org_id', orgId!)
-    }
-    const { data } = await sb.from('notifications').select('id,type,read,title,message,created_at').eq('org_id', orgId).or(bid?`branch_id.is.null,branch_id.eq.${bid}`:'branch_id.is.null,branch_id.not.is.null').order('created_at', { ascending: false })
-    setNotifications(data || [])
-    cache.set('notifications:'+orgId+':'+(bid||'all'), data || [])
+    const orgId = await getOrgId()
+    if (!orgId) return
+    const j = await api.get('/api/notifications', { org_id: orgId, branch_id: bid })
+    if (!j.success) { setLoading(false); return }
+    setNotifications(j.notifications || [])
+    cache.set('notifications:'+orgId+':'+(bid||'all'), j.notifications || [])
     setLoading(false)
   }
 
   async function markRead(id: string) {
-    await sb.from('notifications').update({ read: true }).eq('id', id)
+    const orgId = sessionStorage.getItem('s_org_id')
+    if (!orgId) return
+    await api.patch('/api/notifications', { org_id: orgId, id })
     setNotifications(prev => prev.map(n => n.id === id ? {...n, read: true} : n))
   }
 
@@ -52,13 +49,15 @@ export default function NotificationsPage() {
     const orgId = sessionStorage.getItem('s_org_id')
     if (!orgId) return
     const bidAll = sessionStorage.getItem('s_branch_id')
-    await sb.from('notifications').update({ read: true }).eq('org_id', orgId).eq('read', false).or(bidAll?`branch_id.is.null,branch_id.eq.${bidAll}`:'branch_id.is.null,branch_id.not.is.null')
+    await api.patch('/api/notifications', { org_id: orgId, all: true, branch_id: bidAll })
     setNotifications(prev => prev.map(n => ({...n, read: true})))
     window.dispatchEvent(new Event('notifications-updated'))
   }
 
   async function del(id: string) {
-    await sb.from('notifications').delete().eq('id', id)
+    const orgId = sessionStorage.getItem('s_org_id')
+    if (!orgId) return
+    await api.del('/api/notifications', { org_id: orgId, id })
     setNotifications(prev => prev.filter(n => n.id !== id))
     window.dispatchEvent(new Event('notifications-updated'))
   }

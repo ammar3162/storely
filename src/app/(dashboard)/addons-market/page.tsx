@@ -1,7 +1,8 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
+import { getMe } from '@/lib/session'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { colors, font, card, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
@@ -13,25 +14,20 @@ export default function AddonsMarketPage() {
   const [orgName, setOrgName] = useState('')
   const [orgId, setOrgId] = useState('')
   const [cancelling, setCancelling] = useState<string|null>(null)
-  const sb = createClient()
 
   useEffect(() => { init() }, [])
 
   async function init() {
     // لو المعرّف محفوظ بالجلسة، نبدأ جلب الإضافات فوراً بالتوازي مع فحص المستخدم بدل ما ننتظره
     const cachedOid = sessionStorage.getItem('s_org_id')
-    const [authResult] = await Promise.all([
-      sb.auth.getUser(),
+    const [me] = await Promise.all([
+      getMe(),
       cachedOid ? load(cachedOid) : Promise.resolve(),
     ])
-    const user = authResult.data.user
-    if (!user) return
-    const { data: profile } = await sb.from('profiles').select('org_id,organizations(name)').eq('id', user.id).single()
-    if (!profile?.org_id) return
-    setOrgId(profile.org_id)
-    setOrgName((profile.organizations as any)?.name || '')
-    sessionStorage.setItem('s_org_id', profile.org_id)
-    if (!cachedOid) await load(profile.org_id)
+    if (!me) return
+    setOrgId(me.org_id)
+    setOrgName(me.org?.name || '')
+    if (!cachedOid) await load(me.org_id)
     setLoading(false)
   }
 
@@ -39,8 +35,7 @@ export default function AddonsMarketPage() {
   const [staffBranchMap, setStaffBranchMap] = useState<Record<string, string>>({})
 
   async function load(oid: string) {
-    const res = await fetch(`/api/addons-market?org_id=${oid}`)
-    const j = await res.json()
+    const j = await api.get('/api/addons-market', { org_id: oid })
     if (j.success) {
       setAddons(j.addons)
       setBranches(j.branches || [])
@@ -67,11 +62,7 @@ export default function AddonsMarketPage() {
     }))) return
 
     setCancelling(addon.id + (branchId||''))
-    const res = await fetch('/api/addons-market', {
-      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, addon_id: addon.id, branch_id: branchId }),
-    })
-    const j = await res.json()
+    const j = await api.del('/api/addons-market', undefined, { org_id: orgId, addon_id: addon.id, branch_id: branchId })
     setCancelling(null)
     if (!j.success) { toast(j.error || 'فشل الإلغاء', 'error'); return }
     toast('تم إلغاء الاشتراك')

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { getMe, getOrgId } from '@/lib/session'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { colors, radius, font, card, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
@@ -56,22 +56,14 @@ export default function ProfitabilityPage() {
   const [newDeliveryAmount, setNewDeliveryAmount] = useState('')
   const [savingDelivery, setSavingDelivery] = useState(false)
 
-  const sb = createClient()
-
   useEffect(()=>{ init() },[])
   useEffect(()=>{ if(orgId) { loadAll(); loadClosedMonths() } },[orgId, month])
 
   async function init() {
-    let oid = sessionStorage.getItem('s_org_id')
-    if(!oid){
-      const{data:{user}}=await sb.auth.getUser()
-      if(!user) return
-      const{data:p}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
-      if(!p) return
-      oid=p.org_id; sessionStorage.setItem('s_org_id',oid!)
-    }
-    setOrgId(oid!)
-    sb.from('organizations').select('currency').eq('id',oid!).single().then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
+    const oid = await getOrgId()
+    if(!oid) return
+    setOrgId(oid)
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
   }
 
   async function loadClosedMonths() {

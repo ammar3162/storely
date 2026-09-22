@@ -1,7 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { getMe } from '@/lib/session'
 import { colors, radius, font, card, btnSecondary, pageTitle, pageSub } from '@/lib/ds'
 import { currencySymbol } from '@/lib/currencySymbol'
 
@@ -11,15 +11,11 @@ export default function BranchComparePage() {
   const [loading, setLoading] = useState(true)
   const [exportingPdf, setExportingPdf] = useState(false)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-  const sb = createClient()
   const [curr, setCurr] = useState('ر.س')
 
   useEffect(() => { load() }, [])
   useEffect(() => {
-    const oid = sessionStorage.getItem('s_org_id')
-    if (!oid) return
-    sb.from('organizations' as any).select('currency').eq('id',oid).single()
-      .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
   }, [])
 
   async function load() {
@@ -36,8 +32,7 @@ export default function BranchComparePage() {
   async function handleExportPdf() {
     setExportingPdf(true)
     try {
-      const orgId = sessionStorage.getItem('s_org_id')
-      const { data: org } = orgId ? await sb.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      const org = (await getMe())?.org
       const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
         title: 'مقارنة أداء الفروع',

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
+import { getMe, getOrgId } from '@/lib/session'
 import { colors, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub, radius } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
@@ -28,31 +29,23 @@ export default function TransferStockPage() {
   const [filterProduct, setFilterProduct] = useState('')
   const [exportingPdf, setExportingPdf] = useState(false)
 
-  const sb = createClient()
-
   useEffect(()=>{ init() },[])
   useEffect(()=>{ if(orgId && fromBranch) loadProducts() },[orgId, fromBranch])
   useEffect(()=>{ if(orgId) loadHistory(orgId) },[filterFrom, filterTo])
   useEffect(()=>{ setCart([]) },[fromBranch, toBranch])
 
   async function init() {
-    let oid = sessionStorage.getItem('s_org_id')
-    if(!oid){
-      const{data:{user}}=await sb.auth.getUser()
-      if(!user) return
-      const{data:p}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
-      if(!p) return
-      oid=p.org_id; sessionStorage.setItem('s_org_id',oid!)
-    }
-    setOrgId(oid!)
-    const{data:bList}=await sb.from('branches').select('id,name').eq('org_id',oid!).eq('is_active',true).order('created_at')
-    setBranches(bList||[])
-    loadHistory(oid!)
+    const oid = await getOrgId()
+    if(!oid) return
+    setOrgId(oid)
+    const bj = await api.get('/api/branches', { org_id: oid })
+    setBranches(bj.branches||[])
+    loadHistory(oid)
   }
 
   async function loadProducts() {
-    const{data}=await sb.from('products').select('id,name,unit,qty').eq('org_id',orgId).eq('branch_id',fromBranch).eq('is_active',true).order('name')
-    setProducts(data||[])
+    const pj = await api.get('/api/products', { org_id: orgId, branch_id: fromBranch })
+    setProducts(pj.products||[])
     setProductId('')
     setProductSearch('')
   }
@@ -168,7 +161,7 @@ export default function TransferStockPage() {
   async function handleExportPdf() {
     setExportingPdf(true)
     try {
-      const { data: org } = orgId ? await sb.from('organizations').select('name').eq('id', orgId).single() : { data: null }
+      const org = (await getMe())?.org
       const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
         title: 'تقرير نقل المخزون بين الفروع',

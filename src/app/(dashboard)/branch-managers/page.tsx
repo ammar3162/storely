@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
+import { getOrgId } from '@/lib/session'
 import { colors, font, card, btnPrimary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
@@ -29,25 +30,17 @@ export default function BranchManagersPage() {
   const [perms, setPerms] = useState<Record<string,boolean>>({})
   const [saving, setSaving] = useState(false)
 
-  const sb = createClient()
-
   useEffect(()=>{ init() },[])
 
   async function init() {
-    let oid = sessionStorage.getItem('s_org_id')
-    if(!oid){
-      const{data:{user}}=await sb.auth.getUser()
-      if(!user) return
-      const{data:p}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
-      if(!p) return
-      oid=p.org_id; sessionStorage.setItem('s_org_id',oid!)
-    }
-    setOrgId(oid!)
-    const{data:bList}=await sb.from('branches').select('id,name').eq('org_id',oid!).eq('is_active',true).order('created_at')
-    setBranches(bList||[])
+    const oid = await getOrgId()
+    if(!oid) return
+    setOrgId(oid)
+    const bj = await api.get('/api/branches', { org_id: oid })
+    setBranches(bj.branches||[])
     const cachedManagers = cache.get('branch-managers:'+oid)
     if (cachedManagers) setManagers(cachedManagers)
-    await loadManagers(oid!)
+    await loadManagers(oid)
   }
 
   async function loadManagers(oid:string) {
