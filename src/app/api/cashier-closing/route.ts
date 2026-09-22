@@ -220,7 +220,7 @@ export async function GET(req: Request) {
     const supabase = sb()
     let query = supabase
       .from('cashier_closings')
-      .select('id,branch_id,closing_date,staff_name,total_sales,network_amount,cash_amount,total_purchases,difference,status,sales_image,network_image,purchases')
+      .select('id,branch_id,staff_id,closing_date,staff_name,total_sales,network_amount,cash_amount,total_purchases,difference,status,sales_image,network_image,purchases')
       .eq('org_id', org_id)
       .order('closing_date', { ascending: false })
       .order('created_at', { ascending: false })

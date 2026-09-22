@@ -2,6 +2,8 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, Component } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
+import { getMe } from '@/lib/session'
 import { cache } from '@/lib/cache'
 import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
@@ -113,42 +115,35 @@ export default function DashboardPage() {
         setLoading(false); setVisible(true)
       }
     }
-    const{data:{user}}=await sb.auth.getUser(); if(!user)return
-    const{data:profile}=await sb.from('profiles').select('full_name,org_id,subscription_ends_at,organizations(name)').eq('id',user.id).single()
-    if(profile){
-      setUserName(profile.full_name||'')
-      setOrgName((profile.organizations as any)?.name||'')
-      const endsAt=(profile as any).subscription_ends_at
+    const me=await getMe(); if(!me)return
+    {
+      setUserName(me.full_name||'')
+      setOrgName(me.org?.name||'')
+      const endsAt=me.subscription_ends_at
       if(endsAt){
         const days=Math.ceil((new Date(endsAt).getTime()-Date.now())/(1000*60*60*24))
         if(days<=0){ setSubExpired(true); setSubAlert(lang==='ar'?'انتهى اشتراكك — يرجى التجديد لمتابعة استخدام النظام':'Your subscription has expired — please renew to continue using the system') }
         else if(days<=7) setSubAlert(lang==='ar'?`ينتهي اشتراكك بعد ${days} أيام`:`Your subscription ends in ${days} days`)
       }
     }
-    const orgId=profile?.org_id; if(!orgId)return
-    sessionStorage.setItem('s_org_id',orgId)
-    sessionStorage.setItem('s_profile_id',user.id)
-    sb.from('organizations').select('currency').eq('id',orgId).single().then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
+    const orgId=me.org_id
+    sessionStorage.setItem('s_profile_id',me.user_id)
+    if(me.org?.currency) setCurr(currencySymbol(me.org.currency))
     const bid=sessionStorage.getItem('s_branch_id')
-    const ab=(q:any)=>bid?q.eq('branch_id',bid):q
-    let movementsQuery = sb.from('stock_movements').select('qty_change,type,created_at,products!inner(name,unit,org_id,branch_id)').eq('products.org_id',orgId).order('created_at',{ascending:false}).limit(50)
-    if (bid) movementsQuery = movementsQuery.eq('products.branch_id', bid)
-    const[{data:products},{data:purchases},{data:movements},{data:nData}]=await Promise.all([
-      ab(sb.from('products').select('id,name,qty,reorder_point,unit').eq('org_id',orgId).eq('is_active',true)),
-      ab(sb.from('purchases').select('amount,created_at').eq('org_id',orgId)),
-      movementsQuery,
-      (sb as any).from('notifications').select('id,title,message,type').eq('org_id',orgId).eq('read',false).or(bid?`branch_id.is.null,branch_id.eq.${bid}`:'branch_id.is.null,branch_id.not.is.null').order('created_at',{ascending:false}).limit(5),
-    ])
+    const sum=await api.get('/api/dashboard-summary',{org_id:orgId,branch_id:bid})
+    if(!sum.success)return
+    const purchases:{created_at:string}[]=(sum.purchase_dates||[]).map((created_at:string)=>({created_at}))
+    const movements:any[]=sum.movements||[]
+    const nData=sum.notifications||[]
     const today=new Date().toDateString()
-    const low=(products||[]).filter((p:any)=>p.qty<=p.reorder_point)
     setStats({
-      products:(products||[]).length,
-      lowStock:low.length,
-      outOfStock:(products||[]).filter((p:any)=>p.qty===0).length,
-      todayPurchases:(purchases||[]).filter((p:any)=>new Date(p.created_at).toDateString()===today).length,
-      todayDispenses:(movements||[]).filter((m:any)=>m.type==='out'&&new Date(m.created_at).toDateString()===today).length,
+      products:sum.products_count,
+      lowStock:sum.low_count,
+      outOfStock:sum.out_count,
+      todayPurchases:purchases.filter((p:any)=>new Date(p.created_at).toDateString()===today).length,
+      todayDispenses:movements.filter((m:any)=>m.type==='out'&&new Date(m.created_at).toDateString()===today).length,
     })
-    setLowItems(low.slice(0,5))
+    setLowItems(sum.low_items||[])
     setActivity((movements||[]).slice(0,5))
     const dnames=lang==='ar'?['أحد','إثن','ثلث','أرب','خمس','جمع','سبت']:['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
     const wp:any[]=[],wd:any[]=[]
@@ -167,8 +162,8 @@ export default function DashboardPage() {
     // خزّن في الكاش
     if(orgId_cached){
       cache.set('dashboard:'+orgId_cached, {
-        stats:{products:(products||[]).length,lowStock:low.length,outOfStock:(products||[]).filter((p:any)=>p.qty===0).length,todayPurchases:(purchases||[]).filter((p:any)=>new Date(p.created_at).toDateString()===today).length,todayDispenses:(movements||[]).filter((m:any)=>m.type==='out'&&new Date(m.created_at).toDateString()===today).length},
-        lowItems:low.slice(0,5), activity:(movements||[]).slice(0,5),
+        stats:{products:sum.products_count,lowStock:sum.low_count,outOfStock:sum.out_count,todayPurchases:purchases.filter((p:any)=>new Date(p.created_at).toDateString()===today).length,todayDispenses:movements.filter((m:any)=>m.type==='out'&&new Date(m.created_at).toDateString()===today).length},
+        lowItems:sum.low_items||[], activity:movements.slice(0,5),
         weeklyP:wp, weeklyD:wd, notifs:nData||[]
       })
     }
@@ -238,7 +233,8 @@ export default function DashboardPage() {
               <div style={{fontSize:11,color:'#5f5e5a',lineHeight:1.5}}>{n.message}</div>
             </div>
             <button onClick={async()=>{
-              await (sb as any).from('notifications').update({read:true}).eq('id',n.id)
+              const oid=sessionStorage.getItem('s_org_id')
+              if(oid) await api.patch('/api/notifications',{org_id:oid,id:n.id})
               setNotifs(prev=>prev.filter(x=>x.id!==n.id))
             }} style={{background:'none',border:'none',cursor:'pointer',color:'#888780',padding:2,flexShrink:0,display:'flex',alignItems:'center'}}><X size={16} strokeWidth={2.25}/></button>
           </div>

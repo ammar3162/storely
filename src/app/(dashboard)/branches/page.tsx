@@ -1,14 +1,14 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
+import { getOrgId } from '@/lib/session'
 import { colors, radius, font, card, btnPrimary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { cache } from '@/lib/cache'
 
 export default function BranchesPage() {
-  const sb = createClient()
   const [loading, setLoading] = useState(true)
   const [orgId, setOrgId] = useState('')
   const [maxBranches, setMaxBranches] = useState(1)
@@ -41,20 +41,15 @@ export default function BranchesPage() {
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set())
   const [copyingProducts, setCopyingProducts] = useState(false)
   const [undoingBranch, setUndoingBranch] = useState(false)
+  const [copySourceBranchId, setCopySourceBranchId] = useState('')
 
   async function deleteBranchPermanently() {
     if (!confirmDeleteBranch) return
     setDeleteError('')
     setDeletingBranch(true)
-    const{data:{user}}=await sb.auth.getUser()
-    if(!user){setDeletingBranch(false);return}
-    const res = await fetch('/api/delete-branch', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ branch_id: confirmDeleteBranch.id, org_id: orgId, user_id: user.id })
-    })
-    const data = await res.json()
+    const data = await api.post('/api/delete-branch', { branch_id: confirmDeleteBranch.id, org_id: orgId })
     setDeletingBranch(false)
-    if (!res.ok || !data.success) {
+    if (!data.success) {
       setDeleteError(data.error || 'حدث خطأ أثناء الحذف')
       return
     }
@@ -67,9 +62,9 @@ export default function BranchesPage() {
     const trimmed = editNameValue.trim()
     if(!trimmed){ toast('أدخل اسم الفرع','warning'); return }
     setSavingName(true)
-    const{error}=await sb.from('branches').update({name:trimmed} as any).eq('id',id)
+    const r=await api.patch('/api/branches',{org_id:orgId,id,name:trimmed})
     setSavingName(false)
-    if(error){ toast('فشل تعديل الاسم — حاول مرة أخرى','error'); return }
+    if(!r.success){ toast('فشل تعديل الاسم — حاول مرة أخرى','error'); return }
     setBranches(prev=>prev.map((br:any)=>br.id===id?{...br,name:trimmed}:br))
     toast('✅ تم تعديل اسم الفرع')
     setEditingNameId(null)
@@ -85,44 +80,41 @@ export default function BranchesPage() {
       if (cachedBranches) { setBranches(cachedBranches); setLoading(false) }
     }
     if (!oid) {
-      const{data:{user}}=await sb.auth.getUser()
-      if(!user){setLoading(false);return}
-      const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
-      if(!profile?.org_id){setLoading(false);return}
-      oid = profile.org_id; sessionStorage.setItem('s_org_id', oid!)
+      oid = await getOrgId()
+      if(!oid){setLoading(false);return}
     }
-    setOrgId(oid!)
-    // نطلق الاستعلامات الثلاثة بالتوازي — كلها تعتمد بس على oid
-    const [{data:org}, {data:bList}, {data:iList}] = await Promise.all([
-      (sb.from('organizations' as any) as any).select('max_branches').eq('id',oid!).single(),
-      sb.from('branches').select('id,name,location,whatsapp_number,latitude,longitude').eq('org_id',oid!).eq('is_active',true).order('created_at'),
-      sb.from('branches').select('id,name,location,whatsapp_number,latitude,longitude').eq('org_id',oid!).eq('is_active',false).order('created_at'),
-    ])
-    setMaxBranches((org as any)?.max_branches||1)
-    setBranches(bList||[])
-    cache.set('branches:'+oid, bList||[])
-    setInactiveBranches(iList||[])
+    setOrgId(oid)
+    const j = await api.get('/api/branches', { org_id: oid, include_inactive: 1 })
+    if (!j.success) { setLoading(false); return }
+    setMaxBranches(j.max_branches||1)
+    setBranches(j.branches||[])
+    cache.set('branches:'+oid, j.branches||[])
+    setInactiveBranches(j.inactive||[])
     setLoading(false)
   }
 
   async function addBranch() {
     if(!newBranch.name.trim()) return
     setBranchSaving(true)
-    const{data:created,error}=await sb.from('branches').insert({ org_id:orgId, name:newBranch.name.trim(), location:newBranch.location.trim()||null }).select().single()
-    if(error||!created){toast('فشل إضافة الفرع — حاول مرة أخرى','error');setBranchSaving(false);return}
-    const{data:bList}=await sb.from('branches').select('id,name,location,whatsapp_number,latitude,longitude').eq('org_id',orgId).eq('is_active',true).order('created_at')
-    setBranches(bList||[]); cache.set('branches:'+orgId, bList||[]); setNewBranch({name:'',location:''}); setBranchSaving(false)
+    const cr=await api.post('/api/branches',{ org_id:orgId, name:newBranch.name.trim(), location:newBranch.location.trim()||null })
+    const created=cr.branch
+    if(!cr.success||!created){toast(cr.error||'فشل إضافة الفرع — حاول مرة أخرى','error');setBranchSaving(false);return}
+    const bj=await api.get('/api/branches',{org_id:orgId})
+    const bList=bj.branches||[]
+    setBranches(bList); cache.set('branches:'+orgId, bList); setNewBranch({name:'',location:''}); setBranchSaving(false)
     toast('✅ تم إضافة الفرع')
     setPendingBranchReload(true)
 
     // نعرض عليه منتجات الفرع الأساسي (الأقدم) عشان يختار أيها يبيها بالفرع الجديد — بدون كميات
     const mainBranch = ((bList||[]) as any[]).find((b:any)=>b.id!==created.id)
     if(mainBranch){
-      const{data:prods}=await sb.from('products').select('id,name,unit,category,reorder_point,recipe_unit,recipe_unit_factor').eq('org_id',orgId).eq('branch_id',mainBranch.id).eq('is_active',true).order('name')
+      const pj=await api.get('/api/branches/copy-products',{org_id:orgId,from_branch_id:mainBranch.id})
+      const prods=pj.products
       if(prods && prods.length>0){
         setSourceProducts(prods)
         setSelectedProductIds(new Set(prods.map((p:any)=>p.id)))
         setNewBranchId(created.id)
+        setCopySourceBranchId(mainBranch.id)
         setShowCopyProducts(true)
       }
     }
@@ -130,12 +122,7 @@ export default function BranchesPage() {
 
   async function undoAddBranch() {
     setUndoingBranch(true)
-    const{data:{user}}=await sb.auth.getUser()
-    if(!user){setUndoingBranch(false);return}
-    await fetch('/api/delete-branch', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ branch_id: newBranchId, org_id: orgId, user_id: user.id })
-    })
+    await api.post('/api/delete-branch', { branch_id: newBranchId, org_id: orgId })
     setBranches(prev=>prev.filter((b:any)=>b.id!==newBranchId))
     setUndoingBranch(false)
     setShowCopyProducts(false)
@@ -145,14 +132,11 @@ export default function BranchesPage() {
   async function confirmCopyProducts() {
     if(selectedProductIds.size===0){ setShowCopyProducts(false); return }
     setCopyingProducts(true)
-    const rows = sourceProducts.filter(p=>selectedProductIds.has(p.id)).map(p=>({
-      org_id:orgId, branch_id:newBranchId, name:p.name, unit:p.unit, category:p.category,
-      reorder_point:p.reorder_point, recipe_unit:p.recipe_unit, recipe_unit_factor:p.recipe_unit_factor,
-      qty:0, is_active:true,
-    }))
-    const{error}=await sb.from('products').insert(rows as any)
+    const ids = sourceProducts.filter(p=>selectedProductIds.has(p.id)).map(p=>p.id)
+    const r=await api.post('/api/branches/copy-products',{ org_id:orgId, from_branch_id:copySourceBranchId, to_branch_id:newBranchId, product_ids:ids })
+    const rows={length:r.count||ids.length}
     setCopyingProducts(false)
-    if(error){toast('فشل نسخ المنتجات — حاول تضيفها يدوياً من صفحة المخزون','error');setShowCopyProducts(false);return}
+    if(!r.success){toast('فشل نسخ المنتجات — حاول تضيفها يدوياً من صفحة المخزون','error');setShowCopyProducts(false);return}
     toast(`✅ تم نسخ ${rows.length} منتج للفرع الجديد (بدون كميات)`)
     setShowCopyProducts(false)
   }
@@ -160,8 +144,8 @@ export default function BranchesPage() {
   async function deleteBranch(id:string) {
     if(branches.length<=1){toast('لا يمكن حذف الفرع الوحيد','warning');return}
     if(!(await confirmDialog({ title: 'إيقاف الفرع', message: 'إيقاف هذا الفرع؟ بياناته تبقى محفوظة ويمكن تفعيله لاحقاً.', type: 'warning' }))) return
-    const{error}=await sb.from('branches').update({is_active:false} as any).eq('id',id)
-    if(error){toast('فشل إيقاف الفرع — حاول مرة أخرى','error');return}
+    const r=await api.patch('/api/branches',{org_id:orgId,id,is_active:false})
+    if(!r.success){toast(r.error||'فشل إيقاف الفرع — حاول مرة أخرى','error');return}
     const stopped = branches.find((b:any)=>b.id===id)
     setBranches(prev=>prev.filter((b:any)=>b.id!==id))
     if (stopped) setInactiveBranches(prev=>[...prev, stopped])
@@ -170,8 +154,8 @@ export default function BranchesPage() {
 
   async function reactivateBranch(id:string) {
     setReactivatingId(id)
-    const{error}=await sb.from('branches').update({is_active:true} as any).eq('id',id)
-    if(error){toast('فشل إعادة تفعيل الفرع — حاول مرة أخرى','error');setReactivatingId(null);return}
+    const r=await api.patch('/api/branches',{org_id:orgId,id,is_active:true})
+    if(!r.success){toast(r.error||'فشل إعادة تفعيل الفرع — حاول مرة أخرى','error');setReactivatingId(null);return}
     const b = inactiveBranches.find((x:any)=>x.id===id)
     setInactiveBranches(prev=>prev.filter((x:any)=>x.id!==id))
     if (b) setBranches(prev=>[...prev, b])
@@ -215,9 +199,9 @@ export default function BranchesPage() {
 
   async function saveBranchPhone(id:string, verifiedNumber:string|null) {
     setSavingPhone(true)
-    const{error}=await (sb.from('branches' as any) as any).update({ whatsapp_number: verifiedNumber }).eq('id', id)
+    const r=await api.patch('/api/branches',{org_id:orgId,id,whatsapp_number:verifiedNumber})
     setSavingPhone(false)
-    if(error){toast('فشل حفظ رقم الواتساب — حاول مرة أخرى','error');return}
+    if(!r.success){toast('فشل حفظ رقم الواتساب — حاول مرة أخرى','error');return}
     setBranches((prev:any[]) => prev.map(b => b.id===id ? {...b, whatsapp_number: verifiedNumber} : b))
     resetPhoneEdit()
     toast('✅ تم حفظ رقم الفرع')

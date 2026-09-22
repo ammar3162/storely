@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
+import { getMe, getOrgId } from '@/lib/session'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { cache } from '@/lib/cache'
@@ -49,7 +50,6 @@ export default function HRManagementPage() {
   const [loadingReport, setLoadingReport] = useState(false)
   const [showReport, setShowReport] = useState(false)
 
-  const sb = createClient()
 
   useEffect(()=>{ init() },[])
   useEffect(()=>{ if (showReport && orgId) loadReport() },[showReport, reportMonth, orgId])
@@ -62,28 +62,24 @@ export default function HRManagementPage() {
       if (cachedStaff) { setStaff(cachedStaff); setLoading(false) }
     }
     if(!oid){
-      const{data:{user}}=await sb.auth.getUser()
-      if(!user) return
-      const{data:p}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
-      if(!p) return
-      oid=p.org_id; sessionStorage.setItem('s_org_id',oid!)
+      oid = await getOrgId()
+      if(!oid) return
     }
-    setOrgId(oid!)
+    setOrgId(oid)
     const bid = sessionStorage.getItem('s_branch_id')
-    let q = (sb.from('staff_members' as any) as any).select('*').eq('org_id',oid!)
-    if (bid) q = q.eq('branch_id', bid)
-    const [{data:org}, {data}, leaveRes, advRes, cashierRes, penaltyRes, addonRes, {data:branchesData}] = await Promise.all([
-      sb.from('organizations' as any).select('plan,currency').eq('id',oid!).single(),
-      q.order('created_at',{ascending:false}),
-      fetch(`/api/staff-leave?org_id=${oid}`).then(r=>r.json()).catch(()=>({success:false})),
-      fetch(`/api/staff-payroll-adjustments?org_id=${oid}`).then(r=>r.json()).catch(()=>({success:false})),
-      (sb.from('cashier_closings' as any) as any).select('staff_id,difference,status').eq('org_id',oid!),
-      fetch(`/api/apply-late-penalties?org_id=${oid}`).then(r=>r.json()).catch(()=>({success:false})),
-      fetch(`/api/addons-market?org_id=${oid}`).then(r=>r.json()).catch(()=>null),
-      (sb.from('branches' as any) as any).select('id,name,latitude').eq('org_id',oid!).eq('is_active',true).order('created_at'),
+    const [me, staffRes, leaveRes, advRes, cashierRes, penaltyRes, addonRes, branchesRes] = await Promise.all([
+      getMe(),
+      api.get('/api/staff-members', { org_id: oid, branch_id: bid }),
+      api.get('/api/staff-leave', { org_id: oid }),
+      api.get('/api/staff-payroll-adjustments', { org_id: oid }),
+      api.get('/api/cashier-closing', { org_id: oid }),
+      api.get('/api/apply-late-penalties', { org_id: oid }),
+      api.get('/api/addons-market', { org_id: oid }),
+      api.get('/api/branches', { org_id: oid }),
     ])
-    setBranches(branchesData||[])
-    setOrgPlan((org as any)?.plan || 'basic')
+    const data = staffRes.staff
+    setBranches(branchesRes.branches||[])
+    setOrgPlan(me?.org?.plan || 'basic')
     const hrAddon = (addonRes?.addons||[]).find((a:any)=>a.slug==='hr_full')
     setHasHrAddon(!!hrAddon?.subscription?.isValid)
     setStaff(data||[])
@@ -105,9 +101,9 @@ export default function HRManagementPage() {
       setPendingAdvanceCounts(counts2)
       setApprovedAdvances(approvedSums)
     }
-    if (cashierRes?.data) {
+    if (cashierRes?.success) {
       const summary: Record<string, {deficit:number, surplus:number, count:number}> = {}
-      for (const c of (cashierRes.data as any[])) {
+      for (const c of (cashierRes.closings as any[])) {
         if (!c.staff_id) continue
         if (!summary[c.staff_id]) summary[c.staff_id] = {deficit:0, surplus:0, count:0}
         summary[c.staff_id].count += 1
@@ -161,11 +157,9 @@ export default function HRManagementPage() {
       return
     }
 
-    const{error}=await (sb.from('branches' as any) as any).update({
-      latitude: bestPos.coords.latitude, longitude: bestPos.coords.longitude,
-    }).eq('id', id)
+    const r = await api.patch('/api/branches', { org_id: orgId, id, latitude: bestPos.coords.latitude, longitude: bestPos.coords.longitude })
     setSavingLocationId(null)
-    if(error){ toast('فشل حفظ الموقع — حاول مرة أخرى','error'); return }
+    if(!r.success){ toast('فشل حفظ الموقع — حاول مرة أخرى','error'); return }
     setBranches(prev=>prev.map((br:any)=>br.id===id?{...br,latitude:bestPos!.coords.latitude}:br))
     toast('✅ تم حفظ موقع الفرع — الموظفون الآن يقدروا يسجّلوا حضورهم')
   }

@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getOrgId } from '@/lib/session'
 import { colors, font, card, btnPrimary, pageTitle, pageSub, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 
@@ -49,15 +50,9 @@ export default function OnlineStorePage() {
   useEffect(() => { init() }, [])
 
   async function init() {
-    let oid = sessionStorage.getItem('s_org_id')
-    if (!oid) {
-      const { data: { user } } = await sb.auth.getUser()
-      if (!user) return
-      const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
-      if (!profile?.org_id) return
-      oid = profile.org_id; sessionStorage.setItem('s_org_id', oid!)
-    }
-    setOrgId(oid!)
+    const oid = await getOrgId()
+    if (!oid) return
+    setOrgId(oid)
     try {
       const subRes = await fetch(`/api/addons-market?org_id=${oid}`)
       const subJ = await subRes.json()

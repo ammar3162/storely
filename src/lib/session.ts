@@ -9,6 +9,8 @@ export type Me = {
   org_id: string
   role: string | null
   branch_id: string | null
+  full_name: string
+  subscription_ends_at: string | null
   org: { name: string; plan: string; currency: string | null } | null
 }
 
