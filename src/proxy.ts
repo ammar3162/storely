@@ -1,7 +1,25 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// أصول تطبيق الجوال (Capacitor) — الواجهة داخل التطبيق تكلم /api بالتوكن (بدون كوكيز)
+const APP_ORIGINS = new Set(['capacitor://localhost', 'ionic://localhost', 'https://localhost', 'http://localhost'])
+function corsHeaders(origin: string): Record<string, string> {
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET,POST,PATCH,PUT,DELETE,OPTIONS',
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type, x-admin-key',
+    'Access-Control-Max-Age': '86400',
+    'Vary': 'Origin',
+  }
+}
+
 export async function proxy(request: NextRequest) {
+  const origin = request.headers.get('origin') || ''
+  const isAppApiRequest = APP_ORIGINS.has(origin) && request.nextUrl.pathname.startsWith('/api')
+  if (isAppApiRequest && request.method === 'OPTIONS') {
+    return new NextResponse(null, { status: 204, headers: corsHeaders(origin) })
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -89,6 +107,9 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  if (isAppApiRequest) {
+    for (const [k, v] of Object.entries(corsHeaders(origin))) supabaseResponse.headers.set(k, v)
+  }
   return supabaseResponse
 }
 

@@ -3,15 +3,13 @@
  * الصفحات ما تستخدم Supabase مباشرة — كل قراءة/كتابة تمر من هنا إلى /api.
  *
  * - الموقع: نفس الدومين، والكوكيز تنرسل تلقائياً.
- * - تطبيق الجوال (لاحقاً): NEXT_PUBLIC_API_BASE_URL يشير للسيرفر،
- *   و setApiToken() يضيف توكن الدخول بهيدر Authorization.
+ * - تطبيق الجوال: src/lib/apiBridge.ts يوجّه طلبات /api/ لعنوان السيرفر (NEXT_PUBLIC_API_BASE_URL)
+ *   ويضيف توكن الدخول بهيدر Authorization — نفس المسار يخدم api.* و fetch('/api/...') بالصفحات.
  *
  * الاستخدام:
  *   const j = await api.get('/api/shifts', { org_id, branch_id })
  *   if (!j.success) toast(j.error, 'error')
  */
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || ''
 
 let apiToken: string | null = null
 export function setApiToken(token: string | null) { apiToken = token }
@@ -25,7 +23,7 @@ function buildUrl(path: string, params?: Params) {
     if (v !== null && v !== undefined && v !== '') qs.set(k, String(v))
   }
   const q = qs.toString()
-  return `${BASE_URL}${path}${q ? `?${q}` : ''}`
+  return `${path}${q ? `?${q}` : ''}`
 }
 
 async function request<T>(method: string, path: string, params?: Params, body?: unknown, extraHeaders?: Record<string, string>): Promise<ApiResult<T>> {
@@ -37,7 +35,7 @@ async function request<T>(method: string, path: string, params?: Params, body?: 
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
-      credentials: BASE_URL ? 'include' : 'same-origin',
+      credentials: 'same-origin',
     })
     const j = await res.json().catch(() => ({}))
     if (!res.ok && !j.error) j.error = 'حدث خطأ'

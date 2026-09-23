@@ -3,6 +3,7 @@ import { ConfirmDialogContainer } from '@/components/ConfirmDialog'
 import PWAInstall from '@/components/PWAInstall'
 import FeatureAnnouncement from '@/components/FeatureAnnouncement'
 import PullToRefresh from '@/components/PullToRefresh'
+import ApiBridge from '@/components/ApiBridge'
 import type { Metadata } from "next"
 import "./globals.css"
 
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         `}}/>
       </head>
       <body>
+        <ApiBridge/>
         <ToastContainer/>
         <ConfirmDialogContainer/>
         <PWAInstall/>
