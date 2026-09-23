@@ -47,8 +47,8 @@ export async function POST(req: Request) {
       if (!ownerAuth.authorized) return NextResponse.json({ success: false, error: ownerAuth.error }, { status: ownerAuth.status })
     }
 
-    // لا ترسل إذا المخزون لا يزال كافٍ
-    if (new_qty > reorder_point) return NextResponse.json({ success: false, message: 'كافٍ' })
+    // ملاحظة: القرار يعتمد على كميات قاعدة البيانات تحت (مو قيم الطلب) — الصفحات ترسل الحد العام فقط،
+    // فكان الطلب يوقف هنا لو حد المورد أعلى من الحد العام، وما يوصل طلب التوريد للمورد
 
     const db = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -72,6 +72,8 @@ export async function POST(req: Request) {
     // الحد الفعلي من قاعدة البيانات (مو من الطلب): حد المورد لو محدد، وإلا الحد الأدنى العام
     const threshold = (product as any).supplier_reorder_point ?? (product as any).reorder_point
     const supplierDue = Number((product as any).qty) <= Number(threshold)
+    const ownerDue = Number((product as any).qty) <= Number((product as any).reorder_point)
+    if (!supplierDue && !ownerDue) return NextResponse.json({ success: false, message: 'كافٍ' })
 
     const orderQty = (product as any).supplier_order_qty || (product as any).reorder_point
 
@@ -80,7 +82,11 @@ export async function POST(req: Request) {
     let sentAsMarketplaceOrder = false
     console.log('supplier_id:', (product as any).supplier_id)
     // طلب واحد فقط لكل نزول تحت الحد — لو انرسل طلب ولسا ما انعاد تعبئة الصنف، ما نرسل شي للمورد
-    if ((product as any).supplier_id && supplierDue && !(await orderedSinceLastRestock(db as any, product_id))) {
+    const alreadyOrdered = (product as any).supplier_id && supplierDue ? await orderedSinceLastRestock(db as any, product_id) : false
+    if ((product as any).supplier_id && supplierDue && alreadyOrdered) {
+      console.log('supplier order skipped: already ordered since last restock', { product_id })
+    }
+    if ((product as any).supplier_id && supplierDue && !alreadyOrdered) {
       const { data: supplier } = await (db as any).from('suppliers')
         .select('name,phone,whatsapp_consent,marketplace_supplier_id').eq('id', (product as any).supplier_id).single()
 
@@ -104,6 +110,9 @@ export async function POST(req: Request) {
         }
       }
 
+      if (!sentAsMarketplaceOrder && !((supplier as any)?.phone && (supplier as any)?.whatsapp_consent === true)) {
+        console.log('supplier order skipped: supplier has no phone or no WhatsApp consent', { product_id, supplier_id: (product as any).supplier_id })
+      }
       if (!sentAsMarketplaceOrder && (supplier as any)?.phone && (supplier as any)?.whatsapp_consent === true) {
         const notesLine = (product as any).supplier_notes ? `\n📝 ${(product as any).supplier_notes}\n` : ''
 
