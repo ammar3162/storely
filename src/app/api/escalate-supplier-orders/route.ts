@@ -43,11 +43,15 @@ export async function POST(req: Request) {
     }
     const activeOrders = (pendingOrders as any[]).filter(o => !o.supplier_id || existingSupplierIds.has(o.supplier_id))
 
+    // نصعّد فقط الطلبات الحديثة: تجاوزت مهلة المورد لكن عمرها أقل من 3 أيام.
+    // الطلبات الأقدم ما نلمسها — التصعيد كان متوقف فترة طويلة (CRON_SECRET ما كان مضبوط)،
+    // وإرسال طلبات قديمة للمورد الاحتياطي ممكن تكون ما عاد لها حاجة
+    const MAX_AGE_HOURS = 72
     const now = Date.now()
     const staleOrders = activeOrders.filter((o: any) => {
       const timeoutHours = timeoutMap[o.supplier_id] || 24
       const ageHours = (now - new Date(o.created_at).getTime()) / (1000 * 60 * 60)
-      return ageHours >= timeoutHours
+      return ageHours >= timeoutHours && ageHours < MAX_AGE_HOURS
     })
 
     if (!staleOrders.length) return NextResponse.json({ success: true, escalated: 0, checked: pendingOrders.length, message: 'لا توجد طلبات تجاوزت المهلة' })
