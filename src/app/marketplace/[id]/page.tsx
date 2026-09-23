@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
+import { getOrgId } from '@/lib/session'
 import { confirmDialog } from '@/components/ConfirmDialog'
 
 export default function SupplierStorefrontPage() {
@@ -47,49 +49,18 @@ export default function SupplierStorefrontPage() {
 
   async function load() {
     setLoading(true)
-    const sb = createClient()
-    const { data: s } = await (sb as any).from('supplier_profiles')
-      .select('id,business_name,phone,location,status')
-      .eq('id', supplierId).eq('status','active').maybeSingle()
-    if (!s) { setNotFound(true); setLoading(false); return }
-    setSupplier(s)
-
-    const { data: it } = await (sb as any).from('supplier_catalog_items')
-      .select('id,name,unit,price,image_url,price_includes_vat')
-      .eq('supplier_id', supplierId).eq('is_available', true)
-      .order('created_at', { ascending: false })
-    setItems(it || [])
-
-    const { data: reviews } = await (sb as any).from('supplier_reviews').select('rating,quote_request_id').eq('supplier_id', supplierId)
-    if (reviews && reviews.length > 0) {
-      setAvgRating(reviews.reduce((s:number,r:any)=>s+r.rating,0) / reviews.length)
-      setReviewCount(reviews.length)
-    }
-
-    const { data: { user } } = await sb.auth.getUser()
-    if (user) {
-      const { data: p } = await sb.from('profiles').select('org_id,organizations(name)').eq('id', user.id).maybeSingle()
-      if (p?.org_id) {
-        setOrgId(p.org_id)
-        setOrgName((p.organizations as any)?.name || '')
-        const activeBranch = typeof window !== 'undefined' ? sessionStorage.getItem('s_branch_id') : null
-        let reqsQuery = (sb as any).from('quote_requests')
-          .select('id,items,status,quoted_price,quoted_note,created_at,delivery_date,rep_name,rep_phone,branch_id')
-          .eq('supplier_id', supplierId).eq('org_id', p.org_id)
-        if (activeBranch) reqsQuery = reqsQuery.eq('branch_id', activeBranch)
-        const { data: reqs } = await reqsQuery.order('created_at', { ascending: false })
-        setMyRequests(reqs || [])
-
-        const { data: myReviews } = await (sb as any).from('supplier_reviews').select('quote_request_id').eq('org_id', p.org_id).eq('supplier_id', supplierId)
-        setMyReviewedIds((myReviews||[]).map((r:any)=>r.quote_request_id))
-
-        let msgsQuery = (sb as any).from('chat_messages')
-          .select('id,sender_type,message,created_at,branch_id')
-          .eq('supplier_id', supplierId).eq('org_id', p.org_id)
-        if (activeBranch) msgsQuery = msgsQuery.eq('branch_id', activeBranch)
-        const { data: msgs } = await msgsQuery.order('created_at', { ascending: true })
-        setChatMessages(msgs || [])
-      }
+    const orgIdNow = await getOrgId()
+    const j = await api.get('/api/marketplace', { view: 'supplier', id: supplierId, org_id: orgIdNow, branch_id: typeof window !== 'undefined' ? sessionStorage.getItem('s_branch_id') : null })
+    if (!j.success || j.not_found) { setNotFound(true); setLoading(false); return }
+    setSupplier(j.supplier)
+    setItems(j.items || [])
+    if (j.review_count > 0) { setAvgRating(j.avg_rating); setReviewCount(j.review_count) }
+    if (orgIdNow && j.my_requests) {
+      setOrgId(orgIdNow)
+      setOrgName(j.org_name || '')
+      setMyRequests(j.my_requests || [])
+      setMyReviewedIds(j.my_reviewed_ids || [])
+      setChatMessages(j.messages || [])
     }
     setLoading(false)
   }
@@ -110,41 +81,31 @@ export default function SupplierStorefrontPage() {
   async function submitReview(reqId: string) {
     if (!orgId) return
     setReviewSaving(true)
-    const { error } = await (createClient() as any).from('supplier_reviews').insert({
-      supplier_id: supplierId, org_id: orgId, org_name: orgName,
-      quote_request_id: reqId, rating: reviewRating, comment: reviewComment.trim() || null,
-    })
+    const r = await api.post('/api/marketplace', { action: 'review', org_id: orgId, supplier_id: supplierId, quote_request_id: reqId, rating: reviewRating, comment: reviewComment.trim() || null })
     setReviewSaving(false)
-    if (!error) {
+    if (r.success) {
       setReviewingId(null); setReviewRating(5); setReviewComment('')
       load()
     }
   }
 
-  async function acceptOffer(reqId: string, supplierName: string, supplierPhone: string) {
+  async function acceptOffer(reqId: string) {
     if (!(await confirmDialog({ title: 'قبول العرض', message: 'تأكيد قبول العرض؟ سيتم إضافة المورد تلقائياً لقائمة موردينك', type: 'success' }))) return
-    const sb = createClient()
+    // الخادم يضيف المورد لموردي المنشأة (باسمه ورقمه من ملفه بالسوق) ويقبل الطلب
     const activeBranch = typeof window !== 'undefined' ? sessionStorage.getItem('s_branch_id') : null
-    const { data: existingSupplier } = await (sb as any).from('suppliers').select('id').eq('org_id', orgId).eq('name', supplierName).maybeSingle()
-    if (!existingSupplier) {
-      await (sb as any).from('suppliers').insert({ org_id: orgId, branch_id: activeBranch || null, name: supplierName, phone: supplierPhone || null, marketplace_supplier_id: supplierId })
-    } else {
-      await (sb as any).from('suppliers').update({ marketplace_supplier_id: supplierId, branch_id: activeBranch || null }).eq('id', existingSupplier.id)
-    }
-    await (sb as any).from('quote_requests').update({ status: 'accepted' }).eq('id', reqId)
+    const r = await api.post('/api/marketplace', { action: 'accept', org_id: orgId, supplier_id: supplierId, request_id: reqId, branch_id: activeBranch })
+    if (!r.success) alert(r.error || 'حدث خطأ')
     load()
   }
 
   async function sendChatMessage() {
     if (!chatInput.trim()) return
     if (!orgId) { alert('لازم تسجّل دخول بحسابك بستوريلي أول عشان تراسل المورد'); router.push('/login'); return }
-    const sb = createClient()
     setChatSending(true)
     const activeBranch = typeof window !== 'undefined' ? sessionStorage.getItem('s_branch_id') : null
-    const { data } = await (sb as any).from('chat_messages').insert({
-      supplier_id: supplierId, org_id: orgId, org_name: orgName, sender_type: 'customer', message: chatInput.trim(), branch_id: activeBranch || null,
-    }).select().single()
-    if (data) setChatMessages(prev => [...prev, data])
+    const r = await api.post('/api/marketplace', { action: 'chat', org_id: orgId, supplier_id: supplierId, message: chatInput.trim(), branch_id: activeBranch })
+    const data = r.message
+    if (data) setChatMessages(prev => prev.some((m:any)=>m.id===data.id) ? prev : [...prev, data])
     setChatInput('')
     setChatSending(false)
   }
@@ -157,18 +118,13 @@ export default function SupplierStorefrontPage() {
       router.push('/login')
       return
     }
-    const sb = createClient()
     setSubmitting(true)
-    const requestItems = chosenIds.map(id => {
-      const it = items.find((x:any)=>x.id===id)
-      return { name: it?.name, unit: it?.unit, qty: Number(selected[id])||1 }
-    })
+    // الخادم يقرأ أسماء ووحدات الأصناف من كتالوج المورد — نرسل المعرّفات والكميات فقط
     const activeBranch = typeof window !== 'undefined' ? sessionStorage.getItem('s_branch_id') : null
-    const { error } = await (sb as any).from('quote_requests').insert({
-      supplier_id: supplierId, org_id: orgId, org_name: orgName, items: requestItems, branch_id: activeBranch || null,
-    })
+    const r = await api.post('/api/marketplace', { action: 'quote', org_id: orgId, supplier_id: supplierId, branch_id: activeBranch,
+      items: chosenIds.map(id => ({ id, qty: Number(selected[id])||1 })) })
     setSubmitting(false)
-    if (!error) {
+    if (r.success) {
       setSelected({})
       alert('✅ تم إرسال طلب التسعير للمورد')
       load()
@@ -390,7 +346,7 @@ export default function SupplierStorefrontPage() {
                       </div>
                     )}
                     {r.status==='quoted' && (
-                      <button onClick={()=>acceptOffer(r.id, supplier.business_name, supplier.phone)}
+                      <button onClick={()=>acceptOffer(r.id)}
                         style={{width:'100%',padding:'10px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>
                         ✅ قبول العرض
                       </button>

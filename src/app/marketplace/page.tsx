@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
 
 // حماية أمنية: يمنع عرض روابط خبيثة (javascript:, data:, إلخ) كرابط قابل للنقر
 function isSafeUrl(url?: string | null): boolean {
@@ -34,38 +34,10 @@ export default function MarketplacePage() {
 
   async function loadSuppliers() {
     setLoading(true)
-    const sb = createClient()
-    const { data } = await (sb as any).from('supplier_applications')
-      .select('id,company_name,business_type,description,phone,whatsapp,logo_url,offer,website')
-      .eq('status','approved')
-      .eq('marketplace_consent',true)
-      .order('created_at',{ascending:false})
-    setSuppliers(data || [])
-
-    const { data: profiles } = await (sb as any).from('supplier_profiles')
-      .select('id,business_name,phone,location')
-      .eq('status','active')
-      .eq('is_visible', true)
-    if (profiles?.length) {
-      const { data: allItems } = await (sb as any).from('supplier_catalog_items')
-        .select('id,supplier_id,name,unit,price,image_url')
-        .eq('is_available', true)
-        .in('supplier_id', profiles.map((p:any)=>p.id))
-      const withItems = (profiles||[]).map((p:any)=>({
-        ...p,
-        items: (allItems||[]).filter((it:any)=>it.supplier_id===p.id),
-      })).filter((p:any)=>p.items.length>0)
-      setNewSuppliers(withItems)
-
-      const { data: reviews } = await (sb as any).from('supplier_reviews').select('supplier_id,rating').in('supplier_id', profiles.map((p:any)=>p.id))
-      if (reviews?.length) {
-        const grouped: Record<string, number[]> = {}
-        reviews.forEach((r:any)=>{ (grouped[r.supplier_id] ||= []).push(r.rating) })
-        const computed: Record<string,{avg:number;count:number}> = {}
-        Object.entries(grouped).forEach(([sid, arr])=>{ computed[sid] = { avg: arr.reduce((a,b)=>a+b,0)/arr.length, count: arr.length } })
-        setRatings(computed)
-      }
-    }
+    const j = await api.get('/api/marketplace', { view: 'list' })
+    setSuppliers(j.suppliers || [])
+    setNewSuppliers(j.new_suppliers || [])
+    if (j.ratings && Object.keys(j.ratings).length) setRatings(j.ratings)
     setLoading(false)
   }
 
