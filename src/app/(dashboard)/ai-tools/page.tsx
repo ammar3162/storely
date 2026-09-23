@@ -2,7 +2,8 @@
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
+import { getMe } from '@/lib/session'
 import { colors as dsColors } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
@@ -94,16 +95,16 @@ export default function AIToolsPage() {
   async function loadRecipesList() {
     const orgId=sessionStorage.getItem('s_org_id')
     if(!orgId) return
-    const{data}=await (sb.from('recipes' as any) as any).select('id,name').eq('org_id',orgId).order('created_at',{ascending:false})
-    setRecipesList(data||[])
+    const j=await api.get('/api/recipes',{org_id:orgId})
+    setRecipesList(j.recipes||[])
   }
 
   async function deleteRecipe(id:string) {
     if(!(await confirmDialog({ title: 'حذف الوصفة', message: 'حذف هذي الوصفة؟ هذا الإجراء لا يمكن التراجع عنه.' }))) return
     setDeletingRecipeId(id)
-    const{error}=await (sb.from('recipes' as any) as any).delete().eq('id',id)
+    const r=await api.del('/api/recipes',{org_id:sessionStorage.getItem('s_org_id'),id})
     setDeletingRecipeId(null)
-    if(error){toast('فشل حذف الوصفة — حاول مرة أخرى','error');return}
+    if(!r.success){toast('فشل حذف الوصفة — حاول مرة أخرى','error');return}
     toast('✅ تم حذف الوصفة')
     setRecipesList(prev=>prev.filter(r=>r.id!==id))
   }
@@ -112,10 +113,8 @@ export default function AIToolsPage() {
     const orgId=sessionStorage.getItem('s_org_id')
     if(!orgId) return
     const bid=sessionStorage.getItem('s_branch_id')
-    let rmQ=sb.from('products').select('id,name,unit,recipe_unit,recipe_unit_factor').eq('org_id',orgId).eq('is_active',true)
-    if(bid) rmQ=rmQ.eq('branch_id',bid)
-    const{data}=await rmQ
-    setRawMaterials(data||[])
+    const j=await api.get('/api/products',{org_id:orgId,branch_id:bid,full:1})
+    setRawMaterials(j.products||[])
     setEditingRecipeId(id)
     setShowRecipeModal(true)
   }
@@ -135,18 +134,14 @@ export default function AIToolsPage() {
   const [branchLoading, setBranchLoading] = useState(false)
   const [reportLoading, setReportLoading] = useState(false)
   const router = useRouter()
-  const sb = createClient()
   const [curr, setCurr] = useState('ر.س')
   useEffect(()=>{
-    const oid = sessionStorage.getItem('s_org_id')
-    if(!oid) return
-    sb.from('organizations' as any).select('currency').eq('id',oid).single()
-      .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
   },[])
 
   async function applyReorderSuggestion(productId: string, newReorderPoint: number) {
     setApplyingId(productId)
-    await (sb as any).from('products').update({ reorder_point: newReorderPoint }).eq('id', productId)
+    await api.patch('/api/products', { org_id: sessionStorage.getItem('s_org_id'), id: productId, reorder_point: newReorderPoint })
     setReorderSuggestions((prev: any) => ({
       ...prev,
       suggestions: prev.suggestions.filter((s: any) => s.id !== productId),
@@ -707,10 +702,8 @@ export default function AIToolsPage() {
               const orgId=sessionStorage.getItem('s_org_id')
               if(!orgId) return
               const bid2=sessionStorage.getItem('s_branch_id')
-              let rmQ2=sb.from('products').select('id,name,unit,recipe_unit,recipe_unit_factor').eq('org_id',orgId).eq('is_active',true)
-              if(bid2) rmQ2=rmQ2.eq('branch_id',bid2)
-              const{data}=await rmQ2
-              setRawMaterials(data||[])
+              const j=await api.get('/api/products',{org_id:orgId,branch_id:bid2,full:1})
+              setRawMaterials(j.products||[])
               setShowRecipeModal(true)
             }} style={{flex:1,padding:'8px 14px',background:'white',color:'#7c3aed',border:'1.5px solid #ddd6fe',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
               + وصفة جديدة
@@ -1057,7 +1050,6 @@ export default function AIToolsPage() {
             onClose={()=>{setShowRecipeModal(false);setEditingRecipeId(null)}}
             onSaved={()=>{setShowRecipeModal(false);setEditingRecipeId(null);if(showRecipesList)loadRecipesList()}}
             rawMaterials={rawMaterials}
-            sb={sb}
             orgId={typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null}
             branchId={typeof window!=='undefined'?sessionStorage.getItem('s_branch_id'):null}
             editingRecipeId={editingRecipeId}
@@ -1068,7 +1060,7 @@ export default function AIToolsPage() {
   )
 }
 
-function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editingRecipeId}:{onClose:()=>void,onSaved:()=>void,rawMaterials:any[],sb:any,orgId:string|null,branchId:string|null,editingRecipeId?:string|null}) {
+function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,branchId,editingRecipeId}:{onClose:()=>void,onSaved:()=>void,rawMaterials:any[],orgId:string|null,branchId:string|null,editingRecipeId?:string|null}) {
   const [name,setName]=useState('')
   const [components,setComponents]=useState<{component_product_id:string,qty:string}[]>([])
   const [newCompId,setNewCompId]=useState('')
@@ -1084,9 +1076,9 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
   useEffect(()=>{
     if(!editingRecipeId) return
     ;(async()=>{
-      const{data:recipe}=await (sb.from('recipes' as any) as any).select('name,sell_price').eq('id',editingRecipeId).single()
+      const j=await api.get('/api/recipes',{org_id:sessionStorage.getItem('s_org_id'),id:editingRecipeId})
+      const recipe=j.recipe, items=j.items
       if(recipe){ setName(recipe.name); if(recipe.sell_price) setSellPrice(String(recipe.sell_price)) }
-      const{data:items}=await sb.from('recipe_items').select('component_product_id,qty').eq('recipe_id',editingRecipeId)
       setComponents((items||[]).map((it:any)=>({component_product_id:it.component_product_id,qty:String(it.qty)})))
       setLoadingEdit(false)
     })()
@@ -1096,19 +1088,8 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
   useEffect(()=>{
     if(!orgId) return
     ;(async()=>{
-      let purQ = sb.from('purchases').select('name,qty,total_amount').eq('org_id',orgId).not('total_amount','is',null).not('qty','is',null)
-      if(branchId) purQ = purQ.eq('branch_id',branchId)
-      const{data:purchases}=await purQ
-      const totals:Record<string,{total:number,qty:number}>={}
-      for(const p of (purchases||[]) as any[]){
-        const nm=p.name; const qty=Number(p.qty)||0; const amt=Number(p.total_amount)||0
-        if(!nm||qty<=0) continue
-        if(!totals[nm]) totals[nm]={total:0,qty:0}
-        totals[nm].total+=amt; totals[nm].qty+=qty
-      }
-      const map:Record<string,number>={}
-      for(const nm in totals) map[nm]=totals[nm].qty>0 ? totals[nm].total/totals[nm].qty : 0
-      setPriceMap(map)
+      const j=await api.get('/api/recipes',{org_id:orgId,branch_id:branchId,view:'prices'})
+      setPriceMap(j.price_map||{})
     })()
   },[orgId])
 
@@ -1138,7 +1119,7 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
     setComponents(prev=>[...prev,{component_product_id:newCompId,qty:String(baseQty)}])
     if(customFactor>0 && customSubLabel.trim()){
       // نحفظ التحويل بالمنتج نفسه عشان ما نسأل عنه مرة ثانية بأي وصفة جاية
-      await sb.from('products').update({recipe_unit:customSubLabel.trim(),recipe_unit_factor:customFactor}).eq('id',newCompId)
+      await api.patch('/api/products',{org_id:orgId,id:newCompId,recipe_unit:customSubLabel.trim(),recipe_unit_factor:customFactor})
     }
     setNewCompId('');setNewCompQty('');setNewCompSubUnit(1);setCustomSubLabel('');setCustomSubCount('')
   }
@@ -1161,27 +1142,16 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,sb,orgId,branchId,editi
       const baseQty=Number(newCompQty)/factor
       finalComponents.push({component_product_id:newCompId,qty:String(baseQty)})
       if(customFactor>0 && customSubLabel.trim()){
-        await sb.from('products').update({recipe_unit:customSubLabel.trim(),recipe_unit_factor:customFactor}).eq('id',newCompId)
+        await api.patch('/api/products',{org_id:orgId,id:newCompId,recipe_unit:customSubLabel.trim(),recipe_unit_factor:customFactor})
       }
     }
 
-    let recipeId = editingRecipeId
+    // الوصفات مشتركة على مستوى الشركة كاملة (مو حصرية بفرع واحد) — تُعرَّف مرة وتشتغل بكل الفروع تلقائياً
     const sellPriceVal = sellPrice ? Number(sellPrice) : null
-    if(editingRecipeId){
-      const{error:updErr}=await (sb.from('recipes' as any) as any).update({name:name.trim(),sell_price:sellPriceVal}).eq('id',editingRecipeId)
-      if(updErr){toast('فشل تحديث الوصفة — حاول مرة أخرى','error');setSaving(false);return}
-      await sb.from('recipe_items').delete().eq('recipe_id',editingRecipeId)
-    } else {
-      // الوصفات مشتركة على مستوى الشركة كاملة (مو حصرية بفرع واحد) — تُعرَّف مرة وتشتغل بكل الفروع تلقائياً
-      const{data:nr,error}=await (sb.from('recipes' as any) as any).insert({org_id:orgId,branch_id:null,name:name.trim(),sell_price:sellPriceVal}).select().single()
-      if(error||!nr){toast('فشل حفظ الوصفة — حاول مرة أخرى','error');setSaving(false);return}
-      recipeId = nr.id
-    }
-    if(finalComponents.length>0 && recipeId){
-      const rows=finalComponents.map(c=>({recipe_id:recipeId,component_product_id:c.component_product_id,qty:Number(c.qty)}))
-      const{error:itemsErr}=await sb.from('recipe_items').insert(rows)
-      if(itemsErr){toast('تم حفظ اسم الوصفة لكن فشل حفظ المكوّنات: '+itemsErr.message,'error');setSaving(false);return}
-    } else if(finalComponents.length===0) {
+    const r = await api.post('/api/recipes', { org_id: orgId, id: editingRecipeId || undefined, name: name.trim(), sell_price: sellPriceVal,
+      items: finalComponents.map(c=>({component_product_id:c.component_product_id,qty:Number(c.qty)})) })
+    if(!r.success){toast(r.error || (editingRecipeId?'فشل تحديث الوصفة — حاول مرة أخرى':'فشل حفظ الوصفة — حاول مرة أخرى'),'error');setSaving(false);return}
+    if(finalComponents.length===0) {
       toast('⚠️ تنبيه: الوصفة اتحفظت بدون أي مكوّنات — أضف مكوّناتها لاحقاً من "تعديل"','warning')
     }
     setSaving(false)
