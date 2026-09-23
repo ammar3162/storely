@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { waitUntil } from '@vercel/functions'
 import { createClient } from '@supabase/supabase-js'
 import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
+import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -18,9 +19,31 @@ function buildOrderMessage(orgName: string, items: { name: string; unit: string;
   return `📦 *طلب توريد — ${orgName}*\n\nمرحباً،\n\nنحتاج توريد المواد التالية:\n\n${itemsList}${notesSection}\n\nنرجو التوريد في أقرب وقت. شكراً 🙏\n_Storely — نظام إدارة المخزون_`
 }
 
+/** طلب من Vercel Cron (أو مفتاح الأدمن اليدوي). لو CRON_SECRET مو مضبوط بالبيئة نسمح (نفس السلوك السابق) */
+function isCronRequest(req: Request) {
+  const auth = req.headers.get('authorization')
+  const manualKey = req.headers.get('x-cron-secret')
+  if (process.env.ADMIN_PASSWORD && manualKey === process.env.ADMIN_PASSWORD) return true
+  if (!process.env.CRON_SECRET) return true
+  return auth === `Bearer ${process.env.CRON_SECRET}`
+}
+
 export async function POST(req: Request) {
+  const body = await req.json().catch(() => ({}))
+  if (body?.org_id) {
+    // زر "أرسل الآن" من صفحة الموردين — لازم المستخدم يكون من هذي المنشأة
+    // (كان أي أحد يقدر يرسل طلبات توريد واتساب لموردين أي منشأة)
+    const access = await verifyOrgAccess(body.org_id)
+    if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+  } else if (!isCronRequest(req)) {
+    // الإرسال لكل المنشآت — للجدولة فقط
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  }
+  return run(body)
+}
+
+async function run(body: any) {
   try {
-    const body = await req.json().catch(() => ({}))
     const orgId = body?.org_id
 
     const supabase = sb()
@@ -178,6 +201,7 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET() {
-  return POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ manual: true }) }))
+export async function GET(req: Request) {
+  if (!isCronRequest(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  return run({ manual: true })
 }
