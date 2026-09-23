@@ -46,3 +46,7 @@ android/keystore.properties
 schema.sql
 supabase/.temp/
 .vercel/
+
+# بناء تطبيق الجوال (scripts/build-app.mjs)
+/.app-build/
+/app-www/

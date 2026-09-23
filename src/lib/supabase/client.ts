@@ -1,5 +1,10 @@
 import { createBrowserClient } from '@supabase/ssr'
+import { createClient as createStorageClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/database.types'
+
+// نسخة تطبيق الجوال (NEXT_PUBLIC_API_BASE_URL مضبوط): الجلسة تنحفظ بـ localStorage بدل الكوكيز،
+// لأن الواجهة تشتغل من داخل التطبيق (capacitor://localhost) والكوكيز ما يعتمد عليها هناك
+const IS_APP = !!process.env.NEXT_PUBLIC_API_BASE_URL
 
 declare global {
   interface Window {
@@ -17,7 +22,11 @@ export function createClient() {
     return createBrowserClient<Database>(url, key)
   }
   if (!window.__storely_supabase_client) {
-    window.__storely_supabase_client = createBrowserClient<Database>(url, key)
+    window.__storely_supabase_client = IS_APP
+      ? (createStorageClient<Database>(url, key, {
+          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storage: window.localStorage },
+        }) as unknown as ReturnType<typeof createBrowserClient<Database>>)
+      : createBrowserClient<Database>(url, key)
   }
   return window.__storely_supabase_client
 }
