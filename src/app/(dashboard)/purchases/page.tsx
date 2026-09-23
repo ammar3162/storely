@@ -277,7 +277,7 @@ export default function PurchasesPage() {
       category:form.category, name:form.name, sku:form.sku||null, qty:form.qty||null,
       unit:form.unit||null, reorder_point:form.reorder_point, total_amount:form.total_amount,
       supplier:form.supplier, note:form.note||null, invoice_image:form.invoice_image||null,
-      invoice_date:form.invoice_date, payment_status:form.payment_status, due_date:form.due_date||null,
+      has_vat:form.hasVat==='yes', invoice_date:form.invoice_date, payment_status:form.payment_status, due_date:form.due_date||null,
     })
     if(!res.success){toast(res.error||'حدث خطأ','error');setLoading(false);submitting.current=false;return}
 

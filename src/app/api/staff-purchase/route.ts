@@ -16,7 +16,16 @@ export async function POST(req: Request) {
 
     const body = await req.json()
     const { branch_id, category, name, qty, unit, reorder_point,
-            amount, supplier, note, invoice_image, staff_name } = body
+            supplier, note, invoice_image, staff_name } = body
+
+    // المبلغ قبل الضريبة يُحسب هنا: شاملة ضريبة ← الإجمالي ÷ 1.15، بدون ← الإجمالي نفسه
+    // (توافق مع النسخة القديمة من الصفحة اللي كانت ترسل amount جاهز وتعتبر الكل شامل ضريبة)
+    const hasVat = body.has_vat !== false
+    const total = Number(body.total_amount)
+    const amount = Number.isFinite(total) && total > 0
+      ? (hasVat ? parseFloat((total / 1.15).toFixed(2)) : parseFloat(total.toFixed(2)))
+      : Number(body.amount)
+    if (!(amount > 0)) return NextResponse.json({ error: 'أدخل المبلغ' }, { status: 400 })
 
     if (!org_id || !name) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
@@ -28,7 +37,7 @@ export async function POST(req: Request) {
       org_id, branch_id: branch_id || null,
       category, name, qty: qty || null, unit: unit || null,
       reorder_point: reorder_point || 5,
-      amount,
+      amount, has_vat: hasVat,
       supplier, note: note || `تسجيل بواسطة الموظف: ${staff_name}`,
       invoice_image: invoice_image || null,
       profile_id: null,

@@ -11,12 +11,12 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
 // حفظ عدة أصناف مستخرجة من صورة فاتورة (OCR) — كل صنف فاتورة شراء مستقلة بسعره،
 // والمخزون يتحدث عبر حركة "in" (الـ trigger يعيد حساب الكمية من مجموع الحركات).
-// ملاحظة: vat_amount و total_amount أعمدة محسوبة بقاعدة البيانات (amount × 0.15 / × 1.15)، فنسجّل
-// amount فقط وبنفس طريقة نموذج الفاتورة الواحدة (الإجمالي ÷ 1.15). النسخة السابقة كانت تكتب بالأعمدة
+// ملاحظة: vat_amount و total_amount أعمدة محسوبة بقاعدة البيانات من amount و has_vat، فنسجّل
+// amount و has_vat فقط (بنفس طريقة نموذج الفاتورة الواحدة). النسخة الأقدم كانت تكتب بالأعمدة
 // المحسوبة وبأعمدة غير موجودة (hasVat, invoice_date) فيفشل حفظ الفاتورة دايماً بينما المخزون يزيد.
 export async function POST(req: Request) {
   try {
-    const { org_id, branch_id, supplier, note, invoice_image, invoice_date, items } = await req.json()
+    const { org_id, branch_id, supplier, note, invoice_image, invoice_date, items, has_vat } = await req.json()
     if (!org_id || !Array.isArray(items) || !items.length) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     if (!DATE_RE.test(String(invoice_date || ''))) return NextResponse.json({ error: 'تاريخ غير صالح' }, { status: 400 })
 
@@ -30,6 +30,7 @@ export async function POST(req: Request) {
       if (!b) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
     }
     const invoiceTs = `${invoice_date}T12:00:00+03:00`
+    const hasVat = has_vat !== false
 
     let saved = 0
     const failed: string[] = []
@@ -43,7 +44,7 @@ export async function POST(req: Request) {
       const { error: purchaseErr } = await db.from('purchases').insert({
         org_id, profile_id: access.userId, branch_id: bid || null,
         category: 'مخزون', name, qty, unit, reorder_point: 5,
-        amount: parseFloat((itemTotal / 1.15).toFixed(2)),
+        amount: hasVat ? parseFloat((itemTotal / 1.15).toFixed(2)) : parseFloat(itemTotal.toFixed(2)), has_vat: hasVat,
         supplier: supplier || null, note: note || null, invoice_image: invoice_image || null,
         created_at: invoiceTs, payment_status: 'paid',
       } as any)

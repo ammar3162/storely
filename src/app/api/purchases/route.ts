@@ -85,8 +85,10 @@ export async function POST(req: Request) {
     const purchaseBranch = await resolveBranch(db, access, org_id, body.branch_id || null, false)
     if (purchaseBranch === undefined) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
 
-    // نفس الحساب السابق بالواجهة بالضبط: المبلغ قبل الضريبة = الإجمالي ÷ 1.15
-    const amount = parseFloat((total / 1.15).toFixed(2))
+    // has_vat: الفاتورة شاملة ضريبة 15% ← المبلغ قبل الضريبة = الإجمالي ÷ 1.15؛ بدون ضريبة ← المبلغ = الإجمالي
+    // (vat_amount و total_amount تحسبها قاعدة البيانات من amount و has_vat)
+    const hasVat = body.has_vat !== false
+    const amount = hasVat ? parseFloat((total / 1.15).toFixed(2)) : parseFloat(total.toFixed(2))
     const invoiceTs = `${body.invoice_date}T12:00:00+03:00`
     const qty = body.qty ? Number(body.qty) : 0
 
@@ -94,7 +96,7 @@ export async function POST(req: Request) {
       org_id, profile_id: access.userId, branch_id: purchaseBranch,
       category, name, qty: body.qty ? Number(body.qty) : null,
       unit: body.unit || null, reorder_point: Number(body.reorder_point) || 5,
-      amount, supplier, note: body.note || null, invoice_image: body.invoice_image || null,
+      amount, has_vat: hasVat, supplier, note: body.note || null, invoice_image: body.invoice_image || null,
       created_at: invoiceTs, payment_status: body.payment_status === 'unpaid' ? 'unpaid' : 'paid', due_date: body.due_date || null,
     } as any)
     if (insErr) return NextResponse.json({ error: 'خطأ: ' + insErr.message }, { status: 500 })

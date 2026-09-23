@@ -132,9 +132,7 @@ export default function StaffPurchasesPage() {
     if(form.hasVat==='yes'&&!form.invoice_image){showToast(pt('invoiceRequired',lang));submitting.current=false;return}
     if(!form.supplier.trim()){showToast(pt('supplierRequired',lang));submitting.current=false;return}
     setLoading(true)
-    const inputTotal = Number(form.total_amount)
-    const amount = parseFloat((inputTotal/1.15).toFixed(2))
-    const total_amount = inputTotal.toFixed(2)
+    const total_amount = Number(form.total_amount).toFixed(2)
 
     const staffToken = localStorage.getItem('staff_token')
     const res = await fetch('/api/staff-purchase', {
@@ -145,7 +143,7 @@ export default function StaffPurchasesPage() {
         category:form.category, name:form.name,
         qty:form.qty?Number(form.qty):null,
         unit:form.unit||null, reorder_point:Number(form.reorder_point)||5,
-        amount, total_amount,
+        total_amount, has_vat: form.hasVat==='yes',
         supplier:form.supplier,
         note:form.note||null,
         invoice_image:form.invoice_image||null,
