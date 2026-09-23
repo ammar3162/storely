@@ -13,7 +13,7 @@ export async function GET() {
   try {
     const profile = await getCurrentProfile()
     if (!profile) return NextResponse.json({ error: 'غير مسجل دخول', reason: 'unauthenticated' }, { status: 401 })
-    if (!profile.orgId) return NextResponse.json({ error: 'لا توجد مؤسسة مرتبطة بالحساب', reason: 'no_org' }, { status: 404 })
+    if (!profile.orgId) return NextResponse.json({ error: 'لا توجد مؤسسة مرتبطة بالحساب', reason: 'no_org', status: profile.status }, { status: 404 })
 
     const db = sb()
     let branchesQ = db.from('branches').select('id,name,location').eq('org_id', profile.orgId).eq('is_active', true)
@@ -21,7 +21,7 @@ export async function GET() {
 
     const [{ data: org }, { data: extra }, { data: branches }] = await Promise.all([
       db.from('organizations')
-        .select('id,name,plan,currency,logo_url,deletion_scheduled_at,max_staff,max_suppliers,max_branches,country_code,business_type')
+        .select('id,name,plan,currency,logo_url,deletion_scheduled_at,max_staff,max_suppliers,max_branches,country_code,business_type,onboarding_done')
         .eq('id', profile.orgId).single(),
       db.from('profiles')
         .select('full_name,phone,subscription_ends_at,permissions,whatsapp_consent,whatsapp_first_contact_confirmed,terms_version_accepted')
@@ -37,6 +37,7 @@ export async function GET() {
       org_id: profile.orgId,
       role: profile.role,
       branch_id: profile.branchId,
+      status: profile.status,
       full_name: e.full_name || '',
       phone: e.phone || '',
       email: profile.email || '',
@@ -56,6 +57,7 @@ export async function GET() {
         max_branches: o.max_branches ?? 1,
         country_code: o.country_code || '+966',
         business_type: o.business_type || null,
+        onboarding_done: o.onboarding_done !== false,
       } : null,
       branches: branches || [],
     })

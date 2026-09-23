@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { confirmDialog } from '@/components/ConfirmDialog'
 
 // حماية أمنية: يمنع عرض روابط خبيثة (javascript:, data:, إلخ) كرابط قابل للنقر
@@ -204,7 +203,6 @@ export default function AdminPage() {
   const [dashLoading, setDashLoading] = useState(false)
   const [supplierApps, setSupplierApps] = useState<any[]>([])
   const [suppLoading, setSuppLoading] = useState(false)
-  const sb = createClient()
 
   const [maintenanceMode, setMaintenanceMode] = useState(false)
   const [maintenanceMsgInput, setMaintenanceMsgInput] = useState('')
@@ -321,24 +319,12 @@ export default function AdminPage() {
 
   async function loadDashStats() {
     setDashLoading(true)
-    const db = createClient()
-    const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-
-    const [
-      { count: totalUsers },
-      { count: newThisMonth },
-      { count: trialUsers },
-      { count: paidUsers },
-      { data: expiringSoon }
-    ] = await Promise.all([
-      db.from('profiles').select('*',{count:'exact',head:true}),
-      db.from('profiles').select('*',{count:'exact',head:true}).gte('created_at',startOfMonth),
-      db.from('profiles').select('*',{count:'exact',head:true}).eq('subscription_type','trial'),
-      db.from('profiles').select('*',{count:'exact',head:true}).eq('subscription_type','paid'),
-      db.from('profiles').select('full_name,subscription_ends_at,phone').lte('subscription_ends_at', new Date(Date.now()+7*24*60*60*1000).toISOString()).gte('subscription_ends_at', now.toISOString()).order('subscription_ends_at').limit(5)
-    ])
-
+    let j:any = {}
+    try {
+      const res = await fetch('/api/admin/dashboard-stats', { headers: { 'x-admin-key': sessionStorage.getItem('storely_admin_pass')||'' } })
+      j = await res.json()
+    } catch {}
+    const { totalUsers=0, newThisMonth=0, trialUsers=0, paidUsers=0, expiringSoon=[] } = j
     setDashStats({ totalUsers, newThisMonth, trialUsers, paidUsers, expiringSoon: expiringSoon||[] })
     setDashLoading(false)
   }

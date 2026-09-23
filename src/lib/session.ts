@@ -9,6 +9,7 @@ export type Me = {
   org_id: string
   role: string | null
   branch_id: string | null
+  status: string | null
   full_name: string
   phone: string
   email: string
@@ -20,7 +21,7 @@ export type Me = {
   org: {
     name: string; plan: string; currency: string | null; logo_url: string | null
     deletion_scheduled_at: string | null; max_staff: number; max_suppliers: number
-    max_branches: number; country_code: string; business_type: string | null
+    max_branches: number; country_code: string; business_type: string | null; onboarding_done: boolean
   } | null
   branches: { id: string; name: string; location: string | null }[]
 }

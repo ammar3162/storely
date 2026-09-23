@@ -31,12 +31,13 @@ export async function getCurrentProfile() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('org_id, role, branch_id')
+    .select('org_id, role, branch_id, status')
     .eq('id', user.id)
     .single()
 
   return {
     userId: user.id,
+    status: ((profile as any)?.status as string | null) ?? null,
     email: user.email ?? null,
     orgId: (profile?.org_id as string | null) ?? null,
     role: ((profile as any)?.role as string | null) ?? null,

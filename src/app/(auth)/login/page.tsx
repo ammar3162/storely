@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
 import StoreMascot from '@/components/StoreMascot'
 import { LanguageProvider, useTranslation } from '@/lib/i18n/LanguageContext'
 
@@ -133,7 +134,8 @@ function LoginPage() {
       setLoading(false); return
     }
     if (data.session) {
-      const { data: profile } = await supabase.from('profiles').select('org_id,status').eq('id', data.session.user.id).single()
+      const me = await api.get('/api/me')
+      const profile = { status: me.status as string | null, org_id: me.org_id as string | null }
 
       if (profile?.status === 'suspended' || profile?.status === 'deleted') {
         await supabase.auth.signOut()
@@ -143,10 +145,7 @@ function LoginPage() {
       }
       if (profile?.status === 'pending') { window.location.href = '/pending'; return }
 
-      if (profile?.org_id) {
-        const { data: org } = await (supabase.from('organizations') as any).select('onboarding_done').eq('id', profile.org_id).single()
-        if (org && !org.onboarding_done) { window.location.href = '/onboarding'; return }
-      }
+      if (profile?.org_id && me.org && !me.org.onboarding_done) { window.location.href = '/onboarding'; return }
       window.location.href = '/dashboard'
     }
   }
@@ -247,13 +246,7 @@ function LoginPage() {
     }
     if (data.user) {
       const fullPhone = countryCode + phone.trim().replace(/^0+/, '')
-      // تحقق من تكرار رقم الجوال
-      const { data: existingPhone } = await supabase.from('profiles').select('id').eq('phone', phone.trim()).maybeSingle()
-      if (existingPhone) {
-        await supabase.auth.admin?.deleteUser?.(data.user.id).catch(()=>{})
-        setError('رقم الجوال هذا مرتبط بحساب آخر — استخدم رقماً مختلفاً')
-        setLoading(false); return
-      }
+      // تكرار رقم الجوال يُفحص على الخادم داخل /api/register-org
       const trialEnds = new Date(Date.now() + 14*24*60*60*1000).toISOString()
       // استخدم service role API لإنشاء المنشأة
       const regRes = await fetch('/api/register-org', {
