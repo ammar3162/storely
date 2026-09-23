@@ -2,7 +2,8 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { Upload, Paperclip, X, AlertTriangle, Camera, Ruler, CheckCircle2, Trash2, Sparkles, Package, Clock } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
+import { getMe, getOrgId } from '@/lib/session'
 import { cache } from '@/lib/cache'
 import { colors as dsColors } from '@/lib/ds'
 import { toast } from '@/components/toast'
@@ -101,24 +102,18 @@ export default function InventoryPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<Record<string,boolean>>({})
   const [addingTemplate, setAddingTemplate] = useState(false)
   const [templateDismissed, setTemplateDismissed] = useState(false)
-  const sb = createClient()
 
   async function addTemplateProducts() {
     const items = (STARTER_PRODUCTS[businessType]||[]).filter(p=>selectedTemplate[p.name])
     if(items.length===0) return
     setAddingTemplate(true)
     const oid = sessionStorage.getItem('s_org_id')
-    let bid: string|null = sessionStorage.getItem('s_branch_id')
-    if(!bid && oid){
-      const{data:b}=await sb.from('branches').select('id').eq('org_id',oid).eq('is_active',true).order('created_at').limit(1).single()
-      bid=b?.id||null
-    }
     if(!oid){ setAddingTemplate(false); return }
-    for(const item of items){
-      const{data:np}=await sb.from('products').insert({org_id:oid,branch_id:bid,name:item.name,unit:item.unit,qty:0,reorder_point:5,category:item.category,is_active:true}).select().single()
-      if(np){
-        fetch('/api/sync-product-to-staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:np.id})}).catch(()=>{})
-      }
+    // لو ما فيه فرع محدد، الخادم يستخدم أول فرع نشط
+    const r = await api.post('/api/products', { org_id: oid, branch_id: sessionStorage.getItem('s_branch_id'), items: items.map(i=>({name:i.name,unit:i.unit,category:i.category})) })
+    if(!r.success){ toast(r.error||'فشل إضافة الأصناف','error'); setAddingTemplate(false); return }
+    for(const id of (r.ids||[])){
+      api.post('/api/sync-product-to-staff',{org_id:oid,product_id:id})
     }
     toast(`✅ تم إضافة ${items.length} صنف`)
     setTemplateDismissed(true)
@@ -144,19 +139,17 @@ export default function InventoryPage() {
       if(cached && !silent){ setProducts(cached); setLoading(false) }
     }
     if (!oid) {
-      const{data:{user}}=await sb.auth.getUser()
-      if(!user){if(!silent)setLoading(false);return}
-      const{data:p}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
-      if(!p){if(!silent)setLoading(false);return}
-      oid=p.org_id; sessionStorage.setItem('s_org_id',oid!)
+      oid = await getOrgId()
+      if(!oid){if(!silent)setLoading(false);return}
     }
     const bid = sessionStorage.getItem('s_branch_id')
-    let q: any = sb.from('products').select('id,name,sku,unit,qty,reorder_point,category,org_id,is_active,created_at,updated_at,recipe_unit,recipe_unit_factor').eq('org_id',oid).eq('is_active',true)
-    if (bid) q = q.eq('branch_id',bid)
-    const [{data}, {data:org}] = await Promise.all([
-      q.order('name'),
-      (sb.from('organizations') as any).select('business_type').eq('id',oid).single(),
+    const [res, me] = await Promise.all([
+      api.get('/api/products', { org_id: oid, branch_id: bid, full: 1 }),
+      getMe(),
     ])
+    if(!res.success){if(!silent)setLoading(false);return}
+    const data = res.products
+    const org = me?.org
     setProducts((data||[]) as Product[])
     setTotalCount((data||[]).length)
     setHasMore(false)
@@ -173,29 +166,22 @@ export default function InventoryPage() {
       return
     }
     setSaving(true)
-    const{data:{user}}=await sb.auth.getUser()
-    if(!user){setSaving(false);return}
     const oid=sessionStorage.getItem('s_org_id')
     if(!oid){setSaving(false);return}
+    const fields={name:form.name.trim(),sku:form.sku||null,unit:form.unit,reorder_point:Number(form.reorder_point),category:form.category?.trim()||null,expiry_date:form.expiry_date||null,recipe_unit:form.recipe_unit||null,recipe_unit_factor:form.recipe_unit_factor?Number(form.recipe_unit_factor):null}
     if(editItem){
-      const{error:updErr}=await sb.from('products').update({name:form.name.trim(),sku:form.sku||null,unit:form.unit,reorder_point:Number(form.reorder_point),category:form.category?.trim()||null,expiry_date:form.expiry_date||null,recipe_unit:form.recipe_unit||null,recipe_unit_factor:form.recipe_unit_factor?Number(form.recipe_unit_factor):null} as any).eq('id',editItem.id)
-      if(updErr){toast('فشل حفظ التعديلات — حاول مرة أخرى','error');setSaving(false);return}
+      const r=await api.patch('/api/products',{org_id:oid,id:editItem.id,...fields,add_qty:addQty})
+      if(!r.success){toast('فشل حفظ التعديلات — حاول مرة أخرى','error');setSaving(false);return}
       if(addQty>0){
-        const{error:moveErr}=await sb.from('stock_movements').insert({product_id:editItem.id,profile_id:user.id,type:'in',qty_change:addQty,note:'إضافة مخزون'})
-        if(moveErr){toast('تم حفظ التعديلات لكن فشلت إضافة الكمية — حاول تضيفها مرة أخرى','warning');setSaving(false);setShowAdd(false);setEditItem(null);setAddQty(0);cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:');load();return}
+        if(r.movement_failed){toast('تم حفظ التعديلات لكن فشلت إضافة الكمية — حاول تضيفها مرة أخرى','warning');setSaving(false);setShowAdd(false);setEditItem(null);setAddQty(0);cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:');load();return}
       }
       toast('تم حفظ التعديلات ✓')
     } else {
       if(!form.qty){toast('أدخل كمية أكبر من صفر','warning');setSaving(false);return}
-      let bid=sessionStorage.getItem('s_branch_id')
-      if(!bid){
-        const{data:b}=await sb.from('branches').select('id').eq('org_id',oid).eq('is_active',true).order('created_at').limit(1).single()
-        bid=b?.id||null
-      }
-      const{data:np,error:insErr}=await sb.from('products').insert({org_id:oid,branch_id:bid,name:form.name.trim(),sku:form.sku||null,unit:form.unit,qty:Number(form.qty),reorder_point:Number(form.reorder_point),category:form.category?.trim()||null,expiry_date:form.expiry_date||null,recipe_unit:form.recipe_unit||null,recipe_unit_factor:form.recipe_unit_factor?Number(form.recipe_unit_factor):null,is_active:true,requires_staff_assignment:true} as any).select().single()
-      if(insErr||!np){toast('فشل إضافة المنتج — حاول مرة أخرى','error');setSaving(false);return}
-      const{error:moveErr}=await sb.from('stock_movements').insert({product_id:np.id,profile_id:user.id,type:'in',qty_change:Number(form.qty),note:'إضافة أولية'})
-      if(moveErr){toast('تمت إضافة المنتج لكن فشل تسجيل الكمية الابتدائية — عدّلها يدوياً','warning')}
+      // لو ما فيه فرع محدد، الخادم يستخدم أول فرع نشط
+      const r=await api.post('/api/products',{org_id:oid,branch_id:sessionStorage.getItem('s_branch_id'),...fields,qty:Number(form.qty)})
+      if(!r.success){toast('فشل إضافة المنتج — حاول مرة أخرى','error');setSaving(false);return}
+      if(r.movement_failed){toast('تمت إضافة المنتج لكن فشل تسجيل الكمية الابتدائية — عدّلها يدوياً','warning')}
       else toast('تم إضافة المنتج ✓ — يظهر بصفحة الموظفين لتخصيصه لمن تحب')
       // ملاحظة: ما نزامنه تلقائياً لأي موظف — يفضل مخفي عن الكل لحد ما تخصصه يدوياً من صفحة "الموظفون"
     }
@@ -206,22 +192,9 @@ export default function InventoryPage() {
 
   async function doDelete() {
     if(!confirm) return
-    const{error}=await sb.from('products').update({is_active:false}).eq('id',confirm.id)
-    if(error){toast('فشل حذف المنتج — حاول مرة أخرى','error');setConfirm(null);return}
-    // تنظيف تلقائي: نشيل المنتج المعطّل من قائمة أي موظف كان مخصص له، حتى ما يبقى "عالق" بصمت
-    try {
-      const oid = sessionStorage.getItem('s_org_id')
-      if (oid) {
-        const{data:staffWithProduct}=await (sb.from('staff_members' as any) as any)
-          .select('id,assigned_products').eq('org_id',oid).contains('assigned_products',[confirm.id])
-        if (staffWithProduct?.length) {
-          for (const s of staffWithProduct as any[]) {
-            const updated = (s.assigned_products||[]).filter((pid:string)=>pid!==confirm.id)
-            await (sb.from('staff_members' as any) as any).update({assigned_products:updated}).eq('id',s.id)
-          }
-        }
-      }
-    } catch {}
+    // الخادم يعطّل الصنف ويشيله من قوائم تخصيص الموظفين (حتى ما يبقى "عالق" بصمت)
+    const r=await api.del('/api/products',{org_id:sessionStorage.getItem('s_org_id'),id:confirm.id})
+    if(!r.success){toast('فشل حذف المنتج — حاول مرة أخرى','error');setConfirm(null);return}
     toast('تم حذف المنتج');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:');setConfirm(null);load()
   }
 
@@ -256,34 +229,14 @@ export default function InventoryPage() {
   async function confirmImport() {
     if (importing || importPreview.length === 0) return
     setImporting(true)
-    const{data:{user}}=await sb.auth.getUser()
     const oid = sessionStorage.getItem('s_org_id')
     const bid = sessionStorage.getItem('s_branch_id')
-    if (!oid || !user) { toast('خطأ بالجلسة', 'error'); setImporting(false); return }
+    if (!oid) { toast('خطأ بالجلسة', 'error'); setImporting(false); return }
 
-    let added = 0, updated = 0, failed = 0
-    for (const row of importPreview) {
-      const existing = products.find(p => p.name.trim() === row.name)
-      if (existing) {
-        // نعدّل الكمية عبر حركة "تسوية" بالفرق — لا نكتب الكمية مباشرة أبداً، عشان الزرّاق (Trigger) اللي يعيد حسابها من مجموع الحركات ما يصفّرها لاحقاً
-        const{error:updErr}=await sb.from('products').update({ reorder_point: row.reorder_point, category: row.category || null, unit: row.unit } as any).eq('id', existing.id)
-        if(updErr){failed++;continue}
-        const delta = row.qty - (existing.qty||0)
-        if (delta !== 0) {
-          const{error:moveErr}=await sb.from('stock_movements').insert({product_id:existing.id, profile_id:user.id, type:'adjustment', qty_change:delta, note:'تسوية استيراد جماعي'})
-          if(moveErr){failed++;continue}
-        }
-        updated++
-      } else {
-        const{data:np,error:insErr}=await sb.from('products').insert({ org_id: oid, branch_id: bid, name: row.name, category: row.category || null, qty: 0, unit: row.unit, reorder_point: row.reorder_point, is_active: true } as any).select().single()
-        if (insErr||!np) { failed++; continue }
-        if (row.qty > 0) {
-          const{error:moveErr}=await sb.from('stock_movements').insert({product_id:np.id, profile_id:user.id, type:'in', qty_change:row.qty, note:'إضافة أولية — استيراد جماعي'})
-          if(moveErr){failed++;continue}
-        }
-        added++
-      }
-    }
+    // المطابقة بالاسم، وتسوية الكمية عبر حركات (مو كتابة مباشرة) — كلها على الخادم
+    const r = await api.post('/api/products/import', { org_id: oid, branch_id: bid, rows: importPreview })
+    if (!r.success) { toast(r.error || 'فشل الاستيراد', 'error'); setImporting(false); return }
+    const added = r.added||0, updated = r.updated||0, failed = r.failed||0
     if(failed>0) toast(`تم استيراد ${added+updated} صنف (${added} جديد، ${updated} محدّث) — لكن فشل ${failed} صنف، حاول تستوردهم يدوياً`,'warning')
     else toast(`✅ تم استيراد ${importPreview.length} صنف (${added} جديد، ${updated} محدّث)`)
     setImportPreview([])
