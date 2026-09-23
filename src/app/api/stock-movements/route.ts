@@ -68,7 +68,7 @@ export async function POST(req: Request) {
         : { note: 'استهلاك يومي' }),
     } as any)
 
-    if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+    if (error) return NextResponse.json({ error: `تعذّر تسجيل الحركة: ${error.message}` }, { status: 500 })
     return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
