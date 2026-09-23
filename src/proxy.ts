@@ -20,6 +20,14 @@ export async function proxy(request: NextRequest) {
     return new NextResponse(null, { status: 204, headers: corsHeaders(origin) })
   }
 
+  // طلبات /api ما تحتاج فحص الجلسة هنا — كل API يتحقق بنفسه (verifyOrgAccess / توكن الموظف / مفتاح الأدمن).
+  // كان هذا الفحص رحلة إضافية لخادم Supabase مع كل طلب بيانات.
+  if (request.nextUrl.pathname.startsWith('/api')) {
+    const res = NextResponse.next({ request })
+    if (isAppApiRequest) for (const [k, v] of Object.entries(corsHeaders(origin))) res.headers.set(k, v)
+    return res
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -107,9 +115,6 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  if (isAppApiRequest) {
-    for (const [k, v] of Object.entries(corsHeaders(origin))) supabaseResponse.headers.set(k, v)
-  }
   return supabaseResponse
 }
 
