@@ -37,6 +37,7 @@ export async function getCurrentProfile() {
 
   return {
     userId: user.id,
+    email: user.email ?? null,
     orgId: (profile?.org_id as string | null) ?? null,
     role: ((profile as any)?.role as string | null) ?? null,
     branchId: ((profile as any)?.branch_id as string | null) ?? null,

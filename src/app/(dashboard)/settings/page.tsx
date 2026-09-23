@@ -2,6 +2,8 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
+import { getMe } from '@/lib/session'
 import { colors, radius, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 
 const lbl: React.CSSProperties = { fontSize: font.xs, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }
@@ -73,13 +75,14 @@ export default function SettingsPage() {
   const [reactivatingId, setReactivatingId] = useState<string|null>(null)
 
   async function loadInactiveBranches(oid:string) {
-    const{data}=await sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',oid).eq('is_active',false).order('created_at')
-    setInactiveBranches(data||[])
+    const j=await api.get('/api/branches',{org_id:oid,include_inactive:1})
+    setInactiveBranches(j.inactive||[])
   }
 
   async function reactivateBranch(id:string) {
     setReactivatingId(id)
-    await sb.from('branches').update({is_active:true} as any).eq('id',id)
+    const r=await api.patch('/api/branches',{org_id:orgId,id,is_active:true})
+    if(!r.success){ alert(r.error||'فشل إعادة التفعيل'); setReactivatingId(null); return }
     const b = inactiveBranches.find((x:any)=>x.id===id)
     setInactiveBranches(prev=>prev.filter((x:any)=>x.id!==id))
     if (b) setBranches(prev=>[...prev, b])
@@ -93,7 +96,8 @@ export default function SettingsPage() {
 
   async function saveBranchPhone(id: string) {
     setSavingPhone(true)
-    await (sb.from('branches' as any) as any).update({ whatsapp_number: editPhoneValue.trim() || null }).eq('id', id)
+    const r=await api.patch('/api/branches',{org_id:orgId,id,whatsapp_number:editPhoneValue.trim()||null})
+    if(!r.success){ alert(r.error||'فشل الحفظ'); setSavingPhone(false); return }
     setBranches((prev:any[]) => prev.map(b => b.id===id ? {...b, whatsapp_number: editPhoneValue.trim() || null} : b))
     setEditingPhoneId(null); setSavingPhone(false)
   }
@@ -131,9 +135,9 @@ export default function SettingsPage() {
   async function savePersonalInfo() {
     if (!userId) return
     setSavingPersonal(true)
-    const { error } = await sb.from('profiles').update({ full_name: userFullName.trim(), phone: userPhone.trim() } as any).eq('id', userId)
+    const r = await api.patch('/api/me', { full_name: userFullName.trim(), phone: userPhone.trim() })
     setSavingPersonal(false)
-    if (error) { alert('فشل حفظ البيانات الشخصية: ' + error.message); return }
+    if (!r.success) { alert('فشل حفظ البيانات الشخصية: ' + (r.error||'')); return }
     setPersonalSaveOk(true); setTimeout(()=>setPersonalSaveOk(false),3000)
   }
 
@@ -173,26 +177,21 @@ export default function SettingsPage() {
   async function load() {
     setLoading(true)
     // لو المعرّف محفوظ بالجلسة، نطلق استعلام المؤسسة/الفروع فوراً بالتوازي مع فحص المستخدم -- بدل ما ننتظره بالتتابع
+    // لو المعرّف محفوظ بالجلسة، نطلق استعلام المؤسسة/الفروع فوراً بالتوازي مع بيانات المستخدم
     const cachedOid = sessionStorage.getItem('s_org_id')
-    const [authResult, orgBranchesEarly] = await Promise.all([
-      sb.auth.getUser(),
-      cachedOid ? Promise.all([
-        sb.from('organizations').select('whatsapp_number,name,notify_schedule,notify_time,notify_days,notify_cashier_closing_wa,notify_supplier_wa,last_notified_at,last_backup_at,max_branches,logo_url,plan,subscription_ends_at,billing_cycle').eq('id',cachedOid).single(),
-        sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',cachedOid).eq('is_active',true).order('created_at'),
-      ]) : null
+    const loadOrg = (oid:string) => Promise.all([
+      api.get('/api/org-settings',{org_id:oid,scope:'full'}),
+      api.get('/api/branches',{org_id:oid}),
     ])
-    const user = authResult.data.user
-    if (!user) return
-    const{data:profile}=await sb.from('profiles').select('org_id,full_name,phone').eq('id',user.id).single(); if(!profile) return
-    setOrgId(profile.org_id)
-    sessionStorage.setItem('s_org_id', profile.org_id)
-    setUserFullName((profile as any).full_name||'')
-    setUserPhone((profile as any).phone||'')
-    const [{data:orgRaw}, {data:bList}] = orgBranchesEarly || await Promise.all([
-      sb.from('organizations').select('whatsapp_number,name,notify_schedule,notify_time,notify_days,notify_cashier_closing_wa,notify_supplier_wa,last_notified_at,last_backup_at,max_branches,logo_url,plan,subscription_ends_at,billing_cycle').eq('id',profile.org_id).single(),
-      sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',profile.org_id).eq('is_active',true).order('created_at'),
-    ])
-    const org=orgRaw as any
+    const [me, orgBranchesEarly] = await Promise.all([getMe(), cachedOid ? loadOrg(cachedOid) : null])
+    if (!me) return
+    const user = { id: me.user_id, email: me.email }
+    setOrgId(me.org_id)
+    setUserFullName(me.full_name||'')
+    setUserPhone(me.phone||'')
+    const [orgRes, branchesRes] = (cachedOid===me.org_id && orgBranchesEarly) || await loadOrg(me.org_id)
+    const org=orgRes.settings as any
+    const bList=branchesRes.branches
     if(org){
       const parsed = parsePhone(org.whatsapp_number||'')
       setCountryCode(parsed.countryCode)
@@ -207,7 +206,7 @@ export default function SettingsPage() {
       setBillingCycle(org.billing_cycle==='yearly'?'yearly':'monthly')
       setSubEndsAt(org.subscription_ends_at||null)
       setBranches(bList||[])
-      loadInactiveBranches(profile.org_id)
+      loadInactiveBranches(me.org_id)
     }
     setLoading(false)
     setTimeout(()=>setVisible(true),50)
@@ -216,9 +215,9 @@ export default function SettingsPage() {
   async function handleSave(e:React.FormEvent) {
     e.preventDefault(); setSaving(true)
     const fullPhone = countryCode + form.whatsapp_number.replace(/^0+/, '')
-    const { error } = await sb.from('organizations').update({ name:form.name, whatsapp_number:fullPhone, notify_schedule:form.notify_schedule, notify_time:form.notify_time, notify_days:form.notify_days, notify_cashier_closing_wa:form.notify_cashier_closing_wa, notify_supplier_wa:form.notify_supplier_wa } as any).eq('id',orgId)
+    const r = await api.patch('/api/org-settings', { org_id:orgId, name:form.name, whatsapp_number:fullPhone, notify_schedule:form.notify_schedule, notify_time:form.notify_time, notify_days:form.notify_days, notify_cashier_closing_wa:form.notify_cashier_closing_wa, notify_supplier_wa:form.notify_supplier_wa })
     setSaving(false)
-    if (error) { alert('فشل حفظ الإعدادات: ' + error.message); return }
+    if (!r.success) { alert('فشل حفظ الإعدادات: ' + (r.error||'')); return }
     setSaveOk(true)
     // القائمة الجانبية تجيب اسم المنشأة مرة وحدة بس وقت فتح الصفحة —
     // نعيد تحميل الصفحة عشان تنعكس التغييرات فوراً بكل مكان يعرض اسم المنشأة
@@ -233,8 +232,8 @@ export default function SettingsPage() {
     const { error: upErr } = await sb.storage.from('invoices').upload(path, file, { upsert: true })
     if (upErr) { alert('فشل رفع الصورة: ' + upErr.message); setLogoUploading(false); return }
     const { data: pub } = sb.storage.from('invoices').getPublicUrl(path)
-    const { error: updErr } = await sb.from('organizations').update({ logo_url: pub.publicUrl } as any).eq('id', orgId)
-    if (updErr) { alert('فشل حفظ رابط الصورة: ' + updErr.message); setLogoUploading(false); return }
+    const updRes = await api.patch('/api/org-settings', { org_id: orgId, logo_url: pub.publicUrl })
+    if (!updRes.success) { alert('فشل حفظ رابط الصورة: ' + (updRes.error||'')); setLogoUploading(false); return }
     setLogoUrl(pub.publicUrl)
     setLogoUploading(false)
     // تحديث الـ sidebar تلقائياً
@@ -244,8 +243,7 @@ export default function SettingsPage() {
   async function sendNow() {
     setSending(true); setSendMsg(null)
     try {
-      const res=await fetch('/api/notify-low-stock',{method:'POST',headers:{'Content-Type':'application/json','x-cron-secret':process.env.NEXT_PUBLIC_APP_URL||''},body:JSON.stringify({org_id:orgId})})
-      const data=await res.json()
+      const data=await api.post('/api/notify-low-stock',{org_id:orgId})
       if(data.success){setSendMsg({ok:true,text:data.message||'تم إرسال الإشعار بنجاح'});setLastSent(new Date().toISOString())}
       else setSendMsg({ok:false,text:data.message||'فشل الإرسال'})
     } catch{setSendMsg({ok:false,text:'خطأ في الاتصال'})}
@@ -271,14 +269,17 @@ export default function SettingsPage() {
   async function addBranch() {
     if(!newBranch.name.trim()) return
     setBranchSaving(true)
-    await sb.from('branches').insert({ org_id:orgId, name:newBranch.name.trim(), location:newBranch.location.trim()||null })
-    const{data:bList}=await sb.from('branches').select('id,name,location,whatsapp_number').eq('org_id',orgId).eq('is_active',true).order('created_at')
-    setBranches(bList||[]); setNewBranch({name:'',location:''}); setBranchSaving(false)
+    // الخادم يفرض حد الفروع بالباقة (كانت هذي الصفحة تتجاوزه)
+    const cr=await api.post('/api/branches',{ org_id:orgId, name:newBranch.name.trim(), location:newBranch.location.trim()||null })
+    if(!cr.success){ alert(cr.error||'فشل إضافة الفرع'); setBranchSaving(false); return }
+    const bj=await api.get('/api/branches',{org_id:orgId})
+    setBranches(bj.branches||[]); setNewBranch({name:'',location:''}); setBranchSaving(false)
   }
 
   async function deleteBranch(id:string) {
     if(branches.length<=1){alert('لا يمكن حذف الفرع الوحيد');return}
-    await sb.from('branches').update({is_active:false}).eq('id',id)
+    const r=await api.patch('/api/branches',{org_id:orgId,id,is_active:false})
+    if(!r.success){ alert(r.error||'فشل إيقاف الفرع'); return }
     setBranches(prev=>prev.filter((b:any)=>b.id!==id))
   }
 
@@ -299,9 +300,7 @@ export default function SettingsPage() {
     if(deleteConfirm !== form.name) { setDeleteMsg({ok:false,text:'اسم المنشأة غير صحيح'}); return }
     setDeleting(true)
     try {
-      const{data:{user}}=await sb.auth.getUser(); if(!user){setDeleting(false);return}
-      const res=await fetch('/api/delete-account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,user_id:user.id})})
-      const data=await res.json()
+      const data=await api.post('/api/delete-account',{org_id:orgId})
       if(data.success){
         await sb.auth.signOut()
         window.location.href='/login?deletion_scheduled=1'

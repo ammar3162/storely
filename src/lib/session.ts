@@ -10,6 +10,8 @@ export type Me = {
   role: string | null
   branch_id: string | null
   full_name: string
+  phone: string
+  email: string
   subscription_ends_at: string | null
   permissions: Record<string, boolean>
   whatsapp_consent: boolean

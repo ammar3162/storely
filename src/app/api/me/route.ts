@@ -24,7 +24,7 @@ export async function GET() {
         .select('id,name,plan,currency,logo_url,deletion_scheduled_at,max_staff,max_suppliers,max_branches,country_code,business_type')
         .eq('id', profile.orgId).single(),
       db.from('profiles')
-        .select('full_name,subscription_ends_at,permissions,whatsapp_consent,whatsapp_first_contact_confirmed,terms_version_accepted')
+        .select('full_name,phone,subscription_ends_at,permissions,whatsapp_consent,whatsapp_first_contact_confirmed,terms_version_accepted')
         .eq('id', profile.userId).single(),
       branchesQ.order('created_at'),
     ])
@@ -38,6 +38,8 @@ export async function GET() {
       role: profile.role,
       branch_id: profile.branchId,
       full_name: e.full_name || '',
+      phone: e.phone || '',
+      email: profile.email || '',
       subscription_ends_at: e.subscription_ends_at || null,
       permissions: e.permissions || {},
       whatsapp_consent: e.whatsapp_consent === true,
@@ -64,6 +66,7 @@ export async function GET() {
 
 // تحديثات المستخدم على حسابه — قائمة مسموحة فقط:
 //   { whatsapp_consent: true } | { whatsapp_first_contact_confirmed: true } | { cancel_org_deletion: true }
+//   | { full_name, phone } (البيانات الشخصية)
 export async function PATCH(req: Request) {
   try {
     const profile = await getCurrentProfile()
@@ -77,6 +80,8 @@ export async function PATCH(req: Request) {
       profileUpdate.whatsapp_consent_at = new Date().toISOString()
     }
     if (body.whatsapp_first_contact_confirmed === true) profileUpdate.whatsapp_first_contact_confirmed = true
+    if ('full_name' in body) profileUpdate.full_name = String(body.full_name || '').trim()
+    if ('phone' in body) profileUpdate.phone = String(body.phone || '').trim()
 
     if (Object.keys(profileUpdate).length) {
       const { error } = await db.from('profiles').update(profileUpdate as any).eq('id', profile.userId)
