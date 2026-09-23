@@ -33,11 +33,10 @@ export async function POST(req: Request) {
     const qtyNum = Number(newQty)
     const diff = qtyNum - Number(product.qty)
 
-    const { error: updErr } = await supabase.from('products').update({ qty: qtyNum }).eq('id', productId)
-    if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 })
-
+    // الكمية تتعدّل عبر حركة مخزون فقط — الـ trigger "after_stock_movement" يحسب qty من مجموع الحركات.
+    // (كان يكتب qty مباشرة ثم يضيف الحركة بدون فحص خطأ: لو فشلت الحركة، تختلف الكمية عن سجل الحركات)
     if (diff !== 0) {
-      await supabase.from('stock_movements').insert({
+      const { error: moveErr } = await supabase.from('stock_movements').insert({
         product_id: productId,
         org_id: orgId,
         type: diff > 0 ? 'in' : 'out',
@@ -45,6 +44,7 @@ export async function POST(req: Request) {
         note: `تعديل يدوي بواسطة الموظف: ${staffName || ''}`,
         staff_id: staffId || null,
       } as any)
+      if (moveErr) return NextResponse.json({ error: moveErr.message }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
