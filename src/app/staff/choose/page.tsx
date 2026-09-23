@@ -287,6 +287,11 @@ export default function ChoosePage() {
         })
       })
       const j = await res.json()
+      if(res.status===401) {
+        // الجلسة انتهت أو التوكن مفقود — نرجّع الموظف لتسجيل الدخول بدل رسالة محيّرة
+        localStorage.removeItem('staff_session'); localStorage.removeItem('staff_token')
+        router.push('/staff'); return
+      }
       if(!j.success) { setAttError(j.error||'حدث خطأ'); setMarking(null); return }
       await loadToday(staffData)
     } catch {
