@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
+import { isCronRequest } from '@/lib/cronAuth'
+import { isSubscriptionActive } from '@/lib/subscription'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-export async function GET() {
+export async function GET(req: Request) {
+  // الجدولة فقط (كان أي أحد يفتح الرابط يرسل التقرير لكل المنشآت)
+  if (!isCronRequest(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const db = sb()
 
   const { data: orgs } = await db.from('organizations')
@@ -20,6 +24,11 @@ export async function GET() {
   for (const org of orgs) {
     if (!org.whatsapp_number) continue
     try {
+      // فقط للاشتراكات السارية، ولمن وافق المالك على رسائل واتساب
+      if (!(await isSubscriptionActive(db, org.id))) continue
+      const { data: owner } = await db.from('profiles').select('whatsapp_consent').eq('org_id', org.id).eq('role', 'owner').maybeSingle()
+      if ((owner as any)?.whatsapp_consent !== true) continue
+
       const { data: products } = await db.from('products')
         .select('id,name,qty,reorder_point,unit,category')
         .eq('org_id', org.id).eq('is_active', true)

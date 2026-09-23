@@ -37,7 +37,7 @@ export default function HealthPage() {
 
   async function runNow() {
     setRunning(true)
-    try { await fetch('/api/health-check') } catch {}
+    try { await fetch('/api/health-check', { headers: { 'x-admin-key': sessionStorage.getItem('storely_admin_pass') || '' } }) } catch {}
     setRunning(false)
     load()
   }

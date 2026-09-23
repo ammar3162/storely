@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
+import { isCronRequest } from '@/lib/cronAuth'
+import { requirePermission } from '@/lib/adminAuth'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -152,6 +154,11 @@ async function autoFix(supabase: any) {
 
 export async function GET(req: Request) {
   try {
+    // الجدولة (كل ساعة) أو لوحة الأدمن — كان مفتوح لأي أحد يشغّل الإصلاح التلقائي ويشوف المشاكل
+    const adminKey = req.headers.get('x-admin-key')
+    const isAdmin = adminKey ? !!(await requirePermission(adminKey, 'view_health')) : false
+    if (!isAdmin && !isCronRequest(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+
     const supabase = sb()
 
     await autoFix(supabase)

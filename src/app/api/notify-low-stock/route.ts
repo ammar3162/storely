@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { isCronRequest } from '@/lib/cronAuth'
 import { createClient } from '@supabase/supabase-js'
 import { isSubscriptionActive } from '@/lib/subscription'
 import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
@@ -7,6 +8,9 @@ import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 async function sendForOrg(supabase: any, org: any) {
   const subActive = await isSubscriptionActive(supabase, org.id)
   if (!subActive) return { sent: 0, message: 'الاشتراك منتهي — لا يتم إرسال إشعارات' }
+  // واتساب فقط لمن وافق المالك على استلام الرسائل
+  const { data: owner } = await supabase.from('profiles').select('whatsapp_consent').eq('org_id', org.id).eq('role', 'owner').maybeSingle()
+  if ((owner as any)?.whatsapp_consent !== true) return { sent: 0, message: 'المالك لم يوافق على رسائل واتساب' }
 
   const { data: branches } = await supabase
     .from('branches').select('id,name,whatsapp_number')
@@ -163,8 +167,9 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET() {
-
+export async function GET(req: Request) {
+  // الجدولة (كل ساعة — كل منشأة ترسل بساعتها المفضلة من الإعدادات)
+  if (!isCronRequest(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   return POST(new Request('http://localhost', { 
     method:'POST', 
     body:'{}',

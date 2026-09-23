@@ -3,6 +3,7 @@ import { waitUntil } from '@vercel/functions'
 import { createClient } from '@supabase/supabase-js'
 import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { isCronRequest } from '@/lib/cronAuth'
 import { orderedSinceLastRestock, failedRecently } from '@/lib/supplierOrderGate'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -18,15 +19,6 @@ function buildOrderMessage(orgName: string, items: { name: string; unit: string;
   const notesSection = notes ? `\n\n📝 *ملاحظات:* ${notes}` : ''
 
   return `📦 *طلب توريد — ${orgName}*\n\nمرحباً،\n\nنحتاج توريد المواد التالية:\n\n${itemsList}${notesSection}\n\nنرجو التوريد في أقرب وقت. شكراً 🙏\n_Storely — نظام إدارة المخزون_`
-}
-
-/** طلب من Vercel Cron (أو مفتاح الأدمن اليدوي). لو CRON_SECRET مو مضبوط بالبيئة نسمح (نفس السلوك السابق) */
-function isCronRequest(req: Request) {
-  const auth = req.headers.get('authorization')
-  const manualKey = req.headers.get('x-cron-secret')
-  if (process.env.ADMIN_PASSWORD && manualKey === process.env.ADMIN_PASSWORD) return true
-  if (!process.env.CRON_SECRET) return true
-  return auth === `Bearer ${process.env.CRON_SECRET}`
 }
 
 export async function POST(req: Request) {

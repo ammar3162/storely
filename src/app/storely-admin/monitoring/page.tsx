@@ -39,7 +39,7 @@ export default function MonitoringPage() {
     try { const res=await fetch('/api/webhook'); const data=await res.json(); r.push({label:'بوت واتساب',value:data.status?'يعمل':'متوقف',status:data.status?'ok':'error'}) } catch { r.push({label:'بوت واتساب',value:'خطأ',status:'error'}) }
     if(m) r.push({label:'النشاط (24 ساعة)',value:`${m.movements_24h} حركة`,status:'ok',detail:`${m.purchases_24h} مشتريات`})
     else r.push({label:'النشاط (24 ساعة)',value:'خطأ',status:'error'})
-    try { const res=await fetch('/api/health-check'); const data=await res.json(); const n=data.issues_count||0; r.push({label:'فحص صحة البيانات',value:n===0?'سليم':`${n} مشكلة`,status:n===0?'ok':data.issues?.some((i:any)=>i.severity==='critical')?'error':'warn',detail:n===0?'لا توجد مشاكل هيكلية':data.issues.map((i:any)=>i.type).join('، ')}) } catch { r.push({label:'فحص صحة البيانات',value:'خطأ',status:'error'}) }
+    try { const res=await fetch('/api/health-check',{headers:{'x-admin-key':sessionStorage.getItem('storely_admin_pass')||''}}); const data=await res.json(); const n=data.issues_count||0; r.push({label:'فحص صحة البيانات',value:n===0?'سليم':`${n} مشكلة`,status:n===0?'ok':data.issues?.some((i:any)=>i.severity==='critical')?'error':'warn',detail:n===0?'لا توجد مشاكل هيكلية':data.issues.map((i:any)=>i.type).join('، ')}) } catch { r.push({label:'فحص صحة البيانات',value:'خطأ',status:'error'}) }
     setChecks(r); setLastCheck(new Date()); setLoading(false)
   }
 
