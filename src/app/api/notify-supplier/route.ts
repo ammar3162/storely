@@ -3,6 +3,7 @@ import { waitUntil } from '@vercel/functions'
 import { createClient } from '@supabase/supabase-js'
 import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { orderedSinceLastRestock, failedRecently } from '@/lib/supplierOrderGate'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -53,32 +54,10 @@ async function run(body: any) {
     if (orgId) orgsQuery = orgsQuery.eq('id', orgId)
     const { data: orgs } = await orgsQuery
 
-    const now = new Date()
-    const currentHour = now.getUTCHours() + 3 // توقيت السعودية
-    const currentDay = now.getDay()
-    const currentMinute = now.getMinutes()
-
-    const eligibleOrgIds: string[] = []
-    for (const org of orgs || []) {
-      const mode = org.supplier_notify_mode || 'daily'
-      if (orgId) { eligibleOrgIds.push(org.id); continue } // يدوي
-      if (mode === 'instant') continue // يشتغل من صفحة الصرف
-      if (mode === 'daily') {
-        const [h, m] = (org.supplier_notify_time || '08:00').split(':').map(Number)
-        if (currentHour === h && currentMinute < 30) eligibleOrgIds.push(org.id)
-      }
-      if (mode === 'weekly') {
-        const [h, m] = (org.supplier_notify_time || '08:00').split(':').map(Number)
-        if (currentDay === (org.supplier_notify_day || 0) && currentHour === h && currentMinute < 30) eligibleOrgIds.push(org.id)
-      }
-    }
-
-    if (!eligibleOrgIds.length && !orgId) { 
-      // إذا كان طلب يدوي أضف كل المؤسسات
-      const isManual = body?.manual === true
-      if (!isManual) return NextResponse.json({ success: true, sent: 0, message: 'لا توجد مؤسسات في وقت الإرسال' })
-      for (const org of orgs || []) eligibleOrgIds.push(org.id)
-    }
+    // طلب التوريد يوصل للمورد مرة وحدة لما يوصل الصنف للحد الأدنى — بغض النظر عن جدول الإرسال.
+    // الجدولة تفحص كل المنشآت كل 30 دقيقة كشبكة أمان (المسار الأساسي هو لحظة الصرف)
+    const eligibleOrgIds: string[] = (orgs || []).map((o: any) => o.id)
+    if (!eligibleOrgIds.length) return NextResponse.json({ success: true, sent: 0, message: 'لا توجد مؤسسات' })
 
     let query = supabase
       .from('products')
@@ -100,15 +79,9 @@ async function run(body: any) {
     // نجمّع حسب (المورد + الفرع) مع بعض — يمنع دمج منتجات فرعين مختلفين بطلب توريد واحد
     const bySupplierBranch: Record<string, any[]> = {}
     for (const p of due) {
-      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-      const { data: recentLog } = await supabase
-        .from('supplier_order_logs')
-        .select('id')
-        .eq('product_id', p.id)
-        .gte('created_at', since)
-        .maybeSingle()
-
-      if (recentLog) continue
+      // طلب واحد لكل نزول تحت الحد (لين ينعاد تعبئة الصنف)، ومحاولة فاشلة ما تتكرر قبل 24 ساعة
+      if (await orderedSinceLastRestock(supabase as any, p.id)) continue
+      if (await failedRecently(supabase as any, p.id)) continue
 
       const groupKey = `${p.supplier_id}::${p.branch_id || 'none'}`
       if (!bySupplierBranch[groupKey]) bySupplierBranch[groupKey] = []

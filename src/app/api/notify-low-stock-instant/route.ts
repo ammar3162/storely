@@ -4,6 +4,7 @@ import { isSubscriptionActive } from '@/lib/subscription'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { sendPushToOrg } from '@/lib/push'
+import { orderedSinceLastRestock, logSupplierOrder } from '@/lib/supplierOrderGate'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -63,10 +64,14 @@ export async function POST(req: Request) {
     if (!subActive) return NextResponse.json({ success: false, message: 'الاشتراك منتهي — لا يتم إرسال إشعارات' })
 
     const { data: product } = await db.from('products')
-      .select('id,name,qty,unit,reorder_point,supplier_id,supplier_order_qty,supplier_notes,branch_id,marketplace_catalog_item_id')
+      .select('id,name,qty,unit,reorder_point,supplier_id,supplier_reorder_point,supplier_order_qty,supplier_notes,branch_id,marketplace_catalog_item_id,org_id')
       .eq('id', product_id).single()
     console.log('product:', product)
-    if (!product) return NextResponse.json({ success: false })
+    if (!product || (product as any).org_id !== org_id) return NextResponse.json({ success: false })
+
+    // الحد الفعلي من قاعدة البيانات (مو من الطلب): حد المورد لو محدد، وإلا الحد الأدنى العام
+    const threshold = (product as any).supplier_reorder_point ?? (product as any).reorder_point
+    const supplierDue = Number((product as any).qty) <= Number(threshold)
 
     const orderQty = (product as any).supplier_order_qty || (product as any).reorder_point
 
@@ -74,7 +79,8 @@ export async function POST(req: Request) {
     let sentToSupplier = false
     let sentAsMarketplaceOrder = false
     console.log('supplier_id:', (product as any).supplier_id)
-    if ((product as any).supplier_id) {
+    // طلب واحد فقط لكل نزول تحت الحد — لو انرسل طلب ولسا ما انعاد تعبئة الصنف، ما نرسل شي للمورد
+    if ((product as any).supplier_id && supplierDue && !(await orderedSinceLastRestock(db as any, product_id))) {
       const { data: supplier } = await (db as any).from('suppliers')
         .select('name,phone,whatsapp_consent,marketplace_supplier_id').eq('id', (product as any).supplier_id).single()
 
@@ -94,48 +100,33 @@ export async function POST(req: Request) {
           })
           sentToSupplier = true
           sentAsMarketplaceOrder = true
+          await logSupplierOrder(db as any, { product_id, supplier_id: (product as any).supplier_id, qty_at_trigger: Number((product as any).qty), ok: true })
         }
       }
 
       if (!sentAsMarketplaceOrder && (supplier as any)?.phone && (supplier as any)?.whatsapp_consent === true) {
         const notesLine = (product as any).supplier_notes ? `\n📝 ${(product as any).supplier_notes}\n` : ''
 
-        // تحقق: فيه طلب معلّق لنفس الصنف ونفس المورد؟ لو فيه، نرسل تذكير بس بدل طلب جديد مكرر
-        const { data: pendingExisting } = await (db as any).from('supplier_orders')
-          .select('items')
-          .eq('org_id', org_id)
-          .eq('product_id', product_id)
-          .eq('status', 'pending')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-
-        if (pendingExisting) {
-          const items = (pendingExisting as any).items || []
-          const itemsText = items.map((i: any) => `• ${i.name} — *${i.qty} ${i.unit}*`).join('\n')
-          const reminderMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\n🔔 *تذكير بطلب سابق لسا ما تأكد*\n\n${itemsText}${notesLine}\nللتأكيد رد بكلمة: *تم*\nلو الصنف غير متوفر حالياً، رد بـ: *0*`
-          await sendWA((supplier as any).phone, reminderMsg)
-          sentToSupplier = true
-        } else {
-          const orderItems = [{ name: (product as any).name, qty: orderQty, unit: (product as any).unit }]
-          const { data: orderData, error: orderErr } = await (db as any).from('supplier_orders').insert({
-            org_id,
-            branch_id: (product as any).branch_id || null,
-            product_id,
-            supplier_name: (supplier as any).name,
-            supplier_phone: (supplier as any).phone,
-            items: orderItems,
-            status: 'pending',
-            current_priority: 1,
-          }).select('token').single()
-          if (orderErr) {
-            return NextResponse.json({ success: false, debug: orderErr.message })
-          }
-
-          const supplierMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\nطلب توريد من *${(org as any).name}*\n\n• ${(product as any).name} — *${orderQty} ${(product as any).unit}*${notesLine}\nللتأكيد رد بكلمة: *تم*\nلو الصنف غير متوفر حالياً، رد بـ: *0*`
-          await sendWA((supplier as any).phone, supplierMsg)
-          sentToSupplier = true
+        const orderItems = [{ name: (product as any).name, qty: orderQty, unit: (product as any).unit }]
+        const { error: orderErr } = await (db as any).from('supplier_orders').insert({
+          org_id,
+          branch_id: (product as any).branch_id || null,
+          product_id,
+          supplier_id: (product as any).supplier_id,
+          supplier_name: (supplier as any).name,
+          supplier_phone: (supplier as any).phone,
+          items: orderItems,
+          status: 'pending',
+          current_priority: 1,
+        })
+        if (orderErr) {
+          return NextResponse.json({ success: false, debug: orderErr.message })
         }
+
+        const supplierMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\nطلب توريد من *${(org as any).name}*\n\n• ${(product as any).name} — *${orderQty} ${(product as any).unit}*${notesLine}\nللتأكيد رد بكلمة: *تم*\nلو الصنف غير متوفر حالياً، رد بـ: *0*`
+        const sent = await sendWA((supplier as any).phone, supplierMsg)
+        await logSupplierOrder(db as any, { product_id, supplier_id: (product as any).supplier_id, qty_at_trigger: Number((product as any).qty), ok: sent.ok })
+        sentToSupplier = sent.ok
       }
     }
 
