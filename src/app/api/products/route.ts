@@ -9,6 +9,7 @@ const sb = () => createClient(
 type DB = ReturnType<typeof sb>
 
 const LIST_FIELDS = 'id,name,sku,unit,qty,reorder_point,category,branch_id'
+const SUPPLIER_FIELDS = 'id,name,unit,qty,supplier_id,supplier_reorder_point,supplier_order_qty,supplier_notes,backup_supplier_id'
 const FULL_FIELDS = 'id,name,sku,unit,qty,reorder_point,category,branch_id,org_id,is_active,created_at,updated_at,recipe_unit,recipe_unit_factor,expiry_date'
 
 /** فرع العملية: فرع المدير إجباري، وإلا المرسل (بعد التحقق)، وإلا أول فرع نشط */
@@ -37,7 +38,7 @@ function editableFields(body: any) {
 }
 
 // قائمة الأصناف النشطة لفرع معيّن (أو كل الفروع للمالك لو ما حدد فرع)
-// full=1: كل حقول صفحة المخزون
+// full=1: كل حقول صفحة المخزون | view=suppliers: حقول ربط الموردين
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
@@ -45,13 +46,14 @@ export async function GET(req: Request) {
     const branch_id = searchParams.get('branch_id')
     const sort = searchParams.get('sort') === 'qty' ? 'qty' : 'name'
     const full = searchParams.get('full') === '1'
+    const view = searchParams.get('view')
     if (!org_id) return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
     const effectiveBranchId = enforcedBranchId(access, branch_id)
 
-    let q = sb().from('products').select(full ? FULL_FIELDS : LIST_FIELDS).eq('org_id', org_id).eq('is_active', true)
+    let q = sb().from('products').select(view === 'suppliers' ? SUPPLIER_FIELDS : full ? FULL_FIELDS : LIST_FIELDS).eq('org_id', org_id).eq('is_active', true)
     if (effectiveBranchId) q = q.eq('branch_id', effectiveBranchId)
     const { data, error } = await q.order(sort, { ascending: true })
 

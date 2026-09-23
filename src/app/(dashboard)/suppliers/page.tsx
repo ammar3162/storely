@@ -2,7 +2,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
+import { getMe, getOrgId } from '@/lib/session'
 import { colors, font, pageTitle, pageSub, card, btnPrimary, btnSecondary, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { Send, Clock, Trash2, Truck } from 'lucide-react'
@@ -48,27 +49,26 @@ function EscalationChain({ productId, allSuppliers, primarySupplierId, refreshKe
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
   const [pickSupplier, setPickSupplier] = useState('')
-  const sb = createClient()
 
   useEffect(()=>{ load() },[productId, refreshKey])
 
   async function load() {
     setLoading(true)
-    const { data } = await (sb as any).from('product_suppliers').select('id,supplier_id,priority,suppliers(name)').eq('product_id', productId).gt('priority', 1).order('priority')
-    setChain(data || [])
+    const j = await api.get('/api/suppliers/chain', { org_id: sessionStorage.getItem('s_org_id'), product_id: productId })
+    setChain(j.chain || [])
     setLoading(false)
   }
 
   async function addBackup() {
     if (!pickSupplier) return
-    const nextPriority = chain.length ? Math.max(...chain.map((c:any)=>c.priority)) + 1 : 2
-    await (sb as any).from('product_suppliers').insert({ product_id: productId, supplier_id: pickSupplier, priority: nextPriority })
+    // الأولوية التالية تنحسب على الخادم
+    await api.post('/api/suppliers/chain', { org_id: sessionStorage.getItem('s_org_id'), product_id: productId, supplier_id: pickSupplier })
     setPickSupplier(''); setAdding(false)
     load()
   }
 
   async function removeBackup(id: string) {
-    await (sb as any).from('product_suppliers').delete().eq('id', id)
+    await api.del('/api/suppliers/chain', { org_id: sessionStorage.getItem('s_org_id'), id })
     load()
   }
 
@@ -150,23 +150,21 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [catalogItems, setCatalogItems] = useState<any[]>([])
   const [selectedCatalogItem, setSelectedCatalogItem] = useState('')
-  const sb = createClient()
 
   useEffect(()=>{
     if (!s.marketplace_supplier_id) { setCatalogItems([]); return }
     (async () => {
-      const { data } = await (sb as any).from('supplier_catalog_items')
-        .select('id,name,unit,price').eq('supplier_id', s.marketplace_supplier_id).eq('is_available', true)
-      setCatalogItems(data || [])
+      const j = await api.get('/api/suppliers/catalog', { org_id: orgId, supplier_id: s.id })
+      setCatalogItems(j.items || [])
     })()
   },[s.marketplace_supplier_id])
 
   async function savePhone() {
     if (!editPhoneVal.trim()) { toast('أدخل رقم صحيح', 'warning'); return }
     setSavingPhone(true)
-    const{error}=await (sb as any).from('suppliers').update({ phone: editPhoneVal.trim() }).eq('id', s.id)
+    const r=await api.patch('/api/suppliers',{ org_id: orgId, id: s.id, phone: editPhoneVal.trim() })
     setSavingPhone(false)
-    if(error){toast('فشل تحديث رقم المورد','error');return}
+    if(!r.success){toast('فشل تحديث رقم المورد','error');return}
     setEditingPhone(false)
     toast('✅ تم تحديث رقم المورد')
     onRefresh()
@@ -177,13 +175,9 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
 
   async function saveSettings() {
     setSaving(true)
-    const{error}=await (sb as any).from('suppliers').update({
-      notify_mode: mode,
-      notify_time: time,
-      notify_day: Number(day),
-    }).eq('id', s.id)
+    const r=await api.patch('/api/suppliers',{ org_id: orgId, id: s.id, notify_mode: mode, notify_time: time, notify_day: Number(day) })
     setSaving(false)
-    if(error){toast('فشل حفظ الإعدادات','error');return}
+    if(!r.success){toast('فشل حفظ الإعدادات','error');return}
     setSettingsOpen(false)
     toast('✅ تم حفظ إعدادات المورد')
     onRefresh()
@@ -191,12 +185,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
 
   async function sendNow() {
     setSending(true)
-    const res = await fetch('/api/notify-supplier', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, supplier_id: s.id, manual: true })
-    })
-    const data = await res.json()
+    const data = await api.post('/api/notify-supplier', { org_id: orgId, supplier_id: s.id, manual: true })
     setSending(false)
     if (data.sent > 0 && data.failed > 0) toast(`⚠️ تم إرسال ${data.sent} صنف، وفشل إرسال ${data.failed} — تحقق من رقم واتساب المورد وحاول مرة أخرى`, 'warning')
     else if (data.sent > 0) toast(`✅ تم إرسال طلب توريد للمورد ${s.name}`)
@@ -206,42 +195,26 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
 
   async function linkProduct() {
     if (!selectedProduct || !reorderPoint) { toast('اختر منتج وأدخل الحد الأدنى', 'warning'); return }
-    const{error:prodErr}=await (sb as any).from('products').update({
-      supplier_id: s.id,
-      supplier_reorder_point: Number(reorderPoint),
-      supplier_order_qty: Number(orderQty) || Number(reorderPoint),
-      supplier_notes: supplierNotes.trim() || null,
-      marketplace_catalog_item_id: selectedCatalogItem || null,
-    }).eq('id', selectedProduct)
-    if(prodErr){toast('فشل ربط المنتج بالمورد','error');return}
-    // مزامنة الأولوية 1 بجدول سلسلة التصعيد
-    const{error:chainErr}=await (sb as any).from('product_suppliers').upsert({
-      product_id: selectedProduct,
-      supplier_id: s.id,
-      priority: 1,
-      reorder_point: Number(reorderPoint),
-      order_qty: Number(orderQty) || Number(reorderPoint),
-      notes: supplierNotes.trim() || null,
-    }, { onConflict: 'product_id,priority' })
-    if(chainErr){toast('تم ربط المنتج، لكن فشل تحديث سلسلة التصعيد','warning')}
+    // الربط + مزامنة الأولوية 1 بسلسلة التصعيد على الخادم
+    const r=await api.post('/api/suppliers/link',{ org_id: orgId, supplier_id: s.id, product_id: selectedProduct, reorder_point: reorderPoint, order_qty: orderQty, notes: supplierNotes, catalog_item_id: selectedCatalogItem || null })
+    if(!r.success){toast(r.error||'فشل ربط المنتج بالمورد','error');return}
+    if(r.chain_failed){toast('تم ربط المنتج، لكن فشل تحديث سلسلة التصعيد','warning')}
     else toast('✅ تم ربط المنتج')
     setSelectedProduct(''); setReorderPoint(''); setOrderQty(''); setSupplierNotes(''); setSelectedCatalogItem('')
     onRefresh()
   }
 
   async function unlinkProduct(pid: string) {
-    const{error}=await (sb as any).from('products').update({ supplier_id: null, supplier_reorder_point: null, supplier_order_qty: 0, supplier_notes: null }).eq('id', pid)
-    if(error){toast('فشل فك الارتباط','error');return}
-    await (sb as any).from('product_suppliers').delete().eq('product_id', pid)
+    const r=await api.del('/api/suppliers/link',{ org_id: orgId, product_id: pid })
+    if(!r.success){toast('فشل فك الارتباط','error');return}
     toast('تم فك الارتباط')
     onRefresh()
   }
 
   async function deleteSupplier() {
-    await (sb as any).from('products').update({ supplier_id: null, supplier_reorder_point: null, supplier_order_qty: 0 }).eq('supplier_id', s.id)
-    const{error}=await (sb as any).from('suppliers').delete().eq('id', s.id)
+    const r=await api.del('/api/suppliers',{ org_id: orgId, id: s.id })
     setConfirmDelete(false)
-    if(error){toast('فشل حذف المورد','error');return}
+    if(!r.success){toast('فشل حذف المورد','error');return}
     toast('تم الحذف')
     onRefresh()
   }
@@ -486,7 +459,6 @@ export default function SuppliersPage() {
   const [showPriceComparison, setShowPriceComparison] = useState(false)
   const [supplierRatings, setSupplierRatings] = useState<Record<string,any>>({})
   const [failedRecentMap, setFailedRecentMap] = useState<Record<string,number>>({})
-  const sb = createClient()
 
   useEffect(() => { init() }, [])
 
@@ -499,18 +471,12 @@ export default function SuppliersPage() {
       if (cachedSuppliers) { setSuppliers(cachedSuppliers); setLoading(false) }
     }
     if (!oid) {
-      const { data: { user } } = await sb.auth.getUser()
-      if (!user) return
-      const { data: profile } = await sb.from('profiles').select('org_id').eq('id', user.id).single()
-      if (!profile?.org_id) return
-      oid = profile.org_id; sessionStorage.setItem('s_org_id', oid!)
+      oid = await getOrgId()
+      if (!oid) return
     }
-    setOrgId(oid!)
-    sb.from('organizations' as any).select('currency').eq('id',oid!).single()
-      .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
-    const { data: orgLimits } = await (sb as any).from('organizations').select('max_suppliers').eq('id', oid!).single()
-    setMaxSuppliers((orgLimits as any)?.max_suppliers || 999)
-    await Promise.all([loadSuppliers(oid!), loadProducts(oid!)])
+    setOrgId(oid)
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
+    await Promise.all([loadSuppliers(oid), loadProducts(oid)])
     fetch('/api/supplier-price-comparison',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid})}).then(r=>r.json()).then(d=>{ if(d.success) setPriceComparisons(d.comparisons||[]) }).catch(()=>{})
     fetch('/api/supplier-rating',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid})}).then(r=>r.json()).then(d=>{
       if(d.success){ const map:Record<string,any>={}; d.ratings.forEach((r:any)=>{ map[r.id]=r }); setSupplierRatings(map) }
@@ -520,27 +486,18 @@ export default function SuppliersPage() {
 
   async function loadSuppliers(oid: string) {
     const bid = sessionStorage.getItem('s_branch_id')
-    let q = (sb as any).from('suppliers').select('id,name,phone').eq('org_id', oid).eq('is_active', true)
-    if (bid) q = q.eq('branch_id', bid)
-    const { data } = await q.order('created_at', { ascending: false })
-    setSuppliers(data || [])
-    cache.set('suppliers:'+oid, data || [])
-    const ids = (data || []).map((s:any)=>s.id)
-    if (ids.length) {
-      const since24h = new Date(Date.now() - 24*60*60*1000).toISOString()
-      const { data: failedLogs } = await (sb as any).from('supplier_order_logs').select('supplier_id').eq('status','failed').gte('created_at', since24h).in('supplier_id', ids)
-      const map: Record<string,number> = {}
-      ;(failedLogs||[]).forEach((r:any)=>{ map[r.supplier_id] = (map[r.supplier_id]||0) + 1 })
-      setFailedRecentMap(map)
-    } else setFailedRecentMap({})
+    const j = await api.get('/api/suppliers', { org_id: oid, branch_id: bid })
+    if (!j.success) return
+    setSuppliers(j.suppliers || [])
+    cache.set('suppliers:'+oid, j.suppliers || [])
+    setFailedRecentMap(j.failed_recent || {})
+    setMaxSuppliers(j.max_suppliers || 999)
   }
 
   async function loadProducts(oid: string) {
     const bid = sessionStorage.getItem('s_branch_id')
-    let q = (sb as any).from('products').select('id,name,unit,qty,supplier_id,supplier_reorder_point,supplier_order_qty,supplier_notes,backup_supplier_id').eq('org_id', oid).eq('is_active', true)
-    if (bid) q = q.eq('branch_id', bid)
-    const { data } = await q.order('name')
-    setProducts(data || [])
+    const j = await api.get('/api/products', { org_id: oid, branch_id: bid, view: 'suppliers' })
+    setProducts(j.products || [])
   }
 
   async function addSupplier() {
@@ -550,13 +507,8 @@ export default function SuppliersPage() {
     const reqLen2 = phoneRules2[supCountry] || 9
     const cleanedPhone2 = newPhone.trim().replace(/^0+/,'')
     if(cleanedPhone2.length !== reqLen2){toast(`رقم الجوال يجب أن يكون ${reqLen2} أرقام`,'warning');return}
-    const res = await fetch('/api/add-supplier', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ org_id: orgId, branch_id: sessionStorage.getItem('s_branch_id') || null, name: newName.trim(), phone: supCountry + newPhone.trim().replace(/^0+/,''), notes: newNotes.trim(), whatsapp_consent: true })
-    })
-    const resData = await res.json()
-    const error = !res.ok ? {message: resData.error} : null
+    const resData = await api.post('/api/add-supplier', { org_id: orgId, branch_id: sessionStorage.getItem('s_branch_id') || null, name: newName.trim(), phone: supCountry + newPhone.trim().replace(/^0+/,''), notes: newNotes.trim(), whatsapp_consent: true })
+    const error = !resData.success ? {message: resData.error} : null
     if (error) { toast('خطأ: ' + error.message, 'error'); return }
     toast('✅ تم إضافة المورد')
     setNewName(''); setNewPhone(''); setNewNotes(''); setNewConsent(false); setShowAdd(false)
