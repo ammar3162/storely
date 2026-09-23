@@ -232,14 +232,14 @@ function StaffPageInner() {
         // انتهاء الجلسة ← نطلب PIN؛ غير كذا نعرض سبب الخطأ الفعلي بدل رسالة عامة
         if(res.status===401){ setNeedsReauth(true); setSubmitting(false); return }
         const err = await res.json().catch(()=>({}))
-        showMsg(err.error || T('error',lang),'error');setSubmitting(false);return
+        showMsg(err.error || `${T('error',lang)} (${res.status})`,'error');setSubmitting(false);return
       }
       fetch('/api/notify-staff-dispense',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},body:JSON.stringify({staff_name:session.name,product_name:selected.name,qty:Number(dispenseQty),unit:selected.unit})}).catch(()=>{})
       fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},body:JSON.stringify({org_id:session.org_id,product_id:selected.id,new_qty:selected.qty-Number(dispenseQty),reorder_point:(selected.supplier_reorder_point ?? selected.reorder_point)})}).catch(()=>{})
       showMsg(T('success',lang))
       setSelected(null); setDispenseQty('')
       loadProducts(session)
-    } catch { showMsg(T('error',lang),'error') }
+    } catch (e:any) { showMsg(`${T('error',lang)} — ${e?.message||'تعذر الاتصال'}`,'error') }
     setSubmitting(false)
   }
 
@@ -256,14 +256,14 @@ function StaffPageInner() {
         // انتهاء الجلسة ← نطلب PIN؛ غير كذا نعرض سبب الخطأ الفعلي بدل رسالة عامة
         if(res.status===401){ setNeedsReauth(true); setSubmitting(false); return }
         const err = await res.json().catch(()=>({}))
-        showMsg(err.error || T('error',lang),'error');setSubmitting(false);return
+        showMsg(err.error || `${T('error',lang)} (${res.status})`,'error');setSubmitting(false);return
       }
       fetch('/api/notify-waste',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},body:JSON.stringify({staff_name:session.name,product_name:selected.name,qty:Number(dispenseQty),unit:selected.unit,waste_reason:wasteReason})}).catch(()=>{})
       fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},body:JSON.stringify({org_id:session.org_id,product_id:selected.id,new_qty:selected.qty-Number(dispenseQty),reorder_point:(selected.supplier_reorder_point ?? selected.reorder_point)})}).catch(()=>{})
       showMsg('🗑️ تم تسجيل الهدر بنجاح')
       setSelected(null); setDispenseQty(''); setWasteMode(false); setWasteReason(''); setWasteNote('')
       loadProducts(session)
-    } catch { showMsg(T('error',lang),'error') }
+    } catch (e:any) { showMsg(`${T('error',lang)} — ${e?.message||'تعذر الاتصال'}`,'error') }
     setSubmitting(false)
   }
 
@@ -277,7 +277,7 @@ function StaffPageInner() {
       if(!res.ok||!j.success){ showMsg(j.error||T('error',lang),'error'); setSavingQty(false); return }
       setEditingProduct(null)
       loadProducts(session)
-    } catch { showMsg(T('error',lang),'error') }
+    } catch (e:any) { showMsg(`${T('error',lang)} — ${e?.message||'تعذر الاتصال'}`,'error') }
     setSavingQty(false)
   }
 
