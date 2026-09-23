@@ -7,6 +7,8 @@ import { colors as dsColors } from '@/lib/ds'
 import { cache } from '@/lib/cache'
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
+import { getMe } from '@/lib/session'
 import { toast } from '@/components/toast'
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh'
 import { confirmDialog } from '@/components/ConfirmDialog'
@@ -38,7 +40,6 @@ export default function PurchasesPage() {
   const [isExisting, setIsExisting] = useState<boolean|null>(null)
   const [orgId, setOrgId]           = useState('')
   const [curr, setCurr]             = useState('ر.س')
-  const [userId, setUserId]         = useState('')
   const [loading, setLoading]       = useState(false)
   const submitting = useRef(false)
   const [uploading, setUploading]   = useState(false)
@@ -71,24 +72,23 @@ export default function PurchasesPage() {
   useVisibilityRefresh(()=>{if(orgId)loadHistory(orgId)},20*60*1000)
 
   async function init() {
-    let oid=sessionStorage.getItem('s_org_id'),uid=sessionStorage.getItem('s_profile_id')
-    if(!oid||!uid){
-      const{data:{user}}=await sb.auth.getUser();if(!user)return
-      const{data:p}=await sb.from('profiles').select('id,org_id').eq('id',user.id).single();if(!p)return
-      oid=p.org_id;uid=p.id;sessionStorage.setItem('s_org_id',oid!);sessionStorage.setItem('s_profile_id',uid!)
+    let oid=sessionStorage.getItem('s_org_id')
+    if(!oid){
+      const me=await getMe();if(!me)return
+      oid=me.org_id
     }
-    setOrgId(oid!);setUserId(uid!)
-    sb.from('organizations').select('currency').eq('id',oid!).single().then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
-    loadProducts(oid!);loadHistory(oid!);loadPayables(oid!)
+    setOrgId(oid)
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
+    loadProducts(oid);loadHistory(oid);loadPayables(oid)
   }
 
   async function loadProducts(oid:string) {
     const cached = cache.get('products:'+oid)
     if(cached){ setProducts(cached); }
     const bid=sessionStorage.getItem('s_branch_id')
-    let pq=sb.from('products').select('id,name,unit,qty').eq('org_id',oid).eq('is_active',true)
-    if(bid) pq=pq.eq('branch_id',bid)
-    const{data}=await pq.order('name');setProducts(data||[]);cache.set('products:'+oid,data||[])
+    const j=await api.get('/api/products',{org_id:oid,branch_id:bid})
+    if(!j.success)return
+    setProducts(j.products||[]);cache.set('products:'+oid,j.products||[])
   }
 
   async function loadHistory(oid:string) {
@@ -97,35 +97,26 @@ export default function PurchasesPage() {
     const urlBid=new URLSearchParams(window.location.search).get('_b')
     if(urlBid){sessionStorage.setItem('s_branch_id',urlBid);window.history.replaceState({},'',window.location.pathname)}
     const bid=urlBid||sessionStorage.getItem('s_branch_id')
-    let q=sb.from('purchases').select('id,category,name,qty,unit,amount,vat_amount,total_amount,supplier,invoice_image,created_at').eq('org_id',oid).is('deleted_at',null).order('created_at',{ascending:false}).limit(50)
-    if(bid) q=(q as any).eq('branch_id',bid)
-    const{data}=await q;setHistory(data||[]);cache.set('purchases:'+oid,data||[])
+    const j=await api.get('/api/purchases',{org_id:oid,branch_id:bid,view:'history'})
+    if(!j.success)return
+    setHistory(j.purchases||[]);cache.set('purchases:'+oid,j.purchases||[])
   }
 
   async function loadPayables(oid:string) {
     const bid=sessionStorage.getItem('s_branch_id')
-    let payQ=(sb.from('purchases') as any)
-      .select('id,name,supplier,total_amount,due_date,created_at')
-      .eq('org_id',oid).eq('payment_status','unpaid').is('deleted_at',null)
-      .order('created_at',{ascending:false}).limit(200)
-    if(bid) payQ=payQ.eq('branch_id',bid)
-    const{data,error}=await payQ
-    if(error){ console.error('loadPayables error:', error); setPayables([]); return }
-    const sorted = (data||[]).slice().sort((a:any,b:any)=>{
-      if(!a.due_date && !b.due_date) return 0
-      if(!a.due_date) return 1
-      if(!b.due_date) return -1
-      return a.due_date.localeCompare(b.due_date)
-    })
+    const j=await api.get('/api/purchases',{org_id:oid,branch_id:bid,view:'payables'})
+    if(!j.success){ console.error('loadPayables error:', j.error); setPayables([]); return }
+    // الترتيب حسب تاريخ الاستحقاق يصير على الخادم
+    const sorted:any[] = j.payables||[]
     setPayables(sorted)
     if(sorted.length>0) setShowPayables(true)
   }
 
   async function markPaid(id:string) {
     setPayingId(id)
-    const{error}=await (sb.from('purchases') as any).update({payment_status:'paid',paid_at:new Date().toISOString()}).eq('id',id)
+    const r=await api.patch('/api/purchases',{org_id:orgId,id,mark_paid:true})
     setPayingId(null)
-    if(error){toast('فشل تحديث الحالة — حاول مرة أخرى','error');return}
+    if(!r.success){toast('فشل تحديث الحالة — حاول مرة أخرى','error');return}
     toast('✅ تم تسجيل الدفع')
     setPayables(prev=>prev.filter((p:any)=>p.id!==id))
   }
@@ -137,22 +128,10 @@ export default function PurchasesPage() {
     if(!(await confirmDialog({ title: 'حذف الفاتورة', message: confirmMsg }))) return
     setDeletingId(purchase.id)
 
-    if(purchase.category==='مخزون' && purchase.name && Number(purchase.qty)>0){
-      const bid=sessionStorage.getItem('s_branch_id')
-      let pq=sb.from('products').select('id').eq('org_id',orgId).eq('name',purchase.name)
-      if(bid) pq=pq.eq('branch_id',bid)
-      const{data:matched}=await pq.limit(1)
-      if(matched && matched.length>0){
-        await (sb.from('stock_movements') as any).insert({
-          product_id:matched[0].id, profile_id:userId, type:'out',
-          qty_change:-Number(purchase.qty), note:`إلغاء فاتورة شراء محذوفة (${purchase.supplier||'—'})`,
-        })
-      }
-    }
-
-    const{error}=await (sb.from('purchases') as any).update({deleted_at:new Date().toISOString(),deleted_by:userId}).eq('id',purchase.id)
+    // الخادم يرجّع كمية المخزون (لو فاتورة مخزون) ثم يحذف الفاتورة حذف ناعم
+    const r=await api.del('/api/purchases',{org_id:orgId,id:purchase.id})
     setDeletingId(null)
-    if(error){toast('فشل حذف الفاتورة — حاول مرة أخرى','error');return}
+    if(!r.success){toast('فشل حذف الفاتورة — حاول مرة أخرى','error');return}
     toast('🗑️ تم حذف الفاتورة')
     setHistory(prev=>prev.filter((p:any)=>p.id!==purchase.id))
     cache.invalidate('purchases:');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
@@ -266,38 +245,13 @@ export default function PurchasesPage() {
     const bid = sessionStorage.getItem('s_branch_id')
     const isVat = form.hasVat==='yes'
 
-    for (const i of selectedIndexes) {
-      const item = ocrItems[i]
-      const qty = Number(item.qty) || 0
-      const unit = item.unit || 'قطعة'
-      // سعر هذا الصنف تحديداً (قابل للتعديل بالواجهة) — لو ما اتعدّل، يستخدم القيمة المبدئية الموزّعة بالتساوي
-      const itemTotal = Number(ocrPrices[i]) || 0
-      const itemNet = itemTotal / (isVat ? 1.15 : 1)
-      const itemVat = itemTotal - itemNet
-
-      // سجل عملية شراء كاملة ودقيقة لكل صنف — سعره الخاص، ضريبته، وكل مرفقات الفاتورة (مو الصنف الأول بس)
-      await sb.from('purchases').insert({
-        org_id:orgId, profile_id:userId, branch_id:bid||null,
-        category:'مخزون', name:item.name, qty, unit,
-        reorder_point:5, total_amount:itemTotal,
-        amount:itemNet, vat_amount:itemVat, supplier:form.supplier||null,
-        note:form.note||null, invoice_image:form.invoice_image||null,
-        hasVat:isVat, invoice_date:form.invoice_date,
-      } as any)
-
-      // تحديث المنتج الموجود أو إضافة جديد — عبر حركة مخزون حقيقية دايماً (مو تعديل مباشر للكمية)،
-      // لأن الزرّاق (Trigger) اللي يعيد حساب الكمية من مجموع الحركات بيصفّرها لو ما فيه حركة مقابلة لأول لمسة له
-      const existing = products.find(p=>p.name.trim()===item.name.trim())
-      if (existing) {
-        if(qty>0) await sb.from('stock_movements').insert({product_id:existing.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء من: ${form.supplier||'—'} (OCR)`} as any)
-      } else {
-        const{data:np}=await (sb.from('products') as any).insert({
-          org_id:orgId, branch_id:bid, name:item.name.trim(), unit, qty:0,
-          reorder_point:5, is_active:true,
-        }).select().single()
-        if(np && qty>0) await sb.from('stock_movements').insert({product_id:np.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء جديد من: ${form.supplier||'—'} (OCR)`} as any)
-      }
-    }
+    // كل صنف فاتورة مستقلة بسعره (قابل للتعديل بالواجهة) وضريبته — الحفظ وتحديث المخزون على الخادم
+    const r = await api.post('/api/purchases/bulk', {
+      org_id:orgId, branch_id:bid||null, supplier:form.supplier||null, note:form.note||null,
+      invoice_image:form.invoice_image||null, has_vat:isVat, invoice_date:form.invoice_date,
+      items: selectedIndexes.map(i=>({ name:ocrItems[i].name, qty:ocrItems[i].qty, unit:ocrItems[i].unit, total:Number(ocrPrices[i])||0 })),
+    })
+    if(!r.success){ toast(r.error||'فشل الحفظ','error'); setBulkSaving(false); return }
 
     toast(`✅ تم حفظ ${selectedIndexes.length} صنف بنجاح، بكل تفاصيل السعر والضريبة`)
     setOcrItems([]); setOcrSelected([] as any); setOcrPrices({})
@@ -316,81 +270,26 @@ export default function PurchasesPage() {
     if(form.hasVat==='yes'&&!form.invoice_image){toast('يرجى رفع صورة الفاتورة','warning');submitting.current=false;return}
     if(!form.supplier.trim()){toast('يرجى إدخال اسم المورد','warning');submitting.current=false;return}
     setLoading(true)
-    const inputTotal=Number(form.total_amount)
-    const amount=parseFloat((inputTotal/1.15).toFixed(2))
-    const invoiceTs = `${form.invoice_date}T12:00:00+03:00`
-    const{error:insErr}=await (sb.from('purchases') as any).insert({
-      org_id:orgId,profile_id:userId,branch_id:sessionStorage.getItem('s_branch_id')||null,
-      category:form.category,name:form.name,qty:form.qty?Number(form.qty):null,
-      unit:form.unit||null,reorder_point:Number(form.reorder_point)||5,
-      amount,supplier:form.supplier,note:form.note||null,invoice_image:form.invoice_image||null,
-      created_at:invoiceTs,payment_status:form.payment_status,due_date:form.due_date||null,
+    // حفظ الفاتورة + الإشعار + تحديث المخزون ومتوسط التكلفة كلها على الخادم
+    const res=await api.post('/api/purchases',{
+      org_id:orgId, branch_id:sessionStorage.getItem('s_branch_id')||null,
+      category:form.category, name:form.name, sku:form.sku||null, qty:form.qty||null,
+      unit:form.unit||null, reorder_point:form.reorder_point, total_amount:form.total_amount,
+      supplier:form.supplier, note:form.note||null, invoice_image:form.invoice_image||null,
+      invoice_date:form.invoice_date, payment_status:form.payment_status, due_date:form.due_date||null,
     })
-    if(insErr){toast('خطأ: '+insErr.message,'error');setLoading(false);submitting.current=false;return}
+    if(!res.success){toast(res.error||'حدث خطأ','error');setLoading(false);submitting.current=false;return}
 
-    // إشعار فوري بالنظام عند حفظ أي فاتورة مشتريات (بغض النظر عن حالة الدفع)
-    await (sb.from('notifications') as any).insert({
-      org_id: orgId, branch_id: sessionStorage.getItem('s_branch_id') || null,
-      title: `فاتورة جديدة: ${form.name || form.category}`,
-      message: `${inputTotal.toFixed(2)} ${curr} — ${form.supplier}${form.payment_status==='unpaid' ? ' (غير مدفوعة)' : ''}`,
-      type: 'success', read: false,
-    })
-
-    let matchedProductId:string|null=null
-    if(form.category==='مخزون'&&form.name){
-      const qty=form.qty?Number(form.qty):0
-      const unitCost = qty>0 ? (amount||0)/qty : 0
-      let existing:any=null
-      const purchaseBid=sessionStorage.getItem('s_branch_id')
-      let byNameQ=(sb.from('products') as any).select('id,qty,sku,avg_cost').eq('org_id',orgId).eq('name',form.name)
-      if(purchaseBid) byNameQ=byNameQ.eq('branch_id',purchaseBid)
-      const{data:byNameArr}=await byNameQ.order('created_at',{ascending:false}).limit(1)
-      if(byNameArr&&byNameArr.length>0){existing=byNameArr[0]}
-      else if(form.sku){
-        let bySkuQ=(sb.from('products') as any).select('id,qty,sku,name,avg_cost').eq('org_id',orgId).eq('sku',form.sku)
-        if(purchaseBid) bySkuQ=bySkuQ.eq('branch_id',purchaseBid)
-        const{data:bySkuArr}=await bySkuQ.order('created_at',{ascending:false}).limit(1)
-        if(bySkuArr&&bySkuArr.length>0) existing=bySkuArr[0]
-      }
-      if(existing){
-        if(form.sku&&!existing.sku) await sb.from('products').update({sku:form.sku}).eq('id',existing.id)
-        if(qty>0) await (sb.from('stock_movements') as any).insert({product_id:existing.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء من: ${form.supplier}`,created_at:invoiceTs})
-        const oldQty=Number(existing.qty)||0
-        const oldAvgCost=Number(existing.avg_cost)||0
-        const newAvgCost=(oldQty+qty)>0?((oldQty*oldAvgCost)+(qty*unitCost))/(oldQty+qty):0
-        await (sb.from('products') as any).update({avg_cost:newAvgCost}).eq('id',existing.id)
-        matchedProductId = existing.id
-        toast(`✅ تم تحديث المخزون (+${qty})`,'success')
-      } else {
-        const branchId=sessionStorage.getItem('s_branch_id')||
-          (await sb.from('branches').select('id').eq('org_id',orgId).eq('is_active',true).order('created_at').limit(1).single()).data?.id||null
-        const{data:np}=await (sb.from('products') as any).insert({org_id:orgId,branch_id:branchId,name:form.name.trim(),sku:form.sku||null,unit:form.unit||'قطعة',qty:0,reorder_point:Number(form.reorder_point)||5,is_active:true,avg_cost:unitCost}).select().single()
-        if(np) {
-          matchedProductId = np.id
-          if(qty>0) await (sb.from('stock_movements') as any).insert({product_id:np.id,profile_id:userId,type:'in',qty_change:qty,note:`شراء جديد من: ${form.supplier}`,created_at:invoiceTs})
-          fetch('/api/sync-product-to-staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,product_id:np.id})}).catch(()=>{})
-        }
-        toast(`✅ تم إضافة "${form.name}" للمخزون`)
-      }
-    } else { toast('✅ تم تسجيل الشراء') }
+    if(res.product_action==='updated') toast(`✅ تم تحديث المخزون (+${res.qty})`,'success')
+    else if(res.product_action==='created'){
+      toast(`✅ تم إضافة "${form.name}" للمخزون`)
+      api.post('/api/sync-product-to-staff',{org_id:orgId,product_id:res.product_id})
+    }
+    else toast('✅ تم تسجيل الشراء')
 
     // تأكيد يدوي قبل إرسال رسالة الشكر — يظهر فقط لو المورد مسجّل فعلياً بالنظام والمنتج مرتبط فيه تحديداً
-    if (form.category==='مخزون' && form.name && form.supplier.trim() && matchedProductId) {
-      const { data: matchedSupplier } = await (sb.from('suppliers' as any) as any)
-        .select('id').eq('org_id',orgId).ilike('name',form.supplier.trim()).maybeSingle()
-      if (matchedSupplier) {
-        const { data: directLink } = await (sb.from('products') as any)
-          .select('id').eq('id',matchedProductId).eq('supplier_id',matchedSupplier.id).maybeSingle()
-        let isLinked = !!directLink
-        if (!isLinked) {
-          const { data: altLink } = await (sb.from('product_suppliers' as any) as any)
-            .select('id').eq('product_id',matchedProductId).eq('supplier_id',matchedSupplier.id).maybeSingle()
-          isLinked = !!altLink
-        }
-        if (isLinked) {
-          setPendingThanks({ productId: matchedProductId, productName: form.name, supplierName: form.supplier.trim() })
-        }
-      }
+    if (res.thanks_candidate && res.product_id) {
+      setPendingThanks({ productId: res.product_id, productName: form.name, supplierName: form.supplier.trim() })
     }
 
     setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:''})
