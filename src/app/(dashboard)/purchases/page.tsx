@@ -252,6 +252,7 @@ export default function PurchasesPage() {
       items: selectedIndexes.map(i=>({ name:ocrItems[i].name, qty:ocrItems[i].qty, unit:ocrItems[i].unit, total:Number(ocrPrices[i])||0 })),
     })
     if(!r.success){ toast(r.error||'فشل الحفظ','error'); setBulkSaving(false); return }
+    if(r.failed?.length) toast(`تنبيه: فشل حفظ ${r.failed.length} صنف: ${r.failed.join('، ')}`,'warning')
 
     toast(`✅ تم حفظ ${selectedIndexes.length} صنف بنجاح، بكل تفاصيل السعر والضريبة`)
     setOcrItems([]); setOcrSelected([] as any); setOcrPrices({})
