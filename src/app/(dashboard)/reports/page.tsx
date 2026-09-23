@@ -6,10 +6,25 @@ import { currencySymbol } from '@/lib/currencySymbol'
 import { CalendarDays, FileText, Trophy, Inbox, Loader2, Paperclip, Trash2, PartyPopper, Lock, AlertTriangle, Download, Pencil, BarChart3, CreditCard, Upload, Receipt, ClipboardList, Wallet, Flame, X } from 'lucide-react'
 import { cache } from '@/lib/cache'
 import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
+import { getMe, getOrgId } from '@/lib/session'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 
 type FilterPeriod = 'today'|'week'|'month'|'year'|'custom'
+
+/** اسم المنشأة/الفرع/العملة لتصدير PDF — من /api/me بدل استعلامات مباشرة */
+async function pdfOrgInfo() {
+  const me = await getMe()
+  const bid = sessionStorage.getItem('s_branch_id')
+  const branchName = bid ? me?.branches.find(b=>b.id===bid)?.name : null
+  return { org: me?.org ? { name: me.org.name, currency: me.org.currency } : null, branchRow: branchName ? { name: branchName } : null }
+}
+
+/** بيانات تقرير من /api/reports (الفترة محسوبة بتوقيت المستخدم) */
+function reportData(type: string, start: Date, end: Date, extra: Record<string,string> = {}) {
+  return api.get('/api/reports', { org_id: sessionStorage.getItem('s_org_id'), branch_id: sessionStorage.getItem('s_branch_id'), type, start: start.toISOString(), end: end.toISOString(), ...extra })
+}
 
 function getRange(period: FilterPeriod, from: string, to: string) {
   const now = new Date(); const end = new Date(now); end.setHours(23,59,59,999)
@@ -159,23 +174,14 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
   const [exportingPdf, setExportingPdf] = useState(false)
-  const sb = createClient()
   useEffect(()=>{ load() },[period,from,to])
   async function load() {
     setLoading(true)
-    let orgId=sessionStorage.getItem('s_org_id')
-    if(!orgId){
-      const{data:{user}}=await sb.auth.getUser()
-      if(!user){setLoading(false);return}
-      const{data:p}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
-      if(!p){setLoading(false);return}
-      orgId=p.org_id; sessionStorage.setItem('s_org_id',orgId!)
-    }
+    const orgId=await getOrgId()
+    if(!orgId){setLoading(false);return}
     const{start,end}=getRange(period,from,to)
-    const _bid1 = sessionStorage.getItem('s_branch_id')
-    let _mq1 = sb.from('stock_movements').select('*,products!inner(name,unit,org_id,branch_id),profiles!profile_id(full_name),staff_members!staff_id(name)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
-    if (_bid1) _mq1 = _mq1.eq('products.branch_id', _bid1)
-    const{data}=await _mq1.order('created_at',{ascending:false})
+    const j=await reportData('movements',start,end,{movement_type:'out'})
+    const data=j.movements
     setMovements(data||[]); setLoading(false)
     if(orgId) cache.set('report_movements:'+orgId, data||[])
   }
@@ -187,10 +193,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     setExportingPdf(true)
     try {
       const orgId = sessionStorage.getItem('s_org_id')
-      const sbPdf = createClient()
-      const { data: org } = orgId ? await sbPdf.from('organizations').select('name').eq('id', orgId).single() : { data: null }
-      const branchIdPdf = sessionStorage.getItem('s_branch_id')
-      const { data: branchRow } = branchIdPdf ? await sbPdf.from('branches').select('name').eq('id', branchIdPdf).single() : { data: null }
+      const { org, branchRow } = await pdfOrgInfo()
       const orgDisplayName = ((org as any)?.name || 'Storely') + ((branchRow as any)?.name ? ' — فرع ' + (branchRow as any).name : '')
       const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
@@ -328,23 +331,14 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
   const [exportingPdf, setExportingPdf] = useState(false)
-  const sb = createClient()
   useEffect(()=>{ load() },[period,from,to])
   async function load() {
     setLoading(true)
-    let orgId=sessionStorage.getItem('s_org_id')
-    if(!orgId){
-      const{data:{user}}=await sb.auth.getUser()
-      if(!user){setLoading(false);return}
-      const{data:p}=await sb.from('profiles').select('org_id').eq('id',user.id).single()
-      if(!p){setLoading(false);return}
-      orgId=p.org_id; sessionStorage.setItem('s_org_id',orgId!)
-    }
+    const orgId=await getOrgId()
+    if(!orgId){setLoading(false);return}
     const{start,end}=getRange(period,from,to)
-    const _bid1 = sessionStorage.getItem('s_branch_id')
-    let _mq1 = sb.from('stock_movements').select('*,products!inner(name,unit,org_id,branch_id),profiles!profile_id(full_name),staff_members!staff_id(name)').eq('type','waste').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
-    if (_bid1) _mq1 = _mq1.eq('products.branch_id', _bid1)
-    const{data}=await _mq1.order('created_at',{ascending:false})
+    const j=await reportData('movements',start,end,{movement_type:'waste'})
+    const data=j.movements
     setMovements(data||[]); setLoading(false)
   }
   function exportCSV(){
@@ -355,10 +349,7 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
     setExportingPdf(true)
     try {
       const orgId = sessionStorage.getItem('s_org_id')
-      const sbPdf = createClient()
-      const { data: org } = orgId ? await sbPdf.from('organizations').select('name').eq('id', orgId).single() : { data: null }
-      const branchIdPdf = sessionStorage.getItem('s_branch_id')
-      const { data: branchRow } = branchIdPdf ? await sbPdf.from('branches').select('name').eq('id', branchIdPdf).single() : { data: null }
+      const { org, branchRow } = await pdfOrgInfo()
       const orgDisplayName = ((org as any)?.name || 'Storely') + ((branchRow as any)?.name ? ' — فرع ' + (branchRow as any).name : '')
       const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
@@ -518,18 +509,8 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
   async function loadDeletedLog() {
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId) return
     setLoadingDeleted(true)
-    const{data}=await (sb.from('purchases') as any)
-      .select('id,name,category,qty,unit,total_amount,supplier,deleted_at,deleted_by')
-      .eq('org_id',orgId).not('deleted_at','is',null)
-      .order('deleted_at',{ascending:false}).limit(100)
-    const rows = data||[]
-    const deleterIds = [...new Set(rows.map((r:any)=>r.deleted_by).filter(Boolean))]
-    let namesMap: Record<string,string> = {}
-    if(deleterIds.length>0){
-      const{data:profs}=await sb.from('profiles').select('id,full_name').in('id',deleterIds as string[])
-      for(const p of (profs||[]) as any[]) namesMap[p.id]=p.full_name
-    }
-    setDeletedList(rows.map((r:any)=>({...r, deleterName: namesMap[r.deleted_by]||'—'})))
+    const j=await api.get('/api/reports',{org_id:orgId,type:'deleted_purchases'})
+    setDeletedList(j.deleted||[])
     setLoadingDeleted(false)
   }
 
@@ -547,32 +528,16 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
 
   async function restorePurchase(item:any) {
     setRestoringId(item.id)
-    if(item.category==='مخزون' && item.name && Number(item.qty)>0){
-      const orgId=sessionStorage.getItem('s_org_id')||''
-      const bid=sessionStorage.getItem('s_branch_id')
-      let pq=sb.from('products').select('id').eq('org_id',orgId).eq('name',item.name)
-      if(bid) pq=(pq as any).eq('branch_id',bid)
-      const{data:matched}=await pq.limit(1)
-      if(matched && matched.length>0){
-        const{data:{user}}=await sb.auth.getUser()
-        await (sb.from('stock_movements') as any).insert({
-          product_id:matched[0].id, profile_id:user?.id, type:'in',
-          qty_change:Number(item.qty), note:`استعادة فاتورة شراء (${item.supplier||'—'})`,
-        })
-      }
-    }
-    const{error}=await (sb.from('purchases') as any).update({deleted_at:null,deleted_by:null}).eq('id',item.id)
+    // الخادم يرجّع الكمية للمخزون (لو فاتورة مخزون) ويلغي الحذف
+    const r=await api.post('/api/purchases/restore',{org_id:sessionStorage.getItem('s_org_id'),id:item.id,branch_id:sessionStorage.getItem('s_branch_id')})
     setRestoringId(null)
-    if(error){ toast('فشلت الاستعادة — حاول مرة أخرى','error'); return }
+    if(!r.success){ toast('فشلت الاستعادة — حاول مرة أخرى','error'); return }
     toast('↩️ تمت استعادة الفاتورة')
     setDeletedList(prev=>prev.filter(d=>d.id!==item.id))
     load()
   }
   useEffect(()=>{
-    const oid = sessionStorage.getItem('s_org_id')
-    if(!oid) return
-    sb.from('organizations' as any).select('currency').eq('id',oid).single()
-      .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
   },[])
 
   async function confirmDeletePurchase() {
@@ -582,34 +547,18 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     const { error } = await sb.auth.signInWithPassword({ email: user.email, password: deletePassword })
     if (error) { setDeleteError('كلمة المرور غير صحيحة'); setDeleting(false); return }
 
-    // تعويض المخزون: لو الفاتورة أضافت كمية لمنتج مخزون، نطرحها الآن (نلغي أثر الفاتورة)
-    if(confirmDelete.category==='مخزون' && confirmDelete.name && Number(confirmDelete.qty)>0){
-      const orgId=sessionStorage.getItem('s_org_id')||''
-      const bid=sessionStorage.getItem('s_branch_id')
-      let pq=sb.from('products').select('id').eq('org_id',orgId).eq('name',confirmDelete.name)
-      if(bid) pq=(pq as any).eq('branch_id',bid)
-      const{data:matched}=await pq.limit(1)
-      if(matched && matched.length>0){
-        await (sb.from('stock_movements') as any).insert({
-          product_id:matched[0].id, profile_id:user.id, type:'out',
-          qty_change:-Number(confirmDelete.qty), note:`إلغاء فاتورة شراء محذوفة (${confirmDelete.supplier||'—'})`,
-        })
-      }
-    }
-
-    const{error:delErr}=await (sb.from('purchases') as any).update({deleted_at:new Date().toISOString(),deleted_by:user.id}).eq('id', confirmDelete.id)
-    if(delErr){setDeleteError('فشل الحذف — حاول مرة أخرى');setDeleting(false);return}
+    // الخادم يطرح كمية الفاتورة من المخزون (لو فاتورة مخزون) ثم يحذفها حذف ناعم
+    const delRes=await api.del('/api/purchases',{org_id:sessionStorage.getItem('s_org_id'),id:confirmDelete.id})
+    if(!delRes.success){setDeleteError('فشل الحذف — حاول مرة أخرى');setDeleting(false);return}
     setPurchases(prev => prev.filter(p => p.id !== confirmDelete.id))
     setConfirmDelete(null); setDeletePassword(''); setDeleting(false)
   }
   async function load() {
     setLoading(true)
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setLoading(false);return}
-    const purchBid=sessionStorage.getItem('s_branch_id')
     const{start,end}=getRange(period,from,to)
-    let purchQ=sb.from('purchases').select('id,created_at,name,category,amount,vat_amount,total_amount,supplier,invoice_image,qty,unit').eq('org_id',orgId).is('deleted_at',null).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
-    if(purchBid) purchQ=(purchQ as any).eq('branch_id',purchBid)
-    const{data}=await purchQ.order('created_at',{ascending:false})
+    const j=await reportData('purchases',start,end)
+    const data=j.purchases
     setPurchases(data||[]); setLoading(false)
     if(orgId) cache.set('report_purchases:'+orgId, data||[])
   }
@@ -621,10 +570,8 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
     setExportingPdf(true)
     try {
       const orgId = sessionStorage.getItem('s_org_id')
-      const { data: org } = orgId ? await sb.from('organizations').select('name,currency').eq('id', orgId).single() : { data: null }
+      const { org, branchRow } = await pdfOrgInfo()
       const curr = currencySymbol((org as any)?.currency)
-      const branchIdPdf = sessionStorage.getItem('s_branch_id')
-      const { data: branchRow } = branchIdPdf ? await sb.from('branches').select('name').eq('id', branchIdPdf).single() : { data: null }
       const orgDisplayName = ((org as any)?.name || 'Storely') + ((branchRow as any)?.name ? ' — فرع ' + (branchRow as any).name : '')
       const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
@@ -846,30 +793,17 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
   const [search, setSearch]     = useState('')
   const [filter, setFilter]     = useState<'all'|'low'|'out'>('all')
   const [exportingPdf, setExportingPdf] = useState(false)
-  const sb = createClient()
 
   useEffect(()=>{ load() },[period,from,to])
 
   async function load() {
     setLoading(true)
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setLoading(false);return}
-    const branchId=sessionStorage.getItem('s_branch_id')
     const {start,end}=getRange(period,from,to)
 
-    // products
-    let pq=sb.from('products').select('id,name,unit,qty,reorder_point,category').eq('org_id',orgId).eq('is_active',true)
-    if(branchId) pq=pq.eq('branch_id',branchId)
-    const{data:prods}=await pq.order('name')
-
-    // movements in period
-    let mq=sb.from('stock_movements').select('qty_change,type,products!inner(name,org_id,branch_id)').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
-    if(branchId) mq=mq.eq('products.branch_id',branchId)
-    const{data:mvs}=await mq
-
-    // purchases in period
-    let puq=sb.from('purchases').select('name,qty,unit,category').eq('org_id',orgId).eq('category','مخزون').is('deleted_at',null).gte('created_at',start.toISOString()).lte('created_at',end.toISOString())
-    if(branchId) puq=(puq as any).eq('branch_id',branchId)
-    const{data:pus}=await puq
+    // الأصناف + حركات وفواتير الفترة
+    const j=await reportData('inventory',start,end)
+    const prods=j.products, mvs=j.movements, pus=j.purchases
 
     setProducts(prods||[])
     setMovements(mvs||[])
@@ -886,9 +820,7 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
     setExportingPdf(true)
     try {
       const orgId = sessionStorage.getItem('s_org_id')
-      const { data: org } = orgId ? await sb.from('organizations').select('name').eq('id', orgId).single() : { data: null }
-      const branchIdPdf = sessionStorage.getItem('s_branch_id')
-      const { data: branchRow } = branchIdPdf ? await sb.from('branches').select('name').eq('id', branchIdPdf).single() : { data: null }
+      const { org, branchRow } = await pdfOrgInfo()
       const orgDisplayName = ((org as any)?.name || 'Storely') + ((branchRow as any)?.name ? ' — فرع ' + (branchRow as any).name : '')
       const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
@@ -1101,11 +1033,8 @@ function AttendanceDetail({ onBack }: { onBack:()=>void }) {
       if (!orgId) { setLoading(false); return }
       const start = new Date(dFrom+'T00:00:00')
       const end = new Date(dTo+'T23:59:59')
-      const bid = sessionStorage.getItem('s_branch_id')
-      const sbA = createClient()
-      let q = (sbA.from('staff_attendance' as any) as any).select('recorded_at,type,staff_name,staff_id').eq('org_id', orgId).gte('recorded_at', start.toISOString()).lte('recorded_at', end.toISOString()).order('recorded_at', { ascending: true })
-      if (bid) q = (q as any).eq('branch_id', bid)
-      const { data } = await q
+      const j = await reportData('attendance', start, end)
+      const data = j.records
       // نجمّع حسب الموظف + اليوم -- أول وقت حضور وآخر وقت انصراف بنفس اليوم
       const grouped: Record<string, any> = {}
       for (const r of ((data as any[])||[])) {
@@ -1189,22 +1118,15 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   const [exportingPdf, setExportingPdf] = useState(false)
   const [curr, setCurr] = useState('ر.س')
   useEffect(()=>{
-    const oid = sessionStorage.getItem('s_org_id')
-    if(!oid) return
-    const sbCurr = createClient()
-    sbCurr.from('organizations' as any).select('currency').eq('id',oid).single()
-      .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
   },[])
 
   async function handleExportPdf() {
     setExportingPdf(true)
     try {
       const orgId = sessionStorage.getItem('s_org_id')
-      const sbPdf = createClient()
-      const { data: org } = orgId ? await sbPdf.from('organizations').select('name,currency').eq('id', orgId).single() : { data: null }
+      const { org, branchRow } = await pdfOrgInfo()
       const curr = currencySymbol((org as any)?.currency)
-      const branchIdPdf = sessionStorage.getItem('s_branch_id')
-      const { data: branchRow } = branchIdPdf ? await sbPdf.from('branches').select('name').eq('id', branchIdPdf).single() : { data: null }
       const orgDisplayName = ((org as any)?.name || 'Storely') + ((branchRow as any)?.name ? ' — فرع ' + (branchRow as any).name : '')
       const { exportReportPdf } = await import('@/lib/pdfExport')
       await exportReportPdf({
@@ -1264,10 +1186,9 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
 
   async function saveClosingDate(id: string) {
     setSavingDate(true)
-    const sb = createClient()
-    const{error}=await (sb as any).from('cashier_closings').update({ closing_date: editDateValue }).eq('id', id)
+    const r=await api.patch('/api/cashier-closing',{org_id:sessionStorage.getItem('s_org_id'),id,closing_date:editDateValue})
     setSavingDate(false)
-    if(error){toast('فشل تعديل التاريخ — حاول مرة أخرى','error');return}
+    if(!r.success){toast('فشل تعديل التاريخ — حاول مرة أخرى','error');return}
     setClosings(prev => prev.map(c => c.id===id ? {...c, closing_date: editDateValue} : c))
     setEditingDateId(null)
   }
@@ -1279,8 +1200,8 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
     if (!user?.email) { setDeleteError('تعذر التحقق من الحساب'); setDeleting(false); return }
     const { error } = await sb.auth.signInWithPassword({ email: user.email, password: deletePassword })
     if (error) { setDeleteError('كلمة المرور غير صحيحة'); setDeleting(false); return }
-    const{error:delErr}=await sb.from('cashier_closings' as any).delete().eq('id', confirmDelete.id)
-    if(delErr){setDeleteError('فشل الحذف — حاول مرة أخرى');setDeleting(false);return}
+    const delRes=await api.del('/api/cashier-closing',{org_id:sessionStorage.getItem('s_org_id'),id:confirmDelete.id})
+    if(!delRes.success){setDeleteError('فشل الحذف — حاول مرة أخرى');setDeleting(false);return}
     setClosings(prev => prev.filter(c => c.id !== confirmDelete.id))
     setConfirmDelete(null); setDeletePassword(''); setDeleting(false)
   }
@@ -1504,21 +1425,17 @@ export default function ReportsPage() {
   const [recentOps, setRecentOps] = useState<any[]>([])
   const [cashierStats, setCS]     = useState({count:0,deficit:0,surplus:0})
   const [topMovements, setTopMovements] = useState<any[]>([])
-  const sb = createClient()
 
   useEffect(()=>{ loadStats() },[period,from,to])
 
   async function loadStats() {
     setSL(true)
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setSL(false);return}
-    sb.from('organizations' as any).select('currency').eq('id',orgId).single()
-      .then(({data}:any)=>{ if(data?.currency) setHomeCurr(currencySymbol(data.currency)) })
+    getMe().then(me=>{ if(me?.org?.currency) setHomeCurr(currencySymbol(me.org.currency)) })
     const{start,end}=getRange(period,from,to)
-    const[{data:mv},{data:pu},{data:wv}]=await Promise.all([
-      (()=>{const _bid2=sessionStorage.getItem('s_branch_id');let _mq2=sb.from('stock_movements').select('qty_change,created_at,products!inner(name,org_id,branch_id)').eq('type','out').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bid2)_mq2=_mq2.eq('products.branch_id',_bid2);return _mq2})(),
-      (()=>{const _bidP=sessionStorage.getItem('s_branch_id');let _pq=sb.from('purchases').select('amount,total_amount,vat_amount,created_at,branch_id').eq('org_id',orgId).is('deleted_at',null).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bidP)_pq=_pq.eq('branch_id',_bidP);return _pq})(),
-      (()=>{const _bidW=sessionStorage.getItem('s_branch_id');let _wq=sb.from('stock_movements').select('qty_change,created_at,products!inner(name,org_id,branch_id)').eq('type','waste').eq('products.org_id',orgId).gte('created_at',start.toISOString()).lte('created_at',end.toISOString());if(_bidW)_wq=_wq.eq('products.branch_id',_bidW);return _wq})(),
-    ])
+    const sum=await reportData('summary',start,end)
+    if(!sum.success){setSL(false);return}
+    const mv=sum.dispense, pu=sum.purchases, wv=sum.waste
     const wasteItems=new Set((wv||[]).map((m:any)=>m.products?.name)).size
     setWS({ops:(wv||[]).length,qty:(wv||[]).reduce((s:number,m:any)=>s+Math.abs(m.qty_change),0),items:wasteItems})
     const items=new Set((mv||[]).map((m:any)=>m.products?.name)).size
@@ -1533,29 +1450,13 @@ export default function ReportsPage() {
     }
     setWD(wd); setWP(wp)
     setTopMovements(mv||[])
-    const _bidI=sessionStorage.getItem('s_branch_id')
-    let _invQ=sb.from('products').select('qty,reorder_point').eq('org_id',orgId).eq('is_active',true)
-    if(_bidI)_invQ=_invQ.eq('branch_id',_bidI)
-    const{data:inv}=await _invQ
-    const invData=inv||[]
+    const invData=sum.inventory||[]
     setIS({total:invData.length,low:invData.filter((p:any)=>p.qty>0&&p.qty<=p.reorder_point).length,out:invData.filter((p:any)=>p.qty===0).length})
-    const _bidC=sessionStorage.getItem('s_branch_id')
-    let _closQ=sb.from('cashier_closings' as any).select('status').eq('org_id',orgId).gte('closing_date',start.toISOString().slice(0,10)).lte('closing_date',end.toISOString().slice(0,10))
-    if(_bidC)_closQ=(_closQ as any).eq('branch_id',_bidC)
-    const{data:closings}=await _closQ
-    const closingsData=(closings||[]) as any[]
+    const closingsData=(sum.closings||[]) as any[]
     setCS({count:closingsData.length,deficit:closingsData.filter(c=>c.status==='deficit').length,surplus:closingsData.filter(c=>c.status==='surplus').length})
     setSL(false)
     // آخر العمليات
-    const _bidR=sessionStorage.getItem('s_branch_id')
-    let _recentQ=sb.from('stock_movements')
-      .select('id,qty_change,type,created_at,products!inner(name,unit,org_id,branch_id)')
-      .eq('products.org_id',orgId)
-      .order('created_at',{ascending:false})
-      .limit(10)
-    if(_bidR)_recentQ=_recentQ.eq('products.branch_id',_bidR)
-    const{data:recent}=await _recentQ
-    setRecentOps(recent||[])
+    setRecentOps(sum.recent||[])
     setTimeout(()=>setVisible(true),50)
   }
 

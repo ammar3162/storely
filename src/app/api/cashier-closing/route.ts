@@ -240,3 +240,45 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
 }
+
+async function ownedClosing(org_id: string, id: string, access: any) {
+  const { data } = await sb().from('cashier_closings').select('id,branch_id').eq('id', id).eq('org_id', org_id).maybeSingle()
+  if (!data) return null
+  const forced = enforcedBranchId(access)
+  if (forced && (data as any).branch_id !== forced) return null
+  return data
+}
+
+// تعديل تاريخ إقفال كاشير (المالك / مدير الفرع لفرعه)
+export async function PATCH(req: Request) {
+  try {
+    const { org_id, id, closing_date } = await req.json()
+    if (!org_id || !id || !/^\d{4}-\d{2}-\d{2}$/.test(String(closing_date || ''))) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+    const access = await verifyOrgAccess(org_id)
+    if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    if (!(await ownedClosing(org_id, id, access))) return NextResponse.json({ error: 'غير موجود' }, { status: 404 })
+    const { error } = await sb().from('cashier_closings').update({ closing_date } as any).eq('id', id).eq('org_id', org_id)
+    if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+    return NextResponse.json({ success: true })
+  } catch {
+    return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+  }
+}
+
+// حذف إقفال كاشير — الواجهة تطلب كلمة المرور قبل الإرسال
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url)
+    const org_id = searchParams.get('org_id')
+    const id = searchParams.get('id')
+    if (!org_id || !id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+    const access = await verifyOrgAccess(org_id)
+    if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    if (!(await ownedClosing(org_id, id, access))) return NextResponse.json({ error: 'غير موجود' }, { status: 404 })
+    const { error } = await sb().from('cashier_closings').delete().eq('id', id).eq('org_id', org_id)
+    if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+    return NextResponse.json({ success: true })
+  } catch {
+    return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+  }
+}
