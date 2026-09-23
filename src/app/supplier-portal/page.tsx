@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
 
 export default function SupplierPortalAuthPage() {
   const [mode, setMode] = useState<'login'|'register'>('login')
@@ -20,9 +21,8 @@ export default function SupplierPortalAuthPage() {
     const { error, data } = await sb.auth.signInWithPassword({ email, password })
     if (error) { setError('البريد أو كلمة المرور غير صحيحة'); setLoading(false); return }
     if (data.session) {
-      const { data: supplierProfile } = await sb
-        .from('supplier_profiles' as any).select('id').eq('id', data.session.user.id).single()
-      if (!supplierProfile) {
+      const me = await api.get('/api/supplier-portal')
+      if (!me.success) {
         await sb.auth.signOut()
         setError('هذا الحساب غير مسجّل كمورد — تأكد من البريد أو أنشئ حساب مورد جديد')
         setLoading(false); return
@@ -43,10 +43,18 @@ export default function SupplierPortalAuthPage() {
     }
     if (!data.user) { setError('حدث خطأ أثناء إنشاء الحساب'); setLoading(false); return }
 
-    const { error: profileErr } = await sb.from('supplier_profiles' as any).insert({
-      id: data.user.id, business_name: businessName.trim(), phone: phone.trim() || null,
-      email: email.trim(), location: location.trim() || null,
-    })
+    // مع جلسة: الخادم ينشئ ملف المورد بهوية الجلسة. بدون جلسة (لو تأكيد البريد مفعّل) نبقى على الطريقة السابقة
+    let profileErr: unknown = null
+    if (data.session) {
+      const r = await api.post('/api/supplier-portal', { action: 'register', business_name: businessName.trim(), phone: phone.trim() || null, location: location.trim() || null })
+      if (!r.success) profileErr = r.error || true
+    } else {
+      const { error } = await sb.from('supplier_profiles' as any).insert({
+        id: data.user.id, business_name: businessName.trim(), phone: phone.trim() || null,
+        email: email.trim(), location: location.trim() || null,
+      })
+      profileErr = error
+    }
     if (profileErr) { setError('حدث خطأ أثناء حفظ بيانات المورد'); setLoading(false); return }
 
     if (data.session) window.location.href = '/supplier-portal/dashboard'

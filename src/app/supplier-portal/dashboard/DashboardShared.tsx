@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
 import { confirmDialog } from '@/components/ConfirmDialog'
 
 type Tab = 'products' | 'orders' | 'chats' | 'reps' | 'reports' | 'activity' | 'account'
@@ -62,65 +63,56 @@ export default function SupplierDashboardShared() {
     if (!profile?.id) return
     const channel = sb.channel(`supplier-updates-${profile.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'quote_requests', filter: `supplier_id=eq.${profile.id}` }, () => {
-        loadQuoteRequests(profile.id)
+        refresh()
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `supplier_id=eq.${profile.id}` }, () => {
-        loadChatMessages(profile.id)
+        refresh()
       })
       .subscribe()
     return () => { sb.removeChannel(channel) }
   },[profile?.id])
 
+  // كل بيانات لوحة المورد من /api/supplier-portal (الهوية من الجلسة)
+  async function refresh() {
+    const j = await api.get('/api/supplier-portal')
+    if (!j.success) return null
+    setItems(j.items || [])
+    setQuoteRequests(j.quote_requests || [])
+    setChatMessages(j.messages || [])
+    setMyGivenReviewIds(j.given_review_ids || [])
+    setReps(j.reps || [])
+    return j
+  }
+
   async function init() {
-    const { data: { user } } = await sb.auth.getUser()
-    if (!user) { window.location.href = '/supplier-portal'; return }
-    const { data: p } = await sb.from('supplier_profiles' as any).select('*').eq('id', user.id).single()
-    if (!p) { window.location.href = '/supplier-portal'; return }
-    setProfile(p)
-    await loadItems(user.id)
-    await loadQuoteRequests(user.id)
-    await loadChatMessages(user.id)
-    await loadGivenReviews(user.id)
-    await loadReps(user.id)
+    const j = await refresh()
+    if (!j) { window.location.href = '/supplier-portal'; return }
+    setProfile(j.profile)
     setLoading(false)
   }
 
-  async function loadReps(supplierId: string) {
-    const { data } = await sb.from('supplier_reps' as any)
-      .select('id,name,phone').eq('supplier_id', supplierId).order('created_at', { ascending: false })
-    setReps(data || [])
-  }
+  const act = (action: string, data: Record<string, unknown> = {}) => api.post('/api/supplier-portal', { action, ...data })
 
   async function addRep() {
     if (!repName.trim() || !repPhone.trim()) return
     setRepSaving(true)
-    await sb.from('supplier_reps' as any).insert({ supplier_id: profile.id, name: repName.trim(), phone: repPhone.trim() })
+    await act('rep_add', { name: repName.trim(), phone: repPhone.trim() })
     setRepName(''); setRepPhone(''); setRepSaving(false)
-    loadReps(profile.id)
+    refresh()
   }
 
   async function deleteRep(id: string) {
     if (!(await confirmDialog({ title: 'حذف المندوب', message: 'حذف هذا المندوب؟' }))) return
-    await sb.from('supplier_reps' as any).delete().eq('id', id)
-    loadReps(profile.id)
-  }
-
-  async function loadChatMessages(supplierId: string) {
-    const { data } = await sb.from('chat_messages' as any)
-      .select('id,org_id,org_name,sender_type,message,created_at')
-      .eq('supplier_id', supplierId).order('created_at', { ascending: true })
-    setChatMessages(data || [])
+    await act('rep_delete', { id })
+    refresh()
   }
 
   async function sendChatReply(orgId: string) {
     if (!chatReply.trim()) return
     setChatSending(true)
-    const { data } = await sb.from('chat_messages' as any).insert({
-      supplier_id: profile.id, org_id: orgId,
-      org_name: chatMessages.find((m:any)=>m.org_id===orgId)?.org_name || 'عميل',
-      sender_type: 'supplier', message: chatReply.trim(),
-    }).select().single()
-    if (data) setChatMessages(prev => [...prev, data])
+    const r = await act('chat_reply', { org_id: orgId, message: chatReply.trim() })
+    const data = r.message
+    if (data) setChatMessages(prev => prev.some((m:any)=>m.id===data.id) ? prev : [...prev, data])
     setChatReply('')
     setChatSending(false)
   }
@@ -130,41 +122,25 @@ export default function SupplierDashboardShared() {
   const [customerRating, setCustomerRating] = useState(5)
   const [ratingSaving, setRatingSaving] = useState(false)
 
-  async function loadGivenReviews(supplierId: string) {
-    const { data } = await sb.from('org_reviews' as any).select('quote_request_id').eq('supplier_id', supplierId)
-    setMyGivenReviewIds((data||[]).map((r:any)=>r.quote_request_id))
-  }
-
-  async function submitCustomerRating(reqId: string, orgId: string) {
+  async function submitCustomerRating(reqId: string) {
     setRatingSaving(true)
-    const { error } = await sb.from('org_reviews' as any).insert({
-      org_id: orgId, supplier_id: profile.id, quote_request_id: reqId, rating: customerRating,
-    })
+    const r = await act('org_review', { quote_request_id: reqId, rating: customerRating })
     setRatingSaving(false)
-    if (!error) {
+    if (r.success) {
       setRatingCustomerId(null); setCustomerRating(5)
-      loadGivenReviews(profile.id)
+      refresh()
     }
   }
 
-  async function loadQuoteRequests(supplierId: string) {
-    const { data } = await sb.from('quote_requests' as any)
-      .select('id,org_id,org_name,items,status,quoted_price,quoted_note,created_at,delivery_date,rep_name,rep_phone,payment_status,paid_at')
-      .eq('supplier_id', supplierId).order('created_at', { ascending: false })
-    setQuoteRequests(data || [])
-  }
-
   async function markFulfilled(reqId: string) {
-    await sb.from('quote_requests' as any).update({ status: 'fulfilled' }).eq('id', reqId)
-    loadQuoteRequests(profile.id)
+    await act('quote_fulfill', { id: reqId })
+    refresh()
   }
 
   async function togglePaymentStatus(reqId: string, current: string) {
     const newStatus = current==='paid' ? 'unpaid' : 'paid'
-    await sb.from('quote_requests' as any).update({
-      payment_status: newStatus, paid_at: newStatus==='paid' ? new Date().toISOString() : null,
-    }).eq('id', reqId)
-    loadQuoteRequests(profile.id)
+    await act('quote_payment', { id: reqId, payment_status: newStatus })
+    refresh()
   }
 
   const [approvingId, setApprovingId] = useState<string|null>(null)
@@ -190,7 +166,7 @@ export default function SupplierDashboardShared() {
     })
     setApproveSaving(false)
     setApprovingId(null)
-    loadQuoteRequests(profile.id)
+    refresh()
   }
 
   function startRespond(reqId: string) {
@@ -200,18 +176,10 @@ export default function SupplierDashboardShared() {
   async function submitResponse(reqId: string) {
     if (!respondPrice) return
     setRespondSaving(true)
-    await sb.from('quote_requests' as any).update({
-      status: 'quoted', quoted_price: Number(respondPrice), quoted_note: respondNote.trim() || null,
-      responded_at: new Date().toISOString(),
-    }).eq('id', reqId)
+    await act('quote_respond', { id: reqId, price: Number(respondPrice), note: respondNote.trim() || null })
     setRespondSaving(false)
     setRespondingId(null)
-    loadQuoteRequests(profile.id)
-  }
-
-  async function loadItems(supplierId: string) {
-    const { data } = await sb.from('supplier_catalog_items' as any).select('*').eq('supplier_id', supplierId).order('created_at', { ascending: false })
-    setItems(data || [])
+    refresh()
   }
 
   function resetForm() {
@@ -249,30 +217,26 @@ export default function SupplierDashboardShared() {
       setUploading(false)
     }
 
-    if (editingId) {
-      await sb.from('supplier_catalog_items' as any).update({ name: name.trim(), unit: unit.trim()||null, price: Number(price), price_includes_vat: priceIncludesVat, image_url: imageUrl, updated_at: new Date().toISOString() }).eq('id', editingId)
-    } else {
-      await sb.from('supplier_catalog_items' as any).insert({ supplier_id: profile.id, name: name.trim(), unit: unit.trim()||null, price: Number(price), price_includes_vat: priceIncludesVat, image_url: imageUrl })
-    }
+    await act('item_save', { id: editingId || undefined, name: name.trim(), unit: unit.trim()||null, price: Number(price), price_includes_vat: priceIncludesVat, image_url: imageUrl })
     setSaving(false)
     resetForm()
-    loadItems(profile.id)
+    refresh()
   }
 
   async function toggleAvailable(item: any) {
-    await sb.from('supplier_catalog_items' as any).update({ is_available: !item.is_available }).eq('id', item.id)
-    loadItems(profile.id)
+    await act('item_toggle', { id: item.id })
+    refresh()
   }
 
   async function deleteItem(id: string) {
     if (!(await confirmDialog({ title: 'حذف الصنف', message: 'حذف هذا الصنف نهائياً؟' }))) return
-    await sb.from('supplier_catalog_items' as any).delete().eq('id', id)
-    loadItems(profile.id)
+    await act('item_delete', { id })
+    refresh()
   }
 
   async function toggleVisibility() {
     const newValue = !profile.is_visible
-    await sb.from('supplier_profiles' as any).update({ is_visible: newValue }).eq('id', profile.id)
+    await act('visibility', { is_visible: newValue })
     setProfile((prev:any) => ({ ...prev, is_visible: newValue }))
   }
 
@@ -283,7 +247,7 @@ export default function SupplierDashboardShared() {
   async function saveAccountInfo() {
     if (!accountName.trim()) return
     setAccountSaving(true)
-    await sb.from('supplier_profiles' as any).update({ business_name: accountName.trim(), location: accountLocation.trim() || null }).eq('id', profile.id)
+    await act('account', { business_name: accountName.trim(), location: accountLocation.trim() || null })
     setProfile((prev:any) => ({ ...prev, business_name: accountName.trim(), location: accountLocation.trim() || null }))
     setAccountSaving(false)
   }
@@ -551,7 +515,7 @@ export default function SupplierDashboardShared() {
                                   ))}
                                 </div>
                                 <div style={{display:'flex',gap:6}}>
-                                  <button onClick={()=>submitCustomerRating(r.id, r.org_id)} disabled={ratingSaving}
+                                  <button onClick={()=>submitCustomerRating(r.id)} disabled={ratingSaving}
                                     style={{flex:1,padding:'8px',background:'#029FA2',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>
                                     {ratingSaving?'...':'إرسال التقييم'}
                                   </button>
