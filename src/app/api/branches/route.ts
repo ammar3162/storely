@@ -21,11 +21,13 @@ async function activeCount(db: ReturnType<typeof sb>, org_id: string) {
 
 // قائمة الفروع النشطة (مدير الفرع يشوف فرعه فقط)
 // include_inactive=1 (للمالك): يضيف الفروع الموقوفة وحد الباقة
+// with_limits=1: يضيف max_staff لكل فرع (استعلام منفصل — لو فشل ترجع الفروع بدونه)
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const org_id = searchParams.get('org_id')
     const includeInactive = searchParams.get('include_inactive') === '1'
+    const withLimits = searchParams.get('with_limits') === '1'
     if (!org_id) return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
 
     const access = await verifyOrgAccess(org_id)
@@ -37,6 +39,14 @@ export async function GET(req: Request) {
     if (effectiveBranchId) q = q.eq('id', effectiveBranchId)
     const { data, error } = await q.order('created_at')
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+
+    if (withLimits && data?.length) {
+      const { data: limits, error: limErr } = await db.from('branches').select('id,max_staff').in('id', data.map((b: any) => b.id))
+      if (!limErr) {
+        const byId = new Map((limits || []).map((l: any) => [l.id, l.max_staff]))
+        for (const b of data as any[]) b.max_staff = byId.get(b.id) ?? null
+      }
+    }
 
     if (!includeInactive || access.role !== 'owner') return NextResponse.json({ success: true, branches: data || [] })
 

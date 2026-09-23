@@ -1,7 +1,8 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
+import { getMe, getOrgId } from '@/lib/session'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
@@ -65,8 +66,9 @@ export default function StaffManagementPage() {
   async function saveStaffPhone(id: string) {
     if (!editStaffPhoneVal.trim()) { toast('أدخل رقم صحيح', 'warning'); return }
     setSavingStaffPhone(true)
-    await (sb.from('staff_members' as any) as any).update({ phone: editStaffPhoneVal.trim() }).eq('id', id)
+    const r = await api.patch('/api/staff-members', { org_id: orgId, id, phone: editStaffPhoneVal.trim() })
     setSavingStaffPhone(false)
+    if (!r.success) { toast(r.error || 'فشل التحديث', 'error'); return }
     setEditingStaffPhoneId(null)
     toast('✅ تم تحديث رقم الموظف')
     loadStaff(orgId)
@@ -91,7 +93,6 @@ export default function StaffManagementPage() {
   const [shopCloseTime, setShopCloseTime] = useState('')
   const [showHoursModal, setShowHoursModal] = useState(false)
   const [savingHours, setSavingHours] = useState(false)
-  const sb = createClient()
 
 
   useEffect(() => { init() }, [])
@@ -105,67 +106,52 @@ export default function StaffManagementPage() {
       if (cachedStaff) { setStaff(cachedStaff); setLoading(false); setTimeout(()=>setVisible(true),50) }
     }
     if (!oid) {
-      const{data:{user}}=await sb.auth.getUser(); if(!user) return
-      const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single(); if(!profile?.org_id) return
-      oid = profile.org_id; sessionStorage.setItem('s_org_id', oid!)
+      oid = await getOrgId(); if(!oid) return
     }
-    setOrgId(oid!)
-    sb.from('organizations' as any).select('currency').eq('id',oid!).single()
-      .then(({data}:any)=>{ if(data?.currency) setCurr(currencySymbol(data.currency)) })
-    const{data:orgLimits}=await (sb as any).from('organizations').select('shop_open_time,shop_close_time,notify_cashier_closing_wa').eq('id',oid!).single()
+    setOrgId(oid)
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
+    const settingsRes = await api.get('/api/org-settings', { org_id: oid })
+    const orgLimits = settingsRes.settings
     setShopOpenTime(((orgLimits as any)?.shop_open_time||'').slice(0,5))
     setShopCloseTime(((orgLimits as any)?.shop_close_time||'').slice(0,5))
     setOrgNotifyClosingWA((orgLimits as any)?.notify_cashier_closing_wa!==false)
     // حد الموظفين صار خاص بكل فرع لحاله -- نجيبه من الفرع الحالي المختار، مو من المؤسسة كاملة
     const currentBranchId = sessionStorage.getItem('s_branch_id')
     if (currentBranchId) {
-      const{data:branchLimits}=await (sb as any).from('branches').select('max_staff').eq('id',currentBranchId).maybeSingle()
-      setMaxStaff((branchLimits as any)?.max_staff||3)
+      const bl = await api.get('/api/branches', { org_id: oid, with_limits: 1 })
+      const branchLimits = (bl.branches||[]).find((b:any)=>b.id===currentBranchId)
+      setMaxStaff(branchLimits?.max_staff||3)
     } else {
       setMaxStaff(999) // ما فيه فرع محدد (يشوف كل الفروع) -- ما نقدر نطبّق حد واحد، السيرفر هو اللي يتحقق أصلاً
     }
-    await Promise.all([loadStaff(oid!),loadBranches(oid!),loadProducts(oid!)])
+    await Promise.all([loadStaff(oid),loadBranches(oid),loadProducts(oid)])
     setLoading(false); setTimeout(()=>setVisible(true),50)
   }
 
   async function loadStaff(oid:string) {
     const bid = sessionStorage.getItem('s_branch_id')
-    let q = (sb.from('staff_members' as any) as any).select('*,branches(name)').eq('org_id',oid)
-    if (bid) q = q.eq('branch_id', bid)
-    const{data}=await q.order('created_at',{ascending:false})
-    setStaff(data||[])
-    cache.set('staff:'+oid, data||[])
+    const j = await api.get('/api/staff-members', { org_id: oid, branch_id: bid })
+    if (!j.success) return
+    setStaff(j.staff||[])
+    cache.set('staff:'+oid, j.staff||[])
   }
 
   async function loadProducts(oid:string) {
     const bidProd = sessionStorage.getItem('s_branch_id')
-    let pq = sb.from('products').select('id,name,unit,category').eq('org_id',oid).eq('is_active',true)
-    if (bidProd) pq = pq.eq('branch_id', bidProd)
-    const{data}=await pq.order('name')
-    setProducts(data||[])
+    const j = await api.get('/api/products', { org_id: oid, branch_id: bidProd })
+    setProducts(j.products||[])
   }
 
   async function openReport(s:any) {
     setReportStaff(s)
     setReportLoading(true)
+    const j = await api.get('/api/staff-members/report', { org_id: orgId, staff_id: s.id })
     if(s.role==='cashier'){
-      const{data}=await sb.from('cashier_closings' as any)
-        .select('id,status,closing_date,total_sales,network_amount,difference')
-        .eq('staff_id',s.id)
-        .order('closing_date',{ascending:false})
-        .order('created_at',{ascending:false})
-        .limit(50)
-      setStaffClosings((data||[]) as any[])
+      setStaffClosings(j.closings||[])
       setReportLoading(false)
       return
     }
-    const{data}=await sb.from('stock_movements')
-      .select('id,qty_change,created_at,note,products!inner(name,unit)')
-      .ilike('note', `%صرف بواسطة الموظف: ${s.name}%`)
-      .eq('type','out')
-      .order('created_at',{ascending:false})
-      .limit(50)
-    setStaffReport(data||[])
+    setStaffReport(j.movements||[])
     setReportLoading(false)
   }
 
@@ -182,32 +168,9 @@ export default function StaffManagementPage() {
   }
 
   async function saveAssigned() {
-    // تحقق نهائي مباشر من قاعدة البيانات (مو من بيانات المتصفح القديمة) — يمنع تعارض التخصيص حتى لو فُتحت نافذتان بنفس الوقت
-    if (selectedProds.length) {
-      const{data:conflicting}=await (sb.from('staff_members' as any) as any)
-        .select('id,name,assigned_products').eq('org_id',orgId).neq('id',assigningId)
-      const conflictNames = new Set<string>()
-      const toStripFrom: {id:string, assigned_products:string[]}[] = []
-      ;(conflicting||[]).forEach((s:any)=>{
-        const overlap = (s.assigned_products||[]).filter((pid:string)=>selectedProds.includes(pid))
-        if (overlap.length) {
-          const explicitlyOverridden = overlap.every((pid:string)=>overrideTaken.has(pid))
-          if (explicitlyOverridden) {
-            toStripFrom.push({ id: s.id, assigned_products: (s.assigned_products||[]).filter((pid:string)=>!overlap.includes(pid)) })
-          } else {
-            conflictNames.add(s.name)
-          }
-        }
-      })
-      if (conflictNames.size) {
-        toast(`تعذّر الحفظ — بعض المنتجات صارت مخصصة لموظف آخر (${Array.from(conflictNames).join('، ')}) بينما كانت النافذة مفتوحة. أعد المحاولة.`,'error')
-        return
-      }
-      for (const s of toStripFrom) {
-        await (sb.from('staff_members' as any) as any).update({assigned_products:s.assigned_products}).eq('id',s.id)
-      }
-    }
-    await (sb.from('staff_members' as any) as any).update({assigned_products:selectedProds}).eq('id',assigningId)
+    // التحقق من التعارض يصير على الخادم مباشرة من قاعدة البيانات — يمنع تعارض التخصيص حتى لو فُتحت نافذتان بنفس الوقت
+    const r = await api.post('/api/staff-members/assign', { org_id: orgId, staff_id: assigningId, product_ids: selectedProds, override_ids: Array.from(overrideTaken) })
+    if (!r.success) { toast(r.error || 'فشل الحفظ', 'error'); return }
     toast('✅ تم حفظ المنتجات المخصصة')
     setAssigningId(null)
     loadStaff(orgId)
@@ -217,26 +180,18 @@ export default function StaffManagementPage() {
     setAssigning(true)
     const target = staff.find((s:any)=>s.id===staffId)
     if(!target){ setAssigning(false); return }
-    const{data:conflicting}=await (sb.from('staff_members' as any) as any)
-      .select('id,name,assigned_products').eq('org_id',orgId).neq('id',staffId)
-    const conflict = (conflicting||[]).find((s:any)=>(s.assigned_products||[]).includes(productId))
-    if (conflict) {
-      setAssigning(false)
-      toast(`تعذّر التخصيص — هذا المنتج مخصص أصلاً لـ${(conflict as any).name}`,'error')
-      return
-    }
-    const updated = [...(target.assigned_products||[]), productId]
-    const { error } = await (sb.from('staff_members' as any) as any).update({assigned_products:updated}).eq('id',staffId)
+    const r = await api.post('/api/staff-members/assign', { org_id: orgId, staff_id: staffId, add_product_id: productId })
     setAssigning(false)
-    if(error){ toast('فشل التخصيص — حاول مرة أخرى','error'); return }
+    if(!r.success){ toast(r.error || 'فشل التخصيص — حاول مرة أخرى','error'); return }
     toast(`✅ تم تخصيص المنتج لـ${target.name}`)
     setPickerFor(null)
     loadStaff(orgId)
   }
 
   async function loadBranches(oid:string) {
-    const{data}=await sb.from('branches').select('id,name').eq('org_id',oid).eq('is_active',true).order('created_at')
-    setBranches(data||[])
+    const j = await api.get('/api/branches', { org_id: oid })
+    const data = j.branches||[]
+    setBranches(data)
     // خلّي الفرع الافتراضي هو الفرع النشط بالجلسة (اللي شغّال فيه المالك حالياً) —
     // لا تفرض دايماً أول فرع بالقائمة (كان يوقع الموظفين دايماً بالفرع الرئيسي)
     const activeBid = typeof window!=='undefined' ? sessionStorage.getItem('s_branch_id') : null
@@ -252,20 +207,14 @@ export default function StaffManagementPage() {
     if(cleanedPhone.length !== reqLen){toast(`رقم الجوال يجب أن يكون ${reqLen} أرقام`,'warning');return}
     const cleanPhone=staffCountry + newPhone.trim().replace(/^0+/,'').replace(/\s/g,'')
     const pin=generatePin()
-    const res = await fetch('/api/add-staff', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({org_id:orgId, branch_id:newBranch||null, name:newName.trim(), phone:cleanPhone, pin, permissions:newPermissions, role:newRole, send_closing_whatsapp:newSendClosingWA})
-    })
-    const resData = await res.json()
-    const error = !res.ok ? resData.error : null
-    if(error){
-      if(res.status===409) toast('رقم الجوال هذا مسجّل لموظف آخر','error')
-      else toast('خطأ: '+error,'error')
+    const resData = await api.post('/api/add-staff', {org_id:orgId, branch_id:newBranch||null, name:newName.trim(), phone:cleanPhone, pin, permissions:newPermissions, role:newRole, send_closing_whatsapp:newSendClosingWA})
+    if(!resData.success){
+      if(resData.error==='رقم الجوال مسجل مسبقاً') toast('رقم الجوال هذا مسجّل لموظف آخر','error')
+      else toast('خطأ: '+(resData.error||'حدث خطأ'),'error')
       return
     }
     if(newRole==='cashier' && shopOpenTime && shopCloseTime){
-      await (sb.from('organizations' as any) as any).update({shop_open_time:shopOpenTime, shop_close_time:shopCloseTime}).eq('id',orgId)
+      await api.patch('/api/org-settings', {org_id:orgId, shop_open_time:shopOpenTime, shop_close_time:shopCloseTime})
     }
     setRevealedPin({name:newName.trim(),phone:cleanPhone,pin})
     setNewName('');setNewPhone('');setNewRole('staff');setNewSendClosingWA(true);setShowAdd(false)
@@ -273,7 +222,8 @@ export default function StaffManagementPage() {
   }
 
   async function savePermissions(id:string) {
-    await (sb.from('staff_members' as any) as any).update({permissions:editPerms}).eq('id',id)
+    const r = await api.patch('/api/staff-members', { org_id: orgId, id, permissions: editPerms })
+    if (!r.success) { toast(r.error || 'فشل الحفظ', 'error'); return }
     toast('✅ تم حفظ الصلاحيات')
     setEditingPerms(null)
     loadStaff(orgId)
@@ -282,7 +232,8 @@ export default function StaffManagementPage() {
   async function saveName() {
     if(!editingNameId || !editNameValue.trim()) return
     setSavingName(true)
-    await (sb.from('staff_members' as any) as any).update({name:editNameValue.trim()}).eq('id',editingNameId)
+    const r = await api.patch('/api/staff-members', { org_id: orgId, id: editingNameId, name: editNameValue.trim() })
+    if (!r.success) { toast(r.error || 'فشل التحديث', 'error'); setSavingName(false); return }
     toast('✅ تم تحديث اسم الموظف')
     setEditingNameId(null)
     setSavingName(false)
@@ -292,7 +243,8 @@ export default function StaffManagementPage() {
   async function saveShopHours() {
     if(!shopOpenTime||!shopCloseTime){toast('حدد وقت الفتح والإغلاق','warning');return}
     setSavingHours(true)
-    await (sb.from('organizations' as any) as any).update({shop_open_time:shopOpenTime, shop_close_time:shopCloseTime}).eq('id',orgId)
+    const r = await api.patch('/api/org-settings', {org_id:orgId, shop_open_time:shopOpenTime, shop_close_time:shopCloseTime})
+    if (!r.success) { toast(r.error || 'فشل الحفظ', 'error'); setSavingHours(false); return }
     toast('✅ تم تحديث ساعات العمل')
     setSavingHours(false)
     setShowHoursModal(false)
@@ -300,22 +252,17 @@ export default function StaffManagementPage() {
 
   async function toggleActive(s:any) {
     const activating = !s.is_active
-    if (activating && s.addon_subscription_id) {
-      const res = await fetch(`/api/check-addon-subscription?id=${s.addon_subscription_id}`).then(r=>r.json()).catch(()=>null)
-      if (!res?.active) {
-        toast('هذا الموظف مرتبط بإضافة "موظف إضافي" ملغاة — جدّد الاشتراك من صفحة الإضافات أول عشان تقدر تفعّله من جديد','error')
-        return
-      }
-    }
-    await (sb.from('staff_members' as any) as any).update({is_active:activating}).eq('id',s.id)
+    // فحص إضافة "موظف إضافي" وحد الباقة عند إعادة التفعيل يصير على الخادم
+    const r = await api.patch('/api/staff-members', { org_id: orgId, id: s.id, is_active: activating })
+    if (!r.success) { toast(r.error || 'حدث خطأ', 'error'); return }
     toast(s.is_active?'تم إيقاف الموظف':'تم تفعيل الموظف')
     loadStaff(orgId)
   }
 
   async function deleteStaff(id:string) {
     if(!(await confirmDialog({ title: 'حذف الموظف', message: 'حذف هذا الموظف نهائياً؟' }))) return
-    const { error } = await (sb.from('staff_members' as any) as any).delete().eq('id',id)
-    if (error) {
+    const r = await api.del('/api/staff-members', { org_id: orgId, id })
+    if (!r.success) {
       // القيود صارت SET NULL بدل ما تمنع الحذف -- لو وصلنا هنا فهذا خطأ فعلي غير متوقع، مو قيد ربط بيانات عادي
       toast('حدث خطأ أثناء الحذف — حاول مرة أخرى', 'error')
       return
@@ -324,15 +271,17 @@ export default function StaffManagementPage() {
   }
 
   async function toggleSendClosingWA(id:string, current:boolean) {
-    await (sb.from('staff_members' as any) as any).update({send_closing_whatsapp: !current}).eq('id',id)
+    const r = await api.patch('/api/staff-members', { org_id: orgId, id, send_closing_whatsapp: !current })
+    if (!r.success) { toast(r.error || 'حدث خطأ', 'error'); return }
     setStaff(prev=>prev.map((s:any)=>s.id===id?{...s,send_closing_whatsapp:!current}:s))
     toast(!current?'✅ راح توصل تفاصيل الإقفال كاملة عبر واتساب':'✅ راح يوصل بس إشعار بسيط بدون تفاصيل')
   }
 
   async function regeneratePin(id:string,name:string,phone:string) {
-    const pin=generatePin()
-    await (sb.from('staff_members' as any) as any).update({pin}).eq('id',id)
-    setRevealedPin({name,phone,pin}); loadStaff(orgId)
+    // الرمز يتولّد ويتشفّر على الخادم، ويرجع هنا مرة وحدة عشان المالك يعطيه للموظف
+    const r = await api.post('/api/staff-members/regenerate-pin', { org_id: orgId, id })
+    if (!r.success) { toast(r.error || 'حدث خطأ', 'error'); return }
+    setRevealedPin({name,phone,pin:r.pin}); loadStaff(orgId)
   }
 
   // نستثني من العرض بالكامل الموظفين الموقوفين بسبب إلغاء إضافة "موظف إضافي" (addon_subscription_id)
