@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
 import { colors, radius, shadow, font, btnPrimary, btnSecondary, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 
@@ -109,11 +109,11 @@ export default function OnboardingPage() {
   const [branchId, setBranchId]       = useState('')
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([])
   const [staffList, setStaffList]     = useState<{name:string;phone:string}[]>([{name:'',phone:''}])
+  const [createdStaff, setCreatedStaff] = useState<{name:string;pin:string}[]>([])
   const [saving, setSaving]           = useState(false)
   const [progress, setProgress]       = useState(0)
   const [visible, setVisible]         = useState(false)
   const router = useRouter()
-  const sb = createClient()
 
   useEffect(()=>{ loadOrg(); setTimeout(()=>setVisible(true),50) },[])
   useEffect(()=>{ const s:Step[]=['business','setup','products','staff','done']; setProgress((s.indexOf(step)/4)*100) },[step])
@@ -126,40 +126,32 @@ export default function OnboardingPage() {
   },[businessType])
 
   async function loadOrg() {
-    const{data:{user}}=await sb.auth.getUser(); if(!user){router.push('/login');return}
-    const{data:profile}=await sb.from('profiles').select('org_id').eq('id',user.id).single(); if(!profile) return
-    const{data:org}=await sb.from('organizations').select('onboarding_done,name,whatsapp_number,business_type').eq('id',profile.org_id).single() as any
+    const j=await api.get('/api/onboarding')
+    if(!j.success){ if(j.reason==='unauthenticated') router.push('/login'); return }
+    const org=j.org
     if(org?.onboarding_done){router.push('/dashboard');return}
-    setOrgId(profile.org_id)
+    setOrgId(j.org_id)
     if(org?.name) setOrgName(org.name)
     if(org?.whatsapp_number) setWhatsapp(org.whatsapp_number)
     if(org?.business_type) setBusinessType(org.business_type)
-    const{data:branch}=await sb.from('branches').select('id').eq('org_id',profile.org_id).eq('is_active',true).order('created_at').limit(1).single()
-    if(branch) setBranchId(branch.id)
+    if(j.branch_id) setBranchId(j.branch_id)
   }
 
   async function saveSetup() {
     if(!orgName.trim()){toast('أدخل اسم المنشأة','warning');return}
     setSaving(true)
-    const{error}=await sb.from('organizations').update({name:orgName.trim(),whatsapp_number:whatsapp.trim(),business_type:businessType} as any).eq('id',orgId)
+    const r=await api.patch('/api/onboarding',{org_id:orgId,name:orgName.trim(),whatsapp_number:whatsapp.trim(),business_type:businessType})
     setSaving(false)
-    if(error){toast('حدث خطأ أثناء الحفظ — حاول مرة أخرى','error');return}
+    if(!r.success){toast('حدث خطأ أثناء الحفظ — حاول مرة أخرى','error');return}
     setStep('products')
   }
 
   async function saveProducts() {
     setSaving(true)
-    const{data:{user}}=await sb.auth.getUser(); if(!user){setSaving(false);toast('حدث خطأ — أعد تسجيل الدخول','error');return}
     const toAdd=selectedProducts.filter(p=>p.selected)
-    let failedCount=0
-    for(const p of toAdd){
-      const{data:np,error:prodErr}=await sb.from('products').insert({org_id:orgId,branch_id:branchId||null,name:p.name,unit:p.unit,qty:p.qty||0,reorder_point:p.reorder,category:p.category,is_active:true}).select().single()
-      if(prodErr||!np){failedCount++;continue}
-      if(p.qty>0){
-        const{error:moveErr}=await sb.from('stock_movements').insert({product_id:np.id,profile_id:user.id,type:'in',qty_change:p.qty,note:'إضافة أولية عند الإعداد'})
-        if(moveErr) failedCount++
-      }
-    }
+    const r=await api.post('/api/onboarding',{org_id:orgId,branch_id:branchId||null,products:toAdd.map(p=>({name:p.name,unit:p.unit,qty:p.qty||0,reorder:p.reorder,category:p.category}))})
+    if(!r.success){setSaving(false);toast(r.error||'حدث خطأ — أعد تسجيل الدخول','error');return}
+    const failedCount=r.failed||0
     setSaving(false)
     if(failedCount>0) toast(`تنبيه: فشل حفظ ${failedCount} من ${toAdd.length} — تقدر تضيفهم لاحقاً من صفحة المخزون`,'warning')
     setStep('staff')
@@ -169,20 +161,23 @@ export default function OnboardingPage() {
     setSaving(true)
     const toAdd=staffList.filter(s=>s.name.trim()&&s.phone.trim())
     let failedCount=0
+    const created:{name:string;pin:string}[]=[]
     for(const s of toAdd){
       const pin=String(Math.floor(1000+Math.random()*9000))
-      const{error}=await (sb.from('staff_members' as any) as any).insert({org_id:orgId,branch_id:branchId||null,name:s.name.trim(),phone:s.phone.trim(),pin})
-      if(error) failedCount++
+      const r=await api.post('/api/add-staff',{org_id:orgId,branch_id:branchId||null,name:s.name.trim(),phone:s.phone.trim(),pin,permissions:{dispense:true,inventory:false,purchases:false,reports:false}})
+      if(r.success) created.push({name:s.name.trim(),pin})
+      else failedCount++
     }
-    const{error:orgErr}=await sb.from('organizations').update({onboarding_done:true} as any).eq('id',orgId)
+    setCreatedStaff(created)
+    const fin=await api.patch('/api/onboarding',{org_id:orgId,onboarding_done:true})
     setSaving(false)
-    if(orgErr){toast('حدث خطأ أثناء إنهاء الإعداد — حاول مرة أخرى','error');return}
+    if(!fin.success){toast('حدث خطأ أثناء إنهاء الإعداد — حاول مرة أخرى','error');return}
     if(failedCount>0) toast(`تنبيه: فشل حفظ ${failedCount} من ${toAdd.length} موظف — تقدر تضيفهم لاحقاً من صفحة الموظفين`,'warning')
     setStep('done')
   }
 
   async function skipToDashboard() {
-    await sb.from('organizations').update({onboarding_done:true} as any).eq('id',orgId)
+    await api.patch('/api/onboarding',{org_id:orgId,onboarding_done:true})
     router.push('/dashboard')
   }
 
@@ -383,7 +378,7 @@ export default function OnboardingPage() {
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:36}}>
               {[
                 {icon:'📦',label:'منتج أُضيف',value:selectedCount},
-                {icon:'👥',label:'موظف أُضيف',value:staffList.filter(s=>s.name.trim()&&s.phone.trim()).length},
+                {icon:'👥',label:'موظف أُضيف',value:createdStaff.length},
                 {icon:'✅',label:'الإعداد مكتمل',value:'100%'},
               ].map((s,i)=>(
                 <div key={i} style={{background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`,borderRadius:16,padding:'20px 12px'}}>
@@ -393,6 +388,18 @@ export default function OnboardingPage() {
                 </div>
               ))}
             </div>
+            {createdStaff.length>0&&(
+              <div style={{background:'#fffbeb',border:'1.5px solid #fcd34d',borderRadius:16,padding:18,marginBottom:16,textAlign:'right' as const}}>
+                <div style={{fontSize:15,fontWeight:800,color:colors.text,marginBottom:6}}>🔑 رموز دخول الموظفين</div>
+                <p style={{fontSize:12,color:'#64748b',lineHeight:1.7,marginBottom:10}}>احفظها وأرسلها لكل موظف — يدخل برقم جواله وهذا الرمز. تقدر تغيّرها لاحقاً من صفحة الموظفين.</p>
+                {createdStaff.map((c,i)=>(
+                  <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderTop:i?'1px solid #fde68a':'none',fontSize:14}}>
+                    <span style={{fontWeight:700,color:colors.text}}>{c.name}</span>
+                    <span style={{fontFamily:'monospace',fontWeight:800,fontSize:16,letterSpacing:2,color:colors.primary}}>{c.pin}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             {!pushEnabled ? (
               <div style={{background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`,borderRadius:16,padding:20,marginBottom:16,textAlign:'right' as const}}>
                 <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>

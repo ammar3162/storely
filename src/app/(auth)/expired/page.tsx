@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getMe } from '@/lib/session'
 
 export default function ExpiredPage() {
   const [name, setName] = useState('')
@@ -8,13 +9,10 @@ export default function ExpiredPage() {
   const sb = createClient()
 
   useEffect(() => {
-    sb.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return
-      const { data: p } = await sb.from('profiles').select('full_name,organizations(name)').eq('id', user.id).single()
-      if (p) {
-        setName(p.full_name || '')
-        setOrgName((p.organizations as any)?.name || '')
-      }
+    getMe().then(me => {
+      if (!me) return
+      setName(me.full_name || '')
+      setOrgName(me.org?.name || '')
     })
   }, [])
 

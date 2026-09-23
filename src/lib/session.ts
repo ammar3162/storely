@@ -11,20 +11,39 @@ export type Me = {
   branch_id: string | null
   full_name: string
   subscription_ends_at: string | null
-  org: { name: string; plan: string; currency: string | null } | null
+  permissions: Record<string, boolean>
+  whatsapp_consent: boolean
+  whatsapp_first_contact_confirmed: boolean
+  terms_version_accepted: string | null
+  org: {
+    name: string; plan: string; currency: string | null; logo_url: string | null
+    deletion_scheduled_at: string | null; max_staff: number; max_suppliers: number
+    max_branches: number; country_code: string
+  } | null
+  branches: { id: string; name: string; location: string | null }[]
 }
 
-let mePromise: Promise<Me | null> | null = null
+export type MeResult = { me: Me | null; reason?: 'unauthenticated' | 'no_org' | 'error' }
 
-export function getMe(): Promise<Me | null> {
+let mePromise: Promise<MeResult> | null = null
+
+/** مثل getMe لكن يوضح سبب الفشل (غير مسجل / بدون مؤسسة) — تستخدمه لوحة التحكم للتوجيه */
+export function getMeResult(): Promise<MeResult> {
   if (!mePromise) {
-    mePromise = api.get<Me>('/api/me').then(j => {
-      if (!j.success || !j.org_id) { mePromise = null; return null }
+    mePromise = api.get<Me & { reason?: MeResult['reason'] }>('/api/me').then(j => {
+      if (!j.success || !j.org_id) {
+        mePromise = null
+        return { me: null, reason: j.reason || 'error' }
+      }
       sessionStorage.setItem('s_org_id', j.org_id)
-      return j
+      return { me: j }
     })
   }
   return mePromise
+}
+
+export async function getMe(): Promise<Me | null> {
+  return (await getMeResult()).me
 }
 
 /** معرّف المؤسسة — من الجلسة لو محفوظ (أسرع)، وإلا من /api/me */

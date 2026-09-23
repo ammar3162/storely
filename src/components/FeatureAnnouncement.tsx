@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
 import { colors, radius, shadow, font } from '@/lib/ds'
 
 const FEATURES = [
@@ -24,19 +24,18 @@ export default function FeatureAnnouncement() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [currentBanner, setCurrentBanner] = useState<Announcement|null>(null)
   const [orgName, setOrgName]             = useState('')
-  const [profileId, setProfileId]         = useState('')
+  const [loaded, setLoaded]               = useState(false)
   const router   = useRouter()
   const pathname = usePathname()
-  const sb = createClient()
 
   useEffect(()=>{ init() },[])
 
   useEffect(()=>{
-    if(announcements.length>0 && profileId) {
+    if(announcements.length>0 && loaded) {
       const banners=announcements.filter(a=>a.type==='banner')
       if(banners.length>0) setCurrentBanner(banners[0])
     }
-  },[announcements,profileId])
+  },[announcements,loaded])
 
   // auto-dismiss بعد 7 ثواني
   useEffect(()=>{
@@ -46,42 +45,27 @@ export default function FeatureAnnouncement() {
   },[currentBanner])
 
   async function init() {
-    const{data:{user}}=await sb.auth.getUser(); if(!user) return
-    setProfileId(user.id)
-    const{data:profile}=await (sb as any).from('profiles').select('seen_welcome,org_id').eq('id',user.id).single()
-    if(!profile) return
-    if(profile.org_id){
-      const{data:org}=await sb.from('organizations').select('name').eq('id',profile.org_id).single()
-      if(org?.name) setOrgName(org.name)
-    }
-    if(profile.seen_welcome===false && pathname==='/dashboard'){
+    const j=await api.get('/api/announcements'); if(!j.success) return
+    setLoaded(true)
+    if(j.org_name) setOrgName(j.org_name)
+    if(!j.seen_welcome && pathname==='/dashboard'){
       setShow(true); return
     }
-    const{data:allAnn}=await (sb as any).from('feature_announcements').select('id,version,title,description,type,page,icon,color,target_orgs').order('created_at')
-    const{data:seenAnn}=await (sb as any).from('user_seen_features').select('feature_version').eq('profile_id',user.id)
-    const seen=new Set((seenAnn||[]).map((s:any)=>s.feature_version))
-    // نطبّق التحديد المستهدف: لو target_orgs فاضية أو null، الإشعار للكل. غير كذا، بس للمؤسسات المحددة
-    const unseen=(allAnn||[]).filter((a:any)=>
-      !seen.has(a.version) && a.version!=='1.0.0' &&
-      (!a.target_orgs || a.target_orgs.length===0 || (profile.org_id && a.target_orgs.includes(profile.org_id)))
-    )
-    setAnnouncements(unseen)
+    // الفلترة حسب المنشأة المستهدفة والإعلانات المشاهدة تصير على الخادم
+    setAnnouncements(j.announcements||[])
   }
 
   function dismiss() {
     setShow(false)
-    if(!profileId) return
-    ;(sb as any).from('profiles').update({seen_welcome:true}).eq('id',profileId).then(()=>{})
-    ;(sb as any).from('user_seen_features').insert({profile_id:profileId,feature_version:'1.0.0'}).catch(()=>{})
+    if(!loaded) return
+    api.post('/api/announcements',{welcome:true})
   }
 
   async function markSeen(version:string) {
     setCurrentBanner(null)
     setAnnouncements(prev=>prev.filter(a=>a.version!==version))
-    if(!profileId) return
-    try {
-      await (sb as any).from('user_seen_features').upsert({profile_id:profileId,feature_version:version},{onConflict:'profile_id,feature_version'})
-    } catch {}
+    if(!loaded) return
+    await api.post('/api/announcements',{version})
   }
 
   return (

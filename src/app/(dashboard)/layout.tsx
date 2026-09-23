@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api-client'
+import { getMeResult } from '@/lib/session'
 import { useRouter, usePathname } from 'next/navigation'
 
 import AIAssistant from '@/components/AIAssistant'
@@ -183,15 +185,17 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }
 
   const load = useCallback(async()=>{
-    const{data:{user}}=await sb.auth.getUser()
-    if(!user){router.replace('/login');return}
+    const meRes = getMeResult()
     try {
       const ms = await fetch('/api/platform-settings').then(r=>r.json())
       if (ms.maintenanceMode) { setMaintenanceMsg(ms.maintenanceMessage); setShowMaintenance(true); return }
     } catch {}
-    const{data:p}=await (sb as any).from('profiles').select('id,full_name,org_id,role,branch_id,permissions,whatsapp_consent,whatsapp_first_contact_confirmed,terms_accepted_at,terms_version_accepted,organizations(name,logo_url,deletion_scheduled_at)').eq('id',user.id).single()
-    if(!p){router.replace('/login');return}
-    if(!p.org_id){router.replace('/pending');return}
+    const { me, reason } = await meRes
+    if(!me){ router.replace(reason==='no_org'?'/pending':'/login'); return }
+    const user={id:me.user_id}
+    const p:any={ id:me.user_id, full_name:me.full_name, org_id:me.org_id, role:me.role, branch_id:me.branch_id, permissions:me.permissions,
+      whatsapp_consent:me.whatsapp_consent, whatsapp_first_contact_confirmed:me.whatsapp_first_contact_confirmed,
+      terms_version_accepted:me.terms_version_accepted, organizations:me.org }
     // فحص انتهاء الاشتراك -- بوقت السيرفر عبر api/check-subscription، مو وقت جهاز العميل
     // (وقت المتصفح لو مضبوط غلط كان يقفل حسابات عملاء اشتراكهم فعلياً ساري)
     try {
@@ -235,7 +239,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
     // إلغاء تلقائي لحذف الحساب المجدول — مجرد تسجيل الدخول يعتبر تراجع عن طلب الحذف
     if((p as any).organizations?.deletion_scheduled_at){
-      await sb.from('organizations').update({ deletion_scheduled_at: null } as any).eq('id', (p as any).org_id)
+      await api.patch('/api/me', { cancel_org_deletion: true })
       toast('✅ تم إلغاء حذف حسابك المجدول تلقائياً — حسابك آمن ومستمر بشكل طبيعي', 'success')
     }
     if((p as any).role==='owner'){
@@ -244,7 +248,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         if(!(p as any).terms_version_accepted || (p as any).terms_version_accepted !== tv.version){ setShowTermsConsent(true) }
       } catch {}
     }
-    const{data:orgData}=await (sb as any).from('organizations').select('plan,max_staff,max_suppliers,max_branches,country_code').eq('id',p.org_id).single()
+    const orgData=me.org
     const orgPlan=(orgData as any)?.plan||'basic'
     setOrgPlan(orgPlan)
     setOrgMaxBranches((orgData as any)?.max_branches||1)
@@ -252,8 +256,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     sessionStorage.setItem('s_country_code',(orgData as any)?.country_code||'+966')
     sessionStorage.setItem('s_max_staff',String((orgData as any)?.max_staff||1))
     sessionStorage.setItem('s_max_suppliers',String((orgData as any)?.max_suppliers||1))
-    const{data:bList}=await sb.from('branches').select('id,name,location').eq('org_id',p.org_id).eq('is_active',true).order('created_at')
-    let bl=bList||[]
+    let bl:any[]=me.branches||[]
     if((p as any).role==='manager' && (p as any).branch_id){
       bl = bl.filter((b:any)=>b.id===(p as any).branch_id)
     }
@@ -279,9 +282,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     window.addEventListener('notifications-updated', async ()=>{
       const oid = sessionStorage.getItem('s_org_id')
       if(!oid) return
-      const _bidEvt = sessionStorage.getItem('s_branch_id')
-      const { data: notifData } = await sb.from('notifications').select('id').eq('org_id',oid).eq('read',false).or(_bidEvt?`branch_id.is.null,branch_id.eq.${_bidEvt}`:'branch_id.is.null,branch_id.not.is.null')
-      setUnread(notifData?.length||0)
+      const c = await api.get('/api/nav-counts', { org_id: oid, branch_id: sessionStorage.getItem('s_branch_id') })
+      if (c.success) setUnread(c.unread)
     })
     if(typeof window !== "undefined" && "serviceWorker" in navigator) {
       try {
@@ -311,30 +313,18 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     const orgId = p?.org_id
     if(orgId){
       const notifInterval = setInterval(async()=>{
-        const _bidPoll = sessionStorage.getItem('s_branch_id')
-        const{data:notifData}=await sb.from('notifications').select('id').eq('org_id',orgId).eq('read',false).or(_bidPoll?`branch_id.is.null,branch_id.eq.${_bidPoll}`:'branch_id.is.null,branch_id.not.is.null')
-        setUnread(notifData?.length||0)
-        let _pollProdsQ = sb.from('products').select('qty,reorder_point').eq('org_id',orgId).eq('is_active',true)
-        if (_bidPoll) _pollProdsQ = _pollProdsQ.eq('branch_id', _bidPoll)
-        const {data: pollProds} = await _pollProdsQ
-        setLowCount((pollProds||[]).filter((x:any)=>x.qty<=x.reorder_point).length)
+        const c = await api.get('/api/nav-counts', { org_id: orgId, branch_id: sessionStorage.getItem('s_branch_id') })
+        if (c.success) { setUnread(c.unread); setLowCount(c.low) }
       }, 30000)
     }
-    const _bidLayout = sessionStorage.getItem('s_branch_id')
-    let _prodsQ = sb.from('products').select('qty,reorder_point').eq('org_id',p.org_id).eq('is_active',true)
-    if (_bidLayout) _prodsQ = _prodsQ.eq('branch_id', _bidLayout)
-    const[{data:prods},{data:notifs}]=await Promise.all([
-      _prodsQ,
-      sb.from('notifications').select('id').eq('org_id',p.org_id).eq('read',false).or(_bidLayout?`branch_id.is.null,branch_id.eq.${_bidLayout}`:'branch_id.is.null,branch_id.not.is.null'),
-    ])
-    setLowCount((prods||[]).filter((x:any)=>x.qty<=x.reorder_point).length)
-    setUnread((notifs||[]).length)
+    const counts = await api.get('/api/nav-counts', { org_id: p.org_id, branch_id: sessionStorage.getItem('s_branch_id') })
+    if (counts.success) { setLowCount(counts.low); setUnread(counts.unread) }
   },[])
 
   async function acceptConsent(){
     if(!consentChecked || !profileId) return
     setConsentSaving(true)
-    await sb.from('profiles').update({ whatsapp_consent:true, whatsapp_consent_at:new Date().toISOString() } as any).eq('id',profileId)
+    await api.patch('/api/me', { whatsapp_consent: true })
     setConsentSaving(false)
     setShowConsent(false)
     setShowWaInvite(true)
@@ -342,7 +332,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   async function confirmWaFirstContact(){
     if(!profileId) return
-    await sb.from('profiles').update({ whatsapp_first_contact_confirmed:true } as any).eq('id',profileId)
+    await api.patch('/api/me', { whatsapp_first_contact_confirmed: true })
     setShowWaInvite(false)
   }
 
@@ -399,12 +389,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   async function loadBranchLowCounts(){
     const oid = sessionStorage.getItem('s_org_id')
     if(!oid) return
-    const{data}=await sb.from('products').select('branch_id,qty,reorder_point').eq('org_id',oid).eq('is_active',true)
-    const counts:Record<string,number>={}
-    ;(data||[]).forEach((p:any)=>{
-      if(p.qty<=p.reorder_point && p.branch_id){ counts[p.branch_id]=(counts[p.branch_id]||0)+1 }
-    })
-    setBranchLowCounts(counts)
+    const c = await api.get('/api/nav-counts', { org_id: oid, by_branch: 1 })
+    if (c.success) setBranchLowCounts(c.low_by_branch||{})
   }
 
   function openBranchSelector(){
@@ -425,7 +411,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   async function stopBranch(b:any) {
     if (branches.length <= 1) { alert('لا يمكن إيقاف الفرع الوحيد المتبقي'); return }
     setStoppingBranch(true)
-    await sb.from('branches').update({ is_active:false } as any).eq('id', b.id)
+    const r = await api.patch('/api/branches', { org_id: sessionStorage.getItem('s_org_id'), id: b.id, is_active: false })
+    if (!r.success) { alert(r.error || 'فشل إيقاف الفرع'); setStoppingBranch(false); return }
     const remaining = branches.filter((x:any)=>x.id!==b.id)
     setBranches(remaining)
     sessionStorage.setItem('s_branches', JSON.stringify(remaining))
