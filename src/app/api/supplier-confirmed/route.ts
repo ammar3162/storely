@@ -1,17 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { logConfirmation } from '@/lib/escalateSupplierOrder'
-import { sendPushToOrg } from '@/lib/push'
-
-function formatPhone(raw: string): string {
-  const clean = (raw || '').replace(/\s/g, '')
-  if (clean.startsWith('+')) return clean.slice(1)
-  if (clean.startsWith('00')) return clean.slice(2)
-  if (clean.startsWith('966')) return clean
-  if (clean.startsWith('05')) return '966' + clean.slice(1)
-  if (clean.startsWith('5')) return '966' + clean
-  return clean
-}
+import { notifyOwnerSupplierConfirmed } from '@/lib/supplierConfirmation'
 
 export async function GET(req: Request) {
   try {
@@ -64,45 +54,8 @@ export async function POST(req: Request) {
 
     await logConfirmation(order).catch(()=>{})
 
-    const { data: org } = await db.from('organizations').select('name,whatsapp_number,notify_supplier_wa,digest_mode').eq('id', order.org_id).single()
-    if (!org) return NextResponse.json({ success: false })
-
-    // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
-    await (db as any).from('notifications').insert({
-      org_id: order.org_id, branch_id: order.branch_id || null, title: `تأكيد مورد: ${order.supplier_name}`, message: `تم تأكيد الطلب — سيتم التوصيل قريباً`, type: 'success', read: false
-    })
-    // إشعار فوري بالمتصفح/الجوال — لا يعتمد على واتساب إطلاقاً
-    sendPushToOrg(order.org_id, `تأكيد مورد: ${order.supplier_name}`, `تم تأكيد الطلب — سيتم التوصيل قريباً`, '/purchases').catch(()=>{})
-
-    const { data: ownerProfile } = await db.from('profiles').select('whatsapp_consent').eq('org_id', order.org_id).eq('role', 'owner').maybeSingle()
-    if ((ownerProfile as any)?.whatsapp_consent !== true) return NextResponse.json({ success: true, skipped: 'whatsapp_consent' })
-    // احترام تفضيلات المالك — تأكيد استلام مورد مو حرج، يُوقف عادي بوضع الملخص أو التعطيل
-    if ((org as any).notify_supplier_wa === false || (org as any).digest_mode === true) {
-      return NextResponse.json({ success: true, skipped: 'notify_preference' })
-    }
-
-    const { data: allBranches } = await db.from('branches').select('id,name,whatsapp_number').eq('org_id', order.org_id).eq('is_active', true)
-    const isMultiBranch = (allBranches || []).length > 1
-    const currentBranch = order.branch_id ? (allBranches || []).find((b: any) => b.id === order.branch_id) : null
-    const branchName = currentBranch?.name || null
-    const branchLine = (isMultiBranch && branchName) ? `🏪 الفرع: *${branchName}*\n` : ''
-    // رقم الفرع المخصص له الأولوية على رقم المؤسسة الرئيسي
-    const notifyPhone = (currentBranch as any)?.whatsapp_number || (org as any).whatsapp_number
-    if (!notifyPhone) return NextResponse.json({ success: false })
-
-    const items = (order.items || []).map((i: any) => `• ${i.name} — ${i.qty} ${i.unit}`).join('\n')
-    const msg = `🟢 *Storely*\n\nمرحباً ${(org as any).name}،\n\n✅ المورد *${order.supplier_name}* أكد طلبك\n${branchLine}\n${items}\n\nسيتم التوصيل قريباً`
-
-    const phone = formatPhone(notifyPhone)
-    await fetch('https://www.wasenderapi.com/api/send-message', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.WASENDER_API_KEY}`,
-        'X-Session-Id': process.env.WASENDER_SESSION_ID!,
-      },
-      body: JSON.stringify({ to: phone, text: msg }),
-    })
+    const result = await notifyOwnerSupplierConfirmed(db as any, order)
+    if (!result.ok) return NextResponse.json({ success: false })
 
     return NextResponse.json({ success: true })
   } catch (err: any) {

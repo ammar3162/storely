@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { escalateOrder, logConfirmation } from '@/lib/escalateSupplierOrder'
+import { isSupplierConfirmation, findPendingOrderForPhone, notifyOwnerSupplierConfirmed } from '@/lib/supplierConfirmation'
 const API_KEY      = process.env.WASENDER_API_KEY!
 const SESSION      = process.env.WASENDER_SESSION_ID!
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -300,45 +301,29 @@ export async function POST(req: Request) {
       // البوت موقوف مؤقتاً لهذا الرقم (طلب تواصل بشري) — نتجاهل أي رسالة إلا لو طلب "0" للرجوع يدوياً
       if (t !== '0' && await isBotPaused(to)) continue
 
-      // كشف تأكيد المورد — كلمة "تم" أو "موافق" أو "تأكيد"
-      if (['تم','موافق','تأكيد','confirmed','ok','okay'].includes(t.toLowerCase())) {
-        // ابحث عن آخر طلب معلق لهذا الرقم
-        const cleanPhone = to.replace(/\D/g,'')
-        // ابني آخر 9 أرقام للمقارنة (يتجاهل فرق الصيغة الدولية/المحلية)
-        const phoneLast9 = cleanPhone.slice(-9)
-        const { data: candidates } = await sb().from('supplier_orders' as any)
-          .select('id,org_id,branch_id,supplier_id,supplier_name,supplier_phone,items,current_priority,created_at,token')
-          .eq('status', 'pending')
-          .order('created_at', { ascending: false })
-          .limit(20)
-        const pendingOrder = (candidates || []).find((o: any) =>
-          (o.supplier_phone || '').replace(/\D/g, '').slice(-9) === phoneLast9
-        )
-
+      // كشف تأكيد المورد — "تم" / "تمام" / "أبشر" / "👍" ... (فقط لو عنده طلب توريد معلّق، غير كذا يكمل البوت عادي)
+      if (isSupplierConfirmation(text)) {
+        const pendingOrder: any = await findPendingOrderForPhone(sb() as any, to)
         if (pendingOrder) {
-          // تحديث حالة الطلب
           await sb().from('supplier_orders' as any)
             .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
-            .eq('id', (pendingOrder as any).id)
+            .eq('id', pendingOrder.id)
 
           await logConfirmation(pendingOrder).catch(()=>{})
 
-          // إرسال إشعار للعميل
-          await fetch((process.env.NEXT_PUBLIC_APP_URL || 'https://storely.dev') + '/api/supplier-confirmed', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: (pendingOrder as any).token }),
-          }).catch(() => {})
+          // إبلاغ المالك مباشرة (بدون طلب HTTP داخلي)
+          const res = await notifyOwnerSupplierConfirmed(sb() as any, pendingOrder).catch(() => ({ orgName: '' }))
+          const items = (pendingOrder.items || []).map((i: any) => `• ${i.name} — ${i.qty} ${i.unit}`).join('\n')
 
           await send(to, `🟢 *Storely*
 
-شكراً على تأكيدك ✅
-تم إبلاغ العميل بتأكيد الطلب`)
+✅ تم تأكيد توريدك
+${items ? '\n' + items + '\n' : ''}
+شكراً لك — تم إبلاغ ${res.orgName ? '*' + res.orgName + '*' : 'العميل'} بتأكيدك`)
           continue
         }
       }
 
-      // كشف عدم توفر المنتج من المورد
       if (t === '0' || t === 'غير متوفر' || t.toLowerCase() === 'unavailable') {
         const cleanPhone2 = to.replace(/\D/g,'')
         const phoneLast9b = cleanPhone2.slice(-9)
