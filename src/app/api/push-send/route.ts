@@ -13,6 +13,12 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
+    // للاستخدام الداخلي فقط (الكود يستخدم sendPushToOrg مباشرة) — كان مفتوح لأي أحد يرسل إشعار
+    // بأي نص ورابط لأجهزة أي منشأة
+    const secret = req.headers.get('x-cron-secret')
+    if (!process.env.ADMIN_PASSWORD || secret !== process.env.ADMIN_PASSWORD) {
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+    }
     webpush.setVapidDetails(
       process.env.VAPID_EMAIL || 'mailto:support@storely.dev',
       process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,

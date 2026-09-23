@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { createClient } from '@supabase/supabase-js'
 import { isSubscriptionActive } from '@/lib/subscription'
 import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
@@ -101,7 +102,12 @@ export async function POST(req: Request) {
   try {
     const bodyCheck = await req.clone().json().catch(()=>({}))
     const isFromDashboard = !!bodyCheck.org_id
-    if (!isFromDashboard && secret !== validSecret) {
+    if (isFromDashboard) {
+      // زر "أرسل الآن" بالإعدادات — لازم المستخدم يكون فعلاً من هذي المنشأة
+      // (كان مفتوح لأي أحد يعرف org_id: يرسل واتساب للمنشأة ويرجع قائمة أصنافها الناقصة)
+      const access = await verifyOrgAccess(bodyCheck.org_id)
+      if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    } else if (!validSecret || secret !== validSecret) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
     const supabase = createClient(

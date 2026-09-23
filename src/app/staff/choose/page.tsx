@@ -188,7 +188,7 @@ export default function ChoosePage() {
 
   async function loadToday(parsed:any) {
     try {
-      const res = await fetch(`/api/staff-attendance?staff_id=${parsed.id}&org_id=${parsed.org_id}`)
+      const res = await fetch('/api/staff-attendance', { headers: { 'Authorization': `Bearer ${localStorage.getItem('staff_token')}` } })
       const j = await res.json()
       if(j.success) { setTodayEvents(j.today||[]); setShift(j.shift||null); setAttendanceLocked(!!j.locked) }
     } catch {}
@@ -280,7 +280,7 @@ export default function ChoosePage() {
 
     try {
       const res = await fetch('/api/staff-attendance', {
-        method:'POST', headers:{'Content-Type':'application/json'},
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('staff_token')}`},
         body: JSON.stringify({
           staff_id: staffData.id, org_id: staffData.org_id, branch_id: staffData.branch_id,
           type, latitude: bestPos.coords.latitude, longitude: bestPos.coords.longitude, accuracy_m: bestPos.coords.accuracy,

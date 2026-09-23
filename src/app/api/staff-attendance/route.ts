@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,8 +18,14 @@ function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number) 
 
 export async function POST(req: Request) {
   try {
-    const { staff_id, org_id, branch_id, type, latitude, longitude, accuracy_m } = await req.json()
-    if (!staff_id || !org_id || !branch_id || !type) {
+    // هوية الموظف من التوكن الموقّع فقط — كان أي أحد يقدر يسجّل حضور/انصراف لأي موظف بمعرّفه
+    const auth = await verifyStaffToken(extractStaffToken(req))
+    if (!auth.valid || !auth.data) return NextResponse.json({ error: auth.error }, { status: auth.reason === 'subscription_expired' ? 403 : 401 })
+    const { staff_id, org_id } = auth.data
+    const body = await req.json()
+    const { type, latitude, longitude, accuracy_m } = body
+    const branch_id: string | null = auth.data.branch_id || body.branch_id || null
+    if (!branch_id || !type) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
     if (!['check_in','check_out'].includes(type)) {
@@ -46,8 +53,10 @@ export async function POST(req: Request) {
     // تأكد الموظف فعلاً تابع لهذا الفرع/المنشأة
     const { data: staff } = await supabase.from('staff_members').select('id,name,branch_id,shift_id').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
     if (!staff) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
+    // موقع التحقق لازم يكون فرع الموظف نفسه (مو أي فرع يرسله الطلب)
+    if ((staff as any).branch_id && (staff as any).branch_id !== branch_id) return NextResponse.json({ error: 'الفرع غير صحيح' }, { status: 403 })
 
-    const { data: branch } = await supabase.from('branches').select('latitude,longitude,attendance_radius_m,name').eq('id', branch_id).maybeSingle()
+    const { data: branch } = await supabase.from('branches').select('latitude,longitude,attendance_radius_m,name').eq('id', branch_id).eq('org_id', org_id).maybeSingle()
     if (!branch) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
 
     if (branch.latitude == null || branch.longitude == null) {
@@ -156,10 +165,10 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url)
-    const staff_id = searchParams.get('staff_id')
-    const org_id = searchParams.get('org_id')
-    if (!staff_id || !org_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+    // سجل الموظف نفسه فقط — الهوية من التوكن (معاملات الرابط تُتجاهل)
+    const auth = await verifyStaffToken(extractStaffToken(req))
+    if (!auth.valid || !auth.data) return NextResponse.json({ error: auth.error }, { status: auth.reason === 'subscription_expired' ? 403 : 401 })
+    const { staff_id, org_id } = auth.data
 
     const supabase = sb()
 

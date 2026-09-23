@@ -9,12 +9,14 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
-    const { org_id, user_id } = await req.json()
-    if (!org_id || !user_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+    const { org_id } = await req.json()
+    if (!org_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
     // تحقق من هوية المتصل الفعلية عبر الجلسة الموثوقة (مو من قيم الطلب)
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    // حذف المنشأة للمالك فقط (كان مدير الفرع يقدر يجدول حذف المنشأة كاملة)
+    if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
 
     // بدل الحذف الفوري — نحدد موعد حذف بعد 15 يوم (فترة سماح)
     const deletionDate = new Date()
