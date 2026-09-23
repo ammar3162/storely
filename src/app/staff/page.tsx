@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { LanguageProvider, useTranslation } from '@/lib/i18n/LanguageContext'
+import { Delete } from 'lucide-react'
 
 const COUNTRY_PHONE_LEN: {code:string;flag:string;name:string;key:string;len:number}[] = [
   {code:'966',flag:'🇸🇦',name:'السعودية',key:'countrySaudi',len:10},
@@ -96,8 +97,14 @@ function StaffLoginInner() {
 
   const keypadKeys = ['1','2','3','4','5','6','7','8','9','','0','⌫']
 
+  // عرض الرقم مقسّم لمجموعات (050 123 4567) — للقراءة فقط، القيمة المرسلة بدون مسافات
+  const groupDigits = (d: string) => d.length <= 3 ? d : d.length <= 6 ? `${d.slice(0,3)} ${d.slice(3)}` : `${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}`
+  const phonePlaceholder = groupDigits((selectedCountry.code === '966' ? '05' : '') + 'X'.repeat(Math.max(requiredLen - (selectedCountry.code === '966' ? 2 : 0), 0)))
+
+  const keyContent = (k: string) => k === '⌫' ? <Delete size={22} strokeWidth={2} /> : k
+
   return (
-    <div style={{minHeight:'100vh',background:'linear-gradient(160deg,#042f2e,#042f2e 45%,#134e4a)',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:dir}}>
+    <div style={{minHeight:'100vh',background:'#0b2b29',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:dir}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap');
         *{box-sizing:border-box}
@@ -112,15 +119,16 @@ function StaffLoginInner() {
 
       <div style={{width:'100%',maxWidth:440,minHeight:'100vh',display:'flex',flexDirection:'column' as const,padding:'0 24px'}}>
 
-        {/* الهيدر — شعار Storely */}
-        <div style={{display:'flex',flexDirection:'column' as const,alignItems:'center',paddingTop:'clamp(32px, 8vh, 64px)',paddingBottom:24}}>
-          <div style={{width:56,height:56,borderRadius:16,background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.12)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:14}}>
-            <img src="/storely-logo.png" alt="Storely" style={{width:52,height:52,objectFit:'contain'}}/>
-          </div>
-          <div style={{fontSize:13,fontWeight:700,color:'rgba(255,255,255,.5)',letterSpacing:'.5px',marginBottom:10}}>STORELY</div>
-          <button onClick={()=>setLang(lang==='ar'?'en':'ar')} style={{background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.15)',borderRadius:99,padding:'5px 12px',fontSize:11,fontWeight:700,color:'rgba(255,255,255,.7)',cursor:'pointer',fontFamily:'inherit'}}>
-            {lang==='ar'?'EN':'عربي'}
+        {/* شريط علوي: زر اللغة بالزاوية */}
+        <div style={{display:'flex',justifyContent:'flex-end',paddingTop:16}}>
+          <button onClick={()=>setLang(lang==='ar'?'en':'ar')} style={{background:'transparent',border:'1px solid rgba(255,255,255,.18)',borderRadius:8,padding:'6px 12px',fontSize:12,fontWeight:600,color:'rgba(255,255,255,.75)',cursor:'pointer',fontFamily:'inherit'}}>
+            {lang==='ar'?'English':'عربي'}
           </button>
+        </div>
+
+        {/* الشعار — الصورة فيها اسم Storely أصلاً، فما نكرره */}
+        <div style={{display:'flex',justifyContent:'center',paddingTop:'clamp(16px, 5vh, 40px)',paddingBottom:28}}>
+          <img src="/storely-logo.png" alt="Storely" style={{width:64,height:64,objectFit:'contain',borderRadius:16,background:'white',padding:6}}/>
         </div>
 
         {/* المحتوى الرئيسي */}
@@ -142,7 +150,7 @@ function StaffLoginInner() {
                   </button>
                   <div style={{width:1,height:24,background:'rgba(255,255,255,.15)'}}/>
                   <div style={{flex:1,padding:'12px 14px',fontSize:20,fontWeight:700,color:'white',textAlign:'left' as const,direction:'ltr' as const,minHeight:24,letterSpacing:'1px'}}>
-                    {phone || <span style={{color:'rgba(255,255,255,.3)'}}>{'0'.repeat(requiredLen)}</span>}
+                    {phone ? groupDigits(phone) : <span style={{color:'rgba(255,255,255,.28)',fontWeight:500}}>{phonePlaceholder}</span>}
                   </div>
                 </div>
 
@@ -166,14 +174,14 @@ function StaffLoginInner() {
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:20,direction:'ltr' as const}}>
                 {keypadKeys.map((k,i)=> k==='' ? <div key={i}/> : (
                   <button key={i} className="kp-btn" onClick={()=>pressPhoneKey(k)}
-                    style={{padding:'16px 0',borderRadius:14,border:'none',background:'rgba(255,255,255,.06)',fontSize:20,fontWeight:700,color:k==='⌫'?'#fca5a5':'white',cursor:'pointer',fontFamily:'inherit'}}>
-                    {k}
+                    style={{padding:'16px 0',borderRadius:14,border:'none',background:'rgba(255,255,255,.06)',fontSize:20,fontWeight:700,color:k==='⌫'?'rgba(255,255,255,.7)':'white',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    {keyContent(k)}
                   </button>
                 ))}
               </div>
 
               <button onClick={goToPin} disabled={phone.length<requiredLen}
-                style={{width:'100%',padding:16,marginBottom:'clamp(24px,6vh,48px)',background:phone.length>=requiredLen?'linear-gradient(135deg,#029FA2,#0f766e)':'rgba(255,255,255,.08)',color:phone.length>=requiredLen?'white':'rgba(255,255,255,.35)',border:'none',borderRadius:16,fontSize:15,fontWeight:800,cursor:phone.length>=requiredLen?'pointer':'not-allowed',fontFamily:'inherit',boxShadow:phone.length>=requiredLen?'0 10px 28px rgba(22,163,74,.35)':'none',transition:'all .2s'}}>
+                style={{width:'100%',padding:16,marginBottom:'clamp(24px,6vh,48px)',background:phone.length>=requiredLen?'#14b8a6':'rgba(255,255,255,.1)',color:phone.length>=requiredLen?'#042f2e':'rgba(255,255,255,.45)',border:'none',borderRadius:14,fontSize:16,fontWeight:700,cursor:phone.length>=requiredLen?'pointer':'not-allowed',fontFamily:'inherit',transition:'background .15s, color .15s'}}>
                 {t('staffLogin.continueBtn')}
               </button>
             </div>
@@ -185,7 +193,7 @@ function StaffLoginInner() {
               </button>
 
               <h1 style={{fontSize:'clamp(20px,5vw,24px)',fontWeight:800,color:'white',marginBottom:6,textAlign:'center' as const}}>{t('staffLogin.enterPin')}</h1>
-              <p style={{fontSize:13,color:'rgba(255,255,255,.5)',marginBottom:32,textAlign:'center' as const,direction:'ltr' as const}}>+{selectedCountry.code} {phone}</p>
+              <p style={{fontSize:13,color:'rgba(255,255,255,.5)',marginBottom:32,textAlign:'center' as const,direction:'ltr' as const}}>+{selectedCountry.code} {groupDigits(phone)}</p>
 
               {/* نقاط عرض PIN */}
               <div className={shake?'shake':''} style={{display:'flex',justifyContent:'center',gap:14,marginBottom:32,direction:'ltr' as const}}>
@@ -208,8 +216,8 @@ function StaffLoginInner() {
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:24,direction:'ltr' as const}}>
                 {keypadKeys.map((k,i)=> k==='' ? <div key={i}/> : (
                   <button key={i} className="kp-btn" disabled={loading} onClick={()=>pressPinKey(k)}
-                    style={{padding:'18px 0',borderRadius:14,border:'none',background:'rgba(255,255,255,.06)',fontSize:22,fontWeight:700,color:k==='⌫'?'#fca5a5':'white',cursor:loading?'default':'pointer',fontFamily:'inherit',opacity:loading?.5:1}}>
-                    {k}
+                    style={{padding:'18px 0',borderRadius:14,border:'none',background:'rgba(255,255,255,.06)',fontSize:22,fontWeight:700,color:k==='⌫'?'rgba(255,255,255,.7)':'white',cursor:loading?'default':'pointer',fontFamily:'inherit',opacity:loading?.5:1,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    {keyContent(k)}
                   </button>
                 ))}
               </div>
