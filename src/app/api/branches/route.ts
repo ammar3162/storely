@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { getBranchLimit } from '@/lib/branchLimit'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,8 +11,7 @@ const sb = () => createClient(
 const BRANCH_FIELDS = 'id,name,location,whatsapp_number,latitude,longitude'
 
 async function maxBranchesFor(db: ReturnType<typeof sb>, org_id: string) {
-  const { data } = await db.from('organizations').select('max_branches').eq('id', org_id).single()
-  return Number((data as any)?.max_branches) || 1
+  return (await getBranchLimit(db, org_id)).total
 }
 
 async function activeCount(db: ReturnType<typeof sb>, org_id: string) {
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
 
     const db = sb()
     const [max, active] = await Promise.all([maxBranchesFor(db, org_id), activeCount(db, org_id)])
-    if (active >= max) return NextResponse.json({ error: `وصلت للحد الأقصى لباقتك (${max} فرع) — رقّي باقتك لإضافة المزيد` }, { status: 403 })
+    if (active >= max) return NextResponse.json({ error: `وصلت للحد الأقصى (${max} فرع) — أضف فرعاً من صفحة الإضافات`, code: 'branch_limit' }, { status: 403 })
 
     const { data, error } = await db.from('branches')
       .insert({ org_id, name: String(name).trim(), location: String(location || '').trim() || null } as any)
@@ -122,7 +122,7 @@ export async function PATCH(req: Request) {
         const active = await activeCount(db, org_id)
         if (body.is_active === true) {
           const max = await maxBranchesFor(db, org_id)
-          if (active >= max) return NextResponse.json({ error: 'الباقة ممتلئة — رقّي باقتك لتفعيل فرع إضافي' }, { status: 403 })
+          if (active >= max) return NextResponse.json({ error: 'وصلت للحد الأقصى — أوقف فرعاً آخر أو أضف فرعاً من صفحة الإضافات', code: 'branch_limit' }, { status: 403 })
         } else if (active <= 1) {
           return NextResponse.json({ error: 'لا يمكن إيقاف الفرع الوحيد' }, { status: 400 })
         }

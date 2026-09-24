@@ -218,7 +218,7 @@ export default function BranchesPage() {
   return (
     <div style={{padding:'24px',maxWidth:900,margin:'0 auto',fontFamily:font.family,direction:'rtl'}}>
       <h1 style={pageTitle}>إدارة الفروع</h1>
-      <p style={pageSub}>كل فرع له مخزونه المستقل. الباقة الحالية تسمح بـ <b style={{color:colors.primary}}>{maxBranches} فرع</b>.</p>
+      <p style={pageSub}>كل فرع له مخزونه المستقل. باقتك مع الإضافات تسمح بـ <b style={{color:colors.primary}}>{maxBranches} فرع</b>.</p>
 
       {branches.length>0&&(
         <div style={{...card,overflow:'hidden',marginBottom:16,marginTop:20}}>
@@ -354,7 +354,8 @@ export default function BranchesPage() {
         </div>
       ) : (
         <div style={{...card,padding:'16px',background:colors.warningLight||'#fffbeb',textAlign:'center',fontSize:font.sm,color:colors.text3}}>
-          وصلت للحد الأقصى لباقتك ({maxBranches} فرع) — رقّي باقتك لإضافة المزيد
+          وصلت للحد الأقصى ({maxBranches} فرع).
+          <a href="/addons-market" style={{display:'block',marginTop:10,color:colors.primary,fontWeight:700,textDecoration:'none'}}>+ أضف فرعاً (من صفحة الإضافات)</a>
         </div>
       )}
 

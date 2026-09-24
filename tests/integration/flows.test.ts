@@ -181,6 +181,28 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       expect(r.status).toBe(403)
     })
 
+    it('an extra-branch addon raises the limit by its quantity, and locks the extra branch when it expires', async () => {
+      const { enforceBranchLimit } = await import('@/lib/branchLimit')
+      const { data: addon } = await db.from('marketplace_addons').select('id').eq('slug', 'extra_branch').single()
+      const { data: sub } = await db.from('org_addon_subscriptions').insert({
+        org_id: orgId, addon_id: (addon as any).id, status: 'active', quantity: 1,
+        activated_at: new Date().toISOString(), expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+      } as any).select('id').single()
+
+      const added = await call(branches.POST, 'POST', '/api/branches', { org_id: orgId, name: 'فرع مدفوع' })
+      expect(added.status).toBe(200)
+      expect((await call(branches.POST, 'POST', '/api/branches', { org_id: orgId, name: 'فرع ثالث' })).status).toBe(403)
+
+      await db.from('org_addon_subscriptions').update({ expires_at: new Date(Date.now() - 1000).toISOString() } as any).eq('id', (sub as any).id)
+      expect(await enforceBranchLimit(db as any, orgId)).toBe(1)
+      const { data: paid } = await db.from('branches').select('is_active').eq('id', added.json.branch.id).single()
+      expect((paid as any).is_active).toBe(false)
+      const { data: main } = await db.from('branches').select('is_active').eq('id', branchA).single()
+      expect((main as any).is_active).toBe(true)
+
+      await db.from('org_addon_subscriptions').delete().eq('id', (sub as any).id)
+    })
+
     it('a branch manager only sees products of their own branch', async () => {
       const { data: brB } = await db.from('branches').insert({ org_id: orgId, name: 'فرع ب', is_active: true } as any).select('id').single()
       await db.from('products').insert({ org_id: orgId, branch_id: (brB as any).id, name: 'منتج فرع ب', qty: 0, is_active: true } as any)

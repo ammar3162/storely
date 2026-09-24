@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
+import { isCronRequest } from '@/lib/cronAuth'
+import { enforceBranchLimit, EXTRA_BRANCH_SLUG } from '@/lib/branchLimit'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,14 +10,24 @@ const sb = () => createClient(
 )
 
 export async function POST(req: Request) {
-  const secret = req.headers.get('x-cron-secret')
-  if (secret !== process.env.ADMIN_PASSWORD) {
+  if (!isCronRequest(req)) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
   const db = sb()
   const now = new Date()
   const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
+
+  // إضافة "فرع إضافي" انتهت بدون تجديد: نوقف الفروع الزايدة عن الحد (مؤقتاً — ترجع بالتجديد)
+  let branchesLocked = 0
+  const { data: expiredBranchSubs } = await db.from('org_addon_subscriptions')
+    .select('org_id,marketplace_addons!inner(slug)')
+    .eq('status', 'active').lt('expires_at', now.toISOString())
+    .eq('marketplace_addons.slug', EXTRA_BRANCH_SLUG)
+  for (const org_id of new Set(((expiredBranchSubs || []) as any[]).map(r => r.org_id))) {
+    branchesLocked += await enforceBranchLimit(db, org_id)
+  }
 
   const { data: profiles } = await db
     .from('profiles')
@@ -50,7 +62,8 @@ export async function POST(req: Request) {
     }
 
     // إشعار انتهاء الاشتراك فعلياً — مرة وحدة بس
-    if (!p.expiry_notice_sent && endsAt <= now) {
+    // (للي انتهى خلال آخر ٣ أيام فقط — عشان ما نرسل للحسابات المنتهية من زمان)
+    if (!p.expiry_notice_sent && endsAt <= now && endsAt > threeDaysAgo) {
       const text = `مرحباً ${p.full_name || ''}،\n\nانتهى اشتراكك بـ Storely 😔\n\nجدّد اشتراكك الآن عشان تكمل إدارة مخزونك وفريقك بدون انقطاع:\nstorely.dev/login`
       const res = await sendWhatsAppMessage(p.phone, text)
       if (res.ok) {
@@ -60,5 +73,8 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ success: true, remindersSent, expirySent })
+  return NextResponse.json({ success: true, remindersSent, expirySent, branchesLocked })
 }
+
+// Vercel Cron يستدعي GET
+export async function GET(req: Request) { return POST(req) }

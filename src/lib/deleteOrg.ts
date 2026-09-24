@@ -40,7 +40,7 @@ export async function deleteOrgCompletely(orgId: string, userId?: string): Promi
   const directTables = [
     'notifications','purchases','staff_members','whatsapp_logs',
     'push_subscriptions','cashier_closings','fixed_expenses','monthly_fixed_expenses',
-    'inventory_snapshots','supplier_orders','data_backups',
+    'inventory_snapshots','supplier_orders','data_backups','org_addon_subscriptions',
   ]
   for (const t of directTables) {
     const r = await (supabase as any).from(t).delete().eq('org_id', orgId)

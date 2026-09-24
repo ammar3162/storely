@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/verifyOrgAccess'
+import { combineBranchLimit, EXTRA_BRANCH_SLUG } from '@/lib/branchLimit'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,7 +20,7 @@ export async function GET() {
     let branchesQ = db.from('branches').select('id,name,location').eq('org_id', profile.orgId).eq('is_active', true)
     if (profile.role === 'manager' && profile.branchId) branchesQ = branchesQ.eq('id', profile.branchId)
 
-    const [{ data: org }, { data: extra }, { data: branches }] = await Promise.all([
+    const [{ data: org }, { data: extra }, { data: branches }, { data: branchSubs }] = await Promise.all([
       db.from('organizations')
         .select('id,name,plan,currency,logo_url,deletion_scheduled_at,max_staff,max_suppliers,max_branches,country_code,business_type,onboarding_done')
         .eq('id', profile.orgId).single(),
@@ -27,6 +28,9 @@ export async function GET() {
         .select('full_name,phone,subscription_ends_at,permissions,whatsapp_consent,whatsapp_first_contact_confirmed,terms_version_accepted')
         .eq('id', profile.userId).single(),
       branchesQ.order('created_at'),
+      db.from('org_addon_subscriptions')
+        .select('quantity,expires_at,marketplace_addons!inner(slug)')
+        .eq('org_id', profile.orgId).eq('status', 'active').eq('marketplace_addons.slug', EXTRA_BRANCH_SLUG),
     ])
     const o: any = org || {}
     const e: any = extra || {}
@@ -54,7 +58,7 @@ export async function GET() {
         deletion_scheduled_at: o.deletion_scheduled_at || null,
         max_staff: o.max_staff ?? 1,
         max_suppliers: o.max_suppliers ?? 1,
-        max_branches: o.max_branches ?? 1,
+        max_branches: combineBranchLimit(o.max_branches, (branchSubs || []) as any[]).total,
         country_code: o.country_code || '+966',
         business_type: o.business_type || null,
         onboarding_done: o.onboarding_done !== false,

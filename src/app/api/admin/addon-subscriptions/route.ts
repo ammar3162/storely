@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
+import { enforceBranchLimit } from '@/lib/branchLimit'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -36,10 +37,8 @@ export async function POST(req: Request) {
   const { data: addonRow } = await supabase.from('marketplace_addons').select('slug').eq('id', addon_id).single()
   const slug = (addonRow as any)?.slug
   if (slug === 'extra_branch') {
-    if (!wasActive) {
-      const { data: org } = await supabase.from('organizations').select('max_branches').eq('id', org_id).single()
-      await supabase.from('organizations').update({ max_branches: ((org as any)?.max_branches || 1) + 1 } as any).eq('id', org_id)
-    }
+    // الحد ينحسب من الكمية وقت الطلب (lib/branchLimit) — ما نعدّل max_branches. لو نقصت الكمية نوقف الزايد
+    if (qtyDelta < 0) await enforceBranchLimit(supabase, org_id)
   } else if (slug === 'extra_staff' && qtyDelta !== 0) {
     const { data: org } = await supabase.from('organizations').select('max_staff').eq('id', org_id).single()
     await supabase.from('organizations').update({ max_staff: Math.max(0, ((org as any)?.max_staff || 0) + qtyDelta) } as any).eq('id', org_id)
@@ -75,15 +74,7 @@ export async function DELETE(req: Request) {
   const { data: addonRow } = await supabase.from('marketplace_addons').select('slug').eq('id', addon_id).single()
   const slug = (addonRow as any)?.slug
   if (slug === 'extra_branch') {
-    const { data: org } = await supabase.from('organizations').select('max_branches').eq('id', org_id).single()
-    await supabase.from('organizations').update({ max_branches: Math.max(1, ((org as any)?.max_branches || 2) - 1) } as any).eq('id', org_id)
-    const { data: latestBranch } = await supabase.from('branches').select('id').eq('org_id', org_id).eq('is_active', true).order('created_at', { ascending: false }).limit(1).maybeSingle()
-    if (latestBranch) {
-      const deadBranchId = (latestBranch as any).id
-      await supabase.from('branches').update({ is_active: false } as any).eq('id', deadBranchId)
-      // الفرع نفسه صار غير موجود فعلياً -- نوقف كل موظفيه تلقائياً
-      await supabase.from('staff_members').update({ is_active: false, hidden_from_list: true } as any).eq('branch_id', deadBranchId).eq('is_active', true)
-    }
+    await enforceBranchLimit(supabase, org_id)
   } else if (slug === 'extra_staff') {
     const { data: org } = await supabase.from('organizations').select('max_staff').eq('id', org_id).single()
     await supabase.from('organizations').update({ max_staff: Math.max(0, ((org as any)?.max_staff || existingQty) - existingQty) } as any).eq('id', org_id)

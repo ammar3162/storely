@@ -45,7 +45,7 @@ export default function AddonsMarketPage() {
 
   function subscribeLink(addon: any, qty: number = 1, branchId?: string) {
     const isStaffAddon = addon.slug === 'extra_staff'
-    const isQtyAddon = addon.slug === 'extra_staff' || addon.slug === 'extra_suppliers'
+    const isQtyAddon = addon.slug === 'extra_staff' || addon.slug === 'extra_suppliers' || addon.slug === 'extra_branch'
     const branchName = branchId ? (branches.find(b => b.id === branchId)?.name || '') : ''
     const text = isStaffAddon
       ? `مرحباً، أبي أشترك بميزة "${addon.name}" لفرع "${branchName}" — الكمية: ${qty} (${qty * addon.monthly_price} ر.س/شهر) لمنشأة: ${orgName}`
@@ -153,7 +153,7 @@ export default function AddonsMarketPage() {
                 <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
                 <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14, minHeight: 40 }}>{a.description}</div>
                 {(() => {
-                  const isQtyAddon = a.slug === 'extra_suppliers'
+                  const isQtyAddon = a.slug === 'extra_suppliers' || a.slug === 'extra_branch'
                   const qty = qtyMap[a.id] || 1
                   return (
                     <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 14 }}>
@@ -164,12 +164,18 @@ export default function AddonsMarketPage() {
 
                 {active ? (
                   <div style={{ textAlign: 'center' as const }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 4 }}>✅ مفعّلة{a.slug==='extra_suppliers' ? ` (${a.subscription?.quantity||1})` : ''}</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 4 }}>✅ مفعّلة{(a.slug==='extra_suppliers'||a.slug==='extra_branch') ? ` (${a.subscription?.quantity||1})` : ''}</div>
                     <div style={{ fontSize: 10, color: colors.text4 }}>حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA', { numberingSystem: 'latn' })}</div>
+                    {a.slug === 'extra_branch' && (
+                      <a href={subscribeLink(a, (a.subscription?.quantity || 1) + 1)} target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'inline-block', marginTop: 10, fontSize: 11, fontWeight: 700, color: colors.primary }}>
+                        تحتاج فرع زيادة؟ اطلب عبر واتساب
+                      </a>
+                    )}
                   </div>
                 ) : (
                   <>
-                    {a.slug === 'extra_suppliers' && (
+                    {(a.slug === 'extra_suppliers' || a.slug === 'extra_branch') && (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 10 }}>
                         <span style={{ fontSize: 11, color: colors.text3, fontWeight: 700 }}>الكمية:</span>
                         <input type="number" min={1} max={20} value={qtyMap[a.id] || 1}

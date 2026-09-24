@@ -26,7 +26,7 @@ const STATUS: Record<string,{label:string;color:string;bg:string;dot:string}> = 
 const PLANS = [
   {v:1,  planKey:'basic',         label:'الأساسية',         price:'99 ر.س',  yearlyPrice:'990 ر.س',  desc:'فرع · 3 موظفين · 3 موردين · بدون حضور/انصراف أو إقفال كاشير', color:'#029FA2', maxStaff:3,   maxSup:3},
   {v:3,  planKey:'pro',           label:'المتوسطة',         price:'249 ر.س', yearlyPrice:'2490 ر.س', desc:'3 فروع · 10 موظفين · 10 موردين · كل المميزات',               color:'#2563eb', maxStaff:10,  maxSup:10},
-  {v:10, planKey:'advanced',      label:'المتقدمة',         price:'399 ر.س', yearlyPrice:'3830 ر.س', desc:'كل شي غير محدود',                                            color:'#7c3aed', maxStaff:999, maxSup:999},
+  {v:10, planKey:'advanced',      label:'المتقدمة',         price:'399 ر.س', yearlyPrice:'3830 ر.س', desc:'10 فروع · موظفين وموردين بلا حد',                                            color:'#7c3aed', maxStaff:999, maxSup:999},
 ]
 
 export default function AdminPage() {
@@ -489,11 +489,11 @@ export default function AdminPage() {
     setLoadingAddons(false)
   }
 
-  async function toggleAddon(addon: any, activate: boolean) {
+  async function toggleAddon(addon: any, activate: boolean, quantity?: number) {
     if (!selected?.org_id) return
     setTogglingAddon(addon.id)
     const adminPass = sessionStorage.getItem('storely_admin_pass') || ''
-    const qty = addonQty[addon.id] || 1
+    const qty = quantity || addonQty[addon.id] || 1
     const res = await fetch('/api/admin/addon-subscriptions', {
       method: activate ? 'POST' : 'DELETE',
       headers: { 'Content-Type': 'application/json', 'x-admin-key': adminPass },
@@ -794,7 +794,7 @@ export default function AdminPage() {
                   <div style={{display:'flex',flexDirection:'column',gap:8}}>
                     {addonsList.map((a:any) => {
                       const active = a.subscription?.isValid
-                      const isQtyAddon = a.slug === 'extra_staff' || a.slug === 'extra_suppliers'
+                      const isQtyAddon = a.slug === 'extra_staff' || a.slug === 'extra_suppliers' || a.slug === 'extra_branch'
                       const qty = addonQty[a.id] || (active ? (a.subscription?.quantity || 1) : 1)
                       return (
                         <div key={a.id} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${active?'#c4b5fd':'#e9d5ff'}`,background:active?'#f5f3ff':'#ffffff'}}>
@@ -809,10 +809,17 @@ export default function AdminPage() {
                                 : (isQtyAddon ? `${a.monthly_price} ر.س/وحدة/شهر — غير مفعّلة` : `${a.monthly_price} ر.س/شهر — غير مفعّلة`)}
                             </div>
                           </div>
-                          {isQtyAddon && !active && (
+                          {isQtyAddon && (!active || a.slug === 'extra_branch') && (
                             <input type="number" min={1} max={20} value={qty}
                               onChange={e=>setAddonQty(prev=>({...prev, [a.id]: Math.max(1, Math.min(20, Number(e.target.value)||1))}))}
                               style={{width:48,padding:'6px 4px',borderRadius:8,border:'1px solid #e9d5ff',fontSize:11,textAlign:'center' as const,fontFamily:'inherit'}}/>
+                          )}
+                          {active && a.slug === 'extra_branch' && (
+                            <button onClick={()=>toggleAddon(a, true, qty)} disabled={togglingAddon===a.id}
+                              title="تغيير عدد الفروع وتجديد 30 يوم"
+                              style={{padding:'6px 10px',borderRadius:8,border:'1px solid #c4b5fd',cursor:'pointer',fontSize:11,fontWeight:700,fontFamily:'inherit',background:'white',color:'#7c3aed'}}>
+                              تحديث
+                            </button>
                           )}
                           <button onClick={()=>toggleAddon(a, !active)} disabled={togglingAddon===a.id}
                             style={{padding:'6px 14px',borderRadius:8,border:'none',cursor:'pointer',fontSize:11,fontWeight:700,fontFamily:'inherit',
@@ -1245,7 +1252,7 @@ export default function AdminPage() {
             {[
               {name:'الأساسية',price:'149',color:'#029FA2',branches:1,staff:2,suppliers:3},
               {name:'المتوسطة',price:'249',color:'#2563eb',branches:3,staff:10,suppliers:10},
-              {name:'المتقدمة',price:'399',color:'#7c3aed',branches:999,staff:999,suppliers:999},
+              {name:'المتقدمة',price:'399',color:'#7c3aed',branches:10,staff:999,suppliers:999},
             ].map((p,i)=>(
               <div key={i} style={{background:'#ffffff',borderRadius:14,padding:'20px',border:`1px solid ${p.color}30`}}>
                 <div style={{fontSize:14,fontWeight:800,color:p.color,marginBottom:4}}>{p.name}</div>

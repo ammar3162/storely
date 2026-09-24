@@ -3,6 +3,7 @@ export const fetchCache = 'force-no-store'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { enforceBranchLimit } from '@/lib/branchLimit'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -36,15 +37,7 @@ export async function DELETE(req: Request) {
     const { data: addonRow } = await supabase.from('marketplace_addons').select('slug').eq('id', addon_id).single()
     const slug = (addonRow as any)?.slug
     if (slug === 'extra_branch') {
-      const { data: org } = await supabase.from('organizations').select('max_branches').eq('id', org_id).single()
-      await supabase.from('organizations').update({ max_branches: Math.max(1, ((org as any)?.max_branches || 2) - 1) } as any).eq('id', org_id)
-      const { data: latestBranch } = await supabase.from('branches').select('id').eq('org_id', org_id).eq('is_active', true).order('created_at', { ascending: false }).limit(1).maybeSingle()
-      if (latestBranch) {
-        const deadBranchId = (latestBranch as any).id
-        await supabase.from('branches').update({ is_active: false } as any).eq('id', deadBranchId)
-        // الفرع نفسه صار غير موجود فعلياً -- نوقف كل موظفيه تلقائياً
-        await supabase.from('staff_members').update({ is_active: false, hidden_from_list: true } as any).eq('branch_id', deadBranchId).eq('is_active', true)
-      }
+      await enforceBranchLimit(supabase, org_id)
     } else if (slug === 'extra_staff') {
       if (branch_id) {
         const { data: br } = await supabase.from('branches').select('max_staff').eq('id', branch_id).single()
