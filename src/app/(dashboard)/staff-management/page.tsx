@@ -207,7 +207,8 @@ export default function StaffManagementPage() {
     if(cleanedPhone.length !== reqLen){toast(`رقم الجوال يجب أن يكون ${reqLen} أرقام`,'warning');return}
     const cleanPhone=staffCountry + newPhone.trim().replace(/^0+/,'').replace(/\s/g,'')
     const pin=generatePin()
-    const resData = await api.post('/api/add-staff', {org_id:orgId, branch_id:newBranch||null, name:newName.trim(), phone:cleanPhone, pin, permissions:newPermissions, role:newRole, send_closing_whatsapp:newSendClosingWA})
+    const activeBranch = sessionStorage.getItem('s_branch_id') || newBranch || null
+    const resData = await api.post('/api/add-staff', {org_id:orgId, branch_id:activeBranch, name:newName.trim(), phone:cleanPhone, pin, permissions:newPermissions, role:newRole, send_closing_whatsapp:newSendClosingWA})
     if(!resData.success){
       if(resData.error==='رقم الجوال مسجل مسبقاً') toast('رقم الجوال هذا مسجّل لموظف آخر','error')
       else toast('خطأ: '+(resData.error||'حدث خطأ'),'error')
@@ -470,9 +471,10 @@ export default function StaffManagementPage() {
               {branches.length>1 && (
                 <div>
                   <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>الفرع</label>
-                  <select value={newBranch} onChange={e=>setNewBranch(e.target.value)} style={inp()}>
-                    {branches.map((b:any)=>(<option key={b.id} value={b.id}>{b.name}</option>))}
-                  </select>
+                  {/* الموظف ينضاف للفرع اللي شغّال فيه المالك حالياً — لتغييره بدّل الفرع من القائمة الجانبية */}
+                  <div style={{...inp(),background:colors.bg,color:colors.text2,fontWeight:700}}>
+                    {branches.find((b:any)=>b.id===newBranch)?.name||'—'}
+                  </div>
                 </div>
               )}
               <div>
