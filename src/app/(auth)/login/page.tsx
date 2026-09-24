@@ -56,7 +56,7 @@ const PHONE_RULES: Record<string,{length:number, prefix:string, placeholder:stri
 }
 
 const PLANS = [
-  { v:1,  label:'الأساسية',  price:'149', yearlyPrice:'1430', desc:'فرع · 2 موظفين · 3 موردين',                    color:'#029FA2' },
+  { v:1,  label:'الأساسية',  price:'99', yearlyPrice:'950', desc:'فرع · 3 موظفين · 3 موردين',                    color:'#029FA2' },
   { v:3,  label:'المتوسطة',  price:'249', yearlyPrice:'2390', desc:'3 فروع · 10 موظفين · 10 موردين',               color:'#029FA2' },
   { v:10, label:'المتقدمة',  price:'399', yearlyPrice:'3830', desc:'10 فروع · موظفون وموردون غير محدودين', color:'#7c3aed' },
 ]
@@ -679,7 +679,7 @@ function LoginPage() {
             </div>
             <div style={{marginTop:24,padding:'16px 18px',background:'white',borderRadius:12,border:'1px solid #e5e7eb'}}>
               <div style={{display:'flex',gap:22}}>
-                {[['149 '+(lang==='ar'?'ر.س':'SAR'),t('login.statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('login.statTrial')],['7',t('login.statLangs')]].map(([n,l])=>(
+                {[['99 '+(lang==='ar'?'ر.س':'SAR'),t('login.statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('login.statTrial')],['7',t('login.statLangs')]].map(([n,l])=>(
                   <div key={l}>
                     <div style={{fontSize:18,fontWeight:900,color:'#029FA2'}}>{n}</div>
                     <div style={{fontSize:10,color:'#9ca3af',marginTop:2}}>{l}</div>

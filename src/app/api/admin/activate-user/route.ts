@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     const orgId = (profile as any)?.org_id
     const maxBranches = (profile as any)?.organizations?.max_branches || 1
     const planName = maxBranches === 1 ? 'basic' : maxBranches <= 3 ? 'pro' : 'advanced'
-    const amount = maxBranches === 1 ? 149 : maxBranches <= 3 ? 249 : 399
+    const amount = maxBranches === 1 ? 99 : maxBranches <= 3 ? 249 : 399
     if (orgId) {
       await (supabase as any).from('subscription_events').insert({
         org_id: orgId,

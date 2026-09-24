@@ -25,7 +25,7 @@ const STATUS: Record<string,{label:string;color:string;bg:string;dot:string}> = 
 
 // كل باقة عندها الآن مفتاح صريح (planKey) هو مصدر الحقيقة — مو عدد الفروع (v) بس،
 const PLANS = [
-  {v:1,  planKey:'basic',         label:'الأساسية',         price:'99 ر.س',  yearlyPrice:'990 ر.س',  desc:'فرع · 3 موظفين · 3 موردين · بدون حضور/انصراف أو إقفال كاشير', color:'#029FA2', maxStaff:3,   maxSup:3},
+  {v:1,  planKey:'basic',         label:'الأساسية',         price:'99 ر.س',  yearlyPrice:'950 ر.س',  desc:'فرع · 3 موظفين · 3 موردين · بدون حضور/انصراف أو إقفال كاشير', color:'#029FA2', maxStaff:3,   maxSup:3},
   {v:3,  planKey:'pro',           label:'المتوسطة',         price:'249 ر.س', yearlyPrice:'2490 ر.س', desc:'3 فروع · 10 موظفين · 10 موردين · كل المميزات',               color:'#2563eb', maxStaff:10,  maxSup:10},
   {v:10, planKey:'advanced',      label:'المتقدمة',         price:'399 ر.س', yearlyPrice:'3830 ر.س', desc:'10 فروع · موظفين وموردين بلا حد',                                            color:'#7c3aed', maxStaff:999, maxSup:999},
 ]
@@ -554,7 +554,7 @@ export default function AdminPage() {
     suspended: users.filter(u=>u.status==='suspended').length,
     trial: users.filter(u=>u.subscription_type==='trial'&&u.status==='active').length,
     paid: users.filter(u=>u.subscription_type==='paid'&&u.status==='active').length,
-    revenue: users.filter(u=>u.subscription_type==='paid'&&u.status==='active').reduce((sum,u)=>sum+(u.max_branches===1?149:u.max_branches<=3?249:399),0),
+    revenue: users.filter(u=>u.subscription_type==='paid'&&u.status==='active').reduce((sum,u)=>sum+(u.max_branches===1?99:u.max_branches<=3?249:399),0),
     expiringSoon: users.filter(u=>{
       const d = daysLeft(u.subscription_ends_at)
       return d!==null && d>0 && d<=3 && u.status==='active'
@@ -1268,7 +1268,7 @@ export default function AdminPage() {
           <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>📦 إدارة الباقات</div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
             {[
-              {name:'الأساسية',price:'149',color:'#029FA2',branches:1,staff:2,suppliers:3},
+              {name:'الأساسية',price:'99',color:'#029FA2',branches:1,staff:3,suppliers:3},
               {name:'المتوسطة',price:'249',color:'#2563eb',branches:3,staff:10,suppliers:10},
               {name:'المتقدمة',price:'399',color:'#7c3aed',branches:10,staff:999,suppliers:999},
             ].map((p,i)=>(

@@ -8,7 +8,7 @@ const sb = () => createClient(
 )
 
 function priceFor(maxBranches: number) {
-  return maxBranches === 1 ? 149 : maxBranches <= 3 ? 249 : 399
+  return maxBranches === 1 ? 99 : maxBranches <= 3 ? 249 : 399
 }
 
 export async function GET(req: Request) {

@@ -209,7 +209,7 @@ export default function LandingPage() {
         </div>
 
         <div className="stats-row" style={{display:'flex',gap:40,justifyContent:'center',marginTop:48}}>
-          {[['149 '+(lang==='ar'?'ر.س':'SAR'),t('statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('statFree')],['7',t('statLangs')],['24/7',t('statAlerts')]].map(([n,l])=>(
+          {[['99 '+(lang==='ar'?'ر.س':'SAR'),t('statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('statFree')],['7',t('statLangs')],['24/7',t('statAlerts')]].map(([n,l])=>(
             <div key={l}>
               <div style={{fontSize:24,fontWeight:900,color:'#111827'}}>{n}</div>
               <div style={{fontSize:12,color:'#9ca3af',marginTop:3}}>{l}</div>

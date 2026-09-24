@@ -3,7 +3,7 @@ export type PlanKey = 'basic' | 'pro' | 'advanced'
 export type BillingCycle = 'monthly' | 'yearly'
 
 export const PLAN_PRICING: Record<PlanKey, { label: string; monthly: number; yearly: number }> = {
-  basic:    { label: 'الأساسية', monthly: 99,  yearly: 990 },
+  basic:    { label: 'الأساسية', monthly: 99,  yearly: 950 },
   pro:      { label: 'المتوسطة', monthly: 249, yearly: 2390 },
   advanced: { label: 'المتقدمة', monthly: 399, yearly: 3830 },
 }

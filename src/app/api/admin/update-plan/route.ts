@@ -37,8 +37,8 @@ export async function POST(req: Request) {
   await logAdminAction(admin, 'update_plan', orgId, orgName || null, { new_plan: planName, maxBranches })
 
   if (maxBranches !== oldBranches) {
-    const newAmount = maxBranches===1?149:maxBranches<=3?249:399
-    const oldAmount = oldBranches===1?149:oldBranches<=3?249:399
+    const newAmount = maxBranches===1?99:maxBranches<=3?249:399
+    const oldAmount = oldBranches===1?99:oldBranches<=3?249:399
     try {
       await (supabase as any).from('subscription_events').insert({
         org_id: orgId,
