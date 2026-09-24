@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { netFromTotal } from '@/lib/vat'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
       const { error: purchaseErr } = await db.from('purchases').insert({
         org_id, profile_id: access.userId, branch_id: bid || null,
         category: 'مخزون', name, qty, unit, reorder_point: 5,
-        amount: hasVat ? parseFloat((itemTotal / 1.15).toFixed(2)) : parseFloat(itemTotal.toFixed(2)), has_vat: hasVat,
+        amount: netFromTotal(itemTotal, hasVat), has_vat: hasVat,
         supplier: supplier || null, note: note || null, invoice_image: invoice_image || null,
         created_at: invoiceTs, payment_status: 'paid',
       } as any)

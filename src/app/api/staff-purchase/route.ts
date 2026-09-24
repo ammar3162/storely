@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { netFromTotal } from '@/lib/vat'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
     const hasVat = body.has_vat !== false
     const total = Number(body.total_amount)
     const amount = Number.isFinite(total) && total > 0
-      ? (hasVat ? parseFloat((total / 1.15).toFixed(2)) : parseFloat(total.toFixed(2)))
+      ? netFromTotal(total, hasVat)
       : Number(body.amount)
     if (!(amount > 0)) return NextResponse.json({ error: 'أدخل المبلغ' }, { status: 400 })
 
