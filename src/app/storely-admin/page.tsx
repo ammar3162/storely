@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { confirmDialog } from '@/components/ConfirmDialog'
+import { billLines, planKeyOf } from '@/lib/planPricing'
 
 // حماية أمنية: يمنع عرض روابط خبيثة (javascript:, data:, إلخ) كرابط قابل للنقر
 function isSafeUrl(url?: string | null): boolean {
@@ -443,17 +444,8 @@ export default function AdminPage() {
 
   function currentInvoiceItems() {
     if (!selected) return []
-    const plan = PLANS.find(p => p.v === selected.max_branches)
-    const isYearly = selected.billing_cycle === 'yearly'
-    const items: {label:string; amount:number}[] = []
-    if (plan) {
-      const priceStr = isYearly ? plan.yearlyPrice : plan.price
-      items.push({ label: `اشتراك باقة "${plan.label}" (${isYearly?'سنوياً':'شهرياً'})`, amount: Number(priceStr.replace(/[^0-9]/g, '')) })
-    }
-    for (const a of addonsList) {
-      if (a.subscription?.isValid) items.push({ label: `إضافة "${a.name}"`, amount: Number(a.monthly_price) })
-    }
-    return items
+    const cycle = selected.billing_cycle === 'yearly' ? 'yearly' : 'monthly'
+    return billLines(planKeyOf(selected.plan, selected.max_branches), cycle, addonsList).lines
   }
 
   async function sendInvoice() {

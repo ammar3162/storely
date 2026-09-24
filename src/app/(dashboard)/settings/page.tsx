@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
 import { getMe } from '@/lib/session'
+import { PLAN_PRICING, planKeyOf, billLines } from '@/lib/planPricing'
 import { colors, radius, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 
 const lbl: React.CSSProperties = { fontSize: font.xs, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }
@@ -120,6 +121,8 @@ export default function SettingsPage() {
   const [savingPersonal, setSavingPersonal] = useState(false)
   const [personalSaveOk, setPersonalSaveOk] = useState(false)
   const [subEndsAt, setSubEndsAt]       = useState<string|null>(null)
+  const [planKey, setPlanKey]           = useState<string>('')
+  const [billAddons, setBillAddons]     = useState<any[]>([])
   const [form, setForm] = useState({
     name:'', whatsapp_number:'',
     notify_schedule:'daily',
@@ -198,15 +201,17 @@ export default function SettingsPage() {
       setForm({ name:org.name||'', whatsapp_number:parsed.number||'', notify_schedule:org.notify_schedule||'daily', notify_time:org.notify_time||'08:00', notify_days:org.notify_days||['0'], notify_cashier_closing_wa:org.notify_cashier_closing_wa!==false, notify_supplier_wa:org.notify_supplier_wa!==false })
       setLastSent(org.last_notified_at||null)
       setLastBackup(org.last_backup_at||null)
-      setMaxBranches(org.max_branches||1)
+      setMaxBranches(me.org?.max_branches||org.max_branches||1)
       setUserEmail(user.email||'');setUserId(user.id)
       setLogoUrl(org.logo_url||null)
       const planMap: Record<string,string> = {'basic':'الأساسية','pro':'المتوسطة','advanced':'المتقدمة'}
       setPlanName(planMap[org.plan||'']||org.plan||'')
+      setPlanKey(org.plan||'')
       setBillingCycle(org.billing_cycle==='yearly'?'yearly':'monthly')
       setSubEndsAt(org.subscription_ends_at||null)
       setBranches(bList||[])
       loadInactiveBranches(me.org_id)
+      api.get('/api/addons-market',{org_id:me.org_id}).then(j=>{ if(j.success) setBillAddons(j.addons||[]) })
     }
     setLoading(false)
     setTimeout(()=>setVisible(true),50)
@@ -314,13 +319,10 @@ export default function SettingsPage() {
     }
   }
 
-  const planPrices: Record<string, {monthly:string; yearly:string}> = {
-    'الأساسية': { monthly:'149 ر.س/شهر', yearly:'1430 ر.س/سنة' },
-    'المتوسطة': { monthly:'249 ر.س/شهر', yearly:'2390 ر.س/سنة' },
-    'المتقدمة': { monthly:'399 ر.س/شهر', yearly:'3830 ر.س/سنة' },
-  }
-  const resolvedPlanName = planName || (maxBranches===1?'الأساسية':maxBranches<=3?'المتوسطة':'المتقدمة')
-  const planLabel = `الباقة ${resolvedPlanName} — ${planPrices[resolvedPlanName]?.[billingCycle] || planPrices['الأساسية'][billingCycle]}`
+  const pk = planKeyOf(planKey, maxBranches)
+  const planPrice = PLAN_PRICING[pk]
+  const planLabel = `الباقة ${planPrice.label} — ${billingCycle==='yearly' ? `${planPrice.yearly} ر.س/سنة` : `${planPrice.monthly} ر.س/شهر`}`
+  const bill = billLines(pk, billingCycle, billAddons)
 
   if(loading) return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:640,margin:'0 auto'}}>
@@ -414,6 +416,19 @@ export default function SettingsPage() {
                   <span style={{fontSize:font.sm,fontWeight:800,color:colors.primary}}>{planLabel}</span>
                   <span style={{fontSize:16}}>💎</span>
                 </div>
+                {bill.lines.length>1&&(
+                  <div style={{border:`1px solid ${colors.border}`,borderRadius:radius.md,padding:'12px 14px',marginBottom:12}}>
+                    <div style={{fontSize:font.xs,fontWeight:800,color:colors.text2,marginBottom:8}}>تفاصيل الفاتورة</div>
+                    {bill.lines.map((l,i)=>(
+                      <div key={i} style={{display:'flex',justifyContent:'space-between',gap:12,fontSize:font.xs,color:colors.text3,padding:'4px 0'}}>
+                        <span>{l.label}</span><span style={{fontWeight:700,color:colors.text,whiteSpace:'nowrap'}}>{l.amount} ر.س</span>
+                      </div>
+                    ))}
+                    <div style={{display:'flex',justifyContent:'space-between',borderTop:`1px solid ${colors.border}`,marginTop:6,paddingTop:8,fontSize:font.sm,fontWeight:800,color:colors.primary}}>
+                      <span>الإجمالي</span><span>{bill.total} ر.س</span>
+                    </div>
+                  </div>
+                )}
                 {subEndsAt&&(
                   <div style={{fontSize:font.xs,color:colors.text3}}>ينتهي الاشتراك بتاريخ: <b style={{color:colors.text}}>{new Date(subEndsAt).toLocaleDateString('ar-SA', {numberingSystem:'latn',year:'numeric',month:'long',day:'numeric'})}</b></div>
                 )}

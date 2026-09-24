@@ -6,6 +6,7 @@ import { getMe } from '@/lib/session'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { colors, font, card, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
+import { billLines, planKeyOf } from '@/lib/planPricing'
 
 export default function AddonsMarketPage() {
   const [addons, setAddons] = useState<any[]>([])
@@ -14,6 +15,7 @@ export default function AddonsMarketPage() {
   const [orgName, setOrgName] = useState('')
   const [orgId, setOrgId] = useState('')
   const [cancelling, setCancelling] = useState<string|null>(null)
+  const [plan, setPlan] = useState<{ key: string; cycle: 'monthly'|'yearly'; maxBranches: number } | null>(null)
 
   useEffect(() => { init() }, [])
 
@@ -27,6 +29,7 @@ export default function AddonsMarketPage() {
     if (!me) return
     setOrgId(me.org_id)
     setOrgName(me.org?.name || '')
+    setPlan({ key: me.org?.plan || '', cycle: me.org?.billing_cycle || 'monthly', maxBranches: me.org?.max_branches || 1 })
     if (!cachedOid) await load(me.org_id)
     setLoading(false)
   }
@@ -77,6 +80,23 @@ export default function AddonsMarketPage() {
         <h1 style={pageTitle}>الإضافات</h1>
         <p style={pageSub}>ميزات إضافية تساعدك تطوّر منشأتك — اشترك بأي وقت</p>
       </div>
+
+      {plan && (() => {
+        const bill = billLines(planKeyOf(plan.key, plan.maxBranches), plan.cycle, addons)
+        return (
+          <div style={{ ...card, padding: 18, marginBottom: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10 }}>فاتورتك الحالية</div>
+            {bill.lines.map((l, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, color: colors.text3, padding: '4px 0' }}>
+                <span>{l.label}</span><span style={{ fontWeight: 700, color: colors.text, whiteSpace: 'nowrap' }}>{l.amount} ر.س</span>
+              </div>
+            ))}
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${colors.border}`, marginTop: 8, paddingTop: 10, fontSize: 14, fontWeight: 900, color: colors.primary }}>
+              <span>الإجمالي</span><span>{bill.total} ر.س</span>
+            </div>
+          </div>
+        )
+      })()}
 
       {addons.length === 0 ? (
         <div style={{ ...card, padding: 40, textAlign: 'center' as const, color: colors.text4 }}>ما فيه إضافات متاحة حالياً</div>
