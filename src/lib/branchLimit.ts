@@ -31,7 +31,8 @@ export async function getBranchLimit(db: SupabaseClient, org_id: string): Promis
 /**
  * يطابق الفروع النشطة مع الحد (بعد تغيير الباقة، أو تفعيل/إلغاء/انتهاء إضافة "فرع إضافي"):
  * - أكثر من الحد: نوقف الأحدث مع موظفينه ونعلّمهم plan_locked_at (البيانات تبقى)
- * - أقل من الحد: نرجّع الفروع الموقوفة بسبب الحد (الأقدم أولاً) مع موظفينها
+ * - أقل من الحد: لو كل الفروع الموقوفة بسبب الحد تتسع نرجّعها كلها مع موظفينها.
+ *   لو ما تتسع كلها (مثلاً اشترى فرع واحد وعنده 5 موقوفة) نخليها — المالك يختار أي فرع يفعّل من صفحة الفروع
  * الفروع اللي أوقفها المالك بنفسه ما نلمسها.
  */
 export async function syncBranchesToLimit(db: SupabaseClient, org_id: string): Promise<{ locked: number; restored: number }> {
@@ -52,9 +53,9 @@ export async function syncBranchesToLimit(db: SupabaseClient, org_id: string): P
   if (room <= 0) return { locked: 0, restored: 0 }
   const { data: locked } = await db.from('branches').select('id')
     .eq('org_id', org_id).eq('is_active', false).not('plan_locked_at', 'is', null)
-    .order('created_at', { ascending: true }).limit(room)
   const back = (locked || []).map((b: any) => b.id)
-  if (back.length) await restoreLockedBranches(db, org_id, back)
+  if (!back.length || back.length > room) return { locked: 0, restored: 0 }
+  await restoreLockedBranches(db, org_id, back)
   return { locked: 0, restored: back.length }
 }
 

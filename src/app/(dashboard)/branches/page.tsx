@@ -323,7 +323,12 @@ export default function BranchesPage() {
 
       {inactiveBranches.length>0&&(
         <div style={{...card,overflow:'hidden',marginBottom:16,opacity:.8}}>
-          <div style={{padding:'10px 16px',borderBottom:`1px solid ${colors.border}`,fontSize:font.xs,fontWeight:700,color:colors.text4}}>فروع موقوفة ({inactiveBranches.length})</div>
+          <div style={{padding:'10px 16px',borderBottom:`1px solid ${colors.border}`,fontSize:font.xs,fontWeight:700,color:colors.text4}}>
+            فروع موقوفة ({inactiveBranches.length})
+            {branches.length<maxBranches
+              ? <span style={{fontWeight:600,color:colors.primary}}> — عندك مكان لـ{maxBranches-branches.length} فرع، اختر اللي تبي تفعّله</span>
+              : <span style={{fontWeight:600}}> — لتفعيل فرع: أوقف فرعاً شغّالاً بداله، أو <a href="/addons-market" style={{color:colors.primary,fontWeight:700}}>أضف فرعاً</a></span>}
+          </div>
           {inactiveBranches.map((b:any,i:number)=>(
             <div key={b.id} style={{padding:'14px 16px',borderBottom:i<inactiveBranches.length-1?`1px solid ${colors.border}`:'none',display:'flex',alignItems:'center',gap:12}}>
               <div style={{width:36,height:36,borderRadius:10,background:colors.bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0,border:`1px solid ${colors.border}`}}>⏸</div>
