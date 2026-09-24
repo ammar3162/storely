@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
+import { addonPeriodEnd, proratedCharge } from '@/lib/planPricing'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,12 +14,14 @@ export async function POST(req: Request) {
   const admin = await requirePermission(adminKey, 'manage_users')
   if (!admin) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
-  const { org_id, addon_id, duration_days, org_name, addon_name, quantity } = await req.json()
+  const { org_id, addon_id, org_name, addon_name, quantity } = await req.json()
   if (!org_id || !addon_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
   const supabase = sb()
-  const days = Number(duration_days) || 30
-  const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
+  // الإضافة تنتهي مع الباقة (نفس تاريخ التجديد) — الدفع الحين بالتناسب عن الأيام الباقية
+  const { data: owner } = await supabase.from('profiles').select('subscription_ends_at').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
+  const periodEnd = addonPeriodEnd((owner as any)?.subscription_ends_at)
+  const expiresAt = periodEnd.toISOString()
   const qty = Math.max(1, Math.min(20, Number(quantity) || 1)) // موظف/مورد إضافي: حد أقصى 20 بالطلب الواحد
 
   const { data: existingRow } = await supabase.from('org_addon_subscriptions').select('id,quantity,status').eq('org_id', org_id).eq('addon_id', addon_id).maybeSingle()
@@ -34,7 +37,7 @@ export async function POST(req: Request) {
   if (error) return NextResponse.json({ error: 'فشل التفعيل' }, { status: 500 })
 
   // نطبّق الفرق بس على حدود المنشأة -- لو كان أصلاً نشط وتم تفعيله من جديد (تحديث كمية)، ما نضيف الكمية كاملة فوق القديمة
-  const { data: addonRow } = await supabase.from('marketplace_addons').select('slug').eq('id', addon_id).single()
+  const { data: addonRow } = await supabase.from('marketplace_addons').select('slug,monthly_price').eq('id', addon_id).single()
   const slug = (addonRow as any)?.slug
   if (slug === 'extra_branch') {
     // الحد ينحسب من الكمية وقت الطلب (lib/branchLimit) — ما نعدّل max_branches.
@@ -48,9 +51,13 @@ export async function POST(req: Request) {
     await supabase.from('organizations').update({ max_suppliers: Math.max(0, ((org as any)?.max_suppliers || 0) + qtyDelta) } as any).eq('id', org_id)
   }
 
-  await logAdminAction(admin, 'activate_addon', org_id, org_name || null, { addon_id, addon_name, expires_at: expiresAt })
+  // المستحق الحين: الوحدات الجديدة فقط × الأيام الباقية لين التجديد (تجديد بنفس الكمية = صفر)
+  const chargedQty = wasActive ? Math.max(0, qtyDelta) : qty
+  const prorated = proratedCharge(Number((addonRow as any)?.monthly_price) || 0, chargedQty, periodEnd)
 
-  return NextResponse.json({ success: true, expiresAt })
+  await logAdminAction(admin, 'activate_addon', org_id, org_name || null, { addon_id, addon_name, expires_at: expiresAt, quantity: qty, prorated_amount: prorated.amount })
+
+  return NextResponse.json({ success: true, expiresAt, proratedAmount: prorated.amount, proratedDays: prorated.days })
 }
 
 export async function DELETE(req: Request) {

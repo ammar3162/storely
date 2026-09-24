@@ -6,7 +6,7 @@ import { getMe } from '@/lib/session'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { colors, font, card, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
-import { billLines, planKeyOf } from '@/lib/planPricing'
+import { billLines, planKeyOf, addonPeriodEnd, proratedCharge } from '@/lib/planPricing'
 
 export default function AddonsMarketPage() {
   const [addons, setAddons] = useState<any[]>([])
@@ -16,6 +16,7 @@ export default function AddonsMarketPage() {
   const [orgId, setOrgId] = useState('')
   const [cancelling, setCancelling] = useState<string|null>(null)
   const [plan, setPlan] = useState<{ key: string; cycle: 'monthly'|'yearly'; maxBranches: number } | null>(null)
+  const [subEndsAt, setSubEndsAt] = useState<string | null>(null)
 
   useEffect(() => { init() }, [])
 
@@ -30,6 +31,7 @@ export default function AddonsMarketPage() {
     setOrgId(me.org_id)
     setOrgName(me.org?.name || '')
     setPlan({ key: me.org?.plan || '', cycle: me.org?.billing_cycle || 'monthly', maxBranches: me.org?.max_branches || 1 })
+    setSubEndsAt(me.subscription_ends_at || null)
     if (!cachedOid) await load(me.org_id)
     setLoading(false)
   }
@@ -46,6 +48,22 @@ export default function AddonsMarketPage() {
     }
   }
 
+  // الإضافة تنتهي مع الباقة: المستحق الحين بالتناسب عن الأيام الباقية لين التجديد
+  function dueNow(addon: any, qty: number) {
+    const end = addonPeriodEnd(subEndsAt)
+    const pr = proratedCharge(Number(addon.monthly_price) || 0, qty, end)
+    return { ...pr, endStr: end.toLocaleDateString('ar-SA', { numberingSystem: 'latn', month: 'long', day: 'numeric' }) }
+  }
+
+  function DueNote({ addon, qty }: { addon: any; qty: number }) {
+    const d = dueNow(addon, qty)
+    return (
+      <div style={{ fontSize: 11, color: colors.text3, lineHeight: 1.7, marginBottom: 12 }}>
+        تدفع الحين <b style={{ color: colors.text }}>{d.amount} ر.س</b> عن {d.days} يوم لين تجديد باقتك ({d.endStr})، وبعدها تتجدد مع الباقة.
+      </div>
+    )
+  }
+
   function subscribeLink(addon: any, qty: number = 1, branchId?: string) {
     const isStaffAddon = addon.slug === 'extra_staff'
     const isQtyAddon = addon.slug === 'extra_staff' || addon.slug === 'extra_suppliers' || addon.slug === 'extra_branch'
@@ -55,7 +73,8 @@ export default function AddonsMarketPage() {
       : isQtyAddon
       ? `مرحباً، أبي أشترك بميزة "${addon.name}" — الكمية: ${qty} (${qty * addon.monthly_price} ر.س/شهر) لمنشأة: ${orgName}`
       : `مرحباً، أبي أشترك بميزة "${addon.name}" (${addon.monthly_price} ر.س/شهر) لمنشأة: ${orgName}`
-    return `https://wa.me/966594351667?text=${encodeURIComponent(text)}`
+    const d = dueNow(addon, qty)
+    return `https://wa.me/966594351667?text=${encodeURIComponent(`${text}\nالمستحق الحين: ${d.amount} ر.س (${d.days} يوم لين تجديد الباقة)`)}`
   }
 
   async function cancelAddon(addon: any, branchId?: string) {
@@ -138,6 +157,7 @@ export default function AddonsMarketPage() {
 
                   {branches.length > 0 ? (
                     <>
+                      <DueNote addon={a} qty={qty} />
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                         <select value={selectedBranch} onChange={e => setStaffBranchMap(prev => ({ ...prev, extra_staff_default: e.target.value }))}
                           style={{ flex: 1, padding: '6px 8px', borderRadius: 8, border: `1px solid ${colors.border2}`, fontSize: 12, fontFamily: 'inherit', background: 'white' }}>
@@ -203,6 +223,7 @@ export default function AddonsMarketPage() {
                           style={{ width: 56, padding: '6px 4px', borderRadius: 8, border: `1px solid ${colors.border2}`, fontSize: 12, textAlign: 'center' as const, fontFamily: 'inherit' }} />
                       </div>
                     )}
+                    <DueNote addon={a} qty={qtyMap[a.id] || 1} />
                     <a href={subscribeLink(a, qtyMap[a.id] || 1)} target="_blank" rel="noopener noreferrer"
                       style={{ display: 'block', textAlign: 'center' as const, padding: '11px', background: colors.primary, color: 'white', borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
                       اشتراك عبر واتساب

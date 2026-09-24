@@ -30,13 +30,32 @@ export function billLines(plan: PlanKey, cycle: BillingCycle, addons: AddonRow[]
   for (const a of addons) {
     const active = (a.subscriptions || (a.subscription ? [a.subscription] : [])).filter(s => s?.isValid)
     if (!active.length) continue
+    // الإضافات تتجدد مع الباقة: بالباقة السنوية = سعرها الشهري × 12
+    const months = cycle === 'yearly' ? 12 : 1
+    const per = cycle === 'yearly' ? 'سنوياً' : 'شهرياً'
     const price = Number(a.monthly_price) || 0
     if (QTY_ADDON_SLUGS.includes(a.slug)) {
       const qty = active.reduce((s, x) => s + Math.max(1, Number(x.quantity) || 1), 0)
-      lines.push({ label: `إضافة "${a.name}" (${qty} × ${price} ر.س/شهر)`, amount: qty * price })
+      lines.push({ label: `إضافة "${a.name}" (${qty} × ${price} ر.س${months > 1 ? ' × 12 شهر' : ''})`, amount: qty * price * months })
     } else {
-      lines.push({ label: `إضافة "${a.name}" (شهرياً)`, amount: price })
+      lines.push({ label: `إضافة "${a.name}" (${per})`, amount: price * months })
     }
   }
   return { lines, total: lines.reduce((s, l) => s + l.amount, 0) }
+}
+
+const DAY = 24 * 60 * 60 * 1000
+
+/**
+ * الإضافة تنتهي مع الباقة: لو الاشتراك ساري (باقي أكثر من يوم) تاريخ انتهائه، وإلا 30 يوم من الحين
+ */
+export function addonPeriodEnd(subscriptionEndsAt: string | null | undefined, now = new Date()): Date {
+  const ends = subscriptionEndsAt ? new Date(subscriptionEndsAt) : null
+  return ends && ends.getTime() - now.getTime() > DAY ? ends : new Date(now.getTime() + 30 * DAY)
+}
+
+/** المبلغ المستحق الحين عن الأيام الباقية لين تجديد الباقة (سعر اليوم = الشهري ÷ 30) */
+export function proratedCharge(monthlyPrice: number, qty: number, until: Date, now = new Date()): { days: number; amount: number } {
+  const days = Math.max(1, Math.ceil((until.getTime() - now.getTime()) / DAY))
+  return { days, amount: Math.round((Number(monthlyPrice) || 0) * Math.max(0, qty) * days / 30) }
 }

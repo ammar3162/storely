@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
+import { syncBranchesToLimit } from '@/lib/branchLimit'
 
 export async function POST(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
@@ -28,6 +29,16 @@ export async function POST(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // تجديد الباقة يجدد كل الإضافات المفعّلة لنفس التاريخ — تاريخ تجديد وفاتورة وحدة
+  let addonsRenewed = 0
+  if (orgIdForUpdate && ends) {
+    const { data: renewed } = await supabase.from('org_addon_subscriptions')
+      .update({ expires_at: ends } as any)
+      .eq('org_id', orgIdForUpdate).eq('status', 'active').select('id')
+    addonsRenewed = renewed?.length || 0
+    await syncBranchesToLimit(supabase, orgIdForUpdate)
+  }
+
   await logAdminAction(admin, 'activate_user', (profile as any)?.org_id, (profile as any)?.organizations?.name, { userId, type, ends })
 
   // سجل حدث اشتراك — يُستخدم لاحقاً لحساب MRR وChurn بدقة عبر الزمن
@@ -46,5 +57,5 @@ export async function POST(req: Request) {
     }
   } catch {}
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true, addonsRenewed })
 }

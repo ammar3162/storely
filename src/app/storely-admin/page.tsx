@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { confirmDialog } from '@/components/ConfirmDialog'
-import { billLines, planKeyOf } from '@/lib/planPricing'
+import { billLines, planKeyOf, addonPeriodEnd, proratedCharge } from '@/lib/planPricing'
 
 // حماية أمنية: يمنع عرض روابط خبيثة (javascript:, data:, إلخ) كرابط قابل للنقر
 function isSafeUrl(url?: string | null): boolean {
@@ -485,18 +485,41 @@ export default function AdminPage() {
 
   async function toggleAddon(addon: any, activate: boolean, quantity?: number) {
     if (!selected?.org_id) return
+    const qty = quantity || addonQty[addon.id] || 1
+    if (activate) {
+      // الإضافة تنتهي مع الباقة — نعرض المستحق الحين بالتناسب قبل التفعيل
+      const wasActive = !!addon.subscription?.isValid
+      const chargedQty = wasActive ? Math.max(0, qty - (addon.subscription?.quantity || 1)) : qty
+      const end = addonPeriodEnd(selected.subscription_ends_at)
+      const pr = proratedCharge(Number(addon.monthly_price) || 0, chargedQty, end)
+      const endStr = end.toLocaleDateString('ar-SA', { numberingSystem: 'latn', year: 'numeric', month: 'long', day: 'numeric' })
+      const qtyStr = qty > 1 || wasActive ? ` × ${qty}` : ''
+      if (!(await confirmDialog({ title: `تفعيل "${addon.name}"${qtyStr}`, message:
+        `تنتهي مع الباقة بتاريخ ${endStr}.\n\nالمستحق الحين: ${pr.amount} ر.س (${pr.days} يوم${chargedQty !== qty ? ` — ${chargedQty} وحدة جديدة` : ''})\nومن التجديد: ${qty * (Number(addon.monthly_price) || 0)} ر.س شهرياً مع الباقة` }))) return
+    }
     setTogglingAddon(addon.id)
     const adminPass = sessionStorage.getItem('storely_admin_pass') || ''
-    const qty = quantity || addonQty[addon.id] || 1
     const res = await fetch('/api/admin/addon-subscriptions', {
       method: activate ? 'POST' : 'DELETE',
       headers: { 'Content-Type': 'application/json', 'x-admin-key': adminPass },
-      body: JSON.stringify({ org_id: selected.org_id, addon_id: addon.id, org_name: selected.org_name, addon_name: addon.name, duration_days: 30, quantity: qty }),
+      body: JSON.stringify({ org_id: selected.org_id, addon_id: addon.id, org_name: selected.org_name, addon_name: addon.name, quantity: qty }),
     })
     const j = await res.json()
     setTogglingAddon(null)
     if (!j.success) { alert('خطأ: ' + (j.error || 'unknown')); return }
     await loadAddons(selected.org_id)
+    // فاتورة بالمبلغ المستحق الحين (بالتناسب) — اختيارية
+    if (activate && j.proratedAmount > 0 && selected.phone && selected.phone !== '—') {
+      const label = `إضافة "${addon.name}"${qty > 1 ? ` × ${qty}` : ''} — ${j.proratedDays} يوم لين تجديد الباقة`
+      if (await confirmDialog({ title: 'إرسال فاتورة؟', message: `${label}: ${j.proratedAmount} ر.س\n\nترسل لـ"${selected.org_name}" عبر واتساب (${selected.phone})؟` })) {
+        const r = await fetch('/api/admin/send-invoice', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': adminPass },
+          body: JSON.stringify({ orgId: selected.org_id, orgName: selected.org_name, phone: selected.phone, items: [{ label, amount: j.proratedAmount }] }),
+        })
+        const d = await r.json()
+        alert(d.success ? `✅ تم إرسال الفاتورة #${d.invoiceNumber}` : 'خطأ: ' + (d.error || 'unknown'))
+      }
+    }
   }
 
   async function doDelete(u: User) {
@@ -801,6 +824,7 @@ export default function AdminPage() {
                                     ? `مفعّلة لـ${a.subscription?.quantity || 1} — حتى ${new Date(a.subscription.expires_at).toLocaleDateString('ar-SA',{numberingSystem:'latn'})}`
                                     : `مفعّلة حتى ${new Date(a.subscription.expires_at).toLocaleDateString('ar-SA',{numberingSystem:'latn'})}`)
                                 : (isQtyAddon ? `${a.monthly_price} ر.س/وحدة/شهر — غير مفعّلة` : `${a.monthly_price} ر.س/شهر — غير مفعّلة`)}
+                              {!active && ` · الحين ${proratedCharge(Number(a.monthly_price)||0, qty, addonPeriodEnd(selected.subscription_ends_at)).amount} ر.س`}
                             </div>
                           </div>
                           {isQtyAddon && (!active || a.slug === 'extra_branch') && (
@@ -818,7 +842,7 @@ export default function AdminPage() {
                           <button onClick={()=>toggleAddon(a, !active)} disabled={togglingAddon===a.id}
                             style={{padding:'6px 14px',borderRadius:8,border:'none',cursor:'pointer',fontSize:11,fontWeight:700,fontFamily:'inherit',
                               background:active?'#fef2f2':'#7c3aed',color:active?'#dc2626':'white'}}>
-                            {togglingAddon===a.id?'...':active?'إلغاء':(isQtyAddon?`تفعيل (${qty * a.monthly_price} ر.س)`:'تفعيل 30 يوم')}
+                            {togglingAddon===a.id?'...':active?'إلغاء':'تفعيل'}
                           </button>
                         </div>
                       )
