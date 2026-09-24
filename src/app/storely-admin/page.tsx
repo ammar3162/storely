@@ -406,7 +406,7 @@ export default function AdminPage() {
     // planKey هو مصدر الحقيقة الآن (مو عدد الفروع) — لأن أكثر من باقة تشترك بنفس عدد الفروع
     // (الأساسية والأساسية بريميم الاثنين فرع واحد)
     const plan = PLANS.find(p=>p.planKey===planKey)!
-    if (!(await confirmDialog({ title: 'تغيير الباقة', message: `تأكيد الترقية/التغيير لباقة "${plan.label}" (${plan.price})؟` }))) return
+    if (!(await confirmDialog({ title: 'تغيير الباقة', message: `تأكيد الترقية/التغيير لباقة "${plan.label}" (${plan.price})؟\n\nلو عدد فروعه أكثر من حد الباقة الجديدة (${plan.v} + الفروع المشتراة)، الفروع الأحدث تتوقف مؤقتاً مع موظفينها — بياناتها تبقى وترجع تلقائياً لو رقّى.` }))) return
     setSaving(orgId)
     const target = users.find(u=>u.org_id===orgId)
     const currentBilling = target?.billing_cycle || 'monthly'
@@ -417,6 +417,8 @@ export default function AdminPage() {
     })
     const data = await res.json()
     if (!data.success) { alert('خطأ: ' + (data.error||'unknown')); setSaving(null); return }
+    if (data.locked) alert(`تم — توقف ${data.locked} فرع زايد عن حد الباقة`)
+    else if (data.restored) alert(`تم — رجع ${data.restored} فرع كان موقوف`)
     setUsers(prev=>prev.map(u=>u.org_id===orgId?{...u,max_branches:plan.v,plan:plan.planKey}:u))
     setSelected(prev=>prev&&prev.org_id===orgId?{...prev,max_branches:plan.v,plan:plan.planKey}:prev)
     setSaving(null)

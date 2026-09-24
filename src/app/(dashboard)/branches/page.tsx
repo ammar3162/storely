@@ -330,6 +330,7 @@ export default function BranchesPage() {
               <div style={{flex:1}}>
                 <div style={{fontSize:font.sm,fontWeight:700,color:colors.text3}}>{b.name}</div>
                 {b.location&&<div style={{fontSize:font.xs,color:colors.text4,marginTop:1}}>📍 {b.location}</div>}
+                {b.plan_locked_at&&<div style={{fontSize:font.xs,color:colors.warning||'#b45309',marginTop:2}}>موقوف لأن الفروع تعدّت حد الباقة — يرجع لو رقّيت أو أضفت فرعاً</div>}
               </div>
               <button onClick={()=>reactivateBranch(b.id)} disabled={reactivatingId===b.id || branches.length>=maxBranches}
                 style={{background:colors.primaryLight,color:colors.primary,border:`1px solid ${colors.primaryBorder}`,borderRadius:radius.sm,padding:'6px 12px',fontSize:font.xs,fontWeight:700,cursor:(reactivatingId===b.id||branches.length>=maxBranches)?'not-allowed':'pointer',fontFamily:font.family,opacity:branches.length>=maxBranches?.5:1}}>

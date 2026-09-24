@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
-import { enforceBranchLimit } from '@/lib/branchLimit'
+import { syncBranchesToLimit } from '@/lib/branchLimit'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,8 +37,9 @@ export async function POST(req: Request) {
   const { data: addonRow } = await supabase.from('marketplace_addons').select('slug').eq('id', addon_id).single()
   const slug = (addonRow as any)?.slug
   if (slug === 'extra_branch') {
-    // الحد ينحسب من الكمية وقت الطلب (lib/branchLimit) — ما نعدّل max_branches. لو نقصت الكمية نوقف الزايد
-    if (qtyDelta < 0) await enforceBranchLimit(supabase, org_id)
+    // الحد ينحسب من الكمية وقت الطلب (lib/branchLimit) — ما نعدّل max_branches.
+    // نقصت الكمية: نوقف الزايد. زادت أو تجدّدت: نرجّع الفروع الموقوفة بسبب الحد
+    await syncBranchesToLimit(supabase, org_id)
   } else if (slug === 'extra_staff' && qtyDelta !== 0) {
     const { data: org } = await supabase.from('organizations').select('max_staff').eq('id', org_id).single()
     await supabase.from('organizations').update({ max_staff: Math.max(0, ((org as any)?.max_staff || 0) + qtyDelta) } as any).eq('id', org_id)
@@ -74,7 +75,7 @@ export async function DELETE(req: Request) {
   const { data: addonRow } = await supabase.from('marketplace_addons').select('slug').eq('id', addon_id).single()
   const slug = (addonRow as any)?.slug
   if (slug === 'extra_branch') {
-    await enforceBranchLimit(supabase, org_id)
+    await syncBranchesToLimit(supabase, org_id)
   } else if (slug === 'extra_staff') {
     const { data: org } = await supabase.from('organizations').select('max_staff').eq('id', org_id).single()
     await supabase.from('organizations').update({ max_staff: Math.max(0, ((org as any)?.max_staff || existingQty) - existingQty) } as any).eq('id', org_id)

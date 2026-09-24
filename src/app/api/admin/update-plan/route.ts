@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
+import { syncBranchesToLimit } from '@/lib/branchLimit'
 
 export async function POST(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
@@ -30,6 +31,9 @@ export async function POST(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // تخفيض: الفروع الزايدة تتوقف مؤقتاً (مع موظفينها). ترقية: ترجع تلقائياً
+  const branchSync = await syncBranchesToLimit(supabase, orgId)
+
   await logAdminAction(admin, 'update_plan', orgId, orgName || null, { new_plan: planName, maxBranches })
 
   if (maxBranches !== oldBranches) {
@@ -45,5 +49,5 @@ export async function POST(req: Request) {
     } catch {}
   }
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true, ...branchSync })
 }

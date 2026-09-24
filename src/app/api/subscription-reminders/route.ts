@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
 import { isCronRequest } from '@/lib/cronAuth'
-import { enforceBranchLimit, EXTRA_BRANCH_SLUG } from '@/lib/branchLimit'
+import { syncBranchesToLimit, EXTRA_BRANCH_SLUG } from '@/lib/branchLimit'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     .eq('status', 'active').lt('expires_at', now.toISOString())
     .eq('marketplace_addons.slug', EXTRA_BRANCH_SLUG)
   for (const org_id of new Set(((expiredBranchSubs || []) as any[]).map(r => r.org_id))) {
-    branchesLocked += await enforceBranchLimit(db, org_id)
+    branchesLocked += (await syncBranchesToLimit(db, org_id)).locked
   }
 
   const { data: profiles } = await db

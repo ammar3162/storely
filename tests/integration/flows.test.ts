@@ -182,7 +182,7 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
     })
 
     it('an extra-branch addon raises the limit by its quantity, and locks the extra branch when it expires', async () => {
-      const { enforceBranchLimit } = await import('@/lib/branchLimit')
+      const { syncBranchesToLimit } = await import('@/lib/branchLimit')
       const { data: addon } = await db.from('marketplace_addons').select('id').eq('slug', 'extra_branch').single()
       const { data: sub } = await db.from('org_addon_subscriptions').insert({
         org_id: orgId, addon_id: (addon as any).id, status: 'active', quantity: 1,
@@ -194,13 +194,20 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       expect((await call(branches.POST, 'POST', '/api/branches', { org_id: orgId, name: 'فرع ثالث' })).status).toBe(403)
 
       await db.from('org_addon_subscriptions').update({ expires_at: new Date(Date.now() - 1000).toISOString() } as any).eq('id', (sub as any).id)
-      expect(await enforceBranchLimit(db as any, orgId)).toBe(1)
+      expect((await syncBranchesToLimit(db as any, orgId)).locked).toBe(1)
       const { data: paid } = await db.from('branches').select('is_active').eq('id', added.json.branch.id).single()
       expect((paid as any).is_active).toBe(false)
       const { data: main } = await db.from('branches').select('is_active').eq('id', branchA).single()
       expect((main as any).is_active).toBe(true)
 
+      // تجديد الإضافة: الفرع الموقوف يرجع لحاله
+      await db.from('org_addon_subscriptions').update({ expires_at: new Date(Date.now() + 86_400_000).toISOString() } as any).eq('id', (sub as any).id)
+      expect((await syncBranchesToLimit(db as any, orgId)).restored).toBe(1)
+      const { data: back } = await db.from('branches').select('is_active,plan_locked_at').eq('id', added.json.branch.id).single()
+      expect(back).toMatchObject({ is_active: true, plan_locked_at: null })
+
       await db.from('org_addon_subscriptions').delete().eq('id', (sub as any).id)
+      await db.from('branches').update({ is_active: false } as any).eq('id', added.json.branch.id)
     })
 
     it('a branch manager only sees products of their own branch', async () => {

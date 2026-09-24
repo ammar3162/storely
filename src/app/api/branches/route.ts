@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
-import { getBranchLimit } from '@/lib/branchLimit'
+import { getBranchLimit, restoreLockedBranches } from '@/lib/branchLimit'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -51,7 +51,7 @@ export async function GET(req: Request) {
     if (!includeInactive || access.role !== 'owner') return NextResponse.json({ success: true, branches: data || [] })
 
     const [{ data: inactive }, max_branches] = await Promise.all([
-      db.from('branches').select(BRANCH_FIELDS).eq('org_id', org_id).eq('is_active', false).order('created_at'),
+      db.from('branches').select(BRANCH_FIELDS + ',plan_locked_at').eq('org_id', org_id).eq('is_active', false).order('created_at'),
       maxBranchesFor(db, org_id),
     ])
     return NextResponse.json({ success: true, branches: data || [], inactive: inactive || [], max_branches })
@@ -134,6 +134,8 @@ export async function PATCH(req: Request) {
     const { data, error } = await db.from('branches').update(update as any).eq('id', id).eq('org_id', org_id).select('id')
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
     if (!data?.length) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
+    // تفعيل فرع كان موقوف بسبب حد الباقة: يرجع موظفينه معه
+    if (update.is_active === true) await restoreLockedBranches(db, org_id, [id])
     return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })

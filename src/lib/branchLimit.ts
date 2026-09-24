@@ -29,16 +29,38 @@ export async function getBranchLimit(db: SupabaseClient, org_id: string): Promis
 }
 
 /**
- * لو الفروع النشطة أكثر من الحد (إلغاء أو انتهاء إضافة، أو نزول باقة): نوقف الأحدث.
- * الإيقاف مؤقت — البيانات تبقى، والمالك يقدر يوقف فرع ثاني ويفعّل هذا بدلاً منه من صفحة الفروع.
+ * يطابق الفروع النشطة مع الحد (بعد تغيير الباقة، أو تفعيل/إلغاء/انتهاء إضافة "فرع إضافي"):
+ * - أكثر من الحد: نوقف الأحدث مع موظفينه ونعلّمهم plan_locked_at (البيانات تبقى)
+ * - أقل من الحد: نرجّع الفروع الموقوفة بسبب الحد (الأقدم أولاً) مع موظفينها
+ * الفروع اللي أوقفها المالك بنفسه ما نلمسها.
  */
-export async function enforceBranchLimit(db: SupabaseClient, org_id: string): Promise<number> {
+export async function syncBranchesToLimit(db: SupabaseClient, org_id: string): Promise<{ locked: number; restored: number }> {
   const { total } = await getBranchLimit(db, org_id)
   const { data: active } = await db.from('branches').select('id')
     .eq('org_id', org_id).eq('is_active', true).order('created_at', { ascending: true })
-  const excess = (active || []).slice(total).map((b: any) => b.id)
-  if (!excess.length) return 0
-  await db.from('branches').update({ is_active: false } as any).in('id', excess).eq('org_id', org_id)
-  await db.from('staff_members').update({ is_active: false } as any).in('branch_id', excess).eq('is_active', true)
-  return excess.length
+  const activeIds = (active || []).map((b: any) => b.id)
+  const now = new Date().toISOString()
+
+  if (activeIds.length > total) {
+    const excess = activeIds.slice(total)
+    await db.from('branches').update({ is_active: false, plan_locked_at: now } as any).in('id', excess).eq('org_id', org_id)
+    await db.from('staff_members').update({ is_active: false, plan_locked_at: now } as any).in('branch_id', excess).eq('is_active', true)
+    return { locked: excess.length, restored: 0 }
+  }
+
+  const room = total - activeIds.length
+  if (room <= 0) return { locked: 0, restored: 0 }
+  const { data: locked } = await db.from('branches').select('id')
+    .eq('org_id', org_id).eq('is_active', false).not('plan_locked_at', 'is', null)
+    .order('created_at', { ascending: true }).limit(room)
+  const back = (locked || []).map((b: any) => b.id)
+  if (back.length) await restoreLockedBranches(db, org_id, back)
+  return { locked: 0, restored: back.length }
+}
+
+/** يرجّع فروع موقوفة بسبب الحد مع موظفينها اللي توقفوا معها */
+export async function restoreLockedBranches(db: SupabaseClient, org_id: string, ids: string[]) {
+  await db.from('branches').update({ is_active: true, plan_locked_at: null } as any).in('id', ids).eq('org_id', org_id)
+  await db.from('staff_members').update({ is_active: true, plan_locked_at: null } as any)
+    .in('branch_id', ids).eq('org_id', org_id).not('plan_locked_at', 'is', null)
 }

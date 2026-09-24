@@ -3,7 +3,7 @@ export const fetchCache = 'force-no-store'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
-import { enforceBranchLimit } from '@/lib/branchLimit'
+import { syncBranchesToLimit } from '@/lib/branchLimit'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,7 +37,7 @@ export async function DELETE(req: Request) {
     const { data: addonRow } = await supabase.from('marketplace_addons').select('slug').eq('id', addon_id).single()
     const slug = (addonRow as any)?.slug
     if (slug === 'extra_branch') {
-      await enforceBranchLimit(supabase, org_id)
+      await syncBranchesToLimit(supabase, org_id)
     } else if (slug === 'extra_staff') {
       if (branch_id) {
         const { data: br } = await supabase.from('branches').select('max_staff').eq('id', branch_id).single()
