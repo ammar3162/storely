@@ -1,8 +1,14 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "storely.dev",
-        "sha256_cert_fingerprints": ["19:75:79:66:39:62:29:9F:DF:88:1B:CF:BF:60:2F:6F:D0:F3:5E:14:07:F5:3C:7A:55:70:42:2C:8A:B4:B1:FB"]
-      }
-    }]
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "storely.dev",
+      "sha256_cert_fingerprints": [
+        "29:D7:C2:61:15:06:14:56:8E:6F:31:22:98:B9:29:4D:FC:D3:40:47:25:EA:10:A3:3F:AE:32:62:27:F1:E0:AD"
+      ]
+    }
+  }
+]
