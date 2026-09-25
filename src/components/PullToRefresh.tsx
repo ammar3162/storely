@@ -17,6 +17,9 @@ export default function PullToRefresh() {
       // نتجاهل اللمسات اللي تبدأ من فوق عناصر تفاعلية (أزرار، فئات، حقول) — يمنع تفعيل السحب بالخطأ عند الضغط عليها
       const target = e.target as HTMLElement
       if (target.closest('button, a, input, select, textarea, [role="button"]')) return
+      // داخل نافذة منبثقة (مثل قائمة "المزيد") أو قائمة منزّلة لتحت: السحب لفوق يمرّر المحتوى، مو تحديث الصفحة
+      if (target.closest('[data-no-pull]')) return
+      for (let el: HTMLElement | null = target; el; el = el.parentElement) if (el.scrollTop > 0) return
       startY.current = e.touches[0].clientY
       active = true
     }

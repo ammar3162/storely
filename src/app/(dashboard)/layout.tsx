@@ -605,7 +605,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       {showMore && (
         <div style={{position:'fixed',inset:0,zIndex:1000,display:'flex',alignItems:'flex-end',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
           <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.4)',backdropFilter:'blur(4px)'}} onClick={()=>setShowMore(false)}/>
-          <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',padding:'12px 20px 32px',position:'relative',animation:'slideUp .3s ease'}}>
+          <div data-no-pull style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',padding:'12px 20px calc(32px + env(safe-area-inset-bottom))',position:'relative',animation:'slideUp .3s ease',maxHeight:'90dvh',overflowY:'auto',overscrollBehavior:'contain',WebkitOverflowScrolling:'touch'}}>
             <style>{`@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}`}</style>
             <div style={{width:36,height:4,borderRadius:99,background:'#e5e7eb',margin:'0 auto 20px'}}/>
 
