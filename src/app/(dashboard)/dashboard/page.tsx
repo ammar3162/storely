@@ -7,7 +7,7 @@ import { getMe } from '@/lib/session'
 import { cache } from '@/lib/cache'
 import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
-import { Package, AlertTriangle, ShoppingCart, TrendingUp, Bell, X } from 'lucide-react'
+import { ShoppingCart, Plus, ArrowUpRight, X } from 'lucide-react'
 import { colors as dsColors } from '@/lib/ds'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
 
@@ -20,28 +20,18 @@ class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|nu
   }
 }
 
-function Num({ value }: { value:number }) {
-  const [d, setD] = useState(0)
-  useEffect(() => {
-    let s = 0; const step = value / 40
-    const t = setInterval(() => { s+=step; if(s>=value){setD(value);clearInterval(t)}else setD(Math.floor(s)) }, 16)
-    return () => clearInterval(t)
-  }, [value])
-  return <>{d.toLocaleString('en-US')}</>
-}
-
 function Bar({ data, color }: { data:{label:string;value:number}[]; color:string }) {
   const max = Math.max(...data.map(d=>d.value), 1)
   return (
-    <div style={{display:'flex',alignItems:'flex-end',gap:4,height:44}}>
+    <div style={{display:'flex',alignItems:'flex-end',gap:6,height:88}}>
       {data.map((d,i)=>{
         const last = i===data.length-1
         return (
           <div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
-            <div style={{width:'100%',height:34,display:'flex',alignItems:'flex-end',overflow:'hidden',borderRadius:'3px 3px 0 0'}}>
-              <div style={{width:'100%',borderRadius:'3px 3px 0 0',height:`${Math.max((d.value/max)*100,5)}%`,background:last?color:'#e5e7eb',transition:`height .5s ease ${i*.04}s`}}/>
+            <div style={{width:'100%',height:66,display:'flex',alignItems:'flex-end',overflow:'hidden'}}>
+              <div title={String(d.value)} style={{width:'100%',borderRadius:'3px 3px 0 0',height:`${Math.max((d.value/max)*100,4)}%`,background:last?color:'#d0d5dd'}}/>
             </div>
-            <div style={{fontSize:9,color:last?'#374151':'#9ca3af',fontWeight:last?600:400,letterSpacing:'.02em'}}>{d.label}</div>
+            <div style={{fontSize:11,color:last?'#344054':'#98a2b3',fontWeight:last?600:400}}>{d.label}</div>
           </div>
         )
       })}
@@ -173,253 +163,211 @@ export default function DashboardPage() {
   const hour=new Date().getHours()
   const greeting=hour<12?t('dashboard.goodMorning'):hour<17?t('dashboard.goodAfternoon'):t('dashboard.goodEvening')
 
+  const fmtMoney=(v:number)=>Number(v||0).toLocaleString('en-US',{maximumFractionDigits:0})+' '+curr
+  const dismiss=async(id:string)=>{
+    const oid=sessionStorage.getItem('s_org_id')
+    if(oid) await api.patch('/api/notifications',{org_id:oid,id})
+    setNotifs(prev=>prev.filter(x=>x.id!==id))
+  }
+  const toneColor:Record<string,string>={danger:dsColors.danger,warning:dsColors.warning,success:dsColors.primary,info:dsColors.info}
+  const attention = notifs.length>0 || smartSuggestions.length>0 || !!subAlert
+
   if(loading) return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:dir,maxWidth:'100%'}}>
-      <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.35}}.sk{animation:sk 1.4s ease infinite}`}</style>
-      <div className="sk" style={{height:52,borderRadius:12,background:'#f0f0ee',marginBottom:20}}/>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:8,marginBottom:16}}>
-        {[1,2,3,4].map(i=><div key={i} className="sk" style={{height:96,borderRadius:12,background:'#f0f0ee'}}/>)}
-      </div>
-      <div className="sk" style={{height:100,borderRadius:12,background:'#f0f0ee'}}/>
+    <div className="dh">
+      <style>{DASH_CSS}</style>
+      <div className="dh-sk" style={{height:44,width:260,marginBottom:20}}/>
+      <div className="dh-kpis">{[1,2,3,4].map(i=><div key={i} className="dh-sk" style={{height:92}}/>)}</div>
+      <div className="dh-sk" style={{height:220,marginTop:16}}/>
     </div>
   )
 
   return (
     <ErrorBoundary>
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:dir,maxWidth:'100%',opacity:visible?1:0,transition:'opacity .3s'}}>
-      <style>{`
-        *{box-sizing:border-box}
-        @keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-        .u{animation:up .35s ease both}
-        .r{border-radius:14px}
-        .s{background:#fff;border:1px solid #e5e5e3}
-        .tap{transition:transform .12s,opacity .12s;cursor:pointer}
-        .tap:active{transform:scale(.97);opacity:.85}
-        .rh:hover{background:#f9f9f8}
-        /* grid */
-        .g4{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-        .g2{display:grid;grid-template-columns:1fr;gap:10px}
-        .gq{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-        @media(min-width:600px){
-          .g4{grid-template-columns:repeat(4,1fr);gap:12px}
-          .g2{grid-template-columns:1.6fr 1fr;gap:12px}
-          .gq{grid-template-columns:repeat(4,1fr);gap:10px}
-        }
-      `}</style>
+    <div className="dh" dir={dir}>
+      <style>{DASH_CSS}</style>
 
-      {/* ── Header ── */}
-      <div className="u" style={{marginBottom:20,animationDelay:'.04s'}}>
-        <div style={{fontSize:22,fontWeight:700,color:'#1c1c1a',letterSpacing:'-0.4px',marginBottom:3}}>
-          {greeting}، {userName||t('dashboard.defaultGreeting')}
+      {/* العنوان + إجراءات سريعة */}
+      <div className="dh-head">
+        <div>
+          <h1 className="dh-title">{greeting}، {userName||t('dashboard.defaultGreeting')}</h1>
+          <div className="dh-sub">{orgName} · {new Date().toLocaleDateString(lang==='ar'?'ar-SA':'en-US',{numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'})}</div>
         </div>
-        <div style={{fontSize:12,color:'#888780'}}>
-          {orgName} · {new Date().toLocaleDateString(lang==='ar'?'ar-SA':'en-US', {numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'})}
+        <div className="dh-actions">
+          <button className="sh-btn" onClick={()=>router.push('/purchases')}><ShoppingCart size={16}/> تسجيل شراء</button>
+          <button className="sh-btn" onClick={()=>router.push('/inventory')}><Plus size={16}/> إضافة منتج</button>
+          <button className="sh-btn sh-btn-primary" onClick={()=>router.push('/dispense')}><ArrowUpRight size={16}/> تسجيل صرف</button>
         </div>
       </div>
 
-      {/* ── Notifications ── */}
-      {notifs.map((n:any,i:number)=>{
-        const tc:{[k:string]:{bg:string,border:string,color:string}} = {
-          info:    {bg:dsColors.infoLight,border:dsColors.infoBorder,color:'#378add'},
-          warning: {bg:dsColors.warningLight,border:dsColors.warningBorder,color:'#ba7517'},
-          success: {bg:dsColors.primaryLight,border:dsColors.primaryBorder,color:dsColors.primary},
-          danger:  {bg:dsColors.dangerLight,border:dsColors.dangerBorder,color:'#e24b4a'},
-        }
-        const t=tc[n.type]||tc.info
-        return(
-          <div key={n.id} className="u" style={{background:t.bg,border:`1px solid ${t.border}`,borderRadius:10,padding:'11px 14px',display:'flex',alignItems:'flex-start',gap:10,animationDelay:`${i*.05}s`}}>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:12,fontWeight:700,color:t.color,marginBottom:2}}>{n.title}</div>
-              <div style={{fontSize:11,color:'#5f5e5a',lineHeight:1.5}}>{n.message}</div>
-            </div>
-            <button onClick={async()=>{
-              const oid=sessionStorage.getItem('s_org_id')
-              if(oid) await api.patch('/api/notifications',{org_id:oid,id:n.id})
-              setNotifs(prev=>prev.filter(x=>x.id!==n.id))
-            }} style={{background:'none',border:'none',cursor:'pointer',color:'#888780',padding:2,flexShrink:0,display:'flex',alignItems:'center'}}><X size={16} strokeWidth={2.25}/></button>
-          </div>
-        )
-      })}
-
-      {/* ── Sub alert ── */}
-      {subAlert&&(
-        <div className="u r" style={{padding:'10px 14px',marginBottom:14,background:subExpired?dsColors.dangerLight:dsColors.warningLight,border:`1px solid ${subExpired?'#f7c1c1':'#fac775'}`,display:'flex',alignItems:'center',gap:10,animationDelay:'.06s'}}>
-          <svg width={14} height={14} fill="none" stroke={subExpired?'#a32d2d':'#854f0b'} strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-          <span style={{fontSize:12,fontWeight:600,color:subExpired?'#a32d2d':'#633806'}}>{subAlert}</span>
-        </div>
-      )}
-
-      {/* ── Low stock banner ── */}
-      {stats.lowStock>0&&(
-        <button onClick={()=>router.push('/inventory')} className="u r tap"
-          style={{width:'100%',padding:'12px 16px',marginBottom:16,background:dsColors.warningLight,border:'1px solid #fac775',display:'flex',alignItems:'center',gap:12,textAlign:'right',fontFamily:'inherit',animationDelay:'.08s'}}>
-          <div style={{flex:1}}>
-            <div style={{fontSize:13,fontWeight:600,color:'#633806'}}>{stats.lowStock} {t('dashboard.lowStockBanner')}</div>
-            <div style={{fontSize:11,color:'#854f0b',marginTop:2}}>{t('dashboard.clickForDetails')}</div>
-          </div>
-          <svg width={13} height={13} fill="none" stroke="#854f0b" strokeWidth={2} viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
-        </button>
-      )}
-
-      {/* ── Smart Reorder Timing ── */}
-      {smartSuggestions.length>0&&(
-        <div className="s r u" style={{padding:'16px',marginBottom:16,animationDelay:'.09s',border:'1px solid #bfdbfe',background:dsColors.infoLight}}>
-          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
-            <span style={{display:'flex',alignItems:'center'}}><Bell size={16} strokeWidth={2.25}/></span>
-            <span style={{fontSize:13,fontWeight:800,color:'#1c1c1a'}}>{t('dashboard.smartReorderTitle')}</span>
-          </div>
-          <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
-            {smartSuggestions.slice(0,4).map((s,i)=>(
-              <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 10px',background:'white',borderRadius:9,border:`1px solid ${s.urgency==='now'?dsColors.dangerBorder:'#e5e7eb'}`}}>
-                <div>
-                  <div style={{fontSize:12,fontWeight:700,color:'#1c1c1a'}}>{s.name}</div>
-                  <div style={{fontSize:10,color:'#6b7280',marginTop:2}}>
-                    {t('dashboard.dailyRate')} {s.dailyRate} {s.unit}/{t('dashboard.perDay')} · {t('dashboard.leadTime')} {s.avgLeadTimeDays} {t('dashboard.daysUsually')}
-                  </div>
-                </div>
-                <span style={{fontSize:10,fontWeight:800,padding:'4px 9px',borderRadius:99,background:s.urgency==='now'?dsColors.dangerLight:dsColors.warningLight,color:s.urgency==='now'?dsColors.danger:'#b45309',whiteSpace:'nowrap' as const}}>
-                  {s.urgency==='now'?<span style={{display:'inline-flex',alignItems:'center',gap:4}}><AlertTriangle size={12} strokeWidth={2.25}/> {t('dashboard.orderNow')}</span>:`${t('dashboard.orderWithin')} ${Math.max(s.suggestedOrderInDays,0)} ${t('dashboard.days')}`}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Stats ── */}
-      <div className="g4 u" style={{marginBottom:14,animationDelay:'.1s'}}>
+      {/* الأرقام */}
+      <div className="dh-kpis">
         {[
-          {label:t('dashboard.statItems'),    val:stats.products,       note:t('dashboard.inStock'),   href:'/inventory', accent:dsColors.primary, Icon:Package, critical:false},
-          {label:t('dashboard.statLow'),      val:stats.lowStock,        note:`${stats.outOfStock} ${t('dashboard.outOfStockSuffix')}`,href:'/inventory',accent:'#e24b4a', Icon:AlertTriangle, critical:stats.lowStock>0},
-          {label:t('dashboard.statTodayPurchase'),val:stats.todayPurchases,  note:t('dashboard.invoice'),       href:'/purchases', accent:'#378add', Icon:ShoppingCart, critical:false},
-          {label:t('dashboard.statTodayDispense'), val:stats.todayDispenses,  note:t('dashboard.operation'),        href:'/dispense',  accent:'#ba7517', Icon:TrendingUp, critical:false},
-        ].map((s,i)=>(
-          <button key={i} onClick={()=>router.push(s.href)} className="s r tap"
-            style={{padding:'16px',textAlign:'right',fontFamily:'inherit',cursor:'pointer',animationDelay:`${.12+i*.04}s`, background:s.critical?'#fef2f2':undefined, border:s.critical?'1px solid #f7c1c1':undefined}}>
-            <div style={{width:30,height:30,borderRadius:8,background:s.accent+'14',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:10}}>
-              <s.Icon size={15} color={s.accent} strokeWidth={2}/>
-            </div>
-            <div style={{fontSize:s.critical?30:24,fontWeight:s.critical?800:700,color:s.critical?s.accent:'#1c1c1a',letterSpacing:'-0.5px',lineHeight:1,marginBottom:6,fontVariantNumeric:'tabular-nums'}}>
-              <Num value={s.val}/>
-            </div>
-            <div style={{fontSize:12,fontWeight:s.critical?700:500,color:s.critical?s.accent:'#1c1c1a',marginBottom:2}}>{s.label}</div>
-            <div style={{fontSize:10,color:s.critical?s.accent:'#888780'}}>{s.note}</div>
+          {label:t('dashboard.statItems'), val:stats.products, note:t('dashboard.inStock'), href:'/inventory'},
+          {label:'تحت الحد الأدنى', val:stats.lowStock, note:stats.outOfStock>0?`منها ${stats.outOfStock} نفدت`:'لا يوجد صنف نافد', href:'/inventory', alert:stats.lowStock>0},
+          {label:t('dashboard.statTodayPurchase'), val:stats.todayPurchases, note:t('dashboard.invoice'), href:'/purchases'},
+          {label:t('dashboard.statTodayDispense'), val:stats.todayDispenses, note:t('dashboard.operation'), href:'/dispense'},
+        ].map((k,i)=>(
+          <button key={i} className="dh-kpi" onClick={()=>router.push(k.href)}>
+            <div className="dh-kpi-label">{k.label}</div>
+            <div className="dh-kpi-val" style={k.alert?{color:dsColors.danger}:undefined}>{k.val.toLocaleString('en-US')}</div>
+            <div className="dh-kpi-note">{k.note}</div>
           </button>
         ))}
       </div>
 
-      {monthComp?.success&&(
-        <div className="s r u" style={{padding:'14px 16px',marginBottom:14,animationDelay:'.16s'}}>
-          <div style={{fontSize:12,fontWeight:700,color:'#1c1c1a',marginBottom:12,display:'flex',alignItems:'center',gap:6}}><TrendingUp size={14} strokeWidth={2.25}/> أداء هذا الشهر مقارنة بالشهر الماضي</div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:10}}>
-            {[
-              {label:'المبيعات', value:monthComp.current.sales, change:monthComp.changes.sales, isMoney:true},
-              {label:'المشتريات', value:monthComp.current.purchasesTotal, change:monthComp.changes.purchases, isMoney:true},
-              {label:'الصافي', value:monthComp.current.net, change:monthComp.changes.net, isMoney:true},
-              {label:'عمليات الصرف', value:monthComp.current.dispenseCount, change:monthComp.changes.dispenseCount, isMoney:false},
-            ].map((m,i)=>(
-              <div key={i} style={{padding:'10px 12px',background:'#f9f9f8',borderRadius:9}}>
-                <div style={{fontSize:10,color:'#888780',marginBottom:4}}>{m.label}</div>
-                <div className="mono" style={{fontSize:15,fontWeight:700,color:'#1c1c1a'}}>
-                  {m.isMoney?Number(m.value).toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0})+' '+curr:m.value}
+      <div className="dh-grid">
+        {/* تحتاج انتباهك */}
+        {attention && (
+          <section className="dh-card dh-span">
+            <div className="dh-card-head"><span>تحتاج انتباهك</span></div>
+            {subAlert && (
+              <div className="dh-row">
+                <span className="dh-dot" style={{background:subExpired?dsColors.danger:dsColors.warning}}/>
+                <div className="dh-row-main"><div className="dh-row-title">{subAlert}</div></div>
+                <button className="sh-btn sh-btn-sm hide-in-app" onClick={()=>router.push('/settings')}>التفاصيل</button>
+              </div>
+            )}
+            {smartSuggestions.slice(0,4).map((s:any,i:number)=>(
+              <div key={'s'+i} className="dh-row">
+                <span className="dh-dot" style={{background:s.urgency==='now'?dsColors.danger:dsColors.warning}}/>
+                <div className="dh-row-main">
+                  <div className="dh-row-title">{s.urgency==='now'?'اطلب الآن':`اطلب خلال ${Math.max(s.suggestedOrderInDays,0)} ${t('dashboard.days')}`} — {s.name}</div>
+                  <div className="dh-row-sub">استهلاك {s.dailyRate} {s.unit} يومياً · التوريد يأخذ {s.avgLeadTimeDays} {t('dashboard.days')} عادة</div>
                 </div>
-                {m.change!==null&&(
-                  <div style={{fontSize:10,fontWeight:600,color:m.change>=0?dsColors.primary:'#e24b4a',marginTop:3}}>
-                    {m.change>=0?'▲':'▼'} {Math.abs(m.change)}% عن الشهر الماضي
-                  </div>
-                )}
+                <button className="sh-btn sh-btn-sm" onClick={()=>router.push('/suppliers')}>الموردين</button>
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Charts ── */}
-      <div className="u" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:8,marginBottom:14,animationDelay:'.2s'}}>
-        {[
-          {title:'مشتريات الأسبوع',data:weeklyP,color:'#378add',total:weeklyP.reduce((s,d)=>s+d.value,0),unit:'فاتورة'},
-          {title:'صرف الأسبوع',   data:weeklyD,color:'#e24b4a',total:weeklyD.reduce((s,d)=>s+d.value,0),unit:'عملية'},
-        ].map((c,i)=>(
-          <div key={i} className="s r" style={{padding:'14px 16px'}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
-              <span style={{fontSize:12,fontWeight:500,color:'#1c1c1a'}}>{c.title}</span>
-              <span style={{fontSize:11,fontWeight:600,color:c.color}}>{c.total} {c.unit}</span>
-            </div>
-            <Bar data={c.data} color={c.color}/>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Low stock + Activity ── */}
-      <div className="g2 u" style={{marginBottom:14,animationDelay:'.24s'}}>
-
-        {/* Low stock */}
-        <div className="s r" style={{overflow:'hidden'}}>
-          <div style={{padding:'12px 16px',borderBottom:'1px solid #ebebea',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-            <span style={{fontSize:13,fontWeight:500,color:'#1c1c1a'}}>تحتاج إعادة طلب</span>
-            {lowItems.length>0&&<span style={{fontSize:10,fontWeight:600,color:'#a32d2d',background:'#fcebeb',padding:'2px 8px',borderRadius:99,border:'1px solid #f7c1c1'}}>{lowItems.length}</span>}
-          </div>
-          {lowItems.length===0?(
-            <div style={{padding:'28px 16px',textAlign:'center',fontSize:12,color:'#888780'}}>كل المخزون بحالة جيدة</div>
-          ):lowItems.map((p,i)=>{
-            const pct=Math.min(Math.round((p.qty/Math.max(p.reorder_point,1))*100),100)
-            const col=pct<30?'#e24b4a':pct<70?'#ba7517':dsColors.primary
-            return(
-              <div key={i} className="rh" style={{padding:'11px 16px',borderBottom:i<lowItems.length-1?'1px solid #f5f5f4':'none',cursor:'pointer'}} onClick={()=>router.push('/inventory')}>
-                <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
-                  <span style={{fontSize:12,fontWeight:500,color:'#1c1c1a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:160}}>{p.name}</span>
-                  <span style={{fontSize:11,fontWeight:600,color:col,flexShrink:0,fontVariantNumeric:'tabular-nums'}}>{p.qty}/{p.reorder_point} {p.unit}</span>
+            {notifs.map((n:any)=>(
+              <div key={n.id} className="dh-row">
+                <span className="dh-dot" style={{background:toneColor[n.type]||dsColors.info}}/>
+                <div className="dh-row-main">
+                  <div className="dh-row-title">{n.title}</div>
+                  <div className="dh-row-sub">{n.message}</div>
                 </div>
-                <div style={{height:3,background:'#f0f0ee',borderRadius:99,overflow:'hidden'}}>
-                  <div style={{height:'100%',width:pct+'%',background:col,borderRadius:99,transition:'width .5s'}}/>
-                </div>
+                <button className="sh-icon-btn sh-icon-sm" aria-label="إخفاء" onClick={()=>dismiss(n.id)}><X size={16}/></button>
               </div>
+            ))}
+          </section>
+        )}
+
+        {/* هذا الشهر */}
+        {monthComp?.success && (
+          <section className="dh-card dh-span">
+            <div className="dh-card-head"><span>هذا الشهر</span><span className="dh-muted">مقارنة بالشهر الماضي</span></div>
+            <div className="dh-month">
+              {[
+                {label:'المبيعات', value:fmtMoney(monthComp.current.sales), change:monthComp.changes.sales},
+                {label:'المشتريات', value:fmtMoney(monthComp.current.purchasesTotal), change:monthComp.changes.purchases, inverse:true},
+                {label:'الصافي', value:fmtMoney(monthComp.current.net), change:monthComp.changes.net},
+                {label:'عمليات الصرف', value:Number(monthComp.current.dispenseCount).toLocaleString('en-US'), change:monthComp.changes.dispenseCount},
+              ].map((m,i)=>(
+                <div key={i} className="dh-month-cell">
+                  <div className="dh-kpi-label">{m.label}</div>
+                  <div className="dh-month-val">{m.value}</div>
+                  {m.change!==null && m.change!==undefined && (
+                    <div className="dh-change" dir="ltr" style={{textAlign:'right',color:(m.change>=0)!==!!m.inverse?dsColors.primary:dsColors.danger}}>
+                      {m.change>=0?'+':'−'}{Math.abs(m.change)}%
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* تحتاج إعادة طلب */}
+        <section className="dh-card">
+          <div className="dh-card-head">
+            <span>تحتاج إعادة طلب</span>
+            {lowItems.length>0 && <button className="dh-link" onClick={()=>router.push('/inventory')}>عرض المخزون</button>}
+          </div>
+          {lowItems.length===0 ? <div className="dh-empty">كل الأصناف فوق الحد الأدنى</div> : lowItems.map((p:any,i:number)=>{
+            const pct=Math.min(Math.round((p.qty/Math.max(p.reorder_point,1))*100),100)
+            const out=Number(p.qty)<=0
+            return (
+              <button key={i} className="dh-row dh-row-btn" onClick={()=>router.push('/inventory')}>
+                <div className="dh-row-main">
+                  <div className="dh-row-title">{p.name}</div>
+                  <div className="dh-bar"><div style={{width:Math.max(pct,3)+'%',background:out||pct<30?dsColors.danger:dsColors.warning}}/></div>
+                </div>
+                <div className="dh-qty" style={{color:out?dsColors.danger:dsColors.text}}>{p.qty} <span className="dh-muted">/ {p.reorder_point} {p.unit}</span></div>
+              </button>
             )
           })}
-        </div>
+        </section>
 
-        {/* Activity */}
-        <div className="s r" style={{overflow:'hidden'}}>
-          <div style={{padding:'12px 16px',borderBottom:'1px solid #ebebea'}}>
-            <span style={{fontSize:13,fontWeight:500,color:'#1c1c1a'}}>آخر الحركات</span>
+        {/* آخر الحركات */}
+        <section className="dh-card">
+          <div className="dh-card-head">
+            <span>آخر الحركات</span>
+            {activity.length>0 && <button className="dh-link" onClick={()=>router.push('/reports')}>التقارير</button>}
           </div>
-          {activity.length===0?(
-            <div style={{padding:'28px 16px',textAlign:'center',fontSize:12,color:'#888780'}}>لا توجد حركات بعد</div>
-          ):activity.map((m,i)=>(
-            <div key={i} className="rh" style={{display:'flex',alignItems:'center',gap:10,padding:'10px 16px',borderBottom:i<activity.length-1?'1px solid #f5f5f4':'none'}}>
-              <div style={{width:8,height:8,borderRadius:'50%',background:m.type==='out'?'#e24b4a':dsColors.primary,flexShrink:0}}/>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:12,fontWeight:500,color:'#1c1c1a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(m.products as any)?.name||'—'}</div>
-                <div style={{fontSize:10,color:'#888780',marginTop:1}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric'})}</div>
+          {activity.length===0 ? <div className="dh-empty">ما فيه حركات بعد</div> : activity.map((m:any,i:number)=>(
+            <div key={i} className="dh-row">
+              <div className="dh-row-main">
+                <div className="dh-row-title">{(m.products as any)?.name||'—'}</div>
+                <div className="dh-row-sub">{m.type==='out'?'صرف':m.type==='in'?'إضافة':m.type==='waste'?'هدر':'حركة'} · {new Date(m.created_at).toLocaleString('ar-SA',{numberingSystem:'latn',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>
               </div>
-              <span style={{fontSize:12,fontWeight:600,color:m.type==='out'?'#e24b4a':dsColors.primary,flexShrink:0,fontVariantNumeric:'tabular-nums'}}>
-                {m.qty_change>0?'+':''}{m.qty_change} <span style={{fontSize:10,fontWeight:400,color:'#888780'}}>{(m.products as any)?.unit}</span>
-              </span>
+              <div className="dh-qty" style={{color:m.qty_change<0?dsColors.danger:dsColors.primary}}>{m.qty_change>0?'+':''}{m.qty_change} <span className="dh-muted">{(m.products as any)?.unit}</span></div>
             </div>
           ))}
-        </div>
-      </div>
+        </section>
 
-      {/* ── Quick actions ── */}
-      <div className="gq u" style={{animationDelay:'.28s'}}>
+        {/* الأسبوع */}
         {[
-          {label:'إضافة منتج',  href:'/inventory', icon:'M12 4v16m8-8H4',            color:dsColors.primary},
-          {label:'تسجيل شراء', href:'/purchases', icon:'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z', color:'#378add'},
-          {label:'تسجيل صرف',  href:'/dispense',  icon:'M17 8l4 4m0 0l-4 4m4-4H3',  color:'#e24b4a'},
-          {label:'التقارير',   href:'/reports',   icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',color:'#ba7517'},
-        ].map((b,i)=>(
-          <button key={i} onClick={()=>router.push(b.href)} className="s r tap"
-            style={{padding:'13px 16px',display:'flex',alignItems:'center',gap:12,textAlign:'right',fontFamily:'inherit',cursor:'pointer'}}>
-            <div style={{width:32,height:32,borderRadius:8,background:b.color+'12',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-              <svg width={15} height={15} fill="none" stroke={b.color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                {b.icon.split(' M').map((d,j)=><path key={j} d={(j===0?'':' M')+d}/>)}
-              </svg>
-            </div>
-            <span style={{fontSize:12,fontWeight:500,color:'#1c1c1a'}}>{b.label}</span>
-          </button>
+          {title:'المشتريات آخر 7 أيام', data:weeklyP, unit:'فاتورة'},
+          {title:'الصرف آخر 7 أيام', data:weeklyD, unit:'عملية'},
+        ].map((c,i)=>(
+          <section key={i} className="dh-card">
+            <div className="dh-card-head"><span>{c.title}</span><span className="dh-muted">{c.data.reduce((s,d)=>s+d.value,0)} {c.unit}</span></div>
+            <div style={{padding:'14px 18px 16px'}}><Bar data={c.data} color={dsColors.primary}/></div>
+          </section>
         ))}
       </div>
     </div>
     </ErrorBoundary>
   )
 }
+
+const DASH_CSS = `
+  .dh{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;max-width:1180px}
+  .dh *{box-sizing:border-box}
+  .dh-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+  .dh-title{font-size:20px;font-weight:700;color:${dsColors.text};margin:0}
+  .dh-sub{font-size:13px;color:${dsColors.text3};margin-top:4px}
+  .dh-actions{display:flex;gap:8px;flex-wrap:wrap}
+  @media(max-width:640px){.dh-actions{display:none}}
+  .dh-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px}
+  @media(min-width:900px){.dh-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+  .dh-kpi{background:${dsColors.surface};border:1px solid ${dsColors.border};border-radius:12px;padding:16px;text-align:right;font-family:inherit;cursor:pointer}
+  .dh-kpi:hover{border-color:${dsColors.border2}}
+  .dh-kpi-label{font-size:13px;color:${dsColors.text3};font-weight:500}
+  .dh-kpi-val{font-size:28px;font-weight:700;color:${dsColors.text};margin-top:6px;line-height:1.2;font-variant-numeric:tabular-nums}
+  .dh-kpi-note{font-size:12px;color:${dsColors.text4};margin-top:4px}
+  .dh-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+  @media(min-width:900px){.dh-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.dh-span{grid-column:1/-1}}
+  .dh-card{background:${dsColors.surface};border:1px solid ${dsColors.border};border-radius:12px;overflow:hidden}
+  .dh-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid ${dsColors.border};font-size:14px;font-weight:600;color:${dsColors.text}}
+  .dh-muted{font-size:12px;font-weight:400;color:${dsColors.text4}}
+  .dh-link{border:none;background:none;padding:0;color:${dsColors.primary};font-size:13px;font-weight:600;font-family:inherit;cursor:pointer}
+  .dh-row{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid ${dsColors.border};width:100%;background:none;border-left:none;border-right:none;border-top:none;font-family:inherit;text-align:right}
+  .dh-row:last-child{border-bottom:none}
+  .dh-row-btn{cursor:pointer}
+  .dh-row-btn:hover{background:#f9fafb}
+  .dh-row-main{flex:1;min-width:0}
+  .dh-row-title{font-size:13.5px;font-weight:500;color:${dsColors.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dh-row-sub{font-size:12px;color:${dsColors.text3};margin-top:2px}
+  .dh-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .dh-qty{font-size:13.5px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .dh-bar{height:4px;background:#f2f4f7;border-radius:99px;overflow:hidden;margin-top:7px;max-width:220px}
+  .dh-bar>div{height:100%;border-radius:99px}
+  .dh-empty{padding:28px 18px;text-align:center;font-size:13px;color:${dsColors.text3}}
+  .dh-month{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  @media(min-width:700px){.dh-month{grid-template-columns:repeat(4,minmax(0,1fr))}}
+  .dh-month-cell{padding:16px 18px;border-left:1px solid ${dsColors.border};border-bottom:1px solid ${dsColors.border}}
+  .dh-month-val{font-size:18px;font-weight:700;color:${dsColors.text};margin-top:6px;font-variant-numeric:tabular-nums}
+  .dh-change{font-size:12px;font-weight:600;margin-top:4px}
+  .dh-sk{background:#eceef1;border-radius:12px;animation:dhsk 1.4s ease infinite}
+  @keyframes dhsk{0%,100%{opacity:1}50%{opacity:.5}}
+`
+

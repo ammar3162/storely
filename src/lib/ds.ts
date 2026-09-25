@@ -5,32 +5,32 @@
 export const colors = {
   // Brand — أخضر غامق
   primary:      '#0f766e',
-  primaryDark:  '#134e4a',
+  primaryDark:  '#115e59',
   primaryLight: '#f0fdfa',
-  primaryBorder:'#99f6e4',
+  primaryBorder:'#b2e3df',
 
   // Semantic
   // موحّد مع صفحة الهبوط التسويقية (LandingPageClient.tsx) — نفس القيم بالضبط
   danger:       '#dc2626',
   dangerLight:  '#fef2f2',
-  dangerBorder: '#fecaca',
-  warning:      '#f59e0b',
+  dangerBorder: '#fecdca',
+  warning:      '#b54708',
   warningLight: '#fffbeb',
-  warningBorder:'#fde68a',
-  info:         '#2563eb',
+  warningBorder:'#fedf89',
+  info:         '#175cd3',
   infoLight:    '#eff6ff',
-  infoBorder:   '#dbeafe',
+  infoBorder:   '#b2ddff',
 
   // Neutral — درجة رمادية دافئة مخصصة (مو رمادي Tailwind الافتراضي) — تناسب طابع "دفتر/سجل" لتطبيق مخزون وبيع
-  bg:           '#F7F6F3',
+  bg:           '#F6F7F9',
   surface:      '#FFFFFF',
-  border:       '#EDEBE4',
-  border2:      '#DEDACF',
-  text:         '#1C1A16',
-  text2:        '#4A453C',
-  text3:        '#79736A',
-  text4:        '#A39C8F',
-  text5:        '#D2CCBF',
+  border:       '#E6E8EC',
+  border2:      '#D5D9DF',
+  text:         '#101828',
+  text2:        '#344054',
+  text3:        '#667085',
+  text4:        '#98A2B3',
+  text5:        '#D0D5DD',
 }
 
 // زوايا متدرجة حسب كثافة العنصر -- مو زاوية واحدة موحّدة على كل شي
@@ -38,16 +38,16 @@ export const radius = {
   xs:  '6px',   // صفوف الجداول، الوسوم الصغيرة، عناصر داخل الجدول
   sm:  '8px',   // الأزرار والحقول
   md:  '10px',
-  lg:  '14px',  // البطاقات
-  xl:  '18px',  // النوافذ المنبثقة
+  lg:  '12px',  // البطاقات
+  xl:  '14px',  // النوافذ المنبثقة
   full:'999px',
 }
 
 export const shadow = {
-  sm:  '0 1px 2px rgba(28,26,22,.05)',
-  md:  '0 2px 10px rgba(28,26,22,.06)',
-  lg:  '0 10px 28px rgba(28,26,22,.10)',
-  green:'0 4px 14px rgba(15,118,110,.22)',
+  sm:  '0 1px 2px rgba(16,24,40,.05)',
+  md:  '0 1px 3px rgba(16,24,40,.08)',
+  lg:  '0 12px 24px rgba(16,24,40,.10)',
+  green:'none',
 }
 
 // أرقام مصفوفة بعرض ثابت -- مهم فعلياً بتطبيق مخزون/مبيعات (أعمدة كميات وأسعار تترصّ بدقة بالجداول والتقارير)، مو ديكور
@@ -69,8 +69,8 @@ export const font = {
 // Common styles
 export const inp = (extra?: object): React.CSSProperties => ({
   width:'100%', padding:'11px 14px',
-  border:`1.5px solid ${colors.border2}`,
-  borderRadius:radius.md, fontSize:font.base,
+  border:`1px solid ${colors.border2}`,
+  borderRadius:radius.sm, fontSize:font.base,
   outline:'none', boxSizing:'border-box',
   background:colors.surface, color:colors.text,
   fontFamily:font.family, transition:'border .15s',
@@ -80,15 +80,15 @@ export const inp = (extra?: object): React.CSSProperties => ({
 export const card: React.CSSProperties = {
   background: colors.surface,
   borderRadius: radius.lg,
-  border: `1px solid ${colors.border2}`,
+  border: `1px solid ${colors.border}`,
   overflow: 'hidden',
 }
 
 export const btnPrimary: React.CSSProperties = {
   display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-  padding:'11px 20px',
+  padding:'10px 18px',
   background:colors.primary,
-  color:'white', border:'none', borderRadius:radius.md,
+  color:'white', border:'none', borderRadius:radius.sm,
   fontSize:font.base, fontWeight:700, cursor:'pointer',
   fontFamily:font.family,
   transition:'background .15s',
@@ -98,8 +98,8 @@ export const btnSecondary: React.CSSProperties = {
   display:'flex', alignItems:'center', justifyContent:'center', gap:8,
   padding:'10px 18px',
   background:colors.surface, color:colors.text2,
-  border:`1.5px solid ${colors.border2}`,
-  borderRadius:radius.md, fontSize:font.base,
+  border:`1px solid ${colors.border2}`,
+  borderRadius:radius.sm, fontSize:font.base,
   fontWeight:600, cursor:'pointer', fontFamily:font.family,
   transition:'all .15s',
 }
@@ -108,8 +108,8 @@ export const btnDanger: React.CSSProperties = {
   display:'flex', alignItems:'center', justifyContent:'center', gap:8,
   padding:'10px 18px',
   background:colors.dangerLight, color:colors.danger,
-  border:`1.5px solid ${colors.dangerBorder}`,
-  borderRadius:radius.md, fontSize:font.base,
+  border:`1px solid ${colors.dangerBorder}`,
+  borderRadius:radius.sm, fontSize:font.base,
   fontWeight:700, cursor:'pointer', fontFamily:font.family,
 }
 
@@ -128,11 +128,11 @@ export const pageHeader: React.CSSProperties = {
 }
 
 export const pageTitle: React.CSSProperties = {
-  fontSize:font.xl, fontWeight:800,
-  color:colors.text, letterSpacing:'-0.4px',
+  fontSize:font.xl, fontWeight:700,
+  color:colors.text, letterSpacing:'-0.2px',
   marginBottom:3,
 }
 
 export const pageSub: React.CSSProperties = {
-  fontSize:font.sm, color:colors.text4,
+  fontSize:'13px', color:colors.text3,
 }

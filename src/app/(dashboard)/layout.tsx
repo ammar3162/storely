@@ -6,6 +6,7 @@ import { getMeResult } from '@/lib/session'
 import { useRouter, usePathname } from 'next/navigation'
 
 import AIAssistant from '@/components/AIAssistant'
+import { Bell, Check, ChevronDown, HelpCircle, LogOut, Moon, Pause, Settings, Store, Sun, Wrench } from 'lucide-react'
 import { toast } from '@/components/toast'
 import { colors as dsColors } from '@/lib/ds'
 import { isInApp } from '@/lib/inApp'
@@ -16,7 +17,7 @@ const C = {
   primary: dsColors.primary, primaryD: dsColors.primaryDark, primaryL: dsColors.primaryLight, primaryB: dsColors.primaryBorder,
   danger:  dsColors.danger, dangerL:  dsColors.dangerLight,
   text:    dsColors.text, text2: dsColors.text2, text3: dsColors.text3, text4: dsColors.text4,
-  bg:      dsColors.bg, surface: dsColors.surface, border: dsColors.border,
+  bg:      dsColors.bg, surface: dsColors.surface, border: dsColors.border, border2: dsColors.border2,
 }
 
 const NAV_GROUPS = [
@@ -106,7 +107,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [inApp, setInApp] = useState(false)
   useEffect(() => { setInApp(isInApp()) }, [])
   const [branchName, setBranchName] = useState('')
-  const [advancedNavOpen, setAdvancedNavOpen] = useState(false)
   const [userName, setUserName]     = useState('')
   const [userInit, setUserInit]     = useState('م')
   const [lowCount, setLowCount]     = useState(0)
@@ -148,23 +148,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const router   = useRouter()
   const pathname = usePathname()
   const navRef = useRef<HTMLElement>(null)
-  const [pillStyle, setPillStyle] = useState<{top:number,height:number,opacity:number}>({top:0,height:0,opacity:0})
-
-  useEffect(()=>{
-    const raf = requestAnimationFrame(()=>{
-      if(!navRef.current) return
-      const activeEl = navRef.current.querySelector('[data-active="true"]') as HTMLElement|null
-      if(!activeEl){ setPillStyle(s=>({...s,opacity:0})); return }
-      const navRect = navRef.current.getBoundingClientRect()
-      const itemRect = activeEl.getBoundingClientRect()
-      setPillStyle({
-        top: itemRect.top - navRect.top + navRef.current.scrollTop,
-        height: itemRect.height,
-        opacity: 1,
-      })
-    })
-    return ()=>cancelAnimationFrame(raf)
-  },[pathname])
   const sb = createClient()
 
   useEffect(()=>{
@@ -444,11 +427,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   const isActive=(href:string)=>pathname===href||(href!=='/dashboard'&&pathname.startsWith(href))
 
-  // افتح مجموعة "أدوات متقدمة" تلقائياً لو الصفحة الحالية جوّاها — عشان العنصر النشط يفضل ظاهر بالقائمة
-  useEffect(()=>{
-    const advancedGroup = NAV_GROUPS.find(g=>g.label==='أدوات متقدمة')
-    if(advancedGroup?.items.some(item=>isActive(item.href))) setAdvancedNavOpen(true)
-  },[pathname])
 
   // Bottom nav items
   const BOT_NAV = [
@@ -458,482 +436,318 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     { href:'/purchases',  label:'مشتريات', labelKey:'nav.purchases', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
   ]
 
+  // عناصر القائمة المسموحة لهذا الحساب (الباقة، الإضافات، عدد الفروع، صلاحيات المدير، داخل التطبيق)
+  function navAllowed(href:string){
+    if(href==='/addons-market' && inApp) return false
+    const branchPages=['/branches','/branch-compare','/branch-managers','/transfer-stock']
+    if(branchPages.includes(href) && orgPlan==='basic' && !hasExtraBranchAddon && orgMaxBranches<=1) return false
+    if((href==='/attendance'||href==='/hr-management') && orgPlan==='basic' && !hasHrAddon) return false
+    if(href==='/profitability' && orgPlan==='basic' && !hasProfitAddon) return false
+    if(href==='/online-store' && !hasMenuAddon) return false
+    if(['/branch-compare','/branch-managers','/transfer-stock'].includes(href) && branches.length<=1) return false
+    return navVisible(href)
+  }
+  const visibleGroups = NAV_GROUPS.map(g=>({...g, items:g.items.filter(i=>navAllowed(i.href))})).filter(g=>g.items.length)
+  async function signOut(){ await sb.auth.signOut(); _cache=null; sessionStorage.clear(); window.location.href='/login' }
+
+  const banners = (
+    <>
+      {subDaysLeft!==null && (
+        <div className="sh-banner sh-banner-warn">
+          <span style={{flex:1}}>
+            {subDaysLeft===0?'ينتهي اشتراكك اليوم.':`ينتهي اشتراكك خلال ${subDaysLeft} ${subDaysLeft===1?'يوم':'أيام'}.`} <span className="hide-in-app">جدّد عشان ما يتوقف حسابك.</span>
+          </span>
+          <button className="sh-btn sh-btn-sm hide-in-app" onClick={()=>router.push('/settings')}>تجديد</button>
+        </div>
+      )}
+      {showEnableNotif && (
+        <div className="sh-banner">
+          <span style={{flex:1}}>فعّل الإشعارات عشان توصلك تنبيهات نقص المخزون وإقفال الكاشير حتى لو التطبيق مقفول.</span>
+          <button className="sh-btn sh-btn-sm sh-btn-primary" onClick={enablePush} disabled={enablingPush}>{enablingPush?'جاري التفعيل...':'تفعيل'}</button>
+          <button className="sh-btn sh-btn-sm sh-btn-ghost" onClick={()=>setShowEnableNotif(false)}>لاحقاً</button>
+        </div>
+      )}
+    </>
+  )
+
   if (showMaintenance) return (
     <div style={{minHeight:'100vh',background:C.bg,display:'flex',alignItems:'center',justifyContent:'center',padding:24,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{background:C.surface,borderRadius:20,padding:'40px 32px',maxWidth:420,width:'100%',textAlign:'center',boxShadow:'0 8px 30px rgba(0,0,0,.08)'}}>
-        <div style={{fontSize:48,marginBottom:16}}>🛠️</div>
-        <div style={{fontSize:17,fontWeight:800,color:C.text,marginBottom:10}}>الموقع بصيانة مؤقتة</div>
-        <div style={{fontSize:13,color:C.text3,lineHeight:1.8}}>{maintenanceMsg}</div>
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:'32px 28px',maxWidth:420,width:'100%',textAlign:'center'}}>
+        <div style={{width:48,height:48,borderRadius:12,background:C.primaryL,color:C.primary,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px'}}><Wrench size={22}/></div>
+        <div style={{fontSize:17,fontWeight:700,color:C.text,marginBottom:8}}>النظام تحت صيانة مؤقتة</div>
+        <div style={{fontSize:14,color:C.text3,lineHeight:1.8}}>{maintenanceMsg}</div>
       </div>
     </div>
   )
 
   return (
     <>
-      {/* Terms Consent Modal — نافذة موافقة الشروط والأحكام المحدّثة (للمالك فقط) */}
+      {/* موافقة الشروط المحدّثة (المالك فقط) */}
       {showTermsConsent && (
-        <div style={{position:'fixed',inset:0,zIndex:3100,background:'rgba(15,23,42,.55)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-          <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:440,boxShadow:'0 24px 60px rgba(0,0,0,.25)',overflow:'hidden'}}>
-            <div style={{height:5,background:'linear-gradient(90deg,#029FA2,#2dd4bf,#029FA2)'}}/>
-            <div style={{padding:'28px 26px 24px'}}>
-              <div style={{textAlign:'center',marginBottom:20}}>
-                <div style={{fontSize:40,marginBottom:10}}>📋</div>
-                <div style={{fontSize:19,fontWeight:800,color:C.text,marginBottom:8}}>تحديث على الشروط والأحكام</div>
-                <div style={{fontSize:13,color:C.text3,lineHeight:1.8}}>
-                  حدّثنا الشروط والأحكام وسياسة الخصوصية.<br/>وافق للمتابعة باستخدام حسابك.
-                </div>
-              </div>
-              <label style={{display:'flex',alignItems:'flex-start',gap:8,fontSize:12,color:C.text2,cursor:'pointer',marginBottom:18}}>
-                <input type="checkbox" checked={termsChecked} onChange={e=>setTermsChecked(e.target.checked)} style={{marginTop:2,width:18,height:18,flexShrink:0,cursor:'pointer'}}/>
-                <span>
-                  أوافق على <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:C.primary,fontWeight:700,textDecoration:'underline'}}>الشروط والأحكام</a>
-                  {' '}و{' '}
-                  <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:C.primary,fontWeight:700,textDecoration:'underline'}}>سياسة الخصوصية</a> المحدّثة
-                </span>
-              </label>
-              <button onClick={acceptTermsConsent} disabled={!termsChecked||termsSaving}
-                style={{width:'100%',padding:14,background:termsChecked?'linear-gradient(135deg,#029FA2,#0f766e)':'#e5e7eb',color:'white',border:'none',borderRadius:14,fontSize:14,fontWeight:800,cursor:termsChecked?'pointer':'not-allowed',fontFamily:'inherit',boxShadow:termsChecked?'0 6px 20px rgba(22,163,74,.3)':'none'}}>
-                {termsSaving?'جاري الحفظ...':'أوافق وأكمل ←'}
-              </button>
-              <div style={{textAlign:'center',fontSize:10,color:C.text4,marginTop:12}}>لن تقدر تستخدم حسابك قبل الموافقة</div>
-            </div>
+        <div className="sh-overlay" style={{zIndex:3100}}>
+          <div className="sh-modal" style={{maxWidth:440}}>
+            <div style={{fontSize:18,fontWeight:700,color:C.text,marginBottom:8}}>تحديث على الشروط والأحكام</div>
+            <div style={{fontSize:14,color:C.text2,lineHeight:1.8,marginBottom:18}}>حدّثنا الشروط والأحكام وسياسة الخصوصية. وافق عليها عشان تكمل استخدام حسابك.</div>
+            <label style={{display:'flex',alignItems:'flex-start',gap:10,fontSize:13,color:C.text2,cursor:'pointer',marginBottom:18,lineHeight:1.7}}>
+              <input type="checkbox" checked={termsChecked} onChange={e=>setTermsChecked(e.target.checked)} style={{marginTop:3,width:17,height:17,flexShrink:0,accentColor:C.primary}}/>
+              <span>أوافق على <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:C.primary,fontWeight:600,textDecoration:'underline'}}>الشروط والأحكام</a> و<a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:C.primary,fontWeight:600,textDecoration:'underline'}}>سياسة الخصوصية</a></span>
+            </label>
+            <button className="sh-btn sh-btn-primary" style={{width:'100%'}} onClick={acceptTermsConsent} disabled={!termsChecked||termsSaving}>{termsSaving?'جاري الحفظ...':'موافق، متابعة'}</button>
           </div>
         </div>
       )}
 
-      {/* Consent Modal — نافذة موافقة واتساب */}
+      {/* موافقة استلام رسائل واتساب */}
       {showConsent && (
-        <div style={{position:'fixed',inset:0,zIndex:3000,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-          <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:420,padding:28,boxShadow:'0 24px 60px rgba(0,0,0,.3)'}}>
-            <div style={{fontSize:36,textAlign:'center',marginBottom:12}}>🟢</div>
-            <div style={{fontSize:17,fontWeight:800,color:C.text,textAlign:'center',marginBottom:8}}>تحديث مهم بخصوص الخصوصية</div>
-            <div style={{fontSize:13,color:C.text3,textAlign:'center',lineHeight:1.8,marginBottom:20}}>
-              عشان نقدر نرسل لك تنبيهات مهمة زي نقص المخزون، إقفال الكاشير اليومي، وطلبات التوريد، نحتاج موافقتك على استلام رسائل واتساب من Storely.
-            </div>
-            <label style={{display:'flex',alignItems:'flex-start',gap:10,padding:'12px 14px',background:C.primaryL,borderRadius:12,border:`1px solid ${C.primaryB}`,cursor:'pointer',marginBottom:16}}>
-              <input type="checkbox" checked={consentChecked} onChange={e=>setConsentChecked(e.target.checked)} style={{marginTop:2,width:18,height:18,flexShrink:0,cursor:'pointer'}}/>
-              <span style={{fontSize:12,color:C.text2,lineHeight:1.6}}>أوافق على استلام رسائل واتساب من Storely المتعلقة بإدارة متجري</span>
+        <div className="sh-overlay" style={{zIndex:3000}}>
+          <div className="sh-modal" style={{maxWidth:420}}>
+            <div style={{fontSize:18,fontWeight:700,color:C.text,marginBottom:8}}>تنبيهات واتساب</div>
+            <div style={{fontSize:14,color:C.text2,lineHeight:1.8,marginBottom:18}}>نرسل لك على واتساب تنبيهات نقص المخزون وإقفال الكاشير اليومي وطلبات التوريد. نحتاج موافقتك قبل الإرسال.</div>
+            <label style={{display:'flex',alignItems:'flex-start',gap:10,padding:'12px 14px',background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,cursor:'pointer',marginBottom:16,fontSize:13,color:C.text2,lineHeight:1.7}}>
+              <input type="checkbox" checked={consentChecked} onChange={e=>setConsentChecked(e.target.checked)} style={{marginTop:3,width:17,height:17,flexShrink:0,accentColor:C.primary}}/>
+              <span>أوافق على استلام رسائل واتساب من Storely المتعلقة بإدارة منشأتي</span>
             </label>
-            <button onClick={acceptConsent} disabled={!consentChecked||consentSaving}
-              style={{width:'100%',padding:13,background:consentChecked?C.primary:'#e5e7eb',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:consentChecked?'pointer':'not-allowed',fontFamily:'inherit'}}>
-              {consentSaving?'جاري الحفظ...':'متابعة'}
-            </button>
+            <button className="sh-btn sh-btn-primary" style={{width:'100%'}} onClick={acceptConsent} disabled={!consentChecked||consentSaving}>{consentSaving?'جاري الحفظ...':'متابعة'}</button>
           </div>
         </div>
       )}
 
       {showWaInvite && (
-        <div style={{position:'fixed',inset:0,zIndex:3000,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-          <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:420,padding:28,boxShadow:'0 24px 60px rgba(0,0,0,.3)'}}>
-            <div style={{fontSize:36,textAlign:'center',marginBottom:12}}>📲</div>
-            <div style={{fontSize:17,fontWeight:800,color:C.text,textAlign:'center',marginBottom:8}}>تفعيل استلام التنبيهات مطلوب</div>
-            <div style={{fontSize:13,color:C.text3,textAlign:'center',lineHeight:1.8,marginBottom:20}}>
-              لضمان وصول تنبيهاتك (نقص المخزون، إقفال الكاشير، طلبات التوريد) دون تأخير، تتطلب سياسات واتساب إرسال رسالة تفعيل واحدة من طرفك أولاً. اضغط الزر أدناه لإرسالها (نص الرسالة معبّأ مسبقاً)، ثم أكّد الإرسال.
-            </div>
-            <a href="https://wa.me/966594351667?text=أطلب%20تفعيل%20استلام%20تنبيهات%20حسابي%20على%20Storely" target="_blank" rel="noopener noreferrer"
-              style={{display:'block',width:'100%',padding:13,background:'#25D366',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',textAlign:'center',textDecoration:'none',marginBottom:10}}>
-              📱 إرسال رسالة التفعيل
-            </a>
-            <button onClick={confirmWaFirstContact}
-              style={{width:'100%',padding:13,background:C.primary,color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-              أكّدت إرسال الرسالة، متابعة
-            </button>
+        <div className="sh-overlay" style={{zIndex:3000}}>
+          <div className="sh-modal" style={{maxWidth:420}}>
+            <div style={{fontSize:18,fontWeight:700,color:C.text,marginBottom:8}}>تفعيل تنبيهات واتساب</div>
+            <div style={{fontSize:14,color:C.text2,lineHeight:1.8,marginBottom:18}}>واتساب يطلب إن أول رسالة تكون منك. اضغط "إرسال رسالة التفعيل" (الرسالة جاهزة)، أرسلها، وبعدها ارجع هنا وأكّد.</div>
+            <a href="https://wa.me/966594351667?text=أطلب%20تفعيل%20استلام%20تنبيهات%20حسابي%20على%20Storely" target="_blank" rel="noopener noreferrer" className="sh-btn" style={{width:'100%',textDecoration:'none',marginBottom:8}}>إرسال رسالة التفعيل</a>
+            <button className="sh-btn sh-btn-primary" style={{width:'100%'}} onClick={confirmWaFirstContact}>أرسلتها، متابعة</button>
           </div>
         </div>
       )}
 
-      {/* Branch selector */}
+      {/* اختيار الفرع */}
       {showBranch && branches.length>1 && (
-        <div style={{position:'fixed',inset:0,zIndex:2000,background:'rgba(0,0,0,.5)',backdropFilter:'blur(6px)',display:'flex',alignItems:'flex-end',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-          <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxWidth:480,padding:24}}>
-            <div style={{width:36,height:4,borderRadius:99,background:'#e5e7eb',margin:'0 auto 20px'}}/>
-            <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:16}}>اختر الفرع</div>
-            {branches.map((b:any)=>(
-              <div key={b.id} style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-                <button onClick={()=>selectBranch(b)}
-                  style={{flex:1,display:'flex',alignItems:'center',gap:12,padding:'14px 16px',borderRadius:12,border:`1.5px solid ${sessionStorage.getItem('s_branch_id')===b.id?C.primary:'#e5e7eb'}`,background:sessionStorage.getItem('s_branch_id')===b.id?C.primaryL:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
-                  <div style={{width:36,height:36,borderRadius:10,background:C.primaryL,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>🏪</div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:14,fontWeight:700,color:C.text}}>{b.name}</div>
-                    {b.location&&<div style={{fontSize:11,color:C.text3}}>{b.location}</div>}
-                  </div>
-                  {branchLowCounts[b.id]>0 && (
-                    <span style={{display:'flex',alignItems:'center',gap:3,fontSize:11,fontWeight:700,color:C.danger,background:C.dangerL,padding:'3px 8px',borderRadius:99,flexShrink:0}}>
-                      🔴 {branchLowCounts[b.id]}
-                    </span>
-                  )}
-                  {sessionStorage.getItem('s_branch_id')===b.id&&<span style={{fontSize:12,color:C.primary,fontWeight:700}}>✓</span>}
-                </button>
-                {branches.length>1 && (
-                  <button onClick={()=>setConfirmStopBranch(b)} title="إيقاف الفرع"
-                    style={{width:40,height:40,borderRadius:10,background:'#fef2f2',border:'1px solid #fecaca',color:'#dc2626',cursor:'pointer',fontSize:14,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
-                    ⏸
+        <div className="sh-overlay sh-sheet-wrap" onClick={()=>setShowBranch(false)}>
+          <div className="sh-sheet" onClick={e=>e.stopPropagation()}>
+            <div style={{width:36,height:4,borderRadius:99,background:C.border2,margin:'0 auto 16px'}}/>
+            <div style={{fontSize:16,fontWeight:700,color:C.text,marginBottom:12}}>اختر الفرع</div>
+            {branches.map((b:any)=>{
+              const current = sessionStorage.getItem('s_branch_id')===b.id
+              return (
+                <div key={b.id} style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                  <button onClick={()=>selectBranch(b)}
+                    style={{flex:1,display:'flex',alignItems:'center',gap:12,padding:'12px 14px',borderRadius:10,border:`1px solid ${current?C.primary:C.border}`,background:current?C.primaryL:C.surface,cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
+                    <Store size={18} color={current?C.primary:C.text4}/>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:14,fontWeight:600,color:C.text}}>{b.name}</div>
+                      {b.location&&<div style={{fontSize:12,color:C.text3}}>{b.location}</div>}
+                    </div>
+                    {branchLowCounts[b.id]>0&&<span style={{fontSize:12,fontWeight:600,color:C.danger}}>{branchLowCounts[b.id]} ناقص</span>}
+                    {current&&<Check size={17} color={C.primary}/>}
                   </button>
-                )}
-              </div>
-            ))}
-            <button onClick={()=>setShowBranch(false)} style={{width:'100%',padding:'13px',background:'#f9fafb',border:'1.5px solid #e5e7eb',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:C.text2,marginTop:4}}>إلغاء</button>
+                  <button onClick={()=>setConfirmStopBranch(b)} title="إيقاف الفرع" className="sh-icon-btn" style={{border:`1px solid ${C.border}`}}><Pause size={16}/></button>
+                </div>
+              )
+            })}
+            <button className="sh-btn" style={{width:'100%',marginTop:4}} onClick={()=>setShowBranch(false)}>إغلاق</button>
           </div>
         </div>
       )}
 
       {/* تأكيد إيقاف الفرع */}
       {confirmStopBranch && (
-        <div style={{position:'fixed',inset:0,zIndex:2100,display:'flex',alignItems:'center',justifyContent:'center',padding:20,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-          <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.5)',backdropFilter:'blur(6px)'}} onClick={()=>{if(!stoppingBranch)setConfirmStopBranch(null)}}/>
-          <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:360,position:'relative',boxShadow:'0 24px 60px rgba(0,0,0,.2)'}}>
-            <div style={{width:48,height:48,borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',fontSize:22}}>⏸</div>
-            <div style={{fontSize:15,fontWeight:800,color:C.text,textAlign:'center',marginBottom:6}}>إيقاف الفرع</div>
-            <div style={{fontSize:13,color:C.text3,textAlign:'center',lineHeight:1.7,marginBottom:20}}>
-              راح يختفي فرع <b style={{color:C.text}}>{confirmStopBranch.name}</b> من القائمة والتقارير. بياناته تبقى محفوظة بأمان ويمكن تفعيله من جديد لاحقاً من صفحة الإعدادات.
-            </div>
+        <div className="sh-overlay" style={{zIndex:2100}} onClick={()=>{if(!stoppingBranch)setConfirmStopBranch(null)}}>
+          <div className="sh-modal" style={{maxWidth:380}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:17,fontWeight:700,color:C.text,marginBottom:8}}>إيقاف فرع {confirmStopBranch.name}</div>
+            <div style={{fontSize:14,color:C.text2,lineHeight:1.8,marginBottom:20}}>يختفي الفرع من القوائم والتقارير. بياناته تبقى محفوظة، وتقدر تفعّله من جديد من صفحة الفروع.</div>
             <div style={{display:'flex',gap:8}}>
-              <button onClick={()=>setConfirmStopBranch(null)} disabled={stoppingBranch}
-                style={{flex:1,padding:'11px',background:'#f9fafb',color:C.text2,border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                إلغاء
-              </button>
-              <button onClick={()=>stopBranch(confirmStopBranch)} disabled={stoppingBranch}
-                style={{flex:2,padding:'11px',background:'#dc2626',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                {stoppingBranch?'جاري الإيقاف...':'تأكيد الإيقاف'}
-              </button>
+              <button className="sh-btn" style={{flex:1}} onClick={()=>setConfirmStopBranch(null)} disabled={stoppingBranch}>إلغاء</button>
+              <button className="sh-btn sh-btn-danger" style={{flex:1}} onClick={()=>stopBranch(confirmStopBranch)} disabled={stoppingBranch}>{stoppingBranch?'جاري الإيقاف...':'إيقاف الفرع'}</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* More drawer — mobile */}
-      {showMore && (
-        <div style={{position:'fixed',inset:0,zIndex:1000,display:'flex',alignItems:'flex-end',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-          <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.4)',backdropFilter:'blur(4px)'}} onClick={()=>setShowMore(false)}/>
-          <div data-no-pull style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',padding:'12px 20px calc(32px + env(safe-area-inset-bottom))',position:'relative',animation:'slideUp .3s ease',maxHeight:'90dvh',overflowY:'auto',overscrollBehavior:'contain',WebkitOverflowScrolling:'touch'}}>
-            <style>{`@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}`}</style>
-            <div style={{width:36,height:4,borderRadius:99,background:'#e5e7eb',margin:'0 auto 20px'}}/>
+      {/* Onboarding — أول دخول */}
+      {showOnboarding && (() => {
+        const steps = [
+          { title:'أهلاً بك في Storely', body:'أربع خطوات وتكون جاهز: المنتجات، الموظفين، الموردين، والإشعارات.', go:null },
+          { title:'أضف منتجاتك', body:'من صفحة المخزون اضغط "إضافة منتج" وأدخل الاسم والكمية وحد إعادة الطلب.', go:{ href:'/inventory', label:'فتح المخزون' } },
+          { title:'أضف موظفيك', body:'من صفحة الموظفين أضف كل موظف برقم جواله، ويدخل برمز PIN خاص فيه.', go:{ href:'/staff-management', label:'فتح الموظفين' } },
+          { title:'أضف موردينك', body:'اربط كل منتج بمورده، ويوصل المورد طلب توريد على واتساب لما ينقص الصنف.', go:{ href:'/suppliers', label:'فتح الموردين' } },
+          { title:'كل شي جاهز', body:'تقدر تبدأ الحين. الدعم الفني متاح من القائمة لو احتجت أي شي.', go:null },
+        ]
+        const s = steps[onboardingStep] || steps[0]
+        const done = () => { localStorage.setItem('onboarding_done','1'); setShowOnboarding(false) }
+        return (
+          <div className="sh-overlay" style={{zIndex:9999}}>
+            <div className="sh-modal" style={{maxWidth:440}}>
+              <div style={{fontSize:12,color:C.text3,fontWeight:600,marginBottom:6}}>الخطوة {onboardingStep+1} من {steps.length}</div>
+              <div style={{fontSize:18,fontWeight:700,color:C.text,marginBottom:8}}>{s.title}</div>
+              <div style={{fontSize:14,color:C.text2,lineHeight:1.8,marginBottom:20}}>{s.body}</div>
+              <div style={{display:'flex',gap:4,marginBottom:20}}>
+                {steps.map((_,i)=><div key={i} style={{flex:1,height:4,borderRadius:99,background:i<=onboardingStep?C.primary:C.border}}/>)}
+              </div>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                {onboardingStep<steps.length-1
+                  ? <button className="sh-btn sh-btn-primary" onClick={()=>setOnboardingStep(v=>v+1)}>التالي</button>
+                  : <button className="sh-btn sh-btn-primary" onClick={done}>ابدأ</button>}
+                {s.go && <button className="sh-btn" onClick={()=>{done();router.push(s.go!.href)}}>{s.go.label}</button>}
+                {onboardingStep<steps.length-1 && <button className="sh-btn sh-btn-ghost" style={{marginInlineStart:'auto'}} onClick={done}>تخطي</button>}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
-            {/* User info */}
-            <div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 16px',background:C.primaryL,borderRadius:14,marginBottom:16,border:`1px solid ${C.primaryB}`}}>
-              <div style={{width:44,height:44,borderRadius:12,background:C.primary,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:800,color:'white',flexShrink:0}}>{userInit}</div>
+      {/* More — قائمة الجوال */}
+      {showMore && (
+        <div className="sh-overlay sh-sheet-wrap" onClick={()=>setShowMore(false)}>
+          <div data-no-pull className="sh-sheet" onClick={e=>e.stopPropagation()}>
+            <div style={{width:36,height:4,borderRadius:99,background:C.border2,margin:'0 auto 16px'}}/>
+            <div style={{display:'flex',alignItems:'center',gap:12,padding:'4px 4px 16px',borderBottom:`1px solid ${C.border}`,marginBottom:8}}>
+              <div className="sh-avatar" style={{width:40,height:40,fontSize:15}}>{userInit}</div>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:14,fontWeight:700,color:C.text}}>{userName}</div>
-                <div style={{fontSize:11,color:C.primary,fontWeight:600}}>{orgName}</div>
-                {branchName&&<div style={{fontSize:10,color:C.text3}}>{branchName}</div>}
+                <div style={{fontSize:12,color:C.text3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName}{branchName?` · ${branchName}`:''}</div>
               </div>
-              {branches.length>1&&(
-                <button onClick={()=>{setShowMore(false);openBranchSelector()}} style={{padding:'6px 12px',background:'white',border:`1px solid ${C.primaryB}`,borderRadius:8,fontSize:11,fontWeight:700,color:C.primary,cursor:'pointer',fontFamily:'inherit'}}>تغيير</button>
-              )}
+              {branches.length>1&&<button className="sh-btn sh-btn-sm" onClick={()=>{setShowMore(false);openBranchSelector()}}>تغيير الفرع</button>}
             </div>
-
-            {/* Nav items */}
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
-              {[...NAV_MAIN,...NAV_MORE].filter(item=>(item.href!=='/addons-market'||!inApp)&&((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic'||hasExtraBranchAddon||orgMaxBranches>1)&&(item.href!=='/attendance'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/hr-management'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/profitability'||orgPlan!=='basic'||hasProfitAddon)&&(item.href!=='/online-store'||hasMenuAddon)&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
-                const active=isActive(item.href)
-                return (
-                  <button key={item.href} onClick={()=>{router.push(item.href);setShowMore(false)}} onMouseEnter={()=>router.prefetch(item.href)}
-                    style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',borderRadius:12,border:`1.5px solid ${active?C.primary:'#e5e7eb'}`,background:active?C.primaryL:'#f9fafb',cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
-                    <div style={{width:32,height:32,borderRadius:9,background:active?C.primary:'#e5e7eb',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                      <Icon d={item.icon} size={15} stroke={active?'white':'#6b7280'} width={2}/>
-                    </div>
-                    <span style={{fontSize:12,fontWeight:active?700:600,color:active?C.primary:C.text2}}>{t(item.labelKey)}</span>
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* Actions */}
-            <div style={{display:'flex',gap:8}}>
-              <button onClick={toggleTheme} style={{flex:1,padding:'11px',background:'#f9fafb',border:'1.5px solid #e5e7eb',borderRadius:12,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:C.text2,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-                {theme==='light'?'🌙 داكن':'☀️ فاتح'}
-              </button>
-              <button onClick={async()=>{await sb.auth.signOut();_cache=null;sessionStorage.clear();window.location.href='/login'}}
-                style={{flex:1,padding:'11px',background:'#fef2f2',border:'1.5px solid #fecaca',borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',color:'#ef4444',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-                <Icon d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" size={15} stroke="#ef4444" width={2.5}/>
-                خروج
-              </button>
+            {visibleGroups.map(g=>(
+              <div key={g.labelKey} style={{marginTop:10}}>
+                <div className="sh-group-label">{t(g.labelKey)}</div>
+                {g.items.map(item=>{
+                  const active=isActive(item.href)
+                  const external=item.href.startsWith('http')
+                  const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
+                  return (
+                    <button key={item.href} className={`sh-nav${active?' on':''}`}
+                      onClick={()=>{ if(external) window.open(item.href,'_blank'); else router.push(item.href); setShowMore(false) }}>
+                      <Icon d={item.icon} size={18} width={1.75}/>
+                      <span style={{flex:1}}>{t(item.labelKey)}</span>
+                      {badge>0&&<span className="sh-count">{badge}</span>}
+                    </button>
+                  )
+                })}
+              </div>
+            ))}
+            <div style={{display:'flex',gap:8,marginTop:16,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
+              <button className="sh-btn" style={{flex:1}} onClick={toggleTheme}>{theme==='light'?<Moon size={16}/>:<Sun size={16}/>} {theme==='light'?'الوضع الداكن':'الوضع الفاتح'}</button>
+              <button className="sh-btn sh-btn-danger" style={{flex:1}} onClick={signOut}><LogOut size={16}/> تسجيل الخروج</button>
             </div>
           </div>
         </div>
       )}
 
-      <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',minHeight:'100vh',background:C.bg}}>
-        <style>{`
-          *{box-sizing:border-box}
-          @keyframes spin{to{transform:rotate(360deg)}}
+      <div className="sh-root">
+        <style>{SHELL_CSS}</style>
 
-          /* Mobile — default */
-          .desk-layout{display:none}
-          .mob-layout{display:flex;flex-direction:column;min-height:100vh}
-          .mob-header{display:flex}
-          .mob-content{flex:1;padding:0 12px 80px;margin-top:70px}
-          .mob-bottom-nav{display:flex}
-          /* شاشات ضيقة (أو تكبير الخط/العرض بالجوال): "ناقص" موجود أصلاً بالرئيسية والمخزون — نخفيه من الشريط عشان ما يدفع الصفحة */
-          @media(max-width:340px){.mob-low-pill{display:none!important}}
-          .desk-sidebar{display:none}
-
-          /* Desktop */
-          @media(min-width:768px){
-            .desk-layout{display:flex;min-height:100vh}
-            .mob-layout{display:none}
-            .desk-sidebar{display:flex;flex-direction:column;width:220px;position:fixed;top:0;right:0;bottom:0;background:#042f2e;z-index:100;border-left:1px solid rgba(255,255,255,.06)}.desk-topbar{display:flex}
-            .desk-content{flex:1;margin-right:220px;padding:20px 20px;min-height:100vh;width:calc(100vw - 220px);max-width:calc(100vw - 220px)}
-          }
-        `}</style>
-
-        {/* ═══ MOBILE LAYOUT ═══ */}
+        {/* ═══ الجوال ═══ */}
         <div className="mob-layout">
-          {/* Mobile Header — Zid style */}
-        {/* Onboarding Modal */}
-      {showOnboarding && (
-        <div style={{position:'fixed',inset:0,zIndex:9999,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(4px)'}}>
-          <div style={{background:'white',borderRadius:24,width:'100%',maxWidth:480,fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',overflow:'hidden',boxShadow:'0 24px 60px rgba(0,0,0,.3)'}}>
-            <div style={{background:'linear-gradient(135deg,#042f2e,#0C213B)',padding:'28px 28px 24px',textAlign:'center'}}>
-              <div style={{fontSize:48,marginBottom:12}}>{onboardingStep===0?'👋':onboardingStep===1?'📦':onboardingStep===2?'👥':onboardingStep===3?'🚚':'🎉'}</div>
-              <div style={{fontSize:18,fontWeight:800,color:'white',marginBottom:6}}>
-                {onboardingStep===0?'أهلاً بك في Storely!':onboardingStep===1?'أضف منتجاتك':onboardingStep===2?'أضف موظفيك':onboardingStep===3?'أضف موردينك':'أنت جاهز!'}
-              </div>
-              <div style={{fontSize:13,color:'rgba(255,255,255,.7)'}}>
-                {onboardingStep===0?'دليل سريع لتبدأ في 4 خطوات':onboardingStep===1?'أضف أصناف مخزونك وكمياتها':onboardingStep===2?'أعط موظفيك صلاحيات الصرف':onboardingStep===3?'ربط موردينك لطلبات أسرع':'يمكنك البدء الآن'}
-              </div>
-              <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:16}}>
-                {[0,1,2,3,4].map(i=>(
-                  <div key={i} style={{width:i===onboardingStep?20:6,height:6,borderRadius:99,background:i===onboardingStep?'#2dd4bf':'rgba(255,255,255,.3)',transition:'all .3s'}}/>
-                ))}
-              </div>
-            </div>
-            <div style={{padding:'24px 28px'}}>
-              {onboardingStep===0 && (
-                <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
-                  {[
-                    {icon:'📦',title:'أضف منتجاتك',desc:'سجّل أصناف مخزونك وكمياتها والحد الأدنى'},
-                    {icon:'👥',title:'أضف موظفيك',desc:'أعط كل موظف PIN ليدخل ويصرف'},
-                    {icon:'🚚',title:'أضف موردينك',desc:'ربط المورد بالمنتج لطلبات تلقائية'},
-                    {icon:'📲',title:'فعّل الإشعارات',desc:'استقبل تنبيهات واتساب عند نقص المخزون'},
-                  ].map((s,i)=>(
-                    <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 12px',background:'#f8fafc',borderRadius:10}}>
-                      <span style={{fontSize:20,flexShrink:0}}>{s.icon}</span>
-                      <div>
-                        <div style={{fontSize:13,fontWeight:700,color:'#0f172a'}}>{s.title}</div>
-                        <div style={{fontSize:11,color:'#64748b',marginTop:2}}>{s.desc}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+          <header className="mob-header">
+            <img src={orgLogo||'/storely-logo.png'} alt="" className="sh-logo"/>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:14,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName||'Storely'}</div>
+              {branchName&&(
+                <button className="sh-branch-inline" onClick={()=>branches.length>1&&openBranchSelector()} disabled={branches.length<2}>
+                  <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}}>{branchName}</span>
+                  {branches.length>1&&<ChevronDown size={13}/>}
+                </button>
               )}
-              {onboardingStep===1 && <div style={{textAlign:'center' as const}}><p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:16}}>من صفحة <b>المخزون</b> اضغط <b>"+ إضافة منتج"</b> وأدخل اسم المنتج والكمية وحد إعادة الطلب</p><button onClick={()=>router.push('/inventory')} style={{padding:'10px 20px',background:'#f0fdfa',color:'#029FA2',border:'1.5px solid #99f6e4',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>اذهب للمخزون ←</button></div>}
-              {onboardingStep===2 && <div style={{textAlign:'center' as const}}><p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:16}}>من صفحة <b>الموظفون</b> اضغط <b>"+ موظف جديد"</b> وأدخل اسمه ورقم جواله</p><button onClick={()=>router.push('/staff-management')} style={{padding:'10px 20px',background:'#f0fdfa',color:'#029FA2',border:'1.5px solid #99f6e4',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>اذهب للموظفين ←</button></div>}
-              {onboardingStep===3 && <div style={{textAlign:'center' as const}}><p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:16}}>من صفحة <b>الموردين</b> أضف موردينك لطلبات تلقائية عبر واتساب</p><button onClick={()=>router.push('/suppliers')} style={{padding:'10px 20px',background:'#f0fdfa',color:'#029FA2',border:'1.5px solid #99f6e4',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>اذهب للموردين ←</button></div>}
-              {onboardingStep===4 && <div style={{textAlign:'center' as const}}><p style={{fontSize:14,color:'#64748b',lineHeight:1.8}}>كل شيء جاهز! ابدأ بإدارة مخزونك الآن 🚀</p></div>}
             </div>
-            <div style={{padding:'0 28px 24px',display:'flex',gap:8}}>
-              {onboardingStep<4 ? <>
-                <button onClick={()=>{localStorage.setItem('onboarding_done','1');setShowOnboarding(false)}} style={{flex:1,padding:'11px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:10,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>تخطي</button>
-                <button onClick={()=>setOnboardingStep(s=>s+1)} style={{flex:2,padding:'11px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>التالي ←</button>
-              </> : <button onClick={()=>{localStorage.setItem('onboarding_done','1');setShowOnboarding(false)}} style={{flex:1,padding:'12px',background:'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>🚀 ابدأ الآن</button>}
-            </div>
-          </div>
-        </div>
-      )}
-
-        <header className="mob-header" style={{position:'fixed',top:0,right:0,left:0,zIndex:100,background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,padding:'12px 16px',alignItems:'center',gap:10}}>
-            <div style={{flex:1,display:'flex',alignItems:'center',gap:8,minWidth:0}}>
-              <img src={orgLogo||"/storely-logo.png"} alt="Storely" style={{maxWidth:40,maxHeight:40,height:'auto',width:'auto',flexShrink:0}}/>
-              <div style={{minWidth:0}}>
-                <div style={{fontSize:13,fontWeight:800,color:'white',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName||'Storely'}</div>
-                {branchName&&(
-                  <button onClick={()=>branches.length>1&&openBranchSelector()}
-                    style={{marginTop:2,display:'flex',alignItems:'center',gap:5,maxWidth:'100%',minWidth:0,fontSize:10,fontWeight:700,color:'white',background:'rgba(255,255,255,.22)',border:'1px solid rgba(255,255,255,.35)',borderRadius:99,padding:'2px 9px',cursor:branches.length>1?'pointer':'default',fontFamily:'inherit',width:'fit-content'}}>
-                    <span style={{width:5,height:5,borderRadius:'50%',background:'white',flexShrink:0}}/>
-                    <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:100,minWidth:0}}>{branchName}</span>
-                    {branches.length>1&&<span style={{fontSize:8}}>▾</span>}
-                  </button>
-                )}
-              </div>
-            </div>
-            {lowCount>0&&(
-              <button className="mob-low-pill" onClick={()=>router.push('/inventory')} style={{background:'rgba(255,255,255,.2)',border:'1px solid rgba(255,255,255,.3)',borderRadius:99,padding:'4px 10px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4,flexShrink:0,whiteSpace:'nowrap'}}>
-                <span style={{width:6,height:6,borderRadius:'50%',background:'#fbbf24',display:'inline-block'}}/>
-                <span style={{fontSize:10,fontWeight:700,color:'white'}}>{lowCount} ناقص</span>
-              </button>
-            )}
-            <button onClick={()=>router.push('/notifications')}
-              style={{width:36,height:36,borderRadius:10,background:'rgba(255,255,255,.2)',border:'1px solid rgba(255,255,255,.3)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,position:'relative'}}>
-              <Icon d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" size={18} stroke="white" width={2}/>
-              {unread>0&&<span style={{position:'absolute',top:4,right:4,width:8,height:8,borderRadius:'50%',background:'#ef4444',border:'1.5px solid transparent'}}/>}
+            <button className="sh-icon-btn" aria-label="الإشعارات" onClick={()=>router.push('/notifications')}>
+              <Bell size={20}/>{unread>0&&<span className="sh-dot"/>}
             </button>
-            <div style={{width:36,height:36,borderRadius:10,background:'rgba(255,255,255,.2)',border:'1px solid rgba(255,255,255,.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:800,color:'white',cursor:'pointer',flexShrink:0}} onClick={()=>setShowMore(true)}>
-              {userInit}
-            </div>
+            <button className="sh-avatar" aria-label="حسابي" onClick={()=>setShowMore(true)}>{userInit}</button>
           </header>
 
-          {/* Mobile Content */}
           <div className="mob-content">
-            {ready ? children : (
-              <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'60vh'}}>
-                <div style={{width:32,height:32,border:`3px solid #e5e7eb`,borderTopColor:C.primary,borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
-              </div>
-            )}
+            {banners}
+            {ready ? children : <div className="sh-loading"><span className="sh-spinner"/></div>}
           </div>
 
-          {/* Mobile Bottom Nav — Zid style */}
-          <nav className="mob-bottom-nav" style={{position:'fixed',bottom:0,right:0,left:0,zIndex:100,background:'white',borderTop:'1px solid #f0f0f0',paddingBottom:'env(safe-area-inset-bottom)',justifyContent:'space-around',alignItems:'stretch',boxShadow:'0 -4px 20px rgba(0,0,0,.06)'}}>
+          <nav className="mob-bottom-nav">
             {BOT_NAV.filter(item=>navVisible(item.href)).map(item=>{
               const active=isActive(item.href)
-              return(
-                <button key={item.href} onClick={()=>router.push(item.href)} onMouseEnter={()=>router.prefetch(item.href)}
-                  style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3,padding:'10px 4px 8px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',color:active?C.primary:'#9ca3af',position:'relative',transition:'color .15s'}}>
-                  {active&&<div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:28,height:3,borderRadius:99,background:C.primary}}/>}
-                  <div style={{position:'relative'}}>
-                    <Icon d={item.icon} size={22} stroke={active?C.primary:'#9ca3af'} width={active?2.5:1.8}/>
-                    {(item as any).badge>0&&<span style={{position:'absolute',top:-4,right:-6,background:'#ef4444',color:'white',fontSize:8,fontWeight:700,padding:'1px 4px',borderRadius:99,minWidth:14,textAlign:'center'}}>{(item as any).badge}</span>}
-                  </div>
-                  <span style={{fontSize:9,fontWeight:active?700:400}}>{t(item.labelKey)}</span>
+              return (
+                <button key={item.href} className={`sh-tab${active?' on':''}`} onClick={()=>router.push(item.href)} onMouseEnter={()=>router.prefetch(item.href)}>
+                  <span style={{position:'relative',display:'flex'}}>
+                    <Icon d={item.icon} size={22} width={active?2:1.75}/>
+                    {(item as any).badge>0&&<span className="sh-count sh-count-float">{(item as any).badge}</span>}
+                  </span>
+                  <span>{t(item.labelKey)}</span>
                 </button>
               )
             })}
-            {/* More button */}
-            <button onClick={()=>setShowMore(true)}
-              style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3,padding:'10px 4px 8px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',color:'#9ca3af',position:'relative',transition:'color .15s'}}>
-              <div style={{position:'relative'}}>
-                <Icon d="M4 6h16M4 12h16M4 18h16" size={22} stroke="#9ca3af" width={1.8}/>
-                {(unread>0||lowCount>0)&&<span style={{position:'absolute',top:-3,right:-4,width:7,height:7,borderRadius:'50%',background:'#ef4444',border:'1.5px solid white'}}/>}
-              </div>
-              <span style={{fontSize:9,fontWeight:400}}>المزيد</span>
+            <button className="sh-tab" onClick={()=>setShowMore(true)}>
+              <span style={{position:'relative',display:'flex'}}>
+                <Icon d="M4 6h16M4 12h16M4 18h16" size={22} width={1.75}/>
+                {(unread>0||lowCount>0)&&<span className="sh-dot" style={{top:-2,right:-3}}/>}
+              </span>
+              <span>المزيد</span>
             </button>
           </nav>
         </div>
 
-        {/* ═══ DESKTOP LAYOUT ═══ */}
+        {/* ═══ الكمبيوتر ═══ */}
         <div className="desk-layout">
-          {/* Desktop Sidebar */}
           <aside className="desk-sidebar">
-            <div style={{padding:'18px 16px',borderBottom:'1px solid rgba(255,255,255,.06)',display:'flex',alignItems:'center',gap:10}}>
-              <div style={{width:44,height:44,borderRadius:'50%',background:'rgba(255,255,255,.92)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:5,overflow:'hidden'}}><img src={orgLogo||"/storely-logo.png"} alt="Storely" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/></div>
-              <div style={{minWidth:0}}>
-                <div style={{fontSize:13,fontWeight:800,color:'rgba(255,255,255,.9)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName||'Storely'}</div>
-                {branchName&&(
-                  <button onClick={()=>branches.length>1&&openBranchSelector()}
-                    style={{marginTop:4,display:'flex',alignItems:'center',gap:5,fontSize:11,fontWeight:700,color:C.primary,background:'rgba(22,163,74,.14)',border:'1px solid rgba(22,163,74,.35)',borderRadius:99,padding:'4px 10px',cursor:branches.length>1?'pointer':'default',fontFamily:'inherit'}}>
-                    <span style={{width:6,height:6,borderRadius:'50%',background:C.primary,flexShrink:0}}/>
-                    <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:110}}>{branchName}</span>
-                    {branches.length>1&&<span style={{fontSize:9}}>▾</span>}
-                  </button>
-                )}
+            <div style={{padding:'16px 14px 12px'}}>
+              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                <img src={orgLogo||'/storely-logo.png'} alt="" className="sh-logo"/>
+                <div style={{fontSize:14,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}}>{orgName||'Storely'}</div>
               </div>
+              {branchName&&(
+                <button className="sh-branch" onClick={()=>branches.length>1&&openBranchSelector()} disabled={branches.length<2}>
+                  <Store size={15}/>
+                  <span style={{flex:1,textAlign:'right',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{branchName}</span>
+                  {branches.length>1&&<ChevronDown size={15}/>}
+                </button>
+              )}
             </div>
 
-            <nav ref={navRef} style={{flex:1,padding:'8px 8px',overflowY:'auto',position:'relative' as const}}>
-              <div style={{
-                position:'absolute' as const, right:8, left:8,
-                top:pillStyle.top, height:pillStyle.height, opacity:pillStyle.opacity,
-                background:`${C.primary}22`, borderRadius:9,
-                transition:'top .38s cubic-bezier(0.34,1.56,0.64,1), height .3s cubic-bezier(0.34,1.56,0.64,1), opacity .2s ease',
-                pointerEvents:'none' as const, zIndex:0,
-              }}/>
-              {NAV_GROUPS.map((group,gi)=>{
-                group = { ...group, items: group.items.filter(it => (it.href !== '/online-store' || hasMenuAddon)) }
-                const isAdvancedGroup = group.labelKey==='nav.groupAdvancedTools'
-                const groupCollapsed = isAdvancedGroup && !advancedNavOpen
-                return (
-                <div key={gi} style={{marginBottom:4}}>
-                  {isAdvancedGroup ? (
-                    <button onClick={()=>setAdvancedNavOpen(v=>!v)}
-                      style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',background:'rgba(255,255,255,.07)',border:'1px solid rgba(255,255,255,.1)',borderRadius:8,cursor:'pointer',padding:'8px 10px',margin:'4px 0 6px',fontFamily:'inherit'}}>
-                      <span style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,.7)'}}>✨ {t(group.labelKey)}</span>
-                      <span style={{fontSize:11,color:'rgba(255,255,255,.6)',transition:'transform .2s',transform:advancedNavOpen?'rotate(180deg)':'none'}}>▾</span>
-                    </button>
-                  ) : (
-                    <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.9)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{t(group.labelKey)}</div>
-                  )}
-                  {!groupCollapsed && group.items.filter(item=>(item.href!=='/addons-market'||!inApp)&&((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic'||hasExtraBranchAddon||orgMaxBranches>1)&&(item.href!=='/attendance'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/hr-management'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/profitability'||orgPlan!=='basic'||hasProfitAddon)&&(item.href!=='/online-store'||hasMenuAddon)&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
+            <nav ref={navRef} className="sh-nav-scroll">
+              {visibleGroups.map(g=>(
+                <div key={g.labelKey} style={{marginBottom:12}}>
+                  <div className="sh-group-label">{t(g.labelKey)}</div>
+                  {g.items.map(item=>{
                     const active=isActive(item.href)
+                    const external=item.href.startsWith('http')
                     const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
-                    const isExternal=item.href.startsWith('http')
-                    return(
-                      <button key={item.href} data-active={active} data-navitem={item.href}
-                        onClick={()=>isExternal?window.open(item.href,'_blank'):router.push(item.href)}
-                        onMouseEnter={()=>!isExternal&&router.prefetch(item.href)}
-                        style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:9,border:'none',cursor:'pointer',fontFamily:'inherit',marginBottom:1,background:'transparent',color:active?C.primary:'rgba(255,255,255,.55)',transition:'color .25s ease',textAlign:'right',position:'relative' as const,zIndex:1}}>
-                        <div style={{width:28,height:28,borderRadius:7,background:active?`${C.primary}33`:'rgba(255,255,255,.06)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'all .3s cubic-bezier(0.34,1.56,0.64,1)',transform:active?'scale(1.06)':'scale(1)'}}>
-                          <Icon d={item.icon} size={15} stroke={active?C.primary:'rgba(255,255,255,.55)'} width={active?2.5:2}/>
-                        </div>
-                        <span style={{fontSize:12,fontWeight:active?700:500,flex:1}}>{t(item.labelKey)}</span>
-                        {badge>0&&<span style={{background:C.danger,color:'white',fontSize:9,fontWeight:700,padding:'2px 6px',borderRadius:99,minWidth:18,textAlign:'center'}}>{badge}</span>}
+                    return (
+                      <button key={item.href} className={`sh-nav${active?' on':''}`}
+                        onClick={()=>external?window.open(item.href,'_blank'):router.push(item.href)}
+                        onMouseEnter={()=>!external&&router.prefetch(item.href)}>
+                        <Icon d={item.icon} size={18} width={1.75}/>
+                        <span style={{flex:1}}>{t(item.labelKey)}</span>
+                        {badge>0&&<span className="sh-count">{badge}</span>}
                       </button>
                     )
                   })}
                 </div>
-                )
-              })}
+              ))}
             </nav>
 
-            <div style={{padding:'12px 14px',borderTop:'1px solid rgba(255,255,255,.06)',display:'flex',alignItems:'center',gap:8}}>
-              <div style={{width:32,height:32,borderRadius:'50%',background:C.primary,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'white',flexShrink:0}}>{userInit}</div>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,.8)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{userName}</div>
-              </div>
-              <button onClick={toggleTheme} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,.5)',fontSize:14,padding:4}}>{theme==='light'?'🌙':'☀️'}</button>
-              <button onClick={async()=>{await sb.auth.signOut();_cache=null;sessionStorage.clear();window.location.href='/login'}} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,.5)',padding:4}}>
-                <Icon d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" size={15} stroke="rgba(255,255,255,.5)" width={2}/>
-              </button>
+            <div style={{padding:'10px 12px',borderTop:`1px solid ${C.border}`,display:'flex',alignItems:'center',gap:10}}>
+              <div className="sh-avatar">{userInit}</div>
+              <div style={{flex:1,minWidth:0,fontSize:13,fontWeight:600,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{userName}</div>
+              <button className="sh-icon-btn sh-icon-sm" title={theme==='light'?'الوضع الداكن':'الوضع الفاتح'} onClick={toggleTheme}>{theme==='light'?<Moon size={16}/>:<Sun size={16}/>}</button>
+              <button className="sh-icon-btn sh-icon-sm" title="تسجيل الخروج" onClick={signOut}><LogOut size={16}/></button>
             </div>
           </aside>
 
-
-
-          {/* Top bar */}
-          <div className="desk-topbar" style={{position:'fixed',top:0,right:220,left:0,zIndex:99,background:'white',borderBottom:'1px solid #f0f0ee',padding:'0 24px',height:52,alignItems:'center',justifyContent:'space-between'}}>
-            <div style={{fontSize:13,color:'#94a3b8',fontWeight:500}}>مرحباً، {userName} 👋</div>
-            <div style={{display:'flex',alignItems:'center',gap:4}}>
-              <button onClick={()=>setLang(lang==='ar'?'en':'ar')} title={t('common.language')} style={{display:'none',padding:'0 12px',height:36,borderRadius:10,background:'none',border:'1px solid #e5e7eb',cursor:'pointer',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:'#64748b',fontFamily:'inherit',transition:'background .15s'}}
-                onMouseEnter={e=>(e.currentTarget.style.background='#f5f5f4')} onMouseLeave={e=>(e.currentTarget.style.background='none')}>
-                {lang==='ar'?'EN':'عربي'}
-              </button>
-              <button onClick={()=>router.push('/notifications')} style={{position:'relative',width:36,height:36,borderRadius:10,background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'background .15s'}}
-                onMouseEnter={e=>(e.currentTarget.style.background='#f5f5f4')} onMouseLeave={e=>(e.currentTarget.style.background='none')}>
-                <Icon d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" size={18} stroke="#64748b" width={2}/>
-                {unread>0&&<span style={{position:'absolute',top:5,right:5,width:7,height:7,background:'#ef4444',borderRadius:'50%',border:'2px solid white'}}/>}
-              </button>
-              <button onClick={()=>router.push('/settings')} style={{width:36,height:36,borderRadius:10,background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'background .15s'}}
-                onMouseEnter={e=>(e.currentTarget.style.background='#f5f5f4')} onMouseLeave={e=>(e.currentTarget.style.background='none')}>
-                <Icon d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" size={18} stroke="#64748b" width={2}/>
-              </button>
-              <button onClick={()=>window.open('https://wa.me/966594351667','_blank')} style={{width:36,height:36,borderRadius:10,background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'background .15s'}}
-                onMouseEnter={e=>(e.currentTarget.style.background='#f5f5f4')} onMouseLeave={e=>(e.currentTarget.style.background='none')}>
-                <Icon d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" size={18} stroke="#64748b" width={2}/>
-              </button>
+          <header className="desk-topbar">
+            <div style={{fontSize:13,color:C.text3,display:'flex',alignItems:'center',gap:6,minWidth:0}}>
+              <span style={{fontWeight:600,color:C.text2}}>{orgName}</span>{branchName&&<><span>/</span><span>{branchName}</span></>}
             </div>
-          </div>
+            <div style={{display:'flex',alignItems:'center',gap:4}}>
+              <button className="sh-icon-btn" title="الدعم الفني" onClick={()=>window.open('https://wa.me/966594351667','_blank')}><HelpCircle size={19}/></button>
+              <button className="sh-icon-btn" title="الإعدادات" onClick={()=>router.push('/settings')}><Settings size={19}/></button>
+              <button className="sh-icon-btn" title="الإشعارات" onClick={()=>router.push('/notifications')}><Bell size={19}/>{unread>0&&<span className="sh-dot"/>}</button>
+            </div>
+          </header>
 
-          {/* Desktop Content */}
-          <main className="desk-content" style={{paddingTop:52}}>
-            {subDaysLeft!==null && (
-              <div style={{width:'100%',background:'#fffbeb',borderBottom:'1px solid #fac775',padding:'12px 20px',display:'flex',alignItems:'center',justifyContent:'center',gap:10,flexWrap:'wrap' as const,textAlign:'center' as const}}>
-                <svg width={16} height={16} fill="none" stroke="#854f0b" strokeWidth={2.5} viewBox="0 0 24 24" style={{flexShrink:0}}><path strokeLinecap="round" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-                <span style={{fontSize:13,fontWeight:600,color:'#633806'}}>
-                  {subDaysLeft===0?'ينتهي اشتراكك اليوم!':`سيتم تعطيل حسابك خلال ${subDaysLeft} ${subDaysLeft===1?'يوم':'أيام'}.`} <span className="hide-in-app">قم بالتجديد الآن لتجنب التعطيل!</span>
-                </span>
-                <button className="hide-in-app" onClick={()=>router.push('/settings')} style={{background:'#854f0b',color:'white',border:'none',borderRadius:8,padding:'5px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>
-                  جدد الآن
-                </button>
-              </div>
-            )}
-            {showEnableNotif && (
-              <div style={{width:'100%',background:C.primaryL,borderBottom:`1px solid ${C.primaryB}`,padding:'12px 20px',display:'flex',alignItems:'center',justifyContent:'center',gap:10,flexWrap:'wrap' as const,textAlign:'center' as const}}>
-                <span style={{fontSize:16,flexShrink:0}}>🔔</span>
-                <span style={{fontSize:13,fontWeight:600,color:C.primaryD}}>
-                  فعّل الإشعارات الفورية عشان توصلك تنبيهات نقص المخزون وإقفال الكاشير فوراً — حتى لو التطبيق مقفول.
-                </span>
-                <button onClick={enablePush} disabled={enablingPush} style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'5px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>
-                  {enablingPush?'جاري التفعيل...':'فعّل الإشعارات'}
-                </button>
-                <button onClick={()=>setShowEnableNotif(false)} style={{background:'none',border:'none',color:C.primaryD,fontSize:12,cursor:'pointer',fontFamily:'inherit',textDecoration:'underline',flexShrink:0}}>
-                  لاحقاً
-                </button>
-              </div>
-            )}
-            {ready ? children : (
-              <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'60vh'}}>
-                <div style={{width:32,height:32,border:`3px solid #e5e7eb`,borderTopColor:C.primary,borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
-              </div>
-            )}
+          <main className="desk-content">
+            {banners}
+            {ready ? children : <div className="sh-loading"><span className="sh-spinner"/></div>}
           </main>
         </div>
       </div>
@@ -949,3 +763,72 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </LanguageProvider>
   )
 }
+
+const SHELL_CSS = `
+  .sh-root{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;direction:rtl;min-height:100vh;background:${C.bg}}
+  .sh-root *{box-sizing:border-box}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .sh-loading{display:flex;align-items:center;justify-content:center;min-height:60vh}
+  .sh-spinner{width:28px;height:28px;border:3px solid ${C.border};border-top-color:${C.primary};border-radius:50%;animation:spin .8s linear infinite}
+
+  .sh-logo{width:32px;height:32px;border-radius:8px;object-fit:cover;border:1px solid ${C.border};background:white;flex-shrink:0}
+  .sh-avatar{width:32px;height:32px;border-radius:50%;background:${C.primaryL};color:${C.primary};border:none;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;cursor:pointer;font-family:inherit}
+  .sh-icon-btn{position:relative;width:38px;height:38px;border-radius:8px;border:none;background:transparent;color:${C.text3};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+  .sh-icon-btn:hover{background:#f2f4f7;color:${C.text}}
+  .sh-icon-sm{width:32px;height:32px}
+  .sh-dot{position:absolute;top:8px;right:9px;width:7px;height:7px;border-radius:50%;background:${C.danger};border:1.5px solid white}
+  .sh-count{min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:#f2f4f7;color:${C.text2};font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+  .sh-count-float{position:absolute;top:-6px;right:-10px;background:${C.danger};color:white;min-width:17px;height:17px;font-size:10px;border:1.5px solid white}
+
+  .sh-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;border-radius:8px;border:1px solid ${C.border2};background:${C.surface};color:${C.text};font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap}
+  .sh-btn:hover:not(:disabled){background:#f9fafb}
+  .sh-btn:disabled{opacity:.55;cursor:not-allowed}
+  .sh-btn-sm{padding:6px 11px;font-size:12.5px}
+  .sh-btn-primary{background:${C.primary};border-color:${C.primary};color:white}
+  .sh-btn-primary:hover:not(:disabled){background:${C.primaryD}}
+  .sh-btn-danger{color:${C.danger};border-color:#fecdca}
+  .sh-btn-danger:hover:not(:disabled){background:${C.dangerL}}
+  .sh-btn-ghost{border-color:transparent;background:transparent;color:${C.text3}}
+
+  .sh-group-label{font-size:12px;font-weight:600;color:${C.text4};padding:0 10px 6px}
+  .sh-nav{width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;border:none;background:transparent;color:${C.text2};font-size:13.5px;font-weight:500;font-family:inherit;cursor:pointer;text-align:right;margin-bottom:1px}
+  .sh-nav svg{color:${C.text4};flex-shrink:0}
+  .sh-nav:hover{background:#f2f4f7;color:${C.text}}
+  .sh-nav.on{background:${C.primaryL};color:${C.primary};font-weight:600}
+  .sh-nav.on svg{color:${C.primary}}
+  .sh-nav-scroll{flex:1;overflow-y:auto;padding:4px 10px 12px}
+
+  .sh-branch{margin-top:12px;width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid ${C.border};border-radius:8px;background:${C.surface};color:${C.text2};font-size:13px;font-weight:600;font-family:inherit;cursor:pointer}
+  .sh-branch:disabled{cursor:default}
+  .sh-branch:hover:not(:disabled){border-color:${C.border2};background:#f9fafb}
+  .sh-branch-inline{display:inline-flex;align-items:center;gap:3px;max-width:100%;min-width:0;padding:0;border:none;background:none;color:${C.text3};font-size:12px;font-weight:500;font-family:inherit;cursor:pointer}
+  .sh-branch-inline:disabled{cursor:default}
+
+  .sh-banner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;margin-bottom:16px;border-radius:10px;border:1px solid ${C.primaryB};background:${C.primaryL};color:${C.text};font-size:13px}
+  .sh-banner-warn{border-color:#fedf89;background:#fffaeb}
+
+  .sh-overlay{position:fixed;inset:0;z-index:1000;background:rgba(16,24,40,.45);display:flex;align-items:center;justify-content:center;padding:20px;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;direction:rtl}
+  .sh-modal{background:${C.surface};border-radius:14px;width:100%;padding:24px;box-shadow:0 20px 40px rgba(16,24,40,.18)}
+  .sh-sheet-wrap{align-items:flex-end;padding:0}
+  .sh-sheet{background:${C.surface};border-radius:16px 16px 0 0;width:100%;max-width:560px;padding:12px 16px calc(24px + env(safe-area-inset-bottom));max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;animation:shUp .22s ease}
+  @keyframes shUp{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+
+  /* الجوال */
+  .desk-layout{display:none}
+  .mob-layout{display:flex;flex-direction:column;min-height:100vh}
+  .mob-header{position:fixed;top:0;right:0;left:0;z-index:100;display:flex;align-items:center;gap:10px;height:60px;padding:0 12px 0 14px;background:${C.surface};border-bottom:1px solid ${C.border}}
+  .mob-content{flex:1;padding:16px 14px 88px;margin-top:60px}
+  .mob-bottom-nav{position:fixed;bottom:0;right:0;left:0;z-index:100;display:flex;background:${C.surface};border-top:1px solid ${C.border};padding-bottom:env(safe-area-inset-bottom)}
+  .sh-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:9px 2px 8px;border:none;background:none;color:${C.text4};font-size:11px;font-weight:500;font-family:inherit;cursor:pointer}
+  .sh-tab.on{color:${C.primary};font-weight:700}
+
+  /* الكمبيوتر */
+  @media(min-width:768px){
+    .mob-layout{display:none}
+    .desk-layout{display:block;min-height:100vh}
+    .desk-sidebar{position:fixed;top:0;right:0;bottom:0;width:244px;display:flex;flex-direction:column;background:${C.surface};border-left:1px solid ${C.border};z-index:100}
+    .desk-topbar{position:fixed;top:0;right:244px;left:0;height:56px;z-index:99;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:${C.surface};border-bottom:1px solid ${C.border}}
+    .desk-content{margin-right:244px;padding:80px 28px 40px;min-height:100vh;max-width:calc(100vw - 244px)}
+  }
+`
+

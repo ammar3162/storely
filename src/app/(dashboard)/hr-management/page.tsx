@@ -498,7 +498,7 @@ export default function HRManagementPage() {
                         </span>
                       )}
                       {pendingAdvanceCounts[s.id] > 0 && (
-                        <span style={{background:colors.warning,color:'white',fontSize:10,fontWeight:800,minWidth:18,height:18,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 5px'}} title="عنده طلب سلفة/خصم بانتظار الموافقة">
+                        <span style={{background:'#f79009',color:'white',fontSize:10,fontWeight:800,minWidth:18,height:18,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 5px'}} title="عنده طلب سلفة/خصم بانتظار الموافقة">
                           {pendingAdvanceCounts[s.id]}
                         </span>
                       )}

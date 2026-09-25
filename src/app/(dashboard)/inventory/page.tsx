@@ -1,7 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
-import { Upload, Paperclip, X, AlertTriangle, Camera, Ruler, CheckCircle2, Trash2, Sparkles, Package, Clock } from 'lucide-react'
+import { Upload, Download, Paperclip, X, AlertTriangle, Camera, Ruler, CheckCircle2, Trash2, Sparkles, Package, Plus, ScanLine, Search } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
 import { cache } from '@/lib/cache'
@@ -284,7 +284,8 @@ export default function InventoryPage() {
   )
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',opacity:visible?1:0,transition:'opacity .3s'}}>
+    <div className="iv" style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
+      <style>{IV_CSS}</style>
       <style>{`
         @keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
         @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
@@ -296,7 +297,7 @@ export default function InventoryPage() {
         .tap{transition:all .12s;cursor:pointer}
         .tap:active{transform:scale(.97)}
         /* mobile grid */
-        .mgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+        .mgrid{display:block}
         .dtable{display:none}
         @media(min-width:640px){
           .mgrid{display:none}
@@ -338,7 +339,7 @@ export default function InventoryPage() {
             {importPreview.length===0 ? (
               <>
                 <button onClick={downloadImportTemplate} type="button" style={{width:'100%',padding:10,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,fontSize:12,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit',marginBottom:10}}>
-                  ⬇️ تحميل نموذج فارغ (CSV)
+                  تحميل نموذج فارغ (CSV)
                 </button>
                 <input ref={importFileRef} type="file" accept=".csv" style={{display:'none'}} onChange={e=>{if(e.target.files?.[0])handleImportFile(e.target.files[0])}}/>
                 <button onClick={()=>importFileRef.current?.click()} type="button" style={{width:'100%',padding:14,background:C.primaryL,border:`1.5px dashed ${C.primaryB}`,borderRadius:10,fontSize:13,fontWeight:700,color:C.primary,cursor:'pointer',fontFamily:'inherit'}}>
@@ -400,12 +401,12 @@ export default function InventoryPage() {
 
       {/* Add/Edit Sheet */}
       {showAdd&&(
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.45)',zIndex:500,display:'flex',alignItems:'flex-end',justifyContent:'center',backdropFilter:'blur(4px)'}}>
-          <div style={{background:'white',borderRadius:'18px 18px 0 0',padding:'0 0 env(safe-area-inset-bottom)',width:'100%',maxWidth:500,maxHeight:'92vh',display:'flex',flexDirection:'column',animation:'slideUp .25s ease',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
+        <div className="iv-sheet-wrap" style={{position:'fixed',inset:0,background:'rgba(16,24,40,.45)',zIndex:500,display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
+          <div className="iv-sheet" style={{background:'white',borderRadius:'14px 14px 0 0',padding:'0 0 env(safe-area-inset-bottom)',width:'100%',maxWidth:520,maxHeight:'92vh',display:'flex',flexDirection:'column',animation:'slideUp .25s ease',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
             <div style={{padding:'10px 18px 0',flexShrink:0}}>
-              <div style={{width:32,height:3,borderRadius:99,background:C.border2,margin:'0 auto 14px'}}/>
+              <div style={{width:36,height:4,borderRadius:99,background:C.border2,margin:'0 auto 14px'}}/>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-                <div style={{fontSize:15,fontWeight:700,color:C.text}}>{editItem?'تعديل المنتج':'منتج جديد'}</div>
+                <div style={{fontSize:17,fontWeight:700,color:C.text}}>{editItem?'تعديل المنتج':'منتج جديد'}</div>
                 <button onClick={()=>{setShowAdd(false);setEditItem(null)}} style={{width:28,height:28,borderRadius:'50%',border:`1px solid ${C.border2}`,background:C.bg,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}}><X size={14} strokeWidth={2.25}/></button>
               </div>
             </div>
@@ -450,43 +451,43 @@ export default function InventoryPage() {
                   </div>
 
                   {/* تحويل الوحدة الدقيقة — لدقة استخدام هذا المنتج بالوصفات */}
-                  <div style={{background:'#faf5ff',border:`1px solid #e9d5ff`,borderRadius:10,padding:12}}>
+                  <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:12}}>
                     <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
                       <span style={{display:'flex',alignItems:'center'}}><Ruler size={13} strokeWidth={2.25}/></span>
-                      <div style={{fontSize:11,fontWeight:700,color:'#6b21a8'}}>تحويل الوحدة الدقيقة (اختياري)</div>
+                      <div style={{fontSize:13,fontWeight:600,color:C.text}}>تحويل الوحدة الدقيقة (اختياري)</div>
                       {form.recipe_unit && form.recipe_unit_factor && Number(form.recipe_unit_factor)>0 && (
-                        <span style={{fontSize:9,fontWeight:700,color:'#029FA2',background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'1px 8px',marginRight:'auto',display:'inline-flex',alignItems:'center',gap:3}}><CheckCircle2 size={10} strokeWidth={2.5}/> محدد</span>
+                        <span style={{fontSize:12,fontWeight:600,color:C.primary,marginRight:'auto'}}>محدد</span>
                       )}
                     </div>
-                    <div style={{fontSize:10,color:'#7c3aed',marginBottom:8}}>مفيد لو تستخدم هذا المنتج بوصفات — مثال: الكيس فيه كم جرام، الكرتون فيه كم علبة</div>
+                    <div style={{fontSize:12,color:C.text3,marginBottom:8,lineHeight:1.6}}>مفيد لو تستخدم هذا المنتج بوصفات — مثال: الكيس فيه كم جرام، الكرتون فيه كم علبة</div>
                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                       <div>
                         <label style={lbl}>الوحدة الدقيقة</label>
-                        <input value={form.recipe_unit} onChange={e=>setForm({...form,recipe_unit:e.target.value})} style={{...inp(),fontSize:11,borderColor:'#e9d5ff'}} placeholder="مثال: جرام"/>
+                        <input value={form.recipe_unit} onChange={e=>setForm({...form,recipe_unit:e.target.value})} style={inp()} placeholder="مثال: جرام"/>
                       </div>
                       <div>
                         <label style={lbl}>الكمية بالوحدة الدقيقة</label>
-                        <input type="number" min="0" step="any" value={form.recipe_unit_factor} onChange={e=>setForm({...form,recipe_unit_factor:e.target.value})} style={{...inp(),fontSize:11,borderColor:'#e9d5ff'}} placeholder={`1 ${form.unit} = ؟ ${form.recipe_unit||'وحدة'}`}/>
+                        <input type="number" min="0" step="any" value={form.recipe_unit_factor} onChange={e=>setForm({...form,recipe_unit_factor:e.target.value})} style={inp()} placeholder={`1 ${form.unit} = ؟ ${form.recipe_unit||'وحدة'}`}/>
                       </div>
                     </div>
                     {form.recipe_unit && form.recipe_unit_factor && Number(form.recipe_unit_factor)>0 && (
-                      <div style={{fontSize:10,fontWeight:600,color:'#6b21a8',marginTop:8,textAlign:'center' as const}}>
+                      <div style={{fontSize:12,fontWeight:600,color:C.text2,marginTop:8}}>
                         1 {form.unit} = {form.recipe_unit_factor} {form.recipe_unit}
                       </div>
                     )}
                   </div>
 
                   {editItem?(
-                    <div style={{background:C.primaryL,border:`1px solid ${C.primaryB}`,borderRadius:10,padding:12}}>
-                      <div style={{fontSize:12,color:C.primary,marginBottom:8,fontWeight:600}}>الكمية الحالية: <b style={{fontSize:18}}>{editItem.qty} {form.unit}</b></div>
+                    <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:12}}>
+                      <div style={{fontSize:13,color:C.text2,marginBottom:8}}>الكمية الحالية: <b style={{color:C.text}}>{editItem.qty} {form.unit}</b></div>
                       <label style={lbl}>كمية تضيفها</label>
-                      <input type="number" min="0" value={addQty||''} onChange={e=>setAddQty(Number(e.target.value)||0)} style={{...inp(),fontSize:20,fontWeight:700,textAlign:'center'}} placeholder="0"/>
-                      {addQty>0&&<div style={{fontSize:11,color:C.primary,marginTop:6,fontWeight:600}}>الإجمالي بعد الإضافة: {editItem.qty+addQty} {form.unit}</div>}
+                      <input type="number" min="0" value={addQty||''} onChange={e=>setAddQty(Number(e.target.value)||0)} style={{...inp(),fontSize:16,fontWeight:600}} placeholder="0"/>
+                      {addQty>0&&<div style={{fontSize:12,color:C.text2,marginTop:6}}>الإجمالي بعد الإضافة: {editItem.qty+addQty} {form.unit}</div>}
                     </div>
                   ):(
                     <div>
                       <label style={lbl}>الكمية الابتدائية *</label>
-                      <input type="number" min="1" required value={form.qty||''} onChange={e=>setForm({...form,qty:Number(e.target.value)})} style={{...inp(),fontSize:20,fontWeight:700,textAlign:'center'}} placeholder="0"/>
+                      <input type="number" min="1" required value={form.qty||''} onChange={e=>setForm({...form,qty:Number(e.target.value)})} style={{...inp(),fontSize:16,fontWeight:600}} placeholder="0"/>
                     </div>
                   )}
                 </div>
@@ -508,72 +509,38 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="u" style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,gap:8}}>
+      {/* العنوان + الأدوات */}
+      <div className="iv-head">
         <div style={{minWidth:0}}>
-          <h1 style={{fontSize:18,fontWeight:700,color:C.text,margin:0,letterSpacing:'-0.3px',whiteSpace:'nowrap'}}>المخزون</h1>
-          <p style={{fontSize:11,color:C.text4,margin:'2px 0 0',fontVariantNumeric:'tabular-nums'}}>
-            {products.length} صنف
-            {lowCount>0&&<span style={{color:C.danger,fontWeight:600}}> · {lowCount} ناقص</span>}
-          </p>
+          <h1 className="iv-title">المخزون</h1>
+          <p className="iv-sub">{products.length} صنف · {totalQty.toLocaleString('en-US')} وحدة إجمالاً</p>
         </div>
-        <div style={{display:'flex',gap:6,alignItems:'center',flexShrink:0}}>
-          <button onClick={exportCSV} title="تصدير CSV"
-            style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'white',border:`1px solid ${C.border2}`,borderRadius:8,cursor:'pointer',color:C.text3,flexShrink:0}}>
-            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-          </button>
-          <button onClick={()=>setShowJardScan(true)} title="مسح للجرد"
-            style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:C.primaryL,border:`1px solid ${C.primaryB}`,borderRadius:8,cursor:'pointer',color:C.primary,flexShrink:0,fontSize:14}}>
-            <Camera size={16} strokeWidth={2.25}/>
-          </button>
-          <button onClick={()=>setShowImport(true)} title="استيراد من ملف"
-            style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'white',border:`1px solid ${C.border2}`,borderRadius:8,cursor:'pointer',color:C.text3,flexShrink:0}}>
-            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M3 15v4a2 2 0 002 2h14a2 2 0 002-2v-4M17 9l-5-5-5 5M12 4v12"/></svg>
-          </button>
-          <button onClick={()=>{setEditItem(null);setAddQty(0);setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:'',recipe_unit:'',recipe_unit_factor:''});setShowAdd(true)}}
-            style={{height:32,padding:'0 12px',background:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4,flexShrink:0,whiteSpace:'nowrap'}}>
-            <svg width="11" height="11" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
-            إضافة
+        <div className="iv-tools">
+          <button className="sh-btn" onClick={exportCSV} title="تصدير CSV"><Download size={16}/><span className="iv-hide-sm">تصدير</span></button>
+          <button className="sh-btn" onClick={()=>setShowImport(true)} title="استيراد من ملف"><Upload size={16}/><span className="iv-hide-sm">استيراد</span></button>
+          <button className="sh-btn" onClick={()=>setShowJardScan(true)} title="جرد بالكاميرا"><ScanLine size={16}/><span className="iv-hide-sm">جرد بالباركود</span></button>
+          <button className="sh-btn sh-btn-primary" onClick={()=>{setEditItem(null);setAddQty(0);setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:'',recipe_unit:'',recipe_unit_factor:''});setShowAdd(true)}}>
+            <Plus size={16}/> إضافة منتج
           </button>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="u" style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,marginBottom:14,animationDelay:'.05s'}} >
-        <style>{`@media(min-width:640px){.sg{grid-template-columns:repeat(4,1fr)!important}}`}</style>
-        {[
-          {label:'إجمالي الأصناف', value:products.length,   color:C.info,    key:'all'  as const, critical:false},
-          {label:'مخزون ناقص',     value:lowCount,           color:C.danger,  key:'low'  as const, critical:lowCount>0},
-          {label:'مخزون كافٍ',     value:products.length-lowCount, color:C.primary, key:'ok' as const, critical:false},
-          {label:'إجمالي الكميات', value:totalQty,           color:C.warning, key:'all'  as const, critical:false},
-        ].map((s,i)=>(
-          <button key={i} onClick={()=>{if(s.key!=='all'||i===0){setStatusFilter(s.key);setCatFilter('all');setPage(1)}}}
-            className="tap"
-            style={{background:s.critical?C.dangerL:'white',borderRadius:12,padding:'12px 14px',border:`1px solid ${s.critical?C.dangerB:statusFilter===s.key&&i<3?s.color:C.border}`,boxShadow:'0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)',textAlign:'right',cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
-            <div style={{fontSize:s.critical?28:20,fontWeight:s.critical?800:600,color:s.critical?C.danger:C.text2,letterSpacing:'-0.5px',fontVariantNumeric:'tabular-nums'}}>{s.value.toLocaleString()}</div>
-            <div style={{fontSize:10,color:s.critical?C.danger:C.text4,marginTop:3,fontWeight:s.critical?700:500}}>{s.label}</div>
-          </button>
-        ))}
-      </div>
-
-      {/* بانر تدقيق الوحدات الدقيقة — يعرض المنتجات اللي ماعندها تحويل محدد بعد */}
+      {/* الوحدات الدقيقة الناقصة */}
       {(()=>{
         const missing = products.filter((p:any)=>!p.recipe_unit_factor)
         if(missing.length===0) return null
         return (
-          <div className="u" style={{marginBottom:12,background:'#faf5ff',border:'1px solid #e9d5ff',borderRadius:12,padding:12,animationDelay:'.09s'}}>
-            <button type="button" onClick={()=>setShowAudit(v=>!v)} style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',padding:0}}>
-              <span style={{fontSize:12,fontWeight:700,color:'#6b21a8',display:'inline-flex',alignItems:'center',gap:5}}><Ruler size={13} strokeWidth={2.25}/> {missing.length} منتج بدون تحويل وحدة دقيقة محدد</span>
-              <span style={{fontSize:11,color:'#7c3aed'}}>{showAudit?'إخفاء ▲':'عرض ▼'}</span>
+          <div className="iv-note">
+            <button type="button" className="iv-note-head" onClick={()=>setShowAudit(v=>!v)}>
+              <Ruler size={15}/>
+              <span style={{flex:1}}>{missing.length} منتج بدون تحويل للوحدة الدقيقة — مهم لو تستخدمها في وصفات</span>
+              <span className="iv-link">{showAudit?'إخفاء':'عرض'}</span>
             </button>
             {showAudit && (
-              <div style={{marginTop:10,display:'flex',flexDirection:'column' as const,gap:6}}>
-                <div style={{fontSize:10,color:'#7c3aed',marginBottom:2}}>لو تستخدم أي منها بوصفات، حدد لها تحويل عشان تكون الحسابات دقيقة</div>
+              <div className="iv-note-list">
                 {missing.map((p:any)=>(
-                  <button key={p.id} type="button" onClick={()=>openEdit(p)} className="tap"
-                    style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'white',border:'1px solid #e9d5ff',borderRadius:8,padding:'8px 12px',cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
-                    <span style={{fontSize:11,fontWeight:600,color:C.text}}>{p.name}</span>
-                    <span style={{fontSize:10,color:'#7c3aed',fontWeight:700}}>حدّد التحويل ←</span>
+                  <button key={p.id} type="button" className="iv-note-item" onClick={()=>openEdit(p)}>
+                    <span>{p.name}</span><span className="iv-link">تحديد التحويل</span>
                   </button>
                 ))}
               </div>
@@ -582,24 +549,31 @@ export default function InventoryPage() {
         )
       })()}
 
-      {/* Filters row */}
-      <div className="u" style={{display:'flex',gap:8,marginBottom:12,alignItems:'center',animationDelay:'.08s',flexWrap:'wrap'}}>
-        {/* Search */}
-        <div style={{position:'relative',flex:1,minWidth:160}}>
-          <svg style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}} width="13" height="13" fill="none" stroke={C.text4} strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}} placeholder="ابحث بالاسم أو الباركود..."
-            style={{width:'100%',padding:'8px 32px 8px 12px',border:`1px solid ${C.border2}`,borderRadius:8,fontSize:12,outline:'none',background:'white',color:C.text,fontFamily:'inherit',boxSizing:'border-box'}}/>
-        </div>
-        {/* Category chips */}
-        <div style={{display:'flex',gap:5,overflowX:'auto',scrollbarWidth:'none',flexShrink:0}}>
-          {allCats.map(cat=>(
-            <button key={cat} className="chip" onClick={()=>{setCatFilter(cat);setPage(1)}}
-              style={{background:catFilter===cat?C.primary:'white',color:catFilter===cat?'white':C.text3,borderColor:catFilter===cat?C.primary:C.border2,flexShrink:0}}>
-              {cat==='all'?'الكل':cat}
+      {/* الفلاتر */}
+      <div className="iv-bar">
+        <div className="iv-tabs">
+          {([
+            {k:'all' as const, l:'الكل', n:products.length},
+            {k:'low' as const, l:'ناقص', n:lowCount},
+            {k:'ok' as const, l:'كافٍ', n:products.length-lowCount},
+          ]).map(tb=>(
+            <button key={tb.k} className={`iv-tab${statusFilter===tb.k?' on':''}`} onClick={()=>{setStatusFilter(tb.k);setPage(1)}}>
+              {tb.l} <span className="iv-tab-n" style={tb.k==='low'&&tb.n>0?{color:C.danger}:undefined}>{tb.n}</span>
             </button>
           ))}
         </div>
+        <div className="iv-search">
+          <Search size={15}/>
+          <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}} placeholder="ابحث بالاسم أو الباركود"/>
+        </div>
       </div>
+      {allCats.length>1 && (
+        <div className="iv-cats">
+          {allCats.map(cat=>(
+            <button key={cat} className={`iv-cat${catFilter===cat?' on':''}`} onClick={()=>{setCatFilter(cat);setPage(1)}}>{cat==='all'?'كل الفئات':cat}</button>
+          ))}
+        </div>
+      )}
 
       {filtered.length===0 && !search && catFilter==='all' && STARTER_PRODUCTS[businessType] && !templateDismissed ? (
         <div className="u" style={{background:'white',borderRadius:14,padding:'28px 24px',border:`1.5px solid ${C.primaryB}`}}>
@@ -646,114 +620,56 @@ export default function InventoryPage() {
         </div>
       ):(
         <>
-          {/* Mobile grid */}
-          <div className="mgrid u" style={{animationDelay:'.1s'}}>
-              {paginated.map(p=>{
-                const isOut=p.qty===0,isLow=p.qty<=p.reorder_point
-                const sc=isOut?C.danger:isLow?C.warning:C.primary
-                const sb2=isOut?C.dangerL:isLow?C.warningL:C.primaryL
-                const sbb=isOut?C.dangerB:isLow?C.warningB:C.primaryB
-                const pct=Math.min((p.qty/Math.max(p.reorder_point*2,p.qty,1))*100,100)
-                return (
-                  <div key={p.id} className="tap" onClick={()=>openEdit(p)}
-                    style={{background:'white',borderRadius:14,padding:'14px',border:`1px solid ${C.border}`,boxShadow:'0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)',cursor:'pointer',position:'relative',overflow:'hidden'}}>
-                    {/* شريط علوي ملوّن يدل على الحالة */}
-                    <div style={{position:'absolute',top:0,right:0,left:0,height:3,background:sc}}/>
-
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
-                      <div style={{display:'flex',alignItems:'center',gap:5}}>
-                        <span style={{background:sb2,color:sc,padding:'3px 9px',borderRadius:99,fontSize:10,fontWeight:700,border:`1px solid ${sbb}`}}>
-                          {isOut?'نفد':isLow?'ناقص':'كافٍ'}
-                        </span>
-                        {(p as any).recipe_unit_factor ? (
-                          <span title={`تحويل محدد: 1 ${p.unit} = ${(p as any).recipe_unit_factor} ${(p as any).recipe_unit}`} style={{color:'#7c3aed',background:'#faf5ff',border:'1px solid #e9d5ff',borderRadius:99,padding:'3px 6px',display:'inline-flex',alignItems:'center'}}><Ruler size={11} strokeWidth={2.25}/></span>
-                        ) : (
-                          <span title="ما فيه تحويل وحدة دقيقة محدد" style={{color:C.text4,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:99,padding:'3px 6px',opacity:.5,display:'inline-flex',alignItems:'center'}}><Ruler size={11} strokeWidth={2.25}/></span>
-                        )}
-                      </div>
-                      {p.category && (
-                        <span style={{fontSize:9,color:C.text4,background:C.bg,padding:'3px 7px',borderRadius:6,maxWidth:70,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.category}</span>
-                      )}
+          {/* الجوال: قائمة */}
+          <div className="mgrid iv-list">
+            {paginated.map(p=>{
+              const isOut=p.qty===0,isLow=p.qty<=p.reorder_point
+              const exp=(p as any).expiry_date?Math.ceil((new Date((p as any).expiry_date).getTime()-Date.now())/86400000):null
+              return (
+                <button key={p.id} className="iv-item" onClick={()=>openEdit(p)}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div className="iv-name">{p.name}</div>
+                    <div className="iv-meta">
+                      <StatusDot out={isOut} low={isLow}/>
+                      {p.category&&<span>· {p.category}</span>}
+                      {exp!==null&&exp<=7&&<span style={{color:exp<0?C.danger:C.warning}}>· {exp<0?'منتهي الصلاحية':exp===0?'ينتهي اليوم':`ينتهي خلال ${exp} يوم`}</span>}
                     </div>
-
-                    <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8,lineHeight:1.4,minHeight:36,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' as const,overflow:'hidden'}}>{p.name}</div>
-
-                    <div style={{display:'flex',alignItems:'baseline',gap:4,marginBottom:8}}>
-                      <span style={{fontSize:24,fontWeight:800,color:sc,lineHeight:1,fontVariantNumeric:'tabular-nums'}}>{p.qty}</span>
-                      <span style={{fontSize:11,color:C.text4,fontWeight:600}}>{p.unit}</span>
-                    </div>
-
-                    <div style={{height:4,background:C.bg,borderRadius:99,overflow:'hidden',marginBottom:6}}>
-                      <div style={{height:'100%',width:pct+'%',background:sc,borderRadius:99,transition:'width .3s'}}/>
-                    </div>
-                    <div style={{fontSize:10,color:C.text4,fontWeight:600}}>الحد الأدنى: {p.reorder_point} {p.unit}</div>
-                    {(p as any).expiry_date && (()=>{ const days=Math.ceil((new Date((p as any).expiry_date).getTime()-Date.now())/86400000); return days<=7 ? (
-                      <div style={{marginTop:6,fontSize:10,fontWeight:700,color:days<0?C.danger:C.warning,background:days<0?C.dangerL:C.warningL,padding:'3px 8px',borderRadius:6,display:'inline-block'}}>
-                        {days<0?<span style={{display:'inline-flex',alignItems:'center',gap:4}}><AlertTriangle size={11} strokeWidth={2.25}/> منتهي الصلاحية</span>:days===0?<span style={{display:'inline-flex',alignItems:'center',gap:4}}><AlertTriangle size={11} strokeWidth={2.25}/> ينتهي اليوم</span>:<span style={{display:'inline-flex',alignItems:'center',gap:4}}><Clock size={11} strokeWidth={2.25}/> ينتهي خلال {days} يوم</span>}
-                      </div>
-                    ) : null })()}
                   </div>
-                )
-              })}
+                  <div style={{textAlign:'left',flexShrink:0}}>
+                    <div className="iv-qty" style={{color:isOut?C.danger:isLow?C.warning:C.text}}>{p.qty} <span className="iv-unit">{p.unit}</span></div>
+                    <div className="iv-min">الحد {p.reorder_point}</div>
+                  </div>
+                </button>
+              )
+            })}
           </div>
 
-          {/* Desktop table */}
-          <div className="dtable u" style={{background:'white',borderRadius:12,border:`1px solid ${C.border}`,overflow:'hidden',animationDelay:'.1s'}}>
-            <table style={{width:'100%',borderCollapse:'collapse'}}>
+          {/* الكمبيوتر: جدول */}
+          <div className="dtable iv-table-wrap">
+            <table className="iv-table">
               <thead>
-                <tr style={{background:C.bg,borderBottom:`1px solid ${C.border}`}}>
-                  {['المنتج','الفئة','المخزون','الحد الأدنى','الحالة',''].map((h,i)=>(
-                    <th key={i} style={{padding:'10px 16px',color:C.text4,fontSize:10,fontWeight:700,textAlign:i===5?'center':'right',textTransform:'uppercase',letterSpacing:'.06em',whiteSpace:'nowrap'}}>{h}</th>
-                  ))}
-                </tr>
+                <tr>{['المنتج','الفئة','الكمية','الحد الأدنى','الحالة',''].map((h,i)=><th key={i}>{h}</th>)}</tr>
               </thead>
               <tbody>
                 {paginated.map(p=>{
                   const isOut=p.qty===0,isLow=p.qty<=p.reorder_point
-                  const sc=isOut?C.danger:isLow?C.warning:C.primary
-                  const sb2=isOut?C.dangerL:isLow?C.warningL:C.primaryL
-                  const sbb=isOut?C.dangerB:isLow?C.warningB:C.primaryB
-                  const pct=Math.min((p.qty/Math.max(p.reorder_point*2,p.qty,1))*100,100)
+                  const exp=(p as any).expiry_date?Math.ceil((new Date((p as any).expiry_date).getTime()-Date.now())/86400000):null
                   return (
-                    <tr key={p.id} className="rh" style={{borderBottom:`1px solid ${C.border}`, background: isOut?'rgba(220,38,38,.035)':isLow?'rgba(245,158,11,.045)':'transparent'}}>
-                      <td style={{padding:'12px 16px',minWidth:180}}>
-                        <div style={{fontWeight:600,fontSize:13,color:C.text}}>{p.name}</div>
-                        {p.sku&&<div style={{fontSize:10,color:C.text4,marginTop:1,fontFamily:'monospace'}}>#{p.sku}</div>}
-                        {(p as any).expiry_date && (()=>{ const days=Math.ceil((new Date((p as any).expiry_date).getTime()-Date.now())/86400000); return days<=7 ? (
-                          <div style={{marginTop:4,fontSize:10,fontWeight:700,color:days<0?C.danger:C.warning,background:days<0?C.dangerL:C.warningL,padding:'2px 6px',borderRadius:5,display:'inline-block'}}>
-                            {days<0?<span style={{display:'inline-flex',alignItems:'center',gap:4}}><AlertTriangle size={11} strokeWidth={2.25}/> منتهي</span>:days===0?<span style={{display:'inline-flex',alignItems:'center',gap:4}}><AlertTriangle size={11} strokeWidth={2.25}/> اليوم</span>:<span style={{display:'inline-flex',alignItems:'center',gap:4}}><Clock size={11} strokeWidth={2.25}/> {days} يوم</span>}
-                          </div>
-                        ) : null })()}
-                        <div style={{height:2,background:C.border,borderRadius:99,overflow:'hidden',marginTop:6,width:80}}>
-                          <div style={{height:'100%',width:pct+'%',background:sc,borderRadius:99}}/>
+                    <tr key={p.id} onClick={()=>openEdit(p)}>
+                      <td>
+                        <div className="iv-name">{p.name}</div>
+                        <div className="iv-meta">
+                          {p.sku&&<span dir="ltr">#{p.sku}</span>}
+                          {exp!==null&&exp<=7&&<span style={{color:exp<0?C.danger:C.warning}}>{exp<0?'منتهي الصلاحية':exp===0?'ينتهي اليوم':`ينتهي خلال ${exp} يوم`}</span>}
                         </div>
                       </td>
-                      <td style={{padding:'12px 16px'}}>
-                        {p.category
-                          ?<span style={{background:C.bg,color:C.text2,padding:'3px 9px',borderRadius:99,fontSize:11,fontWeight:500,border:`1px solid ${C.border2}`}}>{p.category}</span>
-                          :<span style={{color:C.text4,fontSize:12}}>—</span>}
-                      </td>
-                      <td style={{padding:'12px 16px',whiteSpace:'nowrap'}}>
-                        <span style={{fontWeight:700,fontSize:18,color:sc,fontVariantNumeric:'tabular-nums'}}>{p.qty}</span>
-                        <span style={{fontSize:11,color:C.text4,marginRight:4}}>{p.unit}</span>
-                      </td>
-                      <td style={{padding:'12px 16px',color:C.text3,fontSize:12,fontVariantNumeric:'tabular-nums'}}>{p.reorder_point} {p.unit}</td>
-                      <td style={{padding:'12px 16px'}}>
-                        <span style={{background:sb2,color:sc,padding:'3px 10px',borderRadius:99,fontSize:11,fontWeight:600,border:`1px solid ${sbb}`}}>
-                          {isOut?'نفد':isLow?'ناقص':'كافٍ'}
-                        </span>
-                      </td>
-                      <td style={{padding:'12px 16px'}}>
-                        <div style={{display:'flex',gap:14,justifyContent:'center'}}>
-                          <button onClick={()=>openEdit(p)}
-                            style={{padding:'4px 2px',fontSize:12,fontWeight:600,cursor:'pointer',border:'none',background:'none',color:C.text2,fontFamily:'inherit',textDecoration:'underline',textUnderlineOffset:3}}>
-                            تعديل
-                          </button>
-                          <button onClick={()=>setConfirm({id:p.id,name:p.name})}
-                            style={{padding:'4px 2px',fontSize:12,fontWeight:600,cursor:'pointer',border:'none',background:'none',color:C.danger,fontFamily:'inherit',textDecoration:'underline',textUnderlineOffset:3}}>
-                            حذف
-                          </button>
-                        </div>
+                      <td style={{color:C.text3}}>{p.category||'—'}</td>
+                      <td style={{whiteSpace:'nowrap'}}><span className="iv-qty" style={{color:isOut?C.danger:isLow?C.warning:C.text}}>{p.qty}</span> <span className="iv-unit">{p.unit}</span></td>
+                      <td style={{color:C.text3,whiteSpace:'nowrap'}}>{p.reorder_point} {p.unit}</td>
+                      <td><StatusDot out={isOut} low={isLow}/></td>
+                      <td style={{textAlign:'left',whiteSpace:'nowrap'}} onClick={e=>e.stopPropagation()}>
+                        <button className="iv-act" onClick={()=>openEdit(p)}>تعديل</button>
+                        <button className="iv-act" style={{color:C.danger}} onClick={()=>setConfirm({id:p.id,name:p.name})}>حذف</button>
                       </td>
                     </tr>
                   )
@@ -768,3 +684,55 @@ export default function InventoryPage() {
     </div>
   )
 }
+
+function StatusDot({ out, low }: { out: boolean; low: boolean }) {
+  const c = out ? C.danger : low ? C.warning : C.primary
+  return <span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:12.5,fontWeight:500,color:C.text2}}><span style={{width:7,height:7,borderRadius:'50%',background:c}}/>{out?'نفد':low?'ناقص':'كافٍ'}</span>
+}
+
+const IV_CSS = `
+  .iv{max-width:1180px}
+  .iv-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .iv-title{font-size:20px;font-weight:700;color:${C.text};margin:0}
+  .iv-sub{font-size:13px;color:${C.text3};margin:4px 0 0;font-variant-numeric:tabular-nums}
+  .iv-tools{display:flex;gap:8px;flex-wrap:wrap}
+  @media(max-width:640px){.iv-hide-sm{display:none}.iv-tools .sh-btn{padding:9px 11px}}
+  .iv-note{background:${C.surface};border:1px solid ${C.border};border-radius:10px;margin-bottom:14px}
+  .iv-note-head{width:100%;display:flex;align-items:center;gap:10px;padding:11px 14px;border:none;background:none;font-family:inherit;font-size:13px;color:${C.text2};cursor:pointer;text-align:right}
+  .iv-note-head svg{color:${C.text4};flex-shrink:0}
+  .iv-link{color:${C.primary};font-weight:600;font-size:13px}
+  .iv-note-list{border-top:1px solid ${C.border};max-height:240px;overflow-y:auto}
+  .iv-note-item{width:100%;display:flex;justify-content:space-between;padding:10px 14px;border:none;border-bottom:1px solid ${C.border};background:none;font-family:inherit;font-size:13px;color:${C.text};cursor:pointer;text-align:right}
+  .iv-note-item:hover{background:#f9fafb}
+  .iv-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  .iv-tabs{display:inline-flex;background:#eef0f3;border-radius:9px;padding:3px}
+  .iv-tab{border:none;background:none;padding:7px 14px;border-radius:7px;font-family:inherit;font-size:13px;font-weight:500;color:${C.text2};cursor:pointer;white-space:nowrap}
+  .iv-tab.on{background:white;color:${C.text};font-weight:600;box-shadow:0 1px 2px rgba(16,24,40,.08)}
+  .iv-tab-n{color:${C.text4};font-weight:500;margin-right:4px;font-variant-numeric:tabular-nums}
+  .iv-search{flex:1;min-width:200px;position:relative;display:flex;align-items:center}
+  .iv-search svg{position:absolute;right:11px;color:${C.text4};pointer-events:none}
+  .iv-search input{width:100%;padding:9px 34px 9px 12px;border:1px solid ${C.border2};border-radius:8px;font-size:13px;font-family:inherit;background:white;color:${C.text};outline:none}
+  .iv-cats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:12px}
+  .iv-cat{flex-shrink:0;padding:5px 11px;border-radius:99px;border:1px solid ${C.border};background:white;font-family:inherit;font-size:12.5px;color:${C.text2};cursor:pointer;white-space:nowrap}
+  .iv-cat.on{border-color:${C.text};color:${C.text};font-weight:600}
+  .iv-list{display:block;background:white;border:1px solid ${C.border};border-radius:12px;overflow:hidden}
+  .iv-item{width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;border:none;border-bottom:1px solid ${C.border};background:none;font-family:inherit;text-align:right;cursor:pointer}
+  .iv-item:last-child{border-bottom:none}
+  .iv-item:active{background:#f9fafb}
+  .iv-name{font-size:14px;font-weight:600;color:${C.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .iv-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:${C.text3};margin-top:3px}
+  .iv-qty{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+  .iv-unit{font-size:12px;font-weight:400;color:${C.text3}}
+  .iv-min{font-size:11.5px;color:${C.text4};margin-top:2px}
+  .iv-table-wrap{background:white;border:1px solid ${C.border};border-radius:12px;overflow:hidden}
+  .iv-table{width:100%;border-collapse:collapse}
+  .iv-table th{text-align:right;padding:10px 16px;font-size:12px;font-weight:600;color:${C.text3};background:#f9fafb;border-bottom:1px solid ${C.border};white-space:nowrap}
+  .iv-table td{padding:12px 16px;border-bottom:1px solid ${C.border};font-size:13px;color:${C.text};vertical-align:middle}
+  .iv-table tbody tr{cursor:pointer}
+  .iv-table tbody tr:hover td{background:#f9fafb}
+  .iv-table tbody tr:last-child td{border-bottom:none}
+  .iv-act{border:none;background:none;padding:4px 8px;font-family:inherit;font-size:13px;font-weight:500;color:${C.text2};cursor:pointer;border-radius:6px}
+  .iv-act:hover{background:#f2f4f7}
+  @media(min-width:768px){.iv-sheet-wrap{align-items:center!important;padding:20px}.iv-sheet{border-radius:14px!important}}
+`
+
