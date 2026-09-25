@@ -10,14 +10,13 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [maint, setMaint] = useState(false)
   const [maintMsg, setMaintMsg] = useState('')
-  const [waCap, setWaCap] = useState('3')
   const [busy, setBusy] = useState<string | null>(null)
   const [qr, setQr] = useState('')
   const [code, setCode] = useState('')
 
   useEffect(() => {
     fetch('/api/platform-settings').then(r => r.json()).then(d => {
-      setMaint(!!d.maintenanceMode); setMaintMsg(d.maintenanceMessage || ''); setWaCap(String(d.waSessionCapacity ?? 3))
+      setMaint(!!d.maintenanceMode); setMaintMsg(d.maintenanceMessage || '')
     }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
@@ -77,17 +76,6 @@ export default function SettingsPage() {
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
               <Btn kind={maint ? 'primary' : 'danger'} loading={busy === 'maint'} onClick={toggleMaintenance}>{maint ? 'إيقاف الصيانة' : 'تفعيل الصيانة'}</Btn>
               {maint && <Btn disabled={!!busy} onClick={() => saveSettings({ maintenanceMode: true, maintenanceMessage: maintMsg }, 'msg', 'تم حفظ الرسالة')}>حفظ الرسالة</Btn>}
-            </div>
-          </Card>
-        )}
-
-        {isSuper && (
-          <Card title="سعة جلسات واتساب" subtitle="عدد الجلسات المتاحة في باقتك بـ WasenderAPI (تُستخدم لإضافة الحجوزات)">
-            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-              <div style={{ width: 120 }}>
-                <Field label="عدد الجلسات"><input type="number" min={0} value={waCap} onChange={e => setWaCap(e.target.value)} style={{ ...inputStyle, textAlign: 'center' }} /></Field>
-              </div>
-              <Btn kind="primary" loading={busy === 'wa'} disabled={!(Number(waCap) >= 0)} onClick={() => saveSettings({ waSessionCapacity: Number(waCap) }, 'wa', 'تم الحفظ')}>حفظ</Btn>
             </div>
           </Card>
         )}

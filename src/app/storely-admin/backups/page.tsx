@@ -52,7 +52,6 @@ export default function BackupsPage() {
         </div>
         <div style={{display:'flex',gap:10}}>
           <button onClick={load} disabled={loading} style={{padding:'8px 16px',background:'#f2f4f7',color:C.text,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{loading?'جاري التحميل...':'🔄 تحديث'}</button>
-          <a href="/storely-admin/monitoring" style={{padding:'8px 16px',background:'#f2f4f7',color:C.text,borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none'}}>← المراقبة</a>
         </div>
       </div>
 

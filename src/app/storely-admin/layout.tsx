@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState, type ComponentType } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Users, TrendingUp, Inbox, Truck, Handshake, Bell, Megaphone,
-  Activity, Gauge, MessageCircle, HardDrive, ScrollText, FileCheck, ShieldAlert,
+  Activity, MessageCircle, HardDrive, ScrollText, FileCheck, ShieldAlert,
   Package, UserCog, Settings, LogOut, Menu, X,
 } from 'lucide-react'
 import AdminLogin from './_admin/Login'
@@ -29,7 +29,6 @@ const NAV: { title: string; items: NavItem[] }[] = [
   ] },
   { title: 'النظام', items: [
     { href: '/storely-admin/health', label: 'صحة النظام', icon: Activity },
-    { href: '/storely-admin/monitoring', label: 'المراقبة', icon: Gauge },
     { href: '/storely-admin/notification-health', label: 'صحة واتساب', icon: MessageCircle },
     { href: '/storely-admin/backups', label: 'النسخ الاحتياطية', icon: HardDrive, perm: 'manage_backups' },
   ] },
