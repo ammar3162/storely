@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { LEGACY_C } from '../_admin/kit'
 
-const C = { bg:'#0f172a', card:'#1e293b', border:'#334155', text:'#f1f5f9', text2:'#94a3b8', text3:'#64748b', green:'#14b8a6', blue:'#3b82f6', purple:'#a78bfa', red:'#ef4444' }
+const C = LEGACY_C
 
 const EVENT_LABELS: Record<string,{label:string;color:string;icon:string}> = {
   trial_started: { label:'بدأ تجربة', color:C.blue, icon:'🎁' },
@@ -44,27 +45,26 @@ export default function MetricsPage() {
   }
 
   if (!authChecked) return (
-    <div style={{minHeight:'100vh',background:C.bg,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
       <div style={{color:C.text2,fontSize:13}}>⏳ جاري التحقق...</div>
     </div>
   )
 
   return (
-    <div style={{minHeight:'100vh',background:C.bg,padding:24,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,flexWrap:'wrap' as const,gap:12}}>
         <div>
           <h1 style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:4}}>مقاييس العمل التجاري</h1>
           <div style={{fontSize:12,color:C.text3}}>الإيراد المتكرر، معدل التحويل، وسجل أحداث الاشتراكات</div>
         </div>
         <div style={{display:'flex',gap:10}}>
-          <button onClick={load} disabled={loading} style={{padding:'8px 16px',background:'#334155',color:C.text,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+          <button onClick={load} disabled={loading} style={{padding:'8px 16px',background:'#f2f4f7',color:C.text,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
             {loading?'...':'↺ تحديث'}
           </button>
-          <a href="/storely-admin" style={{padding:'8px 16px',background:'#334155',color:C.text,borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none'}}>← الرئيسية</a>
         </div>
       </div>
 
-      {error && <div style={{background:'#7f1d1d33',color:'#fca5a5',padding:'10px 14px',borderRadius:10,fontSize:13,marginBottom:16}}>{error}</div>}
+      {error && <div style={{background:'#fef3f2',color:'#d92d20',padding:'10px 14px',borderRadius:10,fontSize:13,marginBottom:16}}>{error}</div>}
 
       {loading && !data ? (
         <div style={{textAlign:'center',padding:60,color:C.text3}}>جاري التحميل...</div>
@@ -87,7 +87,7 @@ export default function MetricsPage() {
             ))}
           </div>
 
-          <div style={{background:'#1e3a5f22',border:'1px solid #1e3a5f',borderRadius:12,padding:'12px 16px',marginBottom:20,fontSize:12,color:C.text2}}>
+          <div style={{background:'#eff8ff',border:'1px solid #1e3a5f',borderRadius:12,padding:'12px 16px',marginBottom:20,fontSize:12,color:C.text2}}>
             ℹ️ سجل الأحداث (تفعيل، إلغاء، ترقية) بدأ التسجيل اليوم — كل ما مرّ وقت أكثر، تصير مقاييس زي معدل الإلغاء الشهري (Churn) أدق.
           </div>
 

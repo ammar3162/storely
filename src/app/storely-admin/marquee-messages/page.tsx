@@ -1,8 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { confirmDialog } from '@/components/ConfirmDialog'
+import { LEGACY_C } from '../_admin/kit'
 
-const C = { bg:'#0f172a', card:'#1e293b', border:'#334155', text:'#f1f5f9', text2:'#94a3b8', text3:'#64748b', green:'#14b8a6', red:'#ef4444', blue:'#3b82f6' }
+const C = LEGACY_C
 
 export default function MarqueeMessagesPage() {
   const [messages, setMessages] = useState<any[]>([])
@@ -91,10 +92,10 @@ export default function MarqueeMessagesPage() {
     load()
   }
 
-  if (!authChecked) return <div style={{background:C.bg,minHeight:'100vh'}}/>
+  if (!authChecked) return null
 
   return (
-    <div style={{background:C.bg, minHeight:'100vh', padding:32, fontFamily:'system-ui', direction:'rtl'}}>
+    <div style={{direction:'rtl'}}>
       <div style={{maxWidth:800, margin:'0 auto'}}>
         <h1 style={{color:C.text, fontSize:24, fontWeight:800, marginBottom:8}}>رسائل الشريط المتحرك بالصفحة التسويقية</h1>
         <p style={{color:C.text3, fontSize:13, marginBottom:28}}>تظهر هذي الرسائل بالشريط الأخضر المتحرك أعلى الصفحة الرئيسية لموقع Storely، وتتناوب فيما بينها</p>

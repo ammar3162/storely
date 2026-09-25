@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { LEGACY_C } from '../_admin/kit'
 
-const C = { bg:'#0f172a', card:'#1e293b', border:'#334155', text:'#f1f5f9', text2:'#94a3b8', text3:'#64748b', green:'#14b8a6', blue:'#3b82f6' }
+const C = LEGACY_C
 
 export default function ConsentLogsPage() {
   const [logs, setLogs] = useState<any[]>([])
@@ -85,13 +86,13 @@ export default function ConsentLogsPage() {
   }
 
   if (!authChecked) return (
-    <div style={{minHeight:'100vh',background:C.bg,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
       <div style={{color:C.text2,fontSize:13}}>⏳ جاري التحقق...</div>
     </div>
   )
 
   return (
-    <div style={{minHeight:'100vh',background:C.bg,padding:24,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,flexWrap:'wrap' as const,gap:12}}>
         <div>
           <h1 style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:4}}>سجلات الموافقة على الشروط</h1>
@@ -99,7 +100,6 @@ export default function ConsentLogsPage() {
         </div>
         <div style={{display:'flex',gap:10}}>
           <button onClick={exportCSV} disabled={logs.length===0} style={{padding:'8px 16px',background:C.green+'22',color:C.green,border:`1px solid ${C.green}44`,borderRadius:10,fontSize:13,fontWeight:700,cursor:logs.length===0?'not-allowed':'pointer',fontFamily:'inherit',opacity:logs.length===0?.5:1}}>⬇ تصدير CSV</button>
-          <a href="/storely-admin" style={{padding:'8px 16px',background:'#334155',color:C.text,borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none'}}>← الرئيسية</a>
         </div>
       </div>
 
@@ -113,7 +113,7 @@ export default function ConsentLogsPage() {
             {versionSaving?'...':'تحديث النسخة'}
           </button>
         </div>
-        {versionMsg && <div style={{fontSize:12,color:versionMsg.startsWith('✅')?C.green:'#fca5a5',marginTop:8}}>{versionMsg}</div>}
+        {versionMsg && <div style={{fontSize:12,color:versionMsg.startsWith('✅')?C.green:'#d92d20',marginTop:8}}>{versionMsg}</div>}
         <div style={{fontSize:11,color:C.text3,marginTop:8}}>تحديث النسخة يفرض على كل المالكين إعادة الموافقة على الشروط بأول دخول لهم بعد نشر التعديل بصفحة /terms</div>
       </div>
 
@@ -124,13 +124,13 @@ export default function ConsentLogsPage() {
           {loading?'...':'🔍 بحث'}
         </button>
         {search && (
-          <button type="button" onClick={()=>{setSearch('');load('')}} style={{padding:'10px 16px',background:'#334155',color:C.text,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+          <button type="button" onClick={()=>{setSearch('');load('')}} style={{padding:'10px 16px',background:'#f2f4f7',color:C.text,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
             مسح
           </button>
         )}
       </form>
 
-      {error && <div style={{background:'#7f1d1d33',color:'#fca5a5',padding:'10px 14px',borderRadius:10,fontSize:13,marginBottom:16}}>{error}</div>}
+      {error && <div style={{background:'#fef3f2',color:'#d92d20',padding:'10px 14px',borderRadius:10,fontSize:13,marginBottom:16}}>{error}</div>}
 
       {loading ? (
         <div style={{textAlign:'center',padding:60,color:C.text3}}>جاري التحميل...</div>
@@ -144,7 +144,7 @@ export default function ConsentLogsPage() {
           <div style={{overflowX:'auto' as const}}>
             <table style={{width:'100%',borderCollapse:'collapse' as const,fontSize:13}}>
               <thead>
-                <tr style={{background:'#0f172a',borderBottom:`1px solid ${C.border}`}}>
+                <tr style={{background:'#f9fafb',borderBottom:`1px solid ${C.border}`}}>
                   <th style={{padding:'10px 14px',textAlign:'right' as const,color:C.text3,fontWeight:700}}>التاريخ والوقت</th>
                   <th style={{padding:'10px 14px',textAlign:'right' as const,color:C.text3,fontWeight:700}}>المؤسسة</th>
                   <th style={{padding:'10px 14px',textAlign:'right' as const,color:C.text3,fontWeight:700}}>الاسم</th>

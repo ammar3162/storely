@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { LEGACY_C } from '../_admin/kit'
 
-const C = { bg:'#0f172a', card:'#1e293b', border:'#334155', text:'#f1f5f9', text2:'#94a3b8', text3:'#64748b', green:'#14b8a6', yellow:'#f59e0b', red:'#ef4444' }
+const C = LEGACY_C
 type Status = 'ok'|'warn'|'error'|'loading'
 interface Check { label:string; value:string; status:Status; detail?:string }
 
@@ -48,18 +49,18 @@ export default function MonitoringPage() {
   const overall=checks.some(c=>c.status==='error')?'error':checks.some(c=>c.status==='warn')?'warn':'ok'
 
   return (
-    <div style={{minHeight:'100vh',background:C.bg,padding:24,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}}>
         <div><h1 style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:4}}>مراقبة النظام</h1>{lastCheck&&<div style={{fontSize:12,color:C.text3}}>آخر فحص: {lastCheck.toLocaleTimeString('en-GB')}</div>}</div>
         <div style={{display:'flex',gap:10,alignItems:'center'}}>
           {!loading&&<div style={{padding:'6px 14px',borderRadius:20,background:sc(overall)+'22',border:`1px solid ${sc(overall)}44`,fontSize:13,fontWeight:700,color:sc(overall)}}>{overall==='ok'?'✅ كل شيء يعمل':overall==='warn'?'⚠️ تنبيهات':'❌ مشاكل'}</div>}
-          <button onClick={runChecks} disabled={loading} style={{padding:'8px 16px',background:'#334155',color:C.text,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6}}><span style={{display:'inline-block',animation:loading?'spin 1s linear infinite':'none'}}>🔄</span>{loading?'جاري الفحص...':'إعادة الفحص'}</button>
-          <a href="/storely-admin" style={{padding:'8px 16px',background:'#334155',color:C.text,borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none'}}>← الأدمن</a>
+          <button onClick={runChecks} disabled={loading} style={{padding:'8px 16px',background:'#f2f4f7',color:C.text,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6}}><span style={{display:'inline-block',animation:loading?'spin 1s linear infinite':'none'}}>🔄</span>{loading?'جاري الفحص...':'إعادة الفحص'}</button>
+          <a href="/storely-admin" style={{padding:'8px 16px',background:'#f2f4f7',color:C.text,borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none'}}>← الأدمن</a>
         </div>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:14,marginBottom:24}}>
-        {loading?[...Array(7)].map((_,i)=>(<div key={i} style={{background:C.card,borderRadius:14,padding:20,border:`1px solid ${C.border}`,animation:'pulse 1.5s infinite'}}><div style={{height:12,background:'#334155',borderRadius:6,marginBottom:10,width:'60%'}}/><div style={{height:20,background:'#334155',borderRadius:6,marginBottom:8,width:'40%'}}/><div style={{height:10,background:'#334155',borderRadius:6,width:'80%'}}/></div>))
+        {loading?[...Array(7)].map((_,i)=>(<div key={i} style={{background:C.card,borderRadius:14,padding:20,border:`1px solid ${C.border}`,animation:'pulse 1.5s infinite'}}><div style={{height:12,background:'#f2f4f7',borderRadius:6,marginBottom:10,width:'60%'}}/><div style={{height:20,background:'#f2f4f7',borderRadius:6,marginBottom:8,width:'40%'}}/><div style={{height:10,background:'#f2f4f7',borderRadius:6,width:'80%'}}/></div>))
         :checks.map((c,i)=>(<div key={i} style={{background:C.card,borderRadius:14,padding:20,border:`1px solid ${sc(c.status)}33`}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}><div style={{fontSize:13,color:C.text2,fontWeight:600}}>{c.label}</div><span style={{fontSize:18}}>{si(c.status)}</span></div><div style={{fontSize:20,fontWeight:900,color:sc(c.status),marginBottom:6}}>{c.value}</div>{c.detail&&<div style={{fontSize:12,color:C.text3}}>{c.detail}</div>}</div>))}
       </div>
       <div style={{background:C.card,borderRadius:14,padding:20,border:`1px solid ${C.border}`}}>

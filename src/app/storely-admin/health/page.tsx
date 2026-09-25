@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { LEGACY_C } from '../_admin/kit'
 
-const C = { bg:'#0f172a', card:'#1e293b', border:'#334155', text:'#f1f5f9', text2:'#94a3b8', text3:'#64748b', green:'#14b8a6', red:'#ef4444', amber:'#f59e0b' }
+const C = LEGACY_C
 
 export default function HealthPage() {
   const [logs, setLogs] = useState<any[]>([])
@@ -45,13 +46,13 @@ export default function HealthPage() {
   const latest = logs[0]
 
   if (!authChecked) return (
-    <div style={{minHeight:'100vh',background:C.bg,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
       <div style={{color:C.text2,fontSize:13}}>⏳ جاري التحقق...</div>
     </div>
   )
 
   return (
-    <div style={{minHeight:'100vh',background:C.bg,padding:24,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,flexWrap:'wrap' as const,gap:12}}>
         <div>
           <h1 style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:4}}>فحص صحة النظام</h1>
@@ -61,15 +62,14 @@ export default function HealthPage() {
           <button onClick={runNow} disabled={running} style={{padding:'8px 16px',background:C.green+'22',color:C.green,border:`1px solid ${C.green}44`,borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
             {running?'جاري الفحص...':'⚡ فحص الآن'}
           </button>
-          <a href="/storely-admin" style={{padding:'8px 16px',background:'#334155',color:C.text,borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none'}}>← الرئيسية</a>
         </div>
       </div>
 
-      {error && <div style={{background:'#7f1d1d33',color:'#fca5a5',padding:'10px 14px',borderRadius:10,fontSize:13,marginBottom:16}}>{error}</div>}
+      {error && <div style={{background:'#fef3f2',color:'#d92d20',padding:'10px 14px',borderRadius:10,fontSize:13,marginBottom:16}}>{error}</div>}
 
       {latest && (
-        <div style={{background: latest.issues_count>0 ? '#7f1d1d22' : '#134e4a22', border:`1.5px solid ${latest.issues_count>0?'#7f1d1d':'#134e4a'}`, borderRadius:14, padding:'16px 18px', marginBottom:20}}>
-          <div style={{fontSize:14,fontWeight:800,color: latest.issues_count>0 ? '#fca5a5' : C.green}}>
+        <div style={{background: latest.issues_count>0 ? '#fef3f2' : '#e7f6f5', border:`1.5px solid ${latest.issues_count>0?'#fecdca':'#99d9d6'}`, borderRadius:14, padding:'16px 18px', marginBottom:20}}>
+          <div style={{fontSize:14,fontWeight:800,color: latest.issues_count>0 ? '#d92d20' : C.green}}>
             {latest.issues_count>0 ? `⚠️ ${latest.issues_count} مشكلة مكتشفة` : '✅ كل شي سليم'}
           </div>
           <div style={{fontSize:11,color:C.text3,marginTop:4}}>آخر فحص: {new Date(latest.checked_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
@@ -94,7 +94,7 @@ export default function HealthPage() {
                 <div style={{fontSize:11,color:C.text3}}>{new Date(log.checked_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
               </div>
               {(log.issues||[]).map((issue:any,i:number)=>(
-                <div key={i} style={{fontSize:12,color:issue.severity==='critical'?'#fca5a5':'#fcd34d',padding:'6px 10px',background:'#0f172a',borderRadius:8,marginTop:6}}>
+                <div key={i} style={{fontSize:12,color:issue.severity==='critical'?'#d92d20':'#b54708',padding:'6px 10px',background:'#f9fafb',borderRadius:8,marginTop:6}}>
                   <b>{issue.severity==='critical'?'🔴':'🟡'} {issue.type}:</b> {issue.detail}
                 </div>
               ))}

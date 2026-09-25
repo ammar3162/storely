@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { LEGACY_C } from '../_admin/kit'
 
-const C = { bg:'#0f172a', card:'#1e293b', border:'#334155', text:'#f1f5f9', text2:'#94a3b8', text3:'#64748b', green:'#14b8a6', blue:'#3b82f6' }
+const C = LEGACY_C
 
 // حالات يدوية — تتحكم فيها أنت لمتابعة التواصل قبل التسجيل
 const STATUS_LABELS: Record<string,string> = { new:'جديد', contacted:'تم التواصل', rejected:'مرفوض' }
@@ -41,10 +42,10 @@ export default function DemoRequestsPage() {
     load()
   }
 
-  if (!authChecked) return <div style={{background:C.bg,minHeight:'100vh'}}/>
+  if (!authChecked) return null
 
   return (
-    <div style={{background:C.bg, minHeight:'100vh', padding:32, fontFamily:'system-ui', direction:'rtl'}}>
+    <div style={{direction:'rtl'}}>
       <div style={{maxWidth:1000, margin:'0 auto'}}>
         <h1 style={{color:C.text, fontSize:24, fontWeight:800, marginBottom:8}}>طلبات عرض النظام</h1>
         <p style={{color:C.text3, fontSize:13, marginBottom:28}}>الطلبات اللي وصلت من نموذج "اطلب عرض النظام" بالصفحة الرئيسية ({requests.length}) — الحالة الخضراء تلقائية، تُكتشف من رقم الجوال نفسه لما يسجّل العميل حساب</p>

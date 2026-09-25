@@ -2,14 +2,15 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { toast } from '@/components/toast'
+import { A } from '../_admin/kit'
 
 const C = {
-  primary:'#029FA2', primaryL:'#f0fdfa', primaryB:'#99f6e4',
-  danger:'#e24b4a', dangerL:'#fef2f2', dangerB:'#fecaca',
-  warning:'#ba7517', warningL:'#fffbeb', warningB:'#fde68a',
-  info:'#378add', infoL:'#eff6ff', infoB:'#bfdbfe',
-  text:'#1c1c1a', text2:'#3d3d3a', text3:'#5f5e5a', text4:'#888780',
-  bg:'#f5f5f4', border:'#ebebea', border2:'#e0e0dd',
+  primary:A.primary, primaryL:A.primarySoft, primaryB:A.primary+'55',
+  danger:A.danger, dangerL:A.dangerSoft, dangerB:'#fecdca',
+  warning:A.warning, warningL:A.warningSoft, warningB:'#fedf89',
+  info:A.info, infoL:A.infoSoft, infoB:'#b2ddff',
+  text:A.text, text2:A.text2, text3:A.text2, text4:A.text3,
+  bg:A.bg, border:A.border, border2:A.borderStrong,
 }
 
 export default function AdminNotificationsPage() {

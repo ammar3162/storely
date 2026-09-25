@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { LEGACY_C } from '../_admin/kit'
 
-const C = { bg:'#0f172a', card:'#1e293b', border:'#334155', text:'#f1f5f9', text2:'#94a3b8', text3:'#64748b', green:'#14b8a6', red:'#ef4444' }
+const C = LEGACY_C
 
 export default function NotificationHealthPage() {
   const [orgs, setOrgs] = useState<any[]>([])
@@ -35,7 +36,7 @@ export default function NotificationHealthPage() {
   }
 
   if (!authChecked) return (
-    <div style={{minHeight:'100vh',background:C.bg,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
       <div style={{color:C.text2,fontSize:13}}>⏳ جاري التحقق...</div>
     </div>
   )
@@ -43,21 +44,20 @@ export default function NotificationHealthPage() {
   const problemOrgs = orgs.filter(o => o.failed > 0 && o.sent === 0)
 
   return (
-    <div style={{minHeight:'100vh',background:C.bg,padding:24,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
+    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,flexWrap:'wrap' as const,gap:12}}>
         <div>
           <h1 style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:4}}>صحة توصيل واتساب لكل عميل</h1>
           <div style={{fontSize:12,color:C.text3}}>آخر 7 أيام — يُحدّث تلقائياً مع كل إشعار حقيقي يُرسل لأصحاب الحسابات</div>
         </div>
         <div style={{display:'flex',gap:10}}>
-          <button onClick={load} disabled={loading} style={{padding:'8px 16px',background:'#334155',color:C.text,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+          <button onClick={load} disabled={loading} style={{padding:'8px 16px',background:'#f2f4f7',color:C.text,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
             {loading?'...':'↺ تحديث'}
           </button>
-          <a href="/storely-admin" style={{padding:'8px 16px',background:'#334155',color:C.text,borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none'}}>← الرئيسية</a>
         </div>
       </div>
 
-      {error && <div style={{background:'#7f1d1d33',color:'#fca5a5',padding:'10px 14px',borderRadius:10,fontSize:13,marginBottom:16}}>{error}</div>}
+      {error && <div style={{background:'#fef3f2',color:'#d92d20',padding:'10px 14px',borderRadius:10,fontSize:13,marginBottom:16}}>{error}</div>}
 
       {loading ? (
         <div style={{textAlign:'center',padding:60,color:C.text3}}>جاري التحميل...</div>
@@ -73,7 +73,7 @@ export default function NotificationHealthPage() {
               const total = o.sent + o.failed
               const allFailed = o.sent === 0 && o.failed > 0
               return (
-                <div key={o.org_id} style={{background:C.card,border:`1px solid ${allFailed?'#7f1d1d':'#134e4a'}`,borderRadius:10,padding:'12px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap' as const,gap:8}}>
+                <div key={o.org_id} style={{background:C.card,border:`1px solid ${allFailed?'#fecdca':'#99d9d6'}`,borderRadius:10,padding:'12px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap' as const,gap:8}}>
                   <div>
                     <div style={{fontSize:13,fontWeight:700,color:C.text}}>{o.org_name}</div>
                     <div style={{fontSize:11,color:C.text3,marginTop:2}}>{o.phone}</div>
@@ -90,9 +90,9 @@ export default function NotificationHealthPage() {
           </div>
 
           {problemOrgs.length > 0 && (
-            <div style={{background:'#7f1d1d22',border:'1px solid #7f1d1d',borderRadius:10,padding:'12px 16px'}}>
+            <div style={{background:'#fef3f2',border:'1px solid #7f1d1d',borderRadius:10,padding:'12px 16px'}}>
               {problemOrgs.map(o => (
-                <div key={o.org_id} style={{fontSize:12,color:'#fca5a5',marginBottom:4}}>
+                <div key={o.org_id} style={{fontSize:12,color:'#d92d20',marginBottom:4}}>
                   🔴 {o.org_name} — كل المحاولات فشلت ({o.failed}) آخر 7 أيام. رقمه غالباً غلط أو غير نشط — يستحق تواصل مباشر.
                 </div>
               ))}
