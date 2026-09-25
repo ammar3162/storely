@@ -412,7 +412,7 @@ function LoginPage() {
                     {t('login.signupNow')}
                   </button>
                 </div>
-                <button type="button" onClick={()=>{setStaffDevice(true);window.location.href='/staff'}}
+                <button type="button" className="show-in-app" onClick={()=>{setStaffDevice(true);window.location.href='/staff'}}
                   style={{width:'100%',marginTop:14,padding:'12px',background:'white',border:'1.5px solid #e5e7eb',borderRadius:12,fontSize:14,fontWeight:700,color:'#0f766e',cursor:'pointer',fontFamily:'inherit'}}>
                   أنا موظف — دخول برقم الجوال و PIN
                 </button>
