@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { LanguageProvider, useTranslation } from '@/lib/i18n/LanguageContext'
 import { Delete } from 'lucide-react'
+import { setStaffDevice } from '@/lib/inApp'
 
 const COUNTRY_PHONE_LEN: {code:string;flag:string;name:string;key:string;len:number}[] = [
   {code:'966',flag:'🇸🇦',name:'السعودية',key:'countrySaudi',len:10},
@@ -184,6 +185,12 @@ function StaffLoginInner() {
                 style={{width:'100%',padding:16,marginBottom:'clamp(24px,6vh,48px)',background:phone.length>=requiredLen?'#14b8a6':'rgba(255,255,255,.1)',color:phone.length>=requiredLen?'#042f2e':'rgba(255,255,255,.45)',border:'none',borderRadius:14,fontSize:16,fontWeight:700,cursor:phone.length>=requiredLen?'pointer':'not-allowed',fontFamily:'inherit',transition:'background .15s, color .15s'}}>
                 {t('staffLogin.continueBtn')}
               </button>
+              <div style={{textAlign:'center' as const,marginTop:'calc(-1 * clamp(12px,3vh,32px))',paddingBottom:16}}>
+                <button onClick={()=>{setStaffDevice(false);window.location.href='/login'}}
+                  style={{background:'none',border:'none',color:'rgba(255,255,255,.55)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                  صاحب المنشأة؟ دخول بالإيميل
+                </button>
+              </div>
             </div>
           ) : (
             <div key="pin-step" className="fade-up">

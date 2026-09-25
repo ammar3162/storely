@@ -12,3 +12,12 @@ export function isInApp(): boolean {
   if (typeof window === 'undefined') return false
   try { return sessionStorage.getItem(IN_APP_KEY) === '1' } catch { return false }
 }
+
+// جهاز الموظف: التطبيق نفسه (Google Play) للمالك والموظفين — نتذكر اختيار "دخول الموظفين" على هذا الجهاز
+export const STAFF_DEVICE_KEY = 'app_role'
+export function isStaffDevice(): boolean {
+  try { return localStorage.getItem(STAFF_DEVICE_KEY) === 'staff' } catch { return false }
+}
+export function setStaffDevice(on: boolean) {
+  try { on ? localStorage.setItem(STAFF_DEVICE_KEY, 'staff') : localStorage.removeItem(STAFF_DEVICE_KEY) } catch {}
+}

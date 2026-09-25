@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
+import { isInApp, isStaffDevice, setStaffDevice } from '@/lib/inApp'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
 import StoreMascot from '@/components/StoreMascot'
@@ -116,6 +117,11 @@ function LoginPage() {
   const [agreedTerms, setAgreedTerms] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const supabase = createClient()
+
+  // جهاز موظف داخل التطبيق: يفتح على دخول الموظفين مباشرة
+  useEffect(() => {
+    if (isInApp() && (isStaffDevice() || localStorage.getItem('staff_session'))) window.location.replace('/staff')
+  }, [])
 
   useEffect(() => {
     const hash = window.location.hash
@@ -406,6 +412,10 @@ function LoginPage() {
                     {t('login.signupNow')}
                   </button>
                 </div>
+                <button type="button" onClick={()=>{setStaffDevice(true);window.location.href='/staff'}}
+                  style={{width:'100%',marginTop:14,padding:'12px',background:'white',border:'1.5px solid #e5e7eb',borderRadius:12,fontSize:14,fontWeight:700,color:'#0f766e',cursor:'pointer',fontFamily:'inherit'}}>
+                  أنا موظف — دخول برقم الجوال و PIN
+                </button>
               </>
             )}
 
