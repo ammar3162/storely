@@ -22,6 +22,9 @@
 
 html { -webkit-tap-highlight-color: transparent; }
 
+/* أي عنصر أعرض من الشاشة ما يسحب الصفحة كلها جانبياً (clip ما يكسر position:sticky) */
+html, body { overflow-x: clip; }
+
 body {
   font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif !important;
   direction: rtl;

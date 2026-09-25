@@ -664,6 +664,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           .mob-header{display:flex}
           .mob-content{flex:1;padding:0 12px 80px;margin-top:70px}
           .mob-bottom-nav{display:flex}
+          /* شاشات ضيقة (أو تكبير الخط/العرض بالجوال): "ناقص" موجود أصلاً بالرئيسية والمخزون — نخفيه من الشريط عشان ما يدفع الصفحة */
+          @media(max-width:340px){.mob-low-pill{display:none!important}}
           .desk-sidebar{display:none}
 
           /* Desktop */
@@ -737,16 +739,16 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 <div style={{fontSize:13,fontWeight:800,color:'white',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName||'Storely'}</div>
                 {branchName&&(
                   <button onClick={()=>branches.length>1&&openBranchSelector()}
-                    style={{marginTop:2,display:'flex',alignItems:'center',gap:5,fontSize:10,fontWeight:700,color:'white',background:'rgba(255,255,255,.22)',border:'1px solid rgba(255,255,255,.35)',borderRadius:99,padding:'2px 9px',cursor:branches.length>1?'pointer':'default',fontFamily:'inherit',width:'fit-content'}}>
+                    style={{marginTop:2,display:'flex',alignItems:'center',gap:5,maxWidth:'100%',minWidth:0,fontSize:10,fontWeight:700,color:'white',background:'rgba(255,255,255,.22)',border:'1px solid rgba(255,255,255,.35)',borderRadius:99,padding:'2px 9px',cursor:branches.length>1?'pointer':'default',fontFamily:'inherit',width:'fit-content'}}>
                     <span style={{width:5,height:5,borderRadius:'50%',background:'white',flexShrink:0}}/>
-                    <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:100}}>{branchName}</span>
+                    <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:100,minWidth:0}}>{branchName}</span>
                     {branches.length>1&&<span style={{fontSize:8}}>▾</span>}
                   </button>
                 )}
               </div>
             </div>
             {lowCount>0&&(
-              <button onClick={()=>router.push('/inventory')} style={{background:'rgba(255,255,255,.2)',border:'1px solid rgba(255,255,255,.3)',borderRadius:99,padding:'4px 10px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>
+              <button className="mob-low-pill" onClick={()=>router.push('/inventory')} style={{background:'rgba(255,255,255,.2)',border:'1px solid rgba(255,255,255,.3)',borderRadius:99,padding:'4px 10px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4,flexShrink:0,whiteSpace:'nowrap'}}>
                 <span style={{width:6,height:6,borderRadius:'50%',background:'#fbbf24',display:'inline-block'}}/>
                 <span style={{fontSize:10,fontWeight:700,color:'white'}}>{lowCount} ناقص</span>
               </button>

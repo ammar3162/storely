@@ -177,7 +177,7 @@ export default function DashboardPage() {
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:dir,maxWidth:'100%'}}>
       <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.35}}.sk{animation:sk 1.4s ease infinite}`}</style>
       <div className="sk" style={{height:52,borderRadius:12,background:'#f0f0ee',marginBottom:20}}/>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,marginBottom:16}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:8,marginBottom:16}}>
         {[1,2,3,4].map(i=><div key={i} className="sk" style={{height:96,borderRadius:12,background:'#f0f0ee'}}/>)}
       </div>
       <div className="sk" style={{height:100,borderRadius:12,background:'#f0f0ee'}}/>
@@ -311,7 +311,7 @@ export default function DashboardPage() {
       {monthComp?.success&&(
         <div className="s r u" style={{padding:'14px 16px',marginBottom:14,animationDelay:'.16s'}}>
           <div style={{fontSize:12,fontWeight:700,color:'#1c1c1a',marginBottom:12,display:'flex',alignItems:'center',gap:6}}><TrendingUp size={14} strokeWidth={2.25}/> أداء هذا الشهر مقارنة بالشهر الماضي</div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:10}}>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:10}}>
             {[
               {label:'المبيعات', value:monthComp.current.sales, change:monthComp.changes.sales, isMoney:true},
               {label:'المشتريات', value:monthComp.current.purchasesTotal, change:monthComp.changes.purchases, isMoney:true},
@@ -335,7 +335,7 @@ export default function DashboardPage() {
       )}
 
       {/* ── Charts ── */}
-      <div className="u" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14,animationDelay:'.2s'}}>
+      <div className="u" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:8,marginBottom:14,animationDelay:'.2s'}}>
         {[
           {title:'مشتريات الأسبوع',data:weeklyP,color:'#378add',total:weeklyP.reduce((s,d)=>s+d.value,0),unit:'فاتورة'},
           {title:'صرف الأسبوع',   data:weeklyD,color:'#e24b4a',total:weeklyD.reduce((s,d)=>s+d.value,0),unit:'عملية'},
