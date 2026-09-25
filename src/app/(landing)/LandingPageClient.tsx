@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { isInApp } from '@/lib/inApp'
 import { Package, MessageCircle, Users, Wallet, Globe, BarChart3, Store, Bot, ShoppingBag } from 'lucide-react'
 import { Billing, PLAN_BRANCHES, PLANS, LS, FAQ_ITEMS, FEATURES, TRUST_POINTS, BRANCH_OPTIONS, BRANCH_OPTIONS_EN } from './landing-data'
 import { FaqItem, MiniMockup } from './landing-components'
@@ -21,6 +22,8 @@ export default function LandingPage() {
     setLangState(l)
     try { localStorage.setItem('storely_lang', l) } catch {}
   }
+  // داخل تطبيق Google Play ما نعرض صفحة التسويق والأسعار — نروح للدخول مباشرة
+  useEffect(() => { if (isInApp()) router.replace('/login') }, [router])
   useEffect(() => {
     try {
       const saved = localStorage.getItem('storely_lang')

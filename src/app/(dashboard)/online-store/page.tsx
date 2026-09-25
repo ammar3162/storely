@@ -376,9 +376,9 @@ export default function OnlineStorePage() {
         <div style={{ fontSize: 44, marginBottom: 14 }}>📋</div>
         <div style={{ fontSize: 18, fontWeight: 800, color: colors.text, marginBottom: 8 }}>ميزة "المنتجات" غير مفعّلة</div>
         <div style={{ fontSize: 13, color: colors.text3, lineHeight: 1.8, marginBottom: 20 }}>
-          اشترك بميزة المنيو الإلكتروني من الإضافات عشان تقدر تبني صفحة منتجاتك العامة
+          <span className="hide-in-app">اشترك بميزة المنيو الإلكتروني من الإضافات عشان تقدر تبني صفحة منتجاتك العامة</span>
         </div>
-        <a href="/addons-market" style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '12px 28px' }}>روح لالإضافات</a>
+        <a className="hide-in-app" href="/addons-market" style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '12px 28px' }}>روح لالإضافات</a>
       </div>
     )
   }

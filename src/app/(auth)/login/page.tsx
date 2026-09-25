@@ -513,7 +513,7 @@ function LoginPage() {
                 </div>
                 {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
                 <form onSubmit={handleRegister} style={{display:'flex',flexDirection:'column',gap:10}}>
-                  <div style={{display:'flex',justifyContent:'center',marginBottom:6}}>
+                  <div className="hide-in-app" style={{display:'flex',justifyContent:'center',marginBottom:6}}>
                     <div style={{display:'inline-flex',gap:4,background:'#f3f4f6',padding:4,borderRadius:12}}>
                       <button type="button" onClick={()=>setBilling('monthly')} style={{padding:'8px 18px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',background:billing==='monthly'?'white':'transparent',color:billing==='monthly'?'#111827':'#6b7280',boxShadow:billing==='monthly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>{t('login.planMonthly')}</button>
                       <button type="button" onClick={()=>setBilling('yearly')} style={{padding:'8px 18px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6,background:billing==='yearly'?'white':'transparent',color:billing==='yearly'?'#111827':'#6b7280',boxShadow:billing==='yearly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>
@@ -528,7 +528,7 @@ function LoginPage() {
                         <div style={{fontSize:15,fontWeight:700,color:branchCount===p.v?p.color:'#111827',marginBottom:3}}>{p.label}</div>
                         <div style={{fontSize:12,color:'#6b7280'}}>{p.desc}</div>
                       </div>
-                      <div style={{flexShrink:0,marginRight:12,textAlign:'left'}}>
+                      <div className="hide-in-app" style={{flexShrink:0,marginRight:12,textAlign:'left'}}>
                         <span style={{fontSize:20,fontWeight:800,color:branchCount===p.v?p.color:'#111827'}}>{billing==='yearly'?p.yearlyPrice:p.price}</span>
                         <span style={{fontSize:12,color:'#9ca3af'}}> {lang==='ar'?'ر.س':'SAR'}/{billing==='yearly'?(lang==='ar'?'سنة':'yr'):(lang==='ar'?'شهر':'mo')}</span>
                       </div>
@@ -677,7 +677,7 @@ function LoginPage() {
                 </div>
               ))}
             </div>
-            <div style={{marginTop:24,padding:'16px 18px',background:'white',borderRadius:12,border:'1px solid #e5e7eb'}}>
+            <div className="hide-in-app" style={{marginTop:24,padding:'16px 18px',background:'white',borderRadius:12,border:'1px solid #e5e7eb'}}>
               <div style={{display:'flex',gap:22}}>
                 {[['99 '+(lang==='ar'?'ر.س':'SAR'),t('login.statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('login.statTrial')],['7',t('login.statLangs')]].map(([n,l])=>(
                   <div key={l}>

@@ -28,7 +28,7 @@ function UpgradeBlock() {
         <p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:24}}>
           إدارة الموردين متاحة في الباقة المتوسطة وما فوق.
         </p>
-        <button onClick={()=>router.push('/settings')}
+        <button className="hide-in-app" onClick={()=>router.push('/settings')}
           style={{padding:'14px 32px',background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
           ترقية الباقة ←
         </button>

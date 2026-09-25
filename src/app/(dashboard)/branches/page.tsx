@@ -327,7 +327,7 @@ export default function BranchesPage() {
             فروع موقوفة ({inactiveBranches.length})
             {branches.length<maxBranches
               ? <span style={{fontWeight:600,color:colors.primary}}> — عندك مكان لـ{maxBranches-branches.length} فرع، اختر اللي تبي تفعّله</span>
-              : <span style={{fontWeight:600}}> — لتفعيل فرع: أوقف فرعاً شغّالاً بداله، أو <a href="/addons-market" style={{color:colors.primary,fontWeight:700}}>أضف فرعاً</a></span>}
+              : <span style={{fontWeight:600}}> — لتفعيل فرع: أوقف فرعاً شغّالاً بداله<span className="hide-in-app">، أو <a href="/addons-market" style={{color:colors.primary,fontWeight:700}}>أضف فرعاً</a></span></span>}
           </div>
           {inactiveBranches.map((b:any,i:number)=>(
             <div key={b.id} style={{padding:'14px 16px',borderBottom:i<inactiveBranches.length-1?`1px solid ${colors.border}`:'none',display:'flex',alignItems:'center',gap:12}}>
@@ -361,7 +361,7 @@ export default function BranchesPage() {
       ) : (
         <div style={{...card,padding:'16px',background:colors.warningLight||'#fffbeb',textAlign:'center',fontSize:font.sm,color:colors.text3}}>
           وصلت للحد الأقصى ({maxBranches} فرع).
-          <a href="/addons-market" style={{display:'block',marginTop:10,color:colors.primary,fontWeight:700,textDecoration:'none'}}>+ أضف فرعاً (من صفحة الإضافات)</a>
+          <a className="hide-in-app" href="/addons-market" style={{display:'block',marginTop:10,color:colors.primary,fontWeight:700,textDecoration:'none'}}>+ أضف فرعاً (من صفحة الإضافات)</a>
         </div>
       )}
 

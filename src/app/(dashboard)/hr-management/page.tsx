@@ -388,7 +388,7 @@ export default function HRManagementPage() {
       <div>
         <div style={{fontSize:44,marginBottom:12}}>🔒</div>
         <div style={{fontSize:16,fontWeight:800,color:colors.text,marginBottom:8}}>إدارة الموظفين متاحة بالباقة المتوسطة أو المتقدمة</div>
-        <div style={{fontSize:13,color:colors.text3}}>رقّي باقتك عشان تفعّل إدارة الرواتب والمهام لفريقك</div>
+        <div className="hide-in-app" style={{fontSize:13,color:colors.text3}}>رقّي باقتك عشان تفعّل إدارة الرواتب والمهام لفريقك</div>
       </div>
     </div>
   )

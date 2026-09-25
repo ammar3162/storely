@@ -417,7 +417,7 @@ export default function SettingsPage() {
                   <span style={{fontSize:16}}>💎</span>
                 </div>
                 {bill.lines.length>1&&(
-                  <div style={{border:`1px solid ${colors.border}`,borderRadius:radius.md,padding:'12px 14px',marginBottom:12}}>
+                  <div className="hide-in-app" style={{border:`1px solid ${colors.border}`,borderRadius:radius.md,padding:'12px 14px',marginBottom:12}}>
                     <div style={{fontSize:font.xs,fontWeight:800,color:colors.text2,marginBottom:8}}>تفاصيل الفاتورة</div>
                     {bill.lines.map((l,i)=>(
                       <div key={i} style={{display:'flex',justifyContent:'space-between',gap:12,fontSize:font.xs,color:colors.text3,padding:'4px 0'}}>
@@ -501,7 +501,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* أزرار الترقية - مؤقتاً عبر واتساب */}
-                  <div style={{marginTop:16,background:'#fffbeb',border:'1.5px solid #fde68a',borderRadius:12,padding:'14px 16px',display:'flex',alignItems:'center',gap:12}}>
+                  <div className="hide-in-app" style={{marginTop:16,background:'#fffbeb',border:'1.5px solid #fde68a',borderRadius:12,padding:'14px 16px',display:'flex',alignItems:'center',gap:12}}>
                     <div style={{fontSize:22}}>📲</div>
                     <div>
                       <div style={{fontSize:13,fontWeight:700,color:'#92400e',marginBottom:2}}>للترقية تواصل معنا عبر واتساب</div>

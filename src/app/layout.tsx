@@ -4,6 +4,7 @@ import PWAInstall from '@/components/PWAInstall'
 import FeatureAnnouncement from '@/components/FeatureAnnouncement'
 import PullToRefresh from '@/components/PullToRefresh'
 import ApiBridge from '@/components/ApiBridge'
+import { IN_APP_SCRIPT } from '@/lib/inApp'
 import type { Metadata } from "next"
 import "./globals.css"
 
@@ -38,8 +39,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{__html: IN_APP_SCRIPT}}/>
         <meta name="theme-color" content="#042f2e"/>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
         <meta name="mobile-web-app-capable" content="yes"/>
@@ -53,6 +55,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
           body { font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif !important; direction: rtl; }
           input, button, select, textarea { font-family: inherit !important; }
+          html[data-in-app] .hide-in-app { display: none !important; }
+          html:not([data-in-app]) .show-in-app { display: none !important; }
         `}}/>
       </head>
       <body>

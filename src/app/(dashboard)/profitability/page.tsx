@@ -222,7 +222,7 @@ export default function ProfitabilityPage() {
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:680,margin:'40px auto',textAlign:'center' as const}}>
       <div style={{fontSize:44,marginBottom:12}}>🔒</div>
       <div style={{fontSize:16,fontWeight:800,color:colors.text,marginBottom:8}}>ميزة الربحية متاحة بالباقة المتوسطة أو المتقدمة</div>
-      <div style={{fontSize:13,color:colors.text3}}>رقّي باقتك عشان تتابع مبيعاتك ومصروفاتك وأرباحك الشهرية</div>
+      <div className="hide-in-app" style={{fontSize:13,color:colors.text3}}>رقّي باقتك عشان تتابع مبيعاتك ومصروفاتك وأرباحك الشهرية</div>
     </div>
   )
 

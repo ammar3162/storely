@@ -8,6 +8,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import AIAssistant from '@/components/AIAssistant'
 import { toast } from '@/components/toast'
 import { colors as dsColors } from '@/lib/ds'
+import { isInApp } from '@/lib/inApp'
 import { LanguageProvider, useTranslation } from '@/lib/i18n/LanguageContext'
 
 // موحّد مع نظام التصميم المشترك (@/lib/ds)
@@ -101,6 +102,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [hasProfitAddon, setHasProfitAddon] = useState(false)
   const [hasAiAddon, setHasAiAddon] = useState(false)
   const [hasExtraBranchAddon, setHasExtraBranchAddon] = useState(false)
+  // داخل تطبيق Google Play نخفي صفحة الإضافات (شراء) — سياسة الدفع
+  const [inApp, setInApp] = useState(false)
+  useEffect(() => { setInApp(isInApp()) }, [])
   const [branchName, setBranchName] = useState('')
   const [advancedNavOpen, setAdvancedNavOpen] = useState(false)
   const [userName, setUserName]     = useState('')
@@ -620,7 +624,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
             {/* Nav items */}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
-              {[...NAV_MAIN,...NAV_MORE].filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic'||hasExtraBranchAddon||orgMaxBranches>1)&&(item.href!=='/attendance'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/hr-management'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/profitability'||orgPlan!=='basic'||hasProfitAddon)&&(item.href!=='/online-store'||hasMenuAddon)&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
+              {[...NAV_MAIN,...NAV_MORE].filter(item=>(item.href!=='/addons-market'||!inApp)&&((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic'||hasExtraBranchAddon||orgMaxBranches>1)&&(item.href!=='/attendance'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/hr-management'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/profitability'||orgPlan!=='basic'||hasProfitAddon)&&(item.href!=='/online-store'||hasMenuAddon)&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
                 const active=isActive(item.href)
                 return (
                   <button key={item.href} onClick={()=>{router.push(item.href);setShowMore(false)}} onMouseEnter={()=>router.prefetch(item.href)}
@@ -836,7 +840,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   ) : (
                     <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.9)',letterSpacing:'.1em',textTransform:'uppercase',padding:'8px 10px 4px'}}>{t(group.labelKey)}</div>
                   )}
-                  {!groupCollapsed && group.items.filter(item=>((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic'||hasExtraBranchAddon||orgMaxBranches>1)&&(item.href!=='/attendance'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/hr-management'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/profitability'||orgPlan!=='basic'||hasProfitAddon)&&(item.href!=='/online-store'||hasMenuAddon)&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
+                  {!groupCollapsed && group.items.filter(item=>(item.href!=='/addons-market'||!inApp)&&((item.href!=='/branches'&&item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||orgPlan!=='basic'||hasExtraBranchAddon||orgMaxBranches>1)&&(item.href!=='/attendance'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/hr-management'||orgPlan!=='basic'||hasHrAddon)&&(item.href!=='/profitability'||orgPlan!=='basic'||hasProfitAddon)&&(item.href!=='/online-store'||hasMenuAddon)&&((item.href!=='/branch-compare'&&item.href!=='/branch-managers'&&item.href!=='/transfer-stock')||branches.length>1)&&navVisible(item.href)).map(item=>{
                     const active=isActive(item.href)
                     const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
                     const isExternal=item.href.startsWith('http')
@@ -902,9 +906,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               <div style={{width:'100%',background:'#fffbeb',borderBottom:'1px solid #fac775',padding:'12px 20px',display:'flex',alignItems:'center',justifyContent:'center',gap:10,flexWrap:'wrap' as const,textAlign:'center' as const}}>
                 <svg width={16} height={16} fill="none" stroke="#854f0b" strokeWidth={2.5} viewBox="0 0 24 24" style={{flexShrink:0}}><path strokeLinecap="round" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
                 <span style={{fontSize:13,fontWeight:600,color:'#633806'}}>
-                  {subDaysLeft===0?'ينتهي اشتراكك اليوم!':`سيتم تعطيل حسابك خلال ${subDaysLeft} ${subDaysLeft===1?'يوم':'أيام'}.`} قم بالتجديد الآن لتجنب التعطيل!
+                  {subDaysLeft===0?'ينتهي اشتراكك اليوم!':`سيتم تعطيل حسابك خلال ${subDaysLeft} ${subDaysLeft===1?'يوم':'أيام'}.`} <span className="hide-in-app">قم بالتجديد الآن لتجنب التعطيل!</span>
                 </span>
-                <button onClick={()=>router.push('/settings')} style={{background:'#854f0b',color:'white',border:'none',borderRadius:8,padding:'5px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>
+                <button className="hide-in-app" onClick={()=>router.push('/settings')} style={{background:'#854f0b',color:'white',border:'none',borderRadius:8,padding:'5px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>
                   جدد الآن
                 </button>
               </div>

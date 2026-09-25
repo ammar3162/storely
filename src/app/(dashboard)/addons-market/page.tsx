@@ -7,6 +7,7 @@ import { confirmDialog } from '@/components/ConfirmDialog'
 import { colors, font, card, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { billLines, planKeyOf, addonPeriodEnd, proratedCharge } from '@/lib/planPricing'
+import { isInApp } from '@/lib/inApp'
 
 export default function AddonsMarketPage() {
   const [addons, setAddons] = useState<any[]>([])
@@ -17,6 +18,8 @@ export default function AddonsMarketPage() {
   const [cancelling, setCancelling] = useState<string|null>(null)
   const [plan, setPlan] = useState<{ key: string; cycle: 'monthly'|'yearly'; maxBranches: number } | null>(null)
   const [subEndsAt, setSubEndsAt] = useState<string | null>(null)
+  const [inApp, setInApp] = useState(false)
+  useEffect(() => { setInApp(isInApp()) }, [])
 
   useEffect(() => { init() }, [])
 
@@ -90,6 +93,13 @@ export default function AddonsMarketPage() {
     toast('تم إلغاء الاشتراك')
     load(orgId)
   }
+
+  if (inApp) return (
+    <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 480, margin: '80px auto', textAlign: 'center' as const, ...card, padding: 32 }}>
+      <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 8 }}>الإضافات</div>
+      <div style={{ fontSize: 13, color: colors.text3, lineHeight: 1.8 }}>إدارة الاشتراك والإضافات متاحة من حسابك على الموقع.</div>
+    </div>
+  )
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontFamily: font.family }}>جاري التحميل...</div>
 
