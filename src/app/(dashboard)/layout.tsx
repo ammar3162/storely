@@ -10,6 +10,7 @@ import { Bell, Check, ChevronDown, HelpCircle, LogOut, Moon, Pause, Settings, St
 import { toast } from '@/components/toast'
 import { colors as dsColors } from '@/lib/ds'
 import { isInApp } from '@/lib/inApp'
+import { pageToneFor } from '@/lib/pageTones'
 import { LanguageProvider, useTranslation } from '@/lib/i18n/LanguageContext'
 
 // موحّد مع نظام التصميم المشترك (@/lib/ds)
@@ -80,6 +81,12 @@ const NAV_GROUPS = [
 ]
 
 const NAV_MAIN = NAV_GROUPS.flatMap(g=>g.items)
+// لون صفحة العنصر — يظهر لما يكون مفتوح أو عند تمرير الماوس
+function navTone(href: string) {
+  const tone = pageToneFor(href)?.tone
+  return tone ? ({ '--nt': tone.fg, '--nb': tone.bg } as React.CSSProperties) : undefined
+}
+
 const NAV_MORE: {href:string;label:string;labelKey:string;icon:string}[] = []
 
 let _cache: any = null
@@ -619,7 +626,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   const external=item.href.startsWith('http')
                   const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
                   return (
-                    <button key={item.href} className={`sh-nav${active?' on':''}`}
+                    <button key={item.href} className={`sh-nav${active?' on':''}`} style={navTone(item.href)}
                       onClick={()=>{ if(external) window.open(item.href,'_blank'); else router.push(item.href); setShowMore(false) }}>
                       <Icon d={item.icon} size={18} width={1.75}/>
                       <span style={{flex:1}}>{t(item.labelKey)}</span>
@@ -713,7 +720,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                     const external=item.href.startsWith('http')
                     const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
                     return (
-                      <button key={item.href} className={`sh-nav${active?' on':''}`}
+                      <button key={item.href} className={`sh-nav${active?' on':''}`} style={navTone(item.href)}
                         onClick={()=>external?window.open(item.href,'_blank'):router.push(item.href)}
                         onMouseEnter={()=>!external&&router.prefetch(item.href)}>
                         <Icon d={item.icon} size={18} width={1.75}/>
@@ -791,11 +798,13 @@ const SHELL_CSS = `
   .sh-btn-ghost{border-color:transparent;background:transparent;color:${C.text3}}
 
   .sh-group-label{font-size:12px;font-weight:600;color:${C.text4};padding:0 10px 6px}
-  .sh-nav{width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;border:none;background:transparent;color:${C.text2};font-size:13.5px;font-weight:500;font-family:inherit;cursor:pointer;text-align:right;margin-bottom:1px}
-  .sh-nav svg{color:${C.text4};flex-shrink:0}
-  .sh-nav:hover{background:#f2f4f7;color:${C.text}}
-  .sh-nav.on{background:${C.primaryL};color:${C.primary};font-weight:600}
-  .sh-nav.on svg{color:${C.primary}}
+  .sh-nav{--nt:${C.primary};--nb:${C.primaryL};position:relative;width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;border:none;background:transparent;color:${C.text2};font-size:13.5px;font-weight:500;font-family:inherit;cursor:pointer;text-align:right;margin-bottom:1px;transition:background .15s,color .15s}
+  .sh-nav svg{color:${C.text4};flex-shrink:0;transition:color .15s}
+  .sh-nav:hover{background:#f4f5f7;color:${C.text}}
+  .sh-nav:hover svg{color:var(--nt)}
+  .sh-nav.on{background:var(--nb);color:var(--nt);font-weight:600}
+  .sh-nav.on svg{color:var(--nt)}
+  .sh-nav.on::before{content:'';position:absolute;right:-10px;top:8px;bottom:8px;width:3px;border-radius:3px 0 0 3px;background:var(--nt)}
   .sh-nav-scroll{flex:1;overflow-y:auto;padding:4px 10px 12px}
 
   .sh-branch{margin-top:12px;width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid ${C.border};border-radius:8px;background:${C.surface};color:${C.text2};font-size:13px;font-weight:600;font-family:inherit;cursor:pointer}

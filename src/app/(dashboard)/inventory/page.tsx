@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import PageIcon from '@/components/PageIcon'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { Upload, Download, Paperclip, X, AlertTriangle, Camera, Ruler, CheckCircle2, Trash2, Sparkles, Package, Plus, ScanLine, Search } from 'lucide-react'
 import { api } from '@/lib/api-client'
@@ -512,7 +513,7 @@ export default function InventoryPage() {
       {/* العنوان + الأدوات */}
       <div className="iv-head">
         <div style={{minWidth:0}}>
-          <h1 className="iv-title">المخزون</h1>
+          <h1 className="iv-title" style={{display:'flex',alignItems:'center',gap:12}}><PageIcon/>المخزون</h1>
           <p className="iv-sub">{products.length} صنف · {totalQty.toLocaleString('en-US')} وحدة إجمالاً</p>
         </div>
         <div className="iv-tools">

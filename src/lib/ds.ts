@@ -46,6 +46,7 @@ export const radius = {
 export const shadow = {
   sm:  '0 1px 2px rgba(16,24,40,.05)',
   md:  '0 1px 3px rgba(16,24,40,.08)',
+  card:'0 1px 2px rgba(16,24,40,.04)',
   lg:  '0 12px 24px rgba(16,24,40,.10)',
   green:'none',
 }
@@ -79,8 +80,9 @@ export const inp = (extra?: object): React.CSSProperties => ({
 
 export const card: React.CSSProperties = {
   background: colors.surface,
-  borderRadius: radius.lg,
+  borderRadius: '14px',
   border: `1px solid ${colors.border}`,
+  boxShadow: shadow.card,
   overflow: 'hidden',
 }
 
@@ -127,7 +129,9 @@ export const pageHeader: React.CSSProperties = {
   flexWrap:'wrap', gap:12,
 }
 
+// العنوان صف مرن عشان أيقونة الصفحة (<PageIcon/>) تجي بجانبه
 export const pageTitle: React.CSSProperties = {
+  display:'flex', alignItems:'center', gap:12,
   fontSize:font.xl, fontWeight:700,
   color:colors.text, letterSpacing:'-0.2px',
   marginBottom:3,

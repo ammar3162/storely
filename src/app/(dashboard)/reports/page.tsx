@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
@@ -1058,7 +1059,7 @@ function AttendanceDetail({ onBack }: { onBack:()=>void }) {
   return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto'}}>
       <button onClick={onBack} style={{background:'none',border:'none',color:colors.primary,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginBottom:12,display:'flex',alignItems:'center',gap:4}}>→ رجوع</button>
-      <h1 style={pageTitle}>تقرير الحضور والانصراف</h1>
+      <h1 style={pageTitle}><PageIcon/>تقرير الحضور والانصراف</h1>
       <p style={pageSub}>سجل حضور وانصراف الموظفين حسب الفترة المحددة</p>
       <div style={{display:'flex',gap:10,flexWrap:'wrap' as const,marginTop:16,marginBottom:12,alignItems:'flex-end'}}>
         <div>
@@ -1463,7 +1464,7 @@ export default function ReportsPage() {
   if (view==='inventory') return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} .spin-icon{animation:spin .8s linear infinite}`}</style>
-      <h1 style={{...pageTitle,marginBottom:16}}>تقرير الجرد اليومي</h1>
+      <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير الجرد اليومي</h1>
       <InventoryDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
     </div>
   )
@@ -1471,7 +1472,7 @@ export default function ReportsPage() {
   if (view==='dispense') return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <h1 style={{...pageTitle,marginBottom:16}}>تقرير الصرف</h1>
+      <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير الصرف</h1>
       <DispenseDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
     </div>
   )
@@ -1479,7 +1480,7 @@ export default function ReportsPage() {
   if (view==='purchase') return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <h1 style={{...pageTitle,marginBottom:16}}>تقرير المشتريات</h1>
+      <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير المشتريات</h1>
       <PurchaseDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
     </div>
   )
@@ -1495,7 +1496,7 @@ export default function ReportsPage() {
   if (view==='cashier') return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <h1 style={{...pageTitle,marginBottom:16}}>إقفال الكاشير اليومي</h1>
+      <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>إقفال الكاشير اليومي</h1>
       <CashierClosingDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
     </div>
   )
@@ -1503,7 +1504,7 @@ export default function ReportsPage() {
   if (view==='waste') return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <h1 style={{...pageTitle,marginBottom:16}}>تقرير الهدر</h1>
+      <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير الهدر</h1>
       <WasteDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
     </div>
   )
@@ -1518,7 +1519,7 @@ export default function ReportsPage() {
       `}</style>
 
       <div style={{marginBottom:20}} className="su">
-        <h1 style={{...pageTitle}}>التقارير</h1>
+        <h1 style={{...pageTitle}}><PageIcon/>التقارير</h1>
         <p style={{...pageSub}}>اختر الفترة ثم اضغط على التقرير لعرض التفاصيل</p>
       </div>
 

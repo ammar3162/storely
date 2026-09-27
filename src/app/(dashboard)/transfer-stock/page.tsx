@@ -1,4 +1,5 @@
 'use client'
+import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
@@ -204,9 +205,8 @@ export default function TransferStockPage() {
   return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:960,margin:'0 auto'}}>
       <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:20}}>
-        <div style={{width:44,height:44,borderRadius:radius.md,background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🔄</div>
         <div>
-          <h1 style={{...pageTitle,marginBottom:1}}>نقل مخزون بين الفروع</h1>
+          <h1 style={{...pageTitle,marginBottom:1}}><PageIcon/>نقل مخزون بين الفروع</h1>
           <p style={{...pageSub}}>اختر الفروع، جمّع الأصناف اللي تبي تنقلها، وأكّد النقلة دفعة وحدة</p>
         </div>
       </div>

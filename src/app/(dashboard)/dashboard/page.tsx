@@ -9,15 +9,8 @@ import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { ShoppingCart, Plus, ArrowUpRight, X, Package, AlertTriangle, Receipt, Send, Sun, Sunset, Moon, Bell, CalendarDays, RotateCcw, Activity, TrendingUp, TrendingDown } from 'lucide-react'
 import { colors as dsColors } from '@/lib/ds'
+import { TONES } from '@/lib/pageTones'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
-
-// ألوان مميزة لكل نوع رقم — درجات هادئة، مو ألوان صارخة
-const TONES = {
-  teal:   { fg:'#0f766e', bg:'#ecfdf8', soft:'#99e0d6' },
-  rose:   { fg:'#e11d48', bg:'#fff1f3', soft:'#fecdd6' },
-  indigo: { fg:'#4f46e5', bg:'#eef2ff', soft:'#c7d2fe' },
-  amber:  { fg:'#c2410c', bg:'#fff7ed', soft:'#fed7aa' },
-}
 
 class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|null}> {
   state = { error: null }

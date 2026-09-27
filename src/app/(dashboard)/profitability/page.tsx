@@ -1,4 +1,5 @@
 'use client'
+import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { getMe, getOrgId } from '@/lib/session'
 import { currencySymbol } from '@/lib/currencySymbol'
@@ -238,7 +239,7 @@ export default function ProfitabilityPage() {
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} .pf-scroll::-webkit-scrollbar{height:0}`}</style>
       <div style={{marginBottom:16}}>
-        <h1 style={{...pageTitle}}>الربحية الشهرية</h1>
+        <h1 style={{...pageTitle}}><PageIcon/>الربحية الشهرية</h1>
         <p style={{...pageSub}}>المبيعات، المشتريات، والمصروفات — تتحدّث تلقائياً</p>
       </div>
 

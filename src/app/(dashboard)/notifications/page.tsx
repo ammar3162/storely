@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { getOrgId } from '@/lib/session'
@@ -78,7 +79,7 @@ export default function NotificationsPage() {
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:800,margin:'0 auto'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20,flexWrap:'wrap' as const,gap:12}}>
         <div>
-          <h1 style={{...pageTitle}}>الإشعارات</h1>
+          <h1 style={{...pageTitle}}><PageIcon/>الإشعارات</h1>
           <p style={{...pageSub}}>{unread > 0 ? `${unread} إشعار غير مقروء` : 'كل الإشعارات مقروءة'}</p>
         </div>
         {unread > 0 && <button onClick={markAllRead} style={{...btnSecondary,padding:'8px 14px',fontSize:font.xs,flexShrink:0}}>تحديد الكل كمقروء</button>}

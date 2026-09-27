@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { colors, font, card, btnPrimary, pageTitle, pageSub, inp } from '@/lib/ds'
@@ -208,7 +209,7 @@ export default function AttendancePage() {
   return (
     <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 900, margin: '0 auto' }}>
       <div style={{ marginBottom: 16 }}>
-        <h1 style={pageTitle}>الحضور والانصراف</h1>
+        <h1 style={pageTitle}><PageIcon/>الحضور والانصراف</h1>
         <p style={pageSub}>سجل حضور الفريق اليومي — يتحقق تلقائياً من موقعهم الجغرافي ويحسب التأخير</p>
       </div>
 

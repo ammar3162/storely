@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
@@ -351,7 +352,7 @@ export default function SettingsPage() {
 
       {/* Header */}
       <div style={{marginBottom:20}} className="su">
-        <h1 style={{...pageTitle}}>الإعدادات</h1>
+        <h1 style={{...pageTitle}}><PageIcon/>الإعدادات</h1>
         <p style={{...pageSub}}>إعدادات المؤسسة وجدولة التنبيهات والنسخ الاحتياطي</p>
       </div>
 

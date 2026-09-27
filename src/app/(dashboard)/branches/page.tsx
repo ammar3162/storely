@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { getOrgId } from '@/lib/session'
@@ -217,7 +218,7 @@ export default function BranchesPage() {
 
   return (
     <div style={{padding:'24px',maxWidth:900,margin:'0 auto',fontFamily:font.family,direction:'rtl'}}>
-      <h1 style={pageTitle}>إدارة الفروع</h1>
+      <h1 style={pageTitle}><PageIcon/>إدارة الفروع</h1>
       <p style={pageSub}>كل فرع له مخزونه المستقل. باقتك مع الإضافات تسمح بـ <b style={{color:colors.primary}}>{maxBranches} فرع</b>.</p>
 
       {branches.length>0&&(

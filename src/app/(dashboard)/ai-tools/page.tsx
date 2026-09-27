@@ -1,4 +1,5 @@
 'use client'
+import PageIcon from '@/components/PageIcon'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
@@ -169,9 +170,7 @@ export default function AIToolsPage() {
       {/* Header */}
       <div className="fu" style={{marginBottom:24}}>
         <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:6}}>
-          <div style={{width:44,height:44,borderRadius:12,background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>
-            ✨
-          </div>
+          <PageIcon size={44}/>
           <div>
             <h1 style={{fontSize:20,fontWeight:800,color:C.text,margin:0}}>أدوات الذكاء</h1>
             <p style={{fontSize:11,color:C.text3,margin:'3px 0 0'}}>أدوات تحليل ذكية مبنية على بيانات مخزونك الحقيقية</p>

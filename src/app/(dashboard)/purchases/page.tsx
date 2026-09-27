@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import PageIcon from '@/components/PageIcon'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { Clock, CheckCircle2, Ban, Percent } from 'lucide-react'
@@ -355,7 +356,7 @@ export default function PurchasesPage() {
 
       {/* Header */}
       <div className="u" style={{marginBottom:16}}>
-        <h1 style={{fontSize:20,fontWeight:700,color:C.text,margin:0,letterSpacing:'-0.3px'}}>المشتريات</h1>
+        <h1 style={{fontSize:20,fontWeight:700,color:C.text,margin:0,letterSpacing:'-0.3px',display:'flex',alignItems:'center',gap:12}}><PageIcon/>المشتريات</h1>
         <p style={{fontSize:11,color:C.text4,margin:'3px 0 0'}}>فئة <b style={{color:C.primary}}>مخزون</b> تُضيف المنتج للمخزون تلقائياً</p>
       </div>
 
