@@ -4,6 +4,8 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { sanitizeShortText } from '@/lib/sanitize'
 import { formatPhone } from '@/lib/whatsapp'
 import { currencyForDialCode } from '@/lib/currencyByCountry'
+import { sendEmail } from '@/lib/email'
+import { welcomeEmail } from '@/lib/emailTemplates'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -111,6 +113,14 @@ export async function POST(req: Request) {
         await supabase.from('demo_requests').update({ matched_org_id: org.id } as any).eq('id', (match as any).id)
       }
     } catch {}
+
+    // إيميل ترحيب (أفضل جهد — لو فشل ما يوقف التسجيل)
+    if (authedUser.email) {
+      try {
+        const mail = welcomeEmail({ name: orgName, trialEnds })
+        await sendEmail({ to: authedUser.email, subject: mail.subject, html: mail.html })
+      } catch (e) { console.error('WELCOME_EMAIL_FAILED (non-fatal):', e) }
+    }
 
     return NextResponse.json({ success: true, org_id: org.id })
   } catch (err: any) {
