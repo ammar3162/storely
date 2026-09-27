@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import { sendEmail } from '@/lib/email'
+import { resetPasswordEmail } from '@/lib/emailTemplates'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,18 +36,9 @@ export async function POST(req: Request) {
     })
 
     const resetLink = `https://storely.dev/reset-password-wa?token=${token}`
-    const html = `
-      <div style="font-family:sans-serif;direction:rtl;text-align:right;max-width:480px;margin:0 auto;padding:24px">
-        <h2 style="color:#029FA2">🔐 استعادة كلمة المرور — Storely</h2>
-        <p>مرحباً ${(profile as any)?.full_name || ''}،</p>
-        <p>اضغط الزر التالي لتعيين كلمة مرور جديدة:</p>
-        <a href="${resetLink}" style="display:inline-block;padding:12px 28px;background:#029FA2;color:white;border-radius:10px;text-decoration:none;font-weight:700;margin:16px 0">تعيين كلمة مرور جديدة</a>
-        <p style="color:#64748b;font-size:13px">⏱️ الرابط صالح لمدة ساعة واحدة فقط.</p>
-        <p style="color:#94a3b8;font-size:12px">إذا لم تطلب هذا، تجاهل الرسالة.</p>
-      </div>
-    `
+    const mail = resetPasswordEmail({ name: (profile as any)?.full_name || '', link: resetLink })
 
-    await sendEmail({ to: email, subject: 'استعادة كلمة المرور — Storely', html })
+    await sendEmail({ to: email, subject: mail.subject, html: mail.html })
 
     return genericResponse
   } catch (err: any) {

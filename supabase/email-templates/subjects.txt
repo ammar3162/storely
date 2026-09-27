@@ -1,0 +1,6 @@
+confirm-signup: أكّد بريدك الإلكتروني — Storely
+reset-password: استعادة كلمة المرور — Storely
+magic-link: رابط الدخول إلى Storely
+change-email: تأكيد تغيير البريد الإلكتروني — Storely
+invite: دعوة للانضمام إلى Storely
+reauthentication: رمز التحقق — Storely

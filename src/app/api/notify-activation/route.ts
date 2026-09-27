@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission } from '@/lib/adminAuth'
+import { sendEmail } from '@/lib/email'
+import { activationEmail } from '@/lib/emailTemplates'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '').replace(/^\+/, '')
@@ -31,19 +33,32 @@ export async function POST(req: Request) {
       .eq('id', userId)
       .single()
 
-    if (!profile?.phone) {
-      return NextResponse.json({ error: 'لا يوجد رقم هاتف' }, { status: 404 })
-    }
-
-    if (profile.whatsapp_consent !== true) {
-      return NextResponse.json({ success: false, message: 'لا يوجد موافقة واتساب' })
-    }
+    if (!profile) return NextResponse.json({ error: 'الحساب غير موجود' }, { status: 404 })
 
     const { data: org } = await supabase
       .from('organizations')
       .select('name')
       .eq('id', profile.org_id)
       .single()
+
+    // إيميل التفعيل (ما يحتاج موافقة واتساب) — أفضل جهد
+    let emailSent = false
+    try {
+      const { data: authUser } = await supabase.auth.admin.getUserById(userId)
+      const to = authUser?.user?.email
+      if (to) {
+        const mail = activationEmail({ name: profile.full_name || '', orgName: org?.name || '', paid: subscriptionType === 'paid', endsAt: subscriptionEndsAt || null })
+        emailSent = (await sendEmail({ to, subject: mail.subject, html: mail.html })).success === true
+      }
+    } catch (e) { console.error('ACTIVATION_EMAIL_FAILED (non-fatal):', e) }
+
+    if (!profile.phone) {
+      return NextResponse.json({ success: emailSent, emailSent, message: 'لا يوجد رقم هاتف' })
+    }
+
+    if (profile.whatsapp_consent !== true) {
+      return NextResponse.json({ success: emailSent, emailSent, message: 'لا يوجد موافقة واتساب' })
+    }
 
     const phone   = formatPhone(profile.phone)
     const apiKey  = process.env.WASENDER_API_KEY!
@@ -79,7 +94,7 @@ export async function POST(req: Request) {
       sent_at: new Date().toISOString(),
     })
 
-    return NextResponse.json({ success: res.ok, phone })
+    return NextResponse.json({ success: res.ok || emailSent, phone, emailSent })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
