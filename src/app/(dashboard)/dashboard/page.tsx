@@ -330,7 +330,7 @@ export default function DashboardPage() {
 }
 
 const DASH_CSS = `
-  .dh{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;max-width:1180px}
+  .dh{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif}
   .dh *{box-sizing:border-box}
   .dh-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
   .dh-title{font-size:20px;font-weight:700;color:${dsColors.text};margin:0}

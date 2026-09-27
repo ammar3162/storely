@@ -691,7 +691,6 @@ function StatusDot({ out, low }: { out: boolean; low: boolean }) {
 }
 
 const IV_CSS = `
-  .iv{max-width:1180px}
   .iv-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
   .iv-title{font-size:20px;font-weight:700;color:${C.text};margin:0}
   .iv-sub{font-size:13px;color:${C.text3};margin:4px 0 0;font-variant-numeric:tabular-nums}
