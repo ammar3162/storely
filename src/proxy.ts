@@ -61,7 +61,8 @@ export async function proxy(request: NextRequest) {
   const isReset    = path.startsWith('/reset-password')
   const isSupplierPortalAuth = path === '/supplier-portal' || path === '/supplier-portal/'
   const isSupplierDashboard  = path.startsWith('/supplier-portal/dashboard')
-  const isPublic   = isLogin || isPending || isExpiredPage || isApi || isStaff || isStatic || isLanding || isReset || isSupplierPortalAuth
+  const isAuthCallback = path.startsWith('/auth/')
+  const isPublic   = isLogin || isPending || isExpiredPage || isApi || isStaff || isStatic || isLanding || isReset || isSupplierPortalAuth || isAuthCallback
 
   if (isAdminPanel) {
     const adminToken  = request.cookies.get('storely_admin_token')?.value
@@ -93,7 +94,9 @@ export async function proxy(request: NextRequest) {
 
   if (user && isLogin) {
     const { data: profile } = await supabase
-      .from('profiles').select('status').eq('id', user.id).single()
+      .from('profiles').select('status,org_id').eq('id', user.id).single()
+    // دخل بـ Google لأول مرة وما عنده منشأة بعد — يبقى في صفحة الدخول ليكمل بياناته
+    if (!profile?.org_id) return supabaseResponse
     if (profile?.status === 'pending') return NextResponse.redirect(new URL('/pending', request.url))
     if (profile?.status === 'suspended') return NextResponse.redirect(new URL('/login?reason=suspended', request.url))
     if (profile?.status === 'deleted') return NextResponse.redirect(new URL('/login?reason=deleted', request.url))
@@ -103,6 +106,7 @@ export async function proxy(request: NextRequest) {
   if (user && !isPublic) {
     const { data: profile } = await supabase
       .from('profiles').select('status,subscription_type,subscription_ends_at,role').eq('id', user.id).single()
+    if (!profile && !isSupplierDashboard) return NextResponse.redirect(new URL('/login?mode=complete', request.url))
     if (profile?.status === 'pending') return NextResponse.redirect(new URL('/pending', request.url))
     if (profile?.status === 'suspended' || profile?.status === 'deleted') {
       await supabase.auth.signOut()
