@@ -81,7 +81,6 @@ export function brandEmail(o: {
   return `<!doctype html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(o.title)}</title></head>
 <body style="margin:0;padding:0;background:${b.bg}">
-${o.preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(o.preheader)}</div>` : ''}
 <div dir="rtl" style="background:${b.bg};padding:28px 12px;font-family:Tahoma,Arial,sans-serif;color:${b.ink}">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:540px;margin:0 auto;background:${b.card};border-radius:20px;border:1px solid ${b.line};overflow:hidden">
     <tr><td style="background:${b.color};background-image:linear-gradient(135deg,${b.color},${b.dark});padding:20px 26px;color:#ffffff">
