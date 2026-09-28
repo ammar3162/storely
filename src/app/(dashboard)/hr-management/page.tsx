@@ -1,4 +1,5 @@
 'use client'
+import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
@@ -401,7 +402,7 @@ export default function HRManagementPage() {
             <Wallet size={20} color="#a21caf" strokeWidth={1.75}/>
           </div>
           <div>
-            <h1 style={pageTitle}>إدارة الموظفين</h1>
+            <h1 style={pageTitle}><PageIcon/>إدارة الموظفين</h1>
             <p style={pageSub}>الرواتب والبدلات، الخصومات والسلف، والمهام لكل موظف</p>
           </div>
         </div>
@@ -498,7 +499,7 @@ export default function HRManagementPage() {
                         </span>
                       )}
                       {pendingAdvanceCounts[s.id] > 0 && (
-                        <span style={{background:colors.warning,color:'white',fontSize:10,fontWeight:800,minWidth:18,height:18,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 5px'}} title="عنده طلب سلفة/خصم بانتظار الموافقة">
+                        <span style={{background:'#f79009',color:'white',fontSize:10,fontWeight:800,minWidth:18,height:18,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 5px'}} title="عنده طلب سلفة/خصم بانتظار الموافقة">
                           {pendingAdvanceCounts[s.id]}
                         </span>
                       )}

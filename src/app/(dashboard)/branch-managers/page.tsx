@@ -1,4 +1,5 @@
 'use client'
+import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { getOrgId } from '@/lib/session'
@@ -94,7 +95,7 @@ export default function BranchManagersPage() {
   return (
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
       <div style={{marginBottom:20}}>
-        <h1 style={{...pageTitle}}>مديرو الفروع</h1>
+        <h1 style={{...pageTitle}}><PageIcon/>مديرو الفروع</h1>
         <p style={{...pageSub}}>أضف حساب مدير لكل فرع، وحدد بالضبط أي الصفحات يقدر يشوفها — يدخل بإيميله وكلمة مروره الخاصة، ويشوف فرعه بس</p>
       </div>
 

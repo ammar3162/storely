@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { getMe } from '@/lib/session'
@@ -106,7 +107,7 @@ export default function AddonsMarketPage() {
   return (
     <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 900, margin: '0 auto' }}>
       <div style={{ marginBottom: 20 }}>
-        <h1 style={pageTitle}>الإضافات</h1>
+        <h1 style={pageTitle}><PageIcon/>الإضافات</h1>
         <p style={pageSub}>ميزات إضافية تساعدك تطوّر منشأتك — اشترك بأي وقت</p>
       </div>
 

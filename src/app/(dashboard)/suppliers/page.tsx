@@ -1,4 +1,5 @@
 'use client'
+import PageIcon from '@/components/PageIcon'
 import { useState, useEffect, useRef } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -527,7 +528,7 @@ export default function SuppliersPage() {
       
       <div style={{ marginBottom:22, display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
         <div>
-          <h1 style={pageTitle}>الموردين</h1>
+          <h1 style={pageTitle}><PageIcon/>الموردين</h1>
           <p style={pageSub}>اربط منتجاتك بموردين وحدد توقيت الإشعار لكل مورد</p>
         </div>
         <div style={{display:'flex',gap:8}}>

@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { getMe } from '@/lib/session'
 import { colors, radius, font, card, btnSecondary, pageTitle, pageSub } from '@/lib/ds'
@@ -87,7 +88,7 @@ export default function BranchComparePage() {
     <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 800, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap' as const, gap: 12 }}>
         <div>
-          <h1 style={{ ...pageTitle }}>📊 مقارنة الفروع</h1>
+          <h1 style={{ ...pageTitle }}><PageIcon/>مقارنة الفروع</h1>
           <p style={{ ...pageSub }}>الصرف، المخزون، الكفاءة، وأكثر المنتجات استهلاكاً لكل فرع (آخر 30 يوم)</p>
         </div>
         <button onClick={handleExportPdf} disabled={exportingPdf || comparison.length === 0}

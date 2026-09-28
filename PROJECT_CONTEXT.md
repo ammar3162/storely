@@ -11,7 +11,7 @@
 - **GitHub:** github.com/ammar3162/storely
 - **الإنتاج:** storely-hm1u.vercel.app
 - **مشروع Vercel:** lanus-projects-73be13f0/storely-hm1u
-- **مسار المشروع المحلي:** `~/Desktop/storely/storely`
+- **مسار المشروع المحلي:** `~/Projects/storely/storely`
 - **Supabase Project ID:** dozqwcczhaiqvoqcrrep
 - **صفحة الأدمن:** `/storely-admin`
 - **واتساب:** عبر WasenderAPI (session 91868، رقم +966594351667)

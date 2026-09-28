@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
@@ -324,7 +325,7 @@ export default function StaffManagementPage() {
             <Users size={20} color={colors.primary} strokeWidth={1.75}/>
           </div>
           <div>
-            <h1 style={pageTitle}>الموظفون</h1>
+            <h1 style={pageTitle}><PageIcon/>الموظفون</h1>
             <p style={pageSub}>أضف موظفين بصلاحيات صرف فقط — يدخلون برقم جوالهم ورمز PIN</p>
           </div>
         </div>

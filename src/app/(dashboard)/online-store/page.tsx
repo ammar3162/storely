@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import PageIcon from '@/components/PageIcon'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getOrgId } from '@/lib/session'
@@ -386,7 +387,7 @@ export default function OnlineStorePage() {
   return (
     <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 900, margin: '0 auto' }}>
       <div style={{ marginBottom: 20 }}>
-        <h1 style={pageTitle}>المنيو الإلكتروني</h1>
+        <h1 style={pageTitle}><PageIcon/>المنيو الإلكتروني</h1>
         <p style={pageSub}>ابنِ صفحة عامة تعرض منتجاتك للعملاء — بالسعر والوصف والصورة</p>
       </div>
 

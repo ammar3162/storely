@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import PageIcon from '@/components/PageIcon'
 import { useState, useEffect, useRef } from 'react'
 import { toast } from '@/components/toast'
 import { cache } from '@/lib/cache'
@@ -162,7 +163,7 @@ export default function DispensePage() {
       {/* Header */}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
         <div>
-          <h1 style={{fontSize:18,fontWeight:800,color:C.text,margin:0}}>الصرف</h1>
+          <h1 style={{fontSize:18,fontWeight:800,color:C.text,margin:0,display:'flex',alignItems:'center',gap:10}}><PageIcon size={32}/>الصرف</h1>
           <p style={{fontSize:10,color:C.text3,margin:'2px 0 0'}}>
             {products.length} صنف
             {outCount>0&&<span style={{color:C.danger,fontWeight:700}}> · {outCount} نفد</span>}

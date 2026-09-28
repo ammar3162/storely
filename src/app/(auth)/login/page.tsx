@@ -62,6 +62,17 @@ const PLANS = [
   { v:10, label:'المتقدمة',  price:'399', yearlyPrice:'3830', desc:'10 فروع · موظفون وموردون غير محدودين', color:'#7c3aed' },
 ]
 
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/>
+      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+      <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/>
+    </svg>
+  )
+}
+
 const BUSINESS_TYPES = [
   {v:'مطعم',icon:'🍔'},{v:'كوفي',icon:'☕'},{v:'مخبز',icon:'🥖'},
   {v:'بقالة',icon:'🛒'},{v:'صيدلية',icon:'💊'},{v:'مستودع',icon:'🏭'},
@@ -72,9 +83,13 @@ function LoginPage() {
   const { t, lang, setLang } = useTranslation()
   const [forgotMethod, setForgotMethod] = useState<'email'|'whatsapp'>('email')
   const [forgotPhone, setForgotPhone] = useState('')
+  // oauth: دخل بـ Google وما عنده منشأة بعد — يكمل بيانات المنشأة بدون بريد وكلمة مرور
+  const [oauth, setOauth] = useState(() =>
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'complete')
   const [mode, setMode] = useState<'login'|'register'|'forgot'|'forgot-sent'|'forgot-sent-wa'>(() => {
     if (typeof window !== 'undefined') {
-      if (new URLSearchParams(window.location.search).get('mode') === 'register') return 'register'
+      const m = new URLSearchParams(window.location.search).get('mode')
+      if (m === 'register' || m === 'complete') return 'register'
     }
     return 'login'
   })
@@ -105,7 +120,9 @@ function LoginPage() {
     return 'monthly'
   })
   const [loading, setLoading]         = useState(false)
-  const [error, setError]             = useState('')
+  const [error, setError]             = useState(() =>
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('error') === 'google'
+      ? 'تعذّر الدخول بحساب Google — حاول مرة ثانية' : '')
   const [accountStatus, setAccountStatus] = useState<'suspended'|'deleted'|null>(() => {
     if (typeof window !== 'undefined') {
       const reason = new URLSearchParams(window.location.search).get('reason')
@@ -122,6 +139,29 @@ function LoginPage() {
   useEffect(() => {
     if (isInApp() && (isStaffDevice() || localStorage.getItem('staff_session'))) window.location.replace('/staff')
   }, [])
+
+  useEffect(() => {
+    if (!oauth) return
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user?.email) { setEmail(data.user.email); return }
+      setOauth(false); setMode('login')
+    })
+  }, [oauth, supabase])
+
+  async function handleGoogle() {
+    setError(''); setLoading(true)
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    })
+    if (error) { setError('تعذّر الدخول بحساب Google — حاول مرة ثانية'); setLoading(false) }
+  }
+
+  async function leaveOauth() {
+    await supabase.auth.signOut()
+    setOauth(false); setMode('login'); setStep(1); setError(''); setEmail('')
+    window.history.replaceState(null, '', '/login')
+  }
 
   useEffect(() => {
     const hash = window.location.hash
@@ -184,6 +224,7 @@ function LoginPage() {
     e.preventDefault(); setError('')
     if (!orgName.trim()) { setError('أدخل اسم المؤسسة'); return }
     if (!phone.trim())   { setError('أدخل رقم الجوال'); return }
+    if (oauth) { setStep(2); return }
     const pwErr = validatePassword(password)
     if (pwErr) { setError(pwErr); return }
     if (password.length < 6) { setError('كلمة المرور 6 أحرف على الأقل'); return }
@@ -241,6 +282,27 @@ function LoginPage() {
     if (!branchCount) { setError('اختر الباقة المناسبة'); return }
     if (!agreedTerms) { setError('يجب الموافقة على الشروط والأحكام للمتابعة'); return }
     setLoading(true); setError('')
+    if (oauth) {
+      const fullPhone = countryCode + phone.trim().replace(/^0+/, '')
+      const regRes = await fetch('/api/register-org', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          orgName: orgName.trim(), fullPhone, businessType: businessType||'مطعم', branchCount, billing,
+          phone: phone.trim(), countryCode,
+          trialEnds: new Date(Date.now() + 14*24*60*60*1000).toISOString(),
+          termsAcceptedAt: new Date().toISOString(),
+        })
+      })
+      const regData = await regRes.json()
+      if (!regRes.ok) { setError('خطأ في إنشاء المنشأة: ' + regData.error); setLoading(false); return }
+      fetch('/api/notify-welcome', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ name: orgName.trim(), phone: fullPhone })
+      }).catch(()=>{})
+      window.location.href = '/dashboard'
+      return
+    }
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) {
       if (error.message.includes('already registered') || error.message.includes('already been registered')) {
@@ -382,6 +444,13 @@ function LoginPage() {
                   <p style={{fontSize:15,color:'#6b7280'}}>{t('login.welcomeSub')}</p>
                 </div>
                 {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
+                <button type="button" onClick={handleGoogle} disabled={loading}
+                  style={{width:'100%',padding:'13px',background:'white',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:15,fontWeight:700,color:'#111827',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+                  <GoogleIcon/> {t('login.continueWithGoogle')}
+                </button>
+                <div style={{display:'flex',alignItems:'center',gap:12,margin:'18px 0',color:'#9ca3af',fontSize:12}}>
+                  <div style={{flex:1,height:1,background:'#e5e7eb'}}/>{t('login.orWithEmail')}<div style={{flex:1,height:1,background:'#e5e7eb'}}/>
+                </div>
                 <form onSubmit={handleLogin} style={{display:'flex',flexDirection:'column',gap:14}}>
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.email')}</label>
@@ -428,10 +497,19 @@ function LoginPage() {
                       <div key={s} style={{flex:1,height:3,borderRadius:99,background:step>=s?'#029FA2':'#e5e7eb',transition:'background .3s'}}/>
                     ))}
                   </div>
-                  <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:6,letterSpacing:'-0.5px'}}>{t('login.createAccountFree')}</h1>
-                  <p style={{fontSize:14,color:'#6b7280'}}>{t('login.freeTrialNoCard')}</p>
+                  <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:6,letterSpacing:'-0.5px'}}>{oauth ? t('login.completeTitle') : t('login.createAccountFree')}</h1>
+                  <p style={{fontSize:14,color:'#6b7280'}}>{oauth ? <>{t('login.completeSub')} <b style={{color:'#111827'}} dir="ltr">{email}</b></> : t('login.freeTrialNoCard')}</p>
                 </div>
                 {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
+                {!oauth && <>
+                  <button type="button" onClick={handleGoogle} disabled={loading}
+                  style={{width:'100%',padding:'13px',background:'white',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:15,fontWeight:700,color:'#111827',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+                  <GoogleIcon/> {t('login.continueWithGoogle')}
+                </button>
+                <div style={{display:'flex',alignItems:'center',gap:12,margin:'18px 0',color:'#9ca3af',fontSize:12}}>
+                  <div style={{flex:1,height:1,background:'#e5e7eb'}}/>{t('login.orWithEmail')}<div style={{flex:1,height:1,background:'#e5e7eb'}}/>
+                </div>
+                </>}
                 <form onSubmit={nextStep} style={{display:'flex',flexDirection:'column',gap:14}}>
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.orgNameLabel')}</label>
@@ -448,10 +526,10 @@ function LoginPage() {
                       ))}
                     </div>
                   </div>
-                  <div>
+                  {!oauth && <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.email')} *</label>
                     <input className="inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
-                  </div>
+                  </div>}
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.whatsappLabel')}</label>
                     <div style={{display:'flex',border:'1.5px solid #e5e7eb',borderRadius:10,overflow:'hidden',background:'white',transition:'border-color .2s'}}
@@ -470,7 +548,7 @@ function LoginPage() {
                     </div>
                     {/* واجهة تحقق OTP معطّلة مؤقتاً (2026-07-24) لحين حل مشكلة توصيل واتساب — راجع notification_logs */}
                   </div>
-                  <div>
+                  {!oauth && <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.passwordHintLabel')}</label>
                     <div style={{position:'relative'}}>
                       <input className="inp" type={showPassword?'text':'password'} required value={password} onChange={e=>setPassword(e.target.value)} placeholder={t('login.passwordPlaceholder')} style={{paddingLeft:44}}/>
@@ -493,15 +571,23 @@ function LoginPage() {
                         </span>
                       </div>
                     )}
-                  </div>
+                  </div>}
                   <button type="submit" className="btn-main" style={{marginTop:4}}>{t('login.nextChoosePlan')}</button>
                 </form>
-                <div style={{textAlign:'center',marginTop:20,fontSize:13,color:'#6b7280'}}>
-                  {t('login.alreadyHaveAccount')}{' '}
-                  <button onClick={()=>{setMode('login');setError('')}} style={{background:'none',border:'none',color:'#029FA2',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
-                    {t('login.loginNow')}
-                  </button>
-                </div>
+                {oauth ? (
+                  <div style={{textAlign:'center',marginTop:20,fontSize:13,color:'#6b7280'}}>
+                    <button onClick={leaveOauth} style={{background:'none',border:'none',color:'#029FA2',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
+                      {t('login.useAnotherAccount')}
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{textAlign:'center',marginTop:20,fontSize:13,color:'#6b7280'}}>
+                    {t('login.alreadyHaveAccount')}{' '}
+                    <button onClick={()=>{setMode('login');setError('')}} style={{background:'none',border:'none',color:'#029FA2',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
+                      {t('login.loginNow')}
+                    </button>
+                  </div>
+                )}
               </>
             )}
 

@@ -266,7 +266,8 @@ export default function AIAssistant() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes glow{0%,100%{box-shadow:0 4px 20px ${C.primary}40}50%{box-shadow:0 4px 28px ${C.primary}70}}
-        .ai-fab{animation:glow 3s ease-in-out infinite;transition:transform .2s}
+        .ai-fab{display:flex;transition:transform .15s}
+        @media(min-width:768px){.ai-fab{display:none!important}}
         .ai-fab:active{transform:scale(.92)!important}
         .ai-win{animation:fadeUp .3s cubic-bezier(.34,1.56,.64,1)}
         .ai-input:focus{border-color:${C.primary}!important;box-shadow:0 0 0 3px ${C.primaryL}!important;outline:none!important}
@@ -279,8 +280,8 @@ export default function AIAssistant() {
       {/* FAB Button */}
       {!open && (
         <button className="ai-fab" onClick={()=>setOpen(true)}
-          style={{position:'fixed',bottom:86,left:16,zIndex:999,width:54,height:54,borderRadius:'50%',background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,border:'none',cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0,display:typeof window!=='undefined'&&window.innerWidth>=768?'none':'flex'}}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          aria-label="المساعد" style={{position:'fixed',bottom:84,left:14,zIndex:999,width:46,height:46,borderRadius:'50%',background:'white',border:'1px solid #d5d9df',boxShadow:'0 2px 8px rgba(16,24,40,.12)',cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
             <path d="M18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/>
           </svg>
