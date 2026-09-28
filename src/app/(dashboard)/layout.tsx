@@ -84,7 +84,7 @@ const NAV_MAIN = NAV_GROUPS.flatMap(g=>g.items)
 // لون صفحة العنصر — يظهر لما يكون مفتوح أو عند تمرير الماوس
 function navTone(href: string) {
   const tone = pageToneFor(href)?.tone
-  return tone ? ({ '--nt': tone.fg, '--nb': tone.bg } as React.CSSProperties) : undefined
+  return tone ? ({ '--nt': tone.fg, '--nb': tone.bg, '--ns': tone.soft } as React.CSSProperties) : undefined
 }
 
 const NAV_MORE: {href:string;label:string;labelKey:string;icon:string}[] = []
@@ -700,7 +700,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             <div style={{padding:'16px 14px 12px'}}>
               <div style={{display:'flex',alignItems:'center',gap:10}}>
                 <img src={orgLogo||'/storely-logo.png'} alt="" className="sh-logo"/>
-                <div style={{fontSize:14,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}}>{orgName||'Storely'}</div>
+                <div style={{fontSize:14,fontWeight:700,color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}}>{orgName||'Storely'}</div>
               </div>
               {branchName&&(
                 <button className="sh-branch" onClick={()=>branches.length>1&&openBranchSelector()} disabled={branches.length<2}>
@@ -733,9 +733,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               ))}
             </nav>
 
-            <div style={{padding:'10px 12px',borderTop:`1px solid ${C.border}`,display:'flex',alignItems:'center',gap:10}}>
+            <div style={{padding:'10px 12px',borderTop:'1px solid rgba(255,255,255,.1)',display:'flex',alignItems:'center',gap:10}}>
               <div className="sh-avatar">{userInit}</div>
-              <div style={{flex:1,minWidth:0,fontSize:13,fontWeight:600,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{userName}</div>
+              <div style={{flex:1,minWidth:0,fontSize:13,fontWeight:600,color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{userName}</div>
               <button className="sh-icon-btn sh-icon-sm" title={theme==='light'?'الوضع الداكن':'الوضع الفاتح'} onClick={toggleTheme}>{theme==='light'?<Moon size={16}/>:<Sun size={16}/>}</button>
               <button className="sh-icon-btn sh-icon-sm" title="تسجيل الخروج" onClick={signOut}><LogOut size={16}/></button>
             </div>
@@ -809,6 +809,26 @@ const SHELL_CSS = `
   .sh-nav.on::before{content:'';position:absolute;right:-10px;top:8px;bottom:8px;width:3px;border-radius:3px 0 0 3px;background:var(--nt)}
   .sh-nav-scroll{flex:1;overflow-y:auto;padding:4px 10px 12px}
 
+  /* القائمة الجانبية على الكمبيوتر — فيروزي غامق */
+  .desk-sidebar .sh-group-label{color:#8fbdb5}
+  .desk-sidebar .sh-group-label::before{background:var(--ns,#99e0d6);box-shadow:0 0 0 3px rgba(255,255,255,.07)}
+  .desk-sidebar .sh-group-label::after{background:rgba(255,255,255,.1)}
+  .desk-sidebar .sh-nav{color:#d3ebe7}
+  .desk-sidebar .sh-nav svg{color:#86b8b0}
+  .desk-sidebar .sh-nav:hover{background:rgba(255,255,255,.07);color:#fff}
+  .desk-sidebar .sh-nav:hover svg{color:var(--ns,#fff)}
+  .desk-sidebar .sh-nav.on{background:#fff;color:var(--nt);box-shadow:0 2px 8px -2px rgba(0,0,0,.25)}
+  .desk-sidebar .sh-nav.on svg{color:var(--nt)}
+  .desk-sidebar .sh-nav.on::before{background:var(--ns,#fff)}
+  .desk-sidebar .sh-count{background:rgba(255,255,255,.14);color:#fff}
+  .desk-sidebar .sh-nav.on .sh-count{background:var(--nb);color:var(--nt)}
+  .desk-sidebar .sh-logo{border-color:rgba(255,255,255,.2)}
+  .desk-sidebar .sh-branch{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:#e2f3f0}
+  .desk-sidebar .sh-branch:hover:not(:disabled){background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.22)}
+  .desk-sidebar .sh-avatar{background:rgba(255,255,255,.14);color:#fff}
+  .desk-sidebar .sh-icon-btn{color:#a7cfc8}
+  .desk-sidebar .sh-icon-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+
   .sh-branch{margin-top:12px;width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid ${C.border};border-radius:8px;background:${C.surface};color:${C.text2};font-size:13px;font-weight:600;font-family:inherit;cursor:pointer}
   .sh-branch:disabled{cursor:default}
   .sh-branch:hover:not(:disabled){border-color:${C.border2};background:#f9fafb}
@@ -837,7 +857,7 @@ const SHELL_CSS = `
   @media(min-width:768px){
     .mob-layout{display:none}
     .desk-layout{display:block;min-height:100vh}
-    .desk-sidebar{position:fixed;top:0;right:0;bottom:0;width:244px;display:flex;flex-direction:column;background:${C.surface};border-left:1px solid ${C.border};z-index:100}
+    .desk-sidebar{position:fixed;top:0;right:0;bottom:0;width:244px;display:flex;flex-direction:column;background:linear-gradient(180deg,#0d4543 0%,#0b3b3a 45%,#0a3231 100%);color-scheme:dark;z-index:100}
     .desk-topbar{position:fixed;top:0;right:244px;left:0;height:56px;z-index:99;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:${C.surface};border-bottom:1px solid ${C.border}}
     .desk-content{margin-right:244px;padding:80px 28px 40px;min-height:100vh;max-width:calc(100vw - 244px)}
   }

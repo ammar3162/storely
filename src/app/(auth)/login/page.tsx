@@ -371,8 +371,8 @@ function LoginPage() {
         .inp{width:100%;padding:13px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;outline:none;background:white;color:#111827;font-family:inherit;transition:border-color .2s}
         .inp:focus{border-color:#029FA2;box-shadow:0 0 0 3px rgba(13,148,136,.08)}
         .inp::placeholder{color:#9ca3af}
-        .btn-main{width:100%;padding:14px;background:#13254C;color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
-        .btn-main:hover{background:#0f1729}
+        .btn-main{width:100%;padding:14px;background:linear-gradient(180deg,#0d4543 0%,#0b3b3a 100%);color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
+        .btn-main:hover{background:#0a3231}
         .btn-main:disabled{opacity:.6;cursor:not-allowed}
         .tab{flex:1;padding:12px;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .2s}
         .biz{padding:12px 8px;border-radius:10px;border:1.5px solid #e5e7eb;background:white;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .15s;font-size:12px;font-weight:600;color:#374151}
