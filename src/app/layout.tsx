@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   appleWebApp: { capable:true, statusBarStyle:"default", title:"Storely" },
   icons: {
     icon: [
-      { url: '/storely-icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' },
       { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
     ],
     apple: '/apple-touch-icon.png',
