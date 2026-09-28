@@ -1,13 +1,30 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { isInApp } from '@/lib/inApp'
-import { Package, MessageCircle, Users, Wallet, Globe, BarChart3, Store, Bot, ShoppingBag } from 'lucide-react'
-import { Billing, PLAN_BRANCHES, PLANS, LS, FAQ_ITEMS, FEATURES, TRUST_POINTS, BRANCH_OPTIONS, BRANCH_OPTIONS_EN } from './landing-data'
-import { FaqItem, MiniMockup } from './landing-components'
+import { Check, Play, ArrowLeft, MessageCircle } from 'lucide-react'
+import { Billing, PLAN_BRANCHES, PLANS, LS, FAQ_ITEMS, FEATURES, BRANCH_OPTIONS, BRANCH_OPTIONS_EN } from './landing-data'
+import { FaqItem } from './landing-components'
+
+// لون لكل ميزة — نفس ألوان صفحات لوحة التحكم
+const FEATURE_TONES = [
+  ['#0f766e', '#ecfdf8'], ['#128c7e', '#e7f8f3'], ['#7c3aed', '#f5f3ff'], ['#4f46e5', '#eef2ff'], ['#be185d', '#fdf2f8'],
+  ['#c2410c', '#fff7ed'], ['#0369a1', '#f0f9ff'], ['#7c3aed', '#f5f3ff'], ['#be185d', '#fdf2f8'],
+]
+
+const WA_ICON = 'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z'
+
+function PhoneVideo({ src, poster, label }: { src: string; poster: string; label: string }) {
+  return (
+    <div className="lp-phone">
+      <video src={src} poster={poster} autoPlay muted loop playsInline preload="metadata" aria-label={label} />
+    </div>
+  )
+}
 
 export default function LandingPage() {
   const router = useRouter()
+  const rootRef = useRef<HTMLDivElement>(null)
   const [billing, setBilling] = useState<Billing>('monthly')
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -18,10 +35,6 @@ export default function LandingPage() {
   const [partners, setPartners] = useState<any[]>([])
   const [lang, setLangState] = useState<'ar'|'en'>('ar')
   function t(key: string) { return (LS as any)[key]?.[lang] || key }
-  function setLang(l: 'ar'|'en') {
-    setLangState(l)
-    try { localStorage.setItem('storely_lang', l) } catch {}
-  }
   // داخل تطبيق Google Play ما نعرض صفحة التسويق والأسعار — نروح للدخول مباشرة
   useEffect(() => { if (isInApp()) router.replace('/login') }, [router])
   useEffect(() => {
@@ -42,8 +55,8 @@ export default function LandingPage() {
   },[router])
 
   useEffect(()=>{
-    const fn=()=>setScrolled(window.scrollY>50)
-    window.addEventListener('scroll',fn)
+    const fn=()=>setScrolled(window.scrollY>30)
+    fn(); window.addEventListener('scroll',fn,{passive:true})
     return ()=>window.removeEventListener('scroll',fn)
   },[])
 
@@ -56,6 +69,16 @@ export default function LandingPage() {
       const msgs = (d.messages||[]).map((m:any)=>m.message)
       if(msgs.length>0) setMarqueeMsgs(msgs)
     }).catch(()=>{})
+  },[])
+
+  // ظهور تدريجي للأقسام عند التمرير — المحتوى ظاهر أصلاً لو ما اشتغل الجافاسكربت
+  useEffect(()=>{
+    const root = rootRef.current
+    if (!root || window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return
+    root.classList.add('lp-anim')
+    const io = new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target) } }),{rootMargin:'0px 0px -8% 0px'})
+    root.querySelectorAll('.rv').forEach(el=>io.observe(el))
+    return ()=>io.disconnect()
   },[])
 
   async function submitDemoRequest(e: React.FormEvent) {
@@ -76,329 +99,274 @@ export default function LandingPage() {
     setSubmitting(false)
   }
 
-  return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',background:'white',color:'#111827'}}>
-      <style>{`
-        @keyframes marqueeScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&family=Noto+Naskh+Arabic:wght@500;600;700&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0}
-        html{scroll-behavior:smooth}
-        .nav-link{color:#4b5563;text-decoration:none;font-size:14px;font-weight:500;transition:color .2s}
-        .nav-link:hover{color:#0f766e}
-        .btn-primary{background:#0f766e;color:white;border:none;border-radius:8px;padding:12px 24px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s;text-decoration:none;display:inline-block}
-        .btn-primary:hover{background:#134e4a}
-        .btn-outline{background:white;color:#111827;border:1.5px solid #e5e7eb;border-radius:8px;padding:11px 22px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;text-decoration:none;display:inline-block}
-        .btn-outline:hover{border-color:#0f766e;color:#0f766e}
-        .feat-card{background:white;border:1px solid #f3f4f6;border-radius:16px;padding:28px;transition:all .25s}
-        .feat-card:hover{border-color:#e5e7eb;box-shadow:0 4px 20px rgba(0,0,0,.06)}
-        .plan-card{border:1.5px solid #e5e7eb;border-radius:16px;padding:28px;transition:all .2s;background:white}
-        .plan-card:hover{border-color:#0f766e}
-        .plan-card.popular{border-color:#0f766e;border-width:2px}
-        .demo-input{width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}
-        .demo-input:focus{border-color:#0f766e}
-        @media(max-width:768px){
-          .desk-nav{display:none!important}
-          .mob-menu-btn{display:flex!important}
-          .hero-h1{font-size:34px!important}
-          .hero-btns{flex-direction:column!important}
-          .collage-grid{grid-template-columns:1fr 1fr!important;height:auto!important}
-          .feat-grid{grid-template-columns:1fr!important}
-          .plan-grid{grid-template-columns:1fr!important}
-          .stats-row{flex-wrap:wrap!important;gap:20px!important}
-          .footer-grid{grid-template-columns:1fr!important}
-          .demo-grid{grid-template-columns:1fr!important}
-          .demo-fields{grid-template-columns:1fr!important}
-          .section-pad{padding:60px 20px!important}
-        }
-        @media(min-width:769px){.mob-menu-btn{display:none!important}.mob-menu{display:none!important}}
-      `}</style>
+  const navLinks: [string,string][] = [[t('navHow'),'#how'],[t('navFeatures'),'#features'],[t('navPricing'),'#pricing'],[t('navFaq'),'#faq']]
+  const top = hasMarquee ? 36 : 0
 
-      {/* MARQUEE */}
+  return (
+    <div ref={rootRef} className="lp" dir="rtl">
+      <style>{LP_CSS}</style>
+
+      {/* شريط الإعلانات */}
       {hasMarquee && (
-        <div style={{position:'fixed',top:0,right:0,left:0,zIndex:1001,height:36,background:'#042f2e',overflow:'hidden',display:'flex',alignItems:'center'}}>
-          <div style={{display:'flex',whiteSpace:'nowrap' as const,animation:'marqueeScroll 35s linear infinite'}}>
+        <div className="lp-marquee">
+          <div className="lp-marquee-track">
             {[...Array(2)].map((_,i)=>(
               <div key={i} style={{display:'flex',alignItems:'center'}}>
-                {marqueeMsgs.map((m,j)=>(
-                  <span key={j} style={{color:'white',fontSize:13,fontWeight:700,padding:'0 24px',display:'flex',alignItems:'center',gap:8}}>
-                    {m}
-                    <span style={{opacity:.5}}>•</span>
-                  </span>
-                ))}
+                {marqueeMsgs.map((m,j)=><span key={j} className="lp-marquee-item">{m}<span style={{opacity:.5}}>•</span></span>)}
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* NAVBAR */}
-      <div style={{background:'linear-gradient(155deg,#042f2e 0%,#134e4a 45%,#115e59 100%)',paddingBottom:80,position:'relative' as const,overflow:'hidden'}}>
-        <div style={{position:'absolute' as const,top:-120,left:-120,width:400,height:400,borderRadius:'50%',background:'radial-gradient(circle,rgba(255,255,255,.06),transparent 70%)'}}/>
-        <div style={{position:'absolute' as const,bottom:-160,right:-100,width:500,height:500,borderRadius:'50%',background:'radial-gradient(circle,rgba(255,255,255,.05),transparent 70%)'}}/>
-
-        <nav style={{position:'fixed',top:hasMarquee?36:0,right:0,left:0,zIndex:1000,background:scrolled?'rgba(10,31,19,.92)':'transparent',borderBottom:scrolled?'1px solid rgba(255,255,255,.08)':'1px solid transparent',backdropFilter:scrolled?'blur(10px)':'none',transition:'all .3s',padding:'0 40px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-          <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <img src="/storely-logo.png" alt="Storely" style={{width:38,height:38,borderRadius:10,objectFit:'cover'}}/>
-            <span style={{fontSize:18,fontWeight:800,color:'white',letterSpacing:'-0.3px'}}>Storely</span>
+      {/* القائمة العلوية */}
+      <nav className={`lp-nav${scrolled?' on':''}`} style={{top}}>
+        <div className="lp-wrap lp-nav-in">
+          <a href="#top" className="lp-brand"><img src="/storely-logo.png" alt=""/><span>Storely</span></a>
+          <div className="lp-desk lp-links">
+            {navLinks.map(([l,h])=><a key={h} href={h}>{l}</a>)}
           </div>
-          <div className="desk-nav" style={{display:'flex',gap:28,alignItems:'center'}}>
-            {[[t('navFeatures'),'#features'],[t('navPricing'),'#pricing'],[t('navFaq'),'#faq']].map(([l,h])=>(
-              <a key={h} href={h} style={{color:'rgba(255,255,255,.75)',textDecoration:'none',fontSize:14,fontWeight:500,transition:'color .2s'}}>{l}</a>
-            ))}
+          <div className="lp-desk" style={{display:'flex',gap:8,alignItems:'center'}}>
+            <button className="lp-btn lp-btn-ghost" onClick={()=>router.push('/login')}>{t('navLogin')}</button>
+            <button className="lp-btn lp-btn-dark" onClick={()=>router.push('/login?mode=register')}>{t('navStart')}</button>
           </div>
-          <div className="desk-nav" style={{display:'flex',gap:10,alignItems:'center'}}>
-            <button onClick={()=>setLang(lang==='ar'?'en':'ar')} style={{display:'none',padding:'8px 14px',fontSize:12,fontWeight:700,background:'rgba(255,255,255,.08)',color:'white',border:'1px solid rgba(255,255,255,.2)',borderRadius:99,cursor:'pointer',fontFamily:'inherit'}}>{lang==='ar'?'EN':'عربي'}</button>
-            <button onClick={()=>router.push('/login')} style={{padding:'8px 18px',fontSize:14,fontWeight:700,background:'transparent',color:'white',border:'1px solid rgba(255,255,255,.25)',borderRadius:99,cursor:'pointer',fontFamily:'inherit'}}>{t('navLogin')}</button>
-            <a href="#demo" style={{padding:'9px 20px',fontSize:14,fontWeight:700,background:'white',color:'#042f2e',borderRadius:99,textDecoration:'none'}}>{t('navDemo')}</a>
-          </div>
-          <button className="mob-menu-btn" onClick={()=>setMenuOpen(o=>!o)}
-            style={{background:'none',border:'none',cursor:'pointer',fontSize:22,color:'white',padding:4}}>
-            {menuOpen?'✕':'☰'}
-          </button>
-        </nav>
-
+          <button className="lp-mob lp-burger" aria-label="القائمة" onClick={()=>setMenuOpen(o=>!o)}>{menuOpen?'✕':'☰'}</button>
+        </div>
         {menuOpen && (
-          <div className="mob-menu" style={{position:'fixed',top:hasMarquee?100:64,right:0,left:0,zIndex:999,background:'#042f2e',borderBottom:'1px solid rgba(255,255,255,.08)',padding:'20px 24px',display:'flex',flexDirection:'column',gap:16}}>
-            {[[t('navFeatures'),'#features'],[t('navPricing'),'#pricing'],[t('navFaq'),'#faq']].map(([l,h])=>(
-              <a key={h} href={h} onClick={()=>setMenuOpen(false)} style={{color:'rgba(255,255,255,.85)',textDecoration:'none',fontSize:16,fontWeight:500,padding:'8px 0',borderBottom:'1px solid rgba(255,255,255,.08)'}}>{l}</a>
-            ))}
-            <a href="#demo" onClick={()=>setMenuOpen(false)} style={{textAlign:'center',padding:'12px',background:'white',color:'#042f2e',borderRadius:99,fontWeight:700,textDecoration:'none'}}>{t('navDemo')}</a>
+          <div className="lp-mob-menu">
+            {navLinks.map(([l,h])=><a key={h} href={h} onClick={()=>setMenuOpen(false)}>{l}</a>)}
+            <button className="lp-btn lp-btn-ghost" onClick={()=>router.push('/login')}>{t('navLogin')}</button>
+            <button className="lp-btn lp-btn-dark" onClick={()=>router.push('/login?mode=register')}>{t('navStart')}</button>
           </div>
         )}
+      </nav>
 
-        {/* HERO */}
-        <section style={{paddingTop:hasMarquee?166:130,paddingBottom:8,padding:hasMarquee?'166px 40px 8px':'130px 40px 8px',maxWidth:1000,margin:'0 auto',textAlign:'center' as const,position:'relative' as const,zIndex:1}}>
-          <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.18)',borderRadius:99,padding:'7px 18px',fontSize:13,fontWeight:600,color:'white',marginBottom:28}}>
-            <span style={{width:6,height:6,borderRadius:'50%',background:'#2dd4bf'}}/>
-            {t('heroBadge')}
+      {/* الواجهة */}
+      <header id="top" className="lp-hero" style={{paddingTop:top+120}}>
+        <div className="lp-wrap lp-hero-grid">
+          <div className="lp-hero-text">
+            <div className="lp-pill"><span className="lp-dot"/>{t('heroBadge')}</div>
+            <h1 className="lp-display">
+              {t('heroTitleA')}<br/>{t('heroTitleB')} <em>{t('heroTitleC')}</em>
+            </h1>
+            <p className="lp-lead">{t('heroSub')}</p>
+            <div className="lp-cta-row">
+              <button className="lp-btn lp-btn-dark lp-btn-lg" onClick={()=>router.push('/login?mode=register')}>{t('heroStart')} <ArrowLeft size={18}/></button>
+              <a className="lp-btn lp-btn-soft lp-btn-lg" href="#how"><span className="lp-play"><Play size={13} fill="currentColor"/></span>{t('heroWatch')}</a>
+            </div>
+            <ul className="lp-ticks">
+              {['heroPoint1','heroPoint2','heroPoint3'].map(k=><li key={k}><Check size={16}/>{t(k)}</li>)}
+            </ul>
           </div>
-          <h1 className="hero-h1" style={{fontFamily:lang==='ar'?"'Noto Naskh Arabic',serif":"'IBM Plex Sans Arabic',sans-serif",fontSize:58,fontWeight:600,color:'white',lineHeight:1.25,marginBottom:22,letterSpacing:'-0.5px',maxWidth:820,margin:'0 auto 22px'}}>
-            {t('heroH1a')}<br/>
-            <span style={{color:'#5eead4',fontStyle:'italic' as const}}>{t('heroH1b')}</span>
-          </h1>
-          <p style={{fontSize:17,color:'rgba(255,255,255,.65)',maxWidth:580,margin:'0 auto 34px',lineHeight:1.7}}>
-            {t('heroSub')}
-          </p>
-          <div className="hero-btns" style={{display:'flex',gap:12,justifyContent:'center',marginBottom:56}}>
-            <a href="#demo" style={{fontSize:16,padding:'14px 28px',background:'transparent',color:'white',border:'1.5px solid rgba(255,255,255,.3)',borderRadius:99,textDecoration:'none',fontWeight:700}}>{t('heroTry')}</a>
-            <button onClick={()=>router.push('/login?mode=register')} style={{fontSize:16,padding:'14px 32px',background:'white',color:'#042f2e',border:'none',borderRadius:99,cursor:'pointer',fontFamily:'inherit',fontWeight:700}}>
-              {t('heroStart')}
-            </button>
-          </div>
-        </section>
 
-        {/* شعارات العملاء — فوق الخلفية الملوّنة مباشرة، زي Tines */}
+          <div className="lp-hero-media">
+            <div className="lp-halo"/>
+            <PhoneVideo src="/videos/storely-ad.mp4" poster="/videos/storely-ad.jpg" label="إعلان Storely"/>
+            <div className="lp-float lp-float-a">
+              <span className="lp-wa"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d={WA_ICON}/></svg></span>
+              <div><b>نقص مخزون: دقيق</b><small>انرسل الطلب للمورد تلقائياً</small></div>
+            </div>
+            <div className="lp-float lp-float-b"><span className="lp-stamp">✓ مطابق</span><small>إقفال الكاشير اليوم</small></div>
+          </div>
+        </div>
+
         {partners.length > 0 && (
-          <div style={{maxWidth:1000,margin:'0 auto',padding:'0 40px',position:'relative' as const,zIndex:1}}>
-            <p style={{textAlign:'center' as const,fontSize:12,fontWeight:700,color:'rgba(255,255,255,.4)',letterSpacing:'.1em',textTransform:'uppercase' as const,marginBottom:24}}>{t('trustedBy')}</p>
-            <div style={{display:'flex',flexWrap:'wrap' as const,gap:18,justifyContent:'center',alignItems:'center'}}>
-              {partners.map((p:any)=>(
-                <div key={p.id} style={{background:'white',borderRadius:14,padding:'14px 26px',display:'flex',alignItems:'center',justifyContent:'center',height:68,boxShadow:'0 4px 16px rgba(0,0,0,.18)'}}>
-                  <img src={p.logo_url} alt={p.name} style={{height:38,maxWidth:150,objectFit:'contain'}}/>
-                </div>
-              ))}
-            </div>
+          <div className="lp-wrap lp-partners">
+            <p>{t('trustedBy')}</p>
+            <div>{partners.map((p:any)=><img key={p.id} src={p.logo_url} alt={p.name}/>)}</div>
           </div>
         )}
-      </div>
 
-      {/* شبكة معاينات — تطفو فوق حافة الخلفية الملوّنة، زي بطاقات Tines */}
-      <div style={{maxWidth:1100,margin:'-60px auto 0',padding:'0 40px',position:'relative' as const,zIndex:2}}>
-        <div className="collage-grid" style={{display:'grid',gridTemplateColumns:'1.1fr 0.9fr 0.9fr 1.3fr',gap:14,height:340,boxShadow:'0 30px 70px rgba(0,0,0,.18)',borderRadius:24}}>
-          <div style={{background:'linear-gradient(160deg,#f0fdfa,#ccfbf1)',borderRadius:20,padding:10}}><MiniMockup variant="whatsapp"/></div>
-          <div style={{background:'linear-gradient(160deg,#eff6ff,#dbeafe)',borderRadius:20,padding:10}}><MiniMockup variant="staff"/></div>
-          <div style={{background:'linear-gradient(160deg,#fefce8,#fef9c3)',borderRadius:20,padding:10}}><MiniMockup variant="chart"/></div>
-          <div style={{background:'linear-gradient(160deg,#f0fdfa,#99f6e4)',borderRadius:20,padding:10}}><MiniMockup variant="stats"/></div>
+        <div className="lp-wrap">
+          <div className="lp-stats">
+            {[['99 '+(lang==='ar'?'ر.س':'SAR'),t('statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('statFree')],['7',t('statLangs')],['24/7',t('statAlerts')]].map(([n,l])=>(
+              <div key={l}><strong>{n}</strong><span>{l}</span></div>
+            ))}
+          </div>
         </div>
+      </header>
 
-        <div className="stats-row" style={{display:'flex',gap:40,justifyContent:'center',marginTop:48}}>
-          {[['99 '+(lang==='ar'?'ر.س':'SAR'),t('statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('statFree')],['7',t('statLangs')],['24/7',t('statAlerts')]].map(([n,l])=>(
-            <div key={l}>
-              <div style={{fontSize:24,fontWeight:900,color:'#111827'}}>{n}</div>
-              <div style={{fontSize:12,color:'#9ca3af',marginTop:3}}>{l}</div>
+      {/* القصة — صاحب المنشأة */}
+      <section className="lp-section">
+        <div className="lp-wrap lp-split">
+          <figure className="lp-photo rv">
+            <img src="/storely-team.jpg" alt="صاحب منشأة يتابع Storely من اللابتوب"/>
+            <figcaption className="lp-note">
+              <span className="lp-note-ic">☀️</span>
+              <div><b>صباح الخير</b><small>3 أصناف تحتاج إعادة طلب اليوم</small></div>
+            </figcaption>
+          </figure>
+          <div className="lp-copy rv">
+            <span className="lp-tag">{t('storyTag')}</span>
+            <h2 className="lp-h2">{t('storyTitle')}</h2>
+            <p className="lp-body">{t('storyBody')}</p>
+            <ul className="lp-list">
+              {['storyP1','storyP2','storyP3'].map(k=><li key={k}><span><Check size={14}/></span>{t(k)}</li>)}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* كيف يشتغل */}
+      <section id="how" className="lp-how">
+        <div className="lp-wrap lp-split lp-split-rev">
+          <div className="lp-copy rv">
+            <span className="lp-tag lp-tag-light">{t('howTag')}</span>
+            <h2 className="lp-h2" style={{color:'#fff'}}>{t('howTitle')}</h2>
+            <ol className="lp-steps">
+              {[1,2,3,4].map(n=>(
+                <li key={n}>
+                  <span className="lp-step-n">0{n}</span>
+                  <div><b>{t(`how${n}T`)}</b><p>{t(`how${n}D`)}</p></div>
+                </li>
+              ))}
+            </ol>
+          </div>
+          <div className="lp-how-media rv">
+            <PhoneVideo src="/videos/storely-features.mp4" poster="/videos/storely-features.jpg" label="مميزات Storely"/>
+          </div>
+        </div>
+      </section>
+
+      {/* الموردين */}
+      <section className="lp-section">
+        <div className="lp-wrap lp-split lp-split-rev">
+          <figure className="lp-photo lp-photo-wide rv">
+            <img src="/supplier-team.jpg" alt="مورد يسلّم طلبية لصاحب منشأة"/>
+            <figcaption className="lp-chat">
+              <div className="lp-bubble lp-bubble-out"><b>🟢 Storely</b><br/>طلب توريد: دقيق — 20 كيس</div>
+              <div className="lp-bubble">تم ✅ أبشر، بيوصلكم اليوم</div>
+            </figcaption>
+          </figure>
+          <div className="lp-copy rv">
+            <span className="lp-tag">{t('supTag')}</span>
+            <h2 className="lp-h2">{t('supTitle')}</h2>
+            <p className="lp-body">{t('supBody')}</p>
+            <a href="#how" className="lp-link">{t('heroWatch')} <ArrowLeft size={16}/></a>
+          </div>
+        </div>
+      </section>
+
+      {/* المميزات */}
+      <section id="features" className="lp-section lp-sand">
+        <div className="lp-wrap">
+          <div className="lp-head rv">
+            <span className="lp-tag">{t('featuresTag')}</span>
+            <h2 className="lp-h2">{t('featuresTitle')}</h2>
+          </div>
+          <div className="lp-feats">
+            {FEATURES.map((f,i)=>{
+              const [fg,bg] = FEATURE_TONES[i % FEATURE_TONES.length]
+              return (
+                <article key={i} className="lp-feat rv" style={{'--fg':fg,'--bg':bg} as React.CSSProperties}>
+                  <span className="lp-feat-ic"><f.icon size={22} strokeWidth={2}/></span>
+                  <h3>{lang==='ar'?f.title:(f as any).titleEn}{(f as any).badge && <em>{lang==='ar'?(f as any).badge:(f as any).badgeEn}</em>}</h3>
+                  <p>{lang==='ar'?f.desc:(f as any).descEn}</p>
+                </article>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* الأسعار */}
+      <section id="pricing" className="lp-section">
+        <div className="lp-wrap">
+          <div className="lp-head rv">
+            <span className="lp-tag">{t('pricingTag')}</span>
+            <h2 className="lp-h2">{t('pricingTitle')}</h2>
+            <div className="lp-toggle">
+              <button className={billing==='monthly'?'on':''} onClick={()=>setBilling('monthly')}>{t('billMonthly')}</button>
+              <button className={billing==='yearly'?'on':''} onClick={()=>setBilling('yearly')}>{t('billYearly')} <span>{t('billSave')}</span></button>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* TRUST */}
-      <section style={{padding:'50px 40px',background:'#fafafa',borderTop:'1px solid #f3f4f6',borderBottom:'1px solid #f3f4f6'}}>
-        <div style={{maxWidth:1000,margin:'0 auto',textAlign:'center' as const}}>
-          <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:32}}>{t('trustTitle')}</h2>
-          <div style={{display:'flex',flexWrap:'wrap' as const,gap:28,justifyContent:'center'}}>
-            {TRUST_POINTS.map((tp,i)=>(
-              <div key={i} style={{display:'flex',alignItems:'center',gap:8,background:'white',border:'1px solid #f3f4f6',borderRadius:99,padding:'10px 18px'}}>
-                <span style={{fontSize:16}}>{tp.icon}</span>
-                <span style={{fontSize:13,fontWeight:600,color:'#374151'}}>{lang==='ar'?tp.label:tp.labelEn}</span>
+          </div>
+          <div className="lp-plans">
+            {PLANS.map((p,i)=>(
+              <div key={i} className={`lp-plan rv${p.popular?' pop':''}`}>
+                {p.popular && <div className="lp-plan-badge">{t('mostPopular')}</div>}
+                <div className="lp-plan-name">{lang==='ar'?p.name:p.nameEn}</div>
+                <div className="lp-plan-price"><strong>{billing==='yearly'?p.yearlyPrice:p.price}</strong><span>{lang==='ar'?'ر.س':'SAR'} {billing==='yearly'?t('perYear'):t('perMonth')}</span></div>
+                <div className="lp-plan-limits">{(lang==='ar'?p.limits:p.limitsEn).join(' · ')}</div>
+                <button onClick={()=>router.push(`/login?mode=register&branches=${PLAN_BRANCHES[i]}&billing=${billing}`)} className={`lp-btn lp-btn-lg ${p.popular?'lp-btn-dark':'lp-btn-line'}`} style={{width:'100%'}}>{t('startNow')}</button>
+                <ul>
+                  {(lang==='ar'?p.features:p.featuresEn).map((f,j)=><li key={j}><Check size={15}/>{f}</li>)}
+                </ul>
+                {(p as any).addonNote && <div className="lp-plan-note">{lang==='ar'?(p as any).addonNote:(p as any).addonNoteEn}</div>}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* FEATURES */}
-      <section id="features" className="section-pad" style={{padding:'90px 40px',maxWidth:1200,margin:'0 auto'}}>
-        <div style={{textAlign:'center',marginBottom:56}}>
-          <p style={{fontSize:13,fontWeight:700,color:'#0f766e',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>{t('featuresTag')}</p>
-          <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>{t('featuresTitle')}</h2>
-        </div>
-        <div className="feat-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:20}}>
-          {FEATURES.map((f,i)=>(
-            <div key={i} className="feat-card">
-              <div style={{width:52,height:52,borderRadius:14,background:'linear-gradient(135deg,#f0fdfa,#ccfbf1)',border:'1px solid #99f6e4',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:16,color:'#029FA2'}}>
-                <f.icon size={24} strokeWidth={2}/>
-              </div>
-              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8,flexWrap:'wrap' as const}}>
-                <div style={{fontSize:17,fontWeight:800,color:'#111827'}}>{lang==='ar'?f.title:(f as any).titleEn}</div>
-                {(f as any).badge && (
-                  <span style={{fontSize:11,fontWeight:800,color:'#029FA2',background:'#f0fdfa',border:'1px solid #99f6e4',padding:'2px 9px',borderRadius:99}}>{lang==='ar'?(f as any).badge:(f as any).badgeEn}</span>
-                )}
-              </div>
-              <div style={{fontSize:14,color:'#6b7280',lineHeight:1.7}}>{lang==='ar'?f.desc:(f as any).descEn}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* DEMO REQUEST FORM */}
-      <section id="demo" className="section-pad" style={{padding:'90px 40px',background:'#fafafa'}}>
-        <div className="demo-grid" style={{maxWidth:1000,margin:'0 auto',display:'grid',gridTemplateColumns:'1fr 1fr',gap:0,borderRadius:20,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.08)'}}>
-          <form onSubmit={submitDemoRequest} style={{background:'white',padding:40}}>
-            <h2 style={{fontSize:24,fontWeight:900,color:'#111827',marginBottom:6}}>{t('demoTitle')}</h2>
-            <p style={{fontSize:14,color:'#6b7280',marginBottom:24}}>{t('demoSub')}</p>
-            {submitMsg && (
-              <div style={{background:submitMsg.ok?'#f0fdfa':'#fef2f2',border:`1px solid ${submitMsg.ok?'#99f6e4':'#fecaca'}`,borderRadius:8,padding:'10px 14px',marginBottom:16,fontSize:13,fontWeight:600,color:submitMsg.ok?'#0f766e':'#dc2626'}}>
-                {submitMsg.text}
-              </div>
-            )}
-            <div className="demo-fields" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
-              <div>
-                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoFirstName')}</label>
-                <input required className="demo-input" value={form.firstName} onChange={e=>setForm(f=>({...f,firstName:e.target.value}))}/>
-              </div>
-              <div>
-                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoLastName')}</label>
-                <input required className="demo-input" value={form.lastName} onChange={e=>setForm(f=>({...f,lastName:e.target.value}))}/>
-              </div>
-            </div>
-            <div style={{marginBottom:12}}>
-              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoPhone')}</label>
-              <input required type="tel" placeholder="05xxxxxxxx" className="demo-input" value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))}/>
-            </div>
-            <div style={{marginBottom:12}}>
-              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoEmail')}</label>
-              <input required type="email" className="demo-input" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/>
-            </div>
-            <div className="demo-fields" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16}}>
-              <div>
-                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoBusiness')}</label>
-                <input required className="demo-input" value={form.businessName} onChange={e=>setForm(f=>({...f,businessName:e.target.value}))}/>
-              </div>
-              <div>
-                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoBranches')}</label>
-                <select className="demo-input" value={form.branchCount} onChange={e=>setForm(f=>({...f,branchCount:e.target.value}))}>
+      {/* طلب عرض النظام */}
+      <section id="demo" className="lp-section lp-sand">
+        <div className="lp-wrap lp-demo rv">
+          <div className="lp-demo-side">
+            <img src="/storely-logo.png" alt=""/>
+            <h3>{t('demoSideTitle')}</h3>
+            <p>{t('demoSideSub')}</p>
+            <a href="https://wa.me/966594351667" target="_blank" rel="noreferrer" className="lp-btn lp-btn-wa">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d={WA_ICON}/></svg>{t('ctaContact')}
+            </a>
+          </div>
+          <form onSubmit={submitDemoRequest} className="lp-demo-form">
+            <h2>{t('demoTitle')}</h2>
+            <p>{t('demoSub')}</p>
+            {submitMsg && <div className={`lp-msg ${submitMsg.ok?'ok':'err'}`}>{submitMsg.text}</div>}
+            <div className="lp-fields">
+              <label>{t('demoFirstName')}<input required value={form.firstName} onChange={e=>setForm(f=>({...f,firstName:e.target.value}))}/></label>
+              <label>{t('demoLastName')}<input required value={form.lastName} onChange={e=>setForm(f=>({...f,lastName:e.target.value}))}/></label>
+              <label className="full">{t('demoPhone')}<input required type="tel" dir="ltr" placeholder="05xxxxxxxx" value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))}/></label>
+              <label className="full">{t('demoEmail')}<input required type="email" dir="ltr" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/></label>
+              <label>{t('demoBusiness')}<input required value={form.businessName} onChange={e=>setForm(f=>({...f,businessName:e.target.value}))}/></label>
+              <label>{t('demoBranches')}
+                <select value={form.branchCount} onChange={e=>setForm(f=>({...f,branchCount:e.target.value}))}>
                   <option value="">{t('demoPleaseSelect')}</option>
                   {(lang==='ar'?BRANCH_OPTIONS:BRANCH_OPTIONS_EN).map((o,oi)=><option key={o} value={BRANCH_OPTIONS[oi]}>{o}</option>)}
                 </select>
-              </div>
+              </label>
             </div>
-            <label style={{display:'flex',alignItems:'flex-start',gap:8,fontSize:12,color:'#6b7280',marginBottom:20,cursor:'pointer'}}>
-              <input type="checkbox" checked={agreed} onChange={e=>setAgreed(e.target.checked)} style={{marginTop:2}}/>
-              {t('demoAgree')} <a href="/terms" target="_blank" style={{color:'#0f766e'}}>{t('demoTerms')}</a> {t('demoAnd')}<a href="/privacy" target="_blank" style={{color:'#0f766e'}}>{t('demoPrivacy')}</a>
+            <label className="lp-agree">
+              <input type="checkbox" checked={agreed} onChange={e=>setAgreed(e.target.checked)}/>
+              <span>{t('demoAgree')} <a href="/terms" target="_blank">{t('demoTerms')}</a> {t('demoAnd')}<a href="/privacy" target="_blank">{t('demoPrivacy')}</a></span>
             </label>
-            <button type="submit" disabled={submitting} className="btn-primary" style={{width:'100%',padding:'13px',fontSize:15,opacity:submitting?.6:1}}>
-              {submitting?t('demoSending'):t('demoSubmit')}
-            </button>
+            <button type="submit" disabled={submitting} className="lp-btn lp-btn-dark lp-btn-lg" style={{width:'100%'}}>{submitting?t('demoSending'):t('demoSubmit')}</button>
           </form>
-          <div style={{background:'linear-gradient(160deg,#0f766e,#134e4a)',padding:40,display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',textAlign:'center' as const}}>
-            <div style={{width:70,height:70,borderRadius:18,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:32,marginBottom:20}}>📦</div>
-            <h3 style={{fontSize:22,fontWeight:900,color:'white',marginBottom:12,lineHeight:1.4}}>{t('demoSideTitle')}</h3>
-            <p style={{fontSize:14,color:'rgba(255,255,255,.85)',lineHeight:1.8}}>{t('demoSideSub')}</p>
+        </div>
+      </section>
+
+      {/* الأسئلة */}
+      <section id="faq" className="lp-section">
+        <div className="lp-wrap" style={{maxWidth:760}}>
+          <div className="lp-head rv">
+            <span className="lp-tag">{t('faqTag')}</span>
+            <h2 className="lp-h2">{t('faqTitle')}</h2>
+          </div>
+          <div className="lp-faq rv">
+            {FAQ_ITEMS.map((f,i)=><FaqItem key={i} q={lang==='ar'?f.q:f.qEn} a={lang==='ar'?f.a:f.aEn}/>)}
           </div>
         </div>
       </section>
 
-      {/* PRICING */}
-      <section id="pricing" className="section-pad" style={{padding:'90px 40px',maxWidth:1200,margin:'0 auto'}}>
-        <div style={{textAlign:'center',marginBottom:32}}>
-          <p style={{fontSize:13,fontWeight:700,color:'#0f766e',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>{t('pricingTag')}</p>
-          <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>{t('pricingTitle')}</h2>
-        </div>
-        <div style={{display:'flex',justifyContent:'center',marginBottom:40}}>
-          <div style={{display:'inline-flex',gap:4,background:'#f3f4f6',padding:4,borderRadius:12}}>
-            <button onClick={()=>setBilling('monthly')} style={{padding:'9px 20px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',background:billing==='monthly'?'white':'transparent',color:billing==='monthly'?'#111827':'#6b7280',boxShadow:billing==='monthly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>{t('billMonthly')}</button>
-            <button onClick={()=>setBilling('yearly')} style={{padding:'9px 20px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6,background:billing==='yearly'?'white':'transparent',color:billing==='yearly'?'#111827':'#6b7280',boxShadow:billing==='yearly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>
-              {t('billYearly')} <span style={{background:'#f0fdfa',color:'#0f766e',fontSize:10,fontWeight:800,padding:'2px 7px',borderRadius:99}}>{t('billSave')}</span>
-            </button>
+      {/* الدعوة الأخيرة */}
+      <section className="lp-wrap">
+        <div className="lp-cta rv">
+          <h2>{t('ctaTitle')}</h2>
+          <p>{t('ctaSub')}</p>
+          <div className="lp-cta-row" style={{justifyContent:'center'}}>
+            <button className="lp-btn lp-btn-white lp-btn-lg" onClick={()=>router.push('/login?mode=register')}>{t('ctaRegister')} <ArrowLeft size={18}/></button>
+            <a className="lp-btn lp-btn-glass lp-btn-lg" href="https://wa.me/966594351667" target="_blank" rel="noreferrer"><MessageCircle size={18}/>{t('ctaContact')}</a>
           </div>
         </div>
-        <div className="plan-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:20}}>
-          {PLANS.map((p,i)=>(
-            <div key={i} className={`plan-card${p.popular?' popular':''}`} style={{position:'relative'}}>
-              {p.popular && <div style={{position:'absolute',top:-13,right:24,background:'#0f766e',color:'white',fontSize:11,fontWeight:800,padding:'4px 12px',borderRadius:99}}>{t('mostPopular')}</div>}
-              <div style={{fontSize:16,fontWeight:800,color:'#111827',marginBottom:8}}>{lang==='ar'?p.name:p.nameEn}</div>
-              <div style={{display:'flex',alignItems:'baseline',gap:6,marginBottom:10}}>
-                <span style={{fontSize:34,fontWeight:900,color:'#111827'}}>{billing==='yearly'?p.yearlyPrice:p.price}</span>
-                <span style={{fontSize:14,color:'#9ca3af'}}>{lang==='ar'?'ر.س':'SAR'} {billing==='yearly'?t('perYear'):t('perMonth')}</span>
-              </div>
-              <div style={{display:'inline-block',background:'#f0fdfa',color:'#0f766e',fontSize:11,fontWeight:800,padding:'3px 10px',borderRadius:99,marginBottom:16}}>{p.features.length} {t('featuresAvail')}</div>
-              <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:16,paddingBottom:16,borderBottom:'1px solid #f3f4f6'}}>
-                {(lang==='ar'?p.limits:p.limitsEn).map((l,j)=><div key={j} style={{fontSize:13,color:'#6b7280'}}>• {l}</div>)}
-              </div>
-              <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:(p as any).addonNote?12:24}}>
-                {(lang==='ar'?p.features:p.featuresEn).map((f,j)=>(
-                  <div key={j} style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#374151'}}>
-                    <span style={{color:'#0f766e'}}>✓</span>{f}
-                  </div>
-                ))}
-              </div>
-              {(p as any).addonNote && (
-                <div style={{display:'flex',alignItems:'flex-start',gap:8,background:'#faf5ff',border:'1px solid #e9d5ff',borderRadius:10,padding:'10px 12px',marginBottom:24,fontSize:12,color:'#6b21a8',lineHeight:1.6}}>
-                  {lang==='ar'?(p as any).addonNote:(p as any).addonNoteEn}
-                </div>
-              )}
-              <button onClick={()=>router.push(`/login?mode=register&branches=${PLAN_BRANCHES[i]}&billing=${billing}`)} className={p.popular?'btn-primary':'btn-outline'} style={{width:'100%',textAlign:'center' as const}}>{t('startNow')}</button>
-            </div>
-          ))}
-        </div>
       </section>
 
-      {/* CTA BANNER */}
-      <section style={{background:'linear-gradient(135deg,#0f766e,#134e4a)',padding:'70px 40px',textAlign:'center' as const}}>
-        <h2 style={{fontSize:32,fontWeight:900,color:'white',marginBottom:14}}>{t('ctaReady')}</h2>
-        <p style={{fontSize:16,color:'rgba(255,255,255,.85)',marginBottom:32}}>{t('ctaSub')}</p>
-        <div style={{display:'flex',gap:14,justifyContent:'center',flexWrap:'wrap' as const}}>
-          <button onClick={()=>router.push('/login?mode=register')}
-            style={{background:'white',color:'#0f766e',border:'none',borderRadius:9,padding:'14px 32px',fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
-            {t('ctaRegister')}
-          </button>
-          <a href="https://wa.me/966594351667" target="_blank" rel="noreferrer"
-            style={{display:'flex',alignItems:'center',gap:8,padding:'14px 24px',borderRadius:9,background:'rgba(255,255,255,.15)',color:'white',textDecoration:'none',fontSize:15,fontWeight:700,border:'1.5px solid rgba(255,255,255,.3)'}}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            {t('ctaContact')}
-          </a>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section id="faq" style={{padding:'80px 40px',maxWidth:700,margin:'0 auto'}}>
-        <div style={{textAlign:'center',marginBottom:48}}>
-          <p style={{fontSize:13,fontWeight:700,color:'#0f766e',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>{t('faqTag')}</p>
-          <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>{t('faqTitle')}</h2>
-        </div>
-        {FAQ_ITEMS.map((f,i)=><FaqItem key={i} q={lang==='ar'?f.q:f.qEn} a={lang==='ar'?f.a:f.aEn}/>)}
-      </section>
-
-      {/* FOOTER */}
-      <footer style={{background:'#111827',padding:'56px 40px 32px'}}>
-        <div style={{maxWidth:1100,margin:'0 auto'}}>
-          <div className="footer-grid" style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr',gap:40,marginBottom:48}}>
+      {/* التذييل */}
+      <footer className="lp-footer">
+        <div className="lp-wrap">
+          <div className="lp-foot-grid">
             <div>
-              <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
-                <img src="/storely-logo.png" alt="Storely" style={{width:32,height:32,borderRadius:8}}/>
-                <span style={{fontSize:18,fontWeight:800,color:'white'}}>Storely</span>
-              </div>
-              <p style={{fontSize:13,color:'white',lineHeight:1.7,maxWidth:220}}>{t('footerTagline')}</p>
+              <div className="lp-brand" style={{color:'#fff'}}><img src="/storely-logo.png" alt=""/><span>Storely</span></div>
+              <p className="lp-foot-tag">{t('footerTagline')}</p>
             </div>
             {[
               {title:t('footerPlatform'),links:[[t('footerLogin'),'/login'],[t('footerSignup'),'/login?mode=register'],[t('footerPricing'),'#pricing']]},
@@ -406,34 +374,262 @@ export default function LandingPage() {
               {title:t('footerContact'),links:[[t('footerWhatsapp'),'https://wa.me/966594351667'],[t('footerEmail'),'mailto:support@storely.dev']]},
             ].map((col,i)=>(
               <div key={i}>
-                <div style={{fontSize:12,fontWeight:700,color:'#9ca3af',marginBottom:14,letterSpacing:'.08em',textTransform:'uppercase'}}>{col.title}</div>
-                <div style={{display:'flex',flexDirection:'column',gap:10}}>
-                  {col.links.map(([l,h])=>(
-                    <a key={l} href={h} style={{color:'white',textDecoration:'none',fontSize:14,transition:'color .2s'}}
-                      onMouseEnter={e=>(e.currentTarget.style.color='#2dd4bf')}
-                      onMouseLeave={e=>(e.currentTarget.style.color='white')}>{l}</a>
-                  ))}
-                </div>
+                <div className="lp-foot-title">{col.title}</div>
+                {col.links.map(([l,h])=><a key={l} href={h} className="lp-foot-link">{l}</a>)}
               </div>
             ))}
           </div>
-          <div style={{borderTop:'1px solid #1f2937',paddingTop:24,display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12}}>
+          <div className="lp-foot-bottom">
             <div>
-              <div style={{fontSize:13,color:'white'}}>{t('footerRights')} {new Date().getFullYear()} ©</div>
-              <div style={{fontSize:11,color:'#6b7280',marginTop:6}}>{lang==='ar'?'مؤسسة باسم علي خلوي لتقنية المعلومات، رقم السجل التجاري 7055023522':'Basim Ali Khulwi Information Technology Est., Commercial Registration No. 7055023522'}</div>
+              <div>{t('footerRights')} {new Date().getFullYear()} ©</div>
+              <small>{lang==='ar'?'مؤسسة باسم علي خلوي لتقنية المعلومات، رقم السجل التجاري 7055023522':'Basim Ali Khulwi Information Technology Est., Commercial Registration No. 7055023522'}</small>
             </div>
-            <div style={{fontSize:13,color:'white'}}>storely.dev</div>
+            <div dir="ltr">storely.dev</div>
           </div>
         </div>
       </footer>
 
-      {/* WhatsApp */}
-      <a href="https://wa.me/966594351667" target="_blank" rel="noreferrer"
-        style={{position:'fixed',bottom:24,left:24,zIndex:9999,width:52,height:52,borderRadius:'50%',background:'#25d366',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 16px rgba(37,211,102,.35)',textDecoration:'none',transition:'transform .2s'}}
-        onMouseEnter={e=>(e.currentTarget.style.transform='scale(1.1)')}
-        onMouseLeave={e=>(e.currentTarget.style.transform='none')}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      {/* واتساب */}
+      <a href="https://wa.me/966594351667" target="_blank" rel="noreferrer" className="lp-wa-float" aria-label="تواصل عبر واتساب">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d={WA_ICON}/></svg>
       </a>
     </div>
   )
 }
+
+const LP_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@500;600;700&display=swap');
+.lp{--ink:#14201f;--ink2:#3d4a48;--ink3:#6b7775;--line:#e7e2d8;--cream:#faf8f3;--sand:#f3eee4;--teal:#0b3b3a;--teal2:#0f766e;--mint:#5eead4;
+  font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:var(--cream);color:var(--ink);overflow-x:hidden}
+.lp *{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+.lp a{color:inherit}
+.lp-wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+.lp-display,.lp-h2,.lp-cta h2{font-family:'Noto Naskh Arabic','IBM Plex Sans Arabic',serif;font-weight:700;letter-spacing:-.3px}
+
+/* الأزرار */
+.lp-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:999px;font:600 14px/1 'IBM Plex Sans Arabic',sans-serif;border:1px solid transparent;cursor:pointer;text-decoration:none;transition:transform .15s,background .2s,border-color .2s,color .2s;white-space:nowrap}
+.lp-btn:active{transform:scale(.98)}
+.lp-btn-lg{padding:15px 26px;font-size:15.5px}
+.lp-btn-dark{background:var(--teal);color:#fff}
+.lp-btn-dark:hover{background:#082e2d}
+.lp-btn-ghost{background:transparent;color:var(--ink)}
+.lp-btn-ghost:hover{background:rgba(20,32,31,.06)}
+.lp-btn-soft{background:#fff;color:var(--ink);border-color:var(--line)}
+.lp-btn-soft:hover{border-color:#cfc7b8}
+.lp-btn-line{background:#fff;color:var(--ink);border-color:var(--line)}
+.lp-btn-line:hover{border-color:var(--teal2);color:var(--teal2)}
+.lp-btn-white{background:#fff;color:var(--teal)}
+.lp-btn-glass{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.28)}
+.lp-btn-glass:hover{background:rgba(255,255,255,.16)}
+.lp-btn-wa{background:#25d366;color:#fff;margin-top:22px}
+.lp-play{width:26px;height:26px;border-radius:50%;background:var(--teal);color:#fff;display:grid;place-items:center}
+
+/* شريط الإعلانات */
+.lp-marquee{position:fixed;top:0;right:0;left:0;z-index:1001;height:36px;background:var(--teal);overflow:hidden;display:flex;align-items:center}
+.lp-marquee-track{display:flex;white-space:nowrap;animation:lpMarquee 35s linear infinite}
+.lp-marquee-item{color:#fff;font-size:13px;font-weight:600;padding:0 24px;display:flex;align-items:center;gap:8px}
+@keyframes lpMarquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* القائمة */
+.lp-nav{position:fixed;right:0;left:0;z-index:1000;transition:background .3s,box-shadow .3s,backdrop-filter .3s}
+.lp-nav.on{background:rgba(250,248,243,.86);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);box-shadow:0 1px 0 var(--line)}
+.lp-nav-in{height:70px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.lp-brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:700;font-size:19px;color:var(--ink)}
+.lp-brand img{width:36px;height:36px;border-radius:10px;background:#fff;object-fit:cover}
+.lp-links{display:flex;gap:30px}
+.lp-links a{text-decoration:none;font-size:14.5px;color:var(--ink2);font-weight:500}
+.lp-links a:hover{color:var(--teal2)}
+.lp-burger{background:none;border:none;font-size:24px;cursor:pointer;color:var(--ink)}
+.lp-mob-menu{background:var(--cream);border-top:1px solid var(--line);padding:18px 28px 24px;display:flex;flex-direction:column;gap:10px;box-shadow:0 20px 30px -20px rgba(0,0,0,.2)}
+.lp-mob-menu a{text-decoration:none;font-size:16px;padding:10px 0;border-bottom:1px solid var(--line)}
+
+/* الواجهة */
+.lp-hero{position:relative;padding-bottom:40px;background:radial-gradient(900px 500px at 15% 10%,rgba(94,234,212,.18),transparent 60%),radial-gradient(700px 400px at 90% 90%,rgba(243,226,196,.6),transparent 60%)}
+.lp-hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:56px;align-items:center}
+.lp-pill{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 16px;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:26px}
+.lp-dot{width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 0 4px rgba(16,185,129,.15)}
+.lp-display{position:relative;z-index:0;font-size:62px;line-height:1.28;color:var(--ink);margin-bottom:22px}
+.lp-display em{font-style:normal;color:var(--teal2);position:relative;white-space:nowrap}
+.lp-display em::after{content:'';position:absolute;right:0;left:0;bottom:6px;height:12px;background:rgba(94,234,212,.35);border-radius:6px;z-index:-1}
+.lp-lead{font-size:18px;line-height:1.9;color:var(--ink2);max-width:560px;margin-bottom:34px}
+.lp-cta-row{display:flex;gap:12px;flex-wrap:wrap}
+.lp-ticks{list-style:none;display:flex;gap:22px;flex-wrap:wrap;margin-top:30px}
+.lp-ticks li{display:flex;align-items:center;gap:7px;font-size:14px;color:var(--ink3)}
+.lp-ticks svg{color:var(--teal2)}
+.lp-hero-media{position:relative;display:flex;justify-content:center;padding:20px 0}
+.lp-halo{position:absolute;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,#0f766e 0%,#0b3b3a 70%);top:50%;left:50%;transform:translate(-50%,-50%);opacity:.95}
+.lp-halo::before{content:'';position:absolute;inset:-34px;border-radius:50%;border:1px dashed rgba(15,118,110,.35)}
+.lp-phone{position:relative;width:290px;aspect-ratio:9/19.2;border-radius:44px;background:#0b1413;padding:10px;box-shadow:0 50px 80px -40px rgba(11,59,58,.7),0 0 0 1px rgba(255,255,255,.06) inset;transform:rotate(-3deg)}
+.lp-phone video{width:100%;height:100%;object-fit:cover;border-radius:35px;display:block;background:#0b3b3a}
+.lp-float{position:absolute;background:#fff;border-radius:18px;padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 24px 40px -20px rgba(20,32,31,.35);border:1px solid var(--line);animation:lpBob 6s ease-in-out infinite}
+.lp-float b{display:block;font-size:14px}
+.lp-float small{display:block;font-size:12px;color:var(--ink3);margin-top:2px}
+.lp-float-a{top:12%;left:-6%}
+.lp-float-b{bottom:10%;right:-4%;flex-direction:column;align-items:flex-start;gap:6px;animation-delay:-3s}
+.lp-wa{width:38px;height:38px;border-radius:12px;background:#25d366;display:grid;place-items:center;flex-shrink:0}
+.lp-stamp{font-weight:700;color:#047857;border:2px solid #047857;border-radius:10px;padding:3px 12px;transform:rotate(-4deg);font-size:15px}
+@keyframes lpBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.lp-partners{text-align:center;margin-top:56px}
+.lp-partners p{font-size:12.5px;color:var(--ink3);margin-bottom:18px}
+.lp-partners>div{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
+.lp-partners img{height:54px;max-width:150px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 18px}
+.lp-stats{display:grid;grid-template-columns:repeat(4,1fr);margin-top:64px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.lp-stats>div{padding:24px 10px;text-align:center;border-left:1px solid var(--line)}
+.lp-stats>div:last-child{border-left:none}
+.lp-stats strong{display:block;font-family:'Noto Naskh Arabic',serif;font-size:30px;color:var(--teal)}
+.lp-stats span{font-size:13px;color:var(--ink3)}
+
+/* الأقسام */
+.lp-section{padding:110px 0}
+.lp-sand{background:var(--sand)}
+.lp-head{text-align:center;max-width:680px;margin:0 auto 54px}
+.lp-tag{display:inline-block;font-size:13px;font-weight:700;color:var(--teal2);background:rgba(15,118,110,.08);border-radius:999px;padding:6px 14px;margin-bottom:16px}
+.lp-tag-light{color:var(--mint);background:rgba(94,234,212,.12)}
+.lp-h2{font-size:42px;line-height:1.35;color:var(--ink);margin-bottom:18px}
+.lp-body{font-size:17px;line-height:1.95;color:var(--ink2);margin-bottom:26px}
+.lp-split{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center}
+.lp-split-rev>:first-child{order:2}
+.lp-photo{position:relative;border-radius:30px}
+.lp-photo img{width:100%;aspect-ratio:4/3.4;object-fit:cover;border-radius:30px;display:block;box-shadow:0 40px 70px -40px rgba(20,32,31,.45)}
+.lp-photo-wide img{aspect-ratio:4/3.2;object-position:35% center}
+.lp-note{position:absolute;bottom:-26px;left:28px;background:#fff;border-radius:20px;padding:14px 18px;display:flex;gap:12px;align-items:center;box-shadow:0 24px 40px -18px rgba(20,32,31,.35);border:1px solid var(--line)}
+.lp-note-ic{width:42px;height:42px;border-radius:13px;background:#fff7ed;display:grid;place-items:center;font-size:20px}
+.lp-note b{display:block;font-size:15px}
+.lp-note small{font-size:12.5px;color:var(--ink3)}
+.lp-list{list-style:none;display:flex;flex-direction:column;gap:14px}
+.lp-list li{display:flex;gap:12px;align-items:center;font-size:16px;color:var(--ink)}
+.lp-list li>span{width:26px;height:26px;border-radius:50%;background:rgba(15,118,110,.1);color:var(--teal2);display:grid;place-items:center;flex-shrink:0}
+.lp-link{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--teal2);text-decoration:none}
+.lp-link:hover{gap:10px}
+.lp-chat{position:absolute;bottom:22px;right:22px;left:22px;display:flex;flex-direction:column;gap:8px;max-width:300px;margin-right:auto}
+.lp-bubble{background:#fff;border-radius:16px 16px 16px 4px;padding:10px 14px;font-size:13.5px;line-height:1.6;box-shadow:0 12px 24px -12px rgba(0,0,0,.3);align-self:flex-start}
+.lp-bubble-out{background:#d9fdd3;border-radius:16px 16px 4px 16px;align-self:flex-end}
+
+/* كيف يشتغل */
+.lp-how{background:radial-gradient(700px 500px at 20% 30%,rgba(94,234,212,.12),transparent 60%),var(--teal);color:#fff;padding:110px 0;margin:0 20px;border-radius:40px}
+.lp-how-media{display:flex;justify-content:center}
+.lp-how .lp-phone{transform:rotate(2deg);box-shadow:0 50px 90px -30px rgba(0,0,0,.6)}
+.lp-steps{list-style:none;display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.lp-steps li{display:flex;gap:18px;padding:18px 0;border-bottom:1px solid rgba(255,255,255,.1)}
+.lp-steps li:last-child{border-bottom:none}
+.lp-step-n{font-family:'Noto Naskh Arabic',serif;font-size:26px;color:var(--mint);min-width:40px;line-height:1.3}
+.lp-steps b{font-size:18px;display:block;margin-bottom:4px}
+.lp-steps p{font-size:15px;line-height:1.8;color:rgba(255,255,255,.72)}
+
+/* المميزات */
+.lp-feats{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.lp-feat{background:#fff;border:1px solid var(--line);border-radius:24px;padding:28px;transition:transform .2s,box-shadow .2s,border-color .2s}
+.lp-feat:hover{transform:translateY(-3px);box-shadow:0 22px 40px -26px rgba(20,32,31,.35);border-color:#dcd4c5}
+.lp-feat-ic{width:48px;height:48px;border-radius:15px;background:var(--bg);color:var(--fg);display:grid;place-items:center;margin-bottom:18px}
+.lp-feat h3{font-size:18px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lp-feat h3 em{font-style:normal;font-size:11px;font-weight:700;color:var(--fg);background:var(--bg);padding:3px 9px;border-radius:99px}
+.lp-feat p{font-size:14.5px;line-height:1.85;color:var(--ink3)}
+
+/* الأسعار */
+.lp-toggle{display:inline-flex;gap:4px;background:#fff;border:1px solid var(--line);padding:4px;border-radius:999px;margin-top:6px}
+.lp-toggle button{border:none;background:none;padding:9px 20px;border-radius:999px;font:600 14px 'IBM Plex Sans Arabic',sans-serif;color:var(--ink3);cursor:pointer;display:flex;align-items:center;gap:6px}
+.lp-toggle button.on{background:var(--teal);color:#fff}
+.lp-toggle button span{font-size:11px;background:rgba(94,234,212,.25);color:inherit;padding:2px 8px;border-radius:99px}
+.lp-plans{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:start}
+.lp-plan{position:relative;background:#fff;border:1px solid var(--line);border-radius:28px;padding:30px}
+.lp-plan.pop{background:var(--teal);color:#fff;border-color:var(--teal);box-shadow:0 40px 70px -40px rgba(11,59,58,.7)}
+.lp-plan-badge{position:absolute;top:-13px;right:28px;background:var(--mint);color:var(--teal);font-size:12px;font-weight:700;padding:5px 14px;border-radius:99px}
+.lp-plan-name{font-size:17px;font-weight:700;margin-bottom:12px}
+.lp-plan-price{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.lp-plan-price strong{font-family:'Noto Naskh Arabic',serif;font-size:46px;line-height:1}
+.lp-plan-price span{font-size:14px;opacity:.65}
+.lp-plan-limits{font-size:13.5px;opacity:.7;margin-bottom:22px}
+.lp-plan ul{list-style:none;display:flex;flex-direction:column;gap:11px;margin-top:24px;padding-top:22px;border-top:1px solid var(--line)}
+.lp-plan.pop ul{border-color:rgba(255,255,255,.14)}
+.lp-plan li{display:flex;gap:9px;align-items:flex-start;font-size:14px;line-height:1.5}
+.lp-plan li svg{color:var(--teal2);flex-shrink:0;margin-top:2px}
+.lp-plan.pop li svg{color:var(--mint)}
+.lp-plan.pop .lp-btn-dark{background:#fff;color:var(--teal)}
+.lp-plan-note{margin-top:20px;background:var(--sand);border-radius:14px;padding:12px 14px;font-size:12.5px;line-height:1.7;color:var(--ink2)}
+
+/* طلب العرض */
+.lp-demo{display:grid;grid-template-columns:.8fr 1.2fr;background:#fff;border-radius:34px;overflow:hidden;border:1px solid var(--line);box-shadow:0 40px 80px -50px rgba(20,32,31,.4);padding:0}
+.lp-demo-side{background:radial-gradient(400px 300px at 80% 0%,rgba(94,234,212,.18),transparent 60%),var(--teal);color:#fff;padding:48px 40px;display:flex;flex-direction:column;justify-content:center}
+.lp-demo-side img{width:56px;height:56px;border-radius:16px;background:#fff;margin-bottom:24px}
+.lp-demo-side h3{font-family:'Noto Naskh Arabic',serif;font-size:28px;line-height:1.5;margin-bottom:14px}
+.lp-demo-side p{font-size:15px;line-height:1.9;color:rgba(255,255,255,.75)}
+.lp-demo-side .lp-btn-wa{align-self:flex-start}
+.lp-demo-form{padding:44px}
+.lp-demo-form h2{font-size:24px;font-weight:700;margin-bottom:6px}
+.lp-demo-form>p{font-size:14.5px;color:var(--ink3);margin-bottom:24px}
+.lp-fields{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.lp-fields label{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:600;color:var(--ink2)}
+.lp-fields .full{grid-column:1/-1}
+.lp-fields input,.lp-fields select{width:100%;padding:13px 15px;border:1px solid var(--line);border-radius:14px;font:15px 'IBM Plex Sans Arabic',sans-serif;background:var(--cream);outline:none;transition:border-color .2s,box-shadow .2s;color:var(--ink)}
+.lp-fields input:focus,.lp-fields select:focus{border-color:var(--teal2);box-shadow:0 0 0 4px rgba(15,118,110,.1);background:#fff}
+.lp-agree{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--ink3);margin-bottom:20px;cursor:pointer;line-height:1.6}
+.lp-agree input{margin-top:4px;accent-color:var(--teal2)}
+.lp-agree a{color:var(--teal2)}
+.lp-msg{border-radius:12px;padding:11px 14px;margin-bottom:16px;font-size:13.5px;font-weight:600}
+.lp-msg.ok{background:#ecfdf5;color:#047857}
+.lp-msg.err{background:#fef2f2;color:#dc2626}
+
+/* الأسئلة */
+.lp-faq{background:#fff;border:1px solid var(--line);border-radius:26px;padding:6px 28px}
+.lp-faq>div:last-child{border-bottom:none!important}
+
+/* الدعوة */
+.lp-cta{text-align:center;color:#fff;border-radius:40px;padding:84px 28px;margin-bottom:90px;background:radial-gradient(600px 300px at 50% 0%,rgba(94,234,212,.25),transparent 70%),linear-gradient(160deg,#0f5c59,#0b3b3a 60%,#072a29)}
+.lp-cta h2{font-size:44px;line-height:1.4;margin-bottom:14px}
+.lp-cta p{font-size:17px;color:rgba(255,255,255,.75);margin-bottom:34px}
+
+/* التذييل */
+.lp-footer{background:#072a29;color:#fff;padding:64px 0 30px}
+.lp-foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:44px}
+.lp-foot-tag{font-size:14px;color:rgba(255,255,255,.65);line-height:1.8;max-width:260px;margin-top:14px}
+.lp-foot-title{font-size:13px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:14px}
+.lp-foot-link{display:block;text-decoration:none;font-size:14.5px;color:rgba(255,255,255,.88);margin-bottom:10px}
+.lp-foot-link:hover{color:var(--mint)}
+.lp-foot-bottom{border-top:1px solid rgba(255,255,255,.1);padding-top:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-size:13px}
+.lp-foot-bottom small{display:block;color:rgba(255,255,255,.45);margin-top:6px;font-size:11.5px}
+.lp-wa-float{position:fixed;bottom:24px;left:24px;z-index:999;width:56px;height:56px;border-radius:50%;background:#25d366;display:grid;place-items:center;box-shadow:0 12px 26px -8px rgba(37,211,102,.55);transition:transform .2s}
+.lp-wa-float:hover{transform:scale(1.08)}
+
+/* الظهور عند التمرير */
+.lp-anim .rv{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+.lp-anim .rv.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.lp-float{animation:none}.lp-marquee-track{animation-duration:80s}}
+
+/* الشاشات */
+.lp-mob{display:none}
+@media(max-width:980px){
+  .lp-hero-grid,.lp-split{grid-template-columns:1fr;gap:48px}
+  .lp-split-rev>:first-child{order:0}
+  .lp-display{font-size:46px}
+  .lp-h2{font-size:34px}
+  .lp-feats,.lp-plans{grid-template-columns:1fr 1fr}
+  .lp-demo{grid-template-columns:1fr}
+  .lp-foot-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:720px){
+  .lp-desk{display:none!important}
+  .lp-mob{display:block}
+  .lp-wrap{padding:0 18px}
+  .lp-display{font-size:36px}
+  .lp-lead{font-size:16px}
+  .lp-h2{font-size:29px}
+  .lp-section,.lp-how{padding:72px 0}
+  .lp-how{margin:0 10px;border-radius:28px}
+  .lp-feats,.lp-plans{grid-template-columns:1fr}
+  .lp-stats{grid-template-columns:1fr 1fr}
+  .lp-stats>div:nth-child(2){border-left:none}
+  .lp-stats>div:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .lp-halo{width:300px;height:300px}
+  .lp-phone{width:240px}
+  .lp-float-a{left:0;top:4%}
+  .lp-float-b{right:0}
+  .lp-fields{grid-template-columns:1fr}
+  .lp-demo-form,.lp-demo-side{padding:30px 22px}
+  .lp-cta{border-radius:28px;padding:60px 20px}
+  .lp-cta h2{font-size:32px}
+  .lp-cta-row .lp-btn{width:100%}
+  .lp-foot-grid{grid-template-columns:1fr}
+  .lp-note{left:14px;bottom:-22px}
+}
+`
