@@ -129,6 +129,8 @@ export const LS: Record<string, {ar:string, en:string}> = {
 }
 
 export const FAQ_ITEMS = [
+  {q:'هل Storely منصة معتمدة ولها سجل تجاري؟',a:'نعم — Storely تابعة لـ «مؤسسة باسم علي خلوي لتقنية المعلومات»، مسجّلة رسمياً في وزارة التجارة السعودية بالرقم الوطني الموحد 7055023522، ونوع الكيان مؤسسة، وحالة السجل نشط. تقدر تتحقق من السجل بنفسك عبر موقع وزارة التجارة mc.gov.sa.',
+   qEn:'Is Storely a registered business?',aEn:'Yes — Storely is operated by Basim Ali Khulwi Information Technology Est., officially registered with the Saudi Ministry of Commerce under unified national number 7055023522 (entity type: establishment, status: active). You can verify it yourself at mc.gov.sa.'},
   {q:'هل فيه تجربة مجانية؟',a:'نعم — 14 يوماً مجانية كاملة بدون بطاقة ائتمانية. استكشف جميع المميزات من أول يوم.',
    qEn:'Is there a free trial?',aEn:"Yes — a full 14 days free, no credit card required. Explore all the features from day one."},
   {q:'كيف يتم الدفع؟',a:'الدفع عبر تحويل بنكي. بعد التحويل يتم تفعيل حسابك خلال 24 ساعة.',
