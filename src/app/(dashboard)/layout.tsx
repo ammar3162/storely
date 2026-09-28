@@ -620,7 +620,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             </div>
             {visibleGroups.map(g=>(
               <div key={g.labelKey} style={{marginTop:10}}>
-                <div className="sh-group-label">{t(g.labelKey)}</div>
+                <div className="sh-group-label" style={navTone(g.items[0]?.href||'')}>{t(g.labelKey)}</div>
                 {g.items.map(item=>{
                   const active=isActive(item.href)
                   const external=item.href.startsWith('http')
@@ -714,7 +714,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             <nav ref={navRef} className="sh-nav-scroll">
               {visibleGroups.map(g=>(
                 <div key={g.labelKey} style={{marginBottom:12}}>
-                  <div className="sh-group-label">{t(g.labelKey)}</div>
+                  <div className="sh-group-label" style={navTone(g.items[0]?.href||'')}>{t(g.labelKey)}</div>
                   {g.items.map(item=>{
                     const active=isActive(item.href)
                     const external=item.href.startsWith('http')
@@ -797,7 +797,9 @@ const SHELL_CSS = `
   .sh-btn-danger:hover:not(:disabled){background:${C.dangerL}}
   .sh-btn-ghost{border-color:transparent;background:transparent;color:${C.text3}}
 
-  .sh-group-label{font-size:12px;font-weight:600;color:${C.text4};padding:0 10px 6px}
+  .sh-group-label{--nt:${C.primary};display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:${C.text2};padding:6px 10px 7px;letter-spacing:.1px}
+  .sh-group-label::before{content:'';width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--nt);box-shadow:0 0 0 3px color-mix(in srgb,var(--nt) 16%,transparent)}
+  .sh-group-label::after{content:'';flex:1;height:1px;background:${C.border}}
   .sh-nav{--nt:${C.primary};--nb:${C.primaryL};position:relative;width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;border:none;background:transparent;color:${C.text2};font-size:13.5px;font-weight:500;font-family:inherit;cursor:pointer;text-align:right;margin-bottom:1px;transition:background .15s,color .15s}
   .sh-nav svg{color:${C.text4};flex-shrink:0;transition:color .15s}
   .sh-nav:hover{background:#f4f5f7;color:${C.text}}
