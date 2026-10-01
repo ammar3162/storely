@@ -16,6 +16,11 @@ export function encryptPin(pin: string): string {
   return ['v1', iv.toString('base64'), cipher.getAuthTag().toString('base64'), data.toString('base64')].join(':')
 }
 
+// للحفظ: لو فشل التشفير ما نوقف إضافة الموظف أو تجديد الرمز — نحفظ بدون نسخة العرض ونسجّل السبب
+export function encryptPinSafe(pin: string): string | null {
+  try { return encryptPin(pin) } catch (e) { console.error('PIN_ENCRYPT_FAILED', e); return null }
+}
+
 export function decryptPin(enc: string | null | undefined): string | null {
   if (!enc) return null
   try {
