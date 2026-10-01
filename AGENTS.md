@@ -28,7 +28,7 @@ The frontend never talks to the database directly. Every read and write goes thr
 ## Data rules
 - Product quantity is derived: the `after_stock_movement` trigger sets `products.qty` to the sum of `stock_movements.qty_change`. Change stock by inserting a movement; never write `qty` directly.
 - `purchases.vat_amount` / `total_amount` are generated from `amount` and `has_vat`. Write `amount` (net) and `has_vat` only.
-- New staff PINs are stored as bcrypt hashes and never returned to the browser.
+- Staff PINs: login checks the bcrypt hash in `pin`. An AES-GCM copy in `pin_enc` (`lib/pinVault`) is decrypted only by `/api/staff-members/reveal-pin` when the owner/branch manager clicks the eye icon. Never return `pin` or `pin_enc` in lists or other responses.
 - Supplier orders are sent once per drop below the reorder point (`lib/supplierOrderGate`).
 
 ## Workflow

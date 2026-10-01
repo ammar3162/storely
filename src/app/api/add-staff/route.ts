@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { encryptPin } from '@/lib/pinVault'
 import bcrypt from 'bcryptjs'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
 
     const { data: newStaff, error } = await supabase
       .from('staff_members')
-      .insert({ org_id, branch_id: effectiveBranchId || null, name, phone, pin: pinHash, is_active: true, permissions: permissions || {dispense:false,inventory:false,purchases:false,reports:false}, role: role === 'cashier' ? 'cashier' : 'staff', send_closing_whatsapp: send_closing_whatsapp !== false, addon_subscription_id: capacity.addonSubscriptionId })
+      .insert({ org_id, branch_id: effectiveBranchId || null, name, phone, pin: pinHash, pin_enc: encryptPin(String(pin)), is_active: true, permissions: permissions || {dispense:false,inventory:false,purchases:false,reports:false}, role: role === 'cashier' ? 'cashier' : 'staff', send_closing_whatsapp: send_closing_whatsapp !== false, addon_subscription_id: capacity.addonSubscriptionId })
       .select()
       .single()
 
@@ -59,6 +60,7 @@ export async function POST(req: Request) {
 
     const safeStaff = { ...(newStaff as any) }
     delete safeStaff.pin
+    delete safeStaff.pin_enc
     return NextResponse.json({ success: true, staff: safeStaff })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
