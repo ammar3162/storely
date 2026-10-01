@@ -9,11 +9,13 @@ const sb = () => createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// الـ PIN المشفّر ما يطلع للمتصفح أبداً — بس علامة '$2' عشان الواجهة تعرف إنه مشفّر (تعرض "رمز جديد").
+// الـ PIN المشفّر ما يطلع للمتصفح أبداً — بس علامة '$2' عشان الواجهة تعرف إنه مشفّر،
+// و has_pin_enc لو فيه نسخة تنعرض بأيقونة العين (عبر /api/staff-members/reveal-pin).
 // الرموز القديمة غير المشفّرة تطلع زي ما كانت (المالك/مدير الفرع يقدر يشوفها) لين تتجدد.
 function maskPin(staff: any) {
-  const pin = staff?.pin == null ? null : String(staff.pin)
-  return { ...staff, pin: pin && pin.startsWith('$2') ? '$2' : pin }
+  const { pin_enc, ...rest } = staff || {}
+  const pin = rest.pin == null ? null : String(rest.pin)
+  return { ...rest, pin: pin && pin.startsWith('$2') ? '$2' : pin, has_pin_enc: !!pin_enc }
 }
 
 // كل موظفي المنشأة (أو فرع معيّن) مع اسم الفرع

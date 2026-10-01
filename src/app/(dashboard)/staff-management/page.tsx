@@ -59,6 +59,7 @@ export default function StaffManagementPage() {
   const [newSendClosingWA, setNewSendClosingWA] = useState(true)
   const [revealedPin, setRevealedPin] = useState<{name:string,phone:string,pin:string}|null>(null)
   const [visiblePins, setVisiblePins] = useState<Record<string,boolean>>({})
+  const [revealedPins, setRevealedPins] = useState<Record<string,string>>({})
   const [expandedId, setExpandedId] = useState<string|null>(null)
   const [editingStaffPhoneId, setEditingStaffPhoneId] = useState<string|null>(null)
   const [editStaffPhoneVal, setEditStaffPhoneVal] = useState('')
@@ -277,6 +278,18 @@ export default function StaffManagementPage() {
     if (!r.success) { toast(r.error || 'حدث خطأ', 'error'); return }
     setStaff(prev=>prev.map((s:any)=>s.id===id?{...s,send_closing_whatsapp:!current}:s))
     toast(!current?'✅ راح توصل تفاصيل الإقفال كاملة عبر واتساب':'✅ راح يوصل بس إشعار بسيط بدون تفاصيل')
+  }
+
+  // أيقونة العين: الرمز المشفّر ينطلب من الخادم وقت الضغط، ويختفي تلقائياً بعد 20 ثانية
+  async function togglePin(s:any) {
+    if (visiblePins[s.id]) { setVisiblePins(v=>({...v,[s.id]:false})); return }
+    if (String(s.pin||'').startsWith('$2') && !revealedPins[s.id]) {
+      const r = await api.post('/api/staff-members/reveal-pin', { org_id: orgId, id: s.id })
+      if (!r.success) { toast(r.error || 'ما نقدر نعرض هذا الرمز — ولّد رمز جديد', 'error'); return }
+      setRevealedPins(v=>({...v,[s.id]:r.pin}))
+    }
+    setVisiblePins(v=>({...v,[s.id]:true}))
+    setTimeout(()=>{ setVisiblePins(v=>({...v,[s.id]:false})); setRevealedPins(v=>{ const n={...v}; delete n[s.id]; return n }) }, 20000)
   }
 
   async function regeneratePin(id:string,name:string,phone:string) {
@@ -885,7 +898,7 @@ export default function StaffManagementPage() {
                     </div>
                     <div style={{background:colors.primaryLight,borderRadius:radius.md,padding:'12px 14px',border:`1px solid ${colors.primaryBorder}`}}>
                       <div style={{fontSize:10,fontWeight:700,color:colors.primary,marginBottom:6,textTransform:'uppercase' as const}}>رمز PIN الحالي</div>
-                      {String(s.pin||'').startsWith('$2') ? (
+                      {String(s.pin||'').startsWith('$2') && !s.has_pin_enc ? (
                         <div>
                           <div style={{fontSize:13,fontWeight:700,color:colors.danger||'#dc2626',marginBottom:6}}>PIN قديم — لا يمكن استرجاعه</div>
                           <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} style={{fontSize:11,fontWeight:700,color:'white',background:colors.primary,border:'none',borderRadius:6,padding:'6px 12px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:5}}>
@@ -895,9 +908,9 @@ export default function StaffManagementPage() {
                       ) : (
                         <div style={{display:'flex',alignItems:'center',gap:10}}>
                           <div style={{fontSize:28,fontWeight:900,color:colors.primary,letterSpacing:8,minWidth:90}}>
-                            {visiblePins[s.id] ? s.pin : '••••'}
+                            {visiblePins[s.id] ? (revealedPins[s.id] || s.pin) : '••••'}
                           </div>
-                          <button onClick={e=>{e.stopPropagation();setVisiblePins(v=>({...v,[s.id]:!v[s.id]}))}} style={{background:'transparent',border:'none',cursor:'pointer',padding:4,lineHeight:1,display:'flex',alignItems:'center'}} title={visiblePins[s.id]?'إخفاء':'إظهار'}>
+                          <button onClick={e=>{e.stopPropagation();togglePin(s)}} style={{background:'transparent',border:'none',cursor:'pointer',padding:4,lineHeight:1,display:'flex',alignItems:'center'}} title={visiblePins[s.id]?'إخفاء':'إظهار'}>
                             {visiblePins[s.id] ? (
                               <svg width={20} height={20} fill="none" stroke={colors.primary} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                                 <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
