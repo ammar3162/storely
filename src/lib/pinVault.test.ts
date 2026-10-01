@@ -21,6 +21,16 @@ describe('pinVault', () => {
     expect(decryptPin('garbage')).toBeNull()
   })
 
+  it('prefers STAFF_PIN_KEY over STAFF_TOKEN_SECRET', () => {
+    process.env.STAFF_PIN_KEY = 'pin-key'
+    const enc = encryptPin('7777')
+    delete process.env.STAFF_PIN_KEY
+    expect(decryptPin(enc)).toBeNull()
+    process.env.STAFF_PIN_KEY = 'pin-key'
+    expect(decryptPin(enc)).toBe('7777')
+    delete process.env.STAFF_PIN_KEY
+  })
+
   it('does not decrypt with a different secret', () => {
     const enc = encryptPin('5555')
     process.env.STAFF_TOKEN_SECRET = 'other-secret'
