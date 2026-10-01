@@ -2,10 +2,11 @@ import crypto from 'crypto'
 
 // نسخة قابلة للعرض من رمز PIN للموظف (أيقونة العين عند المالك).
 // الدخول يتحقق من bcrypt في عمود pin؛ هذي النسخة للعرض فقط وتنفك في الخادم بعد التحقق من المالك.
-// المفتاح مشتق من STAFF_TOKEN_SECRET — لو تغيّر السر، الرموز المحفوظة ما تنعرض لين يتجدد الرمز.
+// المفتاح من STAFF_PIN_KEY (مستقل عن توقيع دخول الموظفين)، وإلا من STAFF_TOKEN_SECRET.
+// لو تغيّر المفتاح، الرموز المحفوظة ما تنعرض لين يتجدد الرمز — الدخول ما يتأثر.
 function key() {
-  const secret = process.env.STAFF_TOKEN_SECRET
-  if (!secret) throw new Error('STAFF_TOKEN_SECRET missing')
+  const secret = process.env.STAFF_PIN_KEY || process.env.STAFF_TOKEN_SECRET
+  if (!secret) throw new Error('STAFF_PIN_KEY missing')
   return Buffer.from(crypto.hkdfSync('sha256', secret, 'storely', 'staff-pin-v1', 32))
 }
 
