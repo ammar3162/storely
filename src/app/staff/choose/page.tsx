@@ -68,6 +68,7 @@ export default function ChoosePage() {
   const [permReason, setPermReason] = useState('')
   const [submittingPerm, setSubmittingPerm] = useState(false)
   const [taskCount, setTaskCount] = useState(0)
+  const [salaryVisible, setSalaryVisible] = useState(false)
   const [hasHrFeature, setHasHrFeature] = useState(false) // مخفي افتراضياً لحد ما يتأكد الفحص — يمنع ظهور الأزرار للحظة ثم اختفائها
   const [hasCashierFeature, setHasCashierFeature] = useState(false) // نفس المبدأ — مخفي لحد ما يتأكد الفحص
   const [showRequests, setShowRequests] = useState(false)
@@ -100,6 +101,7 @@ export default function ChoosePage() {
     // مهامي وطلباتي جزء من ميزة "إدارة الموظفين" — ما نعرضهم إلا لو الباقة تشملها أو عندهم إضافة hr_full
     getStaffOrg()
       .then(async (org)=>{
+        setSalaryVisible(org?.staff_salary_visible === true)
         if (org?.plan !== 'basic') { setHasHrFeature(true); setHasCashierFeature(true); return }
         const j = await fetch(`/api/addons-market?org_id=${parsed.org_id}`).then(r=>r.json()).catch(()=>null)
         const addon = (j?.addons||[]).find((a:any)=>a.slug==='hr_full')
@@ -485,6 +487,12 @@ export default function ChoosePage() {
             <span style={{width:38,height:38,borderRadius:11,background:'#eff6ff',display:'flex',alignItems:'center',justifyContent:'center',color:'#2563eb'}}><Send size={19} strokeWidth={2}/></span>
             {t('myRequests')}
           </button>
+          {salaryVisible && (
+          <button onClick={()=>router.push('/staff/salary')}
+            style={{gridColumn:'1 / -1',padding:'14px 12px',background:'linear-gradient(135deg,#0b3b3a,#0f766e)',color:'white',border:'none',borderRadius:16,fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+            <Wallet size={19} strokeWidth={2}/> راتبي — الراتب والخصومات والأوفر تايم
+          </button>
+          )}
         </div>
         )}
 

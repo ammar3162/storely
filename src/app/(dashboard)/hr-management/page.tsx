@@ -6,10 +6,12 @@ import { getMe, getOrgId } from '@/lib/session'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { cache } from '@/lib/cache'
-import { Wallet, ThumbsUp, ThumbsDown, ClipboardList, ChevronDown, Plus, Camera, CalendarDays, BarChart3 } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, ClipboardList, ChevronDown, Plus, Camera, CalendarDays, BarChart3 } from 'lucide-react'
 
 export default function HRManagementPage() {
   const [orgId, setOrgId] = useState('')
+  const [salaryVisible, setSalaryVisible] = useState<boolean|null>(null)
+  const [isOwner, setIsOwner] = useState(false)
   const [curr, setCurr] = useState('ر.س')
   const [orgPlan, setOrgPlan] = useState('basic')
   const [hasHrAddon, setHasHrAddon] = useState(false)
@@ -67,6 +69,8 @@ export default function HRManagementPage() {
       if(!oid) return
     }
     setOrgId(oid)
+    api.get('/api/org-settings', { org_id: oid, scope: 'full' }).then(r => { if (r.success) setSalaryVisible(r.settings?.staff_salary_visible === true) }).catch(()=>{})
+    getMe().then(m => setIsOwner(m?.role === 'owner')).catch(()=>{})
     const bid = sessionStorage.getItem('s_branch_id')
     const [me, staffRes, leaveRes, advRes, cashierRes, penaltyRes, addonRes, branchesRes] = await Promise.all([
       getMe(),
@@ -248,6 +252,15 @@ export default function HRManagementPage() {
     loadExcuse(staffId)
   }
 
+  // صفحة «راتبي» للموظفين — المالك يفعّلها أو يقفلها
+  async function toggleSalaryVisible() {
+    const next = !salaryVisible
+    setSalaryVisible(next)
+    const r = await api.patch('/api/org-settings', { org_id: orgId, staff_salary_visible: next })
+    if (!r.success) { setSalaryVisible(!next); toast(r.error || 'حدث خطأ', 'error'); return }
+    toast(next ? '✅ الموظفين يقدرون يشوفون رواتبهم الحين' : 'انقفلت صفحة «راتبي» عن الموظفين')
+  }
+
   async function loadReport() {
     setLoadingReport(true)
     try {
@@ -398,9 +411,6 @@ export default function HRManagementPage() {
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto'}}>
       <div style={{marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap' as const}}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <div style={{width:44,height:44,borderRadius:radius.md,background:'#fdf4ff',border:'1px solid #f5d0fe',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-            <Wallet size={20} color="#a21caf" strokeWidth={1.75}/>
-          </div>
           <div>
             <h1 style={pageTitle}><PageIcon/>إدارة الموظفين</h1>
             <p style={pageSub}>الرواتب والبدلات، الخصومات والسلف، والمهام لكل موظف</p>
@@ -410,6 +420,20 @@ export default function HRManagementPage() {
           <BarChart3 size={15} strokeWidth={2.25}/> تقرير الموظفين
         </button>
       </div>
+
+      {/* صفحة «راتبي» للموظف */}
+      {isOwner && salaryVisible !== null && (
+        <div style={{...card,padding:'14px 16px',marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
+          <div>
+            <div style={{fontSize:13,fontWeight:800,color:colors.text}}>💰 الموظف يشوف راتبه</div>
+            <div style={{fontSize:12,color:colors.text3,marginTop:3,lineHeight:1.6}}>يظهر للموظف في صفحته: الراتب والبدلات، الخصومات والسلف، والأوفر تايم المحسوب تلقائياً من الحضور</div>
+          </div>
+          <button onClick={toggleSalaryVisible} role="switch" aria-checked={!!salaryVisible} aria-label="الموظف يشوف راتبه"
+            style={{width:52,height:30,borderRadius:99,border:'none',cursor:'pointer',flexShrink:0,position:'relative' as const,background:salaryVisible?colors.primary:colors.border2,transition:'background .2s'}}>
+            <span style={{position:'absolute' as const,top:3,width:24,height:24,borderRadius:'50%',background:'white',boxShadow:shadow.md,transition:'right .2s',right:salaryVisible?3:25}}/>
+          </button>
+        </div>
+      )}
 
       {/* مواقع الفروع -- لازمة لتفعيل تسجيل الحضور/الانصراف بكل فرع */}
       {branches.length>0 && (
@@ -444,7 +468,7 @@ export default function HRManagementPage() {
               <table style={{width:'100%',borderCollapse:'collapse' as const,fontSize:12,minWidth:820}}>
                 <thead>
                   <tr style={{borderBottom:`2px solid ${colors.border}`}}>
-                    {['الموظف','الراتب الإجمالي','الخصومات','السلف','صافي الراتب','الحضور','التأخير','الإجازات','المهام','التقييم'].map(h=>(
+                    {['الموظف','الراتب الإجمالي','الأوفر تايم','الخصومات','السلف','صافي الراتب','الحضور','التأخير','الإجازات','المهام','التقييم'].map(h=>(
                       <th key={h} style={{padding:'8px 10px',textAlign:'right' as const,color:colors.text4,fontWeight:700,whiteSpace:'nowrap' as const}}>{h}</th>
                     ))}
                   </tr>
@@ -456,6 +480,7 @@ export default function HRManagementPage() {
                       <tr key={r.staffId} style={{borderBottom:`1px solid ${colors.border}`}}>
                         <td style={{padding:'10px',fontWeight:700,color:colors.text,whiteSpace:'nowrap' as const}}>{r.name}</td>
                         <td style={{padding:'10px',color:colors.text2}}>{r.grossSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</td>
+                        <td style={{padding:'10px',color:colors.primary,whiteSpace:'nowrap' as const}}>{r.overtimePay>0?`+${r.overtimePay.toLocaleString('ar-SA',{numberingSystem:'latn'})} (${Math.round(r.overtimeMinutes/6)/10} س)`:'—'}</td>
                         <td style={{padding:'10px',color:colors.danger}}>{r.deductionsTotal>0?`-${r.deductionsTotal.toLocaleString('ar-SA',{numberingSystem:'latn'})}`:'—'}</td>
                         <td style={{padding:'10px',color:colors.danger}}>{r.advancesTotal>0?`-${r.advancesTotal.toLocaleString('ar-SA',{numberingSystem:'latn'})}`:'—'}</td>
                         <td style={{padding:'10px',fontWeight:800,color:colors.primary}}>{r.netSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</td>

@@ -10,7 +10,7 @@ const sb = () => createClient(
 // إعدادات المنشأة اللي تعدّلها صفحات لوحة التحكم — قوائم مسموحة فقط
 const BASIC_FIELDS = 'shop_open_time,shop_close_time,notify_cashier_closing_wa'
 // scope=full: صفحة الإعدادات (استعلام منفصل عشان صفحات ثانية تبقى على الحقول الأساسية فقط)
-const FULL_FIELDS = 'whatsapp_number,name,notify_schedule,notify_time,notify_days,notify_cashier_closing_wa,notify_supplier_wa,last_notified_at,last_backup_at,max_branches,logo_url,plan,subscription_ends_at,billing_cycle'
+const FULL_FIELDS = 'whatsapp_number,name,notify_schedule,notify_time,notify_days,notify_cashier_closing_wa,notify_supplier_wa,last_notified_at,last_backup_at,max_branches,logo_url,plan,subscription_ends_at,billing_cycle,staff_salary_visible'
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/
 
 export async function GET(req: Request) {
@@ -67,6 +67,7 @@ export async function PATCH(req: Request) {
     }
     if ('notify_cashier_closing_wa' in body) update.notify_cashier_closing_wa = !!body.notify_cashier_closing_wa
     if ('notify_supplier_wa' in body) update.notify_supplier_wa = !!body.notify_supplier_wa
+    if ('staff_salary_visible' in body) update.staff_salary_visible = !!body.staff_salary_visible
     if ('logo_url' in body) {
       // الشعار يُرفع لتخزين Supabase الخاص بالمشروع — ما نقبل روابط خارجية
       const url = String(body.logo_url || '')
