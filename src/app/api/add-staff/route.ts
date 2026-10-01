@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { encryptPin } from '@/lib/pinVault'
+import { encryptPinSafe } from '@/lib/pinVault'
 import bcrypt from 'bcryptjs'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
@@ -52,17 +52,18 @@ export async function POST(req: Request) {
 
     const { data: newStaff, error } = await supabase
       .from('staff_members')
-      .insert({ org_id, branch_id: effectiveBranchId || null, name, phone, pin: pinHash, pin_enc: encryptPin(String(pin)), is_active: true, permissions: permissions || {dispense:false,inventory:false,purchases:false,reports:false}, role: role === 'cashier' ? 'cashier' : 'staff', send_closing_whatsapp: send_closing_whatsapp !== false, addon_subscription_id: capacity.addonSubscriptionId })
+      .insert({ org_id, branch_id: effectiveBranchId || null, name, phone, pin: pinHash, pin_enc: encryptPinSafe(String(pin)), is_active: true, permissions: permissions || {dispense:false,inventory:false,purchases:false,reports:false}, role: role === 'cashier' ? 'cashier' : 'staff', send_closing_whatsapp: send_closing_whatsapp !== false, addon_subscription_id: capacity.addonSubscriptionId })
       .select()
       .single()
 
-    if (error) return NextResponse.json({ error: 'حدث خطأ أثناء الإضافة' }, { status: 500 })
+    if (error) { console.error('ADD_STAFF_FAILED', error); return NextResponse.json({ error: 'حدث خطأ أثناء الإضافة' }, { status: 500 }) }
 
     const safeStaff = { ...(newStaff as any) }
     delete safeStaff.pin
     delete safeStaff.pin_enc
     return NextResponse.json({ success: true, staff: safeStaff })
-  } catch {
+  } catch (e) {
+    console.error('ADD_STAFF_FAILED', e)
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
 }

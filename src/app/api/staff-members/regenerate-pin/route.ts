@@ -4,7 +4,7 @@ import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { loadOwnedStaff } from '@/lib/staffAccess'
-import { encryptPin } from '@/lib/pinVault'
+import { encryptPinSafe } from '@/lib/pinVault'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,10 +25,11 @@ export async function POST(req: Request) {
     if (!staff) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
 
     const pin = String(crypto.randomInt(1000, 10000))
-    const { error } = await db.from('staff_members').update({ pin: await bcrypt.hash(pin, 10), pin_enc: encryptPin(pin) } as any).eq('id', id).eq('org_id', org_id)
-    if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+    const { error } = await db.from('staff_members').update({ pin: await bcrypt.hash(pin, 10), pin_enc: encryptPinSafe(pin) } as any).eq('id', id).eq('org_id', org_id)
+    if (error) { console.error('REGENERATE_PIN_FAILED', error); return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 }) }
     return NextResponse.json({ success: true, pin })
-  } catch {
+  } catch (e) {
+    console.error('REGENERATE_PIN_FAILED', e)
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
 }
