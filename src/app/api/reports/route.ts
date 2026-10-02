@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { selectAll } from '@/lib/selectAll'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,18 +43,20 @@ export async function GET(req: Request) {
 
     if (type === 'movements') {
       const movementType = searchParams.get('movement_type') === 'waste' ? 'waste' : 'out'
-      const { data, error } = await movementsOf(movementType,
+      const { data, error } = await selectAll(() => movementsOf(movementType,
         '*,products!inner(name,unit,org_id,branch_id),profiles!profile_id(full_name),staff_members!staff_id(name)')
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }).order('id', { ascending: false }))
       if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
       return NextResponse.json({ success: true, movements: data || [] })
     }
 
     if (type === 'purchases') {
-      let q = db.from('purchases').select('id,created_at,name,category,amount,vat_amount,total_amount,supplier,invoice_image,qty,unit,has_vat')
-        .eq('org_id', org_id).is('deleted_at', null).gte('created_at', start!).lte('created_at', end!)
-      if (bid) q = q.eq('branch_id', bid)
-      const { data, error } = await q.order('created_at', { ascending: false })
+      const { data, error } = await selectAll(() => {
+        let q = db.from('purchases').select('id,created_at,name,category,amount,vat_amount,total_amount,supplier,invoice_image,qty,unit,has_vat')
+          .eq('org_id', org_id).is('deleted_at', null).gte('created_at', start!).lte('created_at', end!)
+        if (bid) q = q.eq('branch_id', bid)
+        return q.order('created_at', { ascending: false }).order('id', { ascending: false })
+      })
       if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
       return NextResponse.json({ success: true, purchases: data || [] })
     }
@@ -75,45 +78,66 @@ export async function GET(req: Request) {
     }
 
     if (type === 'inventory') {
-      let pq = db.from('products').select('id,name,unit,qty,reorder_point,category').eq('org_id', org_id).eq('is_active', true)
-      if (bid) pq = pq.eq('branch_id', bid)
-      let mq = db.from('stock_movements').select('qty_change,type,products!inner(name,org_id,branch_id)').eq('products.org_id', org_id)
-        .gte('created_at', start!).lte('created_at', end!)
-      if (bid) mq = mq.eq('products.branch_id', bid)
-      let puq = db.from('purchases').select('name,qty,unit,category').eq('org_id', org_id).eq('category', 'مخزون').is('deleted_at', null)
-        .gte('created_at', start!).lte('created_at', end!)
-      if (bid) puq = puq.eq('branch_id', bid)
-      const [prods, mvs, pus] = await Promise.all([pq.order('name'), mq, puq])
+      const [prods, mvs, pus] = await Promise.all([
+        selectAll(() => {
+          let pq = db.from('products').select('id,name,unit,qty,reorder_point,category').eq('org_id', org_id).eq('is_active', true)
+          if (bid) pq = pq.eq('branch_id', bid)
+          return pq.order('name').order('id')
+        }),
+        selectAll(() => {
+          let mq = db.from('stock_movements').select('qty_change,type,products!inner(name,org_id,branch_id)').eq('products.org_id', org_id)
+            .gte('created_at', start!).lte('created_at', end!)
+          if (bid) mq = mq.eq('products.branch_id', bid)
+          return mq.order('id')
+        }),
+        selectAll(() => {
+          let puq = db.from('purchases').select('name,qty,unit,category').eq('org_id', org_id).eq('category', 'مخزون').is('deleted_at', null)
+            .gte('created_at', start!).lte('created_at', end!)
+          if (bid) puq = puq.eq('branch_id', bid)
+          return puq.order('id')
+        }),
+      ])
       if (prods.error || mvs.error || pus.error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
       return NextResponse.json({ success: true, products: prods.data || [], movements: mvs.data || [], purchases: pus.data || [] })
     }
 
     if (type === 'attendance') {
-      let q = db.from('staff_attendance').select('recorded_at,type,staff_name,staff_id').eq('org_id', org_id)
-        .gte('recorded_at', start!).lte('recorded_at', end!).order('recorded_at', { ascending: true })
-      if (bid) q = q.eq('branch_id', bid)
-      const { data, error } = await q
+      const { data, error } = await selectAll(() => {
+        let q = db.from('staff_attendance').select('recorded_at,type,staff_name,staff_id').eq('org_id', org_id)
+          .gte('recorded_at', start!).lte('recorded_at', end!).order('recorded_at', { ascending: true }).order('id')
+        if (bid) q = q.eq('branch_id', bid)
+        return q
+      })
       if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
       return NextResponse.json({ success: true, records: data || [] })
     }
 
     if (type === 'summary') {
       const startDate = start!.slice(0, 10), endDate = end!.slice(0, 10)
-      let puq = db.from('purchases').select('amount,total_amount,vat_amount,created_at,branch_id').eq('org_id', org_id).is('deleted_at', null)
-        .gte('created_at', start!).lte('created_at', end!)
-      if (bid) puq = puq.eq('branch_id', bid)
-      let invq = db.from('products').select('qty,reorder_point').eq('org_id', org_id).eq('is_active', true)
-      if (bid) invq = invq.eq('branch_id', bid)
-      let cq = db.from('cashier_closings').select('status').eq('org_id', org_id).gte('closing_date', startDate).lte('closing_date', endDate)
-      if (bid) cq = cq.eq('branch_id', bid)
+      const puq = selectAll(() => {
+        let q = db.from('purchases').select('amount,total_amount,vat_amount,created_at,branch_id').eq('org_id', org_id).is('deleted_at', null)
+          .gte('created_at', start!).lte('created_at', end!)
+        if (bid) q = q.eq('branch_id', bid)
+        return q.order('id')
+      })
+      const invq = selectAll(() => {
+        let q = db.from('products').select('qty,reorder_point').eq('org_id', org_id).eq('is_active', true)
+        if (bid) q = q.eq('branch_id', bid)
+        return q.order('id')
+      })
+      const cq = selectAll(() => {
+        let q = db.from('cashier_closings').select('status').eq('org_id', org_id).gte('closing_date', startDate).lte('closing_date', endDate)
+        if (bid) q = q.eq('branch_id', bid)
+        return q.order('id')
+      })
       let rq = db.from('stock_movements').select('id,qty_change,type,created_at,products!inner(name,unit,org_id,branch_id)')
         .eq('products.org_id', org_id).order('created_at', { ascending: false }).limit(10)
       if (bid) rq = rq.eq('products.branch_id', bid)
 
       const [mv, pu, wv, inv, closings, recent] = await Promise.all([
-        movementsOf('out', 'qty_change,created_at,products!inner(name,org_id,branch_id)'),
+        selectAll(() => movementsOf('out', 'qty_change,created_at,products!inner(name,org_id,branch_id)').order('id')),
         puq,
-        movementsOf('waste', 'qty_change,created_at,products!inner(name,org_id,branch_id)'),
+        selectAll(() => movementsOf('waste', 'qty_change,created_at,products!inner(name,org_id,branch_id)').order('id')),
         invq, cq, rq,
       ])
       if (mv.error || pu.error || wv.error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })

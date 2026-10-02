@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { selectAll } from '@/lib/selectAll'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 
@@ -39,26 +40,30 @@ async function computeLive(supabase: any, org_id: string, monthParam: string, ef
 
   await ensureGenerated(supabase, org_id, monthStart, effectiveBranchId)
 
-  let closingsQ = supabase
-    .from('cashier_closings')
-    .select('total_sales')
-    .eq('org_id', org_id)
-    .gte('closing_date', monthStart)
-    .lte('closing_date', monthEndDate)
-  if (effectiveBranchId) closingsQ = (closingsQ as any).eq('branch_id', effectiveBranchId)
-  const { data: closings } = await closingsQ
+  const { data: closings } = await selectAll(() => {
+    let closingsQ = supabase
+      .from('cashier_closings')
+      .select('total_sales')
+      .eq('org_id', org_id)
+      .gte('closing_date', monthStart)
+      .lte('closing_date', monthEndDate)
+    if (effectiveBranchId) closingsQ = (closingsQ as any).eq('branch_id', effectiveBranchId)
+    return closingsQ.order('id')
+  })
 
   const totalIn = (closings || []).reduce((s: number, c: any) => s + Number(c.total_sales || 0), 0)
   const closingsCount = (closings || []).length
 
-  let purchasesQ = supabase
-    .from('purchases')
-    .select('category,total_amount')
-    .eq('org_id', org_id)
-    .gte('created_at', monthStartTs)
-    .lte('created_at', monthEndTs)
-  if (effectiveBranchId) purchasesQ = (purchasesQ as any).eq('branch_id', effectiveBranchId)
-  const { data: purchases } = await purchasesQ
+  const { data: purchases } = await selectAll(() => {
+    let purchasesQ = supabase
+      .from('purchases')
+      .select('category,total_amount')
+      .eq('org_id', org_id)
+      .gte('created_at', monthStartTs)
+      .lte('created_at', monthEndTs)
+    if (effectiveBranchId) purchasesQ = (purchasesQ as any).eq('branch_id', effectiveBranchId)
+    return purchasesQ.order('id')
+  })
 
   const purchasesList = purchases || []
   const inventoryPurchases = purchasesList.filter((p: any) => p.category === 'مخزون').reduce((s: number, p: any) => s + Number(p.total_amount || 0), 0)

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { selectAll } from '@/lib/selectAll'
 import { loadOvertimeSettings, overtimeMinutes, overtimeHourRate, type Shift } from '@/lib/payroll'
 
 const sb = () => createClient(
@@ -102,12 +103,14 @@ export async function GET(req: Request) {
     const loadEvents = async (startDay: string, endDay: string) => {
       // نهاية الفترة + 20 ساعة عشان انصراف آخر يوم بعد منتصف الليل
       const end = new Date(Date.parse(`${endDay}T23:59:59.999+03:00`) + 20 * 3600e3).toISOString()
-      let q = supabase.from('staff_attendance').select('staff_id,type,recorded_at,late_minutes,penalty_amount,is_excused')
-        .eq('org_id', org_id).gte('recorded_at', `${startDay}T00:00:00+03:00`).lte('recorded_at', end).order('recorded_at')
-      if (effectiveBranchId) q = q.eq('branch_id', effectiveBranchId)
-      if (staff_id) q = q.eq('staff_id', staff_id)
-      const { data } = await q
-      return (data || []) as Ev[]
+      const { data } = await selectAll<Ev>(() => {
+        let q = supabase.from('staff_attendance').select('staff_id,type,recorded_at,late_minutes,penalty_amount,is_excused')
+          .eq('org_id', org_id).gte('recorded_at', `${startDay}T00:00:00+03:00`).lte('recorded_at', end).order('recorded_at').order('id')
+        if (effectiveBranchId) q = q.eq('branch_id', effectiveBranchId)
+        if (staff_id) q = q.eq('staff_id', staff_id)
+        return q
+      })
+      return data
     }
 
     // ═══ وضع الفترة الزمنية — ملخّص لكل موظف، + سجل يومي لو انفلتر موظف واحد ═══

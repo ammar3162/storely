@@ -54,11 +54,14 @@ export async function exportReportPdf(opts: PdfExportOptions) {
   overlay.style.overflow = 'auto'
   overlay.style.display = 'flex'
   overlay.style.justifyContent = 'center'
+  overlay.style.alignItems = 'flex-start'   // ارتفاع الصفحة = ارتفاع المحتوى، مو ارتفاع الشاشة (يمنع القص بالجوال)
   overlay.style.padding = '20px'
   document.body.appendChild(overlay)
 
   const container = document.createElement('div')
   container.style.width = '780px'
+  container.style.minWidth = '780px'   // بالجوال الشاشة أضيق — بدونها ينضغط التقرير ويطلع مقصوص/صغير
+  container.style.flexShrink = '0'
   container.style.background = 'white'
   container.style.fontFamily = "'IBM Plex Sans Arabic', system-ui, sans-serif"
   container.style.direction = 'rtl'
@@ -99,54 +102,70 @@ export async function exportReportPdf(opts: PdfExportOptions) {
 
   function rowDivs(r: Record<string, any>, extra: string) {
     return columns.map(c =>
-      `<div style="flex:1 1 ${colWidth}%;padding:9px 12px;font-size:11px;box-sizing:border-box;text-align:${c.align || 'right'};${extra}">${escapeHtml(r[c.key])}</div>`
+      `<div style="flex:1 1 ${colWidth}%;min-width:0;padding:9px 12px;font-size:11px;box-sizing:border-box;text-align:${c.align || 'right'};overflow-wrap:anywhere;${extra}">${escapeHtml(r[c.key])}</div>`
     ).join('')
   }
 
   function rowsTableHtml(rowsChunk: Record<string, any>[], includeTotals: boolean) {
     const bodyHtml = rowsChunk.map((r, i) => `
-      <div style="display:flex;background:${i % 2 === 0 ? '#ffffff' : '#f8fafc'};border-bottom:1px solid #e2e8f0">
+      <div data-pdf-row style="display:flex;background:${i % 2 === 0 ? '#ffffff' : '#f8fafc'};border-bottom:1px solid #e2e8f0">
         ${rowDivs(r, 'color:#1e293b')}
       </div>
     `).join('')
     const totalsHtml = includeTotals && totalsRow
-      ? `<div style="display:flex;background:#f0fdfa;border-top:2px solid #029FA2">
+      ? `<div data-pdf-totals style="display:flex;background:#f0fdfa;border-top:2px solid #029FA2">
           ${rowDivs(totalsRow, 'color:#029FA2;font-weight:800')}
         </div>`
       : ''
     return `
       <div style="width:100%;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">
-        <div style="display:flex;background:#0f172a;color:white">${colDivsHeader}</div>
+        <div data-pdf-thead style="display:flex;background:#0f172a;color:white">${colDivsHeader}</div>
         ${bodyHtml}${totalsHtml}
       </div>
     `
   }
 
   const footerHtml = `
-    <div style="margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;text-align:center;line-height:1.8">
+    <div data-pdf-footer style="margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;text-align:center;line-height:1.8">
       <div>تم إنشاء هذا التقرير تلقائياً عبر نظام Storely</div>
       <div style="margin-top:2px">© ${new Date().getFullYear()} Storely — جميع الحقوق محفوظة</div>
     </div>
   `
 
-  // تقسيم الصفوف لمجموعات (صفحة = مجموعة صغيرة، آخر صفحة فيها الإجمالي دائماً)
-  const ROWS_PER_PAGE_FIRST = 9
-  const ROWS_PER_PAGE_OTHER = 12
+  // تقسيم الصفوف لصفحات حسب الطول الفعلي لكل صف — الصف اللي فيه نص طويل (سبب، ملاحظة) ياخذ
+  // أكثر من سطر، فالعدد الثابت للصفوف كان ممكن يطلّع الصفحة أطول من A4 وينقطع آخرها.
+  // نرسم كل شي مرة وحدة، نقيس، ثم نوزّع.
+  const PAGE_PX = Math.floor((277 / 190) * 780)   // ارتفاع A4 المتاح (277 مم) بنفس مقياس عرض 190 مم = 780px
+  const PAD = 64                                   // padding:32px فوق وتحت
+  container.innerHTML = `<div style="padding:32px"><div data-pdf-top>${headerHtml + summaryHtml}</div>${rowsTableHtml(rows, true)}${footerHtml}</div>`
+  await new Promise(r => setTimeout(r, 60))
+  const h = (el: Element | null) => (el ? (el as HTMLElement).getBoundingClientRect().height : 0)
+  const topH = h(container.querySelector('[data-pdf-top]'))
+  const theadH = h(container.querySelector('[data-pdf-thead]')) + 2
+  const totalsH = h(container.querySelector('[data-pdf-totals]'))
+  const footerH = h(container.querySelector('[data-pdf-footer]')) + 24
+  const rowHs = Array.from(container.querySelectorAll('[data-pdf-row]')).map(h)
+
   type PageChunk = { rowsChunk: Record<string, any>[]; includeHeader: boolean; includeTotals: boolean; isLast: boolean }
   const pages: PageChunk[] = []
-  if (rows.length === 0) {
-    pages.push({ rowsChunk: [], includeHeader: true, includeTotals: true, isLast: true })
-  } else {
-    let idx = 0
-    let first = true
-    while (idx < rows.length) {
-      const perPage = first ? ROWS_PER_PAGE_FIRST : ROWS_PER_PAGE_OTHER
-      const chunk = rows.slice(idx, idx + perPage)
-      idx += perPage
-      const isLast = idx >= rows.length
-      pages.push({ rowsChunk: chunk, includeHeader: first, includeTotals: isLast, isLast })
-      first = false
+  const tailH = totalsH + footerH
+  let idx = 0
+  let first = true
+  while (true) {
+    const avail = PAGE_PX - PAD - theadH - (first ? topH : 0)
+    let used = 0, end = idx
+    while (end < rows.length && (end === idx || used + rowHs[end] <= avail)) { used += rowHs[end]; end++ }
+    const isLast = end >= rows.length
+    if (isLast && used + tailH > avail && end - idx > 1) {
+      // الإجمالي والتذييل ما يدخلون — ننقل آخر صفوف للصفحة الجاية عشان الإجمالي يجي معها
+      while (end - idx > 1 && used + tailH > avail) { end--; used -= rowHs[end] }
+      pages.push({ rowsChunk: rows.slice(idx, end), includeHeader: first, includeTotals: false, isLast: false })
+    } else {
+      pages.push({ rowsChunk: rows.slice(idx, end), includeHeader: first, includeTotals: isLast, isLast })
+      if (isLast) break
     }
+    idx = end
+    first = false
   }
 
   try {
@@ -168,10 +187,13 @@ export async function exportReportPdf(opts: PdfExportOptions) {
       await new Promise(r => setTimeout(r, 120))
       const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff', useCORS: true })
       const imgData = canvas.toDataURL('image/jpeg', 0.95)
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      let w = imgWidth
+      let imgHeight = (canvas.height * imgWidth) / canvas.width
+      // احتياط: لو صف واحد أطول من صفحة كاملة نصغّر الصورة بدل ما تنقطع
+      if (imgHeight > 277) { w = imgWidth * (277 / imgHeight); imgHeight = 277 }
 
       if (p > 0) pdf.addPage()
-      pdf.addImage(imgData, 'JPEG', marginX, 10, imgWidth, imgHeight)
+      pdf.addImage(imgData, 'JPEG', marginX + (imgWidth - w) / 2, 10, w, imgHeight)
     }
 
     pdf.save(fileName)

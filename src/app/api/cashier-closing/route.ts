@@ -4,6 +4,7 @@ import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { sendPushToOrg } from '@/lib/push'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { computeBusinessDate } from '@/lib/businessDate'
+import { selectAll } from '@/lib/selectAll'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -206,18 +207,19 @@ export async function GET(req: Request) {
     const effectiveBranchId = enforcedBranchId(access, branch_id)
 
     const supabase = sb()
-    let query = supabase
-      .from('cashier_closings')
-      .select('id,branch_id,staff_id,closing_date,created_at,staff_name,total_sales,network_amount,cash_amount,total_purchases,difference,status,deficit_reason,sales_image,network_image,purchases')
-      .eq('org_id', org_id)
-      .order('closing_date', { ascending: false })
-      .order('created_at', { ascending: false })
-
-    if (effectiveBranchId) query = query.eq('branch_id', effectiveBranchId)
-    if (from) query = query.gte('closing_date', from)
-    if (to) query = query.lte('closing_date', to)
-
-    const { data, error } = await query
+    const { data, error } = await selectAll(() => {
+      let query = supabase
+        .from('cashier_closings')
+        .select('id,branch_id,staff_id,closing_date,created_at,staff_name,total_sales,network_amount,cash_amount,total_purchases,difference,status,deficit_reason,sales_image,network_image,purchases')
+        .eq('org_id', org_id)
+        .order('closing_date', { ascending: false })
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+      if (effectiveBranchId) query = query.eq('branch_id', effectiveBranchId)
+      if (from) query = query.gte('closing_date', from)
+      if (to) query = query.lte('closing_date', to)
+      return query
+    })
 
     if (error) {
       return NextResponse.json({ error: 'حدث خطأ أثناء جلب التقارير' }, { status: 500 })
