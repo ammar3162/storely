@@ -107,6 +107,9 @@ export async function PATCH(req: Request) {
       if (effectiveBranchId && effectiveBranchId !== id) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
       update.latitude = lat
       update.longitude = lng
+      // دقة الموقع وقت التحديد — تسجيل الحضور يوسّع النطاق بقدرها
+      const acc = Number(body.accuracy_m)
+      update.location_accuracy_m = Number.isFinite(acc) && acc > 0 ? Math.min(Math.round(acc), 300) : null
     } else {
       if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
 

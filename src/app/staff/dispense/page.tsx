@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getStaffOrg } from '@/lib/session'
+import { Wheat, Milk, SprayCan, CupSoda, Drumstick, Carrot, FileText, Package, Tag, Search, Globe, LogOut, Send, Boxes, ShoppingCart, ChevronLeft, CheckCircle2, Zap } from 'lucide-react'
 
 interface StaffSession {
   id: string; name: string; org_id: string; branch_id: string | null
@@ -44,17 +45,18 @@ function colorFor(cat: string) {
   return CATEGORY_COLORS[hash % CATEGORY_COLORS.length]
 }
 
-function iconFor(cat: string) {
+function iconFor(cat: string, size = 20) {
   const c = (cat||'').toLowerCase()
-  if(c.includes('غذائ')||c.includes('طعام')||c.includes('اكل')||c.includes('أكل')) return '🍞'
-  if(c.includes('لبن')||c.includes('حليب')||c.includes('بيض')||c.includes('ألبان')) return '🥛'
-  if(c.includes('نظاف')||c.includes('تنظيف')) return '🧴'
-  if(c.includes('مشروب')) return '🥤'
-  if(c.includes('لحم')||c.includes('دجاج')) return '🍗'
-  if(c.includes('خضار')||c.includes('فواكه')) return '🥦'
-  if(c.includes('ورق')||c.includes('مكتب')) return '📄'
-  if(c === 'أخرى' || c.includes('اخرى')) return '📦'
-  return '🏷️'
+  const p = { size, strokeWidth: 2 }
+  if(c.includes('غذائ')||c.includes('طعام')||c.includes('اكل')||c.includes('أكل')||c.includes('خبز')) return <Wheat {...p}/>
+  if(c.includes('لبن')||c.includes('حليب')||c.includes('بيض')||c.includes('ألبان')||c.includes('جبن')) return <Milk {...p}/>
+  if(c.includes('نظاف')||c.includes('تنظيف')) return <SprayCan {...p}/>
+  if(c.includes('مشروب')||c.includes('عصير')) return <CupSoda {...p}/>
+  if(c.includes('لحم')||c.includes('دجاج')) return <Drumstick {...p}/>
+  if(c.includes('خضار')||c.includes('فواكه')) return <Carrot {...p}/>
+  if(c.includes('ورق')||c.includes('مكتب')) return <FileText {...p}/>
+  if(c === 'أخرى' || c.includes('اخرى')) return <Package {...p}/>
+  return <Tag {...p}/>
 }
 
 function StaffPageInner() {
@@ -344,28 +346,27 @@ function StaffPageInner() {
 
   const isRTL = lang==='ar'||lang==='ur'
   const tabs = [
-    {key:'dispense',label:'📤 الصرف',show:session.permissions?.dispense},
-    {key:'inventory',label:'📦 المخزون',show:session.permissions?.inventory},
-    {key:'purchases',label:'🛒 المشتريات',show:session.permissions?.purchases},
-    {key:'reports',label:'📊 التقارير',show:session.permissions?.reports},
+    {key:'dispense',label:'الصرف',icon:<Send size={15} strokeWidth={2.25}/>,show:session.permissions?.dispense},
+    {key:'inventory',label:'المخزون',icon:<Boxes size={15} strokeWidth={2.25}/>,show:session.permissions?.inventory},
+    {key:'purchases',label:'المشتريات',icon:<ShoppingCart size={15} strokeWidth={2.25}/>,show:session.permissions?.purchases},
   ].filter(t=>t.show)
 
   return (
-    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:isRTL?'rtl':'ltr'}}>
+    <div style={{minHeight:'100vh',background:'#f4f6f8',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:isRTL?'rtl':'ltr'}}>
       <style>{`
         @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-        .card{background:white;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:transform .15s,box-shadow .15s}
+        .card{background:white;border-radius:16px;border:1px solid #e8ecf1;box-shadow:0 1px 2px rgba(16,24,40,.04);transition:transform .15s,box-shadow .15s}
         .card:active{transform:scale(.98)}
         .tab-btn{padding:10px 18px;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;transition:all .2s}
         .lang-btn{padding:6px 12px;border-radius:20px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;transition:all .2s}
-        .prod-btn{background:white;border:none;border-radius:14px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-family:inherit;text-align:right;width:100%;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:all .15s}
+        .prod-btn{background:white;border:1px solid #e8ecf1;border-radius:14px;padding:15px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-family:inherit;text-align:start;width:100%;box-shadow:0 1px 2px rgba(16,24,40,.04);transition:all .15s}
         .prod-btn:active{transform:scale(.97);box-shadow:0 1px 4px rgba(0,0,0,.1)}
-        input:focus,select:focus{border-color:#029FA2!important;outline:none!important;box-shadow:0 0 0 3px rgba(22,163,74,.1)!important}
+        input:focus,select:focus{border-color:#0f766e!important;outline:none!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)!important}
         @keyframes fadeUpStagger{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
         .cat-card{animation:fadeUpStagger .4s cubic-bezier(0.34,1.56,0.64,1) both;transition:transform .15s,box-shadow .15s}
         .cat-card:active{transform:scale(.94)}
-        @media(hover:hover){.cat-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.16)}}
+        @media(hover:hover){.cat-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(15,23,42,.08)}}
         .mu-btn{animation:fadeUpStagger .35s ease both;transition:transform .15s}
         .mu-btn:active{transform:scale(.95)}
       `}</style>
@@ -419,59 +420,56 @@ function StaffPageInner() {
       )}
 
       {/* Header */}
-      <div style={{background:'linear-gradient(135deg,#042f2e,#0C213B)',padding:'0',position:'sticky',top:0,zIndex:100,boxShadow:'0 4px 20px rgba(0,0,0,.2)'}}>
-        {/* Top bar */}
-        <div style={{padding:'14px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <div style={{display:'flex',alignItems:'center',gap:10}}>
-            {orgLogo ? (
-              <img src={orgLogo} alt="" style={{width:38,height:38,borderRadius:10,objectFit:'cover',border:'2px solid rgba(255,255,255,.2)'}}/>
-            ) : (
-              <div style={{width:38,height:38,borderRadius:10,background:'rgba(255,255,255,.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>👤</div>
-            )}
-            <div>
-              <div style={{fontSize:15,fontWeight:800,color:'white'}}>{session.name}</div>
-              <div style={{fontSize:11,color:'rgba(255,255,255,.6)',marginTop:1}}>{session.org_name}{session.branch_name?` · ${session.branch_name}`:''}</div>
+      <div style={{background:'linear-gradient(160deg,#0b3b3a 0%,#0f766e 100%)',position:'sticky',top:0,zIndex:100,boxShadow:'0 2px 12px rgba(15,23,42,.12)'}}>
+        <div style={{maxWidth:560,margin:'0 auto',padding:'14px 16px',display:'flex',alignItems:'center',gap:10}}>
+          <button onClick={()=>router.push('/staff/choose')} aria-label={T('back',lang)}
+            style={{height:38,padding:'0 12px 0 10px',flexShrink:0,background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.18)',borderRadius:12,color:'white',display:'flex',alignItems:'center',gap:4,cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:700}}>
+            <ChevronLeft size={18} strokeWidth={2.25} style={{transform:isRTL?'scaleX(-1)':'none'}}/>{T('back',lang)}
+          </button>
+          <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:10}}>
+            {orgLogo && <img src={orgLogo} alt="" style={{width:36,height:36,borderRadius:10,objectFit:'cover',background:'white',flexShrink:0}}/>}
+            <div style={{minWidth:0}}>
+              <div style={{fontSize:15,fontWeight:800,color:'white',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{session.name}</div>
+              <div style={{fontSize:11,color:'rgba(255,255,255,.7)',marginTop:1,whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{session.org_name}{session.branch_name?` · ${session.branch_name}`:''}</div>
             </div>
           </div>
-          <button onClick={()=>router.push('/staff/choose')} style={{background:'rgba(255,255,255,.1)',color:'white',border:'1px solid rgba(255,255,255,.2)',borderRadius:10,padding:'7px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',gap:5}}>
-            📍 الحضور
-          </button>
-          <button onClick={logout} style={{background:'rgba(255,255,255,.1)',color:'white',border:'1px solid rgba(255,255,255,.2)',borderRadius:10,padding:'7px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',backdropFilter:'blur(4px)'}}>
-            {T('logout',lang)}
+          <div style={{position:'relative' as const,flexShrink:0}}>
+            <button onClick={()=>setShowLangMenu(v=>!v)} disabled={translating}
+              style={{height:38,padding:'0 11px',background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.18)',borderRadius:12,color:'white',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6,opacity:translating?0.6:1}}>
+              <Globe size={15} strokeWidth={2.25}/>{LANGUAGES.find(l=>l.code===lang)?.label || 'العربية'}
+            </button>
+            {showLangMenu && (
+              <div style={{position:'absolute' as const,top:'100%',insetInlineEnd:0,marginTop:6,background:'white',borderRadius:12,border:'1px solid #e8ecf1',boxShadow:'0 12px 28px rgba(15,23,42,.16)',overflow:'hidden',minWidth:150,zIndex:50}}>
+                {LANGUAGES.map(l=>(
+                  <button key={l.code}
+                    onClick={()=>{setLang(l.code);localStorage.setItem('staff_lang',l.code);if(l.code!=='ar'&&session)fetchTranslation(session,l.code);setShowLangMenu(false)}}
+                    style={{width:'100%',padding:'11px 14px',border:'none',borderBottom:'1px solid #f1f5f9',background:lang===l.code?'#f0fdfa':'white',color:lang===l.code?'#0f766e':'#1e293b',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'start' as const,display:'block'}}>
+                    {lang===l.code?'✓ ':''}{l.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button onClick={logout} aria-label={T('logout',lang)}
+            style={{width:38,height:38,flexShrink:0,background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.18)',borderRadius:12,color:'white',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <LogOut size={16} strokeWidth={2.25}/>
           </button>
         </div>
+      </div>
 
-        {/* Tabs — تختفي لو وصلنا برابط مباشر لصلاحية محددة (?tab=) */}
-        {tabs.length > 1 && !forcedTab && (
-          <div style={{display:'flex',gap:4,padding:'0 16px',overflowX:'auto'}}>
+      {/* Tabs — تختفي لو وصلنا برابط مباشر لصلاحية محددة (?tab=) */}
+      {tabs.length > 1 && !forcedTab && (
+        <div style={{maxWidth:560,margin:'0 auto',padding:'14px 16px 0'}}>
+          <div style={{display:'flex',gap:4,background:'#e9edf1',borderRadius:14,padding:4}}>
             {tabs.map(t=>(
               <button key={t.key} className="tab-btn" onClick={()=>{setTab(t.key as any);if(t.key==='inventory'&&session)loadProducts(session)}}
-                style={{background:tab===t.key?'white':'transparent',color:tab===t.key?'#042f2e':'rgba(255,255,255,.7)',borderBottom:tab===t.key?'none':'2px solid transparent',borderRadius:tab===t.key?'12px 12px 0 0':'12px 12px 0 0',paddingBottom:tab===t.key?12:10,marginBottom:tab===t.key?-2:0}}>
-                {t.label}
+                style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'9px 8px',background:tab===t.key?'white':'transparent',color:tab===t.key?'#0f766e':'#64748b',boxShadow:tab===t.key?'0 1px 3px rgba(15,23,42,.1)':'none',borderRadius:11}}>
+                {t.icon}{t.label}
               </button>
             ))}
           </div>
-        )}
-
-        {/* Language selector — زر واحد + قائمة منسدلة */}
-        <div style={{padding:'10px 16px',background:'rgba(0,0,0,.1)',position:'relative' as const}}>
-          <button onClick={()=>setShowLangMenu(v=>!v)} disabled={translating}
-            style={{background:'rgba(255,255,255,.15)',color:'white',border:'none',borderRadius:20,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6,opacity:translating?0.6:1}}>
-            🌐 {LANGUAGES.find(l=>l.code===lang)?.label || 'العربية'} {showLangMenu?'▴':'▾'}
-          </button>
-          {showLangMenu && (
-            <div style={{position:'absolute' as const,top:'100%',right:16,marginTop:6,background:'white',borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.2)',overflow:'hidden',minWidth:140,zIndex:50}}>
-              {LANGUAGES.map(l=>(
-                <button key={l.code}
-                  onClick={()=>{setLang(l.code);localStorage.setItem('staff_lang',l.code);if(l.code!=='ar'&&session)fetchTranslation(session,l.code);setShowLangMenu(false)}}
-                  style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#f0fdfa':'white',color:lang===l.code?'#029FA2':'#1c1c1a',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
-                  {lang===l.code?'✓ ':''}{l.label}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
-      </div>
+      )}
 
       {/* Translating banner */}
       {translating && (
@@ -481,10 +479,13 @@ function StaffPageInner() {
       )}
 
       {/* ═══ DISPENSE TAB ═══ */}
-      <div style={{display:tab==='dispense'&&session.permissions?.dispense?'block':'none',padding:'16px 20px',maxWidth:560,margin:'0 auto'}}>
-        <input value={search} onChange={e=>{setSearch(e.target.value);setActiveCategory(null)}}
-          style={{width:'100%',padding:'13px 16px',border:'2px solid #e2e8f0',borderRadius:14,fontSize:15,background:'white',color:'#1e293b',fontFamily:'inherit',fontWeight:500,boxSizing:'border-box' as const,marginBottom:16}}
-          placeholder={`🔍 ${T('search',lang)}`}/>
+      <div style={{display:tab==='dispense'&&session.permissions?.dispense?'block':'none',padding:'14px 16px 28px',maxWidth:560,margin:'0 auto'}}>
+        <div style={{position:'relative' as const,marginBottom:14}}>
+          <Search size={18} strokeWidth={2} style={{position:'absolute',top:'50%',transform:'translateY(-50%)',insetInlineStart:14,color:'#94a3b8',pointerEvents:'none'}}/>
+          <input value={search} onChange={e=>{setSearch(e.target.value);setActiveCategory(null)}}
+            style={{width:'100%',height:48,paddingInlineStart:42,paddingInlineEnd:14,border:'1px solid #e2e8f0',borderRadius:14,fontSize:15,background:'white',color:'#1e293b',fontFamily:'inherit',fontWeight:500,boxSizing:'border-box' as const}}
+            placeholder={T('search',lang)}/>
+        </div>
 
         {loading ? (
           <div style={{textAlign:'center',padding:60,color:'#94a3b8',fontSize:15}}>{T('loading',lang)}</div>
@@ -505,44 +506,52 @@ function StaffPageInner() {
         ) : !activeCategory ? (
           <div style={{animation:'fadeIn .3s'}}>
             {todayCount>0 && (
-              <div style={{display:'flex',alignItems:'center',gap:8,background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:14,padding:'10px 16px',marginBottom:14}}>
-                <span style={{fontSize:18}}>✅</span>
-                <span style={{fontSize:13,fontWeight:700,color:'#0f766e'}}>صرفت {todayCount} صنف اليوم — استمر!</span>
+              <div style={{display:'inline-flex',alignItems:'center',gap:7,background:'#ecfdf5',color:'#047857',borderRadius:99,padding:'7px 13px',marginBottom:16,fontSize:12.5,fontWeight:700}}>
+                <CheckCircle2 size={15} strokeWidth={2.25}/> صرفت {todayCount} صنف اليوم
               </div>
             )}
             {mostUsed.length>0 && (
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:12,fontWeight:700,color:'#64748b',marginBottom:8}}>⚡ الأكثر استخداماً</div>
-                <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}}>
+                <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,fontWeight:700,color:'#64748b',margin:'0 2px 10px'}}><Zap size={14} strokeWidth={2.25} color="#f59e0b"/> الأكثر استخداماً <span style={{fontWeight:500,color:'#94a3b8'}}>· آخر 14 يوم</span></div>
+                <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4,scrollbarWidth:'none' as const}}>
                   {mostUsed.map((p:any,i:number)=>(
-                    <button key={p.id} className="mu-btn" onClick={()=>setSelected(p)} style={{animationDelay:`${i*0.06}s`,flexShrink:0,background:'white',border:'1.5px solid #e2e8f0',borderRadius:14,padding:'10px 14px',cursor:'pointer',fontFamily:'inherit',minWidth:110,textAlign:'right' as const,boxShadow:'0 2px 6px rgba(0,0,0,.05)'}}>
-                      <div style={{fontSize:12,fontWeight:700,color:'#0f172a',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis',maxWidth:110}}>{tx(p.name)}</div>
-                      <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>صُرف {p.dispense_count} مرة (آخر 14 يوم)</div>
+                    <button key={p.id} className="mu-btn" onClick={()=>setSelected(p)} style={{animationDelay:`${i*0.06}s`,flexShrink:0,background:'white',border:'1px solid #e8ecf1',borderRadius:14,padding:'11px 14px',cursor:'pointer',fontFamily:'inherit',minWidth:118,maxWidth:160,textAlign:'start' as const,boxShadow:'0 1px 2px rgba(16,24,40,.04)'}}>
+                      <div style={{fontSize:13.5,fontWeight:700,color:'#0f172a',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{tx(p.name)}</div>
+                      <div style={{fontSize:11,color:'#94a3b8',marginTop:3,whiteSpace:'nowrap' as const}}>صُرف {p.dispense_count} {p.dispense_count>=3&&p.dispense_count<=10?"مرات":"مرة"}</div>
                     </button>
                   ))}
                 </div>
               </div>
             )}
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+            <div style={{fontSize:12,fontWeight:700,color:'#64748b',margin:'0 2px 10px'}}>الفئات</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
               {categories.map((cat,i)=>(
                 <button key={cat} className="cat-card" onClick={()=>setActiveCategory(cat)}
-                  style={{animationDelay:`${i*0.06}s`,background:colorFor(cat),color:'white',border:'none',borderRadius:20,padding:'28px 16px',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:8,boxShadow:`0 8px 24px ${colorFor(cat)}44`,minHeight:120}}>
-                  <div style={{fontSize:30}}>{iconFor(cat)}</div>
-                  <div style={{fontSize:18,fontWeight:800}}>{tx(cat)}</div>
-                  {lang!=='ar'&&<div style={{fontSize:11,opacity:.7}}>{cat}</div>}
-                  <div style={{fontSize:12,opacity:.85,background:'rgba(255,255,255,.2)',padding:'3px 10px',borderRadius:20}}>{categoriesMap[cat]} {T('items',lang)}</div>
+                  style={{animationDelay:`${i*0.05}s`,gridColumn:categories.length%2===1&&i===categories.length-1?'1 / -1':undefined,background:'white',border:'1px solid #e8ecf1',borderRadius:16,padding:'16px 14px',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'flex-start',gap:12,boxShadow:'0 1px 2px rgba(16,24,40,.04)',minHeight:112,textAlign:'start' as const}}>
+                  <span style={{width:42,height:42,borderRadius:12,background:`${colorFor(cat)}14`,color:colorFor(cat),display:'flex',alignItems:'center',justifyContent:'center'}}>{iconFor(cat)}</span>
+                  <span style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',width:'100%',gap:6}}>
+                    <span style={{minWidth:0}}>
+                      <span style={{display:'block',fontSize:15,fontWeight:800,color:'#0f172a'}}>{tx(cat)}</span>
+                      {lang!=='ar'&&<span style={{display:'block',fontSize:11,color:'#94a3b8'}}>{cat}</span>}
+                      <span style={{display:'block',fontSize:12,color:'#94a3b8',marginTop:2}}>{categoriesMap[cat]} {T('items',lang)}</span>
+                    </span>
+                    <ChevronLeft size={18} strokeWidth={2} color="#cbd5e1" style={{flexShrink:0,transform:isRTL?'none':'scaleX(-1)'}}/>
+                  </span>
                 </button>
               ))}
             </div>
           </div>
         ) : (
           <div style={{animation:'fadeIn .3s'}}>
-            <button onClick={()=>setActiveCategory(null)} style={{background:'none',border:'none',color:'#029FA2',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginBottom:16,padding:0,display:'flex',alignItems:'center',gap:6}}>
-              ← {T('back',lang)}
-            </button>
-            <div style={{marginBottom:16}}>
-              <div style={{fontSize:18,fontWeight:800,color:'#0f172a'}}>{tx(activeCategory)}</div>
-              {lang!=='ar'&&<div style={{fontSize:12,color:'#94a3b8'}}>{activeCategory}</div>}
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
+              <button onClick={()=>setActiveCategory(null)} aria-label={T('back',lang)} style={{width:38,height:38,flexShrink:0,background:'white',border:'1px solid #e2e8f0',borderRadius:12,color:'#334155',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <ChevronLeft size={18} strokeWidth={2.25} style={{transform:isRTL?'scaleX(-1)':'none'}}/>
+              </button>
+              <span style={{width:38,height:38,borderRadius:11,background:`${colorFor(activeCategory)}14`,color:colorFor(activeCategory),display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{iconFor(activeCategory,18)}</span>
+              <div style={{minWidth:0}}>
+                <div style={{fontSize:17,fontWeight:800,color:'#0f172a'}}>{tx(activeCategory)}</div>
+                <div style={{fontSize:12,color:'#94a3b8'}}>{lang!=='ar'?`${activeCategory} · `:''}{categoryProducts.length} {T('items',lang)}</div>
+              </div>
             </div>
             <div style={{display:'flex',flexDirection:'column',gap:8}}>
               {categoryProducts.map(p=>(

@@ -1,4 +1,5 @@
 'use client'
+import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -141,21 +142,14 @@ export default function StaffTasksPage() {
     <div style={{minHeight:'100vh',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',paddingBottom:40}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
-      <div style={{background:'white',borderBottom:'1px solid #ece8e2',padding:'16px 20px'}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
-          <div>
-            <div style={{fontSize:16,fontWeight:800,color:'#1c1c1a'}}>{t('myTasks')}</div>
-            <div style={{fontSize:12,color:'#888780',marginTop:2}}>{session.name}</div>
-          </div>
-          <button onClick={()=>router.back()} style={{background:'#f5f5f4',border:'none',borderRadius:8,padding:'8px 14px',fontSize:12,fontWeight:700,color:'#5f5e5a',cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
-        </div>
+      <StaffHeader title={t('myTasks')} subtitle={session.name} end={
         <div style={{position:'relative' as const}}>
           <button onClick={()=>setShowLangMenu(v=>!v)} disabled={translating}
-            style={{background:'#f5f5f4',color:'#1c1c1a',border:'none',borderRadius:20,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6,opacity:translating?0.6:1}}>
-            🌐 {LANGUAGES.find(l=>l.code===lang)?.label || 'العربية'} {showLangMenu?'▴':'▾'}
+            style={{...staffHeaderBtn,opacity:translating?0.6:1}}>
+            🌐 {LANGUAGES.find(l=>l.code===lang)?.label || 'العربية'}
           </button>
           {showLangMenu && (
-            <div style={{position:'absolute' as const,top:'100%',right:0,marginTop:6,background:'white',border:'1px solid #ece8e2',borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.15)',overflow:'hidden',minWidth:140,zIndex:50}}>
+            <div style={{position:'absolute' as const,top:'100%',insetInlineEnd:0,marginTop:6,background:'white',border:'1px solid #ece8e2',borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.15)',overflow:'hidden',minWidth:140,zIndex:50}}>
               {LANGUAGES.map(l=>(
                 <button key={l.code}
                   onClick={()=>{setLang(l.code);localStorage.setItem('staff_lang',l.code);if(l.code!=='ar')fetchTranslation(l.code);setShowLangMenu(false)}}
@@ -166,7 +160,7 @@ export default function StaffTasksPage() {
             </div>
           )}
         </div>
-      </div>
+      } />
 
       <div style={{maxWidth:520,margin:'0 auto',padding:'20px 16px'}}>
         {loading ? (

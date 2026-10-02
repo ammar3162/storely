@@ -1,4 +1,6 @@
 'use client'
+import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
+import { computeBusinessDate } from '@/lib/businessDate'
 import { useState, useEffect } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter } from 'next/navigation'
@@ -81,6 +83,12 @@ const CUI: Record<string,Record<'ar'|'en',string>> = {
   savedClosingReport: {ar:'✅ تم حفظ تقرير الإقفال',en:'✅ Closing report saved'},
   genericError:     {ar:'حدث خطأ، حاول مرة أخرى',en:'Something went wrong, try again'},
   noReason:         {ar:'بدون سبب',en:'No reason given'},
+  deficitReasonLbl: {ar:'وش سبب العجز؟ (إجباري)',en:'What caused the deficit? (required)'},
+  deficitNoteLbl:   {ar:'تفاصيل إضافية (اختياري)',en:'More details (optional)'},
+  deficitOtherLbl:  {ar:'اكتب السبب',en:'Describe the reason'},
+  deficitReasonPh:  {ar:'مثال: فاتورة رقم 1043 طلعت بدون دفع',en:'e.g. invoice #1043 left unpaid'},
+  deficitReasonReq: {ar:'فيه عجز — اختر سبب العجز قبل التقفيل',en:'There is a deficit — choose the reason before closing'},
+  deficitOtherReq:  {ar:'اكتب سبب العجز',en:'Write the reason'},
 }
 const ct = (key: string, lang: 'ar'|'en') => CUI[key]?.[lang] || CUI[key]?.ar || key
 
@@ -149,10 +157,25 @@ const THANK_YOU_TEMPLATES_EN = [
   'Another day, another win, {name} — thank you 🙌',
 ]
 
+// أشهر أسباب عجز الكاشير — الاختيار إجباري، و«سبب آخر» يطلب كتابة السبب
+const DEFICIT_REASONS: { key: string; ar: string; en: string }[] = [
+  { key:'unpaid', ar:'فاتورة ما تحاسبت',                 en:'An invoice was not paid' },
+  { key:'change', ar:'خطأ بالباقي للعميل',               en:'Wrong change given to a customer' },
+  { key:'purchase', ar:'مشتريات من الكاش ما تسجلت',       en:'Cash purchase not recorded' },
+  { key:'card', ar:'عملية شبكة تسجلت كاش بالغلط',     en:'Card payment recorded as cash' },
+  { key:'refund', ar:'مرتجع أو استرجاع مبلغ لعميل',      en:'Refund to a customer' },
+  { key:'discount', ar:'خصم لعميل ما تسجل',               en:'Unrecorded discount' },
+  { key:'mistake', ar:'خطأ من الكاشير بالعدّ أو الإدخال', en:'Cashier counting/entry mistake' },
+  { key:'unknown', ar:'ما أعرف السبب',                    en:"I don't know the reason" },
+  { key:'other', ar:'سبب آخر',                          en:'Other reason' },
+]
+
 export default function CashierClosingPage() {
   const [lang, setPageLang] = useState<'ar'|'en'>('ar')
   const [session, setSession] = useState<StaffSession|null>(null)
   const [orgLogo, setOrgLogo] = useState<string|null>(null)
+  const [dayStartHour, setDayStartHour] = useState<number|null>(null)
+  const [clockTick, setClockTick] = useState(0)  // يحدّث التاريخ المعروض لو الصفحة مفتوحة وقت تغيّر اليوم
   const [step, setStep] = useState(1)
   const [closingDate, setClosingDate] = useState(() => new Date().toISOString().slice(0,10))
     const [totalSales, setTotalSales] = useState('')
@@ -162,6 +185,8 @@ export default function CashierClosingPage() {
   const [cashAmount, setCashAmount] = useState('')
   const [hasPurchases, setHasPurchases] = useState<'yes'|'no'|null>(null)
   const [purchases, setPurchases] = useState<Purchase[]>([{amount:'',reason:''}])
+  const [deficitChoice, setDeficitChoice] = useState('')   // مفتاح من DEFICIT_REASONS
+  const [deficitNote, setDeficitNote] = useState('')
   const [networkImage, setNetworkImage] = useState('')
   const [salesImage, setSalesImage] = useState('')
   const [uploadingNetwork, setUploadingNetwork] = useState(false)
@@ -174,6 +199,7 @@ export default function CashierClosingPage() {
   const [toast, setToast] = useState<{msg:string,type:'success'|'error'}|null>(null)
   const router = useRouter()
 
+  useEffect(()=>{ const t=setInterval(()=>setClockTick(x=>x+1),60000); return ()=>clearInterval(t) },[])
   useEffect(()=>{
     const savedLang = localStorage.getItem('staff_lang')
     if(savedLang==='en') setPageLang('en')
@@ -184,6 +210,7 @@ export default function CashierClosingPage() {
     setSession(s)
     getStaffOrg().then(org=>{
         if(org?.logo_url) setOrgLogo(org.logo_url)
+        if(org?.business_day_start_hour != null) setDayStartHour(org.business_day_start_hour)
         if(org?.currency) setCurr(currencySymbol(org.currency))
         if(org?.plan==='basic') setLocked(true)
       })
@@ -281,8 +308,19 @@ export default function CashierClosingPage() {
   }
   function goBack() { setStep(s=>Math.max(1,s-1)) }
 
+  const deficitOption = DEFICIT_REASONS.find(r=>r.key===deficitChoice)
+  // النص اللي يتحفظ ويطلع بالتقرير — دايماً بالعربي عشان التقرير يكون موحّد للمالك
+  const deficitReason = !deficitOption ? '' : deficitOption.key==='other' ? deficitNote.trim() : (deficitOption.ar + (deficitNote.trim() ? ` — ${deficitNote.trim()}` : ''))
+  const deficitReasonOk = status!=='deficit' || (!!deficitOption && deficitReason.length>=3)
+  // نفس قاعدة السيرفر بالضبط — الكاشير يشوف التاريخ اللي بينحفظ قبل ما يحفظ
+  void clockTick
+  const businessDate = computeBusinessDate({ startHour: dayStartHour })
+  const businessDateLabel = new Date(businessDate+'T12:00:00Z').toLocaleDateString(lang==='en'?'en-US':'ar-SA', {numberingSystem:'latn',weekday:'long',year:'numeric',month:'long',day:'numeric',calendar:'gregory',timeZone:'UTC'})
+  const isAfterMidnightCarry = businessDate !== new Date(Date.now()+3*3600e3).toISOString().slice(0,10)
+
   async function saveClosing() {
     if(!session) return
+    if(!deficitReasonOk){ showToast(ct(deficitChoice==='other'?'deficitOtherReq':'deficitReasonReq',lang),'error'); return }
     setSubmitting(true)
     try {
       const validPurchases = validPurchasesNow.map(p=>({amount:Number(p.amount),reason:p.reason||ct('noReason',lang)}))
@@ -296,9 +334,10 @@ export default function CashierClosingPage() {
           mada_amount: mada, visa_amount: visa, mastercard_amount: mastercard,
           cash_amount: cash, purchases: validPurchases,
           network_image: networkImage, sales_image: salesImage,
+          deficit_reason: status==='deficit' ? deficitReason : null,
         })
       })
-      if(!res.ok){ showToast(ct('saveError',lang),'error'); setSubmitting(false); return }
+      if(!res.ok){ const j = await res.json().catch(()=>null); showToast(j?.error || ct('saveError',lang),'error'); setSubmitting(false); return }
       const templates = lang==='en' ? THANK_YOU_TEMPLATES_EN : THANK_YOU_TEMPLATES_AR
       const template = templates[Math.floor(Math.random()*templates.length)]
       setThankYouMsg(template.replace('{name}', session?.name || ''))
@@ -313,7 +352,7 @@ export default function CashierClosingPage() {
   function resetForm() {
     setTotalSales(''); setMadaAmount(''); setVisaAmount(''); setMastercardAmount(''); setCashAmount('')
     setHasPurchases(null); setPurchases([{amount:'',reason:''}])
-    setNetworkImage(''); setSalesImage('')
+    setNetworkImage(''); setSalesImage(''); setDeficitChoice(''); setDeficitNote('')
     setStep(1); setSaved(false)
   }
 
@@ -330,6 +369,7 @@ export default function CashierClosingPage() {
         <div style={{fontSize:44,marginBottom:12}}>🔒</div>
         <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:8}}>{ct('lockedTitle',lang)}</div>
         <div style={{fontSize:13,color:'#78716c'}}>{ct('lockedSub',lang)}</div>
+        <button onClick={()=>router.push('/staff/choose')} style={{marginTop:20,height:44,padding:'0 22px',background:'#0f766e',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{lang==='en'?'Back':'رجوع للرئيسية'}</button>
       </div>
     </div>
   )
@@ -344,31 +384,14 @@ export default function CashierClosingPage() {
         </div>
       )}
 
-      <div style={{background:'linear-gradient(135deg,#042f2e,#0C213B)',padding:'16px 20px',position:'sticky',top:0,zIndex:100,boxShadow:'0 4px 20px rgba(0,0,0,.2)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-        <div style={{display:'flex',alignItems:'center',gap:12}}>
-          {orgLogo ? (
-            <img src={orgLogo} alt="" style={{width:42,height:42,borderRadius:12,objectFit:'cover',border:'2px solid rgba(255,255,255,.2)'}}/>
-          ) : (
-            <div style={{width:42,height:42,borderRadius:12,background:'rgba(255,255,255,.12)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:19}}>💰</div>
-          )}
-          <div>
-            <div style={{fontSize:15,fontWeight:800,color:'white'}}>{session.name}</div>
-            <div style={{fontSize:11,color:'rgba(255,255,255,.55)',marginTop:2,display:'flex',alignItems:'center',gap:5}}>
-              <span>{session.org_name}{session.branch_name?` · ${session.branch_name}`:''}</span>
-              <span style={{background:'rgba(255,255,255,.15)',padding:'1px 8px',borderRadius:20,fontWeight:700,fontSize:10}}>{ct('cashierBadge',lang)}</span>
-            </div>
-          </div>
-        </div>
-        <button onClick={logout} style={{background:'rgba(255,255,255,.1)',color:'white',border:'1px solid rgba(255,255,255,.2)',borderRadius:10,padding:'8px 16px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-          {ct('logout',lang)}
-        </button>
-      </div>
+      <StaffHeader title={session.name} subtitle={`${session.org_name}${session.branch_name?` · ${session.branch_name}`:''} · ${ct('cashierBadge',lang)}`} rtl={lang!=='en'}
+        end={<button onClick={logout} style={staffHeaderBtn}>{ct('logout',lang)}</button>} />
 
       <div style={{maxWidth:520,margin:'0 auto',padding:'28px 16px'}}>
         {!saved && (
           <div className="fu" style={{marginBottom:6}}>
             <div style={{fontSize:22,fontWeight:800,color:'#1c1c1a',marginBottom:4}}>{ct('pageTitle',lang)}</div>
-            <div style={{fontSize:13,color:'#8b8a84',fontWeight:600,marginBottom:22}}>{new Date().toLocaleDateString(lang==='en'?'en-US':'ar-SA', {numberingSystem:'latn',weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
+            <div style={{fontSize:13,color:'#8b8a84',fontWeight:600,marginBottom:22}}>{businessDateLabel}</div>
             <ProgressBar step={step} lang={lang}/>
           </div>
         )}
@@ -558,6 +581,12 @@ export default function CashierClosingPage() {
                     <div style={{fontSize:10,color:'#a8a7a1',marginTop:4}}>{ct('withdrawalsNote',lang)}</div>
                   </div>
                 )}
+                <div style={{display:'flex',alignItems:'flex-start',gap:10,background:'#f0f9ff',border:'1px solid #bae6fd',borderRadius:12,padding:'11px 13px',marginBottom:12,textAlign:'start' as const}}>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:800,color:'#075985'}}>{lang==='en'?'This closing will be recorded on:':'هذا الإقفال بيتسجّل على:'} {businessDateLabel}</div>
+                    {isAfterMidnightCarry && <div style={{fontSize:11.5,color:'#0369a1',marginTop:3,lineHeight:1.5}}>{lang==='en'?'Closed after midnight — it counts on the previous business day.':'لأنك تقفل بعد 12 الليل، ينحسب على يوم العمل اللي قبل.'}</div>}
+                  </div>
+                </div>
                 <div style={{
                   padding:'18px',borderRadius:14,textAlign:'center',marginBottom:16,
                   background: status==='balanced' ? '#f0fdfa' : status==='deficit' ? '#fef2f2' : '#eff6ff',
@@ -572,6 +601,34 @@ export default function CashierClosingPage() {
                     </div>
                   )}
                 </div>
+                {status==='deficit' && (
+                  <div style={{marginBottom:16,textAlign:'start' as const}}>
+                    <div style={{fontSize:13,fontWeight:800,color:'#b42318',marginBottom:8}}>{ct('deficitReasonLbl',lang)}</div>
+                    <div style={{display:'flex',flexDirection:'column' as const,gap:6,marginBottom:10}}>
+                      {DEFICIT_REASONS.map(r=>{
+                        const on = deficitChoice===r.key
+                        return (
+                          <button key={r.key} type="button" onClick={()=>setDeficitChoice(r.key)}
+                            style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'11px 12px',borderRadius:12,border:`1.5px solid ${on?'#dc2626':'#e5e5e2'}`,background:on?'#fef2f2':'white',cursor:'pointer',fontFamily:'inherit',textAlign:'start' as const}}>
+                            <span style={{width:18,height:18,borderRadius:'50%',border:`2px solid ${on?'#dc2626':'#d4d4d0'}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                              {on && <span style={{width:8,height:8,borderRadius:'50%',background:'#dc2626'}}/>}
+                            </span>
+                            <span style={{fontSize:13.5,fontWeight:on?800:600,color:on?'#991b1b':'#1c1c1a'}}>{lang==='en'?r.en:r.ar}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {deficitChoice && (
+                      <>
+                        <label style={{display:'block',fontSize:12,fontWeight:700,color:'#5f5e5a',marginBottom:6}}>{ct(deficitChoice==='other'?'deficitOtherLbl':'deficitNoteLbl',lang)}</label>
+                        <textarea value={deficitNote} onChange={e=>setDeficitNote(e.target.value.slice(0,400))} rows={2}
+                          placeholder={ct('deficitReasonPh',lang)}
+                          style={{width:'100%',padding:'11px 12px',border:`1.5px solid ${deficitChoice==='other'&&!deficitReasonOk?'#fca5a5':'#e5e5e2'}`,borderRadius:12,fontSize:14,fontFamily:'inherit',boxSizing:'border-box' as const,resize:'vertical' as const,background:'white',outline:'none'}}/>
+                      </>
+                    )}
+                    {!deficitReasonOk && <div style={{fontSize:11.5,color:'#b42318',marginTop:5,fontWeight:600}}>{ct(deficitChoice==='other'?'deficitOtherReq':'deficitReasonReq',lang)}</div>}
+                  </div>
+                )}
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                   <div style={{padding:8,borderRadius:9,background:'#f7f7f5',textAlign:'center' as const}}>
                     <img src={salesImage} alt="" style={{width:'100%',height:60,borderRadius:6,objectFit:'cover',marginBottom:4}}/>
@@ -597,7 +654,7 @@ export default function CashierClosingPage() {
                   {ct('next',lang)}
                 </button>
               ) : (
-                <button onClick={saveClosing} disabled={submitting} style={{flex:2,padding:'15px',background:'#029FA2',color:'white',border:'none',borderRadius:14,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',opacity:submitting?.7:1,boxShadow:'0 4px 16px rgba(22,163,74,.28)'}}>
+                <button onClick={saveClosing} disabled={submitting||!deficitReasonOk} style={{flex:2,padding:'15px',background:deficitReasonOk?'#029FA2':'#94a3b8',color:'white',border:'none',borderRadius:14,fontSize:14,fontWeight:800,cursor:deficitReasonOk?'pointer':'not-allowed',fontFamily:'inherit',opacity:submitting?.7:1,boxShadow:'0 4px 16px rgba(22,163,74,.28)'}}>
                   {submitting ? ct('saving',lang) : ct('confirmSave',lang)}
                 </button>
               )}

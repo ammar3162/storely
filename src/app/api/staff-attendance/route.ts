@@ -56,7 +56,7 @@ export async function POST(req: Request) {
     // موقع التحقق لازم يكون فرع الموظف نفسه (مو أي فرع يرسله الطلب)
     if ((staff as any).branch_id && (staff as any).branch_id !== branch_id) return NextResponse.json({ error: 'الفرع غير صحيح' }, { status: 403 })
 
-    const { data: branch } = await supabase.from('branches').select('latitude,longitude,attendance_radius_m,name').eq('id', branch_id).eq('org_id', org_id).maybeSingle()
+    const { data: branch } = await supabase.from('branches').select('latitude,longitude,attendance_radius_m,location_accuracy_m,name').eq('id', branch_id).eq('org_id', org_id).maybeSingle()
     if (!branch) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
 
     if (branch.latitude == null || branch.longitude == null) {
@@ -64,7 +64,11 @@ export async function POST(req: Request) {
     }
 
     const dist = distanceMeters(Number(latitude), Number(longitude), Number(branch.latitude), Number(branch.longitude))
-    const withinRange = dist <= (branch.attendance_radius_m || 50)
+    // سماحية بقدر دقة الموقعين: موقع الفرع (لو انحدد من لابتوب يكون تقريبي، حتى 150 متر)
+    // + GPS جوال الموظف (حتى 40 متر) — عشان الموقع ينفع يتحدد من أي جهاز
+    const clamp = (v: unknown, max: number) => Math.min(Math.max(Number(v) || 0, 0), max)
+    const tolerance = clamp((branch as any).location_accuracy_m, 150) + clamp(accuracy_m, 40)
+    const withinRange = dist <= (branch.attendance_radius_m || 50) + tolerance
 
     if (!withinRange) {
       return NextResponse.json({

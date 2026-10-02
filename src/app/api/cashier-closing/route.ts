@@ -3,32 +3,13 @@ import { createClient } from '@supabase/supabase-js'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { sendPushToOrg } from '@/lib/push'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { computeBusinessDate } from '@/lib/businessDate'
+import { selectAll } from '@/lib/selectAll'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
-
-function computeBusinessDate(openTime: string|null, closeTime: string|null): string {
-  const now = new Date()
-  const riyadhDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)
-  const riyadhHour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Riyadh', hour: '2-digit', hour12: false }).format(now))
-
-  if (!openTime || !closeTime) return riyadhDateStr
-
-  const openHour = Number(openTime.slice(0, 2))
-  const closeHour = Number(closeTime.slice(0, 2))
-
-  // محل يعمل حتى بعد منتصف الليل (وقت الإغلاق أصغر من وقت الفتح رقمياً)
-  const isOvernight = closeHour < openHour
-  if (isOvernight && riyadhHour < closeHour) {
-    const [y, m, d] = riyadhDateStr.split('-').map(Number)
-    const yesterday = new Date(Date.UTC(y, m - 1, d))
-    yesterday.setUTCDate(yesterday.getUTCDate() - 1)
-    return yesterday.toISOString().slice(0, 10)
-  }
-  return riyadhDateStr
-}
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -46,7 +27,7 @@ export async function POST(req: Request) {
       org_id, branch_id, staff_id, staff_name, total_sales,
       network_amount, mada_amount, visa_amount, mastercard_amount,
       cash_amount, purchases, network_image, sales_image,
-      closing_date, closing_time,
+      deficit_reason,
     } = await req.json()
 
     if (!org_id || !staff_id || !staff_name) {
@@ -81,9 +62,17 @@ export async function POST(req: Request) {
     const difference = cash - expectedCash
     const status = Math.abs(difference) < 0.01 ? 'balanced' : (difference < 0 ? 'deficit' : 'surplus')
 
+    // العجز لازم له سبب — ما ينقبل التقفيل بدونه
+    const deficitReason = status === 'deficit' ? String(deficit_reason || '').trim().slice(0, 500) : ''
+    if (status === 'deficit' && deficitReason.length < 3) {
+      return NextResponse.json({ error: 'فيه عجز — اكتب سبب العجز قبل التقفيل' }, { status: 400 })
+    }
+
     const supabase = sb()
-    const { data: orgHours } = await supabase.from('organizations').select('shop_open_time,shop_close_time').eq('id', org_id).single()
-    const businessDate = closing_date || computeBusinessDate((orgHours as any)?.shop_open_time || null, (orgHours as any)?.shop_close_time || null)
+    // تاريخ يوم العمل — قاعدة وحدة: أي تقفيل قبل ساعة بداية اليوم الجديد ينحسب على اليوم اللي قبل
+    // (ما نقبل تاريخ من الطلب — التاريخ يحدده السيرفر بس)
+    const { data: orgDay } = await supabase.from('organizations').select('business_day_start_hour').eq('id', org_id).single()
+    const businessDate = computeBusinessDate({ startHour: (orgDay as any)?.business_day_start_hour })
     const { data, error } = await supabase
       .from('cashier_closings')
       .insert({
@@ -92,7 +81,6 @@ export async function POST(req: Request) {
         staff_id,
         staff_name,
         closing_date: businessDate,
-        closing_time: closing_time || null,
         total_sales: sales,
         network_amount: network,
         mada_amount: mada,
@@ -104,6 +92,7 @@ export async function POST(req: Request) {
         expected_cash: expectedCash,
         difference,
         status,
+        deficit_reason: deficitReason || null,
         network_image: network_image || null,
         sales_image: sales_image || null,
       })
@@ -121,7 +110,7 @@ export async function POST(req: Request) {
       const ownerConsented = (ownerProfile as any)?.whatsapp_consent === true
 
       // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
-      const closingStatusText = status === 'balanced' ? 'مطابق تماماً' : status === 'deficit' ? `يوجد عجز: ${Math.abs(difference).toFixed(2)} ر.س` : `يوجد زيادة: ${Math.abs(difference).toFixed(2)} ر.س`
+      const closingStatusText = status === 'balanced' ? 'مطابق تماماً' : status === 'deficit' ? `يوجد عجز: ${Math.abs(difference).toFixed(2)} ر.س — السبب: ${deficitReason}` : `يوجد زيادة: ${Math.abs(difference).toFixed(2)} ر.س`
       await (supabase as any).from('notifications').insert({
         org_id, branch_id: branch_id || null, title: `إقفال كاشير: ${staff_name}`, message: `إجمالي المبيعات: ${sales.toFixed(2)} ر.س — ${closingStatusText}`, type: 'info', read: false
       })
@@ -142,7 +131,7 @@ export async function POST(req: Request) {
 
       if (whatsappNumber && shouldSendNow && ownerConsented) {
         const now = new Date()
-        const effectiveDate = closing_date ? new Date(`${closing_date}T${closing_time||'00:00'}:00+03:00`) : now
+        const effectiveDate = now
         const timeStr = effectiveDate.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Riyadh' })
         const dateStr = effectiveDate.toLocaleDateString('ar-SA', {numberingSystem:'latn', weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })
         const branchLine = (isMultiBranch && branchName) ? `🏪 الفرع: *${branchName}*\n` : ''
@@ -158,7 +147,7 @@ export async function POST(req: Request) {
           const statusLine = status === 'balanced'
             ? '✅ *مطابق تماماً*'
             : status === 'deficit'
-              ? `⚠️ *يوجد عجز: ${Math.abs(difference).toFixed(2)} ر.س*`
+              ? `⚠️ *يوجد عجز: ${Math.abs(difference).toFixed(2)} ر.س*\n📝 السبب: ${deficitReason}`
               : `📈 *يوجد زيادة: ${Math.abs(difference).toFixed(2)} ر.س*`
 
           let networkLines = ''
@@ -218,18 +207,19 @@ export async function GET(req: Request) {
     const effectiveBranchId = enforcedBranchId(access, branch_id)
 
     const supabase = sb()
-    let query = supabase
-      .from('cashier_closings')
-      .select('id,branch_id,staff_id,closing_date,staff_name,total_sales,network_amount,cash_amount,total_purchases,difference,status,sales_image,network_image,purchases')
-      .eq('org_id', org_id)
-      .order('closing_date', { ascending: false })
-      .order('created_at', { ascending: false })
-
-    if (effectiveBranchId) query = query.eq('branch_id', effectiveBranchId)
-    if (from) query = query.gte('closing_date', from)
-    if (to) query = query.lte('closing_date', to)
-
-    const { data, error } = await query
+    const { data, error } = await selectAll(() => {
+      let query = supabase
+        .from('cashier_closings')
+        .select('id,branch_id,staff_id,closing_date,created_at,staff_name,total_sales,network_amount,cash_amount,total_purchases,difference,status,deficit_reason,sales_image,network_image,purchases')
+        .eq('org_id', org_id)
+        .order('closing_date', { ascending: false })
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+      if (effectiveBranchId) query = query.eq('branch_id', effectiveBranchId)
+      if (from) query = query.gte('closing_date', from)
+      if (to) query = query.lte('closing_date', to)
+      return query
+    })
 
     if (error) {
       return NextResponse.json({ error: 'حدث خطأ أثناء جلب التقارير' }, { status: 500 })
@@ -247,22 +237,6 @@ async function ownedClosing(org_id: string, id: string, access: any) {
   const forced = enforcedBranchId(access)
   if (forced && (data as any).branch_id !== forced) return null
   return data
-}
-
-// تعديل تاريخ إقفال كاشير (المالك / مدير الفرع لفرعه)
-export async function PATCH(req: Request) {
-  try {
-    const { org_id, id, closing_date } = await req.json()
-    if (!org_id || !id || !/^\d{4}-\d{2}-\d{2}$/.test(String(closing_date || ''))) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
-    const access = await verifyOrgAccess(org_id)
-    if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (!(await ownedClosing(org_id, id, access))) return NextResponse.json({ error: 'غير موجود' }, { status: 404 })
-    const { error } = await sb().from('cashier_closings').update({ closing_date } as any).eq('id', id).eq('org_id', org_id)
-    if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
-    return NextResponse.json({ success: true })
-  } catch {
-    return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
-  }
 }
 
 // حذف إقفال كاشير — الواجهة تطلب كلمة المرور قبل الإرسال

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { computeStaffPayroll, loadOvertimeSettings } from '@/lib/payroll'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,37 +32,19 @@ export async function GET(req: Request) {
 
     const { data: staffList } = await supabase
       .from('staff_members')
-      .select('id,name,monthly_salary,housing_allowance,transport_allowance,food_allowance,leave_balance_days,is_active')
+      .select('id,name,monthly_salary,housing_allowance,transport_allowance,food_allowance,leave_balance_days,is_active,shift_id')
       .eq('org_id', org_id)
       .eq('is_active', true)
 
+    const overtimeSettings = await loadOvertimeSettings(supabase, org_id)
     const report = []
     for (const s of (staffList || []) as any[]) {
-      const grossSalary = Number(s.monthly_salary || 0) + Number(s.housing_allowance || 0) + Number(s.transport_allowance || 0) + Number(s.food_allowance || 0)
-
-      const { data: adjustments } = await supabase
-        .from('staff_payroll_adjustments')
-        .select('type,amount,status')
-        .eq('staff_id', s.id)
-        .gte('created_at', monthStartTs)
-        .lte('created_at', monthEndTs)
-
-      const deductions = (adjustments || []).filter((a: any) => a.type === 'deduction' && a.status === 'approved')
-      const advances = (adjustments || []).filter((a: any) => a.type === 'advance' && a.status === 'approved')
-      const deductionsTotal = deductions.reduce((sum: number, a: any) => sum + Number(a.amount), 0)
-      const advancesTotal = advances.reduce((sum: number, a: any) => sum + Number(a.amount), 0)
-      const netSalary = Math.max(0, grossSalary - deductionsTotal - advancesTotal)
-
-      const { data: checkIns } = await supabase
-        .from('staff_attendance')
-        .select('late_minutes')
-        .eq('staff_id', s.id)
-        .eq('type', 'check_in')
-        .gte('recorded_at', monthStartTs)
-        .lte('recorded_at', monthEndTs)
-
-      const daysPresent = (checkIns || []).length
-      const lateCount = (checkIns || []).filter((c: any) => Number(c.late_minutes || 0) > 0).length
+      // الراتب والخصومات والسلف والأوفر تايم من نفس حساب صفحة «راتبي» للموظف
+      const pay = await computeStaffPayroll(supabase, s, month, overtimeSettings)
+      const { grossSalary, deductionsTotal, advancesTotal, netSalary } = pay
+      const deductions = pay.deductions
+      const daysPresent = pay.attendance.daysPresent
+      const lateCount = pay.attendance.lateCount
       const attendanceRate = daysInMonth > 0 ? Math.min(1, daysPresent / daysInMonth) : 0
 
       const { data: leaveThisMonth } = await supabase
@@ -93,6 +76,7 @@ export async function GET(req: Request) {
       report.push({
         staffId: s.id, name: s.name,
         grossSalary, deductionsTotal, advancesTotal, netSalary,
+        overtimeMinutes: pay.overtime.minutes, overtimePay: pay.overtime.pay,
         daysPresent, daysInMonth, attendanceRate: Math.round(attendanceRate * 100),
         lateCount, leaveDaysTaken, leaveBalance: Number(s.leave_balance_days || 0),
         tasksTotal, tasksConfirmed, taskCompletionRate: Math.round(taskCompletionRate * 100),

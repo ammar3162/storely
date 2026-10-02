@@ -25,7 +25,7 @@ export async function GET(req: Request) {
 
     if (staff.role === 'cashier') {
       const { data, error } = await db.from('cashier_closings')
-        .select('id,status,closing_date,total_sales,network_amount,difference')
+        .select('id,status,closing_date,total_sales,network_amount,difference,deficit_reason')
         .eq('org_id', org_id).eq('staff_id', staff_id)
         .order('closing_date', { ascending: false }).order('created_at', { ascending: false }).limit(50)
       if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })

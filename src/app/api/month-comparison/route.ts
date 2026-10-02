@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { selectAll } from '@/lib/selectAll'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 
 const sb = () => createClient(
@@ -34,20 +35,16 @@ export async function GET(req: Request) {
     const fmt = (d: Date) => d.toISOString().slice(0, 10)
 
     async function periodStats(fromDate: string, toDate: string) {
-      let closingsQ2 = supabase.from('cashier_closings').select('total_sales').eq('org_id', org_id).gte('closing_date', fromDate).lte('closing_date', toDate)
-      let purchasesQ2 = supabase.from('purchases').select('total_amount').eq('org_id', org_id).gte('created_at', fromDate).lte('created_at', toDate + 'T23:59:59')
-      let movementsQ3 = supabase.from('stock_movements').select('id,products!inner(org_id,branch_id)').eq('type', 'out').eq('products.org_id', org_id).gte('created_at', fromDate).lte('created_at', toDate + 'T23:59:59')
-      if (branch_id) {
-        closingsQ2 = (closingsQ2 as any).eq('branch_id', branch_id)
-        purchasesQ2 = (purchasesQ2 as any).eq('branch_id', branch_id)
-        movementsQ3 = (movementsQ3 as any).eq('products.branch_id', branch_id)
-      }
-      const [{ data: closings }, { data: purchases }, { data: movements }] = await Promise.all([
-        closingsQ2, purchasesQ2, movementsQ3,
+      const withBranch = (q: any, col = 'branch_id') => branch_id ? q.eq(col, branch_id) : q
+      // على دفعات — الشهر ممكن يتعدّى 1000 سجل؛ والصرف نحتاج عدده بس
+      const [{ data: closings }, { data: purchases }, { count: dispenseCountRaw }] = await Promise.all([
+        selectAll(() => withBranch(supabase.from('cashier_closings').select('total_sales').eq('org_id', org_id).gte('closing_date', fromDate).lte('closing_date', toDate)).order('id')),
+        selectAll(() => withBranch(supabase.from('purchases').select('total_amount').eq('org_id', org_id).gte('created_at', fromDate).lte('created_at', toDate + 'T23:59:59')).order('id')),
+        withBranch(supabase.from('stock_movements').select('id,products!inner(org_id,branch_id)', { count: 'exact', head: true }).eq('type', 'out').eq('products.org_id', org_id).gte('created_at', fromDate).lte('created_at', toDate + 'T23:59:59'), 'products.branch_id'),
       ])
       const sales = (closings || []).reduce((s: number, c: any) => s + Number(c.total_sales || 0), 0)
       const purchasesTotal = (purchases || []).reduce((s: number, p: any) => s + Number(p.total_amount || 0), 0)
-      const dispenseCount = (movements || []).length
+      const dispenseCount = dispenseCountRaw || 0
       return { sales, purchasesTotal, dispenseCount, net: sales - purchasesTotal }
     }
 

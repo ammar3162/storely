@@ -4,7 +4,7 @@ import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
-import { CalendarDays, FileText, Trophy, Inbox, Loader2, Paperclip, Trash2, PartyPopper, Lock, AlertTriangle, Download, Pencil, BarChart3, CreditCard, Upload, Receipt, ClipboardList, Wallet, Flame, X } from 'lucide-react'
+import { CalendarDays, FileText, Trophy, Inbox, Loader2, Paperclip, Trash2, PartyPopper, Lock, AlertTriangle, Download, BarChart3, CreditCard, Upload, Receipt, ClipboardList, Wallet, Flame, X } from 'lucide-react'
 import { cache } from '@/lib/cache'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
@@ -1018,88 +1018,203 @@ function RecentOpsSection({ recentOps, colors }: { recentOps:any[]; colors:any }
 }
 
 
+// تقرير الحضور — نفس بيانات صفحة الحضور والانصراف (/api/attendance-report) عشان الأرقام تطابق
+const saudiToday = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
+const attTime = (iso: string | null) => iso ? new Date(iso).toLocaleTimeString('ar-SA', { numberingSystem: 'latn', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Riyadh' }) : '—'
+const attDay = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString('ar-SA', { numberingSystem: 'latn', weekday: 'short', day: 'numeric', month: 'short', calendar: 'gregory', timeZone: 'UTC' })
+const attMin = (m: number) => { const h = Math.floor(m / 60), r = m % 60; return h ? (r ? `${h}س ${r}د` : `${h} ساعة`) : `${r} دقيقة` }
+
 function AttendanceDetail({ onBack }: { onBack:()=>void }) {
-  const [rows, setRows] = useState<any[]>([])
+  const [summary, setSummary] = useState<any[]>([])      // ملخص كل الموظفين
+  const [person, setPerson] = useState<any|null>(null)   // سجل موظف واحد يوم بيوم
+  const [totalDays, setTotalDays] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const todayStr = new Date().toISOString().slice(0,10)
-  const monthAgoStr = new Date(Date.now()-30*24*60*60*1000).toISOString().slice(0,10)
-  const [dFrom, setDFrom] = useState(monthAgoStr)
-  const [dTo, setDTo] = useState(todayStr)
+  const [staffId, setStaffId] = useState('')
+  const [dFrom, setDFrom] = useState(() => saudiToday().slice(0, 8) + '01')
+  const [dTo, setDTo] = useState(() => saudiToday())
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
+    let alive = true
     async function load() {
-      setLoading(true)
       const orgId = sessionStorage.getItem('s_org_id')
-      if (!orgId) { setLoading(false); return }
-      const start = new Date(dFrom+'T00:00:00')
-      const end = new Date(dTo+'T23:59:59')
-      const j = await reportData('attendance', start, end)
-      const data = j.records
-      // نجمّع حسب الموظف + اليوم -- أول وقت حضور وآخر وقت انصراف بنفس اليوم
-      const grouped: Record<string, any> = {}
-      for (const r of ((data as any[])||[])) {
-        const day = new Date(r.recorded_at).toLocaleDateString('en-CA')
-        const key = (r.staff_id||r.staff_name||'')+'::'+day
-        if (!grouped[key]) grouped[key] = { date: day, staffName: r.staff_name||'موظف محذوف', checkIn: null, checkOut: null }
-        if (r.type === 'check_in' && !grouped[key].checkIn) grouped[key].checkIn = r.recorded_at
-        if (r.type === 'check_out') grouped[key].checkOut = r.recorded_at
-      }
-      const list = Object.values(grouped).sort((a:any,b:any)=> b.date.localeCompare(a.date))
-      setRows(list)
+      if (!orgId || dFrom > dTo) { setLoading(false); return }
+      setLoading(true)
+      const bid = sessionStorage.getItem('s_branch_id')
+      const [all, one] = await Promise.all([
+        api.get('/api/attendance-report', { org_id: orgId, branch_id: bid, from: dFrom, to: dTo }),
+        staffId ? api.get('/api/attendance-report', { org_id: orgId, branch_id: bid, from: dFrom, to: dTo, staff_id: staffId }) : Promise.resolve(null),
+      ])
+      if (!alive) return
+      if (all?.success) { setSummary(all.rows || []); setTotalDays(all.totalDays || 0) }
+      else toast(all?.error || 'تعذر تحميل التقرير', 'error')
+      setPerson(one?.success ? (one.rows?.[0] || null) : null)
       setLoading(false)
     }
     load()
-  }, [dFrom, dTo])
+    return () => { alive = false }
+  }, [dFrom, dTo, staffId])
 
-  const filtered = rows.filter((r:any)=> !search || r.staffName.includes(search))
-  const fmtTime = (iso:string|null) => iso ? new Date(iso).toLocaleTimeString('ar-SA', { hour:'2-digit', minute:'2-digit', numberingSystem:'latn' }) : '—'
-  const fmtDate = (d:string) => new Date(d).toLocaleDateString('ar-SA', { numberingSystem:'latn', day:'numeric', month:'short' })
+  const rows = person ? [person] : summary
+  const sum = (k: string) => rows.reduce((s: number, r: any) => s + Number(r[k] || 0), 0)
+  const present = sum('days_present'), possible = rows.length * totalDays
+  const rate = possible ? Math.round(present / possible * 100) : null
+  const lateMin = sum('total_late_minutes'), penalty = Math.round(sum('total_penalty') * 100) / 100
+  const otMin = sum('total_overtime_minutes'), otPay = Math.round(sum('total_overtime_pay') * 100) / 100
+
+  async function exportPdf() {
+    setExporting(true)
+    try {
+      const { exportReportPdf } = await import('@/lib/pdfExport')
+      const { org } = await pdfOrgInfo()
+      if (person) {
+        await exportReportPdf({
+          title: `سجل حضور ${person.name}`, subtitle: `من ${dFrom} إلى ${dTo}`, orgName: org?.name || '',
+          columns: [
+            { header: 'التاريخ', key: 'date' }, { header: 'الحضور', key: 'in', align: 'center' }, { header: 'الانصراف', key: 'out', align: 'center' },
+            { header: 'الساعات', key: 'hours', align: 'center' }, { header: 'التأخير', key: 'late', align: 'center' }, { header: 'الأوفر تايم', key: 'ot', align: 'center' },
+          ],
+          rows: person.days.map((d: any) => ({ date: attDay(d.date), in: attTime(d.check_in), out: attTime(d.check_out), hours: d.hours_worked ?? '—', late: d.late_minutes ? attMin(d.late_minutes) : '—', ot: d.overtime_minutes ? `${attMin(d.overtime_minutes)} (${d.overtime_pay} ر.س)` : '—' })),
+          totalsRow: { date: 'الإجمالي', in: `${person.days_present} يوم`, out: '', hours: '', late: lateMin ? attMin(lateMin) : '—', ot: otMin ? `${attMin(otMin)} (${otPay} ر.س)` : '—' },
+          fileName: `حضور-${person.name}-${dFrom}-${dTo}`,
+        })
+      } else {
+        await exportReportPdf({
+          title: 'تقرير الحضور والانصراف', subtitle: `من ${dFrom} إلى ${dTo}`, orgName: org?.name || '',
+          columns: [
+            { header: 'الموظف', key: 'name' }, { header: 'أيام الحضور', key: 'days_present', align: 'center' }, { header: 'أيام الغياب', key: 'days_absent', align: 'center' },
+            { header: 'التأخير (دقيقة)', key: 'total_late_minutes', align: 'center' }, { header: 'الخصومات (ر.س)', key: 'total_penalty', align: 'center' },
+            { header: 'أوفر تايم (دقيقة)', key: 'total_overtime_minutes', align: 'center' }, { header: 'مبلغ الأوفر (ر.س)', key: 'total_overtime_pay', align: 'center' },
+          ],
+          rows: summary,
+          totalsRow: { name: 'الإجمالي', days_present: present, days_absent: sum('days_absent'), total_late_minutes: lateMin, total_penalty: penalty, total_overtime_minutes: otMin, total_overtime_pay: otPay },
+          fileName: `تقرير-الحضور-${dFrom}-${dTo}`,
+        })
+      }
+    } catch { toast('فشل التصدير', 'error') }
+    setExporting(false)
+  }
+
+  const th: React.CSSProperties = { padding:'11px 14px', textAlign:'right', fontSize:11, fontWeight:700, color:colors.text3, whiteSpace:'nowrap' }
+  const td: React.CSSProperties = { padding:'12px 14px', fontSize:13, color:colors.text2, whiteSpace:'nowrap' }
+  const pill = (txt: string, c: string, bg: string) => <span style={{ fontSize:11, fontWeight:700, color:c, background:bg, padding:'3px 10px', borderRadius:99 }}>{txt}</span>
+  const label: React.CSSProperties = { fontSize:11, color:colors.text3, fontWeight:600, display:'block', marginBottom:5 }
+  const stat = (title: string, value: string, sub: string, c: string, bg: string) => (
+    <div style={{ ...card, padding:'14px 16px', background:bg, border:`1px solid ${colors.border}` }}>
+      <div style={{ fontSize:11, color:colors.text3, fontWeight:600 }}>{title}</div>
+      <div style={{ fontSize:22, fontWeight:900, color:c, marginTop:4 }}>{value}</div>
+      <div style={{ fontSize:11, color:colors.text4, marginTop:2 }}>{sub}</div>
+    </div>
+  )
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto'}}>
-      <button onClick={onBack} style={{background:'none',border:'none',color:colors.primary,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginBottom:12,display:'flex',alignItems:'center',gap:4}}>→ رجوع</button>
+    <div style={{ fontFamily:font.family, direction:'rtl', maxWidth:1000, margin:'0 auto' }}>
+      <button onClick={onBack} style={{ background:'none', border:'none', color:colors.primary, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', marginBottom:12, display:'flex', alignItems:'center', gap:4 }}>→ رجوع</button>
       <h1 style={pageTitle}><PageIcon/>تقرير الحضور والانصراف</h1>
-      <p style={pageSub}>سجل حضور وانصراف الموظفين حسب الفترة المحددة</p>
-      <div style={{display:'flex',gap:10,flexWrap:'wrap' as const,marginTop:16,marginBottom:12,alignItems:'flex-end'}}>
-        <div>
-          <label style={{fontSize:11,color:colors.text4,display:'block',marginBottom:4}}>من تاريخ</label>
-          <input type="date" value={dFrom} onChange={e=>setDFrom(e.target.value)} style={{...inp,width:160}}/>
+      <p style={pageSub}>حضور الموظفين وتأخيرهم والأوفر تايم خلال الفترة — اختر موظف عشان تشوف سجله يوم بيوم</p>
+
+      <div style={{ ...card, padding:14, marginTop:16, marginBottom:14, display:'flex', gap:12, flexWrap:'wrap' as const, alignItems:'flex-end' }}>
+        <div style={{ flex:'1 1 180px' }}>
+          <label style={label}>الموظف</label>
+          <select value={staffId} onChange={e => setStaffId(e.target.value)} style={inp()}>
+            <option value="">كل الموظفين</option>
+            {summary.map((s: any) => <option key={s.staff_id} value={s.staff_id}>{s.name}</option>)}
+          </select>
         </div>
-        <div>
-          <label style={{fontSize:11,color:colors.text4,display:'block',marginBottom:4}}>إلى تاريخ</label>
-          <input type="date" value={dTo} onChange={e=>setDTo(e.target.value)} style={{...inp,width:160}}/>
+        <div style={{ flex:'1 1 140px' }}>
+          <label style={label}>من تاريخ</label>
+          <input type="date" value={dFrom} max={dTo} onChange={e => setDFrom(e.target.value)} style={inp()}/>
         </div>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="بحث باسم الموظف..." style={{...inp,maxWidth:220}}/>
+        <div style={{ flex:'1 1 140px' }}>
+          <label style={label}>إلى تاريخ</label>
+          <input type="date" value={dTo} min={dFrom} onChange={e => setDTo(e.target.value)} style={inp()}/>
+        </div>
+        <button onClick={exportPdf} disabled={exporting || loading || rows.length === 0} style={{ ...btnSecondary, display:'flex', alignItems:'center', gap:6, padding:'10px 16px' }}>
+          <Download size={15}/>{exporting ? 'جاري التصدير...' : 'تصدير PDF'}
+        </button>
       </div>
-      {loading ? (
-        <div style={{textAlign:'center' as const,padding:40,color:colors.text4}}>جاري التحميل...</div>
-      ) : filtered.length===0 ? (
-        <div style={{textAlign:'center' as const,padding:40,color:colors.text4}}>ما فيه سجلات حضور بهالفترة</div>
-      ) : (
-        <div style={{...card,padding:0,overflow:'hidden'}}>
-          <table style={{width:'100%',borderCollapse:'collapse' as const}}>
-            <thead>
-              <tr style={{background:colors.bg,borderBottom:`1px solid ${colors.border}`}}>
-                <th style={{padding:'10px 14px',textAlign:'right' as const,fontSize:11,fontWeight:700,color:colors.text3}}>الموظف</th>
-                <th style={{padding:'10px 14px',textAlign:'right' as const,fontSize:11,fontWeight:700,color:colors.text3}}>التاريخ</th>
-                <th style={{padding:'10px 14px',textAlign:'right' as const,fontSize:11,fontWeight:700,color:colors.text3}}>وقت الحضور</th>
-                <th style={{padding:'10px 14px',textAlign:'right' as const,fontSize:11,fontWeight:700,color:colors.text3}}>وقت الانصراف</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r:any,i:number)=>(
-                <tr key={i} style={{borderBottom:`1px solid ${colors.border}`}}>
-                  <td style={{padding:'10px 14px',fontSize:12,fontWeight:600,color:colors.text}}>{r.staffName}</td>
-                  <td style={{padding:'10px 14px',fontSize:12,color:colors.text2}}>{fmtDate(r.date)}</td>
-                  <td style={{padding:'10px 14px',fontSize:12,color:colors.text2}}>{fmtTime(r.checkIn)}</td>
-                  <td style={{padding:'10px 14px',fontSize:12,color:colors.text2}}>{fmtTime(r.checkOut)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))', gap:10, marginBottom:14 }}>
+        {stat('نسبة الحضور', rate === null ? '—' : `${rate}%`, `${present} يوم حضور من ${possible}`, colors.primary, colors.primaryLight)}
+        {stat('التأخير', lateMin ? attMin(lateMin) : '—', penalty ? `خصومات ${penalty} ر.س` : 'بدون خصومات', colors.warning, colors.warningLight)}
+        {stat('الأوفر تايم', otMin ? attMin(otMin) : '—', otPay ? `المستحق ${otPay} ر.س` : 'ما فيه ساعات إضافية', colors.info, colors.infoLight)}
+      </div>
+
+      {!loading && !person && summary.some((r: any) => r.shift_warning === 'none') && (
+        <div style={{ ...card, padding:'10px 14px', marginBottom:14, background:colors.warningLight, border:`1px solid ${colors.warningBorder}`, color:colors.warning, fontSize:12, fontWeight:600 }}>
+          ⚠️ {summary.filter((r: any) => r.shift_warning === 'none').length} موظف مو مربوطين بشفت — ما ينحسب لهم تأخير ولا أوفر تايم. اربطهم من صفحة الحضور والانصراف ← الإعدادات.
         </div>
       )}
+      <div style={{ ...card, padding:0, overflow:'hidden' }}>
+        {loading ? (
+          <div style={{ textAlign:'center' as const, padding:48, color:colors.text4, fontSize:13 }}>جاري التحميل...</div>
+        ) : person ? (
+          <>
+            {person.shift_warning && (
+              <div style={{ padding:'10px 16px', background:colors.warningLight, borderBottom:`1px solid ${colors.warningBorder}`, color:colors.warning, fontSize:12, fontWeight:600 }}>
+                ⚠️ {person.shift_warning === 'none' ? 'هذا الموظف مو مربوط بشفت' : 'هذا الموظف على شفت 24 ساعة'} — ما ينحسب له تأخير ولا أوفر تايم. اربطه بشفت من صفحة الحضور والانصراف ← الإعدادات.
+              </div>
+            )}
+            <div style={{ padding:'14px 16px', borderBottom:`1px solid ${colors.border}`, display:'flex', justifyContent:'space-between', alignItems:'center', gap:8, flexWrap:'wrap' as const }}>
+              <div style={{ fontWeight:800, fontSize:14, color:colors.text }}>{person.name}</div>
+              <div style={{ display:'flex', gap:6 }}>
+                {pill(`${person.days_present} حضور`, colors.primary, colors.primaryLight)}
+                {pill(`${person.days_absent} غياب`, colors.danger, colors.dangerLight)}
+              </div>
+            </div>
+            <div style={{ overflowX:'auto' as const }}>
+              <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+                <thead><tr style={{ background:colors.bg, borderBottom:`1px solid ${colors.border}` }}>
+                  {['التاريخ','الحالة','الحضور','الانصراف','الساعات','التأخير','الأوفر تايم'].map(h => <th key={h} style={th}>{h}</th>)}
+                </tr></thead>
+                <tbody>
+                  {[...person.days].reverse().map((d: any) => (
+                    <tr key={d.date} style={{ borderBottom:`1px solid ${colors.border}`, background: d.check_in ? undefined : colors.bg }}>
+                      <td style={{ ...td, fontWeight:700, color:colors.text }}>{attDay(d.date)}</td>
+                      <td style={td}>{!d.check_in ? pill('غياب', colors.danger, colors.dangerLight) : d.check_out ? pill('انصرف', colors.primary, colors.primaryLight) : pill('حاضر', colors.info, colors.infoLight)}</td>
+                      <td style={td}>{attTime(d.check_in)}</td>
+                      <td style={td}>{attTime(d.check_out)}{d.is_excused && <span style={{ marginRight:6 }}>{pill('مستأذن', colors.warning, colors.warningLight)}</span>}</td>
+                      <td style={{ ...td, fontWeight:600 }}>{d.hours_worked !== null ? `${d.hours_worked} ساعة` : '—'}</td>
+                      <td style={{ ...td, color: d.late_minutes ? colors.warning : colors.text4, fontWeight: d.late_minutes ? 700 : 400 }}>
+                        {d.late_minutes ? attMin(d.late_minutes) : '—'}{d.penalty_amount ? <div style={{ fontSize:11, color:colors.danger }}>خصم {d.penalty_amount} ر.س</div> : null}
+                      </td>
+                      <td style={{ ...td, color: d.overtime_minutes ? colors.info : colors.text4, fontWeight: d.overtime_minutes ? 700 : 400 }}>
+                        {d.overtime_minutes ? attMin(d.overtime_minutes) : '—'}{d.overtime_pay ? <div style={{ fontSize:11, color:colors.text3 }}>{d.overtime_pay} ر.س</div> : null}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : summary.length === 0 ? (
+          <div style={{ textAlign:'center' as const, padding:48, color:colors.text4, fontSize:13 }}>ما فيه موظفين نشطين بهذا الفرع</div>
+        ) : (
+          <div style={{ overflowX:'auto' as const }}>
+            <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+              <thead><tr style={{ background:colors.bg, borderBottom:`1px solid ${colors.border}` }}>
+                {['الموظف','الحضور','الغياب','التأخير','الخصومات','الأوفر تايم',''].map((h, i) => <th key={i} style={th}>{h}</th>)}
+              </tr></thead>
+              <tbody>
+                {summary.map((r: any) => (
+                  <tr key={r.staff_id} onClick={() => setStaffId(r.staff_id)} style={{ borderBottom:`1px solid ${colors.border}`, cursor:'pointer' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = colors.bg)} onMouseLeave={e => (e.currentTarget.style.background = '')}>
+                    <td style={{ ...td, fontWeight:700, color:colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف مو مربوط بشفت — ما ينحسب له تأخير ولا أوفر تايم' : 'شفت 24 ساعة — ما ينحسب تأخير ولا أوفر تايم'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? '⚠️ بدون شفت' : '⚠️ شفت 24 ساعة'}</span>}</td>
+                    <td style={td}>{pill(`${r.days_present} يوم`, colors.primary, colors.primaryLight)}</td>
+                    <td style={td}>{r.days_absent ? pill(`${r.days_absent} يوم`, colors.danger, colors.dangerLight) : '—'}</td>
+                    <td style={{ ...td, color: r.total_late_minutes ? colors.warning : colors.text4, fontWeight:600 }}>{r.total_late_minutes ? attMin(r.total_late_minutes) : '—'}</td>
+                    <td style={{ ...td, color: r.total_penalty ? colors.danger : colors.text4, fontWeight:600 }}>{r.total_penalty ? `${r.total_penalty} ر.س` : '—'}</td>
+                    <td style={{ ...td, color: r.total_overtime_minutes ? colors.info : colors.text4, fontWeight:600 }}>
+                      {r.total_overtime_minutes ? attMin(r.total_overtime_minutes) : '—'}{r.total_overtime_pay ? <div style={{ fontSize:11, color:colors.text3 }}>{r.total_overtime_pay} ر.س</div> : null}
+                    </td>
+                    <td style={{ ...td, color:colors.primary, fontSize:12, fontWeight:700 }}>السجل ←</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -1108,9 +1223,6 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   const [closings, setClosings] = useState<any[]>([])
   const [expandedReasons, setExpandedReasons] = useState<Record<string,boolean>>({})
   const [loading, setLoading]   = useState(true)
-  const [editingDateId, setEditingDateId] = useState<string|null>(null)
-  const [editDateValue, setEditDateValue] = useState('')
-  const [savingDate, setSavingDate] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<any|null>(null)
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteError, setDeleteError] = useState('')
@@ -1145,9 +1257,10 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
           { header: 'الكاش بعد الخصم', key: 'cashAfter', align: 'left' },
           { header: 'الصافي', key: 'net', align: 'left' },
           { header: 'النتيجة', key: 'result' },
+          { header: 'سبب العجز', key: 'reason' },
         ],
         rows: closings.map((c: any) => ({
-          date: new Date(c.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn'}),
+          date: new Date(c.closing_date+'T12:00:00Z').toLocaleDateString('ar-SA', {numberingSystem:'latn',calendar:'gregory',timeZone:'UTC'}) + (c.created_at ? ' · ' + new Date(c.created_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'}) : ''),
           staff: c.staff_name || '—',
           sales: Number(c.total_sales || 0).toFixed(2) + ' ' + curr,
           network: Number(c.network_amount || 0).toFixed(2) + ' ' + curr,
@@ -1156,6 +1269,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
           cashAfter: (Number(c.cash_amount||0)-Number(c.total_purchases||0)).toFixed(2) + ' ' + curr,
           net: (Number(c.network_amount||0)+Number(c.cash_amount||0)-Number(c.total_purchases||0)).toFixed(2) + ' ' + curr,
           result: c.difference > 0 ? `زيادة ${c.difference.toFixed(2)}` : c.difference < 0 ? `عجز ${Math.abs(c.difference).toFixed(2)}` : 'مطابق',
+          reason: c.status === 'deficit' ? (c.deficit_reason || '—') : '',
         })),
         summaryStats: [
           { label: 'إجمالي التقارير', value: String(closings.length), color: '#0891b2' },
@@ -1172,6 +1286,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
           cashAfter: closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount||0)-Number(c.total_purchases||0)),0).toFixed(2) + ' ' + curr,
           net: closings.reduce((s:number,c:any)=>s+Number(c.network_amount||0)+Number(c.cash_amount||0)-Number(c.total_purchases||0),0).toFixed(2) + ' ' + curr,
           result: '—',
+          reason: '',
         },
         fileName: `تقرير-اقفال-الكاشير-${new Date().toISOString().slice(0,10)}.pdf`,
       })
@@ -1184,15 +1299,6 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
     if(!orgId) return
     fetch('/api/month-comparison?org_id='+orgId+'&branch_id='+(sessionStorage.getItem('s_branch_id')||'')).then(r=>r.json()).then(d=>{ if(d.success) setMonthComp(d) }).catch(()=>{})
   },[])
-
-  async function saveClosingDate(id: string) {
-    setSavingDate(true)
-    const r=await api.patch('/api/cashier-closing',{org_id:sessionStorage.getItem('s_org_id'),id,closing_date:editDateValue})
-    setSavingDate(false)
-    if(!r.success){toast('فشل تعديل التاريخ — حاول مرة أخرى','error');return}
-    setClosings(prev => prev.map(c => c.id===id ? {...c, closing_date: editDateValue} : c))
-    setEditingDateId(null)
-  }
 
   async function confirmDeleteClosing() {
     setDeleteError(''); setDeleting(true)
@@ -1293,23 +1399,11 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                 {closings.map((c:any)=>(
                   <tr key={c.id} style={{borderBottom:`1px solid ${colors.border}`}}>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>
-                      {editingDateId===c.id ? (
-                        <div style={{display:'flex',alignItems:'center',gap:6}}>
-                          <input type="date" value={editDateValue} onChange={e=>setEditDateValue(e.target.value)}
-                            style={{...inp(),padding:'4px 8px',fontSize:font.xs,width:140}}/>
-                          <button onClick={()=>saveClosingDate(c.id)} disabled={savingDate}
-                            style={{background:colors.primary,color:'white',border:'none',borderRadius:6,padding:'4px 8px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                            {savingDate?'...':'حفظ'}
-                          </button>
-                          <button onClick={()=>setEditingDateId(null)}
-                            style={{background:colors.bg,color:colors.text3,border:'none',borderRadius:6,padding:'4px 8px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                            إلغاء
-                          </button>
-                        </div>
-                      ) : (
-                        <div onClick={()=>{setEditingDateId(c.id);setEditDateValue(c.closing_date)}} style={{cursor:'pointer',display:'flex',alignItems:'center',gap:6}}>
-                          {new Date(c.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn'})}
-                          <span style={{opacity:.4,display:'inline-flex',alignItems:'center'}}><Pencil size={11} strokeWidth={2.25}/></span>
+                      <div style={{fontWeight:600,color:colors.text}}>{new Date(c.closing_date+'T12:00:00Z').toLocaleDateString('ar-SA', {numberingSystem:'latn',calendar:'gregory',timeZone:'UTC'})}</div>
+                      {c.created_at && (
+                        <div style={{fontSize:11,color:colors.text4,marginTop:2,whiteSpace:'nowrap' as const}}>
+                          قُفل {new Date(c.created_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'})}
+                          {new Date(c.created_at).toLocaleDateString('en-CA',{timeZone:'Asia/Riyadh'}) !== c.closing_date && <> · {new Date(c.created_at).toLocaleDateString('ar-SA',{numberingSystem:'latn',day:'numeric',month:'short',calendar:'gregory',timeZone:'Asia/Riyadh'})}</>}
                         </div>
                       )}
                     </td>
@@ -1334,8 +1428,13 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                     </td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{(Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} {curr}</td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{(Number(c.network_amount)+Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} {curr}</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:statusColor[c.status]}}>
+                    <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:statusColor[c.status],minWidth:150}}>
                       {statusLabel[c.status]}{c.status!=='balanced'?` (${Math.abs(Number(c.difference)).toFixed(0)} ${curr})`:''}
+                      {c.status==='deficit' && (
+                        <div style={{fontSize:11,fontWeight:600,marginTop:4,lineHeight:1.5,color:c.deficit_reason?colors.text2:colors.text4,background:c.deficit_reason?colors.dangerLight:'transparent',borderRadius:6,padding:c.deficit_reason?'4px 8px':0,maxWidth:220,whiteSpace:'normal' as const}}>
+                          {c.deficit_reason ? <>السبب: {c.deficit_reason}</> : 'بدون سبب (إقفال قديم)'}
+                        </div>
+                      )}
                     </td>
                     <td style={{padding:'12px 16px'}}>
                       <div style={{display:'flex',gap:6}}>
@@ -1486,7 +1585,7 @@ export default function ReportsPage() {
   )
 
   if (view==='attendance') return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto',padding:'20px 16px'}}>
+    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
       <AttendanceDetail onBack={()=>setView('home')}/>
     </div>
   )
@@ -1605,7 +1704,7 @@ export default function ReportsPage() {
         <div className="su" style={{animationDelay:'.28s'}}>
           <ReportCard
             title="الحضور والانصراف"
-            subtitle="سجل حضور وانصراف الموظفين"
+            subtitle="الحضور والتأخير والأوفر تايم لكل موظف"
             icon={<CalendarDays size={20} strokeWidth={1.75}/>}
             color={'#0f766e'}
             bg={'#f0fdfa'}
