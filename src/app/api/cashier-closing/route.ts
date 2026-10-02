@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { sendPushToOrg } from '@/lib/push'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { computeBusinessDate } from '@/lib/businessDate'
 import { selectAll } from '@/lib/selectAll'
 
@@ -10,6 +11,14 @@ const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
+
+// صور الإقفال لازم تكون مرفوعة على تخزين Supabase حقنا — نرفض أي رابط ثاني
+function safeImageUrl(v: unknown): string | null {
+  const s = typeof v === 'string' ? v.trim() : ''
+  if (!s) return null
+  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '')
+  return base && s.startsWith(`${base}/storage/v1/`) ? s.slice(0, 1000) : null
+}
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -23,16 +32,23 @@ function formatPhone(raw: string): string {
 
 export async function POST(req: Request) {
   try {
+    // الكاشير لازم يكون مسجّل دخول بالـPIN — المنشأة والموظف والفرع من التوكن الموقّع، مو من الطلب
+    const auth = await verifyStaffToken(extractStaffToken(req))
+    if (!auth.valid || !auth.data) return NextResponse.json({ error: auth.error, reason: auth.reason }, { status: 401 })
+    const { org_id, staff_id } = auth.data
+
     const {
-      org_id, branch_id, staff_id, staff_name, total_sales,
-      network_amount, mada_amount, visa_amount, mastercard_amount,
-      cash_amount, purchases, network_image, sales_image,
-      deficit_reason,
+      total_sales, network_amount, mada_amount, visa_amount, mastercard_amount,
+      cash_amount, purchases, network_image, sales_image, deficit_reason,
     } = await req.json()
 
-    if (!org_id || !staff_id || !staff_name) {
-      return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
-    }
+    // الاسم والفرع والدور من قاعدة البيانات — وما يقفل الصندوق إلا كاشير فعّال
+    const { data: staffRow } = await sb().from('staff_members')
+      .select('name,branch_id,role,is_active').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
+    if (!staffRow || (staffRow as any).is_active === false) return NextResponse.json({ error: 'الحساب غير فعّال' }, { status: 403 })
+    if ((staffRow as any).role !== 'cashier') return NextResponse.json({ error: 'إقفال الصندوق للكاشير فقط' }, { status: 403 })
+    const staff_name: string = (staffRow as any).name
+    const branch_id: string | null = (staffRow as any).branch_id ?? auth.data.branch_id ?? null
 
     const { data: orgCheck } = await sb().from('organizations').select('plan').eq('id', org_id).single()
     if ((orgCheck as any)?.plan === 'basic') {
@@ -47,13 +63,21 @@ export async function POST(req: Request) {
       }
     }
 
-    const sales = Number(total_sales) || 0
-    const mada = Number(mada_amount) || 0
-    const visa = Number(visa_amount) || 0
-    const mastercard = Number(mastercard_amount) || 0
-    const network = Number(network_amount) || (mada + visa + mastercard)
-    const cash = Number(cash_amount) || 0
-    const purchasesList = Array.isArray(purchases) ? purchases.filter((p: any) => p && Number(p.amount) > 0) : []
+    // مبالغ موجبة ومعقولة بس — أي قيمة غريبة تنرفض
+    const money = (v: unknown) => { const n = Number(v); return Number.isFinite(n) && n >= 0 && n < 1e9 ? Math.round(n * 100) / 100 : NaN }
+    const sales = money(total_sales || 0)
+    const mada = money(mada_amount || 0)
+    const visa = money(visa_amount || 0)
+    const mastercard = money(mastercard_amount || 0)
+    const cash = money(cash_amount || 0)
+    const network = network_amount ? money(network_amount) : Math.round((mada + visa + mastercard) * 100) / 100
+    if ([sales, mada, visa, mastercard, cash, network].some(Number.isNaN)) {
+      return NextResponse.json({ error: 'مبالغ غير صالحة' }, { status: 400 })
+    }
+    // المسحوبات: مبلغ وسبب فقط (ما نخزّن أي حقول ثانية من الطلب)
+    const purchasesList = (Array.isArray(purchases) ? purchases : []).slice(0, 50)
+      .map((p: any) => ({ amount: money(p?.amount), reason: String(p?.reason ?? '').trim().slice(0, 200) }))
+      .filter(p => p.amount > 0)
     const totalPurchases = purchasesList.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0)
 
     const expectedCash = sales - network
@@ -93,8 +117,8 @@ export async function POST(req: Request) {
         difference,
         status,
         deficit_reason: deficitReason || null,
-        network_image: network_image || null,
-        sales_image: sales_image || null,
+        network_image: safeImageUrl(network_image),
+        sales_image: safeImageUrl(sales_image),
       })
       .select()
       .single()
@@ -122,8 +146,8 @@ export async function POST(req: Request) {
       const branchName = currentBranch?.name || null
       // رقم الفرع المخصص له الأولوية على رقم المؤسسة الرئيسي
       const whatsappNumber = (currentBranch as any)?.whatsapp_number || (org as any)?.whatsapp_number
-      const { data: staffRow } = await supabase.from('staff_members').select('send_closing_whatsapp').eq('id', staff_id).maybeSingle()
-      const sendFullDetails = WHATSAPP_PAUSED ? false : ((staffRow as any)?.send_closing_whatsapp !== false)
+      const { data: staffPrefs } = await supabase.from('staff_members').select('send_closing_whatsapp').eq('id', staff_id).maybeSingle()
+      const sendFullDetails = WHATSAPP_PAUSED ? false : ((staffPrefs as any)?.send_closing_whatsapp !== false)
 
       // احترام تفضيل العميل: يرسل بس لو مفعّل بالإعدادات
       const notifyEnabled = (org as any)?.notify_cashier_closing_wa !== false
