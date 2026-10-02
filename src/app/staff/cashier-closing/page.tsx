@@ -164,7 +164,7 @@ const DEFICIT_REASONS: { key: string; ar: string; en: string }[] = [
   { key:'purchase', ar:'مشتريات من الكاش ما انسجلت',       en:'Cash purchase not recorded' },
   { key:'card', ar:'عملية شبكة انسجلت كاش بالغلط',     en:'Card payment recorded as cash' },
   { key:'refund', ar:'مرتجع أو استرجاع مبلغ لعميل',      en:'Refund to a customer' },
-  { key:'discount', ar:'خصم لعميل ما انسجل',               en:'Unrecorded discount' },
+  { key:'discount', ar:'خصم لعميل ما تسجل',               en:'Unrecorded discount' },
   { key:'mistake', ar:'خطأ من الكاشير بالعدّ أو الإدخال', en:'Cashier counting/entry mistake' },
   { key:'unknown', ar:'ما أعرف السبب',                    en:"I don't know the reason" },
   { key:'other', ar:'سبب آخر',                          en:'Other reason' },
