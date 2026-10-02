@@ -8,6 +8,12 @@ import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { exportReportPdf } from '@/lib/pdfExport'
 
+// كل الأوقات والتواريخ بالتقرير بتوقيت السعودية
+const saudiToday = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
+const fmtTime = (iso: string | null) => iso ? new Date(iso).toLocaleTimeString('ar-SA', { numberingSystem: 'latn', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Riyadh' }) : '—'
+const fmtDay = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString('ar-SA', { numberingSystem: 'latn', weekday: 'short', day: 'numeric', month: 'numeric', calendar: 'gregory', timeZone: 'UTC' })
+const fmtMinutes = (m: number) => { const h = Math.floor(m / 60), r = m % 60; return h ? (r ? `${h}س ${r}د` : `${h} ساعة`) : `${r} دقيقة` }
+
 export default function AttendancePage() {
   const [tab, setTab] = useState<'report'|'settings'>('report')
   const [orgId, setOrgId] = useState('')
@@ -15,9 +21,10 @@ export default function AttendancePage() {
   const [locked, setLocked] = useState(false)
   const [branchId, setBranchId] = useState<string|null>(null)
   const [periodMode, setPeriodMode] = useState<'day'|'range'>('day')
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
-  const [rangeFrom, setRangeFrom] = useState(() => { const d=new Date(); d.setDate(1); return d.toISOString().slice(0,10) })
-  const [rangeTo, setRangeTo] = useState(() => new Date().toISOString().slice(0, 10))
+  const [date, setDate] = useState(() => saudiToday())
+  const [rangeFrom, setRangeFrom] = useState(() => saudiToday().slice(0, 8) + '01')
+  const [rangeTo, setRangeTo] = useState(() => saudiToday())
+  const [staffFilter, setStaffFilter] = useState('')  // '' = كل الموظفين
   const [rows, setRows] = useState<any[]>([])
   const [rangeRows, setRangeRows] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -47,8 +54,8 @@ export default function AttendancePage() {
   const [savingOt, setSavingOt] = useState(false)
 
   useEffect(() => { init() }, [])
-  useEffect(() => { if (orgId && periodMode === 'day') load(orgId, date) }, [date, periodMode])
-  useEffect(() => { if (orgId && periodMode === 'range') loadRange(orgId, rangeFrom, rangeTo) }, [rangeFrom, rangeTo, periodMode])
+  useEffect(() => { if (orgId && periodMode === 'day') load(orgId, date) }, [date, periodMode, staffFilter])
+  useEffect(() => { if (orgId && periodMode === 'range') loadRange(orgId, rangeFrom, rangeTo) }, [rangeFrom, rangeTo, periodMode, staffFilter])
 
   async function init() {
     const me = await api.get('/api/me')
@@ -96,7 +103,7 @@ export default function AttendancePage() {
     setLoading(true)
     try {
       const bid = sessionStorage.getItem('s_branch_id')
-      const j = await api.get('/api/attendance-report', { org_id: oid, from, to, branch_id: bid })
+      const j = await api.get('/api/attendance-report', { org_id: oid, from, to, branch_id: bid, staff_id: staffFilter || undefined })
       if (j.success) setRangeRows(j.rows || [])
       else toast(j.message || j.error || 'تعذر تحميل السجل', 'error')
     } catch { toast('خطأ بالاتصال', 'error') }
@@ -106,6 +113,37 @@ export default function AttendancePage() {
   async function exportRangePdf() {
     setExporting(true)
     try {
+      const one = staffFilter ? rangeRows[0] : null
+      if (one?.days) {
+        const days = one.days.map((d: any) => ({
+          ...d,
+          check_in: fmtTime(d.check_in), check_out: fmtTime(d.check_out),
+          hours_worked: d.hours_worked ?? '—', late_minutes: d.late_minutes || '—',
+          overtime: d.overtime_minutes ? `${fmtMinutes(d.overtime_minutes)} (${d.overtime_pay} ر.س)` : '—',
+        }))
+        await exportReportPdf({
+          title: `سجل حضور ${one.name}`,
+          subtitle: `من ${rangeFrom} إلى ${rangeTo}`,
+          orgName,
+          columns: [
+            { header: 'التاريخ', key: 'date' },
+            { header: 'الحضور', key: 'check_in', align: 'center' },
+            { header: 'الانصراف', key: 'check_out', align: 'center' },
+            { header: 'الساعات', key: 'hours_worked', align: 'center' },
+            { header: 'التأخير (دقيقة)', key: 'late_minutes', align: 'center' },
+            { header: 'الأوفر تايم', key: 'overtime', align: 'center' },
+          ],
+          rows: days,
+          totalsRow: {
+            date: 'الإجمالي', check_in: `${one.days_present} يوم`, check_out: '', hours_worked: '',
+            late_minutes: one.total_late_minutes,
+            overtime: one.total_overtime_minutes ? `${fmtMinutes(one.total_overtime_minutes)} (${one.total_overtime_pay} ر.س)` : '—',
+          },
+          fileName: `حضور-${one.name}-${rangeFrom}-${rangeTo}`,
+        })
+        setExporting(false)
+        return
+      }
       await exportReportPdf({
         title: 'تقرير الحضور والانصراف',
         subtitle: `من ${rangeFrom} إلى ${rangeTo}`,
@@ -116,6 +154,8 @@ export default function AttendancePage() {
           { header: 'أيام الغياب', key: 'days_absent', align: 'center' },
           { header: 'إجمالي دقائق التأخير', key: 'total_late_minutes', align: 'center' },
           { header: 'إجمالي الخصومات (ر.س)', key: 'total_penalty', align: 'center' },
+          { header: 'دقائق الأوفر تايم', key: 'total_overtime_minutes', align: 'center' },
+          { header: 'مبلغ الأوفر تايم (ر.س)', key: 'total_overtime_pay', align: 'center' },
         ],
         rows: rangeRows,
         totalsRow: {
@@ -124,6 +164,8 @@ export default function AttendancePage() {
           days_absent: rangeRows.reduce((s,r)=>s+r.days_absent,0),
           total_late_minutes: rangeRows.reduce((s,r)=>s+r.total_late_minutes,0),
           total_penalty: Math.round(rangeRows.reduce((s,r)=>s+r.total_penalty,0)*100)/100,
+          total_overtime_minutes: rangeRows.reduce((s,r)=>s+(r.total_overtime_minutes||0),0),
+          total_overtime_pay: Math.round(rangeRows.reduce((s,r)=>s+(r.total_overtime_pay||0),0)*100)/100,
         },
         fileName: `تقرير-الحضور-${rangeFrom}-${rangeTo}`,
       })
@@ -135,7 +177,7 @@ export default function AttendancePage() {
     setLoading(true)
     try {
       const bid = sessionStorage.getItem('s_branch_id')
-      const j = await api.get('/api/attendance-report', { org_id: oid, date: d, branch_id: bid })
+      const j = await api.get('/api/attendance-report', { org_id: oid, date: d, branch_id: bid, staff_id: staffFilter || undefined })
       if (j.success) setRows(j.rows || [])
       else toast(j.message || j.error || 'تعذر تحميل السجل', 'error')
     } catch { toast('خطأ بالاتصال', 'error') }
@@ -289,6 +331,10 @@ export default function AttendancePage() {
                   {m.label}
                 </button>
               ))}
+              <select value={staffFilter} onChange={e => setStaffFilter(e.target.value)} style={{ ...inp(), width: 170, padding: '7px 10px', fontSize: 12 }}>
+                <option value="">👥 كل الموظفين</option>
+                {staffList.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
             </div>
             {periodMode === 'day' ? (
               <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ ...inp(), width: 170 }} />
@@ -334,6 +380,7 @@ export default function AttendancePage() {
                           <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجمالي الساعات</th>
                           <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>التأخير</th>
                           <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الخصم</th>
+                          <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الأوفر تايم</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -344,10 +391,10 @@ export default function AttendancePage() {
                               <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(r.status), background: statusBg(r.status), padding: '3px 10px', borderRadius: 99 }}>{r.status}</span>
                             </td>
                             <td style={{ padding: '11px 14px', color: colors.text2 }}>
-                              {r.check_in ? new Date(r.check_in).toLocaleTimeString('ar-SA', { numberingSystem: 'latn', hour: '2-digit', minute: '2-digit' }) : '—'}
+                              {fmtTime(r.check_in)}
                             </td>
                             <td style={{ padding: '11px 14px', color: colors.text2 }}>
-                              {r.check_out ? new Date(r.check_out).toLocaleTimeString('ar-SA', { numberingSystem: 'latn', hour: '2-digit', minute: '2-digit' }) : '—'}
+                              {fmtTime(r.check_out)}
                               {r.is_excused && <span style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px' }}>مستأذن</span>}
                             </td>
                             <td style={{ padding: '11px 14px', color: colors.text2, fontWeight: 600 }}>
@@ -358,6 +405,9 @@ export default function AttendancePage() {
                             </td>
                             <td style={{ padding: '11px 14px', color: r.penalty_amount ? colors.danger : colors.text4, fontWeight: 700 }}>
                               {r.penalty_amount ? `${r.penalty_amount} ر.س` : '—'}
+                            </td>
+                            <td style={{ padding: '11px 14px', color: r.overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
+                              {r.overtime_minutes ? <>{fmtMinutes(r.overtime_minutes)}{r.overtime_pay ? <span style={{ fontSize: 11, fontWeight: 600, color: colors.text3 }}> · {r.overtime_pay} ر.س</span> : null}</> : '—'}
                             </td>
                           </tr>
                         ))}
@@ -383,6 +433,7 @@ export default function AttendancePage() {
                         <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>أيام الغياب</th>
                         <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجمالي التأخير</th>
                         <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجمالي الخصومات</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الأوفر تايم</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -393,11 +444,54 @@ export default function AttendancePage() {
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: colors.danger, fontWeight: 700 }}>{r.days_absent}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_late_minutes ? colors.warning : colors.text4 }}>{r.total_late_minutes ? `${r.total_late_minutes} دقيقة` : '—'}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_penalty ? colors.danger : colors.text4, fontWeight: 700 }}>{r.total_penalty ? `${r.total_penalty} ر.س` : '—'}</td>
+                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
+                            {r.total_overtime_minutes ? <>{fmtMinutes(r.total_overtime_minutes)}{r.total_overtime_pay ? <div style={{ fontSize: 11, fontWeight: 600, color: colors.text3 }}>{r.total_overtime_pay} ر.س</div> : null}</> : '—'}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+              )}
+              {!loading && rangeRows[0]?.days && (
+                <div style={{ borderTop: `1px solid ${colors.border2}` }}>
+                  <div style={{ padding: '12px 14px', fontWeight: 800, fontSize: 13, color: colors.text }}>📅 السجل اليومي — {rangeRows[0].name}</div>
+                  <div style={{ overflowX: 'auto' as const }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ background: colors.bg, borderBottom: `1px solid ${colors.border2}` }}>
+                          {['التاريخ', 'الحالة', 'الحضور', 'الانصراف', 'الساعات', 'التأخير', 'الخصم', 'الأوفر تايم'].map(h => (
+                            <th key={h} style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11, whiteSpace: 'nowrap' as const }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rangeRows[0].days.map((d: any, i: number) => (
+                          <tr key={d.date} style={{ borderBottom: i < rangeRows[0].days.length - 1 ? `1px solid ${colors.border}` : 'none', opacity: d.check_in ? 1 : 0.6 }}>
+                            <td style={{ padding: '10px 14px', fontWeight: 700, color: colors.text, whiteSpace: 'nowrap' as const }}>{fmtDay(d.date)}</td>
+                            <td style={{ padding: '10px 14px' }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(d.status), background: statusBg(d.status), padding: '3px 10px', borderRadius: 99, whiteSpace: 'nowrap' as const }}>{d.status === 'لم يحضر' ? 'غياب' : d.status}</span>
+                            </td>
+                            <td style={{ padding: '10px 14px', color: colors.text2 }}>{fmtTime(d.check_in)}</td>
+                            <td style={{ padding: '10px 14px', color: colors.text2 }}>
+                              {fmtTime(d.check_out)}
+                              {d.is_excused && <span style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px' }}>مستأذن</span>}
+                            </td>
+                            <td style={{ padding: '10px 14px', color: colors.text2, fontWeight: 600 }}>{d.hours_worked !== null ? `${d.hours_worked} ساعة` : '—'}</td>
+                            <td style={{ padding: '10px 14px', color: d.late_minutes ? colors.warning : colors.text4 }}>{d.late_minutes ? `${d.late_minutes} دقيقة` : '—'}</td>
+                            <td style={{ padding: '10px 14px', color: d.penalty_amount ? colors.danger : colors.text4, fontWeight: 700 }}>{d.penalty_amount ? `${d.penalty_amount} ر.س` : '—'}</td>
+                            <td style={{ padding: '10px 14px', color: d.overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
+                              {d.overtime_minutes ? <>{fmtMinutes(d.overtime_minutes)}{d.overtime_pay ? <span style={{ fontSize: 11, fontWeight: 600, color: colors.text3 }}> · {d.overtime_pay} ر.س</span> : null}</> : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+              {!loading && !staffFilter && rangeRows.length > 0 && (
+                <div style={{ padding: '10px 14px', fontSize: 11, color: colors.text4, borderTop: `1px solid ${colors.border}` }}>💡 اختر موظف من القائمة فوق عشان يطلع لك سجله يوم بيوم</div>
               )}
             </div>
           )}
