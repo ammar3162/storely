@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { attendanceState, lateMinutesAt } from './attendanceState'
+import { attendanceState, lateMinutesAt, activeShift } from './attendanceState'
 
 const at = (d: string, t: string) => `${d}T${t}:00+03:00`
 const now = (d: string, t: string) => new Date(at(d, t))
@@ -57,5 +57,20 @@ describe('lateMinutesAt', () => {
   it('no shift or 24h means no lateness', () => {
     expect(lateMinutesAt(Date.now(), null)).toBe(0)
     expect(lateMinutesAt(Date.now(), { start_time: null, end_time: null, is_24h: true })).toBe(0)
+  })
+})
+
+describe('activeShift (shift change mid-session)', () => {
+  const evening = { start_time: '18:00', end_time: '23:00', is_24h: false }
+  it('keeps the shift the employee checked in on while still checked in', () => {
+    const open = { type: 'check_in', recorded_at: at('2026-10-04', '08:00'), shift_start_time: '08:00:00', shift_end_time: '16:00:00', shift_is_24h: false }
+    expect(activeShift(open, evening)).toEqual({ start_time: '08:00:00', end_time: '16:00:00', is_24h: false })
+  })
+  it('uses the new shift when not checked in, or for old records without a snapshot', () => {
+    expect(activeShift(null, evening)).toBe(evening)
+    expect(activeShift({ type: 'check_in', recorded_at: at('2026-10-04', '08:00'), shift_is_24h: null }, evening)).toBe(evening)
+  })
+  it('checked in without a shift stays without a shift', () => {
+    expect(activeShift({ type: 'check_in', recorded_at: at('2026-10-04', '08:00'), shift_start_time: null, shift_is_24h: false }, evening)).toBeNull()
   })
 })

@@ -279,7 +279,7 @@ export default function AttendancePage() {
   async function assignShift(staffId: string, shiftId: string) {
     const j = await api.patch('/api/staff-shifts', { org_id: orgId, staff_id: staffId, shift_id: shiftId || null })
     if (!j.success) { toast(j.error || 'فشل الربط', 'error'); return }
-    toast('✅ تم تحديد شفت الموظف')
+    toast('✅ تم تحديد الشفت — لو الموظف داخل دوامه الحين يكمله على شفته القديم، والجديد يبدأ من دوامه الجاي')
     setStaffList(prev => prev.map(s => s.id === staffId ? { ...s, shift_id: shiftId || null } : s))
   }
 
@@ -574,7 +574,7 @@ export default function AttendancePage() {
           {/* ربط الموظفين بالشفتات */}
           <div style={{ ...card, padding: '18px 20px' }}>
             <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>تحديد شفت كل موظف</div>
-            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>حدّد أي موظف يتبع أي شفت — عشان النظام يعرف يحسب تأخيره صح</div>
+            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14, lineHeight: 1.6 }}>حدّد أي موظف يتبع أي شفت — عشان النظام يعرف يحسب تأخيره وأوفر تايمه صح. تغيير الشفت يتطبّق من دوامه الجاي: لو كان حاضر يكمل دوامه الحالي على شفته القديم.</div>
 
             {staffList.length === 0 ? (
               <div style={{ fontSize: 12, color: colors.text4, textAlign: 'center' as const, padding: 12 }}>ما فيه موظفين نشطين</div>

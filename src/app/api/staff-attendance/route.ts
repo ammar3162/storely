@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
-import { attendanceState, lateMinutesAt, type AttEvent } from '@/lib/attendanceState'
+import { attendanceState, lateMinutesAt, activeShift, type AttEvent } from '@/lib/attendanceState'
 import { overtimeMinutes, loadOvertimeSettings, type Shift } from '@/lib/payroll'
 
 // آخر حركات الموظف (يكفي آخر يومين) — لحالة «حاضر / انصرف / دوام جديد»
 async function recentEvents(supabase: any, staff_id: string, org_id: string): Promise<AttEvent[]> {
-  const { data } = await supabase.from('staff_attendance').select('id,type,recorded_at')
+  const { data } = await supabase.from('staff_attendance').select('id,type,recorded_at,shift_start_time,shift_end_time,shift_is_24h')
     .eq('staff_id', staff_id).eq('org_id', org_id)
     .gte('recorded_at', new Date(Date.now() - 48 * 3600e3).toISOString())
     .order('recorded_at', { ascending: false }).limit(20)
@@ -82,6 +82,8 @@ export async function POST(req: Request) {
     if (type === 'check_out' && !state.canCheckOut) {
       return NextResponse.json({ error: 'سجّل حضورك أول' }, { status: 409 })
     }
+    // الانصراف والأوفر تايم على الشفت اللي حضر عليه — تغيير الشفت وهو داخل دوامه يتطبّق من دوامه الجاي
+    const sessionShift = activeShift(state.sessionIn, currentShift)
 
     const { data: branch } = await supabase.from('branches').select('latitude,longitude,attendance_radius_m,location_accuracy_m,name').eq('id', branch_id).eq('org_id', org_id).maybeSingle()
     if (!branch) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
@@ -105,8 +107,8 @@ export async function POST(req: Request) {
 
     // يمنع تسجيل الانصراف قبل الوقت المحدد بشفت الموظف — إلا لو عنده استئذان موافق عليه اليوم
     let isExcused = false
-    if (type === 'check_out' && (staff as any).shift_id) {
-      const { data: shiftRow } = await supabase.from('shifts').select('start_time,end_time,is_24h').eq('id', (staff as any).shift_id).maybeSingle()
+    if (type === 'check_out' && sessionShift) {
+      const shiftRow = sessionShift
       if (shiftRow && !(shiftRow as any).is_24h && (shiftRow as any).end_time) {
         const now = new Date()
         const saudiMinutes = ((now.getUTCHours()+3)%24)*60 + now.getUTCMinutes()
@@ -150,7 +152,7 @@ export async function POST(req: Request) {
     let overtimeAtCheckout: number | null = null
     if (type === 'check_out') {
       const ot = await loadOvertimeSettings(supabase, org_id)
-      overtimeAtCheckout = overtimeMinutes(new Date().toISOString(), currentShift, ot.minMinutes)
+      overtimeAtCheckout = overtimeMinutes(new Date().toISOString(), sessionShift, ot.minMinutes)
     }
 
     const { error: insErr } = await supabase.from('staff_attendance').insert({
@@ -158,6 +160,12 @@ export async function POST(req: Request) {
       latitude, longitude, distance_m: Math.round(dist), within_range: true,
       late_minutes: lateMinutes, penalty_amount: penaltyAmount,
       overtime_minutes: overtimeAtCheckout,
+      // الحضور يثبّت شفت الموظف وقتها
+      ...(type === 'check_in' ? {
+        shift_start_time: currentShift?.start_time ?? null,
+        shift_end_time: currentShift?.end_time ?? null,
+        shift_is_24h: currentShift ? !!currentShift.is_24h : false,
+      } : {}),
       accuracy_m: accuracy_m != null ? Number(accuracy_m) : null,
     } as any)
     if (insErr) return NextResponse.json({ error: 'فشل تسجيل الحضور — حاول مرة أخرى' }, { status: 500 })
@@ -211,8 +219,10 @@ export async function GET(req: Request) {
     }
 
     const { data: staffRow } = await supabase.from('staff_members').select('shift_id').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
-    const shift = await staffShift(supabase, (staffRow as any)?.shift_id || null)
-    const st = attendanceState({ events: await recentEvents(supabase, staff_id, org_id), shift })
+    const currentShift = await staffShift(supabase, (staffRow as any)?.shift_id || null)
+    const st = attendanceState({ events: await recentEvents(supabase, staff_id, org_id), shift: currentShift })
+    // وهو حاضر: نعرض شفت دوامه الحالي (اللي حضر عليه) — الشفت الجديد يبدأ من دوامه الجاي
+    const shift = st.checkedIn ? activeShift(st.sessionIn, currentShift) : currentShift
     // today = الدوام الحالي/الأخير بس (حضور + انصراف) — الواجهة تبني الأزرار على state
     const data = [st.sessionOut, st.sessionIn].filter(Boolean)
 

@@ -11,7 +11,18 @@ const RIYADH = 3 * 3600e3
 const DAY = 24 * 3600e3
 const toMin = (t: string) => { const [h, m] = String(t).slice(0, 5).split(':').map(Number); return h * 60 + m }
 
-export type AttEvent = { id?: string; type: 'check_in' | 'check_out' | string; recorded_at: string }
+export type AttEvent = {
+  id?: string; type: 'check_in' | 'check_out' | string; recorded_at: string
+  // الشفت اللي حضر عليه الموظف (يتثبّت وقت الحضور). shift_is_24h = null يعني سجل قديم قبل التثبيت
+  shift_start_time?: string | null; shift_end_time?: string | null; shift_is_24h?: boolean | null
+}
+
+/** شفت الدوام الحالي: لو الموظف حاضر يكمل على الشفت اللي حضر عليه، وإلا شفته الحالي */
+export function activeShift(openCheckIn: AttEvent | null, current: Shift): Shift {
+  if (!openCheckIn || openCheckIn.shift_is_24h == null) return current
+  if (!openCheckIn.shift_start_time && !openCheckIn.shift_is_24h) return null   // حضر وهو بدون شفت
+  return { start_time: openCheckIn.shift_start_time ?? null, end_time: openCheckIn.shift_end_time ?? null, is_24h: !!openCheckIn.shift_is_24h }
+}
 
 /** بداية الشفت الأقرب: آخر بداية ≤ (الآن + ساعة). null لو ما فيه شفت محدد */
 export function currentShiftStart(nowMs: number, shift: Shift): number | null {
