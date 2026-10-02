@@ -11,6 +11,7 @@ import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
+import StaffMonthlyDetail from '@/components/reports/StaffMonthlyReport'
 
 type FilterPeriod = 'today'|'week'|'month'|'year'|'custom'
 
@@ -1534,7 +1535,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
 
 export default function ReportsPage() {
   const orgPlan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
-  const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'|'cashier'|'waste'|'attendance'>('home')
+  const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'|'cashier'|'waste'|'attendance'|'staffMonthly'>('home')
   const [period, setPeriod]       = useState<FilterPeriod>('today')
   const [from, setFrom]           = useState('')
   const [to, setTo]               = useState('')
@@ -1606,6 +1607,12 @@ export default function ReportsPage() {
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير المشتريات</h1>
       <PurchaseDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
+    </div>
+  )
+
+  if (view==='staffMonthly') return (
+    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
+      <StaffMonthlyDetail onBack={()=>setView('home')}/>
     </div>
   )
 
@@ -1738,6 +1745,20 @@ export default function ReportsPage() {
             chartData={[]}
             stats={[]}
             onClick={()=>setView('attendance')}
+          />
+        </div>
+        <div className="su" style={{animationDelay:'.29s'}}>
+          <ReportCard
+            title="تقرير الموظف الشهري"
+            subtitle="الرواتب والأوفر تايم والتأخير والخصومات والسلف"
+            icon={<Wallet size={20} strokeWidth={1.75}/>}
+            color={'#b45309'}
+            bg={'#fffbeb'}
+            border={'#fde68a'}
+            loading={false}
+            chartData={[]}
+            stats={[]}
+            onClick={()=>setView('staffMonthly')}
           />
         </div>
         <div className="su" style={{animationDelay:'.3s'}}>
