@@ -158,16 +158,16 @@ const THANK_YOU_TEMPLATES_EN = [
 ]
 
 // أشهر أسباب عجز الكاشير — الاختيار إجباري، و«سبب آخر» يطلب كتابة السبب
-const DEFICIT_REASONS: { key: string; icon: string; ar: string; en: string }[] = [
-  { key:'unpaid',   icon:'🧾', ar:'فاتورة ما تحاسبت',                 en:'An invoice was not paid' },
-  { key:'change',   icon:'💵', ar:'خطأ بالباقي للعميل',               en:'Wrong change given to a customer' },
-  { key:'purchase', icon:'🛒', ar:'مشتريات من الكاش ما انسجلت',       en:'Cash purchase not recorded' },
-  { key:'card',     icon:'💳', ar:'عملية شبكة انسجلت كاش بالغلط',     en:'Card payment recorded as cash' },
-  { key:'refund',   icon:'↩️', ar:'مرتجع أو استرجاع مبلغ لعميل',      en:'Refund to a customer' },
-  { key:'discount', icon:'🏷️', ar:'خصم لعميل ما انسجل',               en:'Unrecorded discount' },
-  { key:'mistake',  icon:'✋', ar:'خطأ من الكاشير بالعدّ أو الإدخال', en:'Cashier counting/entry mistake' },
-  { key:'unknown',  icon:'❓', ar:'ما أعرف السبب',                    en:"I don't know the reason" },
-  { key:'other',    icon:'✏️', ar:'سبب آخر',                          en:'Other reason' },
+const DEFICIT_REASONS: { key: string; ar: string; en: string }[] = [
+  { key:'unpaid', ar:'فاتورة ما تحاسبت',                 en:'An invoice was not paid' },
+  { key:'change', ar:'خطأ بالباقي للعميل',               en:'Wrong change given to a customer' },
+  { key:'purchase', ar:'مشتريات من الكاش ما انسجلت',       en:'Cash purchase not recorded' },
+  { key:'card', ar:'عملية شبكة انسجلت كاش بالغلط',     en:'Card payment recorded as cash' },
+  { key:'refund', ar:'مرتجع أو استرجاع مبلغ لعميل',      en:'Refund to a customer' },
+  { key:'discount', ar:'خصم لعميل ما انسجل',               en:'Unrecorded discount' },
+  { key:'mistake', ar:'خطأ من الكاشير بالعدّ أو الإدخال', en:'Cashier counting/entry mistake' },
+  { key:'unknown', ar:'ما أعرف السبب',                    en:"I don't know the reason" },
+  { key:'other', ar:'سبب آخر',                          en:'Other reason' },
 ]
 
 export default function CashierClosingPage() {
@@ -582,7 +582,6 @@ export default function CashierClosingPage() {
                   </div>
                 )}
                 <div style={{display:'flex',alignItems:'flex-start',gap:10,background:'#f0f9ff',border:'1px solid #bae6fd',borderRadius:12,padding:'11px 13px',marginBottom:12,textAlign:'start' as const}}>
-                  <span style={{fontSize:16,lineHeight:1.3}}>📅</span>
                   <div>
                     <div style={{fontSize:13,fontWeight:800,color:'#075985'}}>{lang==='en'?'This closing will be recorded on:':'هذا الإقفال بيتسجّل على:'} {businessDateLabel}</div>
                     {isAfterMidnightCarry && <div style={{fontSize:11.5,color:'#0369a1',marginTop:3,lineHeight:1.5}}>{lang==='en'?'Closed after midnight — it counts on the previous business day.':'لأنك تقفل بعد 12 الليل، ينحسب على يوم العمل اللي قبل.'}</div>}
@@ -614,7 +613,6 @@ export default function CashierClosingPage() {
                             <span style={{width:18,height:18,borderRadius:'50%',border:`2px solid ${on?'#dc2626':'#d4d4d0'}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                               {on && <span style={{width:8,height:8,borderRadius:'50%',background:'#dc2626'}}/>}
                             </span>
-                            <span style={{fontSize:16}}>{r.icon}</span>
                             <span style={{fontSize:13.5,fontWeight:on?800:600,color:on?'#991b1b':'#1c1c1a'}}>{lang==='en'?r.en:r.ar}</span>
                           </button>
                         )
