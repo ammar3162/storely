@@ -19,7 +19,6 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter]   = useState<'all'|'unread'|'warning'|'success'|'info'>('all')
-  const [canDecide, setCanDecide] = useState(false)
   const [deciding, setDeciding] = useState<string|null>(null)
 
   useEffect(() => { load() }, [])
@@ -38,7 +37,6 @@ export default function NotificationsPage() {
     const j = await api.get('/api/notifications', { org_id: orgId, branch_id: bid })
     if (!j.success) { setLoading(false); return }
     setNotifications(j.notifications || [])
-    setCanDecide(!!j.canDecide)
     cache.set('notifications:'+orgId+':'+(bid||'all'), j.notifications || [])
     setLoading(false)
   }
@@ -50,16 +48,28 @@ export default function NotificationsPage() {
     setNotifications(prev => prev.map(n => n.id === id ? {...n, read: true} : n))
   }
 
-  // قرار عجز الكاشير — اعتماد = خصم من الراتب، رفض = ما ينخصم
-  async function decideDeficit(n: any, decision: 'approved'|'rejected') {
+  // أزرار القرار حسب نوع الطلب — نفس الـAPI اللي تستخدمه صفحة إدارة الموظفين
+  const DECISIONS: Record<string, { approve: string; reject: string; approved: string; rejected: string; call: (orgId: string, id: string, ok: boolean) => Promise<any> }> = {
+    cashier_deficit: { approve: 'اعتماد الخصم من الراتب', reject: 'رفض', approved: 'تم اعتماد الخصم من راتب الكاشير', rejected: 'تم رفض الخصم — ما انخصم من الراتب',
+      call: (orgId, id, ok) => api.post('/api/cashier-deficit-decision', { org_id: orgId, closing_id: id, decision: ok ? 'approved' : 'rejected' }) },
+    excuse_request: { approve: 'موافقة', reject: 'رفض', approved: 'تمت الموافقة على الاستئذان', rejected: 'تم رفض الاستئذان',
+      call: (orgId, id, ok) => api.put('/api/attendance-permission-request', { org_id: orgId, id, action: ok ? 'approve' : 'reject' }) },
+    advance_request: { approve: 'موافقة على السلفة', reject: 'رفض', approved: 'تمت الموافقة على السلفة', rejected: 'تم رفض السلفة',
+      call: (orgId, id, ok) => api.patch('/api/staff-payroll-adjustments', { org_id: orgId, adjustment_id: id, decision: ok ? 'approved' : 'rejected' }) },
+    leave_request: { approve: 'موافقة على الإجازة', reject: 'رفض', approved: 'تمت الموافقة على الإجازة', rejected: 'تم رفض الإجازة',
+      call: (orgId, id, ok) => api.patch('/api/staff-leave', { org_id: orgId, request_id: id, decision: ok ? 'approved' : 'rejected' }) },
+  }
+
+  async function decide(n: any, ok: boolean) {
     const orgId = sessionStorage.getItem('s_org_id')
-    if (!orgId || deciding) return
+    const cfg = DECISIONS[n.ref_type]
+    if (!orgId || !cfg || deciding) return
     setDeciding(n.id)
-    const r = await api.post('/api/cashier-deficit-decision', { org_id: orgId, closing_id: n.ref_id, decision })
+    const r = await cfg.call(orgId, n.ref_id, ok)
     setDeciding(null)
-    if (!r.success) { toast(r.error || 'تعذر حفظ القرار', 'error'); if (r.error) load(); return }
-    toast(decision === 'approved' ? 'تم اعتماد الخصم من راتب الكاشير' : 'تم رفض الخصم — ما ينخصم من الراتب')
-    setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, decision, read: true } : x))
+    if (!r.success) { toast(r.error || 'تعذر حفظ القرار', 'error'); load(); return }
+    toast(ok ? cfg.approved : cfg.rejected)
+    setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, decision: ok ? 'approved' : 'rejected', read: true } : x))
     window.dispatchEvent(new Event('notifications-updated'))
   }
 
@@ -137,25 +147,25 @@ export default function NotificationsPage() {
                     {!n.read && <span style={{...tag('white',c.color,c.color),fontSize:10,flexShrink:0}}>جديد</span>}
                   </div>
                   <div style={{fontSize:font.xs,color:n.read?colors.text4:colors.text3,marginBottom:6,lineHeight:1.6}}>{n.message}</div>
-                  {n.ref_type==='cashier_deficit' && (
+                  {DECISIONS[n.ref_type] && n.decision && (
                     n.decision==='pending' ? (
-                      canDecide ? (
-                        <div style={{display:'flex',gap:8,margin:'4px 0 8px'}} onClick={e=>e.stopPropagation()}>
-                          <button onClick={()=>decideDeficit(n,'approved')} disabled={deciding===n.id}
-                            style={{padding:'7px 14px',borderRadius:8,border:'none',background:colors.danger,color:'white',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:deciding===n.id?.6:1}}>
-                            اعتماد الخصم من الراتب
+                      n.can_decide ? (
+                        <div style={{display:'flex',gap:8,margin:'4px 0 8px',flexWrap:'wrap' as const}} onClick={e=>e.stopPropagation()}>
+                          <button onClick={()=>decide(n,true)} disabled={deciding===n.id}
+                            style={{padding:'7px 14px',borderRadius:8,border:'none',background:n.ref_type==='cashier_deficit'?colors.danger:colors.primary,color:'white',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:deciding===n.id?.6:1}}>
+                            {DECISIONS[n.ref_type].approve}
                           </button>
-                          <button onClick={()=>decideDeficit(n,'rejected')} disabled={deciding===n.id}
+                          <button onClick={()=>decide(n,false)} disabled={deciding===n.id}
                             style={{padding:'7px 14px',borderRadius:8,border:`1px solid ${colors.border2}`,background:colors.surface,color:colors.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:deciding===n.id?.6:1}}>
-                            رفض
+                            {DECISIONS[n.ref_type].reject}
                           </button>
                         </div>
                       ) : <div style={{fontSize:11,color:colors.text4,margin:'2px 0 8px'}}>بانتظار قرار المالك</div>
-                    ) : n.decision==='approved' ? (
-                      <div style={{fontSize:11,fontWeight:700,color:colors.danger,margin:'2px 0 8px'}}>✓ تم اعتماد الخصم من راتب الكاشير</div>
-                    ) : n.decision==='rejected' ? (
-                      <div style={{fontSize:11,fontWeight:700,color:colors.text3,margin:'2px 0 8px'}}>تم رفض الخصم — ما انخصم من الراتب</div>
-                    ) : null
+                    ) : (
+                      <div style={{fontSize:11,fontWeight:700,color:n.decision==='approved'?(n.ref_type==='cashier_deficit'?colors.danger:colors.primary):colors.text3,margin:'2px 0 8px'}}>
+                        {n.decision==='approved' ? `✓ ${DECISIONS[n.ref_type].approved}` : DECISIONS[n.ref_type].rejected}
+                      </div>
+                    )
                   )}
                   <div style={{fontSize:10,color:colors.text4}}>{new Date(n.created_at).toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
                 </div>

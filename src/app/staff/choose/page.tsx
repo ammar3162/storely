@@ -151,7 +151,7 @@ export default function ChoosePage() {
       const [advRes, leaveRes, excuseRes] = await Promise.all([
         fetch('/api/staff-payroll-adjustments', { headers: { 'Authorization': `Bearer ${token}` } }).then(r=>r.json()).catch(()=>({success:false})),
         fetch('/api/staff-leave', { headers: { 'Authorization': `Bearer ${token}` } }).then(r=>r.json()).catch(()=>({success:false})),
-        fetch(`/api/attendance-permission-request?staff_id=${staffData.id}&history=true`).then(r=>r.json()).catch(()=>({success:false})),
+        fetch(`/api/attendance-permission-request?history=true`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r=>r.json()).catch(()=>({success:false})),
       ])
       const combined: any[] = []
       if (advRes?.success) for (const a of (advRes.adjustments||[])) {
@@ -195,7 +195,7 @@ export default function ChoosePage() {
       if(j.success) { setTodayEvents(j.today||[]); setShift(j.shift||null); setAttendanceLocked(!!j.locked) }
     } catch {}
     try {
-      const pr = await fetch(`/api/attendance-permission-request?staff_id=${parsed.id}`)
+      const pr = await fetch(`/api/attendance-permission-request`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('staff_token')}` } })
       const pj = await pr.json()
       if (pj.success) setPermReq(pj.request)
     } catch {}
@@ -207,8 +207,8 @@ export default function ChoosePage() {
     setSubmittingPerm(true)
     try {
       const res = await fetch('/api/attendance-permission-request', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ org_id: staffData.org_id, branch_id: staffData.branch_id, staff_id: staffData.id, staff_name: staffData.name, reason: permReason }),
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('staff_token')}` },
+        body: JSON.stringify({ reason: permReason }),
       })
       const j = await res.json()
       if (!j.success) { setAttError(j.error || 'فشل إرسال الطلب'); setSubmittingPerm(false); return }

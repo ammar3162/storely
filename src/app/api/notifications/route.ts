@@ -34,14 +34,26 @@ export async function GET(req: Request) {
 
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
     const rows = (data || []) as any[]
-    // إشعارات عجز الكاشير: نرفق حالة القرار عشان الواجهة تعرض أزرار الاعتماد أو النتيجة
-    const deficitIds = rows.filter(n => n.ref_type === 'cashier_deficit' && n.ref_id).map(n => n.ref_id)
-    if (deficitIds.length) {
-      const { data: cl } = await db.from('cashier_closings').select('id,deficit_decision').eq('org_id', org_id).in('id', deficitIds)
-      const dec = new Map(((cl || []) as any[]).map(c => [c.id, c.deficit_decision]))
-      for (const n of rows) if (n.ref_type === 'cashier_deficit') n.decision = dec.get(n.ref_id) ?? null
+    // إشعارات الطلبات (استئذان، سلفة، إجازة، عجز كاشير): نرفق حالة القرار عشان الواجهة تعرض الأزرار أو النتيجة
+    const REF_SOURCES: Record<string, { table: string; col: string; map: (v: any) => string | null }> = {
+      cashier_deficit: { table: 'cashier_closings', col: 'deficit_decision', map: v => v ?? null },
+      excuse_request: { table: 'attendance_permission_requests', col: 'status', map: v => v },
+      advance_request: { table: 'staff_payroll_adjustments', col: 'status', map: v => v },
+      leave_request: { table: 'staff_leave_requests', col: 'status', map: v => v },
     }
-    return NextResponse.json({ success: true, notifications: rows, canDecide: access.role === 'owner' })
+    const isOwner = access.role === 'owner'
+    for (const [refType, src] of Object.entries(REF_SOURCES)) {
+      const ids = rows.filter(n => n.ref_type === refType && n.ref_id).map(n => n.ref_id)
+      if (!ids.length) continue
+      const { data: refRows } = await db.from(src.table).select(`id,${src.col}`).eq('org_id', org_id).in('id', ids)
+      const dec = new Map(((refRows || []) as any[]).map(r => [r.id, src.map(r[src.col])]))
+      for (const n of rows) if (n.ref_type === refType) {
+        n.decision = dec.get(n.ref_id) ?? null
+        // عجز الكاشير للمالك فقط، والباقي للمالك أو مدير الفرع (السيرفر يتحقق مرة ثانية عند القرار)
+        n.can_decide = refType === 'cashier_deficit' ? isOwner : true
+      }
+    }
+    return NextResponse.json({ success: true, notifications: rows })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
