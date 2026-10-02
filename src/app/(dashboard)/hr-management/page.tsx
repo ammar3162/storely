@@ -128,7 +128,8 @@ export default function HRManagementPage() {
     setLoading(false)
   }
 
-  const MAX_ACCEPTABLE_ACCURACY_M = 100
+  // موقع الفرع هو المرجع لكل الموظفين — لازم يكون دقيق (GPS الجوال)، مو تقريبي (واي فاي اللابتوب)
+  const MAX_ACCEPTABLE_ACCURACY_M = 30
 
   function getPositionOnce(): Promise<GeolocationPosition> {
     return new Promise((resolve, reject) => {
@@ -158,15 +159,15 @@ export default function HRManagementPage() {
     if (!bestPos) { setSavingLocationId(null); toast('تعذر تحديد موقعك','error'); return }
     if (bestPos.coords.accuracy > MAX_ACCEPTABLE_ACCURACY_M) {
       setSavingLocationId(null)
-      toast(`إشارة GPS ضعيفة (دقة ${Math.round(bestPos.coords.accuracy)} متر) — جرّب تطلع لمكان مفتوح وحاول مرة ثانية`,'error')
+      toast(`الموقع غير دقيق (±${Math.round(bestPos.coords.accuracy)} متر) — حدّده من جوالك وأنت داخل الفرع، مو من اللابتوب`,'error')
       return
     }
 
     const r = await api.patch('/api/branches', { org_id: orgId, id, latitude: bestPos.coords.latitude, longitude: bestPos.coords.longitude })
     setSavingLocationId(null)
     if(!r.success){ toast('فشل حفظ الموقع — حاول مرة أخرى','error'); return }
-    setBranches(prev=>prev.map((br:any)=>br.id===id?{...br,latitude:bestPos!.coords.latitude}:br))
-    toast('✅ تم حفظ موقع الفرع — الموظفون الآن يقدروا يسجّلوا حضورهم')
+    setBranches(prev=>prev.map((br:any)=>br.id===id?{...br,latitude:bestPos!.coords.latitude,longitude:bestPos!.coords.longitude}:br))
+    toast(`✅ تم حفظ موقع الفرع (دقة ±${Math.round(bestPos.coords.accuracy)} متر)`)
   }
 
   async function applyLatePenalty(staffId:string) {
@@ -438,16 +439,25 @@ export default function HRManagementPage() {
       {/* مواقع الفروع -- لازمة لتفعيل تسجيل الحضور/الانصراف بكل فرع */}
       {branches.length>0 && (
         <div style={{...card,padding:14,marginBottom:20}}>
-          <div style={{fontSize:12,fontWeight:700,color:colors.text2,marginBottom:8}}>📍 مواقع الفروع (لتسجيل الحضور)</div>
+          <div style={{fontSize:12,fontWeight:700,color:colors.text2,marginBottom:4}}>📍 مواقع الفروع (لتسجيل الحضور)</div>
+          <div style={{fontSize:11,color:colors.text3,marginBottom:8}}>حدّد موقع كل فرع <b>من جوالك وأنت داخل الفرع</b> — اللابتوب يعطي موقع تقريبي ممكن يبعد 100 متر</div>
           <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
             {branches.map((b:any)=>(
-              <button key={b.id} onClick={()=>saveBranchLocation(b.id)} disabled={savingLocationId===b.id}
-                style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:colors.bg,border:`1px solid ${colors.border2}`,borderRadius:8,padding:'8px 12px',cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
-                <span style={{fontSize:12,fontWeight:600,color:colors.text}}>{b.name}</span>
-                <span style={{fontSize:11,color:b.latitude?colors.primary:colors.text4}}>
-                  {savingLocationId===b.id ? 'جاري تحديد الموقع...' : b.latitude ? 'تم تحديد الموقع — إعادة الضبط' : 'حدّد موقع الفرع'}
-                </span>
-              </button>
+              <div key={b.id} style={{display:'flex',alignItems:'center',gap:6}}>
+                <button onClick={()=>saveBranchLocation(b.id)} disabled={savingLocationId===b.id}
+                  style={{flex:1,display:'flex',justifyContent:'space-between',alignItems:'center',background:colors.bg,border:`1px solid ${colors.border2}`,borderRadius:8,padding:'8px 12px',cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
+                  <span style={{fontSize:12,fontWeight:600,color:colors.text}}>{b.name}</span>
+                  <span style={{fontSize:11,color:b.latitude?colors.primary:colors.text4}}>
+                    {savingLocationId===b.id ? 'جاري تحديد الموقع...' : b.latitude ? 'تم تحديد الموقع — إعادة الضبط' : 'حدّد موقع الفرع'}
+                  </span>
+                </button>
+                {b.latitude!=null && b.longitude!=null && (
+                  <a href={`https://www.google.com/maps?q=${b.latitude},${b.longitude}`} target="_blank" rel="noopener noreferrer"
+                    style={{fontSize:11,fontWeight:700,color:colors.primary,background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`,borderRadius:8,padding:'8px 10px',textDecoration:'none',whiteSpace:'nowrap' as const}}>
+                    🗺️ الخريطة
+                  </a>
+                )}
+              </div>
             ))}
           </div>
         </div>

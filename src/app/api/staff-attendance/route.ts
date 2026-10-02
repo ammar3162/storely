@@ -64,7 +64,9 @@ export async function POST(req: Request) {
     }
 
     const dist = distanceMeters(Number(latitude), Number(longitude), Number(branch.latitude), Number(branch.longitude))
-    const withinRange = dist <= (branch.attendance_radius_m || 50)
+    // سماحية بقدر دقة GPS الجوال (حتى 40 متر) — داخل المباني الإشارة أضعف والموقع يتذبذب
+    const tolerance = Math.min(Math.max(Number(accuracy_m) || 0, 0), 40)
+    const withinRange = dist <= (branch.attendance_radius_m || 50) + tolerance
 
     if (!withinRange) {
       return NextResponse.json({
