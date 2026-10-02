@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bell, MapPin, Package, Store, ClipboardList, Send, Wallet, Plane, UserCheck, Boxes, ShoppingCart } from 'lucide-react'
+import { Bell, MapPin, Package, Store, ClipboardList, Send, Wallet, Plane, UserCheck, Boxes, ShoppingCart, Clock, LogOut } from 'lucide-react'
 import { getStaffOrg } from '@/lib/session'
 
 const CS: Record<string, Record<'ar'|'en', string>> = {
@@ -302,204 +302,188 @@ export default function ChoosePage() {
     setMarking(null)
   }
 
+  const isAr = lang === 'ar'
+  const fmtClock = (iso: string) => new Date(iso).toLocaleTimeString('ar-SA', { numberingSystem:'latn', hour:'2-digit', minute:'2-digit', timeZone:'Asia/Riyadh' })
+  const todayLabel = new Date().toLocaleDateString(isAr ? 'ar-SA' : 'en-GB', { numberingSystem:'latn', weekday:'long', day:'numeric', month:'long', calendar:'gregory', timeZone:'Asia/Riyadh' })
+  const statusTxt = isCheckedIn ? t('checkedIn') : lastCheckOut ? t('checkedOutToday') : t('notCheckedIn')
+  const statusClr = isCheckedIn ? { c:'#0f766e', bg:'#ecfdf5', dot:'#10b981' } : lastCheckOut ? { c:'#475569', bg:'#f1f5f9', dot:'#94a3b8' } : { c:'#b45309', bg:'#fffbeb', dot:'#f59e0b' }
+
+  // أزرار العمل — نفس الشكل للكل، اللون بس بالأيقونة
+  const workActions = [
+    canDispense && { key:'d', icon:<Package size={20} strokeWidth={2}/>, title:t('dispense'), sub:t('dispenseSub'), c:'#0f766e', bg:'#f0fdfa', go:()=>router.push('/staff/dispense') },
+    isCashier && hasCashierFeature && { key:'c', icon:<Store size={20} strokeWidth={2}/>, title:t('cashierClosing'), sub:t('cashierSub'), c:'#334155', bg:'#f1f5f9', go:()=>router.push('/staff/cashier-closing') },
+    canInventory && { key:'i', icon:<Boxes size={20} strokeWidth={2}/>, title:t('inventory'), sub:t('inventorySub'), c:'#6d28d9', bg:'#f5f3ff', go:()=>router.push('/staff/inventory') },
+    canPurchases && { key:'p', icon:<ShoppingCart size={20} strokeWidth={2}/>, title:t('purchases'), sub:t('purchasesSub'), c:'#1d4ed8', bg:'#eff6ff', go:()=>router.push('/staff/purchases') },
+    !canDispense && !isCashier && { key:'e', icon:<Package size={20} strokeWidth={2}/>, title:t('enterSystem'), sub:t('dispenseSub'), c:'#0f766e', bg:'#f0fdfa', go:()=>router.push('/staff/dispense') },
+  ].filter(Boolean) as { key:string; icon:any; title:string; sub:string; c:string; bg:string; go:()=>void }[]
+
+  const sectionTitle = (txt: string) => (
+    <div style={{fontSize:12,fontWeight:700,color:'#64748b',margin:'22px 4px 10px',textAlign:isAr?'right':'left'}}>{txt}</div>
+  )
+  const cardBase: React.CSSProperties = { background:'white', border:'1px solid #e8ecf1', borderRadius:16, boxShadow:'0 1px 2px rgba(16,24,40,.04)' }
+  const Chevron = () => <span style={{color:'#cbd5e1',fontSize:18,lineHeight:1,transform:isAr?'none':'scaleX(-1)'}}>‹</span>
+
   return (
-    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#042f2e,#0C213B)',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl'}}>
-      <div style={{background:'white',borderRadius:0,padding:'32px 24px 40px',maxWidth:480,width:'100%',minHeight:'100vh',boxSizing:'border-box' as const,textAlign:'center',position:'relative' as const,display:'flex',flexDirection:'column' as const,justifyContent:'center'}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-          <button onClick={()=>{
-              const nl=lang==='ar'?'en':'ar'; setLang(nl); localStorage.setItem('staff_lang',nl)
-              const token = localStorage.getItem('staff_token')
-              fetch('/api/staff-set-lang',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({lang:nl})}).catch(()=>{})
-            }}
-            style={{background:'#f1f5f9',border:'none',borderRadius:20,padding:'6px 12px',fontSize:12,fontWeight:700,color:'#475569',cursor:'pointer',fontFamily:'inherit'}}>
-            {lang==='ar'?'EN':'عربي'}
-          </button>
-          <button onClick={()=>{ setShowNotifications(true); markNotificationsRead() }}
-            style={{position:'relative' as const,background:'#f1f5f9',border:'none',borderRadius:'50%',width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:16}}>
-            <Bell size={17} strokeWidth={2.25}/>
-            {notifications.some((n:any)=>!n.is_read) && (
-              <span style={{position:'absolute' as const,top:-2,left:-2,width:10,height:10,borderRadius:'50%',background:'#dc2626',border:'2px solid white'}}/>
-            )}
-          </button>
-        </div>
-        <div style={{width:60,height:60,borderRadius:18,background: orgLogo ? 'white' : 'linear-gradient(135deg,#029FA2,#0f766e)',border: orgLogo ? '1px solid #e5e7eb' : 'none',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px',boxShadow: orgLogo ? '0 4px 12px rgba(0,0,0,.08)' : '0 8px 20px rgba(22,163,74,.28)',overflow:'hidden' as const}}>
-          {orgLogo ? (
-            <img src={orgLogo} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-          ) : (
-            <span style={{fontSize:24,fontWeight:800,color:'white'}}>{name?.trim()?.[0] || '👤'}</span>
-          )}
-        </div>
-        <h2 style={{fontSize:21,fontWeight:800,color:'#0f172a',marginBottom:5,letterSpacing:'-.2px'}}>{t('welcome')} {name}</h2>
-        <p style={{fontSize:13.5,color:'#94a3b8',marginBottom:28}}>{t('chooseTask')}</p>
+    <div style={{minHeight:'100vh',background:'#f4f6f8',display:'flex',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:isAr?'rtl':'ltr'}}>
+      <div style={{maxWidth:480,width:'100%',minHeight:'100vh',boxSizing:'border-box' as const,padding:'0 0 32px'}}>
 
-        {/* تسجيل الحضور والانصراف */}
-        {!loadingToday && !attendanceLocked && (
-          <div style={{
-            background: isCheckedIn ? 'linear-gradient(135deg,#f0fdfa,#f0fdfa)' : '#f8fafc',
-            border: `1.5px solid ${isCheckedIn ? '#99f6e4' : '#e2e8f0'}`,
-            borderRadius: 18, padding: 18, marginBottom: 24, textAlign: 'right'
-          }}>
-            {/* حالة الموظف الآن */}
-            <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:8,marginBottom:14}}>
-              <span style={{fontSize:12,fontWeight:800,color: isCheckedIn ? '#0f766e' : '#64748b'}}>
-                {isCheckedIn ? t('checkedIn') : lastCheckOut ? t('checkedOutToday') : t('notCheckedIn')}
-              </span>
-              <span style={{
-                width:9,height:9,borderRadius:'50%',
-                background: isCheckedIn ? '#029FA2' : lastCheckOut ? '#94a3b8' : '#f59e0b',
-                boxShadow: isCheckedIn ? '0 0 0 4px rgba(22,163,74,.15)' : 'none',
-              }}/>
+        {/* الهيدر */}
+        <div style={{background:'linear-gradient(160deg,#0b3b3a 0%,#0f766e 100%)',padding:'18px 20px 64px',borderRadius:'0 0 28px 28px',color:'white'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <div style={{display:'flex',alignItems:'center',gap:12}}>
+              <div style={{width:46,height:46,borderRadius:14,background:orgLogo?'white':'rgba(255,255,255,.14)',border:'1px solid rgba(255,255,255,.18)',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden' as const,flexShrink:0}}>
+                {orgLogo ? <img src={orgLogo} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span style={{fontSize:19,fontWeight:800}}>{name?.trim()?.[0] || '👤'}</span>}
+              </div>
+              <div style={{textAlign:isAr?'right':'left'}}>
+                <div style={{fontSize:12,opacity:.75,fontWeight:500}}>{t('welcome')} 👋</div>
+                <div style={{fontSize:18,fontWeight:800,letterSpacing:'-.2px'}}>{name}</div>
+              </div>
             </div>
-
-            {/* أوقات الحضور والانصراف */}
-            {(lastCheckIn || lastCheckOut) && (
-              <div style={{display:'flex',gap:8,marginBottom:16}}>
-                {lastCheckIn && (
-                  <div style={{flex:1,background:'white',borderRadius:12,padding:'10px 12px',border:'1px solid #e2e8f0'}}>
-                    <div style={{fontSize:9,color:'#94a3b8',fontWeight:700,marginBottom:3}}>{t('checkInTime')}</div>
-                    <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>{new Date(lastCheckIn.recorded_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit'})}</div>
-                  </div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>{
+                  const nl=lang==='ar'?'en':'ar'; setLang(nl); localStorage.setItem('staff_lang',nl)
+                  const token = localStorage.getItem('staff_token')
+                  fetch('/api/staff-set-lang',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({lang:nl})}).catch(()=>{})
+                }}
+                style={{height:38,padding:'0 12px',background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.18)',borderRadius:12,fontSize:12,fontWeight:700,color:'white',cursor:'pointer',fontFamily:'inherit'}}>
+                {isAr?'EN':'عربي'}
+              </button>
+              <button onClick={()=>{ setShowNotifications(true); markNotificationsRead() }} aria-label={t('notifications')}
+                style={{position:'relative' as const,width:38,height:38,background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.18)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'white'}}>
+                <Bell size={17} strokeWidth={2.25}/>
+                {notifications.some((n:any)=>!n.is_read) && (
+                  <span style={{position:'absolute' as const,top:7,insetInlineEnd:8,width:8,height:8,borderRadius:'50%',background:'#f87171',border:'2px solid #0f766e'}}/>
                 )}
-                {lastCheckOut && (
-                  <div style={{flex:1,background:'white',borderRadius:12,padding:'10px 12px',border:'1px solid #e2e8f0'}}>
-                    <div style={{fontSize:9,color:'#94a3b8',fontWeight:700,marginBottom:3}}>{t('checkOutTime')}</div>
-                    <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>{new Date(lastCheckOut.recorded_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit'})}</div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* الزر الرئيسي */}
-            {!lastCheckOut && (
-              !isCheckedIn ? (
-                <button onClick={()=>markAttendance('check_in')} disabled={marking!==null}
-                  style={{width:'100%',padding:'15px',background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow:'0 6px 16px rgba(22,163,74,.3)'}}>
-                  <span style={{width:26,height:26,borderRadius:'50%',background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center'}}><MapPin size={14} strokeWidth={2.25}/></span>
-                  {marking==='check_in' ? t('markingLocation') : t('checkIn')}
-                </button>
-              ) : (
-                <>
-                  <button onClick={()=>markAttendance('check_out')} disabled={marking!==null || !canCheckOut}
-                    style={{width:'100%',padding:'15px',background: canCheckOut ? 'linear-gradient(135deg,#ef4444,#dc2626)' : '#cbd5e1',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor: canCheckOut ? 'pointer' : 'not-allowed',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow: canCheckOut ? '0 6px 16px rgba(220,38,38,.3)' : 'none'}}>
-                    <span style={{width:26,height:26,borderRadius:'50%',background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center'}}><MapPin size={14} strokeWidth={2.25}/></span>
-                    {marking==='check_out' ? t('markingLocation') : t('checkOut')}
-                  </button>
-                  {!canCheckOut && checkOutHint && (
-                    <div style={{textAlign:'center' as const,fontSize:11,color:'#94a3b8',fontWeight:600,marginTop:8}}>⏰ {checkOutHint}</div>
-                  )}
-                  {!canCheckOut && (
-                    permReq?.status === 'pending' ? (
-                      <div style={{textAlign:'center' as const,fontSize:12,color:'#d97706',fontWeight:700,marginTop:10,background:'#fffbeb',border:'1px solid #fde68a',borderRadius:10,padding:'8px 10px'}}>⏳ طلب الاستئذان بانتظار رد المالك</div>
-                    ) : permReq?.status === 'rejected' ? (
-                      <div style={{textAlign:'center' as const,fontSize:12,color:'#dc2626',fontWeight:700,marginTop:10,background:'#fef2f2',border:'1px solid #fecaca',borderRadius:10,padding:'8px 10px'}}>🚫 تم رفض طلب الاستئذان</div>
-                    ) : showPermForm ? (
-                      <div style={{marginTop:10}}>
-                        <textarea value={permReason} onChange={e=>setPermReason(e.target.value)} placeholder={t('excuseReasonPh')} rows={2}
-                          style={{width:'100%',padding:'10px 12px',border:'1px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',resize:'vertical' as const,marginBottom:8,boxSizing:'border-box' as const}}/>
-                        <div style={{display:'flex',gap:8}}>
-                          <button onClick={submitPermissionRequest} disabled={submittingPerm}
-                            style={{flex:1,padding:'10px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                            {submittingPerm ? 'جاري الإرسال...' : 'إرسال الطلب'}
-                          </button>
-                          <button onClick={()=>setShowPermForm(false)} style={{padding:'10px 16px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button onClick={()=>setShowPermForm(true)} style={{width:'100%',marginTop:10,padding:'11px',background:'#fffbeb',color:'#b45309',border:'1.5px solid #fde68a',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                        <UserCheck size={13} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> طلب استئذان (ظرف طارئ)
-                      </button>
-                    )
-                  )}
-                </>
-              )
-            )}
-            {lastCheckOut && (
-              <div style={{textAlign:'center' as const,fontSize:11,color:'#94a3b8',fontWeight:600,padding:'6px 0'}}>✓ اكتمل دوامك لهذا اليوم</div>
-            )}
-            {locatingHint && <div style={{fontSize:11,color:'#64748b',marginTop:10,textAlign:'center' as const}}>📍 {locatingHint}</div>}
-            {attError && <div style={{fontSize:11,color:'#dc2626',marginTop:10,lineHeight:1.6,textAlign:'center' as const}}>{attError}</div>}
+              </button>
+            </div>
           </div>
-        )}
-
-        <div style={{display:'flex',flexDirection:'column',gap:12}}>
-          {canDispense && (
-            <button onClick={()=>router.push('/staff/dispense')}
-              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#042f2e,#029FA2)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
-              <span style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Package size={22} strokeWidth={2}/></span>
-              <div style={{textAlign:'right'}}>
-                <div style={{fontSize:16,fontWeight:800}}>{t('dispense')}</div>
-                <div style={{fontSize:12,opacity:.8}}>{t('dispenseSub')}</div>
-              </div>
-            </button>
-          )}
-          {isCashier && hasCashierFeature && (
-            <button onClick={()=>router.push('/staff/cashier-closing')}
-              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#1e293b,#334155)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
-              <span style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Store size={22} strokeWidth={2}/></span>
-              <div style={{textAlign:'right'}}>
-                <div style={{fontSize:16,fontWeight:800}}>{t('cashierClosing')}</div>
-                <div style={{fontSize:12,opacity:.8}}>{t('cashierSub')}</div>
-              </div>
-            </button>
-          )}
-          {canInventory && (
-            <button onClick={()=>router.push('/staff/inventory')}
-              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#5b21b6,#7c3aed)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
-              <span style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Boxes size={22} strokeWidth={2}/></span>
-              <div style={{textAlign:'right'}}>
-                <div style={{fontSize:16,fontWeight:800}}>{t('inventory')}</div>
-                <div style={{fontSize:12,opacity:.8}}>{t('inventorySub')}</div>
-              </div>
-            </button>
-          )}
-          {canPurchases && (
-            <button onClick={()=>router.push('/staff/purchases')}
-              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#1d4ed8,#2563eb)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
-              <span style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><ShoppingCart size={22} strokeWidth={2}/></span>
-              <div style={{textAlign:'right'}}>
-                <div style={{fontSize:16,fontWeight:800}}>{t('purchases')}</div>
-                <div style={{fontSize:12,opacity:.8}}>{t('purchasesSub')}</div>
-              </div>
-            </button>
-          )}
-          {!canDispense && !isCashier && (
-            <button onClick={()=>router.push('/staff/dispense')}
-              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#042f2e,#029FA2)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
-              <span style={{fontSize:28}}>📦</span>
-              <div style={{textAlign:'right'}}>
-                <div style={{fontSize:16,fontWeight:800}}>{t('enterSystem')}</div>
-              </div>
-            </button>
-          )}
         </div>
-        {hasHrFeature && (
-        <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:10,marginTop:12}}>
-          <button onClick={()=>router.push('/staff/tasks')}
-            style={{position:'relative' as const,padding:'16px 8px',background:'white',color:'#1c1c1a',border:'1.5px solid #e5e7eb',borderRadius:16,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,alignItems:'center',gap:6}}>
-            {taskCount>0 && (
-              <span style={{position:'absolute' as const,top:6,left:6,background:'#dc2626',color:'white',fontSize:10,fontWeight:800,minWidth:18,height:18,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 4px'}}>{taskCount}</span>
-            )}
-            <span style={{width:38,height:38,borderRadius:11,background:'#f0fdfa',display:'flex',alignItems:'center',justifyContent:'center',color:'#029FA2'}}><ClipboardList size={19} strokeWidth={2}/></span>
-            {t('myTasksLabel')}
-          </button>
-          <button onClick={()=>{setShowRequests(true);loadRequestHistory()}}
-            style={{padding:'16px 8px',background:'white',color:'#1c1c1a',border:'1.5px solid #e5e7eb',borderRadius:16,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,alignItems:'center',gap:6}}>
-            <span style={{width:38,height:38,borderRadius:11,background:'#eff6ff',display:'flex',alignItems:'center',justifyContent:'center',color:'#2563eb'}}><Send size={19} strokeWidth={2}/></span>
-            {t('myRequests')}
-          </button>
-          {salaryVisible && (
-          <button onClick={()=>router.push('/staff/salary')}
-            style={{gridColumn:'1 / -1',padding:'14px 12px',background:'linear-gradient(135deg,#0b3b3a,#0f766e)',color:'white',border:'none',borderRadius:16,fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
-            <Wallet size={19} strokeWidth={2}/> راتبي — الراتب والخصومات والأوفر تايم
-          </button>
-          )}
-        </div>
-        )}
 
-        <button onClick={()=>{localStorage.removeItem('staff_session');router.replace('/staff')}}
-          style={{marginTop:20,background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
-          {t('logout')}
-        </button>
+        <div style={{padding:'0 16px',marginTop:-44}}>
+
+          {/* دوام اليوم */}
+          {!loadingToday && !attendanceLocked && (
+            <div style={{...cardBase,padding:18,textAlign:isAr?'right':'left',boxShadow:'0 8px 24px rgba(15,23,42,.08)'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10,marginBottom:14}}>
+                <div>
+                  <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>{isAr?'دوام اليوم':"Today's shift"}</div>
+                  <div style={{fontSize:11.5,color:'#94a3b8',marginTop:2}}>{todayLabel}</div>
+                </div>
+                <span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:11.5,fontWeight:700,color:statusClr.c,background:statusClr.bg,padding:'5px 10px',borderRadius:99,whiteSpace:'nowrap' as const}}>
+                  <span style={{width:7,height:7,borderRadius:'50%',background:statusClr.dot,boxShadow:isCheckedIn?'0 0 0 3px rgba(16,185,129,.2)':'none'}}/>{statusTxt}
+                </span>
+              </div>
+
+              <div style={{display:'grid',gridTemplateColumns:shift && !shift.is_24h && shift.start_time ? '1fr 1fr 1fr' : '1fr 1fr',gap:8,marginBottom:16}}>
+                {shift && !shift.is_24h && shift.start_time && (
+                  <div style={{background:'#f8fafc',borderRadius:12,padding:'10px 12px'}}>
+                    <div style={{fontSize:10.5,color:'#94a3b8',fontWeight:600,marginBottom:3}}>{isAr?'الشفت':'Shift'}</div>
+                    <div style={{fontSize:13,fontWeight:800,color:'#334155',direction:'ltr',textAlign:isAr?'right':'left'}}>{String(shift.start_time).slice(0,5)}–{String(shift.end_time||'').slice(0,5)}</div>
+                  </div>
+                )}
+                <div style={{background:'#f8fafc',borderRadius:12,padding:'10px 12px'}}>
+                  <div style={{fontSize:10.5,color:'#94a3b8',fontWeight:600,marginBottom:3}}>{t('checkInTime')}</div>
+                  <div style={{fontSize:15,fontWeight:800,color:lastCheckIn?'#0f172a':'#cbd5e1'}}>{lastCheckIn ? fmtClock(lastCheckIn.recorded_at) : '--:--'}</div>
+                </div>
+                <div style={{background:'#f8fafc',borderRadius:12,padding:'10px 12px'}}>
+                  <div style={{fontSize:10.5,color:'#94a3b8',fontWeight:600,marginBottom:3}}>{t('checkOutTime')}</div>
+                  <div style={{fontSize:15,fontWeight:800,color:lastCheckOut?'#0f172a':'#cbd5e1'}}>{lastCheckOut ? fmtClock(lastCheckOut.recorded_at) : '--:--'}</div>
+                </div>
+              </div>
+
+              {!lastCheckOut && (
+                !isCheckedIn ? (
+                  <button onClick={()=>markAttendance('check_in')} disabled={marking!==null}
+                    style={{width:'100%',height:52,background:'#0f766e',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:'0 6px 14px rgba(15,118,110,.25)',opacity:marking?0.8:1}}>
+                    <MapPin size={17} strokeWidth={2.25}/>
+                    {marking==='check_in' ? t('markingLocation') : t('checkIn')}
+                  </button>
+                ) : (
+                  <>
+                    <button onClick={()=>markAttendance('check_out')} disabled={marking!==null || !canCheckOut}
+                      style={{width:'100%',height:52,background:canCheckOut?'#dc2626':'#f1f5f9',color:canCheckOut?'white':'#94a3b8',border:canCheckOut?'none':'1px dashed #cbd5e1',borderRadius:14,fontSize:canCheckOut?15:13.5,fontWeight:canCheckOut?800:700,cursor:canCheckOut?'pointer':'not-allowed',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:canCheckOut?'0 6px 14px rgba(220,38,38,.22)':'none'}}>
+                      {canCheckOut ? <MapPin size={17} strokeWidth={2.25}/> : <Clock size={16} strokeWidth={2.25}/>}
+                      {marking==='check_out' ? t('markingLocation') : canCheckOut ? t('checkOut') : (checkOutHint || t('checkOut'))}
+                    </button>
+                    {!canCheckOut && (
+                      permReq?.status === 'pending' ? (
+                        <div style={{textAlign:'center' as const,fontSize:12,color:'#b45309',fontWeight:700,marginTop:10,background:'#fffbeb',borderRadius:10,padding:'9px 10px'}}>⏳ طلب الاستئذان بانتظار رد المالك</div>
+                      ) : permReq?.status === 'rejected' ? (
+                        <div style={{textAlign:'center' as const,fontSize:12,color:'#dc2626',fontWeight:700,marginTop:10,background:'#fef2f2',borderRadius:10,padding:'9px 10px'}}>تم رفض طلب الاستئذان</div>
+                      ) : showPermForm ? (
+                        <div style={{marginTop:10}}>
+                          <textarea value={permReason} onChange={e=>setPermReason(e.target.value)} placeholder={t('excuseReasonPh')} rows={2}
+                            style={{width:'100%',padding:'10px 12px',border:'1px solid #e2e8f0',borderRadius:12,fontSize:13,fontFamily:'inherit',resize:'vertical' as const,marginBottom:8,boxSizing:'border-box' as const}}/>
+                          <div style={{display:'flex',gap:8}}>
+                            <button onClick={submitPermissionRequest} disabled={submittingPerm}
+                              style={{flex:1,height:42,background:'#0f766e',color:'white',border:'none',borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                              {submittingPerm ? 'جاري الإرسال...' : 'إرسال الطلب'}
+                            </button>
+                            <button onClick={()=>setShowPermForm(false)} style={{height:42,padding:'0 16px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button onClick={()=>setShowPermForm(true)} style={{width:'100%',marginTop:10,height:40,background:'none',color:'#b45309',border:'none',fontSize:12.5,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                          <UserCheck size={14} strokeWidth={2.25}/> عندك ظرف طارئ؟ اطلب استئذان
+                        </button>
+                      )
+                    )}
+                  </>
+                )
+              )}
+              {lastCheckOut && (
+                <div style={{textAlign:'center' as const,fontSize:12.5,color:'#0f766e',fontWeight:700,background:'#f0fdfa',borderRadius:12,padding:'11px 0'}}>✓ اكتمل دوامك لهذا اليوم</div>
+              )}
+              {locatingHint && <div style={{fontSize:11.5,color:'#64748b',marginTop:10,textAlign:'center' as const}}>📍 {locatingHint}</div>}
+              {attError && <div style={{fontSize:12,color:'#dc2626',marginTop:10,lineHeight:1.6,textAlign:'center' as const,background:'#fef2f2',borderRadius:10,padding:'8px 10px'}}>{attError}</div>}
+            </div>
+          )}
+
+          {/* العمل */}
+          {workActions.length > 0 && sectionTitle(isAr ? 'العمل' : 'Work')}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            {workActions.map((a, i) => (
+              <button key={a.key} onClick={a.go}
+                style={{...cardBase,gridColumn: workActions.length % 2 === 1 && i === workActions.length - 1 ? '1 / -1' : undefined,padding:'16px 14px',cursor:'pointer',fontFamily:'inherit',textAlign:isAr?'right':'left',display:'flex',flexDirection:'column' as const,alignItems:'flex-start',gap:12,minHeight:118}}>
+                <span style={{width:42,height:42,borderRadius:12,background:a.bg,color:a.c,display:'flex',alignItems:'center',justifyContent:'center'}}>{a.icon}</span>
+                <span>
+                  <span style={{display:'block',fontSize:14.5,fontWeight:800,color:'#0f172a'}}>{a.title}</span>
+                  <span style={{display:'block',fontSize:11.5,color:'#94a3b8',marginTop:3,lineHeight:1.5}}>{a.sub}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* شؤوني */}
+          {hasHrFeature && (
+            <>
+              {sectionTitle(isAr ? 'شؤوني' : 'My stuff')}
+              <div style={{...cardBase,overflow:'hidden'}}>
+                {[
+                  { key:'t', icon:<ClipboardList size={18} strokeWidth={2}/>, c:'#0f766e', bg:'#f0fdfa', title:t('myTasksLabel'), sub:isAr?'المهام المطلوبة منك':'Tasks assigned to you', badge:taskCount, go:()=>router.push('/staff/tasks') },
+                  { key:'r', icon:<Send size={18} strokeWidth={2}/>, c:'#2563eb', bg:'#eff6ff', title:t('myRequests'), sub:isAr?'سلفة، إجازة، استئذان':'Advance, leave, early leave', badge:0, go:()=>{setShowRequests(true);loadRequestHistory()} },
+                  ...(salaryVisible ? [{ key:'s', icon:<Wallet size={18} strokeWidth={2}/>, c:'#b45309', bg:'#fffbeb', title:isAr?'راتبي':'My salary', sub:isAr?'الراتب والخصومات والأوفر تايم':'Salary, deductions & overtime', badge:0, go:()=>router.push('/staff/salary') }] : []),
+                ].map((row, i, arr) => (
+                  <button key={row.key} onClick={row.go}
+                    style={{width:'100%',background:'white',border:'none',borderBottom:i<arr.length-1?'1px solid #f1f5f9':'none',padding:'14px 16px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12,textAlign:isAr?'right':'left'}}>
+                    <span style={{width:38,height:38,borderRadius:11,background:row.bg,color:row.c,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{row.icon}</span>
+                    <span style={{flex:1,minWidth:0}}>
+                      <span style={{display:'block',fontSize:14,fontWeight:700,color:'#0f172a'}}>{row.title}</span>
+                      <span style={{display:'block',fontSize:11.5,color:'#94a3b8',marginTop:2}}>{row.sub}</span>
+                    </span>
+                    {row.badge > 0 && <span style={{background:'#dc2626',color:'white',fontSize:11,fontWeight:800,minWidth:20,height:20,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 6px'}}>{row.badge}</span>}
+                    <Chevron/>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          <button onClick={()=>{localStorage.removeItem('staff_session');router.replace('/staff')}}
+            style={{width:'100%',marginTop:22,height:46,background:'white',border:'1px solid #e8ecf1',borderRadius:14,color:'#64748b',fontSize:13.5,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+            <LogOut size={16} strokeWidth={2}/> {t('logout')}
+          </button>
+        </div>
       </div>
 
       {/* نافذة طلباتي */}
