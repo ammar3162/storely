@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
-import { computeStaffPayroll } from '@/lib/payroll'
+import { computeStaffPayroll, loadOvertimeSettings } from '@/lib/payroll'
 import { orgHasHrFeature } from '@/lib/hrAccess'
 
 const sb = () => createClient(
@@ -31,7 +31,7 @@ export async function GET(req: Request) {
       .eq('id', staff_id).eq('org_id', org_id).single()
     if (!staff) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
 
-    const payroll = await computeStaffPayroll(db, staff, month)
+    const payroll = await computeStaffPayroll(db, staff, month, await loadOvertimeSettings(db, org_id))
     return NextResponse.json({ success: true, name: (staff as any).name, currency: (org as any)?.currency || null, payroll },
       { headers: { 'Cache-Control': 'no-store' } })
   } catch {

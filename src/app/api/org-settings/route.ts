@@ -10,7 +10,7 @@ const sb = () => createClient(
 // إعدادات المنشأة اللي تعدّلها صفحات لوحة التحكم — قوائم مسموحة فقط
 const BASIC_FIELDS = 'shop_open_time,shop_close_time,notify_cashier_closing_wa'
 // scope=full: صفحة الإعدادات (استعلام منفصل عشان صفحات ثانية تبقى على الحقول الأساسية فقط)
-const FULL_FIELDS = 'whatsapp_number,name,notify_schedule,notify_time,notify_days,notify_cashier_closing_wa,notify_supplier_wa,last_notified_at,last_backup_at,max_branches,logo_url,plan,subscription_ends_at,billing_cycle,staff_salary_visible'
+const FULL_FIELDS = 'whatsapp_number,name,notify_schedule,notify_time,notify_days,notify_cashier_closing_wa,notify_supplier_wa,last_notified_at,last_backup_at,max_branches,logo_url,plan,subscription_ends_at,billing_cycle,staff_salary_visible,overtime_mode,overtime_multiplier,overtime_fixed_rate,overtime_min_minutes'
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/
 
 export async function GET(req: Request) {
@@ -68,6 +68,26 @@ export async function PATCH(req: Request) {
     if ('notify_cashier_closing_wa' in body) update.notify_cashier_closing_wa = !!body.notify_cashier_closing_wa
     if ('notify_supplier_wa' in body) update.notify_supplier_wa = !!body.notify_supplier_wa
     if ('staff_salary_visible' in body) update.staff_salary_visible = !!body.staff_salary_visible
+    // إعدادات الأوفر تايم (صفحة الحضور والانصراف)
+    if ('overtime_mode' in body) {
+      if (!['auto', 'fixed', 'off'].includes(body.overtime_mode)) return NextResponse.json({ error: 'طريقة الأوفر تايم غير صالحة' }, { status: 400 })
+      update.overtime_mode = body.overtime_mode
+    }
+    if ('overtime_multiplier' in body) {
+      const m = Number(body.overtime_multiplier)
+      if (!Number.isFinite(m) || m < 1 || m > 3) return NextResponse.json({ error: 'المضاعف من 1 إلى 3' }, { status: 400 })
+      update.overtime_multiplier = Math.round(m * 100) / 100
+    }
+    if ('overtime_fixed_rate' in body) {
+      const r = body.overtime_fixed_rate === '' || body.overtime_fixed_rate == null ? null : Number(body.overtime_fixed_rate)
+      if (r !== null && (!Number.isFinite(r) || r < 0 || r > 10000)) return NextResponse.json({ error: 'مبلغ الساعة غير صالح' }, { status: 400 })
+      update.overtime_fixed_rate = r
+    }
+    if ('overtime_min_minutes' in body) {
+      const n = Number(body.overtime_min_minutes)
+      if (!Number.isInteger(n) || n < 0 || n > 240) return NextResponse.json({ error: 'أقل مدة من 0 إلى 240 دقيقة' }, { status: 400 })
+      update.overtime_min_minutes = n
+    }
     if ('logo_url' in body) {
       // الشعار يُرفع لتخزين Supabase الخاص بالمشروع — ما نقبل روابط خارجية
       const url = String(body.logo_url || '')

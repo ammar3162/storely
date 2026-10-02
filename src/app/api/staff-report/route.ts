@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
-import { computeStaffPayroll } from '@/lib/payroll'
+import { computeStaffPayroll, loadOvertimeSettings } from '@/lib/payroll'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -36,10 +36,11 @@ export async function GET(req: Request) {
       .eq('org_id', org_id)
       .eq('is_active', true)
 
+    const overtimeSettings = await loadOvertimeSettings(supabase, org_id)
     const report = []
     for (const s of (staffList || []) as any[]) {
       // الراتب والخصومات والسلف والأوفر تايم من نفس حساب صفحة «راتبي» للموظف
-      const pay = await computeStaffPayroll(supabase, s, month)
+      const pay = await computeStaffPayroll(supabase, s, month, overtimeSettings)
       const { grossSalary, deductionsTotal, advancesTotal, netSalary } = pay
       const deductions = pay.deductions
       const daysPresent = pay.attendance.daysPresent

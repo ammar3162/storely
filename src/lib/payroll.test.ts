@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { overtimeMinutes, overtimeHourRate } from './payroll'
+import { overtimeMinutes, overtimeHourRate, shiftHours, DEFAULT_OVERTIME } from './payroll'
 
 // أوقات الانصراف بتوقيت السعودية (+03:00)
 const at = (t: string) => `2026-10-05T${t}:00+03:00`
@@ -29,8 +29,30 @@ describe('overtimeMinutes', () => {
   })
 })
 
+describe('overtimeMinutes min threshold', () => {
+  it('uses the owner minimum', () => {
+    expect(overtimeMinutes(at('16:10'), day, 5)).toBe(10)
+    expect(overtimeMinutes(at('16:20'), day, 30)).toBe(0)
+  })
+})
+
+describe('shiftHours', () => {
+  it('measures day and overnight shifts', () => {
+    expect(shiftHours(day)).toBe(8)
+    expect(shiftHours(night)).toBe(8)
+    expect(shiftHours({ start_time: '22:16', end_time: '02:00', is_24h: false })).toBeCloseTo(3.733, 2)
+    expect(shiftHours({ start_time: null, end_time: null, is_24h: true })).toBeNull()
+  })
+})
+
 describe('overtimeHourRate', () => {
-  it('is 1.5x the basic hourly wage (basic / 240)', () => {
-    expect(overtimeHourRate(4800)).toBe(30)
+  it('auto: basic / 30 / shift hours x multiplier', () => {
+    expect(overtimeHourRate(3000, day)).toBe(18.75)                        // 3000/30/8 = 12.5 × 1.5
+    expect(overtimeHourRate(3000, { start_time: '08:00', end_time: '18:00', is_24h: false })).toBe(15)  // 10h shift
+    expect(overtimeHourRate(3000, day, { ...DEFAULT_OVERTIME, multiplier: 2 })).toBe(25)
+  })
+  it('fixed and off', () => {
+    expect(overtimeHourRate(3000, day, { ...DEFAULT_OVERTIME, mode: 'fixed', fixedRate: 25 })).toBe(25)
+    expect(overtimeHourRate(3000, day, { ...DEFAULT_OVERTIME, mode: 'off' })).toBe(0)
   })
 })

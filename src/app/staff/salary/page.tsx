@@ -9,7 +9,7 @@ type Payroll = {
   basic: number
   allowances: { housing: number; transport: number; food: number }
   grossSalary: number
-  overtime: { minutes: number; pay: number; hourRate: number; days: { date: string; minutes: number; pay: number }[] }
+  overtime: { minutes: number; pay: number; hourRate: number; mode?: 'auto' | 'fixed' | 'off'; days: { date: string; minutes: number; pay: number }[] }
   deductions: { amount: number; reason: string | null; date: string }[]
   deductionsTotal: number
   advances: { amount: number; reason: string | null; date: string }[]
@@ -155,7 +155,9 @@ export default function StaffSalaryPage() {
             ))}
 
             <p style={{ fontSize: 11, color: '#a3a29c', textAlign: 'center', lineHeight: 1.8, marginTop: 6 }}>
-              الأوفر تايم محسوب تلقائياً من وقت انصرافك بعد نهاية شفتك (15 دقيقة فأكثر)، بأجر الساعة × 1.5 حسب نظام العمل.
+              {data.overtime.mode === 'off' ? 'الأوفر تايم غير مفعّل في منشأتك.'
+                : data.overtime.mode === 'fixed' ? `الأوفر تايم محسوب من وقت انصرافك بعد نهاية شفتك، بمبلغ ${num(data.overtime.hourRate)} ${curr} لكل ساعة.`
+                : `الأوفر تايم محسوب من وقت انصرافك بعد نهاية شفتك: راتبك الأساسي ÷ 30 ÷ ساعات شفتك × المضاعف = ${num(data.overtime.hourRate)} ${curr} للساعة.`}
               {isCurrent && <><br />أرقام الشهر الحالي تتحدث مع كل حضور وانصراف.</>}
             </p>
           </>
