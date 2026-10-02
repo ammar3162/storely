@@ -26,7 +26,7 @@ function dateRange(from: string, to: string): string[] {
   return dates
 }
 
-type Ev = { staff_id: string; type: string; recorded_at: string; late_minutes: number | null; penalty_amount: number | null; is_excused: boolean | null; within_range?: boolean; distance_m?: number }
+type Ev = { id: string; staff_id: string; type: string; recorded_at: string; late_minutes: number | null; penalty_amount: number | null; penalty_waived?: boolean | null; penalty_applied?: boolean | null; overtime_minutes?: number | null; is_excused: boolean | null }
 
 // كل حضور مع انصرافه (أول انصراف بعده وقبل الحضور التالي، خلال 20 ساعة) — يغطي الشفتات بعد منتصف الليل
 function sessions(events: Ev[]) {
@@ -81,7 +81,8 @@ export async function GET(req: Request) {
     const overtimeFor = (s: any, checkOut: Ev | null) => {
       if (!checkOut || otSettings.mode === 'off') return { minutes: 0, pay: 0 }
       const shift = shiftOf(s)
-      const minutes = overtimeMinutes(checkOut.recorded_at, shift, otSettings.minMinutes)
+      // المثبّت وقت الانصراف أولاً (على شفت ذاك اليوم)، والسجلات القديمة على الشفت الحالي
+      const minutes = checkOut.overtime_minutes != null ? Number(checkOut.overtime_minutes) : overtimeMinutes(checkOut.recorded_at, shift, otSettings.minMinutes)
       return { minutes, pay: round2((minutes / 60) * overtimeHourRate(Number(s.monthly_salary || 0), shift, otSettings)) }
     }
     const describe = (s: any, x: { checkIn: Ev; checkOut: Ev | null } | null) => {
@@ -92,7 +93,12 @@ export async function GET(req: Request) {
         check_out: x?.checkOut?.recorded_at || null,
         hours_worked: hours !== null ? Math.round(hours * 10) / 10 : null,
         late_minutes: x?.checkIn.late_minutes ?? null,
-        penalty_amount: x?.checkIn.penalty_amount ?? null,
+        // الغرامة الملغاة من المالك ما تنحسب
+        penalty_amount: x?.checkIn.penalty_waived ? null : (x?.checkIn.penalty_amount ?? null),
+        penalty_original: x?.checkIn.penalty_amount ?? null,
+        penalty_waived: !!x?.checkIn.penalty_waived,
+        penalty_locked: !!x?.checkIn.penalty_applied,
+        attendance_id: x?.checkIn.id ?? null,
         is_excused: !!x?.checkOut?.is_excused,
         overtime_minutes: ot.minutes,
         overtime_pay: ot.pay,
@@ -104,7 +110,7 @@ export async function GET(req: Request) {
       // نهاية الفترة + 20 ساعة عشان انصراف آخر يوم بعد منتصف الليل
       const end = new Date(Date.parse(`${endDay}T23:59:59.999+03:00`) + 20 * 3600e3).toISOString()
       const { data } = await selectAll<Ev>(() => {
-        let q = supabase.from('staff_attendance').select('staff_id,type,recorded_at,late_minutes,penalty_amount,is_excused')
+        let q = supabase.from('staff_attendance').select('id,staff_id,type,recorded_at,late_minutes,penalty_amount,penalty_waived,penalty_applied,overtime_minutes,is_excused')
           .eq('org_id', org_id).gte('recorded_at', `${startDay}T00:00:00+03:00`).lte('recorded_at', end).order('recorded_at').order('id')
         if (effectiveBranchId) q = q.eq('branch_id', effectiveBranchId)
         if (staff_id) q = q.eq('staff_id', staff_id)

@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
+import { toast } from '@/components/toast'
 import { getOrgId } from '@/lib/session'
 import { colors, radius, font, card, btnSecondary, tag, pageTitle, pageSub } from '@/lib/ds'
 import { cache } from '@/lib/cache'
@@ -18,6 +19,8 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter]   = useState<'all'|'unread'|'warning'|'success'|'info'>('all')
+  const [canDecide, setCanDecide] = useState(false)
+  const [deciding, setDeciding] = useState<string|null>(null)
 
   useEffect(() => { load() }, [])
 
@@ -35,6 +38,7 @@ export default function NotificationsPage() {
     const j = await api.get('/api/notifications', { org_id: orgId, branch_id: bid })
     if (!j.success) { setLoading(false); return }
     setNotifications(j.notifications || [])
+    setCanDecide(!!j.canDecide)
     cache.set('notifications:'+orgId+':'+(bid||'all'), j.notifications || [])
     setLoading(false)
   }
@@ -44,6 +48,19 @@ export default function NotificationsPage() {
     if (!orgId) return
     await api.patch('/api/notifications', { org_id: orgId, id })
     setNotifications(prev => prev.map(n => n.id === id ? {...n, read: true} : n))
+  }
+
+  // قرار عجز الكاشير — اعتماد = خصم من الراتب، رفض = ما ينخصم
+  async function decideDeficit(n: any, decision: 'approved'|'rejected') {
+    const orgId = sessionStorage.getItem('s_org_id')
+    if (!orgId || deciding) return
+    setDeciding(n.id)
+    const r = await api.post('/api/cashier-deficit-decision', { org_id: orgId, closing_id: n.ref_id, decision })
+    setDeciding(null)
+    if (!r.success) { toast(r.error || 'تعذر حفظ القرار', 'error'); if (r.error) load(); return }
+    toast(decision === 'approved' ? 'تم اعتماد الخصم من راتب الكاشير' : 'تم رفض الخصم — ما ينخصم من الراتب')
+    setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, decision, read: true } : x))
+    window.dispatchEvent(new Event('notifications-updated'))
   }
 
   async function markAllRead() {
@@ -120,6 +137,26 @@ export default function NotificationsPage() {
                     {!n.read && <span style={{...tag('white',c.color,c.color),fontSize:10,flexShrink:0}}>جديد</span>}
                   </div>
                   <div style={{fontSize:font.xs,color:n.read?colors.text4:colors.text3,marginBottom:6,lineHeight:1.6}}>{n.message}</div>
+                  {n.ref_type==='cashier_deficit' && (
+                    n.decision==='pending' ? (
+                      canDecide ? (
+                        <div style={{display:'flex',gap:8,margin:'4px 0 8px'}} onClick={e=>e.stopPropagation()}>
+                          <button onClick={()=>decideDeficit(n,'approved')} disabled={deciding===n.id}
+                            style={{padding:'7px 14px',borderRadius:8,border:'none',background:colors.danger,color:'white',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:deciding===n.id?.6:1}}>
+                            اعتماد الخصم من الراتب
+                          </button>
+                          <button onClick={()=>decideDeficit(n,'rejected')} disabled={deciding===n.id}
+                            style={{padding:'7px 14px',borderRadius:8,border:`1px solid ${colors.border2}`,background:colors.surface,color:colors.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:deciding===n.id?.6:1}}>
+                            رفض
+                          </button>
+                        </div>
+                      ) : <div style={{fontSize:11,color:colors.text4,margin:'2px 0 8px'}}>بانتظار قرار المالك</div>
+                    ) : n.decision==='approved' ? (
+                      <div style={{fontSize:11,fontWeight:700,color:colors.danger,margin:'2px 0 8px'}}>✓ تم اعتماد الخصم من راتب الكاشير</div>
+                    ) : n.decision==='rejected' ? (
+                      <div style={{fontSize:11,fontWeight:700,color:colors.text3,margin:'2px 0 8px'}}>تم رفض الخصم — ما انخصم من الراتب</div>
+                    ) : null
+                  )}
                   <div style={{fontSize:10,color:colors.text4}}>{new Date(n.created_at).toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
                 </div>
                 <button onClick={e=>{e.stopPropagation();del(n.id)}} style={{width:28,height:28,borderRadius:radius.sm,border:`1px solid ${colors.border2}`,background:colors.surface,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:colors.text4,flexShrink:0,fontSize:12}}>✕</button>

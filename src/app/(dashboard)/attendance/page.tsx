@@ -18,6 +18,8 @@ export default function AttendancePage() {
   const [tab, setTab] = useState<'report'|'settings'>('report')
   const [orgId, setOrgId] = useState('')
   const [orgName, setOrgName] = useState('')
+  const [isOwner, setIsOwner] = useState(false)
+  const [waiving, setWaiving] = useState<string|null>(null)
   const [locked, setLocked] = useState(false)
   const [branchId, setBranchId] = useState<string|null>(null)
   const [periodMode, setPeriodMode] = useState<'day'|'range'>('day')
@@ -65,6 +67,7 @@ export default function AttendancePage() {
     const orgName = me.org?.name || '', orgPlan = me.org?.plan || ''
     setOrgId(oid)
     setOrgName(orgName)
+    setIsOwner(me.role === 'owner')
     if (orgPlan === 'basic') {
       // عميل الأساسية ممكن يكون اشترى إضافة "إدارة الموظفين الكاملة" من المتجر
       const addonRes = await api.get('/api/addons-market', { org_id: oid })
@@ -182,6 +185,35 @@ export default function AttendancePage() {
       else toast(j.message || j.error || 'تعذر تحميل السجل', 'error')
     } catch { toast('خطأ بالاتصال', 'error') }
     setLoading(false)
+  }
+
+  // غرامات التأخير تنخصم تلقائياً — المالك يقدر يلغي غرامة يوم معيّن أو يرجّعها
+  async function toggleWaive(attendanceId: string, waived: boolean) {
+    if (!orgId || waiving) return
+    setWaiving(attendanceId)
+    const j = await api.post('/api/attendance-penalty', { org_id: orgId, attendance_id: attendanceId, waived })
+    setWaiving(null)
+    if (!j.success) { toast(j.error || 'تعذر التعديل', 'error'); return }
+    toast(waived ? 'تم إلغاء الغرامة — ما تنخصم من الراتب' : 'تم إرجاع الغرامة')
+    if (periodMode === 'day') load(orgId, date); else loadRange(orgId, rangeFrom, rangeTo)
+  }
+
+  function penaltyCell(r: any) {
+    const amount = r.penalty_original ?? r.penalty_amount
+    if (!amount) return <span style={{ color: colors.text4 }}>—</span>
+    const canToggle = isOwner && r.attendance_id && !r.penalty_locked
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' as const }}>
+        <span style={{ color: r.penalty_waived ? colors.text4 : colors.danger, fontWeight: 700, textDecoration: r.penalty_waived ? 'line-through' : 'none' }}>{amount} ر.س</span>
+        {r.penalty_waived && <span style={{ fontSize: 10, fontWeight: 700, color: colors.text3 }}>ملغاة</span>}
+        {canToggle && (
+          <button onClick={() => toggleWaive(r.attendance_id, !r.penalty_waived)} disabled={waiving === r.attendance_id}
+            style={{ padding: '2px 8px', borderRadius: 6, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text3, fontSize: 10.5, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
+            {waiving === r.attendance_id ? '...' : r.penalty_waived ? 'إرجاع' : 'إلغاء'}
+          </button>
+        )}
+      </span>
+    )
   }
 
   async function loadShifts(oid: string, bid: string|null) {
@@ -403,8 +435,8 @@ export default function AttendancePage() {
                             <td style={{ padding: '11px 14px', color: r.late_minutes ? colors.warning : colors.text4 }}>
                               {r.late_minutes ? `${r.late_minutes} دقيقة` : '—'}
                             </td>
-                            <td style={{ padding: '11px 14px', color: r.penalty_amount ? colors.danger : colors.text4, fontWeight: 700 }}>
-                              {r.penalty_amount ? `${r.penalty_amount} ر.س` : '—'}
+                            <td style={{ padding: '11px 14px', fontWeight: 700 }}>
+                              {penaltyCell(r)}
                             </td>
                             <td style={{ padding: '11px 14px', color: r.overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
                               {r.overtime_minutes ? <>{fmtMinutes(r.overtime_minutes)}{r.overtime_pay ? <span style={{ fontSize: 11, fontWeight: 600, color: colors.text3 }}> · {r.overtime_pay} ر.س</span> : null}</> : '—'}
@@ -479,7 +511,7 @@ export default function AttendancePage() {
                             </td>
                             <td style={{ padding: '10px 14px', color: colors.text2, fontWeight: 600 }}>{d.hours_worked !== null ? `${d.hours_worked} ساعة` : '—'}</td>
                             <td style={{ padding: '10px 14px', color: d.late_minutes ? colors.warning : colors.text4 }}>{d.late_minutes ? `${d.late_minutes} دقيقة` : '—'}</td>
-                            <td style={{ padding: '10px 14px', color: d.penalty_amount ? colors.danger : colors.text4, fontWeight: 700 }}>{d.penalty_amount ? `${d.penalty_amount} ر.س` : '—'}</td>
+                            <td style={{ padding: '10px 14px', fontWeight: 700 }}>{penaltyCell(d)}</td>
                             <td style={{ padding: '10px 14px', color: d.overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
                               {d.overtime_minutes ? <>{fmtMinutes(d.overtime_minutes)}{d.overtime_pay ? <span style={{ fontSize: 11, fontWeight: 600, color: colors.text3 }}> · {d.overtime_pay} ر.س</span> : null}</> : '—'}
                             </td>
@@ -564,7 +596,7 @@ export default function AttendancePage() {
           {/* غرامات التأخير */}
           <div style={{ ...card, padding: '18px 20px' }}>
             <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>غرامات التأخير (اختياري)</div>
-            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>حدّد مبلغ مختلف حسب مدة التأخير بالدقائق — مثلاً: من 0 إلى 30 دقيقة = 10 ر.س</div>
+            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>حدّد مبلغ مختلف حسب مدة التأخير بالدقائق — مثلاً: من 0 إلى 30 دقيقة = 10 ر.س. الغرامة تنخصم تلقائياً من راتب الموظف وتطلع له بكشف الراتب، وتقدر تلغي غرامة أي يوم من تبويب التقرير.</div>
 
             <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' as const }}>
               <input type="number" value={newRuleMin} onChange={e => setNewRuleMin(e.target.value)} placeholder="من دقيقة" style={{ ...inp(), width: 110 }} />

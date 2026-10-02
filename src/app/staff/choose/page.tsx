@@ -462,7 +462,7 @@ export default function ChoosePage() {
                 {[
                   { key:'t', icon:<ClipboardList size={18} strokeWidth={2}/>, c:'#0f766e', bg:'#f0fdfa', title:t('myTasksLabel'), sub:isAr?'المهام المطلوبة منك':'Tasks assigned to you', badge:taskCount, go:()=>router.push('/staff/tasks') },
                   { key:'r', icon:<Send size={18} strokeWidth={2}/>, c:'#2563eb', bg:'#eff6ff', title:t('myRequests'), sub:isAr?'سلفة، إجازة، استئذان':'Advance, leave, early leave', badge:0, go:()=>{setShowRequests(true);loadRequestHistory()} },
-                  ...(salaryVisible ? [{ key:'s', icon:<Wallet size={18} strokeWidth={2}/>, c:'#b45309', bg:'#fffbeb', title:isAr?'راتبي':'My salary', sub:isAr?'الراتب والخصومات والأوفر تايم':'Salary, deductions & overtime', badge:0, go:()=>router.push('/staff/salary') }] : []),
+                  ...(salaryVisible ? [{ key:'s', icon:<Wallet size={18} strokeWidth={2}/>, c:'#b45309', bg:'#fffbeb', title:isAr?'كشف الراتب':'Payslip', sub:isAr?'الراتب والخصومات والأوفر تايم':'Salary, deductions & overtime', badge:0, go:()=>router.push('/staff/salary') }] : []),
                 ].map((row, i, arr) => (
                   <button key={row.key} onClick={row.go}
                     style={{width:'100%',background:'white',border:'none',borderBottom:i<arr.length-1?'1px solid #f1f5f9':'none',padding:'14px 16px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12,textAlign:isAr?'right':'left'}}>

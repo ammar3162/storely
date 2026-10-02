@@ -41,10 +41,8 @@ export default function HRManagementPage() {
   const [loadingLeave, setLoadingLeave] = useState(false)
   const [pendingLeaveCounts, setPendingLeaveCounts] = useState<Record<string, number>>({})
   const [pendingAdvanceCounts, setPendingAdvanceCounts] = useState<Record<string, number>>({})
-  const [cashierSummary, setCashierSummary] = useState<Record<string, {deficit:number, surplus:number, count:number}>>({})
-  const [approvedAdvances, setApprovedAdvances] = useState<Record<string, number>>({})
-  const [latePenalties, setLatePenalties] = useState<Record<string, number>>({})
-  const [applyingPenalty, setApplyingPenalty] = useState<string|null>(null)
+  // ملخص راتب الشهر الحالي لكل موظف — نفس حساب كشف راتب الموظف بالضبط
+  const [cardPayroll, setCardPayroll] = useState<Record<string, any>>({})
   const [excuseRequests, setExcuseRequests] = useState<any[]>([])
   const [loadingExcuse, setLoadingExcuse] = useState(false)
 
@@ -72,13 +70,13 @@ export default function HRManagementPage() {
     api.get('/api/org-settings', { org_id: oid, scope: 'full' }).then(r => { if (r.success) setSalaryVisible(r.settings?.staff_salary_visible === true) }).catch(()=>{})
     getMe().then(m => setIsOwner(m?.role === 'owner')).catch(()=>{})
     const bid = sessionStorage.getItem('s_branch_id')
-    const [me, staffRes, leaveRes, advRes, cashierRes, penaltyRes, addonRes, branchesRes] = await Promise.all([
+    const curMonth = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 7)
+    const [me, staffRes, leaveRes, advRes, payRes, addonRes, branchesRes] = await Promise.all([
       getMe(),
       api.get('/api/staff-members', { org_id: oid, branch_id: bid }),
       api.get('/api/staff-leave', { org_id: oid }),
       api.get('/api/staff-payroll-adjustments', { org_id: oid }),
-      api.get('/api/cashier-closing', { org_id: oid }),
-      api.get('/api/apply-late-penalties', { org_id: oid }),
+      api.get('/api/staff-report', { org_id: oid, month: curMonth }),
       api.get('/api/addons-market', { org_id: oid }),
       api.get('/api/branches', { org_id: oid }),
     ])
@@ -98,32 +96,15 @@ export default function HRManagementPage() {
     }
     if (advRes?.success) {
       const counts2: Record<string, number> = {}
-      const approvedSums: Record<string, number> = {}
       for (const req of (advRes.adjustments||advRes.requests||[])) {
         if (req.status === 'pending') counts2[req.staff_id] = (counts2[req.staff_id]||0) + 1
-        if (req.status === 'approved' && req.type === 'advance') approvedSums[req.staff_id] = (approvedSums[req.staff_id]||0) + Number(req.amount||0)
       }
       setPendingAdvanceCounts(counts2)
-      setApprovedAdvances(approvedSums)
     }
-    if (cashierRes?.success) {
-      const summary: Record<string, {deficit:number, surplus:number, count:number}> = {}
-      for (const c of (cashierRes.closings as any[])) {
-        if (!c.staff_id) continue
-        if (!summary[c.staff_id]) summary[c.staff_id] = {deficit:0, surplus:0, count:0}
-        summary[c.staff_id].count += 1
-        if (c.status === 'deficit') summary[c.staff_id].deficit += Math.abs(Number(c.difference||0))
-        else if (c.status === 'surplus') summary[c.staff_id].surplus += Number(c.difference||0)
-      }
-      setCashierSummary(summary)
-    }
-    if (penaltyRes?.success) {
-      const penaltySums: Record<string, number> = {}
-      for (const r of (penaltyRes.records||[])) {
-        if (!r.staff_id) continue
-        penaltySums[r.staff_id] = (penaltySums[r.staff_id]||0) + Number(r.penalty_amount||0)
-      }
-      setLatePenalties(penaltySums)
+    if (payRes?.success) {
+      const map: Record<string, any> = {}
+      for (const r of (payRes.report||[])) map[r.staffId] = r
+      setCardPayroll(map)
     }
     setLoading(false)
   }
@@ -168,20 +149,6 @@ export default function HRManagementPage() {
     if(!r.success){ toast('فشل حفظ الموقع — حاول مرة أخرى','error'); return }
     setBranches(prev=>prev.map((br:any)=>br.id===id?{...br,latitude:bestPos!.coords.latitude,longitude:bestPos!.coords.longitude}:br))
     toast('✅ تم حفظ موقع الفرع — الموظفون الآن يقدروا يسجّلوا حضورهم')
-  }
-
-  async function applyLatePenalty(staffId:string) {
-    setApplyingPenalty(staffId)
-    const res = await fetch('/api/apply-late-penalties', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ org_id: orgId, staff_id: staffId }),
-    })
-    const j = await res.json()
-    setApplyingPenalty(null)
-    if (!j.success) { toast(j.error || 'خطأ', 'error'); return }
-    toast(`✅ تم تسجيل خصم بقيمة ${j.total} ر.س (${j.count} غرامة تأخير)`)
-    setLatePenalties(prev => { const next = {...prev}; delete next[staffId]; return next })
-    loadAdjustments(staffId)
   }
 
   function toggleExpand(s:any) {
@@ -253,13 +220,13 @@ export default function HRManagementPage() {
     loadExcuse(staffId)
   }
 
-  // صفحة «راتبي» للموظفين — المالك يفعّلها أو يقفلها
+  // كشف الراتب للموظفين — المالك يفعّله أو يقفله
   async function toggleSalaryVisible() {
     const next = !salaryVisible
     setSalaryVisible(next)
     const r = await api.patch('/api/org-settings', { org_id: orgId, staff_salary_visible: next })
     if (!r.success) { setSalaryVisible(!next); toast(r.error || 'حدث خطأ', 'error'); return }
-    toast(next ? '✅ الموظفين يقدرون يشوفون رواتبهم الحين' : 'انقفلت صفحة «راتبي» عن الموظفين')
+    toast(next ? '✅ الموظفين يقدرون يشوفون كشف رواتبهم الحين' : 'انقفل كشف الراتب عن الموظفين')
   }
 
   async function loadReport() {
@@ -422,14 +389,14 @@ export default function HRManagementPage() {
         </button>
       </div>
 
-      {/* صفحة «راتبي» للموظف */}
+      {/* كشف الراتب للموظف */}
       {isOwner && salaryVisible !== null && (
         <div style={{...card,padding:'14px 16px',marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
           <div>
-            <div style={{fontSize:13,fontWeight:800,color:colors.text}}>💰 الموظف يشوف راتبه</div>
-            <div style={{fontSize:12,color:colors.text3,marginTop:3,lineHeight:1.6}}>يظهر للموظف في صفحته: الراتب والبدلات، الخصومات والسلف، والأوفر تايم المحسوب تلقائياً من الحضور</div>
+            <div style={{fontSize:13,fontWeight:800,color:colors.text}}>كشف الراتب للموظف</div>
+            <div style={{fontSize:12,color:colors.text3,marginTop:3,lineHeight:1.6}}>الموظف يشوف بلغته: الراتب والبدلات، والأوفر تايم، وكل خصم بسببه وتاريخه (غرامات التأخير، خصوماتك، عجز الكاشير اللي تعتمده، والسلف)، والصافي</div>
           </div>
-          <button onClick={toggleSalaryVisible} role="switch" aria-checked={!!salaryVisible} aria-label="الموظف يشوف راتبه"
+          <button onClick={toggleSalaryVisible} role="switch" aria-checked={!!salaryVisible} aria-label="كشف الراتب للموظف"
             style={{width:52,height:30,borderRadius:99,border:'none',cursor:'pointer',flexShrink:0,position:'relative' as const,background:salaryVisible?colors.primary:colors.border2,transition:'background .2s'}}>
             <span style={{position:'absolute' as const,top:3,width:24,height:24,borderRadius:'50%',background:'white',boxShadow:shadow.md,transition:'right .2s',right:salaryVisible?3:25}}/>
           </button>
@@ -538,42 +505,29 @@ export default function HRManagementPage() {
                 </div>
 
                 {(() => {
-                  const cs = cashierSummary[s.id]
-                  const advDeducted = approvedAdvances[s.id] || 0
-                  const cashierDeficit = cs?.deficit || 0
-                  const pendingPenalty = latePenalties[s.id] || 0
-                  const netSalary = savedTotal - advDeducted - cashierDeficit
-                  const hasAnyDeduction = advDeducted > 0 || cashierDeficit > 0 || pendingPenalty > 0
-                  if (!hasAnyDeduction) return null
+                  // راتب الشهر الحالي — نفس أرقام كشف راتب الموظف
+                  const p = cardPayroll[s.id]
+                  if (!p) return null
+                  const fmtN = (n:number) => Number(n||0).toLocaleString('ar-SA',{numberingSystem:'latn'})
+                  const line = (label:string, value:string, color:string) => (
+                    <div style={{display:'flex',justifyContent:'space-between',fontSize:11}}>
+                      <span style={{color:colors.text3}}>{label}</span>
+                      <span style={{color,fontWeight:700}}>{value}</span>
+                    </div>
+                  )
+                  const hasAny = p.overtimePay>0 || p.latePenaltiesTotal>0 || p.otherDeductionsTotal>0 || p.advancesTotal>0 || p.pendingDeficitsTotal>0
+                  if (!hasAny) return null
                   return (
                     <div style={{marginTop:10,padding:'10px 12px',background:colors.bg,borderRadius:10,display:'flex',flexDirection:'column' as const,gap:6}}>
-                      {advDeducted > 0 && (
-                        <div style={{display:'flex',justifyContent:'space-between',fontSize:11}}>
-                          <span style={{color:colors.text3}}>سلف مخصومة (معتمدة)</span>
-                          <span style={{color:colors.warning,fontWeight:700}}>−{advDeducted.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
-                        </div>
-                      )}
-                      {cashierDeficit > 0 && (
-                        <div style={{display:'flex',justifyContent:'space-between',fontSize:11}}>
-                          <span style={{color:colors.text3}}>عجز إقفال كاشير ({cs?.count} إقفال)</span>
-                          <span style={{color:colors.danger,fontWeight:700}}>−{cashierDeficit.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
-                        </div>
-                      )}
-                      {pendingPenalty > 0 && (
-                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontSize:11}} onClick={e=>e.stopPropagation()}>
-                          <span style={{color:colors.text3}}>غرامات تأخير (لسه ما اتخصمت)</span>
-                          <div style={{display:'flex',alignItems:'center',gap:8}}>
-                            <span style={{color:colors.danger,fontWeight:700}}>{pendingPenalty.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
-                            <button onClick={()=>applyLatePenalty(s.id)} disabled={applyingPenalty===s.id}
-                              style={{padding:'3px 10px',background:colors.danger,color:'white',border:'none',borderRadius:99,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
-                              {applyingPenalty===s.id?'...':'طبّقها كخصم'}
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                      <div style={{fontSize:10.5,fontWeight:700,color:colors.text4}}>هذا الشهر</div>
+                      {p.overtimePay>0 && line('أوفر تايم', `+${fmtN(p.overtimePay)} ${curr}`, colors.primary)}
+                      {p.latePenaltiesTotal>0 && line(`غرامات تأخير (${p.latePenaltiesCount})`, `−${fmtN(p.latePenaltiesTotal)} ${curr}`, colors.danger)}
+                      {p.otherDeductionsTotal>0 && line('خصومات', `−${fmtN(p.otherDeductionsTotal)} ${curr}`, colors.danger)}
+                      {p.advancesTotal>0 && line('سلف معتمدة', `−${fmtN(p.advancesTotal)} ${curr}`, colors.warning)}
+                      {p.pendingDeficitsTotal>0 && line('عجز كاشير بانتظار قرارك', `${fmtN(p.pendingDeficitsTotal)} ${curr}`, colors.text3)}
                       <div style={{display:'flex',justifyContent:'space-between',fontSize:12,fontWeight:800,paddingTop:6,borderTop:`1px dashed ${colors.border}`}}>
-                        <span style={{color:colors.text}}>الصافي المتوقع</span>
-                        <span style={{color:colors.primary}}>{netSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
+                        <span style={{color:colors.text}}>الصافي حتى الآن</span>
+                        <span style={{color:colors.primary}}>{fmtN(p.netSalary)} {curr}</span>
                       </div>
                     </div>
                   )

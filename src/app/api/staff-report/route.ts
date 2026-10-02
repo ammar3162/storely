@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { computeStaffPayroll, loadOvertimeSettings } from '@/lib/payroll'
+import { orgHasHrFeature } from '@/lib/hrAccess'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,8 +21,9 @@ export async function GET(req: Request) {
 
     const supabase = sb()
     const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
-    if ((orgCheck as any)?.plan === 'basic') {
-      return NextResponse.json({ error: 'ميزة تقرير الموظفين متاحة فقط بالباقة المتوسطة أو المتقدمة' }, { status: 403 })
+    // نفس شرط صفحة الموظف: الباقة المتوسطة/المتقدمة أو إضافة «إدارة الموظفين الكاملة»
+    if (!(await orgHasHrFeature(supabase, org_id, (orgCheck as any)?.plan))) {
+      return NextResponse.json({ error: 'ميزة تقرير الموظفين متاحة بالباقة المتوسطة أو المتقدمة، أو بإضافة إدارة الموظفين الكاملة' }, { status: 403 })
     }
 
     const [year, monthNum] = month.split('-').map(Number)
@@ -30,11 +32,15 @@ export async function GET(req: Request) {
     const monthEndTs = `${month}-${String(lastDay).padStart(2, '0')}T23:59:59.999+03:00`
     const daysInMonth = lastDay
 
-    const { data: staffList } = await supabase
+    // مدير الفرع يشوف موظفين فرعه بس
+    const forcedBranch = enforcedBranchId(access)
+    let staffQ = supabase
       .from('staff_members')
-      .select('id,name,monthly_salary,housing_allowance,transport_allowance,food_allowance,leave_balance_days,is_active,shift_id')
+      .select('id,org_id,name,monthly_salary,housing_allowance,transport_allowance,food_allowance,leave_balance_days,is_active,shift_id')
       .eq('org_id', org_id)
       .eq('is_active', true)
+    if (forcedBranch) staffQ = staffQ.eq('branch_id', forcedBranch)
+    const { data: staffList } = await staffQ
 
     const overtimeSettings = await loadOvertimeSettings(supabase, org_id)
     const report = []
@@ -77,6 +83,9 @@ export async function GET(req: Request) {
         staffId: s.id, name: s.name,
         grossSalary, deductionsTotal, advancesTotal, netSalary,
         overtimeMinutes: pay.overtime.minutes, overtimePay: pay.overtime.pay,
+        latePenaltiesTotal: pay.latePenaltiesTotal, latePenaltiesCount: pay.latePenalties.length,
+        otherDeductionsTotal: Math.round((deductionsTotal - pay.latePenaltiesTotal) * 100) / 100,
+        pendingDeficitsTotal: Math.round(pay.pendingDeficits.reduce((s2, d) => s2 + d.amount, 0) * 100) / 100,
         daysPresent, daysInMonth, attendanceRate: Math.round(attendanceRate * 100),
         lateCount, leaveDaysTaken, leaveBalance: Number(s.leave_balance_days || 0),
         tasksTotal, tasksConfirmed, taskCompletionRate: Math.round(taskCompletionRate * 100),

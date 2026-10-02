@@ -117,6 +117,8 @@ export async function POST(req: Request) {
         difference,
         status,
         deficit_reason: deficitReason || null,
+        // العجز ما ينخصم من راتب الكاشير إلا لو المالك اعتمده
+        deficit_decision: status === 'deficit' ? 'pending' : null,
         network_image: safeImageUrl(network_image),
         sales_image: safeImageUrl(sales_image),
       })
@@ -138,6 +140,15 @@ export async function POST(req: Request) {
       await (supabase as any).from('notifications').insert({
         org_id, branch_id: branch_id || null, title: `إقفال كاشير: ${staff_name}`, message: `إجمالي المبيعات: ${sales.toFixed(2)} ر.س — ${closingStatusText}`, type: 'info', read: false
       })
+      // قرار العجز — إشعار داخل النظام فقط، فيه زر اعتماد الخصم أو رفضه
+      if (status === 'deficit' && data) {
+        await (supabase as any).from('notifications').insert({
+          org_id, branch_id: branch_id || null, type: 'warning', read: false,
+          title: `عجز بانتظار قرارك: ${staff_name}`,
+          message: `عجز ${Math.abs(difference).toFixed(2)} ر.س بإقفال ${businessDate} — السبب: ${deficitReason}. تخصمه من راتب الكاشير؟`,
+          ref_type: 'cashier_deficit', ref_id: (data as any).id,
+        })
+      }
       // إشعار فوري بالمتصفح/الجوال — لا يعتمد على واتساب إطلاقاً
       sendPushToOrg(org_id, `إقفال كاشير: ${staff_name}`, `إجمالي المبيعات: ${sales.toFixed(2)} ر.س — ${closingStatusText}`, '/reports').catch(()=>{})
       const { data: allBranches } = await supabase.from('branches').select('id,name,whatsapp_number').eq('org_id', org_id).eq('is_active', true)
@@ -234,7 +245,7 @@ export async function GET(req: Request) {
     const { data, error } = await selectAll(() => {
       let query = supabase
         .from('cashier_closings')
-        .select('id,branch_id,staff_id,closing_date,created_at,staff_name,total_sales,network_amount,cash_amount,total_purchases,difference,status,deficit_reason,sales_image,network_image,purchases')
+        .select('id,branch_id,staff_id,closing_date,created_at,staff_name,total_sales,network_amount,cash_amount,total_purchases,difference,status,deficit_reason,deficit_decision,deficit_decided_at,sales_image,network_image,purchases')
         .eq('org_id', org_id)
         .order('closing_date', { ascending: false })
         .order('created_at', { ascending: false })

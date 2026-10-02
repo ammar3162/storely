@@ -26,13 +26,22 @@ export async function GET(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
     const effectiveBranchId = enforcedBranchId(access, branch_id)
 
-    const { data, error } = await sb().from('notifications')
-      .select('id,type,read,title,message,created_at')
+    const db = sb()
+    const { data, error } = await db.from('notifications')
+      .select('id,type,read,title,message,created_at,ref_type,ref_id')
       .eq('org_id', org_id).or(branchFilter(effectiveBranchId))
       .order('created_at', { ascending: false })
 
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
-    return NextResponse.json({ success: true, notifications: data || [] })
+    const rows = (data || []) as any[]
+    // إشعارات عجز الكاشير: نرفق حالة القرار عشان الواجهة تعرض أزرار الاعتماد أو النتيجة
+    const deficitIds = rows.filter(n => n.ref_type === 'cashier_deficit' && n.ref_id).map(n => n.ref_id)
+    if (deficitIds.length) {
+      const { data: cl } = await db.from('cashier_closings').select('id,deficit_decision').eq('org_id', org_id).in('id', deficitIds)
+      const dec = new Map(((cl || []) as any[]).map(c => [c.id, c.deficit_decision]))
+      for (const n of rows) if (n.ref_type === 'cashier_deficit') n.decision = dec.get(n.ref_id) ?? null
+    }
+    return NextResponse.json({ success: true, notifications: rows, canDecide: access.role === 'owner' })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }

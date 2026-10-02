@@ -1,6 +1,23 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
+import { attendanceState, lateMinutesAt, type AttEvent } from '@/lib/attendanceState'
+import { overtimeMinutes, loadOvertimeSettings, type Shift } from '@/lib/payroll'
+
+// آخر حركات الموظف (يكفي آخر يومين) — لحالة «حاضر / انصرف / دوام جديد»
+async function recentEvents(supabase: any, staff_id: string, org_id: string): Promise<AttEvent[]> {
+  const { data } = await supabase.from('staff_attendance').select('id,type,recorded_at')
+    .eq('staff_id', staff_id).eq('org_id', org_id)
+    .gte('recorded_at', new Date(Date.now() - 48 * 3600e3).toISOString())
+    .order('recorded_at', { ascending: false }).limit(20)
+  return (data || []) as AttEvent[]
+}
+
+async function staffShift(supabase: any, shift_id: string | null): Promise<Shift> {
+  if (!shift_id) return null
+  const { data } = await supabase.from('shifts').select('start_time,end_time,is_24h').eq('id', shift_id).maybeSingle()
+  return (data as Shift) || null
+}
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -56,6 +73,16 @@ export async function POST(req: Request) {
     // موقع التحقق لازم يكون فرع الموظف نفسه (مو أي فرع يرسله الطلب)
     if ((staff as any).branch_id && (staff as any).branch_id !== branch_id) return NextResponse.json({ error: 'الفرع غير صحيح' }, { status: 403 })
 
+    // نفس قاعدة الواجهة: ما فيه حضور مرتين، ولا انصراف بدون حضور، والحضور يرجع يفتح لدوام جديد بس
+    const currentShift = await staffShift(supabase, (staff as any).shift_id)
+    const state = attendanceState({ events: await recentEvents(supabase, staff_id, org_id), shift: currentShift })
+    if (type === 'check_in' && !state.canCheckIn) {
+      return NextResponse.json({ error: state.checkedIn ? 'أنت مسجّل حضور بالفعل' : 'سجّلت انصرافك لهذا الدوام — الحضور يفتح مع بداية دوامك الجاي' }, { status: 409 })
+    }
+    if (type === 'check_out' && !state.canCheckOut) {
+      return NextResponse.json({ error: 'سجّل حضورك أول' }, { status: 409 })
+    }
+
     const { data: branch } = await supabase.from('branches').select('latitude,longitude,attendance_radius_m,location_accuracy_m,name').eq('id', branch_id).eq('org_id', org_id).maybeSingle()
     if (!branch) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
 
@@ -109,33 +136,28 @@ export async function POST(req: Request) {
     let lateMinutes: number | null = null
     let penaltyAmount: number | null = null
 
-    // حساب التأخير — بس عند تسجيل الحضور، ولو الموظف مرتبط بشفت له وقت بداية محدد
-    if (type === 'check_in') {
-      const { data: staffShift } = await supabase.from('staff_members').select('shift_id').eq('id', staff_id).single()
-      const shiftId = (staffShift as any)?.shift_id
-      if (shiftId) {
-        const { data: shift } = await supabase.from('shifts').select('start_time,is_24h').eq('id', shiftId).maybeSingle()
-        if (shift && !(shift as any).is_24h) {
-          const now = new Date()
-          const nowMinutes = ((now.getUTCHours() + 3) % 24) * 60 + now.getUTCMinutes()
-          const [sh, sm] = String((shift as any).start_time).split(':').map(Number)
-          const shiftStartMinutes = sh * 60 + sm
-          const diff = nowMinutes - shiftStartMinutes
-          lateMinutes = diff > 0 ? diff : 0
-
-          if (lateMinutes > 0) {
-            const { data: rules } = await supabase.from('late_penalty_rules').select('*').eq('org_id', org_id).order('min_minutes')
-            const match = (rules || []).find((r: any) => lateMinutes! >= r.min_minutes && (r.max_minutes === null || lateMinutes! <= r.max_minutes))
-            if (match) penaltyAmount = Number((match as any).penalty_amount)
-          }
-        }
+    // حساب التأخير — بس عند تسجيل الحضور، على بداية الشفت الأقرب (يغطي الشفت الليلي)
+    if (type === 'check_in' && currentShift && !currentShift.is_24h && currentShift.start_time) {
+      lateMinutes = lateMinutesAt(Date.now(), currentShift)
+      if (lateMinutes > 0) {
+        const { data: rules } = await supabase.from('late_penalty_rules').select('*').eq('org_id', org_id).order('min_minutes')
+        const match = (rules || []).find((r: any) => lateMinutes! >= r.min_minutes && (r.max_minutes === null || lateMinutes! <= r.max_minutes))
+        if (match) penaltyAmount = Number((match as any).penalty_amount)
       }
+    }
+
+    // الأوفر تايم يتثبّت لحظة الانصراف على شفت ذاك الوقت — تغيير الشفت بعدين ما يغيّر الأيام اللي فاتت
+    let overtimeAtCheckout: number | null = null
+    if (type === 'check_out') {
+      const ot = await loadOvertimeSettings(supabase, org_id)
+      overtimeAtCheckout = overtimeMinutes(new Date().toISOString(), currentShift, ot.minMinutes)
     }
 
     const { error: insErr } = await supabase.from('staff_attendance').insert({
       org_id, branch_id, staff_id, type, is_excused: isExcused,
       latitude, longitude, distance_m: Math.round(dist), within_range: true,
       late_minutes: lateMinutes, penalty_amount: penaltyAmount,
+      overtime_minutes: overtimeAtCheckout,
       accuracy_m: accuracy_m != null ? Number(accuracy_m) : null,
     } as any)
     if (insErr) return NextResponse.json({ error: 'فشل تسجيل الحضور — حاول مرة أخرى' }, { status: 500 })
@@ -146,7 +168,7 @@ export async function POST(req: Request) {
         const hrs = Math.floor(lateMinutes / 60)
         const mins = lateMinutes % 60
         const durationText = hrs > 0 ? `${hrs} ساعة${mins > 0 ? ` و${mins} دقيقة` : ''}` : `${mins} دقيقة`
-        const penaltyText = penaltyAmount ? ` — الغرامة المقترحة: ${penaltyAmount} ر.س` : ''
+        const penaltyText = penaltyAmount ? ` — غرامة ${penaltyAmount} ر.س تنخصم تلقائياً (تقدر تلغيها من تقرير الحضور)` : ''
         await supabase.from('notifications').insert({
           org_id, branch_id, type: 'warning',
           title: 'تأخير موظف',
@@ -188,23 +210,14 @@ export async function GET(req: Request) {
       }
     }
 
-    const todayStart = new Date(); todayStart.setHours(0,0,0,0)
-    const { data } = await supabase
-      .from('staff_attendance')
-      .select('id,type,recorded_at')
-      .eq('staff_id', staff_id).eq('org_id', org_id)
-      .gte('recorded_at', todayStart.toISOString())
-      .order('recorded_at', { ascending: false })
+    const { data: staffRow } = await supabase.from('staff_members').select('shift_id').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
+    const shift = await staffShift(supabase, (staffRow as any)?.shift_id || null)
+    const st = attendanceState({ events: await recentEvents(supabase, staff_id, org_id), shift })
+    // today = الدوام الحالي/الأخير بس (حضور + انصراف) — الواجهة تبني الأزرار على state
+    const data = [st.sessionOut, st.sessionIn].filter(Boolean)
 
-    // نجيب شفت الموظف عشان نعرف الوقت المحدد للانصراف (يمنع الانصراف المبكر)
-    let shift: any = null
-    const { data: staffRow } = await supabase.from('staff_members').select('shift_id').eq('id', staff_id).maybeSingle()
-    if ((staffRow as any)?.shift_id) {
-      const { data: shiftRow } = await supabase.from('shifts').select('start_time,end_time,is_24h').eq('id', (staffRow as any).shift_id).maybeSingle()
-      shift = shiftRow
-    }
-
-    return NextResponse.json({ success: true, today: data || [], shift })
+    return NextResponse.json({ success: true, today: data, shift,
+      state: { checkedIn: st.checkedIn, canCheckIn: st.canCheckIn, canCheckOut: st.canCheckOut, shiftStart: st.shiftStartMs ? new Date(st.shiftStartMs).toISOString() : null } })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { sendWhatsAppMessage, formatPhone } from '@/lib/whatsapp'
 
@@ -64,8 +64,14 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'ميزة الرواتب متاحة فقط بالباقة المتوسطة أو المتقدمة' }, { status: 403 })
       }
 
+      // الموظف لازم يكون من نفس المنشأة (ومن فرع المدير لو كان مدير فرع)
+      const { data: target } = await supabase.from('staff_members').select('id,branch_id').eq('id', body.staff_id).eq('org_id', body.org_id).maybeSingle()
+      const forced = enforcedBranchId(access)
+      if (!target || (forced && (target as any).branch_id !== forced)) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
+      if (amountNum > 1_000_000) return NextResponse.json({ error: 'مبلغ غير صالح' }, { status: 400 })
+
       const { error } = await supabase.from('staff_payroll_adjustments').insert({
-        org_id: body.org_id, staff_id: body.staff_id, type, amount: amountNum, reason: reason || null,
+        org_id: body.org_id, staff_id: body.staff_id, type, amount: Math.round(amountNum * 100) / 100, reason: reason ? String(reason).trim().slice(0, 300) : null,
         status: 'approved', requested_by: 'owner', reviewed_by: 'owner', reviewed_at: new Date().toISOString(),
       } as any)
       if (error) return NextResponse.json({ error: 'فشل الحفظ' }, { status: 500 })
