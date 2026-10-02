@@ -161,8 +161,8 @@ const THANK_YOU_TEMPLATES_EN = [
 const DEFICIT_REASONS: { key: string; ar: string; en: string }[] = [
   { key:'unpaid', ar:'فاتورة ما تحاسبت',                 en:'An invoice was not paid' },
   { key:'change', ar:'خطأ بالباقي للعميل',               en:'Wrong change given to a customer' },
-  { key:'purchase', ar:'مشتريات من الكاش ما انسجلت',       en:'Cash purchase not recorded' },
-  { key:'card', ar:'عملية شبكة انسجلت كاش بالغلط',     en:'Card payment recorded as cash' },
+  { key:'purchase', ar:'مشتريات من الكاش ما تسجلت',       en:'Cash purchase not recorded' },
+  { key:'card', ar:'عملية شبكة تسجلت كاش بالغلط',     en:'Card payment recorded as cash' },
   { key:'refund', ar:'مرتجع أو استرجاع مبلغ لعميل',      en:'Refund to a customer' },
   { key:'discount', ar:'خصم لعميل ما تسجل',               en:'Unrecorded discount' },
   { key:'mistake', ar:'خطأ من الكاشير بالعدّ أو الإدخال', en:'Cashier counting/entry mistake' },
