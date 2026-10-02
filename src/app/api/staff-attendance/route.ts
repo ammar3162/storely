@@ -126,7 +126,7 @@ export async function POST(req: Request) {
           const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
           const { data: approvedReq } = await supabase.from('attendance_permission_requests')
             .select('id').eq('staff_id', staff_id).eq('status', 'approved')
-            .gte('requested_at', todayStart.toISOString()).maybeSingle()
+            .gte('requested_at', todayStart.toISOString()).limit(1).maybeSingle()
           if (approvedReq) {
             isExcused = true
           } else {

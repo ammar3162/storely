@@ -13,6 +13,15 @@ export function normalizePhone(raw: string): string {
   return d.replace(/^0+/, '')
 }
 
+/** نفس الرقم؟ — مطابقة كاملة، أو رقم دولي مكتوب مع/بدون رمز الدولة (آخر 9 أرقام على الأقل) */
+export function samePhone(a: string, b: string): boolean {
+  const x = normalizePhone(a), y = normalizePhone(b)
+  if (!x || !y) return false
+  if (x === y) return true
+  const [short, long] = x.length <= y.length ? [x, y] : [y, x]
+  return short.length >= 9 && long.length - short.length <= 3 && long.endsWith(short)
+}
+
 export function clientIp(req: Request): string {
   return (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || req.headers.get('x-real-ip') || 'unknown'
 }

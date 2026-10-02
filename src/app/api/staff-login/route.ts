@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { normalizePhone, clientIp, lockedUntil, lockedMessage, recordFailure, recordSuccess, notifyLocked, PER_IP_MAX } from '@/lib/loginThrottle'
+import { normalizePhone, samePhone, clientIp, lockedUntil, lockedMessage, recordFailure, recordSuccess, notifyLocked, PER_IP_MAX } from '@/lib/loginThrottle'
 import { createClient } from '@supabase/supabase-js'
 import { generateStaffToken } from '@/lib/staffAuth'
 
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
       .ilike('phone', '%' + normalized.slice(-8))
       .eq('is_active', true)
       .limit(20)
-    const candidates = (found || []).filter((c: any) => normalizePhone(c.phone) === normalized)
+    const candidates = (found || []).filter((c: any) => samePhone(c.phone, normalized))
 
     if (error || !candidates.length) {
       await fail()

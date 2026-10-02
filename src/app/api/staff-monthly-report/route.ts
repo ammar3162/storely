@@ -4,6 +4,7 @@ import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { computeStaffPayroll, loadOvertimeSettings } from '@/lib/payroll'
 import { orgHasHrFeature } from '@/lib/hrAccess'
 import { payrollLedger } from '@/lib/payrollLedger'
+import { mapLimit } from '@/lib/mapLimit'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -44,11 +45,11 @@ export async function GET(req: Request) {
     if (staff_id && !(staffList || []).length) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
 
     const settings = await loadOvertimeSettings(db, org_id)
-    const rows: any[] = []
-    for (const s of (staffList || []) as any[]) {
+    // 6 موظفين بنفس الوقت — أسرع بكثير مع الفروع الكبيرة
+    const rows: any[] = await mapLimit((staffList || []) as any[], 6, async (s) => {
       const p = await computeStaffPayroll(db, s, month, settings)
       const otherDeductions = r2(p.deductionsTotal - p.latePenaltiesTotal)
-      rows.push({
+      return {
         staff_id: s.id, name: s.name, role: s.role,
         basic: p.basic, allowances: r2(p.allowances.housing + p.allowances.transport + p.allowances.food), gross: p.grossSalary,
         overtime_minutes: p.overtime.minutes, overtime_pay: p.overtime.pay,
@@ -58,8 +59,8 @@ export async function GET(req: Request) {
         net: p.netSalary,
         days_present: p.attendance.daysPresent, days_in_month: p.attendance.daysInMonth,
         ...(staff_id ? { ledger: payrollLedger(p), hour_rate: p.overtime.hourRate, overtime_mode: p.overtime.mode } : {}),
-      })
-    }
+      }
+    })
 
     const sum = (k: string) => r2(rows.reduce((a: number, r: any) => a + Number(r[k] || 0), 0))
     return NextResponse.json({

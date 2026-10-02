@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { computeStaffPayroll, loadOvertimeSettings } from '@/lib/payroll'
 import { orgHasHrFeature } from '@/lib/hrAccess'
+import { mapLimit } from '@/lib/mapLimit'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -43,8 +44,8 @@ export async function GET(req: Request) {
     const { data: staffList } = await staffQ
 
     const overtimeSettings = await loadOvertimeSettings(supabase, org_id)
-    const report = []
-    for (const s of (staffList || []) as any[]) {
+    // 6 موظفين بنفس الوقت — أسرع بكثير مع الفروع الكبيرة
+    const report = await mapLimit((staffList || []) as any[], 6, async (s) => {
       // الراتب والخصومات والسلف والأوفر تايم من نفس حساب صفحة «راتبي» للموظف
       const pay = await computeStaffPayroll(supabase, s, month, overtimeSettings)
       const { grossSalary, deductionsTotal, advancesTotal, netSalary } = pay
@@ -79,7 +80,7 @@ export async function GET(req: Request) {
       const deductionScore = Math.max(0, 15 - deductions.length * 5)
       const rating = Math.round(attendanceScore + taskScore + lateScore + deductionScore)
 
-      report.push({
+      return {
         staffId: s.id, name: s.name,
         grossSalary, deductionsTotal, advancesTotal, netSalary,
         overtimeMinutes: pay.overtime.minutes, overtimePay: pay.overtime.pay,
@@ -90,8 +91,8 @@ export async function GET(req: Request) {
         lateCount, leaveDaysTaken, leaveBalance: Number(s.leave_balance_days || 0),
         tasksTotal, tasksConfirmed, taskCompletionRate: Math.round(taskCompletionRate * 100),
         rating,
-      })
-    }
+      }
+    })
 
     return NextResponse.json({ success: true, month, report })
   } catch (err: any) {
