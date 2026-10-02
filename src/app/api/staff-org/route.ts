@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     const auth = await verifyStaffToken(extractStaffToken(req))
     if (!auth.valid || !auth.data) return NextResponse.json({ error: auth.error, reason: auth.reason }, { status: 401 })
 
-    const { data: org, error } = await sb().from('organizations').select('logo_url,currency,plan,staff_salary_visible').eq('id', auth.data.org_id).single()
+    const { data: org, error } = await sb().from('organizations').select('logo_url,currency,plan,staff_salary_visible,business_day_start_hour').eq('id', auth.data.org_id).single()
     if (error || !org) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
 
     return NextResponse.json({
@@ -22,6 +22,7 @@ export async function GET(req: Request) {
       currency: (org as any).currency || null,
       plan: (org as any).plan || null,
       staff_salary_visible: (org as any).staff_salary_visible === true,
+      business_day_start_hour: (org as any).business_day_start_hour ?? null,
     })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })

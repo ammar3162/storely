@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { MAX_BUSINESS_DAY_START_HOUR } from '@/lib/businessDate'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,7 +9,7 @@ const sb = () => createClient(
 )
 
 // إعدادات المنشأة اللي تعدّلها صفحات لوحة التحكم — قوائم مسموحة فقط
-const BASIC_FIELDS = 'shop_open_time,shop_close_time,notify_cashier_closing_wa'
+const BASIC_FIELDS = 'shop_open_time,shop_close_time,business_day_start_hour,notify_cashier_closing_wa'
 // scope=full: صفحة الإعدادات (استعلام منفصل عشان صفحات ثانية تبقى على الحقول الأساسية فقط)
 const FULL_FIELDS = 'whatsapp_number,name,notify_schedule,notify_time,notify_days,notify_cashier_closing_wa,notify_supplier_wa,last_notified_at,last_backup_at,max_branches,logo_url,plan,subscription_ends_at,billing_cycle,staff_salary_visible,overtime_mode,overtime_multiplier,overtime_fixed_rate,overtime_min_minutes'
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/
@@ -64,6 +65,11 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ error: 'أيام غير صالحة' }, { status: 400 })
       }
       update.notify_days = body.notify_days.map(String)
+    }
+    if ('business_day_start_hour' in body) {
+      const h = Number(body.business_day_start_hour)
+      if (!Number.isInteger(h) || h < 0 || h > MAX_BUSINESS_DAY_START_HOUR) return NextResponse.json({ error: 'ساعة بداية اليوم غير صالحة' }, { status: 400 })
+      update.business_day_start_hour = h
     }
     if ('notify_cashier_closing_wa' in body) update.notify_cashier_closing_wa = !!body.notify_cashier_closing_wa
     if ('notify_supplier_wa' in body) update.notify_supplier_wa = !!body.notify_supplier_wa

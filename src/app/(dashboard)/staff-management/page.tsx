@@ -91,8 +91,8 @@ export default function StaffManagementPage() {
 
   const [takenProducts, setTakenProducts] = useState<Record<string,string>>({})
   const [overrideTaken, setOverrideTaken] = useState<Set<string>>(new Set())
-  const [shopOpenTime, setShopOpenTime] = useState('')
-  const [shopCloseTime, setShopCloseTime] = useState('')
+  const [dayStartHour, setDayStartHour] = useState(4)   // بداية يوم العمل الجديد لإقفال الكاشير
+  const [dayStartLoaded, setDayStartLoaded] = useState(4)
   const [showHoursModal, setShowHoursModal] = useState(false)
   const [savingHours, setSavingHours] = useState(false)
 
@@ -114,8 +114,8 @@ export default function StaffManagementPage() {
     getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
     const settingsRes = await api.get('/api/org-settings', { org_id: oid })
     const orgLimits = settingsRes.settings
-    setShopOpenTime(((orgLimits as any)?.shop_open_time||'').slice(0,5))
-    setShopCloseTime(((orgLimits as any)?.shop_close_time||'').slice(0,5))
+    const h = Number((orgLimits as any)?.business_day_start_hour ?? 4)
+    setDayStartHour(h); setDayStartLoaded(h)
     setOrgNotifyClosingWA((orgLimits as any)?.notify_cashier_closing_wa!==false)
     // حد الموظفين صار خاص بكل فرع لحاله -- نجيبه من الفرع الحالي المختار، مو من المؤسسة كاملة
     const currentBranchId = sessionStorage.getItem('s_branch_id')
@@ -216,8 +216,9 @@ export default function StaffManagementPage() {
       else toast('خطأ: '+(resData.error||'حدث خطأ'),'error')
       return
     }
-    if(newRole==='cashier' && shopOpenTime && shopCloseTime){
-      await api.patch('/api/org-settings', {org_id:orgId, shop_open_time:shopOpenTime, shop_close_time:shopCloseTime})
+    if(newRole==='cashier' && dayStartHour!==dayStartLoaded){
+      const r = await api.patch('/api/org-settings', {org_id:orgId, business_day_start_hour:dayStartHour})
+      if (r.success) setDayStartLoaded(dayStartHour)
     }
     setRevealedPin({name:newName.trim(),phone:cleanPhone,pin})
     setNewName('');setNewPhone('');setNewRole('staff');setNewSendClosingWA(true);setShowAdd(false)
@@ -244,11 +245,11 @@ export default function StaffManagementPage() {
   }
 
   async function saveShopHours() {
-    if(!shopOpenTime||!shopCloseTime){toast('حدد وقت الفتح والإغلاق','warning');return}
     setSavingHours(true)
-    const r = await api.patch('/api/org-settings', {org_id:orgId, shop_open_time:shopOpenTime, shop_close_time:shopCloseTime})
+    const r = await api.patch('/api/org-settings', {org_id:orgId, business_day_start_hour:dayStartHour})
     if (!r.success) { toast(r.error || 'فشل الحفظ', 'error'); setSavingHours(false); return }
-    toast('✅ تم تحديث ساعات العمل')
+    setDayStartLoaded(dayStartHour)
+    toast('✅ تم حفظ بداية يوم العمل')
     setSavingHours(false)
     setShowHoursModal(false)
   }
@@ -512,16 +513,16 @@ export default function StaffManagementPage() {
               </div>
               {newRole==='cashier' && (
                 <div style={{background:colors.bg,borderRadius:radius.md,padding:'12px 14px'}}>
-                  <div style={{fontSize:font.xs,fontWeight:700,color:colors.text3,marginBottom:4,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>ساعات عمل المحل</div>
-                  <div style={{fontSize:10,color:colors.text4,marginBottom:10,lineHeight:1.5}}>يستخدمها النظام ليحدد تاريخ يوم العمل الصحيح لو المحل يقفل بعد منتصف الليل</div>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                    <div>
-                      <label style={{fontSize:10,fontWeight:700,color:colors.text3,display:'block',marginBottom:4}}>وقت الفتح</label>
-                      <input type="time" value={shopOpenTime} onChange={e=>setShopOpenTime(e.target.value)} style={inp()}/>
-                    </div>
-                    <div>
-                      <label style={{fontSize:10,fontWeight:700,color:colors.text3,display:'block',marginBottom:4}}>وقت الإغلاق</label>
-                      <input type="time" value={shopCloseTime} onChange={e=>setShopCloseTime(e.target.value)} style={inp()}/>
+                  <div style={{fontSize:font.xs,fontWeight:700,color:colors.text3,marginBottom:4}}>اليوم الجديد يبدأ الساعة</div>
+                  <div style={{fontSize:10,color:colors.text4,marginBottom:10,lineHeight:1.5}}>أي إقفال قبل هالساعة ينحسب على اليوم اللي قبل — مفيد لو المحل يقفل بعد 12 الليل</div>
+                  <div>
+                    <select value={dayStartHour} onChange={e=>setDayStartHour(Number(e.target.value))} style={inp()}>
+                      {Array.from({length:11},(_,h)=>(
+                        <option key={h} value={h}>{h===0 ? '12:00 منتصف الليل (بدون ترحيل)' : `${h}:00 ${h<6?'الفجر':'الصبح'}`}</option>
+                      ))}
+                    </select>
+                    <div style={{fontSize:10.5,color:colors.text3,marginTop:8,lineHeight:1.6,background:'white',borderRadius:8,padding:'8px 10px',border:`1px solid ${colors.border}`}}>
+                      {dayStartHour===0 ? 'كل تقفيل يتسجّل بتاريخ يومه بالضبط.' : <>مثال: لو الكاشير قفّل الأحد الساعة {dayStartHour===1?'12':dayStartHour-1}:30 {dayStartHour<=6?'الفجر':'الصبح'}، يتسجّل الإقفال على <b>السبت</b>.</>}
                     </div>
                   </div>
                   <label style={{display:'flex',alignItems:'center',gap:8,marginTop:12,padding:'10px 12px',background:'white',borderRadius:8,border:`1.5px solid ${newSendClosingWA?colors.primary:colors.border}`,cursor:'pointer'}}>
@@ -663,20 +664,20 @@ export default function StaffManagementPage() {
       {showHoursModal && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
           <div style={{background:colors.surface,borderRadius:radius.xl,padding:24,width:'100%',maxWidth:380,boxShadow:shadow.lg}}>
-            <div style={{fontSize:font.md,fontWeight:800,color:colors.text,marginBottom:6}}>ساعات عمل المحل</div>
-            <div style={{fontSize:11,color:colors.text4,marginBottom:16,lineHeight:1.5}}>يستخدمها النظام ليحدد تاريخ يوم العمل الصحيح لو المحل يقفل بعد منتصف الليل</div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:18}}>
-              <div>
-                <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5}}>وقت الفتح</label>
-                <input type="time" value={shopOpenTime} onChange={e=>setShopOpenTime(e.target.value)} style={inp()}/>
-              </div>
-              <div>
-                <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5}}>وقت الإغلاق</label>
-                <input type="time" value={shopCloseTime} onChange={e=>setShopCloseTime(e.target.value)} style={inp()}/>
-              </div>
+            <div style={{fontSize:font.md,fontWeight:800,color:colors.text,marginBottom:6}}>بداية يوم العمل</div>
+            <div style={{fontSize:11,color:colors.text4,marginBottom:14,lineHeight:1.6}}>أي إقفال كاشير قبل هالساعة ينحسب على اليوم اللي قبل. الكاشير يشوف التاريخ قبل ما يحفظ، والتاريخ ما يتعدّل بعد الحفظ.</div>
+            <div style={{marginBottom:18}}>
+                    <select value={dayStartHour} onChange={e=>setDayStartHour(Number(e.target.value))} style={inp()}>
+                      {Array.from({length:11},(_,h)=>(
+                        <option key={h} value={h}>{h===0 ? '12:00 منتصف الليل (بدون ترحيل)' : `${h}:00 ${h<6?'الفجر':'الصبح'}`}</option>
+                      ))}
+                    </select>
+                    <div style={{fontSize:10.5,color:colors.text3,marginTop:8,lineHeight:1.6,background:'white',borderRadius:8,padding:'8px 10px',border:`1px solid ${colors.border}`}}>
+                      {dayStartHour===0 ? 'كل تقفيل يتسجّل بتاريخ يومه بالضبط.' : <>مثال: لو الكاشير قفّل الأحد الساعة {dayStartHour===1?'12':dayStartHour-1}:30 {dayStartHour<=6?'الفجر':'الصبح'}، يتسجّل الإقفال على <b>السبت</b>.</>}
+                    </div>
             </div>
             <div style={{display:'flex',gap:10}}>
-              <button onClick={()=>setShowHoursModal(false)} style={{...btnSecondary,flex:1,padding:'12px'}}>إلغاء</button>
+              <button onClick={()=>{setShowHoursModal(false);setDayStartHour(dayStartLoaded)}} style={{...btnSecondary,flex:1,padding:'12px'}}>إلغاء</button>
               <button onClick={saveShopHours} disabled={savingHours} style={{...btnPrimary,flex:2,padding:'12px',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>{savingHours?'جاري الحفظ...':(<><Check size={15} strokeWidth={2.5}/> حفظ</>)}</button>
             </div>
           </div>
@@ -861,7 +862,7 @@ export default function StaffManagementPage() {
                   )}
                   {s.role==='cashier' && (
                     <button onClick={e=>{e.stopPropagation();setShowHoursModal(true)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
-                      <Clock size={13} strokeWidth={2.25}/> ساعات العمل
+                      <Clock size={13} strokeWidth={2.25}/> بداية يوم العمل
                     </button>
                   )}
                   {s.role==='cashier' && !WHATSAPP_PAUSED && (

@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       org_id, branch_id, staff_id, staff_name, total_sales,
       network_amount, mada_amount, visa_amount, mastercard_amount,
       cash_amount, purchases, network_image, sales_image,
-      closing_date, closing_time, deficit_reason,
+      deficit_reason,
     } = await req.json()
 
     if (!org_id || !staff_id || !staff_name) {
@@ -68,17 +68,10 @@ export async function POST(req: Request) {
     }
 
     const supabase = sb()
-    // التقفيل بعد 12 الليل يتسجّل بتاريخ اليوم اللي انفتح فيه الكاشير
-    const [{ data: orgHours }, { data: lastIn }] = await Promise.all([
-      supabase.from('organizations').select('shop_open_time,shop_close_time').eq('id', org_id).single(),
-      supabase.from('staff_attendance').select('recorded_at').eq('org_id', org_id).eq('staff_id', staff_id).eq('type', 'check_in')
-        .gte('recorded_at', new Date(Date.now() - 18 * 3600e3).toISOString()).order('recorded_at', { ascending: false }).limit(1).maybeSingle(),
-    ])
-    const businessDate = (typeof closing_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(closing_date)) ? closing_date : computeBusinessDate({
-      openTime: (orgHours as any)?.shop_open_time || null,
-      closeTime: (orgHours as any)?.shop_close_time || null,
-      lastCheckInIso: (lastIn as any)?.recorded_at || null,
-    })
+    // تاريخ يوم العمل — قاعدة وحدة: أي تقفيل قبل ساعة بداية اليوم الجديد ينحسب على اليوم اللي قبل
+    // (ما نقبل تاريخ من الطلب — التاريخ يحدده السيرفر بس)
+    const { data: orgDay } = await supabase.from('organizations').select('business_day_start_hour').eq('id', org_id).single()
+    const businessDate = computeBusinessDate({ startHour: (orgDay as any)?.business_day_start_hour })
     const { data, error } = await supabase
       .from('cashier_closings')
       .insert({
@@ -87,7 +80,6 @@ export async function POST(req: Request) {
         staff_id,
         staff_name,
         closing_date: businessDate,
-        closing_time: closing_time || null,
         total_sales: sales,
         network_amount: network,
         mada_amount: mada,
@@ -138,7 +130,7 @@ export async function POST(req: Request) {
 
       if (whatsappNumber && shouldSendNow && ownerConsented) {
         const now = new Date()
-        const effectiveDate = closing_date ? new Date(`${closing_date}T${closing_time||'00:00'}:00+03:00`) : now
+        const effectiveDate = now
         const timeStr = effectiveDate.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Riyadh' })
         const dateStr = effectiveDate.toLocaleDateString('ar-SA', {numberingSystem:'latn', weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })
         const branchLine = (isMultiBranch && branchName) ? `🏪 الفرع: *${branchName}*\n` : ''
@@ -216,7 +208,7 @@ export async function GET(req: Request) {
     const supabase = sb()
     let query = supabase
       .from('cashier_closings')
-      .select('id,branch_id,staff_id,closing_date,staff_name,total_sales,network_amount,cash_amount,total_purchases,difference,status,deficit_reason,sales_image,network_image,purchases')
+      .select('id,branch_id,staff_id,closing_date,created_at,staff_name,total_sales,network_amount,cash_amount,total_purchases,difference,status,deficit_reason,sales_image,network_image,purchases')
       .eq('org_id', org_id)
       .order('closing_date', { ascending: false })
       .order('created_at', { ascending: false })
@@ -243,22 +235,6 @@ async function ownedClosing(org_id: string, id: string, access: any) {
   const forced = enforcedBranchId(access)
   if (forced && (data as any).branch_id !== forced) return null
   return data
-}
-
-// تعديل تاريخ إقفال كاشير (المالك / مدير الفرع لفرعه)
-export async function PATCH(req: Request) {
-  try {
-    const { org_id, id, closing_date } = await req.json()
-    if (!org_id || !id || !/^\d{4}-\d{2}-\d{2}$/.test(String(closing_date || ''))) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
-    const access = await verifyOrgAccess(org_id)
-    if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (!(await ownedClosing(org_id, id, access))) return NextResponse.json({ error: 'غير موجود' }, { status: 404 })
-    const { error } = await sb().from('cashier_closings').update({ closing_date } as any).eq('id', id).eq('org_id', org_id)
-    if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
-    return NextResponse.json({ success: true })
-  } catch {
-    return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
-  }
 }
 
 // حذف إقفال كاشير — الواجهة تطلب كلمة المرور قبل الإرسال

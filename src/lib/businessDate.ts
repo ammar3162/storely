@@ -1,31 +1,19 @@
-// «يوم العمل» لإقفال الكاشير — التقفيل بعد منتصف الليل ينحسب على اليوم اللي انفتح فيه الكاشير.
-// الترتيب:
-//   1) لو الكاشير سجّل حضور خلال آخر 18 ساعة → تاريخ ذاك الحضور (بتوقيت السعودية)
-//   2) لو المالك محدّد ساعات المحل → أي تقفيل قبل ساعة الفتح يرجع لليوم السابق
-//   3) بدون ساعات → أي تقفيل قبل الساعة 6 الفجر يرجع لليوم السابق
+// «يوم العمل» لإقفال الكاشير — قاعدة وحدة يحددها المالك:
+// أي تقفيل قبل ساعة بداية اليوم الجديد (بتوقيت السعودية) ينحسب على اليوم اللي قبل.
+// مثال: البداية 4 الفجر → تقفيل الساعة 1:30 ص يوم الأحد يتسجّل على السبت.
 
+export const DEFAULT_BUSINESS_DAY_START_HOUR = 4
+export const MAX_BUSINESS_DAY_START_HOUR = 10
 const RIYADH_OFFSET_MS = 3 * 3600e3
-export const EARLY_MORNING_CUTOFF_HOUR = 6
-const CHECKIN_WINDOW_MS = 18 * 3600e3
 
-const riyadhDate = (ms: number) => new Date(ms + RIYADH_OFFSET_MS).toISOString().slice(0, 10)
-const riyadhHour = (ms: number) => new Date(ms + RIYADH_OFFSET_MS).getUTCHours()
+export function normalizeStartHour(v: unknown): number {
+  const n = Number(v)
+  return Number.isInteger(n) && n >= 0 && n <= MAX_BUSINESS_DAY_START_HOUR ? n : DEFAULT_BUSINESS_DAY_START_HOUR
+}
 
-export function computeBusinessDate(opts: {
-  now?: Date
-  openTime?: string | null      // 'HH:MM'
-  closeTime?: string | null
-  lastCheckInIso?: string | null
-}): string {
+export function computeBusinessDate(opts: { now?: Date; startHour?: number | null } = {}): string {
   const nowMs = (opts.now ?? new Date()).getTime()
-
-  if (opts.lastCheckInIso) {
-    const inMs = Date.parse(opts.lastCheckInIso)
-    if (!Number.isNaN(inMs) && inMs <= nowMs && nowMs - inMs <= CHECKIN_WINDOW_MS) return riyadhDate(inMs)
-  }
-
-  const hour = riyadhHour(nowMs)
-  const openHour = opts.openTime ? Number(String(opts.openTime).slice(0, 2)) : NaN
-  const cutoff = Number.isFinite(openHour) && opts.closeTime ? openHour : EARLY_MORNING_CUTOFF_HOUR
-  return hour < cutoff ? riyadhDate(nowMs - 24 * 3600e3) : riyadhDate(nowMs)
+  const startHour = opts.startHour == null ? DEFAULT_BUSINESS_DAY_START_HOUR : normalizeStartHour(opts.startHour)
+  // نرجّع الوقت بمقدار ساعة البداية، فأي وقت قبلها يطيح على اليوم اللي قبل
+  return new Date(nowMs + RIYADH_OFFSET_MS - startHour * 3600e3).toISOString().slice(0, 10)
 }

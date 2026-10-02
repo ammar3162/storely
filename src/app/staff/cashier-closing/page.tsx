@@ -158,6 +158,8 @@ export default function CashierClosingPage() {
   const [lang, setPageLang] = useState<'ar'|'en'>('ar')
   const [session, setSession] = useState<StaffSession|null>(null)
   const [orgLogo, setOrgLogo] = useState<string|null>(null)
+  const [dayStartHour, setDayStartHour] = useState<number|null>(null)
+  const [clockTick, setClockTick] = useState(0)  // يحدّث التاريخ المعروض لو الصفحة مفتوحة وقت تغيّر اليوم
   const [step, setStep] = useState(1)
   const [closingDate, setClosingDate] = useState(() => new Date().toISOString().slice(0,10))
     const [totalSales, setTotalSales] = useState('')
@@ -180,6 +182,7 @@ export default function CashierClosingPage() {
   const [toast, setToast] = useState<{msg:string,type:'success'|'error'}|null>(null)
   const router = useRouter()
 
+  useEffect(()=>{ const t=setInterval(()=>setClockTick(x=>x+1),60000); return ()=>clearInterval(t) },[])
   useEffect(()=>{
     const savedLang = localStorage.getItem('staff_lang')
     if(savedLang==='en') setPageLang('en')
@@ -190,6 +193,7 @@ export default function CashierClosingPage() {
     setSession(s)
     getStaffOrg().then(org=>{
         if(org?.logo_url) setOrgLogo(org.logo_url)
+        if(org?.business_day_start_hour != null) setDayStartHour(org.business_day_start_hour)
         if(org?.currency) setCurr(currencySymbol(org.currency))
         if(org?.plan==='basic') setLocked(true)
       })
@@ -288,6 +292,11 @@ export default function CashierClosingPage() {
   function goBack() { setStep(s=>Math.max(1,s-1)) }
 
   const deficitReasonOk = status!=='deficit' || deficitReason.trim().length>=3
+  // نفس قاعدة السيرفر بالضبط — الكاشير يشوف التاريخ اللي بينحفظ قبل ما يحفظ
+  void clockTick
+  const businessDate = computeBusinessDate({ startHour: dayStartHour })
+  const businessDateLabel = new Date(businessDate+'T12:00:00Z').toLocaleDateString(lang==='en'?'en-US':'ar-SA', {numberingSystem:'latn',weekday:'long',year:'numeric',month:'long',day:'numeric',calendar:'gregory',timeZone:'UTC'})
+  const isAfterMidnightCarry = businessDate !== new Date(Date.now()+3*3600e3).toISOString().slice(0,10)
 
   async function saveClosing() {
     if(!session) return
@@ -362,7 +371,7 @@ export default function CashierClosingPage() {
         {!saved && (
           <div className="fu" style={{marginBottom:6}}>
             <div style={{fontSize:22,fontWeight:800,color:'#1c1c1a',marginBottom:4}}>{ct('pageTitle',lang)}</div>
-            <div style={{fontSize:13,color:'#8b8a84',fontWeight:600,marginBottom:22}}>{new Date(computeBusinessDate({})+'T12:00:00Z').toLocaleDateString(lang==='en'?'en-US':'ar-SA', {numberingSystem:'latn',weekday:'long',year:'numeric',month:'long',day:'numeric',calendar:'gregory',timeZone:'UTC'})}</div>
+            <div style={{fontSize:13,color:'#8b8a84',fontWeight:600,marginBottom:22}}>{businessDateLabel}</div>
             <ProgressBar step={step} lang={lang}/>
           </div>
         )}
@@ -552,6 +561,13 @@ export default function CashierClosingPage() {
                     <div style={{fontSize:10,color:'#a8a7a1',marginTop:4}}>{ct('withdrawalsNote',lang)}</div>
                   </div>
                 )}
+                <div style={{display:'flex',alignItems:'flex-start',gap:10,background:'#f0f9ff',border:'1px solid #bae6fd',borderRadius:12,padding:'11px 13px',marginBottom:12,textAlign:'start' as const}}>
+                  <span style={{fontSize:16,lineHeight:1.3}}>📅</span>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:800,color:'#075985'}}>{lang==='en'?'This closing will be recorded on:':'هذا الإقفال بيتسجّل على:'} {businessDateLabel}</div>
+                    {isAfterMidnightCarry && <div style={{fontSize:11.5,color:'#0369a1',marginTop:3,lineHeight:1.5}}>{lang==='en'?'Closed after midnight — it counts on the previous business day.':'لأنك تقفل بعد 12 الليل، ينحسب على يوم العمل اللي قبل.'}</div>}
+                  </div>
+                </div>
                 <div style={{
                   padding:'18px',borderRadius:14,textAlign:'center',marginBottom:16,
                   background: status==='balanced' ? '#f0fdfa' : status==='deficit' ? '#fef2f2' : '#eff6ff',

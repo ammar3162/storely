@@ -4,7 +4,7 @@ import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
-import { CalendarDays, FileText, Trophy, Inbox, Loader2, Paperclip, Trash2, PartyPopper, Lock, AlertTriangle, Download, Pencil, BarChart3, CreditCard, Upload, Receipt, ClipboardList, Wallet, Flame, X } from 'lucide-react'
+import { CalendarDays, FileText, Trophy, Inbox, Loader2, Paperclip, Trash2, PartyPopper, Lock, AlertTriangle, Download, BarChart3, CreditCard, Upload, Receipt, ClipboardList, Wallet, Flame, X } from 'lucide-react'
 import { cache } from '@/lib/cache'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
@@ -1223,9 +1223,6 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   const [closings, setClosings] = useState<any[]>([])
   const [expandedReasons, setExpandedReasons] = useState<Record<string,boolean>>({})
   const [loading, setLoading]   = useState(true)
-  const [editingDateId, setEditingDateId] = useState<string|null>(null)
-  const [editDateValue, setEditDateValue] = useState('')
-  const [savingDate, setSavingDate] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<any|null>(null)
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteError, setDeleteError] = useState('')
@@ -1263,7 +1260,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
           { header: 'سبب العجز', key: 'reason' },
         ],
         rows: closings.map((c: any) => ({
-          date: new Date(c.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn'}),
+          date: new Date(c.closing_date+'T12:00:00Z').toLocaleDateString('ar-SA', {numberingSystem:'latn',calendar:'gregory',timeZone:'UTC'}) + (c.created_at ? ' · ' + new Date(c.created_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'}) : ''),
           staff: c.staff_name || '—',
           sales: Number(c.total_sales || 0).toFixed(2) + ' ' + curr,
           network: Number(c.network_amount || 0).toFixed(2) + ' ' + curr,
@@ -1302,15 +1299,6 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
     if(!orgId) return
     fetch('/api/month-comparison?org_id='+orgId+'&branch_id='+(sessionStorage.getItem('s_branch_id')||'')).then(r=>r.json()).then(d=>{ if(d.success) setMonthComp(d) }).catch(()=>{})
   },[])
-
-  async function saveClosingDate(id: string) {
-    setSavingDate(true)
-    const r=await api.patch('/api/cashier-closing',{org_id:sessionStorage.getItem('s_org_id'),id,closing_date:editDateValue})
-    setSavingDate(false)
-    if(!r.success){toast('فشل تعديل التاريخ — حاول مرة أخرى','error');return}
-    setClosings(prev => prev.map(c => c.id===id ? {...c, closing_date: editDateValue} : c))
-    setEditingDateId(null)
-  }
 
   async function confirmDeleteClosing() {
     setDeleteError(''); setDeleting(true)
@@ -1411,23 +1399,11 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                 {closings.map((c:any)=>(
                   <tr key={c.id} style={{borderBottom:`1px solid ${colors.border}`}}>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>
-                      {editingDateId===c.id ? (
-                        <div style={{display:'flex',alignItems:'center',gap:6}}>
-                          <input type="date" value={editDateValue} onChange={e=>setEditDateValue(e.target.value)}
-                            style={{...inp(),padding:'4px 8px',fontSize:font.xs,width:140}}/>
-                          <button onClick={()=>saveClosingDate(c.id)} disabled={savingDate}
-                            style={{background:colors.primary,color:'white',border:'none',borderRadius:6,padding:'4px 8px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                            {savingDate?'...':'حفظ'}
-                          </button>
-                          <button onClick={()=>setEditingDateId(null)}
-                            style={{background:colors.bg,color:colors.text3,border:'none',borderRadius:6,padding:'4px 8px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                            إلغاء
-                          </button>
-                        </div>
-                      ) : (
-                        <div onClick={()=>{setEditingDateId(c.id);setEditDateValue(c.closing_date)}} style={{cursor:'pointer',display:'flex',alignItems:'center',gap:6}}>
-                          {new Date(c.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn'})}
-                          <span style={{opacity:.4,display:'inline-flex',alignItems:'center'}}><Pencil size={11} strokeWidth={2.25}/></span>
+                      <div style={{fontWeight:600,color:colors.text}}>{new Date(c.closing_date+'T12:00:00Z').toLocaleDateString('ar-SA', {numberingSystem:'latn',calendar:'gregory',timeZone:'UTC'})}</div>
+                      {c.created_at && (
+                        <div style={{fontSize:11,color:colors.text4,marginTop:2,whiteSpace:'nowrap' as const}}>
+                          قُفل {new Date(c.created_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'})}
+                          {new Date(c.created_at).toLocaleDateString('en-CA',{timeZone:'Asia/Riyadh'}) !== c.closing_date && <> · {new Date(c.created_at).toLocaleDateString('ar-SA',{numberingSystem:'latn',day:'numeric',month:'short',calendar:'gregory',timeZone:'Asia/Riyadh'})}</>}
                         </div>
                       )}
                     </td>
