@@ -2,7 +2,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getStaffOrg } from '@/lib/session'
-import { Wheat, Milk, SprayCan, CupSoda, Drumstick, Carrot, FileText, Package, Tag, Search, Globe, Home, LogOut, Send, Boxes, ShoppingCart, ChevronLeft, CheckCircle2, Zap } from 'lucide-react'
+import { Wheat, Milk, SprayCan, CupSoda, Drumstick, Carrot, FileText, Package, Tag, Search, Globe, LogOut, Send, Boxes, ShoppingCart, ChevronLeft, CheckCircle2, Zap } from 'lucide-react'
 
 interface StaffSession {
   id: string; name: string; org_id: string; branch_id: string | null
@@ -422,9 +422,9 @@ function StaffPageInner() {
       {/* Header */}
       <div style={{background:'linear-gradient(160deg,#0b3b3a 0%,#0f766e 100%)',position:'sticky',top:0,zIndex:100,boxShadow:'0 2px 12px rgba(15,23,42,.12)'}}>
         <div style={{maxWidth:560,margin:'0 auto',padding:'14px 16px',display:'flex',alignItems:'center',gap:10}}>
-          <button onClick={()=>router.push('/staff/choose')} aria-label="الرئيسية"
-            style={{width:38,height:38,flexShrink:0,background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.18)',borderRadius:12,color:'white',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-            <Home size={17} strokeWidth={2.25}/>
+          <button onClick={()=>router.push('/staff/choose')} aria-label={T('back',lang)}
+            style={{height:38,padding:'0 12px 0 10px',flexShrink:0,background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.18)',borderRadius:12,color:'white',display:'flex',alignItems:'center',gap:4,cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:700}}>
+            <ChevronLeft size={18} strokeWidth={2.25} style={{transform:isRTL?'scaleX(-1)':'none'}}/>{T('back',lang)}
           </button>
           <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:10}}>
             {orgLogo && <img src={orgLogo} alt="" style={{width:36,height:36,borderRadius:10,objectFit:'cover',background:'white',flexShrink:0}}/>}
