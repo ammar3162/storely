@@ -3,32 +3,12 @@ import { createClient } from '@supabase/supabase-js'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { sendPushToOrg } from '@/lib/push'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { computeBusinessDate } from '@/lib/businessDate'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
-
-function computeBusinessDate(openTime: string|null, closeTime: string|null): string {
-  const now = new Date()
-  const riyadhDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)
-  const riyadhHour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Riyadh', hour: '2-digit', hour12: false }).format(now))
-
-  if (!openTime || !closeTime) return riyadhDateStr
-
-  const openHour = Number(openTime.slice(0, 2))
-  const closeHour = Number(closeTime.slice(0, 2))
-
-  // محل يعمل حتى بعد منتصف الليل (وقت الإغلاق أصغر من وقت الفتح رقمياً)
-  const isOvernight = closeHour < openHour
-  if (isOvernight && riyadhHour < closeHour) {
-    const [y, m, d] = riyadhDateStr.split('-').map(Number)
-    const yesterday = new Date(Date.UTC(y, m - 1, d))
-    yesterday.setUTCDate(yesterday.getUTCDate() - 1)
-    return yesterday.toISOString().slice(0, 10)
-  }
-  return riyadhDateStr
-}
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -88,8 +68,17 @@ export async function POST(req: Request) {
     }
 
     const supabase = sb()
-    const { data: orgHours } = await supabase.from('organizations').select('shop_open_time,shop_close_time').eq('id', org_id).single()
-    const businessDate = closing_date || computeBusinessDate((orgHours as any)?.shop_open_time || null, (orgHours as any)?.shop_close_time || null)
+    // التقفيل بعد 12 الليل يتسجّل بتاريخ اليوم اللي انفتح فيه الكاشير
+    const [{ data: orgHours }, { data: lastIn }] = await Promise.all([
+      supabase.from('organizations').select('shop_open_time,shop_close_time').eq('id', org_id).single(),
+      supabase.from('staff_attendance').select('recorded_at').eq('org_id', org_id).eq('staff_id', staff_id).eq('type', 'check_in')
+        .gte('recorded_at', new Date(Date.now() - 18 * 3600e3).toISOString()).order('recorded_at', { ascending: false }).limit(1).maybeSingle(),
+    ])
+    const businessDate = (typeof closing_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(closing_date)) ? closing_date : computeBusinessDate({
+      openTime: (orgHours as any)?.shop_open_time || null,
+      closeTime: (orgHours as any)?.shop_close_time || null,
+      lastCheckInIso: (lastIn as any)?.recorded_at || null,
+    })
     const { data, error } = await supabase
       .from('cashier_closings')
       .insert({

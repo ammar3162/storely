@@ -1,5 +1,6 @@
 'use client'
 import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
+import { computeBusinessDate } from '@/lib/businessDate'
 import { useState, useEffect } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter } from 'next/navigation'
@@ -361,7 +362,7 @@ export default function CashierClosingPage() {
         {!saved && (
           <div className="fu" style={{marginBottom:6}}>
             <div style={{fontSize:22,fontWeight:800,color:'#1c1c1a',marginBottom:4}}>{ct('pageTitle',lang)}</div>
-            <div style={{fontSize:13,color:'#8b8a84',fontWeight:600,marginBottom:22}}>{new Date().toLocaleDateString(lang==='en'?'en-US':'ar-SA', {numberingSystem:'latn',weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
+            <div style={{fontSize:13,color:'#8b8a84',fontWeight:600,marginBottom:22}}>{new Date(computeBusinessDate({})+'T12:00:00Z').toLocaleDateString(lang==='en'?'en-US':'ar-SA', {numberingSystem:'latn',weekday:'long',year:'numeric',month:'long',day:'numeric',calendar:'gregory',timeZone:'UTC'})}</div>
             <ProgressBar step={step} lang={lang}/>
           </div>
         )}
