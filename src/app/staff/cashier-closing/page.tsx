@@ -1,4 +1,5 @@
 'use client'
+import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
 import { useState, useEffect } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter } from 'next/navigation'
@@ -330,6 +331,7 @@ export default function CashierClosingPage() {
         <div style={{fontSize:44,marginBottom:12}}>🔒</div>
         <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:8}}>{ct('lockedTitle',lang)}</div>
         <div style={{fontSize:13,color:'#78716c'}}>{ct('lockedSub',lang)}</div>
+        <button onClick={()=>router.push('/staff/choose')} style={{marginTop:20,height:44,padding:'0 22px',background:'#0f766e',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{lang==='en'?'Back':'رجوع للرئيسية'}</button>
       </div>
     </div>
   )
@@ -344,25 +346,8 @@ export default function CashierClosingPage() {
         </div>
       )}
 
-      <div style={{background:'linear-gradient(135deg,#042f2e,#0C213B)',padding:'16px 20px',position:'sticky',top:0,zIndex:100,boxShadow:'0 4px 20px rgba(0,0,0,.2)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-        <div style={{display:'flex',alignItems:'center',gap:12}}>
-          {orgLogo ? (
-            <img src={orgLogo} alt="" style={{width:42,height:42,borderRadius:12,objectFit:'cover',border:'2px solid rgba(255,255,255,.2)'}}/>
-          ) : (
-            <div style={{width:42,height:42,borderRadius:12,background:'rgba(255,255,255,.12)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:19}}>💰</div>
-          )}
-          <div>
-            <div style={{fontSize:15,fontWeight:800,color:'white'}}>{session.name}</div>
-            <div style={{fontSize:11,color:'rgba(255,255,255,.55)',marginTop:2,display:'flex',alignItems:'center',gap:5}}>
-              <span>{session.org_name}{session.branch_name?` · ${session.branch_name}`:''}</span>
-              <span style={{background:'rgba(255,255,255,.15)',padding:'1px 8px',borderRadius:20,fontWeight:700,fontSize:10}}>{ct('cashierBadge',lang)}</span>
-            </div>
-          </div>
-        </div>
-        <button onClick={logout} style={{background:'rgba(255,255,255,.1)',color:'white',border:'1px solid rgba(255,255,255,.2)',borderRadius:10,padding:'8px 16px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-          {ct('logout',lang)}
-        </button>
-      </div>
+      <StaffHeader title={session.name} subtitle={`${session.org_name}${session.branch_name?` · ${session.branch_name}`:''} · ${ct('cashierBadge',lang)}`} rtl={lang!=='en'}
+        end={<button onClick={logout} style={staffHeaderBtn}>{ct('logout',lang)}</button>} />
 
       <div style={{maxWidth:520,margin:'0 auto',padding:'28px 16px'}}>
         {!saved && (

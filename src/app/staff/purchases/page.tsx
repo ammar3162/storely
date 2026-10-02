@@ -1,4 +1,5 @@
 'use client'
+import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter } from 'next/navigation'
@@ -172,16 +173,7 @@ export default function StaffPurchasesPage() {
       {showScan&&<Suspense fallback={null}><BarcodeScanner onScan={(code:string)=>{setShowScan(false);setForm(f=>({...f,sku:code}))}} onClose={()=>setShowScan(false)}/></Suspense>}
 
       {/* Header */}
-      <div style={{background:'white',padding:'14px 20px',boxShadow:'0 1px 3px rgba(0,0,0,.06)',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100}}>
-        <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <button onClick={()=>router.push('/staff/dispense')}
-            style={{background:'none',border:'none',cursor:'pointer',fontSize:20,padding:'4px 8px',color:C.text2}}>{lang==='en'?'→':'←'}</button>
-          <div>
-            <div style={{fontSize:15,fontWeight:800,color:C.text}}>{pt('title',lang)}</div>
-            <div style={{fontSize:11,color:C.text4}}>{session.name} · {session.org_name}</div>
-          </div>
-        </div>
-      </div>
+      <StaffHeader title={pt('title',lang)} subtitle={`${session.name} · ${session.org_name}`} rtl={lang!=='en'} />
 
       {toast&&<div style={{background:toast.startsWith('✅')?C.primaryL:C.dangerL,color:toast.startsWith('✅')?C.primary:C.danger,padding:'12px 20px',fontSize:13,fontWeight:700,textAlign:'center'}}>{toast}</div>}
 

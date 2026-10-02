@@ -1,4 +1,5 @@
 'use client'
+import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronRight, ChevronLeft, TrendingUp, TrendingDown, Clock, CalendarCheck, Wallet } from 'lucide-react'
@@ -69,13 +70,7 @@ export default function StaffSalaryPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#f7f7f5', fontFamily: "'IBM Plex Sans Arabic',system-ui", direction: 'rtl', paddingBottom: 40 }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <div style={{ background: 'white', borderBottom: '1px solid #ece8e2', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: '#1c1c1a', display: 'flex', alignItems: 'center', gap: 8 }}><Wallet size={18} color="#0f766e" /> راتبي</div>
-          <div style={{ fontSize: 12, color: '#888780', marginTop: 2 }}>{name}</div>
-        </div>
-        <button onClick={() => router.back()} style={{ background: '#f5f5f4', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700, color: '#5f5e5a', cursor: 'pointer', fontFamily: 'inherit' }}>رجوع</button>
-      </div>
+      <StaffHeader title="راتبي" subtitle={name} />
 
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px' }}>
         {/* الشهر */}
