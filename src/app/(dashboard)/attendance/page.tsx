@@ -198,6 +198,7 @@ export default function AttendancePage() {
   function penaltyCell(r: any) {
     const amount = r.penalty_original ?? r.penalty_amount
     if (!amount) return <span style={{ color: colors.text4 }}>—</span>
+    if (r.penalty_legacy) return <span style={{ color: colors.text4, whiteSpace: 'nowrap' as const }} title="غرامة قبل تفعيل الخصم التلقائي — ما تنخصم">{amount} ر.س · <span style={{ fontSize: 10, fontWeight: 700 }}>ما انخصمت</span></span>
     const canToggle = isOwner && r.attendance_id && !r.penalty_locked
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' as const }}>

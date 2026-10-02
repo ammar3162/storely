@@ -7,19 +7,22 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 //   auto  : أجر الساعة = الراتب الأساسي ÷ 30 يوم ÷ ساعات شفت الموظف، × المضاعف (1.5 = نظام العمل م107)
 //   fixed : مبلغ ثابت لكل ساعة إضافية
 //   off   : بدون أوفر تايم
-export type OvertimeSettings = { mode: 'auto' | 'fixed' | 'off'; multiplier: number; fixedRate: number | null; minMinutes: number }
+export type OvertimeSettings = { mode: 'auto' | 'fixed' | 'off'; multiplier: number; fixedRate: number | null; minMinutes: number
+  lateAutoFrom?: string | null   // غرامات التأخير تنخصم تلقائياً من هالوقت (يوم تفعيل الميزة) — اللي قبله ما ينخصم
+}
 export const DEFAULT_OVERTIME: OvertimeSettings = { mode: 'auto', multiplier: 1.5, fixedRate: null, minMinutes: 15 }
 export const OVERTIME_MAX_MINUTES = 6 * 60  // حد أعلى باليوم (يحمي من نسيان تسجيل الانصراف)
 
 export async function loadOvertimeSettings(db: SupabaseClient, orgId: string): Promise<OvertimeSettings> {
   const { data } = await db.from('organizations')
-    .select('overtime_mode,overtime_multiplier,overtime_fixed_rate,overtime_min_minutes').eq('id', orgId).maybeSingle()
+    .select('overtime_mode,overtime_multiplier,overtime_fixed_rate,overtime_min_minutes,late_auto_from').eq('id', orgId).maybeSingle()
   const o: any = data || {}
   return {
     mode: ['auto', 'fixed', 'off'].includes(o.overtime_mode) ? o.overtime_mode : DEFAULT_OVERTIME.mode,
     multiplier: Number(o.overtime_multiplier) || DEFAULT_OVERTIME.multiplier,
     fixedRate: o.overtime_fixed_rate == null ? null : Number(o.overtime_fixed_rate),
     minMinutes: o.overtime_min_minutes == null ? DEFAULT_OVERTIME.minMinutes : Number(o.overtime_min_minutes),
+    lateAutoFrom: o.late_auto_from ?? null,
   }
 }
 
@@ -118,7 +121,8 @@ export async function computeStaffPayroll(db: SupabaseClient, staff: any, month:
 
   // غرامات التأخير — تنخصم تلقائياً. نستثني الملغاة من المالك، والمطبّقة سابقاً كخصم مجمّع (موجودة أصلاً بالخصومات)
   const latePenalties: LatePenalty[] = checkIns
-    .filter(c => Number(c.penalty_amount || 0) > 0 && !c.penalty_applied && !c.penalty_waived)
+    .filter(c => Number(c.penalty_amount || 0) > 0 && !c.penalty_applied && !c.penalty_waived
+      && (!settings.lateAutoFrom || Date.parse(c.recorded_at) >= Date.parse(settings.lateAutoFrom)))
     .map(c => ({ attendanceId: c.id, date: saudi(c.recorded_at).toISOString().slice(0, 10), minutes: Number(c.late_minutes || 0), amount: round2(Number(c.penalty_amount)) }))
   const latePenaltiesTotal = round2(latePenalties.reduce((s, p) => s + p.amount, 0))
 

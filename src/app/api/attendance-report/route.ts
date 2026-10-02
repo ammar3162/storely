@@ -85,6 +85,8 @@ export async function GET(req: Request) {
       const minutes = checkOut.overtime_minutes != null ? Number(checkOut.overtime_minutes) : overtimeMinutes(checkOut.recorded_at, shift, otSettings.minMinutes)
       return { minutes, pay: round2((minutes / 60) * overtimeHourRate(Number(s.monthly_salary || 0), shift, otSettings)) }
     }
+    const autoFrom = otSettings.lateAutoFrom ? Date.parse(otSettings.lateAutoFrom) : null
+    const isLegacy = (c?: Ev | null) => !!c && autoFrom != null && !c.penalty_applied && Number(c.penalty_amount || 0) > 0 && Date.parse(c.recorded_at) < autoFrom
     const describe = (s: any, x: { checkIn: Ev; checkOut: Ev | null } | null) => {
       const ot = overtimeFor(s, x?.checkOut || null)
       const hours = x?.checkOut ? round2((Date.parse(x.checkOut.recorded_at) - Date.parse(x.checkIn.recorded_at)) / 3600e3) : null
@@ -93,8 +95,9 @@ export async function GET(req: Request) {
         check_out: x?.checkOut?.recorded_at || null,
         hours_worked: hours !== null ? Math.round(hours * 10) / 10 : null,
         late_minutes: x?.checkIn.late_minutes ?? null,
-        // الغرامة الملغاة من المالك ما تنحسب
-        penalty_amount: x?.checkIn.penalty_waived ? null : (x?.checkIn.penalty_amount ?? null),
+        // الغرامة الملغاة من المالك، أو القديمة قبل تفعيل الخصم التلقائي، ما تنحسب
+        penalty_amount: (x?.checkIn.penalty_waived || isLegacy(x?.checkIn)) ? null : (x?.checkIn.penalty_amount ?? null),
+        penalty_legacy: isLegacy(x?.checkIn),
         penalty_original: x?.checkIn.penalty_amount ?? null,
         penalty_waived: !!x?.checkIn.penalty_waived,
         penalty_locked: !!x?.checkIn.penalty_applied,
