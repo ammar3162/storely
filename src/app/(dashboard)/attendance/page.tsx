@@ -605,6 +605,11 @@ export default function AttendancePage() {
               <button onClick={addRule} disabled={savingRule} style={{ ...btnPrimary, padding: '0 16px' }}>{savingRule ? '...' : '+ إضافة'}</button>
             </div>
 
+            {rules.length > 0 && rules.every((r: any) => r.max_minutes != null) && (
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '9px 12px', marginBottom: 10, lineHeight: 1.6 }}>
+                ⚠️ أي تأخير أكثر من {Math.max(...rules.map((r: any) => Number(r.max_minutes)))} دقيقة ما عليه غرامة — أضف شريحة وخلّ «إلى دقيقة» فاضي عشان تغطي أي تأخير أطول.
+              </div>
+            )}
             {rules.length === 0 ? (
               <div style={{ fontSize: 12, color: colors.text4, textAlign: 'center' as const, padding: 12 }}>ما فيه نطاقات غرامة معرّفة — التأخير راح يُسجّل بدون غرامة</div>
             ) : (

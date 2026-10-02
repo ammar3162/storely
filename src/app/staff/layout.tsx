@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import StaffSessionGuard from '@/components/StaffSessionGuard'
 
 export function generateMetadata(): Metadata {
   return {
@@ -12,5 +13,5 @@ export function generateMetadata(): Metadata {
 }
 
 export default function StaffLayout({ children }: { children: React.ReactNode }) {
-  return children
+  return <StaffSessionGuard>{children}</StaffSessionGuard>
 }

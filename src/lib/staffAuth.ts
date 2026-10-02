@@ -45,11 +45,14 @@ export function generateStaffToken(staff_id: string, org_id: string, branch_id: 
  * يتحقق من صحة التوكن ويرجّع بيانات الموظف الموثوقة منه (مو من الطلب).
  * يُستخدم بأول كل API خاص بالموظفين بدل الثقة بـ org_id من الـbody مباشرة.
  */
+// رسالة واحدة واضحة للموظف — بدون مصطلحات تقنية. الواجهة تطلب منه رمز PIN وتكمل العملية
+export const SESSION_ENDED = 'انتهت جلستك — أدخل رمزك من جديد'
+
 export async function verifyStaffToken(token: string | null): Promise<{ valid: boolean; data?: StaffPayload; error?: string; reason?: 'subscription_expired' }> {
-  if (!token) return { valid: false, error: 'لا يوجد توكن — يرجى تسجيل الدخول' }
+  if (!token) return { valid: false, error: SESSION_ENDED }
 
   const parts = token.split('.')
-  if (parts.length !== 2) return { valid: false, error: 'توكن غير صالح' }
+  if (parts.length !== 2) return { valid: false, error: SESSION_ENDED }
 
   const [payloadB64, signature] = parts
   const expectedSignature = sign(payloadB64)
@@ -58,18 +61,18 @@ export async function verifyStaffToken(token: string | null): Promise<{ valid: b
   const sigBuffer = Buffer.from(signature)
   const expectedBuffer = Buffer.from(expectedSignature)
   if (sigBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(sigBuffer, expectedBuffer)) {
-    return { valid: false, error: 'توكن غير صالح — تم التلاعب به' }
+    return { valid: false, error: SESSION_ENDED }
   }
 
   let payload: StaffPayload
   try {
     payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString())
   } catch {
-    return { valid: false, error: 'توكن تالف' }
+    return { valid: false, error: SESSION_ENDED }
   }
 
   if (Date.now() > payload.exp) {
-    return { valid: false, error: 'انتهت الجلسة — يرجى تسجيل الدخول من جديد' }
+    return { valid: false, error: SESSION_ENDED }
   }
 
   // فحص حالة اشتراك المنشأة — لو انتهت (تجريبية أو مدفوعة)، نمنع كل عمليات الموظفين
