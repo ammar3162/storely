@@ -386,7 +386,7 @@ export default function AttendancePage() {
                       <tbody>
                         {rows.map((r, i) => (
                           <tr key={r.staff_id} style={{ borderBottom: i < rows.length - 1 ? `1px solid ${colors.border}` : 'none' }}>
-                            <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}</td>
+                            <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف مو مربوط بشفت — ما ينحسب له تأخير ولا أوفر تايم' : 'شفت 24 ساعة — ما ينحسب تأخير ولا أوفر تايم'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? '⚠️ بدون شفت' : '⚠️ شفت 24 ساعة'}</span>}</td>
                             <td style={{ padding: '11px 14px' }}>
                               <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(r.status), background: statusBg(r.status), padding: '3px 10px', borderRadius: 99 }}>{r.status}</span>
                             </td>
@@ -439,7 +439,7 @@ export default function AttendancePage() {
                     <tbody>
                       {rangeRows.map((r, i) => (
                         <tr key={r.staff_id} style={{ borderBottom: i < rangeRows.length - 1 ? `1px solid ${colors.border}` : 'none' }}>
-                          <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}</td>
+                          <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف مو مربوط بشفت — ما ينحسب له تأخير ولا أوفر تايم' : 'شفت 24 ساعة — ما ينحسب تأخير ولا أوفر تايم'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? '⚠️ بدون شفت' : '⚠️ شفت 24 ساعة'}</span>}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: colors.primary, fontWeight: 700 }}>{r.days_present}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: colors.danger, fontWeight: 700 }}>{r.days_absent}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_late_minutes ? colors.warning : colors.text4 }}>{r.total_late_minutes ? `${r.total_late_minutes} دقيقة` : '—'}</td>
@@ -455,7 +455,7 @@ export default function AttendancePage() {
               )}
               {!loading && rangeRows[0]?.days && (
                 <div style={{ borderTop: `1px solid ${colors.border2}` }}>
-                  <div style={{ padding: '12px 14px', fontWeight: 800, fontSize: 13, color: colors.text }}>📅 السجل اليومي — {rangeRows[0].name}</div>
+                  <div style={{ padding: '12px 14px', fontWeight: 800, fontSize: 13, color: colors.text }}>📅 السجل اليومي — {rangeRows[0].name}{rangeRows[0].shift_warning && <span style={{ marginRight: 8, fontSize: 11, fontWeight: 600, color: '#b45309' }}>⚠️ {rangeRows[0].shift_warning === 'none' ? 'مو مربوط بشفت' : 'شفت 24 ساعة'} — ما ينحسب له تأخير ولا أوفر تايم. اربطه من تبويب الإعدادات.</span>}</div>
                   <div style={{ overflowX: 'auto' as const }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 }}>
                       <thead>

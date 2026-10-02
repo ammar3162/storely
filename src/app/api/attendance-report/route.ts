@@ -75,6 +75,8 @@ export async function GET(req: Request) {
       loadOvertimeSettings(supabase, org_id),
     ])
     const shiftOf = (s: any): Shift => ((shiftRows || []) as any[]).find(r => r.id === s.shift_id) || null
+    // بدون شفت (أو شفت 24 ساعة) = ما ينحسب تأخير ولا أوفر تايم — نبلّغ الواجهة عشان تنبّه المالك
+    const shiftWarning = (s: any): 'none' | '24h' | null => { const sh = shiftOf(s); return !sh ? 'none' : sh.is_24h ? '24h' : null }
     const overtimeFor = (s: any, checkOut: Ev | null) => {
       if (!checkOut || otSettings.mode === 'off') return { minutes: 0, pay: 0 }
       const shift = shiftOf(s)
@@ -130,6 +132,7 @@ export async function GET(req: Request) {
         return {
           staff_id: s.id,
           name: s.name,
+          shift_warning: shiftWarning(s),
           days_present: byDay.size,
           days_absent: days.length - byDay.size,
           total_late_minutes: totalLateMinutes,
@@ -149,7 +152,7 @@ export async function GET(req: Request) {
     const events = await loadEvents(targetDate, targetDate)
     const rows = staff.map((s: any) => {
       const x = sessions(events.filter(e => e.staff_id === s.id)).find(v => v.date === targetDate) || null
-      return { staff_id: s.id, name: s.name, ...describe(s, x) }
+      return { staff_id: s.id, name: s.name, shift_warning: shiftWarning(s), ...describe(s, x) }
     })
 
     return NextResponse.json({ success: true, mode: 'day', date: targetDate, rows, overtime_mode: otSettings.mode })
