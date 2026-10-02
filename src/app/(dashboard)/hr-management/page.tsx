@@ -128,8 +128,8 @@ export default function HRManagementPage() {
     setLoading(false)
   }
 
-  // موقع الفرع هو المرجع لكل الموظفين — لازم يكون دقيق (GPS الجوال)، مو تقريبي (واي فاي اللابتوب)
-  const MAX_ACCEPTABLE_ACCURACY_M = 30
+  // أي جهاز ينفع (اللابتوب يعطي موقع تقريبي) — الدقة تنحفظ ونطاق الحضور يتوسع بقدرها
+  const MAX_ACCEPTABLE_ACCURACY_M = 150
 
   function getPositionOnce(): Promise<GeolocationPosition> {
     return new Promise((resolve, reject) => {
@@ -159,15 +159,15 @@ export default function HRManagementPage() {
     if (!bestPos) { setSavingLocationId(null); toast('تعذر تحديد موقعك','error'); return }
     if (bestPos.coords.accuracy > MAX_ACCEPTABLE_ACCURACY_M) {
       setSavingLocationId(null)
-      toast(`الموقع غير دقيق (±${Math.round(bestPos.coords.accuracy)} متر) — حدّده من جوالك وأنت داخل الفرع، مو من اللابتوب`,'error')
+      toast(`إشارة الموقع ضعيفة (±${Math.round(bestPos.coords.accuracy)} متر) — حاول مرة ثانية`,'error')
       return
     }
 
-    const r = await api.patch('/api/branches', { org_id: orgId, id, latitude: bestPos.coords.latitude, longitude: bestPos.coords.longitude })
+    const r = await api.patch('/api/branches', { org_id: orgId, id, latitude: bestPos.coords.latitude, longitude: bestPos.coords.longitude, accuracy_m: bestPos.coords.accuracy })
     setSavingLocationId(null)
     if(!r.success){ toast('فشل حفظ الموقع — حاول مرة أخرى','error'); return }
     setBranches(prev=>prev.map((br:any)=>br.id===id?{...br,latitude:bestPos!.coords.latitude,longitude:bestPos!.coords.longitude}:br))
-    toast(`✅ تم حفظ موقع الفرع (دقة ±${Math.round(bestPos.coords.accuracy)} متر)`)
+    toast('✅ تم حفظ موقع الفرع — الموظفون الآن يقدروا يسجّلوا حضورهم')
   }
 
   async function applyLatePenalty(staffId:string) {
@@ -439,8 +439,7 @@ export default function HRManagementPage() {
       {/* مواقع الفروع -- لازمة لتفعيل تسجيل الحضور/الانصراف بكل فرع */}
       {branches.length>0 && (
         <div style={{...card,padding:14,marginBottom:20}}>
-          <div style={{fontSize:12,fontWeight:700,color:colors.text2,marginBottom:4}}>📍 مواقع الفروع (لتسجيل الحضور)</div>
-          <div style={{fontSize:11,color:colors.text3,marginBottom:8}}>حدّد موقع كل فرع <b>من جوالك وأنت داخل الفرع</b> — اللابتوب يعطي موقع تقريبي ممكن يبعد 100 متر</div>
+          <div style={{fontSize:12,fontWeight:700,color:colors.text2,marginBottom:8}}>📍 مواقع الفروع (لتسجيل الحضور)</div>
           <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
             {branches.map((b:any)=>(
               <div key={b.id} style={{display:'flex',alignItems:'center',gap:6}}>
@@ -451,12 +450,6 @@ export default function HRManagementPage() {
                     {savingLocationId===b.id ? 'جاري تحديد الموقع...' : b.latitude ? 'تم تحديد الموقع — إعادة الضبط' : 'حدّد موقع الفرع'}
                   </span>
                 </button>
-                {b.latitude!=null && b.longitude!=null && (
-                  <a href={`https://www.google.com/maps?q=${b.latitude},${b.longitude}`} target="_blank" rel="noopener noreferrer"
-                    style={{fontSize:11,fontWeight:700,color:colors.primary,background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`,borderRadius:8,padding:'8px 10px',textDecoration:'none',whiteSpace:'nowrap' as const}}>
-                    🗺️ الخريطة
-                  </a>
-                )}
               </div>
             ))}
           </div>
