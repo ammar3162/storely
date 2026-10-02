@@ -326,10 +326,8 @@ export default function CashierClosingPage() {
       const validPurchases = validPurchasesNow.map(p=>({amount:Number(p.amount),reason:p.reason||ct('noReason',lang)}))
       const res = await fetch('/api/cashier-closing',{
         method:'POST',
-        headers:{'Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('staff_token')}`},
         body:JSON.stringify({
-          org_id: session.org_id, branch_id: session.branch_id,
-          staff_id: session.id, staff_name: session.name,
           total_sales: sales, network_amount: network,
           mada_amount: mada, visa_amount: visa, mastercard_amount: mastercard,
           cash_amount: cash, purchases: validPurchases,
@@ -337,6 +335,13 @@ export default function CashierClosingPage() {
           deficit_reason: status==='deficit' ? deficitReason : null,
         })
       })
+      if(res.status===401){
+        // الجلسة انتهت — نرجّعه يدخل بالـPIN (البيانات اللي عبّاها تضيع، فننبّهه)
+        showToast(lang==='en'?'Session expired — log in again':'انتهت الجلسة — ادخل بالرمز من جديد','error')
+        setSubmitting(false)
+        setTimeout(()=>{ localStorage.removeItem('staff_session'); router.push('/staff') }, 1500)
+        return
+      }
       if(!res.ok){ const j = await res.json().catch(()=>null); showToast(j?.error || ct('saveError',lang),'error'); setSubmitting(false); return }
       const templates = lang==='en' ? THANK_YOU_TEMPLATES_EN : THANK_YOU_TEMPLATES_AR
       const template = templates[Math.floor(Math.random()*templates.length)]
