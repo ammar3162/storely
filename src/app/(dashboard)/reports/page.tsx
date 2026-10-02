@@ -1260,6 +1260,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
           { header: 'الكاش بعد الخصم', key: 'cashAfter', align: 'left' },
           { header: 'الصافي', key: 'net', align: 'left' },
           { header: 'النتيجة', key: 'result' },
+          { header: 'سبب العجز', key: 'reason' },
         ],
         rows: closings.map((c: any) => ({
           date: new Date(c.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn'}),
@@ -1271,6 +1272,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
           cashAfter: (Number(c.cash_amount||0)-Number(c.total_purchases||0)).toFixed(2) + ' ' + curr,
           net: (Number(c.network_amount||0)+Number(c.cash_amount||0)-Number(c.total_purchases||0)).toFixed(2) + ' ' + curr,
           result: c.difference > 0 ? `زيادة ${c.difference.toFixed(2)}` : c.difference < 0 ? `عجز ${Math.abs(c.difference).toFixed(2)}` : 'مطابق',
+          reason: c.status === 'deficit' ? (c.deficit_reason || '—') : '',
         })),
         summaryStats: [
           { label: 'إجمالي التقارير', value: String(closings.length), color: '#0891b2' },
@@ -1287,6 +1289,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
           cashAfter: closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount||0)-Number(c.total_purchases||0)),0).toFixed(2) + ' ' + curr,
           net: closings.reduce((s:number,c:any)=>s+Number(c.network_amount||0)+Number(c.cash_amount||0)-Number(c.total_purchases||0),0).toFixed(2) + ' ' + curr,
           result: '—',
+          reason: '',
         },
         fileName: `تقرير-اقفال-الكاشير-${new Date().toISOString().slice(0,10)}.pdf`,
       })
@@ -1449,8 +1452,13 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                     </td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{(Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} {curr}</td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{(Number(c.network_amount)+Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} {curr}</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:statusColor[c.status]}}>
+                    <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:statusColor[c.status],minWidth:150}}>
                       {statusLabel[c.status]}{c.status!=='balanced'?` (${Math.abs(Number(c.difference)).toFixed(0)} ${curr})`:''}
+                      {c.status==='deficit' && (
+                        <div style={{fontSize:11,fontWeight:600,marginTop:4,lineHeight:1.5,color:c.deficit_reason?colors.text2:colors.text4,background:c.deficit_reason?colors.dangerLight:'transparent',borderRadius:6,padding:c.deficit_reason?'4px 8px':0,maxWidth:220,whiteSpace:'normal' as const}}>
+                          {c.deficit_reason ? <>السبب: {c.deficit_reason}</> : 'بدون سبب (إقفال قديم)'}
+                        </div>
+                      )}
                     </td>
                     <td style={{padding:'12px 16px'}}>
                       <div style={{display:'flex',gap:6}}>

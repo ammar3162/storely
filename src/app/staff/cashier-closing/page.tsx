@@ -82,6 +82,9 @@ const CUI: Record<string,Record<'ar'|'en',string>> = {
   savedClosingReport: {ar:'✅ تم حفظ تقرير الإقفال',en:'✅ Closing report saved'},
   genericError:     {ar:'حدث خطأ، حاول مرة أخرى',en:'Something went wrong, try again'},
   noReason:         {ar:'بدون سبب',en:'No reason given'},
+  deficitReasonLbl: {ar:'سبب العجز (إجباري)',en:'Reason for the deficit (required)'},
+  deficitReasonPh:  {ar:'وضّح وش صار… مثال: باقي غلط لعميل، مبلغ ما انحسب',en:'Explain what happened… e.g. wrong change given to a customer'},
+  deficitReasonReq: {ar:'فيه عجز — اكتب سبب العجز قبل التقفيل',en:'There is a deficit — write the reason before closing'},
 }
 const ct = (key: string, lang: 'ar'|'en') => CUI[key]?.[lang] || CUI[key]?.ar || key
 
@@ -163,6 +166,7 @@ export default function CashierClosingPage() {
   const [cashAmount, setCashAmount] = useState('')
   const [hasPurchases, setHasPurchases] = useState<'yes'|'no'|null>(null)
   const [purchases, setPurchases] = useState<Purchase[]>([{amount:'',reason:''}])
+  const [deficitReason, setDeficitReason] = useState('')
   const [networkImage, setNetworkImage] = useState('')
   const [salesImage, setSalesImage] = useState('')
   const [uploadingNetwork, setUploadingNetwork] = useState(false)
@@ -282,8 +286,11 @@ export default function CashierClosingPage() {
   }
   function goBack() { setStep(s=>Math.max(1,s-1)) }
 
+  const deficitReasonOk = status!=='deficit' || deficitReason.trim().length>=3
+
   async function saveClosing() {
     if(!session) return
+    if(!deficitReasonOk){ showToast(ct('deficitReasonReq',lang),'error'); return }
     setSubmitting(true)
     try {
       const validPurchases = validPurchasesNow.map(p=>({amount:Number(p.amount),reason:p.reason||ct('noReason',lang)}))
@@ -297,9 +304,10 @@ export default function CashierClosingPage() {
           mada_amount: mada, visa_amount: visa, mastercard_amount: mastercard,
           cash_amount: cash, purchases: validPurchases,
           network_image: networkImage, sales_image: salesImage,
+          deficit_reason: status==='deficit' ? deficitReason.trim() : null,
         })
       })
-      if(!res.ok){ showToast(ct('saveError',lang),'error'); setSubmitting(false); return }
+      if(!res.ok){ const j = await res.json().catch(()=>null); showToast(j?.error || ct('saveError',lang),'error'); setSubmitting(false); return }
       const templates = lang==='en' ? THANK_YOU_TEMPLATES_EN : THANK_YOU_TEMPLATES_AR
       const template = templates[Math.floor(Math.random()*templates.length)]
       setThankYouMsg(template.replace('{name}', session?.name || ''))
@@ -314,7 +322,7 @@ export default function CashierClosingPage() {
   function resetForm() {
     setTotalSales(''); setMadaAmount(''); setVisaAmount(''); setMastercardAmount(''); setCashAmount('')
     setHasPurchases(null); setPurchases([{amount:'',reason:''}])
-    setNetworkImage(''); setSalesImage('')
+    setNetworkImage(''); setSalesImage(''); setDeficitReason('')
     setStep(1); setSaved(false)
   }
 
@@ -557,6 +565,15 @@ export default function CashierClosingPage() {
                     </div>
                   )}
                 </div>
+                {status==='deficit' && (
+                  <div style={{marginBottom:16,textAlign:'start' as const}}>
+                    <label style={{display:'block',fontSize:13,fontWeight:800,color:'#b42318',marginBottom:6}}>{ct('deficitReasonLbl',lang)}</label>
+                    <textarea value={deficitReason} onChange={e=>setDeficitReason(e.target.value.slice(0,500))} rows={3}
+                      placeholder={ct('deficitReasonPh',lang)}
+                      style={{width:'100%',padding:'12px',border:`1.5px solid ${deficitReasonOk?'#e5e5e2':'#fca5a5'}`,borderRadius:12,fontSize:14,fontFamily:'inherit',boxSizing:'border-box' as const,resize:'vertical' as const,background:'white',outline:'none'}}/>
+                    {!deficitReasonOk && <div style={{fontSize:11.5,color:'#b42318',marginTop:5,fontWeight:600}}>{ct('deficitReasonReq',lang)}</div>}
+                  </div>
+                )}
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                   <div style={{padding:8,borderRadius:9,background:'#f7f7f5',textAlign:'center' as const}}>
                     <img src={salesImage} alt="" style={{width:'100%',height:60,borderRadius:6,objectFit:'cover',marginBottom:4}}/>
@@ -582,7 +599,7 @@ export default function CashierClosingPage() {
                   {ct('next',lang)}
                 </button>
               ) : (
-                <button onClick={saveClosing} disabled={submitting} style={{flex:2,padding:'15px',background:'#029FA2',color:'white',border:'none',borderRadius:14,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',opacity:submitting?.7:1,boxShadow:'0 4px 16px rgba(22,163,74,.28)'}}>
+                <button onClick={saveClosing} disabled={submitting||!deficitReasonOk} style={{flex:2,padding:'15px',background:deficitReasonOk?'#029FA2':'#94a3b8',color:'white',border:'none',borderRadius:14,fontSize:14,fontWeight:800,cursor:deficitReasonOk?'pointer':'not-allowed',fontFamily:'inherit',opacity:submitting?.7:1,boxShadow:'0 4px 16px rgba(22,163,74,.28)'}}>
                   {submitting ? ct('saving',lang) : ct('confirmSave',lang)}
                 </button>
               )}

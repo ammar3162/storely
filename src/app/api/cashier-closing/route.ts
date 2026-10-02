@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       org_id, branch_id, staff_id, staff_name, total_sales,
       network_amount, mada_amount, visa_amount, mastercard_amount,
       cash_amount, purchases, network_image, sales_image,
-      closing_date, closing_time,
+      closing_date, closing_time, deficit_reason,
     } = await req.json()
 
     if (!org_id || !staff_id || !staff_name) {
@@ -81,6 +81,12 @@ export async function POST(req: Request) {
     const difference = cash - expectedCash
     const status = Math.abs(difference) < 0.01 ? 'balanced' : (difference < 0 ? 'deficit' : 'surplus')
 
+    // العجز لازم له سبب — ما ينقبل التقفيل بدونه
+    const deficitReason = status === 'deficit' ? String(deficit_reason || '').trim().slice(0, 500) : ''
+    if (status === 'deficit' && deficitReason.length < 3) {
+      return NextResponse.json({ error: 'فيه عجز — اكتب سبب العجز قبل التقفيل' }, { status: 400 })
+    }
+
     const supabase = sb()
     const { data: orgHours } = await supabase.from('organizations').select('shop_open_time,shop_close_time').eq('id', org_id).single()
     const businessDate = closing_date || computeBusinessDate((orgHours as any)?.shop_open_time || null, (orgHours as any)?.shop_close_time || null)
@@ -104,6 +110,7 @@ export async function POST(req: Request) {
         expected_cash: expectedCash,
         difference,
         status,
+        deficit_reason: deficitReason || null,
         network_image: network_image || null,
         sales_image: sales_image || null,
       })
@@ -121,7 +128,7 @@ export async function POST(req: Request) {
       const ownerConsented = (ownerProfile as any)?.whatsapp_consent === true
 
       // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
-      const closingStatusText = status === 'balanced' ? 'مطابق تماماً' : status === 'deficit' ? `يوجد عجز: ${Math.abs(difference).toFixed(2)} ر.س` : `يوجد زيادة: ${Math.abs(difference).toFixed(2)} ر.س`
+      const closingStatusText = status === 'balanced' ? 'مطابق تماماً' : status === 'deficit' ? `يوجد عجز: ${Math.abs(difference).toFixed(2)} ر.س — السبب: ${deficitReason}` : `يوجد زيادة: ${Math.abs(difference).toFixed(2)} ر.س`
       await (supabase as any).from('notifications').insert({
         org_id, branch_id: branch_id || null, title: `إقفال كاشير: ${staff_name}`, message: `إجمالي المبيعات: ${sales.toFixed(2)} ر.س — ${closingStatusText}`, type: 'info', read: false
       })
@@ -158,7 +165,7 @@ export async function POST(req: Request) {
           const statusLine = status === 'balanced'
             ? '✅ *مطابق تماماً*'
             : status === 'deficit'
-              ? `⚠️ *يوجد عجز: ${Math.abs(difference).toFixed(2)} ر.س*`
+              ? `⚠️ *يوجد عجز: ${Math.abs(difference).toFixed(2)} ر.س*\n📝 السبب: ${deficitReason}`
               : `📈 *يوجد زيادة: ${Math.abs(difference).toFixed(2)} ر.س*`
 
           let networkLines = ''
@@ -220,7 +227,7 @@ export async function GET(req: Request) {
     const supabase = sb()
     let query = supabase
       .from('cashier_closings')
-      .select('id,branch_id,staff_id,closing_date,staff_name,total_sales,network_amount,cash_amount,total_purchases,difference,status,sales_image,network_image,purchases')
+      .select('id,branch_id,staff_id,closing_date,staff_name,total_sales,network_amount,cash_amount,total_purchases,difference,status,deficit_reason,sales_image,network_image,purchases')
       .eq('org_id', org_id)
       .order('closing_date', { ascending: false })
       .order('created_at', { ascending: false })
