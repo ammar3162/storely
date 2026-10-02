@@ -45,11 +45,9 @@ export default function AttendancePage() {
   const [staffList, setStaffList] = useState<any[]>([])
 
   // إعدادات — غرامات التأخير
-  const [rules, setRules] = useState<any[]>([])
-  const [newRuleMin, setNewRuleMin] = useState('')
-  const [newRuleMax, setNewRuleMax] = useState('')
-  const [newRuleAmount, setNewRuleAmount] = useState('')
-  const [savingRule, setSavingRule] = useState(false)
+  // غرامة التأخير: وقت سماح + مبلغ لكل ساعة
+  const [late, setLate] = useState<{ grace: string; perHour: string } | null>(null)
+  const [savingLate, setSavingLate] = useState(false)
 
   // إعدادات — الأوفر تايم
   const [ot, setOt] = useState<{mode:'auto'|'fixed'|'off'; multiplier:string; fixedRate:string; minMinutes:string}|null>(null)
@@ -79,7 +77,6 @@ export default function AttendancePage() {
     load(oid, date)
     loadShifts(oid, bid)
     loadStaff(oid, bid)
-    loadRules(oid)
     loadOvertime(oid)
     loadMonthOverview(oid)
   }
@@ -236,6 +233,7 @@ export default function AttendancePage() {
       fixedRate: o.overtime_fixed_rate == null ? '' : String(o.overtime_fixed_rate),
       minMinutes: String(o.overtime_min_minutes ?? 15),
     })
+    setLate({ grace: String(o.late_grace_minutes ?? 0), perHour: o.late_penalty_per_hour == null ? '' : String(o.late_penalty_per_hour) })
   }
 
   async function saveOvertime() {
@@ -251,10 +249,7 @@ export default function AttendancePage() {
     toast('✅ تم حفظ إعدادات الأوفر تايم')
   }
 
-  async function loadRules(oid: string) {
-    const j = await api.get('/api/late-penalty-rules', { org_id: oid })
-    if (j.success) setRules(j.rules || [])
-  }
+
 
   async function addShift() {
     if (!newShiftName.trim() || !branchId) { toast('أدخل اسم الشفت — وتأكد إنك حدّدت فرع نشط', 'warning'); return }
@@ -283,24 +278,19 @@ export default function AttendancePage() {
     setStaffList(prev => prev.map(s => s.id === staffId ? { ...s, shift_id: shiftId || null } : s))
   }
 
-  async function addRule() {
-    if (!newRuleMin || !newRuleAmount) { toast('أدخل الحد الأدنى للدقائق والمبلغ', 'warning'); return }
-    setSavingRule(true)
-    const j = await api.post('/api/late-penalty-rules', { org_id: orgId, min_minutes: newRuleMin, max_minutes: newRuleMax || null, penalty_amount: newRuleAmount })
-    setSavingRule(false)
-    if (!j.success) { toast(j.error || 'فشل الإضافة', 'error'); return }
-    setNewRuleMin(''); setNewRuleMax(''); setNewRuleAmount('')
-    toast('✅ تم إضافة نطاق الغرامة')
-    loadRules(orgId)
+  async function saveLate() {
+    if (!orgId || !late) return
+    const grace = Number(late.grace || 0)
+    if (!Number.isInteger(grace) || grace < 0 || grace > 120) { toast('وقت السماح من 0 إلى 120 دقيقة', 'warning'); return }
+    if (late.perHour !== '' && !(Number(late.perHour) >= 0)) { toast('أدخل مبلغ صحيح', 'warning'); return }
+    setSavingLate(true)
+    const j = await api.patch('/api/org-settings', { org_id: orgId, late_grace_minutes: grace, late_penalty_per_hour: late.perHour === '' ? null : Number(late.perHour) })
+    setSavingLate(false)
+    if (!j.success) { toast(j.error || 'فشل الحفظ', 'error'); return }
+    toast('✅ تم حفظ إعدادات التأخير — تتطبّق من الحضور الجاي')
   }
 
-  async function deleteRule(id: string) {
-    if (!(await confirmDialog({ title: 'حذف النطاق', message: 'حذف نطاق الغرامة هذا؟' }))) return
-    const j = await api.del('/api/late-penalty-rules', { id })
-    if (!j.success) { toast(j.error || 'فشل الحذف', 'error'); return }
-    toast('🗑️ تم الحذف')
-    loadRules(orgId)
-  }
+
 
   const presentCount = rows.filter(r => r.status !== 'لم يحضر').length
   const absentCount = rows.filter(r => r.status === 'لم يحضر').length
@@ -593,39 +583,39 @@ export default function AttendancePage() {
             )}
           </div>
 
-          {/* غرامات التأخير */}
-          <div style={{ ...card, padding: '18px 20px' }}>
-            <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>غرامات التأخير (اختياري)</div>
-            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>حدّد مبلغ مختلف حسب مدة التأخير بالدقائق — مثلاً: من 0 إلى 30 دقيقة = 10 ر.س. الغرامة تنخصم تلقائياً من راتب الموظف وتطلع له بكشف الراتب، وتقدر تلغي غرامة أي يوم من تبويب التقرير.</div>
-
-            <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' as const }}>
-              <input type="number" value={newRuleMin} onChange={e => setNewRuleMin(e.target.value)} placeholder="من دقيقة" style={{ ...inp(), width: 110 }} />
-              <input type="number" value={newRuleMax} onChange={e => setNewRuleMax(e.target.value)} placeholder="إلى دقيقة (اختياري)" style={{ ...inp(), width: 140 }} />
-              <input type="number" value={newRuleAmount} onChange={e => setNewRuleAmount(e.target.value)} placeholder="المبلغ (ر.س)" style={{ ...inp(), width: 120 }} />
-              <button onClick={addRule} disabled={savingRule} style={{ ...btnPrimary, padding: '0 16px' }}>{savingRule ? '...' : '+ إضافة'}</button>
-            </div>
-
-            {rules.length > 0 && rules.every((r: any) => r.max_minutes != null) && (
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '9px 12px', marginBottom: 10, lineHeight: 1.6 }}>
-                ⚠️ أي تأخير أكثر من {Math.max(...rules.map((r: any) => Number(r.max_minutes)))} دقيقة ما عليه غرامة — أضف شريحة وخلّ «إلى دقيقة» فاضي عشان تغطي أي تأخير أطول.
-              </div>
-            )}
-            {rules.length === 0 ? (
-              <div style={{ fontSize: 12, color: colors.text4, textAlign: 'center' as const, padding: 12 }}>ما فيه نطاقات غرامة معرّفة — التأخير راح يُسجّل بدون غرامة</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
-                {rules.map((r: any) => (
-                  <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', background: colors.bg, borderRadius: 8 }}>
-                    <span style={{ fontSize: 13, color: colors.text }}>من {r.min_minutes} دقيقة {r.max_minutes ? `إلى ${r.max_minutes} دقيقة` : 'فأكثر'}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: colors.danger }}>{r.penalty_amount} ر.س</span>
-                      <button onClick={() => deleteRule(r.id)} style={{ background: 'none', border: 'none', color: colors.danger, cursor: 'pointer', fontSize: 12 }}>🗑️</button>
-                    </div>
+          {/* التأخير: وقت سماح + خصم لكل ساعة */}
+          {late && (() => {
+            const g = Number(late.grace || 0), rate = Number(late.perHour || 0)
+            const exLate = Math.max(g + 4, 14)
+            const exAmount = Math.round(rate * exLate / 60 * 100) / 100
+            return (
+              <div style={{ ...card, padding: '18px 20px' }}>
+                <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>التأخير والخصم</div>
+                <div style={{ fontSize: 11.5, color: colors.text4, marginBottom: 14, lineHeight: 1.7 }}>
+                  التأخير ضمن وقت السماح ما يتسجّل. لو تعدّاه ينحسب التأخير كامل من بداية الشفت، وينخصم من راتب الموظف بالنسبة والتناسب حسب المبلغ للساعة — ويطلع له بكشف الراتب، وتقدر تلغي خصم أي يوم من تبويب التقرير.
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 10 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 5 }}>وقت السماح (دقيقة)</label>
+                    <input type="number" min={0} max={120} inputMode="numeric" value={late.grace} onChange={e => setLate({ ...late, grace: e.target.value })} placeholder="0" style={inp()} />
                   </div>
-                ))}
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 5 }}>الخصم لكل ساعة تأخير (ر.س)</label>
+                    <input type="number" min={0} step="0.5" inputMode="decimal" value={late.perHour} onChange={e => setLate({ ...late, perHour: e.target.value })} placeholder="فاضي = بدون خصم" style={inp()} />
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, color: colors.text2, background: colors.bg, borderRadius: 10, padding: '10px 12px', marginTop: 12, lineHeight: 1.7 }}>
+                  {g > 0 ? <>تأخير لين <b>{g} دقيقة</b> ما يتسجّل. </> : <>أي تأخير يتسجّل من أول دقيقة. </>}
+                  {rate > 0
+                    ? <>مثال: تأخر <b>{exLate} دقيقة</b> ← خصم <b style={{ color: colors.danger }}>{exAmount} ر.س</b> ({rate} ر.س × {exLate} ÷ 60).</>
+                    : <>بدون مبلغ للساعة: التأخير يتسجّل بدون خصم.</>}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+                  <button onClick={saveLate} disabled={savingLate} style={{ ...btnPrimary, padding: '10px 20px' }}>{savingLate ? 'جاري الحفظ...' : 'حفظ'}</button>
+                </div>
               </div>
-            )}
-          </div>
+            )
+          })()}
 
           {/* الأوفر تايم */}
           {ot && (

@@ -11,7 +11,7 @@ const sb = () => createClient(
 // إعدادات المنشأة اللي تعدّلها صفحات لوحة التحكم — قوائم مسموحة فقط
 const BASIC_FIELDS = 'shop_open_time,shop_close_time,business_day_start_hour,notify_cashier_closing_wa'
 // scope=full: صفحة الإعدادات (استعلام منفصل عشان صفحات ثانية تبقى على الحقول الأساسية فقط)
-const FULL_FIELDS = 'whatsapp_number,name,notify_schedule,notify_time,notify_days,notify_cashier_closing_wa,notify_supplier_wa,last_notified_at,last_backup_at,max_branches,logo_url,plan,subscription_ends_at,billing_cycle,staff_salary_visible,overtime_mode,overtime_multiplier,overtime_fixed_rate,overtime_min_minutes'
+const FULL_FIELDS = 'whatsapp_number,name,notify_schedule,notify_time,notify_days,notify_cashier_closing_wa,notify_supplier_wa,last_notified_at,last_backup_at,max_branches,logo_url,plan,subscription_ends_at,billing_cycle,staff_salary_visible,overtime_mode,overtime_multiplier,overtime_fixed_rate,overtime_min_minutes,late_grace_minutes,late_penalty_per_hour'
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/
 
 export async function GET(req: Request) {
@@ -65,6 +65,21 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ error: 'أيام غير صالحة' }, { status: 400 })
       }
       update.notify_days = body.notify_days.map(String)
+    }
+    // غرامة التأخير: وقت السماح (دقائق) + مبلغ لكل ساعة تأخير (فاضي = بدون غرامة)
+    if ('late_grace_minutes' in body) {
+      const g = Number(body.late_grace_minutes)
+      if (!Number.isInteger(g) || g < 0 || g > 120) return NextResponse.json({ error: 'وقت السماح من 0 إلى 120 دقيقة' }, { status: 400 })
+      update.late_grace_minutes = g
+    }
+    if ('late_penalty_per_hour' in body) {
+      const v = body.late_penalty_per_hour
+      if (v === null || v === '') update.late_penalty_per_hour = null
+      else {
+        const n = Number(v)
+        if (!Number.isFinite(n) || n < 0 || n > 10000) return NextResponse.json({ error: 'مبلغ الخصم للساعة غير صالح' }, { status: 400 })
+        update.late_penalty_per_hour = Math.round(n * 100) / 100
+      }
     }
     if ('business_day_start_hour' in body) {
       const h = Number(body.business_day_start_hour)

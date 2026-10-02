@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { attendanceState, lateMinutesAt, activeShift, type AttEvent } from '@/lib/attendanceState'
 import { overtimeMinutes, loadOvertimeSettings, type Shift } from '@/lib/payroll'
+import { applyLateRules } from '@/lib/latePenalty'
 
 // آخر حركات الموظف (يكفي آخر يومين) — لحالة «حاضر / انصرف / دوام جديد»
 async function recentEvents(supabase: any, staff_id: string, org_id: string): Promise<AttEvent[]> {
@@ -140,12 +141,14 @@ export async function POST(req: Request) {
 
     // حساب التأخير — بس عند تسجيل الحضور، على بداية الشفت الأقرب (يغطي الشفت الليلي)
     if (type === 'check_in' && currentShift && !currentShift.is_24h && currentShift.start_time) {
-      lateMinutes = lateMinutesAt(Date.now(), currentShift)
-      if (lateMinutes > 0) {
-        const { data: rules } = await supabase.from('late_penalty_rules').select('*').eq('org_id', org_id).order('min_minutes')
-        const match = (rules || []).find((r: any) => lateMinutes! >= r.min_minutes && (r.max_minutes === null || lateMinutes! <= r.max_minutes))
-        if (match) penaltyAmount = Number((match as any).penalty_amount)
-      }
+      // وقت السماح + مبلغ لكل ساعة (إعداد المالك بصفحة الحضور)
+      const { data: lateCfg } = await supabase.from('organizations').select('late_grace_minutes,late_penalty_per_hour').eq('id', org_id).single()
+      const r = applyLateRules(lateMinutesAt(Date.now(), currentShift), {
+        graceMinutes: Number((lateCfg as any)?.late_grace_minutes || 0),
+        perHour: (lateCfg as any)?.late_penalty_per_hour == null ? null : Number((lateCfg as any).late_penalty_per_hour),
+      })
+      lateMinutes = r.lateMinutes
+      penaltyAmount = r.penalty
     }
 
     // الأوفر تايم يتثبّت لحظة الانصراف على شفت ذاك الوقت — تغيير الشفت بعدين ما يغيّر الأيام اللي فاتت
