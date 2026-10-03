@@ -130,12 +130,26 @@ export default function StaffManagementPage() {
     setLoading(false); setTimeout(()=>setVisible(true),50)
   }
 
+  const [orphans, setOrphans] = useState<any[]>([])   // موظفين فروعهم موقوفة
+
   async function loadStaff(oid:string) {
     const bid = sessionStorage.getItem('s_branch_id')
     const j = await api.get('/api/staff-members', { org_id: oid, branch_id: bid })
     if (!j.success) return
     setStaff(j.staff||[])
+    setOrphans(j.orphans||[])
     cache.set('staff:'+oid, j.staff||[])
+  }
+
+  // موظف فرعه موقوف → ننقله للفرع المختار حالياً (يبقى موقوف لين المالك يفعّله)
+  async function moveOrphanHere(s:any) {
+    const bid = sessionStorage.getItem('s_branch_id')
+    const bname = sessionStorage.getItem('s_branch_name') || 'الفرع الحالي'
+    if (!bid) { toast('اختر الفرع من القائمة فوق أول','warning'); return }
+    if(!(await confirmDialog({ title:`نقل ${s.name}`, message:`ينتقل ${s.name} إلى «${bname}» ويبقى موقوف — تقدر تفعّله بعدها من زر «تفعيل».`, confirmText:'نقل', type:'warning' }))) return
+    const r = await api.patch('/api/staff-members', { org_id: orgId, id: s.id, branch_id: bid })
+    if (!r.success) { toast(r.error || 'تعذر النقل','error'); return }
+    toast(`تم نقل ${s.name} إلى ${bname}`); loadStaff(orgId)
   }
 
   async function loadProducts(oid:string) {
@@ -821,6 +835,27 @@ export default function StaffManagementPage() {
       )}
 
       {/* Staff list */}
+      {orphans.length > 0 && (
+        <div style={{...card,padding:'14px 16px',marginBottom:14,border:'1px solid #fde68a',background:'#fffdf5'}}>
+          <div style={{fontSize:13.5,fontWeight:800,color:'#92400e'}}>موظفين بفروع موقوفة ({orphans.length})</div>
+          <div style={{fontSize:12,color:'#b45309',marginTop:3,marginBottom:10,lineHeight:1.6}}>فروعهم موقوفة فما يطلعون بأي فرع شغّال، وأرقام جوالاتهم محجوزة. انقلهم لهذا الفرع، أو احذفهم، أو رجّع تشغيل فرعهم من «إدارة الفروع».</div>
+          <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+            {orphans.map((o:any)=>(
+              <div key={o.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap' as const,background:'white',border:`1px solid ${colors.border}`,borderRadius:10,padding:'10px 12px'}}>
+                <div style={{minWidth:0}}>
+                  <div style={{fontSize:13.5,fontWeight:700,color:colors.text}}>{o.name}</div>
+                  <div style={{fontSize:11.5,color:colors.text3,marginTop:2}} dir="auto">{o.phone} · بفرع «{o.orphan_branch || '—'}» (موقوف){o.is_active ? '' : ' · موقوف'}</div>
+                </div>
+                <div style={{display:'flex',gap:6}}>
+                  <button onClick={()=>moveOrphanHere(o)} style={{...btnPrimary,padding:'7px 14px',fontSize:12}}>نقل لهذا الفرع</button>
+                  <button onClick={()=>deleteStaff(o.id)} style={{padding:'7px 14px',fontSize:12,fontWeight:700,borderRadius:8,border:`1px solid ${colors.dangerBorder}`,background:colors.dangerLight,color:colors.danger,cursor:'pointer',fontFamily:'inherit'}}>حذف</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {visibleStaff.length===0 ? (
         <div style={{...card,padding:56,textAlign:'center'}} className="su">
           <div style={{display:'flex',justifyContent:'center',marginBottom:14}}><Users size={52} strokeWidth={1.25} color={colors.text4}/></div>

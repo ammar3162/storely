@@ -31,12 +31,23 @@ export async function GET(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
     const effectiveBranchId = enforcedBranchId(access, branch_id)
 
-    let q = sb().from('staff_members').select('*,branches(name)').eq('org_id', org_id)
+    const db = sb()
+    let q = db.from('staff_members').select('*,branches(name)').eq('org_id', org_id)
     if (effectiveBranchId) q = q.eq('branch_id', effectiveBranchId)
     const { data, error } = await q.order('created_at', { ascending: false })
-
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
-    return NextResponse.json({ success: true, staff: (data || []).map(maskPin) })
+
+    // موظفين فروعهم موقوفة — ما يطلعون بأي فرع شغّال، فنعرضهم للمالك عشان ينقلهم أو يحذفهم (رقمهم محجوز)
+    let orphans: any[] = []
+    if (access.role === 'owner') {
+      const { data: deadBranches } = await db.from('branches').select('id,name').eq('org_id', org_id).eq('is_active', false)
+      const ids = ((deadBranches || []) as any[]).map(b => b.id)
+      if (ids.length) {
+        const { data: o } = await db.from('staff_members').select('*,branches(name)').eq('org_id', org_id).in('branch_id', ids).order('created_at', { ascending: false })
+        orphans = ((o || []) as any[]).map(x => ({ ...maskPin(x), orphan_branch: x.branches?.name || null }))
+      }
+    }
+    return NextResponse.json({ success: true, staff: (data || []).map(maskPin), orphans })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
@@ -73,6 +84,12 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ error: `رقم الجوال مسجّل للموظف «${dup.name}»${where}${dup.is_active ? '' : ' (موقوف)'}.` }, { status: 409 })
       }
       update.phone = phone
+    }
+    if ('branch_id' in body) {
+      if (access.role !== 'owner') return NextResponse.json({ error: 'نقل الموظفين بين الفروع للمالك فقط' }, { status: 403 })
+      const { data: target } = await db.from('branches').select('id').eq('id', String(body.branch_id || '')).eq('org_id', org_id).eq('is_active', true).maybeSingle()
+      if (!target) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
+      update.branch_id = (target as any).id
     }
     if ('permissions' in body && body.permissions && typeof body.permissions === 'object') update.permissions = body.permissions
     if ('send_closing_whatsapp' in body) update.send_closing_whatsapp = !!body.send_closing_whatsapp

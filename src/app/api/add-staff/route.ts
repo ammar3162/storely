@@ -39,12 +39,14 @@ export async function POST(req: Request) {
     // تحقق من عدم تكرار رقم الجوال (بأي صيغة) — ونقول للمالك لمين الرقم بالضبط، حتى لو الموظف موقوف أو بفرع ثاني
     const { data: sameOrg } = await supabase
       .from('staff_members')
-      .select('id,name,phone,is_active,hidden_from_list,branches(name)')
+      .select('id,name,phone,is_active,hidden_from_list,branches(name,is_active)')
       .eq('org_id', org_id)
     const dup = ((sameOrg || []) as any[]).find(x => samePhone(String(x.phone || ''), String(phone)))
     if (dup) {
       const where = dup.branches?.name ? ` بفرع «${dup.branches.name}»` : ''
-      const msg = dup.is_active
+      const msg = dup.branches && dup.branches.is_active === false
+        ? `رقم الجوال مسجّل للموظف «${dup.name}» بفرع «${dup.branches.name}» الموقوف. تلقاه بصفحة الموظفين تحت «موظفين بفروع موقوفة»: انقله لهذا الفرع أو احذفه.`
+        : dup.is_active
         ? `رقم الجوال مسجّل للموظف «${dup.name}»${where}.`
         : dup.hidden_from_list
           ? `رقم الجوال مسجّل للموظف «${dup.name}»${where}، وهو موقوف بسبب انتهاء إضافة «موظف إضافي».`
