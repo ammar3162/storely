@@ -49,7 +49,7 @@ export async function POST(req: Request) {
         : dup.is_active
         ? `رقم الجوال مسجّل للموظف «${dup.name}»${where}.`
         : dup.hidden_from_list
-          ? `رقم الجوال مسجّل للموظف «${dup.name}»${where}، وهو موقوف بسبب انتهاء إضافة «موظف إضافي».`
+          ? `رقم الجوال مسجّل للموظف «${dup.name}»${where}، وهو موقوف بسبب انتهاء إضافة «موظف إضافي». تلقاه بصفحة الموظفين تحت «موقوفين بسبب انتهاء إضافة» — احذفه عشان يتحرر الرقم.`
           : `رقم الجوال مسجّل للموظف «${dup.name}»${where}، وهو موقوف — فعّله من صفحة الموظفين بدل ما تضيفه من جديد، أو احذفه لو ما تحتاجه.`
       return NextResponse.json({ error: msg, duplicate: { id: dup.id, name: dup.name, is_active: dup.is_active } }, { status: 409 })
     }
