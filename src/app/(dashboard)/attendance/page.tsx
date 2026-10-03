@@ -7,6 +7,7 @@ import { colors, font, card, btnPrimary, pageTitle, pageSub, inp } from '@/lib/d
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { exportReportPdf } from '@/lib/pdfExport'
+import StaffDaysOffEditor, { type OffPatch } from '@/components/StaffDaysOffEditor'
 
 // كل الأوقات والتواريخ بالتقرير بتوقيت السعودية
 const saudiToday = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
@@ -18,6 +19,8 @@ export default function AttendancePage() {
   const [tab, setTab] = useState<'report'|'settings'>('report')
   const [orgId, setOrgId] = useState('')
   const [orgName, setOrgName] = useState('')
+  const [isOwner, setIsOwner] = useState(false)
+  const [waiving, setWaiving] = useState<string|null>(null)
   const [locked, setLocked] = useState(false)
   const [branchId, setBranchId] = useState<string|null>(null)
   const [periodMode, setPeriodMode] = useState<'day'|'range'>('day')
@@ -43,11 +46,9 @@ export default function AttendancePage() {
   const [staffList, setStaffList] = useState<any[]>([])
 
   // إعدادات — غرامات التأخير
-  const [rules, setRules] = useState<any[]>([])
-  const [newRuleMin, setNewRuleMin] = useState('')
-  const [newRuleMax, setNewRuleMax] = useState('')
-  const [newRuleAmount, setNewRuleAmount] = useState('')
-  const [savingRule, setSavingRule] = useState(false)
+  // غرامة التأخير: وقت سماح + مبلغ لكل ساعة
+  const [late, setLate] = useState<{ grace: string; perHour: string } | null>(null)
+  const [savingLate, setSavingLate] = useState(false)
 
   // إعدادات — الأوفر تايم
   const [ot, setOt] = useState<{mode:'auto'|'fixed'|'off'; multiplier:string; fixedRate:string; minMinutes:string}|null>(null)
@@ -65,6 +66,7 @@ export default function AttendancePage() {
     const orgName = me.org?.name || '', orgPlan = me.org?.plan || ''
     setOrgId(oid)
     setOrgName(orgName)
+    setIsOwner(me.role === 'owner')
     if (orgPlan === 'basic') {
       // عميل الأساسية ممكن يكون اشترى إضافة "إدارة الموظفين الكاملة" من المتجر
       const addonRes = await api.get('/api/addons-market', { org_id: oid })
@@ -76,7 +78,6 @@ export default function AttendancePage() {
     load(oid, date)
     loadShifts(oid, bid)
     loadStaff(oid, bid)
-    loadRules(oid)
     loadOvertime(oid)
     loadMonthOverview(oid)
   }
@@ -91,7 +92,7 @@ export default function AttendancePage() {
       if (!j.success || !j.rows?.length) { setMonthStats({ totalPenalty: 0, attendanceRate: null, mostLate: null }); return }
       const totalPenalty = Math.round(j.rows.reduce((s:number,r:any)=>s+r.total_penalty,0)*100)/100
       const totalPresent = j.rows.reduce((s:number,r:any)=>s+r.days_present,0)
-      const totalPossible = j.rows.length * j.totalDays
+      const totalPossible = j.rows.reduce((s:number,r:any)=>s+r.days_present+r.days_absent,0)
       const attendanceRate = totalPossible > 0 ? Math.round((totalPresent/totalPossible)*100) : null
       const withLate = j.rows.filter((r:any)=>r.total_late_minutes>0).sort((a:any,b:any)=>b.total_late_minutes-a.total_late_minutes)
       const mostLate = withLate[0] ? { name: withLate[0].name, minutes: withLate[0].total_late_minutes } : null
@@ -152,6 +153,8 @@ export default function AttendancePage() {
           { header: 'الموظف', key: 'name' },
           { header: 'أيام الحضور', key: 'days_present', align: 'center' },
           { header: 'أيام الغياب', key: 'days_absent', align: 'center' },
+          { header: 'إجازات', key: 'days_off', align: 'center' },
+          { header: 'أيام إضافية', key: 'extra_days', align: 'center' },
           { header: 'إجمالي دقائق التأخير', key: 'total_late_minutes', align: 'center' },
           { header: 'إجمالي الخصومات (ر.س)', key: 'total_penalty', align: 'center' },
           { header: 'دقائق الأوفر تايم', key: 'total_overtime_minutes', align: 'center' },
@@ -162,6 +165,8 @@ export default function AttendancePage() {
           name: 'الإجمالي',
           days_present: rangeRows.reduce((s,r)=>s+r.days_present,0),
           days_absent: rangeRows.reduce((s,r)=>s+r.days_absent,0),
+          days_off: rangeRows.reduce((s,r)=>s+(r.days_off||0),0),
+          extra_days: rangeRows.reduce((s,r)=>s+(r.extra_days||0),0),
           total_late_minutes: rangeRows.reduce((s,r)=>s+r.total_late_minutes,0),
           total_penalty: Math.round(rangeRows.reduce((s,r)=>s+r.total_penalty,0)*100)/100,
           total_overtime_minutes: rangeRows.reduce((s,r)=>s+(r.total_overtime_minutes||0),0),
@@ -184,6 +189,36 @@ export default function AttendancePage() {
     setLoading(false)
   }
 
+  // غرامات التأخير تنخصم تلقائياً — المالك يقدر يلغي غرامة يوم معيّن أو يرجّعها
+  async function toggleWaive(attendanceId: string, waived: boolean) {
+    if (!orgId || waiving) return
+    setWaiving(attendanceId)
+    const j = await api.post('/api/attendance-penalty', { org_id: orgId, attendance_id: attendanceId, waived })
+    setWaiving(null)
+    if (!j.success) { toast(j.error || 'تعذر التعديل', 'error'); return }
+    toast(waived ? 'تم إلغاء الغرامة — ما تنخصم من الراتب' : 'تم إرجاع الغرامة')
+    if (periodMode === 'day') load(orgId, date); else loadRange(orgId, rangeFrom, rangeTo)
+  }
+
+  function penaltyCell(r: any) {
+    const amount = r.penalty_original ?? r.penalty_amount
+    if (!amount) return <span style={{ color: colors.text4 }}>—</span>
+    if (r.penalty_legacy) return <span style={{ color: colors.text4, whiteSpace: 'nowrap' as const }} title="غرامة قبل تفعيل الخصم التلقائي — ما تنخصم">{amount} ر.س · <span style={{ fontSize: 10, fontWeight: 700 }}>ما انخصمت</span></span>
+    const canToggle = isOwner && r.attendance_id && !r.penalty_locked
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' as const }}>
+        <span style={{ color: r.penalty_waived ? colors.text4 : colors.danger, fontWeight: 700, textDecoration: r.penalty_waived ? 'line-through' : 'none' }}>{amount} ر.س</span>
+        {r.penalty_waived && <span style={{ fontSize: 10, fontWeight: 700, color: colors.text3 }}>ملغاة</span>}
+        {canToggle && (
+          <button onClick={() => toggleWaive(r.attendance_id, !r.penalty_waived)} disabled={waiving === r.attendance_id}
+            style={{ padding: '2px 8px', borderRadius: 6, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text3, fontSize: 10.5, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
+            {waiving === r.attendance_id ? '...' : r.penalty_waived ? 'إرجاع' : 'إلغاء'}
+          </button>
+        )}
+      </span>
+    )
+  }
+
   async function loadShifts(oid: string, bid: string|null) {
     const j = await api.get('/api/shifts', { org_id: oid, branch_id: bid })
     if (j.success) setShifts(j.shifts || [])
@@ -204,6 +239,7 @@ export default function AttendancePage() {
       fixedRate: o.overtime_fixed_rate == null ? '' : String(o.overtime_fixed_rate),
       minMinutes: String(o.overtime_min_minutes ?? 15),
     })
+    setLate({ grace: String(o.late_grace_minutes ?? 0), perHour: o.late_penalty_per_hour == null ? '' : String(o.late_penalty_per_hour) })
   }
 
   async function saveOvertime() {
@@ -219,9 +255,17 @@ export default function AttendancePage() {
     toast('✅ تم حفظ إعدادات الأوفر تايم')
   }
 
-  async function loadRules(oid: string) {
-    const j = await api.get('/api/late-penalty-rules', { org_id: oid })
-    if (j.success) setRules(j.rules || [])
+
+
+  // إعداد إجازة الموظف — ينحفظ على طول مع كل تغيير، ويرجع لو فشل
+  async function patchOff(staffId: string, patch: OffPatch) {
+    const before = staffList.find((x: any) => x.id === staffId)
+    setStaffList(prev => prev.map((x: any) => x.id === staffId ? { ...x, ...patch } : x))
+    const j = await api.patch('/api/staff-shifts', { org_id: orgId, staff_id: staffId, ...patch })
+    if (!j.success) {
+      toast(j.error || 'تعذر الحفظ', 'error')
+      setStaffList(prev => prev.map((x: any) => x.id === staffId ? before : x))
+    }
   }
 
   async function addShift() {
@@ -247,36 +291,32 @@ export default function AttendancePage() {
   async function assignShift(staffId: string, shiftId: string) {
     const j = await api.patch('/api/staff-shifts', { org_id: orgId, staff_id: staffId, shift_id: shiftId || null })
     if (!j.success) { toast(j.error || 'فشل الربط', 'error'); return }
-    toast('✅ تم تحديد شفت الموظف')
+    toast('✅ تم تحديد الشفت — لو الموظف داخل دوامه الحين يكمله على شفته القديم، والجديد يبدأ من دوامه الجاي')
     setStaffList(prev => prev.map(s => s.id === staffId ? { ...s, shift_id: shiftId || null } : s))
   }
 
-  async function addRule() {
-    if (!newRuleMin || !newRuleAmount) { toast('أدخل الحد الأدنى للدقائق والمبلغ', 'warning'); return }
-    setSavingRule(true)
-    const j = await api.post('/api/late-penalty-rules', { org_id: orgId, min_minutes: newRuleMin, max_minutes: newRuleMax || null, penalty_amount: newRuleAmount })
-    setSavingRule(false)
-    if (!j.success) { toast(j.error || 'فشل الإضافة', 'error'); return }
-    setNewRuleMin(''); setNewRuleMax(''); setNewRuleAmount('')
-    toast('✅ تم إضافة نطاق الغرامة')
-    loadRules(orgId)
+  async function saveLate() {
+    if (!orgId || !late) return
+    const grace = Number(late.grace || 0)
+    if (!Number.isInteger(grace) || grace < 0 || grace > 120) { toast('وقت السماح من 0 إلى 120 دقيقة', 'warning'); return }
+    if (late.perHour !== '' && !(Number(late.perHour) >= 0)) { toast('أدخل مبلغ صحيح', 'warning'); return }
+    setSavingLate(true)
+    const j = await api.patch('/api/org-settings', { org_id: orgId, late_grace_minutes: grace, late_penalty_per_hour: late.perHour === '' ? null : Number(late.perHour) })
+    setSavingLate(false)
+    if (!j.success) { toast(j.error || 'فشل الحفظ', 'error'); return }
+    toast('✅ تم حفظ إعدادات التأخير — تتطبّق من الحضور الجاي')
   }
 
-  async function deleteRule(id: string) {
-    if (!(await confirmDialog({ title: 'حذف النطاق', message: 'حذف نطاق الغرامة هذا؟' }))) return
-    const j = await api.del('/api/late-penalty-rules', { id })
-    if (!j.success) { toast(j.error || 'فشل الحذف', 'error'); return }
-    toast('🗑️ تم الحذف')
-    loadRules(orgId)
-  }
 
-  const presentCount = rows.filter(r => r.status !== 'لم يحضر').length
+
+  const presentCount = rows.filter(r => r.check_in).length
   const absentCount = rows.filter(r => r.status === 'لم يحضر').length
+  const offCount = rows.filter(r => !r.check_in && r.day_off).length
 
   const statusColor = (s: string) =>
-    s === 'حاضر' ? colors.primary : s === 'انصرف' ? colors.info : colors.text4
+    s.startsWith('حاضر') ? colors.primary : s.startsWith('انصرف') ? colors.info : s.startsWith('إجازة') ? '#1d4ed8' : colors.text4
   const statusBg = (s: string) =>
-    s === 'حاضر' ? colors.primaryLight : s === 'انصرف' ? colors.infoLight : colors.bg
+    s.startsWith('حاضر') ? colors.primaryLight : s.startsWith('انصرف') ? colors.infoLight : s.startsWith('إجازة') ? '#eff6ff' : colors.bg
 
   return (
     <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 900, margin: '0 auto' }}>
@@ -352,7 +392,7 @@ export default function AttendancePage() {
 
           {periodMode === 'day' ? (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8, marginBottom: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${offCount ? 3 : 2},1fr)`, gap: 8, marginBottom: 16 }}>
                 <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}` }}>
                   <div style={{ fontSize: 22, fontWeight: 900, color: colors.primary }}>{presentCount}</div>
                   <div style={{ fontSize: 11, color: colors.primary, fontWeight: 600, marginTop: 2 }}>حضروا اليوم</div>
@@ -361,6 +401,12 @@ export default function AttendancePage() {
                   <div style={{ fontSize: 22, fontWeight: 900, color: colors.danger }}>{absentCount}</div>
                   <div style={{ fontSize: 11, color: colors.danger, fontWeight: 600, marginTop: 2 }}>لم يحضروا</div>
                 </div>
+                {offCount > 0 && (
+                  <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: '#1d4ed8' }}>{offCount}</div>
+                    <div style={{ fontSize: 11, color: '#1d4ed8', fontWeight: 600, marginTop: 2 }}>بإجازة</div>
+                  </div>
+                )}
               </div>
 
               <div style={{ ...card, overflow: 'hidden' }}>
@@ -403,8 +449,8 @@ export default function AttendancePage() {
                             <td style={{ padding: '11px 14px', color: r.late_minutes ? colors.warning : colors.text4 }}>
                               {r.late_minutes ? `${r.late_minutes} دقيقة` : '—'}
                             </td>
-                            <td style={{ padding: '11px 14px', color: r.penalty_amount ? colors.danger : colors.text4, fontWeight: 700 }}>
-                              {r.penalty_amount ? `${r.penalty_amount} ر.س` : '—'}
+                            <td style={{ padding: '11px 14px', fontWeight: 700 }}>
+                              {penaltyCell(r)}
                             </td>
                             <td style={{ padding: '11px 14px', color: r.overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
                               {r.overtime_minutes ? <>{fmtMinutes(r.overtime_minutes)}{r.overtime_pay ? <span style={{ fontSize: 11, fontWeight: 600, color: colors.text3 }}> · {r.overtime_pay} ر.س</span> : null}</> : '—'}
@@ -431,6 +477,7 @@ export default function AttendancePage() {
                         <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الموظف</th>
                         <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>أيام الحضور</th>
                         <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>أيام الغياب</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجازات</th>
                         <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجمالي التأخير</th>
                         <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجمالي الخصومات</th>
                         <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الأوفر تايم</th>
@@ -441,7 +488,10 @@ export default function AttendancePage() {
                         <tr key={r.staff_id} style={{ borderBottom: i < rangeRows.length - 1 ? `1px solid ${colors.border}` : 'none' }}>
                           <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف مو مربوط بشفت — ما ينحسب له تأخير ولا أوفر تايم' : 'شفت 24 ساعة — ما ينحسب تأخير ولا أوفر تايم'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? '⚠️ بدون شفت' : '⚠️ شفت 24 ساعة'}</span>}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: colors.primary, fontWeight: 700 }}>{r.days_present}</td>
-                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: colors.danger, fontWeight: 700 }}>{r.days_absent}</td>
+                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.days_absent ? colors.danger : colors.text4, fontWeight: 700 }}>{r.days_absent || '—'}</td>
+                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.days_off ? '#1d4ed8' : colors.text4, fontWeight: 700 }}>
+                            {r.days_off || '—'}{r.extra_days ? <div style={{ fontSize: 10.5, color: colors.primary, fontWeight: 700 }}>+{r.extra_days} يوم إضافي</div> : null}
+                          </td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_late_minutes ? colors.warning : colors.text4 }}>{r.total_late_minutes ? `${r.total_late_minutes} دقيقة` : '—'}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_penalty ? colors.danger : colors.text4, fontWeight: 700 }}>{r.total_penalty ? `${r.total_penalty} ر.س` : '—'}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
@@ -479,7 +529,7 @@ export default function AttendancePage() {
                             </td>
                             <td style={{ padding: '10px 14px', color: colors.text2, fontWeight: 600 }}>{d.hours_worked !== null ? `${d.hours_worked} ساعة` : '—'}</td>
                             <td style={{ padding: '10px 14px', color: d.late_minutes ? colors.warning : colors.text4 }}>{d.late_minutes ? `${d.late_minutes} دقيقة` : '—'}</td>
-                            <td style={{ padding: '10px 14px', color: d.penalty_amount ? colors.danger : colors.text4, fontWeight: 700 }}>{d.penalty_amount ? `${d.penalty_amount} ر.س` : '—'}</td>
+                            <td style={{ padding: '10px 14px', fontWeight: 700 }}>{penaltyCell(d)}</td>
                             <td style={{ padding: '10px 14px', color: d.overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
                               {d.overtime_minutes ? <>{fmtMinutes(d.overtime_minutes)}{d.overtime_pay ? <span style={{ fontSize: 11, fontWeight: 600, color: colors.text3 }}> · {d.overtime_pay} ر.س</span> : null}</> : '—'}
                             </td>
@@ -498,151 +548,252 @@ export default function AttendancePage() {
         </>
       )}
 
-      {tab === 'settings' && (
+      {tab === 'settings' && (() => {
+        // ── مساعدات العرض ──
+        const t12 = (t?: string | null) => {
+          if (!t) return '—'
+          const [h, m] = t.slice(0, 5).split(':').map(Number)
+          const suffix = h < 12 ? 'ص' : 'م'
+          const h12 = h % 12 === 0 ? 12 : h % 12
+          return `${h12}:${String(m).padStart(2, '0')} ${suffix}`
+        }
+        const durMin = (st?: string | null, en?: string | null) => {
+          if (!st || !en) return 0
+          const toM = (x: string) => { const [h, m] = x.slice(0, 5).split(':').map(Number); return h * 60 + m }
+          const S = toM(st), E = toM(en)
+          return E > S ? E - S : 1440 - S + E
+        }
+        const durLabel = (min: number) => { const h = Math.floor(min / 60), m = min % 60; return h && m ? `${h} ساعة و${m} دقيقة` : h ? `${h} ${h <= 10 && h > 2 ? 'ساعات' : 'ساعة'}` : `${m} دقيقة` }
+        // ينتهي بعد 12 الليل (اللي ينتهي 12:00 بالضبط ما نعتبره «اليوم الثاني»)
+        const crossesMidnight = (st?: string | null, en?: string | null) => !!st && !!en && en.slice(0, 5) !== '00:00' && en.slice(0, 5) <= st.slice(0, 5)
+        const staffOn = (shiftId: string) => staffList.filter((x: any) => x.shift_id === shiftId).length
+        const withoutShift = staffList.filter((x: any) => !x.shift_id).length
+
+        const step = (n: number, title: string, desc: string, status?: React.ReactNode) => (
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16, flexWrap: 'wrap' as const }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', minWidth: 0, flex: 1 }}>
+              <span style={{ width: 30, height: 30, borderRadius: 10, background: colors.primaryLight, color: colors.primary, fontWeight: 900, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n}</span>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: colors.text }}>{title}</div>
+                <div style={{ fontSize: 12, color: colors.text3, marginTop: 3, lineHeight: 1.7 }}>{desc}</div>
+              </div>
+            </div>
+            {status}
+          </div>
+        )
+        const pill = (txt: React.ReactNode, tone: 'ok' | 'warn' | 'muted') => {
+          const c = tone === 'ok' ? { fg: colors.primary, bg: colors.primaryLight, bd: colors.primaryBorder } : tone === 'warn' ? { fg: '#b45309', bg: '#fffbeb', bd: '#fde68a' } : { fg: colors.text3, bg: colors.bg, bd: colors.border }
+          return <span style={{ fontSize: 11.5, fontWeight: 700, color: c.fg, background: c.bg, border: `1px solid ${c.bd}`, borderRadius: 99, padding: '5px 11px', whiteSpace: 'nowrap' as const }}>{txt}</span>
+        }
+        const fieldLabel: React.CSSProperties = { fontSize: 11.5, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }
+        const box: React.CSSProperties = { ...card, padding: '20px 22px' }
+
+        const newDur = durMin(newShiftStart, newShiftEnd)
+        return (
         <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
 
-          {/* الشفتات */}
-          <div style={{ ...card, padding: '18px 20px' }}>
-            <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>الشفتات</div>
-            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>حدّد شفت واحد، شفتين، أو 24 ساعة — وحدّد وقت البداية لكل شفت عشان يعرف النظام يحسب التأخير</div>
+          {/* 1) الشفتات */}
+          <div style={box}>
+            {step(1, 'الشفتات', 'أوقات الدوام عندك. النظام يحسب التأخير من بداية الشفت، والانصراف والأوفر تايم من نهايته.',
+              shifts.length ? pill(`${shifts.length} ${shifts.length === 1 ? 'شفت' : 'شفتات'}`, 'ok') : pill('ما فيه شفتات', 'warn'))}
 
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 12 }}>
-              <input value={newShiftName} onChange={e => setNewShiftName(e.target.value)} placeholder="اسم الشفت (مثلاً: الشفت الأول)" style={{ ...inp(), flex: 1, minWidth: 160 }} />
-              {!newShift24h && (
-                <>
-                  <input type="time" value={newShiftStart} onChange={e => setNewShiftStart(e.target.value)} style={{ ...inp(), width: 110 }} />
-                  <span style={{ alignSelf: 'center', color: colors.text4, fontSize: 12 }}>إلى</span>
-                  <input type="time" value={newShiftEnd} onChange={e => setNewShiftEnd(e.target.value)} style={{ ...inp(), width: 110 }} />
-                </>
-              )}
-              <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: colors.text3, cursor: 'pointer' }}>
-                <input type="checkbox" checked={newShift24h} onChange={e => setNewShift24h(e.target.checked)} />
-                24 ساعة
-              </label>
-              <button onClick={addShift} disabled={savingShift} style={{ ...btnPrimary, padding: '0 16px' }}>{savingShift ? '...' : '+ إضافة'}</button>
-            </div>
-
-            {shifts.length === 0 ? (
-              <div style={{ fontSize: 12, color: colors.text4, textAlign: 'center' as const, padding: 12 }}>ما فيه شفتات معرّفة بعد</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
-                {shifts.map((s: any) => (
-                  <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', background: colors.bg, borderRadius: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: colors.text }}>{s.name}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 12, color: colors.text3 }}>{s.is_24h ? '24 ساعة' : `${s.start_time?.slice(0,5)} — ${s.end_time?.slice(0,5)}`}</span>
-                      <button onClick={() => deleteShift(s.id)} style={{ background: 'none', border: 'none', color: colors.danger, cursor: 'pointer', fontSize: 12 }}>🗑️</button>
+            {shifts.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 10, marginBottom: 14 }}>
+                {shifts.map((sh: any) => {
+                  const n = staffOn(sh.id)
+                  return (
+                    <div key={sh.id} style={{ border: `1px solid ${colors.border}`, borderRadius: 14, padding: '14px 14px 12px', background: colors.surface, position: 'relative' as const }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>{sh.name}</div>
+                        <button onClick={() => deleteShift(sh.id)} aria-label={`حذف ${sh.name}`} title="حذف الشفت"
+                          style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text4, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                      </div>
+                      {sh.is_24h ? (
+                        <div style={{ fontSize: 13, color: colors.text2, marginTop: 6, fontWeight: 600 }}>دوام 24 ساعة</div>
+                      ) : (
+                        <>
+                          <div style={{ fontSize: 13.5, color: colors.text2, marginTop: 6, fontWeight: 600 }}>من {t12(sh.start_time)} إلى {t12(sh.end_time)}</div>
+                          <div style={{ fontSize: 11.5, color: colors.text4, marginTop: 3 }}>
+                            {durLabel(durMin(sh.start_time, sh.end_time))}{crossesMidnight(sh.start_time, sh.end_time) ? ' · ينتهي اليوم الثاني' : ''}
+                          </div>
+                        </>
+                      )}
+                      <div style={{ marginTop: 10, fontSize: 11.5, fontWeight: 700, color: n ? colors.primary : colors.text4 }}>{n ? `${n} موظف على هالشفت` : 'ما عليه موظفين'}</div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
+
+            {/* إضافة شفت */}
+            <div style={{ border: `1.5px dashed ${colors.border2}`, borderRadius: 14, padding: 14, background: colors.bg }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10 }}>شفت جديد</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10, alignItems: 'end' }}>
+                <div style={{ gridColumn: 'span 2' as const, minWidth: 0 }}>
+                  <label style={fieldLabel}>اسم الشفت</label>
+                  <input value={newShiftName} onChange={e => setNewShiftName(e.target.value)} placeholder="مثلاً: الشفت الصباحي" style={inp()} />
+                </div>
+                {!newShift24h && (
+                  <>
+                    <div>
+                      <label style={fieldLabel}>يبدأ الساعة</label>
+                      <input type="time" value={newShiftStart} onChange={e => setNewShiftStart(e.target.value)} style={inp()} />
+                    </div>
+                    <div>
+                      <label style={fieldLabel}>ينتهي الساعة</label>
+                      <input type="time" value={newShiftEnd} onChange={e => setNewShiftEnd(e.target.value)} style={inp()} />
+                    </div>
+                  </>
+                )}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginTop: 12, flexWrap: 'wrap' as const }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: colors.text2, cursor: 'pointer', fontWeight: 600 }}>
+                  <input type="checkbox" checked={newShift24h} onChange={e => setNewShift24h(e.target.checked)} style={{ width: 16, height: 16, accentColor: colors.primary }} />
+                  دوام 24 ساعة (بدون تأخير ولا أوفر تايم)
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {!newShift24h && newShiftStart && newShiftEnd && newDur > 0 && (
+                    <span style={{ fontSize: 12, color: colors.text3 }}>من {t12(newShiftStart)} إلى {t12(newShiftEnd)} · {durLabel(newDur)}{crossesMidnight(newShiftStart, newShiftEnd) ? ' · ينتهي اليوم الثاني' : ''}</span>
+                  )}
+                  <button onClick={addShift} disabled={savingShift} style={{ ...btnPrimary, padding: '10px 18px' }}>{savingShift ? 'جاري الإضافة...' : 'إضافة الشفت'}</button>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* ربط الموظفين بالشفتات */}
-          <div style={{ ...card, padding: '18px 20px' }}>
-            <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>تحديد شفت كل موظف</div>
-            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>حدّد أي موظف يتبع أي شفت — عشان النظام يعرف يحسب تأخيره صح</div>
-
+          {/* 2) شفت كل موظف */}
+          <div style={box}>
+            {step(2, 'شفت كل موظف وإجازته', 'اختر لكل موظف شفته ونظام إجازته: أيام ثابتة، أسبوع وأسبوع، أيام تحددها، أو رصيد بالشهر. يوم إجازته ما ينحسب غياب، ولو داوم فيه ينحسب يوم إضافي. تغيير الشفت وهو داخل دوامه يتطبّق من دوامه الجاي.',
+              staffList.length === 0 ? null : withoutShift ? pill(`${withoutShift} بدون شفت`, 'warn') : pill('كل الموظفين مربوطين', 'ok'))}
             {staffList.length === 0 ? (
-              <div style={{ fontSize: 12, color: colors.text4, textAlign: 'center' as const, padding: 12 }}>ما فيه موظفين نشطين</div>
+              <div style={{ fontSize: 13, color: colors.text4, textAlign: 'center' as const, padding: 16 }}>ما فيه موظفين نشطين بهذا الفرع</div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
-                {staffList.map((s: any) => (
-                  <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', background: colors.bg, borderRadius: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: colors.text }}>{s.name}</span>
-                    <select value={s.shift_id || ''} onChange={e => assignShift(s.id, e.target.value)} style={{ ...inp(), width: 180, padding: '6px 10px', fontSize: 12 }}>
-                      <option value="">بدون شفت محدد</option>
-                      {shifts.map((sh: any) => (<option key={sh.id} value={sh.id}>{sh.name}</option>))}
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+                {shifts.length === 0 && <div style={{ fontSize: 12.5, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '9px 12px' }}>أضف شفت في الخطوة 1 أول، بعدها تقدر تربط الموظفين.</div>}
+                {staffList.map((x: any) => (
+                  <div key={x.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', border: `1px solid ${x.shift_id ? colors.border : '#fde68a'}`, background: x.shift_id ? colors.surface : '#fffdf5', borderRadius: 12, flexWrap: 'wrap' as const }}>
+                    <span style={{ width: 34, height: 34, borderRadius: 10, background: colors.primaryLight, color: colors.primary, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{(x.name || '?').trim()[0]}</span>
+                    <div style={{ flex: 1, minWidth: 120 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: colors.text }}>{x.name}</div>
+                      {!x.shift_id && <div style={{ fontSize: 11.5, color: '#b45309', marginTop: 2 }}>بدون شفت — ما ينحسب له تأخير ولا أوفر تايم، والانصراف مفتوح له أي وقت</div>}
+                    </div>
+                    <select value={x.shift_id || ''} onChange={e => assignShift(x.id, e.target.value)} disabled={shifts.length === 0} style={{ ...inp(), width: 250, maxWidth: '100%' }}>
+                      <option value="">بدون شفت</option>
+                      {shifts.map((sh: any) => (<option key={sh.id} value={sh.id}>{sh.name}{sh.is_24h ? ' (24 ساعة)' : ` (${t12(sh.start_time)} – ${t12(sh.end_time)})`}</option>))}
                     </select>
+                    <StaffDaysOffEditor staff={x} onPatch={p => patchOff(x.id, p)} />
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* غرامات التأخير */}
-          <div style={{ ...card, padding: '18px 20px' }}>
-            <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>غرامات التأخير (اختياري)</div>
-            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>حدّد مبلغ مختلف حسب مدة التأخير بالدقائق — مثلاً: من 0 إلى 30 دقيقة = 10 ر.س</div>
-
-            <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' as const }}>
-              <input type="number" value={newRuleMin} onChange={e => setNewRuleMin(e.target.value)} placeholder="من دقيقة" style={{ ...inp(), width: 110 }} />
-              <input type="number" value={newRuleMax} onChange={e => setNewRuleMax(e.target.value)} placeholder="إلى دقيقة (اختياري)" style={{ ...inp(), width: 140 }} />
-              <input type="number" value={newRuleAmount} onChange={e => setNewRuleAmount(e.target.value)} placeholder="المبلغ (ر.س)" style={{ ...inp(), width: 120 }} />
-              <button onClick={addRule} disabled={savingRule} style={{ ...btnPrimary, padding: '0 16px' }}>{savingRule ? '...' : '+ إضافة'}</button>
-            </div>
-
-            {rules.length === 0 ? (
-              <div style={{ fontSize: 12, color: colors.text4, textAlign: 'center' as const, padding: 12 }}>ما فيه نطاقات غرامة معرّفة — التأخير راح يُسجّل بدون غرامة</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
-                {rules.map((r: any) => (
-                  <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', background: colors.bg, borderRadius: 8 }}>
-                    <span style={{ fontSize: 13, color: colors.text }}>من {r.min_minutes} دقيقة {r.max_minutes ? `إلى ${r.max_minutes} دقيقة` : 'فأكثر'}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: colors.danger }}>{r.penalty_amount} ر.س</span>
-                      <button onClick={() => deleteRule(r.id)} style={{ background: 'none', border: 'none', color: colors.danger, cursor: 'pointer', fontSize: 12 }}>🗑️</button>
+          {/* 3) التأخير والخصم */}
+          {late && (() => {
+            const g = Number(late.grace || 0), rate = Number(late.perHour || 0)
+            const exLate = Math.max(g + 4, 14)
+            const exAmount = Math.round(rate * exLate / 60 * 100) / 100
+            return (
+              <div style={box}>
+                {step(3, 'التأخير والخصم', 'التأخير ضمن وقت السماح ما يتسجّل. لو تعدّاه ينحسب التأخير كامل من بداية الشفت، وينخصم من الراتب بالنسبة والتناسب. وتقدر تلغي خصم أي يوم من تبويب التقرير.',
+                  rate > 0 ? pill(`${rate} ر.س للساعة`, 'ok') : pill('بدون خصم', 'muted'))}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12 }}>
+                  <div>
+                    <label style={fieldLabel}>وقت السماح</label>
+                    <div style={{ position: 'relative' as const }}>
+                      <input type="number" min={0} max={120} inputMode="numeric" value={late.grace} onChange={e => setLate({ ...late, grace: e.target.value })} placeholder="0" style={{ ...inp(), paddingInlineEnd: 60 }} />
+                      <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>دقيقة</span>
                     </div>
                   </div>
-                ))}
+                  <div>
+                    <label style={fieldLabel}>الخصم لكل ساعة تأخير</label>
+                    <div style={{ position: 'relative' as const }}>
+                      <input type="number" min={0} step="0.5" inputMode="decimal" value={late.perHour} onChange={e => setLate({ ...late, perHour: e.target.value })} placeholder="فاضي = بدون خصم" style={{ ...inp(), paddingInlineEnd: 50 }} />
+                      <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>ر.س</span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 12.5, color: colors.text2, background: colors.bg, borderRadius: 10, padding: '11px 14px', marginTop: 12, lineHeight: 1.8 }}>
+                  {g > 0 ? <>تأخير لين <b>{g} دقيقة</b> ما يتسجّل. </> : <>أي تأخير يتسجّل من أول دقيقة. </>}
+                  {rate > 0
+                    ? <>مثال: تأخر <b>{exLate} دقيقة</b> ← خصم <b style={{ color: colors.danger }}>{exAmount} ر.س</b> ({rate} × {exLate} ÷ 60).</>
+                    : <>بدون مبلغ للساعة: التأخير يتسجّل بدون خصم.</>}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
+                  <button onClick={saveLate} disabled={savingLate} style={{ ...btnPrimary, padding: '10px 22px' }}>{savingLate ? 'جاري الحفظ...' : 'حفظ'}</button>
+                </div>
               </div>
-            )}
-          </div>
+            )
+          })()}
 
-          {/* الأوفر تايم */}
+          {/* 4) الأوفر تايم */}
           {ot && (
-          <div style={{ ...card, padding: '18px 20px', marginTop: 16 }}>
-            <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>الأوفر تايم</div>
-            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>ينحسب من وقت انصراف الموظف بعد نهاية شفته، ويظهر في تقرير الموظفين وصفحة «راتبي»</div>
+          <div style={box}>
+            {step(4, 'الأوفر تايم', 'ينحسب من وقت انصراف الموظف بعد نهاية شفته، ويطلع له بكشف الراتب ولك بتقرير الموظفين.',
+              ot.mode === 'off' ? pill('موقّف', 'muted') : ot.mode === 'fixed' ? pill(ot.fixedRate ? `${ot.fixedRate} ر.س للساعة` : 'مبلغ ثابت', 'ok') : pill(`تلقائي × ${ot.multiplier}`, 'ok'))}
 
-            <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 8, marginBottom: 14 }}>
               {([
-                ['auto', 'تلقائي من الراتب والشفت', 'أجر الساعة = الراتب الأساسي ÷ 30 يوم ÷ ساعات شفت الموظف، × المضاعف'],
+                ['auto', 'تلقائي من الراتب', 'أجر الساعة = الراتب الأساسي ÷ 30 ÷ ساعات الشفت × المضاعف'],
                 ['fixed', 'مبلغ ثابت للساعة', 'نفس المبلغ لكل ساعة إضافية لكل الموظفين'],
                 ['off', 'بدون أوفر تايم', 'ما ينحسب أي وقت إضافي'],
               ] as const).map(([v, title, sub]) => (
-                <label key={v} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '11px 12px', borderRadius: 10, cursor: 'pointer', border: `1.5px solid ${ot.mode === v ? colors.primary : colors.border}`, background: ot.mode === v ? colors.primaryLight : colors.surface }}>
+                <label key={v} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px', borderRadius: 12, cursor: 'pointer', border: `1.5px solid ${ot.mode === v ? colors.primary : colors.border}`, background: ot.mode === v ? colors.primaryLight : colors.surface }}>
                   <input type="radio" name="ot-mode" checked={ot.mode === v} onChange={() => setOt({ ...ot, mode: v })} style={{ marginTop: 3, accentColor: colors.primary }} />
                   <span>
-                    <span style={{ display: 'block', fontSize: 13, fontWeight: 700, color: colors.text }}>{title}</span>
-                    <span style={{ display: 'block', fontSize: 11, color: colors.text3, marginTop: 2 }}>{sub}</span>
+                    <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: colors.text }}>{title}</span>
+                    <span style={{ display: 'block', fontSize: 11.5, color: colors.text3, marginTop: 3, lineHeight: 1.6 }}>{sub}</span>
                   </span>
                 </label>
               ))}
             </div>
 
             {ot.mode !== 'off' && (
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' as const, alignItems: 'flex-end', marginBottom: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12, marginBottom: 12 }}>
                 {ot.mode === 'auto' ? (
-                  <label style={{ fontSize: 11, color: colors.text3, fontWeight: 600 }}>المضاعف
-                    <select value={ot.multiplier} onChange={e => setOt({ ...ot, multiplier: e.target.value })} style={{ ...inp(), width: 170, marginTop: 4, display: 'block' }}>
+                  <div>
+                    <label style={fieldLabel}>المضاعف</label>
+                    <select value={ot.multiplier} onChange={e => setOt({ ...ot, multiplier: e.target.value })} style={inp()}>
                       {['1', '1.25', '1.5', '1.75', '2'].map(m => <option key={m} value={m}>× {m}{m === '1.5' ? ' (نظام العمل)' : ''}</option>)}
                     </select>
-                  </label>
+                  </div>
                 ) : (
-                  <label style={{ fontSize: 11, color: colors.text3, fontWeight: 600 }}>مبلغ الساعة (ر.س)
-                    <input type="number" min="0" step="0.5" value={ot.fixedRate} onChange={e => setOt({ ...ot, fixedRate: e.target.value })} placeholder="مثلاً 25" style={{ ...inp(), width: 150, marginTop: 4, display: 'block' }} />
-                  </label>
+                  <div>
+                    <label style={fieldLabel}>مبلغ الساعة</label>
+                    <div style={{ position: 'relative' as const }}>
+                      <input type="number" min="0" step="0.5" value={ot.fixedRate} onChange={e => setOt({ ...ot, fixedRate: e.target.value })} placeholder="مثلاً 25" style={{ ...inp(), paddingInlineEnd: 50 }} />
+                      <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>ر.س</span>
+                    </div>
+                  </div>
                 )}
-                <label style={{ fontSize: 11, color: colors.text3, fontWeight: 600 }}>أقل مدة تنحسب باليوم (دقيقة)
-                  <input type="number" min="0" max="240" value={ot.minMinutes} onChange={e => setOt({ ...ot, minMinutes: e.target.value })} style={{ ...inp(), width: 150, marginTop: 4, display: 'block' }} />
-                </label>
+                <div>
+                  <label style={fieldLabel}>أقل مدة تنحسب باليوم</label>
+                  <div style={{ position: 'relative' as const }}>
+                    <input type="number" min="0" max="240" value={ot.minMinutes} onChange={e => setOt({ ...ot, minMinutes: e.target.value })} style={{ ...inp(), paddingInlineEnd: 60 }} />
+                    <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>دقيقة</span>
+                  </div>
+                </div>
               </div>
             )}
 
             {ot.mode === 'auto' && (
-              <div style={{ fontSize: 12, color: colors.text2, background: colors.bg, borderRadius: 8, padding: '9px 12px', marginBottom: 12 }}>
-                مثال: راتب أساسي 3,000 وشفت 8 ساعات ← أجر الساعة {Math.round(3000 / 30 / 8 * 100) / 100} ← الساعة الإضافية <b>{Math.round(3000 / 30 / 8 * (Number(ot.multiplier) || 1.5) * 100) / 100} ر.س</b>
+              <div style={{ fontSize: 12.5, color: colors.text2, background: colors.bg, borderRadius: 10, padding: '11px 14px', marginBottom: 12, lineHeight: 1.8 }}>
+                مثال: راتب أساسي 3,000 وشفت 8 ساعات ← أجر الساعة {Math.round(3000 / 30 / 8 * 100) / 100} ر.س ← الساعة الإضافية <b>{Math.round(3000 / 30 / 8 * (Number(ot.multiplier) || 1.5) * 100) / 100} ر.س</b>
               </div>
             )}
+            {ot.mode !== 'off' && (
+              <div style={{ fontSize: 12, color: colors.text3, marginBottom: 12 }}>لو الموظف انصرف بعد نهاية شفته بأقل من {ot.minMinutes || 0} دقيقة، ما ينحسب له أوفر تايم ذاك اليوم.</div>
+            )}
 
-            <button onClick={saveOvertime} disabled={savingOt} style={{ ...btnPrimary, padding: '10px 22px' }}>{savingOt ? '...' : 'حفظ'}</button>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={saveOvertime} disabled={savingOt} style={{ ...btnPrimary, padding: '10px 22px' }}>{savingOt ? 'جاري الحفظ...' : 'حفظ'}</button>
+            </div>
           </div>
           )}
 
         </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

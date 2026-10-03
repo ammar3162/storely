@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { markRefNotificationsRead } from '@/lib/requestRefs'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { sendWhatsAppMessage, formatPhone } from '@/lib/whatsapp'
 
@@ -59,13 +60,13 @@ export async function POST(req: Request) {
     const daysCount = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
 
     const supabase = sb()
-    const { data: staffRow } = await supabase.from('staff_members').select('name,leave_balance_days').eq('id', staff_id).maybeSingle()
+    const { data: staffRow } = await supabase.from('staff_members').select('name,leave_balance_days').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
     const balance = Number((staffRow as any)?.leave_balance_days || 0)
     if (daysCount > balance) return NextResponse.json({ error: `رصيدك المتبقي ${balance} يوم فقط` }, { status: 400 })
 
-    const { error } = await supabase.from('staff_leave_requests').insert({
-      org_id, staff_id, start_date, end_date, days_count: daysCount, reason: reason || null, status: 'pending',
-    } as any)
+    const { data: created, error } = await supabase.from('staff_leave_requests').insert({
+      org_id, staff_id, start_date, end_date, days_count: daysCount, reason: reason ? String(reason).trim().slice(0, 300) : null, status: 'pending',
+    } as any).select('id').single()
     if (error) return NextResponse.json({ error: 'فشل إرسال الطلب' }, { status: 500 })
 
     const staffName = (staffRow as any)?.name || 'موظف'
@@ -73,6 +74,7 @@ export async function POST(req: Request) {
       org_id, branch_id: branch_id || null, type: 'info',
       title: 'طلب إجازة جديد',
       message: `${staffName} يطلب إجازة من ${start_date} إلى ${end_date} (${daysCount} يوم)${reason ? ` — السبب: ${reason}` : ''}`,
+      ref_type: 'leave_request', ref_id: (created as any)?.id,
     } as any)
 
     const { data: owner } = await supabase.from('profiles').select('phone').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
@@ -100,9 +102,18 @@ export async function PATCH(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
     const supabase = sb()
-    const { data: reqRow } = await supabase.from('staff_leave_requests').select('id,status,staff_id,days_count').eq('id', request_id).eq('org_id', org_id).maybeSingle()
-    if (!reqRow) return NextResponse.json({ error: 'الطلب غير موجود' }, { status: 404 })
+    const { data: reqRow } = await supabase.from('staff_leave_requests').select('id,status,staff_id,days_count,staff_members(branch_id)').eq('id', request_id).eq('org_id', org_id).maybeSingle()
+    const forced = enforcedBranchId(access)
+    if (!reqRow || (forced && (reqRow as any).staff_members?.branch_id !== forced)) return NextResponse.json({ error: 'الطلب غير موجود' }, { status: 404 })
     if ((reqRow as any).status !== 'pending') return NextResponse.json({ error: 'تم البت بهذا الطلب مسبقاً' }, { status: 400 })
+
+    // القرار مرة وحدة (شرط pending) — قبل خصم الرصيد عشان ما ينخصم مرتين
+    const { data: updated, error } = await supabase.from('staff_leave_requests').update({
+      status: decision, reviewed_by: 'owner', reviewed_at: new Date().toISOString(),
+    } as any).eq('id', request_id).eq('status', 'pending').select('id').maybeSingle()
+    if (error) return NextResponse.json({ error: 'فشل التحديث' }, { status: 500 })
+    if (!updated) return NextResponse.json({ error: 'تم البت بهذا الطلب مسبقاً' }, { status: 400 })
+    await markRefNotificationsRead(supabase, org_id, 'leave_request', request_id)
 
     if (decision === 'approved') {
       const { data: staffRow } = await supabase.from('staff_members').select('leave_balance_days').eq('id', (reqRow as any).staff_id).maybeSingle()
@@ -110,11 +121,6 @@ export async function PATCH(req: Request) {
       const newBalance = Math.max(0, balance - Number((reqRow as any).days_count))
       await supabase.from('staff_members').update({ leave_balance_days: newBalance } as any).eq('id', (reqRow as any).staff_id)
     }
-
-    const { error } = await supabase.from('staff_leave_requests').update({
-      status: decision, reviewed_by: 'owner', reviewed_at: new Date().toISOString(),
-    } as any).eq('id', request_id)
-    if (error) return NextResponse.json({ error: 'فشل التحديث' }, { status: 500 })
 
     // إشعار داخل النظام للموظف بالنتيجة (كان ناقص تماماً قبل)
     const { data: staffRow2 } = await supabase.from('staff_members').select('preferred_lang').eq('id', (reqRow as any).staff_id).maybeSingle()

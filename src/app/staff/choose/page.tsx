@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Bell, MapPin, Package, Store, ClipboardList, Send, Wallet, Plane, UserCheck, Boxes, ShoppingCart, Clock, LogOut } from 'lucide-react'
 import { getStaffOrg } from '@/lib/session'
+import { canCheckOutAt } from '@/lib/attendanceState'
 
 const CS: Record<string, Record<'ar'|'en', string>> = {
   welcome:        { ar:'أهلاً', en:'Welcome' },
@@ -63,6 +64,7 @@ export default function ChoosePage() {
   const [attError, setAttError] = useState('')
   const [locatingHint, setLocatingHint] = useState('')
   const [shift, setShift] = useState<any>(null)
+  const [dayOff, setDayOff] = useState<'weekly'|'leave'|'comp'|'monthly'|null>(null)   // اليوم إجازته (أسبوعية، معتمدة، بديلة، أو خلّص أيام شهره)
   const [permReq, setPermReq] = useState<any>(null)
   const [showPermForm, setShowPermForm] = useState(false)
   const [permReason, setPermReason] = useState('')
@@ -100,14 +102,11 @@ export default function ChoosePage() {
     getStaffOrg().then(org=>{ if(org?.logo_url) setOrgLogo(org.logo_url) })
     // مهامي وطلباتي جزء من ميزة "إدارة الموظفين" — ما نعرضهم إلا لو الباقة تشملها أو عندهم إضافة hr_full
     getStaffOrg()
-      .then(async (org)=>{
+      .then((org)=>{
         setSalaryVisible(org?.staff_salary_visible === true)
-        if (org?.plan !== 'basic') { setHasHrFeature(true); setHasCashierFeature(true); return }
-        const j = await fetch(`/api/addons-market?org_id=${parsed.org_id}`).then(r=>r.json()).catch(()=>null)
-        const addon = (j?.addons||[]).find((a:any)=>a.slug==='hr_full')
-        setHasHrFeature(!!addon?.subscription?.isValid)
-        const cashierAddon = (j?.addons||[]).find((a:any)=>a.slug==='cashier_closing')
-        setHasCashierFeature(!!cashierAddon?.subscription?.isValid)
+        // السيرفر يحدد الميزات (الباقة أو الإضافات المشتراة)
+        setHasHrFeature(!!org?.hr_feature)
+        setHasCashierFeature(!!org?.cashier_feature)
       })
     const savedLang = localStorage.getItem('staff_lang')
     if (savedLang === 'en') setLang('en')
@@ -151,7 +150,7 @@ export default function ChoosePage() {
       const [advRes, leaveRes, excuseRes] = await Promise.all([
         fetch('/api/staff-payroll-adjustments', { headers: { 'Authorization': `Bearer ${token}` } }).then(r=>r.json()).catch(()=>({success:false})),
         fetch('/api/staff-leave', { headers: { 'Authorization': `Bearer ${token}` } }).then(r=>r.json()).catch(()=>({success:false})),
-        fetch(`/api/attendance-permission-request?staff_id=${staffData.id}&history=true`).then(r=>r.json()).catch(()=>({success:false})),
+        fetch(`/api/attendance-permission-request?history=true`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r=>r.json()).catch(()=>({success:false})),
       ])
       const combined: any[] = []
       if (advRes?.success) for (const a of (advRes.adjustments||[])) {
@@ -192,10 +191,10 @@ export default function ChoosePage() {
     try {
       const res = await fetch('/api/staff-attendance', { headers: { 'Authorization': `Bearer ${localStorage.getItem('staff_token')}` } })
       const j = await res.json()
-      if(j.success) { setTodayEvents(j.today||[]); setShift(j.shift||null); setAttendanceLocked(!!j.locked) }
+      if(j.success) { setTodayEvents(j.today||[]); setShift(j.shift||null); setAttendanceLocked(!!j.locked); setDayOff(j.state?.dayOff || null) }
     } catch {}
     try {
-      const pr = await fetch(`/api/attendance-permission-request?staff_id=${parsed.id}`)
+      const pr = await fetch(`/api/attendance-permission-request`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('staff_token')}` } })
       const pj = await pr.json()
       if (pj.success) setPermReq(pj.request)
     } catch {}
@@ -207,8 +206,8 @@ export default function ChoosePage() {
     setSubmittingPerm(true)
     try {
       const res = await fetch('/api/attendance-permission-request', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ org_id: staffData.org_id, branch_id: staffData.branch_id, staff_id: staffData.id, staff_name: staffData.name, reason: permReason }),
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('staff_token')}` },
+        body: JSON.stringify({ reason: permReason }),
       })
       const j = await res.json()
       if (!j.success) { setAttError(j.error || 'فشل إرسال الطلب'); setSubmittingPerm(false); return }
@@ -222,20 +221,11 @@ export default function ChoosePage() {
   const lastCheckOut = todayEvents.find(e=>e.type==='check_out')
   const isCheckedIn = !!lastCheckIn && !lastCheckOut
 
-  // يمنع الانصراف قبل الوقت المحدد بالشفت (إلا لو الشفت 24 ساعة أو ما فيه شفت مخصص)
+  // يمنع الانصراف قبل نهاية الشفت اللي حضر عليه (نفس قاعدة السيرفر — تغطي الشفت الليلي والحضور المبكر)
   let canCheckOut = true
   let checkOutHint = ''
-  if (shift && !shift.is_24h && shift.end_time) {
-    const now = new Date()
-    const saudiMinutes = ((now.getUTCHours()+3)%24)*60 + now.getUTCMinutes()
-    const [eh, em] = String(shift.end_time).slice(0,5).split(':').map(Number)
-    const endMinutes = eh*60 + em
-    const [sh2, sm2] = String(shift.start_time||'00:00').slice(0,5).split(':').map(Number)
-    const startMinutes = sh2*60 + sm2
-    const isOvernight = endMinutes <= startMinutes
-    canCheckOut = isOvernight
-      ? (saudiMinutes >= endMinutes && saudiMinutes < startMinutes)
-      : (saudiMinutes >= endMinutes)
+  if (shift && !shift.is_24h && shift.end_time && lastCheckIn) {
+    canCheckOut = canCheckOutAt(Date.now(), Date.parse(lastCheckIn.recorded_at), shift)
     if (!canCheckOut && permReq?.status === 'approved') canCheckOut = true
     if (!canCheckOut) checkOutHint = `زر الانصراف يفعّل الساعة ${String(shift.end_time).slice(0,5)}`
   }
@@ -305,8 +295,9 @@ export default function ChoosePage() {
   const isAr = lang === 'ar'
   const fmtClock = (iso: string) => new Date(iso).toLocaleTimeString('ar-SA', { numberingSystem:'latn', hour:'2-digit', minute:'2-digit', timeZone:'Asia/Riyadh' })
   const todayLabel = new Date().toLocaleDateString(isAr ? 'ar-SA' : 'en-GB', { numberingSystem:'latn', weekday:'long', day:'numeric', month:'long', calendar:'gregory', timeZone:'Asia/Riyadh' })
-  const statusTxt = isCheckedIn ? t('checkedIn') : lastCheckOut ? t('checkedOutToday') : t('notCheckedIn')
-  const statusClr = isCheckedIn ? { c:'#0f766e', bg:'#ecfdf5', dot:'#10b981' } : lastCheckOut ? { c:'#475569', bg:'#f1f5f9', dot:'#94a3b8' } : { c:'#b45309', bg:'#fffbeb', dot:'#f59e0b' }
+  const offToday = !!dayOff && !isCheckedIn && !lastCheckOut
+  const statusTxt = isCheckedIn ? t('checkedIn') : lastCheckOut ? t('checkedOutToday') : offToday ? (isAr ? (dayOff === 'leave' ? 'إجازة معتمدة' : dayOff === 'comp' ? 'إجازة بديلة' : 'يوم إجازتك') : 'Day off') : t('notCheckedIn')
+  const statusClr = isCheckedIn ? { c:'#0f766e', bg:'#ecfdf5', dot:'#10b981' } : lastCheckOut ? { c:'#475569', bg:'#f1f5f9', dot:'#94a3b8' } : offToday ? { c:'#1d4ed8', bg:'#eff6ff', dot:'#3b82f6' } : { c:'#b45309', bg:'#fffbeb', dot:'#f59e0b' }
 
   // أزرار العمل — نفس الشكل للكل، اللون بس بالأيقونة
   const workActions = [
@@ -391,12 +382,22 @@ export default function ChoosePage() {
                 </div>
               </div>
 
+              {offToday && (
+                <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:12,padding:'12px 14px',marginBottom:10}}>
+                  <div style={{fontSize:14,fontWeight:800,color:'#1e3a8a'}}>{isAr
+                    ? (dayOff === 'leave' ? 'أنت بإجازة معتمدة اليوم' : dayOff === 'comp' ? 'اليوم إجازتك البديلة' : dayOff === 'monthly' ? 'خلّصت أيام دوامك هالشهر' : 'اليوم إجازتك')
+                    : (dayOff === 'leave' ? 'You are on approved leave today' : dayOff === 'comp' ? 'Today is your day off in lieu' : dayOff === 'monthly' ? "You've completed this month's working days" : 'Today is your day off')}</div>
+                  <div style={{fontSize:12,color:'#1e40af',marginTop:3,lineHeight:1.6}}>{isAr ? 'ما ينحسب عليك غياب. لو طلب منك صاحب العمل تداوم، حضّر وينحسب يوم إضافي — وصاحب العمل يحدد تعويضك: مبلغ أو يوم إجازة بديل.' : "No absence is counted. If your employer asks you to work, check in — it's an extra day and your employer decides the compensation: pay or a day off in lieu."}</div>
+                </div>
+              )}
               {!lastCheckOut && (
                 !isCheckedIn ? (
                   <button onClick={()=>markAttendance('check_in')} disabled={marking!==null}
-                    style={{width:'100%',height:52,background:'#0f766e',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:'0 6px 14px rgba(15,118,110,.25)',opacity:marking?0.8:1}}>
+                    style={offToday
+                      ? {width:'100%',height:48,background:'white',color:'#0f766e',border:'1.5px solid #99d5cf',borderRadius:14,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,opacity:marking?0.8:1}
+                      : {width:'100%',height:52,background:'#0f766e',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:'0 6px 14px rgba(15,118,110,.25)',opacity:marking?0.8:1}}>
                     <MapPin size={17} strokeWidth={2.25}/>
-                    {marking==='check_in' ? t('markingLocation') : t('checkIn')}
+                    {marking==='check_in' ? t('markingLocation') : offToday ? (isAr ? 'تحضير يوم إضافي' : 'Check in (extra day)') : t('checkIn')}
                   </button>
                 ) : (
                   <>
@@ -462,7 +463,7 @@ export default function ChoosePage() {
                 {[
                   { key:'t', icon:<ClipboardList size={18} strokeWidth={2}/>, c:'#0f766e', bg:'#f0fdfa', title:t('myTasksLabel'), sub:isAr?'المهام المطلوبة منك':'Tasks assigned to you', badge:taskCount, go:()=>router.push('/staff/tasks') },
                   { key:'r', icon:<Send size={18} strokeWidth={2}/>, c:'#2563eb', bg:'#eff6ff', title:t('myRequests'), sub:isAr?'سلفة، إجازة، استئذان':'Advance, leave, early leave', badge:0, go:()=>{setShowRequests(true);loadRequestHistory()} },
-                  ...(salaryVisible ? [{ key:'s', icon:<Wallet size={18} strokeWidth={2}/>, c:'#b45309', bg:'#fffbeb', title:isAr?'راتبي':'My salary', sub:isAr?'الراتب والخصومات والأوفر تايم':'Salary, deductions & overtime', badge:0, go:()=>router.push('/staff/salary') }] : []),
+                  ...(salaryVisible ? [{ key:'s', icon:<Wallet size={18} strokeWidth={2}/>, c:'#b45309', bg:'#fffbeb', title:isAr?'كشف الراتب':'Payslip', sub:isAr?'الراتب والخصومات والأوفر تايم':'Salary, deductions & overtime', badge:0, go:()=>router.push('/staff/salary') }] : []),
                 ].map((row, i, arr) => (
                   <button key={row.key} onClick={row.go}
                     style={{width:'100%',background:'white',border:'none',borderBottom:i<arr.length-1?'1px solid #f1f5f9':'none',padding:'14px 16px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12,textAlign:isAr?'right':'left'}}>

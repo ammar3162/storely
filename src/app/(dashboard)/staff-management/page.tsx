@@ -43,6 +43,10 @@ export default function StaffManagementPage() {
   const orgPlan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
   const [staff, setStaff]           = useState<any[]>([])
   const [branches, setBranches]     = useState<any[]>([])
+  const [isOwnerSM, setIsOwnerSM]   = useState(false)
+  const [moveFor, setMoveFor]       = useState<any|null>(null)   // الموظف اللي ننقله
+  const [moveTo, setMoveTo]         = useState('')
+  const [moving, setMoving]         = useState(false)
   const [orgId, setOrgId]           = useState('')
   const [curr, setCurr]             = useState('ر.س')
   const [orgNotifyClosingWA, setOrgNotifyClosingWA] = useState(true)
@@ -111,7 +115,7 @@ export default function StaffManagementPage() {
       oid = await getOrgId(); if(!oid) return
     }
     setOrgId(oid)
-    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setIsOwnerSM(me?.role==='owner') })
     const settingsRes = await api.get('/api/org-settings', { org_id: oid })
     const orgLimits = settingsRes.settings
     const h = Number((orgLimits as any)?.business_day_start_hour ?? 4)
@@ -130,12 +134,26 @@ export default function StaffManagementPage() {
     setLoading(false); setTimeout(()=>setVisible(true),50)
   }
 
+  const [orphans, setOrphans] = useState<any[]>([])   // موظفين فروعهم موقوفة
+
   async function loadStaff(oid:string) {
     const bid = sessionStorage.getItem('s_branch_id')
     const j = await api.get('/api/staff-members', { org_id: oid, branch_id: bid })
     if (!j.success) return
     setStaff(j.staff||[])
+    setOrphans(j.orphans||[])
     cache.set('staff:'+oid, j.staff||[])
+  }
+
+  // موظف فرعه موقوف → ننقله للفرع المختار حالياً (يبقى موقوف لين المالك يفعّله)
+  async function moveOrphanHere(s:any) {
+    const bid = sessionStorage.getItem('s_branch_id')
+    const bname = sessionStorage.getItem('s_branch_name') || 'الفرع الحالي'
+    if (!bid) { toast('اختر الفرع من القائمة فوق أول','warning'); return }
+    if(!(await confirmDialog({ title:`نقل ${s.name}`, message:`ينتقل ${s.name} إلى «${bname}» ويبقى موقوف — تقدر تفعّله بعدها من زر «تفعيل».`, confirmText:'نقل', type:'warning' }))) return
+    const r = await api.patch('/api/staff-members', { org_id: orgId, id: s.id, branch_id: bid })
+    if (!r.success) { toast(r.error || 'تعذر النقل','error'); return }
+    toast(`تم نقل ${s.name} إلى ${bname}`); loadStaff(orgId)
   }
 
   async function loadProducts(oid:string) {
@@ -190,6 +208,18 @@ export default function StaffManagementPage() {
     loadStaff(orgId)
   }
 
+  // نقل موظف لفرع ثاني (المالك، ولو عنده أكثر من فرع)
+  async function confirmMove() {
+    if (!moveFor || !moveTo || moving) return
+    setMoving(true)
+    const r = await api.patch('/api/staff-members', { org_id: orgId, id: moveFor.id, branch_id: moveTo })
+    setMoving(false)
+    if (!r.success) { toast(r.error || 'تعذر النقل','error'); return }
+    const bname = branches.find((b:any)=>b.id===moveTo)?.name || 'الفرع'
+    toast(`تم نقل ${moveFor.name} إلى ${bname}${(r as any).notes?.length ? ' — ' + (r as any).notes.join('، ') : ''}`)
+    setMoveFor(null); setMoveTo(''); loadStaff(orgId)
+  }
+
   async function loadBranches(oid:string) {
     const j = await api.get('/api/branches', { org_id: oid })
     const data = j.branches||[]
@@ -212,7 +242,7 @@ export default function StaffManagementPage() {
     const activeBranch = sessionStorage.getItem('s_branch_id') || newBranch || null
     const resData = await api.post('/api/add-staff', {org_id:orgId, branch_id:activeBranch, name:newName.trim(), phone:cleanPhone, pin, permissions:newPermissions, role:newRole, send_closing_whatsapp:newSendClosingWA})
     if(!resData.success){
-      if(resData.error==='رقم الجوال مسجل مسبقاً') toast('رقم الجوال هذا مسجّل لموظف آخر','error')
+      if((resData as any).duplicate) toast(resData.error,'error')
       else toast('خطأ: '+(resData.error||'حدث خطأ'),'error')
       return
     }
@@ -661,6 +691,31 @@ export default function StaffManagementPage() {
         </div>
       )}
 
+      {moveFor && (
+        <div onClick={()=>setMoveFor(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:colors.surface,borderRadius:radius.xl,padding:24,width:'100%',maxWidth:400,boxShadow:shadow.lg}}>
+            <div style={{fontSize:font.md,fontWeight:800,color:colors.text}}>نقل {moveFor.name} لفرع ثاني</div>
+            <div style={{fontSize:12,color:colors.text3,marginTop:4,marginBottom:14}}>حالياً بفرع «{moveFor.branches?.name || '—'}»</div>
+            <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:6}}>الفرع الجديد</label>
+            <select value={moveTo} onChange={e=>setMoveTo(e.target.value)} style={inp()}>
+              <option value="">اختر الفرع</option>
+              {branches.filter((b:any)=>b.id!==moveFor.branch_id).map((b:any)=><option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+            <div style={{fontSize:11.5,color:colors.text3,background:colors.bg,borderRadius:10,padding:'10px 12px',marginTop:12,lineHeight:1.8}}>
+              • يحضّر وينصرف من موقع الفرع الجديد<br/>
+              • لو شفته خاص بالفرع القديم ينفك — حدد له شفت بالفرع الجديد<br/>
+              • المنتجات المخصصة له تنمسح (كانت من الفرع القديم)<br/>
+              • سجلاته القديمة (الحضور والخصومات والرواتب) تبقى زي ما هي<br/>
+              • يطلب منه النظام رمزه مرة وحدة عشان يدخل على فرعه الجديد
+            </div>
+            <div style={{display:'flex',gap:10,marginTop:16}}>
+              <button onClick={()=>setMoveFor(null)} style={{...btnSecondary,flex:1,padding:'12px'}}>إلغاء</button>
+              <button onClick={confirmMove} disabled={!moveTo||moving} style={{...btnPrimary,flex:2,padding:'12px',opacity:!moveTo||moving?.6:1}}>{moving?'جاري النقل...':'نقل'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showHoursModal && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
           <div style={{background:colors.surface,borderRadius:radius.xl,padding:24,width:'100%',maxWidth:380,boxShadow:shadow.lg}}>
@@ -821,6 +876,46 @@ export default function StaffManagementPage() {
       )}
 
       {/* Staff list */}
+      {/* موقوفين بسبب انتهاء إضافة «موظف إضافي» — كانوا مخفيين تماماً، فنعرضهم عشان المالك يقدر يحذفهم ويتحرر رقمهم */}
+      {staff.some((x:any)=>x.hidden_from_list) && (
+        <div style={{...card,padding:'14px 16px',marginBottom:14,border:`1px solid ${colors.border2}`,background:colors.bg}}>
+          <div style={{fontSize:13.5,fontWeight:800,color:colors.text}}>موقوفين بسبب انتهاء إضافة «موظف إضافي» ({staff.filter((x:any)=>x.hidden_from_list).length})</div>
+          <div style={{fontSize:12,color:colors.text3,marginTop:3,marginBottom:10,lineHeight:1.6}}>ما يقدرون يدخلون ولا ينحسبون بالرواتب، وأرقام جوالاتهم محجوزة. جدّد الإضافة من «الإضافات» عشان ترجّعهم، أو احذفهم لو ما تحتاجهم.</div>
+          <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+            {staff.filter((x:any)=>x.hidden_from_list).map((o:any)=>(
+              <div key={o.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap' as const,background:'white',border:`1px solid ${colors.border}`,borderRadius:10,padding:'10px 12px'}}>
+                <div style={{minWidth:0}}>
+                  <div style={{fontSize:13.5,fontWeight:700,color:colors.text}}>{o.name}</div>
+                  <div style={{fontSize:11.5,color:colors.text3,marginTop:2}} dir="auto">{o.phone}</div>
+                </div>
+                <button onClick={()=>deleteStaff(o.id)} style={{padding:'7px 14px',fontSize:12,fontWeight:700,borderRadius:8,border:`1px solid ${colors.dangerBorder}`,background:colors.dangerLight,color:colors.danger,cursor:'pointer',fontFamily:'inherit'}}>حذف</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {orphans.length > 0 && (
+        <div style={{...card,padding:'14px 16px',marginBottom:14,border:'1px solid #fde68a',background:'#fffdf5'}}>
+          <div style={{fontSize:13.5,fontWeight:800,color:'#92400e'}}>موظفين بفروع موقوفة ({orphans.length})</div>
+          <div style={{fontSize:12,color:'#b45309',marginTop:3,marginBottom:10,lineHeight:1.6}}>فروعهم موقوفة فما يطلعون بأي فرع شغّال، وأرقام جوالاتهم محجوزة. انقلهم لهذا الفرع، أو احذفهم، أو رجّع تشغيل فرعهم من «إدارة الفروع».</div>
+          <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+            {orphans.map((o:any)=>(
+              <div key={o.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap' as const,background:'white',border:`1px solid ${colors.border}`,borderRadius:10,padding:'10px 12px'}}>
+                <div style={{minWidth:0}}>
+                  <div style={{fontSize:13.5,fontWeight:700,color:colors.text}}>{o.name}</div>
+                  <div style={{fontSize:11.5,color:colors.text3,marginTop:2}} dir="auto">{o.phone} · بفرع «{o.orphan_branch || '—'}» (موقوف){o.is_active ? '' : ' · موقوف'}</div>
+                </div>
+                <div style={{display:'flex',gap:6}}>
+                  <button onClick={()=>moveOrphanHere(o)} style={{...btnPrimary,padding:'7px 14px',fontSize:12}}>نقل لهذا الفرع</button>
+                  <button onClick={()=>deleteStaff(o.id)} style={{padding:'7px 14px',fontSize:12,fontWeight:700,borderRadius:8,border:`1px solid ${colors.dangerBorder}`,background:colors.dangerLight,color:colors.danger,cursor:'pointer',fontFamily:'inherit'}}>حذف</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {visibleStaff.length===0 ? (
         <div style={{...card,padding:56,textAlign:'center'}} className="su">
           <div style={{display:'flex',justifyContent:'center',marginBottom:14}}><Users size={52} strokeWidth={1.25} color={colors.text4}/></div>
@@ -872,6 +967,9 @@ export default function StaffManagementPage() {
                     </button>
                   )}
                   <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}><RefreshCw size={13} strokeWidth={2.25}/> PIN جديد</button>
+                  {isOwnerSM && branches.length > 1 && (
+                    <button onClick={e=>{e.stopPropagation();setMoveFor(s);setMoveTo('')}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`}}>نقل لفرع</button>
+                  )}
                   <button onClick={e=>{e.stopPropagation();toggleActive(s)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`}}>{s.is_active?'إيقاف':'تفعيل'}</button>
                   <button onClick={e=>{e.stopPropagation();deleteStaff(s.id)}} className="act-btn" style={{background:colors.dangerLight,color:colors.danger}}>حذف</button>
                   <svg width={14} height={14} fill="none" stroke={colors.text3} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" style={{transition:'transform .2s',transform:expandedId===s.id?'rotate(180deg)':'none',marginRight:4}}>

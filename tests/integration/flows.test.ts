@@ -252,6 +252,87 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
     })
   })
 
+  describe('staff adds a product from the staff app', () => {
+    it('creates the product in the staff branch with stock, adds quantity to an existing one, and refuses without login', async () => {
+      process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
+      const { generateStaffToken } = await import('@/lib/staffAuth')
+      const addProduct = await import('@/app/api/staff-add-product/route')
+      const { data: st } = await db.from('staff_members').insert({
+        org_id: orgId, branch_id: branchA, name: 'موظف مخزون', phone: `9665${String(stamp + 7).slice(-8)}`, pin: 'x', is_active: true,
+        permissions: { dispense: true, inventory: true, purchases: false, reports: false }, role: 'staff',
+      } as any).select('id').single()
+      const token = generateStaffToken((st as any).id, orgId, branchA)
+      const post = (body: any, withAuth = true) => addProduct.POST(new Request('http://test/api/staff-add-product', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...(withAuth ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body),
+      }))
+
+      expect((await post({ name: 'سكر', qty: 3, unit: 'كيلو' }, false)).status).toBe(401)
+
+      const r1 = await post({ name: 'سكر', qty: 3, unit: 'كيلو' })
+      const j1 = await r1.json()
+      expect(r1.status).toBe(200); expect(j1.created).toBe(true)
+      const sugar = (await db.from('products').select('id,qty,branch_id,requires_staff_assignment').eq('id', j1.product_id).single()).data as any
+      expect(sugar).toMatchObject({ qty: 3, branch_id: branchA, requires_staff_assignment: false })
+
+      const r2 = await post({ name: 'سكر', qty: 2, unit: 'كيلو' })
+      expect((await r2.json()).created).toBe(false)
+      expect(((await db.from('products').select('qty').eq('id', j1.product_id).single()).data as any).qty).toBe(5)
+
+      const bad = await post({ name: 'ملح', qty: 0 })
+      expect(bad.status).toBe(400)
+    })
+  })
+
+  describe('deduction notifies the employee', () => {
+    it("an owner deduction lands in the employee's notifications in their language", async () => {
+      const adj = await import('@/app/api/staff-payroll-adjustments/route')
+      const { data: st } = await db.from('staff_members').insert({
+        org_id: orgId, branch_id: branchA, name: 'موظف إشعار', phone: `9665${String(stamp + 9).slice(-8)}`, pin: 'x', is_active: true,
+        permissions: { dispense: true }, role: 'staff', preferred_lang: 'en',
+      } as any).select('id').single()
+      const r = await call(adj.POST, 'POST', '/api/staff-payroll-adjustments', { org_id: orgId, staff_id: (st as any).id, type: 'deduction', amount: 40, reason: 'broken plate' })
+      expect(r.status).toBe(200)
+      const { data: notes } = await db.from('staff_notifications').select('title,message').eq('staff_id', (st as any).id)
+      expect(notes?.length).toBe(1)
+      expect((notes as any)[0].title).toBe('Salary deduction')
+      expect((notes as any)[0].message).toContain('40 SAR')
+      expect((notes as any)[0].message).toContain('broken plate')
+    })
+  })
+
+  describe('extra day (worked a day off) — owner decides', () => {
+    it('paid adds a bonus to the payslip, comp marks a day off, and a second decision is refused', async () => {
+      const extra = await import('@/app/api/extra-days/route')
+      const { computeStaffPayroll, loadOvertimeSettings } = await import('@/lib/payroll')
+      const { data: st } = await db.from('staff_members').insert({
+        org_id: orgId, branch_id: branchA, name: 'موظف إضافي', phone: `9665${String(stamp + 11).slice(-8)}`, pin: 'x', is_active: true,
+        permissions: { dispense: true }, role: 'staff', monthly_salary: 3000, weekly_off_days: [5],
+      } as any).select('id,org_id,monthly_salary,housing_allowance,transport_allowance,food_allowance,shift_id,weekly_off_days').single()
+      const staffId = (st as any).id
+      const month = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 7)
+      const { data: e1 } = await db.from('staff_extra_days').insert({ org_id: orgId, staff_id: staffId, work_date: `${month}-01`, reason: 'weekly' } as any).select('id').single()
+      const { data: e2 } = await db.from('staff_extra_days').insert({ org_id: orgId, staff_id: staffId, work_date: `${month}-02`, reason: 'weekly' } as any).select('id').single()
+
+      const list = await call(extra.GET, 'GET', `/api/extra-days?org_id=${orgId}&status=pending`)
+      expect(list.json.extra_days.find((x: any) => x.id === (e1 as any).id).suggested_amount).toBe(100)   // 3000 ÷ 30
+
+      const paid = await call(extra.POST, 'POST', '/api/extra-days', { org_id: orgId, id: (e1 as any).id, decision: 'paid', amount: 100 })
+      expect(paid.status).toBe(200)
+      const again = await call(extra.POST, 'POST', '/api/extra-days', { org_id: orgId, id: (e1 as any).id, decision: 'paid', amount: 100 })
+      expect(again.status).toBe(409)
+
+      const comp = await call(extra.POST, 'POST', '/api/extra-days', { org_id: orgId, id: (e2 as any).id, decision: 'comp', comp_date: `${month}-10` })
+      expect(comp.status).toBe(200)
+      expect(((await db.from('staff_extra_days').select('status,comp_date').eq('id', (e2 as any).id).single()).data as any)).toMatchObject({ status: 'comp', comp_date: `${month}-10` })
+
+      const pay = await computeStaffPayroll(db as any, st, month, await loadOvertimeSettings(db as any, orgId))
+      expect(pay.bonusesTotal).toBe(100)
+      expect(pay.netSalary).toBe(3100)
+      const { data: notes } = await db.from('staff_notifications').select('title').eq('staff_id', staffId)
+      expect((notes || []).length).toBe(2)
+    })
+  })
+
   describe('supplier orders: once per drop', () => {
     it('blocks a second order until the product is restocked', async () => {
       const milk = await productByName('حليب')

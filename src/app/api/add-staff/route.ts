@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { samePhone } from '@/lib/loginThrottle'
 import { encryptPinSafe } from '@/lib/pinVault'
 import bcrypt from 'bcryptjs'
 import { createClient } from '@supabase/supabase-js'
@@ -35,16 +36,22 @@ export async function POST(req: Request) {
     const capacity = await checkStaffCapacity(supabase, org_id, effectiveBranchId)
     if (!capacity.ok) return NextResponse.json({ error: capacity.error }, { status: 403 })
 
-    // تحقق من عدم تكرار رقم الجوال
-    const { data: existing } = await supabase
+    // تحقق من عدم تكرار رقم الجوال (بأي صيغة) — ونقول للمالك لمين الرقم بالضبط، حتى لو الموظف موقوف أو بفرع ثاني
+    const { data: sameOrg } = await supabase
       .from('staff_members')
-      .select('id')
+      .select('id,name,phone,is_active,hidden_from_list,branches(name,is_active)')
       .eq('org_id', org_id)
-      .eq('phone', phone)
-      .limit(1)
-
-    if (existing?.length) {
-      return NextResponse.json({ error: 'رقم الجوال مسجل مسبقاً' }, { status: 409 })
+    const dup = ((sameOrg || []) as any[]).find(x => samePhone(String(x.phone || ''), String(phone)))
+    if (dup) {
+      const where = dup.branches?.name ? ` بفرع «${dup.branches.name}»` : ''
+      const msg = dup.branches && dup.branches.is_active === false
+        ? `رقم الجوال مسجّل للموظف «${dup.name}» بفرع «${dup.branches.name}» الموقوف. تلقاه بصفحة الموظفين تحت «موظفين بفروع موقوفة»: انقله لهذا الفرع أو احذفه.`
+        : dup.is_active
+        ? `رقم الجوال مسجّل للموظف «${dup.name}»${where}.`
+        : dup.hidden_from_list
+          ? `رقم الجوال مسجّل للموظف «${dup.name}»${where}، وهو موقوف بسبب انتهاء إضافة «موظف إضافي». تلقاه بصفحة الموظفين تحت «موقوفين بسبب انتهاء إضافة» — احذفه عشان يتحرر الرقم.`
+          : `رقم الجوال مسجّل للموظف «${dup.name}»${where}، وهو موقوف — فعّله من صفحة الموظفين بدل ما تضيفه من جديد، أو احذفه لو ما تحتاجه.`
+      return NextResponse.json({ error: msg, duplicate: { id: dup.id, name: dup.name, is_active: dup.is_active } }, { status: 409 })
     }
 
     // الـ PIN يُحفظ مشفّر — المالك يشوفه مرة وحدة عند الإضافة (الواجهة تعرضه من الطلب نفسه)

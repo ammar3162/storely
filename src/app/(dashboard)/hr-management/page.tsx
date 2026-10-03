@@ -5,6 +5,8 @@ import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
+import { confirmDialog } from '@/components/ConfirmDialog'
+import ExtraDayDecision from '@/components/ExtraDayDecision'
 import { cache } from '@/lib/cache'
 import { ThumbsUp, ThumbsDown, ClipboardList, ChevronDown, Plus, Camera, CalendarDays, BarChart3 } from 'lucide-react'
 
@@ -13,7 +15,7 @@ export default function HRManagementPage() {
   const [salaryVisible, setSalaryVisible] = useState<boolean|null>(null)
   const [isOwner, setIsOwner] = useState(false)
   const [curr, setCurr] = useState('ر.س')
-  const [orgPlan, setOrgPlan] = useState('basic')
+  const [orgPlan, setOrgPlan] = useState<string | null>(null)   // null = لسا ما عرفنا الباقة — لا نعرض القفل قبلها
   const [hasHrAddon, setHasHrAddon] = useState(false)
   const [staff, setStaff] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -41,10 +43,10 @@ export default function HRManagementPage() {
   const [loadingLeave, setLoadingLeave] = useState(false)
   const [pendingLeaveCounts, setPendingLeaveCounts] = useState<Record<string, number>>({})
   const [pendingAdvanceCounts, setPendingAdvanceCounts] = useState<Record<string, number>>({})
-  const [cashierSummary, setCashierSummary] = useState<Record<string, {deficit:number, surplus:number, count:number}>>({})
-  const [approvedAdvances, setApprovedAdvances] = useState<Record<string, number>>({})
-  const [latePenalties, setLatePenalties] = useState<Record<string, number>>({})
-  const [applyingPenalty, setApplyingPenalty] = useState<string|null>(null)
+  // ملخص راتب الشهر الحالي لكل موظف — نفس حساب كشف راتب الموظف بالضبط
+  const [cardPayroll, setCardPayroll] = useState<Record<string, any>>({})
+  const [extraDays, setExtraDays] = useState<any[]>([])          // أيام إضافية بانتظار قرار المالك
+  const [canDecideExtra, setCanDecideExtra] = useState(false)
   const [excuseRequests, setExcuseRequests] = useState<any[]>([])
   const [loadingExcuse, setLoadingExcuse] = useState(false)
 
@@ -62,7 +64,9 @@ export default function HRManagementPage() {
     // عرض كاش الموظفين فوراً لو متوفر
     if (oid) {
       const cachedStaff = cache.get('hr-staff:'+oid)
-      if (cachedStaff) { setStaff(cachedStaff); setLoading(false) }
+      const cachedAccess = cache.get('hr-access:'+oid) as { plan: string; addon: boolean } | null
+      if (cachedAccess) { setOrgPlan(cachedAccess.plan); setHasHrAddon(cachedAccess.addon) }
+      if (cachedStaff) { setStaff((cachedStaff as any[]).filter((s:any) => !s.hidden_from_list)); setLoading(false) }
     }
     if(!oid){
       oid = await getOrgId()
@@ -72,21 +76,24 @@ export default function HRManagementPage() {
     api.get('/api/org-settings', { org_id: oid, scope: 'full' }).then(r => { if (r.success) setSalaryVisible(r.settings?.staff_salary_visible === true) }).catch(()=>{})
     getMe().then(m => setIsOwner(m?.role === 'owner')).catch(()=>{})
     const bid = sessionStorage.getItem('s_branch_id')
-    const [me, staffRes, leaveRes, advRes, cashierRes, penaltyRes, addonRes, branchesRes] = await Promise.all([
+    const curMonth = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 7)
+    const [me, staffRes, leaveRes, advRes, payRes, , addonRes, branchesRes] = await Promise.all([
       getMe(),
       api.get('/api/staff-members', { org_id: oid, branch_id: bid }),
       api.get('/api/staff-leave', { org_id: oid }),
       api.get('/api/staff-payroll-adjustments', { org_id: oid }),
-      api.get('/api/cashier-closing', { org_id: oid }),
-      api.get('/api/apply-late-penalties', { org_id: oid }),
+      api.get('/api/staff-report', { org_id: oid, month: curMonth }),
+      api.get('/api/extra-days', { org_id: oid, status: 'pending' }).then(r => { if (r.success) { setExtraDays(r.extra_days || []); setCanDecideExtra(!!r.canDecide) } return r }),
       api.get('/api/addons-market', { org_id: oid }),
       api.get('/api/branches', { org_id: oid }),
     ])
-    const data = staffRes.staff
+    // نفس قاعدة صفحة الموظفين: الموظفين الموقوفين تلقائياً بانتهاء إضافة «موظف إضافي» ما يطلعون
+    const data = (staffRes.staff || []).filter((s:any) => !s.hidden_from_list)
     setBranches(branchesRes.branches||[])
-    setOrgPlan(me?.org?.plan || 'basic')
     const hrAddon = (addonRes?.addons||[]).find((a:any)=>a.slug==='hr_full')
-    setHasHrAddon(!!hrAddon?.subscription?.isValid)
+    const access = { plan: me?.org?.plan || 'basic', addon: !!hrAddon?.subscription?.isValid }
+    setOrgPlan(access.plan); setHasHrAddon(access.addon)
+    cache.set('hr-access:'+oid, access)
     setStaff(data||[])
     cache.set('hr-staff:'+oid, data||[])
     if (leaveRes?.success) {
@@ -98,32 +105,15 @@ export default function HRManagementPage() {
     }
     if (advRes?.success) {
       const counts2: Record<string, number> = {}
-      const approvedSums: Record<string, number> = {}
       for (const req of (advRes.adjustments||advRes.requests||[])) {
         if (req.status === 'pending') counts2[req.staff_id] = (counts2[req.staff_id]||0) + 1
-        if (req.status === 'approved' && req.type === 'advance') approvedSums[req.staff_id] = (approvedSums[req.staff_id]||0) + Number(req.amount||0)
       }
       setPendingAdvanceCounts(counts2)
-      setApprovedAdvances(approvedSums)
     }
-    if (cashierRes?.success) {
-      const summary: Record<string, {deficit:number, surplus:number, count:number}> = {}
-      for (const c of (cashierRes.closings as any[])) {
-        if (!c.staff_id) continue
-        if (!summary[c.staff_id]) summary[c.staff_id] = {deficit:0, surplus:0, count:0}
-        summary[c.staff_id].count += 1
-        if (c.status === 'deficit') summary[c.staff_id].deficit += Math.abs(Number(c.difference||0))
-        else if (c.status === 'surplus') summary[c.staff_id].surplus += Number(c.difference||0)
-      }
-      setCashierSummary(summary)
-    }
-    if (penaltyRes?.success) {
-      const penaltySums: Record<string, number> = {}
-      for (const r of (penaltyRes.records||[])) {
-        if (!r.staff_id) continue
-        penaltySums[r.staff_id] = (penaltySums[r.staff_id]||0) + Number(r.penalty_amount||0)
-      }
-      setLatePenalties(penaltySums)
+    if (payRes?.success) {
+      const map: Record<string, any> = {}
+      for (const r of (payRes.report||[])) map[r.staffId] = r
+      setCardPayroll(map)
     }
     setLoading(false)
   }
@@ -137,8 +127,16 @@ export default function HRManagementPage() {
     })
   }
 
+  // الفرع المختار من القائمة فوق (sessionStorage) — موقعه بس اللي يتحدد من هالجهاز
+  const [currentBranchId, setCurrentBranchId] = useState<string|null>(null)
+  useEffect(() => { try { setCurrentBranchId(sessionStorage.getItem('s_branch_id')) } catch {} }, [])
+
   async function saveBranchLocation(id:string) {
     if(!navigator.geolocation){ toast('المتصفح ما يدعم تحديد الموقع','error'); return }
+    // الموقع ينحفظ من مكان الجهاز — نتأكد إن المالك فعلاً داخل الفرع
+    if (id !== currentBranchId) { toast('اختر هذا الفرع من القائمة فوق وأنت موجود فيه','warning'); return }
+    const bName = branches.find((b:any)=>b.id===id)?.name || 'الفرع'
+    if (!(await confirmDialog({ title:`تحديد موقع ${bName}`, message:`تأكد إنك موجود الحين داخل ${bName} — الموقع يتسجّل من مكان جهازك، والموظفين يحضّرون بناءً عليه.`, confirmText:'أنا داخل الفرع — حدّد', type:'warning' }))) return
     setSavingLocationId(id)
 
     let bestPos: GeolocationPosition | null = null
@@ -168,20 +166,6 @@ export default function HRManagementPage() {
     if(!r.success){ toast('فشل حفظ الموقع — حاول مرة أخرى','error'); return }
     setBranches(prev=>prev.map((br:any)=>br.id===id?{...br,latitude:bestPos!.coords.latitude,longitude:bestPos!.coords.longitude}:br))
     toast('✅ تم حفظ موقع الفرع — الموظفون الآن يقدروا يسجّلوا حضورهم')
-  }
-
-  async function applyLatePenalty(staffId:string) {
-    setApplyingPenalty(staffId)
-    const res = await fetch('/api/apply-late-penalties', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ org_id: orgId, staff_id: staffId }),
-    })
-    const j = await res.json()
-    setApplyingPenalty(null)
-    if (!j.success) { toast(j.error || 'خطأ', 'error'); return }
-    toast(`✅ تم تسجيل خصم بقيمة ${j.total} ر.س (${j.count} غرامة تأخير)`)
-    setLatePenalties(prev => { const next = {...prev}; delete next[staffId]; return next })
-    loadAdjustments(staffId)
   }
 
   function toggleExpand(s:any) {
@@ -253,13 +237,13 @@ export default function HRManagementPage() {
     loadExcuse(staffId)
   }
 
-  // صفحة «راتبي» للموظفين — المالك يفعّلها أو يقفلها
+  // كشف الراتب للموظفين — المالك يفعّله أو يقفله
   async function toggleSalaryVisible() {
     const next = !salaryVisible
     setSalaryVisible(next)
     const r = await api.patch('/api/org-settings', { org_id: orgId, staff_salary_visible: next })
     if (!r.success) { setSalaryVisible(!next); toast(r.error || 'حدث خطأ', 'error'); return }
-    toast(next ? '✅ الموظفين يقدرون يشوفون رواتبهم الحين' : 'انقفلت صفحة «راتبي» عن الموظفين')
+    toast(next ? '✅ الموظفين يقدرون يشوفون كشف رواتبهم الحين' : 'انقفل كشف الراتب عن الموظفين')
   }
 
   async function loadReport() {
@@ -391,7 +375,7 @@ export default function HRManagementPage() {
     rejected:  {label:'مرفوضة',        color: colors.danger,  bg: colors.dangerLight},
   }
 
-  if (loading) return (
+  if (loading || orgPlan === null) return (
     <div style={{minHeight:'50vh',display:'flex',alignItems:'center',justifyContent:'center'}}>
       <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
@@ -422,39 +406,57 @@ export default function HRManagementPage() {
         </button>
       </div>
 
-      {/* صفحة «راتبي» للموظف */}
+      {/* أيام إضافية (دوام بيوم إجازة) بانتظار قرار المالك */}
+      {extraDays.length > 0 && (
+        <div style={{...card,padding:'14px 16px',marginBottom:20,border:`1px solid ${colors.primaryBorder}`}}>
+          <div style={{fontSize:13.5,fontWeight:800,color:colors.text}}>أيام إضافية بانتظار قرارك ({extraDays.length})</div>
+          <div style={{fontSize:12,color:colors.text3,marginTop:3,marginBottom:10}}>موظفين داوموا بيوم إجازتهم — حدد التعويض: مبلغ ينضاف لراتبهم أو يوم إجازة بديل.</div>
+          <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+            {extraDays.map((e:any)=>(
+              <div key={e.id} style={{background:colors.bg,borderRadius:10,padding:'10px 12px'}}>
+                <div style={{fontSize:13,fontWeight:700,color:colors.text}}>{e.name}</div>
+                <div style={{fontSize:11.5,color:colors.text3,marginTop:2}}>
+                  {e.reason==='monthly' ? 'داوم بعد ما خلّص أيام دوامه المطلوبة هالشهر' : 'داوم بيوم إجازته'} — {new Date(`${e.work_date}T12:00:00Z`).toLocaleDateString('ar-SA',{weekday:'long',day:'numeric',month:'long',calendar:'gregory',numberingSystem:'latn',timeZone:'UTC'})}
+                </div>
+                <ExtraDayDecision item={e} orgId={orgId} canDecide={canDecideExtra} onDone={()=>setTimeout(()=>setExtraDays(prev=>prev.filter((x:any)=>x.id!==e.id)),1200)}/>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* كشف الراتب للموظف */}
       {isOwner && salaryVisible !== null && (
         <div style={{...card,padding:'14px 16px',marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
           <div>
-            <div style={{fontSize:13,fontWeight:800,color:colors.text}}>💰 الموظف يشوف راتبه</div>
-            <div style={{fontSize:12,color:colors.text3,marginTop:3,lineHeight:1.6}}>يظهر للموظف في صفحته: الراتب والبدلات، الخصومات والسلف، والأوفر تايم المحسوب تلقائياً من الحضور</div>
+            <div style={{fontSize:13,fontWeight:800,color:colors.text}}>كشف الراتب للموظف</div>
+            <div style={{fontSize:12,color:colors.text3,marginTop:3,lineHeight:1.6}}>الموظف يشوف بلغته: الراتب والبدلات، والأوفر تايم، وكل خصم بسببه وتاريخه (غرامات التأخير، خصوماتك، عجز الكاشير اللي تعتمده، والسلف)، والصافي</div>
           </div>
-          <button onClick={toggleSalaryVisible} role="switch" aria-checked={!!salaryVisible} aria-label="الموظف يشوف راتبه"
+          <button onClick={toggleSalaryVisible} role="switch" aria-checked={!!salaryVisible} aria-label="كشف الراتب للموظف"
             style={{width:52,height:30,borderRadius:99,border:'none',cursor:'pointer',flexShrink:0,position:'relative' as const,background:salaryVisible?colors.primary:colors.border2,transition:'background .2s'}}>
             <span style={{position:'absolute' as const,top:3,width:24,height:24,borderRadius:'50%',background:'white',boxShadow:shadow.md,transition:'right .2s',right:salaryVisible?3:25}}/>
           </button>
         </div>
       )}
 
-      {/* مواقع الفروع -- لازمة لتفعيل تسجيل الحضور/الانصراف بكل فرع */}
-      {branches.length>0 && (
-        <div style={{...card,padding:14,marginBottom:20}}>
-          <div style={{fontSize:12,fontWeight:700,color:colors.text2,marginBottom:8}}>📍 مواقع الفروع (لتسجيل الحضور)</div>
-          <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
-            {branches.map((b:any)=>(
-              <div key={b.id} style={{display:'flex',alignItems:'center',gap:6}}>
-                <button onClick={()=>saveBranchLocation(b.id)} disabled={savingLocationId===b.id}
-                  style={{flex:1,display:'flex',justifyContent:'space-between',alignItems:'center',background:colors.bg,border:`1px solid ${colors.border2}`,borderRadius:8,padding:'8px 12px',cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
-                  <span style={{fontSize:12,fontWeight:600,color:colors.text}}>{b.name}</span>
-                  <span style={{fontSize:11,color:b.latitude?colors.primary:colors.text4}}>
-                    {savingLocationId===b.id ? 'جاري تحديد الموقع...' : b.latitude ? 'تم تحديد الموقع — إعادة الضبط' : 'حدّد موقع الفرع'}
-                  </span>
-                </button>
-              </div>
-            ))}
+      {/* موقع الفرع — يتحدد من داخل الفرع نفسه: يطلع بس للفرع المختار حالياً (لفرع ثاني: انتقل له من قائمة الفروع) */}
+      {(() => {
+        const b = branches.find((x:any)=>x.id===currentBranchId)
+        if (!b) return null
+        return (
+          <div style={{...card,padding:14,marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap' as const}}>
+            <div style={{minWidth:0}}>
+              <div style={{fontSize:12.5,fontWeight:700,color:colors.text}}>📍 موقع {b.name} (لتسجيل الحضور)</div>
+              <div style={{fontSize:11,color:b.latitude?colors.primary:colors.warning,marginTop:3}}>{b.latitude ? '✓ الموقع محدّد' : 'الموقع غير محدّد — الموظفين ما يقدرون يحضّرون'}</div>
+              <div style={{fontSize:10.5,color:colors.text4,marginTop:3}}>يتسجّل من مكان جهازك — حدّده وأنت داخل الفرع.{branches.length > 1 ? ' لفرع ثاني: انتقل له من قائمة الفروع فوق.' : ''}</div>
+            </div>
+            <button onClick={()=>saveBranchLocation(b.id)} disabled={savingLocationId===b.id}
+              style={{...btnPrimary,padding:'9px 16px',fontSize:12.5,whiteSpace:'nowrap' as const,opacity:savingLocationId===b.id?.7:1}}>
+              {savingLocationId===b.id ? 'جاري التحديد...' : b.latitude ? 'إعادة الضبط من هنا' : 'حدّد الموقع من هنا'}
+            </button>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {showReport && (
         <div style={{...card,padding:'18px 20px',marginBottom:20}}>
@@ -538,42 +540,30 @@ export default function HRManagementPage() {
                 </div>
 
                 {(() => {
-                  const cs = cashierSummary[s.id]
-                  const advDeducted = approvedAdvances[s.id] || 0
-                  const cashierDeficit = cs?.deficit || 0
-                  const pendingPenalty = latePenalties[s.id] || 0
-                  const netSalary = savedTotal - advDeducted - cashierDeficit
-                  const hasAnyDeduction = advDeducted > 0 || cashierDeficit > 0 || pendingPenalty > 0
-                  if (!hasAnyDeduction) return null
+                  // راتب الشهر الحالي — نفس أرقام كشف راتب الموظف
+                  const p = cardPayroll[s.id]
+                  if (!p) return null
+                  const fmtN = (n:number) => Number(n||0).toLocaleString('ar-SA',{numberingSystem:'latn'})
+                  const line = (label:string, value:string, color:string) => (
+                    <div style={{display:'flex',justifyContent:'space-between',fontSize:11}}>
+                      <span style={{color:colors.text3}}>{label}</span>
+                      <span style={{color,fontWeight:700}}>{value}</span>
+                    </div>
+                  )
+                  const hasAny = p.bonusesTotal>0 || p.overtimePay>0 || p.latePenaltiesTotal>0 || p.otherDeductionsTotal>0 || p.advancesTotal>0 || p.pendingDeficitsTotal>0
+                  if (!hasAny) return null
                   return (
                     <div style={{marginTop:10,padding:'10px 12px',background:colors.bg,borderRadius:10,display:'flex',flexDirection:'column' as const,gap:6}}>
-                      {advDeducted > 0 && (
-                        <div style={{display:'flex',justifyContent:'space-between',fontSize:11}}>
-                          <span style={{color:colors.text3}}>سلف مخصومة (معتمدة)</span>
-                          <span style={{color:colors.warning,fontWeight:700}}>−{advDeducted.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
-                        </div>
-                      )}
-                      {cashierDeficit > 0 && (
-                        <div style={{display:'flex',justifyContent:'space-between',fontSize:11}}>
-                          <span style={{color:colors.text3}}>عجز إقفال كاشير ({cs?.count} إقفال)</span>
-                          <span style={{color:colors.danger,fontWeight:700}}>−{cashierDeficit.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
-                        </div>
-                      )}
-                      {pendingPenalty > 0 && (
-                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontSize:11}} onClick={e=>e.stopPropagation()}>
-                          <span style={{color:colors.text3}}>غرامات تأخير (لسه ما اتخصمت)</span>
-                          <div style={{display:'flex',alignItems:'center',gap:8}}>
-                            <span style={{color:colors.danger,fontWeight:700}}>{pendingPenalty.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
-                            <button onClick={()=>applyLatePenalty(s.id)} disabled={applyingPenalty===s.id}
-                              style={{padding:'3px 10px',background:colors.danger,color:'white',border:'none',borderRadius:99,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
-                              {applyingPenalty===s.id?'...':'طبّقها كخصم'}
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                      <div style={{fontSize:10.5,fontWeight:700,color:colors.text4}}>هذا الشهر</div>
+                      {p.overtimePay>0 && line('أوفر تايم', `+${fmtN(p.overtimePay)} ${curr}`, colors.primary)}
+                      {p.bonusesTotal>0 && line('تعويض أيام إضافية', `+${fmtN(p.bonusesTotal)} ${curr}`, colors.primary)}
+                      {p.latePenaltiesTotal>0 && line(`غرامات تأخير (${p.latePenaltiesCount})`, `−${fmtN(p.latePenaltiesTotal)} ${curr}`, colors.danger)}
+                      {p.otherDeductionsTotal>0 && line('خصومات', `−${fmtN(p.otherDeductionsTotal)} ${curr}`, colors.danger)}
+                      {p.advancesTotal>0 && line('سلف معتمدة', `−${fmtN(p.advancesTotal)} ${curr}`, colors.warning)}
+                      {p.pendingDeficitsTotal>0 && line('عجز كاشير بانتظار قرارك', `${fmtN(p.pendingDeficitsTotal)} ${curr}`, colors.text3)}
                       <div style={{display:'flex',justifyContent:'space-between',fontSize:12,fontWeight:800,paddingTop:6,borderTop:`1px dashed ${colors.border}`}}>
-                        <span style={{color:colors.text}}>الصافي المتوقع</span>
-                        <span style={{color:colors.primary}}>{netSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
+                        <span style={{color:colors.text}}>الصافي حتى الآن</span>
+                        <span style={{color:colors.primary}}>{fmtN(p.netSalary)} {curr}</span>
                       </div>
                     </div>
                   )

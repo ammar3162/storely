@@ -45,11 +45,14 @@ export function generateStaffToken(staff_id: string, org_id: string, branch_id: 
  * يتحقق من صحة التوكن ويرجّع بيانات الموظف الموثوقة منه (مو من الطلب).
  * يُستخدم بأول كل API خاص بالموظفين بدل الثقة بـ org_id من الـbody مباشرة.
  */
+// رسالة واحدة واضحة للموظف — بدون مصطلحات تقنية. الواجهة تطلب منه رمز PIN وتكمل العملية
+export const SESSION_ENDED = 'انتهت جلستك — أدخل رمزك من جديد'
+
 export async function verifyStaffToken(token: string | null): Promise<{ valid: boolean; data?: StaffPayload; error?: string; reason?: 'subscription_expired' }> {
-  if (!token) return { valid: false, error: 'لا يوجد توكن — يرجى تسجيل الدخول' }
+  if (!token) return { valid: false, error: SESSION_ENDED }
 
   const parts = token.split('.')
-  if (parts.length !== 2) return { valid: false, error: 'توكن غير صالح' }
+  if (parts.length !== 2) return { valid: false, error: SESSION_ENDED }
 
   const [payloadB64, signature] = parts
   const expectedSignature = sign(payloadB64)
@@ -58,18 +61,18 @@ export async function verifyStaffToken(token: string | null): Promise<{ valid: b
   const sigBuffer = Buffer.from(signature)
   const expectedBuffer = Buffer.from(expectedSignature)
   if (sigBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(sigBuffer, expectedBuffer)) {
-    return { valid: false, error: 'توكن غير صالح — تم التلاعب به' }
+    return { valid: false, error: SESSION_ENDED }
   }
 
   let payload: StaffPayload
   try {
     payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString())
   } catch {
-    return { valid: false, error: 'توكن تالف' }
+    return { valid: false, error: SESSION_ENDED }
   }
 
   if (Date.now() > payload.exp) {
-    return { valid: false, error: 'انتهت الجلسة — يرجى تسجيل الدخول من جديد' }
+    return { valid: false, error: SESSION_ENDED }
   }
 
   // فحص حالة اشتراك المنشأة — لو انتهت (تجريبية أو مدفوعة)، نمنع كل عمليات الموظفين
@@ -80,9 +83,16 @@ export async function verifyStaffToken(token: string | null): Promise<{ valid: b
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
-    const { data: org } = await supabase.from('profiles').select('subscription_ends_at').eq('org_id', payload.org_id).eq('role', 'owner').maybeSingle()
+    const [{ data: org }, { data: staff, error: staffErr }] = await Promise.all([
+      supabase.from('profiles').select('subscription_ends_at').eq('org_id', payload.org_id).eq('role', 'owner').maybeSingle(),
+      supabase.from('staff_members').select('is_active,branch_id').eq('id', payload.staff_id).eq('org_id', payload.org_id).maybeSingle(),
+    ])
     if ((org as any)?.subscription_ends_at && new Date((org as any).subscription_ends_at) < new Date()) {
       return { valid: false, error: 'انتهت صلاحية اشتراك المنشأة — يرجى إبلاغ صاحب العمل لتجديد الاشتراك', reason: 'subscription_expired' }
+    }
+    // الموظف انوقف/انحذف أو انتقل لفرع ثاني بعد ما دخل: الجلسة تنتهي فوراً (يدخل رمزه من جديد بفرعه الجديد)
+    if (!staffErr && (!staff || (staff as any).is_active === false || ((staff as any).branch_id ?? null) !== (payload.branch_id ?? null))) {
+      return { valid: false, error: SESSION_ENDED }
     }
   } catch {
     // لو فشل فحص الاشتراك لأي سبب تقني، ما نمنع الموظف (فشل آمن نحو السماح)

@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
+import { notifyStaffDeduction } from '@/lib/staffDeductionNotice'
 import { createClient } from '@supabase/supabase-js'
-import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
+import { markRefNotificationsRead } from '@/lib/requestRefs'
 import { sendWhatsAppMessage, formatPhone } from '@/lib/whatsapp'
 
 const sb = () => createClient(
@@ -64,11 +66,19 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'ميزة الرواتب متاحة فقط بالباقة المتوسطة أو المتقدمة' }, { status: 403 })
       }
 
+      // الموظف لازم يكون من نفس المنشأة (ومن فرع المدير لو كان مدير فرع)
+      const { data: target } = await supabase.from('staff_members').select('id,branch_id').eq('id', body.staff_id).eq('org_id', body.org_id).maybeSingle()
+      const forced = enforcedBranchId(access)
+      if (!target || (forced && (target as any).branch_id !== forced)) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
+      if (amountNum > 1_000_000) return NextResponse.json({ error: 'مبلغ غير صالح' }, { status: 400 })
+
       const { error } = await supabase.from('staff_payroll_adjustments').insert({
-        org_id: body.org_id, staff_id: body.staff_id, type, amount: amountNum, reason: reason || null,
+        org_id: body.org_id, staff_id: body.staff_id, type, amount: Math.round(amountNum * 100) / 100, reason: reason ? String(reason).trim().slice(0, 300) : null,
         status: 'approved', requested_by: 'owner', reviewed_by: 'owner', reviewed_at: new Date().toISOString(),
       } as any)
       if (error) return NextResponse.json({ error: 'فشل الحفظ' }, { status: 500 })
+      // إشعار للموظف بصفحته
+      if (type === 'deduction') await notifyStaffDeduction(supabase, body.org_id, body.staff_id, { kind: 'manual', amount: amountNum, reason: reason ? String(reason).trim().slice(0, 300) : null })
       return NextResponse.json({ success: true })
     } else {
       // الموظف يطلب سلفة (بانتظار الموافقة) — نوع advance فقط
@@ -77,12 +87,13 @@ export async function POST(req: Request) {
       if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
       const { org_id, staff_id } = auth.data!
 
-      const { data: staffRow } = await supabase.from('staff_members').select('name,branch_id').eq('id', staff_id).maybeSingle()
+      const { data: staffRow } = await supabase.from('staff_members').select('name,branch_id').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
+      if (amountNum > 1_000_000) return NextResponse.json({ error: 'مبلغ غير صالح' }, { status: 400 })
 
-      const { error } = await supabase.from('staff_payroll_adjustments').insert({
-        org_id, staff_id, type: 'advance', amount: amountNum, reason: reason || null,
+      const { data: created, error } = await supabase.from('staff_payroll_adjustments').insert({
+        org_id, staff_id, type: 'advance', amount: Math.round(amountNum * 100) / 100, reason: reason ? String(reason).trim().slice(0, 300) : null,
         status: 'pending', requested_by: 'staff',
-      } as any)
+      } as any).select('id').single()
       if (error) return NextResponse.json({ error: 'فشل إرسال الطلب' }, { status: 500 })
 
       // إشعار داخل النظام للمالك (يظهر بجرس الإشعارات)
@@ -92,6 +103,7 @@ export async function POST(req: Request) {
         org_id, branch_id: branchId, type: 'info',
         title: 'طلب سلفة جديد',
         message: `${staffName} يطلب سلفة بمبلغ ${amountNum} ر.س${reason ? ` — السبب: ${reason}` : ''}`,
+        ref_type: 'advance_request', ref_id: (created as any)?.id,
       } as any)
 
       // إشعار واتساب للمالك
@@ -121,14 +133,19 @@ export async function PATCH(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
     const supabase = sb()
-    const { data: adj } = await supabase.from('staff_payroll_adjustments').select('id,status,type,amount,staff_id').eq('id', adjustment_id).eq('org_id', org_id).maybeSingle()
-    if (!adj) return NextResponse.json({ error: 'الطلب غير موجود' }, { status: 404 })
+    const { data: adj } = await supabase.from('staff_payroll_adjustments').select('id,status,type,amount,staff_id,staff_members(branch_id)').eq('id', adjustment_id).eq('org_id', org_id).maybeSingle()
+    // مدير الفرع يرد على طلبات موظفين فرعه بس
+    const forced = enforcedBranchId(access)
+    if (!adj || (forced && (adj as any).staff_members?.branch_id !== forced)) return NextResponse.json({ error: 'الطلب غير موجود' }, { status: 404 })
     if ((adj as any).status !== 'pending') return NextResponse.json({ error: 'تم البت بهذا الطلب مسبقاً' }, { status: 400 })
 
-    const { error } = await supabase.from('staff_payroll_adjustments').update({
+    // القرار مرة وحدة (شرط pending)
+    const { data: updated, error } = await supabase.from('staff_payroll_adjustments').update({
       status: decision, reviewed_by: 'owner', reviewed_at: new Date().toISOString(),
-    } as any).eq('id', adjustment_id)
+    } as any).eq('id', adjustment_id).eq('status', 'pending').select('id').maybeSingle()
     if (error) return NextResponse.json({ error: 'فشل التحديث' }, { status: 500 })
+    if (!updated) return NextResponse.json({ error: 'تم البت بهذا الطلب مسبقاً' }, { status: 400 })
+    await markRefNotificationsRead(supabase, org_id, 'advance_request', adjustment_id)
 
     // إشعار داخل النظام للموظف بالنتيجة (لو النوع سلفة) — بلغته المفضّلة
     if ((adj as any).type === 'advance') {

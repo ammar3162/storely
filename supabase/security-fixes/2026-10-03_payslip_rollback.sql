@@ -1,0 +1,12 @@
+alter table public.notifications drop column if exists ref_id;
+alter table public.notifications drop column if exists ref_type;
+drop index if exists public.staff_payroll_adjustments_source_uniq;
+alter table public.staff_payroll_adjustments drop column if exists source_id;
+alter table public.staff_payroll_adjustments drop column if exists source;
+alter table public.cashier_closings drop constraint if exists cashier_closings_deficit_decision_chk;
+alter table public.cashier_closings drop column if exists deficit_decided_at;
+alter table public.cashier_closings drop column if exists deficit_decision;
+alter table public.staff_attendance drop constraint if exists staff_attendance_overtime_minutes_range;
+alter table public.staff_attendance drop column if exists overtime_minutes;
+alter table public.staff_attendance drop column if exists penalty_waived;
+notify pgrst, 'reload schema';

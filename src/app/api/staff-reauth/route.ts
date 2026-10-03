@@ -2,28 +2,12 @@ import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { createClient } from '@supabase/supabase-js'
 import { generateStaffToken } from '@/lib/staffAuth'
+import { clientIp, lockedUntil, lockedMessage, recordFailure, recordSuccess, notifyLocked, PER_IP_MAX } from '@/lib/loginThrottle'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
-
-// Rate limiting: نفس منطق staff-login لحماية من التخمين
-const attempts = new Map<string, { count: number; firstAt: number }>()
-const MAX_ATTEMPTS = 5
-const WINDOW_MS = 5 * 60 * 1000
-
-function checkRateLimit(key: string): boolean {
-  const now = Date.now()
-  const entry = attempts.get(key)
-  if (!entry || now - entry.firstAt > WINDOW_MS) {
-    attempts.set(key, { count: 1, firstAt: now })
-    return true
-  }
-  if (entry.count >= MAX_ATTEMPTS) return false
-  entry.count++
-  return true
-}
 
 /**
  * إعادة مصادقة سريعة بـ PIN فقط — تُستخدم لما تنتهي جلسة الموظف (12 ساعة)
@@ -36,11 +20,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
 
-    if (!checkRateLimit(staff_id)) {
-      return NextResponse.json({ error: 'محاولات كثيرة — انتظر 5 دقائق' }, { status: 429 })
-    }
-
     const supabase = sb()
+    const staffKey = `staff:${String(staff_id).slice(0, 64)}`
+    const ipKey = `ip:${clientIp(req)}`
+    const lock = await lockedUntil(supabase, [staffKey, ipKey])
+    if (lock) return NextResponse.json({ error: lockedMessage(lock) }, { status: 429 })
     const { data: staff, error } = await supabase
       .from('staff_members')
       .select('id,name,org_id,branch_id,pin,is_active,permissions,role,organizations(name),branches(name)')
@@ -48,6 +32,7 @@ export async function POST(req: Request) {
       .maybeSingle()
 
     if (error || !staff || !(staff as any).is_active) {
+      await recordFailure(supabase, ipKey, PER_IP_MAX)
       return NextResponse.json({ error: 'الحساب غير موجود أو موقوف' }, { status: 401 })
     }
 
@@ -58,10 +43,13 @@ export async function POST(req: Request) {
       : storedPin === pinStr
 
     if (!pinValid) {
+      const [r] = await Promise.all([recordFailure(supabase, staffKey), recordFailure(supabase, ipKey, PER_IP_MAX)])
+      if (r.justLocked) await notifyLocked(supabase, [{ org_id: (staff as any).org_id, branch_id: (staff as any).branch_id, name: (staff as any).name }])
+      if (r.lockedUntil) return NextResponse.json({ error: lockedMessage(r.lockedUntil) }, { status: 429 })
       return NextResponse.json({ error: 'رمز PIN غير صحيح' }, { status: 401 })
     }
 
-    attempts.delete(staff_id)
+    await recordSuccess(supabase, staffKey)
     const token = generateStaffToken(staff.id, staff.org_id, staff.branch_id)
 
     return NextResponse.json({

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
+import { clientIp, lockedUntil, lockedMessage, recordFailure, recordSuccess, PER_IP_MAX } from '@/lib/loginThrottle'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,20 +17,29 @@ export async function POST(req: Request) {
     }
 
     const db = sb()
+    // حماية من التخمين — نفس عدّاد قاعدة البيانات حق دخول الموظفين
+    const accKey = `admin:${String(email).trim().toLowerCase().slice(0, 200)}`
+    const ipKey = `ip:${clientIp(req)}`
+    const lock = await lockedUntil(db, [accKey, ipKey])
+    if (lock) return NextResponse.json({ error: lockedMessage(lock) }, { status: 429 })
+    const fail = async () => {
+      const [r] = await Promise.all([recordFailure(db, accKey), recordFailure(db, ipKey, PER_IP_MAX)])
+      return r.lockedUntil
+        ? NextResponse.json({ error: lockedMessage(r.lockedUntil) }, { status: 429 })
+        : NextResponse.json({ error: 'بيانات الدخول غير صحيحة' }, { status: 401 })
+    }
+
     const { data: admin } = await db
       .from('admin_users')
       .select('id,email,password_hash,full_name,role,is_active,permissions,totp_enabled')
       .eq('email', String(email).trim().toLowerCase())
       .maybeSingle()
 
-    if (!admin || !admin.is_active) {
-      return NextResponse.json({ error: 'بيانات الدخول غير صحيحة' }, { status: 401 })
-    }
+    if (!admin || !admin.is_active) return fail()
 
     const valid = await bcrypt.compare(password, (admin as any).password_hash)
-    if (!valid) {
-      return NextResponse.json({ error: 'بيانات الدخول غير صحيحة' }, { status: 401 })
-    }
+    if (!valid) return fail()
+    await recordSuccess(db, accKey)
 
     if ((admin as any).totp_enabled) {
       const pendingToken = crypto.randomBytes(24).toString('hex')

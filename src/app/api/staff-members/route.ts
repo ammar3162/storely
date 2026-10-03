@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { samePhone } from '@/lib/loginThrottle'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { checkStaffCapacity } from '@/lib/staffCapacity'
@@ -30,12 +31,23 @@ export async function GET(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
     const effectiveBranchId = enforcedBranchId(access, branch_id)
 
-    let q = sb().from('staff_members').select('*,branches(name)').eq('org_id', org_id)
+    const db = sb()
+    let q = db.from('staff_members').select('*,branches(name)').eq('org_id', org_id)
     if (effectiveBranchId) q = q.eq('branch_id', effectiveBranchId)
     const { data, error } = await q.order('created_at', { ascending: false })
-
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
-    return NextResponse.json({ success: true, staff: (data || []).map(maskPin) })
+
+    // موظفين فروعهم موقوفة — ما يطلعون بأي فرع شغّال، فنعرضهم للمالك عشان ينقلهم أو يحذفهم (رقمهم محجوز)
+    let orphans: any[] = []
+    if (access.role === 'owner') {
+      const { data: deadBranches } = await db.from('branches').select('id,name').eq('org_id', org_id).eq('is_active', false)
+      const ids = ((deadBranches || []) as any[]).map(b => b.id)
+      if (ids.length) {
+        const { data: o } = await db.from('staff_members').select('*,branches(name)').eq('org_id', org_id).in('branch_id', ids).order('created_at', { ascending: false })
+        orphans = ((o || []) as any[]).map(x => ({ ...maskPin(x), orphan_branch: x.branches?.name || null }))
+      }
+    }
+    return NextResponse.json({ success: true, staff: (data || []).map(maskPin), orphans })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
@@ -64,9 +76,42 @@ export async function PATCH(req: Request) {
     if ('phone' in body) {
       const phone = String(body.phone || '').trim()
       if (!phone) return NextResponse.json({ error: 'أدخل رقم صحيح' }, { status: 400 })
-      const { data: dup } = await db.from('staff_members').select('id').eq('org_id', org_id).eq('phone', phone).neq('id', id).limit(1)
-      if (dup?.length) return NextResponse.json({ error: 'رقم الجوال مسجل مسبقاً' }, { status: 409 })
+      // الرقم (بأي صيغة) لموظف ثاني بنفس المنشأة؟ نقول لمين بالضبط
+      const { data: others } = await db.from('staff_members').select('id,name,phone,is_active,branches(name)').eq('org_id', org_id).neq('id', id)
+      const dup = ((others || []) as any[]).find(x => samePhone(String(x.phone || ''), phone))
+      if (dup) {
+        const where = dup.branches?.name ? ` بفرع «${dup.branches.name}»` : ''
+        return NextResponse.json({ error: `رقم الجوال مسجّل للموظف «${dup.name}»${where}${dup.is_active ? '' : ' (موقوف)'}.` }, { status: 409 })
+      }
       update.phone = phone
+    }
+    // نقل لفرع ثاني (المالك فقط)
+    const moveNotes: string[] = []
+    if ('branch_id' in body) {
+      if (access.role !== 'owner') return NextResponse.json({ error: 'نقل الموظفين بين الفروع للمالك فقط' }, { status: 403 })
+      const { data: target } = await db.from('branches').select('id,name').eq('id', String(body.branch_id || '')).eq('org_id', org_id).eq('is_active', true).maybeSingle()
+      if (!target) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
+      const targetId = (target as any).id
+      if (targetId !== staff.branch_id) {
+        // ما ننقله وهو داخل دوامه — حضوره وانصرافه لازم يكونون بنفس الفرع
+        const { data: last } = await db.from('staff_attendance').select('type,recorded_at').eq('staff_id', id).eq('org_id', org_id)
+          .order('recorded_at', { ascending: false }).limit(1).maybeSingle()
+        if ((last as any)?.type === 'check_in' && Date.now() - Date.parse((last as any).recorded_at) < 20 * 3600e3) {
+          return NextResponse.json({ error: 'الموظف داخل دوامه الحين — انقله بعد ما يسجّل انصرافه' }, { status: 409 })
+        }
+        // حد الموظفين بالفرع الجديد (لو الموظف فعّال)
+        if (staff.is_active) {
+          const capacity = await checkStaffCapacity(db, org_id, targetId)
+          if (!capacity.ok) return NextResponse.json({ error: capacity.error }, { status: 403 })
+        }
+        update.branch_id = targetId
+        // الشفت الخاص بالفرع القديم ينفك، والمنتجات المخصصة له (منتجات الفرع القديم) تنمسح
+        if (staff.shift_id) {
+          const { data: sh } = await db.from('shifts').select('branch_id').eq('id', staff.shift_id).maybeSingle()
+          if ((sh as any)?.branch_id && (sh as any).branch_id !== targetId) { update.shift_id = null; moveNotes.push('انفك عن شفته القديم — حدد له شفت بالفرع الجديد') }
+        }
+        if (Array.isArray(staff.assigned_products) && staff.assigned_products.length) { update.assigned_products = []; moveNotes.push('انمسحت المنتجات المخصصة له (كانت من الفرع القديم)') }
+      }
     }
     if ('permissions' in body && body.permissions && typeof body.permissions === 'object') update.permissions = body.permissions
     if ('send_closing_whatsapp' in body) update.send_closing_whatsapp = !!body.send_closing_whatsapp
@@ -92,7 +137,7 @@ export async function PATCH(req: Request) {
     if (!Object.keys(update).length) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const { error } = await db.from('staff_members').update(update as any).eq('id', id).eq('org_id', org_id)
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, notes: moveNotes })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }

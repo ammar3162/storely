@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { invoiceTimestamp } from '@/lib/invoiceTime'
 import { netFromTotal } from '@/lib/vat'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
@@ -90,7 +91,7 @@ export async function POST(req: Request) {
     // (vat_amount و total_amount تحسبها قاعدة البيانات من amount و has_vat)
     const hasVat = body.has_vat !== false
     const amount = netFromTotal(total, hasVat)
-    const invoiceTs = `${body.invoice_date}T12:00:00+03:00`
+    const invoiceTs = invoiceTimestamp(body.invoice_date)   // اليوم = الوقت الفعلي، تاريخ سابق = 12 الظهر
     const qty = body.qty ? Number(body.qty) : 0
 
     const { error: insErr } = await db.from('purchases').insert({

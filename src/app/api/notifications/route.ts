@@ -26,13 +26,46 @@ export async function GET(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
     const effectiveBranchId = enforcedBranchId(access, branch_id)
 
-    const { data, error } = await sb().from('notifications')
-      .select('id,type,read,title,message,created_at')
+    const db = sb()
+    const { data, error } = await db.from('notifications')
+      .select('id,type,read,title,message,created_at,ref_type,ref_id')
       .eq('org_id', org_id).or(branchFilter(effectiveBranchId))
       .order('created_at', { ascending: false })
 
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
-    return NextResponse.json({ success: true, notifications: data || [] })
+    const rows = (data || []) as any[]
+    // إشعارات الطلبات (استئذان، سلفة، إجازة، عجز كاشير): نرفق حالة القرار عشان الواجهة تعرض الأزرار أو النتيجة
+    const REF_SOURCES: Record<string, { table: string; col: string; map: (v: any) => string | null }> = {
+      cashier_deficit: { table: 'cashier_closings', col: 'deficit_decision', map: v => v ?? null },
+      excuse_request: { table: 'attendance_permission_requests', col: 'status', map: v => v },
+      advance_request: { table: 'staff_payroll_adjustments', col: 'status', map: v => v },
+      leave_request: { table: 'staff_leave_requests', col: 'status', map: v => v },
+    }
+    const isOwner = access.role === 'owner'
+    for (const [refType, src] of Object.entries(REF_SOURCES)) {
+      const ids = rows.filter(n => n.ref_type === refType && n.ref_id).map(n => n.ref_id)
+      if (!ids.length) continue
+      const { data: refRows } = await db.from(src.table).select(`id,${src.col}`).eq('org_id', org_id).in('id', ids)
+      const dec = new Map(((refRows || []) as any[]).map(r => [r.id, src.map(r[src.col])]))
+      for (const n of rows) if (n.ref_type === refType) {
+        n.decision = dec.get(n.ref_id) ?? null
+        // عجز الكاشير للمالك فقط، والباقي للمالك أو مدير الفرع (السيرفر يتحقق مرة ثانية عند القرار)
+        n.can_decide = refType === 'cashier_deficit' ? isOwner : true
+      }
+    }
+    // اليوم الإضافي: نرفق بياناته (التاريخ والمبلغ المقترح والقرار) لأدوات القرار
+    const extraIds = rows.filter(n => n.ref_type === 'extra_day' && n.ref_id).map(n => n.ref_id)
+    if (extraIds.length) {
+      const { data: ex } = await db.from('staff_extra_days').select('id,work_date,status,amount,comp_date,staff_members(monthly_salary)').eq('org_id', org_id).in('id', extraIds)
+      const byId = new Map(((ex || []) as any[]).map(e => [e.id, e]))
+      for (const n of rows) if (n.ref_type === 'extra_day') {
+        const e = byId.get(n.ref_id)
+        n.extra = e ? { id: e.id, work_date: e.work_date, status: e.status, amount: e.amount, comp_date: e.comp_date,
+          suggested_amount: Math.round((Number(e.staff_members?.monthly_salary || 0) / 30) * 100) / 100 } : null
+        n.can_decide = access.role === 'owner'
+      }
+    }
+    return NextResponse.json({ success: true, notifications: rows })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }

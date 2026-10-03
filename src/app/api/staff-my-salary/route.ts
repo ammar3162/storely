@@ -27,7 +27,7 @@ export async function GET(req: Request) {
     }
 
     const { data: staff } = await db.from('staff_members')
-      .select('id,name,monthly_salary,housing_allowance,transport_allowance,food_allowance,shift_id')
+      .select('id,org_id,name,monthly_salary,housing_allowance,transport_allowance,food_allowance,shift_id,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates')
       .eq('id', staff_id).eq('org_id', org_id).single()
     if (!staff) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
 

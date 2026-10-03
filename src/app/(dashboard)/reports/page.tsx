@@ -11,6 +11,7 @@ import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
+import StaffMonthlyDetail from '@/components/reports/StaffMonthlyReport'
 
 type FilterPeriod = 'today'|'week'|'month'|'year'|'custom'
 
@@ -1230,9 +1231,22 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   const [monthComp, setMonthComp] = useState<any>(null)
   const [exportingPdf, setExportingPdf] = useState(false)
   const [curr, setCurr] = useState('ر.س')
+  const [isOwner, setIsOwner] = useState(false)
+  const [deciding, setDeciding] = useState<string|null>(null)
   useEffect(()=>{
-    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setIsOwner(me?.role==='owner') })
   },[])
+
+  // قرار عجز الكاشير — اعتماد = خصم من راتب الكاشير، رفض = ما ينخصم
+  async function decideDeficit(id: string, decision: 'approved'|'rejected') {
+    if (deciding) return
+    setDeciding(id)
+    const r = await api.post('/api/cashier-deficit-decision', { org_id: sessionStorage.getItem('s_org_id'), closing_id: id, decision })
+    setDeciding(null)
+    if (!r.success) { toast(r.error || 'تعذر حفظ القرار', 'error'); return }
+    setClosings(prev => prev.map(c => c.id === id ? { ...c, deficit_decision: decision } : c))
+    toast(decision === 'approved' ? 'تم اعتماد الخصم من راتب الكاشير' : 'تم رفض الخصم')
+  }
 
   async function handleExportPdf() {
     setExportingPdf(true)
@@ -1435,6 +1449,18 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                           {c.deficit_reason ? <>السبب: {c.deficit_reason}</> : 'بدون سبب (إقفال قديم)'}
                         </div>
                       )}
+                      {c.status==='deficit' && c.deficit_decision==='pending' && (
+                        isOwner ? (
+                          <div style={{display:'flex',gap:6,marginTop:6}}>
+                            <button onClick={()=>decideDeficit(c.id,'approved')} disabled={deciding===c.id}
+                              style={{padding:'4px 10px',borderRadius:6,border:'none',background:colors.danger,color:'white',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>خصم من الراتب</button>
+                            <button onClick={()=>decideDeficit(c.id,'rejected')} disabled={deciding===c.id}
+                              style={{padding:'4px 10px',borderRadius:6,border:`1px solid ${colors.border2}`,background:colors.surface,color:colors.text2,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>رفض</button>
+                          </div>
+                        ) : <div style={{fontSize:11,fontWeight:600,color:colors.warning,marginTop:4}}>بانتظار قرار المالك</div>
+                      )}
+                      {c.status==='deficit' && c.deficit_decision==='approved' && <div style={{fontSize:11,fontWeight:700,color:colors.danger,marginTop:4}}>انخصم من الراتب</div>}
+                      {c.status==='deficit' && c.deficit_decision==='rejected' && <div style={{fontSize:11,fontWeight:600,color:colors.text4,marginTop:4}}>رُفض الخصم</div>}
                     </td>
                     <td style={{padding:'12px 16px'}}>
                       <div style={{display:'flex',gap:6}}>
@@ -1509,7 +1535,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
 
 export default function ReportsPage() {
   const orgPlan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
-  const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'|'cashier'|'waste'|'attendance'>('home')
+  const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'|'cashier'|'waste'|'attendance'|'staffMonthly'>('home')
   const [period, setPeriod]       = useState<FilterPeriod>('today')
   const [from, setFrom]           = useState('')
   const [to, setTo]               = useState('')
@@ -1581,6 +1607,12 @@ export default function ReportsPage() {
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير المشتريات</h1>
       <PurchaseDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
+    </div>
+  )
+
+  if (view==='staffMonthly') return (
+    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
+      <StaffMonthlyDetail onBack={()=>setView('home')}/>
     </div>
   )
 
@@ -1713,6 +1745,20 @@ export default function ReportsPage() {
             chartData={[]}
             stats={[]}
             onClick={()=>setView('attendance')}
+          />
+        </div>
+        <div className="su" style={{animationDelay:'.29s'}}>
+          <ReportCard
+            title="تقرير الموظف الشهري"
+            subtitle="الرواتب والأوفر تايم والتأخير والخصومات والسلف"
+            icon={<Wallet size={20} strokeWidth={1.75}/>}
+            color={'#b45309'}
+            bg={'#fffbeb'}
+            border={'#fde68a'}
+            loading={false}
+            chartData={[]}
+            stats={[]}
+            onClick={()=>setView('staffMonthly')}
           />
         </div>
         <div className="su" style={{animationDelay:'.3s'}}>

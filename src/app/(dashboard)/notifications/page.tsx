@@ -3,6 +3,8 @@ export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
+import { toast } from '@/components/toast'
+import ExtraDayDecision from '@/components/ExtraDayDecision'
 import { getOrgId } from '@/lib/session'
 import { colors, radius, font, card, btnSecondary, tag, pageTitle, pageSub } from '@/lib/ds'
 import { cache } from '@/lib/cache'
@@ -18,6 +20,7 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter]   = useState<'all'|'unread'|'warning'|'success'|'info'>('all')
+  const [deciding, setDeciding] = useState<string|null>(null)
 
   useEffect(() => { load() }, [])
 
@@ -44,6 +47,31 @@ export default function NotificationsPage() {
     if (!orgId) return
     await api.patch('/api/notifications', { org_id: orgId, id })
     setNotifications(prev => prev.map(n => n.id === id ? {...n, read: true} : n))
+  }
+
+  // أزرار القرار حسب نوع الطلب — نفس الـAPI اللي تستخدمه صفحة إدارة الموظفين
+  const DECISIONS: Record<string, { approve: string; reject: string; approved: string; rejected: string; call: (orgId: string, id: string, ok: boolean) => Promise<any> }> = {
+    cashier_deficit: { approve: 'اعتماد الخصم من الراتب', reject: 'رفض', approved: 'تم اعتماد الخصم من راتب الكاشير', rejected: 'تم رفض الخصم — ما انخصم من الراتب',
+      call: (orgId, id, ok) => api.post('/api/cashier-deficit-decision', { org_id: orgId, closing_id: id, decision: ok ? 'approved' : 'rejected' }) },
+    excuse_request: { approve: 'موافقة', reject: 'رفض', approved: 'تمت الموافقة على الاستئذان', rejected: 'تم رفض الاستئذان',
+      call: (orgId, id, ok) => api.put('/api/attendance-permission-request', { org_id: orgId, id, action: ok ? 'approve' : 'reject' }) },
+    advance_request: { approve: 'موافقة على السلفة', reject: 'رفض', approved: 'تمت الموافقة على السلفة', rejected: 'تم رفض السلفة',
+      call: (orgId, id, ok) => api.patch('/api/staff-payroll-adjustments', { org_id: orgId, adjustment_id: id, decision: ok ? 'approved' : 'rejected' }) },
+    leave_request: { approve: 'موافقة على الإجازة', reject: 'رفض', approved: 'تمت الموافقة على الإجازة', rejected: 'تم رفض الإجازة',
+      call: (orgId, id, ok) => api.patch('/api/staff-leave', { org_id: orgId, request_id: id, decision: ok ? 'approved' : 'rejected' }) },
+  }
+
+  async function decide(n: any, ok: boolean) {
+    const orgId = sessionStorage.getItem('s_org_id')
+    const cfg = DECISIONS[n.ref_type]
+    if (!orgId || !cfg || deciding) return
+    setDeciding(n.id)
+    const r = await cfg.call(orgId, n.ref_id, ok)
+    setDeciding(null)
+    if (!r.success) { toast(r.error || 'تعذر حفظ القرار', 'error'); load(); return }
+    toast(ok ? cfg.approved : cfg.rejected)
+    setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, decision: ok ? 'approved' : 'rejected', read: true } : x))
+    window.dispatchEvent(new Event('notifications-updated'))
   }
 
   async function markAllRead() {
@@ -120,6 +148,30 @@ export default function NotificationsPage() {
                     {!n.read && <span style={{...tag('white',c.color,c.color),fontSize:10,flexShrink:0}}>جديد</span>}
                   </div>
                   <div style={{fontSize:font.xs,color:n.read?colors.text4:colors.text3,marginBottom:6,lineHeight:1.6}}>{n.message}</div>
+                  {n.ref_type === 'extra_day' && n.extra && (
+                    <ExtraDayDecision item={n.extra} orgId={sessionStorage.getItem('s_org_id') || ''} canDecide={!!n.can_decide}
+                      onDone={() => { setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x)); window.dispatchEvent(new Event('notifications-updated')) }} />
+                  )}
+                  {DECISIONS[n.ref_type] && n.decision && (
+                    n.decision==='pending' ? (
+                      n.can_decide ? (
+                        <div style={{display:'flex',gap:8,margin:'4px 0 8px',flexWrap:'wrap' as const}} onClick={e=>e.stopPropagation()}>
+                          <button onClick={()=>decide(n,true)} disabled={deciding===n.id}
+                            style={{padding:'7px 14px',borderRadius:8,border:'none',background:n.ref_type==='cashier_deficit'?colors.danger:colors.primary,color:'white',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:deciding===n.id?.6:1}}>
+                            {DECISIONS[n.ref_type].approve}
+                          </button>
+                          <button onClick={()=>decide(n,false)} disabled={deciding===n.id}
+                            style={{padding:'7px 14px',borderRadius:8,border:`1px solid ${colors.border2}`,background:colors.surface,color:colors.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:deciding===n.id?.6:1}}>
+                            {DECISIONS[n.ref_type].reject}
+                          </button>
+                        </div>
+                      ) : <div style={{fontSize:11,color:colors.text4,margin:'2px 0 8px'}}>بانتظار قرار المالك</div>
+                    ) : (
+                      <div style={{fontSize:11,fontWeight:700,color:n.decision==='approved'?(n.ref_type==='cashier_deficit'?colors.danger:colors.primary):colors.text3,margin:'2px 0 8px'}}>
+                        {n.decision==='approved' ? `✓ ${DECISIONS[n.ref_type].approved}` : DECISIONS[n.ref_type].rejected}
+                      </div>
+                    )
+                  )}
                   <div style={{fontSize:10,color:colors.text4}}>{new Date(n.created_at).toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
                 </div>
                 <button onClick={e=>{e.stopPropagation();del(n.id)}} style={{width:28,height:28,borderRadius:radius.sm,border:`1px solid ${colors.border2}`,background:colors.surface,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:colors.text4,flexShrink:0,fontSize:12}}>✕</button>

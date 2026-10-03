@@ -57,7 +57,7 @@ export async function getOrgId(): Promise<string | null> {
 }
 
 /** بيانات عرض المنشأة لصفحات الموظفين (دخول الـ PIN) — تُجلب مرة وحدة لكل تحميل صفحة */
-export type StaffOrg = { logo_url: string | null; currency: string | null; plan: string | null; staff_salary_visible?: boolean; business_day_start_hour?: number | null }
+export type StaffOrg = { logo_url: string | null; currency: string | null; plan: string | null; staff_salary_visible?: boolean; business_day_start_hour?: number | null; hr_feature?: boolean; cashier_feature?: boolean }
 
 let staffOrgPromise: Promise<StaffOrg | null> | null = null
 let staffOrgToken: string | null = null
