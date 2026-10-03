@@ -64,6 +64,7 @@ export default function ChoosePage() {
   const [attError, setAttError] = useState('')
   const [locatingHint, setLocatingHint] = useState('')
   const [shift, setShift] = useState<any>(null)
+  const [dayOff, setDayOff] = useState<'weekly'|'leave'|null>(null)   // اليوم إجازته (أسبوعية أو معتمدة)
   const [permReq, setPermReq] = useState<any>(null)
   const [showPermForm, setShowPermForm] = useState(false)
   const [permReason, setPermReason] = useState('')
@@ -193,7 +194,7 @@ export default function ChoosePage() {
     try {
       const res = await fetch('/api/staff-attendance', { headers: { 'Authorization': `Bearer ${localStorage.getItem('staff_token')}` } })
       const j = await res.json()
-      if(j.success) { setTodayEvents(j.today||[]); setShift(j.shift||null); setAttendanceLocked(!!j.locked) }
+      if(j.success) { setTodayEvents(j.today||[]); setShift(j.shift||null); setAttendanceLocked(!!j.locked); setDayOff(j.state?.dayOff || null) }
     } catch {}
     try {
       const pr = await fetch(`/api/attendance-permission-request`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('staff_token')}` } })
@@ -297,8 +298,9 @@ export default function ChoosePage() {
   const isAr = lang === 'ar'
   const fmtClock = (iso: string) => new Date(iso).toLocaleTimeString('ar-SA', { numberingSystem:'latn', hour:'2-digit', minute:'2-digit', timeZone:'Asia/Riyadh' })
   const todayLabel = new Date().toLocaleDateString(isAr ? 'ar-SA' : 'en-GB', { numberingSystem:'latn', weekday:'long', day:'numeric', month:'long', calendar:'gregory', timeZone:'Asia/Riyadh' })
-  const statusTxt = isCheckedIn ? t('checkedIn') : lastCheckOut ? t('checkedOutToday') : t('notCheckedIn')
-  const statusClr = isCheckedIn ? { c:'#0f766e', bg:'#ecfdf5', dot:'#10b981' } : lastCheckOut ? { c:'#475569', bg:'#f1f5f9', dot:'#94a3b8' } : { c:'#b45309', bg:'#fffbeb', dot:'#f59e0b' }
+  const offToday = !!dayOff && !isCheckedIn && !lastCheckOut
+  const statusTxt = isCheckedIn ? t('checkedIn') : lastCheckOut ? t('checkedOutToday') : offToday ? (isAr ? (dayOff === 'leave' ? 'إجازة معتمدة' : 'يوم إجازتك') : 'Day off') : t('notCheckedIn')
+  const statusClr = isCheckedIn ? { c:'#0f766e', bg:'#ecfdf5', dot:'#10b981' } : lastCheckOut ? { c:'#475569', bg:'#f1f5f9', dot:'#94a3b8' } : offToday ? { c:'#1d4ed8', bg:'#eff6ff', dot:'#3b82f6' } : { c:'#b45309', bg:'#fffbeb', dot:'#f59e0b' }
 
   // أزرار العمل — نفس الشكل للكل، اللون بس بالأيقونة
   const workActions = [
@@ -383,12 +385,20 @@ export default function ChoosePage() {
                 </div>
               </div>
 
+              {offToday && (
+                <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:12,padding:'12px 14px',marginBottom:10}}>
+                  <div style={{fontSize:14,fontWeight:800,color:'#1e3a8a'}}>{isAr ? (dayOff === 'leave' ? 'أنت بإجازة معتمدة اليوم' : 'اليوم إجازتك') : (dayOff === 'leave' ? 'You are on approved leave today' : 'Today is your day off')}</div>
+                  <div style={{fontSize:12,color:'#1e40af',marginTop:3,lineHeight:1.6}}>{isAr ? 'ما ينحسب عليك غياب. لو طلب منك صاحب العمل تداوم، تقدر تحضّر وينحسب لك يوم إضافي.' : "No absence is counted. If your employer asks you to work, you can check in and it counts as an extra day."}</div>
+                </div>
+              )}
               {!lastCheckOut && (
                 !isCheckedIn ? (
                   <button onClick={()=>markAttendance('check_in')} disabled={marking!==null}
-                    style={{width:'100%',height:52,background:'#0f766e',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:'0 6px 14px rgba(15,118,110,.25)',opacity:marking?0.8:1}}>
+                    style={offToday
+                      ? {width:'100%',height:48,background:'white',color:'#0f766e',border:'1.5px solid #99d5cf',borderRadius:14,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,opacity:marking?0.8:1}
+                      : {width:'100%',height:52,background:'#0f766e',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:'0 6px 14px rgba(15,118,110,.25)',opacity:marking?0.8:1}}>
                     <MapPin size={17} strokeWidth={2.25}/>
-                    {marking==='check_in' ? t('markingLocation') : t('checkIn')}
+                    {marking==='check_in' ? t('markingLocation') : offToday ? (isAr ? 'تحضير يوم إضافي' : 'Check in (extra day)') : t('checkIn')}
                   </button>
                 ) : (
                   <>

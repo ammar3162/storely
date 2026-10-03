@@ -14,6 +14,7 @@ export const PAYSLIP_LANGS: { code: PayslipLang; label: string; locale: string; 
 type Dict = Record<string, string>
 
 const ar: Dict = {
+  extraDays: '+{n} يوم إضافي', 
   title: 'كشف الراتب', back: 'رجوع', prev: 'الشهر السابق', next: 'الشهر التالي', current: 'الشهر الحالي',
   netSoFar: 'صافي الراتب حتى الآن', net: 'صافي الراتب',
   earnings: 'المستحقات', basic: 'الراتب الأساسي', housing: 'بدل سكن', transport: 'بدل مواصلات', food: 'بدل طعام',
@@ -31,6 +32,7 @@ const ar: Dict = {
 }
 
 const en: Dict = {
+  extraDays: '+{n} extra day(s)', 
   title: 'Payslip', back: 'Back', prev: 'Previous month', next: 'Next month', current: 'This month',
   netSoFar: 'Net pay so far', net: 'Net pay',
   earnings: 'Earnings', basic: 'Basic salary', housing: 'Housing allowance', transport: 'Transport allowance', food: 'Food allowance',
@@ -48,6 +50,7 @@ const en: Dict = {
 }
 
 const ur: Dict = {
+  extraDays: '+{n} اضافی دن', 
   title: 'تنخواہ کی پرچی', back: 'واپس', prev: 'پچھلا مہینہ', next: 'اگلا مہینہ', current: 'موجودہ مہینہ',
   netSoFar: 'اب تک کی خالص تنخواہ', net: 'خالص تنخواہ',
   earnings: 'آمدنی', basic: 'بنیادی تنخواہ', housing: 'رہائش الاؤنس', transport: 'ٹرانسپورٹ الاؤنس', food: 'کھانے کا الاؤنس',
@@ -65,6 +68,7 @@ const ur: Dict = {
 }
 
 const hi: Dict = {
+  extraDays: '+{n} अतिरिक्त दिन', 
   title: 'वेतन पर्ची', back: 'वापस', prev: 'पिछला महीना', next: 'अगला महीना', current: 'इस महीने',
   netSoFar: 'अब तक का शुद्ध वेतन', net: 'शुद्ध वेतन',
   earnings: 'कमाई', basic: 'मूल वेतन', housing: 'आवास भत्ता', transport: 'यात्रा भत्ता', food: 'भोजन भत्ता',
@@ -82,6 +86,7 @@ const hi: Dict = {
 }
 
 const tl: Dict = {
+  extraDays: '+{n} dagdag na araw', 
   title: 'Payslip', back: 'Bumalik', prev: 'Nakaraang buwan', next: 'Susunod na buwan', current: 'Ngayong buwan',
   netSoFar: 'Netong sahod hanggang ngayon', net: 'Netong sahod',
   earnings: 'Mga kita', basic: 'Batayang sahod', housing: 'Allowance sa pabahay', transport: 'Allowance sa transportasyon', food: 'Allowance sa pagkain',
@@ -99,6 +104,7 @@ const tl: Dict = {
 }
 
 const bn: Dict = {
+  extraDays: '+{n} অতিরিক্ত দিন', 
   title: 'বেতন স্লিপ', back: 'ফিরে যান', prev: 'আগের মাস', next: 'পরের মাস', current: 'এই মাস',
   netSoFar: 'এখন পর্যন্ত নিট বেতন', net: 'নিট বেতন',
   earnings: 'আয়', basic: 'মূল বেতন', housing: 'বাসা ভাতা', transport: 'যাতায়াত ভাতা', food: 'খাবার ভাতা',
@@ -116,6 +122,7 @@ const bn: Dict = {
 }
 
 const fr: Dict = {
+  extraDays: '+{n} jour(s) en plus', 
   title: 'Bulletin de paie', back: 'Retour', prev: 'Mois précédent', next: 'Mois suivant', current: 'Ce mois-ci',
   netSoFar: 'Salaire net à ce jour', net: 'Salaire net',
   earnings: 'Gains', basic: 'Salaire de base', housing: 'Indemnité de logement', transport: 'Indemnité de transport', food: 'Indemnité de repas',

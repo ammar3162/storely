@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { normalizeOffDays } from '@/lib/daysOff'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,7 +20,7 @@ export async function GET(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
     const effectiveBranchId = enforcedBranchId(access, branch_id)
 
-    let q = sb().from('staff_members').select('id,name,shift_id').eq('org_id', org_id).eq('is_active', true)
+    let q = sb().from('staff_members').select('id,name,shift_id,weekly_off_days').eq('org_id', org_id).eq('is_active', true)
     if (effectiveBranchId) q = q.eq('branch_id', effectiveBranchId)
     const { data, error } = await q.order('name')
 
@@ -33,7 +34,8 @@ export async function GET(req: Request) {
 // ربط موظف بشفت (أو فكّه لو shift_id فاضي)
 export async function PATCH(req: Request) {
   try {
-    const { org_id, staff_id, shift_id } = await req.json()
+    const body = await req.json()
+    const { org_id, staff_id, shift_id } = body
     if (!org_id || !staff_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
     const access = await verifyOrgAccess(org_id)
@@ -47,6 +49,15 @@ export async function PATCH(req: Request) {
     const effectiveBranchId = enforcedBranchId(access)
     if (effectiveBranchId && (staff as any).branch_id !== effectiveBranchId) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
+    }
+
+    // أيام الإجازة الأسبوعية (لو انرسلت) — بدون ما نلمس الشفت
+    if ('weekly_off_days' in body) {
+      const days = normalizeOffDays(body.weekly_off_days)
+      if (!days) return NextResponse.json({ error: 'أيام الإجازة غير صالحة — لازم يبقى يوم دوام واحد على الأقل' }, { status: 400 })
+      const { error } = await supabase.from('staff_members').update({ weekly_off_days: days } as any).eq('id', staff_id).eq('org_id', org_id)
+      if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+      return NextResponse.json({ success: true, weekly_off_days: days })
     }
 
     if (shift_id) {

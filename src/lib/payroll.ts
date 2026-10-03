@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { weeklyOffCount } from './daysOff'
 
 // حساب راتب موظف لشهر واحد — مشترك بين تقرير المالك (staff-report) وصفحة «راتبي» للموظف،
 // عشان الرقمين يطلعون نفس الشي دايماً.
@@ -96,7 +97,7 @@ export async function computeStaffPayroll(db: SupabaseClient, staff: any, month:
   const [{ data: adjustments }, { data: attendance }, { data: shiftRow }, { data: leaves }, { data: pendingClosings }] = await Promise.all([
     scoped(db.from('staff_payroll_adjustments').select('id,type,amount,status,reason,source,created_at')
       .eq('staff_id', staff.id).gte('created_at', start).lte('created_at', end)).order('created_at'),
-    scoped(db.from('staff_attendance').select('id,type,recorded_at,late_minutes,penalty_amount,penalty_applied,penalty_waived,overtime_minutes')
+    scoped(db.from('staff_attendance').select('id,type,recorded_at,late_minutes,penalty_amount,penalty_applied,penalty_waived,overtime_minutes,on_day_off')
       .eq('staff_id', staff.id).gte('recorded_at', start).lte('recorded_at', end)).order('recorded_at'),
     staff.shift_id ? db.from('shifts').select('start_time,end_time,is_24h').eq('id', staff.shift_id).maybeSingle() : Promise.resolve({ data: null }),
     scoped(db.from('staff_leave_requests').select('days_count').eq('staff_id', staff.id).eq('status', 'approved')
@@ -162,7 +163,9 @@ export async function computeStaffPayroll(db: SupabaseClient, staff: any, month:
     // عجز إقفال بانتظار قرار المالك — للعلم فقط، ما ينخصم
     pendingDeficits: ((pendingClosings || []) as any[]).map(c => ({ date: c.closing_date as string, amount: round2(Math.abs(Number(c.difference || 0))), reason: c.deficit_reason || null })),
     netSalary,
-    attendance: { daysPresent: checkIns.length, daysInMonth: lastDay, lateCount, lateMinutes },
+    attendance: { daysPresent: checkIns.length, daysInMonth: lastDay, lateCount, lateMinutes,
+      extraDays: checkIns.filter(c => c.on_day_off).length,   // حضور بيوم إجازته (يوم إضافي)
+      weeklyOffDays: weeklyOffCount(month, staff.weekly_off_days) },
     leaveDaysTaken: ((leaves || []) as any[]).reduce((s, l) => s + Number(l.days_count), 0),
   }
 }

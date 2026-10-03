@@ -4,6 +4,15 @@ import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { attendanceState, lateMinutesAt, activeShift, canCheckOutAt, type AttEvent } from '@/lib/attendanceState'
 import { overtimeMinutes, loadOvertimeSettings, type Shift } from '@/lib/payroll'
 import { applyLateRules } from '@/lib/latePenalty'
+import { workDateFor, offReason, type OffReason } from '@/lib/daysOff'
+
+// يوم إجازة؟ (أسبوعية من المالك أو إجازة معتمدة) — لتاريخ دوام الموظف الحالي
+async function dayOffFor(supabase: any, staff: { id: string; weekly_off_days?: number[] | null }, org_id: string, shift: Shift): Promise<OffReason | null> {
+  const date = workDateFor(Date.now(), shift)
+  const { data: leaves } = await supabase.from('staff_leave_requests').select('start_date,end_date')
+    .eq('staff_id', staff.id).eq('org_id', org_id).eq('status', 'approved').lte('start_date', date).gte('end_date', date).limit(1)
+  return offReason(date, staff.weekly_off_days, (leaves || []) as any[])
+}
 
 // آخر حركات الموظف (يكفي آخر يومين) — لحالة «حاضر / انصرف / دوام جديد»
 async function recentEvents(supabase: any, staff_id: string, org_id: string): Promise<AttEvent[]> {
@@ -69,7 +78,7 @@ export async function POST(req: Request) {
     }
 
     // تأكد الموظف فعلاً تابع لهذا الفرع/المنشأة
-    const { data: staff } = await supabase.from('staff_members').select('id,name,branch_id,shift_id').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
+    const { data: staff } = await supabase.from('staff_members').select('id,name,branch_id,shift_id,weekly_off_days').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
     if (!staff) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
     // موقع التحقق لازم يكون فرع الموظف نفسه (مو أي فرع يرسله الطلب)
     if ((staff as any).branch_id && (staff as any).branch_id !== branch_id) return NextResponse.json({ error: 'الفرع غير صحيح' }, { status: 403 })
@@ -130,8 +139,11 @@ export async function POST(req: Request) {
     let lateMinutes: number | null = null
     let penaltyAmount: number | null = null
 
+    // يوم إجازة؟ الحضور فيه ينسجّل «دوام يوم إجازة» (يوم إضافي) بدون تأخير
+    const onDayOff = type === 'check_in' ? !!(await dayOffFor(supabase, staff as any, org_id, currentShift)) : false
+
     // حساب التأخير — بس عند تسجيل الحضور، على بداية الشفت الأقرب (يغطي الشفت الليلي)
-    if (type === 'check_in' && currentShift && !currentShift.is_24h && currentShift.start_time) {
+    if (type === 'check_in' && !onDayOff && currentShift && !currentShift.is_24h && currentShift.start_time) {
       // وقت السماح + مبلغ لكل ساعة (إعداد المالك بصفحة الحضور)
       const { data: lateCfg } = await supabase.from('organizations').select('late_grace_minutes,late_penalty_per_hour').eq('id', org_id).single()
       const r = applyLateRules(lateMinutesAt(Date.now(), currentShift), {
@@ -154,6 +166,7 @@ export async function POST(req: Request) {
       latitude, longitude, distance_m: Math.round(dist), within_range: true,
       late_minutes: lateMinutes, penalty_amount: penaltyAmount,
       overtime_minutes: overtimeAtCheckout,
+      ...(type === 'check_in' ? { on_day_off: onDayOff } : {}),
       // الحضور يثبّت شفت الموظف وقتها
       ...(type === 'check_in' ? {
         shift_start_time: currentShift?.start_time ?? null,
@@ -212,7 +225,7 @@ export async function GET(req: Request) {
       }
     }
 
-    const { data: staffRow } = await supabase.from('staff_members').select('shift_id').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
+    const { data: staffRow } = await supabase.from('staff_members').select('id,shift_id,weekly_off_days').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
     const currentShift = await staffShift(supabase, (staffRow as any)?.shift_id || null)
     const st = attendanceState({ events: await recentEvents(supabase, staff_id, org_id), shift: currentShift })
     // وهو حاضر: نعرض شفت دوامه الحالي (اللي حضر عليه) — الشفت الجديد يبدأ من دوامه الجاي
@@ -221,7 +234,8 @@ export async function GET(req: Request) {
     const data = [st.sessionOut, st.sessionIn].filter(Boolean)
 
     return NextResponse.json({ success: true, today: data, shift,
-      state: { checkedIn: st.checkedIn, canCheckIn: st.canCheckIn, canCheckOut: st.canCheckOut, shiftStart: st.shiftStartMs ? new Date(st.shiftStartMs).toISOString() : null } })
+      state: { checkedIn: st.checkedIn, canCheckIn: st.canCheckIn, canCheckOut: st.canCheckOut, shiftStart: st.shiftStartMs ? new Date(st.shiftStartMs).toISOString() : null,
+        dayOff: staffRow ? await dayOffFor(supabase, staffRow as any, org_id, currentShift) : null } })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }

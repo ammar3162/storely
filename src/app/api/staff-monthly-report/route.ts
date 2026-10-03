@@ -36,7 +36,7 @@ export async function GET(req: Request) {
     // مدير الفرع: موظفين فرعه بس
     const branch = enforcedBranchId(access, searchParams.get('branch_id'))
     let q = db.from('staff_members')
-      .select('id,org_id,name,role,branch_id,monthly_salary,housing_allowance,transport_allowance,food_allowance,shift_id,is_active')
+      .select('id,org_id,name,role,branch_id,monthly_salary,housing_allowance,transport_allowance,food_allowance,shift_id,is_active,weekly_off_days')
       .eq('org_id', org_id).order('name')
     if (branch) q = q.eq('branch_id', branch)
     if (staff_id) q = q.eq('id', staff_id)
@@ -58,6 +58,7 @@ export async function GET(req: Request) {
         pending_total: r2(p.pendingAdvances.reduce((a, x) => a + x.amount, 0) + p.pendingDeficits.reduce((a, x) => a + x.amount, 0)),
         net: p.netSalary,
         days_present: p.attendance.daysPresent, days_in_month: p.attendance.daysInMonth,
+        extra_days: p.attendance.extraDays, weekly_off_days: p.attendance.weeklyOffDays,
         ...(staff_id ? { ledger: payrollLedger(p), hour_rate: p.overtime.hourRate, overtime_mode: p.overtime.mode } : {}),
       }
     })

@@ -7,6 +7,7 @@ import { colors, font, card, btnPrimary, pageTitle, pageSub, inp } from '@/lib/d
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { exportReportPdf } from '@/lib/pdfExport'
+import { WEEKDAYS_AR, weeklyOffCount } from '@/lib/daysOff'
 
 // كل الأوقات والتواريخ بالتقرير بتوقيت السعودية
 const saudiToday = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
@@ -91,7 +92,7 @@ export default function AttendancePage() {
       if (!j.success || !j.rows?.length) { setMonthStats({ totalPenalty: 0, attendanceRate: null, mostLate: null }); return }
       const totalPenalty = Math.round(j.rows.reduce((s:number,r:any)=>s+r.total_penalty,0)*100)/100
       const totalPresent = j.rows.reduce((s:number,r:any)=>s+r.days_present,0)
-      const totalPossible = j.rows.length * j.totalDays
+      const totalPossible = j.rows.reduce((s:number,r:any)=>s+r.days_present+r.days_absent,0)
       const attendanceRate = totalPossible > 0 ? Math.round((totalPresent/totalPossible)*100) : null
       const withLate = j.rows.filter((r:any)=>r.total_late_minutes>0).sort((a:any,b:any)=>b.total_late_minutes-a.total_late_minutes)
       const mostLate = withLate[0] ? { name: withLate[0].name, minutes: withLate[0].total_late_minutes } : null
@@ -152,6 +153,8 @@ export default function AttendancePage() {
           { header: 'الموظف', key: 'name' },
           { header: 'أيام الحضور', key: 'days_present', align: 'center' },
           { header: 'أيام الغياب', key: 'days_absent', align: 'center' },
+          { header: 'إجازات', key: 'days_off', align: 'center' },
+          { header: 'أيام إضافية', key: 'extra_days', align: 'center' },
           { header: 'إجمالي دقائق التأخير', key: 'total_late_minutes', align: 'center' },
           { header: 'إجمالي الخصومات (ر.س)', key: 'total_penalty', align: 'center' },
           { header: 'دقائق الأوفر تايم', key: 'total_overtime_minutes', align: 'center' },
@@ -162,6 +165,8 @@ export default function AttendancePage() {
           name: 'الإجمالي',
           days_present: rangeRows.reduce((s,r)=>s+r.days_present,0),
           days_absent: rangeRows.reduce((s,r)=>s+r.days_absent,0),
+          days_off: rangeRows.reduce((s,r)=>s+(r.days_off||0),0),
+          extra_days: rangeRows.reduce((s,r)=>s+(r.extra_days||0),0),
           total_late_minutes: rangeRows.reduce((s,r)=>s+r.total_late_minutes,0),
           total_penalty: Math.round(rangeRows.reduce((s,r)=>s+r.total_penalty,0)*100)/100,
           total_overtime_minutes: rangeRows.reduce((s,r)=>s+(r.total_overtime_minutes||0),0),
@@ -252,6 +257,19 @@ export default function AttendancePage() {
 
 
 
+  // أيام الإجازة الأسبوعية للموظف — تنحفظ على طول مع كل ضغطة
+  async function toggleOffDay(staffId: string, day: number) {
+    const cur: number[] = staffList.find((x: any) => x.id === staffId)?.weekly_off_days || []
+    const next = cur.includes(day) ? cur.filter(d => d !== day) : [...cur, day].sort((a, b) => a - b)
+    if (next.length > 6) { toast('لازم يبقى يوم دوام واحد على الأقل', 'warning'); return }
+    setStaffList(prev => prev.map((x: any) => x.id === staffId ? { ...x, weekly_off_days: next } : x))
+    const j = await api.patch('/api/staff-shifts', { org_id: orgId, staff_id: staffId, weekly_off_days: next })
+    if (!j.success) {
+      toast(j.error || 'تعذر الحفظ', 'error')
+      setStaffList(prev => prev.map((x: any) => x.id === staffId ? { ...x, weekly_off_days: cur } : x))
+    }
+  }
+
   async function addShift() {
     if (!newShiftName.trim() || !branchId) { toast('أدخل اسم الشفت — وتأكد إنك حدّدت فرع نشط', 'warning'); return }
     setSavingShift(true)
@@ -293,13 +311,14 @@ export default function AttendancePage() {
 
 
 
-  const presentCount = rows.filter(r => r.status !== 'لم يحضر').length
+  const presentCount = rows.filter(r => r.check_in).length
   const absentCount = rows.filter(r => r.status === 'لم يحضر').length
+  const offCount = rows.filter(r => !r.check_in && r.day_off).length
 
   const statusColor = (s: string) =>
-    s === 'حاضر' ? colors.primary : s === 'انصرف' ? colors.info : colors.text4
+    s.startsWith('حاضر') ? colors.primary : s.startsWith('انصرف') ? colors.info : s.startsWith('إجازة') ? '#1d4ed8' : colors.text4
   const statusBg = (s: string) =>
-    s === 'حاضر' ? colors.primaryLight : s === 'انصرف' ? colors.infoLight : colors.bg
+    s.startsWith('حاضر') ? colors.primaryLight : s.startsWith('انصرف') ? colors.infoLight : s.startsWith('إجازة') ? '#eff6ff' : colors.bg
 
   return (
     <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 900, margin: '0 auto' }}>
@@ -375,7 +394,7 @@ export default function AttendancePage() {
 
           {periodMode === 'day' ? (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8, marginBottom: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${offCount ? 3 : 2},1fr)`, gap: 8, marginBottom: 16 }}>
                 <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}` }}>
                   <div style={{ fontSize: 22, fontWeight: 900, color: colors.primary }}>{presentCount}</div>
                   <div style={{ fontSize: 11, color: colors.primary, fontWeight: 600, marginTop: 2 }}>حضروا اليوم</div>
@@ -384,6 +403,12 @@ export default function AttendancePage() {
                   <div style={{ fontSize: 22, fontWeight: 900, color: colors.danger }}>{absentCount}</div>
                   <div style={{ fontSize: 11, color: colors.danger, fontWeight: 600, marginTop: 2 }}>لم يحضروا</div>
                 </div>
+                {offCount > 0 && (
+                  <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: '#1d4ed8' }}>{offCount}</div>
+                    <div style={{ fontSize: 11, color: '#1d4ed8', fontWeight: 600, marginTop: 2 }}>بإجازة</div>
+                  </div>
+                )}
               </div>
 
               <div style={{ ...card, overflow: 'hidden' }}>
@@ -454,6 +479,7 @@ export default function AttendancePage() {
                         <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الموظف</th>
                         <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>أيام الحضور</th>
                         <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>أيام الغياب</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجازات</th>
                         <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجمالي التأخير</th>
                         <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجمالي الخصومات</th>
                         <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الأوفر تايم</th>
@@ -464,7 +490,10 @@ export default function AttendancePage() {
                         <tr key={r.staff_id} style={{ borderBottom: i < rangeRows.length - 1 ? `1px solid ${colors.border}` : 'none' }}>
                           <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف مو مربوط بشفت — ما ينحسب له تأخير ولا أوفر تايم' : 'شفت 24 ساعة — ما ينحسب تأخير ولا أوفر تايم'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? '⚠️ بدون شفت' : '⚠️ شفت 24 ساعة'}</span>}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: colors.primary, fontWeight: 700 }}>{r.days_present}</td>
-                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: colors.danger, fontWeight: 700 }}>{r.days_absent}</td>
+                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.days_absent ? colors.danger : colors.text4, fontWeight: 700 }}>{r.days_absent || '—'}</td>
+                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.days_off ? '#1d4ed8' : colors.text4, fontWeight: 700 }}>
+                            {r.days_off || '—'}{r.extra_days ? <div style={{ fontSize: 10.5, color: colors.primary, fontWeight: 700 }}>+{r.extra_days} يوم إضافي</div> : null}
+                          </td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_late_minutes ? colors.warning : colors.text4 }}>{r.total_late_minutes ? `${r.total_late_minutes} دقيقة` : '—'}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_penalty ? colors.danger : colors.text4, fontWeight: 700 }}>{r.total_penalty ? `${r.total_penalty} ر.س` : '—'}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
@@ -636,7 +665,7 @@ export default function AttendancePage() {
 
           {/* 2) شفت كل موظف */}
           <div style={box}>
-            {step(2, 'شفت كل موظف', 'اختر لكل موظف شفته. لو غيّرت شفت موظف وهو داخل دوامه، يكمل دوامه الحالي على شفته القديم والجديد يبدأ من دوامه الجاي.',
+            {step(2, 'شفت كل موظف وإجازته', 'اختر لكل موظف شفته وأيام إجازته بالأسبوع. يوم إجازته ما ينحسب غياب، ولو داوم فيه ينحسب يوم إضافي. تغيير الشفت وهو داخل دوامه يتطبّق من دوامه الجاي.',
               staffList.length === 0 ? null : withoutShift ? pill(`${withoutShift} بدون شفت`, 'warn') : pill('كل الموظفين مربوطين', 'ok'))}
             {staffList.length === 0 ? (
               <div style={{ fontSize: 13, color: colors.text4, textAlign: 'center' as const, padding: 16 }}>ما فيه موظفين نشطين بهذا الفرع</div>
@@ -654,6 +683,21 @@ export default function AttendancePage() {
                       <option value="">بدون شفت</option>
                       {shifts.map((sh: any) => (<option key={sh.id} value={sh.id}>{sh.name}{sh.is_24h ? ' (24 ساعة)' : ` (${t12(sh.start_time)} – ${t12(sh.end_time)})`}</option>))}
                     </select>
+                    <div style={{ flexBasis: '100%', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const, paddingTop: 4 }}>
+                      <span style={{ fontSize: 11.5, fontWeight: 700, color: colors.text3, marginInlineEnd: 4 }}>الإجازة:</span>
+                      {WEEKDAYS_AR.map((dn, di) => {
+                        const on = (x.weekly_off_days || []).includes(di)
+                        return (
+                          <button key={di} onClick={() => toggleOffDay(x.id, di)} aria-pressed={on}
+                            style={{ padding: '5px 10px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, border: `1.5px solid ${on ? '#3b82f6' : colors.border}`, background: on ? '#eff6ff' : colors.surface, color: on ? '#1d4ed8' : colors.text3 }}>
+                            {dn}
+                          </button>
+                        )
+                      })}
+                      <span style={{ fontSize: 11.5, color: colors.text4, marginInlineStart: 4 }}>
+                        {(x.weekly_off_days || []).length ? `${weeklyOffCount(saudiToday().slice(0, 7), x.weekly_off_days)} أيام إجازة هالشهر` : 'بدون إجازة أسبوعية'}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>

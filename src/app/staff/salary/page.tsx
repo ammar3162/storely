@@ -21,7 +21,7 @@ type Payroll = {
   pendingAdvances: { amount: number; date: string }[]
   pendingDeficits: { date: string; amount: number; reason: string | null }[]
   netSalary: number
-  attendance: { daysPresent: number; daysInMonth: number; lateCount: number; lateMinutes: number }
+  attendance: { daysPresent: number; daysInMonth: number; lateCount: number; lateMinutes: number; extraDays?: number }
 }
 
 const thisMonth = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 7)
@@ -216,7 +216,7 @@ export default function PayslipPage() {
             {/* الحضور */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginTop: 18 }}>
               {[
-                { icon: <CalendarCheck size={16} />, v: `${data.attendance.daysPresent}`, l: t('daysPresent'), c: '#0f766e' },
+                { icon: <CalendarCheck size={16} />, v: `${data.attendance.daysPresent}`, l: data.attendance.extraDays ? `${t('daysPresent')} · ${t('extraDays', { n: String(data.attendance.extraDays) })}` : t('daysPresent'), c: '#0f766e' },
                 { icon: <Clock size={16} />, v: data.attendance.lateMinutes ? dur(data.attendance.lateMinutes) : '0', l: `${t('lateStat')} (${data.attendance.lateCount} ${t('times')})`, c: data.attendance.lateCount ? '#c2410c' : '#0f766e' },
                 { icon: <TrendingUp size={16} />, v: data.overtime.minutes ? dur(data.overtime.minutes) : '0', l: t('overtimeStat'), c: '#4f46e5' },
               ].map((k, i) => (

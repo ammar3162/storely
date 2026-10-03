@@ -177,7 +177,7 @@ export default function StaffMonthlyDetail({ onBack }: { onBack: () => void }) {
             {stat('صافي الراتب', `${smNum(one.net)} ${curr}`, colors.primary, colors.primaryLight, isCurrent ? 'حتى الآن' : undefined)}
             {stat('المستحقات', `${smNum(one.gross + one.overtime_pay)} ${curr}`, '#047857', '#ecfdf5', one.overtime_minutes ? `منها أوفر تايم ${smDur(one.overtime_minutes)}` : undefined)}
             {stat('الخصومات والسلف', `${smNum(one.late_total + one.deductions_total + one.advances_total)} ${curr}`, colors.danger, colors.dangerLight, one.late_count ? `${one.late_count} تأخير` : undefined)}
-            {stat('الحضور', `${one.days_present} يوم`, colors.text, colors.surface, one.late_minutes ? `تأخير ${smDur(one.late_minutes)}` : 'بدون تأخير')}
+            {stat('الحضور', `${one.days_present} يوم`, colors.text, colors.surface, [one.extra_days ? `منها ${one.extra_days} يوم إضافي` : '', one.late_minutes ? `تأخير ${smDur(one.late_minutes)}` : 'بدون تأخير'].filter(Boolean).join(' · '))}
           </div>
           {section('المستحقات', one.ledger.filter((r: any) => r.section === 'earning'), '+', '#047857', one.gross + one.overtime_pay, 'إجمالي المستحقات')}
           {one.ledger.some((r: any) => r.section === 'deduction')
