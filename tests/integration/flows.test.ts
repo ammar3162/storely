@@ -300,6 +300,39 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
     })
   })
 
+  describe('extra day (worked a day off) — owner decides', () => {
+    it('paid adds a bonus to the payslip, comp marks a day off, and a second decision is refused', async () => {
+      const extra = await import('@/app/api/extra-days/route')
+      const { computeStaffPayroll, loadOvertimeSettings } = await import('@/lib/payroll')
+      const { data: st } = await db.from('staff_members').insert({
+        org_id: orgId, branch_id: branchA, name: 'موظف إضافي', phone: `9665${String(stamp + 11).slice(-8)}`, pin: 'x', is_active: true,
+        permissions: { dispense: true }, role: 'staff', monthly_salary: 3000, weekly_off_days: [5],
+      } as any).select('id,org_id,monthly_salary,housing_allowance,transport_allowance,food_allowance,shift_id,weekly_off_days').single()
+      const staffId = (st as any).id
+      const month = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 7)
+      const { data: e1 } = await db.from('staff_extra_days').insert({ org_id: orgId, staff_id: staffId, work_date: `${month}-01`, reason: 'weekly' } as any).select('id').single()
+      const { data: e2 } = await db.from('staff_extra_days').insert({ org_id: orgId, staff_id: staffId, work_date: `${month}-02`, reason: 'weekly' } as any).select('id').single()
+
+      const list = await call(extra.GET, 'GET', `/api/extra-days?org_id=${orgId}&status=pending`)
+      expect(list.json.extra_days.find((x: any) => x.id === (e1 as any).id).suggested_amount).toBe(100)   // 3000 ÷ 30
+
+      const paid = await call(extra.POST, 'POST', '/api/extra-days', { org_id: orgId, id: (e1 as any).id, decision: 'paid', amount: 100 })
+      expect(paid.status).toBe(200)
+      const again = await call(extra.POST, 'POST', '/api/extra-days', { org_id: orgId, id: (e1 as any).id, decision: 'paid', amount: 100 })
+      expect(again.status).toBe(409)
+
+      const comp = await call(extra.POST, 'POST', '/api/extra-days', { org_id: orgId, id: (e2 as any).id, decision: 'comp', comp_date: `${month}-10` })
+      expect(comp.status).toBe(200)
+      expect(((await db.from('staff_extra_days').select('status,comp_date').eq('id', (e2 as any).id).single()).data as any)).toMatchObject({ status: 'comp', comp_date: `${month}-10` })
+
+      const pay = await computeStaffPayroll(db as any, st, month, await loadOvertimeSettings(db as any, orgId))
+      expect(pay.bonusesTotal).toBe(100)
+      expect(pay.netSalary).toBe(3100)
+      const { data: notes } = await db.from('staff_notifications').select('title').eq('staff_id', staffId)
+      expect((notes || []).length).toBe(2)
+    })
+  })
+
   describe('supplier orders: once per drop', () => {
     it('blocks a second order until the product is restocked', async () => {
       const milk = await productByName('حليب')

@@ -74,7 +74,7 @@ export default function StaffMonthlyDetail({ onBack }: { onBack: () => void }) {
           ],
           rows: one.ledger.map((r: any) => ({ section: sec[r.section], label: r.label, date: r.date ? smDay(r.date) : '—', detail: r.detail || '—', amount: `${r.section === 'deduction' ? '−' : r.section === 'earning' ? '+' : ''}${money(r.amount)}` })),
           summaryStats: [
-            { label: 'المستحقات', value: money(one.gross + one.overtime_pay), color: '#047857' },
+            { label: 'المستحقات', value: money(one.gross + one.overtime_pay + (one.bonus_total || 0)), color: '#047857' },
             { label: 'الخصومات والسلف', value: money(one.late_total + one.deductions_total + one.advances_total), color: '#dc2626' },
             { label: 'صافي الراتب', value: money(one.net), color: '#0f766e' },
           ],
@@ -175,11 +175,11 @@ export default function StaffMonthlyDetail({ onBack }: { onBack: () => void }) {
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 10, marginBottom: 14 }}>
             {stat('صافي الراتب', `${smNum(one.net)} ${curr}`, colors.primary, colors.primaryLight, isCurrent ? 'حتى الآن' : undefined)}
-            {stat('المستحقات', `${smNum(one.gross + one.overtime_pay)} ${curr}`, '#047857', '#ecfdf5', one.overtime_minutes ? `منها أوفر تايم ${smDur(one.overtime_minutes)}` : undefined)}
+            {stat('المستحقات', `${smNum(one.gross + one.overtime_pay + (one.bonus_total || 0))} ${curr}`, '#047857', '#ecfdf5', one.overtime_minutes ? `منها أوفر تايم ${smDur(one.overtime_minutes)}` : undefined)}
             {stat('الخصومات والسلف', `${smNum(one.late_total + one.deductions_total + one.advances_total)} ${curr}`, colors.danger, colors.dangerLight, one.late_count ? `${one.late_count} تأخير` : undefined)}
             {stat('الحضور', `${one.days_present} يوم`, colors.text, colors.surface, [one.extra_days ? `منها ${one.extra_days} يوم إضافي` : '', one.late_minutes ? `تأخير ${smDur(one.late_minutes)}` : 'بدون تأخير'].filter(Boolean).join(' · '))}
           </div>
-          {section('المستحقات', one.ledger.filter((r: any) => r.section === 'earning'), '+', '#047857', one.gross + one.overtime_pay, 'إجمالي المستحقات')}
+          {section('المستحقات', one.ledger.filter((r: any) => r.section === 'earning'), '+', '#047857', one.gross + one.overtime_pay + (one.bonus_total || 0), 'إجمالي المستحقات')}
           {one.ledger.some((r: any) => r.section === 'deduction')
             ? section('الخصومات والسلف', one.ledger.filter((r: any) => r.section === 'deduction'), '−', colors.danger, one.late_total + one.deductions_total + one.advances_total, 'إجمالي الخصومات والسلف')
             : <div style={{ ...card, padding: '16px', marginBottom: 12, textAlign: 'center' as const, fontSize: 13, color: colors.text3, fontWeight: 600 }}>ما عليه أي خصومات أو سلف هذا الشهر</div>}

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { selectAll } from '@/lib/selectAll'
-import { offReason } from '@/lib/daysOff'
+import { offReason, monthlyOffDates } from '@/lib/daysOff'
 import { loadOvertimeSettings, overtimeMinutes, overtimeHourRate, type Shift } from '@/lib/payroll'
 
 const sb = () => createClient(
@@ -15,6 +15,9 @@ const round2 = (n: number) => Math.round(n * 100) / 100
 // تاريخ اليوم بتوقيت السعودية
 const saudiDate = (iso: string) => new Date(new Date(iso).getTime() + 3 * 3600e3).toISOString().slice(0, 10)
 const saudiToday = () => saudiDate(new Date().toISOString())
+
+const monthEnd = (m: string) => { const [y, mo] = m.split('-').map(Number); return new Date(Date.UTC(y, mo, 0)).toISOString().slice(0, 10) }
+const nextMonth = (m: string) => { const [y, mo] = m.split('-').map(Number); return new Date(Date.UTC(y, mo, 1)).toISOString().slice(0, 7) }
 
 function dateRange(from: string, to: string): string[] {
   const dates: string[] = []
@@ -64,7 +67,7 @@ export async function GET(req: Request) {
 
     // القراءة متاحة دايماً حتى بدون اشتراك فعّال -- المالك يقدر يشوف سجلاته القديمة (قراءة فقط)،
     // الحماية الفعلية (منع تسجيل حضور جديد) موجودة بمسار POST /api/staff-attendance مو هنا
-    let staffQ = supabase.from('staff_members').select('id,name,branch_id,shift_id,monthly_salary,weekly_off_days').eq('org_id', org_id).eq('is_active', true)
+    let staffQ = supabase.from('staff_members').select('id,name,branch_id,shift_id,monthly_salary,weekly_off_days,days_off_mode,monthly_off_days').eq('org_id', org_id).eq('is_active', true)
     if (effectiveBranchId) staffQ = staffQ.eq('branch_id', effectiveBranchId)
     if (staff_id) staffQ = staffQ.eq('id', staff_id)
     const { data: staffList } = await staffQ.order('name')
@@ -90,14 +93,42 @@ export async function GET(req: Request) {
     const isLegacy = (c?: Ev | null) => !!c && autoFrom != null && !c.penalty_applied && Number(c.penalty_amount || 0) > 0 && Date.parse(c.recorded_at) < autoFrom
     // الإجازات المعتمدة للموظفين بالفترة — يوم الإجازة ما ينحسب غياب
     let leaves: { staff_id: string; start_date: string; end_date: string }[] = []
+    let comps: { staff_id: string; comp_date: string }[] = []
+    // رصيد الشهر المرن: أيام الإجازة المحسوبة لكل موظف (أول N أيام ما داوم فيها)
+    const monthlyOff = new Map<string, Set<string>>()
     const loadLeaves = async (startDay: string, endDay: string) => {
       const ids = staff.map((x: any) => x.id)
       if (!ids.length) return
-      const { data } = await supabase.from('staff_leave_requests').select('staff_id,start_date,end_date')
-        .eq('org_id', org_id).eq('status', 'approved').in('staff_id', ids).lte('start_date', endDay).gte('end_date', startDay)
-      leaves = (data || []) as any[]
+      const [{ data: lv }, { data: cp }] = await Promise.all([
+        supabase.from('staff_leave_requests').select('staff_id,start_date,end_date')
+          .eq('org_id', org_id).eq('status', 'approved').in('staff_id', ids).lte('start_date', endDay).gte('end_date', startDay),
+        supabase.from('staff_extra_days').select('staff_id,comp_date')
+          .eq('org_id', org_id).eq('status', 'comp').in('staff_id', ids).gte('comp_date', startDay).lte('comp_date', endDay),
+      ])
+      leaves = (lv || []) as any[]
+      comps = (cp || []) as any[]
+
+      const monthlyStaff = staff.filter((x: any) => x.days_off_mode === 'monthly' && Number(x.monthly_off_days) > 0)
+      if (monthlyStaff.length) {
+        const monthStart = `${startDay.slice(0, 7)}-01`
+        const { data: ins } = await supabase.from('staff_attendance').select('staff_id,recorded_at')
+          .eq('org_id', org_id).eq('type', 'check_in').in('staff_id', monthlyStaff.map((x: any) => x.id))
+          .gte('recorded_at', `${monthStart}T00:00:00+03:00`).lte('recorded_at', `${endDay}T23:59:59+03:00`)
+        const today = saudiToday()
+        for (const st of monthlyStaff) {
+          const worked = new Set(((ins || []) as any[]).filter(r => r.staff_id === st.id).map(r => saudiDate(r.recorded_at)))
+          const set = new Set<string>()
+          for (let m = startDay.slice(0, 7); m <= endDay.slice(0, 7); m = nextMonth(m)) {
+            const fixed = new Set(dateRange(`${m}-01`, monthEnd(m)).filter(d => fixedOff(st, d)))
+            for (const d of monthlyOffDates(m, Number(st.monthly_off_days), worked, today, fixed)) set.add(d)
+          }
+          monthlyOff.set(st.id, set)
+        }
+      }
     }
-    const offFor = (s: any, d: string) => offReason(d, s.weekly_off_days, leaves.filter(l => l.staff_id === s.id))
+    const fixedOff = (s: any, d: string) => offReason(d, s.days_off_mode === 'monthly' ? [] : s.weekly_off_days,
+      leaves.filter(l => l.staff_id === s.id), comps.filter(c => c.staff_id === s.id).map(c => c.comp_date))
+    const offFor = (s: any, d: string) => fixedOff(s, d) || (monthlyOff.get(s.id)?.has(d) ? 'monthly' as const : null)
 
     const describe = (s: any, x: { checkIn: Ev; checkOut: Ev | null } | null, d?: string) => {
       const off = !x && d ? offFor(s, d) : null
@@ -120,7 +151,7 @@ export async function GET(req: Request) {
         overtime_pay: ot.pay,
         status: x
           ? (x.checkIn.on_day_off ? (x.checkOut ? 'انصرف — يوم إضافي' : 'حاضر — يوم إضافي') : (x.checkOut ? 'انصرف' : 'حاضر'))
-          : off === 'leave' ? 'إجازة معتمدة' : off === 'weekly' ? 'إجازة' : 'لم يحضر',
+          : off === 'leave' ? 'إجازة معتمدة' : off === 'comp' ? 'إجازة بديلة' : off ? 'إجازة' : 'لم يحضر',
         day_off: off,
         extra_day: !!x?.checkIn.on_day_off,
       }

@@ -83,7 +83,7 @@ export async function GET(req: Request) {
       return {
         staffId: s.id, name: s.name,
         grossSalary, deductionsTotal, advancesTotal, netSalary,
-        overtimeMinutes: pay.overtime.minutes, overtimePay: pay.overtime.pay,
+        overtimeMinutes: pay.overtime.minutes, overtimePay: pay.overtime.pay, bonusesTotal: pay.bonusesTotal,
         latePenaltiesTotal: pay.latePenaltiesTotal, latePenaltiesCount: pay.latePenalties.length,
         otherDeductionsTotal: Math.round((deductionsTotal - pay.latePenaltiesTotal) * 100) / 100,
         pendingDeficitsTotal: Math.round(pay.pendingDeficits.reduce((s2, d) => s2 + d.amount, 0) * 100) / 100,

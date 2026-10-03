@@ -5,14 +5,28 @@ import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { attendanceState, lateMinutesAt, activeShift, canCheckOutAt, type AttEvent } from '@/lib/attendanceState'
 import { overtimeMinutes, loadOvertimeSettings, type Shift } from '@/lib/payroll'
 import { applyLateRules } from '@/lib/latePenalty'
-import { workDateFor, offReason, type OffReason } from '@/lib/daysOff'
+import { workDateFor, offReason, isMonthlyExtraDay, type OffReason } from '@/lib/daysOff'
 
 // يوم إجازة؟ (أسبوعية من المالك أو إجازة معتمدة) — لتاريخ دوام الموظف الحالي
-async function dayOffFor(supabase: any, staff: { id: string; weekly_off_days?: number[] | null }, org_id: string, shift: Shift): Promise<OffReason | null> {
+type StaffOff = { id: string; weekly_off_days?: number[] | null; days_off_mode?: string | null; monthly_off_days?: number | null }
+
+// يوم إجازة؟ ثابت (أسبوعي، إجازة معتمدة، يوم بديل) أو — لرصيد الشهر المرن — خلّص أيام دوامه المطلوبة
+async function dayOffFor(supabase: any, staff: StaffOff, org_id: string, shift: Shift): Promise<OffReason | null> {
   const date = workDateFor(Date.now(), shift)
-  const { data: leaves } = await supabase.from('staff_leave_requests').select('start_date,end_date')
-    .eq('staff_id', staff.id).eq('org_id', org_id).eq('status', 'approved').lte('start_date', date).gte('end_date', date).limit(1)
-  return offReason(date, staff.weekly_off_days, (leaves || []) as any[])
+  const monthly = staff.days_off_mode === 'monthly'
+  const [{ data: leaves }, { data: comp }] = await Promise.all([
+    supabase.from('staff_leave_requests').select('start_date,end_date')
+      .eq('staff_id', staff.id).eq('org_id', org_id).eq('status', 'approved').lte('start_date', date).gte('end_date', date).limit(1),
+    supabase.from('staff_extra_days').select('comp_date').eq('staff_id', staff.id).eq('org_id', org_id).eq('status', 'comp').eq('comp_date', date).limit(1),
+  ])
+  const fixed = offReason(date, monthly ? [] : staff.weekly_off_days, (leaves || []) as any[], ((comp || []) as any[]).map(c => c.comp_date))
+  if (fixed || !monthly) return fixed
+  // رصيد شهري: كم يوم داوم هالشهر قبل اليوم؟
+  const month = date.slice(0, 7)
+  const { data: ins } = await supabase.from('staff_attendance').select('recorded_at').eq('staff_id', staff.id).eq('org_id', org_id).eq('type', 'check_in')
+    .gte('recorded_at', `${month}-01T00:00:00+03:00`).lt('recorded_at', `${date}T00:00:00+03:00`)
+  const days = new Set(((ins || []) as any[]).map(r => new Date(Date.parse(r.recorded_at) + 3 * 3600e3).toISOString().slice(0, 10)))
+  return isMonthlyExtraDay(month, Number(staff.monthly_off_days || 0), days.size) ? 'monthly' : null
 }
 
 // آخر حركات الموظف (يكفي آخر يومين) — لحالة «حاضر / انصرف / دوام جديد»
@@ -79,7 +93,7 @@ export async function POST(req: Request) {
     }
 
     // تأكد الموظف فعلاً تابع لهذا الفرع/المنشأة
-    const { data: staff } = await supabase.from('staff_members').select('id,name,branch_id,shift_id,weekly_off_days').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
+    const { data: staff } = await supabase.from('staff_members').select('id,name,branch_id,shift_id,weekly_off_days,days_off_mode,monthly_off_days,monthly_salary').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
     if (!staff) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
     // موقع التحقق لازم يكون فرع الموظف نفسه (مو أي فرع يرسله الطلب)
     if ((staff as any).branch_id && (staff as any).branch_id !== branch_id) return NextResponse.json({ error: 'الفرع غير صحيح' }, { status: 403 })
@@ -141,7 +155,8 @@ export async function POST(req: Request) {
     let penaltyAmount: number | null = null
 
     // يوم إجازة؟ الحضور فيه ينسجّل «دوام يوم إجازة» (يوم إضافي) بدون تأخير
-    const onDayOff = type === 'check_in' ? !!(await dayOffFor(supabase, staff as any, org_id, currentShift)) : false
+    const offKind = type === 'check_in' ? await dayOffFor(supabase, staff as any, org_id, currentShift) : null
+    const onDayOff = !!offKind
 
     // حساب التأخير — بس عند تسجيل الحضور، على بداية الشفت الأقرب (يغطي الشفت الليلي)
     if (type === 'check_in' && !onDayOff && currentShift && !currentShift.is_24h && currentShift.start_time) {
@@ -162,7 +177,7 @@ export async function POST(req: Request) {
       overtimeAtCheckout = overtimeMinutes(new Date().toISOString(), sessionShift, ot.minMinutes)
     }
 
-    const { error: insErr } = await supabase.from('staff_attendance').insert({
+    const { data: insRow, error: insErr } = await supabase.from('staff_attendance').insert({
       org_id, branch_id, staff_id, type, is_excused: isExcused,
       latitude, longitude, distance_m: Math.round(dist), within_range: true,
       late_minutes: lateMinutes, penalty_amount: penaltyAmount,
@@ -175,8 +190,26 @@ export async function POST(req: Request) {
         shift_is_24h: currentShift ? !!currentShift.is_24h : false,
       } : {}),
       accuracy_m: accuracy_m != null ? Number(accuracy_m) : null,
-    } as any)
+    } as any).select('id').single()
     if (insErr) return NextResponse.json({ error: 'فشل تسجيل الحضور — حاول مرة أخرى' }, { status: 500 })
+
+    // دوام بيوم إجازة = يوم إضافي ينتظر قرار المالك (تعويض مالي / يوم بديل / رفض)
+    if (type === 'check_in' && offKind && insRow) {
+      const workDate = workDateFor(Date.now(), currentShift)
+      const { data: extra } = await supabase.from('staff_extra_days').insert({
+        org_id, staff_id, attendance_id: (insRow as any).id, work_date: workDate, reason: offKind === 'monthly' ? 'monthly' : 'weekly',
+      } as any).select('id').single()
+      if (extra) {
+        await supabase.from('notifications').insert({
+          org_id, branch_id, type: 'info', read: false,
+          title: `يوم إضافي: ${(staff as any).name}`,
+          message: offKind === 'monthly'
+            ? `${(staff as any).name} داوم ${workDate} بعد ما خلّص أيام دوامه المطلوبة هالشهر — حدد التعويض: مبلغ أو يوم بديل.`
+            : `${(staff as any).name} حضّر بيوم إجازته (${workDate}) — حدد التعويض: مبلغ أو يوم بديل.`,
+          ref_type: 'extra_day', ref_id: (extra as any).id,
+        } as any)
+      }
+    }
     // خصم تأخير؟ يوصل الموظف إشعار بصفحته على طول
     if (type === 'check_in' && penaltyAmount && penaltyAmount > 0) {
       await notifyStaffDeduction(supabase, org_id, staff_id, { kind: 'late', amount: penaltyAmount, minutes: lateMinutes || 0 })
@@ -230,7 +263,7 @@ export async function GET(req: Request) {
       }
     }
 
-    const { data: staffRow } = await supabase.from('staff_members').select('id,shift_id,weekly_off_days').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
+    const { data: staffRow } = await supabase.from('staff_members').select('id,shift_id,weekly_off_days,days_off_mode,monthly_off_days').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
     const currentShift = await staffShift(supabase, (staffRow as any)?.shift_id || null)
     const st = attendanceState({ events: await recentEvents(supabase, staff_id, org_id), shift: currentShift })
     // وهو حاضر: نعرض شفت دوامه الحالي (اللي حضر عليه) — الشفت الجديد يبدأ من دوامه الجاي

@@ -53,6 +53,18 @@ export async function GET(req: Request) {
         n.can_decide = refType === 'cashier_deficit' ? isOwner : true
       }
     }
+    // اليوم الإضافي: نرفق بياناته (التاريخ والمبلغ المقترح والقرار) لأدوات القرار
+    const extraIds = rows.filter(n => n.ref_type === 'extra_day' && n.ref_id).map(n => n.ref_id)
+    if (extraIds.length) {
+      const { data: ex } = await db.from('staff_extra_days').select('id,work_date,status,amount,comp_date,staff_members(monthly_salary)').eq('org_id', org_id).in('id', extraIds)
+      const byId = new Map(((ex || []) as any[]).map(e => [e.id, e]))
+      for (const n of rows) if (n.ref_type === 'extra_day') {
+        const e = byId.get(n.ref_id)
+        n.extra = e ? { id: e.id, work_date: e.work_date, status: e.status, amount: e.amount, comp_date: e.comp_date,
+          suggested_amount: Math.round((Number(e.staff_members?.monthly_salary || 0) / 30) * 100) / 100 } : null
+        n.can_decide = access.role === 'owner'
+      }
+    }
     return NextResponse.json({ success: true, notifications: rows })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })

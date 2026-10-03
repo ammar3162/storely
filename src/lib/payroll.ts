@@ -114,6 +114,10 @@ export async function computeStaffPayroll(db: SupabaseClient, staff: any, month:
   const advances = adj.filter(a => a.type === 'advance' && a.status === 'approved')
   const pendingAdvances = adj.filter(a => a.type === 'advance' && a.status === 'pending')
   const advancesTotal = round2(advances.reduce((s, a) => s + Number(a.amount), 0))
+  // مكافآت (تعويض الأيام الإضافية) — تنضاف للمستحقات
+  const bonusRows = adj.filter(a => a.type === 'bonus' && a.status === 'approved')
+  const bonuses = bonusRows.map(a => ({ amount: Number(a.amount), reason: a.reason || null, date: a.created_at, source: a.source || null }))
+  const bonusesTotal = round2(bonuses.reduce((s, b) => s + b.amount, 0))
 
   const rows = (attendance || []) as any[]
   const checkIns = rows.filter(r => r.type === 'check_in')
@@ -147,12 +151,14 @@ export async function computeStaffPayroll(db: SupabaseClient, staff: any, month:
   // إجمالي الخصومات = خصومات الإدارة + عجز الكاشير المعتمد + غرامات التأخير
   const deductionsTotal = round2(manualDeductionsTotal + latePenaltiesTotal)
 
-  const netSalary = Math.max(0, round2(grossSalary + overtimePay - deductionsTotal - advancesTotal))
+  const netSalary = Math.max(0, round2(grossSalary + overtimePay + bonusesTotal - deductionsTotal - advancesTotal))
 
   return {
     month,
     basic, allowances, grossSalary,
     overtime: { minutes: overtimeMinutesTotal, pay: overtimePay, hourRate: rate, mode: settings.mode, days: overtimeDays },
+    bonuses,
+    bonusesTotal,
     deductions,
     latePenalties,
     latePenaltiesTotal,

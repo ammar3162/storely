@@ -52,7 +52,7 @@ export async function GET(req: Request) {
       return {
         staff_id: s.id, name: s.name, role: s.role,
         basic: p.basic, allowances: r2(p.allowances.housing + p.allowances.transport + p.allowances.food), gross: p.grossSalary,
-        overtime_minutes: p.overtime.minutes, overtime_pay: p.overtime.pay,
+        overtime_minutes: p.overtime.minutes, overtime_pay: p.overtime.pay, bonus_total: p.bonusesTotal,
         late_count: p.latePenalties.length, late_minutes: p.attendance.lateMinutes, late_total: p.latePenaltiesTotal,
         deductions_total: otherDeductions, advances_total: p.advancesTotal,
         pending_total: r2(p.pendingAdvances.reduce((a, x) => a + x.amount, 0) + p.pendingDeficits.reduce((a, x) => a + x.amount, 0)),
@@ -66,7 +66,7 @@ export async function GET(req: Request) {
     const sum = (k: string) => r2(rows.reduce((a: number, r: any) => a + Number(r[k] || 0), 0))
     return NextResponse.json({
       success: true, month, rows,
-      totals: { gross: sum('gross'), overtime_pay: sum('overtime_pay'), late_total: sum('late_total'), deductions_total: sum('deductions_total'), advances_total: sum('advances_total'), net: sum('net'), pending_total: sum('pending_total') },
+      totals: { gross: sum('gross'), overtime_pay: sum('overtime_pay'), bonus_total: sum('bonus_total'), late_total: sum('late_total'), deductions_total: sum('deductions_total'), advances_total: sum('advances_total'), net: sum('net'), pending_total: sum('pending_total') },
     }, { headers: { 'Cache-Control': 'no-store' } })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })

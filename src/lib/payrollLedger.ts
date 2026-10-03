@@ -2,6 +2,7 @@
 type Pay = {
   basic: number; allowances: { housing: number; transport: number; food: number }
   overtime: { minutes: number; pay: number; hourRate: number; days: { date: string; minutes: number; pay: number }[] }
+  bonuses?: { amount: number; reason: string | null; date: string }[]
   latePenalties: { date: string; minutes: number; amount: number }[]
   deductions: { amount: number; reason: string | null; date: string; source: string }[]
   advances: { amount: number; reason: string | null; date: string }[]
@@ -31,6 +32,10 @@ export function payrollLedger(p: Pay): LedgerRow[] {
   if (p.allowances.transport) rows.push({ section: 'earning', label: 'بدل مواصلات', date: null, detail: '', amount: p.allowances.transport })
   if (p.allowances.food) rows.push({ section: 'earning', label: 'بدل طعام', date: null, detail: '', amount: p.allowances.food })
   for (const d of p.overtime.days) rows.push({ section: 'earning', label: 'أوفر تايم', date: d.date, detail: `${fmtDuration(d.minutes)} × ${p.overtime.hourRate} للساعة`, amount: d.pay })
+  for (const b of p.bonuses || []) {
+    const m = /^تعويض يوم إضافي (\d{4}-\d{2}-\d{2})$/.exec(b.reason || '')
+    rows.push({ section: 'earning', label: m ? 'تعويض يوم إضافي' : 'مكافأة', date: m ? m[1] : isoDay(b.date), detail: m ? '' : (b.reason || ''), amount: b.amount })
+  }
 
   for (const l of p.latePenalties) rows.push({ section: 'deduction', label: 'غرامة تأخير', date: l.date, detail: `تأخير ${fmtDuration(l.minutes)}`, amount: l.amount })
   for (const d of p.deductions) {

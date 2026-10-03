@@ -13,6 +13,8 @@ type Payroll = {
   grossSalary: number
   overtime: { minutes: number; pay: number; hourRate: number; mode?: 'auto' | 'fixed' | 'off'; days: { date: string; minutes: number; pay: number }[] }
   deductions: { amount: number; reason: string | null; date: string; source: 'manual' | 'cashier_deficit' | 'late_bundle' }[]
+  bonuses?: { amount: number; reason: string | null; date: string; source: string | null }[]
+  bonusesTotal?: number
   latePenalties: { date: string; minutes: number; amount: number }[]
   latePenaltiesTotal: number
   deductionsTotal: number
@@ -153,7 +155,7 @@ export default function PayslipPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 14 }}>
                 <div style={{ background: 'rgba(255,255,255,.12)', borderRadius: 12, padding: '9px 12px' }}>
                   <div style={{ fontSize: 11, opacity: .8 }}>{t('totalEarnings')}</div>
-                  <div style={{ fontSize: 15, fontWeight: 800 }}><span dir="ltr">+{num(data.grossSalary + data.overtime.pay)}</span></div>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}><span dir="ltr">+{num(data.grossSalary + data.overtime.pay + (data.bonusesTotal || 0))}</span></div>
                 </div>
                 <div style={{ background: 'rgba(255,255,255,.12)', borderRadius: 12, padding: '9px 12px' }}>
                   <div style={{ fontSize: 11, opacity: .8 }}>{t('totalDeductions')}</div>
@@ -170,7 +172,11 @@ export default function PayslipPage() {
               {data.allowances.transport > 0 && line('transport', t('transport'), data.allowances.transport, { sign: '+' })}
               {data.allowances.food > 0 && line('food', t('food'), data.allowances.food, { sign: '+' })}
               {data.overtime.pay > 0 && line('ot', t('overtime'), data.overtime.pay, { sign: '+', color: '#047857', sub: `${dur(data.overtime.minutes)} × ${num(data.overtime.hourRate)} ${curr} ${t('perHour')}` })}
-              {line('te', t('totalEarnings'), data.grossSalary + data.overtime.pay, { strong: true })}
+              {(data.bonuses || []).map((b, i) => {
+                const m = /^تعويض يوم إضافي (\d{4}-\d{2}-\d{2})$/.exec(b.reason || '')
+                return line(`b${i}`, m ? t('extraPay') : t('bonus'), b.amount, { sign: '+', color: '#047857', sub: m ? dayLabel(m[1]) : subLine(b.date, b.reason) })
+              })}
+              {line('te', t('totalEarnings'), data.grossSalary + data.overtime.pay + (data.bonusesTotal || 0), { strong: true })}
             </div>
 
             {/* الخصومات — كل خصم بسببه وتاريخه */}

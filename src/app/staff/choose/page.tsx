@@ -64,7 +64,7 @@ export default function ChoosePage() {
   const [attError, setAttError] = useState('')
   const [locatingHint, setLocatingHint] = useState('')
   const [shift, setShift] = useState<any>(null)
-  const [dayOff, setDayOff] = useState<'weekly'|'leave'|null>(null)   // اليوم إجازته (أسبوعية أو معتمدة)
+  const [dayOff, setDayOff] = useState<'weekly'|'leave'|'comp'|'monthly'|null>(null)   // اليوم إجازته (أسبوعية، معتمدة، بديلة، أو خلّص أيام شهره)
   const [permReq, setPermReq] = useState<any>(null)
   const [showPermForm, setShowPermForm] = useState(false)
   const [permReason, setPermReason] = useState('')
@@ -296,7 +296,7 @@ export default function ChoosePage() {
   const fmtClock = (iso: string) => new Date(iso).toLocaleTimeString('ar-SA', { numberingSystem:'latn', hour:'2-digit', minute:'2-digit', timeZone:'Asia/Riyadh' })
   const todayLabel = new Date().toLocaleDateString(isAr ? 'ar-SA' : 'en-GB', { numberingSystem:'latn', weekday:'long', day:'numeric', month:'long', calendar:'gregory', timeZone:'Asia/Riyadh' })
   const offToday = !!dayOff && !isCheckedIn && !lastCheckOut
-  const statusTxt = isCheckedIn ? t('checkedIn') : lastCheckOut ? t('checkedOutToday') : offToday ? (isAr ? (dayOff === 'leave' ? 'إجازة معتمدة' : 'يوم إجازتك') : 'Day off') : t('notCheckedIn')
+  const statusTxt = isCheckedIn ? t('checkedIn') : lastCheckOut ? t('checkedOutToday') : offToday ? (isAr ? (dayOff === 'leave' ? 'إجازة معتمدة' : dayOff === 'comp' ? 'إجازة بديلة' : 'يوم إجازتك') : 'Day off') : t('notCheckedIn')
   const statusClr = isCheckedIn ? { c:'#0f766e', bg:'#ecfdf5', dot:'#10b981' } : lastCheckOut ? { c:'#475569', bg:'#f1f5f9', dot:'#94a3b8' } : offToday ? { c:'#1d4ed8', bg:'#eff6ff', dot:'#3b82f6' } : { c:'#b45309', bg:'#fffbeb', dot:'#f59e0b' }
 
   // أزرار العمل — نفس الشكل للكل، اللون بس بالأيقونة
@@ -384,8 +384,10 @@ export default function ChoosePage() {
 
               {offToday && (
                 <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:12,padding:'12px 14px',marginBottom:10}}>
-                  <div style={{fontSize:14,fontWeight:800,color:'#1e3a8a'}}>{isAr ? (dayOff === 'leave' ? 'أنت بإجازة معتمدة اليوم' : 'اليوم إجازتك') : (dayOff === 'leave' ? 'You are on approved leave today' : 'Today is your day off')}</div>
-                  <div style={{fontSize:12,color:'#1e40af',marginTop:3,lineHeight:1.6}}>{isAr ? 'ما ينحسب عليك غياب. لو طلب منك صاحب العمل تداوم، تقدر تحضّر وينحسب لك يوم إضافي.' : "No absence is counted. If your employer asks you to work, you can check in and it counts as an extra day."}</div>
+                  <div style={{fontSize:14,fontWeight:800,color:'#1e3a8a'}}>{isAr
+                    ? (dayOff === 'leave' ? 'أنت بإجازة معتمدة اليوم' : dayOff === 'comp' ? 'اليوم إجازتك البديلة' : dayOff === 'monthly' ? 'خلّصت أيام دوامك هالشهر' : 'اليوم إجازتك')
+                    : (dayOff === 'leave' ? 'You are on approved leave today' : dayOff === 'comp' ? 'Today is your day off in lieu' : dayOff === 'monthly' ? "You've completed this month's working days" : 'Today is your day off')}</div>
+                  <div style={{fontSize:12,color:'#1e40af',marginTop:3,lineHeight:1.6}}>{isAr ? 'ما ينحسب عليك غياب. لو طلب منك صاحب العمل تداوم، حضّر وينحسب يوم إضافي — وصاحب العمل يحدد تعويضك: مبلغ أو يوم إجازة بديل.' : "No absence is counted. If your employer asks you to work, check in — it's an extra day and your employer decides the compensation: pay or a day off in lieu."}</div>
                 </div>
               )}
               {!lastCheckOut && (

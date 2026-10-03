@@ -14,6 +14,7 @@ export const PAYSLIP_LANGS: { code: PayslipLang; label: string; locale: string; 
 type Dict = Record<string, string>
 
 const ar: Dict = {
+  extraPay: 'تعويض يوم إضافي', bonus: 'مكافأة', 
   extraDays: '+{n} يوم إضافي', 
   title: 'كشف الراتب', back: 'رجوع', prev: 'الشهر السابق', next: 'الشهر التالي', current: 'الشهر الحالي',
   netSoFar: 'صافي الراتب حتى الآن', net: 'صافي الراتب',
@@ -32,6 +33,7 @@ const ar: Dict = {
 }
 
 const en: Dict = {
+  extraPay: 'Extra day pay', bonus: 'Bonus', 
   extraDays: '+{n} extra day(s)', 
   title: 'Payslip', back: 'Back', prev: 'Previous month', next: 'Next month', current: 'This month',
   netSoFar: 'Net pay so far', net: 'Net pay',
@@ -50,6 +52,7 @@ const en: Dict = {
 }
 
 const ur: Dict = {
+  extraPay: 'اضافی دن کا معاوضہ', bonus: 'بونس', 
   extraDays: '+{n} اضافی دن', 
   title: 'تنخواہ کی پرچی', back: 'واپس', prev: 'پچھلا مہینہ', next: 'اگلا مہینہ', current: 'موجودہ مہینہ',
   netSoFar: 'اب تک کی خالص تنخواہ', net: 'خالص تنخواہ',
@@ -68,6 +71,7 @@ const ur: Dict = {
 }
 
 const hi: Dict = {
+  extraPay: 'अतिरिक्त दिन का भुगतान', bonus: 'बोनस', 
   extraDays: '+{n} अतिरिक्त दिन', 
   title: 'वेतन पर्ची', back: 'वापस', prev: 'पिछला महीना', next: 'अगला महीना', current: 'इस महीने',
   netSoFar: 'अब तक का शुद्ध वेतन', net: 'शुद्ध वेतन',
@@ -86,6 +90,7 @@ const hi: Dict = {
 }
 
 const tl: Dict = {
+  extraPay: 'Bayad sa dagdag na araw', bonus: 'Bonus', 
   extraDays: '+{n} dagdag na araw', 
   title: 'Payslip', back: 'Bumalik', prev: 'Nakaraang buwan', next: 'Susunod na buwan', current: 'Ngayong buwan',
   netSoFar: 'Netong sahod hanggang ngayon', net: 'Netong sahod',
@@ -104,6 +109,7 @@ const tl: Dict = {
 }
 
 const bn: Dict = {
+  extraPay: 'অতিরিক্ত দিনের পারিশ্রমিক', bonus: 'বোনাস', 
   extraDays: '+{n} অতিরিক্ত দিন', 
   title: 'বেতন স্লিপ', back: 'ফিরে যান', prev: 'আগের মাস', next: 'পরের মাস', current: 'এই মাস',
   netSoFar: 'এখন পর্যন্ত নিট বেতন', net: 'নিট বেতন',
@@ -122,6 +128,7 @@ const bn: Dict = {
 }
 
 const fr: Dict = {
+  extraPay: 'Jour supplémentaire payé', bonus: 'Prime', 
   extraDays: '+{n} jour(s) en plus', 
   title: 'Bulletin de paie', back: 'Retour', prev: 'Mois précédent', next: 'Mois suivant', current: 'Ce mois-ci',
   netSoFar: 'Salaire net à ce jour', net: 'Salaire net',

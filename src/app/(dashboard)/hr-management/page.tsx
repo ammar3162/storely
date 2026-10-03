@@ -6,6 +6,7 @@ import { getMe, getOrgId } from '@/lib/session'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
+import ExtraDayDecision from '@/components/ExtraDayDecision'
 import { cache } from '@/lib/cache'
 import { ThumbsUp, ThumbsDown, ClipboardList, ChevronDown, Plus, Camera, CalendarDays, BarChart3 } from 'lucide-react'
 
@@ -44,6 +45,8 @@ export default function HRManagementPage() {
   const [pendingAdvanceCounts, setPendingAdvanceCounts] = useState<Record<string, number>>({})
   // ملخص راتب الشهر الحالي لكل موظف — نفس حساب كشف راتب الموظف بالضبط
   const [cardPayroll, setCardPayroll] = useState<Record<string, any>>({})
+  const [extraDays, setExtraDays] = useState<any[]>([])          // أيام إضافية بانتظار قرار المالك
+  const [canDecideExtra, setCanDecideExtra] = useState(false)
   const [excuseRequests, setExcuseRequests] = useState<any[]>([])
   const [loadingExcuse, setLoadingExcuse] = useState(false)
 
@@ -72,12 +75,13 @@ export default function HRManagementPage() {
     getMe().then(m => setIsOwner(m?.role === 'owner')).catch(()=>{})
     const bid = sessionStorage.getItem('s_branch_id')
     const curMonth = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 7)
-    const [me, staffRes, leaveRes, advRes, payRes, addonRes, branchesRes] = await Promise.all([
+    const [me, staffRes, leaveRes, advRes, payRes, , addonRes, branchesRes] = await Promise.all([
       getMe(),
       api.get('/api/staff-members', { org_id: oid, branch_id: bid }),
       api.get('/api/staff-leave', { org_id: oid }),
       api.get('/api/staff-payroll-adjustments', { org_id: oid }),
       api.get('/api/staff-report', { org_id: oid, month: curMonth }),
+      api.get('/api/extra-days', { org_id: oid, status: 'pending' }).then(r => { if (r.success) { setExtraDays(r.extra_days || []); setCanDecideExtra(!!r.canDecide) } return r }),
       api.get('/api/addons-market', { org_id: oid }),
       api.get('/api/branches', { org_id: oid }),
     ])
@@ -399,6 +403,25 @@ export default function HRManagementPage() {
         </button>
       </div>
 
+      {/* أيام إضافية (دوام بيوم إجازة) بانتظار قرار المالك */}
+      {extraDays.length > 0 && (
+        <div style={{...card,padding:'14px 16px',marginBottom:20,border:`1px solid ${colors.primaryBorder}`}}>
+          <div style={{fontSize:13.5,fontWeight:800,color:colors.text}}>أيام إضافية بانتظار قرارك ({extraDays.length})</div>
+          <div style={{fontSize:12,color:colors.text3,marginTop:3,marginBottom:10}}>موظفين داوموا بيوم إجازتهم — حدد التعويض: مبلغ ينضاف لراتبهم أو يوم إجازة بديل.</div>
+          <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+            {extraDays.map((e:any)=>(
+              <div key={e.id} style={{background:colors.bg,borderRadius:10,padding:'10px 12px'}}>
+                <div style={{fontSize:13,fontWeight:700,color:colors.text}}>{e.name}</div>
+                <div style={{fontSize:11.5,color:colors.text3,marginTop:2}}>
+                  {e.reason==='monthly' ? 'داوم بعد ما خلّص أيام دوامه المطلوبة هالشهر' : 'داوم بيوم إجازته'} — {new Date(`${e.work_date}T12:00:00Z`).toLocaleDateString('ar-SA',{weekday:'long',day:'numeric',month:'long',calendar:'gregory',numberingSystem:'latn',timeZone:'UTC'})}
+                </div>
+                <ExtraDayDecision item={e} orgId={orgId} canDecide={canDecideExtra} onDone={()=>setTimeout(()=>setExtraDays(prev=>prev.filter((x:any)=>x.id!==e.id)),1200)}/>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* كشف الراتب للموظف */}
       {isOwner && salaryVisible !== null && (
         <div style={{...card,padding:'14px 16px',marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
@@ -524,12 +547,13 @@ export default function HRManagementPage() {
                       <span style={{color,fontWeight:700}}>{value}</span>
                     </div>
                   )
-                  const hasAny = p.overtimePay>0 || p.latePenaltiesTotal>0 || p.otherDeductionsTotal>0 || p.advancesTotal>0 || p.pendingDeficitsTotal>0
+                  const hasAny = p.bonusesTotal>0 || p.overtimePay>0 || p.latePenaltiesTotal>0 || p.otherDeductionsTotal>0 || p.advancesTotal>0 || p.pendingDeficitsTotal>0
                   if (!hasAny) return null
                   return (
                     <div style={{marginTop:10,padding:'10px 12px',background:colors.bg,borderRadius:10,display:'flex',flexDirection:'column' as const,gap:6}}>
                       <div style={{fontSize:10.5,fontWeight:700,color:colors.text4}}>هذا الشهر</div>
                       {p.overtimePay>0 && line('أوفر تايم', `+${fmtN(p.overtimePay)} ${curr}`, colors.primary)}
+                      {p.bonusesTotal>0 && line('تعويض أيام إضافية', `+${fmtN(p.bonusesTotal)} ${curr}`, colors.primary)}
                       {p.latePenaltiesTotal>0 && line(`غرامات تأخير (${p.latePenaltiesCount})`, `−${fmtN(p.latePenaltiesTotal)} ${curr}`, colors.danger)}
                       {p.otherDeductionsTotal>0 && line('خصومات', `−${fmtN(p.otherDeductionsTotal)} ${curr}`, colors.danger)}
                       {p.advancesTotal>0 && line('سلف معتمدة', `−${fmtN(p.advancesTotal)} ${curr}`, colors.warning)}

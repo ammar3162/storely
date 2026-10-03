@@ -15,7 +15,7 @@ describe('deduction notice text', () => {
     const t = deductionNoticeText('xx', { kind: 'deficit', amount: 50, date: '2026-10-01' })
     expect(t.message).toContain('2026-10-01')
     for (const lang of ['ar', 'en', 'ur', 'hi', 'tl', 'bn', 'fr'])
-      for (const n of [{ kind: 'manual', amount: 5 }, { kind: 'late', amount: 5, minutes: 3 }, { kind: 'deficit', amount: 5, date: 'x' }, { kind: 'late_waived', amount: 5, date: 'x' }, { kind: 'late_restored', amount: 5, date: 'x' }] as any[])
+      for (const n of [{ kind: 'manual', amount: 5 }, { kind: 'late', amount: 5, minutes: 3 }, { kind: 'deficit', amount: 5, date: 'x' }, { kind: 'late_waived', amount: 5, date: 'x' }, { kind: 'late_restored', amount: 5, date: 'x' }, { kind: 'extra_paid', amount: 5, date: 'x' }, { kind: 'extra_comp', amount: 0, date: 'x', comp: 'y' }, { kind: 'extra_rejected', amount: 0, date: 'x' }] as any[])
         expect(deductionNoticeText(lang, n).message).not.toMatch(/\{[a-z]\}/)
   })
 })

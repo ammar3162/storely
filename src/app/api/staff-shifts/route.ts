@@ -20,7 +20,7 @@ export async function GET(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
     const effectiveBranchId = enforcedBranchId(access, branch_id)
 
-    let q = sb().from('staff_members').select('id,name,shift_id,weekly_off_days').eq('org_id', org_id).eq('is_active', true)
+    let q = sb().from('staff_members').select('id,name,shift_id,weekly_off_days,days_off_mode,monthly_off_days').eq('org_id', org_id).eq('is_active', true)
     if (effectiveBranchId) q = q.eq('branch_id', effectiveBranchId)
     const { data, error } = await q.order('name')
 
@@ -49,6 +49,23 @@ export async function PATCH(req: Request) {
     const effectiveBranchId = enforcedBranchId(access)
     if (effectiveBranchId && (staff as any).branch_id !== effectiveBranchId) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
+    }
+
+    // نوع الإجازة: أيام ثابتة بالأسبوع أو رصيد أيام بالشهر
+    if ('days_off_mode' in body || 'monthly_off_days' in body) {
+      const upd: Record<string, unknown> = {}
+      if ('days_off_mode' in body) {
+        if (!['weekly', 'monthly'].includes(body.days_off_mode)) return NextResponse.json({ error: 'نوع إجازة غير صالح' }, { status: 400 })
+        upd.days_off_mode = body.days_off_mode
+      }
+      if ('monthly_off_days' in body) {
+        const n = Number(body.monthly_off_days)
+        if (!Number.isInteger(n) || n < 0 || n > 15) return NextResponse.json({ error: 'عدد أيام الإجازة بالشهر من 0 إلى 15' }, { status: 400 })
+        upd.monthly_off_days = n
+      }
+      const { error } = await supabase.from('staff_members').update(upd as any).eq('id', staff_id).eq('org_id', org_id)
+      if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+      return NextResponse.json({ success: true })
     }
 
     // أيام الإجازة الأسبوعية (لو انرسلت) — بدون ما نلمس الشفت

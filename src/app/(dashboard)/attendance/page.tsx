@@ -270,6 +270,17 @@ export default function AttendancePage() {
     }
   }
 
+  // نوع إجازة الموظف: أيام ثابتة بالأسبوع أو رصيد بالشهر
+  async function setOffMode(staffId: string, patch: { days_off_mode?: 'weekly' | 'monthly'; monthly_off_days?: number }) {
+    const before = staffList.find((x: any) => x.id === staffId)
+    setStaffList(prev => prev.map((x: any) => x.id === staffId ? { ...x, ...patch } : x))
+    const j = await api.patch('/api/staff-shifts', { org_id: orgId, staff_id: staffId, ...patch })
+    if (!j.success) {
+      toast(j.error || 'تعذر الحفظ', 'error')
+      setStaffList(prev => prev.map((x: any) => x.id === staffId ? { ...x, ...before } : x))
+    }
+  }
+
   async function addShift() {
     if (!newShiftName.trim() || !branchId) { toast('أدخل اسم الشفت — وتأكد إنك حدّدت فرع نشط', 'warning'); return }
     setSavingShift(true)
@@ -685,18 +696,35 @@ export default function AttendancePage() {
                     </select>
                     <div style={{ flexBasis: '100%', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const, paddingTop: 4 }}>
                       <span style={{ fontSize: 11.5, fontWeight: 700, color: colors.text3, marginInlineEnd: 4 }}>الإجازة:</span>
-                      {WEEKDAYS_AR.map((dn, di) => {
-                        const on = (x.weekly_off_days || []).includes(di)
-                        return (
-                          <button key={di} onClick={() => toggleOffDay(x.id, di)} aria-pressed={on}
-                            style={{ padding: '5px 10px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, border: `1.5px solid ${on ? '#3b82f6' : colors.border}`, background: on ? '#eff6ff' : colors.surface, color: on ? '#1d4ed8' : colors.text3 }}>
-                            {dn}
-                          </button>
-                        )
-                      })}
-                      <span style={{ fontSize: 11.5, color: colors.text4, marginInlineStart: 4 }}>
-                        {(x.weekly_off_days || []).length ? `${weeklyOffCount(saudiToday().slice(0, 7), x.weekly_off_days)} أيام إجازة هالشهر` : 'بدون إجازة أسبوعية'}
-                      </span>
+                      <select value={x.days_off_mode || 'weekly'} onChange={e => setOffMode(x.id, { days_off_mode: e.target.value as any })}
+                        style={{ ...inp(), width: 'auto', padding: '5px 10px', fontSize: 12 }}>
+                        <option value="weekly">أيام ثابتة بالأسبوع</option>
+                        <option value="monthly">عدد أيام بالشهر</option>
+                      </select>
+                      {(x.days_off_mode || 'weekly') === 'weekly' ? (
+                        <>
+                          {WEEKDAYS_AR.map((dn, di) => {
+                            const on = (x.weekly_off_days || []).includes(di)
+                            return (
+                              <button key={di} onClick={() => toggleOffDay(x.id, di)} aria-pressed={on}
+                                style={{ padding: '5px 10px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, border: `1.5px solid ${on ? '#3b82f6' : colors.border}`, background: on ? '#eff6ff' : colors.surface, color: on ? '#1d4ed8' : colors.text3 }}>
+                                {dn}
+                              </button>
+                            )
+                          })}
+                          <span style={{ fontSize: 11.5, color: colors.text4, marginInlineStart: 4 }}>
+                            {(x.weekly_off_days || []).length ? `${weeklyOffCount(saudiToday().slice(0, 7), x.weekly_off_days)} أيام إجازة هالشهر` : 'بدون إجازة أسبوعية'}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <input type="number" min={0} max={15} value={x.monthly_off_days ?? 0}
+                            onChange={e => setStaffList(prev => prev.map((y: any) => y.id === x.id ? { ...y, monthly_off_days: e.target.value } : y))}
+                            onBlur={e => setOffMode(x.id, { monthly_off_days: Math.max(0, Math.min(15, Math.round(Number(e.target.value) || 0))) })}
+                            style={{ ...inp(), width: 70, padding: '5px 10px', fontSize: 12 }} />
+                          <span style={{ fontSize: 11.5, color: colors.text3 }}>أيام بالشهر — أي يوم ما يداوم فيه ينحسب إجازة لين يخلص رصيده، وبعدها غياب</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}

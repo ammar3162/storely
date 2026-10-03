@@ -4,6 +4,7 @@ import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { toast } from '@/components/toast'
+import ExtraDayDecision from '@/components/ExtraDayDecision'
 import { getOrgId } from '@/lib/session'
 import { colors, radius, font, card, btnSecondary, tag, pageTitle, pageSub } from '@/lib/ds'
 import { cache } from '@/lib/cache'
@@ -147,6 +148,10 @@ export default function NotificationsPage() {
                     {!n.read && <span style={{...tag('white',c.color,c.color),fontSize:10,flexShrink:0}}>جديد</span>}
                   </div>
                   <div style={{fontSize:font.xs,color:n.read?colors.text4:colors.text3,marginBottom:6,lineHeight:1.6}}>{n.message}</div>
+                  {n.ref_type === 'extra_day' && n.extra && (
+                    <ExtraDayDecision item={n.extra} orgId={sessionStorage.getItem('s_org_id') || ''} canDecide={!!n.can_decide}
+                      onDone={() => { setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x)); window.dispatchEvent(new Event('notifications-updated')) }} />
+                  )}
                   {DECISIONS[n.ref_type] && n.decision && (
                     n.decision==='pending' ? (
                       n.can_decide ? (
