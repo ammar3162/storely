@@ -71,9 +71,32 @@ export function attendanceState(opts: { now?: Date; events: AttEvent[]; shift: S
   }
 }
 
-/** دقائق التأخير على بداية الشفت الأقرب (يغطي الشفت الليلي) */
+/** نهاية الشفت اللي حضر عليه الموظف: نبدأ من بداية الشفت الأقرب لوقت حضوره (قبله أو بعده)،
+ *  ونضيف مدة الشفت. يغطي الشفت الليلي والحضور المبكر قبل بداية الشفت. */
+export function shiftEndForCheckIn(checkInMs: number, shift: Shift): number | null {
+  if (!shift || shift.is_24h || !shift.start_time || !shift.end_time) return null
+  const S = toMin(shift.start_time), E = toMin(shift.end_time)
+  const duration = (E > S ? E - S : 1440 - S + E) * 60e3
+  return nearestShiftStart(checkInMs, shift)! + duration
+}
+
+/** يقدر ينصرف الحين؟ (بدون شفت أو 24 ساعة = أي وقت) */
+export function canCheckOutAt(nowMs: number, checkInMs: number, shift: Shift): boolean {
+  const end = shiftEndForCheckIn(checkInMs, shift)
+  return end == null || nowMs >= end
+}
+
+/** بداية الشفت الأقرب لوقت معيّن (قبله أو بعده) — للحضور المبكر والشفت الليلي */
+export function nearestShiftStart(atMs: number, shift: Shift): number | null {
+  if (!shift || shift.is_24h || !shift.start_time) return null
+  const saudiMidnight = Math.floor((atMs + RIYADH) / DAY) * DAY - RIYADH
+  const today = saudiMidnight + toMin(shift.start_time) * 60e3
+  return [today - DAY, today, today + DAY].reduce((best, c) => Math.abs(c - atMs) < Math.abs(best - atMs) ? c : best)
+}
+
+/** دقائق التأخير عن بداية الشفت الأقرب — الحضور قبل البداية (حتى لو بساعات) = صفر */
 export function lateMinutesAt(nowMs: number, shift: Shift): number {
-  const start = currentShiftStart(nowMs, shift)
+  const start = nearestShiftStart(nowMs, shift)
   if (start == null) return 0
   return Math.max(0, Math.floor((nowMs - start) / 60e3))
 }

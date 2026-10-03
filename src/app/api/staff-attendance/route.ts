@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
-import { attendanceState, lateMinutesAt, activeShift, type AttEvent } from '@/lib/attendanceState'
+import { attendanceState, lateMinutesAt, activeShift, canCheckOutAt, type AttEvent } from '@/lib/attendanceState'
 import { overtimeMinutes, loadOvertimeSettings, type Shift } from '@/lib/payroll'
 import { applyLateRules } from '@/lib/latePenalty'
 
@@ -108,25 +108,16 @@ export async function POST(req: Request) {
 
     // يمنع تسجيل الانصراف قبل الوقت المحدد بشفت الموظف — إلا لو عنده استئذان موافق عليه اليوم
     let isExcused = false
-    if (type === 'check_out' && sessionShift) {
+    if (type === 'check_out' && sessionShift && state.sessionIn) {
       const shiftRow = sessionShift
-      if (shiftRow && !(shiftRow as any).is_24h && (shiftRow as any).end_time) {
-        const now = new Date()
-        const saudiMinutes = ((now.getUTCHours()+3)%24)*60 + now.getUTCMinutes()
-        const [eh, em] = String((shiftRow as any).end_time).slice(0,5).split(':').map(Number)
-        const endMinutes = eh*60 + em
-        const [sh2, sm2] = String((shiftRow as any).start_time || '00:00').slice(0,5).split(':').map(Number)
-        const startMinutes = sh2*60 + sm2
-        // شفت يمتد لما بعد منتصف الليل (مثل مساءً 6 → صباحاً 2) — "انتهى الشفت" فقط بالنافذة بين وقت الانتهاء ووقت البداية التالي
-        const isOvernight = endMinutes <= startMinutes
-        const shiftEnded = isOvernight
-          ? (saudiMinutes >= endMinutes && saudiMinutes < startMinutes)
-          : (saudiMinutes >= endMinutes)
+      if (shiftRow && !shiftRow.is_24h && shiftRow.end_time) {
+        // نهاية الشفت اللي حضر عليه فعلاً (يغطي الشفت الليلي والحضور المبكر قبل البداية)
+        const shiftEnded = canCheckOutAt(Date.now(), Date.parse(state.sessionIn.recorded_at), shiftRow)
         if (!shiftEnded) {
-          const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+          // استئذان موافق عليه خلال هالدوام (من وقت حضوره)
           const { data: approvedReq } = await supabase.from('attendance_permission_requests')
-            .select('id').eq('staff_id', staff_id).eq('status', 'approved')
-            .gte('requested_at', todayStart.toISOString()).limit(1).maybeSingle()
+            .select('id').eq('staff_id', staff_id).eq('org_id', org_id).eq('status', 'approved')
+            .gte('requested_at', state.sessionIn.recorded_at).limit(1).maybeSingle()
           if (approvedReq) {
             isExcused = true
           } else {

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Bell, MapPin, Package, Store, ClipboardList, Send, Wallet, Plane, UserCheck, Boxes, ShoppingCart, Clock, LogOut } from 'lucide-react'
 import { getStaffOrg } from '@/lib/session'
+import { canCheckOutAt } from '@/lib/attendanceState'
 
 const CS: Record<string, Record<'ar'|'en', string>> = {
   welcome:        { ar:'أهلاً', en:'Welcome' },
@@ -222,20 +223,11 @@ export default function ChoosePage() {
   const lastCheckOut = todayEvents.find(e=>e.type==='check_out')
   const isCheckedIn = !!lastCheckIn && !lastCheckOut
 
-  // يمنع الانصراف قبل الوقت المحدد بالشفت (إلا لو الشفت 24 ساعة أو ما فيه شفت مخصص)
+  // يمنع الانصراف قبل نهاية الشفت اللي حضر عليه (نفس قاعدة السيرفر — تغطي الشفت الليلي والحضور المبكر)
   let canCheckOut = true
   let checkOutHint = ''
-  if (shift && !shift.is_24h && shift.end_time) {
-    const now = new Date()
-    const saudiMinutes = ((now.getUTCHours()+3)%24)*60 + now.getUTCMinutes()
-    const [eh, em] = String(shift.end_time).slice(0,5).split(':').map(Number)
-    const endMinutes = eh*60 + em
-    const [sh2, sm2] = String(shift.start_time||'00:00').slice(0,5).split(':').map(Number)
-    const startMinutes = sh2*60 + sm2
-    const isOvernight = endMinutes <= startMinutes
-    canCheckOut = isOvernight
-      ? (saudiMinutes >= endMinutes && saudiMinutes < startMinutes)
-      : (saudiMinutes >= endMinutes)
+  if (shift && !shift.is_24h && shift.end_time && lastCheckIn) {
+    canCheckOut = canCheckOutAt(Date.now(), Date.parse(lastCheckIn.recorded_at), shift)
     if (!canCheckOut && permReq?.status === 'approved') canCheckOut = true
     if (!canCheckOut) checkOutHint = `زر الانصراف يفعّل الساعة ${String(shift.end_time).slice(0,5)}`
   }

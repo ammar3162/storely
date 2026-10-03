@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { attendanceState, lateMinutesAt, activeShift } from './attendanceState'
+import { attendanceState, lateMinutesAt, activeShift, canCheckOutAt, shiftEndForCheckIn } from './attendanceState'
 
 const at = (d: string, t: string) => `${d}T${t}:00+03:00`
 const now = (d: string, t: string) => new Date(at(d, t))
@@ -72,5 +72,41 @@ describe('activeShift (shift change mid-session)', () => {
   })
   it('checked in without a shift stays without a shift', () => {
     expect(activeShift({ type: 'check_in', recorded_at: at('2026-10-04', '08:00'), shift_start_time: null, shift_is_24h: false }, evening)).toBeNull()
+  })
+})
+
+describe('canCheckOutAt (early check-out block)', () => {
+  const t = (d: string, h: string) => Date.parse(at(d, h))
+  const lateNight = { start_time: '23:00', end_time: '06:00', is_24h: false }
+  it('night shift: checked in 16 min early cannot check out until 06:00 next morning (production bug)', () => {
+    const inAt = t('2026-10-02', '22:44')
+    expect(canCheckOutAt(t('2026-10-02', '22:44'), inAt, lateNight)).toBe(false)
+    expect(canCheckOutAt(t('2026-10-03', '05:59'), inAt, lateNight)).toBe(false)
+    expect(canCheckOutAt(t('2026-10-03', '06:00'), inAt, lateNight)).toBe(true)
+  })
+  it('night shift: checked in after midnight still ends at 06:00 that morning', () => {
+    expect(new Date(shiftEndForCheckIn(t('2026-10-03', '00:30'), lateNight)!).toISOString()).toBe(new Date(at('2026-10-03', '06:00')).toISOString())
+  })
+  it('evening shift crossing midnight (15:50 → 02:00)', () => {
+    const eve = { start_time: '15:50', end_time: '02:00', is_24h: false }
+    const inAt = t('2026-10-02', '16:24')
+    expect(canCheckOutAt(t('2026-10-02', '23:00'), inAt, eve)).toBe(false)
+    expect(canCheckOutAt(t('2026-10-03', '02:00'), inAt, eve)).toBe(true)
+  })
+  it('day shift and early arrival', () => {
+    expect(canCheckOutAt(t('2026-10-04', '15:59'), t('2026-10-04', '07:30'), morning)).toBe(false)
+    expect(canCheckOutAt(t('2026-10-04', '16:00'), t('2026-10-04', '07:30'), morning)).toBe(true)
+  })
+  it('no shift or 24h: any time', () => {
+    expect(canCheckOutAt(t('2026-10-04', '09:00'), t('2026-10-04', '08:59'), null)).toBe(true)
+    expect(canCheckOutAt(t('2026-10-04', '09:00'), t('2026-10-04', '08:59'), { start_time: null, end_time: null, is_24h: true })).toBe(true)
+  })
+})
+
+describe('lateMinutesAt early arrival', () => {
+  it('arriving two hours before a night shift is not late', () => {
+    const lateNight = { start_time: '23:00', end_time: '06:00', is_24h: false }
+    expect(lateMinutesAt(Date.parse(at('2026-10-02', '21:00')), lateNight)).toBe(0)
+    expect(lateMinutesAt(Date.parse(at('2026-10-02', '23:20')), lateNight)).toBe(20)
   })
 })

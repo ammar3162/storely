@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { invoiceTimestamp } from '@/lib/invoiceTime'
 import { netFromTotal } from '@/lib/vat'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
       const { data: b } = await db.from('branches').select('id').eq('id', bid).eq('org_id', org_id).maybeSingle()
       if (!b) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
     }
-    const invoiceTs = `${invoice_date}T12:00:00+03:00`
+    const invoiceTs = invoiceTimestamp(invoice_date)   // اليوم = الوقت الفعلي، تاريخ سابق = 12 الظهر
     const hasVat = has_vat !== false
 
     let saved = 0
