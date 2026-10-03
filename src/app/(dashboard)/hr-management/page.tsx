@@ -61,7 +61,7 @@ export default function HRManagementPage() {
     // عرض كاش الموظفين فوراً لو متوفر
     if (oid) {
       const cachedStaff = cache.get('hr-staff:'+oid)
-      if (cachedStaff) { setStaff(cachedStaff); setLoading(false) }
+      if (cachedStaff) { setStaff((cachedStaff as any[]).filter((s:any) => !s.hidden_from_list)); setLoading(false) }
     }
     if(!oid){
       oid = await getOrgId()
@@ -81,7 +81,8 @@ export default function HRManagementPage() {
       api.get('/api/addons-market', { org_id: oid }),
       api.get('/api/branches', { org_id: oid }),
     ])
-    const data = staffRes.staff
+    // نفس قاعدة صفحة الموظفين: الموظفين الموقوفين تلقائياً بانتهاء إضافة «موظف إضافي» ما يطلعون
+    const data = (staffRes.staff || []).filter((s:any) => !s.hidden_from_list)
     setBranches(branchesRes.branches||[])
     setOrgPlan(me?.org?.plan || 'basic')
     const hrAddon = (addonRes?.addons||[]).find((a:any)=>a.slug==='hr_full')
