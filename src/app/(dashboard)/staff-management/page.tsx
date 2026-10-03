@@ -212,7 +212,7 @@ export default function StaffManagementPage() {
     const activeBranch = sessionStorage.getItem('s_branch_id') || newBranch || null
     const resData = await api.post('/api/add-staff', {org_id:orgId, branch_id:activeBranch, name:newName.trim(), phone:cleanPhone, pin, permissions:newPermissions, role:newRole, send_closing_whatsapp:newSendClosingWA})
     if(!resData.success){
-      if(resData.error==='رقم الجوال مسجل مسبقاً') toast('رقم الجوال هذا مسجّل لموظف آخر','error')
+      if((resData as any).duplicate) toast(resData.error,'error')
       else toast('خطأ: '+(resData.error||'حدث خطأ'),'error')
       return
     }

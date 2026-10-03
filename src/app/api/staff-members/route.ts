@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { samePhone } from '@/lib/loginThrottle'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { checkStaffCapacity } from '@/lib/staffCapacity'
@@ -64,8 +65,13 @@ export async function PATCH(req: Request) {
     if ('phone' in body) {
       const phone = String(body.phone || '').trim()
       if (!phone) return NextResponse.json({ error: 'أدخل رقم صحيح' }, { status: 400 })
-      const { data: dup } = await db.from('staff_members').select('id').eq('org_id', org_id).eq('phone', phone).neq('id', id).limit(1)
-      if (dup?.length) return NextResponse.json({ error: 'رقم الجوال مسجل مسبقاً' }, { status: 409 })
+      // الرقم (بأي صيغة) لموظف ثاني بنفس المنشأة؟ نقول لمين بالضبط
+      const { data: others } = await db.from('staff_members').select('id,name,phone,is_active,branches(name)').eq('org_id', org_id).neq('id', id)
+      const dup = ((others || []) as any[]).find(x => samePhone(String(x.phone || ''), phone))
+      if (dup) {
+        const where = dup.branches?.name ? ` بفرع «${dup.branches.name}»` : ''
+        return NextResponse.json({ error: `رقم الجوال مسجّل للموظف «${dup.name}»${where}${dup.is_active ? '' : ' (موقوف)'}.` }, { status: 409 })
+      }
       update.phone = phone
     }
     if ('permissions' in body && body.permissions && typeof body.permissions === 'object') update.permissions = body.permissions
