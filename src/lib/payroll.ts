@@ -171,7 +171,7 @@ export async function computeStaffPayroll(db: SupabaseClient, staff: any, month:
     netSalary,
     attendance: { daysPresent: checkIns.length, daysInMonth: lastDay, lateCount, lateMinutes,
       extraDays: checkIns.filter(c => c.on_day_off).length,   // حضور بيوم إجازته (يوم إضافي)
-      weeklyOffDays: weeklyOffCount(month, staff.weekly_off_days) },
+      weeklyOffDays: weeklyOffCount(month, staff) },
     leaveDaysTaken: ((leaves || []) as any[]).reduce((s, l) => s + Number(l.days_count), 0),
   }
 }

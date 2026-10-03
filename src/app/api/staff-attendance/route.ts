@@ -5,10 +5,10 @@ import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { attendanceState, lateMinutesAt, activeShift, canCheckOutAt, type AttEvent } from '@/lib/attendanceState'
 import { overtimeMinutes, loadOvertimeSettings, type Shift } from '@/lib/payroll'
 import { applyLateRules } from '@/lib/latePenalty'
-import { workDateFor, offReason, isMonthlyExtraDay, type OffReason } from '@/lib/daysOff'
+import { workDateFor, offReason, isMonthlyExtraDay, type OffReason, type OffConfig } from '@/lib/daysOff'
 
 // يوم إجازة؟ (أسبوعية من المالك أو إجازة معتمدة) — لتاريخ دوام الموظف الحالي
-type StaffOff = { id: string; weekly_off_days?: number[] | null; days_off_mode?: string | null; monthly_off_days?: number | null }
+type StaffOff = OffConfig & { id: string; monthly_off_days?: number | null }
 
 // يوم إجازة؟ ثابت (أسبوعي، إجازة معتمدة، يوم بديل) أو — لرصيد الشهر المرن — خلّص أيام دوامه المطلوبة
 async function dayOffFor(supabase: any, staff: StaffOff, org_id: string, shift: Shift): Promise<OffReason | null> {
@@ -19,7 +19,7 @@ async function dayOffFor(supabase: any, staff: StaffOff, org_id: string, shift: 
       .eq('staff_id', staff.id).eq('org_id', org_id).eq('status', 'approved').lte('start_date', date).gte('end_date', date).limit(1),
     supabase.from('staff_extra_days').select('comp_date').eq('staff_id', staff.id).eq('org_id', org_id).eq('status', 'comp').eq('comp_date', date).limit(1),
   ])
-  const fixed = offReason(date, monthly ? [] : staff.weekly_off_days, (leaves || []) as any[], ((comp || []) as any[]).map(c => c.comp_date))
+  const fixed = offReason(date, staff, (leaves || []) as any[], ((comp || []) as any[]).map(c => c.comp_date))
   if (fixed || !monthly) return fixed
   // رصيد شهري: كم يوم داوم هالشهر قبل اليوم؟
   const month = date.slice(0, 7)
@@ -93,7 +93,7 @@ export async function POST(req: Request) {
     }
 
     // تأكد الموظف فعلاً تابع لهذا الفرع/المنشأة
-    const { data: staff } = await supabase.from('staff_members').select('id,name,branch_id,shift_id,weekly_off_days,days_off_mode,monthly_off_days,monthly_salary').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
+    const { data: staff } = await supabase.from('staff_members').select('id,name,branch_id,shift_id,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates,monthly_salary').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
     if (!staff) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
     // موقع التحقق لازم يكون فرع الموظف نفسه (مو أي فرع يرسله الطلب)
     if ((staff as any).branch_id && (staff as any).branch_id !== branch_id) return NextResponse.json({ error: 'الفرع غير صحيح' }, { status: 403 })
@@ -263,7 +263,7 @@ export async function GET(req: Request) {
       }
     }
 
-    const { data: staffRow } = await supabase.from('staff_members').select('id,shift_id,weekly_off_days,days_off_mode,monthly_off_days').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
+    const { data: staffRow } = await supabase.from('staff_members').select('id,shift_id,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
     const currentShift = await staffShift(supabase, (staffRow as any)?.shift_id || null)
     const st = attendanceState({ events: await recentEvents(supabase, staff_id, org_id), shift: currentShift })
     // وهو حاضر: نعرض شفت دوامه الحالي (اللي حضر عليه) — الشفت الجديد يبدأ من دوامه الجاي

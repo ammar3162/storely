@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { weekdayOf, workDateFor, offReason, weeklyOffCount, normalizeOffDays, monthlyOffDates, isMonthlyExtraDay } from './daysOff'
+import { weekdayOf, workDateFor, offReason, weeklyOffCount, normalizeOffDays, monthlyOffDates, isMonthlyExtraDay, isScheduledOff, scheduledOffDates } from './daysOff'
 
 describe('days off', () => {
   it('weekday of a Saudi date', () => {
@@ -46,5 +46,27 @@ describe('monthly flexible allowance', () => {
   })
   it('compensation day counts as off', () => {
     expect(offReason('2026-10-09', [], [], ['2026-10-09'])).toBe('comp')
+  })
+})
+
+describe('days-off patterns', () => {
+  it('alternate weeks: Tuesday every other week from the anchor week', () => {
+    const cfg = { days_off_mode: 'biweekly', weekly_off_days: [2], biweekly_anchor: '2026-10-06' }   // ثلاثاء 6 أكتوبر
+    expect(scheduledOffDates('2026-10', cfg)).toEqual(['2026-10-06', '2026-10-20'])
+    expect(isScheduledOff('2026-10-13', cfg)).toBe(false)
+    expect(isScheduledOff('2026-11-03', cfg)).toBe(true)
+  })
+  it('any day in the anchor week sets the cycle', () => {
+    const cfg = { days_off_mode: 'biweekly', weekly_off_days: [2], biweekly_anchor: '2026-10-08' }   // خميس نفس الأسبوع
+    expect(scheduledOffDates('2026-10', cfg)).toEqual(['2026-10-06', '2026-10-20'])
+  })
+  it('owner-picked dates', () => {
+    const cfg = { days_off_mode: 'dates', off_dates: ['2026-10-09', '2026-10-23'] }
+    expect(scheduledOffDates('2026-10', cfg)).toEqual(['2026-10-09', '2026-10-23'])
+    expect(offReason('2026-10-09', cfg)).toBe('weekly')
+  })
+  it('weekly and legacy array still work', () => {
+    expect(scheduledOffDates('2026-10', [5]).length).toBe(5)
+    expect(weeklyOffCount('2026-10', { days_off_mode: 'monthly', monthly_off_days: 4 } as any)).toBe(4)
   })
 })

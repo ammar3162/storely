@@ -67,7 +67,7 @@ export async function GET(req: Request) {
 
     // القراءة متاحة دايماً حتى بدون اشتراك فعّال -- المالك يقدر يشوف سجلاته القديمة (قراءة فقط)،
     // الحماية الفعلية (منع تسجيل حضور جديد) موجودة بمسار POST /api/staff-attendance مو هنا
-    let staffQ = supabase.from('staff_members').select('id,name,branch_id,shift_id,monthly_salary,weekly_off_days,days_off_mode,monthly_off_days').eq('org_id', org_id).eq('is_active', true)
+    let staffQ = supabase.from('staff_members').select('id,name,branch_id,shift_id,monthly_salary,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates').eq('org_id', org_id).eq('is_active', true)
     if (effectiveBranchId) staffQ = staffQ.eq('branch_id', effectiveBranchId)
     if (staff_id) staffQ = staffQ.eq('id', staff_id)
     const { data: staffList } = await staffQ.order('name')
@@ -126,7 +126,7 @@ export async function GET(req: Request) {
         }
       }
     }
-    const fixedOff = (s: any, d: string) => offReason(d, s.days_off_mode === 'monthly' ? [] : s.weekly_off_days,
+    const fixedOff = (s: any, d: string) => offReason(d, s,
       leaves.filter(l => l.staff_id === s.id), comps.filter(c => c.staff_id === s.id).map(c => c.comp_date))
     const offFor = (s: any, d: string) => fixedOff(s, d) || (monthlyOff.get(s.id)?.has(d) ? 'monthly' as const : null)
 

@@ -36,7 +36,7 @@ export async function GET(req: Request) {
     // مدير الفرع: موظفين فرعه بس
     const branch = enforcedBranchId(access, searchParams.get('branch_id'))
     let q = db.from('staff_members')
-      .select('id,org_id,name,role,branch_id,monthly_salary,housing_allowance,transport_allowance,food_allowance,shift_id,is_active,weekly_off_days')
+      .select('id,org_id,name,role,branch_id,monthly_salary,housing_allowance,transport_allowance,food_allowance,shift_id,is_active,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates')
       .eq('org_id', org_id).order('name')
     if (branch) q = q.eq('branch_id', branch)
     if (staff_id) q = q.eq('id', staff_id)

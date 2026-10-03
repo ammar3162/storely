@@ -7,7 +7,7 @@ import { colors, font, card, btnPrimary, pageTitle, pageSub, inp } from '@/lib/d
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { exportReportPdf } from '@/lib/pdfExport'
-import { WEEKDAYS_AR, weeklyOffCount } from '@/lib/daysOff'
+import StaffDaysOffEditor, { type OffPatch } from '@/components/StaffDaysOffEditor'
 
 // كل الأوقات والتواريخ بالتقرير بتوقيت السعودية
 const saudiToday = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
@@ -257,27 +257,14 @@ export default function AttendancePage() {
 
 
 
-  // أيام الإجازة الأسبوعية للموظف — تنحفظ على طول مع كل ضغطة
-  async function toggleOffDay(staffId: string, day: number) {
-    const cur: number[] = staffList.find((x: any) => x.id === staffId)?.weekly_off_days || []
-    const next = cur.includes(day) ? cur.filter(d => d !== day) : [...cur, day].sort((a, b) => a - b)
-    if (next.length > 6) { toast('لازم يبقى يوم دوام واحد على الأقل', 'warning'); return }
-    setStaffList(prev => prev.map((x: any) => x.id === staffId ? { ...x, weekly_off_days: next } : x))
-    const j = await api.patch('/api/staff-shifts', { org_id: orgId, staff_id: staffId, weekly_off_days: next })
-    if (!j.success) {
-      toast(j.error || 'تعذر الحفظ', 'error')
-      setStaffList(prev => prev.map((x: any) => x.id === staffId ? { ...x, weekly_off_days: cur } : x))
-    }
-  }
-
-  // نوع إجازة الموظف: أيام ثابتة بالأسبوع أو رصيد بالشهر
-  async function setOffMode(staffId: string, patch: { days_off_mode?: 'weekly' | 'monthly'; monthly_off_days?: number }) {
+  // إعداد إجازة الموظف — ينحفظ على طول مع كل تغيير، ويرجع لو فشل
+  async function patchOff(staffId: string, patch: OffPatch) {
     const before = staffList.find((x: any) => x.id === staffId)
     setStaffList(prev => prev.map((x: any) => x.id === staffId ? { ...x, ...patch } : x))
     const j = await api.patch('/api/staff-shifts', { org_id: orgId, staff_id: staffId, ...patch })
     if (!j.success) {
       toast(j.error || 'تعذر الحفظ', 'error')
-      setStaffList(prev => prev.map((x: any) => x.id === staffId ? { ...x, ...before } : x))
+      setStaffList(prev => prev.map((x: any) => x.id === staffId ? before : x))
     }
   }
 
@@ -676,7 +663,7 @@ export default function AttendancePage() {
 
           {/* 2) شفت كل موظف */}
           <div style={box}>
-            {step(2, 'شفت كل موظف وإجازته', 'اختر لكل موظف شفته وأيام إجازته بالأسبوع. يوم إجازته ما ينحسب غياب، ولو داوم فيه ينحسب يوم إضافي. تغيير الشفت وهو داخل دوامه يتطبّق من دوامه الجاي.',
+            {step(2, 'شفت كل موظف وإجازته', 'اختر لكل موظف شفته ونظام إجازته: أيام ثابتة، أسبوع وأسبوع، أيام تحددها، أو رصيد بالشهر. يوم إجازته ما ينحسب غياب، ولو داوم فيه ينحسب يوم إضافي. تغيير الشفت وهو داخل دوامه يتطبّق من دوامه الجاي.',
               staffList.length === 0 ? null : withoutShift ? pill(`${withoutShift} بدون شفت`, 'warn') : pill('كل الموظفين مربوطين', 'ok'))}
             {staffList.length === 0 ? (
               <div style={{ fontSize: 13, color: colors.text4, textAlign: 'center' as const, padding: 16 }}>ما فيه موظفين نشطين بهذا الفرع</div>
@@ -694,38 +681,7 @@ export default function AttendancePage() {
                       <option value="">بدون شفت</option>
                       {shifts.map((sh: any) => (<option key={sh.id} value={sh.id}>{sh.name}{sh.is_24h ? ' (24 ساعة)' : ` (${t12(sh.start_time)} – ${t12(sh.end_time)})`}</option>))}
                     </select>
-                    <div style={{ flexBasis: '100%', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const, paddingTop: 4 }}>
-                      <span style={{ fontSize: 11.5, fontWeight: 700, color: colors.text3, marginInlineEnd: 4 }}>الإجازة:</span>
-                      <select value={x.days_off_mode || 'weekly'} onChange={e => setOffMode(x.id, { days_off_mode: e.target.value as any })}
-                        style={{ ...inp(), width: 'auto', padding: '5px 10px', fontSize: 12 }}>
-                        <option value="weekly">أيام ثابتة بالأسبوع</option>
-                        <option value="monthly">عدد أيام بالشهر</option>
-                      </select>
-                      {(x.days_off_mode || 'weekly') === 'weekly' ? (
-                        <>
-                          {WEEKDAYS_AR.map((dn, di) => {
-                            const on = (x.weekly_off_days || []).includes(di)
-                            return (
-                              <button key={di} onClick={() => toggleOffDay(x.id, di)} aria-pressed={on}
-                                style={{ padding: '5px 10px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, border: `1.5px solid ${on ? '#3b82f6' : colors.border}`, background: on ? '#eff6ff' : colors.surface, color: on ? '#1d4ed8' : colors.text3 }}>
-                                {dn}
-                              </button>
-                            )
-                          })}
-                          <span style={{ fontSize: 11.5, color: colors.text4, marginInlineStart: 4 }}>
-                            {(x.weekly_off_days || []).length ? `${weeklyOffCount(saudiToday().slice(0, 7), x.weekly_off_days)} أيام إجازة هالشهر` : 'بدون إجازة أسبوعية'}
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <input type="number" min={0} max={15} value={x.monthly_off_days ?? 0}
-                            onChange={e => setStaffList(prev => prev.map((y: any) => y.id === x.id ? { ...y, monthly_off_days: e.target.value } : y))}
-                            onBlur={e => setOffMode(x.id, { monthly_off_days: Math.max(0, Math.min(15, Math.round(Number(e.target.value) || 0))) })}
-                            style={{ ...inp(), width: 70, padding: '5px 10px', fontSize: 12 }} />
-                          <span style={{ fontSize: 11.5, color: colors.text3 }}>أيام بالشهر — أي يوم ما يداوم فيه ينحسب إجازة لين يخلص رصيده، وبعدها غياب</span>
-                        </>
-                      )}
-                    </div>
+                    <StaffDaysOffEditor staff={x} onPatch={p => patchOff(x.id, p)} />
                   </div>
                 ))}
               </div>

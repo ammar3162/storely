@@ -37,7 +37,7 @@ export async function GET(req: Request) {
     const forcedBranch = enforcedBranchId(access)
     let staffQ = supabase
       .from('staff_members')
-      .select('id,org_id,name,monthly_salary,housing_allowance,transport_allowance,food_allowance,leave_balance_days,is_active,shift_id,weekly_off_days')
+      .select('id,org_id,name,monthly_salary,housing_allowance,transport_allowance,food_allowance,leave_balance_days,is_active,shift_id,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates')
       .eq('org_id', org_id)
       .eq('is_active', true)
     if (forcedBranch) staffQ = staffQ.eq('branch_id', forcedBranch)
