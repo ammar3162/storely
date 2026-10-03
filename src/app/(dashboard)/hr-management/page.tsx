@@ -15,7 +15,7 @@ export default function HRManagementPage() {
   const [salaryVisible, setSalaryVisible] = useState<boolean|null>(null)
   const [isOwner, setIsOwner] = useState(false)
   const [curr, setCurr] = useState('ر.س')
-  const [orgPlan, setOrgPlan] = useState('basic')
+  const [orgPlan, setOrgPlan] = useState<string | null>(null)   // null = لسا ما عرفنا الباقة — لا نعرض القفل قبلها
   const [hasHrAddon, setHasHrAddon] = useState(false)
   const [staff, setStaff] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -64,6 +64,8 @@ export default function HRManagementPage() {
     // عرض كاش الموظفين فوراً لو متوفر
     if (oid) {
       const cachedStaff = cache.get('hr-staff:'+oid)
+      const cachedAccess = cache.get('hr-access:'+oid) as { plan: string; addon: boolean } | null
+      if (cachedAccess) { setOrgPlan(cachedAccess.plan); setHasHrAddon(cachedAccess.addon) }
       if (cachedStaff) { setStaff((cachedStaff as any[]).filter((s:any) => !s.hidden_from_list)); setLoading(false) }
     }
     if(!oid){
@@ -88,9 +90,10 @@ export default function HRManagementPage() {
     // نفس قاعدة صفحة الموظفين: الموظفين الموقوفين تلقائياً بانتهاء إضافة «موظف إضافي» ما يطلعون
     const data = (staffRes.staff || []).filter((s:any) => !s.hidden_from_list)
     setBranches(branchesRes.branches||[])
-    setOrgPlan(me?.org?.plan || 'basic')
     const hrAddon = (addonRes?.addons||[]).find((a:any)=>a.slug==='hr_full')
-    setHasHrAddon(!!hrAddon?.subscription?.isValid)
+    const access = { plan: me?.org?.plan || 'basic', addon: !!hrAddon?.subscription?.isValid }
+    setOrgPlan(access.plan); setHasHrAddon(access.addon)
+    cache.set('hr-access:'+oid, access)
     setStaff(data||[])
     cache.set('hr-staff:'+oid, data||[])
     if (leaveRes?.success) {
@@ -372,7 +375,7 @@ export default function HRManagementPage() {
     rejected:  {label:'مرفوضة',        color: colors.danger,  bg: colors.dangerLight},
   }
 
-  if (loading) return (
+  if (loading || orgPlan === null) return (
     <div style={{minHeight:'50vh',display:'flex',alignItems:'center',justifyContent:'center'}}>
       <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
