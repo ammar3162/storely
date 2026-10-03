@@ -421,7 +421,7 @@ export default function HRManagementPage() {
             <div style={{minWidth:0}}>
               <div style={{fontSize:12.5,fontWeight:700,color:colors.text}}>📍 موقع {b.name} (لتسجيل الحضور)</div>
               <div style={{fontSize:11,color:b.latitude?colors.primary:colors.warning,marginTop:3}}>{b.latitude ? '✓ الموقع محدّد' : 'الموقع غير محدّد — الموظفين ما يقدرون يحضّرون'}</div>
-              <div style={{fontSize:10.5,color:colors.text4,marginTop:3}}>يتسجّل من مكان جهازك — حدّده وأنت داخل الفرع. لفرع ثاني: انتقل له من قائمة الفروع فوق.</div>
+              <div style={{fontSize:10.5,color:colors.text4,marginTop:3}}>يتسجّل من مكان جهازك — حدّده وأنت داخل الفرع.{branches.length > 1 ? ' لفرع ثاني: انتقل له من قائمة الفروع فوق.' : ''}</div>
             </div>
             <button onClick={()=>saveBranchLocation(b.id)} disabled={savingLocationId===b.id}
               style={{...btnPrimary,padding:'9px 16px',fontSize:12.5,whiteSpace:'nowrap' as const,opacity:savingLocationId===b.id?.7:1}}>
