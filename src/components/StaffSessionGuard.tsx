@@ -61,6 +61,8 @@ export default function StaffSessionGuard({ children }: { children: React.ReactN
       if (!res.ok || !j.token) { setErr(j.error || 'الرمز غير صحيح'); setPin(''); setBusy(false); return }
       localStorage.setItem('staff_token', j.token)
       if (j.staff) localStorage.setItem('staff_session', JSON.stringify(j.staff))
+      // المالك نقله لفرع ثاني: نحدّث الصفحة عشان كل شي (المنتجات، الموقع، الشفت) يجي من فرعه الجديد
+      if (j.staff && (j.staff.branch_id ?? null) !== (session.branch_id ?? null)) { window.location.reload(); return }
       setOpen(false); setPin(''); setBusy(false)
       waiters.current.splice(0).forEach(w => w.resolve(true))
     } catch { setErr('خطأ بالاتصال — حاول مرة ثانية'); setBusy(false) }
