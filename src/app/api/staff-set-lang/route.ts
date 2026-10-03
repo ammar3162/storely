@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     const { staff_id } = auth.data!
 
     const { lang } = await req.json()
-    if (!['ar', 'en'].includes(lang)) return NextResponse.json({ error: 'لغة غير مدعومة' }, { status: 400 })
+    if (!['ar', 'en', 'ur', 'hi', 'tl', 'bn', 'fr'].includes(lang)) return NextResponse.json({ error: 'لغة غير مدعومة' }, { status: 400 })
 
     const supabase = sb()
     const { error } = await supabase.from('staff_members').update({ preferred_lang: lang } as any).eq('id', staff_id)

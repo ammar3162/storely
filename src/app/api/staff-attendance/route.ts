@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { notifyStaffDeduction } from '@/lib/staffDeductionNotice'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { attendanceState, lateMinutesAt, activeShift, canCheckOutAt, type AttEvent } from '@/lib/attendanceState'
@@ -176,6 +177,10 @@ export async function POST(req: Request) {
       accuracy_m: accuracy_m != null ? Number(accuracy_m) : null,
     } as any)
     if (insErr) return NextResponse.json({ error: 'فشل تسجيل الحضور — حاول مرة أخرى' }, { status: 500 })
+    // خصم تأخير؟ يوصل الموظف إشعار بصفحته على طول
+    if (type === 'check_in' && penaltyAmount && penaltyAmount > 0) {
+      await notifyStaffDeduction(supabase, org_id, staff_id, { kind: 'late', amount: penaltyAmount, minutes: lateMinutes || 0 })
+    }
 
     // إشعارات المالك — عند الحضور فقط
     if (type === 'check_in') {

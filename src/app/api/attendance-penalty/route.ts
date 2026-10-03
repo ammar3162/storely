@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { notifyStaffDeduction } from '@/lib/staffDeductionNotice'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 
@@ -21,9 +22,12 @@ export async function POST(req: Request) {
       .update({ penalty_waived: waived } as any)
       .eq('id', attendance_id).eq('org_id', org_id).eq('type', 'check_in')
       .gt('penalty_amount', 0).eq('penalty_applied', false)
-      .select('id').maybeSingle()
+      .select('id,staff_id,penalty_amount,recorded_at').maybeSingle()
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
     if (!data) return NextResponse.json({ error: 'الغرامة غير موجودة أو انخصمت سابقاً' }, { status: 404 })
+    const row = data as any
+    const day = new Date(Date.parse(row.recorded_at) + 3 * 3600e3).toISOString().slice(0, 10)
+    await notifyStaffDeduction(sb(), org_id, row.staff_id, { kind: waived ? 'late_waived' : 'late_restored', amount: Number(row.penalty_amount), date: day })
     return NextResponse.json({ success: true, waived })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })

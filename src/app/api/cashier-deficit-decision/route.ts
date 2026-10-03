@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { notifyStaffDeduction } from '@/lib/staffDeductionNotice'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 
@@ -42,6 +43,7 @@ export async function POST(req: Request) {
         await db.from('cashier_closings').update({ deficit_decision: 'pending', deficit_decided_at: null } as any).eq('id', c.id).eq('org_id', org_id)
         return NextResponse.json({ error: 'فشل تسجيل الخصم — حاول مرة ثانية' }, { status: 500 })
       }
+      if (!insErr) await notifyStaffDeduction(db, org_id, c.staff_id, { kind: 'deficit', amount, date: c.closing_date })
     }
 
     await db.from('notifications').update({ read: true } as any)

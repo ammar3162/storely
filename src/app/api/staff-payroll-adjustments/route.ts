@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { notifyStaffDeduction } from '@/lib/staffDeductionNotice'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
@@ -76,6 +77,8 @@ export async function POST(req: Request) {
         status: 'approved', requested_by: 'owner', reviewed_by: 'owner', reviewed_at: new Date().toISOString(),
       } as any)
       if (error) return NextResponse.json({ error: 'فشل الحفظ' }, { status: 500 })
+      // إشعار للموظف بصفحته
+      if (type === 'deduction') await notifyStaffDeduction(supabase, body.org_id, body.staff_id, { kind: 'manual', amount: amountNum, reason: reason ? String(reason).trim().slice(0, 300) : null })
       return NextResponse.json({ success: true })
     } else {
       // الموظف يطلب سلفة (بانتظار الموافقة) — نوع advance فقط

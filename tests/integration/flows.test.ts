@@ -283,6 +283,23 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
     })
   })
 
+  describe('deduction notifies the employee', () => {
+    it("an owner deduction lands in the employee's notifications in their language", async () => {
+      const adj = await import('@/app/api/staff-payroll-adjustments/route')
+      const { data: st } = await db.from('staff_members').insert({
+        org_id: orgId, branch_id: branchA, name: 'موظف إشعار', phone: `9665${String(stamp + 9).slice(-8)}`, pin: 'x', is_active: true,
+        permissions: { dispense: true }, role: 'staff', preferred_lang: 'en',
+      } as any).select('id').single()
+      const r = await call(adj.POST, 'POST', '/api/staff-payroll-adjustments', { org_id: orgId, staff_id: (st as any).id, type: 'deduction', amount: 40, reason: 'broken plate' })
+      expect(r.status).toBe(200)
+      const { data: notes } = await db.from('staff_notifications').select('title,message').eq('staff_id', (st as any).id)
+      expect(notes?.length).toBe(1)
+      expect((notes as any)[0].title).toBe('Salary deduction')
+      expect((notes as any)[0].message).toContain('40 SAR')
+      expect((notes as any)[0].message).toContain('broken plate')
+    })
+  })
+
   describe('supplier orders: once per drop', () => {
     it('blocks a second order until the product is restocked', async () => {
       const milk = await productByName('حليب')
