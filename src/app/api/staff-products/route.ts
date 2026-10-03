@@ -13,15 +13,13 @@ export async function POST(req: Request) {
     if (!auth.valid) return NextResponse.json({ products: [], error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
     const { org_id: orgId, staff_id: staffId } = auth.data!
 
-    const { branchId } = await req.json()
+    await req.json().catch(() => ({}))
     if (!orgId) return NextResponse.json({ products: [] })
 
-    // جلب assigned_products للموظف
-    let assignedProducts: string[] = []
-    if (staffId) {
-      const { data: staffData } = await sb().from('staff_members').select('assigned_products').eq('id', staffId).single()
-      assignedProducts = (staffData as any)?.assigned_products || []
-    }
+    // فرع الموظف ومنتجاته المخصصة من قاعدة البيانات (مو من الطلب) — ما يقدر يطلب منتجات فرع ثاني
+    const { data: staffData } = await sb().from('staff_members').select('assigned_products,branch_id').eq('id', staffId).eq('org_id', orgId).maybeSingle()
+    const assignedProducts: string[] = (staffData as any)?.assigned_products || []
+    const branchId: string | null = (staffData as any)?.branch_id ?? null
 
     let q = sb().from('products').select('id,name,unit,qty,category,reorder_point').eq('org_id', orgId).eq('is_active', true)
     if (branchId) q = q.eq('branch_id', branchId)

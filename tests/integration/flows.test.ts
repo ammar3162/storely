@@ -252,6 +252,37 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
     })
   })
 
+  describe('staff adds a product from the staff app', () => {
+    it('creates the product in the staff branch with stock, adds quantity to an existing one, and refuses without login', async () => {
+      process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
+      const { generateStaffToken } = await import('@/lib/staffAuth')
+      const addProduct = await import('@/app/api/staff-add-product/route')
+      const { data: st } = await db.from('staff_members').insert({
+        org_id: orgId, branch_id: branchA, name: 'موظف مخزون', phone: `9665${String(stamp + 7).slice(-8)}`, pin: 'x', is_active: true,
+        permissions: { dispense: true, inventory: true, purchases: false, reports: false }, role: 'staff',
+      } as any).select('id').single()
+      const token = generateStaffToken((st as any).id, orgId, branchA)
+      const post = (body: any, withAuth = true) => addProduct.POST(new Request('http://test/api/staff-add-product', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...(withAuth ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body),
+      }))
+
+      expect((await post({ name: 'سكر', qty: 3, unit: 'كيلو' }, false)).status).toBe(401)
+
+      const r1 = await post({ name: 'سكر', qty: 3, unit: 'كيلو' })
+      const j1 = await r1.json()
+      expect(r1.status).toBe(200); expect(j1.created).toBe(true)
+      const sugar = (await db.from('products').select('id,qty,branch_id,requires_staff_assignment').eq('id', j1.product_id).single()).data as any
+      expect(sugar).toMatchObject({ qty: 3, branch_id: branchA, requires_staff_assignment: false })
+
+      const r2 = await post({ name: 'سكر', qty: 2, unit: 'كيلو' })
+      expect((await r2.json()).created).toBe(false)
+      expect(((await db.from('products').select('qty').eq('id', j1.product_id).single()).data as any).qty).toBe(5)
+
+      const bad = await post({ name: 'ملح', qty: 0 })
+      expect(bad.status).toBe(400)
+    })
+  })
+
   describe('supplier orders: once per drop', () => {
     it('blocks a second order until the product is restocked', async () => {
       const milk = await productByName('حليب')

@@ -284,12 +284,18 @@ function StaffPageInner() {
   }
 
   async function addProduct() {
-    if(!newProduct.name.trim()||!newProduct.qty||!session) return
+    if(!newProduct.name.trim()||!newProduct.qty||!session||savingProduct) return
     setSavingProduct(true)
-    await fetch('/api/staff-purchase',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:session.org_id,branch_id:session.branch_id,category:'مخزون',name:newProduct.name.trim(),qty:Number(newProduct.qty),unit:newProduct.unit,reorder_point:5,amount:0,supplier:'إضافة يدوية',note:`إضافة منتج بواسطة: ${session.name}`,staff_name:session.name,staff_id:session.id})})
-    setNewProduct({name:'',qty:'',unit:'قطعة',category:''})
-    setShowAddProduct(false)
-    if(session) loadProducts(session)
+    try {
+      const res = await fetch('/api/staff-add-product',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('staff_token')}`},
+        body:JSON.stringify({name:newProduct.name.trim(),qty:Number(newProduct.qty),unit:newProduct.unit,category:newProduct.category.trim()||null})})
+      const j = await res.json().catch(()=>({}))
+      if(!res.ok || !j.success){ showMsg(j.error || 'تعذر إضافة المنتج — حاول مرة ثانية','error'); setSavingProduct(false); return }
+      showMsg(j.created ? `تمت إضافة ${newProduct.name.trim()}` : `تمت إضافة الكمية لـ ${newProduct.name.trim()}`,'success')
+      setNewProduct({name:'',qty:'',unit:'قطعة',category:''})
+      setShowAddProduct(false)
+      loadProducts(session)
+    } catch { showMsg('خطأ بالاتصال — حاول مرة ثانية','error') }
     setSavingProduct(false)
   }
 

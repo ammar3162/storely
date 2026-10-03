@@ -102,14 +102,11 @@ export default function ChoosePage() {
     getStaffOrg().then(org=>{ if(org?.logo_url) setOrgLogo(org.logo_url) })
     // مهامي وطلباتي جزء من ميزة "إدارة الموظفين" — ما نعرضهم إلا لو الباقة تشملها أو عندهم إضافة hr_full
     getStaffOrg()
-      .then(async (org)=>{
+      .then((org)=>{
         setSalaryVisible(org?.staff_salary_visible === true)
-        if (org?.plan !== 'basic') { setHasHrFeature(true); setHasCashierFeature(true); return }
-        const j = await fetch(`/api/addons-market?org_id=${parsed.org_id}`).then(r=>r.json()).catch(()=>null)
-        const addon = (j?.addons||[]).find((a:any)=>a.slug==='hr_full')
-        setHasHrFeature(!!addon?.subscription?.isValid)
-        const cashierAddon = (j?.addons||[]).find((a:any)=>a.slug==='cashier_closing')
-        setHasCashierFeature(!!cashierAddon?.subscription?.isValid)
+        // السيرفر يحدد الميزات (الباقة أو الإضافات المشتراة)
+        setHasHrFeature(!!org?.hr_feature)
+        setHasCashierFeature(!!org?.cashier_feature)
       })
     const savedLang = localStorage.getItem('staff_lang')
     if (savedLang === 'en') setLang('en')
