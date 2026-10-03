@@ -5,6 +5,7 @@ import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
+import { confirmDialog } from '@/components/ConfirmDialog'
 import { cache } from '@/lib/cache'
 import { ThumbsUp, ThumbsDown, ClipboardList, ChevronDown, Plus, Camera, CalendarDays, BarChart3 } from 'lucide-react'
 
@@ -118,8 +119,16 @@ export default function HRManagementPage() {
     })
   }
 
+  // الفرع المختار من القائمة فوق (sessionStorage) — موقعه بس اللي يتحدد من هالجهاز
+  const [currentBranchId, setCurrentBranchId] = useState<string|null>(null)
+  useEffect(() => { try { setCurrentBranchId(sessionStorage.getItem('s_branch_id')) } catch {} }, [])
+
   async function saveBranchLocation(id:string) {
     if(!navigator.geolocation){ toast('المتصفح ما يدعم تحديد الموقع','error'); return }
+    // الموقع ينحفظ من مكان الجهاز — نتأكد إن المالك فعلاً داخل الفرع
+    if (id !== currentBranchId) { toast('اختر هذا الفرع من القائمة فوق وأنت موجود فيه','warning'); return }
+    const bName = branches.find((b:any)=>b.id===id)?.name || 'الفرع'
+    if (!(await confirmDialog({ title:`تحديد موقع ${bName}`, message:`تأكد إنك موجود الحين داخل ${bName} — الموقع يتسجّل من مكان جهازك، والموظفين يحضّرون بناءً عليه.`, confirmText:'أنا داخل الفرع — حدّد', type:'warning' }))) return
     setSavingLocationId(id)
 
     let bestPos: GeolocationPosition | null = null
@@ -403,25 +412,24 @@ export default function HRManagementPage() {
         </div>
       )}
 
-      {/* مواقع الفروع -- لازمة لتفعيل تسجيل الحضور/الانصراف بكل فرع */}
-      {branches.length>0 && (
-        <div style={{...card,padding:14,marginBottom:20}}>
-          <div style={{fontSize:12,fontWeight:700,color:colors.text2,marginBottom:8}}>📍 مواقع الفروع (لتسجيل الحضور)</div>
-          <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
-            {branches.map((b:any)=>(
-              <div key={b.id} style={{display:'flex',alignItems:'center',gap:6}}>
-                <button onClick={()=>saveBranchLocation(b.id)} disabled={savingLocationId===b.id}
-                  style={{flex:1,display:'flex',justifyContent:'space-between',alignItems:'center',background:colors.bg,border:`1px solid ${colors.border2}`,borderRadius:8,padding:'8px 12px',cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
-                  <span style={{fontSize:12,fontWeight:600,color:colors.text}}>{b.name}</span>
-                  <span style={{fontSize:11,color:b.latitude?colors.primary:colors.text4}}>
-                    {savingLocationId===b.id ? 'جاري تحديد الموقع...' : b.latitude ? 'تم تحديد الموقع — إعادة الضبط' : 'حدّد موقع الفرع'}
-                  </span>
-                </button>
-              </div>
-            ))}
+      {/* موقع الفرع — يتحدد من داخل الفرع نفسه: يطلع بس للفرع المختار حالياً (لفرع ثاني: انتقل له من قائمة الفروع) */}
+      {(() => {
+        const b = branches.find((x:any)=>x.id===currentBranchId)
+        if (!b) return null
+        return (
+          <div style={{...card,padding:14,marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap' as const}}>
+            <div style={{minWidth:0}}>
+              <div style={{fontSize:12.5,fontWeight:700,color:colors.text}}>📍 موقع {b.name} (لتسجيل الحضور)</div>
+              <div style={{fontSize:11,color:b.latitude?colors.primary:colors.warning,marginTop:3}}>{b.latitude ? '✓ الموقع محدّد' : 'الموقع غير محدّد — الموظفين ما يقدرون يحضّرون'}</div>
+              <div style={{fontSize:10.5,color:colors.text4,marginTop:3}}>يتسجّل من مكان جهازك — حدّده وأنت داخل الفرع. لفرع ثاني: انتقل له من قائمة الفروع فوق.</div>
+            </div>
+            <button onClick={()=>saveBranchLocation(b.id)} disabled={savingLocationId===b.id}
+              style={{...btnPrimary,padding:'9px 16px',fontSize:12.5,whiteSpace:'nowrap' as const,opacity:savingLocationId===b.id?.7:1}}>
+              {savingLocationId===b.id ? 'جاري التحديد...' : b.latitude ? 'إعادة الضبط من هنا' : 'حدّد الموقع من هنا'}
+            </button>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {showReport && (
         <div style={{...card,padding:'18px 20px',marginBottom:20}}>
