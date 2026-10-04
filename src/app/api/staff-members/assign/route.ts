@@ -26,6 +26,7 @@ export async function POST(req: Request) {
     const { data: others } = await db.from('staff_members').select('id,name,assigned_products').eq('org_id', org_id).neq('id', staff_id)
 
     if (add_product_id) {
+      if ((target.assigned_products || []).includes(add_product_id)) return NextResponse.json({ success: true })
       const conflict = (others || []).find((s: any) => (s.assigned_products || []).includes(add_product_id))
       if (conflict) return NextResponse.json({ error: `تعذّر التخصيص — هذا المنتج مخصص أصلاً لـ${(conflict as any).name}` }, { status: 409 })
       const updated = Array.from(new Set([...(target.assigned_products || []), add_product_id]))
@@ -38,10 +39,12 @@ export async function POST(req: Request) {
     const selected: string[] = product_ids.map(String)
     const overrides = new Set<string>((Array.isArray(override_ids) ? override_ids : []).map(String))
 
+    // منتجات عنده من قبل (حتى لو مشتركة مع غيره من تخصيص قديم) تبقى له — ما تعتبر تعارض
+    const already = new Set<string>((target.assigned_products || []).map(String))
     const conflictNames = new Set<string>()
     const toStrip: { id: string; assigned_products: string[] }[] = []
     for (const s of (others || []) as any[]) {
-      const overlap = (s.assigned_products || []).filter((pid: string) => selected.includes(pid))
+      const overlap = (s.assigned_products || []).filter((pid: string) => selected.includes(pid) && (!already.has(pid) || overrides.has(pid)))
       if (!overlap.length) continue
       if (overlap.every((pid: string) => overrides.has(pid))) {
         toStrip.push({ id: s.id, assigned_products: (s.assigned_products || []).filter((pid: string) => !overlap.includes(pid)) })
@@ -50,7 +53,7 @@ export async function POST(req: Request) {
       }
     }
     if (conflictNames.size) {
-      return NextResponse.json({ error: `تعذّر الحفظ — بعض المنتجات صارت مخصصة لموظف آخر (${Array.from(conflictNames).join('، ')}) بينما كانت النافذة مفتوحة. أعد المحاولة.` }, { status: 409 })
+      return NextResponse.json({ error: `ما انحفظ — فيه منتجات اخترتها مخصصة لـ${Array.from(conflictNames).join('، ')}. سكّر النافذة وافتحها من جديد عشان تشوف التخصيص الحالي.` }, { status: 409 })
     }
 
     for (const s of toStrip) {
