@@ -94,6 +94,7 @@ export default function StaffManagementPage() {
   const [assignSearch, setAssignSearch] = useState('')
 
   const [takenProducts, setTakenProducts] = useState<Record<string,string>>({})
+  const [sharedProducts, setSharedProducts] = useState<Record<string,string[]>>({})
   const [overrideTaken, setOverrideTaken] = useState<Set<string>>(new Set())
   const [dayStartHour, setDayStartHour] = useState(4)   // بداية يوم العمل الجديد لإقفال الكاشير
   const [dayStartLoaded, setDayStartLoaded] = useState(4)
@@ -178,12 +179,18 @@ export default function StaffManagementPage() {
   async function openAssign(s:any) {
     setAssigningId(s.id)
     setSelectedProds(s.assigned_products||[])
-    const taken: Record<string,string> = {}
+    // المنتجات اللي عنده أصلاً تبقى له حتى لو مشتركة مع غيره (تخصيص قديم) — نعرضها كعادية مع اسم اللي يشاركه
+    const own = new Set<string>(s.assigned_products||[])
+    const taken: Record<string,string> = {}, shared: Record<string,string[]> = {}
     staff.forEach((other:any)=>{
       if(other.id===s.id) return
-      ;(other.assigned_products||[]).forEach((pid:string)=>{ taken[pid] = other.name })
+      ;(other.assigned_products||[]).forEach((pid:string)=>{
+        if (own.has(pid)) (shared[pid] ||= []).push(other.name)
+        else taken[pid] = other.name
+      })
     })
     setTakenProducts(taken)
+    setSharedProducts(shared)
     setOverrideTaken(new Set())
   }
 
@@ -657,7 +664,7 @@ export default function StaffManagementPage() {
                     </div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{p.name}</div>
-                      <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit}</div>
+                      <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit}{sharedProducts[p.id] ? ` · مشترك مع ${sharedProducts[p.id].join('، ')}` : ''}</div>
                     </div>
                   </div>
                 )
