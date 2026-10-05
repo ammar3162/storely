@@ -15,7 +15,9 @@ const dateLabel = (d: string) => `${WEEKDAYS[new Date(`${d}T12:00:00Z`).getUTCDa
 const NOW_PERIODS: { key: ManualPeriodKey; label: string }[] = [
   { key: 'scheduled', label: 'آخر فترة حسب الموعد' }, { key: 'last_month', label: 'الشهر اللي فات' },
   { key: 'this_month', label: 'هذا الشهر لين أمس' }, { key: 'last_week', label: 'آخر ٧ أيام' }, { key: 'yesterday', label: 'أمس' },
+  { key: 'custom', label: 'من تاريخ إلى تاريخ' },
 ]
+const todaySA = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
 const FREQ: { key: AccFrequency; label: string }[] = [{ key: 'daily', label: 'يومي' }, { key: 'weekly', label: 'أسبوعي' }, { key: 'monthly', label: 'شهري' }]
 
 type Form = { name: string; email: string; whatsapp: string; channels: string[]; sections: AccSection[]; frequency: AccFrequency; weekday: number; month_day: number; send_hour: number
@@ -37,6 +39,8 @@ export default function AccountantLinkSettings({ orgId }: { orgId: string }) {
   const [consent, setConsent] = useState(false)
   const [busy, setBusy] = useState<'' | 'save' | 'test' | 'delete'>('')
   const [nowPeriod, setNowPeriod] = useState<ManualPeriodKey>('scheduled')
+  const [from, setFrom] = useState(() => todaySA().slice(0, 8) + '01')
+  const [to, setTo] = useState(() => todaySA())
 
   async function load() {
     const [j, b] = await Promise.all([api.get('/api/accountant-link', { org_id: orgId }), api.get('/api/branches', { org_id: orgId })])
@@ -76,7 +80,8 @@ export default function AccountantLinkSettings({ orgId }: { orgId: string }) {
   }
   async function test() {
     setBusy('test')
-    const j = await api.post('/api/accountant-link', { org_id: orgId, period: nowPeriod })
+    if (nowPeriod === 'custom' && (!from || !to || from > to)) { toast('اختر الفترة صح: من تاريخ قبل إلى تاريخ', 'warning'); return }
+    const j = await api.post('/api/accountant-link', { org_id: orgId, period: nowPeriod, ...(nowPeriod === 'custom' ? { from, to } : {}) })
     setBusy('')
     if (!j.success) { toast(j.error || 'تعذر الإرسال', 'error'); load(); return }
     toast(`✅ أرسلنا تقرير ${j.label} للمحاسب`)
@@ -208,6 +213,12 @@ export default function AccountantLinkSettings({ orgId }: { orgId: string }) {
           <select value={nowPeriod} onChange={e => setNowPeriod(e.target.value as ManualPeriodKey)} disabled={!!busy || dirty} style={{ ...inp(), width: 'auto', padding: '10px 12px', fontSize: 13 }}>
             {NOW_PERIODS.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
           </select>
+          {nowPeriod === 'custom' && <>
+            <span style={{ fontSize: 12.5, color: colors.text3 }}>من</span>
+            <input type="date" value={from} max={to || todaySA()} onChange={e => setFrom(e.target.value)} disabled={!!busy || dirty} style={{ ...inp(), width: 'auto', padding: '9px 10px', fontSize: 13 }} />
+            <span style={{ fontSize: 12.5, color: colors.text3 }}>إلى</span>
+            <input type="date" value={to} min={from} max={todaySA()} onChange={e => setTo(e.target.value)} disabled={!!busy || dirty} style={{ ...inp(), width: 'auto', padding: '9px 10px', fontSize: 13 }} />
+          </>}
           <button onClick={test} disabled={!!busy || dirty} title={dirty ? 'احفظ التعديلات أول' : ''} style={{ ...btnSecondary, padding: '11px 18px', display: 'inline-flex', alignItems: 'center', gap: 6, opacity: dirty ? .6 : 1 }}>
             <Send size={15} /> {busy === 'test' ? 'جاري الإرسال...' : 'أرسل الحين'}</button>
         </span>}

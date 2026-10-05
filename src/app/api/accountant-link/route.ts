@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { formatPhone } from '@/lib/whatsapp'
 import { ACC_SECTIONS } from '@/lib/accountantExport'
-import { latestPeriod, saudiToday, scheduleToday, manualPeriod, type AccFrequency, type ManualPeriodKey } from '@/lib/accountantSchedule'
+import { latestPeriod, saudiToday, scheduleToday, manualPeriod, customPeriod, type AccFrequency, type ManualPeriodKey } from '@/lib/accountantSchedule'
 import { sendAccountantReport } from '@/lib/accountantSend'
 import { isSubscriptionActive } from '@/lib/subscription'
 
@@ -116,8 +116,16 @@ export async function POST(req: Request) {
       .eq('org_id', b.org_id).eq('is_test', true).gte('created_at', new Date(Date.now() - 3600e3).toISOString())
     if ((count || 0) >= TEST_PER_HOUR) return NextResponse.json({ error: 'أرسلت تقارير كثيرة خلال ساعة — جرّب بعد شوي' }, { status: 429 })
 
-    const KEYS: ManualPeriodKey[] = ['scheduled', 'last_month', 'this_month', 'last_week', 'yesterday']
+    const KEYS: ManualPeriodKey[] = ['scheduled', 'last_month', 'this_month', 'last_week', 'yesterday', 'custom']
     const key: ManualPeriodKey = KEYS.includes(b.period) ? b.period : 'scheduled'
+    if (key === 'custom') {
+      const p = customPeriod(String(b.from || ''), String(b.to || ''), saudiToday())
+      if (typeof p === 'string') return NextResponse.json({ error: p }, { status: 400 })
+      const r = await sendAccountantReport(db, link as any, p, { manual: true })
+      const failed = [r.email_status === 'failed' && 'الإيميل', r.whatsapp_status === 'failed' && 'الواتساب'].filter(Boolean)
+      if (failed.length) return NextResponse.json({ success: false, error: `ما وصل عن طريق ${failed.join(' و')} — تأكد من البيانات وجرّب مرة ثانية`, ...r })
+      return NextResponse.json({ success: true, ...r })
+    }
     const period = manualPeriod(key, link as any, saudiToday())
     if (!period) return NextResponse.json({ error: 'الشهر بدأ اليوم — ما فيه أيام مكتملة لسا' }, { status: 400 })
     const r = await sendAccountantReport(db, link as any, period, { manual: true })

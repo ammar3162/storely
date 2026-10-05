@@ -66,14 +66,25 @@ export function nextSend(s: AccSchedule, lastPeriodEnd: string | null, now = Dat
 }
 
 /** «أرسل الحين»: الفترة اللي يختارها المالك */
-export type ManualPeriodKey = 'scheduled' | 'last_month' | 'this_month' | 'last_week' | 'yesterday'
+export type ManualPeriodKey = 'scheduled' | 'last_month' | 'this_month' | 'last_week' | 'yesterday' | 'custom'
 export function manualPeriod(key: ManualPeriodKey, s: AccSchedule, today: string): Period | null {
   const y = addDays(today, -1)
   if (key === 'yesterday') return { start: y, end: y }
   if (key === 'last_week') return { start: addDays(today, -7), end: y }
   if (key === 'last_month') { const end = addDays(monthStart(today), -1); return { start: monthStart(end), end } }
   if (key === 'this_month') return today === monthStart(today) ? null : { start: monthStart(today), end: y }
+  if (key === 'custom') return null   // الفترة المخصصة تمر من customPeriod
   return latestPeriod(s, today)
+}
+
+/** فترة من تاريخ لتاريخ — لين اليوم، وسنة بالكثير */
+export function customPeriod(from: string, to: string, today: string): Period | string {
+  const ok = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d) && new Date(`${d}T12:00:00Z`).toISOString().slice(0, 10) === d
+  if (!ok(from) || !ok(to)) return 'اختر التاريخين'
+  if (from > to) return 'تاريخ البداية بعد تاريخ النهاية'
+  if (to > today) return 'تاريخ النهاية ما يكون بعد اليوم'
+  if ((ms(to) - ms(from)) / 86400e3 > 366) return 'الفترة أطول من سنة'
+  return { start: from, end: to }
 }
 
 /** وقت الإرسال بالعربي: 8 → «8:00 ص» */

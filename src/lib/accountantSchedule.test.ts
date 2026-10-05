@@ -71,3 +71,14 @@ describe('owner-chosen send hour and send-now periods', () => {
     expect(manualPeriod('last_week', M, '2026-10-06')).toEqual({ start: '2026-09-29', end: '2026-10-05' })
   })
 })
+
+describe('custom range', () => {
+  it('validates from/to', async () => {
+    const { customPeriod } = await import('./accountantSchedule')
+    expect(customPeriod('2026-09-10', '2026-10-05', '2026-10-06')).toEqual({ start: '2026-09-10', end: '2026-10-05' })
+    expect(customPeriod('2026-10-05', '2026-09-10', '2026-10-06')).toBe('تاريخ البداية بعد تاريخ النهاية')
+    expect(customPeriod('2026-10-01', '2026-10-09', '2026-10-06')).toBe('تاريخ النهاية ما يكون بعد اليوم')
+    expect(customPeriod('2024-01-01', '2026-10-01', '2026-10-06')).toBe('الفترة أطول من سنة')
+    expect(customPeriod('2026-02-31', '2026-03-01', '2026-10-06')).toBe('اختر التاريخين')
+  })
+})
