@@ -1,0 +1,135 @@
+'use client'
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
+import { Download, FileSpreadsheet, Loader2, AlertTriangle } from 'lucide-react'
+import { colors, font, radius } from '@/lib/ds'
+
+// تقرير المحاسب — يفتحه المحاسب من الرابط اللي وصله (بدون تسجيل دخول)
+const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const DECISION: Record<string, string> = { pending: 'بانتظار قرار المالك', approved: 'خُصم من الموظف', rejected: 'ما انخصم' }
+
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: radius.lg, padding: 18, marginBottom: 14 }}>
+      <h2 style={{ fontSize: 15, fontWeight: 800, color: colors.primary, margin: '0 0 12px' }}>{title}</h2>
+      {children}
+    </section>
+  )
+}
+function Lines({ rows }: { rows: [string, number, boolean?][] }) {
+  return (
+    <div>
+      {rows.map(([k, v, strong]) => (
+        <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '8px 0', borderBottom: `1px solid ${colors.border}`, fontSize: 13.5, fontWeight: strong ? 800 : 500, color: strong ? colors.text : colors.text2 }}>
+          <span>{k}</span><span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums' }}>{fmt(v)}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+function Table({ head, rows, moneyCols = [] }: { head: string[]; rows: (string | number)[][]; moneyCols?: number[] }) {
+  if (!rows.length) return <div style={{ fontSize: 12.5, color: colors.text4, padding: '8px 0' }}>ما فيه بيانات لهذي الفترة</div>
+  return (
+    <div style={{ overflowX: 'auto', marginTop: 10 }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, minWidth: 420 }}>
+        <thead><tr>{head.map((h, i) => <th key={i} style={{ textAlign: 'right', padding: '7px 8px', background: colors.primaryLight, color: colors.primaryDark, fontWeight: 700, whiteSpace: 'nowrap' }}>{h}</th>)}</tr></thead>
+        <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} dir={moneyCols.includes(j) ? 'ltr' : undefined} style={{ padding: '7px 8px', borderBottom: `1px solid ${colors.border}`, textAlign: moneyCols.includes(j) ? 'left' : 'right', whiteSpace: moneyCols.includes(j) ? 'nowrap' : undefined }}>{moneyCols.includes(j) ? fmt(Number(c)) : c}</td>)}</tr>)}</tbody>
+      </table>
+    </div>
+  )
+}
+
+export default function AccountantReportPage() {
+  const token = useParams().token as string
+  const [data, setData] = useState<any>(null)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    fetch(`/api/accountant-report?token=${encodeURIComponent(token)}`)
+      .then(r => r.json()).then(j => j.success ? setData(j) : setError(j.error || 'الرابط غير صحيح'))
+      .catch(() => setError('تعذر فتح التقرير — تأكد من الإنترنت'))
+  }, [token])
+
+  const shell = (children: React.ReactNode) => (
+    <div dir="rtl" style={{ minHeight: '100vh', background: '#f4f7f7', fontFamily: font.family, color: colors.text }}>
+      <div style={{ maxWidth: 860, margin: '0 auto', padding: '20px 16px 40px' }}>{children}</div>
+    </div>
+  )
+  if (error) return shell(
+    <div style={{ textAlign: 'center', padding: '80px 16px' }}>
+      <AlertTriangle size={36} color={colors.warning} />
+      <div style={{ fontSize: 17, fontWeight: 800, marginTop: 12 }}>{error}</div>
+    </div>)
+  if (!data) return shell(<div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}><Loader2 size={28} color={colors.primary} style={{ animation: 'spin .8s linear infinite' }} /><style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style></div>)
+
+  const r = data.report, t = data.totals
+  const has = (s: string) => r.sections.includes(s)
+  const multi = !r.branchName
+  const diffs = r.closings.filter((c: any) => c.difference !== 0)
+
+  return shell(<>
+    <header style={{ background: 'linear-gradient(135deg,#029FA2,#0f3f40)', color: '#fff', borderRadius: radius.xl, padding: '20px 22px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
+      <div>
+        <div style={{ fontSize: 12, opacity: .85 }}>تقرير المحاسب</div>
+        <h1 style={{ fontSize: 22, fontWeight: 800, margin: '4px 0' }}>{r.orgName}</h1>
+        <div style={{ fontSize: 13, opacity: .9 }}>{r.label} · {r.branchName || 'كل الفروع'} · العملة {r.currency}</div>
+      </div>
+      <a href={`/api/accountant-report?token=${encodeURIComponent(token)}&format=xlsx`}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', color: colors.primary, fontWeight: 800, fontSize: 14, padding: '11px 18px', borderRadius: 12, textDecoration: 'none' }}>
+        <FileSpreadsheet size={18} /> تحميل ملف الإكسل <Download size={15} />
+      </a>
+    </header>
+
+    {has('sales') && <Card title="المبيعات">
+      <Lines rows={[['إجمالي المبيعات', t.sales, true], ['مدى', t.mada], ['فيزا', t.visa], ['ماستركارد', t.mastercard], ['الكاش', t.cash]]} />
+      <Table head={['التاريخ', ...(multi ? ['الفرع'] : []), 'الكاشير', 'المبيعات', 'الشبكة', 'الكاش']} moneyCols={multi ? [3, 4, 5] : [2, 3, 4]}
+        rows={r.closings.map((c: any) => [c.date, ...(multi ? [c.branch] : []), c.staff || '—', c.sales, c.network, c.cash])} />
+    </Card>}
+
+    {has('purchases') && <Card title={`المشتريات (${t.invoices} فاتورة)`}>
+      <Lines rows={[['قبل الضريبة', t.purNet], ['الضريبة', t.purVat], ['الإجمالي', t.purTotal, true], ['منها آجلة', t.purUnpaid]]} />
+      <Table head={['التاريخ', 'المورد', 'الصنف', 'قبل الضريبة', 'الضريبة', 'الإجمالي', 'الدفع']} moneyCols={[3, 4, 5]}
+        rows={r.purchases.map((p: any) => [p.date, p.supplier || '—', p.name, p.net, p.vat, p.total, p.paid ? 'مدفوعة' : 'آجلة'])} />
+    </Card>}
+
+    {has('vat') && <Card title="ضريبة القيمة المضافة">
+      {r.vatRegistered
+        ? <><Lines rows={[['المبيعات قبل الضريبة', t.salesNet], ['ضريبة المبيعات (المخرجات)', t.outputVat], ['ضريبة المشتريات (المدخلات)', t.inputVat], ['صافي الضريبة المستحقة', t.vatNet, true]]} />
+            <div style={{ fontSize: 11.5, color: colors.text4, marginTop: 8 }}>تقدير من إقفالات الكاشير وفواتير المشتريات المسجلة — راجعه قبل تقديم الإقرار.</div></>
+        : <div style={{ fontSize: 13, color: colors.text3 }}>المنشأة غير مسجلة في ضريبة القيمة المضافة.</div>}
+    </Card>}
+
+    {has('payables') && <Card title="الموردين الآجلين">
+      <Lines rows={[['إجمالي المستحق للموردين', t.payablesTotal, true]]} />
+      <Table head={['المورد', 'عدد الفواتير', 'أقدم فاتورة', 'أقرب استحقاق', 'المبلغ']} moneyCols={[4]}
+        rows={r.payables.map((p: any) => [p.supplier, p.invoices, p.oldest, p.nextDue || '—', p.total])} />
+    </Card>}
+
+    {has('payroll') && r.payroll && <Card title={`الرواتب (${r.payroll.length} موظف)`}>
+      <Lines rows={[['إجمالي الرواتب', t.payrollGross], ['صافي الرواتب', t.payrollNet, true]]} />
+      <Table head={['الموظف', 'الإجمالي', 'الإضافي', 'مكافآت', 'خصومات', 'سلف', 'الصافي']} moneyCols={[1, 2, 3, 4, 5, 6]}
+        rows={r.payroll.map((p: any) => [p.name, p.gross, p.overtime, p.bonuses, p.deductions, p.advances, p.net])} />
+    </Card>}
+
+    {has('expenses') && <Card title="المصروفات من الدرج">
+      <Lines rows={[['الإجمالي', t.expenses, true]]} />
+      <Table head={['التاريخ', 'الموظف', 'البند', 'المبلغ']} moneyCols={[3]} rows={r.expenses.map((e: any) => [e.date, e.staff || '—', e.item, e.amount])} />
+    </Card>}
+
+    {has('cash_diff') && <Card title="فروقات الكاشير">
+      <Lines rows={[['العجز', t.deficit], ['الزيادة', t.surplus]]} />
+      <Table head={['التاريخ', 'الكاشير', 'النوع', 'السبب', 'القرار', 'المبلغ']} moneyCols={[5]}
+        rows={diffs.map((c: any) => [c.date, c.staff || '—', c.difference < 0 ? 'عجز' : 'زيادة', c.deficitReason || '—', c.difference < 0 ? DECISION[c.deficitDecision] || '—' : '—', Math.abs(c.difference)])} />
+    </Card>}
+
+    {has('stock') && <Card title="المخزون">
+      <Lines rows={[['قيمة المخزون الحالية', t.stockValue, true]]} />
+      <Table head={['الصنف', 'الكمية', 'الوحدة', 'متوسط التكلفة', 'القيمة']} moneyCols={[3, 4]}
+        rows={r.stock.filter((s: any) => s.avgCost != null).map((s: any) => [s.name, s.qty, s.unit || '', s.avgCost, Math.round(s.qty * s.avgCost * 100) / 100])} />
+    </Card>}
+
+    <footer style={{ textAlign: 'center', fontSize: 12, color: colors.text4, marginTop: 20 }}>
+      صدر من <a href="https://www.storely.dev" style={{ color: colors.primary }}>Storely</a> · الرابط صالح ٧ أيام من تاريخ الإرسال
+    </footer>
+  </>)
+}

@@ -7,6 +7,7 @@ import { api } from '@/lib/api-client'
 import { getMe } from '@/lib/session'
 import { PLAN_PRICING, planKeyOf, billLines } from '@/lib/planPricing'
 import { colors, radius, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
+import AccountantLinkSettings from '@/components/AccountantLinkSettings'
 
 const lbl: React.CSSProperties = { fontSize: font.xs, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }
 
@@ -20,6 +21,7 @@ const TABS = [
   {key:'org',    label:'المؤسسة',    icon:'🏢'},
   {key:'notify', label:'الإشعارات',  icon:'🔔'},
   {key:'backup', label:'النسخ الاحتياطي', icon:'💾'},
+  {key:'accountant', label:'المحاسب', icon:'📊', ownerOnly:true},
   {key:'security',label:'الأمان',   icon:'🔐'},
 ]
 
@@ -67,6 +69,7 @@ export default function SettingsPage() {
   const [saveOk, setSaveOk]             = useState(false)
   const [sendMsg, setSendMsg]           = useState<{ok:boolean;text:string}|null>(null)
   const [orgId, setOrgId]               = useState('')
+  const [isOwner, setIsOwner]           = useState(false)
   const [lastSent, setLastSent]         = useState<string|null>(null)
   const [lastBackup, setLastBackup]     = useState<string|null>(null)
   const [backups, setBackups]           = useState<any[]>([])
@@ -191,6 +194,7 @@ export default function SettingsPage() {
     if (!me) return
     const user = { id: me.user_id, email: me.email }
     setOrgId(me.org_id)
+    setIsOwner(me.role === 'owner')
     setUserFullName(me.full_name||'')
     setUserPhone(me.phone||'')
     const [orgRes, branchesRes] = (cachedOid===me.org_id && orgBranchesEarly) || await loadOrg(me.org_id)
@@ -375,7 +379,7 @@ export default function SettingsPage() {
       {/* Tabs */}
       <div className="su" style={{...card,overflow:'hidden',marginBottom:16,animationDelay:'.1s'}}>
         <div style={{display:'flex',borderBottom:`1px solid ${colors.border}`,overflowX:'auto',scrollbarWidth:'none'}}>
-          {TABS.map(t=>(
+          {TABS.filter((t:any)=>!t.ownerOnly||isOwner).map(t=>(
             <button key={t.key} className={`tab-btn${activeTab===t.key?' active':''}`}
               onClick={()=>setActiveTab(t.key)}
               style={{background:'none',color:activeTab===t.key?colors.primary:colors.text3}}>
@@ -386,6 +390,8 @@ export default function SettingsPage() {
         </div>
 
         <div style={{padding:22}}>
+
+          {activeTab==='accountant'&&isOwner&&orgId&&<AccountantLinkSettings orgId={orgId}/>}
 
           {/* ORG TAB */}
           {activeTab==='account'&&(

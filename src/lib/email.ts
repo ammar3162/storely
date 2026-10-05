@@ -14,7 +14,14 @@ function htmlToText(html: string) {
     .replace(/[ \t]+/g, ' ').replace(/\n\s*\n\s*\n+/g, '\n\n').trim()
 }
 
-export async function sendEmail({ to, subject, html, text }: { to: string; subject: string; html: string; text?: string }) {
+// اسم المرسل الظاهر — نشيل أي رموز تكسر ترويسة From
+const cleanName = (s: string) => s.replace(/[<>"\r\n\\]/g, '').trim().slice(0, 60)
+
+export async function sendEmail({ to, subject, html, text, fromName, fromAddress, replyTo, attachments }: {
+  to: string; subject: string; html: string; text?: string
+  fromName?: string; fromAddress?: string; replyTo?: string
+  attachments?: { filename: string; content: Buffer }[]
+}) {
   // بدون مفتاح (مثلاً بيئة staging إذا ما انضاف لها المفتاح) نرجّع فشل واضح بدل ما ينكسر الطلب كله
   if (!process.env.RESEND_API_KEY) {
     console.error('EMAIL_SEND_FAILED: RESEND_API_KEY is not set in this environment')
@@ -22,11 +29,13 @@ export async function sendEmail({ to, subject, html, text }: { to: string; subje
   }
   const resend = new Resend(process.env.RESEND_API_KEY)
   const { data, error } = await resend.emails.send({
-    from: 'Storely <noreply@storely.dev>',
+    from: `${fromName ? cleanName(fromName) || 'Storely' : 'Storely'} <${fromAddress || 'noreply@storely.dev'}>`,
     to,
     subject,
     html,
     text: text || htmlToText(html),
+    ...(replyTo ? { replyTo } : {}),
+    ...(attachments?.length ? { attachments } : {}),
   })
   if (error) {
     console.error('EMAIL_SEND_FAILED:', error)
