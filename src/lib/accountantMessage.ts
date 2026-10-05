@@ -1,5 +1,5 @@
 import { brandEmail, esc, sar } from '@/lib/emailTemplates'
-import { summarize, deficitDecisionLabel, type AccountantReport } from '@/lib/accountantExport'
+import { summarize, deficitDecisionLabel, invoicesLabel, staffLabel, type AccountantReport } from '@/lib/accountantExport'
 
 // رسائل تقرير المحاسب: إيميل مرتب (ملخص + جداول مختصرة + الملف مرفق) ورسالة واتساب قصيرة برابط
 
@@ -27,13 +27,13 @@ export function accountantEmail(r: AccountantReport, o: { accountantName: string
   const has = (s: string) => r.sections.includes(s as any)
   let html = ''
   if (has('sales')) html += block('المبيعات', [['إجمالي المبيعات', t.sales, true], ['الشبكة', t.network], ['الكاش', t.cash]])
-  if (has('purchases')) html += block(`المشتريات (${t.invoices} فاتورة)`, [['قبل الضريبة', t.purNet], ['الضريبة', t.purVat], ['الإجمالي', t.purTotal, true], ['منها آجلة', t.purUnpaid]])
+  if (has('purchases')) html += block(`المشتريات (${invoicesLabel(t.invoices)})`, [['قبل الضريبة', t.purNet], ['الضريبة', t.purVat], ['الإجمالي', t.purTotal, true], ['منها آجلة', t.purUnpaid]])
   if (has('vat')) html += r.vatRegistered
     ? block('ضريبة القيمة المضافة', [['ضريبة المبيعات', t.outputVat], ['ضريبة المشتريات', t.inputVat], ['صافي الضريبة المستحقة', t.vatNet, true]])
     : `<tr><td style="padding:12px 28px 4px;font-size:12px;color:${C.muted}">المنشأة غير مسجلة في ضريبة القيمة المضافة.</td></tr>`
   if (has('payables')) html += block('الموردين الآجلين', [['إجمالي المستحق', t.payablesTotal, true]],
     miniTable(['المورد', 'فواتير', 'المبلغ'], r.payables.slice(0, 5).map(p => [p.supplier, String(p.invoices), sar(p.total)]), r.payables.length - 5))
-  if (has('payroll') && r.payroll) html += block(`الرواتب (${r.payroll.length} موظف)`, [['إجمالي الرواتب', t.payrollGross], ['صافي الرواتب', t.payrollNet, true]])
+  if (has('payroll') && r.payroll) html += block(`الرواتب (${staffLabel(r.payroll.length)})`, [['إجمالي الرواتب', t.payrollGross], ['صافي الرواتب', t.payrollNet, true]])
   if (has('expenses')) html += block('المصروفات من الدرج', [['الإجمالي', t.expenses, true]])
   if (has('cash_diff')) {
     const diffs = r.closings.filter(c => c.difference !== 0)
@@ -64,7 +64,7 @@ export function accountantWhatsapp(r: AccountantReport, o: { accountantName: str
   const has = (s: string) => r.sections.includes(s as any)
   const L = [`${o.isTest ? '*[تجربة]* ' : ''}📊 *تقرير ${r.orgName}*${r.branchName ? ` — ${r.branchName}` : ''}`, `الفترة: ${r.label}`, '']
   if (has('sales')) L.push(`المبيعات: *${sar(t.sales)}*`)
-  if (has('purchases')) L.push(`المشتريات: *${sar(t.purTotal)}* (${t.invoices} فاتورة)`)
+  if (has('purchases')) L.push(`المشتريات: *${sar(t.purTotal)}* (${invoicesLabel(t.invoices)})`)
   if (has('vat') && r.vatRegistered) L.push(`صافي الضريبة المستحقة: *${sar(t.vatNet)}*`)
   if (has('payables')) L.push(`المستحق للموردين: *${sar(t.payablesTotal)}*`)
   if (has('payroll') && r.payroll) L.push(`صافي الرواتب: *${sar(t.payrollNet)}*`)

@@ -59,3 +59,11 @@ describe('accountant report', () => {
     expect(wa).toContain('555')
   })
 })
+
+describe('arabic counts', () => {
+  it('invoices and staff', async () => {
+    const { invoicesLabel, staffLabel } = await import('./accountantExport')
+    expect([1, 2, 3, 10, 11].map(invoicesLabel)).toEqual(['فاتورة', 'فاتورتين', '3 فواتير', '10 فواتير', '11 فاتورة'])
+    expect([1, 2, 5].map(staffLabel)).toEqual(['موظف', 'موظفين', '5 موظفين'])
+  })
+})

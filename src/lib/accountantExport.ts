@@ -33,6 +33,15 @@ export type AccountantReport = {
   stock: AccStock[]; payables: AccPayable[]
 }
 
+// عدد بالعربي: فاتورة، فاتورتين، ٣ فواتير، ١١ فاتورة
+export function arCount(n: number, one: string, two: string, few: string) {
+  if (n === 1) return one
+  if (n === 2) return two
+  return `${n} ${n >= 3 && n <= 10 ? few : one}`
+}
+export const invoicesLabel = (n: number) => arCount(n, 'فاتورة', 'فاتورتين', 'فواتير')
+export const staffLabel = (n: number) => arCount(n, 'موظف', 'موظفين', 'موظفين')
+
 const r2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100
 const sum = <T>(rows: T[], f: (r: T) => number) => r2(rows.reduce((s, r) => s + (Number(f(r)) || 0), 0))
 export const VAT_RATE = 0.15

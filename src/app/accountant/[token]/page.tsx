@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Download, FileSpreadsheet, Loader2, AlertTriangle } from 'lucide-react'
 import { colors, font, radius } from '@/lib/ds'
+import { invoicesLabel, staffLabel } from '@/lib/accountantExport'
 
 // تقرير المحاسب — يفتحه المحاسب من الرابط اللي وصله (بدون تسجيل دخول)
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -86,10 +87,10 @@ export default function AccountantReportPage() {
         rows={r.closings.map((c: any) => [c.date, ...(multi ? [c.branch] : []), c.staff || '—', c.sales, c.network, c.cash])} />
     </Card>}
 
-    {has('purchases') && <Card title={`المشتريات (${t.invoices} فاتورة)`}>
+    {has('purchases') && <Card title={`المشتريات (${invoicesLabel(t.invoices)})`}>
       <Lines rows={[['قبل الضريبة', t.purNet], ['الضريبة', t.purVat], ['الإجمالي', t.purTotal, true], ['منها آجلة', t.purUnpaid]]} />
-      <Table head={['التاريخ', 'المورد', 'الصنف', 'قبل الضريبة', 'الضريبة', 'الإجمالي', 'الدفع']} moneyCols={[3, 4, 5]}
-        rows={r.purchases.map((p: any) => [p.date, p.supplier || '—', p.name, p.net, p.vat, p.total, p.paid ? 'مدفوعة' : 'آجلة'])} />
+      <Table head={['التاريخ', ...(multi ? ['الفرع'] : []), 'المورد', 'الصنف', 'قبل الضريبة', 'الضريبة', 'الإجمالي', 'الدفع']} moneyCols={multi ? [4, 5, 6] : [3, 4, 5]}
+        rows={r.purchases.map((p: any) => [p.date, ...(multi ? [p.branch] : []), p.supplier || '—', p.name, p.net, p.vat, p.total, p.paid ? 'مدفوعة' : 'آجلة'])} />
     </Card>}
 
     {has('vat') && <Card title="ضريبة القيمة المضافة">
@@ -105,7 +106,7 @@ export default function AccountantReportPage() {
         rows={r.payables.map((p: any) => [p.supplier, p.invoices, p.oldest, p.nextDue || '—', p.total])} />
     </Card>}
 
-    {has('payroll') && r.payroll && <Card title={`الرواتب (${r.payroll.length} موظف)`}>
+    {has('payroll') && r.payroll && <Card title={`الرواتب (${staffLabel(r.payroll.length)})`}>
       <Lines rows={[['إجمالي الرواتب', t.payrollGross], ['صافي الرواتب', t.payrollNet, true]]} />
       <Table head={['الموظف', 'الإجمالي', 'الإضافي', 'مكافآت', 'خصومات', 'سلف', 'الصافي']} moneyCols={[1, 2, 3, 4, 5, 6]}
         rows={r.payroll.map((p: any) => [p.name, p.gross, p.overtime, p.bonuses, p.deductions, p.advances, p.net])} />
@@ -113,7 +114,7 @@ export default function AccountantReportPage() {
 
     {has('expenses') && <Card title="المصروفات من الدرج">
       <Lines rows={[['الإجمالي', t.expenses, true]]} />
-      <Table head={['التاريخ', 'الموظف', 'البند', 'المبلغ']} moneyCols={[3]} rows={r.expenses.map((e: any) => [e.date, e.staff || '—', e.item, e.amount])} />
+      <Table head={['التاريخ', ...(multi ? ['الفرع'] : []), 'الموظف', 'البند', 'المبلغ']} moneyCols={multi ? [4] : [3]} rows={r.expenses.map((e: any) => [e.date, ...(multi ? [e.branch] : []), e.staff || '—', e.item, e.amount])} />
     </Card>}
 
     {has('cash_diff') && <Card title="فروقات الكاشير">
@@ -124,8 +125,8 @@ export default function AccountantReportPage() {
 
     {has('stock') && <Card title="المخزون">
       <Lines rows={[['قيمة المخزون الحالية', t.stockValue, true]]} />
-      <Table head={['الصنف', 'الكمية', 'الوحدة', 'متوسط التكلفة', 'القيمة']} moneyCols={[3, 4]}
-        rows={r.stock.filter((s: any) => s.avgCost != null).map((s: any) => [s.name, s.qty, s.unit || '', s.avgCost, Math.round(s.qty * s.avgCost * 100) / 100])} />
+      <Table head={['الصنف', ...(multi ? ['الفرع'] : []), 'الكمية', 'الوحدة', 'متوسط التكلفة', 'القيمة']} moneyCols={multi ? [4, 5] : [3, 4]}
+        rows={r.stock.filter((s: any) => s.avgCost != null).map((s: any) => [s.name, ...(multi ? [s.branch] : []), s.qty, s.unit || '', s.avgCost, Math.round(s.qty * s.avgCost * 100) / 100])} />
     </Card>}
 
     <footer style={{ textAlign: 'center', fontSize: 12, color: colors.text4, marginTop: 20 }}>
