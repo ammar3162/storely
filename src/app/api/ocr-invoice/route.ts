@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { normalizeVat, isValidVat, normalizeInvoiceNumber } from '@/lib/taxInvoice'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 
@@ -31,7 +32,9 @@ export async function POST(req: Request) {
 2. تاريخ الفاتورة بصيغة YYYY-MM-DD (invoice_date) — إذا غير واضح استخدم null
 3. الإجمالي الكلي شامل الضريبة إن وجدت (total_amount) — رقم فقط
 4. هل الفاتورة تحتوي ضريبة قيمة مضافة 15% واضحة (has_vat) — true أو false
-5. قائمة الأصناف الظاهرة بالفاتورة (items) — لكل صنف: الاسم (name)، الكمية (qty) إن وجدت، الوحدة (unit) مثل "كيلو" أو "قطعة" أو "كرتون" إن وجدت
+5. رقم الفاتورة كما هو مكتوب (invoice_number) — إذا غير موجود استخدم null
+6. الرقم الضريبي للمورد/البائع (supplier_vat_number) — ١٥ رقم يبدأ بـ 3 وينتهي بـ 3، أرقام فقط. لا تخلطه برقم ضريبي للمشتري. إذا غير موجود استخدم null
+7. قائمة الأصناف الظاهرة بالفاتورة (items) — لكل صنف: الاسم (name)، الكمية (qty) إن وجدت، الوحدة (unit) مثل "كيلو" أو "قطعة" أو "كرتون" إن وجدت
 
 أعطني فقط كائن JSON بهذا الشكل بدون أي شرح أو نص إضافي:
 {
@@ -39,6 +42,8 @@ export async function POST(req: Request) {
   "invoice_date": "2026-07-18",
   "total_amount": 450.50,
   "has_vat": true,
+  "invoice_number": "INV-1024",
+  "supplier_vat_number": "300012345678903",
   "items": [
     {"name": "اسم الصنف", "qty": 10, "unit": "كيلو"}
   ]
@@ -78,6 +83,10 @@ export async function POST(req: Request) {
     const extracted = JSON.parse(jsonMatch[0])
     if (extracted.error) return NextResponse.json({ error: extracted.error }, { status: 422 })
 
+    // نتأكد من الرقم الضريبي قبل ما يوصل للنموذج — الغلط أخطر من الفاضي
+    const vat = normalizeVat(extracted.supplier_vat_number)
+    extracted.supplier_vat_number = isValidVat(vat) ? vat : null
+    extracted.invoice_number = normalizeInvoiceNumber(extracted.invoice_number)
     return NextResponse.json({ success: true, data: extracted })
   } catch (err: any) {
     return NextResponse.json({ error: 'حدث خطأ أثناء معالجة الصورة' }, { status: 500 })

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { invoiceTimestamp } from '@/lib/invoiceTime'
 import { netFromTotal } from '@/lib/vat'
+import { resolveTaxInfo } from '@/lib/taxInvoice'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 
@@ -18,7 +19,8 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 // المحسوبة وبأعمدة غير موجودة (hasVat, invoice_date) فيفشل حفظ الفاتورة دايماً بينما المخزون يزيد.
 export async function POST(req: Request) {
   try {
-    const { org_id, branch_id, supplier, note, invoice_image, invoice_date, items, has_vat } = await req.json()
+    const body = await req.json()
+    const { org_id, branch_id, supplier, note, invoice_image, invoice_date, items, has_vat } = body
     if (!org_id || !Array.isArray(items) || !items.length) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     if (!DATE_RE.test(String(invoice_date || ''))) return NextResponse.json({ error: 'تاريخ غير صالح' }, { status: 400 })
 
@@ -33,6 +35,9 @@ export async function POST(req: Request) {
     }
     const invoiceTs = invoiceTimestamp(invoice_date)   // اليوم = الوقت الفعلي، تاريخ سابق = 12 الظهر
     const hasVat = has_vat !== false
+    const tax = await resolveTaxInfo(db, org_id, supplier || null, body, hasVat)
+    if (!tax.ok) return NextResponse.json({ error: tax.error }, { status: 400 })
+    const invoice_group = crypto.randomUUID()   // كل الأصناف = فاتورة وحدة للمحاسب
 
     let saved = 0
     const failed: string[] = []
@@ -48,7 +53,7 @@ export async function POST(req: Request) {
         category: 'مخزون', name, qty, unit, reorder_point: 5,
         amount: netFromTotal(itemTotal, hasVat), has_vat: hasVat,
         supplier: supplier || null, note: note || null, invoice_image: invoice_image || null,
-        created_at: invoiceTs, payment_status: 'paid',
+        created_at: invoiceTs, payment_status: 'paid', ...tax.info, invoice_group,
       } as any)
       // ما نزيد المخزون إلا لو انحفظت الفاتورة فعلاً
       if (purchaseErr) { failed.push(name); continue }

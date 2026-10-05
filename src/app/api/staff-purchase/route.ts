@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { netFromTotal } from '@/lib/vat'
+import { resolveTaxInfo } from '@/lib/taxInvoice'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 
@@ -13,10 +14,10 @@ export async function POST(req: Request) {
     const rawStaffToken = extractStaffToken(req)
     const auth = await verifyStaffToken(rawStaffToken)
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
-    const { org_id, staff_id } = auth.data!
+    const { org_id, staff_id, branch_id } = auth.data!
 
     const body = await req.json()
-    const { branch_id, category, name, qty, unit, reorder_point,
+    const { category, name, qty, unit, reorder_point,
             supplier, note, invoice_image, staff_name } = body
 
     // المبلغ قبل الضريبة يُحسب هنا: شاملة ضريبة ← الإجمالي ÷ 1.15، بدون ← الإجمالي نفسه
@@ -33,6 +34,8 @@ export async function POST(req: Request) {
     }
 
     const supabase = sb()
+    const tax = await resolveTaxInfo(supabase, org_id, supplier || null, body, hasVat)
+    if (!tax.ok) return NextResponse.json({ error: tax.error }, { status: 400 })
 
     const { error } = await supabase.from('purchases').insert({
       org_id, branch_id: branch_id || null,
@@ -42,6 +45,7 @@ export async function POST(req: Request) {
       supplier, note: note || `تسجيل بواسطة الموظف: ${staff_name}`,
       invoice_image: invoice_image || null,
       profile_id: null,
+      ...tax.info, invoice_group: crypto.randomUUID(),
     } as any)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

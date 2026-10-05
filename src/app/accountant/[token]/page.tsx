@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Download, FileSpreadsheet, Loader2, AlertTriangle } from 'lucide-react'
 import { colors, font, radius } from '@/lib/ds'
-import { invoicesLabel, staffLabel } from '@/lib/accountantExport'
+import { invoicesLabel, staffLabel, taxInvoices } from '@/lib/accountantExport'
 
 // تقرير المحاسب — يفتحه المحاسب من الرابط اللي وصله (بدون تسجيل دخول)
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -87,6 +87,14 @@ export default function AccountantReportPage() {
         rows={r.closings.map((c: any) => [c.date, ...(multi ? [c.branch] : []), c.staff || '—', c.sales, c.network, c.cash])} />
     </Card>}
 
+    {(has('purchases') || has('vat')) && <Card title={`الفواتير الضريبية (${invoicesLabel(t.taxInvoices)})`}>
+      {t.taxInvoices > 0 && <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: t.taxInvoices === t.taxComplete ? '#059669' : '#b45309' }}>
+        {t.taxInvoices === t.taxComplete ? '✓ كل الفواتير مكتملة البيانات' : `${t.taxInvoices - t.taxComplete} ناقصة — تحتاج الرقم الضريبي أو رقم الفاتورة قبل الإقفال`}
+      </div>}
+      <Table head={['التاريخ', 'رقم الفاتورة', 'المورد', 'الرقم الضريبي', 'الضريبة', 'الإجمالي', 'الحالة']} moneyCols={[4, 5]}
+        rows={taxInvoices(r.purchases).map(i => [i.date, i.invoiceNumber || '—', i.supplier || '—', i.supplierVat || '—', i.vat, i.total, i.complete ? '✓ مكتملة' : `ناقص: ${i.missing.filter(m => m !== 'صورة الفاتورة').join('، ')}`])} />
+    </Card>}
+
     {has('purchases') && <Card title={`المشتريات (${invoicesLabel(t.invoices)})`}>
       <Lines rows={[['قبل الضريبة', t.purNet], ['الضريبة', t.purVat], ['الإجمالي', t.purTotal, true], ['منها آجلة', t.purUnpaid]]} />
       <Table head={['التاريخ', ...(multi ? ['الفرع'] : []), 'المورد', 'الصنف', 'قبل الضريبة', 'الضريبة', 'الإجمالي', 'الدفع']} moneyCols={multi ? [4, 5, 6] : [3, 4, 5]}
@@ -95,7 +103,8 @@ export default function AccountantReportPage() {
 
     {has('vat') && <Card title="ضريبة القيمة المضافة">
       {r.vatRegistered
-        ? <><Lines rows={[['المبيعات قبل الضريبة', t.salesNet], ['ضريبة المبيعات (المخرجات)', t.outputVat], ['ضريبة المشتريات (المدخلات)', t.inputVat], ['صافي الضريبة المستحقة', t.vatNet, true]]} />
+        ? <><Lines rows={[['المبيعات قبل الضريبة', t.salesNet], ['ضريبة المبيعات (المخرجات)', t.outputVat], ['ضريبة المشتريات القابلة للخصم', t.inputVatClaimable], ['صافي الضريبة المستحقة', t.vatNet, true],
+              ...(t.inputVatReview > 0 ? [['ضريبة بفواتير ناقصة — تحتاج مراجعة', t.inputVatReview] as [string, number]] : [])]} />
             <div style={{ fontSize: 11.5, color: colors.text4, marginTop: 8 }}>تقدير من إقفالات الكاشير وفواتير المشتريات المسجلة — راجعه قبل تقديم الإقرار.</div></>
         : <div style={{ fontSize: 13, color: colors.text3 }}>المنشأة غير مسجلة في ضريبة القيمة المضافة.</div>}
     </Card>}

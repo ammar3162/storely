@@ -148,6 +148,8 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
   const [editingPhone, setEditingPhone] = useState(false)
   const [editPhoneVal, setEditPhoneVal] = useState(s.phone || '')
   const [savingPhone, setSavingPhone]   = useState(false)
+  const [editingVat, setEditingVat]     = useState(false)
+  const [editVatVal, setEditVatVal]     = useState(s.vat_number || '')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [catalogItems, setCatalogItems] = useState<any[]>([])
   const [selectedCatalogItem, setSelectedCatalogItem] = useState('')
@@ -168,6 +170,17 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
     if(!r.success){toast('فشل تحديث رقم المورد','error');return}
     setEditingPhone(false)
     toast('✅ تم تحديث رقم المورد')
+    onRefresh()
+  }
+
+  // الرقم الضريبي للمورد — يتعبى تلقائياً بفواتيره ويحتاجه المحاسب للضريبة
+  async function saveVat() {
+    setSavingPhone(true)
+    const r=await api.patch('/api/suppliers',{ org_id: orgId, id: s.id, vat_number: editVatVal.trim() || null })
+    setSavingPhone(false)
+    if(!r.success){toast(r.error||'فشل حفظ الرقم الضريبي','error');return}
+    setEditingVat(false)
+    toast('✅ تم حفظ الرقم الضريبي')
     onRefresh()
   }
 
@@ -259,6 +272,19 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
               )}
               <span style={{ fontSize:12, color:'#94a3b8' }}>·</span>
               <span style={{ fontSize:12, color:'#64748b' }}>{linked.length} منتج</span>
+              <span style={{ fontSize:12, color:'#94a3b8' }}>·</span>
+              {editingVat ? (
+                <span onClick={e=>e.stopPropagation()} style={{display:'flex',alignItems:'center',gap:4}}>
+                  <input value={editVatVal} onChange={e=>setEditVatVal(e.target.value)} dir="ltr" autoFocus inputMode="numeric" placeholder="3xxxxxxxxxxxxx3"
+                    style={{fontSize:11,padding:'3px 6px',border:'1.5px solid #029FA2',borderRadius:5,width:140,fontFamily:'inherit'}}/>
+                  <button onClick={saveVat} disabled={savingPhone} style={{fontSize:10,fontWeight:700,color:'white',background:'#029FA2',border:'none',borderRadius:5,padding:'3px 8px',cursor:'pointer',fontFamily:'inherit'}}>{savingPhone?'...':'حفظ'}</button>
+                  <button onClick={()=>{setEditingVat(false);setEditVatVal(s.vat_number||'')}} style={{fontSize:10,fontWeight:700,color:'#64748b',background:'#f1f5f9',border:'none',borderRadius:5,padding:'3px 8px',cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                </span>
+              ) : (
+                <span onClick={e=>{e.stopPropagation();setEditingVat(true)}} style={{ fontSize:12, color:s.vat_number?'#64748b':'#029FA2', cursor:'pointer', display:'flex', alignItems:'center', gap:3 }}>
+                  {s.vat_number ? <>الرقم الضريبي: <span dir="ltr">{s.vat_number}</span> <span style={{fontSize:10,opacity:.5}}>✏️</span></> : '+ الرقم الضريبي'}
+                </span>
+              )}
             </div>
           </div>
         </div>

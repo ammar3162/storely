@@ -1,6 +1,8 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
+import TaxInvoiceFields from '@/components/TaxInvoiceFields'
+import { normalizeVat, isValidVat } from '@/lib/taxInvoice'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { Clock, CheckCircle2, Ban, Percent } from 'lucide-react'
@@ -63,8 +65,17 @@ export default function PurchasesPage() {
     category:'مخزون', name:'', sku:'', qty:'', unit:'قطعة',
     reorder_point:'5', total_amount:'', supplier:'',
     note:'', invoice_image:'', hasVat:'', invoice_date: todayRiyadh(),
-    payment_status:'paid', due_date:'',
+    payment_status:'paid', due_date:'', invoice_number:'', supplier_vat_number:'',
   })
+  const [suppliers, setSuppliers] = useState<{name:string;vat_number:string|null}[]>([])
+  const [vatFromSupplier, setVatFromSupplier] = useState(false)
+  // اختيار مورد محفوظ رقمه الضريبي → يتعبى تلقائياً
+  function setSupplierName(name:string){
+    const sup = suppliers.find(x=>x.name===name.trim())
+    const fill = !!sup?.vat_number && !form.supplier_vat_number
+    if (fill) setVatFromSupplier(true)
+    setForm(f=>({...f, supplier:name, supplier_vat_number: fill ? sup!.vat_number! : f.supplier_vat_number}))
+  }
   const sb = createClient()
 
   useEffect(()=>{
@@ -81,6 +92,7 @@ export default function PurchasesPage() {
     setOrgId(oid)
     getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
     loadProducts(oid);loadHistory(oid);loadPayables(oid)
+    api.get('/api/suppliers',{org_id:oid}).then(j=>{ if(j.success) setSuppliers((j.suppliers||[]).map((x:any)=>({name:x.name,vat_number:x.vat_number||null}))) }).catch(()=>{})
   }
 
   async function loadProducts(oid:string) {
@@ -192,6 +204,8 @@ export default function PurchasesPage() {
               total_amount: d.total_amount ? String(d.total_amount) : f.total_amount,
               invoice_date: d.invoice_date || f.invoice_date,
               hasVat: d.has_vat ? 'yes' : f.hasVat,
+              invoice_number: d.invoice_number || f.invoice_number,
+              supplier_vat_number: d.supplier_vat_number || f.supplier_vat_number,
               name: d.items?.length === 1 ? d.items[0].name : f.name,
               qty: d.items?.length === 1 && d.items[0].qty ? String(d.items[0].qty) : f.qty,
               unit: d.items?.length === 1 && d.items[0].unit ? d.items[0].unit : f.unit,
@@ -250,6 +264,7 @@ export default function PurchasesPage() {
     const r = await api.post('/api/purchases/bulk', {
       org_id:orgId, branch_id:bid||null, supplier:form.supplier||null, note:form.note||null,
       invoice_image:form.invoice_image||null, has_vat:isVat, invoice_date:form.invoice_date,
+      invoice_number:isVat?form.invoice_number||null:null, supplier_vat_number:isVat?form.supplier_vat_number||null:null,
       items: selectedIndexes.map(i=>({ name:ocrItems[i].name, qty:ocrItems[i].qty, unit:ocrItems[i].unit, total:Number(ocrPrices[i])||0 })),
     })
     if(!r.success){ toast(r.error||'فشل الحفظ','error'); setBulkSaving(false); return }
@@ -257,7 +272,7 @@ export default function PurchasesPage() {
 
     toast(`✅ تم حفظ ${selectedIndexes.length} صنف بنجاح، بكل تفاصيل السعر والضريبة`)
     setOcrItems([]); setOcrSelected([] as any); setOcrPrices({})
-    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:''})
+    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:'',invoice_number:'',supplier_vat_number:''})
     setPreviewUrl(null)
     setBulkSaving(false)
     loadHistory(orgId)
@@ -271,6 +286,7 @@ export default function PurchasesPage() {
     if(!form.hasVat){toast('حدد هل الفاتورة تشمل الضريبة','warning');submitting.current=false;return}
     if(form.hasVat==='yes'&&!form.invoice_image){toast('يرجى رفع صورة الفاتورة','warning');submitting.current=false;return}
     if(!form.supplier.trim()){toast('يرجى إدخال اسم المورد','warning');submitting.current=false;return}
+    if(form.hasVat==='yes'&&form.supplier_vat_number.trim()&&!isValidVat(normalizeVat(form.supplier_vat_number))){toast('الرقم الضريبي للمورد غير صحيح — ١٥ رقم يبدأ وينتهي بـ 3','warning');submitting.current=false;return}
     setLoading(true)
     // حفظ الفاتورة + الإشعار + تحديث المخزون ومتوسط التكلفة كلها على الخادم
     const res=await api.post('/api/purchases',{
@@ -279,6 +295,7 @@ export default function PurchasesPage() {
       unit:form.unit||null, reorder_point:form.reorder_point, total_amount:form.total_amount,
       supplier:form.supplier, note:form.note||null, invoice_image:form.invoice_image||null,
       has_vat:form.hasVat==='yes', invoice_date:form.invoice_date, payment_status:form.payment_status, due_date:form.due_date||null,
+      invoice_number:form.hasVat==='yes'?form.invoice_number||null:null, supplier_vat_number:form.hasVat==='yes'?form.supplier_vat_number||null:null,
     })
     if(!res.success){toast(res.error||'حدث خطأ','error');setLoading(false);submitting.current=false;return}
 
@@ -294,7 +311,7 @@ export default function PurchasesPage() {
       setPendingThanks({ productId: res.product_id, productName: form.name, supplierName: form.supplier.trim() })
     }
 
-    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:''})
+    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:'',invoice_number:'',supplier_vat_number:''})
     setPreviewUrl(null);setLoading(false);submitting.current=false
     cache.invalidate('purchases:');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
     loadHistory(orgId);loadPayables(orgId)
@@ -531,7 +548,8 @@ export default function PurchasesPage() {
             {/* Supplier */}
             <div style={{marginBottom:10}}>
               <label style={lbl}>المورد *</label>
-              <input required value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})} style={inp} placeholder="اسم المورد أو الشركة"/>
+              <input required value={form.supplier} onChange={e=>setSupplierName(e.target.value)} list="pur-sup-list" style={inp} placeholder="اسم المورد أو الشركة"/>
+              <datalist id="pur-sup-list">{suppliers.map(x=><option key={x.name} value={x.name}/>)}</datalist>
             </div>
 
             {/* Payment status */}
@@ -574,6 +592,11 @@ export default function PurchasesPage() {
                 ))}
               </div>
             </div>
+
+            {form.hasVat==='yes' && (
+              <TaxInvoiceFields invoiceNumber={form.invoice_number} vatNumber={form.supplier_vat_number} savedFromSupplier={vatFromSupplier}
+                onChange={p=>{ if('supplier_vat_number' in p) setVatFromSupplier(false); setForm(f=>({...f,...p})) }} inputStyle={inp} labelStyle={lbl}/>
+            )}
 
             {/* Note */}
             <div style={{marginBottom:14}}>

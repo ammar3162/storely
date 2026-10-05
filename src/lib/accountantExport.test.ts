@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import ExcelJS from 'exceljs'
-import { buildAccountantWorkbook, summarize, type AccountantReport } from './accountantExport'
+import { buildAccountantWorkbook, summarize, taxInvoices, type AccountantReport } from './accountantExport'
 import { accountantEmail, accountantWhatsapp } from './accountantMessage'
 
 const base: AccountantReport = {
   orgName: 'ركن القهوة', branchName: 'فرع العليا', currency: 'SAR', period: { start: '2026-09-01', end: '2026-09-30' }, label: 'سبتمبر 2026',
   sections: ['sales', 'purchases', 'vat', 'payables', 'payroll', 'expenses', 'cash_diff', 'stock'], vatRegistered: true,
   purchases: [
-    { date: '2026-09-02', supplier: 'المراعي', name: 'حليب', category: 'ألبان', qty: 10, unit: 'لتر', net: 100, vat: 15, total: 115, paid: true, invoiceUrl: 'https://x.test/a.jpg' },
+    { date: '2026-09-02', supplier: 'المراعي', name: 'حليب', category: 'ألبان', qty: 10, unit: 'لتر', net: 100, vat: 15, total: 115, paid: true, invoiceUrl: 'https://x.test/a.jpg', invoiceNumber: 'INV-1', supplierVat: '300012345678903', group: 'g1' },
     { date: '2026-09-05', supplier: null, name: 'أكواب', category: null, qty: 500, unit: 'حبة', net: 200, vat: 30, total: 230, paid: false, invoiceUrl: 'javascript:alert(1)' },
   ],
   closings: [{ date: '2026-09-02', staff: 'خالد', sales: 4600, mada: 2150, visa: 640, mastercard: 210, network: 3000, cash: 1560, expenses: 0, difference: -40, status: 'deficit', deficitReason: 'فاتورة ما تحاسبت', deficitDecision: 'approved' }],
@@ -25,25 +25,27 @@ async function load(r: AccountantReport) {
 const cellsOf = (ws: ExcelJS.Worksheet) => { const out: unknown[] = []; ws.eachRow(r => r.eachCell(c => out.push(c.value))); return out }
 
 describe('accountant report', () => {
-  it('vat: output from sales incl. VAT minus purchase VAT', () => {
+  it('vat: output from sales incl. VAT minus claimable purchase VAT only', () => {
     const t = summarize(base)
     expect(t.outputVat).toBe(600)          // 4600 × 15/115
     expect(t.inputVat).toBe(45)
-    expect(t.vatNet).toBe(555)
+    expect(t.inputVatClaimable).toBe(15)   // الفاتورة الثانية ناقصة
+    expect(t.inputVatReview).toBe(30)
+    expect(t.vatNet).toBe(585)
     expect(summarize({ ...base, vatRegistered: false }).vatNet).toBe(0)
   })
   it('all sheets in order, right-to-left', async () => {
     const wb = await load(base)
-    expect(wb.worksheets.map(w => w.name)).toEqual(['الملخص', 'المبيعات', 'المشتريات', 'الضريبة', 'الموردين الآجلين', 'الرواتب', 'المصروفات', 'العجز والزيادة', 'المخزون'])
+    expect(wb.worksheets.map(w => w.name)).toEqual(['الملخص', 'المبيعات', 'الفواتير الضريبية', 'مشتريات بدون ضريبة', 'أصناف المشتريات', 'الضريبة', 'الموردين الآجلين', 'الرواتب', 'المصروفات', 'العجز والزيادة', 'المخزون'])
     expect(wb.worksheets.every(w => (w.views[0] as any)?.rightToLeft)).toBe(true)
   })
   it('only the sections the owner chose', async () => {
     const wb = await load({ ...base, sections: ['purchases', 'vat'] })
-    expect(wb.worksheets.map(w => w.name)).toEqual(['الملخص', 'المشتريات', 'الضريبة'])
+    expect(wb.worksheets.map(w => w.name)).toEqual(['الملخص', 'الفواتير الضريبية', 'مشتريات بدون ضريبة', 'أصناف المشتريات', 'الضريبة'])
     expect(cellsOf(wb.getWorksheet('الملخص')!)).not.toContain('صافي الرواتب')
   })
   it('only https invoice links', async () => {
-    const v = cellsOf((await load(base)).getWorksheet('المشتريات')!)
+    const v = cellsOf((await load(base)).getWorksheet('أصناف المشتريات')!)
     expect(v.filter((x: any) => x && typeof x === 'object' && 'hyperlink' in x).map((x: any) => x.hyperlink)).toEqual(['https://x.test/a.jpg'])
   })
   it('no payroll sheet when payroll is not applicable', async () => {
@@ -56,7 +58,8 @@ describe('accountant report', () => {
     expect(subject).toContain('سبتمبر 2026')
     const wa = accountantWhatsapp(base, { accountantName: 'محمد', reportUrl: 'https://storely.dev/accountant/abc' })
     expect(wa).toContain('https://storely.dev/accountant/abc')
-    expect(wa).toContain('555')
+    expect(wa).toContain('585')
+    expect(wa).toContain('ناقصة')
   })
 })
 
@@ -65,5 +68,22 @@ describe('arabic counts', () => {
     const { invoicesLabel, staffLabel } = await import('./accountantExport')
     expect([1, 2, 3, 10, 11].map(invoicesLabel)).toEqual(['فاتورة', 'فاتورتين', '3 فواتير', '10 فواتير', '11 فاتورة'])
     expect([1, 2, 5].map(staffLabel)).toEqual(['موظف', 'موظفين', '5 موظفين'])
+  })
+})
+
+describe('tax invoices', () => {
+  const p = (o: any) => ({ date: '2026-09-02', supplier: 'المراعي', name: 'x', category: null, qty: 1, unit: null, net: 100, vat: 15, total: 115, paid: true, invoiceUrl: 'https://x.test/a.jpg', ...o })
+  it('groups items of the same invoice into one row', () => {
+    const list = taxInvoices([p({ group: 'g', invoiceNumber: 'A1', supplierVat: '300012345678903' }), p({ group: 'g' }), p({ group: 'h', vat: 0, total: 100 })])
+    expect(list).toHaveLength(1)
+    expect(list[0]).toMatchObject({ items: 2, vat: 30, total: 230, invoiceNumber: 'A1', complete: true })
+  })
+  it('flags what is missing', () => {
+    const [i] = taxInvoices([p({ id: '1', supplierVat: '123' })])
+    expect(i.complete).toBe(false)
+    expect(i.missing).toEqual(['الرقم الضريبي للمورد', 'رقم الفاتورة'])
+  })
+  it('old rows without a group: same image + supplier + date = one invoice', () => {
+    expect(taxInvoices([p({ id: '1' }), p({ id: '2' }), p({ id: '3', invoiceUrl: 'https://x.test/b.jpg' })])).toHaveLength(2)
   })
 })

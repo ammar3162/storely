@@ -1,5 +1,7 @@
 'use client'
 import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
+import TaxInvoiceFields from '@/components/TaxInvoiceFields'
+import { normalizeVat, isValidVat } from '@/lib/taxInvoice'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter } from 'next/navigation'
@@ -57,6 +59,7 @@ const PUI: Record<string,Record<'ar'|'en',string>> = {
   selectVat:        {ar:'حدد هل الفاتورة تشمل الضريبة',en:'Please specify if the invoice includes VAT'},
   invoiceRequired:  {ar:'يرجى رفع صورة الفاتورة',en:'Please upload the invoice photo'},
   supplierRequired: {ar:'يرجى إدخال اسم المورد',en:'Please enter the supplier name'},
+  vatInvalid:       {ar:'الرقم الضريبي للمورد غير صحيح — ١٥ رقم يبدأ وينتهي بـ 3',en:'Supplier VAT number is invalid — 15 digits, starts and ends with 3'},
   inventoryUpdated: {ar:'✅ تم تحديث المخزون',en:'✅ Inventory updated'},
   purchaseRecorded: {ar:'✅ تم تسجيل الشراء',en:'✅ Purchase recorded'},
   errorPrefix:      {ar:'خطأ: ',en:'Error: '},
@@ -72,10 +75,11 @@ export default function StaffPurchasesPage() {
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
   const [toast, setToast] = useState('')
   const [suppliers, setSuppliers] = useState<any[]>([])
+  const [vatFromSupplier, setVatFromSupplier] = useState(false)
   const [form, setForm] = useState({
     category:'مخزون', name:'', sku:'', qty:'', unit:'قطعة',
     reorder_point:'5', total_amount:'', supplier:'', note:'',
-    invoice_image:'', hasVat:''
+    invoice_image:'', hasVat:'', invoice_number:'', supplier_vat_number:''
   })
   const submitting = useRef(false)
   const [curr, setCurr] = useState('ر.س')
@@ -131,6 +135,7 @@ export default function StaffPurchasesPage() {
     submitting.current=true
     if(!form.hasVat){showToast(pt('selectVat',lang));submitting.current=false;return}
     if(form.hasVat==='yes'&&!form.invoice_image){showToast(pt('invoiceRequired',lang));submitting.current=false;return}
+    if(form.hasVat==='yes'&&form.supplier_vat_number.trim()&&!isValidVat(normalizeVat(form.supplier_vat_number))){showToast(pt('vatInvalid',lang));submitting.current=false;return}
     if(!form.supplier.trim()){showToast(pt('supplierRequired',lang));submitting.current=false;return}
     setLoading(true)
     const total_amount = Number(form.total_amount).toFixed(2)
@@ -148,6 +153,8 @@ export default function StaffPurchasesPage() {
         supplier:form.supplier,
         note:form.note||null,
         invoice_image:form.invoice_image||null,
+        invoice_number:form.hasVat==='yes'?form.invoice_number||null:null,
+        supplier_vat_number:form.hasVat==='yes'?form.supplier_vat_number||null:null,
         staff_name:session.name,
         staff_id:session.id
       })
@@ -156,7 +163,8 @@ export default function StaffPurchasesPage() {
     if(!res.ok){showToast(pt('errorPrefix',lang)+resData.error);setLoading(false);submitting.current=false;return}
     showToast(form.category==='مخزون'?`${pt('inventoryUpdated',lang)} (+${form.qty||0})`:pt('purchaseRecorded',lang))
 
-    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:''})
+    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_number:'',supplier_vat_number:''})
+    setVatFromSupplier(false)
     setPreviewUrl(null);setLoading(false);submitting.current=false
     // بعد 2 ثانية ارجع لصفحة الموظف
     setTimeout(()=>router.push('/staff/dispense'), 2000)
@@ -216,7 +224,12 @@ export default function StaffPurchasesPage() {
           {/* المورد */}
           <div style={{marginBottom:12}}>
             <label style={lbl}>{pt('supplier',lang)}</label>
-            <input style={inp} list="sup-list" value={form.supplier} onChange={e=>setForm(f=>({...f,supplier:e.target.value}))} placeholder={pt('supplierPh',lang)} required/>
+            <input style={inp} list="sup-list" value={form.supplier} onChange={e=>{
+              const name=e.target.value, sup=suppliers.find((x:any)=>x.name===name.trim())
+              const fill=!!sup?.vat_number&&!form.supplier_vat_number
+              if(fill) setVatFromSupplier(true)
+              setForm(f=>({...f,supplier:name,supplier_vat_number:fill?sup.vat_number:f.supplier_vat_number}))
+            }} placeholder={pt('supplierPh',lang)} required/>
             <datalist id="sup-list">{suppliers.map(s=><option key={s.id} value={s.name}/>)}</datalist>
           </div>
 
@@ -250,6 +263,11 @@ export default function StaffPurchasesPage() {
               </div>
             )}
           </div>
+
+          {form.hasVat==='yes'&&(
+            <TaxInvoiceFields lang={lang} invoiceNumber={form.invoice_number} vatNumber={form.supplier_vat_number} savedFromSupplier={vatFromSupplier}
+              onChange={p=>{ if('supplier_vat_number' in p) setVatFromSupplier(false); setForm(f=>({...f,...p})) }} inputStyle={inp} labelStyle={lbl}/>
+          )}
 
           {/* صورة الفاتورة */}
           {form.hasVat==='yes'&&(

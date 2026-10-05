@@ -29,7 +29,10 @@ export function accountantEmail(r: AccountantReport, o: { accountantName: string
   if (has('sales')) html += block('المبيعات', [['إجمالي المبيعات', t.sales, true], ['الشبكة', t.network], ['الكاش', t.cash]])
   if (has('purchases')) html += block(`المشتريات (${invoicesLabel(t.invoices)})`, [['قبل الضريبة', t.purNet], ['الضريبة', t.purVat], ['الإجمالي', t.purTotal, true], ['منها آجلة', t.purUnpaid]])
   if (has('vat')) html += r.vatRegistered
-    ? block('ضريبة القيمة المضافة', [['ضريبة المبيعات', t.outputVat], ['ضريبة المشتريات', t.inputVat], ['صافي الضريبة المستحقة', t.vatNet, true]])
+    ? block('ضريبة القيمة المضافة', [['ضريبة المبيعات', t.outputVat], ['ضريبة المشتريات القابلة للخصم', t.inputVatClaimable], ['صافي الضريبة المستحقة', t.vatNet, true]],
+        `<div style="font-size:12px;margin-top:8px;color:${t.taxInvoices === t.taxComplete ? '#15803d' : '#b45309'}">${t.taxInvoices === 0 ? 'ما فيه فواتير ضريبية بهذي الفترة' : t.taxInvoices === t.taxComplete
+          ? `✓ كل الفواتير الضريبية مكتملة (${esc(String(t.taxInvoices))})`
+          : `${esc(String(t.taxInvoices - t.taxComplete))} من ${esc(String(t.taxInvoices))} فواتير ناقصة بياناتها — ضريبتها ${esc(sar(t.inputVatReview))} تحتاج مراجعة (التفاصيل في ورقة «الفواتير الضريبية»)`}</div>`)
     : `<tr><td style="padding:12px 28px 4px;font-size:12px;color:${C.muted}">المنشأة غير مسجلة في ضريبة القيمة المضافة.</td></tr>`
   if (has('payables')) html += block('الموردين الآجلين', [['إجمالي المستحق', t.payablesTotal, true]],
     miniTable(['المورد', 'فواتير', 'المبلغ'], r.payables.slice(0, 5).map(p => [p.supplier, String(p.invoices), sar(p.total)]), r.payables.length - 5))
@@ -65,7 +68,10 @@ export function accountantWhatsapp(r: AccountantReport, o: { accountantName: str
   const L = [`${o.isTest ? '*[تجربة]* ' : ''}📊 *تقرير ${r.orgName}*${r.branchName ? ` — ${r.branchName}` : ''}`, `الفترة: ${r.label}`, '']
   if (has('sales')) L.push(`المبيعات: *${sar(t.sales)}*`)
   if (has('purchases')) L.push(`المشتريات: *${sar(t.purTotal)}* (${invoicesLabel(t.invoices)})`)
-  if (has('vat') && r.vatRegistered) L.push(`صافي الضريبة المستحقة: *${sar(t.vatNet)}*`)
+  if (has('vat') && r.vatRegistered) {
+    L.push(`صافي الضريبة المستحقة: *${sar(t.vatNet)}*`)
+    if (t.taxInvoices > t.taxComplete) L.push(`⚠️ ${t.taxInvoices - t.taxComplete} فواتير ضريبية ناقصة بياناتها (${sar(t.inputVatReview)} ضريبة تحتاج مراجعة)`)
+  }
   if (has('payables')) L.push(`المستحق للموردين: *${sar(t.payablesTotal)}*`)
   if (has('payroll') && r.payroll) L.push(`صافي الرواتب: *${sar(t.payrollNet)}*`)
   if (has('expenses')) L.push(`المصروفات: *${sar(t.expenses)}*`)
