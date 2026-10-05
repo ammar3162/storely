@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { invoiceTimestamp } from '@/lib/invoiceTime'
 import { netFromTotal } from '@/lib/vat'
-import { resolveTaxInfo } from '@/lib/taxInvoice'
+import { resolvePurchaseTax, notifyQrMismatch } from '@/lib/taxInvoice'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 
@@ -35,9 +35,9 @@ export async function POST(req: Request) {
     }
     const invoiceTs = invoiceTimestamp(invoice_date)   // اليوم = الوقت الفعلي، تاريخ سابق = 12 الظهر
     const hasVat = has_vat !== false
-    const tax = await resolveTaxInfo(db, org_id, supplier || null, body, hasVat)
-    if (!tax.ok) return NextResponse.json({ error: tax.error }, { status: 400 })
-    const invoice_group = crypto.randomUUID()   // كل الأصناف = فاتورة وحدة للمحاسب
+    const enteredTotal = items.slice(0, 200).reduce((s: number, it: any) => s + (Number(it?.total) || 0), 0)
+    const tax = await resolvePurchaseTax(db, org_id, supplier || null, body, hasVat, enteredTotal)   // كل الأصناف = فاتورة وحدة للمحاسب
+    if (!tax.ok) return NextResponse.json({ error: tax.error }, { status: tax.status })
 
     let saved = 0
     const failed: string[] = []
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
         category: 'مخزون', name, qty, unit, reorder_point: 5,
         amount: netFromTotal(itemTotal, hasVat), has_vat: hasVat,
         supplier: supplier || null, note: note || null, invoice_image: invoice_image || null,
-        created_at: invoiceTs, payment_status: 'paid', ...tax.info, invoice_group,
+        created_at: invoiceTs, payment_status: 'paid', ...tax.tax,
       } as any)
       // ما نزيد المخزون إلا لو انحفظت الفاتورة فعلاً
       if (purchaseErr) { failed.push(name); continue }
@@ -78,6 +78,7 @@ export async function POST(req: Request) {
       saved++
     }
 
+    if (saved && tax.alert) await notifyQrMismatch(db, org_id, bid || null, tax.alert)
     if (!saved && failed.length) return NextResponse.json({ error: 'فشل حفظ الفواتير', failed }, { status: 500 })
     return NextResponse.json({ success: true, saved, failed })
   } catch {

@@ -36,6 +36,8 @@ export async function sendWhatsAppMessage(phone: string, text: string, retries =
 
       if (res.ok) {
         const data = await res.json().catch(() => ({}))
+        // الخدمة أحياناً ترجع 200 مع success:false (جلسة مفصولة مثلاً) — هذا فشل مو نجاح
+        if (data?.success === false) return { ok: false, status: res.status, data }
         return { ok: true, status: res.status, data }
       }
 

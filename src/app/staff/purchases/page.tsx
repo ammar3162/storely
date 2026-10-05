@@ -1,6 +1,8 @@
 'use client'
 import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
-import TaxInvoiceFields from '@/components/TaxInvoiceFields'
+import TaxInvoiceFields, { type ZatcaState } from '@/components/TaxInvoiceFields'
+import { zatcaFromImage } from '@/lib/zatcaScan'
+import { zatcaDate } from '@/lib/zatcaQr'
 import { normalizeVat, isValidVat } from '@/lib/taxInvoice'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
@@ -76,6 +78,12 @@ export default function StaffPurchasesPage() {
   const [toast, setToast] = useState('')
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [vatFromSupplier, setVatFromSupplier] = useState(false)
+  const [zatca, setZatcaState] = useState<ZatcaState>(null)
+  function setZatca(z:ZatcaState){
+    setZatcaState(z)
+    if(!z) return
+    setForm(f=>({...f, hasVat:'yes', supplier: f.supplier || z.inv.sellerName, supplier_vat_number: z.inv.vatNumber, total_amount: f.total_amount || String(z.inv.total)}))
+  }
   const [form, setForm] = useState({
     category:'مخزون', name:'', sku:'', qty:'', unit:'قطعة',
     reorder_point:'5', total_amount:'', supplier:'', note:'',
@@ -113,6 +121,7 @@ export default function StaffPurchasesPage() {
 
   async function handleImage(file: File) {
     setUploading(true)
+    if(file.type.startsWith('image/')) zatcaFromImage(file).then(z=>{ if(z){ setZatca(z); showToast(lang==='en'?'✅ Invoice QR found — data verified':'✅ لقينا باركود الهيئة بالفاتورة — البيانات موثقة') } })
     try {
       const staffToken = localStorage.getItem('staff_token')
       const fd = new FormData()
@@ -155,6 +164,7 @@ export default function StaffPurchasesPage() {
         invoice_image:form.invoice_image||null,
         invoice_number:form.hasVat==='yes'?form.invoice_number||null:null,
         supplier_vat_number:form.hasVat==='yes'?form.supplier_vat_number||null:null,
+        zatca_qr:form.hasVat==='yes'?zatca?.raw||null:null,
         staff_name:session.name,
         staff_id:session.id
       })
@@ -164,7 +174,7 @@ export default function StaffPurchasesPage() {
     showToast(form.category==='مخزون'?`${pt('inventoryUpdated',lang)} (+${form.qty||0})`:pt('purchaseRecorded',lang))
 
     setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_number:'',supplier_vat_number:''})
-    setVatFromSupplier(false)
+    setVatFromSupplier(false); setZatca(null)
     setPreviewUrl(null);setLoading(false);submitting.current=false
     // بعد 2 ثانية ارجع لصفحة الموظف
     setTimeout(()=>router.push('/staff/dispense'), 2000)
@@ -238,7 +248,7 @@ export default function StaffPurchasesPage() {
             <label style={lbl}>{pt('vatQuestion',lang)}</label>
             <div style={{display:'flex',gap:8}}>
               {[{v:'yes',l:pt('vatYes',lang)},{v:'no',l:pt('vatNo',lang)}].map(o=>(
-                <button key={o.v} type="button" onClick={()=>setForm(f=>({...f,hasVat:o.v}))}
+                <button key={o.v} type="button" onClick={()=>{ if(o.v==='no') setZatca(null); setForm(f=>({...f,hasVat:o.v})) }}
                   style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.hasVat===o.v?C.primary:C.border2}`,background:form.hasVat===o.v?C.primaryL:'white',color:form.hasVat===o.v?C.primary:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                   {o.l}
                 </button>
@@ -266,6 +276,7 @@ export default function StaffPurchasesPage() {
 
           {form.hasVat==='yes'&&(
             <TaxInvoiceFields lang={lang} invoiceNumber={form.invoice_number} vatNumber={form.supplier_vat_number} savedFromSupplier={vatFromSupplier}
+              zatca={zatca} onZatca={setZatca} enteredTotal={Number(form.total_amount)||0} onError={showToast}
               onChange={p=>{ if('supplier_vat_number' in p) setVatFromSupplier(false); setForm(f=>({...f,...p})) }} inputStyle={inp} labelStyle={lbl}/>
           )}
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { netFromTotal } from '@/lib/vat'
-import { resolveTaxInfo } from '@/lib/taxInvoice'
+import { resolvePurchaseTax, notifyQrMismatch } from '@/lib/taxInvoice'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 
@@ -34,8 +34,8 @@ export async function POST(req: Request) {
     }
 
     const supabase = sb()
-    const tax = await resolveTaxInfo(supabase, org_id, supplier || null, body, hasVat)
-    if (!tax.ok) return NextResponse.json({ error: tax.error }, { status: 400 })
+    const tax = await resolvePurchaseTax(supabase, org_id, supplier || null, body, hasVat, Number.isFinite(total) && total > 0 ? total : amount)
+    if (!tax.ok) return NextResponse.json({ error: tax.error }, { status: tax.status })
 
     const { error } = await supabase.from('purchases').insert({
       org_id, branch_id: branch_id || null,
@@ -45,10 +45,15 @@ export async function POST(req: Request) {
       supplier, note: note || `تسجيل بواسطة الموظف: ${staff_name}`,
       invoice_image: invoice_image || null,
       profile_id: null,
-      ...tax.info, invoice_group: crypto.randomUUID(),
+      ...tax.tax,
     } as any)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (tax.alert) {
+      // اسم الموظف من قاعدة البيانات (مو من الطلب)
+      const { data: me } = await supabase.from('staff_members').select('name').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
+      await notifyQrMismatch(supabase, org_id, branch_id || null, tax.alert, (me as any)?.name || undefined)
+    }
 
     // تحديث المخزون لو مخزون
     if (category === 'مخزون' && name && qty) {

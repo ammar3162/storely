@@ -48,3 +48,26 @@ describe('next send', () => {
     expect(nextSend(W, '2026-10-03', at('2026-10-05T10:00:00+03:00'))).toEqual({ date: '2026-10-11', period: { start: '2026-10-04', end: '2026-10-10' } })
   })
 })
+
+describe('owner-chosen send hour and send-now periods', () => {
+  it('before the send hour, today does not count yet', async () => {
+    const { scheduleToday, duePeriod } = await import('./accountantSchedule')
+    const W8pm = { ...W, send_hour: 20 }
+    const sun3pm = Date.parse('2026-10-04T15:00:00+03:00'), sun9pm = Date.parse('2026-10-04T21:00:00+03:00')
+    expect(scheduleToday(W8pm, sun3pm)).toBe('2026-10-03')
+    expect(duePeriod({ ...W8pm, last_period_end: '2026-09-26' }, scheduleToday(W8pm, sun3pm))).toBeNull()
+    expect(duePeriod({ ...W8pm, last_period_end: '2026-09-26' }, scheduleToday(W8pm, sun9pm))).toEqual({ start: '2026-09-27', end: '2026-10-03' })
+  })
+  it('next send respects the chosen hour', async () => {
+    const { nextSend } = await import('./accountantSchedule')
+    expect(nextSend({ ...D, send_hour: 22 }, '2026-10-03', Date.parse('2026-10-05T21:00:00+03:00')).date).toBe('2026-10-05')
+    expect(nextSend({ ...D, send_hour: 22 }, '2026-10-03', Date.parse('2026-10-05T23:00:00+03:00')).date).toBe('2026-10-06')
+  })
+  it('manual periods', async () => {
+    const { manualPeriod } = await import('./accountantSchedule')
+    expect(manualPeriod('this_month', M, '2026-10-06')).toEqual({ start: '2026-10-01', end: '2026-10-05' })
+    expect(manualPeriod('this_month', M, '2026-10-01')).toBeNull()
+    expect(manualPeriod('last_month', M, '2026-10-06')).toEqual({ start: '2026-09-01', end: '2026-09-30' })
+    expect(manualPeriod('last_week', M, '2026-10-06')).toEqual({ start: '2026-09-29', end: '2026-10-05' })
+  })
+})

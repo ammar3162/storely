@@ -3,7 +3,7 @@
 //   weekly : بيوم weekday، عن الأسبوع اللي قبله (٧ أيام تنتهي أمس)
 //   monthly: بتاريخ month_day، عن الشهر اللي فات كامل
 export type AccFrequency = 'daily' | 'weekly' | 'monthly'
-export type AccSchedule = { frequency: AccFrequency; weekday: number; month_day: number }
+export type AccSchedule = { frequency: AccFrequency; weekday: number; month_day: number; send_hour?: number }
 export type Period = { start: string; end: string }
 
 const ms = (d: string) => Date.parse(`${d}T12:00:00Z`)
@@ -43,15 +43,38 @@ export function periodLabel(p: Period) {
   return `${dayLabel(p.start)} – ${dayLabel(p.end)} ${p.end.slice(0, 4)}`
 }
 
-/** متى يوصل التقرير الجاي (الإرسال الساعة ٨ الصبح بتوقيت السعودية) */
+/** ساعة الإرسال اللي حددها المالك (افتراضي ٨ الصبح) */
 export const SEND_HOUR = 8
+export const sendHourOf = (s: AccSchedule) => Number.isInteger(s.send_hour) ? s.send_hour! : SEND_HOUR
+const saudiHour = (now: number) => new Date(now + 3 * 3600e3).getUTCHours()
+
+/** «اليوم» من ناحية الجدولة: قبل ساعة الإرسال نعتبره أمس (لسا ما جا موعد اليوم) */
+export function scheduleToday(s: AccSchedule, now = Date.now()) {
+  const today = saudiToday(now)
+  return saudiHour(now) >= sendHourOf(s) ? today : addDays(today, -1)
+}
+
+/** متى يوصل التقرير الجاي */
 export function nextSend(s: AccSchedule, lastPeriodEnd: string | null, now = Date.now()): { date: string; period: Period } {
   const today = saudiToday(now)
-  const hour = new Date(now + 3 * 3600e3).getUTCHours()
-  for (let i = hour < SEND_HOUR ? 0 : 1; i < 70; i++) {
+  for (let i = saudiHour(now) < sendHourOf(s) ? 0 : 1; i < 70; i++) {
     const d = addDays(today, i), p = latestPeriod(s, d)
     if (!lastPeriodEnd || p.end > lastPeriodEnd) return { date: d, period: p }
   }
   const d = addDays(today, 1)
   return { date: d, period: latestPeriod(s, d) }
 }
+
+/** «أرسل الحين»: الفترة اللي يختارها المالك */
+export type ManualPeriodKey = 'scheduled' | 'last_month' | 'this_month' | 'last_week' | 'yesterday'
+export function manualPeriod(key: ManualPeriodKey, s: AccSchedule, today: string): Period | null {
+  const y = addDays(today, -1)
+  if (key === 'yesterday') return { start: y, end: y }
+  if (key === 'last_week') return { start: addDays(today, -7), end: y }
+  if (key === 'last_month') { const end = addDays(monthStart(today), -1); return { start: monthStart(end), end } }
+  if (key === 'this_month') return today === monthStart(today) ? null : { start: monthStart(today), end: y }
+  return latestPeriod(s, today)
+}
+
+/** وقت الإرسال بالعربي: 8 → «8:00 ص» */
+export const hourLabel = (h: number) => `${h % 12 === 0 ? 12 : h % 12}:00 ${h < 12 ? 'ص' : 'م'}`

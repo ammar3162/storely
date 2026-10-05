@@ -3,12 +3,12 @@ import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { formatPhone } from '@/lib/whatsapp'
 import { ACC_SECTIONS } from '@/lib/accountantExport'
-import { latestPeriod, saudiToday, type AccFrequency } from '@/lib/accountantSchedule'
+import { latestPeriod, saudiToday, scheduleToday, manualPeriod, type AccFrequency, type ManualPeriodKey } from '@/lib/accountantSchedule'
 import { sendAccountantReport } from '@/lib/accountantSend'
 import { isSubscriptionActive } from '@/lib/subscription'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-const FIELDS = 'id,org_id,branch_id,name,email,whatsapp,channels,sections,frequency,weekday,month_day,vat_registered,is_active,last_period_end,updated_at'
+const FIELDS = 'id,org_id,branch_id,name,email,whatsapp,channels,sections,frequency,weekday,month_day,send_hour,vat_registered,is_active,last_period_end,updated_at'
 const EMAIL_RE = /^[^\s@<>"']+@[^\s@<>"']+\.[a-z]{2,}$/i
 const UUID_RE = /^[0-9a-f-]{36}$/i
 const TEST_PER_HOUR = 5
@@ -62,6 +62,7 @@ export async function PUT(req: Request) {
     const frequency: AccFrequency = ['daily', 'weekly', 'monthly'].includes(b.frequency) ? b.frequency : 'monthly'
     const weekday = Number.isInteger(b.weekday) && b.weekday >= 0 && b.weekday <= 6 ? b.weekday : 0
     const month_day = Number.isInteger(b.month_day) && b.month_day >= 1 && b.month_day <= 28 ? b.month_day : 1
+    const send_hour = Number.isInteger(b.send_hour) && b.send_hour >= 0 && b.send_hour <= 23 ? b.send_hour : 8
 
     const db = sb()
     let branch_id: string | null = null
@@ -72,12 +73,13 @@ export async function PUT(req: Request) {
       branch_id = b.branch_id
     }
 
-    const { data: cur } = await db.from('accountant_links').select('frequency,weekday,month_day,last_period_end').eq('org_id', b.org_id).maybeSingle()
+    const { data: cur } = await db.from('accountant_links').select('frequency,weekday,month_day,send_hour,last_period_end').eq('org_id', b.org_id).maybeSingle()
     // أول حفظ أو تغيير الموعد: نبدأ من الموعد الجاي — ما نرسل فترة فاتت فجأة
-    const scheduleChanged = !cur || (cur as any).frequency !== frequency || (cur as any).weekday !== weekday || (cur as any).month_day !== month_day
-    const last_period_end = scheduleChanged ? latestPeriod({ frequency, weekday, month_day }, saudiToday()).end : (cur as any).last_period_end
+    const scheduleChanged = !cur || (cur as any).frequency !== frequency || (cur as any).weekday !== weekday || (cur as any).month_day !== month_day || (cur as any).send_hour !== send_hour
+    const sched = { frequency, weekday, month_day, send_hour }
+    const last_period_end = scheduleChanged ? latestPeriod(sched, scheduleToday(sched)).end : (cur as any).last_period_end
 
-    const row = { org_id: b.org_id, branch_id, name, email, whatsapp, channels, sections, frequency, weekday, month_day,
+    const row = { org_id: b.org_id, branch_id, name, email, whatsapp, channels, sections, frequency, weekday, month_day, send_hour,
       vat_registered: b.vat_registered !== false, is_active: b.is_active !== false, last_period_end, updated_at: new Date().toISOString() }
     const { data, error } = await db.from('accountant_links').upsert(row as any, { onConflict: 'org_id' }).select(FIELDS).single()
     if (error) return NextResponse.json({ error: 'تعذر الحفظ' }, { status: 500 })
@@ -100,7 +102,7 @@ export async function DELETE(req: Request) {
   }
 }
 
-// إرسال تجربة الحين — آخر فترة مكتملة حسب الموعد
+// «أرسل الحين» — الفترة اللي يختارها المالك (ما تأثر على الموعد المجدول)
 export async function POST(req: Request) {
   try {
     const b = await req.json()
@@ -112,10 +114,13 @@ export async function POST(req: Request) {
 
     const { count } = await db.from('accountant_reports').select('id', { count: 'exact', head: true })
       .eq('org_id', b.org_id).eq('is_test', true).gte('created_at', new Date(Date.now() - 3600e3).toISOString())
-    if ((count || 0) >= TEST_PER_HOUR) return NextResponse.json({ error: 'أرسلت تجارب كثيرة — جرّب بعد ساعة' }, { status: 429 })
+    if ((count || 0) >= TEST_PER_HOUR) return NextResponse.json({ error: 'أرسلت تقارير كثيرة خلال ساعة — جرّب بعد شوي' }, { status: 429 })
 
-    const period = latestPeriod(link as any, saudiToday())
-    const r = await sendAccountantReport(db, link as any, period, { isTest: true })
+    const KEYS: ManualPeriodKey[] = ['scheduled', 'last_month', 'this_month', 'last_week', 'yesterday']
+    const key: ManualPeriodKey = KEYS.includes(b.period) ? b.period : 'scheduled'
+    const period = manualPeriod(key, link as any, saudiToday())
+    if (!period) return NextResponse.json({ error: 'الشهر بدأ اليوم — ما فيه أيام مكتملة لسا' }, { status: 400 })
+    const r = await sendAccountantReport(db, link as any, period, { manual: true })
     const failed = [r.email_status === 'failed' && 'الإيميل', r.whatsapp_status === 'failed' && 'الواتساب'].filter(Boolean)
     if (failed.length) return NextResponse.json({ success: false, error: `ما وصل عن طريق ${failed.join(' و')} — تأكد من البيانات وجرّب مرة ثانية`, ...r })
     return NextResponse.json({ success: true, ...r })

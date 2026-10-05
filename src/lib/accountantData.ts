@@ -27,7 +27,7 @@ export async function loadAccountantReport(db: SupabaseClient, o: {
   const empty = { data: [] as any[], error: null }
 
   const [pur, clo, prods, unpaid] = await Promise.all([
-    has('purchases', 'vat') ? selectAll(() => withBranch(db.from('purchases').select('id,created_at,branch_id,supplier,name,category,qty,unit,amount,vat_amount,total_amount,payment_status,invoice_image,invoice_number,supplier_vat_number,invoice_group')
+    has('purchases', 'vat') ? selectAll(() => withBranch(db.from('purchases').select('id,created_at,branch_id,supplier,name,category,qty,unit,amount,vat_amount,total_amount,payment_status,invoice_image,invoice_number,supplier_vat_number,invoice_group,qr_verified,qr_mismatch')
       .eq('org_id', orgId).is('deleted_at', null).gte('created_at', start).lte('created_at', end)).order('created_at').order('id')) : empty,
     has('sales', 'vat', 'expenses', 'cash_diff') ? selectAll(() => withBranch(db.from('cashier_closings').select('id,closing_date,branch_id,staff_name,total_sales,mada_amount,visa_amount,mastercard_amount,network_amount,cash_amount,total_purchases,difference,status,deficit_reason,deficit_decision,purchases')
       .eq('org_id', orgId).gte('closing_date', period.start).lte('closing_date', period.end)).order('closing_date').order('id')) : empty,
@@ -70,7 +70,7 @@ export async function loadAccountantReport(db: SupabaseClient, o: {
     period, label: periodLabel(period), sections, vatRegistered: o.vatRegistered,
     purchases: (pur.data as any[]).map(p => ({ date: saudiDate(p.created_at), branch: bn(p.branch_id), supplier: p.supplier, name: p.name, category: p.category,
       qty: p.qty, unit: p.unit, net: n(p.amount), vat: n(p.vat_amount), total: n(p.total_amount), paid: p.payment_status !== 'unpaid', invoiceUrl: p.invoice_image || null,
-      id: p.id, invoiceNumber: p.invoice_number || null, supplierVat: p.supplier_vat_number || null, group: p.invoice_group || null })),
+      id: p.id, invoiceNumber: p.invoice_number || null, supplierVat: p.supplier_vat_number || null, group: p.invoice_group || null, verified: !!p.qr_verified, mismatch: !!p.qr_mismatch })),
     closings: closings.map(c => ({ date: c.closing_date, branch: bn(c.branch_id), staff: c.staff_name, sales: n(c.total_sales), mada: n(c.mada_amount), visa: n(c.visa_amount),
       mastercard: n(c.mastercard_amount), network: n(c.network_amount), cash: n(c.cash_amount), expenses: n(c.total_purchases), difference: n(c.difference),
       status: c.status, deficitReason: c.deficit_reason, deficitDecision: c.deficit_decision })),

@@ -87,3 +87,11 @@ describe('tax invoices', () => {
     expect(taxInvoices([p({ id: '1' }), p({ id: '2' }), p({ id: '3', invoiceUrl: 'https://x.test/b.jpg' })])).toHaveLength(2)
   })
 })
+
+describe('verified invoices', () => {
+  it('verified and mismatch flags carry to the invoice', () => {
+    const [i] = taxInvoices([{ date: '2026-09-02', supplier: 'x', name: 'a', category: null, qty: 1, unit: null, net: 100, vat: 15, total: 115, paid: true,
+      invoiceUrl: null, group: 'g', invoiceNumber: '1', supplierVat: '300012345678903', verified: true, mismatch: true }])
+    expect(i).toMatchObject({ verified: true, mismatch: true, complete: true })
+  })
+})

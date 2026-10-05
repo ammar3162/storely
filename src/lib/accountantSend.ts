@@ -18,16 +18,16 @@ export type AccountantLink = {
 }
 
 // يجمع التقرير ويرسله للمحاسب بالإيميل (مع الإكسل) والواتساب (ملخص + رابط)، ويسجّل النتيجة
-export async function sendAccountantReport(db: SupabaseClient, link: AccountantLink, period: Period, opts: { isTest?: boolean } = {}) {
+export async function sendAccountantReport(db: SupabaseClient, link: AccountantLink, period: Period, opts: { manual?: boolean } = {}) {
   const report = await loadAccountantReport(db, { orgId: link.org_id, branchId: link.branch_id, period, sections: link.sections, vatRegistered: link.vat_registered })
   const token = randomBytes(24).toString('base64url')
   const { data: row, error } = await db.from('accountant_reports').insert({
     org_id: link.org_id, link_id: link.id, period_start: period.start, period_end: period.end, token_hash: hashToken(token),
-    expires_at: new Date(Date.now() + REPORT_LINK_DAYS * 86400e3).toISOString(), is_test: !!opts.isTest,
+    expires_at: new Date(Date.now() + REPORT_LINK_DAYS * 86400e3).toISOString(), is_test: !!opts.manual,   // is_test = إرسال يدوي
   } as any).select('id').single()
   if (error || !row) throw new Error('ACCOUNTANT_REPORT_INSERT_FAILED')
   const reportUrl = `${siteUrl()}/accountant/${token}`
-  const msg = { accountantName: link.name, reportUrl, isTest: opts.isTest }
+  const msg = { accountantName: link.name, reportUrl }
 
   let email_status: 'sent' | 'failed' | 'skipped' = 'skipped', whatsapp_status: 'sent' | 'failed' | 'skipped' = 'skipped'
   const errors: string[] = []

@@ -90,9 +90,11 @@ export default function AccountantReportPage() {
     {(has('purchases') || has('vat')) && <Card title={`الفواتير الضريبية (${invoicesLabel(t.taxInvoices)})`}>
       {t.taxInvoices > 0 && <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: t.taxInvoices === t.taxComplete ? '#059669' : '#b45309' }}>
         {t.taxInvoices === t.taxComplete ? '✓ كل الفواتير مكتملة البيانات' : `${t.taxInvoices - t.taxComplete} ناقصة — تحتاج الرقم الضريبي أو رقم الفاتورة قبل الإقفال`}
+        {t.taxVerified > 0 && <span style={{ color: '#059669' }}> · {t.taxVerified} موثقة من باركود الهيئة</span>}
       </div>}
+      {t.taxMismatch > 0 && <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: '#dc2626' }}>⚠️ {t.taxMismatch} فاتورة مبلغها المسجّل أكبر من الأصلية — راجعها</div>}
       <Table head={['التاريخ', 'رقم الفاتورة', 'المورد', 'الرقم الضريبي', 'الضريبة', 'الإجمالي', 'الحالة']} moneyCols={[4, 5]}
-        rows={taxInvoices(r.purchases).map(i => [i.date, i.invoiceNumber || '—', i.supplier || '—', i.supplierVat || '—', i.vat, i.total, i.complete ? '✓ مكتملة' : `ناقص: ${i.missing.filter(m => m !== 'صورة الفاتورة').join('، ')}`])} />
+        rows={taxInvoices(r.purchases).map(i => [i.date, i.invoiceNumber || '—', i.supplier || '—', i.supplierVat || '—', i.vat, i.total, (i.mismatch ? '⚠️ أكبر من الأصلية · ' : '') + (!i.complete ? `ناقص: ${i.missing.filter(m => m !== 'صورة الفاتورة').join('، ')}` : i.verified ? '✓ موثقة' : '✓ مكتملة')])} />
     </Card>}
 
     {has('purchases') && <Card title={`المشتريات (${invoicesLabel(t.invoices)})`}>

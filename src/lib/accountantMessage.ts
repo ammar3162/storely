@@ -22,7 +22,7 @@ function miniTable(head: string[], rows: string[][], more: number) {
   </table>`
 }
 
-export function accountantEmail(r: AccountantReport, o: { accountantName: string; reportUrl: string; isTest?: boolean }) {
+export function accountantEmail(r: AccountantReport, o: { accountantName: string; reportUrl: string }) {
   const t = summarize(r)
   const has = (s: string) => r.sections.includes(s as any)
   let html = ''
@@ -46,7 +46,7 @@ export function accountantEmail(r: AccountantReport, o: { accountantName: string
   if (has('stock')) html += block('المخزون', [['قيمة المخزون الحالية', t.stockValue, true]])
 
   return {
-    subject: `${o.isTest ? '[تجربة] ' : ''}تقرير ${r.orgName} — ${r.label}`,
+    subject: `تقرير ${r.orgName} — ${r.label}`,
     html: brandEmail({
       title: `تقرير ${r.label}`,
       preheader: `تقرير ${r.orgName} المحاسبي — ${r.label}`,
@@ -56,21 +56,21 @@ export function accountantEmail(r: AccountantReport, o: { accountantName: string
       paragraphs: [`هذا تقرير ${r.orgName} عن ${r.label}، والتفاصيل كاملة في ملف الإكسل المرفق.`],
       rawSections: html,
       button: { label: 'عرض التقرير كامل', url: o.reportUrl },
-      note: o.isTest ? 'هذي رسالة تجربة أرسلها المالك عشان يتأكد إن الربط شغال.' : undefined,
       small: 'يوصلك هذا التقرير تلقائياً لأن المنشأة أضافتك محاسباً لها في Storely. للإيقاف تواصل مع المنشأة.',
     }),
   }
 }
 
-export function accountantWhatsapp(r: AccountantReport, o: { accountantName: string; reportUrl: string; isTest?: boolean }) {
+export function accountantWhatsapp(r: AccountantReport, o: { accountantName: string; reportUrl: string }) {
   const t = summarize(r)
   const has = (s: string) => r.sections.includes(s as any)
-  const L = [`${o.isTest ? '*[تجربة]* ' : ''}📊 *تقرير ${r.orgName}*${r.branchName ? ` — ${r.branchName}` : ''}`, `الفترة: ${r.label}`, '']
+  const L = [`📊 *تقرير ${r.orgName}*${r.branchName ? ` — ${r.branchName}` : ''}`, `الفترة: ${r.label}`, '']
   if (has('sales')) L.push(`المبيعات: *${sar(t.sales)}*`)
   if (has('purchases')) L.push(`المشتريات: *${sar(t.purTotal)}* (${invoicesLabel(t.invoices)})`)
   if (has('vat') && r.vatRegistered) {
     L.push(`صافي الضريبة المستحقة: *${sar(t.vatNet)}*`)
     if (t.taxInvoices > t.taxComplete) L.push(`⚠️ ${t.taxInvoices - t.taxComplete} فواتير ضريبية ناقصة بياناتها (${sar(t.inputVatReview)} ضريبة تحتاج مراجعة)`)
+    if (t.taxMismatch) L.push(`⚠️ ${t.taxMismatch} فاتورة مبلغها المسجّل أكبر من الأصلية`)
   }
   if (has('payables')) L.push(`المستحق للموردين: *${sar(t.payablesTotal)}*`)
   if (has('payroll') && r.payroll) L.push(`صافي الرواتب: *${sar(t.payrollNet)}*`)

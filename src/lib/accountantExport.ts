@@ -16,11 +16,12 @@ export const ACC_SECTIONS: { key: AccSection; label: string; hint: string }[] = 
 
 export type AccPurchase = { date: string; branch?: string | null; supplier: string | null; name: string; category: string | null; qty: number | null; unit: string | null
   net: number; vat: number; total: number; paid: boolean; invoiceUrl: string | null
-  id?: string; invoiceNumber?: string | null; supplierVat?: string | null; group?: string | null }
+  id?: string; invoiceNumber?: string | null; supplierVat?: string | null; group?: string | null; verified?: boolean; mismatch?: boolean }
 
 // فاتورة ضريبية = أصناف نفس الفاتورة مجموعة بسطر واحد (اللي فيها ضريبة بس)
 export type TaxInvoice = { date: string; branch?: string | null; invoiceNumber: string | null; supplier: string | null; supplierVat: string | null
-  items: number; net: number; vat: number; total: number; invoiceUrl: string | null; complete: boolean; missing: string[] }
+  items: number; net: number; vat: number; total: number; invoiceUrl: string | null; complete: boolean; missing: string[]
+  verified: boolean; mismatch: boolean }   // verified = من باركود الهيئة · mismatch = المسجّل أكبر من الأصلية
 
 const VAT_RE = /^3\d{13}3$/
 export function taxInvoices(purchases: AccPurchase[]): TaxInvoice[] {
@@ -30,8 +31,9 @@ export function taxInvoices(purchases: AccPurchase[]): TaxInvoice[] {
     // الفواتير الجديدة مربوطة بـ group؛ القديمة: نفس الصورة + المورد + التاريخ = نفس الفاتورة
     const key = p.group || `${p.date}|${p.supplier || ''}|${p.invoiceUrl || p.id || Math.random()}`
     const e = map.get(key) || { date: p.date, branch: p.branch, invoiceNumber: p.invoiceNumber || null, supplier: p.supplier, supplierVat: p.supplierVat || null,
-      items: 0, net: 0, vat: 0, total: 0, invoiceUrl: p.invoiceUrl, complete: false, missing: [] }
+      items: 0, net: 0, vat: 0, total: 0, invoiceUrl: p.invoiceUrl, complete: false, missing: [], verified: false, mismatch: false }
     e.items++; e.net = r2(e.net + p.net); e.vat = r2(e.vat + p.vat); e.total = r2(e.total + p.total)
+    e.verified ||= !!p.verified; e.mismatch ||= !!p.mismatch
     e.invoiceNumber ||= p.invoiceNumber || null; e.supplierVat ||= p.supplierVat || null; e.invoiceUrl ||= p.invoiceUrl
     map.set(key, e)
   }
@@ -83,7 +85,7 @@ export function summarize(r: AccountantReport) {
   const tinv = taxInvoices(r.purchases)
   const claimable = r.vatRegistered ? sum(tinv.filter(i => i.complete), i => i.vat) : 0
   return {
-    taxInvoices: tinv.length, taxComplete: tinv.filter(i => i.complete).length,
+    taxInvoices: tinv.length, taxComplete: tinv.filter(i => i.complete).length, taxVerified: tinv.filter(i => i.verified).length, taxMismatch: tinv.filter(i => i.mismatch).length,
     inputVatClaimable: claimable, inputVatReview: r2(inputVat - claimable),
     nonVatTotal: sum(r.purchases.filter(p => !(p.vat > 0)), p => p.total), nonVatCount: r.purchases.filter(p => !(p.vat > 0)).length,
     sales, network: sum(c, x => x.network), cash: sum(c, x => x.cash), mada: sum(c, x => x.mada), visa: sum(c, x => x.visa), mastercard: sum(c, x => x.mastercard),
@@ -184,12 +186,14 @@ export async function buildAccountantWorkbook(r: AccountantReport): Promise<Buff
       { header: 'التاريخ', key: 'date', width: 12 }, ...branchCol, { header: 'رقم الفاتورة', key: 'invoiceNumber', width: 15 }, { header: 'المورد', key: 'supplier', width: 22 },
       { header: 'الرقم الضريبي للمورد', key: 'supplierVat', width: 19 }, { header: 'أصناف', key: 'items', width: 7 },
       { header: 'قبل الضريبة', key: 'net', width: 13, money: true }, { header: 'الضريبة', key: 'vat', width: 11, money: true }, { header: 'الإجمالي', key: 'total', width: 13, money: true },
-      { header: 'الحالة', key: 'status', width: 11 }, { header: 'الناقص', key: 'missingText', width: 30 }, { header: 'صورة الفاتورة', key: 'invoice', width: 15 },
+      { header: 'الحالة', key: 'status', width: 11 }, { header: 'الناقص / تنبيه', key: 'missingText', width: 34 }, { header: 'صورة الفاتورة', key: 'invoice', width: 15 },
     ], list.map(i => ({ ...i, invoiceNumber: i.invoiceNumber || '—', supplier: i.supplier || '—', supplierVat: i.supplierVat || '—',
-      status: i.complete ? 'مكتملة' : 'ناقصة', missingText: i.missing.join('، '), invoice: null })),
+      status: !i.complete ? 'ناقصة' : i.verified ? 'موثقة' : 'مكتملة',
+      missingText: [i.mismatch && '⚠️ المسجّل أكبر من الفاتورة الأصلية', i.missing.join('، ')].filter(Boolean).join(' · '), invoice: null })),
     { date: 'الإجمالي', net: sum(list, i => i.net), vat: sum(list, i => i.vat), total: sum(list, i => i.total) }, 'ما فيه فواتير ضريبية بهذي الفترة')
     list.forEach((i, idx) => {
       const row = tws.getRow(idx + 2)
+      if (i.mismatch) row.getCell('missingText').font = { bold: true, color: { argb: 'FFDC2626' } }
       if (!i.complete) row.getCell('status').font = { bold: true, color: { argb: 'FFDC2626' } }
       else row.getCell('status').font = { bold: true, color: { argb: 'FF059669' } }
       if (i.invoiceUrl && /^https:\/\//.test(i.invoiceUrl)) {

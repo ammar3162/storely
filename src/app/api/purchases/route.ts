@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { invoiceTimestamp } from '@/lib/invoiceTime'
 import { netFromTotal } from '@/lib/vat'
-import { resolveTaxInfo } from '@/lib/taxInvoice'
+import { resolvePurchaseTax, notifyQrMismatch } from '@/lib/taxInvoice'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { currencySymbol } from '@/lib/currencySymbol'
@@ -94,8 +94,8 @@ export async function POST(req: Request) {
     const amount = netFromTotal(total, hasVat)
     const invoiceTs = invoiceTimestamp(body.invoice_date)   // اليوم = الوقت الفعلي، تاريخ سابق = 12 الظهر
     const qty = body.qty ? Number(body.qty) : 0
-    const tax = await resolveTaxInfo(db, org_id, supplier, body, hasVat)
-    if (!tax.ok) return NextResponse.json({ error: tax.error }, { status: 400 })
+    const tax = await resolvePurchaseTax(db, org_id, supplier, body, hasVat, total)
+    if (!tax.ok) return NextResponse.json({ error: tax.error }, { status: tax.status })
 
     const { error: insErr } = await db.from('purchases').insert({
       org_id, profile_id: access.userId, branch_id: purchaseBranch,
@@ -103,9 +103,10 @@ export async function POST(req: Request) {
       unit: body.unit || null, reorder_point: Number(body.reorder_point) || 5,
       amount, has_vat: hasVat, supplier, note: body.note || null, invoice_image: body.invoice_image || null,
       created_at: invoiceTs, payment_status: body.payment_status === 'unpaid' ? 'unpaid' : 'paid', due_date: body.due_date || null,
-      ...tax.info, invoice_group: crypto.randomUUID(),
+      ...tax.tax,
     } as any)
     if (insErr) return NextResponse.json({ error: 'خطأ: ' + insErr.message }, { status: 500 })
+    if (tax.alert) await notifyQrMismatch(db, org_id, purchaseBranch, tax.alert)
 
     const { data: org } = await db.from('organizations').select('currency').eq('id', org_id).single()
     await db.from('notifications').insert({
