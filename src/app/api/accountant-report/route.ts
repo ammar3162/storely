@@ -24,7 +24,7 @@ export async function GET(req: Request) {
 
     const report = await loadAccountantReport(db, { orgId: (rep as any).org_id, branchId: (link as any).branch_id,
       period: { start: (rep as any).period_start, end: (rep as any).period_end }, sections: (link as any).sections, vatRegistered: (link as any).vat_registered })
-    if (!(rep as any).opened_at) await db.from('accountant_reports').update({ opened_at: new Date().toISOString() } as any).eq('id', (rep as any).id)
+    if (!(rep as any).opened_at && searchParams.get('src') !== 'wa') await db.from('accountant_reports').update({ opened_at: new Date().toISOString() } as any).eq('id', (rep as any).id)
 
     const headers = { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex', 'Referrer-Policy': 'no-referrer' }
     if (searchParams.get('format') === 'xlsx') {

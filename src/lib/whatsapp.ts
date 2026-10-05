@@ -18,7 +18,8 @@ interface SendResult {
  * يرسل رسالة واتساب وحدة، مع إعادة محاولة تلقائية (حتى مرتين إضافيتين)
  * لو فشل الإرسال بسبب مؤقت (rate limit، تعليق شبكة، خطأ سيرفر 5xx).
  */
-export async function sendWhatsAppMessage(phone: string, text: string, retries = 2): Promise<SendResult> {
+// doc: ملف مرفق (الخدمة تجيبه من الرابط وترسله كمستند، والنص يصير وصف له)
+export async function sendWhatsAppMessage(phone: string, text: string, retries = 2, doc?: { url: string; fileName: string }): Promise<SendResult> {
   const apiKey  = process.env.WASENDER_API_KEY!
   const session = process.env.WASENDER_SESSION_ID!
 
@@ -31,7 +32,7 @@ export async function sendWhatsAppMessage(phone: string, text: string, retries =
           'Authorization': `Bearer ${apiKey}`,
           'X-Session-Id': session,
         },
-        body: JSON.stringify({ to: phone, text }),
+        body: JSON.stringify(doc ? { to: phone, text, documentUrl: doc.url, fileName: doc.fileName } : { to: phone, text }),
       })
 
       if (res.ok) {

@@ -9,8 +9,9 @@ import type { Period } from '@/lib/accountantSchedule'
 
 export const REPORT_LINK_DAYS = 7
 export const hashToken = (t: string) => createHash('sha256').update(t).digest('hex')
-// رابط التقرير — الإنتاج على الدومين الرسمي، وغيره على التجربة
-export const siteUrl = () => process.env.VERCEL_ENV === 'production' ? 'https://www.storely.dev' : 'https://staging.storely.dev'
+// عنوان الموقع — حسب قاعدة البيانات (مشروع التجربة على Vercel نفسه «إنتاج»، فما نعتمد على VERCEL_ENV)
+const PROD_DB = 'dozqwcczhaiqvoqcrrep'
+export const siteUrl = () => (process.env.NEXT_PUBLIC_SUPABASE_URL || '').includes(PROD_DB) ? 'https://www.storely.dev' : 'https://staging.storely.dev'
 
 export type AccountantLink = {
   id: string; org_id: string; branch_id: string | null; name: string; email: string | null; whatsapp: string | null
@@ -26,8 +27,10 @@ export async function sendAccountantReport(db: SupabaseClient, link: AccountantL
     expires_at: new Date(Date.now() + REPORT_LINK_DAYS * 86400e3).toISOString(), is_test: !!opts.manual,   // is_test = إرسال يدوي
   } as any).select('id').single()
   if (error || !row) throw new Error('ACCOUNTANT_REPORT_INSERT_FAILED')
-  const reportUrl = `${siteUrl()}/accountant/${token}`
-  const msg = { accountantName: link.name, reportUrl }
+  const msg = { accountantName: link.name }
+  // ملف الإكسل للواتساب: الخدمة تجيبه من هالرابط (src=wa ما يحسب «فتحه المحاسب»)
+  const xlsxUrl = `${siteUrl()}/api/accountant-report?token=${token}&format=xlsx&src=wa`
+  const fileName = `تقرير ${report.orgName} - ${report.label}.xlsx`.replace(/[\\/:*?"<>|]/g, '')
 
   let email_status: 'sent' | 'failed' | 'skipped' = 'skipped', whatsapp_status: 'sent' | 'failed' | 'skipped' = 'skipped'
   const errors: string[] = []
@@ -40,7 +43,7 @@ export async function sendAccountantReport(db: SupabaseClient, link: AccountantL
       const r = await sendEmail({
         to: link.email, subject, html, fromName: `${report.orgName} عبر Storely`, fromAddress: 'reports@storely.dev',
         replyTo: (owner as any)?.email || undefined,
-        attachments: [{ filename: `تقرير ${report.orgName} - ${report.label}.xlsx`.replace(/[\\/:*?"<>|]/g, ''), content: xlsx }],
+        attachments: [{ filename: fileName, content: xlsx }],
       })
       email_status = r.success ? 'sent' : 'failed'
       if (!r.success) errors.push('email: ' + (r as any).error)
@@ -48,7 +51,7 @@ export async function sendAccountantReport(db: SupabaseClient, link: AccountantL
   }
   if (link.channels.includes('whatsapp') && link.whatsapp) {
     try {
-      const r = await sendWhatsAppMessage(link.whatsapp, accountantWhatsapp(report, msg))
+      const r = await sendWhatsAppMessage(link.whatsapp, accountantWhatsapp(report, msg), 2, { url: xlsxUrl, fileName })
       whatsapp_status = r.ok ? 'sent' : 'failed'
       if (!r.ok) errors.push('whatsapp: ' + JSON.stringify(r.data).slice(0, 200))
     } catch (e: any) { whatsapp_status = 'failed'; errors.push('whatsapp: ' + (e?.message || 'error')) }

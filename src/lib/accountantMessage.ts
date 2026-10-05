@@ -22,7 +22,7 @@ function miniTable(head: string[], rows: string[][], more: number) {
   </table>`
 }
 
-export function accountantEmail(r: AccountantReport, o: { accountantName: string; reportUrl: string }) {
+export function accountantEmail(r: AccountantReport, o: { accountantName: string }) {
   const t = summarize(r)
   const has = (s: string) => r.sections.includes(s as any)
   let html = ''
@@ -53,15 +53,14 @@ export function accountantEmail(r: AccountantReport, o: { accountantName: string
       eyebrow: r.orgName + (r.branchName ? ` · ${r.branchName}` : ''),
       headerSide: { title: 'تقرير المحاسب', sub: `${r.period.start} → ${r.period.end}` },
       greeting: `هلا ${o.accountantName}،`,
-      paragraphs: [`هذا تقرير ${r.orgName} عن ${r.label}، والتفاصيل كاملة في ملف الإكسل المرفق.`],
+      paragraphs: [`هذا تقرير ${r.orgName} عن ${r.label}، والتفاصيل كاملة في ملف الإكسل المرفق 📎`],
       rawSections: html,
-      button: { label: 'عرض التقرير كامل', url: o.reportUrl },
       small: 'يوصلك هذا التقرير تلقائياً لأن المنشأة أضافتك محاسباً لها في Storely. للإيقاف تواصل مع المنشأة.',
     }),
   }
 }
 
-export function accountantWhatsapp(r: AccountantReport, o: { accountantName: string; reportUrl: string }) {
+export function accountantWhatsapp(r: AccountantReport, o: { accountantName: string }) {
   const t = summarize(r)
   const has = (s: string) => r.sections.includes(s as any)
   const L = [`📊 *تقرير ${r.orgName}*${r.branchName ? ` — ${r.branchName}` : ''}`, `الفترة: ${r.label}`, '']
@@ -77,6 +76,6 @@ export function accountantWhatsapp(r: AccountantReport, o: { accountantName: str
   if (has('expenses')) L.push(`المصروفات: *${sar(t.expenses)}*`)
   if (has('cash_diff') && (t.deficit || t.surplus)) L.push(`فروقات الكاشير: عجز ${sar(t.deficit)} · زيادة ${sar(t.surplus)}`)
   if (has('stock')) L.push(`قيمة المخزون: *${sar(t.stockValue)}*`)
-  L.push('', 'التقرير كامل وملف الإكسل:', o.reportUrl, '', '_الرابط صالح ٧ أيام — من Storely_')
+  L.push('', '📎 الملف المرفق فيه كل التفاصيل', '_من Storely_')
   return L.join('\n')
 }

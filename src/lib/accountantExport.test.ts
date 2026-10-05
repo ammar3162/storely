@@ -51,13 +51,14 @@ describe('accountant report', () => {
   it('no payroll sheet when payroll is not applicable', async () => {
     expect((await load({ ...base, payroll: null })).worksheets.map(w => w.name)).not.toContain('الرواتب')
   })
-  it('email escapes data and whatsapp has the link', () => {
+  it('email escapes data; whatsapp is a caption for the attached file (no links)', () => {
     const evil = { ...base, orgName: '<script>x</script>' }
-    const { html, subject } = accountantEmail(evil, { accountantName: 'محمد', reportUrl: 'https://storely.dev/accountant/abc' })
+    const { html, subject } = accountantEmail(evil, { accountantName: 'محمد' })
     expect(html).not.toContain('<script>x</script>')
     expect(subject).toContain('سبتمبر 2026')
-    const wa = accountantWhatsapp(base, { accountantName: 'محمد', reportUrl: 'https://storely.dev/accountant/abc' })
-    expect(wa).toContain('https://storely.dev/accountant/abc')
+    const wa = accountantWhatsapp(base, { accountantName: 'محمد' })
+    expect(wa).not.toContain('http')
+    expect(wa).toContain('الملف المرفق')
     expect(wa).toContain('585')
     expect(wa).toContain('ناقصة')
   })

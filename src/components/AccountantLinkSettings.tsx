@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { Mail, MessageCircle, Send, Trash2, CheckCircle2, XCircle, Clock, Eye } from 'lucide-react'
+import { Mail, MessageCircle, Send, Trash2, CheckCircle2, XCircle, Clock } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import { colors, radius, font, inp, btnPrimary, btnSecondary } from '@/lib/ds'
 import { toast } from '@/components/toast'
@@ -102,7 +102,7 @@ export default function AccountantLinkSettings({ orgId }: { orgId: string }) {
       <div style={{ ...box, background: colors.primaryLight, borderColor: colors.primaryBorder }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: colors.text }}>الربط مع المحاسب</div>
         <div style={{ fontSize: 12.5, color: colors.text3, marginTop: 4, lineHeight: 1.7 }}>
-          يوصل محاسبك تقرير تلقائي بالإيميل (مع ملف إكسل) أو الواتساب (ملخص ورابط) — فيه بس البيانات اللي تختارها، بالموعد اللي تحدده.
+          يوصل محاسبك تقرير تلقائي فيه ملف إكسل بكل البيانات اللي تختارها — بالإيميل أو الواتساب — فيه بس البيانات اللي تختارها، بالموعد اللي تحدده.
         </div>
         {upcoming && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize: 12.5, fontWeight: 700, color: colors.primary }}>
@@ -123,7 +123,7 @@ export default function AccountantLinkSettings({ orgId }: { orgId: string }) {
         <label style={{ ...label, marginTop: 14 }}>يوصله عن طريق</label>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
           <button onClick={() => set('channels', toggle(form.channels, 'email'))} style={chip(form.channels.includes('email'))}><Mail size={15} /> إيميل + ملف إكسل</button>
-          <button onClick={() => set('channels', toggle(form.channels, 'whatsapp'))} style={chip(form.channels.includes('whatsapp'))}><MessageCircle size={15} /> واتساب (ملخص ورابط)</button>
+          <button onClick={() => set('channels', toggle(form.channels, 'whatsapp'))} style={chip(form.channels.includes('whatsapp'))}><MessageCircle size={15} /> واتساب + ملف إكسل</button>
         </div>
         {form.channels.includes('whatsapp') && (
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 12.5, color: colors.text2, cursor: 'pointer' }}>
@@ -223,7 +223,6 @@ export default function AccountantLinkSettings({ orgId }: { orgId: string }) {
               <span style={{ fontWeight: 700, color: colors.text, minWidth: 150 }}>{periodLabel({ start: r.period_start, end: r.period_end })}{r.is_test && <span style={{ color: colors.text4, fontWeight: 500 }}> (إرسال يدوي)</span>}</span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: colors.text3 }}><Mail size={13} /> {status(r.email_status)}</span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: colors.text3 }}><MessageCircle size={13} /> {status(r.whatsapp_status)}</span>
-              {r.opened_at && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#059669' }}><Eye size={13} /> فتحه المحاسب</span>}
               <span style={{ marginInlineStart: 'auto', color: colors.text4 }} dir="ltr">{new Date(r.created_at).toLocaleDateString('en-GB')}</span>
             </div>
           ))}
