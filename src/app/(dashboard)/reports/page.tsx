@@ -12,6 +12,7 @@ import { getMe, getOrgId } from '@/lib/session'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import StaffMonthlyDetail from '@/components/reports/StaffMonthlyReport'
+import AccountantExportCard from '@/components/reports/AccountantExportCard'
 
 type FilterPeriod = 'today'|'week'|'month'|'year'|'custom'
 
@@ -1656,6 +1657,10 @@ export default function ReportsPage() {
 
       <div className="su" style={{animationDelay:'.05s'}}>
         <FilterBar period={period} setPeriod={setPeriod} from={from} setFrom={setFrom} to={to} setTo={setTo}/>
+      </div>
+
+      <div className="su" style={{animationDelay:'.08s'}}>
+        <AccountantExportCard/>
       </div>
 
       <div style={{display:'flex',flexDirection:'column' as const,gap:14}}>
