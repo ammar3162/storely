@@ -31,7 +31,10 @@ export async function GET(req: Request) {
     const headers = { 'Cache-Control': 'no-store' }
     if (xlsx) {
       const name = `تقرير ${report.orgName} - ${report.label}.xlsx`.replace(/[\\/:*?"<>|]/g, '')
-      return new NextResponse(new Uint8Array(await buildAccountantWorkbook(report)), { headers: { ...headers,
+      const stamp = `نسخة ${me.name || me.email} · ${new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 16).replace('T', ' ')}`
+      await db.from('notifications').insert({ org_id: access.org_id, type: 'info', read: false, title: 'محاسبك حمّل ملف',
+        message: `${me.name || me.email} حمّل تقرير ${report.label}` } as any)
+      return new NextResponse(new Uint8Array(await buildAccountantWorkbook(report, { watermark: stamp })), { headers: { ...headers,
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="report.xlsx"; filename*=UTF-8''${encodeURIComponent(name)}` } })
     }

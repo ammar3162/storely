@@ -17,19 +17,20 @@ export const isEmail = (e: string) => e.length <= 254 && /^[^\s@<>"']+@[^\s@<>"'
 export function newCode() { return String(crypto.randomInt(0, 1_000_000)).padStart(6, '0') }
 export const hashCode = (email: string, code: string) => sign(`code:${email}:${code}`)
 
-export function makeSession(accountantId: string, now = Date.now()) {
-  const payload = Buffer.from(JSON.stringify({ aid: accountantId, exp: now + SESSION_DAYS * 86400e3 })).toString('base64url')
+// sid = رقم الجهاز (جدول accountant_sessions) — المحاسب يقدر يطلّع أي جهاز
+export function makeSession(accountantId: string, sessionId: string, now = Date.now()) {
+  const payload = Buffer.from(JSON.stringify({ aid: accountantId, sid: sessionId, exp: now + SESSION_DAYS * 86400e3 })).toString('base64url')
   return `${payload}.${sign(payload)}`
 }
-export function readSession(token: string | null | undefined, now = Date.now()): string | null {
+export function readSession(token: string | null | undefined, now = Date.now()): { aid: string; sid: string } | null {
   if (!token) return null
   const [payload, sig] = token.split('.')
   if (!payload || !sig) return null
   const expected = sign(payload)
   if (sig.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null
   try {
-    const { aid, exp } = JSON.parse(Buffer.from(payload, 'base64url').toString())
-    return typeof aid === 'string' && typeof exp === 'number' && exp > now ? aid : null
+    const { aid, sid, exp } = JSON.parse(Buffer.from(payload, 'base64url').toString())
+    return typeof aid === 'string' && typeof sid === 'string' && typeof exp === 'number' && exp > now ? { aid, sid } : null
   } catch { return null }
 }
 
@@ -41,19 +42,38 @@ function cookieFrom(req: Request) {
   return m ? decodeURIComponent(m[1]) : null
 }
 
-export type PortalAccountant = { id: string; email: string; name: string | null }
-/** المحاسب الحالي من الكوكي (ويتأكد إنه موجود فعلاً) */
+export type PortalAccountant = { id: string; email: string; name: string | null; sessionId: string }
+/** المحاسب الحالي من الكوكي — والجهاز لازم يكون ما انطلّع */
 export async function currentAccountant(db: SupabaseClient, req: Request): Promise<PortalAccountant | null> {
-  const aid = readSession(cookieFrom(req))
-  if (!aid) return null
-  const { data } = await db.from('accountant_users').select('id,email,name').eq('id', aid).maybeSingle()
-  return (data as any) || null
+  const s = readSession(cookieFrom(req))
+  if (!s) return null
+  const [{ data: user }, { data: sess }] = await Promise.all([
+    db.from('accountant_users').select('id,email,name').eq('id', s.aid).maybeSingle(),
+    db.from('accountant_sessions').select('id,last_seen_at,revoked_at').eq('id', s.sid).eq('accountant_id', s.aid).maybeSingle(),
+  ])
+  if (!user || !sess || (sess as any).revoked_at) return null
+  // آخر استخدام للجهاز (كل ٥ دقايق بس — ما نكتب مع كل طلب)
+  if (Date.now() - Date.parse((sess as any).last_seen_at) > 5 * 60e3) await db.from('accountant_sessions').update({ last_seen_at: new Date().toISOString() } as any).eq('id', s.sid)
+  return { ...(user as any), sessionId: s.sid }
+}
+
+/** وصف الجهاز للعرض: «آيفون · Safari» */
+export function deviceLabel(ua: string | null | undefined) {
+  const u = ua || ''
+  const os = /iPhone/.test(u) ? 'آيفون' : /iPad/.test(u) ? 'آيباد' : /Android/.test(u) ? 'أندرويد' : /Mac OS X/.test(u) ? 'ماك' : /Windows/.test(u) ? 'ويندوز' : 'جهاز'
+  const br = /Edg\//.test(u) ? 'Edge' : /CriOS|Chrome\//.test(u) ? 'Chrome' : /FxiOS|Firefox\//.test(u) ? 'Firefox' : /Safari\//.test(u) ? 'Safari' : ''
+  return br ? `${os} · ${br}` : os
 }
 
 /** إذن المحاسب على منشأة (مفعّل فقط) */
 export async function accessFor(db: SupabaseClient, accountantId: string, orgId: string) {
   if (!/^[0-9a-f-]{36}$/i.test(orgId)) return null
-  const { data } = await db.from('accountant_access').select('id,org_id,branch_id,sections,vat_registered,status')
+  const { data } = await db.from('accountant_access').select('id,org_id,branch_id,sections,vat_registered,status,expires_on')
     .eq('accountant_id', accountantId).eq('org_id', orgId).eq('status', 'active').maybeSingle()
-  return (data as any) || null
+  const a = data as any
+  return a && !accessExpired(a.expires_on) ? a : null
 }
+
+/** الإذن انتهى؟ (آخر يوم = expires_on نفسه) */
+export const accessExpired = (expiresOn: string | null | undefined, now = Date.now()) =>
+  !!expiresOn && new Date(now + 3 * 3600e3).toISOString().slice(0, 10) > expiresOn

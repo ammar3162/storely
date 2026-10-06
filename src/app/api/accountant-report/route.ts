@@ -28,7 +28,8 @@ export async function GET(req: Request) {
 
     const headers = { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex', 'Referrer-Policy': 'no-referrer' }
     if (searchParams.get('format') === 'xlsx') {
-      const buf = await buildAccountantWorkbook(report)
+      const { data: l2 } = await db.from('accountant_links').select('name').eq('id', (rep as any).link_id).maybeSingle()
+      const buf = await buildAccountantWorkbook(report, { watermark: `أُرسل إلى ${(l2 as any)?.name || 'المحاسب'}` })
       const name = `تقرير ${report.orgName} - ${report.label}.xlsx`.replace(/[\\/:*?"<>|]/g, '')
       return new NextResponse(new Uint8Array(buf), { headers: { ...headers,
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

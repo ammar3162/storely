@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { normalizeEmail, isEmail } from '@/lib/accountantPortalAuth'
+import { parseDateOnly } from '@/lib/daysOff'
+import { saudiToday } from '@/lib/accountantSchedule'
 import { ACC_SECTIONS } from '@/lib/accountantExport'
 import { siteUrl } from '@/lib/accountantSend'
 import { sendEmail } from '@/lib/email'
@@ -10,7 +12,7 @@ import { brandEmail } from '@/lib/emailTemplates'
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 const UUID_RE = /^[0-9a-f-]{36}$/i
 const MAX_PER_ORG = 3
-const FIELDS = 'id,email,name,branch_id,sections,vat_registered,status,invited_at,accepted_at,last_view_at'
+const FIELDS = 'id,email,name,branch_id,sections,vat_registered,status,invited_at,accepted_at,last_view_at,expires_on'
 
 // بوابة المحاسب — صلاحيات المحاسبين على المنشأة (للمالك بس)
 async function ownerOnly(org_id: unknown) {
@@ -23,6 +25,12 @@ async function ownerOnly(org_id: unknown) {
 function cleanSections(v: unknown) {
   const allowed = new Set(ACC_SECTIONS.map(s => s.key))
   return [...new Set((Array.isArray(v) ? v : []).filter((s: any) => allowed.has(s)))]
+}
+// مدة الإذن: تاريخ آخر يوم (اليوم أو بعده) أو null بدون نهاية
+function cleanExpiry(v: unknown): { ok: true; value: string | null } | { ok: false } {
+  if (v == null || v === '') return { ok: true, value: null }
+  const d = parseDateOnly(v)
+  return d && d >= saudiToday() ? { ok: true, value: d } : { ok: false }
 }
 async function checkBranch(db: any, org_id: string, branch_id: unknown) {
   if (!branch_id) return { ok: true as const, id: null }
@@ -56,6 +64,8 @@ export async function POST(req: Request) {
     const name = String(b.name || '').trim().slice(0, 80) || null
     const sections = cleanSections(b.sections)
     if (!sections.length) return NextResponse.json({ error: 'اختر وش يشوف المحاسب' }, { status: 400 })
+    const exp = cleanExpiry(b.expires_on)
+    if (!exp.ok) return NextResponse.json({ error: 'تاريخ نهاية الإذن لازم يكون اليوم أو بعده' }, { status: 400 })
     const db = sb()
     const br = await checkBranch(db, b.org_id, b.branch_id)
     if (!br.ok) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
@@ -68,7 +78,7 @@ export async function POST(req: Request) {
     // عنده حساب في البوابة (إيميله متأكد منه) → يتفعل مباشرة
     const { data: user } = await db.from('accountant_users').select('id').eq('email', email).maybeSingle()
     const { data: row, error } = await db.from('accountant_access').insert({
-      org_id: b.org_id, email, name, branch_id: br.id, sections, vat_registered: b.vat_registered !== false,
+      org_id: b.org_id, email, name, branch_id: br.id, sections, vat_registered: b.vat_registered !== false, expires_on: exp.value,
       ...(user ? { accountant_id: (user as any).id, status: 'active', accepted_at: new Date().toISOString() } : {}),
     } as any).select(FIELDS).single()
     if (error) return NextResponse.json({ error: 'تعذر إرسال الدعوة' }, { status: 500 })
@@ -98,6 +108,7 @@ export async function PATCH(req: Request) {
     const upd: Record<string, unknown> = {}
     if ('sections' in b) { const s = cleanSections(b.sections); if (!s.length) return NextResponse.json({ error: 'اختر قسم واحد على الأقل' }, { status: 400 }); upd.sections = s }
     if ('vat_registered' in b) upd.vat_registered = b.vat_registered !== false
+    if ('expires_on' in b) { const e = cleanExpiry(b.expires_on); if (!e.ok) return NextResponse.json({ error: 'تاريخ نهاية الإذن لازم يكون اليوم أو بعده' }, { status: 400 }); upd.expires_on = e.value }
     const db = sb()
     if ('branch_id' in b) { const br = await checkBranch(db, b.org_id, b.branch_id); if (!br.ok) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 }); upd.branch_id = br.id }
     if (!Object.keys(upd).length) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })

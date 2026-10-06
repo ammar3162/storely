@@ -39,7 +39,7 @@ export async function sendAccountantReport(db: SupabaseClient, link: AccountantL
     try {
       const { data: owner } = await db.from('profiles').select('email').eq('org_id', link.org_id).eq('role', 'owner').maybeSingle()
       const { subject, html } = accountantEmail(report, msg)
-      const xlsx = await buildAccountantWorkbook(report)
+      const xlsx = await buildAccountantWorkbook(report, { watermark: `أُرسل إلى ${link.name}` })
       const r = await sendEmail({
         to: link.email, subject, html, fromName: `${report.orgName} عبر Storely`, fromAddress: 'reports@storely.dev',
         replyTo: (owner as any)?.email || undefined,

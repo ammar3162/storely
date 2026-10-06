@@ -96,3 +96,11 @@ describe('verified invoices', () => {
     expect(i).toMatchObject({ verified: true, mismatch: true, complete: true })
   })
 })
+
+describe('watermark', () => {
+  it('every sheet footer carries who downloaded it', async () => {
+    const wb = new ExcelJS.Workbook()
+    await wb.xlsx.load(await buildAccountantWorkbook(base, { watermark: 'نسخة أ. محمد · 2026-10-06 21:00' }) as any)
+    expect(wb.worksheets.every(w => String(w.headerFooter?.oddFooter || '').includes('أ. محمد'))).toBe(true)
+  })
+})

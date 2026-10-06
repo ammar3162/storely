@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { currentAccountant } from '@/lib/accountantPortalAuth'
+import { currentAccountant, accessExpired } from '@/lib/accountantPortalAuth'
 import { loadAccountantReport } from '@/lib/accountantData'
-import { summarize, type AccSection } from '@/lib/accountantExport'
-import { customPeriod, saudiToday } from '@/lib/accountantSchedule'
+import { summarize, buildClientsWorkbook, type AccSection } from '@/lib/accountantExport'
+import { customPeriod, saudiToday, periodLabel } from '@/lib/accountantSchedule'
 import { isSubscriptionActive } from '@/lib/subscription'
 import { mapLimit } from '@/lib/mapLimit'
 
@@ -21,10 +21,11 @@ export async function GET(req: Request) {
     const p = customPeriod(searchParams.get('from') || `${today.slice(0, 8)}01`, searchParams.get('to') || today, today)
     if (typeof p === 'string') return NextResponse.json({ error: p }, { status: 400 })
 
-    const { data: rows } = await db.from('accountant_access').select('org_id,branch_id,sections,vat_registered,last_view_at,organizations(name),branches(name)')
+    const { data: rows } = await db.from('accountant_access').select('org_id,branch_id,sections,vat_registered,last_view_at,expires_on,organizations(name),branches(name)')
       .eq('accountant_id', me.id).eq('status', 'active')
     const clients = await mapLimit((rows || []) as any[], 4, async a => {
-      const base = { org_id: a.org_id, name: a.organizations?.name || '—', branch: a.branches?.name || null, sections: a.sections }
+      const base = { org_id: a.org_id, name: a.organizations?.name || '—', branch: a.branches?.name || null, sections: a.sections, expires_on: a.expires_on || null }
+      if (accessExpired(a.expires_on)) return { ...base, expired: true }
       if (!(await isSubscriptionActive(db, a.org_id))) return { ...base, inactive: true }
       const sections = LIGHT.filter(s => a.sections.includes(s))
       if (!sections.length) return { ...base, totals: null }
@@ -36,6 +37,15 @@ export async function GET(req: Request) {
         taxInvoices: t.taxInvoices, incomplete: t.taxInvoices - t.taxComplete, mismatch: t.taxMismatch,
       } }
     })
+    if (searchParams.get('format') === 'xlsx') {
+      const label = periodLabel(p)
+      const stamp = `نسخة ${me.name || me.email} · ${new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 16).replace('T', ' ')}`
+      const buf = await buildClientsWorkbook((clients as any[]).map(c => ({ name: c.name, branch: c.branch, sales: c.totals?.sales ?? null, purchases: c.totals?.purchases ?? null,
+        vatNet: c.totals?.vatNet ?? null, payables: c.totals?.payables ?? null, taxInvoices: c.totals?.taxInvoices || 0, incomplete: c.totals?.incomplete || 0, mismatch: c.totals?.mismatch || 0,
+        note: c.expired ? 'انتهى الإذن' : c.inactive ? 'اشتراك المنشأة متوقف' : '' })), label, stamp)
+      return new NextResponse(new Uint8Array(buf), { headers: { 'Cache-Control': 'no-store', 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="clients.xlsx"; filename*=UTF-8''${encodeURIComponent(`ملخص العملاء - ${label}.xlsx`)}` } })
+    }
     return NextResponse.json({ success: true, accountant: me, period: p, clients })
   } catch {
     return NextResponse.json({ error: 'تعذر تحميل العملاء، حاول مرة ثانية' }, { status: 500 })

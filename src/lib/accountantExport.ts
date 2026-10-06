@@ -130,7 +130,8 @@ function addTable(wb: ExcelJS.Workbook, title: string, cols: Col[], rows: Record
   return ws
 }
 
-export async function buildAccountantWorkbook(r: AccountantReport): Promise<Buffer> {
+// watermark: «نسخة فلان · الوقت» — يطلع أسفل كل ورقة وبالملخص (لو تسرّب الملف نعرف من وين)
+export async function buildAccountantWorkbook(r: AccountantReport, opts: { watermark?: string } = {}): Promise<Buffer> {
   const wb = new ExcelJS.Workbook()
   wb.creator = 'Storely'
   wb.created = new Date()
@@ -170,7 +171,7 @@ export async function buildAccountantWorkbook(r: AccountantReport): Promise<Buff
   ws.addRow([])
   if (has('vat') && r.vatRegistered) ws.addRow(['ضريبة المبيعات محسوبة من إجمالي المبيعات شامل الضريبة (15%).']).font = { italic: true, size: 9, color: { argb: 'FF98A2B3' } }
   if (has('stock')) ws.addRow(['قيمة المخزون وقت إصدار التقرير، للأصناف اللي لها تكلفة.']).font = { italic: true, size: 9, color: { argb: 'FF98A2B3' } }
-  ws.addRow(['صدر من Storely']).font = { italic: true, size: 9, color: { argb: 'FF98A2B3' } }
+  ws.addRow([opts.watermark ? `صدر من Storely · ${opts.watermark}` : 'صدر من Storely']).font = { italic: true, size: 9, color: { argb: 'FF98A2B3' } }
 
   if (has('sales')) addTable(wb, 'المبيعات', [
     { header: 'التاريخ', key: 'date', width: 12 }, ...branchCol, { header: 'الكاشير', key: 'staff', width: 16 },
@@ -276,5 +277,28 @@ export async function buildAccountantWorkbook(r: AccountantReport): Promise<Buff
     { header: 'الوحدة', key: 'unit', width: 9 }, { header: 'متوسط التكلفة', key: 'avgCost', width: 13, money: true }, { header: 'القيمة', key: 'value', width: 13, money: true },
   ], r.stock.map(s => ({ ...s, category: s.category || '—', value: s.avgCost != null ? r2(s.qty * Number(s.avgCost)) : null })), { name: 'الإجمالي', value: t.stockValue })
 
+  if (opts.watermark) {
+    const mark = opts.watermark.replace(/&/g, '&&').slice(0, 120)
+    wb.eachSheet(sh => { sh.headerFooter = { oddFooter: `&C${mark}`, evenFooter: `&C${mark}` } })
+    wb.subject = opts.watermark.slice(0, 120)
+  }
+  return Buffer.from(await wb.xlsx.writeBuffer())
+}
+
+/** ملخص كل عملاء المحاسب بملف واحد — سطر لكل منشأة */
+export async function buildClientsWorkbook(rows: { name: string; branch: string | null; sales: number | null; purchases: number | null; vatNet: number | null
+  payables: number | null; taxInvoices: number; incomplete: number; mismatch: number; note?: string }[], label: string, watermark?: string): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook()
+  wb.creator = 'Storely'
+  const ws = addTable(wb, 'العملاء', [
+    { header: 'المنشأة', key: 'name', width: 26 }, { header: 'الفرع', key: 'branch', width: 16 }, { header: 'المبيعات', key: 'sales', width: 14, money: true },
+    { header: 'المشتريات', key: 'purchases', width: 14, money: true }, { header: 'الضريبة المستحقة', key: 'vatNet', width: 15, money: true },
+    { header: 'للموردين', key: 'payables', width: 13, money: true }, { header: 'فواتير ضريبية', key: 'taxInvoices', width: 12 },
+    { header: 'ناقصة', key: 'incomplete', width: 9 }, { header: 'أكبر من الأصلية', key: 'mismatch', width: 13 }, { header: 'ملاحظة', key: 'note', width: 24 },
+  ], rows.map(r => ({ ...r, branch: r.branch || 'كل الفروع', note: r.note || '' })), undefined, 'ما فيه عملاء')
+  ws.addRow([])
+  ws.addRow([`الفترة: ${label}`]).font = { color: { argb: MUTED } }
+  ws.addRow([watermark ? `صدر من Storely · ${watermark}` : 'صدر من Storely']).font = { italic: true, size: 9, color: { argb: 'FF98A2B3' } }
+  if (watermark) ws.headerFooter = { oddFooter: `&C${watermark.replace(/&/g, '&&').slice(0, 120)}` }
   return Buffer.from(await wb.xlsx.writeBuffer())
 }
