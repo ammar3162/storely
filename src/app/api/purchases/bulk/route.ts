@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { invoiceTimestamp } from '@/lib/invoiceTime'
-import { netFromTotal } from '@/lib/vat'
-import { resolvePurchaseTax, notifyQrMismatch } from '@/lib/taxInvoice'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { resolvePurchaseTax, notifyQrMismatch } from '@/lib/taxInvoice'
+import { cleanItems, saveInvoiceItems, itemsSummary } from '@/lib/purchaseItems'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,16 +12,14 @@ const sb = () => createClient(
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
-// حفظ عدة أصناف مستخرجة من صورة فاتورة (OCR) — كل صنف فاتورة شراء مستقلة بسعره،
-// والمخزون يتحدث عبر حركة "in" (الـ trigger يعيد حساب الكمية من مجموع الحركات).
-// ملاحظة: vat_amount و total_amount أعمدة محسوبة بقاعدة البيانات من amount و has_vat، فنسجّل
-// amount و has_vat فقط (بنفس طريقة نموذج الفاتورة الواحدة). النسخة الأقدم كانت تكتب بالأعمدة
-// المحسوبة وبأعمدة غير موجودة (hasVat, invoice_date) فيفشل حفظ الفاتورة دايماً بينما المخزون يزيد.
+// حفظ أصناف فاتورة وحدة مقروءة من صورة (المالك/المدير): كل صنف سطر مشتريات،
+// والصنف الموجود تزيد كميته (اختيار المستخدم أو تطابق قوي بالاسم) — الباقي ينضاف للمخزون
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { org_id, branch_id, supplier, note, invoice_image, invoice_date, items, has_vat } = body
-    if (!org_id || !Array.isArray(items) || !items.length) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+    const { org_id, branch_id, supplier, invoice_image, invoice_date, has_vat } = body
+    const items = cleanItems(body.items)
+    if (!org_id || !items.length) return NextResponse.json({ error: 'حدد صنف واحد على الأقل واكتب سعره' }, { status: 400 })
     if (!DATE_RE.test(String(invoice_date || ''))) return NextResponse.json({ error: 'تاريخ غير صالح' }, { status: 400 })
 
     const access = await verifyOrgAccess(org_id)
@@ -33,54 +31,17 @@ export async function POST(req: Request) {
       const { data: b } = await db.from('branches').select('id').eq('id', bid).eq('org_id', org_id).maybeSingle()
       if (!b) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
     }
-    const invoiceTs = invoiceTimestamp(invoice_date)   // اليوم = الوقت الفعلي، تاريخ سابق = 12 الظهر
     const hasVat = has_vat !== false
-    const enteredTotal = items.slice(0, 200).reduce((s: number, it: any) => s + (Number(it?.total) || 0), 0)
-    const tax = await resolvePurchaseTax(db, org_id, supplier || null, body, hasVat, enteredTotal)   // كل الأصناف = فاتورة وحدة للمحاسب
+    const sup = String(supplier || '').trim().slice(0, 120) || null
+    const tax = await resolvePurchaseTax(db, org_id, sup, body, hasVat, items.reduce((s, it) => s + it.total, 0))   // كل الأصناف = فاتورة وحدة للمحاسب
     if (!tax.ok) return NextResponse.json({ error: tax.error }, { status: tax.status })
 
-    let saved = 0
-    const failed: string[] = []
-    for (const item of items.slice(0, 200)) {
-      const name = String(item.name || '').trim()
-      if (!name) continue
-      const qty = Number(item.qty) || 0
-      const unit = item.unit || 'قطعة'
-      const itemTotal = Number(item.total) || 0
-
-      const { error: purchaseErr } = await db.from('purchases').insert({
-        org_id, profile_id: access.userId, branch_id: bid || null,
-        category: 'مخزون', name, qty, unit, reorder_point: 5,
-        amount: netFromTotal(itemTotal, hasVat), has_vat: hasVat,
-        supplier: supplier || null, note: note || null, invoice_image: invoice_image || null,
-        created_at: invoiceTs, payment_status: 'paid', ...tax.tax,
-      } as any)
-      // ما نزيد المخزون إلا لو انحفظت الفاتورة فعلاً
-      if (purchaseErr) { failed.push(name); continue }
-
-      // مطابقة الصنف بالاسم داخل نفس الفرع (نفس منطق الواجهة السابق: قائمة أصناف الفرع النشطة)
-      let pq = db.from('products').select('id').eq('org_id', org_id).eq('is_active', true).eq('name', name)
-      if (bid) pq = pq.eq('branch_id', bid)
-      const { data: existing } = await pq.limit(1)
-
-      let productId: string | null = (existing as any)?.[0]?.id || null
-      let noteText = `شراء من: ${supplier || '—'} (OCR)`
-      if (!productId) {
-        const { data: np } = await db.from('products').insert({
-          org_id, branch_id: bid || null, name, unit, qty: 0, reorder_point: 5, is_active: true,
-        } as any).select('id').single()
-        productId = (np as any)?.id || null
-        noteText = `شراء جديد من: ${supplier || '—'} (OCR)`
-      }
-      if (productId && qty > 0) {
-        await db.from('stock_movements').insert({ product_id: productId, org_id, profile_id: access.userId, type: 'in', qty_change: qty, note: noteText } as any)
-      }
-      saved++
-    }
-
+    const results = await saveInvoiceItems(db, { orgId: org_id, branchId: bid || null, items, hasVat, supplier: sup || '—', invoiceImage: invoice_image || null,
+      tax: tax.tax, createdAt: invoiceTimestamp(invoice_date), profileId: access.userId })
+    const saved = results.filter(r => r.action !== 'failed').length
     if (saved && tax.alert) await notifyQrMismatch(db, org_id, bid || null, tax.alert)
-    if (!saved && failed.length) return NextResponse.json({ error: 'فشل حفظ الفواتير', failed }, { status: 500 })
-    return NextResponse.json({ success: true, saved, failed })
+    if (!saved) return NextResponse.json({ error: 'فشل حفظ الفاتورة', results }, { status: 500 })
+    return NextResponse.json({ success: true, saved, results, summary: itemsSummary(results) })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }

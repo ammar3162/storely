@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
 import TaxInvoiceFields, { type ZatcaState } from '@/components/TaxInvoiceFields'
+import InvoiceItemsPicker, { type PickedItem } from '@/components/InvoiceItemsPicker'
 import { zatcaFromImage } from '@/lib/zatcaScan'
 import { zatcaDate } from '@/lib/zatcaQr'
 import { normalizeVat, isValidVat } from '@/lib/taxInvoice'
@@ -51,8 +52,6 @@ export default function PurchasesPage() {
   const [showScan, setShowScan]     = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
   const [ocrItems, setOcrItems]     = useState<any[]>([])
-  const [ocrSelected, setOcrSelected] = useState<Record<number,boolean>>({})
-  const [ocrPrices, setOcrPrices] = useState<Record<number,string>>({})
   const [bulkSaving, setBulkSaving] = useState(false)
   const [pendingThanks, setPendingThanks] = useState<{productId:string; productName:string; supplierName:string}|null>(null)
   const [ocrLoading, setOcrLoading] = useState(false)
@@ -227,13 +226,7 @@ export default function PurchasesPage() {
               unit: d.items?.length === 1 && d.items[0].unit ? d.items[0].unit : f.unit,
             }))
             if (d.items?.length > 1) {
-              setOcrItems(d.items)
-              const sel: Record<number,boolean> = {}
-              const initPrices: Record<number,string> = {}
-              const equalShare = d.total_amount ? (Number(d.total_amount)/d.items.length).toFixed(2) : ''
-              d.items.forEach((_:any,i:number)=>{ sel[i]=true; initPrices[i]=equalShare })
-              setOcrSelected(sel)
-              setOcrPrices(initPrices)
+              setOcrItems(d.items)   // الكمية والسعر و«ينضاف إلى» تتعبى بمكوّن الأصناف
             }
             toast('✨ تم استخراج بيانات الفاتورة تلقائياً')
           }
@@ -269,30 +262,30 @@ export default function PurchasesPage() {
     setForm(f => ({ ...f, name: item.name || f.name, qty: item.qty ? String(item.qty) : f.qty, unit: item.unit || f.unit }))
   }
 
-  async function saveBulkOcrItems() {
-    const selectedIndexes = ocrItems.map((_,i)=>i).filter(i=>ocrSelected[i])
-    if (selectedIndexes.length===0 || bulkSaving || !orgId) return
+  // حفظ أصناف الفاتورة: الصنف الموجود تزيد كميته، والجديد ينضاف — والفاتورة كلها تنسجل وحدة
+  async function saveBulkOcrItems(rows: PickedItem[]) {
+    if (!rows.length || bulkSaving || !orgId) return
+    if (rows.some(r=>!(r.total>0))) { toast('اكتب سعر كل صنف محدد','warning'); return }
+    if (!form.supplier.trim()) { toast('يرجى إدخال اسم المورد','warning'); return }
     setBulkSaving(true)
     const bid = sessionStorage.getItem('s_branch_id')
-    const isVat = form.hasVat==='yes'
-
-    // كل صنف فاتورة مستقلة بسعره (قابل للتعديل بالواجهة) وضريبته — الحفظ وتحديث المخزون على الخادم
+    const isVat = form.hasVat!=='no'
     const r = await api.post('/api/purchases/bulk', {
-      org_id:orgId, branch_id:bid||null, supplier:form.supplier||null, note:form.note||null,
+      org_id:orgId, branch_id:bid||null, supplier:form.supplier,
       invoice_image:form.invoice_image||null, has_vat:isVat, invoice_date:form.invoice_date,
       invoice_number:isVat?form.invoice_number||null:null, supplier_vat_number:isVat?form.supplier_vat_number||null:null, zatca_qr:isVat?zatca?.raw||null:null,
-      items: selectedIndexes.map(i=>({ name:ocrItems[i].name, qty:ocrItems[i].qty, unit:ocrItems[i].unit, total:Number(ocrPrices[i])||0 })),
+      items: rows,
     })
-    if(!r.success){ toast(r.error||'فشل الحفظ','error'); setBulkSaving(false); return }
-    if(r.failed?.length) toast(`تنبيه: فشل حفظ ${r.failed.length} صنف: ${r.failed.join('، ')}`,'warning')
-
-    toast(`✅ تم حفظ ${selectedIndexes.length} صنف بنجاح، بكل تفاصيل السعر والضريبة`)
-    setOcrItems([]); setOcrSelected([] as any); setOcrPrices({})
+    setBulkSaving(false)
+    if(!r.success){ toast(r.error||'فشل الحفظ','error'); return }
+    toast(`✅ تم تسجيل الفاتورة — ${r.summary||`${r.saved} صنف`}`)
+    setOcrItems([])
     setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:'',invoice_number:'',supplier_vat_number:''});setZatca(null);setVatFromSupplier(false)
     setPreviewUrl(null)
-    setBulkSaving(false)
-    loadHistory(orgId)
+    cache.invalidate('inventory:');cache.invalidate('products:')
+    loadHistory(orgId); loadProducts(orgId)
   }
+
 
   async function handleSubmit(e:React.FormEvent) {
     e.preventDefault()
@@ -451,27 +444,10 @@ export default function PurchasesPage() {
                   <span>✨</span><span>جاري استخراج بيانات الفاتورة...</span>
                 </div>
               )}
-              {ocrItems.length>0&&(
-                <div style={{marginTop:8,padding:12,background:C.infoL,borderRadius:10,border:`1px solid ${C.infoB}`}}>
-                  <div style={{fontSize:11,fontWeight:700,color:C.info,marginBottom:8}}>📋 {ocrItems.length} صنف مكتشف بالفاتورة — حدد اللي تبي تحفظه</div>
-                  <div style={{display:'flex',flexDirection:'column' as const,gap:6,marginBottom:10}}>
-                    {ocrItems.map((item,i)=>(
-                      <label key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',borderRadius:7,background:'white',border:`1px solid ${C.infoB}`,cursor:'pointer'}}>
-                        <input type="checkbox" checked={!!ocrSelected[i]} onChange={e=>setOcrSelected(s=>({...s,[i]:e.target.checked}))} style={{width:15,height:15,cursor:'pointer'}}/>
-                        <span style={{fontSize:12,color:C.text,flex:1}}>{item.name}</span>
-                        <span style={{fontSize:11,color:C.text3}}>{item.qty||0} {item.unit||''}</span>
-                        <input type="number" step="0.01" value={ocrPrices[i]||''} onChange={e=>setOcrPrices(p=>({...p,[i]:e.target.value}))}
-                          placeholder="السعر" style={{width:64,padding:'4px 6px',borderRadius:6,border:`1px solid ${C.border}`,fontSize:11,textAlign:'left' as const,fontFamily:'inherit'}}/>
-                      </label>
-                    ))}
-                  </div>
-                  <div style={{fontSize:10,color:C.text3,marginBottom:8}}>
-                    * السعر يتوزّع تلقائياً بالتساوي بدايةً — عدّله لكل صنف حسب سعره الفعلي بالفاتورة لدقة أعلى بالتقارير
-                  </div>
-                  <button type="button" onClick={saveBulkOcrItems} disabled={bulkSaving||Object.values(ocrSelected).every(v=>!v)}
-                    style={{width:'100%',padding:10,background:bulkSaving?C.text4:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:bulkSaving?'not-allowed':'pointer',fontFamily:'inherit'}}>
-                    {bulkSaving?'جاري الحفظ...':`✅ حفظ ${Object.values(ocrSelected).filter(Boolean).length} صنف محدد`}
-                  </button>
+              {ocrItems.length>1&&(
+                <div style={{marginTop:8}}>
+                  <InvoiceItemsPicker items={ocrItems} products={products as any} invoiceTotal={zatca?.inv.total ?? (Number(form.total_amount)||null)}
+                    saving={bulkSaving} onSave={saveBulkOcrItems} color={C.primary}/>
                 </div>
               )}
             </div>

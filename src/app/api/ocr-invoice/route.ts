@@ -39,7 +39,8 @@ export async function POST(req: Request) {
 4. هل الفاتورة تحتوي ضريبة قيمة مضافة 15% واضحة (has_vat) — true أو false
 5. رقم الفاتورة كما هو مكتوب (invoice_number) — إذا غير موجود استخدم null
 6. الرقم الضريبي للمورد/البائع (supplier_vat_number) — ١٥ رقم يبدأ بـ 3 وينتهي بـ 3، أرقام فقط. لا تخلطه برقم ضريبي للمشتري. إذا غير موجود استخدم null
-7. قائمة الأصناف الظاهرة بالفاتورة (items) — لكل صنف: الاسم (name)، الكمية (qty) إن وجدت، الوحدة (unit) مثل "كيلو" أو "قطعة" أو "كرتون" إن وجدت
+7. قائمة الأصناف الظاهرة بالفاتورة (items) — لكل صنف: الاسم (name)، الكمية (qty) إن وجدت، الوحدة (unit) مثل "كيلو" أو "قطعة" أو "كرتون" إن وجدت، وإجمالي سطر الصنف كما هو مطبوع (line_total) رقم فقط أو null
+8. هل أسعار الأصناف المطبوعة شاملة الضريبة (prices_include_vat) — true أو false (غالباً false لو الفاتورة فيها سطر ضريبة منفصل تحت)
 
 أعطني فقط كائن JSON بهذا الشكل بدون أي شرح أو نص إضافي:
 {
@@ -50,8 +51,9 @@ export async function POST(req: Request) {
   "invoice_number": "INV-1024",
   "supplier_vat_number": "300012345678903",
   "items": [
-    {"name": "اسم الصنف", "qty": 10, "unit": "كيلو"}
-  ]
+    {"name": "اسم الصنف", "qty": 10, "unit": "كيلو", "line_total": 120.00}
+  ],
+  "prices_include_vat": false
 }
 
 لو الصورة مو واضحة أو مو فاتورة أصلاً، أرجع: {"error": "لم يتم التعرف على فاتورة واضحة بالصورة"}`
@@ -92,6 +94,13 @@ export async function POST(req: Request) {
     const vat = normalizeVat(extracted.supplier_vat_number)
     extracted.supplier_vat_number = isValidVat(vat) ? vat : null
     extracted.invoice_number = normalizeInvoiceNumber(extracted.invoice_number)
+    // سعر كل صنف شامل الضريبة (عشان يطابق طريقة الحفظ) — لو المطبوع قبل الضريبة نضيفها
+    const addVat = extracted.has_vat && extracted.prices_include_vat === false
+    if (Array.isArray(extracted.items)) extracted.items = extracted.items.slice(0, 60).map((it: any) => {
+      const lt = Number(it?.line_total)
+      return { name: String(it?.name || '').slice(0, 120), qty: Number(it?.qty) || null, unit: it?.unit ? String(it.unit).slice(0, 30) : null,
+        total: lt > 0 ? Math.round(lt * (addVat ? 1.15 : 1) * 100) / 100 : null }
+    })
     return NextResponse.json({ success: true, data: extracted })
   } catch (err: any) {
     return NextResponse.json({ error: 'حدث خطأ أثناء معالجة الصورة' }, { status: 500 })

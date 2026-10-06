@@ -1,6 +1,7 @@
 'use client'
 import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
 import TaxInvoiceFields, { type ZatcaState } from '@/components/TaxInvoiceFields'
+import InvoiceItemsPicker, { type PickedItem } from '@/components/InvoiceItemsPicker'
 import { zatcaFromImage, shrinkImage, blobToBase64 } from '@/lib/zatcaScan'
 import { zatcaDate } from '@/lib/zatcaQr'
 import { normalizeVat, isValidVat } from '@/lib/taxInvoice'
@@ -96,10 +97,9 @@ export default function StaffPurchasesPage() {
   const [zatca, setZatcaState] = useState<ZatcaState>(null)
   // القراءة الذكية للفاتورة
   const [readState, setReadState] = useState<'' | 'reading' | 'ok' | 'qr' | 'fail'>('')
-  const [ocrItems, setOcrItems] = useState<{ name: string; qty?: number; unit?: string }[]>([])
-  const [ocrSel, setOcrSel] = useState<Record<number, boolean>>({})
-  const [ocrPrice, setOcrPrice] = useState<Record<number, string>>({})
+  const [ocrItems, setOcrItems] = useState<{ name: string; qty?: number; unit?: string; total?: number }[]>([])
   const [bulkSaving, setBulkSaving] = useState(false)
+  const [products, setProducts] = useState<{ id: string; name: string; unit?: string }[]>([])   // لمطابقة أصناف الفاتورة
   function setZatca(z:ZatcaState){
     setZatcaState(z)
     if(!z) return
@@ -123,6 +123,8 @@ export default function StaffPurchasesPage() {
     if (!s.permissions?.purchases) { router.push('/staff/dispense'); return }
     setSession(s)
     loadSuppliers(s.org_id)
+    fetch('/api/staff-products',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('staff_token')}`},body:'{}'})
+      .then(r=>r.json()).then(j=>setProducts(j.products||[])).catch(()=>{})
     getStaffOrg().then(org=>{ if(org?.currency) setCurr(currencySymbol(org.currency)) })
   },[])
 
@@ -142,7 +144,7 @@ export default function StaffPurchasesPage() {
 
   // الصورة (كاميرا أو من الصور): رفع + باركود الهيئة + قراءة ذكية — بالتوازي
   async function handleImage(file: File) {
-    setUploading(true); setReadState('reading'); setOcrItems([]); setOcrSel({}); setOcrPrice({})
+    setUploading(true); setReadState('reading'); setOcrItems([])
     setPreviewUrl(URL.createObjectURL(file))
     const staffToken = localStorage.getItem('staff_token')
     const small = await shrinkImage(file)
@@ -170,29 +172,28 @@ export default function StaffPurchasesPage() {
         hasVat: d.has_vat ? 'yes' : (f.hasVat || (d.has_vat === false ? 'no' : '')),
         invoice_number: f.invoice_number || d.invoice_number || '', supplier_vat_number: f.supplier_vat_number || d.supplier_vat_number || '',
         ...(items.length === 1 ? { name: f.name || items[0].name, qty: f.qty || (items[0].qty ? String(items[0].qty) : ''), unit: items[0].unit || f.unit } : {}) }))
-      if (items.length > 1) { setOcrItems(items); setOcrSel(Object.fromEntries(items.map((_: any, i: number) => [i, true]))) }
+      if (items.length > 1) setOcrItems(items)
     }
     if (z) setZatca(z)   // الباركود أدق — يغطي على القراءة الذكية بالمورد والمبلغ والرقم الضريبي
     setReadState(z ? 'qr' : d ? 'ok' : 'fail')
     setUploading(false)
   }
 
-  async function saveItems() {
-    if (!session || bulkSaving) return
+  async function saveItems(rows: PickedItem[]) {
+    if (!session || bulkSaving || !rows.length) return
     if (!form.supplier.trim()) { showToast(pt('needSupplier', lang)); return }
-    const picked = ocrItems.map((it, i) => ({ ...it, total: Number(ocrPrice[i]) || 0, i })).filter(it => ocrSel[it.i] && it.total > 0)
-    if (!picked.length) { showToast(pt('pickPrice', lang)); return }
+    if (rows.some(r => !(r.total > 0))) { showToast(pt('pickPrice', lang)); return }
     setBulkSaving(true)
     const res = await fetch('/api/staff-purchase/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('staff_token')}` },
       body: JSON.stringify({ supplier: form.supplier, has_vat: form.hasVat !== 'no', invoice_image: form.invoice_image || null,
-        invoice_number: form.invoice_number || null, supplier_vat_number: form.supplier_vat_number || null, zatca_qr: zatca?.raw || null,
-        items: picked.map(it => ({ name: it.name, qty: it.qty || 0, unit: it.unit || 'قطعة', total: it.total })) }) })
+        invoice_number: form.invoice_number || null, supplier_vat_number: form.supplier_vat_number || null, zatca_qr: zatca?.raw || null, items: rows }) })
     const j = await res.json().catch(() => ({}))
     setBulkSaving(false)
     if (!res.ok || !j.success) { showToast(pt('errorPrefix', lang) + (j.error || '')); return }
-    showToast(`${pt('itemsSaved', lang)} (${j.saved})`)
-    setTimeout(() => router.push('/staff/dispense'), 1800)
+    showToast(`${pt('itemsSaved', lang)} — ${j.summary || j.saved}`)
+    setTimeout(() => router.push('/staff/dispense'), 2200)
   }
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -357,28 +358,13 @@ export default function StaffPurchasesPage() {
 
           {form.hasVat==='yes'&&(
             <TaxInvoiceFields lang={lang} invoiceNumber={form.invoice_number} vatNumber={form.supplier_vat_number} savedFromSupplier={vatFromSupplier}
-              zatca={zatca} onZatca={setZatca} enteredTotal={multi?ocrItems.reduce((t,_,i)=>t+(ocrSel[i]?Number(ocrPrice[i])||0:0),0):Number(form.total_amount)||0} onError={showToast}
+              zatca={zatca} onZatca={setZatca} enteredTotal={multi?0:Number(form.total_amount)||0} onError={showToast}
               onChange={p=>{ if('supplier_vat_number' in p) setVatFromSupplier(false); setForm(f=>({...f,...p})) }} inputStyle={inp} labelStyle={lbl}/>
           )}
 
           {/* الفاتورة فيها أكثر من صنف */}
-          {ocrItems.length>1&&(
-            <div style={{background:'white',border:`1.5px solid ${C.primary}`,borderRadius:14,padding:14,marginBottom:14}}>
-              <div style={{fontSize:12.5,fontWeight:800,color:C.primary,marginBottom:10}}>📋 {itemsCount(ocrItems.length,lang)} {pt('itemsFound',lang)}</div>
-              {ocrItems.map((it,i)=>(
-                <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'7px 0',borderBottom:`1px solid ${C.border}`}}>
-                  <input type="checkbox" checked={!!ocrSel[i]} onChange={e=>setOcrSel(s=>({...s,[i]:e.target.checked}))} style={{width:17,height:17}}/>
-                  <div style={{flex:1,minWidth:0,fontSize:13,fontWeight:700,color:C.text}}>{it.name}<span style={{fontSize:11,color:C.text4,fontWeight:500}}>{it.qty?` · ${it.qty} ${it.unit||''}`:''}</span></div>
-                  <input type="number" step="0.01" min="0" inputMode="decimal" value={ocrPrice[i]||''} onChange={e=>setOcrPrice(p=>({...p,[i]:e.target.value}))}
-                    placeholder={pt('itemPrice',lang)} style={{...inp,width:90,padding:'7px 8px',textAlign:'center' as const}}/>
-                </div>
-              ))}
-              <button type="button" onClick={saveItems} disabled={bulkSaving}
-                style={{width:'100%',marginTop:10,padding:'11px',borderRadius:10,border:'none',background:bulkSaving?'#9ca3af':C.primary,color:'white',fontSize:13.5,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
-                {bulkSaving?pt('submitting',lang):`${pt('saveItems',lang)} (${Object.values(ocrSel).filter(Boolean).length})`}
-              </button>
-            </div>
-          )}
+          {multi&&<InvoiceItemsPicker items={ocrItems} products={products} lang={lang} invoiceTotal={zatca?.inv.total ?? (Number(form.total_amount)||null)}
+            saving={bulkSaving} onSave={saveItems} color={C.primary}/>}
 
           {/* ملاحظة */}
           <div style={{marginBottom:16}}>
