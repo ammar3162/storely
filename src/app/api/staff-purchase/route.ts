@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { lockedFor, lockedFromError } from '@/lib/periodLock'
 import { netFromTotal } from '@/lib/vat'
 import { resolvePurchaseTax, notifyQrMismatch } from '@/lib/taxInvoice'
 import { staffHasPermission, NO_PURCHASES } from '@/lib/staffPermission'
@@ -51,6 +52,7 @@ export async function POST(req: Request) {
       ...tax.tax,
     } as any)
 
+    if (error && lockedFromError(error)) return NextResponse.json({ error: lockedFromError(error) }, { status: 423 })
     if (error) { console.error('STAFF_PURCHASE_FAILED', error.message); return NextResponse.json({ error: 'تعذر تسجيل الشراء، حاول مرة ثانية' }, { status: 500 }) }
     if (tax.alert) {
       // اسم الموظف من قاعدة البيانات (مو من الطلب)

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { lockedFor, lockedFromError } from '@/lib/periodLock'
 import { createClient } from '@supabase/supabase-js'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { sendPushToOrg } from '@/lib/push'
@@ -97,6 +98,8 @@ export async function POST(req: Request) {
     // (ما نقبل تاريخ من الطلب — التاريخ يحدده السيرفر بس)
     const { data: orgDay } = await supabase.from('organizations').select('business_day_start_hour').eq('id', org_id).single()
     const businessDate = computeBusinessDate({ startHour: (orgDay as any)?.business_day_start_hour })
+    const locked = await lockedFor(supabase, org_id, [businessDate])
+    if (locked) return NextResponse.json({ error: locked }, { status: 423 })
     const { data, error } = await supabase
       .from('cashier_closings')
       .insert({
@@ -125,6 +128,7 @@ export async function POST(req: Request) {
       .select()
       .single()
 
+    if (error && lockedFromError(error)) return NextResponse.json({ error: lockedFromError(error) }, { status: 423 })
     if (error) {
       return NextResponse.json({ error: 'حدث خطأ أثناء حفظ التقرير' }, { status: 500 })
     }
@@ -267,7 +271,7 @@ export async function GET(req: Request) {
 }
 
 async function ownedClosing(org_id: string, id: string, access: any) {
-  const { data } = await sb().from('cashier_closings').select('id,branch_id').eq('id', id).eq('org_id', org_id).maybeSingle()
+  const { data } = await sb().from('cashier_closings').select('id,branch_id,closing_date').eq('id', id).eq('org_id', org_id).maybeSingle()
   if (!data) return null
   const forced = enforcedBranchId(access)
   if (forced && (data as any).branch_id !== forced) return null
@@ -283,7 +287,10 @@ export async function DELETE(req: Request) {
     if (!org_id || !id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (!(await ownedClosing(org_id, id, access))) return NextResponse.json({ error: 'غير موجود' }, { status: 404 })
+    const owned: any = await ownedClosing(org_id, id, access)
+    if (!owned) return NextResponse.json({ error: 'غير موجود' }, { status: 404 })
+    const locked = await lockedFor(sb(), org_id, [owned.closing_date])
+    if (locked) return NextResponse.json({ error: locked }, { status: 423 })
     const { error } = await sb().from('cashier_closings').delete().eq('id', id).eq('org_id', org_id)
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
     return NextResponse.json({ success: true })

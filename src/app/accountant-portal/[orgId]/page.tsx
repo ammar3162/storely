@@ -6,6 +6,7 @@ import { colors, font } from '@/lib/ds'
 import { PortalShell, PeriodBar, presetRange } from '@/components/accountant/PortalShell'
 import AccountantReportView from '@/components/accountant/AccountantReportView'
 import AccountantRequestsPanel, { RequestDialog, type RequestTarget } from '@/components/accountant/AccountantRequests'
+import PortalLocks from '@/components/accountant/PortalLocks'
 
 // صفحة منشأة في بوابة المحاسب — قراءة فقط، بالأقسام اللي سمح فيها المالك
 export default function PortalClientPage() {
@@ -41,6 +42,7 @@ export default function PortalClientPage() {
         : !data ? <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}><Loader2 size={24} color={colors.primary} style={{ animation: 'spin .8s linear infinite' }} /><style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style></div>
         : <>
           <AccountantRequestsPanel orgId={orgId} refreshKey={reqKey} onNew={() => setReqTarget(null)} />
+          <PortalLocks orgId={orgId} />
           <AccountantReportView data={data} kicker="بوابة المحاسب" downloadHref={`/api/accountant-portal/report?org_id=${orgId}&from=${range!.from}&to=${range!.to}&format=xlsx`}
             onRequest={inv => setReqTarget({ invoice_group: inv.group, purchase_id: inv.firstId, label: `${inv.supplier || '—'} · ${inv.date} · ${Number(inv.total).toFixed(2)}${inv.invoiceNumber ? ` · ${inv.invoiceNumber}` : ''}` })} />
         </>}

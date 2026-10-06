@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { lockedFor, lockedFromError } from '@/lib/periodLock'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { withTargets } from '@/lib/accountantRequests'
@@ -53,6 +54,9 @@ export async function PATCH(req: Request) {
     }
     if (Object.keys(fix).length) {
       if (!(r as any).invoice_group && !(r as any).purchase_id) return NextResponse.json({ error: 'هذا الطلب مو مربوط بفاتورة' }, { status: 400 })
+      const { data: inv } = await db.from('purchases').select('created_at').eq('org_id', b.org_id).eq((r as any).invoice_group ? 'invoice_group' : 'id', (r as any).invoice_group || (r as any).purchase_id).limit(1).maybeSingle()
+      const locked = await lockedFor(db, b.org_id, [(inv as any)?.created_at])
+      if (locked) return NextResponse.json({ error: locked }, { status: 423 })
       let q = db.from('purchases').update(fix as any).eq('org_id', b.org_id)
       q = (r as any).invoice_group ? q.eq('invoice_group', (r as any).invoice_group) : q.eq('id', (r as any).purchase_id)
       const { error } = await q

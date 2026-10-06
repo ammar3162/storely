@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { lockedFor, lockedFromError } from '@/lib/periodLock'
 import { invoiceTimestamp } from '@/lib/invoiceTime'
 import { netFromTotal } from '@/lib/vat'
 import { resolvePurchaseTax, notifyQrMismatch } from '@/lib/taxInvoice'
@@ -95,6 +96,8 @@ export async function POST(req: Request) {
     const invoiceTs = invoiceTimestamp(body.invoice_date)   // اليوم = الوقت الفعلي، تاريخ سابق = 12 الظهر
     const qty = body.qty ? Number(body.qty) : 0
     if (!(Number.isInteger(qty) && qty >= 0)) return NextResponse.json({ error: 'الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)' }, { status: 400 })
+    const locked = await lockedFor(db, org_id, [body.invoice_date])
+    if (locked) return NextResponse.json({ error: locked }, { status: 423 })
     const tax = await resolvePurchaseTax(db, org_id, supplier, body, hasVat, total)
     if (!tax.ok) return NextResponse.json({ error: tax.error }, { status: tax.status })
 
@@ -106,6 +109,7 @@ export async function POST(req: Request) {
       created_at: invoiceTs, payment_status: body.payment_status === 'unpaid' ? 'unpaid' : 'paid', due_date: body.due_date || null,
       ...tax.tax,
     } as any)
+    if (insErr && lockedFromError(insErr)) return NextResponse.json({ error: lockedFromError(insErr) }, { status: 423 })
     if (insErr) { console.error('PURCHASE_FAILED', insErr.message); return NextResponse.json({ error: 'تعذر تسجيل الفاتورة، حاول مرة ثانية' }, { status: 500 }) }
     if (tax.alert) await notifyQrMismatch(db, org_id, purchaseBranch, tax.alert)
 
@@ -217,8 +221,11 @@ export async function DELETE(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
     const db = sb()
-    const { data: purchase } = await db.from('purchases').select('id,category,name,qty,supplier,branch_id,deleted_at').eq('id', id).eq('org_id', org_id).maybeSingle()
+    const { data: purchase } = await db.from('purchases').select('id,category,name,qty,supplier,branch_id,deleted_at,created_at').eq('id', id).eq('org_id', org_id).maybeSingle()
     if (!purchase || (purchase as any).deleted_at) return NextResponse.json({ error: 'الفاتورة غير موجودة' }, { status: 404 })
+    // الشهر مقفل؟ نوقف قبل ما نحرّك المخزون
+    const locked = await lockedFor(db, org_id, [(purchase as any).created_at])
+    if (locked) return NextResponse.json({ error: locked }, { status: 423 })
     const p: any = purchase
     const bid = enforcedBranchId(access)
     if (bid && p.branch_id !== bid) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })

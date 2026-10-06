@@ -10,6 +10,7 @@ import { colors, radius, font, card, btnPrimary, btnSecondary, inp, pageTitle, p
 import AccountantLinkSettings from '@/components/AccountantLinkSettings'
 import AccountantPortalAccess from '@/components/AccountantPortalAccess'
 import OwnerAccountantRequests from '@/components/OwnerAccountantRequests'
+import OwnerPeriodLocks from '@/components/OwnerPeriodLocks'
 
 const lbl: React.CSSProperties = { fontSize: font.xs, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }
 
@@ -394,7 +395,7 @@ export default function SettingsPage() {
 
         <div style={{padding:22}}>
 
-          {activeTab==='accountant'&&isOwner&&orgId&&<><OwnerAccountantRequests orgId={orgId}/><AccountantPortalAccess orgId={orgId}/><AccountantLinkSettings orgId={orgId}/></>}
+          {activeTab==='accountant'&&isOwner&&orgId&&<><OwnerAccountantRequests orgId={orgId}/><OwnerPeriodLocks orgId={orgId}/><AccountantPortalAccess orgId={orgId}/><AccountantLinkSettings orgId={orgId}/></>}
 
           {/* ORG TAB */}
           {activeTab==='account'&&(

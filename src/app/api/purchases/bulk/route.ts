@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { lockedFor, lockedFromError } from '@/lib/periodLock'
 import { invoiceTimestamp } from '@/lib/invoiceTime'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
@@ -32,6 +33,8 @@ export async function POST(req: Request) {
       const { data: b } = await db.from('branches').select('id').eq('id', bid).eq('org_id', org_id).maybeSingle()
       if (!b) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
     }
+    const locked = await lockedFor(db, org_id, [invoice_date])
+    if (locked) return NextResponse.json({ error: locked }, { status: 423 })
     const hasVat = has_vat !== false
     const sup = String(supplier || '').trim().slice(0, 120) || null
     const tax = await resolvePurchaseTax(db, org_id, sup, body, hasVat, items.reduce((s, it) => s + it.total, 0))   // كل الأصناف = فاتورة وحدة للمحاسب
