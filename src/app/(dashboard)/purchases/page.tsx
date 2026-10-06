@@ -215,7 +215,7 @@ export default function PurchasesPage() {
               ...f,
               ...(zatcaRef.current ? {} : {
                 supplier: d.supplier || f.supplier,
-                total_amount: d.total_amount ? String(d.total_amount) : f.total_amount,
+                total_amount: Number(d.total_amount) > 0 ? String(Math.round(Number(d.total_amount) * 100) / 100) : f.total_amount,
                 invoice_date: d.invoice_date || f.invoice_date,
                 hasVat: d.has_vat ? 'yes' : f.hasVat,
                 supplier_vat_number: d.supplier_vat_number || f.supplier_vat_number,
@@ -266,6 +266,7 @@ export default function PurchasesPage() {
   async function saveBulkOcrItems(rows: PickedItem[]) {
     if (!rows.length || bulkSaving || !orgId) return
     if (rows.some(r=>!(r.total>0))) { toast('اكتب سعر كل صنف محدد','warning'); return }
+    if (rows.some(r=>!Number.isInteger(r.qty))) { toast('الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)','warning'); return }
     if (!form.supplier.trim()) { toast('يرجى إدخال اسم المورد','warning'); return }
     setBulkSaving(true)
     const bid = sessionStorage.getItem('s_branch_id')
@@ -289,8 +290,10 @@ export default function PurchasesPage() {
 
   async function handleSubmit(e:React.FormEvent) {
     e.preventDefault()
-    if(!form.total_amount||!orgId)return
-    if(submitting.current)return
+    if(!orgId||submitting.current)return
+    if(form.category==='مخزون'&&!form.name.trim()){toast('اكتب اسم الصنف','warning');return}
+    if(!(Number(form.total_amount)>0)){toast('اكتب المبلغ الإجمالي','warning');return}
+    if(form.qty&&!(Number.isInteger(Number(form.qty))&&Number(form.qty)>=0)){toast('الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)','warning');return}
     submitting.current=true
     if(!form.hasVat){toast('حدد هل الفاتورة تشمل الضريبة','warning');submitting.current=false;return}
     if(form.hasVat==='yes'&&!form.invoice_image){toast('يرجى رفع صورة الفاتورة','warning');submitting.current=false;return}
@@ -407,7 +410,7 @@ export default function PurchasesPage() {
         {/* Form */}
         <div className="u" style={{background:'white',borderRadius:12,padding:18,border:`1px solid ${C.border}`,animationDelay:'.06s'}}>
           <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:14}}>تسجيل شراء جديد</div>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
 
             {/* Category */}
             <div style={{marginBottom:12}}>
@@ -504,7 +507,7 @@ export default function PurchasesPage() {
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:10}}>
                   <div>
                     <label style={lbl}>الكمية</label>
-                    <input type="number" min="0" value={form.qty} onChange={e=>setForm({...form,qty:e.target.value})} style={inp} placeholder="0" inputMode="numeric"/>
+                    <input type="number" min="0" step="any" value={form.qty} onChange={e=>setForm({...form,qty:e.target.value})} style={inp} placeholder="0" inputMode="numeric"/>
                   </div>
                   <div>
                     <label style={lbl}>الوحدة</label>
@@ -523,7 +526,7 @@ export default function PurchasesPage() {
             {/* Amount */}
             <div style={{marginBottom:10}}>
               <label style={lbl}>المبلغ الإجمالي ({curr}) *</label>
-              <input type="number" min="0" step="0.01" required value={form.total_amount}
+              <input type="number" min="0" step="any" required value={form.total_amount}
                 onChange={e=>setForm({...form,total_amount:e.target.value})}
                 style={{...inp,fontSize:16,fontWeight:700}} placeholder="0.00" inputMode="decimal"/>
               {inputTotal>0&&form.hasVat==='yes'&&(

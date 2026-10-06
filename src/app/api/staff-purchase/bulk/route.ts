@@ -15,6 +15,7 @@ export async function POST(req: Request) {
     const { org_id, staff_id, branch_id } = auth.data!
     const body = await req.json()
     const items = cleanItems(body.items)
+    if (items.some(it => !Number.isInteger(it.qty))) return NextResponse.json({ error: 'الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)' }, { status: 400 })
     if (!items.length) return NextResponse.json({ error: 'حدد صنف واحد على الأقل واكتب سعره' }, { status: 400 })
     const supplier = String(body.supplier || '').trim().slice(0, 120)
     if (!supplier) return NextResponse.json({ error: 'اكتب اسم المورد' }, { status: 400 })

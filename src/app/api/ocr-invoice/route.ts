@@ -6,6 +6,8 @@ import { staffHasPermission, NO_PURCHASES } from '@/lib/staffPermission'
 import { createClient } from '@supabase/supabase-js'
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!
+// قراءة فاتورة مفصّلة تاخذ أكثر من ١٠ ثواني — بدون هذا السيرفر يقطعها قبل ما تخلص
+export const maxDuration = 60
 
 /**
  * يستخرج بيانات فاتورة شراء من صورة باستخدام رؤية Claude (Vision).
@@ -67,7 +69,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1500,
+        max_tokens: 4000,
         messages: [{
           role: 'user',
           content: [
@@ -79,7 +81,9 @@ export async function POST(req: Request) {
     })
 
     if (!res.ok) {
-      return NextResponse.json({ error: 'تعذر تحليل الصورة' }, { status: 500 })
+      const detail = await res.text().catch(() => '')
+      console.error('OCR_FAILED', res.status, detail.slice(0, 300))
+      return NextResponse.json({ error: res.status === 529 || res.status === 429 ? 'خدمة القراءة مشغولة — جرّب بعد دقيقة' : 'تعذر قراءة الصورة — جرّب صورة أوضح' }, { status: 502 })
     }
 
     const data = await res.json()
@@ -87,7 +91,11 @@ export async function POST(req: Request) {
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) return NextResponse.json({ error: 'تعذر استخراج بيانات من الصورة' }, { status: 422 })
 
-    const extracted = JSON.parse(jsonMatch[0])
+    let extracted: any
+    try { extracted = JSON.parse(jsonMatch[0]) } catch {
+      console.error('OCR_BAD_JSON', data.stop_reason, text.slice(0, 200))
+      return NextResponse.json({ error: 'تعذر قراءة كل الفاتورة — جرّب صورة أقرب أو عبّي يدوي' }, { status: 422 })
+    }
     if (extracted.error) return NextResponse.json({ error: extracted.error }, { status: 422 })
 
     // نتأكد من الرقم الضريبي قبل ما يوصل للنموذج — الغلط أخطر من الفاضي

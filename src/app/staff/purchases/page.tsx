@@ -80,6 +80,9 @@ const PUI: Record<string,Record<'ar'|'en',string>> = {
   itemsSaved:       {ar:'✅ تم تسجيل الأصناف',en:'✅ Items recorded'},
   needSupplier:     {ar:'اكتب اسم المورد أول',en:'Enter the supplier first'},
   pickPrice:        {ar:'حدد صنف واكتب سعره',en:'Pick an item and enter its price'},
+  needName:         {ar:'اكتب اسم الصنف',en:'Enter the item name'},
+  needAmount:       {ar:'اكتب المبلغ الإجمالي',en:'Enter the total amount'},
+  needQty:          {ar:'الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)',en:'Quantity must be a whole number — use a smaller unit (grams instead of kg)'},
 }
 const pt = (key: string, lang: 'ar'|'en') => PUI[key]?.[lang] || PUI[key]?.ar || key
 const itemsCount = (n: number, lang: 'ar'|'en') => lang === 'en' ? `${n} items` : n === 2 ? 'صنفين' : n <= 10 ? `${n} أصناف` : `${n} صنف`
@@ -97,6 +100,7 @@ export default function StaffPurchasesPage() {
   const [zatca, setZatcaState] = useState<ZatcaState>(null)
   // القراءة الذكية للفاتورة
   const [readState, setReadState] = useState<'' | 'reading' | 'ok' | 'qr' | 'fail'>('')
+  const [readErr, setReadErr] = useState('')
   const [ocrItems, setOcrItems] = useState<{ name: string; qty?: number; unit?: string; total?: number }[]>([])
   const [bulkSaving, setBulkSaving] = useState(false)
   const [products, setProducts] = useState<{ id: string; name: string; unit?: string }[]>([])   // لمطابقة أصناف الفاتورة
@@ -144,7 +148,7 @@ export default function StaffPurchasesPage() {
 
   // الصورة (كاميرا أو من الصور): رفع + باركود الهيئة + قراءة ذكية — بالتوازي
   async function handleImage(file: File) {
-    setUploading(true); setReadState('reading'); setOcrItems([])
+    setUploading(true); setReadState('reading'); setReadErr(''); setOcrItems([])
     setPreviewUrl(URL.createObjectURL(file))
     const staffToken = localStorage.getItem('staff_token')
     const small = await shrinkImage(file)
@@ -159,7 +163,8 @@ export default function StaffPurchasesPage() {
       const res = await fetch('/api/ocr-invoice', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
         body: JSON.stringify({ image: await blobToBase64(small), mediaType: 'image/jpeg', org_id: session?.org_id }) })
       const j = await res.json().catch(() => ({}))
-      return res.ok && j.success ? j.data : null
+      if (!(res.ok && j.success)) { if (j.error) setReadErr(j.error); return null }
+      return j.data
     })().catch(() => null)
     const [z, url, d] = await Promise.all([zatcaFromImage(file), upload, ocr])
 
@@ -168,7 +173,7 @@ export default function StaffPurchasesPage() {
     if (d) {
       const items = Array.isArray(d.items) ? d.items.filter((x: any) => x?.name) : []
       setForm(f => ({ ...f,
-        supplier: f.supplier || d.supplier || '', total_amount: f.total_amount || (d.total_amount ? String(d.total_amount) : ''),
+        supplier: f.supplier || d.supplier || '', total_amount: f.total_amount || (Number(d.total_amount) > 0 ? String(Math.round(Number(d.total_amount) * 100) / 100) : ''),
         hasVat: d.has_vat ? 'yes' : (f.hasVat || (d.has_vat === false ? 'no' : '')),
         invoice_number: f.invoice_number || d.invoice_number || '', supplier_vat_number: f.supplier_vat_number || d.supplier_vat_number || '',
         ...(items.length === 1 ? { name: f.name || items[0].name, qty: f.qty || (items[0].qty ? String(items[0].qty) : ''), unit: items[0].unit || f.unit } : {}) }))
@@ -183,6 +188,7 @@ export default function StaffPurchasesPage() {
     if (!session || bulkSaving || !rows.length) return
     if (!form.supplier.trim()) { showToast(pt('needSupplier', lang)); return }
     if (rows.some(r => !(r.total > 0))) { showToast(pt('pickPrice', lang)); return }
+    if (rows.some(r => !Number.isInteger(r.qty))) { showToast(pt('needQty', lang)); return }
     setBulkSaving(true)
     const res = await fetch('/api/staff-purchase/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('staff_token')}` },
       body: JSON.stringify({ supplier: form.supplier, has_vat: form.hasVat !== 'no', invoice_image: form.invoice_image || null,
@@ -197,15 +203,18 @@ export default function StaffPurchasesPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if(!form.total_amount||!session)return
-    if(submitting.current)return
+    if(!session||submitting.current)return
+    // رسالة واضحة بدل منع صامت
+    if(form.category==='مخزون'&&!form.name.trim()){showToast(pt('needName',lang));return}
+    if(!(Number(form.total_amount)>0)){showToast(pt('needAmount',lang));return}
+    if(form.qty&&!(Number.isInteger(Number(form.qty))&&Number(form.qty)>=0)){showToast(pt('needQty',lang));return}
     submitting.current=true
     if(!form.hasVat){showToast(pt('selectVat',lang));submitting.current=false;return}
     if(form.hasVat==='yes'&&!form.invoice_image){showToast(pt('invoiceRequired',lang));submitting.current=false;return}
     if(form.hasVat==='yes'&&form.supplier_vat_number.trim()&&!isValidVat(normalizeVat(form.supplier_vat_number))){showToast(pt('vatInvalid',lang));submitting.current=false;return}
     if(!form.supplier.trim()){showToast(pt('supplierRequired',lang));submitting.current=false;return}
     setLoading(true)
-    const total_amount = Number(form.total_amount).toFixed(2)
+    const total_amount = (Math.round(Number(form.total_amount) * 100) / 100).toFixed(2)
 
     const staffToken = localStorage.getItem('staff_token')
     const res = await fetch('/api/staff-purchase', {
@@ -271,11 +280,12 @@ export default function StaffPurchasesPage() {
             ))}
           </div>
           {readState&&<div style={{marginTop:10,fontSize:12.5,fontWeight:700,lineHeight:1.6,color:readState==='fail'?C.warning:readState==='reading'?C.text3:C.primary}}>
-            {pt(readState==='reading'?'reading':readState==='qr'?'readQr':readState==='ok'?'readOk':'readFail',lang)}
+            {readState==='fail'&&readErr&&lang!=='en'?`${readErr}`:pt(readState==='reading'?'reading':readState==='qr'?'readQr':readState==='ok'?'readOk':'readFail',lang)}
           </div>}
         </div>
 
-        <form onSubmit={handleSubmit}>
+        {/* noValidate: نتحقق بنفسنا برسائل واضحة — الآيفون كان يمنع الحفظ بصمت (كمية بكسور مثلاً) */}
+        <form onSubmit={handleSubmit} noValidate>
 
           {!multi&&<>
           {/* نوع الفاتورة */}
@@ -301,7 +311,7 @@ export default function StaffPurchasesPage() {
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
             <div>
               <label style={lbl}>{pt('quantity',lang)}</label>
-              <input style={inp} type="number" min="0" value={form.qty} onChange={e=>setForm(f=>({...f,qty:e.target.value}))} placeholder="0"/>
+              <input style={inp} type="number" min="0" step="any" inputMode="decimal" value={form.qty} onChange={e=>setForm(f=>({...f,qty:e.target.value}))} placeholder="0"/>
             </div>
             <div>
               <label style={lbl}>{pt('unit',lang)}</label>
@@ -341,7 +351,7 @@ export default function StaffPurchasesPage() {
           {/* المبلغ */}
           {!multi&&<div style={{marginBottom:12}}>
             <label style={lbl}>{pt('totalAmount',lang)} ({curr}) *</label>
-            <input style={{...inp,fontSize:18,fontWeight:700,textAlign:'center' as const}} type="number" min="0" step="0.01" value={form.total_amount} onChange={e=>setForm(f=>({...f,total_amount:e.target.value}))} placeholder="0.00" required/>
+            <input style={{...inp,fontSize:18,fontWeight:700,textAlign:'center' as const}} type="number" min="0" step="any" inputMode="decimal" value={form.total_amount} onChange={e=>setForm(f=>({...f,total_amount:e.target.value}))} placeholder="0.00" required/>
             {inputTotal>0&&form.hasVat&&(
               <div style={{display:'flex',gap:8,marginTop:6}}>
                 <div style={{flex:1,background:C.bg,borderRadius:8,padding:'8px 10px',textAlign:'center' as const}}>

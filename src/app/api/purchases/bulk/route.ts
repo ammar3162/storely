@@ -19,6 +19,7 @@ export async function POST(req: Request) {
     const body = await req.json()
     const { org_id, branch_id, supplier, invoice_image, invoice_date, has_vat } = body
     const items = cleanItems(body.items)
+    if (items.some(it => !Number.isInteger(it.qty))) return NextResponse.json({ error: 'الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)' }, { status: 400 })
     if (!org_id || !items.length) return NextResponse.json({ error: 'حدد صنف واحد على الأقل واكتب سعره' }, { status: 400 })
     if (!DATE_RE.test(String(invoice_date || ''))) return NextResponse.json({ error: 'تاريخ غير صالح' }, { status: 400 })
 

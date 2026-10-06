@@ -30,6 +30,7 @@ export async function POST(req: Request) {
       : Number(body.amount)
     if (!(amount > 0)) return NextResponse.json({ error: 'أدخل المبلغ' }, { status: 400 })
 
+    if (qty != null && qty !== '' && !(Number.isInteger(Number(qty)) && Number(qty) >= 0)) return NextResponse.json({ error: 'الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)' }, { status: 400 })
     if (!org_id || !name) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
       ...tax.tax,
     } as any)
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) { console.error('STAFF_PURCHASE_FAILED', error.message); return NextResponse.json({ error: 'تعذر تسجيل الشراء، حاول مرة ثانية' }, { status: 500 }) }
     if (tax.alert) {
       // اسم الموظف من قاعدة البيانات (مو من الطلب)
       const { data: me } = await supabase.from('staff_members').select('name').eq('id', staff_id).eq('org_id', org_id).maybeSingle()

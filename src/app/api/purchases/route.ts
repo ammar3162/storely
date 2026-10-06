@@ -94,6 +94,7 @@ export async function POST(req: Request) {
     const amount = netFromTotal(total, hasVat)
     const invoiceTs = invoiceTimestamp(body.invoice_date)   // اليوم = الوقت الفعلي، تاريخ سابق = 12 الظهر
     const qty = body.qty ? Number(body.qty) : 0
+    if (!(Number.isInteger(qty) && qty >= 0)) return NextResponse.json({ error: 'الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)' }, { status: 400 })
     const tax = await resolvePurchaseTax(db, org_id, supplier, body, hasVat, total)
     if (!tax.ok) return NextResponse.json({ error: tax.error }, { status: tax.status })
 
@@ -105,7 +106,7 @@ export async function POST(req: Request) {
       created_at: invoiceTs, payment_status: body.payment_status === 'unpaid' ? 'unpaid' : 'paid', due_date: body.due_date || null,
       ...tax.tax,
     } as any)
-    if (insErr) return NextResponse.json({ error: 'خطأ: ' + insErr.message }, { status: 500 })
+    if (insErr) { console.error('PURCHASE_FAILED', insErr.message); return NextResponse.json({ error: 'تعذر تسجيل الفاتورة، حاول مرة ثانية' }, { status: 500 }) }
     if (tax.alert) await notifyQrMismatch(db, org_id, purchaseBranch, tax.alert)
 
     const { data: org } = await db.from('organizations').select('currency').eq('id', org_id).single()
