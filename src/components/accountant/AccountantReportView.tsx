@@ -38,7 +38,7 @@ function Table({ head, rows, moneyCols = [] }: { head: string[]; rows: (string |
   )
 }
 
-export default function AccountantReportView({ data, downloadHref, kicker = 'تقرير المحاسب' }: { data: any; downloadHref: string; kicker?: string }) {
+export default function AccountantReportView({ data, downloadHref, kicker = 'تقرير المحاسب', onRequest }: { data: any; downloadHref: string; kicker?: string; onRequest?: (inv: any) => void }) {
   const r = data.report, t = data.totals
   const has = (s: string) => r.sections.includes(s)
   const multi = !r.branchName
@@ -69,9 +69,10 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
         {t.taxVerified > 0 && <span style={{ color: '#059669' }}> · {t.taxVerified} موثقة من باركود الهيئة</span>}
       </div>}
       {t.taxMismatch > 0 && <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: '#dc2626' }}>⚠️ {t.taxMismatch} فاتورة مبلغها المسجّل أكبر من الأصلية — راجعها</div>}
-      <Table head={['التاريخ', 'رقم الفاتورة', 'المورد', 'الرقم الضريبي', 'الضريبة', 'الإجمالي', 'الحالة', 'الفاتورة']} moneyCols={[4, 5]}
+      <Table head={['التاريخ', 'رقم الفاتورة', 'المورد', 'الرقم الضريبي', 'الضريبة', 'الإجمالي', 'الحالة', 'الفاتورة', ...(onRequest ? [''] : [])]} moneyCols={[4, 5]}
         rows={taxInvoices(r.purchases).map(i => [i.date, i.invoiceNumber || '—', i.supplier || '—', i.supplierVat || '—', i.vat, i.total, (i.mismatch ? '⚠️ أكبر من الأصلية · ' : '') + (!i.complete ? `ناقص: ${i.missing.filter(m => m !== 'صورة الفاتورة').join('، ')}` : i.verified ? '✓ موثقة' : '✓ مكتملة'),
-          i.invoiceUrl && /^https:\/\//.test(i.invoiceUrl) ? <a href={i.invoiceUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>عرض</a> : '—'])} />
+          i.invoiceUrl && /^https:\/\//.test(i.invoiceUrl) ? <a href={i.invoiceUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>عرض</a> : '—',
+          ...(onRequest ? [<button key="rq" onClick={() => onRequest(i)} style={{ fontSize: 12, fontWeight: 800, color: colors.primary, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, borderRadius: 8, padding: '4px 9px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>اطلب</button>] : [])])} />
     </Card>}
 
     {has('purchases') && <Card title={`المشتريات (${invoicesLabel(t.invoices)})`}>

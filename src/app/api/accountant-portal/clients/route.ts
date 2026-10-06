@@ -23,8 +23,11 @@ export async function GET(req: Request) {
 
     const { data: rows } = await db.from('accountant_access').select('org_id,branch_id,sections,vat_registered,last_view_at,expires_on,organizations(name),branches(name)')
       .eq('accountant_id', me.id).eq('status', 'active')
+    const { data: reqs } = await db.from('accountant_requests').select('org_id,status').eq('accountant_id', me.id).neq('status', 'resolved')
+    const reqCount = (orgId: string, st: string) => ((reqs || []) as any[]).filter(r => r.org_id === orgId && r.status === st).length
     const clients = await mapLimit((rows || []) as any[], 4, async a => {
-      const base = { org_id: a.org_id, name: a.organizations?.name || '—', branch: a.branches?.name || null, sections: a.sections, expires_on: a.expires_on || null }
+      const base = { org_id: a.org_id, name: a.organizations?.name || '—', branch: a.branches?.name || null, sections: a.sections, expires_on: a.expires_on || null,
+        requests: { open: reqCount(a.org_id, 'open'), answered: reqCount(a.org_id, 'answered') } }
       if (accessExpired(a.expires_on)) return { ...base, expired: true }
       if (!(await isSubscriptionActive(db, a.org_id))) return { ...base, inactive: true }
       const sections = LIGHT.filter(s => a.sections.includes(s))

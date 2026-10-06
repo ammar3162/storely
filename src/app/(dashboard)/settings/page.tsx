@@ -9,6 +9,7 @@ import { PLAN_PRICING, planKeyOf, billLines } from '@/lib/planPricing'
 import { colors, radius, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import AccountantLinkSettings from '@/components/AccountantLinkSettings'
 import AccountantPortalAccess from '@/components/AccountantPortalAccess'
+import OwnerAccountantRequests from '@/components/OwnerAccountantRequests'
 
 const lbl: React.CSSProperties = { fontSize: font.xs, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }
 
@@ -112,6 +113,7 @@ export default function SettingsPage() {
   const [pwSaving, setPwSaving]         = useState(false)
   const [pwMsg, setPwMsg]               = useState<{ok:boolean;text:string}|null>(null)
   const [activeTab, setActiveTab]       = useState('org')
+  useEffect(()=>{ const t=new URLSearchParams(window.location.search).get('tab'); if(t&&TABS.some(x=>x.key===t)) setActiveTab(t) },[])
   const [visible, setVisible]           = useState(false)
   const [countryCode, setCountryCode]   = useState('+966')
   const [logoUrl, setLogoUrl]           = useState<string|null>(null)
@@ -392,7 +394,7 @@ export default function SettingsPage() {
 
         <div style={{padding:22}}>
 
-          {activeTab==='accountant'&&isOwner&&orgId&&<><AccountantPortalAccess orgId={orgId}/><AccountantLinkSettings orgId={orgId}/></>}
+          {activeTab==='accountant'&&isOwner&&orgId&&<><OwnerAccountantRequests orgId={orgId}/><AccountantPortalAccess orgId={orgId}/><AccountantLinkSettings orgId={orgId}/></>}
 
           {/* ORG TAB */}
           {activeTab==='account'&&(

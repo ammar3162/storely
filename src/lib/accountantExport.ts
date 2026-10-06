@@ -21,7 +21,8 @@ export type AccPurchase = { date: string; branch?: string | null; supplier: stri
 // فاتورة ضريبية = أصناف نفس الفاتورة مجموعة بسطر واحد (اللي فيها ضريبة بس)
 export type TaxInvoice = { date: string; branch?: string | null; invoiceNumber: string | null; supplier: string | null; supplierVat: string | null
   items: number; net: number; vat: number; total: number; invoiceUrl: string | null; complete: boolean; missing: string[]
-  verified: boolean; mismatch: boolean }   // verified = من باركود الهيئة · mismatch = المسجّل أكبر من الأصلية
+  verified: boolean; mismatch: boolean     // verified = من باركود الهيئة · mismatch = المسجّل أكبر من الأصلية
+  group: string | null; firstId: string | null }   // لربط طلبات المحاسب بالفاتورة
 
 const VAT_RE = /^3\d{13}3$/
 export function taxInvoices(purchases: AccPurchase[]): TaxInvoice[] {
@@ -31,7 +32,7 @@ export function taxInvoices(purchases: AccPurchase[]): TaxInvoice[] {
     // الفواتير الجديدة مربوطة بـ group؛ القديمة: نفس الصورة + المورد + التاريخ = نفس الفاتورة
     const key = p.group || `${p.date}|${p.supplier || ''}|${p.invoiceUrl || p.id || Math.random()}`
     const e = map.get(key) || { date: p.date, branch: p.branch, invoiceNumber: p.invoiceNumber || null, supplier: p.supplier, supplierVat: p.supplierVat || null,
-      items: 0, net: 0, vat: 0, total: 0, invoiceUrl: p.invoiceUrl, complete: false, missing: [], verified: false, mismatch: false }
+      items: 0, net: 0, vat: 0, total: 0, invoiceUrl: p.invoiceUrl, complete: false, missing: [], verified: false, mismatch: false, group: p.group || null, firstId: p.id || null }
     e.items++; e.net = r2(e.net + p.net); e.vat = r2(e.vat + p.vat); e.total = r2(e.total + p.total)
     e.verified ||= !!p.verified; e.mismatch ||= !!p.mismatch
     e.invoiceNumber ||= p.invoiceNumber || null; e.supplierVat ||= p.supplierVat || null; e.invoiceUrl ||= p.invoiceUrl

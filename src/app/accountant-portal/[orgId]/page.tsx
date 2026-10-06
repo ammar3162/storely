@@ -5,6 +5,7 @@ import { Loader2, ChevronRight } from 'lucide-react'
 import { colors, font } from '@/lib/ds'
 import { PortalShell, PeriodBar, presetRange } from '@/components/accountant/PortalShell'
 import AccountantReportView from '@/components/accountant/AccountantReportView'
+import AccountantRequestsPanel, { RequestDialog, type RequestTarget } from '@/components/accountant/AccountantRequests'
 
 // صفحة منشأة في بوابة المحاسب — قراءة فقط، بالأقسام اللي سمح فيها المالك
 export default function PortalClientPage() {
@@ -19,6 +20,8 @@ export default function PortalClientPage() {
   const [email, setEmail] = useState<string>()
   const [data, setData] = useState<any>(null)
   const [error, setError] = useState('')
+  const [reqTarget, setReqTarget] = useState<RequestTarget | null | undefined>(undefined)   // undefined = مقفل، null = طلب عام
+  const [reqKey, setReqKey] = useState(0)
 
   useEffect(() => { fetch('/api/accountant-portal/me').then(r => r.json()).then(j => j.success ? setEmail(j.accountant.email) : router.replace('/accountant-portal')).catch(() => {}) }, [router])
   useEffect(() => {
@@ -36,7 +39,12 @@ export default function PortalClientPage() {
       {range && <PeriodBar from={range.from} to={range.to} onChange={setRange} />}
       {error ? <div style={{ color: colors.danger, fontSize: 14, padding: 20 }}>{error}</div>
         : !data ? <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}><Loader2 size={24} color={colors.primary} style={{ animation: 'spin .8s linear infinite' }} /><style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style></div>
-        : <AccountantReportView data={data} kicker="بوابة المحاسب" downloadHref={`/api/accountant-portal/report?org_id=${orgId}&from=${range!.from}&to=${range!.to}&format=xlsx`} />}
+        : <>
+          <AccountantRequestsPanel orgId={orgId} refreshKey={reqKey} onNew={() => setReqTarget(null)} />
+          <AccountantReportView data={data} kicker="بوابة المحاسب" downloadHref={`/api/accountant-portal/report?org_id=${orgId}&from=${range!.from}&to=${range!.to}&format=xlsx`}
+            onRequest={inv => setReqTarget({ invoice_group: inv.group, purchase_id: inv.firstId, label: `${inv.supplier || '—'} · ${inv.date} · ${Number(inv.total).toFixed(2)}${inv.invoiceNumber ? ` · ${inv.invoiceNumber}` : ''}` })} />
+        </>}
+      {reqTarget !== undefined && <RequestDialog orgId={orgId} target={reqTarget} onClose={() => setReqTarget(undefined)} onSent={() => setReqKey(k => k + 1)} />}
     </PortalShell>
   )
 }

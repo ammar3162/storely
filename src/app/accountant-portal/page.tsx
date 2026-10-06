@@ -148,6 +148,10 @@ export default function AccountantPortalPage() {
                       : t.taxInvoices ? '✓ الفواتير الضريبية مكتملة' : 'ما فيه فواتير ضريبية بهذي الفترة'}
                   </div>
                 </>) : <div style={{ fontSize: 12.5, color: colors.text3 }}>افتح المنشأة لعرض التفاصيل</div>}
+                {!locked && (c.requests?.open || c.requests?.answered) ? <div style={{ fontSize: 12, marginTop: 6, fontWeight: 700 }}>
+                  {c.requests.answered ? <span style={{ color: '#1d4ed8' }}>💬 {c.requests.answered} رد جديد </span> : null}
+                  {c.requests.open ? <span style={{ color: '#b45309' }}>🟡 {c.requests.open} طلب بانتظار الرد</span> : null}
+                </div> : null}
                 {!locked && c.expires_on && <div style={{ fontSize: 11.5, color: colors.text4, marginTop: 6 }}>الإذن لين <span dir="ltr">{c.expires_on}</span></div>}
               </div>
             )
