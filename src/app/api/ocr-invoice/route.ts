@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { normalizeVat, isValidVat, normalizeInvoiceNumber } from '@/lib/taxInvoice'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
+import { staffHasPermission, NO_PURCHASES } from '@/lib/staffPermission'
+import { createClient } from '@supabase/supabase-js'
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!
 
@@ -21,6 +23,9 @@ export async function POST(req: Request) {
     const staffAuth = await verifyStaffToken(extractStaffToken(req))
     if (staffAuth.valid) {
       if (staffAuth.data!.org_id !== org_id) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
+      // القراءة الذكية لها تكلفة — للموظف اللي عنده صلاحية المشتريات بس
+      const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+      if (!(await staffHasPermission(db, staffAuth.data!.staff_id, org_id, 'purchases'))) return NextResponse.json({ error: NO_PURCHASES }, { status: 403 })
     } else {
       const ownerAuth = await verifyOrgAccess(org_id)
       if (!ownerAuth.authorized) return NextResponse.json({ error: ownerAuth.error }, { status: ownerAuth.status })

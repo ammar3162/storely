@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { netFromTotal } from '@/lib/vat'
 import { resolvePurchaseTax, notifyQrMismatch } from '@/lib/taxInvoice'
+import { staffHasPermission, NO_PURCHASES } from '@/lib/staffPermission'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 
@@ -34,6 +35,7 @@ export async function POST(req: Request) {
     }
 
     const supabase = sb()
+    if (!(await staffHasPermission(supabase, staff_id, org_id, 'purchases'))) return NextResponse.json({ error: NO_PURCHASES }, { status: 403 })
     const tax = await resolvePurchaseTax(supabase, org_id, supplier || null, body, hasVat, Number.isFinite(total) && total > 0 ? total : amount)
     if (!tax.ok) return NextResponse.json({ error: tax.error }, { status: tax.status })
 
@@ -109,7 +111,8 @@ async function addToAssignedProducts(supabase: any, staffId: string, productId: 
   try {
     const { data: staff } = await supabase.from('staff_members').select('assigned_products').eq('id', staffId).single()
     const assigned = staff?.assigned_products || []
-    if (!assigned.includes(productId)) {
+    // قائمة فاضية = يشوف كل المنتجات — إضافة منتج لها كانت تخليه ما يشوف غيره
+    if (assigned.length && !assigned.includes(productId)) {
       await supabase.from('staff_members').update({ assigned_products: [...assigned, productId] }).eq('id', staffId)
     }
   } catch {}
