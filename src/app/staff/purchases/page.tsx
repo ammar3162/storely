@@ -103,6 +103,7 @@ export default function StaffPurchasesPage() {
   const [readErr, setReadErr] = useState('')
   const [ocrItems, setOcrItems] = useState<{ name: string; qty?: number; unit?: string; total?: number }[]>([])
   const [bulkSaving, setBulkSaving] = useState(false)
+  const [bulkErr, setBulkErr] = useState('')
   const [products, setProducts] = useState<{ id: string; name: string; unit?: string }[]>([])   // لمطابقة أصناف الفاتورة
   function setZatca(z:ZatcaState){
     setZatcaState(z)
@@ -134,7 +135,7 @@ export default function StaffPurchasesPage() {
 
   function showToast(msg: string) {
     setToast(msg)
-    setTimeout(()=>setToast(''),3000)
+    setTimeout(()=>setToast(''),msg.startsWith('✅')?3000:6000)
   }
 
   async function loadSuppliers(orgId: string) {
@@ -186,16 +187,23 @@ export default function StaffPurchasesPage() {
 
   async function saveItems(rows: PickedItem[]) {
     if (!session || bulkSaving || !rows.length) return
-    if (!form.supplier.trim()) { showToast(pt('needSupplier', lang)); return }
-    if (rows.some(r => !(r.total > 0))) { showToast(pt('pickPrice', lang)); return }
-    if (rows.some(r => !Number.isInteger(r.qty))) { showToast(pt('needQty', lang)); return }
+    const stop = (m: string) => { setBulkErr(m); showToast(m) }
+    setBulkErr('')
+    if (!form.supplier.trim()) {
+      // ننقله لخانة المورد عشان يشوفها
+      const el = document.querySelector<HTMLInputElement>('input[list="sup-list"]'); el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => el?.focus(), 350)
+      return stop(pt('needSupplier', lang))
+    }
+    if (rows.some(r => !(r.total > 0))) return stop(pt('pickPrice', lang))
+    if (rows.some(r => !Number.isInteger(r.qty))) return stop(pt('needQty', lang))
+    if (form.hasVat !== 'no' && !form.invoice_image) return stop(uploading ? (lang === 'en' ? 'Wait — the photo is still uploading' : 'انتظر — الصورة لسا ترتفع') : pt('invoiceRequired', lang))
     setBulkSaving(true)
     const res = await fetch('/api/staff-purchase/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('staff_token')}` },
       body: JSON.stringify({ supplier: form.supplier, has_vat: form.hasVat !== 'no', invoice_image: form.invoice_image || null,
         invoice_number: form.invoice_number || null, supplier_vat_number: form.supplier_vat_number || null, zatca_qr: zatca?.raw || null, items: rows }) })
     const j = await res.json().catch(() => ({}))
     setBulkSaving(false)
-    if (!res.ok || !j.success) { showToast(pt('errorPrefix', lang) + (j.error || '')); return }
+    if (!res.ok || !j.success) return stop(j.error || (lang === 'en' ? 'Could not save — try again' : 'ما انحفظت الفاتورة — حاول مرة ثانية'))
     showToast(`${pt('itemsSaved', lang)} — ${j.summary || j.saved}`)
     setTimeout(() => router.push('/staff/dispense'), 2200)
   }
@@ -261,7 +269,8 @@ export default function StaffPurchasesPage() {
       {/* Header */}
       <StaffHeader title={pt('title',lang)} subtitle={`${session.name} · ${session.org_name}`} rtl={lang!=='en'} />
 
-      {toast&&<div style={{background:toast.startsWith('✅')?C.primaryL:C.dangerL,color:toast.startsWith('✅')?C.primary:C.danger,padding:'12px 20px',fontSize:13,fontWeight:700,textAlign:'center'}}>{toast}</div>}
+      {/* الرسالة ثابتة بأسفل الشاشة — كانت فوق الصفحة وما تبين لو الموظف نازل عند زر الحفظ */}
+      {toast&&<div role="status" style={{position:'fixed',left:16,right:16,bottom:20,zIndex:1000,maxWidth:520,margin:'0 auto',background:toast.startsWith('✅')?C.primaryL:C.dangerL,color:toast.startsWith('✅')?C.primary:C.danger,border:`1.5px solid ${toast.startsWith('✅')?C.primary:C.danger}`,borderRadius:12,padding:'12px 16px',fontSize:13.5,fontWeight:800,textAlign:'center',boxShadow:'0 10px 30px rgba(0,0,0,.18)'}}>{toast}</div>}
 
       <div style={{padding:'16px 20px',maxWidth:520,margin:'0 auto'}}>
         {/* صوّر الفاتورة — كاميرا أو من الصور */}
@@ -374,7 +383,7 @@ export default function StaffPurchasesPage() {
 
           {/* الفاتورة فيها أكثر من صنف */}
           {multi&&<InvoiceItemsPicker items={ocrItems} products={products} lang={lang} invoiceTotal={zatca?.inv.total ?? (Number(form.total_amount)||null)}
-            saving={bulkSaving} onSave={saveItems} color={C.primary}/>}
+            saving={bulkSaving} onSave={saveItems} color={C.primary} error={bulkErr}/>}
 
           {/* ملاحظة */}
           <div style={{marginBottom:16}}>

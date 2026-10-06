@@ -14,9 +14,9 @@ const T = {
     to: 'Add to', newItem: '➕ New item', matched: 'In stock', sum: 'Selected total', inv: 'Invoice total', save: 'Save invoice', saving: 'Saving...' },
 }
 
-export default function InvoiceItemsPicker({ items, products, invoiceTotal, lang = 'ar', saving, onSave, color = '#0f766e' }: {
+export default function InvoiceItemsPicker({ items, products, invoiceTotal, lang = 'ar', saving, onSave, color = '#0f766e', error }: {
   items: OcrItem[]; products: { id: string; name: string; unit?: string | null }[]; invoiceTotal?: number | null
-  lang?: 'ar' | 'en'; saving?: boolean; onSave: (rows: PickedItem[]) => void; color?: string
+  lang?: 'ar' | 'en'; saving?: boolean; onSave: (rows: PickedItem[]) => void; color?: string; error?: string
 }) {
   const t = T[lang]
   const [rows, setRows] = useState<Row[]>([])
@@ -60,6 +60,7 @@ export default function InvoiceItemsPicker({ items, products, invoiceTotal, lang
         <span>{t.sum}: <b dir="ltr">{fmt(sum)}</b></span>
         {invoiceTotal ? <span style={{ color: Math.abs(sum - invoiceTotal) > 0.5 ? '#b45309' : '#059669' }}>{t.inv}: <b dir="ltr">{fmt(invoiceTotal)}</b></span> : null}
       </div>
+      {error && <div role="alert" style={{ marginTop: 10, padding: '9px 12px', borderRadius: 10, background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontSize: 13, fontWeight: 700 }}>⚠️ {error}</div>}
       <button type="button" disabled={saving || !picked}
         onClick={() => onSave(rows.map((r, i) => ({ r, it: items[i] })).filter(x => x.r.on).map(({ r, it }) => ({
           name: it.name, qty: Number(r.qty) || 0, unit: it.unit || 'قطعة', total: Number(r.price) || 0, product_id: r.target })))}

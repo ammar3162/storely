@@ -44,11 +44,11 @@ function RequestCard({ r, orgId, onDone }: { r: any; orgId: string; onDone: () =
       {r.owner_reply && <div style={{ fontSize: 12.5, marginTop: 6, color: colors.text3, whiteSpace: 'pre-line' as const }}>ردك: {r.owner_reply}</div>}
       {r.status !== 'resolved' && <div style={{ marginTop: 8 }}>
         {canFix && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 6, marginBottom: 6 }}>
-          <input value={invNo} onChange={e => setInvNo(e.target.value)} placeholder="رقم الفاتورة" dir="ltr" maxLength={50} style={inp()} />
-          <input value={vat} onChange={e => setVat(e.target.value)} placeholder="الرقم الضريبي للمورد 3xxxxxxxxxxxxx3" dir="ltr" inputMode="numeric" maxLength={20} style={{ ...inp(), ...(vatBad ? { borderColor: colors.danger } : {}) }} />
+          <input value={invNo} onChange={e => setInvNo(e.target.value)} placeholder="رقم الفاتورة" maxLength={50} style={inp()} />
+          <input value={vat} onChange={e => setVat(e.target.value)} placeholder="الرقم الضريبي للمورد" inputMode="numeric" maxLength={20} style={{ ...inp(), ...(vatBad ? { borderColor: colors.danger } : {}) }} />
         </div>}
         <div style={{ display: 'flex', gap: 6 }}>
-          <input value={reply} onChange={e => setReply(e.target.value)} maxLength={500} placeholder={canFix ? 'ردك (اختياري لو كمّلت البيانات)' : 'اكتب ردك للمحاسب'} style={{ ...inp(), flex: 1 }} />
+          <input value={reply} onChange={e => setReply(e.target.value)} maxLength={500} placeholder={canFix ? 'ردك (اختياري)' : 'اكتب ردك للمحاسب'} style={{ ...inp(), flex: 1 }} />
           <button onClick={send} disabled={busy} style={{ ...btnPrimary, padding: '9px 16px', opacity: busy ? .6 : 1 }}>{busy ? '...' : 'إرسال'}</button>
         </div>
       </div>}

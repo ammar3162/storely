@@ -41,7 +41,8 @@ export async function POST(req: Request) {
     if (saved && tax.alert) await notifyQrMismatch(db, org_id, branch_id || null, tax.alert, staffName)
     if (!saved) return NextResponse.json({ error: 'ما انحفظ شي — حاول مرة ثانية', results }, { status: 500 })
     return NextResponse.json({ success: true, saved, results, summary: itemsSummary(results) })
-  } catch {
+  } catch (e: any) {
+    console.error('STAFF_BULK_FAILED', e?.message)
     return NextResponse.json({ error: 'حدث خطأ، حاول مرة ثانية' }, { status: 500 })
   }
 }
