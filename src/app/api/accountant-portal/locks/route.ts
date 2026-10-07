@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { currentAccountant, accessFor } from '@/lib/accountantPortalAuth'
+import { currentAccountant, accessFor, accessExpired } from '@/lib/accountantPortalAuth'
 import { closedMonths, isClosedMonth, monthName } from '@/lib/periodLock'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -17,7 +17,20 @@ async function guard(req: Request, orgId: unknown) {
 // آخر ١٢ شهر خلصت وحالة كل واحد
 export async function GET(req: Request) {
   try {
-    const g = await guard(req, new URL(req.url).searchParams.get('org_id')); if (g.error) return g.error
+    const { searchParams } = new URL(req.url)
+    if (searchParams.get('all') === '1') {
+      const db = sb()
+      const me = await currentAccountant(db, req)
+      if (!me) return NextResponse.json({ error: 'سجّل دخولك' }, { status: 401 })
+      const months = closedMonths(6)
+      const { data: acc } = await db.from('accountant_access').select('org_id,expires_on,organizations(name,logo_url)').eq('accountant_id', me.id).eq('status', 'active')
+      const orgs = ((acc || []) as any[]).filter(a => !accessExpired(a.expires_on))
+      const { data: locks } = orgs.length ? await db.from('period_locks').select('org_id,month,locked_by_name,locked_at').in('org_id', orgs.map(o => o.org_id)).in('month', months) : { data: [] }
+      return NextResponse.json({ success: true, months: months.map(m => ({ month: m, label: monthName(m) })),
+        orgs: orgs.map(o => ({ org_id: o.org_id, name: o.organizations?.name || '—', logo_url: o.organizations?.logo_url || null,
+          locked: Object.fromEntries(((locks || []) as any[]).filter(l => l.org_id === o.org_id).map(l => [l.month, { by: l.locked_by_name, at: l.locked_at }])) })) })
+    }
+    const g = await guard(req, searchParams.get('org_id')); if (g.error) return g.error
     const months = closedMonths(12)
     const { data } = await g.db.from('period_locks').select('month,locked_by_name,locked_at').eq('org_id', g.access.org_id).in('month', months)
     const map = new Map(((data || []) as any[]).map(l => [l.month, l]))

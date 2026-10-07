@@ -344,13 +344,30 @@ export default function SettingsPage() {
   )
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:640,margin:'0 auto',opacity:visible?1:0,transition:'opacity .4s ease',position:'relative'}}>
+    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1280,margin:'0 auto',opacity:visible?1:0,transition:'opacity .4s ease',position:'relative'}}>
       <style>{`
         @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
         .su{animation:slideUp .4s ease both}
         input:focus,select:focus,textarea:focus{border-color:${colors.primary}!important;box-shadow:0 0 0 3px ${colors.primaryLight}!important}
         .tab-btn{padding:10px 0;border:none;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;border-bottom:2.5px solid transparent}
         .tab-btn.active{border-bottom-color:${colors.primary}}
+        /* الكمبيوتر: التبويبات قائمة جانبية والمحتوى بعرض كامل */
+        .set-shell{display:block}
+        .set-body{padding:22px}
+        .set-narrow{max-width:760px}
+        .acc-grid{display:block}
+        @media (min-width:1000px){
+          .set-shell{display:grid;grid-template-columns:220px 1fr}
+          .set-tabs{flex-direction:column!important;border-bottom:none!important;border-left:1px solid ${colors.border};padding:12px 10px;gap:2px;overflow:visible!important}
+          .set-tabs .tab-btn{flex:none;flex-direction:row;justify-content:flex-start;gap:10px;padding:11px 14px;border-bottom:none;border-radius:10px}
+          .set-tabs .tab-btn span:last-child{font-size:13.5px!important}
+          .set-tabs .tab-btn:hover{background:${colors.bg}}
+          .set-tabs .tab-btn.active{background:${colors.primaryLight};border-bottom:none}
+          .set-body{padding:26px 30px}
+        }
+        @media (min-width:1280px){
+          .acc-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+        }
         .day-btn{padding:8px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid ${colors.border};background:${colors.surface};color:${colors.text3};font-family:inherit;transition:all .15s}
         .day-btn.active{border-color:${colors.primary};background:${colors.primaryLight};color:${colors.primary}}
         .sched-btn{padding:14px 8px;border-radius:${radius.md};cursor:pointer;border:1.5px solid ${colors.border};background:${colors.surface};color:${colors.text3};font-size:${font.sm};font-weight:700;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;transition:all .2s}
@@ -381,8 +398,8 @@ export default function SettingsPage() {
       )}
 
       {/* Tabs */}
-      <div className="su" style={{...card,overflow:'hidden',marginBottom:16,animationDelay:'.1s'}}>
-        <div style={{display:'flex',borderBottom:`1px solid ${colors.border}`,overflowX:'auto',scrollbarWidth:'none'}}>
+      <div className="su set-shell" style={{...card,overflow:'hidden',marginBottom:16,animationDelay:'.1s'}}>
+        <div className="set-tabs" style={{display:'flex',borderBottom:`1px solid ${colors.border}`,overflowX:'auto',scrollbarWidth:'none'}}>
           {TABS.filter((t:any)=>!t.ownerOnly||isOwner).map(t=>(
             <button key={t.key} className={`tab-btn${activeTab===t.key?' active':''}`}
               onClick={()=>setActiveTab(t.key)}
@@ -393,9 +410,14 @@ export default function SettingsPage() {
           ))}
         </div>
 
-        <div style={{padding:22}}>
+        <div className="set-body">
 
-          {activeTab==='accountant'&&isOwner&&orgId&&<><OwnerAccountantRequests orgId={orgId}/><OwnerPeriodLocks orgId={orgId}/><AccountantPortalAccess orgId={orgId}/><AccountantLinkSettings orgId={orgId}/></>}
+          {activeTab==='accountant'&&isOwner&&orgId&&<div className="acc-grid">
+            <div><OwnerAccountantRequests orgId={orgId}/><OwnerPeriodLocks orgId={orgId}/><AccountantPortalAccess orgId={orgId}/></div>
+            <div><AccountantLinkSettings orgId={orgId}/></div>
+          </div>}
+
+          <div className="set-narrow">
 
           {/* ORG TAB */}
           {activeTab==='account'&&(
@@ -727,6 +749,7 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
+          </div>
 
         </div>
       </div>

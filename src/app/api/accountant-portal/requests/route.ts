@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { currentAccountant, accessFor } from '@/lib/accountantPortalAuth'
+import { currentAccountant, accessFor, accessExpired } from '@/lib/accountantPortalAuth'
 import { REQUEST_KINDS, isKind, validateTarget, withTargets, MAX_OPEN_PER_ORG } from '@/lib/accountantRequests'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -18,7 +18,24 @@ async function guard(req: Request, orgId: unknown) {
 // طلبات المحاسب على منشأة
 export async function GET(req: Request) {
   try {
-    const g = await guard(req, new URL(req.url).searchParams.get('org_id')); if (g.error) return g.error
+    const orgParam = new URL(req.url).searchParams.get('org_id')
+    if (!orgParam) {
+      // كل الطلبات عند كل المنشآت المفعّلة
+      const db = sb()
+      const me = await currentAccountant(db, req)
+      if (!me) return NextResponse.json({ error: 'سجّل دخولك' }, { status: 401 })
+      const { data: acc } = await db.from('accountant_access').select('org_id,expires_on,organizations(name,logo_url)').eq('accountant_id', me.id).eq('status', 'active')
+      const orgs = ((acc || []) as any[]).filter(a => !accessExpired(a.expires_on))
+      if (!orgs.length) return NextResponse.json({ success: true, requests: [] })
+      const { data } = await db.from('accountant_requests').select('org_id,' + FIELDS).eq('accountant_id', me.id).in('org_id', orgs.map(o => o.org_id)).order('created_at', { ascending: false }).limit(200)
+      const out: any[] = []
+      for (const o of orgs) {
+        const rows = ((data || []) as any[]).filter(r => r.org_id === o.org_id)
+        if (rows.length) out.push(...(await withTargets(db, o.org_id, rows)).map(r => ({ ...r, org_name: o.organizations?.name || '—', org_logo: o.organizations?.logo_url || null })))
+      }
+      return NextResponse.json({ success: true, requests: out.sort((a, b) => b.created_at.localeCompare(a.created_at)) })
+    }
+    const g = await guard(req, orgParam); if (g.error) return g.error
     const { data } = await g.db.from('accountant_requests').select(FIELDS).eq('org_id', g.access.org_id).eq('accountant_id', g.me.id).order('created_at', { ascending: false }).limit(100)
     return NextResponse.json({ success: true, requests: await withTargets(g.db, g.access.org_id, (data || []) as any[]) })
   } catch {

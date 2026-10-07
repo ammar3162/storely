@@ -38,7 +38,8 @@ export async function GET(req: Request) {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="report.xlsx"; filename*=UTF-8''${encodeURIComponent(name)}` } })
     }
-    return NextResponse.json({ success: true, report, totals: summarize(report) }, { headers })
+    const { data: org } = await db.from('organizations').select('logo_url').eq('id', access.org_id).maybeSingle()
+    return NextResponse.json({ success: true, report, totals: summarize(report), logo_url: (org as any)?.logo_url || null }, { headers })
   } catch {
     return NextResponse.json({ error: 'تعذر تحميل التقرير، حاول مرة ثانية' }, { status: 500 })
   }
