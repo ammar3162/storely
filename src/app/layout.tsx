@@ -6,6 +6,7 @@ import PullToRefresh from '@/components/PullToRefresh'
 import ApiBridge from '@/components/ApiBridge'
 import { IN_APP_SCRIPT } from '@/lib/inApp'
 import type { Metadata } from "next"
+import Script from "next/script"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -67,6 +68,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <FeatureAnnouncement/>
         <PullToRefresh/>
         {children}
+        {/* Vercel Speed Insights: قياس سرعة الصفحات عند العملاء الحقيقيين (سكربت Vercel الرسمي — بدون مكتبة إضافية).
+            يشتغل بس على المشروع اللي مفعّلة فيه الخدمة، وغيره يتجاهله */}
+        <Script src="/_vercel/speed-insights/script.js" strategy="afterInteractive" />
       </body>
     </html>
   )
