@@ -7,10 +7,7 @@ import { api } from '@/lib/api-client'
 import { getMe } from '@/lib/session'
 import { PLAN_PRICING, planKeyOf, billLines } from '@/lib/planPricing'
 import { colors, radius, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
-import AccountantLinkSettings from '@/components/AccountantLinkSettings'
-import AccountantPortalAccess from '@/components/AccountantPortalAccess'
-import OwnerAccountantRequests from '@/components/OwnerAccountantRequests'
-import OwnerPeriodLocks from '@/components/OwnerPeriodLocks'
+import AccountantHub from '@/components/AccountantHub'
 
 const lbl: React.CSSProperties = { fontSize: font.xs, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }
 
@@ -412,9 +409,8 @@ export default function SettingsPage() {
 
         <div className="set-body">
 
-          {activeTab==='accountant'&&isOwner&&orgId&&<div className="acc-grid">
-            <div><OwnerAccountantRequests orgId={orgId}/><OwnerPeriodLocks orgId={orgId}/><AccountantPortalAccess orgId={orgId}/></div>
-            <div><AccountantLinkSettings orgId={orgId}/></div>
+          {activeTab==='accountant'&&isOwner&&orgId&&<div>
+            <AccountantHub orgId={orgId}/>
           </div>}
 
           <div className="set-narrow">

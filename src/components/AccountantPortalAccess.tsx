@@ -14,11 +14,12 @@ const chip = (on: boolean): React.CSSProperties => ({ padding: '5px 11px', borde
   border: `1.5px solid ${on ? colors.primary : colors.border}`, background: on ? colors.primaryLight : colors.surface, color: on ? colors.primary : colors.text3 })
 const todaySA = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
 const ago = (iso: string) => {
+  if (!iso || isNaN(Date.parse(iso))) return ''
   const m = Math.round((Date.now() - Date.parse(iso)) / 60000)
   return m < 60 ? `قبل ${Math.max(1, m)} دقيقة` : m < 1440 ? `قبل ${Math.round(m / 60)} ساعة` : `قبل ${Math.round(m / 1440)} يوم`
 }
 
-export default function AccountantPortalAccess({ orgId }: { orgId: string }) {
+export default function AccountantPortalAccess({ orgId, onChange }: { orgId: string; onChange?: () => void }) {
   const [list, setList] = useState<any[]>([])
   const [logs, setLogs] = useState<any[]>([])
   const [branches, setBranches] = useState<any[]>([])
@@ -29,6 +30,7 @@ export default function AccountantPortalAccess({ orgId }: { orgId: string }) {
   async function load() {
     const [j, b] = await Promise.all([api.get('/api/accountant-access', { org_id: orgId }), api.get('/api/branches', { org_id: orgId })])
     if (j.success) { setList(j.accountants || []); setLogs(j.logs || []) }
+    onChange?.()
     setBranches((b.branches || []).filter((x: any) => x.is_active !== false))
   }
   useEffect(() => { if (orgId) load() }, [orgId])
@@ -75,7 +77,7 @@ export default function AccountantPortalAccess({ orgId }: { orgId: string }) {
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
         <ShieldCheck size={20} color={colors.primary} style={{ flexShrink: 0, marginTop: 2 }} />
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 800 }}>بوابة المحاسب</div>
+          <div style={{ fontSize: 15, fontWeight: 800 }}>المحاسبين وصلاحياتهم</div>
           <div style={{ fontSize: 12.5, color: colors.text3, lineHeight: 1.7, marginTop: 2 }}>
             ادعُ محاسبك بإيميله — يوصله رابط «قبول الدعوة»، وأول ما يقبل يشوف بيانات منشأتك لأي فترة ويحمّلها إكسل. قراءة بس، وتسحب الإذن متى ما بغيت. مجانية.
           </div>

@@ -30,7 +30,7 @@ const chip = (on: boolean): React.CSSProperties => ({ display: 'inline-flex', al
   fontFamily: font.family, border: `1.5px solid ${on ? colors.primary : colors.border}`, background: on ? colors.primaryLight : colors.surface, color: on ? colors.primary : colors.text3 })
 const box: React.CSSProperties = { background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: radius.lg, padding: 16, marginBottom: 12 }
 
-export default function AccountantLinkSettings({ orgId }: { orgId: string }) {
+export default function AccountantLinkSettings({ orgId, onChange }: { orgId: string; onChange?: () => void }) {
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState<Form>(EMPTY)
   const [saved, setSaved] = useState<any>(null)        // آخر نسخة محفوظة
@@ -58,6 +58,7 @@ export default function AccountantLinkSettings({ orgId }: { orgId: string }) {
     }
     setBranches((b.branches || []).filter((x: any) => x.is_active !== false))
     setLoading(false)
+    onChange?.()
   }
   useEffect(() => { if (orgId) load() }, [orgId])
 
