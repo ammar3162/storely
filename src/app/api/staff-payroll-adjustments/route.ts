@@ -5,6 +5,7 @@ import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { markRefNotificationsRead } from '@/lib/requestRefs'
 import { sendWhatsAppMessage, formatPhone } from '@/lib/whatsapp'
+import { ownerWhatsapp } from '@/lib/ownerContact'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -107,9 +108,9 @@ export async function POST(req: Request) {
       } as any)
 
       // إشعار واتساب للمالك
-      const { data: owner } = await supabase.from('profiles').select('phone').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
-      if ((owner as any)?.phone) {
-        await sendWhatsAppMessage(formatPhone((owner as any).phone),
+      const ownerWa = await ownerWhatsapp(supabase, org_id)   // رقم واتساب المنشأة اللي حدده المالك
+      if (ownerWa) {
+        await sendWhatsAppMessage(ownerWa!,
           `💰 *طلب سلفة جديد*\n\n${staffName} يطلب سلفة بمبلغ *${amountNum} ر.س*${reason ? `\nالسبب: ${reason}` : ''}\n\nراجع الطلب من لوحة "إدارة الموظفين" بحساب Storely.`
         )
       }
