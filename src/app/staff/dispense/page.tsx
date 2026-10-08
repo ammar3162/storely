@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
+import NumberInput from '@/components/NumberInput'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getStaffOrg } from '@/lib/session'
 import { Wheat, Milk, SprayCan, CupSoda, Drumstick, Carrot, FileText, Package, Tag, Search, Globe, LogOut, Send, Boxes, ShoppingCart, ChevronLeft, CheckCircle2, Zap } from 'lucide-react'
@@ -710,7 +711,7 @@ function StaffPageInner() {
             <div style={{fontSize:18,fontWeight:800,color:'#0f172a',marginBottom:4}}>{editingProduct.name}</div>
             <div style={{fontSize:13,color:'#64748b',marginBottom:20}}>الكمية الحالية: <b>{editingProduct.qty}</b> {editingProduct.unit}</div>
             <div style={{fontSize:13,fontWeight:700,color:'#374151',marginBottom:8}}>الكمية الجديدة</div>
-            <input type="number" value={editQty} onChange={e=>setEditQty(e.target.value)} min="0" autoFocus
+            <NumberInput value={editQty} onChange={e=>setEditQty(e.target.value)} min="0" autoFocus
               style={{width:'100%',padding:'16px',border:'2px solid #e2e8f0',borderRadius:14,fontSize:28,fontWeight:800,textAlign:'center',fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:16}}/>
             <div style={{display:'flex',gap:8}}>
               <button onClick={updateQty} disabled={savingQty}
@@ -735,7 +736,7 @@ function StaffPageInner() {
               <input value={newProduct.name} onChange={e=>setNewProduct(p=>({...p,name:e.target.value}))} placeholder="اسم المنتج *" autoFocus
                 style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',boxSizing:'border-box' as const}}/>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                <input type="number" value={newProduct.qty} onChange={e=>setNewProduct(p=>({...p,qty:e.target.value}))} placeholder="الكمية *"
+                <NumberInput value={newProduct.qty} onChange={e=>setNewProduct(p=>({...p,qty:e.target.value}))} placeholder="الكمية *"
                   style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit'}}/>
                 <select value={newProduct.unit} onChange={e=>setNewProduct(p=>({...p,unit:e.target.value}))}
                   style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',background:'white'}}>

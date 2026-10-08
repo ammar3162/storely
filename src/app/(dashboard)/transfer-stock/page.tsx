@@ -1,5 +1,6 @@
 'use client'
 import PageIcon from '@/components/PageIcon'
+import NumberInput from '@/components/NumberInput'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
@@ -269,7 +270,7 @@ export default function TransferStockPage() {
           </div>
           <div>
             <label style={{fontSize:11,fontWeight:700,color:colors.text4,display:'block',marginBottom:5}}>الكمية{selectedProduct?` (${selectedProduct.unit})`:''}</label>
-            <input type="number" value={qty} onChange={e=>setQty(e.target.value)} style={inp()} placeholder="0"/>
+            <NumberInput value={qty} onChange={e=>setQty(e.target.value)} style={inp()} placeholder="0"/>
           </div>
           <button onClick={addToCart} disabled={!productId||!qty} style={{...btnSecondary,padding:'11px 18px',height:44,opacity:(!productId||!qty)?0.5:1,cursor:(!productId||!qty)?'not-allowed':'pointer'}}>
             + أضف

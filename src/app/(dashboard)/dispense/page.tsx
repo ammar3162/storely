@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
+import NumberInput from '@/components/NumberInput'
 import { useState, useEffect, useRef } from 'react'
 import { toast } from '@/components/toast'
 import { cache } from '@/lib/cache'
@@ -318,7 +319,7 @@ export default function DispensePage() {
               <div style={{marginBottom:14}}>
                 <div style={{display:'flex',alignItems:'center',gap:12,justifyContent:'center',marginBottom:10}}>
                   <button className="qbtn" onClick={()=>setQty(q=>String(Math.max(1,Number(q)-1)))}>−</button>
-                  <input type="number" min="1" value={qty} onChange={e=>setQty(e.target.value)} inputMode="numeric"
+                  <NumberInput min="1" value={qty} onChange={e=>setQty(e.target.value)} inputMode="numeric"
                     style={{width:88,padding:'8px',border:`2px solid ${C.border}`,borderRadius:12,fontSize:30,fontWeight:900,textAlign:'center',outline:'none',color:C.text,background:C.bg,fontFamily:'inherit'}}/>
                   <button className="qbtn" onClick={()=>setQty(q=>String(Number(q)+1))}>+</button>
                 </div>

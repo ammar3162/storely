@@ -1,5 +1,6 @@
 'use client'
 import PageIcon from '@/components/PageIcon'
+import NumberInput from '@/components/NumberInput'
 import { useState, useEffect, useRef } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -379,12 +380,12 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
                 </div>
                 <div>
                   <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:4 }}>يُطلب عند</label>
-                  <input type="number" value={reorderPoint} onChange={e=>setReorderPoint(e.target.value)}
+                  <NumberInput value={reorderPoint} onChange={e=>setReorderPoint(e.target.value)}
                     style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box' as const }} placeholder="5" />
                 </div>
                 <div>
                   <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:4 }}>كمية الطلب</label>
-                  <input type="number" value={orderQty} onChange={e=>setOrderQty(e.target.value)}
+                  <NumberInput value={orderQty} onChange={e=>setOrderQty(e.target.value)}
                     style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box' as const }} placeholder="20" />
                 </div>
               </div>

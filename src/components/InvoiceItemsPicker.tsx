@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
+import NumberInput from '@/components/NumberInput'
 import { bestMatch } from '@/lib/productMatch'
 
 // أصناف الفاتورة المقروءة من الصورة: لكل صنف الكمية والسعر و«ينضاف إلى» (صنف موجود تزيد كميته أو صنف جديد)
@@ -45,9 +46,9 @@ export default function InvoiceItemsPicker({ items, products, invoiceTotal, lang
             </label>
             {r.on && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6, paddingInlineStart: 25 }}>
               <label style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>{t.qty}{it.unit ? ` (${it.unit})` : ''}
-                <input type="number" min="0" step="any" inputMode="decimal" value={r.qty} onChange={e => set(i, { qty: e.target.value })} placeholder="0" style={{ ...inp, marginTop: 3 }} /></label>
+                <NumberInput min="0" step="any" inputMode="decimal" value={r.qty} onChange={e => set(i, { qty: e.target.value })} placeholder="0" style={{ ...inp, marginTop: 3 }} /></label>
               <label style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>{t.price}
-                <input type="number" min="0" step="0.01" inputMode="decimal" value={r.price} onChange={e => set(i, { price: e.target.value })} placeholder="0.00" style={{ ...inp, marginTop: 3 }} /></label>
+                <NumberInput min="0" step="0.01" inputMode="decimal" value={r.price} onChange={e => set(i, { price: e.target.value })} placeholder="0.00" style={{ ...inp, marginTop: 3 }} /></label>
               <select value={r.target} onChange={e => set(i, { target: e.target.value })} style={{ ...inp, gridColumn: '1 / -1', borderColor: isNew ? '#e2e8f0' : color, color: isNew ? '#334155' : color, fontWeight: 700 }}>
                 <option value="new">{t.newItem}</option>
                 {products.map(p => <option key={p.id} value={p.id}>{t.to}: {p.name}</option>)}

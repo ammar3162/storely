@@ -1,5 +1,6 @@
 'use client'
 import PageIcon from '@/components/PageIcon'
+import NumberInput from '@/components/NumberInput'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
@@ -578,19 +579,19 @@ export default function HRManagementPage() {
                       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
                         <div>
                           <label style={{fontSize:10,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>الراتب الأساسي</label>
-                          <input type="number" value={salaryForm.base} onChange={e=>setSalaryForm({...salaryForm,base:e.target.value})} style={{...inp(),fontSize:13}} placeholder="0"/>
+                          <NumberInput value={salaryForm.base} onChange={e=>setSalaryForm({...salaryForm,base:e.target.value})} style={{...inp(),fontSize:13}} placeholder="0"/>
                         </div>
                         <div>
                           <label style={{fontSize:10,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>بدل السكن</label>
-                          <input type="number" value={salaryForm.housing} onChange={e=>setSalaryForm({...salaryForm,housing:e.target.value})} style={{...inp(),fontSize:13}} placeholder="0"/>
+                          <NumberInput value={salaryForm.housing} onChange={e=>setSalaryForm({...salaryForm,housing:e.target.value})} style={{...inp(),fontSize:13}} placeholder="0"/>
                         </div>
                         <div>
                           <label style={{fontSize:10,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>بدل المواصلات</label>
-                          <input type="number" value={salaryForm.transport} onChange={e=>setSalaryForm({...salaryForm,transport:e.target.value})} style={{...inp(),fontSize:13}} placeholder="0"/>
+                          <NumberInput value={salaryForm.transport} onChange={e=>setSalaryForm({...salaryForm,transport:e.target.value})} style={{...inp(),fontSize:13}} placeholder="0"/>
                         </div>
                         <div>
                           <label style={{fontSize:10,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>بدل الأكل</label>
-                          <input type="number" value={salaryForm.food} onChange={e=>setSalaryForm({...salaryForm,food:e.target.value})} style={{...inp(),fontSize:13}} placeholder="0"/>
+                          <NumberInput value={salaryForm.food} onChange={e=>setSalaryForm({...salaryForm,food:e.target.value})} style={{...inp(),fontSize:13}} placeholder="0"/>
                         </div>
                       </div>
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:10}}>
@@ -629,7 +630,7 @@ export default function HRManagementPage() {
                           )}
                           <div style={{background:colors.bg,borderRadius:radius.md,padding:'14px',marginBottom:12}}>
                             <div style={{display:'grid',gridTemplateColumns:'1fr 2fr',gap:8,marginBottom:8}}>
-                              <input type="number" value={newAdjAmount} onChange={e=>setNewAdjAmount(e.target.value)} placeholder="المبلغ" style={{...inp(),fontSize:13}}/>
+                              <NumberInput value={newAdjAmount} onChange={e=>setNewAdjAmount(e.target.value)} placeholder="المبلغ" style={{...inp(),fontSize:13}}/>
                               <input value={newAdjReason} onChange={e=>setNewAdjReason(e.target.value)} placeholder="السبب (اختياري)" style={{...inp(),fontSize:13}}/>
                             </div>
                             <button onClick={()=>addDeduction(s.id)} disabled={savingAdj||!newAdjAmount} style={{...btnSecondary,width:'100%',padding:'9px',fontSize:13,opacity:(savingAdj||!newAdjAmount)?0.6:1}}>{savingAdj?'...':'+ إضافة خصم'}</button>

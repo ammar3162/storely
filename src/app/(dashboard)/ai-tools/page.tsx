@@ -1,5 +1,6 @@
 'use client'
 import PageIcon from '@/components/PageIcon'
+import NumberInput from '@/components/NumberInput'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
@@ -1202,12 +1203,12 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,branchId,editingR
           <div style={{fontSize:10,color:'#92400e',marginBottom:6}}>كم قطعة/وحدة بكل {rawMaterials.find(x=>x.id===newCompId)?.unit} واحد؟ (اختياري)</div>
           <div style={{display:'flex',gap:6}}>
             <input value={customSubLabel} onChange={(e:any)=>setCustomSubLabel(e.target.value)} placeholder="اسم الوحدة (مثال: رغيف)" style={{flex:2,padding:'7px',border:'1.5px solid #fde68a',borderRadius:7,fontSize:10}}/>
-            <input type="number" min="1" value={customSubCount} onChange={(e:any)=>setCustomSubCount(e.target.value)} placeholder="العدد" style={{flex:1,padding:'7px',border:'1.5px solid #fde68a',borderRadius:7,fontSize:10}}/>
+            <NumberInput min="1" value={customSubCount} onChange={(e:any)=>setCustomSubCount(e.target.value)} placeholder="العدد" style={{flex:1,padding:'7px',border:'1.5px solid #fde68a',borderRadius:7,fontSize:10}}/>
           </div>
         </div>
       )}
       <div style={{display:'flex',gap:6,marginBottom:16}}>
-        <input type="number" step="0.01" min="0" value={newCompQty} onChange={(e:any)=>setNewCompQty(e.target.value)} placeholder={customSubCount?`الكمية بـ${customSubLabel||'وحدة'}`:'الكمية'} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}/>
+        <NumberInput step="0.01" min="0" value={newCompQty} onChange={(e:any)=>setNewCompQty(e.target.value)} placeholder={customSubCount?`الكمية بـ${customSubLabel||'وحدة'}`:'الكمية'} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}/>
         {newCompId && (()=>{const r=rawMaterials.find(x=>x.id===newCompId);const opts=subUnitOptions(r);return opts.length>1 ? (
           <select value={newCompSubUnit} onChange={(e:any)=>setNewCompSubUnit(Number(e.target.value))} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}>
             {opts.map(o=>(<option key={o.label} value={o.factor}>{o.label}</option>))}
@@ -1236,7 +1237,7 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,branchId,editingR
               <div style={{display:'flex',gap:8,alignItems:'center'}}>
                 <div style={{flex:1}}>
                   <label style={{fontSize:10,color:'#115e59',display:'block',marginBottom:4}}>سعر البيع (اختياري)</label>
-                  <input type="number" min="0" step="0.01" value={sellPrice} onChange={(e:any)=>setSellPrice(e.target.value)} placeholder="مثال: 25" style={{width:'100%',padding:'7px 10px',border:'1px solid #99f6e4',borderRadius:7,fontSize:12}}/>
+                  <NumberInput min="0" step="0.01" value={sellPrice} onChange={(e:any)=>setSellPrice(e.target.value)} placeholder="مثال: 25" style={{width:'100%',padding:'7px 10px',border:'1px solid #99f6e4',borderRadius:7,fontSize:12}}/>
                 </div>
                 {foodCostPct!==null && (
                   <div style={{textAlign:'center' as const,padding:'4px 12px'}}>

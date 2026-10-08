@@ -1,5 +1,6 @@
 'use client'
 import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
+import NumberInput from '@/components/NumberInput'
 import TaxInvoiceFields, { type ZatcaState } from '@/components/TaxInvoiceFields'
 import InvoiceItemsPicker, { type PickedItem } from '@/components/InvoiceItemsPicker'
 import { zatcaFromImage, shrinkImage, blobToBase64 } from '@/lib/zatcaScan'
@@ -320,7 +321,7 @@ export default function StaffPurchasesPage() {
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
             <div>
               <label style={lbl}>{pt('quantity',lang)}</label>
-              <input style={inp} type="number" min="0" step="any" inputMode="decimal" value={form.qty} onChange={e=>setForm(f=>({...f,qty:e.target.value}))} placeholder="0"/>
+              <NumberInput style={inp} min="0" step="any" inputMode="decimal" value={form.qty} onChange={e=>setForm(f=>({...f,qty:e.target.value}))} placeholder="0"/>
             </div>
             <div>
               <label style={lbl}>{pt('unit',lang)}</label>
@@ -360,7 +361,7 @@ export default function StaffPurchasesPage() {
           {/* المبلغ */}
           {!multi&&<div style={{marginBottom:12}}>
             <label style={lbl}>{pt('totalAmount',lang)} ({curr}) *</label>
-            <input style={{...inp,fontSize:18,fontWeight:700,textAlign:'center' as const}} type="number" min="0" step="any" inputMode="decimal" value={form.total_amount} onChange={e=>setForm(f=>({...f,total_amount:e.target.value}))} placeholder="0.00" required/>
+            <NumberInput style={{...inp,fontSize:18,fontWeight:700,textAlign:'center' as const}} min="0" step="any" inputMode="decimal" value={form.total_amount} onChange={e=>setForm(f=>({...f,total_amount:e.target.value}))} placeholder="0.00" required/>
             {inputTotal>0&&form.hasVat&&(
               <div style={{display:'flex',gap:8,marginTop:6}}>
                 <div style={{flex:1,background:C.bg,borderRadius:8,padding:'8px 10px',textAlign:'center' as const}}>

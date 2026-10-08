@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import NumberInput from '@/components/NumberInput'
 import { colors, font, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { WEEKDAYS_AR, weekdayOf, scheduledOffDates, isScheduledOff } from '@/lib/daysOff'
@@ -74,7 +75,7 @@ export default function StaffDaysOffEditor({ staff, onPatch }: { staff: any; onP
 
         {mode === 'monthly' && (
           <>
-            <input type="number" min={0} max={15} defaultValue={staff.monthly_off_days ?? 0} key={staff.monthly_off_days ?? 0}
+            <NumberInput min={0} max={15} defaultValue={staff.monthly_off_days ?? 0} key={staff.monthly_off_days ?? 0}
               onBlur={e => { const n = Math.max(0, Math.min(15, Math.round(Number(e.target.value) || 0))); if (n !== Number(staff.monthly_off_days || 0)) onPatch({ monthly_off_days: n }) }}
               style={{ ...inp(), width: 70, padding: '5px 10px', fontSize: 12 }} />
             <span style={{ fontSize: 11.5, color: colors.text3 }}>أيام بالشهر — أي يوم ما يداوم فيه ينحسب إجازة لين يخلص رصيده، وبعدها غياب</span>

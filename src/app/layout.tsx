@@ -4,6 +4,7 @@ import PWAInstall from '@/components/PWAInstall'
 import FeatureAnnouncement from '@/components/FeatureAnnouncement'
 import PullToRefresh from '@/components/PullToRefresh'
 import ApiBridge from '@/components/ApiBridge'
+import DigitNormalizer from '@/components/DigitNormalizer'
 import { IN_APP_SCRIPT } from '@/lib/inApp'
 import type { Metadata } from "next"
 import Script from "next/script"
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ApiBridge/>
+        <DigitNormalizer/>
         <ToastContainer/>
         <ConfirmDialogContainer/>
         <PWAInstall/>

@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import NumberInput from '@/components/NumberInput'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
@@ -369,7 +370,7 @@ export default function SupplierDashboardShared() {
                     style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
                   <input value={unit} onChange={e=>setUnit(e.target.value)} placeholder="الوحدة (كيلو، قطعة...)"
                     style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
-                  <input type="number" value={price} onChange={e=>setPrice(e.target.value)} placeholder="السعر"
+                  <NumberInput value={price} onChange={e=>setPrice(e.target.value)} placeholder="السعر"
                     style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
                 </div>
                 <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10,background:'#f5f5f4',borderRadius:8,padding:'8px 10px'}}>
@@ -537,7 +538,7 @@ export default function SupplierDashboardShared() {
                         <div style={{fontSize:12,color:'#029FA2',fontWeight:700}}>سعرك المرسل: {r.quoted_price} ر.س</div>
                       ) : respondingId===r.id ? (
                         <div style={{display:'flex',gap:6,alignItems:'center'}}>
-                          <input type="number" value={respondPrice} onChange={e=>setRespondPrice(e.target.value)} placeholder="السعر"
+                          <NumberInput value={respondPrice} onChange={e=>setRespondPrice(e.target.value)} placeholder="السعر"
                             style={{width:90,padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',fontSize:12}}/>
                           <input value={respondNote} onChange={e=>setRespondNote(e.target.value)} placeholder="ملاحظة (اختياري)"
                             style={{flex:1,padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',fontSize:12}}/>
