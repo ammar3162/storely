@@ -77,3 +77,22 @@ export async function accessFor(db: SupabaseClient, accountantId: string, orgId:
 /** الإذن انتهى؟ (آخر يوم = expires_on نفسه) */
 export const accessExpired = (expiresOn: string | null | undefined, now = Date.now()) =>
   !!expiresOn && new Date(now + 3 * 3600e3).toISOString().slice(0, 10) > expiresOn
+
+// رابط قبول الدعوة (يوصل على إيميل المحاسب): موقّع، مربوط بالدعوة نفسها وإيميلها، وينتهي بعد INVITE_DAYS
+export const INVITE_DAYS = 7
+export function makeInviteToken(accessId: string, email: string, now = Date.now()) {
+  const payload = Buffer.from(JSON.stringify({ iid: accessId, em: email, exp: now + INVITE_DAYS * 86400e3 })).toString('base64url')
+  return `${payload}.${sign(`invite:${payload}`)}`
+}
+export function readInviteToken(token: string | null | undefined, now = Date.now()): { iid: string; em: string } | 'expired' | null {
+  if (!token || token.length > 600) return null
+  const [payload, sig] = token.split('.')
+  if (!payload || !sig) return null
+  const expected = sign(`invite:${payload}`)
+  if (sig.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null
+  try {
+    const { iid, em, exp } = JSON.parse(Buffer.from(payload, 'base64url').toString())
+    if (typeof iid !== 'string' || typeof em !== 'string' || typeof exp !== 'number') return null
+    return exp > now ? { iid, em } : 'expired'
+  } catch { return null }
+}

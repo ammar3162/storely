@@ -79,6 +79,17 @@ export default function AccountantPortalPage() {
   const [range, setRange] = useState(() => presetRange('month'))
   const [data, setData] = useState<any>(null)
   const [error, setError] = useState('')
+  const [reload, setReload] = useState(0)
+  const [inviteBusy, setInviteBusy] = useState('')
+  async function answerInvite(id: string, action: 'accept' | 'decline') {
+    setInviteBusy(id + action)
+    const j = await fetch('/api/accountant-portal/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action }) })
+      .then(r => r.json()).catch(() => ({ error: 'تأكد من الإنترنت' }))
+    setInviteBusy('')
+    if (!j.success) { setError(j.error || 'حدث خطأ'); return }
+    if (action === 'accept') { window.location.reload(); return }   // القائمة الجانبية تتحدث بالمنشأة الجديدة
+    setReload(n => n + 1)
+  }
   const loadMe = () => fetch('/api/accountant-portal/me').then(r => r.json()).then(j => setMe(j.success ? j.accountant : null)).catch(() => setMe(null))
   useEffect(() => { loadMe() }, [])
   useEffect(() => {
@@ -86,7 +97,7 @@ export default function AccountantPortalPage() {
     setData(null); setError('')
     fetch(`/api/accountant-portal/clients?from=${range.from}&to=${range.to}`).then(r => r.json())
       .then(j => j.success ? setData(j) : j.error === 'سجّل دخولك' ? setMe(null) : setError(j.error || 'تعذر التحميل')).catch(() => setError('تأكد من الإنترنت'))
-  }, [me, range])
+  }, [me, range, reload])
 
   if (me === undefined) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader2 size={26} color={colors.primary} style={{ animation: 'spin .8s linear infinite' }} /><style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style></div>
   if (!me) return <Login onDone={loadMe} />
@@ -103,6 +114,17 @@ export default function AccountantPortalPage() {
         style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 11, background: colors.primary, color: '#fff', fontSize: 13, fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap' as const }}>
         <FileSpreadsheet size={16} /> ملخص كل العملاء</a> : undefined}>
       <PeriodBar from={range.from} to={range.to} onChange={setRange} />
+      {(data?.invites || []).map((v: any) => (
+        <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, background: '#fff', border: `1.5px solid ${colors.primaryBorder}`, borderRadius: radius.xl, padding: '14px 16px', marginBottom: 12, boxShadow: '0 6px 18px rgba(2,159,162,.08)' }}>
+          <OrgLogo name={v.org} url={v.logo_url} size={42} />
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: 14.5, fontWeight: 800 }}>{v.org} تدعوك تكون محاسبها{v.branch ? ` · فرع ${v.branch}` : ''}</div>
+            <div style={{ fontSize: 12, color: colors.text3, marginTop: 2 }}>بتشوف: {v.sections.join('، ')}</div>
+          </div>
+          <button onClick={() => answerInvite(v.id, 'accept')} disabled={!!inviteBusy} style={{ padding: '9px 16px', borderRadius: 11, border: 'none', background: colors.primary, color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: font.family }}>{inviteBusy === v.id + 'accept' ? 'جاري...' : 'قبول'}</button>
+          <button onClick={() => answerInvite(v.id, 'decline')} disabled={!!inviteBusy} style={{ padding: '9px 14px', borderRadius: 11, border: `1px solid ${colors.border}`, background: '#fff', color: colors.text3, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>{inviteBusy === v.id + 'decline' ? 'جاري...' : 'رفض'}</button>
+        </div>
+      ))}
       {error ? <div style={{ color: colors.danger, fontSize: 14, padding: 20 }}>{error}</div>
         : !data ? <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={24} color={colors.primary} className="spin" /></div>
         : <>
@@ -113,7 +135,7 @@ export default function AccountantPortalPage() {
             <Stat label="ردود جديدة من المنشآت" value={String(replies)} hint="على طلباتك" tone={replies ? 'amber' : 'teal'} icon={<MessageSquareText size={16} />} />
           </div>
 
-          {!clients.length ? <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: radius.xl, padding: 40, textAlign: 'center', color: colors.text3, fontSize: 14 }}>ما عندك عملاء مفعّلين للحين — أول ما تدعوك منشأة تطلع هنا.</div>
+          {!clients.length ? <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: radius.xl, padding: 40, textAlign: 'center', color: colors.text3, fontSize: 14 }}>ما عندك عملاء مفعّلين للحين — أول ما تقبل دعوة منشأة تطلع هنا.</div>
             : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 14 }}>
               {clients.map(c => {
                 const t = c.totals, issues = (t?.incomplete || 0) + (t?.mismatch || 0), locked = c.inactive || c.expired

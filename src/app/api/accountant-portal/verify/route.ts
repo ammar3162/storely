@@ -5,7 +5,7 @@ import { clientIp } from '@/lib/loginThrottle'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-// التحقق من الرمز → إنشاء حساب المحاسب (أول مرة) + تفعيل دعواته + جلسة
+// التحقق من الرمز → إنشاء حساب المحاسب (أول مرة) + جلسة
 export async function POST(req: Request) {
   try {
     const b = await req.json()
@@ -27,13 +27,7 @@ export async function POST(req: Request) {
     const { data: user, error } = await db.from('accountant_users').upsert({ email, last_login_at: new Date().toISOString() } as any, { onConflict: 'email' }).select('id,name').single()
     if (error || !user) return NextResponse.json({ error: 'حدث خطأ، حاول مرة ثانية' }, { status: 500 })
     if (!(user as any).name && (invite as any)?.name) await db.from('accountant_users').update({ name: (invite as any).name } as any).eq('id', (user as any).id)
-    // الإيميل تأكد بالرمز → كل دعواته تتفعل، وكل منشأة يوصلها إشعار إن محاسبها دخل
-    const { data: activated } = await db.from('accountant_access').update({ accountant_id: (user as any).id, status: 'active', accepted_at: new Date().toISOString() } as any)
-      .eq('email', email).eq('status', 'pending').select('org_id,name')
-    if (activated?.length) await db.from('notifications').insert((activated as any[]).map(a => ({
-      org_id: a.org_id, type: 'info', read: false, title: 'محاسبك دخل بوابة المحاسب',
-      message: `${a.name || email} قبل الدعوة وصار يشوف بيانات منشأتك. تقدر تسحب الإذن من الإعدادات ← المحاسب.`,
-    })) as any)
+    // الدعوات ما تتفعل بالدخول — المحاسب يقبل كل دعوة بنفسه (من الإيميل أو من البوابة)
 
     // جهاز جديد — المحاسب يشوفه في «أجهزتي» ويقدر يطلّعه
     const { data: sess } = await db.from('accountant_sessions').insert({ accountant_id: (user as any).id, ip: clientIp(req),

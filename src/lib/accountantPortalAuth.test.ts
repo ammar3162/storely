@@ -35,3 +35,18 @@ describe('access expiry and devices', () => {
     expect(deviceLabel(null)).toBe('جهاز')
   })
 })
+
+describe('accountant invite link', () => {
+  it('round trip, expiry, tampering, and not usable as a session', async () => {
+    const { makeInviteToken, readInviteToken, readSession, INVITE_DAYS } = await import('./accountantPortalAuth')
+    const t = makeInviteToken('i1', 'cpa@office.sa', 1000)
+    expect(readInviteToken(t, 2000)).toEqual({ iid: 'i1', em: 'cpa@office.sa' })
+    expect(readInviteToken(t, 1000 + INVITE_DAYS * 86400e3 + 1)).toBe('expired')
+    const [p, s] = t.split('.')
+    const forged = Buffer.from(JSON.stringify({ iid: 'i1', em: 'attacker@x.com', exp: 9e15 })).toString('base64url')
+    expect(readInviteToken(`${forged}.${s}`, 2000)).toBeNull()
+    expect(readInviteToken(`${p}.x${s.slice(1)}`, 2000)).toBeNull()
+    expect(readInviteToken('', 2000)).toBeNull()
+    expect(readSession(t, 2000)).toBeNull()   // توقيع مختلف — رابط الدعوة ما يصير جلسة
+  })
+})
