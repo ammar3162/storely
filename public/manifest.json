@@ -1,7 +1,7 @@
 {
-  "name": "Storely — نظام إدارة المخزون",
+  "name": "Storely — كل أعمال منشأتك في مكان واحد",
   "short_name": "Storely",
-  "description": "نظام إدارة المخزون الاحترافي",
+  "description": "نظام واحد يربط كل أعمال منشأتك",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#0d2818",

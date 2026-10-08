@@ -71,7 +71,7 @@ async function sendForOrg(supabase: any, org: any) {
     '━━━━━━━━━━━━━━━━━━━━━\n' +
     '📊 الملخص: ' + outStock.length + ' نفد | ' + lowStock.length + ' منخفض\n' +
     '━━━━━━━━━━━━━━━━━━━━━\n\n' +
-    '_Storely — نظام إدارة المخزون_'
+    '_Storely — نظام واحد يربط كل أعمال منشأتك_'
 
     const phone = formatPhone(group.phone)
     const result = await sendWhatsAppMessage(phone, msg)

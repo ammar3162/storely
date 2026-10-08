@@ -12,7 +12,7 @@ import "./globals.css"
 
 export const metadata: Metadata = {
   title: "Storely — نحوّل التعقيد إلى تحكّم",
-  description: "من المخزون والمشتريات، للمنيو الإلكتروني وحجز الطاولات، وإدارة الموظفين والفروع — كل شي بمكان واحد",
+  description: "الكاشير، المخزون، المشتريات، الفروع، الموظفين، والمحاسب — مترابطة في مكان واحد. للمطاعم والكافيهات والبقالات والصيدليات والمستودعات والمتاجر.",
   manifest: "/manifest.json",
   appleWebApp: { capable:true, statusBarStyle:"default", title:"Storely" },
   icons: {
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Storely — نحوّل التعقيد إلى تحكّم",
-    description: "من المخزون والمشتريات، للمنيو الإلكتروني وحجز الطاولات، وإدارة الموظفين والفروع — كل شي بمكان واحد",
+    description: "الكاشير، المخزون، المشتريات، الفروع، الموظفين، والمحاسب — مترابطة في مكان واحد. للمطاعم والكافيهات والبقالات والصيدليات والمستودعات والمتاجر.",
     url: "https://www.storely.dev",
     siteName: "Storely",
     images: [{ url: "https://www.storely.dev/icon-192.png", width: 192, height: 192, alt: "Storely" }],
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary",
     title: "Storely — نحوّل التعقيد إلى تحكّم",
-    description: "من المخزون والمشتريات، للمنيو الإلكتروني وحجز الطاولات، وإدارة الموظفين والفروع — كل شي بمكان واحد",
+    description: "الكاشير، المخزون، المشتريات، الفروع، الموظفين، والمحاسب — مترابطة في مكان واحد. للمطاعم والكافيهات والبقالات والصيدليات والمستودعات والمتاجر.",
     images: ["https://www.storely.dev/icon-192.png"],
   },
 }
