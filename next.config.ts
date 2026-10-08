@@ -13,6 +13,21 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     '/api/admin/send-invoice': ['./node_modules/@sparticuz/chromium/bin/**'],
   },
+  // حماية المتصفح: ما أحد يقدر يضمّن الموقع داخل موقع ثاني (خداع النقر)، والمتصفح ما يخمّن نوع الملفات،
+  // والروابط الخارجية ما تشوف المسار الكامل، والاتصال دايماً مشفّر
+  async headers() {
+    return [{
+      source: '/:path*',
+      headers: [
+        { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+        { key: 'Content-Security-Policy', value: "frame-ancestors 'self'; base-uri 'self'; object-src 'none'" },
+        { key: 'X-Content-Type-Options', value: 'nosniff' },
+        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        { key: 'Strict-Transport-Security', value: 'max-age=31536000' },
+        { key: 'Permissions-Policy', value: 'camera=(self), microphone=(self), geolocation=(self), payment=(), usb=()' },
+      ],
+    }];
+  },
 };
 
 export default withSentryConfig(nextConfig, {

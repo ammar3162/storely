@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { isCronRequest } from '@/lib/cronAuth'
 import { createClient } from '@supabase/supabase-js'
 
 const sb = () => createClient(
@@ -8,8 +9,7 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
-    const secret = req.headers.get('x-cron-secret')
-    if(secret !== process.env.ADMIN_PASSWORD) {
+    if (!isCronRequest(req)) {
       return NextResponse.json({error:'unauthorized'},{status:401})
     }
     const db = sb()
@@ -77,3 +77,6 @@ export async function POST(req: Request) {
     return NextResponse.json({error:err.message},{status:500})
   }
 }
+
+// Vercel Cron يستدعي GET
+export async function GET(req: Request) { return POST(req) }

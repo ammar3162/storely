@@ -1,6 +1,7 @@
 export const runtime = 'nodejs'
 
 import { NextResponse } from 'next/server'
+import { isCronRequest } from '@/lib/cronAuth'
 import { createClient } from '@supabase/supabase-js'
 import webpush from 'web-push'
 
@@ -15,8 +16,7 @@ export async function POST(req: Request) {
   try {
     // للاستخدام الداخلي فقط (الكود يستخدم sendPushToOrg مباشرة) — كان مفتوح لأي أحد يرسل إشعار
     // بأي نص ورابط لأجهزة أي منشأة
-    const secret = req.headers.get('x-cron-secret')
-    if (!process.env.ADMIN_PASSWORD || secret !== process.env.ADMIN_PASSWORD) {
+    if (!isCronRequest(req)) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
     webpush.setVapidDetails(

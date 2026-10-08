@@ -100,9 +100,6 @@ async function sendForOrg(supabase: any, org: any) {
 }
 
 export async function POST(req: Request) {
-  const secret = req.headers.get('x-cron-secret')
-  const validSecret = process.env.ADMIN_PASSWORD
-  
   try {
     const bodyCheck = await req.clone().json().catch(()=>({}))
     const isFromDashboard = !!bodyCheck.org_id
@@ -111,7 +108,7 @@ export async function POST(req: Request) {
       // (كان مفتوح لأي أحد يعرف org_id: يرسل واتساب للمنشأة ويرجع قائمة أصنافها الناقصة)
       const access = await verifyOrgAccess(bodyCheck.org_id)
       if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    } else if (!validSecret || secret !== validSecret) {
+    } else if (!isCronRequest(req)) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
     const supabase = createClient(
@@ -170,9 +167,5 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   // الجدولة (كل ساعة — كل منشأة ترسل بساعتها المفضلة من الإعدادات)
   if (!isCronRequest(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  return POST(new Request('http://localhost', { 
-    method:'POST', 
-    body:'{}',
-    headers: { 'x-cron-secret': process.env.ADMIN_PASSWORD || '' }
-  })) 
+  return POST(new Request('http://localhost', { method: 'POST', body: '{}', headers: req.headers }))
 }

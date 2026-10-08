@@ -12,8 +12,12 @@ describe('isCronRequest', () => {
     expect(isCronRequest(req({ authorization: 'Bearer cron-secret' }))).toBe(true)
   })
 
-  it('accepts the admin key header', () => {
-    expect(isCronRequest(req({ 'x-cron-secret': 'admin-key' }))).toBe(true)
+  it('accepts the cron key in the manual header', () => {
+    expect(isCronRequest(req({ 'x-cron-secret': 'cron-secret' }))).toBe(true)
+  })
+
+  it('no longer accepts the admin panel password', () => {
+    expect(isCronRequest(req({ 'x-cron-secret': 'admin-key' }))).toBe(false)
   })
 
   it('rejects anonymous requests and wrong secrets', () => {
@@ -22,8 +26,9 @@ describe('isCronRequest', () => {
     expect(isCronRequest(req({ 'x-cron-secret': 'nope' }))).toBe(false)
   })
 
-  it('stays open when CRON_SECRET is not configured (so schedules keep running)', () => {
+  it('fails closed when CRON_SECRET is not configured', () => {
     delete process.env.CRON_SECRET
-    expect(isCronRequest(req())).toBe(true)
+    expect(isCronRequest(req())).toBe(false)
+    expect(isCronRequest(req({ authorization: 'Bearer undefined' }))).toBe(false)
   })
 })

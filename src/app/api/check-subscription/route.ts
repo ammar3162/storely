@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getCurrentProfile } from '@/lib/verifyOrgAccess'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,11 +9,12 @@ const sb = () => createClient(
 
 // يتحقق من انتهاء الاشتراك بوقت السيرفر (Node.js) -- مو وقت جهاز العميل.
 // الاعتماد على new Date() بالمتصفح كان يقفل حسابات عملاء صحيحة لو ساعة/تاريخ جهازهم مضبوطة غلط.
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url)
-    const profile_id = searchParams.get('profile_id')
-    if (!profile_id) return NextResponse.json({ error: 'profile_id مطلوب' }, { status: 400 })
+    // المستخدم من جلسته — مو من الرابط (كان أي أحد يعرف رقم حساب يشوف تاريخ نهاية اشتراكه)
+    const me = await getCurrentProfile()
+    if (!me) return NextResponse.json({ error: 'سجّل دخولك' }, { status: 401 })
+    const profile_id = me.userId
 
     const { data: profile } = await sb()
       .from('profiles')
