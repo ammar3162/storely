@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import NumberInput from '@/components/NumberInput'
 import { useRouter } from 'next/navigation'
 import { Bell, MapPin, Package, Store, ClipboardList, Send, Wallet, Plane, UserCheck, Boxes, ShoppingCart, Clock, LogOut } from 'lucide-react'
 import { getStaffOrg } from '@/lib/session'
@@ -545,7 +546,7 @@ export default function ChoosePage() {
           <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:360,textAlign:'right' as const}}>
             <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>{t('advanceTitle')}</div>
             <label style={{fontSize:12,color:'#64748b',display:'block',marginBottom:6}}>{t('amount')}</label>
-            <input type="number" value={advanceAmount} onChange={e=>setAdvanceAmount(e.target.value)} placeholder="0"
+            <NumberInput value={advanceAmount} onChange={e=>setAdvanceAmount(e.target.value)} placeholder="0"
               style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:16,fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:12}}/>
             <label style={{fontSize:12,color:'#64748b',display:'block',marginBottom:6}}>{t('reasonOptional')}</label>
             <textarea value={advanceReason} onChange={e=>setAdvanceReason(e.target.value)} placeholder={t('advanceReasonPh')}

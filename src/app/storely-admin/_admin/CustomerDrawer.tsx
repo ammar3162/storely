@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import NumberInput from '@/components/NumberInput'
 import { MessageCircle, Send, Trash2, PauseCircle, PlayCircle } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { toast } from '@/components/toast'
@@ -229,7 +230,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
                       </div>
                     </div>
                     {canEditQty && (
-                      <input type="number" min={1} max={20} value={q} aria-label="الكمية"
+                      <NumberInput min={1} max={20} value={q} aria-label="الكمية"
                         onChange={e => setQty(p => ({ ...p, [a.id]: Math.max(1, Math.min(20, Number(e.target.value) || 1)) }))}
                         style={{ ...inputStyle, width: 58, padding: '6px', textAlign: 'center' }} />
                     )}

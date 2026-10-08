@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
+import NumberInput from '@/components/NumberInput'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api-client'
 import { colors, radius, shadow, font, btnPrimary, btnSecondary, inp } from '@/lib/ds'
@@ -317,7 +318,7 @@ export default function OnboardingPage() {
                         {p.selected&&(
                           <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
                             <button onClick={()=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:Math.max(0,x.qty-1)}:x))} style={{width:26,height:26,borderRadius:8,border:`1px solid ${colors.border}`,background:'white',cursor:'pointer',fontSize:16,fontWeight:700,color:colors.text,display:'flex',alignItems:'center',justifyContent:'center'}}>−</button>
-                            <input type="number" min="0" value={p.qty||''} onChange={e=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:Number(e.target.value)||0}:x))}
+                            <NumberInput min="0" value={p.qty||''} onChange={e=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:Number(e.target.value)||0}:x))}
                               style={{width:50,textAlign:'center',border:`1.5px solid ${colors.border}`,borderRadius:8,padding:'4px',fontSize:14,fontWeight:700,color:colors.text,fontFamily:'inherit',outline:'none'}} placeholder="0"/>
                             <button onClick={()=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:x.qty+1}:x))} style={{width:26,height:26,borderRadius:8,border:`1px solid ${colors.primary}`,background:colors.primaryLight,cursor:'pointer',fontSize:16,fontWeight:700,color:colors.primary,display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
                             <span style={{fontSize:11,color:'#94a3b8'}}>{p.unit}</span>

@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
+import NumberInput from '@/components/NumberInput'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { Upload, Download, Paperclip, X, AlertTriangle, Camera, Ruler, CheckCircle2, Trash2, Sparkles, Package, Plus, ScanLine, Search } from 'lucide-react'
 import { api } from '@/lib/api-client'
@@ -443,7 +444,7 @@ export default function InventoryPage() {
                     </div>
                     <div>
                       <label style={lbl}>الحد الأدنى</label>
-                      <input type="number" min="0" value={form.reorder_point} onChange={e=>setForm({...form,reorder_point:Number(e.target.value)})} style={inp()}/>
+                      <NumberInput min="0" value={form.reorder_point} onChange={e=>setForm({...form,reorder_point:Number(e.target.value)})} style={inp()}/>
                     </div>
                   </div>
                   <div>
@@ -468,7 +469,7 @@ export default function InventoryPage() {
                       </div>
                       <div>
                         <label style={lbl}>الكمية بالوحدة الدقيقة</label>
-                        <input type="number" min="0" step="any" value={form.recipe_unit_factor} onChange={e=>setForm({...form,recipe_unit_factor:e.target.value})} style={inp()} placeholder={`1 ${form.unit} = ؟ ${form.recipe_unit||'وحدة'}`}/>
+                        <NumberInput min="0" step="any" value={form.recipe_unit_factor} onChange={e=>setForm({...form,recipe_unit_factor:e.target.value})} style={inp()} placeholder={`1 ${form.unit} = ؟ ${form.recipe_unit||'وحدة'}`}/>
                       </div>
                     </div>
                     {form.recipe_unit && form.recipe_unit_factor && Number(form.recipe_unit_factor)>0 && (
@@ -482,13 +483,13 @@ export default function InventoryPage() {
                     <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:12}}>
                       <div style={{fontSize:13,color:C.text2,marginBottom:8}}>الكمية الحالية: <b style={{color:C.text}}>{editItem.qty} {form.unit}</b></div>
                       <label style={lbl}>كمية تضيفها</label>
-                      <input type="number" min="0" value={addQty||''} onChange={e=>setAddQty(Number(e.target.value)||0)} style={{...inp(),fontSize:16,fontWeight:600}} placeholder="0"/>
+                      <NumberInput min="0" value={addQty||''} onChange={e=>setAddQty(Number(e.target.value)||0)} style={{...inp(),fontSize:16,fontWeight:600}} placeholder="0"/>
                       {addQty>0&&<div style={{fontSize:12,color:C.text2,marginTop:6}}>الإجمالي بعد الإضافة: {editItem.qty+addQty} {form.unit}</div>}
                     </div>
                   ):(
                     <div>
                       <label style={lbl}>الكمية الابتدائية *</label>
-                      <input type="number" min="1" required value={form.qty||''} onChange={e=>setForm({...form,qty:Number(e.target.value)})} style={{...inp(),fontSize:16,fontWeight:600}} placeholder="0"/>
+                      <NumberInput min="1" required value={form.qty||''} onChange={e=>setForm({...form,qty:Number(e.target.value)})} style={{...inp(),fontSize:16,fontWeight:600}} placeholder="0"/>
                     </div>
                   )}
                 </div>

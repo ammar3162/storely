@@ -1,5 +1,6 @@
 'use client'
 import PageIcon from '@/components/PageIcon'
+import NumberInput from '@/components/NumberInput'
 import { useState, useEffect } from 'react'
 import { getMe, getOrgId } from '@/lib/session'
 import { currencySymbol } from '@/lib/currencySymbol'
@@ -334,7 +335,7 @@ export default function ProfitabilityPage() {
             {!data.closed && (
             <div style={{display:'flex',gap:6,marginBottom:12}}>
               <input value={newTplName} onChange={e=>setNewTplName(e.target.value)} placeholder="اسم المصروف" style={{...inp(),flex:1}}/>
-              <input type="number" value={newTplAmount} onChange={e=>setNewTplAmount(e.target.value)} placeholder="المبلغ" style={{...inp(),width:100}}/>
+              <NumberInput value={newTplAmount} onChange={e=>setNewTplAmount(e.target.value)} placeholder="المبلغ" style={{...inp(),width:100}}/>
               <button onClick={addTemplate} disabled={savingTpl} style={{padding:'0 16px',background:colors.primary,color:'white',border:'none',borderRadius:radius.md,fontSize:14,fontWeight:700,cursor:'pointer'}}>{savingTpl?'...':'+'}</button>
             </div>
             )}
@@ -361,7 +362,7 @@ export default function ProfitabilityPage() {
             {!data.closed && (
             <div style={{display:'flex',gap:6,marginBottom:12}}>
               <input value={newVarName} onChange={e=>setNewVarName(e.target.value)} placeholder="اسم المصروف" style={{...inp(),flex:1}}/>
-              <input type="number" value={newVarAmount} onChange={e=>setNewVarAmount(e.target.value)} placeholder="المبلغ" style={{...inp(),width:100}}/>
+              <NumberInput value={newVarAmount} onChange={e=>setNewVarAmount(e.target.value)} placeholder="المبلغ" style={{...inp(),width:100}}/>
               <button onClick={addVariable} disabled={savingVar} style={{padding:'0 16px',background:colors.primary,color:'white',border:'none',borderRadius:radius.md,fontSize:14,fontWeight:700,cursor:'pointer'}}>{savingVar?'...':'+'}</button>
             </div>
             )}
@@ -395,7 +396,7 @@ export default function ProfitabilityPage() {
               {!data.closed && (
               <div style={{display:'flex',gap:6,marginBottom:10,flexWrap:'wrap' as const}}>
                 <input value={newDeliveryPlatform} onChange={e=>setNewDeliveryPlatform(e.target.value)} placeholder="اسم التطبيق" style={{...inp(),flex:1,minWidth:140}}/>
-                <input type="number" value={newDeliveryAmount} onChange={e=>setNewDeliveryAmount(e.target.value)} placeholder="المبلغ" style={{...inp(),width:100}}/>
+                <NumberInput value={newDeliveryAmount} onChange={e=>setNewDeliveryAmount(e.target.value)} placeholder="المبلغ" style={{...inp(),width:100}}/>
                 <button onClick={()=>addDeliveryIncome()} disabled={savingDelivery} style={{padding:'0 16px',background:colors.primary,color:'white',border:'none',borderRadius:radius.md,fontSize:14,fontWeight:700,cursor:'pointer'}}>{savingDelivery?'...':'+'}</button>
               </div>
               )}

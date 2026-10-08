@@ -1,5 +1,6 @@
 'use client'
 import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
+import NumberInput from '@/components/NumberInput'
 import { computeBusinessDate } from '@/lib/businessDate'
 import { useState, useEffect } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
@@ -103,7 +104,7 @@ function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconColor, err
         <div style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',width:30,height:30,borderRadius:9,background:iconBg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>
           {icon}
         </div>
-        <input type="number" value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
+        <NumberInput value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
           style={{width:'100%',padding:'14px 54px 14px 46px',border:`1.5px solid ${error?'#dc2626':'#e5e5e2'}`,borderRadius:12,fontSize:16,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'right',color:'#1c1c1a',transition:'border-color .15s',background:error?'#fef7f7':'white'}}
           onFocus={e=>{if(!error)e.target.style.borderColor=iconColor}}
           onBlur={e=>{if(!error)e.target.style.borderColor='#e5e5e2'}}
@@ -431,17 +432,17 @@ export default function CashierClosingPage() {
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
                     <div>
                       <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>{ct('mada',lang)}</div>
-                      <input type="number" value={madaAmount} onChange={e=>setMadaAmount(e.target.value)} placeholder="0.00"
+                      <NumberInput value={madaAmount} onChange={e=>setMadaAmount(e.target.value)} placeholder="0.00"
                         style={{width:'100%',padding:'11px 8px',border:`1.5px solid ${networkError?'#dc2626':'#e5e5e2'}`,borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'center' as const,background:networkError?'#fef7f7':'white'}}/>
                     </div>
                     <div>
                       <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>{ct('visa',lang)}</div>
-                      <input type="number" value={visaAmount} onChange={e=>setVisaAmount(e.target.value)} placeholder="0.00"
+                      <NumberInput value={visaAmount} onChange={e=>setVisaAmount(e.target.value)} placeholder="0.00"
                         style={{width:'100%',padding:'11px 8px',border:`1.5px solid ${networkError?'#dc2626':'#e5e5e2'}`,borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'center' as const,background:networkError?'#fef7f7':'white'}}/>
                     </div>
                     <div>
                       <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>{ct('mastercard',lang)}</div>
-                      <input type="number" value={mastercardAmount} onChange={e=>setMastercardAmount(e.target.value)} placeholder="0.00"
+                      <NumberInput value={mastercardAmount} onChange={e=>setMastercardAmount(e.target.value)} placeholder="0.00"
                         style={{width:'100%',padding:'11px 8px',border:`1.5px solid ${networkError?'#dc2626':'#e5e5e2'}`,borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'center' as const,background:networkError?'#fef7f7':'white'}}/>
                     </div>
                   </div>
@@ -487,7 +488,7 @@ export default function CashierClosingPage() {
                     {purchases.map((p,idx)=>(
                       <div key={idx} style={{display:'flex',gap:8,marginBottom:10,alignItems:'center',background:'#faf9f7',padding:10,borderRadius:12,border:'1px solid #f0efec'}}>
                         <div style={{flex:1}}>
-                          <input type="number" value={p.amount} onChange={e=>updatePurchase(idx,'amount',e.target.value)} placeholder={ct('amountPh',lang)}
+                          <NumberInput value={p.amount} onChange={e=>updatePurchase(idx,'amount',e.target.value)} placeholder={ct('amountPh',lang)}
                             style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e5e2',borderRadius:9,fontSize:14,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'right'}}/>
                         </div>
                         <div style={{flex:1.4}}>

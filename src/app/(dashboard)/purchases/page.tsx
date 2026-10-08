@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
+import NumberInput from '@/components/NumberInput'
 import TaxInvoiceFields, { type ZatcaState } from '@/components/TaxInvoiceFields'
 import InvoiceItemsPicker, { type PickedItem } from '@/components/InvoiceItemsPicker'
 import { zatcaFromImage } from '@/lib/zatcaScan'
@@ -507,7 +508,7 @@ export default function PurchasesPage() {
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:10}}>
                   <div>
                     <label style={lbl}>الكمية</label>
-                    <input type="number" min="0" step="any" value={form.qty} onChange={e=>setForm({...form,qty:e.target.value})} style={inp} placeholder="0" inputMode="numeric"/>
+                    <NumberInput min="0" step="any" value={form.qty} onChange={e=>setForm({...form,qty:e.target.value})} style={inp} placeholder="0" inputMode="numeric"/>
                   </div>
                   <div>
                     <label style={lbl}>الوحدة</label>
@@ -517,7 +518,7 @@ export default function PurchasesPage() {
                   </div>
                   <div>
                     <label style={lbl}>الحد الأدنى</label>
-                    <input type="number" min="0" value={form.reorder_point} onChange={e=>setForm({...form,reorder_point:e.target.value})} style={inp} inputMode="numeric"/>
+                    <NumberInput min="0" value={form.reorder_point} onChange={e=>setForm({...form,reorder_point:e.target.value})} style={inp} inputMode="numeric"/>
                   </div>
                 </div>
               </>
@@ -526,7 +527,7 @@ export default function PurchasesPage() {
             {/* Amount */}
             <div style={{marginBottom:10}}>
               <label style={lbl}>المبلغ الإجمالي ({curr}) *</label>
-              <input type="number" min="0" step="any" required value={form.total_amount}
+              <NumberInput min="0" step="any" required value={form.total_amount}
                 onChange={e=>setForm({...form,total_amount:e.target.value})}
                 style={{...inp,fontSize:16,fontWeight:700}} placeholder="0.00" inputMode="decimal"/>
               {inputTotal>0&&form.hasVat==='yes'&&(

@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import NumberInput from '@/components/NumberInput'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
@@ -233,7 +234,7 @@ export default function SupplierStorefrontPage() {
                       طلب تسعير
                     </label>
                     {selected[it.id]!==undefined && (
-                      <input type="number" min="1" value={selected[it.id]} onChange={e=>setQty(it.id, e.target.value)}
+                      <NumberInput min="1" value={selected[it.id]} onChange={e=>setQty(it.id, e.target.value)}
                         style={{width:50,padding:'4px 6px',borderRadius:6,border:'1px solid #e2e8f0',fontSize:11,marginRight:'auto'}}/>
                     )}
                   </div>

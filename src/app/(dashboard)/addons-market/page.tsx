@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
+import NumberInput from '@/components/NumberInput'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { getMe } from '@/lib/session'
@@ -174,7 +175,7 @@ export default function AddonsMarketPage() {
                           style={{ flex: 1, padding: '6px 8px', borderRadius: 8, border: `1px solid ${colors.border2}`, fontSize: 12, fontFamily: 'inherit', background: 'white' }}>
                           {branches.map((b: any) => (<option key={b.id} value={b.id}>{b.name}</option>))}
                         </select>
-                        <input type="number" min={1} max={20} value={qty}
+                        <NumberInput min={1} max={20} value={qty}
                           onChange={e => setQtyMap(prev => ({ ...prev, [a.id]: Math.max(1, Math.min(20, Number(e.target.value) || 1)) }))}
                           style={{ width: 56, padding: '6px 4px', borderRadius: 8, border: `1px solid ${colors.border2}`, fontSize: 12, textAlign: 'center' as const, fontFamily: 'inherit' }} />
                       </div>
@@ -229,7 +230,7 @@ export default function AddonsMarketPage() {
                     {(a.slug === 'extra_suppliers' || a.slug === 'extra_branch') && (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 10 }}>
                         <span style={{ fontSize: 11, color: colors.text3, fontWeight: 700 }}>الكمية:</span>
-                        <input type="number" min={1} max={20} value={qtyMap[a.id] || 1}
+                        <NumberInput min={1} max={20} value={qtyMap[a.id] || 1}
                           onChange={e => setQtyMap(prev => ({ ...prev, [a.id]: Math.max(1, Math.min(20, Number(e.target.value) || 1)) }))}
                           style={{ width: 56, padding: '6px 4px', borderRadius: 8, border: `1px solid ${colors.border2}`, fontSize: 12, textAlign: 'center' as const, fontFamily: 'inherit' }} />
                       </div>

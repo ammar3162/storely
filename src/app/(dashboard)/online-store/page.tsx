@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
+import NumberInput from '@/components/NumberInput'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getOrgId } from '@/lib/session'
@@ -545,7 +546,7 @@ export default function OnlineStorePage() {
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
                               <input placeholder="اسم المنتج" value={editForm.name} onChange={e => setEditForm((p:any) => ({ ...p, name: e.target.value }))} style={{ ...inp(), width: '100%' }} />
-                              <input type="number" placeholder="السعر" value={editForm.price} onChange={e => setEditForm((p:any) => ({ ...p, price: e.target.value }))} style={{ ...inp(), width: '100%' }} />
+                              <NumberInput placeholder="السعر" value={editForm.price} onChange={e => setEditForm((p:any) => ({ ...p, price: e.target.value }))} style={{ ...inp(), width: '100%' }} />
                             </div>
                           </div>
                           <textarea placeholder="وصف قصير..." value={editForm.description} onChange={e => setEditForm((p:any) => ({ ...p, description: e.target.value }))} rows={2} style={{ ...inp(), width: '100%', resize: 'vertical' as const, marginBottom: 10 }} />
@@ -628,7 +629,7 @@ export default function OnlineStorePage() {
                 <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
                   <label style={{ fontSize: 10, fontWeight: 700, color: colors.text3 }}>٢) تفاصيل المنتج</label>
                   <input placeholder="اسم المنتج *" value={newItem.name} onChange={e => setNewItem(prev => ({ ...prev, name: e.target.value }))} style={{ ...inp(), width: '100%' }} />
-                  <input type="number" placeholder="السعر (ر.س)" value={newItem.price} onChange={e => setNewItem(prev => ({ ...prev, price: e.target.value }))} style={{ ...inp(), width: '100%' }} />
+                  <NumberInput placeholder="السعر (ر.س)" value={newItem.price} onChange={e => setNewItem(prev => ({ ...prev, price: e.target.value }))} style={{ ...inp(), width: '100%' }} />
                 </div>
               </div>
               <textarea placeholder="وصف قصير..." value={newItem.description} onChange={e => setNewItem(prev => ({ ...prev, description: e.target.value }))} rows={2} style={{ ...inp(), width: '100%', resize: 'vertical' as const, marginBottom: 10 }} />
