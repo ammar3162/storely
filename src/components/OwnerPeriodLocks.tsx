@@ -2,16 +2,18 @@
 import { useEffect, useState } from 'react'
 import { Lock } from 'lucide-react'
 import { api } from '@/lib/api-client'
+import { Empty } from '@/components/OwnerAccountantRequests'
 import { colors, radius, font, btnSecondary } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 
 // الشهور المقفلة (جهة المالك)
-export default function OwnerPeriodLocks({ orgId }: { orgId: string }) {
+export default function OwnerPeriodLocks({ orgId, showEmpty = false }: { orgId: string; showEmpty?: boolean }) {
   const [data, setData] = useState<{ locks: any[]; hasAccountant: boolean } | null>(null)
   const load = () => api.get('/api/period-locks', { org_id: orgId }).then(j => { if (j.success) setData(j as any) })
   useEffect(() => { if (orgId) load() }, [orgId])
-  if (!data?.locks.length) return null
+  if (!data) return null
+  if (!data.locks.length) return showEmpty ? <Empty icon={<Lock size={22} color={colors.text4} />} title="ما فيه شهور مقفلة" text="لما يراجع محاسبك شهر ويقفله من بوابته، يطلع هنا — وما ينقدر يتعدّل فيه مشتريات ولا إقفالات كاشير." /> : null
   async function act(l: any) {
     if (data!.hasAccountant) {
       const reason = window.prompt(`ليش تحتاج تفتح شهر ${l.label}؟ (يوصل للمحاسب)`, '')

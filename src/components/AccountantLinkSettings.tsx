@@ -30,11 +30,12 @@ const chip = (on: boolean): React.CSSProperties => ({ display: 'inline-flex', al
   fontFamily: font.family, border: `1.5px solid ${on ? colors.primary : colors.border}`, background: on ? colors.primaryLight : colors.surface, color: on ? colors.primary : colors.text3 })
 const box: React.CSSProperties = { background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: radius.lg, padding: 16, marginBottom: 12 }
 
-export default function AccountantLinkSettings({ orgId }: { orgId: string }) {
+export default function AccountantLinkSettings({ orgId, onChange }: { orgId: string; onChange?: () => void }) {
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState<Form>(EMPTY)
   const [saved, setSaved] = useState<any>(null)        // آخر نسخة محفوظة
   const [reports, setReports] = useState<any[]>([])
+  const [invite, setInvite] = useState<{ id: string; status: string } | null>(null)   // دعوة البوابة لإيميل المحاسب
   const [branches, setBranches] = useState<any[]>([])
   const [consent, setConsent] = useState(false)
   const [busy, setBusy] = useState<'' | 'save' | 'test' | 'delete'>('')
@@ -47,6 +48,7 @@ export default function AccountantLinkSettings({ orgId }: { orgId: string }) {
     if (j.success) {
       setReports(j.reports || [])
       setSaved(j.link)
+      setInvite(j.invite || null)
       if (j.link) {
         const l = j.link
         setForm({ name: l.name, email: l.email || '', whatsapp: l.whatsapp ? '+' + l.whatsapp : '', channels: l.channels, sections: l.sections, frequency: l.frequency,
@@ -56,6 +58,7 @@ export default function AccountantLinkSettings({ orgId }: { orgId: string }) {
     }
     setBranches((b.branches || []).filter((x: any) => x.is_active !== false))
     setLoading(false)
+    onChange?.()
   }
   useEffect(() => { if (orgId) load() }, [orgId])
 
@@ -75,8 +78,16 @@ export default function AccountantLinkSettings({ orgId }: { orgId: string }) {
     const j = await api.put('/api/accountant-link', { org_id: orgId, ...form, branch_id: form.branch_id || null })
     setBusy('')
     if (!j.success) { toast(j.error || 'تعذر الحفظ', 'error'); return }
-    toast('✅ تم حفظ الربط مع المحاسب')
+    toast(j.invite_sent ? '✅ انحفظ — أرسلنا للمحاسب إيميل «قبول الدعوة»، والتقارير تبدأ توصله أول ما يقبل' : '✅ تم حفظ الربط مع المحاسب')
     load()
+  }
+  async function resendInvite() {
+    if (!invite) return
+    setBusy('test')
+    const j = await api.post('/api/accountant-access', { org_id: orgId, action: 'resend', id: invite.id })
+    setBusy('')
+    if (!j.success) { toast(j.error || 'تعذر الإرسال', 'error'); return }
+    toast(j.email_sent ? '✅ أرسلنا الدعوة مرة ثانية' : 'الإيميل ما وصل — تأكد من العنوان', j.email_sent ? 'success' : 'warning')
   }
   async function test() {
     setBusy('test')
@@ -109,7 +120,16 @@ export default function AccountantLinkSettings({ orgId }: { orgId: string }) {
         <div style={{ fontSize: 12.5, color: colors.text3, marginTop: 4, lineHeight: 1.7 }}>
           يوصل محاسبك تقرير تلقائي فيه ملف إكسل بكل البيانات اللي تختارها — بالإيميل أو الواتساب — فيه بس البيانات اللي تختارها، بالموعد اللي تحدده.
         </div>
-        {upcoming && (
+        {invite?.status === 'pending' && (
+          <div style={{ marginTop: 10, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
+            <div style={{ flex: 1, minWidth: 200, fontSize: 12.5, lineHeight: 1.7, color: '#92400e' }}>
+              <b>بانتظار قبول المحاسب</b> — أرسلنا له إيميل فيه زر «قبول الدعوة» على <span dir="ltr">{saved?.email}</span>. التقارير تبدأ توصله أول ما يقبل.
+            </div>
+            <button onClick={resendInvite} disabled={!!busy} style={{ ...btnSecondary, padding: '6px 12px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Send size={13} /> إعادة إرسال الدعوة</button>
+          </div>
+        )}
+        {invite?.status === 'active' && <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize: 12.5, fontWeight: 700, color: '#047857' }}><CheckCircle2 size={14} /> المحاسب قبل الدعوة — يوصله التقرير ويقدر يدخل بوابته</div>}
+        {upcoming && invite?.status !== 'pending' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize: 12.5, fontWeight: 700, color: colors.primary }}>
             <Clock size={14} /> التقرير الجاي: {dateLabel(upcoming.date)} الساعة {hourLabel(saved.send_hour ?? 8)} — عن {periodLabel(upcoming.period)}
           </div>

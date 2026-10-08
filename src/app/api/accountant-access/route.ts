@@ -5,9 +5,7 @@ import { normalizeEmail, isEmail } from '@/lib/accountantPortalAuth'
 import { parseDateOnly } from '@/lib/daysOff'
 import { saudiToday } from '@/lib/accountantSchedule'
 import { ACC_SECTIONS } from '@/lib/accountantExport'
-import { siteUrl } from '@/lib/accountantSend'
-import { sendEmail } from '@/lib/email'
-import { brandEmail } from '@/lib/emailTemplates'
+import { sendInviteEmail } from '@/lib/accountantInvite'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 const UUID_RE = /^[0-9a-f-]{36}$/i
@@ -54,11 +52,23 @@ export async function GET(req: Request) {
   }
 }
 
-// دعوة محاسب
+// دعوة محاسب (أو إعادة إرسال دعوة ما انقبلت)
 export async function POST(req: Request) {
   try {
     const b = await req.json()
     const g = await ownerOnly(b.org_id); if (g.error) return g.error
+    if (b.action === 'resend') {
+      if (!UUID_RE.test(String(b.id || ''))) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+      const db = sb()
+      const { data: row } = await db.from('accountant_access').select(FIELDS).eq('id', b.id).eq('org_id', b.org_id).maybeSingle()
+      if (!row) return NextResponse.json({ error: 'الدعوة غير موجودة' }, { status: 404 })
+      if ((row as any).status === 'active') return NextResponse.json({ error: 'المحاسب قبل الدعوة من قبل' }, { status: 409 })
+      // حد بسيط: مرة كل ٥ دقايق (ما نغرق إيميل المحاسب)
+      if (Date.now() - Date.parse((row as any).invited_at) < 5 * 60e3) return NextResponse.json({ error: 'أرسلنا الدعوة قبل شوي — انتظر كم دقيقة' }, { status: 429 })
+      await db.from('accountant_access').update({ invited_at: new Date().toISOString() } as any).eq('id', b.id).eq('org_id', b.org_id)
+      const mail = await sendInviteEmail(db, { ...(row as any), org_id: b.org_id })
+      return NextResponse.json({ success: true, email_sent: mail.success })
+    }
     const email = normalizeEmail(b.email)
     if (!isEmail(email)) return NextResponse.json({ error: 'اكتب إيميل المحاسب صحيح' }, { status: 400 })
     const name = String(b.name || '').trim().slice(0, 80) || null
@@ -75,24 +85,12 @@ export async function POST(req: Request) {
     const { count } = await db.from('accountant_access').select('id', { count: 'exact', head: true }).eq('org_id', b.org_id)
     if ((count || 0) >= MAX_PER_ORG) return NextResponse.json({ error: `الحد ${MAX_PER_ORG} محاسبين لكل منشأة` }, { status: 400 })
 
-    // عنده حساب في البوابة (إيميله متأكد منه) → يتفعل مباشرة
-    const { data: user } = await db.from('accountant_users').select('id').eq('email', email).maybeSingle()
+    // الإذن يبقى «بانتظار القبول» لين المحاسب يضغط «قبول الدعوة» في الإيميل
     const { data: row, error } = await db.from('accountant_access').insert({
       org_id: b.org_id, email, name, branch_id: br.id, sections, vat_registered: b.vat_registered !== false, expires_on: exp.value,
-      ...(user ? { accountant_id: (user as any).id, status: 'active', accepted_at: new Date().toISOString() } : {}),
     } as any).select(FIELDS).single()
     if (error) return NextResponse.json({ error: 'تعذر إرسال الدعوة' }, { status: 500 })
-
-    const { data: org } = await db.from('organizations').select('name').eq('id', b.org_id).single()
-    const orgName = (org as any)?.name || 'منشأة'
-    const url = `${siteUrl()}/accountant-portal?email=${encodeURIComponent(email)}`
-    const mail = await sendEmail({
-      to: email, fromName: `${orgName} عبر Storely`, subject: `${orgName} تدعوك لمتابعة حساباتها في Storely`,
-      html: brandEmail({ title: 'دعوة لبوابة المحاسب', preheader: `${orgName} تدعوك لمتابعة حساباتها`,
-        greeting: name ? `هلا ${name}،` : 'هلا،',
-        paragraphs: [`منشأة ${orgName} أضافتك محاسباً لها في Storely.`, 'تقدر تشوف مبيعاتها ومشترياتها وفواتيرها الضريبية وتحمّلها إكسل لأي فترة — وكل عملائك اللي يستخدمون Storely في حساب واحد.'],
-        button: { label: 'ادخل بوابة المحاسب', url }, small: 'الدخول برمز يوصلك على هالإيميل — بدون كلمة مرور.' }),
-    })
+    const mail = await sendInviteEmail(db, { ...(row as any), org_id: b.org_id })
     return NextResponse.json({ success: true, accountant: row, email_sent: mail.success })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })

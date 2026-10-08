@@ -6,6 +6,7 @@ import { summarize, buildClientsWorkbook, type AccSection } from '@/lib/accounta
 import { customPeriod, saudiToday, periodLabel } from '@/lib/accountantSchedule'
 import { isSubscriptionActive } from '@/lib/subscription'
 import { mapLimit } from '@/lib/mapLimit'
+import { sectionLabels } from '@/lib/accountantInvite'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 const LIGHT: AccSection[] = ['sales', 'purchases', 'vat', 'payables']   // ملخص البطاقات (بدون الرواتب — ثقيلة)
@@ -49,7 +50,10 @@ export async function GET(req: Request) {
       return new NextResponse(new Uint8Array(buf), { headers: { 'Cache-Control': 'no-store', 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="clients.xlsx"; filename*=UTF-8''${encodeURIComponent(`ملخص العملاء - ${label}.xlsx`)}` } })
     }
-    return NextResponse.json({ success: true, accountant: me, period: p, clients })
+    // دعوات تنتظر قبوله (لو دخل البوابة قبل ما يضغط الزر في الإيميل)
+    const { data: inv } = await db.from('accountant_access').select('id,sections,invited_at,organizations(name,logo_url),branches(name)').eq('email', me.email).eq('status', 'pending').order('invited_at')
+    const invites = ((inv || []) as any[]).map(i => ({ id: i.id, org: i.organizations?.name || 'منشأة', logo_url: i.organizations?.logo_url || null, branch: i.branches?.name || null, sections: sectionLabels(i.sections || []) }))
+    return NextResponse.json({ success: true, accountant: me, period: p, clients, invites })
   } catch {
     return NextResponse.json({ error: 'تعذر تحميل العملاء، حاول مرة ثانية' }, { status: 500 })
   }

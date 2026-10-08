@@ -149,7 +149,7 @@ export default function NotificationsPage() {
                   </div>
                   <div style={{fontSize:font.xs,color:n.read?colors.text4:colors.text3,marginBottom:6,lineHeight:1.6}}>{n.message}</div>
                   {n.ref_type === 'accountant_request' && (
-                    <a href="/settings?tab=accountant" style={{display:'inline-block',fontSize:12,fontWeight:700,color:'white',background:colors.primary,borderRadius:8,padding:'6px 12px',textDecoration:'none',marginBottom:6}}>افتح الطلب ورد عليه</a>
+                    <a href="/settings?tab=accountant&sub=requests" style={{display:'inline-block',fontSize:12,fontWeight:700,color:'white',background:colors.primary,borderRadius:8,padding:'6px 12px',textDecoration:'none',marginBottom:6}}>افتح الطلب ورد عليه</a>
                   )}
                   {n.ref_type === 'extra_day' && n.extra && (
                     <ExtraDayDecision item={n.extra} orgId={sessionStorage.getItem('s_org_id') || ''} canDecide={!!n.can_decide}

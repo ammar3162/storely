@@ -56,12 +56,12 @@ function RequestCard({ r, orgId, onDone }: { r: any; orgId: string; onDone: () =
   )
 }
 
-export default function OwnerAccountantRequests({ orgId }: { orgId: string }) {
+export default function OwnerAccountantRequests({ orgId, showEmpty = false, onChange }: { orgId: string; showEmpty?: boolean; onChange?: () => void }) {
   const [list, setList] = useState<any[]>([])
   const [showDone, setShowDone] = useState(false)
-  const load = () => api.get('/api/accountant-requests', { org_id: orgId }).then(j => { if (j.success) setList(j.requests || []) })
+  const load = () => api.get('/api/accountant-requests', { org_id: orgId }).then(j => { if (j.success) { setList(j.requests || []); onChange?.() } })
   useEffect(() => { if (orgId) load() }, [orgId])
-  if (!list.length) return null
+  if (!list.length) return showEmpty ? <Empty icon={<MessageSquareText size={22} color={colors.text4} />} title="ما فيه طلبات من المحاسب" text="لما يحتاج محاسبك شي — رقم ضريبي ناقص أو مستند — يوصلك هنا وترد عليه بضغطة." /> : null
   const active = list.filter(r => r.status !== 'resolved'), done = list.filter(r => r.status === 'resolved')
   return (
     <div style={{ background: colors.surface, border: `1.5px solid ${active.some(r => r.status === 'open') ? '#fcd34d' : colors.border}`, borderRadius: radius.lg, padding: 16, marginBottom: 12, fontFamily: font.family }}>
@@ -74,6 +74,16 @@ export default function OwnerAccountantRequests({ orgId }: { orgId: string }) {
       {done.length > 0 && <button onClick={() => setShowDone(s => !s)} style={{ fontSize: 12.5, color: colors.text3, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, padding: 0 }}>
         {showDone ? 'إخفاء' : 'عرض'} الطلبات المنحلة ({done.length})</button>}
       {showDone && done.map(r => <RequestCard key={r.id} r={r} orgId={orgId} onDone={load} />)}
+    </div>
+  )
+}
+
+export function Empty({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
+  return (
+    <div style={{ textAlign: 'center' as const, padding: '36px 20px', border: `1.5px dashed ${colors.border}`, borderRadius: radius.lg, fontFamily: font.family }}>
+      <div style={{ width: 46, height: 46, borderRadius: 14, background: colors.bg, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>{icon}</div>
+      <div style={{ fontSize: 14.5, fontWeight: 800, color: colors.text2 }}>{title}</div>
+      <div style={{ fontSize: 12.5, color: colors.text3, marginTop: 4, lineHeight: 1.7, maxWidth: 420, marginInline: 'auto' }}>{text}</div>
     </div>
   )
 }

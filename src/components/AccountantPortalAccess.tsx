@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { UserPlus, Trash2, ShieldCheck, Clock } from 'lucide-react'
+import { UserPlus, Trash2, ShieldCheck, Clock, Send } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import { colors, radius, font, inp, btnPrimary, btnSecondary } from '@/lib/ds'
 import { toast } from '@/components/toast'
@@ -14,11 +14,12 @@ const chip = (on: boolean): React.CSSProperties => ({ padding: '5px 11px', borde
   border: `1.5px solid ${on ? colors.primary : colors.border}`, background: on ? colors.primaryLight : colors.surface, color: on ? colors.primary : colors.text3 })
 const todaySA = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
 const ago = (iso: string) => {
+  if (!iso || isNaN(Date.parse(iso))) return ''
   const m = Math.round((Date.now() - Date.parse(iso)) / 60000)
   return m < 60 ? `قبل ${Math.max(1, m)} دقيقة` : m < 1440 ? `قبل ${Math.round(m / 60)} ساعة` : `قبل ${Math.round(m / 1440)} يوم`
 }
 
-export default function AccountantPortalAccess({ orgId }: { orgId: string }) {
+export default function AccountantPortalAccess({ orgId, onChange }: { orgId: string; onChange?: () => void }) {
   const [list, setList] = useState<any[]>([])
   const [logs, setLogs] = useState<any[]>([])
   const [branches, setBranches] = useState<any[]>([])
@@ -29,6 +30,7 @@ export default function AccountantPortalAccess({ orgId }: { orgId: string }) {
   async function load() {
     const [j, b] = await Promise.all([api.get('/api/accountant-access', { org_id: orgId }), api.get('/api/branches', { org_id: orgId })])
     if (j.success) { setList(j.accountants || []); setLogs(j.logs || []) }
+    onChange?.()
     setBranches((b.branches || []).filter((x: any) => x.is_active !== false))
   }
   useEffect(() => { if (orgId) load() }, [orgId])
@@ -38,8 +40,16 @@ export default function AccountantPortalAccess({ orgId }: { orgId: string }) {
     const j = await api.post('/api/accountant-access', { org_id: orgId, ...form, branch_id: form.branch_id || null, expires_on: form.expires_on || null })
     setBusy(false)
     if (!j.success) { toast(j.error || 'تعذر إرسال الدعوة', 'error'); return }
-    toast(j.accountant?.status === 'active' ? '✅ المحاسب عنده حساب — صار يشوف منشأتك الحين' : j.email_sent ? '✅ أرسلنا الدعوة لإيميل المحاسب' : 'انحفظت الدعوة، لكن الإيميل ما وصل — تأكد من العنوان', j.email_sent || j.accountant?.status === 'active' ? 'success' : 'warning')
+    toast(j.email_sent ? '✅ أرسلنا الدعوة — يتفعل الربط أول ما المحاسب يضغط «قبول الدعوة» في إيميله' : 'انحفظت الدعوة، لكن الإيميل ما وصل — تأكد من العنوان', j.email_sent ? 'success' : 'warning')
     setAdding(false); setForm({ name: '', email: '', sections: DEFAULT, branch_id: '', vat_registered: true, expires_on: '' })
+    load()
+  }
+  async function resend(a: any) {
+    setBusy(true)
+    const j = await api.post('/api/accountant-access', { org_id: orgId, action: 'resend', id: a.id })
+    setBusy(false)
+    if (!j.success) { toast(j.error || 'تعذر الإرسال', 'error'); return }
+    toast(j.email_sent ? '✅ أرسلنا الدعوة مرة ثانية' : 'الإيميل ما وصل — تأكد من العنوان', j.email_sent ? 'success' : 'warning')
     load()
   }
   async function toggleSection(a: any, s: AccSection) {
@@ -67,9 +77,9 @@ export default function AccountantPortalAccess({ orgId }: { orgId: string }) {
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
         <ShieldCheck size={20} color={colors.primary} style={{ flexShrink: 0, marginTop: 2 }} />
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 800 }}>بوابة المحاسب</div>
+          <div style={{ fontSize: 15, fontWeight: 800 }}>المحاسبين وصلاحياتهم</div>
           <div style={{ fontSize: 12.5, color: colors.text3, lineHeight: 1.7, marginTop: 2 }}>
-            محاسبك يدخل بحسابه ويشوف بيانات منشأتك لأي فترة ويحمّلها إكسل — قراءة بس، وتسحب الإذن متى ما بغيت. مجانية.
+            ادعُ محاسبك بإيميله — يوصله رابط «قبول الدعوة»، وأول ما يقبل يشوف بيانات منشأتك لأي فترة ويحمّلها إكسل. قراءة بس، وتسحب الإذن متى ما بغيت. مجانية.
           </div>
         </div>
       </div>
@@ -83,12 +93,13 @@ export default function AccountantPortalAccess({ orgId }: { orgId: string }) {
             </div>
             {(() => { const expired = !!a.expires_on && todaySA() > a.expires_on
               return <span style={{ fontSize: 11.5, fontWeight: 700, padding: '3px 10px', borderRadius: 99, background: expired ? '#fef2f2' : a.status === 'active' ? '#ecfdf5' : '#fffbeb', color: expired ? '#b91c1c' : a.status === 'active' ? '#047857' : '#b45309' }}>
-                {expired ? 'انتهى الإذن' : a.status === 'active' ? 'مفعّل' : 'بانتظار دخوله'}
+                {expired ? 'انتهى الإذن' : a.status === 'active' ? 'مفعّل' : 'بانتظار قبول المحاسب'}
               </span> })()}
+            {a.status !== 'active' && <button onClick={() => resend(a)} disabled={busy} style={{ ...btnSecondary, padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12 }}><Send size={13} /> إعادة إرسال الدعوة</button>}
             <button onClick={() => revoke(a)} title="سحب الإذن" style={{ ...btnSecondary, padding: '6px 10px', color: colors.danger, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12 }}><Trash2 size={13} /> سحب الإذن</button>
           </div>
           <div style={{ fontSize: 11.5, color: colors.text4, margin: '6px 0 8px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={12} /> {a.last_view_at ? `آخر دخول ${ago(a.last_view_at)}` : 'ما دخل للحين'}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={12} /> {a.status !== 'active' ? `أُرسلت الدعوة ${ago(a.invited_at)}` : a.last_view_at ? `آخر دخول ${ago(a.last_view_at)}` : 'قبل الدعوة — ما فتح التقارير للحين'}</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               الإذن لين
               <input type="date" value={a.expires_on || ''} min={todaySA()} onChange={e => setExpiry(a, e.target.value)}

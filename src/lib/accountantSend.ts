@@ -38,7 +38,9 @@ export async function sendAccountantReport(db: SupabaseClient, link: AccountantL
   if (link.channels.includes('email') && link.email) {
     try {
       const { data: owner } = await db.from('profiles').select('email').eq('org_id', link.org_id).eq('role', 'owner').maybeSingle()
-      const { subject, html } = accountantEmail(report, msg)
+      // لو المحاسب قبل دعوة البوابة: زر يدخله صفحته
+      const { data: acc } = await db.from('accountant_access').select('status').eq('org_id', link.org_id).eq('email', link.email.toLowerCase()).maybeSingle()
+      const { subject, html } = accountantEmail(report, { ...msg, portalUrl: (acc as any)?.status === 'active' ? `${siteUrl()}/accountant-portal` : undefined })
       const xlsx = await buildAccountantWorkbook(report, { watermark: `أُرسل إلى ${link.name}` })
       const r = await sendEmail({
         to: link.email, subject, html, fromName: `${report.orgName} عبر Storely`, fromAddress: 'reports@storely.dev',

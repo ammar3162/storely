@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { formatPhone } from '@/lib/whatsapp'
+import { ensurePortalInvite, inviteStatus } from '@/lib/accountantInvite'
 import { ACC_SECTIONS } from '@/lib/accountantExport'
 import { latestPeriod, saudiToday, scheduleToday, manualPeriod, customPeriod, type AccFrequency, type ManualPeriodKey } from '@/lib/accountantSchedule'
 import { sendAccountantReport } from '@/lib/accountantSend'
@@ -31,7 +32,9 @@ export async function GET(req: Request) {
       db.from('accountant_links').select(FIELDS).eq('org_id', org_id!).maybeSingle(),
       db.from('accountant_reports').select('id,period_start,period_end,is_test,email_status,whatsapp_status,opened_at,created_at').eq('org_id', org_id!).order('created_at', { ascending: false }).limit(10),
     ])
-    return NextResponse.json({ success: true, link: link || null, reports: reports || [] })
+    // حالة دعوة البوابة لإيميل المحاسب (للعرض وزر إعادة الإرسال)
+    const { data: inv } = (link as any)?.email ? await db.from('accountant_access').select('id,status,invited_at').eq('org_id', org_id!).eq('email', (link as any).email).maybeSingle() : { data: null }
+    return NextResponse.json({ success: true, link: link || null, reports: reports || [], invite: inv || null })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
@@ -83,7 +86,9 @@ export async function PUT(req: Request) {
       vat_registered: b.vat_registered !== false, is_active: b.is_active !== false, last_period_end, updated_at: new Date().toISOString() }
     const { data, error } = await db.from('accountant_links').upsert(row as any, { onConflict: 'org_id' }).select(FIELDS).single()
     if (error) return NextResponse.json({ error: 'تعذر الحفظ' }, { status: 500 })
-    return NextResponse.json({ success: true, link: data })
+    // المحاسب يوصله إيميل «قبول الدعوة» — والتقارير ما تنرسل لين يقبل
+    const invite = email ? await ensurePortalInvite(db, { org_id: b.org_id, email, name, sections: sections as string[], branch_id, vat_registered: b.vat_registered !== false }) : null
+    return NextResponse.json({ success: true, link: data, invite_status: invite?.status ?? null, invite_sent: !!invite?.email_sent, invite_limit: !!(invite as any)?.limit })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
@@ -110,6 +115,7 @@ export async function POST(req: Request) {
     const db = sb()
     const { data: link } = await db.from('accountant_links').select(FIELDS).eq('org_id', b.org_id).maybeSingle()
     if (!link) return NextResponse.json({ error: 'احفظ بيانات المحاسب أول' }, { status: 400 })
+    if ((await inviteStatus(db, b.org_id, (link as any).email)) === 'pending') return NextResponse.json({ error: 'المحاسب ما قبل الدعوة للحين — أول ما يضغط «قبول الدعوة» في إيميله تقدر ترسل له' }, { status: 409 })
     if (!(await isSubscriptionActive(db, b.org_id))) return NextResponse.json({ error: 'اشتراكك منتهي — جدّده عشان يشتغل الربط' }, { status: 403 })
 
     const { count } = await db.from('accountant_reports').select('id', { count: 'exact', head: true })
