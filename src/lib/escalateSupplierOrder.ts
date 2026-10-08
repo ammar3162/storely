@@ -101,7 +101,7 @@ export async function escalateOrder(order: any, reason: 'unavailable' | 'timeout
       ? `⚠️ هذا الطلب مُحوّل تلقائياً لأن المورد السابق أبلغ بعدم توفر الصنف`
       : `⚠️ هذا الطلب مُحوّل تلقائياً لأن المورد السابق لم يرد بالوقت المحدد`
 
-    const msg = `📦 *طلب توريد — ${orgName}*\n\n${reasonNote}\n\nنحتاج توريد المواد التالية:\n\n${itemsList}\n\nنرجو التوريد في أقرب وقت. شكراً 🙏\n\nللتأكيد رد بكلمة: *تم*\nإن لم يتوفر الصنف، رد بكلمة: *غير متوفر*\n\n_Storely — نظام إدارة التشغيل_`
+    const msg = `📦 *طلب توريد — ${orgName}*\n\n${reasonNote}\n\nنحتاج توريد المواد التالية:\n\n${itemsList}\n\nنرجو التوريد في أقرب وقت. شكراً 🙏\n\nللتأكيد رد بكلمة: *تم*\nإن لم يتوفر الصنف، رد بكلمة: *غير متوفر*\n\n_Storely — نظام واحد يربط كل أعمال منشأتك_`
 
     await (db as any).from('supplier_orders').insert({
       org_id: order.org_id,

@@ -60,7 +60,7 @@ export const LS: Record<string, {ar:string, en:string}> = {
   demoPrivacy:   { ar:'سياسة الخصوصية', en:'Privacy Policy' },
   demoSending:   { ar:'جاري الإرسال...', en:'Sending...' },
   demoSubmit:    { ar:'إرسال الطلب', en:'Send request' },
-  demoSideTitle: { ar:'اطلب تجربة نظام Storely لإدارة التشغيل مجاناً', en:'Request a free trial of Storely operations management' },
+  demoSideTitle: { ar:'اطلب تجربة Storely مجاناً — نظام واحد يربط كل أعمال منشأتك', en:'Request a free Storely trial — one system for your whole business' },
   demoSideSub:   { ar:'بنساعدك تختار الباقة الأنسب لمنشأتك، ونجاوب على كل أسئلتك مباشرة', en:"We'll help you pick the right plan for your business and answer all your questions directly" },
 
   pricingTag:    { ar:'الأسعار', en:'PRICING' },
@@ -82,7 +82,7 @@ export const LS: Record<string, {ar:string, en:string}> = {
   faqTag:        { ar:'الأسئلة الشائعة', en:'FAQ' },
   faqTitle:      { ar:'عندك سؤال؟', en:'Got a question?' },
 
-  footerTagline: { ar:'منصة إدارة التشغيل الذكية للمطاعم والمحلات', en:'The smart operations platform for restaurants and stores' },
+  footerTagline: { ar:'نظام واحد يربط كل أعمال منشأتك', en:'One system that connects your whole business' },
   footerPlatform:{ ar:'المنصة', en:'Platform' },
   footerLegal:   { ar:'قانوني', en:'Legal' },
   footerContact: { ar:'تواصل', en:'Contact' },

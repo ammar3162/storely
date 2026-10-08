@@ -1,7 +1,7 @@
 {
-  "name": "Storely — نظام إدارة التشغيل",
+  "name": "Storely — كل أعمال منشأتك في مكان واحد",
   "short_name": "Storely",
-  "description": "نظام إدارة التشغيل للمطاعم والمحلات",
+  "description": "نظام واحد يربط كل أعمال منشأتك",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#0d2818",

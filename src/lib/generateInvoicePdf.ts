@@ -65,7 +65,7 @@ function buildInvoiceHtml(data: InvoiceData): string {
   <div class="header">
     <div>
       <div class="brand">Storely</div>
-      <div class="brand-sub">نظام إدارة التشغيل</div>
+      <div class="brand-sub">نظام واحد يربط كل أعمال منشأتك</div>
       <div class="brand-legal">مؤسسة باسم علي خلوي لتقنية المعلومات — س.ت 7055023522</div>
     </div>
     <div class="meta">

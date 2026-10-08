@@ -18,7 +18,7 @@ function buildOrderMessage(orgName: string, items: { name: string; unit: string;
 
   const notesSection = notes ? `\n\n📝 *ملاحظات:* ${notes}` : ''
 
-  return `📦 *طلب توريد — ${orgName}*\n\nمرحباً،\n\nنحتاج توريد المواد التالية:\n\n${itemsList}${notesSection}\n\nنرجو التوريد في أقرب وقت. شكراً 🙏\n_Storely — نظام إدارة التشغيل_`
+  return `📦 *طلب توريد — ${orgName}*\n\nمرحباً،\n\nنحتاج توريد المواد التالية:\n\n${itemsList}${notesSection}\n\nنرجو التوريد في أقرب وقت. شكراً 🙏\n_Storely — نظام واحد يربط كل أعمال منشأتك_`
 }
 
 export async function POST(req: Request) {
