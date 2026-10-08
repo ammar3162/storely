@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { normalizeVat, isValidVat } from '@/lib/taxInvoice'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { loadOwnedSupplier } from '@/lib/supplierAccess'
@@ -23,7 +24,7 @@ export async function GET(req: Request) {
     const bid = enforcedBranchId(access, branch_id)
 
     const db = sb()
-    let q = db.from('suppliers').select('id,name,phone,notify_mode,notify_time,notify_day,marketplace_supplier_id').eq('org_id', org_id).eq('is_active', true)
+    let q = db.from('suppliers').select('id,name,phone,notify_mode,notify_time,notify_day,marketplace_supplier_id,vat_number').eq('org_id', org_id).eq('is_active', true)
     if (bid) q = q.eq('branch_id', bid)
     const [{ data, error }, { data: org }] = await Promise.all([
       q.order('created_at', { ascending: false }),
@@ -45,7 +46,7 @@ export async function GET(req: Request) {
   }
 }
 
-// تعديل مورد: { phone } أو إعدادات الإرسال { notify_mode, notify_time, notify_day }
+// تعديل مورد: { phone } أو { vat_number } أو إعدادات الإرسال { notify_mode, notify_time, notify_day }
 export async function PATCH(req: Request) {
   try {
     const body = await req.json()
@@ -63,6 +64,11 @@ export async function PATCH(req: Request) {
       const phone = String(body.phone || '').trim()
       if (!phone) return NextResponse.json({ error: 'أدخل رقم صحيح' }, { status: 400 })
       update.phone = phone
+    }
+    if ('vat_number' in body) {
+      const vat = normalizeVat(body.vat_number)
+      if (vat && !isValidVat(vat)) return NextResponse.json({ error: 'الرقم الضريبي غير صحيح — ١٥ رقم يبدأ وينتهي بـ 3' }, { status: 400 })
+      update.vat_number = vat
     }
     if ('notify_mode' in body) update.notify_mode = String(body.notify_mode || '')
     if ('notify_time' in body) {

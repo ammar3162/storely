@@ -1,6 +1,11 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
+import TaxInvoiceFields, { type ZatcaState } from '@/components/TaxInvoiceFields'
+import InvoiceItemsPicker, { type PickedItem } from '@/components/InvoiceItemsPicker'
+import { zatcaFromImage } from '@/lib/zatcaScan'
+import { zatcaDate } from '@/lib/zatcaQr'
+import { normalizeVat, isValidVat } from '@/lib/taxInvoice'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { Clock, CheckCircle2, Ban, Percent } from 'lucide-react'
@@ -47,8 +52,6 @@ export default function PurchasesPage() {
   const [showScan, setShowScan]     = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
   const [ocrItems, setOcrItems]     = useState<any[]>([])
-  const [ocrSelected, setOcrSelected] = useState<Record<number,boolean>>({})
-  const [ocrPrices, setOcrPrices] = useState<Record<number,string>>({})
   const [bulkSaving, setBulkSaving] = useState(false)
   const [pendingThanks, setPendingThanks] = useState<{productId:string; productName:string; supplierName:string}|null>(null)
   const [ocrLoading, setOcrLoading] = useState(false)
@@ -63,8 +66,27 @@ export default function PurchasesPage() {
     category:'مخزون', name:'', sku:'', qty:'', unit:'قطعة',
     reorder_point:'5', total_amount:'', supplier:'',
     note:'', invoice_image:'', hasVat:'', invoice_date: todayRiyadh(),
-    payment_status:'paid', due_date:'',
+    payment_status:'paid', due_date:'', invoice_number:'', supplier_vat_number:'',
   })
+  const [suppliers, setSuppliers] = useState<{name:string;vat_number:string|null}[]>([])
+  const [vatFromSupplier, setVatFromSupplier] = useState(false)
+  // باركود هيئة الزكاة: يعبّي البيانات ويوثّقها (والسيرفر يفكه بنفسه ويطابق المبالغ)
+  const [zatca, setZatcaState] = useState<ZatcaState>(null)
+  const zatcaRef = useRef<ZatcaState>(null)
+  function setZatca(z:ZatcaState, silent=false){
+    zatcaRef.current = z; setZatcaState(z)
+    if(!z) return
+    setForm(f=>({...f, hasVat:'yes', supplier: f.supplier || z.inv.sellerName, supplier_vat_number: z.inv.vatNumber,
+      invoice_date: zatcaDate(z.inv), total_amount: f.total_amount || String(z.inv.total)}))
+    if(!silent) toast('✅ قرأنا باركود الفاتورة — البيانات موثقة')
+  }
+  // اختيار مورد محفوظ رقمه الضريبي → يتعبى تلقائياً
+  function setSupplierName(name:string){
+    const sup = suppliers.find(x=>x.name===name.trim())
+    const fill = !!sup?.vat_number && !form.supplier_vat_number
+    if (fill) setVatFromSupplier(true)
+    setForm(f=>({...f, supplier:name, supplier_vat_number: fill ? sup!.vat_number! : f.supplier_vat_number}))
+  }
   const sb = createClient()
 
   useEffect(()=>{
@@ -81,6 +103,7 @@ export default function PurchasesPage() {
     setOrgId(oid)
     getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
     loadProducts(oid);loadHistory(oid);loadPayables(oid)
+    api.get('/api/suppliers',{org_id:oid}).then(j=>{ if(j.success) setSuppliers((j.suppliers||[]).map((x:any)=>({name:x.name,vat_number:x.vat_number||null}))) }).catch(()=>{})
   }
 
   async function loadProducts(oid:string) {
@@ -159,6 +182,8 @@ export default function PurchasesPage() {
 
   async function handleImage(file:File) {
     setUploading(true)
+    // باركود الهيئة من الصورة نفسها (على الجهاز) — بالتوازي مع الرفع
+    if(file.type.startsWith('image/')) zatcaFromImage(file).then(z=>{ if(z&&!zatcaRef.current){ setZatca(z,true); toast('✅ لقينا باركود الهيئة بالفاتورة — البيانات موثقة') } })
     try {
       // ضغط الصورة لو كانت أكبر من 500KB
       const compressed = file.type.startsWith('image/') && file.size > 500*1024
@@ -188,22 +213,20 @@ export default function PurchasesPage() {
             const d = ocrData.data
             setForm(f => ({
               ...f,
-              supplier: d.supplier || f.supplier,
-              total_amount: d.total_amount ? String(d.total_amount) : f.total_amount,
-              invoice_date: d.invoice_date || f.invoice_date,
-              hasVat: d.has_vat ? 'yes' : f.hasVat,
+              ...(zatcaRef.current ? {} : {
+                supplier: d.supplier || f.supplier,
+                total_amount: Number(d.total_amount) > 0 ? String(Math.round(Number(d.total_amount) * 100) / 100) : f.total_amount,
+                invoice_date: d.invoice_date || f.invoice_date,
+                hasVat: d.has_vat ? 'yes' : f.hasVat,
+                supplier_vat_number: d.supplier_vat_number || f.supplier_vat_number,
+              }),
+              invoice_number: f.invoice_number || d.invoice_number || '',
               name: d.items?.length === 1 ? d.items[0].name : f.name,
               qty: d.items?.length === 1 && d.items[0].qty ? String(d.items[0].qty) : f.qty,
               unit: d.items?.length === 1 && d.items[0].unit ? d.items[0].unit : f.unit,
             }))
             if (d.items?.length > 1) {
-              setOcrItems(d.items)
-              const sel: Record<number,boolean> = {}
-              const initPrices: Record<number,string> = {}
-              const equalShare = d.total_amount ? (Number(d.total_amount)/d.items.length).toFixed(2) : ''
-              d.items.forEach((_:any,i:number)=>{ sel[i]=true; initPrices[i]=equalShare })
-              setOcrSelected(sel)
-              setOcrPrices(initPrices)
+              setOcrItems(d.items)   // الكمية والسعر و«ينضاف إلى» تتعبى بمكوّن الأصناف
             }
             toast('✨ تم استخراج بيانات الفاتورة تلقائياً')
           }
@@ -239,38 +262,43 @@ export default function PurchasesPage() {
     setForm(f => ({ ...f, name: item.name || f.name, qty: item.qty ? String(item.qty) : f.qty, unit: item.unit || f.unit }))
   }
 
-  async function saveBulkOcrItems() {
-    const selectedIndexes = ocrItems.map((_,i)=>i).filter(i=>ocrSelected[i])
-    if (selectedIndexes.length===0 || bulkSaving || !orgId) return
+  // حفظ أصناف الفاتورة: الصنف الموجود تزيد كميته، والجديد ينضاف — والفاتورة كلها تنسجل وحدة
+  async function saveBulkOcrItems(rows: PickedItem[]) {
+    if (!rows.length || bulkSaving || !orgId) return
+    if (rows.some(r=>!(r.total>0))) { toast('اكتب سعر كل صنف محدد','warning'); return }
+    if (rows.some(r=>!Number.isInteger(r.qty))) { toast('الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)','warning'); return }
+    if (!form.supplier.trim()) { toast('يرجى إدخال اسم المورد','warning'); return }
     setBulkSaving(true)
     const bid = sessionStorage.getItem('s_branch_id')
-    const isVat = form.hasVat==='yes'
-
-    // كل صنف فاتورة مستقلة بسعره (قابل للتعديل بالواجهة) وضريبته — الحفظ وتحديث المخزون على الخادم
+    const isVat = form.hasVat!=='no'
     const r = await api.post('/api/purchases/bulk', {
-      org_id:orgId, branch_id:bid||null, supplier:form.supplier||null, note:form.note||null,
+      org_id:orgId, branch_id:bid||null, supplier:form.supplier,
       invoice_image:form.invoice_image||null, has_vat:isVat, invoice_date:form.invoice_date,
-      items: selectedIndexes.map(i=>({ name:ocrItems[i].name, qty:ocrItems[i].qty, unit:ocrItems[i].unit, total:Number(ocrPrices[i])||0 })),
+      invoice_number:isVat?form.invoice_number||null:null, supplier_vat_number:isVat?form.supplier_vat_number||null:null, zatca_qr:isVat?zatca?.raw||null:null,
+      items: rows,
     })
-    if(!r.success){ toast(r.error||'فشل الحفظ','error'); setBulkSaving(false); return }
-    if(r.failed?.length) toast(`تنبيه: فشل حفظ ${r.failed.length} صنف: ${r.failed.join('، ')}`,'warning')
-
-    toast(`✅ تم حفظ ${selectedIndexes.length} صنف بنجاح، بكل تفاصيل السعر والضريبة`)
-    setOcrItems([]); setOcrSelected([] as any); setOcrPrices({})
-    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:''})
-    setPreviewUrl(null)
     setBulkSaving(false)
-    loadHistory(orgId)
+    if(!r.success){ toast(r.error||'فشل الحفظ','error'); return }
+    toast(`✅ تم تسجيل الفاتورة — ${r.summary||`${r.saved} صنف`}`)
+    setOcrItems([])
+    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:'',invoice_number:'',supplier_vat_number:''});setZatca(null);setVatFromSupplier(false)
+    setPreviewUrl(null)
+    cache.invalidate('inventory:');cache.invalidate('products:')
+    loadHistory(orgId); loadProducts(orgId)
   }
+
 
   async function handleSubmit(e:React.FormEvent) {
     e.preventDefault()
-    if(!form.total_amount||!orgId)return
-    if(submitting.current)return
+    if(!orgId||submitting.current)return
+    if(form.category==='مخزون'&&!form.name.trim()){toast('اكتب اسم الصنف','warning');return}
+    if(!(Number(form.total_amount)>0)){toast('اكتب المبلغ الإجمالي','warning');return}
+    if(form.qty&&!(Number.isInteger(Number(form.qty))&&Number(form.qty)>=0)){toast('الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)','warning');return}
     submitting.current=true
     if(!form.hasVat){toast('حدد هل الفاتورة تشمل الضريبة','warning');submitting.current=false;return}
     if(form.hasVat==='yes'&&!form.invoice_image){toast('يرجى رفع صورة الفاتورة','warning');submitting.current=false;return}
     if(!form.supplier.trim()){toast('يرجى إدخال اسم المورد','warning');submitting.current=false;return}
+    if(form.hasVat==='yes'&&form.supplier_vat_number.trim()&&!isValidVat(normalizeVat(form.supplier_vat_number))){toast('الرقم الضريبي للمورد غير صحيح — ١٥ رقم يبدأ وينتهي بـ 3','warning');submitting.current=false;return}
     setLoading(true)
     // حفظ الفاتورة + الإشعار + تحديث المخزون ومتوسط التكلفة كلها على الخادم
     const res=await api.post('/api/purchases',{
@@ -279,6 +307,7 @@ export default function PurchasesPage() {
       unit:form.unit||null, reorder_point:form.reorder_point, total_amount:form.total_amount,
       supplier:form.supplier, note:form.note||null, invoice_image:form.invoice_image||null,
       has_vat:form.hasVat==='yes', invoice_date:form.invoice_date, payment_status:form.payment_status, due_date:form.due_date||null,
+      invoice_number:form.hasVat==='yes'?form.invoice_number||null:null, supplier_vat_number:form.hasVat==='yes'?form.supplier_vat_number||null:null, zatca_qr:form.hasVat==='yes'?zatca?.raw||null:null,
     })
     if(!res.success){toast(res.error||'حدث خطأ','error');setLoading(false);submitting.current=false;return}
 
@@ -294,7 +323,7 @@ export default function PurchasesPage() {
       setPendingThanks({ productId: res.product_id, productName: form.name, supplierName: form.supplier.trim() })
     }
 
-    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:''})
+    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:'',invoice_number:'',supplier_vat_number:''});setZatca(null);setVatFromSupplier(false)
     setPreviewUrl(null);setLoading(false);submitting.current=false
     cache.invalidate('purchases:');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
     loadHistory(orgId);loadPayables(orgId)
@@ -381,7 +410,7 @@ export default function PurchasesPage() {
         {/* Form */}
         <div className="u" style={{background:'white',borderRadius:12,padding:18,border:`1px solid ${C.border}`,animationDelay:'.06s'}}>
           <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:14}}>تسجيل شراء جديد</div>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
 
             {/* Category */}
             <div style={{marginBottom:12}}>
@@ -418,27 +447,10 @@ export default function PurchasesPage() {
                   <span>✨</span><span>جاري استخراج بيانات الفاتورة...</span>
                 </div>
               )}
-              {ocrItems.length>0&&(
-                <div style={{marginTop:8,padding:12,background:C.infoL,borderRadius:10,border:`1px solid ${C.infoB}`}}>
-                  <div style={{fontSize:11,fontWeight:700,color:C.info,marginBottom:8}}>📋 {ocrItems.length} صنف مكتشف بالفاتورة — حدد اللي تبي تحفظه</div>
-                  <div style={{display:'flex',flexDirection:'column' as const,gap:6,marginBottom:10}}>
-                    {ocrItems.map((item,i)=>(
-                      <label key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',borderRadius:7,background:'white',border:`1px solid ${C.infoB}`,cursor:'pointer'}}>
-                        <input type="checkbox" checked={!!ocrSelected[i]} onChange={e=>setOcrSelected(s=>({...s,[i]:e.target.checked}))} style={{width:15,height:15,cursor:'pointer'}}/>
-                        <span style={{fontSize:12,color:C.text,flex:1}}>{item.name}</span>
-                        <span style={{fontSize:11,color:C.text3}}>{item.qty||0} {item.unit||''}</span>
-                        <input type="number" step="0.01" value={ocrPrices[i]||''} onChange={e=>setOcrPrices(p=>({...p,[i]:e.target.value}))}
-                          placeholder="السعر" style={{width:64,padding:'4px 6px',borderRadius:6,border:`1px solid ${C.border}`,fontSize:11,textAlign:'left' as const,fontFamily:'inherit'}}/>
-                      </label>
-                    ))}
-                  </div>
-                  <div style={{fontSize:10,color:C.text3,marginBottom:8}}>
-                    * السعر يتوزّع تلقائياً بالتساوي بدايةً — عدّله لكل صنف حسب سعره الفعلي بالفاتورة لدقة أعلى بالتقارير
-                  </div>
-                  <button type="button" onClick={saveBulkOcrItems} disabled={bulkSaving||Object.values(ocrSelected).every(v=>!v)}
-                    style={{width:'100%',padding:10,background:bulkSaving?C.text4:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:bulkSaving?'not-allowed':'pointer',fontFamily:'inherit'}}>
-                    {bulkSaving?'جاري الحفظ...':`✅ حفظ ${Object.values(ocrSelected).filter(Boolean).length} صنف محدد`}
-                  </button>
+              {ocrItems.length>1&&(
+                <div style={{marginTop:8}}>
+                  <InvoiceItemsPicker items={ocrItems} products={products as any} invoiceTotal={zatca?.inv.total ?? (Number(form.total_amount)||null)}
+                    saving={bulkSaving} onSave={saveBulkOcrItems} color={C.primary}/>
                 </div>
               )}
             </div>
@@ -495,7 +507,7 @@ export default function PurchasesPage() {
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:10}}>
                   <div>
                     <label style={lbl}>الكمية</label>
-                    <input type="number" min="0" value={form.qty} onChange={e=>setForm({...form,qty:e.target.value})} style={inp} placeholder="0" inputMode="numeric"/>
+                    <input type="number" min="0" step="any" value={form.qty} onChange={e=>setForm({...form,qty:e.target.value})} style={inp} placeholder="0" inputMode="numeric"/>
                   </div>
                   <div>
                     <label style={lbl}>الوحدة</label>
@@ -514,7 +526,7 @@ export default function PurchasesPage() {
             {/* Amount */}
             <div style={{marginBottom:10}}>
               <label style={lbl}>المبلغ الإجمالي ({curr}) *</label>
-              <input type="number" min="0" step="0.01" required value={form.total_amount}
+              <input type="number" min="0" step="any" required value={form.total_amount}
                 onChange={e=>setForm({...form,total_amount:e.target.value})}
                 style={{...inp,fontSize:16,fontWeight:700}} placeholder="0.00" inputMode="decimal"/>
               {inputTotal>0&&form.hasVat==='yes'&&(
@@ -531,7 +543,8 @@ export default function PurchasesPage() {
             {/* Supplier */}
             <div style={{marginBottom:10}}>
               <label style={lbl}>المورد *</label>
-              <input required value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})} style={inp} placeholder="اسم المورد أو الشركة"/>
+              <input required value={form.supplier} onChange={e=>setSupplierName(e.target.value)} list="pur-sup-list" style={inp} placeholder="اسم المورد أو الشركة"/>
+              <datalist id="pur-sup-list">{suppliers.map(x=><option key={x.name} value={x.name}/>)}</datalist>
             </div>
 
             {/* Payment status */}
@@ -567,13 +580,19 @@ export default function PurchasesPage() {
               <label style={lbl}>الفاتورة شاملة ضريبة 15%؟ *</label>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
                 {[{v:'no',l:'بدون ضريبة',c:C.primary,Icon:Ban},{v:'yes',l:'شاملة 15%',c:C.warning,Icon:Percent}].map(b=>(
-                  <button key={b.v} type="button" onClick={()=>setForm({...form,hasVat:b.v,invoice_image:b.v==='no'?'':form.invoice_image})}
+                  <button key={b.v} type="button" onClick={()=>{ if(b.v==='no') setZatca(null); setForm({...form,hasVat:b.v,invoice_image:b.v==='no'?'':form.invoice_image}) }}
                     style={{padding:'10px',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer',border:`1px solid ${form.hasVat===b.v?b.c:C.border2}`,background:form.hasVat===b.v?b.v==='no'?C.primaryL:C.warningL:'white',color:form.hasVat===b.v?b.c:C.text3,fontFamily:'inherit',transition:'all .15s',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                     <b.Icon size={13} strokeWidth={2.3}/> {b.l}
                   </button>
                 ))}
               </div>
             </div>
+
+            {form.hasVat==='yes' && (
+              <TaxInvoiceFields invoiceNumber={form.invoice_number} vatNumber={form.supplier_vat_number} savedFromSupplier={vatFromSupplier}
+                zatca={zatca} onZatca={z=>setZatca(z)} enteredTotal={Number(form.total_amount)||0} onError={m=>toast(m,'warning')}
+                onChange={p=>{ if('supplier_vat_number' in p) setVatFromSupplier(false); setForm(f=>({...f,...p})) }} inputStyle={inp} labelStyle={lbl}/>
+            )}
 
             {/* Note */}
             <div style={{marginBottom:14}}>

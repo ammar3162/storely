@@ -1,5 +1,10 @@
 'use client'
 import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
+import TaxInvoiceFields, { type ZatcaState } from '@/components/TaxInvoiceFields'
+import InvoiceItemsPicker, { type PickedItem } from '@/components/InvoiceItemsPicker'
+import { zatcaFromImage, shrinkImage, blobToBase64 } from '@/lib/zatcaScan'
+import { zatcaDate } from '@/lib/zatcaQr'
+import { normalizeVat, isValidVat } from '@/lib/taxInvoice'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter } from 'next/navigation'
@@ -57,11 +62,30 @@ const PUI: Record<string,Record<'ar'|'en',string>> = {
   selectVat:        {ar:'حدد هل الفاتورة تشمل الضريبة',en:'Please specify if the invoice includes VAT'},
   invoiceRequired:  {ar:'يرجى رفع صورة الفاتورة',en:'Please upload the invoice photo'},
   supplierRequired: {ar:'يرجى إدخال اسم المورد',en:'Please enter the supplier name'},
+  vatInvalid:       {ar:'الرقم الضريبي للمورد غير صحيح — ١٥ رقم يبدأ وينتهي بـ 3',en:'Supplier VAT number is invalid — 15 digits, starts and ends with 3'},
   inventoryUpdated: {ar:'✅ تم تحديث المخزون',en:'✅ Inventory updated'},
   purchaseRecorded: {ar:'✅ تم تسجيل الشراء',en:'✅ Purchase recorded'},
   errorPrefix:      {ar:'خطأ: ',en:'Error: '},
+  snapTitle:        {ar:'صوّر الفاتورة — ونعبّي البيانات عنك',en:'Snap the invoice — we fill it in for you'},
+  camera:           {ar:'📷 الكاميرا',en:'📷 Camera'},
+  gallery:          {ar:'🖼️ من الصور',en:'🖼️ From photos'},
+  reading:          {ar:'⏳ جاري قراءة الفاتورة...',en:'⏳ Reading the invoice...'},
+  readOk:           {ar:'✅ قرأنا الفاتورة — راجع البيانات قبل الحفظ',en:'✅ Invoice read — please review before saving'},
+  readQr:           {ar:'✅ قرأنا الفاتورة وباركود الهيئة — البيانات موثقة',en:'✅ Invoice and ZATCA QR read — data verified'},
+  readFail:         {ar:'ما قدرنا نقرأ الفاتورة — عبّي البيانات يدوي',en:"Couldn't read the invoice — please fill it in manually"},
+  changePhoto:      {ar:'تغيير الصورة',en:'Change photo'},
+  itemsFound:       {ar:'بالفاتورة — حدد اللي تبي تسجله واكتب سعره',en:'on the invoice — pick and price them'},
+  itemPrice:        {ar:'السعر',en:'Price'},
+  saveItems:        {ar:'حفظ الأصناف المحددة',en:'Save selected items'},
+  itemsSaved:       {ar:'✅ تم تسجيل الأصناف',en:'✅ Items recorded'},
+  needSupplier:     {ar:'اكتب اسم المورد أول',en:'Enter the supplier first'},
+  pickPrice:        {ar:'حدد صنف واكتب سعره',en:'Pick an item and enter its price'},
+  needName:         {ar:'اكتب اسم الصنف',en:'Enter the item name'},
+  needAmount:       {ar:'اكتب المبلغ الإجمالي',en:'Enter the total amount'},
+  needQty:          {ar:'الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)',en:'Quantity must be a whole number — use a smaller unit (grams instead of kg)'},
 }
 const pt = (key: string, lang: 'ar'|'en') => PUI[key]?.[lang] || PUI[key]?.ar || key
+const itemsCount = (n: number, lang: 'ar'|'en') => lang === 'en' ? `${n} items` : n === 2 ? 'صنفين' : n <= 10 ? `${n} أصناف` : `${n} صنف`
 
 export default function StaffPurchasesPage() {
   const [lang, setPageLang] = useState<'ar'|'en'>('ar')
@@ -72,10 +96,24 @@ export default function StaffPurchasesPage() {
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
   const [toast, setToast] = useState('')
   const [suppliers, setSuppliers] = useState<any[]>([])
+  const [vatFromSupplier, setVatFromSupplier] = useState(false)
+  const [zatca, setZatcaState] = useState<ZatcaState>(null)
+  // القراءة الذكية للفاتورة
+  const [readState, setReadState] = useState<'' | 'reading' | 'ok' | 'qr' | 'fail'>('')
+  const [readErr, setReadErr] = useState('')
+  const [ocrItems, setOcrItems] = useState<{ name: string; qty?: number; unit?: string; total?: number }[]>([])
+  const [bulkSaving, setBulkSaving] = useState(false)
+  const [bulkErr, setBulkErr] = useState('')
+  const [products, setProducts] = useState<{ id: string; name: string; unit?: string }[]>([])   // لمطابقة أصناف الفاتورة
+  function setZatca(z:ZatcaState){
+    setZatcaState(z)
+    if(!z) return
+    setForm(f=>({...f, hasVat:'yes', supplier: f.supplier || z.inv.sellerName, supplier_vat_number: z.inv.vatNumber, total_amount: f.total_amount || String(z.inv.total)}))
+  }
   const [form, setForm] = useState({
     category:'مخزون', name:'', sku:'', qty:'', unit:'قطعة',
     reorder_point:'5', total_amount:'', supplier:'', note:'',
-    invoice_image:'', hasVat:''
+    invoice_image:'', hasVat:'', invoice_number:'', supplier_vat_number:''
   })
   const submitting = useRef(false)
   const [curr, setCurr] = useState('ر.س')
@@ -90,12 +128,14 @@ export default function StaffPurchasesPage() {
     if (!s.permissions?.purchases) { router.push('/staff/dispense'); return }
     setSession(s)
     loadSuppliers(s.org_id)
+    fetch('/api/staff-products',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('staff_token')}`},body:'{}'})
+      .then(r=>r.json()).then(j=>setProducts(j.products||[])).catch(()=>{})
     getStaffOrg().then(org=>{ if(org?.currency) setCurr(currencySymbol(org.currency)) })
   },[])
 
   function showToast(msg: string) {
     setToast(msg)
-    setTimeout(()=>setToast(''),3000)
+    setTimeout(()=>setToast(''),msg.startsWith('✅')?3000:6000)
   }
 
   async function loadSuppliers(orgId: string) {
@@ -107,33 +147,82 @@ export default function StaffPurchasesPage() {
     } catch {}
   }
 
+  // الصورة (كاميرا أو من الصور): رفع + باركود الهيئة + قراءة ذكية — بالتوازي
   async function handleImage(file: File) {
-    setUploading(true)
-    try {
-      const staffToken = localStorage.getItem('staff_token')
+    setUploading(true); setReadState('reading'); setReadErr(''); setOcrItems([])
+    setPreviewUrl(URL.createObjectURL(file))
+    const staffToken = localStorage.getItem('staff_token')
+    const small = await shrinkImage(file)
+    const upload = (async () => {
       const fd = new FormData()
-      fd.append('file', file)
-      const res = await fetch('/api/staff-upload-invoice',{method:'POST',headers:{'Authorization':`Bearer ${staffToken}`},body:fd})
-      const j = await res.json()
-      if(!res.ok||!j.success){showToast(j.error||pt('imgFailed',lang));setUploading(false);return}
-      setForm(f=>({...f,invoice_image:j.url}));setPreviewUrl(j.url)
-      showToast(pt('imgUploaded',lang))
-    } catch {
-      showToast(pt('imgFailed',lang))
+      fd.append('file', new File([small], 'invoice.jpg', { type: small.type || 'image/jpeg' }))
+      const res = await fetch('/api/staff-upload-invoice', { method: 'POST', headers: { 'Authorization': `Bearer ${staffToken}` }, body: fd })
+      const j = await res.json().catch(() => ({}))
+      return res.ok && j.success ? j.url as string : null
+    })().catch(() => null)
+    const ocr = (async () => {
+      const res = await fetch('/api/ocr-invoice', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
+        body: JSON.stringify({ image: await blobToBase64(small), mediaType: 'image/jpeg', org_id: session?.org_id }) })
+      const j = await res.json().catch(() => ({}))
+      if (!(res.ok && j.success)) { if (j.error) setReadErr(j.error); return null }
+      return j.data
+    })().catch(() => null)
+    const [z, url, d] = await Promise.all([zatcaFromImage(file), upload, ocr])
+
+    if (url) setForm(f => ({ ...f, invoice_image: url }))
+    else showToast(pt('imgFailed', lang))
+    if (d) {
+      const items = Array.isArray(d.items) ? d.items.filter((x: any) => x?.name) : []
+      setForm(f => ({ ...f,
+        supplier: f.supplier || d.supplier || '', total_amount: f.total_amount || (Number(d.total_amount) > 0 ? String(Math.round(Number(d.total_amount) * 100) / 100) : ''),
+        hasVat: d.has_vat ? 'yes' : (f.hasVat || (d.has_vat === false ? 'no' : '')),
+        invoice_number: f.invoice_number || d.invoice_number || '', supplier_vat_number: f.supplier_vat_number || d.supplier_vat_number || '',
+        ...(items.length === 1 ? { name: f.name || items[0].name, qty: f.qty || (items[0].qty ? String(items[0].qty) : ''), unit: items[0].unit || f.unit } : {}) }))
+      if (items.length > 1) setOcrItems(items)
     }
+    if (z) setZatca(z)   // الباركود أدق — يغطي على القراءة الذكية بالمورد والمبلغ والرقم الضريبي
+    setReadState(z ? 'qr' : d ? 'ok' : 'fail')
     setUploading(false)
   }
 
+  async function saveItems(rows: PickedItem[]) {
+    if (!session || bulkSaving || !rows.length) return
+    const stop = (m: string) => { setBulkErr(m); showToast(m) }
+    setBulkErr('')
+    if (!form.supplier.trim()) {
+      // ننقله لخانة المورد عشان يشوفها
+      const el = document.querySelector<HTMLInputElement>('input[list="sup-list"]'); el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => el?.focus(), 350)
+      return stop(pt('needSupplier', lang))
+    }
+    if (rows.some(r => !(r.total > 0))) return stop(pt('pickPrice', lang))
+    if (rows.some(r => !Number.isInteger(r.qty))) return stop(pt('needQty', lang))
+    if (form.hasVat !== 'no' && !form.invoice_image) return stop(uploading ? (lang === 'en' ? 'Wait — the photo is still uploading' : 'انتظر — الصورة لسا ترتفع') : pt('invoiceRequired', lang))
+    setBulkSaving(true)
+    const res = await fetch('/api/staff-purchase/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('staff_token')}` },
+      body: JSON.stringify({ supplier: form.supplier, has_vat: form.hasVat !== 'no', invoice_image: form.invoice_image || null,
+        invoice_number: form.invoice_number || null, supplier_vat_number: form.supplier_vat_number || null, zatca_qr: zatca?.raw || null, items: rows }) })
+    const j = await res.json().catch(() => ({}))
+    setBulkSaving(false)
+    if (!res.ok || !j.success) return stop(j.error || (lang === 'en' ? 'Could not save — try again' : 'ما انحفظت الفاتورة — حاول مرة ثانية'))
+    showToast(`${pt('itemsSaved', lang)} — ${j.summary || j.saved}`)
+    setTimeout(() => router.push('/staff/dispense'), 2200)
+  }
+
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if(!form.total_amount||!session)return
-    if(submitting.current)return
+    if(!session||submitting.current)return
+    // رسالة واضحة بدل منع صامت
+    if(form.category==='مخزون'&&!form.name.trim()){showToast(pt('needName',lang));return}
+    if(!(Number(form.total_amount)>0)){showToast(pt('needAmount',lang));return}
+    if(form.qty&&!(Number.isInteger(Number(form.qty))&&Number(form.qty)>=0)){showToast(pt('needQty',lang));return}
     submitting.current=true
     if(!form.hasVat){showToast(pt('selectVat',lang));submitting.current=false;return}
     if(form.hasVat==='yes'&&!form.invoice_image){showToast(pt('invoiceRequired',lang));submitting.current=false;return}
+    if(form.hasVat==='yes'&&form.supplier_vat_number.trim()&&!isValidVat(normalizeVat(form.supplier_vat_number))){showToast(pt('vatInvalid',lang));submitting.current=false;return}
     if(!form.supplier.trim()){showToast(pt('supplierRequired',lang));submitting.current=false;return}
     setLoading(true)
-    const total_amount = Number(form.total_amount).toFixed(2)
+    const total_amount = (Math.round(Number(form.total_amount) * 100) / 100).toFixed(2)
 
     const staffToken = localStorage.getItem('staff_token')
     const res = await fetch('/api/staff-purchase', {
@@ -148,6 +237,9 @@ export default function StaffPurchasesPage() {
         supplier:form.supplier,
         note:form.note||null,
         invoice_image:form.invoice_image||null,
+        invoice_number:form.hasVat==='yes'?form.invoice_number||null:null,
+        supplier_vat_number:form.hasVat==='yes'?form.supplier_vat_number||null:null,
+        zatca_qr:form.hasVat==='yes'?zatca?.raw||null:null,
         staff_name:session.name,
         staff_id:session.id
       })
@@ -156,12 +248,14 @@ export default function StaffPurchasesPage() {
     if(!res.ok){showToast(pt('errorPrefix',lang)+resData.error);setLoading(false);submitting.current=false;return}
     showToast(form.category==='مخزون'?`${pt('inventoryUpdated',lang)} (+${form.qty||0})`:pt('purchaseRecorded',lang))
 
-    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:''})
-    setPreviewUrl(null);setLoading(false);submitting.current=false
+    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_number:'',supplier_vat_number:''})
+    setVatFromSupplier(false); setZatca(null)
+    setPreviewUrl(null);setReadState('');setOcrItems([]);setLoading(false);submitting.current=false
     // بعد 2 ثانية ارجع لصفحة الموظف
     setTimeout(()=>router.push('/staff/dispense'), 2000)
   }
 
+  const multi = ocrItems.length > 1   // فاتورة فيها أكثر من صنف → نحفظها أصناف (زر واحد)
   const inputTotal = Number(form.total_amount)||0
   const displayAmount = form.hasVat==='yes'&&inputTotal>0?(inputTotal/1.15).toFixed(2):inputTotal.toFixed(2)
   const displayVat = form.hasVat==='yes'&&inputTotal>0?(inputTotal-Number(displayAmount)).toFixed(2):'0.00'
@@ -175,11 +269,34 @@ export default function StaffPurchasesPage() {
       {/* Header */}
       <StaffHeader title={pt('title',lang)} subtitle={`${session.name} · ${session.org_name}`} rtl={lang!=='en'} />
 
-      {toast&&<div style={{background:toast.startsWith('✅')?C.primaryL:C.dangerL,color:toast.startsWith('✅')?C.primary:C.danger,padding:'12px 20px',fontSize:13,fontWeight:700,textAlign:'center'}}>{toast}</div>}
+      {/* الرسالة ثابتة بأسفل الشاشة — كانت فوق الصفحة وما تبين لو الموظف نازل عند زر الحفظ */}
+      {toast&&<div role="status" style={{position:'fixed',left:16,right:16,bottom:20,zIndex:1000,maxWidth:520,margin:'0 auto',background:toast.startsWith('✅')?C.primaryL:C.dangerL,color:toast.startsWith('✅')?C.primary:C.danger,border:`1.5px solid ${toast.startsWith('✅')?C.primary:C.danger}`,borderRadius:12,padding:'12px 16px',fontSize:13.5,fontWeight:800,textAlign:'center',boxShadow:'0 10px 30px rgba(0,0,0,.18)'}}>{toast}</div>}
 
       <div style={{padding:'16px 20px',maxWidth:520,margin:'0 auto'}}>
-        <form onSubmit={handleSubmit}>
+        {/* صوّر الفاتورة — كاميرا أو من الصور */}
+        <div style={{background:'white',border:`1.5px solid ${previewUrl?C.primary:C.border2}`,borderRadius:14,padding:14,marginBottom:14}}>
+          <div style={{fontSize:13.5,fontWeight:800,color:C.text,marginBottom:10}}>{pt('snapTitle',lang)}</div>
+          {previewUrl && <img src={previewUrl} alt="invoice" style={{width:'100%',maxHeight:180,objectFit:'cover' as const,borderRadius:10,marginBottom:10}}/>}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+            {[{k:'cam',l:pt('camera',lang),cap:true},{k:'gal',l:pt('gallery',lang),cap:false}].map(o=>(
+              <label key={o.k} style={{display:'flex',alignItems:'center',justifyContent:'center',padding:'12px 8px',borderRadius:10,cursor:uploading?'wait':'pointer',fontSize:13,fontWeight:800,
+                background:o.cap?C.primary:C.primaryL,color:o.cap?'white':C.primary,border:`1.5px solid ${C.primary}`,opacity:uploading?.6:1}}>
+                {/* capture يفتح الكاميرا مباشرة؛ بدونه يفتح الصور */}
+                <input type="file" accept="image/*" {...(o.cap?{capture:'environment' as const}:{})} disabled={uploading} style={{display:'none'}}
+                  onChange={e=>{const f=e.target.files?.[0]; e.target.value=''; if(f) handleImage(f)}}/>
+                {previewUrl&&!o.cap?pt('changePhoto',lang):o.l}
+              </label>
+            ))}
+          </div>
+          {readState&&<div style={{marginTop:10,fontSize:12.5,fontWeight:700,lineHeight:1.6,color:readState==='fail'?C.warning:readState==='reading'?C.text3:C.primary}}>
+            {readState==='fail'&&readErr&&lang!=='en'?`${readErr}`:pt(readState==='reading'?'reading':readState==='qr'?'readQr':readState==='ok'?'readOk':'readFail',lang)}
+          </div>}
+        </div>
 
+        {/* noValidate: نتحقق بنفسنا برسائل واضحة — الآيفون كان يمنع الحفظ بصمت (كمية بكسور مثلاً) */}
+        <form onSubmit={handleSubmit} noValidate>
+
+          {!multi&&<>
           {/* نوع الفاتورة */}
           <div style={{marginBottom:14}}>
             <label style={lbl}>{pt('purchaseType',lang)}</label>
@@ -203,7 +320,7 @@ export default function StaffPurchasesPage() {
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
             <div>
               <label style={lbl}>{pt('quantity',lang)}</label>
-              <input style={inp} type="number" min="0" value={form.qty} onChange={e=>setForm(f=>({...f,qty:e.target.value}))} placeholder="0"/>
+              <input style={inp} type="number" min="0" step="any" inputMode="decimal" value={form.qty} onChange={e=>setForm(f=>({...f,qty:e.target.value}))} placeholder="0"/>
             </div>
             <div>
               <label style={lbl}>{pt('unit',lang)}</label>
@@ -213,10 +330,17 @@ export default function StaffPurchasesPage() {
             </div>
           </div>
 
+          </>}
+
           {/* المورد */}
           <div style={{marginBottom:12}}>
             <label style={lbl}>{pt('supplier',lang)}</label>
-            <input style={inp} list="sup-list" value={form.supplier} onChange={e=>setForm(f=>({...f,supplier:e.target.value}))} placeholder={pt('supplierPh',lang)} required/>
+            <input style={inp} list="sup-list" value={form.supplier} onChange={e=>{
+              const name=e.target.value, sup=suppliers.find((x:any)=>x.name===name.trim())
+              const fill=!!sup?.vat_number&&!form.supplier_vat_number
+              if(fill) setVatFromSupplier(true)
+              setForm(f=>({...f,supplier:name,supplier_vat_number:fill?sup.vat_number:f.supplier_vat_number}))
+            }} placeholder={pt('supplierPh',lang)} required/>
             <datalist id="sup-list">{suppliers.map(s=><option key={s.id} value={s.name}/>)}</datalist>
           </div>
 
@@ -225,7 +349,7 @@ export default function StaffPurchasesPage() {
             <label style={lbl}>{pt('vatQuestion',lang)}</label>
             <div style={{display:'flex',gap:8}}>
               {[{v:'yes',l:pt('vatYes',lang)},{v:'no',l:pt('vatNo',lang)}].map(o=>(
-                <button key={o.v} type="button" onClick={()=>setForm(f=>({...f,hasVat:o.v}))}
+                <button key={o.v} type="button" onClick={()=>{ if(o.v==='no') setZatca(null); setForm(f=>({...f,hasVat:o.v})) }}
                   style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.hasVat===o.v?C.primary:C.border2}`,background:form.hasVat===o.v?C.primaryL:'white',color:form.hasVat===o.v?C.primary:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                   {o.l}
                 </button>
@@ -234,9 +358,9 @@ export default function StaffPurchasesPage() {
           </div>
 
           {/* المبلغ */}
-          <div style={{marginBottom:12}}>
+          {!multi&&<div style={{marginBottom:12}}>
             <label style={lbl}>{pt('totalAmount',lang)} ({curr}) *</label>
-            <input style={{...inp,fontSize:18,fontWeight:700,textAlign:'center' as const}} type="number" min="0" step="0.01" value={form.total_amount} onChange={e=>setForm(f=>({...f,total_amount:e.target.value}))} placeholder="0.00" required/>
+            <input style={{...inp,fontSize:18,fontWeight:700,textAlign:'center' as const}} type="number" min="0" step="any" inputMode="decimal" value={form.total_amount} onChange={e=>setForm(f=>({...f,total_amount:e.target.value}))} placeholder="0.00" required/>
             {inputTotal>0&&form.hasVat&&(
               <div style={{display:'flex',gap:8,marginTop:6}}>
                 <div style={{flex:1,background:C.bg,borderRadius:8,padding:'8px 10px',textAlign:'center' as const}}>
@@ -249,26 +373,17 @@ export default function StaffPurchasesPage() {
                 </div>
               </div>
             )}
-          </div>
+          </div>}
 
-          {/* صورة الفاتورة */}
           {form.hasVat==='yes'&&(
-            <div style={{marginBottom:12}}>
-              <label style={lbl}>{pt('invoiceImage',lang)}</label>
-              {previewUrl?(
-                <div style={{position:'relative' as const,marginBottom:8}}>
-                  <img src={previewUrl} alt="invoice" style={{width:'100%',borderRadius:10,maxHeight:160,objectFit:'cover' as const}}/>
-                  <button type="button" onClick={()=>{setPreviewUrl(null);setForm(f=>({...f,invoice_image:''}))}}
-                    style={{position:'absolute' as const,top:6,left:6,background:'rgba(0,0,0,.5)',color:'white',border:'none',borderRadius:'50%',width:24,height:24,cursor:'pointer',fontSize:14}}>×</button>
-                </div>
-              ):(
-                <label style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'20px',border:`2px dashed ${C.border2}`,borderRadius:10,cursor:'pointer',background:C.bg}}>
-                  <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>e.target.files?.[0]&&handleImage(e.target.files[0])}/>
-                  <span style={{fontSize:13,color:C.text3,fontWeight:600}}>{uploading?pt('uploading',lang):pt('clickToUpload',lang)}</span>
-                </label>
-              )}
-            </div>
+            <TaxInvoiceFields lang={lang} invoiceNumber={form.invoice_number} vatNumber={form.supplier_vat_number} savedFromSupplier={vatFromSupplier}
+              zatca={zatca} onZatca={setZatca} enteredTotal={multi?0:Number(form.total_amount)||0} onError={showToast}
+              onChange={p=>{ if('supplier_vat_number' in p) setVatFromSupplier(false); setForm(f=>({...f,...p})) }} inputStyle={inp} labelStyle={lbl}/>
           )}
+
+          {/* الفاتورة فيها أكثر من صنف */}
+          {multi&&<InvoiceItemsPicker items={ocrItems} products={products} lang={lang} invoiceTotal={zatca?.inv.total ?? (Number(form.total_amount)||null)}
+            saving={bulkSaving} onSave={saveItems} color={C.primary} error={bulkErr}/>}
 
           {/* ملاحظة */}
           <div style={{marginBottom:16}}>
@@ -276,10 +391,10 @@ export default function StaffPurchasesPage() {
             <textarea style={{...inp,resize:'none' as const,minHeight:60}} value={form.note} onChange={e=>setForm(f=>({...f,note:e.target.value}))} placeholder={pt('notePh',lang)}/>
           </div>
 
-          <button type="submit" disabled={loading||uploading}
+          {!multi&&<button type="submit" disabled={loading||uploading}
             style={{width:'100%',padding:'14px',background:loading?'#9ca3af':C.primary,color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:800,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:`0 4px 14px rgba(22,163,74,.3)`}}>
             {loading?pt('submitting',lang):pt('submitBtn',lang)}
-          </button>
+          </button>}
         </form>
       </div>
     </div>

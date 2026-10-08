@@ -52,6 +52,7 @@ export function brandEmail(o: {
   note?: string
   small?: string
   rawLinkFallback?: string
+  rawSections?: string   // HTML جاهز ومحمي مسبقاً (جداول التقارير)
 }) {
   const b = BRAND
   const btnUrl = o.button ? (o.button.rawUrl ?? esc(o.button.url || '')) : ''
@@ -107,6 +108,7 @@ export function brandEmail(o: {
       </div></td></tr>` : ''}
     ${rows || badge ? `<tr><td style="padding:12px 28px 6px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid ${b.line};border-radius:14px;padding:10px 14px">${rows}${badge}</table></td></tr>` : ''}
     ${items}
+    ${o.rawSections || ''}
     ${o.button ? `<tr><td style="padding:18px 28px 6px;text-align:center">
       <a href="${btnUrl}" style="display:inline-block;background:${b.color};color:#ffffff;text-decoration:none;font-weight:bold;font-size:14px;padding:13px 30px;border-radius:12px">${esc(o.button.label)}</a>
       ${o.rawLinkFallback ? `<div style="font-size:11px;color:${b.muted};margin-top:10px;line-height:1.7">إذا ما اشتغل الزر، انسخ هذا الرابط:<br><span dir="ltr" style="word-break:break-all">${o.rawLinkFallback}</span></div>` : ''}

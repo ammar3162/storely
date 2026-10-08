@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     const { org_id: orgId } = auth.data!
 
     const supabase = sb()
-    const { data } = await supabase.from('suppliers').select('id,name').eq('org_id', orgId).eq('is_active', true).order('name')
+    const { data } = await supabase.from('suppliers').select('id,name,vat_number').eq('org_id', orgId).eq('is_active', true).order('name')
 
     return NextResponse.json({ success: true, suppliers: data || [] })
   } catch {

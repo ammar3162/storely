@@ -46,6 +46,10 @@
     {
       "path": "/api/health-check",
       "schedule": "15 * * * *"
+    },
+    {
+      "path": "/api/accountant-reports-cron",
+      "schedule": "5 * * * *"
     }
   ]
 }

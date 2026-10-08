@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { lockedFor, lockedFromError } from '@/lib/periodLock'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 
@@ -17,7 +18,9 @@ export async function POST(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
     const db = sb()
-    const { data: purchase } = await db.from('purchases').select('id,category,name,qty,supplier,branch_id,deleted_at').eq('id', id).eq('org_id', org_id).maybeSingle()
+    const { data: purchase } = await db.from('purchases').select('id,category,name,qty,supplier,branch_id,deleted_at,created_at').eq('id', id).eq('org_id', org_id).maybeSingle()
+    const locked = purchase ? await lockedFor(db, org_id, [(purchase as any).created_at]) : null
+    if (locked) return NextResponse.json({ error: locked }, { status: 423 })
     if (!purchase || !(purchase as any).deleted_at) return NextResponse.json({ error: 'الفاتورة غير موجودة' }, { status: 404 })
     const p: any = purchase
     const forced = enforcedBranchId(access)

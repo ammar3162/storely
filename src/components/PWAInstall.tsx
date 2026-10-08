@@ -8,6 +8,8 @@ export default function PWAInstall() {
   const [installed, setInstalled]   = useState(false)
 
   useEffect(() => {
+    // بوابة المحاسب وتقريره ما يحتاجون «ثبّت Storely» — هذا للمالك والموظفين
+    if (location.pathname.startsWith('/accountant')) return
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(console.error)
     if (localStorage.getItem('pwa_dismissed')) return
     const handler = (e: any) => { e.preventDefault(); setPrompt(e); setShowBanner(true) }
