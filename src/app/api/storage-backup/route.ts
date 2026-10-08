@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { isCronRequest } from '@/lib/cronAuth'
 import { createClient } from '@supabase/supabase-js'
 
 const sb = () => createClient(
@@ -31,11 +32,7 @@ async function backupFolder(supabase: ReturnType<typeof sb>, folder: string) {
 
 export async function POST(req: Request) {
   try {
-    const cronSecret = req.headers.get('x-cron-secret')
-    const authHeader = req.headers.get('authorization')
-    const isManualAuth = cronSecret === process.env.ADMIN_PASSWORD
-    const isVercelCron = authHeader === `Bearer ${process.env.CRON_SECRET}`
-    if (!isManualAuth && !isVercelCron) {
+    if (!isCronRequest(req)) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
 

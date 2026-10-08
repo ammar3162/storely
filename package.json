@@ -13,9 +13,9 @@
     "test:integration": "vitest run tests/integration"
   },
   "dependencies": {
-    "@capacitor/android": "^8.4.2",
-    "@capacitor/cli": "^8.4.2",
-    "@capacitor/core": "^8.4.2",
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
     "@sentry/nextjs": "^10.62.0",
     "@sparticuz/chromium": "^149.0.0",
     "@stripe/stripe-js": "^9.8.0",
@@ -31,7 +31,7 @@
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.28.0",
-    "next": "16.2.7",
+    "next": "16.4.0",
     "otplib": "^12.0.1",
     "papaparse": "^5.5.4",
     "puppeteer-core": "^25.7.0",
@@ -54,7 +54,7 @@
     "@types/web-push": "^3.6.4",
     "dotenv": "^17.4.2",
     "eslint": "^9",
-    "eslint-config-next": "16.2.7",
+    "eslint-config-next": "16.4.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^3.2.7"

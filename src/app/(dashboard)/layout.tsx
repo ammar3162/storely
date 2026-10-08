@@ -193,7 +193,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     // فحص انتهاء الاشتراك -- بوقت السيرفر عبر api/check-subscription، مو وقت جهاز العميل
     // (وقت المتصفح لو مضبوط غلط كان يقفل حسابات عملاء اشتراكهم فعلياً ساري)
     try {
-      const subRes = await fetch(`/api/check-subscription?profile_id=${user.id}`).then(r=>r.json())
+      const subRes = await fetch('/api/check-subscription').then(r=>r.json())
       if (subRes?.hasSubscription) {
         if (subRes.expired) {
           router.replace('/expired'); return

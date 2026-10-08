@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
+import { isCronRequest } from '@/lib/cronAuth'
 import { createClient } from '@supabase/supabase-js'
 import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 
 export async function POST(req: Request) {
   try {
-    const cronSecret = req.headers.get('x-cron-secret')
-    if (cronSecret !== process.env.ADMIN_PASSWORD) {
+    if (!isCronRequest(req)) {
       return NextResponse.json({ success:false, error: 'unauthorized' }, { status: 401 })
     }
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL

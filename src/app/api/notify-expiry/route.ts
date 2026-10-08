@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { isCronRequest } from '@/lib/cronAuth'
 import { createClient } from '@supabase/supabase-js'
 import { isSubscriptionActive } from '@/lib/subscription'
 import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
@@ -10,8 +11,7 @@ const sb = () => createClient(
 
 // تنبيه يومي تلقائي لأي منتج قرب انتهاء صلاحيته (خلال 7 أيام أو أقل)
 export async function POST(req: Request) {
-  const secret = req.headers.get('x-cron-secret')
-  if (secret !== process.env.ADMIN_PASSWORD) {
+  if (!isCronRequest(req)) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
@@ -94,9 +94,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ success: true, sent: totalSent, results })
 }
 
-export async function GET() {
-  return POST(new Request('http://localhost', {
-    method: 'POST',
-    headers: { 'x-cron-secret': process.env.ADMIN_PASSWORD || '' },
-  }))
+// Vercel Cron يستدعي GET — نمرر نفس الهيدرات عشان التحقق يصير على الطلب الحقيقي
+export async function GET(req: Request) {
+  return POST(new Request('http://localhost', { method: 'POST', headers: req.headers }))
 }

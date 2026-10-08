@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { isCronRequest } from '@/lib/cronAuth'
 import { createClient } from '@supabase/supabase-js'
 import { sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 
@@ -6,11 +7,7 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 
 export async function GET(req: Request) {
   try {
-    const cronSecret = req.headers.get('x-cron-secret')
-    const authHeader = req.headers.get('authorization')
-    const isManualAuth = cronSecret === process.env.ADMIN_PASSWORD
-    const isVercelCron = authHeader === `Bearer ${process.env.CRON_SECRET}`
-    if (!isManualAuth && !isVercelCron) {
+    if (!isCronRequest(req)) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
 
