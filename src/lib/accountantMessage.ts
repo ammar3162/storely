@@ -22,7 +22,7 @@ function miniTable(head: string[], rows: string[][], more: number) {
   </table>`
 }
 
-export function accountantEmail(r: AccountantReport, o: { accountantName: string }) {
+export function accountantEmail(r: AccountantReport, o: { accountantName: string; portalUrl?: string }) {
   const t = summarize(r)
   const has = (s: string) => r.sections.includes(s as any)
   let html = ''
@@ -55,6 +55,7 @@ export function accountantEmail(r: AccountantReport, o: { accountantName: string
       greeting: `هلا ${o.accountantName}،`,
       paragraphs: [`هذا تقرير ${r.orgName} عن ${r.label}، والتفاصيل كاملة في ملف الإكسل المرفق 📎`],
       rawSections: html,
+      ...(o.portalUrl ? { button: { label: 'ادخل بوابة المحاسب', url: o.portalUrl } } : {}),
       small: 'يوصلك هذا التقرير تلقائياً لأن المنشأة أضافتك محاسباً لها في Storely. للإيقاف تواصل مع المنشأة.',
     }),
   }

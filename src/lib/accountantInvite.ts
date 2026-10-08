@@ -63,3 +63,23 @@ export async function declineInvite(db: SupabaseClient, accessId: string, email:
     message: `${a.name || email} رفض دعوة بوابة المحاسب. تأكد من الإيميل وادعه مرة ثانية إذا لزم.` } as any)
   return !!a
 }
+
+/** حالة دعوة البوابة لإيميل المحاسب في منشأة: pending / active / null (ما فيه دعوة) */
+export async function inviteStatus(db: SupabaseClient, orgId: string, email: string | null | undefined): Promise<'pending' | 'active' | null> {
+  if (!email) return null
+  const { data } = await db.from('accountant_access').select('status').eq('org_id', orgId).eq('email', email.toLowerCase()).maybeSingle()
+  return ((data as any)?.status as 'pending' | 'active') || null
+}
+
+/** لما المالك يضيف محاسب في «الربط مع المحاسب»: نرسل له دعوة البوابة (لو ما عنده) — والتقارير تنتظر قبوله */
+export async function ensurePortalInvite(db: SupabaseClient, o: { org_id: string; email: string; name: string | null; sections: string[]; branch_id: string | null; vat_registered: boolean }) {
+  const cur = await inviteStatus(db, o.org_id, o.email)
+  if (cur) return { status: cur, email_sent: false }
+  const { count } = await db.from('accountant_access').select('id', { count: 'exact', head: true }).eq('org_id', o.org_id)
+  if ((count || 0) >= 3) return { status: null, email_sent: false, limit: true }
+  const { data: row } = await db.from('accountant_access').insert({ org_id: o.org_id, email: o.email.toLowerCase(), name: o.name, sections: o.sections,
+    branch_id: o.branch_id, vat_registered: o.vat_registered } as any).select('id,org_id,email,name,sections').single()
+  if (!row) return { status: null, email_sent: false }
+  const mail = await sendInviteEmail(db, row as any)
+  return { status: 'pending' as const, email_sent: mail.success }
+}

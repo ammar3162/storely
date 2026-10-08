@@ -4,6 +4,7 @@ import { isCronRequest } from '@/lib/cronAuth'
 import { isSubscriptionActive } from '@/lib/subscription'
 import { duePeriod, scheduleToday } from '@/lib/accountantSchedule'
 import { sendAccountantReport } from '@/lib/accountantSend'
+import { inviteStatus } from '@/lib/accountantInvite'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 export const maxDuration = 300
@@ -20,6 +21,8 @@ export async function GET(req: Request) {
     if (!period) continue
     try {
       if (!(await isSubscriptionActive(db, link.org_id))) continue
+      // المحاسب ما قبل الدعوة للحين → ننتظر (ما نعلّم الفترة، تنرسل أول موعد بعد قبوله)
+      if ((await inviteStatus(db, link.org_id, link.email)) === 'pending') continue
       // نعلّم الفترة قبل الإرسال — لو انعادت المهمة ما يتكرر التقرير
       const { data: claimed } = await db.from('accountant_links').update({ last_period_end: period.end } as any)
         .eq('id', link.id).or(`last_period_end.is.null,last_period_end.lt.${period.end}`).select('id')
