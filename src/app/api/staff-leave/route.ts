@@ -4,6 +4,7 @@ import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { markRefNotificationsRead } from '@/lib/requestRefs'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { sendWhatsAppMessage, formatPhone } from '@/lib/whatsapp'
+import { ownerWhatsapp } from '@/lib/ownerContact'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -77,9 +78,9 @@ export async function POST(req: Request) {
       ref_type: 'leave_request', ref_id: (created as any)?.id,
     } as any)
 
-    const { data: owner } = await supabase.from('profiles').select('phone').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
-    if ((owner as any)?.phone) {
-      await sendWhatsAppMessage(formatPhone((owner as any).phone),
+    const ownerWa = await ownerWhatsapp(supabase, org_id)   // رقم واتساب المنشأة اللي حدده المالك
+    if (ownerWa) {
+      await sendWhatsAppMessage(ownerWa!,
         `🏖️ *طلب إجازة جديد*\n\n${staffName} يطلب إجازة من ${start_date} إلى ${end_date} (${daysCount} يوم)${reason ? `\nالسبب: ${reason}` : ''}\n\nراجع الطلب من لوحة "إدارة الموظفين" بحساب Storely.`
       )
     }

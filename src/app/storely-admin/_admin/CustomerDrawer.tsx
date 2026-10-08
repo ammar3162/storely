@@ -132,7 +132,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   return (
     <Drawer open onClose={onClose} width={560}
       title={c.org_name}
-      subtitle={<span>{c.full_name}{hasPhone && <> · <span dir="ltr">{c.phone}</span></>}</span>}>
+      subtitle={<span>{c.full_name}{hasPhone && <> · <span dir="ltr">{c.phone}</span></>}{c.reg_phone && c.reg_phone.replace(/\D/g, '').slice(-9) !== c.phone.replace(/\D/g, '').slice(-9) && <span style={{ opacity: .6 }}> · جوال التسجيل <span dir="ltr">{c.reg_phone}</span></span>}</span>}>
 
       {/* الملخص */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>

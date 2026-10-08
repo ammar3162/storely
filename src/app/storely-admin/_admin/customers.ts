@@ -2,7 +2,7 @@ import { PLAN_PRICING, planKeyOf, type PlanKey } from '@/lib/planPricing'
 import type { Tone } from './kit'
 
 export type Customer = {
-  id: string; full_name: string; phone: string; role: string
+  id: string; full_name: string; phone: string; reg_phone: string; role: string
   status: string; created_at: string; org_id: string; org_name: string
   subscription_type: string; subscription_ends_at: string | null; billing_cycle: 'monthly' | 'yearly'
   max_branches: number; plan: PlanKey; requested_plan: string
@@ -29,7 +29,8 @@ export const PLAN_TONE: Record<PlanKey, Tone> = { basic: 'primary', pro: 'info',
 export function mapCustomer(p: any): Customer {
   const maxB = p.organizations?.max_branches || 1
   return {
-    id: p.id, full_name: p.full_name || '—', phone: p.phone || '',
+    // رقم التواصل = رقم واتساب اللي حدده العميل بإعداداته (يقدر يغيّره)، ولو ما حدد نرجع لجوال التسجيل
+    id: p.id, full_name: p.full_name || '—', phone: p.organizations?.whatsapp_number || p.phone || '', reg_phone: p.phone || '',
     role: p.role, status: p.status || 'pending', created_at: p.created_at,
     org_id: p.org_id, org_name: p.organizations?.name || '—',
     subscription_type: p.subscription_type || 'trial',

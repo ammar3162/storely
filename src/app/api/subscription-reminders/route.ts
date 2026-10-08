@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
+import { pickOwnerWhatsapp } from '@/lib/ownerContact'
 import { isCronRequest } from '@/lib/cronAuth'
 import { syncBranchesToLimit, EXTRA_BRANCH_SLUG } from '@/lib/branchLimit'
 
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
 
   const { data: profiles } = await db
     .from('profiles')
-    .select('id,full_name,phone,subscription_type,subscription_ends_at,trial_reminder_sent,expiry_notice_sent')
+    .select('id,full_name,phone,subscription_type,subscription_ends_at,trial_reminder_sent,expiry_notice_sent,organizations(whatsapp_number)')
     .eq('role', 'owner')
     .eq('status', 'active')
     .not('subscription_ends_at', 'is', null)
@@ -40,7 +41,9 @@ export async function POST(req: Request) {
   let expirySent = 0
 
   for (const p of (profiles || []) as any[]) {
-    if (!p.phone) continue
+    // رقم واتساب المنشأة اللي حدده العميل، أو جوال التسجيل — بصيغة دولية
+    const to = pickOwnerWhatsapp(p.organizations?.whatsapp_number, p.phone)
+    if (!to) continue
     const endsAt = new Date(p.subscription_ends_at)
 
     // تذكير قبل انتهاء الاشتراك بـ٣ أيام — للتجربة المجانية والاشتراك المدفوع معاً، مرة وحدة بس
@@ -54,7 +57,7 @@ export async function POST(req: Request) {
       const text = isTrial
         ? `مرحباً ${p.full_name || ''} 👋\n\nتجربتك المجانية بـ Storely راح تنتهي خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'} 📅\n\nلا تفوّت الفرصة — رقّي اشتراكك الآن واستمر بدون أي انقطاع في إدارة مخزونك:\nstorely.dev`
         : `مرحباً ${p.full_name || ''} 👋\n\nاشتراكك بـ Storely راح ينتهي خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'} 📅\n\nجدّد اشتراكك الآن عشان تكمل إدارة مخزونك وفريقك بدون أي انقطاع:\nstorely.dev`
-      const res = await sendWhatsAppMessage(p.phone, text)
+      const res = await sendWhatsAppMessage(to, text)
       if (res.ok) {
         await db.from('profiles').update({ trial_reminder_sent: true } as any).eq('id', p.id)
         remindersSent++
@@ -65,7 +68,7 @@ export async function POST(req: Request) {
     // (للي انتهى خلال آخر ٣ أيام فقط — عشان ما نرسل للحسابات المنتهية من زمان)
     if (!p.expiry_notice_sent && endsAt <= now && endsAt > threeDaysAgo) {
       const text = `مرحباً ${p.full_name || ''}،\n\nانتهى اشتراكك بـ Storely 😔\n\nجدّد اشتراكك الآن عشان تكمل إدارة مخزونك وفريقك بدون انقطاع:\nstorely.dev/login`
-      const res = await sendWhatsAppMessage(p.phone, text)
+      const res = await sendWhatsAppMessage(to, text)
       if (res.ok) {
         await db.from('profiles').update({ expiry_notice_sent: true } as any).eq('id', p.id)
         expirySent++

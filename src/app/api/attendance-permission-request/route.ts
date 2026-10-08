@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { randomBytes } from 'crypto'
 import { sendWhatsAppMessage, formatPhone } from '@/lib/whatsapp'
+import { ownerWhatsapp } from '@/lib/ownerContact'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { markRefNotificationsRead } from '@/lib/requestRefs'
@@ -46,9 +47,9 @@ export async function POST(req: Request) {
       ref_type: 'excuse_request', ref_id: (inserted as any)?.id,
     } as any)
 
-    const { data: owner } = await supabase.from('profiles').select('phone').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
-    if ((owner as any)?.phone) {
-      await sendWhatsAppMessage(formatPhone((owner as any).phone),
+    const ownerWa = await ownerWhatsapp(supabase, org_id)   // رقم واتساب المنشأة اللي حدده المالك
+    if (ownerWa) {
+      await sendWhatsAppMessage(ownerWa!,
         `🚪 *طلب استئذان جديد*\n\n${name} يطلب الانصراف قبل نهاية شفته${reason ? `\nالسبب: ${reason}` : ''}\n\nراجع الطلب من لوحة "إدارة الموظفين" بحساب Storely.`
       )
     }

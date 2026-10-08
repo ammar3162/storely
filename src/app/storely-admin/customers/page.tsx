@@ -53,7 +53,7 @@ function CustomersPage() {
   const counts = useMemo(() => Object.fromEntries(FILTERS.map(f => [f.k, list.filter(u => matches(u, f.k)).length])), [list])
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase()
-    return list.filter(u => matches(u, filter) && (!s || [u.full_name, u.org_name, u.phone].some(v => v?.toLowerCase().includes(s))))
+    return list.filter(u => matches(u, filter) && (!s || [u.full_name, u.org_name, u.phone, u.reg_phone].some(v => v?.toLowerCase().includes(s))))
   }, [list, q, filter])
   const selected = list.find(u => u.id === selectedId) || null
 
