@@ -146,7 +146,7 @@ export default function SuppliersJoinPage() {
         </div>
 
         <div style={{textAlign:'center',marginTop:20,fontSize:12,color:'rgba(255,255,255,.4)'}}>
-          Storely — نظام إدارة المخزون الاحترافي
+          Storely — نظام إدارة التشغيل للمطاعم والمحلات
         </div>
       </div>
     </div>

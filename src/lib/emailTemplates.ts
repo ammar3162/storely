@@ -89,7 +89,7 @@ export function brandEmail(o: {
         <td style="vertical-align:middle">
           <table role="presentation" cellpadding="0" cellspacing="0"><tr>
             <td style="padding-left:10px"><img src="${b.logo}" width="40" height="40" alt="Storely" style="display:block;border-radius:10px;background:#ffffff"></td>
-            <td><div style="font-size:20px;font-weight:bold;letter-spacing:.5px" dir="ltr">Storely</div><div style="font-size:11px;opacity:.8">نظام إدارة المخزون والمطاعم</div></td>
+            <td><div style="font-size:20px;font-weight:bold;letter-spacing:.5px" dir="ltr">Storely</div><div style="font-size:11px;opacity:.8">نظام إدارة التشغيل</div></td>
           </tr></table>
         </td>
         ${o.headerSide ? `<td style="text-align:left;vertical-align:middle"><div style="font-size:15px;font-weight:bold">${esc(o.headerSide.title)}</div>${o.headerSide.sub ? `<div style="font-size:11px;opacity:.8" dir="ltr">${esc(o.headerSide.sub)}</div>` : ''}</td>` : ''}
@@ -117,7 +117,7 @@ export function brandEmail(o: {
     <tr><td style="padding:20px 28px 24px;text-align:center">
       ${o.small ? `<div style="font-size:12px;color:${b.muted};line-height:1.8;margin-bottom:12px">${esc(o.small)}</div>` : ''}
       <a href="https://wa.me/${b.whatsapp}" style="display:inline-block;color:${b.color};text-decoration:none;font-weight:bold;font-size:12px;border:1px solid rgba(2,159,162,.35);padding:9px 18px;border-radius:10px">تواصل معنا عبر واتساب</a>
-      <div style="font-size:11px;color:#94a3b8;margin-top:14px;line-height:1.8">Storely — نظام إدارة المخزون<br><a href="${b.site}" style="color:#94a3b8" dir="ltr">storely.dev</a></div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:14px;line-height:1.8">Storely — نظام إدارة التشغيل<br><a href="${b.site}" style="color:#94a3b8" dir="ltr">storely.dev</a></div>
     </td></tr>
   </table>
 </div>

@@ -1,7 +1,7 @@
 {
-  "name": "Storely — نظام إدارة المخزون",
+  "name": "Storely — نظام إدارة التشغيل",
   "short_name": "Storely",
-  "description": "نظام إدارة المخزون الاحترافي",
+  "description": "نظام إدارة التشغيل للمطاعم والمحلات",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#0d2818",

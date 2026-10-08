@@ -99,7 +99,7 @@ export default function PendingPage() {
 
         {/* footer -->*/}
         <div style={{textAlign:'center',marginTop:20,fontSize:12,color:'rgba(255,255,255,0.5)'}}>
-          Storely — نظام إدارة المخزون الاحترافي
+          Storely — نظام إدارة التشغيل للمطاعم والمحلات
         </div>
       </div>
     </div>
