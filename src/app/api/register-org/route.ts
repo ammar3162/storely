@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { attachReferral } from '@/lib/agentReferral'
+import { REF_COOKIE } from '@/lib/agentRewards'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { sanitizeShortText } from '@/lib/sanitize'
@@ -21,7 +23,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'غير مصرح — سجّل الدخول أولاً' }, { status: 401 })
     }
 
-    let { orgName, fullPhone, businessType, branchCount, billing, phone, trialEnds, countryCode, termsAcceptedAt } = await req.json()
+    let { orgName, fullPhone, businessType, branchCount, billing, phone, trialEnds, countryCode, termsAcceptedAt, agentCode } = await req.json()
     const userId = authedUser.id
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null
     const userAgent = req.headers.get('user-agent') || null
@@ -103,6 +105,12 @@ export async function POST(req: Request) {
       ip_address: ip,
       user_agent: userAgent,
     }).then(({ error }: any) => { if (error) console.log('consent_logs insert error:', error.message) })
+
+    // مندوب: الكود المكتوب في التسجيل، وإلا كوكي رابطه (أفضل جهد — ما يوقف التسجيل)
+    try {
+      const refCookie = (req.headers.get('cookie') || '').match(new RegExp(`(?:^|;\\s*)${REF_COOKIE}=([A-Z0-9]+)`))?.[1]
+      await attachReferral(supabase, { orgId: org.id, orgName, code: agentCode || refCookie, ownerEmail: authedUser.email, ownerPhone: fullPhone })
+    } catch (e) { console.error('AGENT_REFERRAL_FAILED (non-fatal):', e) }
 
     // ربط تلقائي بطلب عرض سابق (لو وجد) — نطابق آخر 9 أرقام من رقم الجوال، بدون تدخل يدوي
     try {

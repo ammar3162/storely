@@ -132,6 +132,9 @@ function LoginPage() {
     return null
   })
   const [agreedTerms, setAgreedTerms] = useState(false)
+  // كود المندوب (اختياري) — يتعبّى تلقائياً من رابطه storely.dev/r/الكود
+  const [agentCode, setAgentCode] = useState('')
+  useEffect(() => { const r = new URLSearchParams(window.location.search).get('ref'); if (r) setAgentCode(r.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12)) }, [])
   const [showPassword, setShowPassword] = useState(false)
   const supabase = createClient()
 
@@ -292,6 +295,7 @@ function LoginPage() {
           phone: phone.trim(), countryCode,
           trialEnds: new Date(Date.now() + 14*24*60*60*1000).toISOString(),
           termsAcceptedAt: new Date().toISOString(),
+          agentCode: agentCode.trim() || undefined,
         })
       })
       const regData = await regRes.json()
@@ -330,7 +334,8 @@ function LoginPage() {
           phone: phone.trim(),
           countryCode,
           trialEnds,
-          termsAcceptedAt: new Date().toISOString()
+          termsAcceptedAt: new Date().toISOString(),
+          agentCode: agentCode.trim() || undefined,
         })
       })
       const regData = await regRes.json()
@@ -636,6 +641,11 @@ function LoginPage() {
                       ✓ {t('login.freeTrialConfirm')}
                     </div>
                   )}
+
+                  <div>
+                    <input className="inp" type="text" value={agentCode} onChange={e=>setAgentCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12))}
+                      placeholder="كود المندوب (اختياري)" dir="ltr" autoComplete="off" style={{textAlign:'center',letterSpacing:2}}/>
+                  </div>
 
                   <label style={{display:'flex',alignItems:'flex-start',gap:8,fontSize:12,color:'#4b5563',cursor:'pointer',marginTop:4}}>
                     <input type="checkbox" checked={agreedTerms} onChange={e=>setAgreedTerms(e.target.checked)}
