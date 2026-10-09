@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
+import { awardAgentCommission } from '@/lib/agentReferral'
 
 export async function POST(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
@@ -57,5 +58,11 @@ export async function POST(req: Request) {
     }
   } catch {}
 
-  return NextResponse.json({ success: true, addonsRenewed })
+  // مكافأة المندوب على أول اشتراك مدفوع (مرة وحدة لكل منشأة)
+  let agentReward: number | null = null
+  if (type === 'paid' && orgIdForUpdate) {
+    try { agentReward = await awardAgentCommission(supabase, orgIdForUpdate) } catch (e) { console.error('AGENT_COMMISSION_FAILED', e) }
+  }
+
+  return NextResponse.json({ success: true, addonsRenewed, agentReward })
 }

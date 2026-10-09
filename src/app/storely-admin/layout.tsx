@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState, type ComponentType } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import {
+import { Wallet,
   LayoutDashboard, Users, TrendingUp, Inbox, Truck, Handshake, Bell, Megaphone,
   Activity, MessageCircle, HardDrive, ScrollText, FileCheck, ShieldAlert,
   Package, UserCog, Settings, LogOut, Menu, X,
@@ -22,6 +22,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
     { href: '/storely-admin/demo-requests', label: 'طلبات العرض', icon: Inbox },
     { href: '/storely-admin/supplier-applications', label: 'طلبات الموردين', icon: Truck, perm: 'manage_suppliers' },
     { href: '/storely-admin/partners', label: 'الشركاء', icon: Handshake },
+    { href: '/storely-admin/agents', label: 'المناديب', icon: Wallet, perm: 'manage_users' },
   ] },
   { title: 'التواصل', items: [
     { href: '/storely-admin/notifications', label: 'إشعارات العملاء', icon: Bell },
