@@ -11,7 +11,6 @@ import type { Metadata } from "next"
 import Script from "next/script"
 // الخط من موقعنا نفسه بدل Google (أسرع — بدون اتصالات خارجية تعطّل الرسم). الخط أوزانه لين 700 بس
 import "./fonts.css"
-import { preload } from "react-dom"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -43,15 +42,13 @@ export const metadata: Metadata = {
   },
 }
 
-function preloadFonts() {
-  for (const w of [400, 700]) preload(`/fonts/ibm-plex-sans-arabic-arabic-${w}-normal.woff2`, { as: 'font', type: 'font/woff2', crossOrigin: 'anonymous' })
-}
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  preloadFonts()
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
+        {/* أكثر وزنين مستخدمين — المتصفح يبدأ ينزّلهم من أول سطر */}
+        <link rel="preload" href="/fonts/ibm-plex-sans-arabic-arabic-400-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous"/>
+        <link rel="preload" href="/fonts/ibm-plex-sans-arabic-arabic-700-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous"/>
         <script dangerouslySetInnerHTML={{__html: IN_APP_SCRIPT}}/>
         <meta name="theme-color" content="#042f2e"/>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
