@@ -303,7 +303,7 @@ export default function ProfitabilityPage() {
         </div>
 
         {/* صف المقاييس */}
-        <div style={{display:'grid',gridTemplateColumns:`repeat(${hasDelivery?6:5},1fr)`,gap:8,marginBottom:16,alignItems:'start'}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:8,marginBottom:16,alignItems:'start'}}>
           {[
             {label:'المبيعات',value:data.totalIn,prev:prevData?.totalIn},
             ...(hasDelivery?[{label:'دخل التوصيل',value:data.deliveryIncomeTotal||0,prev:prevData?.deliveryIncomeTotal}]:[]),
@@ -328,7 +328,7 @@ export default function ProfitabilityPage() {
         </div>
 
         {/* المصروفات */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,alignItems:'start'}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:10,alignItems:'start'}}>
           <div style={{...card,padding:'16px 18px'}}>
             <div style={{fontSize:font.base,fontWeight:700,color:colors.text,marginBottom:2}}>المصروفات الثابتة</div>
             <div style={{fontSize:11,color:colors.text4,marginBottom:14}}>رواتب، إيجار... تتكرر تلقائياً كل شهر</div>
