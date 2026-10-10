@@ -54,7 +54,7 @@ export default function SuppliersJoinPage() {
 
   return (
     <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#042f2e,#0C213B)',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:20}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap');*{box-sizing:border-box}.inp{width:100%;padding:12px 16px;border:1.5px solid #e5e7eb;borderRadius:10px;fontSize:14px;outline:none;fontFamily:inherit;transition:border-color .2s}.inp:focus{border-color:#029FA2;box-shadow:0 0 0 3px rgba(22,163,74,.08)}`}</style>
+      <style>{`*{box-sizing:border-box}.inp{width:100%;padding:12px 16px;border:1.5px solid #e5e7eb;borderRadius:10px;fontSize:14px;outline:none;fontFamily:inherit;transition:border-color .2s}.inp:focus{border-color:#029FA2;box-shadow:0 0 0 3px rgba(22,163,74,.08)}`}</style>
 
       <div style={{maxWidth:600,margin:'0 auto',paddingTop:40}}>
         {/* Header */}

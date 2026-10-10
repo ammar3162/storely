@@ -1,4 +1,8 @@
 'use client'
+// خط العناوين في صفحة الهبوط — من موقعنا نفسه بدل Google
+import "@fontsource/noto-naskh-arabic/500.css"
+import "@fontsource/noto-naskh-arabic/600.css"
+import "@fontsource/noto-naskh-arabic/700.css"
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { isInApp } from '@/lib/inApp'
@@ -14,15 +18,24 @@ const FEATURE_TONES = [
 
 const WA_ICON = 'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z'
 
-function PhoneVideo({ src, poster, label }: { src: string; poster: string; label: string }) {
+// الفيديو اللي تحت (lazy) ما ينحمّل إلا لما يقرب يطلع في الشاشة — يخفف تحميل الصفحة الأولى
+function PhoneVideo({ src, poster, label, lazy = false }: { src: string; poster: string; label: string; lazy?: boolean }) {
+  const ref = useRef<HTMLVideoElement>(null)
+  const [show, setShow] = useState(!lazy)
+  useEffect(() => {
+    if (!lazy || show || !ref.current) return
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setShow(true); io.disconnect() } }, { rootMargin: '300px' })
+    io.observe(ref.current)
+    return () => io.disconnect()
+  }, [lazy, show])
   return (
     <div className="lp-phone">
-      <video src={src} poster={poster} autoPlay muted loop playsInline preload="metadata" aria-label={label} />
+      <video ref={ref} src={show ? src : undefined} poster={poster} autoPlay muted loop playsInline preload={lazy ? 'none' : 'metadata'} aria-label={label} />
     </div>
   )
 }
 
-export default function LandingPage() {
+export default function LandingPage({ initialMarquee }: { initialMarquee?: string[] } = {}) {
   const router = useRouter()
   const rootRef = useRef<HTMLDivElement>(null)
   const [billing, setBilling] = useState<Billing>('monthly')
@@ -43,7 +56,7 @@ export default function LandingPage() {
       if (saved === 'ar' || saved === 'en') setLangState(saved)
     } catch {}
   }, [])
-  const [marqueeMsgs, setMarqueeMsgs] = useState<string[]>([])
+  const [marqueeMsgs, setMarqueeMsgs] = useState<string[]>(initialMarquee || [])
   const hasMarquee = marqueeMsgs.length>0
 
   useEffect(()=>{
@@ -65,6 +78,7 @@ export default function LandingPage() {
   },[])
 
   useEffect(()=>{
+    if (initialMarquee) return   // جات من الخادم
     fetch('/api/marquee-messages').then(r=>r.json()).then(d=>{
       const msgs = (d.messages||[]).map((m:any)=>m.message)
       if(msgs.length>0) setMarqueeMsgs(msgs)
@@ -173,7 +187,7 @@ export default function LandingPage() {
         {partners.length > 0 && (
           <div className="lp-wrap lp-partners">
             <p>{t('trustedBy')}</p>
-            <div>{partners.map((p:any)=><img key={p.id} src={p.logo_url} alt={p.name}/>)}</div>
+            <div>{partners.map((p:any)=><img key={p.id} src={p.logo_url} alt={p.name} loading="lazy" decoding="async"/>)}</div>
           </div>
         )}
 
@@ -190,7 +204,7 @@ export default function LandingPage() {
       <section className="lp-section">
         <div className="lp-wrap lp-split">
           <figure className="lp-photo rv">
-            <img src="/storely-team.jpg" alt="صاحب منشأة يتابع Storely من اللابتوب"/>
+            <img src="/storely-team.jpg" alt="صاحب منشأة يتابع Storely من اللابتوب" width={1100} height={635} loading="lazy" decoding="async"/>
             <figcaption className="lp-note">
               <span className="lp-note-ic">☀️</span>
               <div><b>صباح الخير</b><small>3 أصناف تحتاج إعادة طلب اليوم</small></div>
@@ -223,7 +237,7 @@ export default function LandingPage() {
             </ol>
           </div>
           <div className="lp-how-media rv">
-            <PhoneVideo src="/videos/storely-features.mp4" poster="/videos/storely-features.jpg" label="مميزات Storely"/>
+            <PhoneVideo src="/videos/storely-features.mp4" poster="/videos/storely-features.jpg" label="مميزات Storely" lazy/>
           </div>
         </div>
       </section>
@@ -232,7 +246,7 @@ export default function LandingPage() {
       <section className="lp-section">
         <div className="lp-wrap lp-split lp-split-rev">
           <figure className="lp-photo lp-photo-wide rv">
-            <img src="/supplier-team.jpg" alt="مورد يسلّم طلبية لصاحب منشأة"/>
+            <img src="/supplier-team.jpg" alt="مورد يسلّم طلبية لصاحب منشأة" width={1100} height={600} loading="lazy" decoding="async"/>
             <figcaption className="lp-chat">
               <div className="lp-bubble lp-bubble-out"><b>🟢 Storely</b><br/>طلب توريد: دقيق — 20 كيس</div>
               <div className="lp-bubble">تم ✅ أبشر، بيوصلكم اليوم</div>
@@ -398,7 +412,6 @@ export default function LandingPage() {
 }
 
 const LP_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@500;600;700&display=swap');
 .lp{--ink:#14201f;--ink2:#3d4a48;--ink3:#6b7775;--line:#e7e2d8;--cream:#faf8f3;--sand:#f3eee4;--teal:#0b3b3a;--teal2:#0f766e;--mint:#5eead4;
   font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:var(--cream);color:var(--ink);overflow-x:hidden}
 .lp *{box-sizing:border-box;margin:0;padding:0}
