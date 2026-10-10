@@ -129,7 +129,7 @@ function ReportCard({ title, subtitle, icon, color, bg, border, stats, onClick, 
           </div>
         </div>
 
-        <div style={{display:'grid',gridTemplateColumns:`repeat(${stats.length},1fr)`,gap:10,marginBottom:chartData?16:0}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:10,marginBottom:chartData?16:0}}>
           {loading?[...Array(stats.length)].map((_,i)=>(
             <div key={i} style={{background:colors.bg,borderRadius:radius.md,padding:'12px',textAlign:'center' as const}}>
               <div style={{height:22,background:colors.border2,borderRadius:6,marginBottom:6,animation:'sk 1.4s infinite'}}/>
@@ -636,7 +636,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
           {exportingPdf?<span style={{display:'inline-flex',alignItems:'center',gap:6}}><Loader2 size={14} strokeWidth={2.25} className="spin-icon"/> جاري التصدير...</span>:<span style={{display:'inline-flex',alignItems:'center',gap:6}}><FileText size={14} strokeWidth={2.25}/> تصدير PDF</span>}
         </button>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16,marginTop:12}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:10,marginBottom:16,marginTop:12}}>
         {[
           {label:'بدون ضريبة',value:totalAmount.toFixed(0)+' '+curr,color:colors.text2,bg:colors.bg,border:colors.border2},
           {label:'ضريبة 15%',value:totalVat.toFixed(0)+' '+curr,color:colors.warning,bg:colors.warningLight,border:colors.warningBorder},

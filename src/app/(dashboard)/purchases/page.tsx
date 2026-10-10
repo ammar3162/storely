@@ -391,7 +391,7 @@ export default function PurchasesPage() {
       </div>
 
       {/* Stats */}
-      <div className="u" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:16,animationDelay:'.04s'}}>
+      <div className="u" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:8,marginBottom:16,animationDelay:'.04s'}}>
         {[
           {label:'الفواتير',   value:filteredHistory.length,       color:C.info},
           {label:'بدون ضريبة',value:totalNet.toFixed(0)+' '+curr,   color:C.text},
