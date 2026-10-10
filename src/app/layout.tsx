@@ -46,8 +46,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
-        {/* أكثر وزنين مستخدمين — المتصفح يبدأ ينزّلهم من أول سطر */}
+        {/* أكثر الأوزان استخداماً — المتصفح يبدأ ينزّلها من أول سطر */}
         <link rel="preload" href="/fonts/ibm-plex-sans-arabic-arabic-400-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous"/>
+        <link rel="preload" href="/fonts/ibm-plex-sans-arabic-arabic-600-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous"/>
         <link rel="preload" href="/fonts/ibm-plex-sans-arabic-arabic-700-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous"/>
         <script dangerouslySetInnerHTML={{__html: IN_APP_SCRIPT}}/>
         <meta name="theme-color" content="#042f2e"/>
