@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState, type ComponentType } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { Wallet,
+import { PlayCircle, Wallet,
   LayoutDashboard, Users, TrendingUp, Inbox, Truck, Handshake, Bell, Megaphone,
   Activity, MessageCircle, HardDrive, ScrollText, FileCheck, ShieldAlert,
   Package, UserCog, Settings, LogOut, Menu, X,
@@ -27,6 +27,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
   { title: 'التواصل', items: [
     { href: '/storely-admin/notifications', label: 'إشعارات العملاء', icon: Bell },
     { href: '/storely-admin/marquee-messages', label: 'الشريط الإخباري', icon: Megaphone },
+    { href: '/storely-admin/help-videos', label: 'فيديوهات الشرح', icon: PlayCircle, perm: 'manage_users' },
   ] },
   { title: 'النظام', items: [
     { href: '/storely-admin/health', label: 'صحة النظام', icon: Activity },

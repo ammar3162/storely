@@ -6,6 +6,7 @@ import { getMeResult } from '@/lib/session'
 import { useRouter, usePathname } from 'next/navigation'
 
 import AIAssistant from '@/components/AIAssistant'
+import HelpVideoButton from '@/components/HelpVideoButton'
 import { Bell, Check, ChevronDown, HelpCircle, LogOut, Moon, Pause, Settings, Store, Sun, Wrench } from 'lucide-react'
 import { toast } from '@/components/toast'
 import { colors as dsColors } from '@/lib/ds'
@@ -660,6 +661,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 </button>
               )}
             </div>
+            <HelpVideoButton/>
             <button className="sh-icon-btn" aria-label="الإشعارات" onClick={()=>router.push('/notifications')}>
               <Bell size={20}/>{unread>0&&<span className="sh-dot"/>}
             </button>
@@ -746,6 +748,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               <span style={{fontWeight:600,color:C.text2}}>{orgName}</span>{branchName&&<><span>/</span><span>{branchName}</span></>}
             </div>
             <div style={{display:'flex',alignItems:'center',gap:4}}>
+              <HelpVideoButton/>
               <button className="sh-icon-btn" title="الدعم الفني" onClick={()=>window.open('https://wa.me/966594351667','_blank')}><HelpCircle size={19}/></button>
               <button className="sh-icon-btn" title="الإعدادات" onClick={()=>router.push('/settings')}><Settings size={19}/></button>
               <button className="sh-icon-btn" title="الإشعارات" onClick={()=>router.push('/notifications')}><Bell size={19}/>{unread>0&&<span className="sh-dot"/>}</button>
