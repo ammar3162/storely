@@ -1,8 +1,4 @@
 'use client'
-// خط العناوين في صفحة الهبوط — من موقعنا نفسه بدل Google
-import "@fontsource/noto-naskh-arabic/500.css"
-import "@fontsource/noto-naskh-arabic/600.css"
-import "@fontsource/noto-naskh-arabic/700.css"
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { isInApp } from '@/lib/inApp'

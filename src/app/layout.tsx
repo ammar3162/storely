@@ -10,10 +10,8 @@ import { IN_APP_SCRIPT } from '@/lib/inApp'
 import type { Metadata } from "next"
 import Script from "next/script"
 // الخط من موقعنا نفسه بدل Google (أسرع — بدون اتصالات خارجية تعطّل الرسم). الخط أوزانه لين 700 بس
-import "@fontsource/ibm-plex-sans-arabic/400.css"
-import "@fontsource/ibm-plex-sans-arabic/500.css"
-import "@fontsource/ibm-plex-sans-arabic/600.css"
-import "@fontsource/ibm-plex-sans-arabic/700.css"
+import "./fonts.css"
+import { preload } from "react-dom"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -45,7 +43,12 @@ export const metadata: Metadata = {
   },
 }
 
+function preloadFonts() {
+  for (const w of [400, 700]) preload(`/fonts/ibm-plex-sans-arabic-arabic-${w}-normal.woff2`, { as: 'font', type: 'font/woff2', crossOrigin: 'anonymous' })
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  preloadFonts()
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
