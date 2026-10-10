@@ -107,7 +107,6 @@ function StaffLoginInner() {
   return (
     <div style={{minHeight:'100vh',background:'#0b2b29',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:dir}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap');
         *{box-sizing:border-box}
         @keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}
         .shake{animation:shake .5s cubic-bezier(.36,.07,.19,.97) both}

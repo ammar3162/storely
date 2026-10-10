@@ -4,10 +4,13 @@ import PWAInstall from '@/components/PWAInstall'
 import FeatureAnnouncement from '@/components/FeatureAnnouncement'
 import PullToRefresh from '@/components/PullToRefresh'
 import ApiBridge from '@/components/ApiBridge'
+import SpeedInsightsRoute from '@/components/SpeedInsightsRoute'
 import DigitNormalizer from '@/components/DigitNormalizer'
 import { IN_APP_SCRIPT } from '@/lib/inApp'
 import type { Metadata } from "next"
 import Script from "next/script"
+// الخط من موقعنا نفسه بدل Google (أسرع — بدون اتصالات خارجية تعطّل الرسم). الخط أوزانه لين 700 بس
+import "./fonts.css"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -43,6 +46,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
+        {/* أكثر الأوزان استخداماً — المتصفح يبدأ ينزّلها من أول سطر */}
+        <link rel="preload" href="/fonts/ibm-plex-sans-arabic-arabic-400-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous"/>
+        <link rel="preload" href="/fonts/ibm-plex-sans-arabic-arabic-600-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous"/>
+        <link rel="preload" href="/fonts/ibm-plex-sans-arabic-arabic-700-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous"/>
         <script dangerouslySetInnerHTML={{__html: IN_APP_SCRIPT}}/>
         <meta name="theme-color" content="#042f2e"/>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -51,8 +58,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
         <meta name="apple-mobile-web-app-title" content="Storely"/>
         <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-        <link rel="preconnect" href="https://fonts.googleapis.com"/>
-        <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
         <style dangerouslySetInnerHTML={{__html:`
           *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
           body { font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif !important; direction: rtl; }
@@ -72,7 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         {/* Vercel Speed Insights: قياس سرعة الصفحات عند العملاء الحقيقيين (سكربت Vercel الرسمي — بدون مكتبة إضافية).
             يشتغل بس على المشروع اللي مفعّلة فيه الخدمة، وغيره يتجاهله */}
-        <Script src="/_vercel/speed-insights/script.js" strategy="afterInteractive" />
+        <SpeedInsightsRoute/>
       </body>
     </html>
   )

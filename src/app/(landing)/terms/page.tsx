@@ -5,7 +5,7 @@ export default function TermsPage() {
   const router = useRouter()
   return (
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',minHeight:'100vh',background:'#f8fafc'}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700;800&display=swap');*{box-sizing:border-box;margin:0;padding:0}`}</style>
+      <style>{`*{box-sizing:border-box;margin:0;padding:0}`}</style>
       
       {/* Header */}
       <div style={{background:'#042f2e',padding:'16px 32px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>

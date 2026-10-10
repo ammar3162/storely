@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
   // والروابط الخارجية ما تشوف المسار الكامل، والاتصال دايماً مشفّر
   async headers() {
     return [{
+      // الخطوط ما تتغير (لو تغيّرت نغيّر اسم الملف) — تنحفظ في المتصفح سنة
+      source: '/fonts/:file*',
+      headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+    }, {
       source: '/:path*',
       headers: [
         { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
