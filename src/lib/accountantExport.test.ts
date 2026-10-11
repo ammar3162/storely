@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import ExcelJS from 'exceljs'
-import { buildAccountantWorkbook, summarize, taxInvoices, type AccountantReport } from './accountantExport'
+import { buildAccountantWorkbook, summarize, taxInvoices, vatReturn, type AccountantReport } from './accountantExport'
 import { accountantEmail, accountantWhatsapp } from './accountantMessage'
 
 const base: AccountantReport = {
@@ -34,14 +34,32 @@ describe('accountant report', () => {
     expect(t.vatNet).toBe(585)
     expect(summarize({ ...base, vatRegistered: false }).vatNet).toBe(0)
   })
+  it('vat return follows the ZATCA boxes', async () => {
+    const v = vatReturn(base)
+    const b = (n: number) => v.boxes.find(x => x.no === n)!
+    expect(v.boxes.map(x => x.no)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
+    expect([b(1).amount, b(1).vat]).toEqual([4000, 600])
+    expect([b(7).amount, b(7).vat]).toEqual([100, 15])        // الفاتورة الناقصة ما تدخل
+    expect(b(3).amount).toBeNull()                               // ما يسجله النظام
+    expect([b(13).vat, b(16).vat, v.netDue]).toEqual([585, 585, 585])
+    expect(v.review).toEqual({ count: 1, net: 200, vat: 30 })
+    expect(v.drawerExpenses).toBe(25)
+    expect(v.deadline).toBe('2026-10-31')
+    expect(vatReturn({ ...base, period: { start: '2026-07-01', end: '2026-09-30' } }).deadline).toBe('2026-10-31')
+    expect(vatReturn({ ...base, period: { start: '2026-09-01', end: '2026-09-15' } }).deadline).toBeNull()
+    expect(vatReturn({ ...base, period: { start: '2026-12-01', end: '2026-12-31' } }).deadline).toBe('2027-01-31')
+    const cells = cellsOf((await load(base)).getWorksheet('الإقرار الضريبي')!)
+    expect(cells).toContain('المبيعات الخاضعة للنسبة الأساسية')
+    expect(cells).toContain(585)
+  })
   it('all sheets in order, right-to-left', async () => {
     const wb = await load(base)
-    expect(wb.worksheets.map(w => w.name)).toEqual(['الملخص', 'المبيعات', 'الفواتير الضريبية', 'مشتريات بدون ضريبة', 'أصناف المشتريات', 'الضريبة', 'الموردين الآجلين', 'الرواتب', 'المصروفات', 'العجز والزيادة', 'المخزون'])
+    expect(wb.worksheets.map(w => w.name)).toEqual(['الملخص', 'المبيعات', 'الفواتير الضريبية', 'مشتريات بدون ضريبة', 'أصناف المشتريات', 'الإقرار الضريبي', 'الموردين الآجلين', 'الرواتب', 'المصروفات', 'العجز والزيادة', 'المخزون'])
     expect(wb.worksheets.every(w => (w.views[0] as any)?.rightToLeft)).toBe(true)
   })
   it('only the sections the owner chose', async () => {
     const wb = await load({ ...base, sections: ['purchases', 'vat'] })
-    expect(wb.worksheets.map(w => w.name)).toEqual(['الملخص', 'الفواتير الضريبية', 'مشتريات بدون ضريبة', 'أصناف المشتريات', 'الضريبة'])
+    expect(wb.worksheets.map(w => w.name)).toEqual(['الملخص', 'الفواتير الضريبية', 'مشتريات بدون ضريبة', 'أصناف المشتريات', 'الإقرار الضريبي'])
     expect(cellsOf(wb.getWorksheet('الملخص')!)).not.toContain('صافي الرواتب')
   })
   it('only https invoice links', async () => {
