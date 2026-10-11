@@ -225,7 +225,8 @@ export async function buildAccountantWorkbook(r: AccountantReport, opts: { water
   ], r.closings.map(c => ({ ...c, staff: c.staff || '—', status: CLOSING_STATUS[c.status || ''] || '—' })),
   { date: 'الإجمالي', sales: t.sales, mada: t.mada, visa: t.visa, mastercard: t.mastercard, network: t.network, cash: t.cash, expenses: sum(r.closings, c => c.expenses), difference: sum(r.closings, c => c.difference) })
 
-  if (has('purchases') || has('vat')) {
+  // الفواتير الضريبية تهم المنشأة المسجلة بس (هي اللي تخصم ضريبة المشتريات)
+  if ((has('purchases') || has('vat')) && r.vatRegistered) {
     const list = taxInvoices(r.purchases)
     const tws = addTable(wb, 'الفواتير الضريبية', [
       { header: 'التاريخ', key: 'date', width: 12 }, ...branchCol, { header: 'رقم الفاتورة', key: 'invoiceNumber', width: 15 }, { header: 'المورد', key: 'supplier', width: 22 },

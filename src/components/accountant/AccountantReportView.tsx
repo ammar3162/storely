@@ -68,7 +68,7 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
         rows={r.closings.map((c: any) => [c.date, ...(multi ? [c.branch] : []), c.staff || '—', c.sales, c.network, c.cash])} />
     </Card>}
 
-    {(has('purchases') || has('vat')) && <Card wide title={`الفواتير الضريبية (${invoicesLabel(t.taxInvoices)})`}>
+    {(has('purchases') || has('vat')) && r.vatRegistered && <Card wide title={`الفواتير الضريبية (${invoicesLabel(t.taxInvoices)})`}>
       {t.taxInvoices > 0 && <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: t.taxInvoices === t.taxComplete ? '#059669' : '#b45309' }}>
         {t.taxInvoices === t.taxComplete ? '✓ كل الفواتير مكتملة البيانات' : `${t.taxInvoices - t.taxComplete} ناقصة — تحتاج الرقم الضريبي أو رقم الفاتورة قبل الإقفال`}
         {t.taxVerified > 0 && <span style={{ color: '#059669' }}> · {t.taxVerified} موثقة من باركود الهيئة</span>}

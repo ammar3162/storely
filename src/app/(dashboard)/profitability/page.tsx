@@ -37,6 +37,8 @@ export default function ProfitabilityPage() {
   const [month, setMonth] = useState(currentMonth())
   const [orgId, setOrgId] = useState('')
   const [curr, setCurr] = useState('ر.س')
+  // المنشأة غير المسجلة بالضريبة ما تاخذ ضريبة من العميل — ما نعرض لها ضريبة تقديرية
+  const [showVat, setShowVat] = useState(true)
   const [loading, setLoading] = useState(true)
   const [locked, setLocked] = useState(false)
   const [data, setData] = useState<any>(null)
@@ -65,7 +67,7 @@ export default function ProfitabilityPage() {
     const oid = await getOrgId()
     if(!oid) return
     setOrgId(oid)
-    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setShowVat(me?.org?.vat_registered!==false) })
   }
 
   async function loadClosedMonths() {
@@ -117,7 +119,7 @@ export default function ProfitabilityPage() {
       const rows = [
         {name:`المبيعات (${data.closingsCount} إقفال كاشير)`, type:'إيرادات', amount: Math.round(data.totalIn).toLocaleString('en-US')+' '+curr},
         ...(data.deliveryIncomeList||[]).map((e:any)=>({name:`دخل توصيل — ${e.platform}`, type:'إيرادات', amount: Number(e.amount).toFixed(0)+' '+curr})),
-        {name:'الضريبة على المبيعات (تقديري)', type:'إيرادات', amount: Math.round(vatAmount).toLocaleString('en-US')+' '+curr},
+        ...(showVat?[{name:'الضريبة على المبيعات (تقديري)', type:'إيرادات', amount: Math.round(vatAmount).toLocaleString('en-US')+' '+curr}]:[]),
         {name:'مشتريات المخزون', type:'مشتريات', amount: Math.round(data.inventoryPurchases).toLocaleString('en-US')+' '+curr},
         {name:'مشتريات أخرى', type:'مشتريات', amount: Math.round(data.otherPurchases).toLocaleString('en-US')+' '+curr},
         ...fixedList.map((e:any)=>({name:e.name, type:'مصروف ثابت', amount: Number(e.amount).toFixed(0)+' '+curr})),
@@ -137,7 +139,7 @@ export default function ProfitabilityPage() {
           {label:'المبيعات', value: Math.round(data.totalIn).toLocaleString('en-US')+' '+curr},
           {label:'إجمالي المشتريات', value: Math.round(data.totalPurchases).toLocaleString('en-US')+' '+curr},
           {label:'إجمالي المصروفات', value: Math.round(fixedTotal+variableTotal).toLocaleString('en-US')+' '+curr},
-          {label:'الضريبة (تقديري)', value: Math.round(vatAmount).toLocaleString('en-US')+' '+curr},
+          ...(showVat?[{label:'الضريبة (تقديري)', value: Math.round(vatAmount).toLocaleString('en-US')+' '+curr}]:[]),
           {label:'صافي الربح', value: Math.round(data.netProfit).toLocaleString('en-US')+' '+curr, color: data.netProfit>=0?'#029FA2':'#dc2626'},
         ],
         totalsRow: {name:'الصافي', type:'', amount: Math.round(data.netProfit).toLocaleString('en-US')+' '+curr},
@@ -152,7 +154,7 @@ export default function ProfitabilityPage() {
       ['البند','التصنيف','المبلغ'],
       [`المبيعات (${data.closingsCount} إقفال كاشير)`,'إيرادات', Math.round(data.totalIn).toString()],
       ...(data.deliveryIncomeList||[]).map((e:any)=>[`دخل توصيل — ${e.platform}`,'إيرادات', Number(e.amount).toFixed(0)]),
-      ['الضريبة على المبيعات (تقديري)','إيرادات', Math.round(vatAmount).toString()],
+      ...(showVat?[['الضريبة على المبيعات (تقديري)','إيرادات', Math.round(vatAmount).toString()]]:[]),
       ['مشتريات المخزون','مشتريات', Math.round(data.inventoryPurchases).toString()],
       ['مشتريات أخرى','مشتريات', Math.round(data.otherPurchases).toString()],
       ...fixedList.map((e:any)=>[e.name,'مصروف ثابت', Number(e.amount).toFixed(0)]),
@@ -310,7 +312,7 @@ export default function ProfitabilityPage() {
             {label:'المشتريات',value:data.totalPurchases,prev:prevData?.totalPurchases},
             {label:'إجمالي المصروفات',value:totalExpenses,prev:prevData?(prevData.fixedExpensesTotal):undefined},
             {label:'تكلفة الرواتب',value:data.salaryExpenseTotal||0,prev:prevData?.salaryExpenseTotal},
-            {label:'الضريبة (تقديري)',value:vatAmount,prev:prevData?(prevData.totalIn-(prevData.totalIn/1.15)):undefined},
+            ...(showVat?[{label:'الضريبة (تقديري)',value:vatAmount,prev:prevData?(prevData.totalIn-(prevData.totalIn/1.15)):undefined}]:[]),
           ].map((s,i)=>{
             const change = (prevData && s.prev!==undefined) ? pctChange(s.value, s.prev) : null
             return (

@@ -21,7 +21,7 @@ export type Me = {
   org: {
     name: string; plan: string; billing_cycle: 'monthly' | 'yearly'; currency: string | null; logo_url: string | null
     deletion_scheduled_at: string | null; max_staff: number; max_suppliers: number
-    max_branches: number; country_code: string; business_type: string | null; onboarding_done: boolean
+    max_branches: number; country_code: string; business_type: string | null; onboarding_done: boolean; vat_registered?: boolean | null
   } | null
   branches: { id: string; name: string; location: string | null }[]
 }

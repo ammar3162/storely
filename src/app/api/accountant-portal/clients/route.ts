@@ -39,7 +39,7 @@ export async function GET(req: Request) {
       return { ...base, totals: {
         sales: has('sales') ? t.sales : null, purchases: has('purchases') ? t.purTotal : null,
         vatNet: has('vat') && rep.vatRegistered ? t.vatNet : null, payables: has('payables') ? t.payablesTotal : null,
-        taxInvoices: t.taxInvoices, incomplete: t.taxInvoices - t.taxComplete, mismatch: t.taxMismatch,
+        ...(rep.vatRegistered ? { taxInvoices: t.taxInvoices, incomplete: t.taxInvoices - t.taxComplete, mismatch: t.taxMismatch } : { taxInvoices: 0, incomplete: 0, mismatch: 0 }),
       } }
     })
     if (searchParams.get('format') === 'xlsx') {

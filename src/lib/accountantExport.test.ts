@@ -135,3 +135,13 @@ describe('vat threshold', () => {
       .toEqual(['ok', 'ok', 'voluntary', 'voluntary', 'near', 'near', 'over'])
   })
 })
+
+describe('not VAT registered', () => {
+  it('no tax-invoice sheet and no VAT due', async () => {
+    const r = { ...base, vatRegistered: false }
+    const names = (await load(r)).worksheets.map(w => w.name)
+    expect(names).not.toContain('الفواتير الضريبية')
+    expect(names).toContain('الإقرار الضريبي')
+    expect(summarize(r).vatNet).toBe(0)
+  })
+})
