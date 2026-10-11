@@ -6,6 +6,7 @@ import InvoiceItemsPicker, { type PickedItem } from '@/components/InvoiceItemsPi
 import { zatcaFromImage, blobToBase64 } from '@/lib/zatcaScan'
 import { prepareInvoiceFile } from '@/lib/invoiceFile'
 import { unitsFor, UNIT_EN } from '@/lib/businessTypes'
+import SelectOrOther from '@/components/SelectOrOther'
 import InvoicePickButtons from '@/components/InvoicePickButtons'
 import { zatcaDate } from '@/lib/zatcaQr'
 import { normalizeVat, isValidVat } from '@/lib/taxInvoice'
@@ -325,9 +326,7 @@ export default function StaffPurchasesPage() {
             </div>
             <div>
               <label style={lbl}>{pt('unit',lang)}</label>
-              <select style={inp} value={form.unit} onChange={e=>setForm(f=>({...f,unit:e.target.value}))}>
-                {unitsFor(bizType,form.unit).map(u=><option key={u} value={u}>{lang==='en'?(UNIT_EN[u]||u):u}</option>)}
-              </select>
+              <SelectOrOther style={inp} value={form.unit} onChange={v=>setForm(f=>({...f,unit:v}))} options={unitsFor(bizType)} label={u=>lang==='en'?(UNIT_EN[u]||u):u} placeholder={lang==='en'?'Type the unit':'اكتب اسم الوحدة'}/>
             </div>
           </div>
 

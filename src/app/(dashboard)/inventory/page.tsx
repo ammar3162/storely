@@ -1,7 +1,8 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
-import { catsWith, unitsFor } from '@/lib/businessTypes'
+import { catsFor, unitsFor } from '@/lib/businessTypes'
+import SelectOrOther from '@/components/SelectOrOther'
 import NumberInput from '@/components/NumberInput'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { Upload, Download, Paperclip, X, AlertTriangle, Camera, Ruler, CheckCircle2, Trash2, Sparkles, Package, Plus, ScanLine, Search } from 'lucide-react'
@@ -410,16 +411,11 @@ export default function InventoryPage() {
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                     <div>
                       <label style={lbl}>الفئة</label>
-                      <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inp()}>
-                        <option value="">— اختر —</option>
-                        {catsWith(businessType,form.category).map(c=><option key={c}>{c}</option>)}
-                      </select>
+                      <SelectOrOther value={form.category} onChange={v=>setForm({...form,category:v})} options={catsFor(businessType)} emptyLabel="— اختر —" placeholder="اكتب اسم الفئة" style={inp()}/>
                     </div>
                     <div>
                       <label style={lbl}>الوحدة</label>
-                      <select value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})} style={inp()}>
-                        {unitsFor(businessType,form.unit).map(u=><option key={u}>{u}</option>)}
-                      </select>
+                      <SelectOrOther value={form.unit} onChange={v=>setForm({...form,unit:v})} options={unitsFor(businessType)} placeholder="اكتب اسم الوحدة" style={inp()}/>
                     </div>
                   </div>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>

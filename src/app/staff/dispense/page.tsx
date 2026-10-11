@@ -2,8 +2,9 @@
 import { useState, useEffect, Suspense } from 'react'
 import NumberInput from '@/components/NumberInput'
 import { useRouter, useSearchParams } from 'next/navigation'
+import SelectOrOther from '@/components/SelectOrOther'
 import { getStaffOrg } from '@/lib/session'
-import { unitsFor, catsWith } from '@/lib/businessTypes'
+import { unitsFor, catsFor } from '@/lib/businessTypes'
 import { Wheat, Milk, SprayCan, CupSoda, Drumstick, Carrot, FileText, Package, Tag, Search, Globe, LogOut, Send, Boxes, ShoppingCart, ChevronLeft, CheckCircle2, Zap } from 'lucide-react'
 
 interface StaffSession {
@@ -739,16 +740,9 @@ function StaffPageInner() {
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                 <NumberInput value={newProduct.qty} onChange={e=>setNewProduct(p=>({...p,qty:e.target.value}))} placeholder="الكمية *"
                   style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit'}}/>
-                <select value={newProduct.unit} onChange={e=>setNewProduct(p=>({...p,unit:e.target.value}))}
-                  style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',background:'white'}}>
-                  {unitsFor(bizType,newProduct.unit).map(u=><option key={u}>{u}</option>)}
-                </select>
+                <SelectOrOther value={newProduct.unit} onChange={v=>setNewProduct(p=>({...p,unit:v}))} options={unitsFor(bizType)} placeholder="اكتب اسم الوحدة" style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',background:'white',width:'100%',boxSizing:'border-box' as const}}/>
               </div>
-              <select value={newProduct.category} onChange={e=>setNewProduct(p=>({...p,category:e.target.value}))}
-                style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',boxSizing:'border-box' as const,background:'white',color:newProduct.category?'inherit':'#94a3b8'}}>
-                <option value="">الفئة (اختياري)</option>
-                {catsWith(bizType,newProduct.category).map(c=><option key={c} value={c}>{c}</option>)}
-              </select>
+              <SelectOrOther value={newProduct.category} onChange={v=>setNewProduct(p=>({...p,category:v}))} options={catsFor(bizType)} emptyLabel="الفئة (اختياري)" placeholder="اكتب اسم الفئة" style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',background:'white',width:'100%',boxSizing:'border-box' as const}}/>
             </div>
             <div style={{display:'flex',gap:8}}>
               <button onClick={addProduct} disabled={savingProduct||!newProduct.name||!newProduct.qty}

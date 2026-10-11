@@ -7,6 +7,7 @@ import InvoiceItemsPicker, { type PickedItem } from '@/components/InvoiceItemsPi
 import { zatcaFromImage, blobToBase64 } from '@/lib/zatcaScan'
 import { prepareInvoiceFile, isPdfUrl } from '@/lib/invoiceFile'
 import { unitsFor } from '@/lib/businessTypes'
+import SelectOrOther from '@/components/SelectOrOther'
 import InvoicePickButtons from '@/components/InvoicePickButtons'
 import { zatcaDate } from '@/lib/zatcaQr'
 import { normalizeVat, isValidVat } from '@/lib/taxInvoice'
@@ -481,9 +482,7 @@ export default function PurchasesPage() {
                   </div>
                   <div>
                     <label style={lbl}>الوحدة</label>
-                    <select value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})} style={inp}>
-                      {unitsFor(bizType,form.unit).map(u=><option key={u}>{u}</option>)}
-                    </select>
+                    <SelectOrOther value={form.unit} onChange={v=>setForm({...form,unit:v})} options={unitsFor(bizType)} placeholder="اكتب اسم الوحدة" style={inp}/>
                   </div>
                   <div>
                     <label style={lbl}>الحد الأدنى</label>
