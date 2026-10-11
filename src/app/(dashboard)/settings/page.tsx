@@ -466,7 +466,6 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {activeTab==='org'&&orgId&&<div style={{marginBottom:18}}><VatRegistration orgId={orgId}/></div>}
           {activeTab==='org'&&(
             <form onSubmit={handleSave}>
               <div style={{display:'flex',flexDirection:'column' as const,gap:18}}>
@@ -514,6 +513,8 @@ export default function SettingsPage() {
                   </div>
                   <div style={{fontSize:11,color:colors.text4,marginTop:6,display:'flex',alignItems:'center',gap:4}}><span>💡</span> يُستخدم لإرسال تنبيهات نقص المخزون</div>
                 </div>
+
+                {orgId&&<VatRegistration orgId={orgId}/>}
 
                 {/* تفاصيل الاشتراك */}
                 <div>
