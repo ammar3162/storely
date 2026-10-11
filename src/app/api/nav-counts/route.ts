@@ -30,7 +30,10 @@ export async function GET(req: Request) {
       let q = db.from('products').select('branch_id,qty,reorder_point').eq('org_id', org_id).eq('is_active', true)
       if (access.role === 'manager' && access.branchId) q = q.eq('branch_id', access.branchId)
       const { data, error } = await q
-      if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+      if (error) {
+        console.error('[api/nav-counts] Supabase by-branch query failed', error)
+        return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+      }
       const low_by_branch: Record<string, number> = {}
       for (const p of (data || []) as any[]) {
         if (p.qty <= p.reorder_point && p.branch_id) low_by_branch[p.branch_id] = (low_by_branch[p.branch_id] || 0) + 1
@@ -45,14 +48,21 @@ export async function GET(req: Request) {
       db.from('notifications').select('id', { count: 'exact', head: true }).eq('org_id', org_id).eq('read', false)
         .or(bid ? `branch_id.is.null,branch_id.eq.${bid}` : 'branch_id.is.null,branch_id.not.is.null'),
     ])
-    if (prods.error || unread.error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+    if (prods.error || unread.error) {
+      console.error('[api/nav-counts] Supabase query failed', {
+        products: prods.error,
+        unread: unread.error,
+      })
+      return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+    }
 
     return NextResponse.json({
       success: true,
       unread: unread.count || 0,
       low: (prods.data || []).filter((p: any) => p.qty <= p.reorder_point).length,
     })
-  } catch {
+  } catch (error) {
+    console.error('[api/nav-counts] Unexpected error', error)
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
 }

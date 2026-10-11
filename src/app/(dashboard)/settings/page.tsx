@@ -347,7 +347,7 @@ export default function SettingsPage() {
         .day-btn.active{border-color:${colors.primary};background:${colors.primaryLight};color:${colors.primary}}
         .sched-btn{padding:14px 8px;border-radius:${radius.md};cursor:pointer;border:1.5px solid ${colors.border};background:${colors.surface};color:${colors.text3};font-size:${font.sm};font-weight:700;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;transition:all .2s}
         .sched-btn:hover{border-color:${colors.primary};transform:translateY(-1px)}
-        .sched-btn.active{border-color:${colors.primary};background:${colors.primaryLight};color:${colors.primary};box-shadow:0 4px 12px ${colors.primary}22}
+        .sched-btn.active{border-color:${colors.primary};background:${colors.primaryLight};color:${colors.primary};box-shadow:none}
       `}</style>
 
       {/* Header */}
@@ -448,7 +448,7 @@ export default function SettingsPage() {
                     <input type="file" accept="image/*" id="logoInput" style={{display:'none'}}
                       onChange={e=>{ const f=e.target.files?.[0]; if(f) uploadLogo(f) }}/>
                     <label htmlFor="logoInput" style={{cursor:'pointer',flexShrink:0}}>
-                      <div style={{position:'relative',width:64,height:64,borderRadius:'50%',overflow:'hidden',background:logoUrl?'transparent':'linear-gradient(135deg,#f0fdfa,#ccfbf1)',border:`2px solid ${colors.primaryBorder}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                      <div style={{position:'relative',width:64,height:64,borderRadius:'50%',overflow:'hidden',background:logoUrl?'transparent':colors.primaryLight,border:`2px solid ${colors.primaryBorder}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
                         {logoUrl ? (
                           <img src={logoUrl} alt="شعار" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
                         ) : (
@@ -471,16 +471,16 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <label style={lbl}>رقم واتساب التنبيهات</label>
-                  <div style={{display:'flex',borderRadius:12,overflow:'hidden',border:'1.5px solid #e2e8f0',background:'#f8fafc'}}>
+                  <div style={{display:'flex',borderRadius:12,overflow:'hidden',border:'1.5px solid #E7E1D8',background:'#F7F3ED'}}>
                     <select value={countryCode} onChange={e=>setCountryCode(e.target.value)}
-                      style={{background:'transparent',color:'#1e293b',border:'none',borderLeft:'1.5px solid #e2e8f0',padding:'12px 8px',fontSize:13,fontFamily:'inherit',outline:'none',flexShrink:0,cursor:'pointer',direction:'ltr',minWidth:130}}>
+                      style={{background:'transparent',color:'#43525B',border:'none',borderLeft:'1.5px solid #E7E1D8',padding:'12px 8px',fontSize:13,fontFamily:'inherit',outline:'none',flexShrink:0,cursor:'pointer',direction:'ltr',minWidth:130}}>
                       {COUNTRY_CODES.map(c=>(
                         <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
                       ))}
                     </select>
                     <input value={form.whatsapp_number} onChange={e=>setForm({...form,whatsapp_number:e.target.value})}
                       placeholder={countryCode==='+966'?'5xxxxxxxx':countryCode==='+20'?'1xxxxxxxxx':'xxxxxxxxxx'} dir="ltr"
-                      style={{background:'transparent',border:'none',padding:'12px',fontSize:14,color:'#1e293b',flex:1,outline:'none',fontFamily:'inherit'}}/>
+                      style={{background:'transparent',border:'none',padding:'12px',fontSize:14,color:'#43525B',flex:1,outline:'none',fontFamily:'inherit'}}/>
                   </div>
                   <div style={{fontSize:11,color:colors.text4,marginTop:6,display:'flex',alignItems:'center',gap:4}}><span>💡</span> يُستخدم لإرسال تنبيهات نقص المخزون</div>
                 </div>
@@ -509,7 +509,7 @@ export default function SettingsPage() {
                       <div style={{fontSize:11,color:'#b45309'}}>الأساسية 99 · المتوسطة 249 · المتقدمة 399 ريال/شهر</div>
                     </div>
                     <a href="https://wa.me/966594351667?text=أريد الترقية في Storely" target="_blank" rel="noopener noreferrer"
-                      style={{marginRight:'auto',padding:'8px 16px',background:'#029FA2',color:'white',borderRadius:8,fontSize:12,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap'}}>
+                      style={{marginRight:'auto',padding:'8px 16px',background:'#203640',color:'white',borderRadius:8,fontSize:12,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap'}}>
                       تواصل معنا
                     </a>
                   </div>
@@ -738,7 +738,7 @@ export default function SettingsPage() {
           <div style={{display:'flex',gap:10}}>
             <button onClick={()=>{setShowDelete(false);setDeleteConfirm('');setDeleteMsg(null)}} style={{...btnSecondary,flex:1,padding:'12px',fontSize:font.sm}}>إلغاء</button>
             <button onClick={deleteAccount} disabled={deleting||deleteConfirm!==form.name}
-              style={{flex:2,padding:'12px',background:deleteConfirm===form.name?colors.danger:'#94a3b8',color:'white',border:'none',borderRadius:radius.md,fontSize:font.sm,fontWeight:700,cursor:deleteConfirm===form.name?'pointer':'not-allowed',fontFamily:font.family}}>
+              style={{flex:2,padding:'12px',background:deleteConfirm===form.name?colors.danger:'#8EA0B1',color:'white',border:'none',borderRadius:radius.md,fontSize:font.sm,fontWeight:700,cursor:deleteConfirm===form.name?'pointer':'not-allowed',fontFamily:font.family}}>
               {deleting?'⏳ جاري الجدولة...':'🗑️ جدولة الحذف (15 يوم)'}
             </button>
           </div>

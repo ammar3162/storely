@@ -1,10 +1,10 @@
 'use client'
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const dynamic = 'force-dynamic'
-import PageIcon from '@/components/PageIcon'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
-import { Clock, CheckCircle2, Ban, Percent } from 'lucide-react'
-import { colors as dsColors } from '@/lib/ds'
+import { Ban, Building2, CheckCircle2, ChevronDown, Clock, CreditCard, FileText, Package, Percent, Plus, Receipt, ScanBarcode, ShoppingCart, Trash2, Upload, X } from 'lucide-react'
+import { StorelyButton, StorelyCard, StorelyDataTable, StorelyEmptyState, StorelyPageHeader, StorelyStatusBadge, type StorelyDataTableColumn } from '@/components/ui'
 import { cache } from '@/lib/cache'
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 import { createClient } from '@/lib/supabase/client'
@@ -14,22 +14,8 @@ import { toast } from '@/components/toast'
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh'
 import { confirmDialog } from '@/components/ConfirmDialog'
 
-// موحّد مع نظام التصميم المشترك (@/lib/ds) — نفس أسماء المفاتيح المستخدمة بالملف، قيم موحدة
-const C = {
-  primary:dsColors.primary, primaryD:dsColors.primaryDark, primaryL:dsColors.primaryLight, primaryB:dsColors.primaryBorder,
-  danger:dsColors.danger,  dangerL:dsColors.dangerLight,  dangerB:dsColors.dangerBorder,
-  warning:dsColors.warning, warningL:dsColors.warningLight, warningB:dsColors.warningBorder,
-  info:dsColors.info,    infoL:dsColors.infoLight,    infoB:dsColors.infoBorder,
-  text:dsColors.text, text2:dsColors.text2, text3:dsColors.text3, text4:dsColors.text4,
-  bg:dsColors.bg, surface:dsColors.surface, border:dsColors.border, border2:dsColors.border2,
-}
-
 const CATS = ['مخزون','مشتريات','أخرى']
-const CAT_ICONS: Record<string,string> = {'مخزون':'📦','مشتريات':'🛒','أخرى':'📋'}
 const UNITS = ['قطعة','كيلو','كيس','كرتون','لتر','علبة','باكيت','درزن','رول','غرام','أخرى']
-
-const lbl: React.CSSProperties = {fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}
-const inp: React.CSSProperties = {width:'100%',padding:'10px 12px',border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',background:'white',color:C.text,fontFamily:'inherit'}
 
 export default function PurchasesPage() {
   const [history, setHistory]       = useState<any[]>([])
@@ -55,6 +41,7 @@ export default function PurchasesPage() {
   const [filterCat, setFilterCat]       = useState('all')
   const [filterPeriod, setFilterPeriod] = useState('all')
   const [filterSupplier, setFilterSupplier] = useState('')
+  const [selectedPurchase, setSelectedPurchase] = useState<any|null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   function todayRiyadh() {
     return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
@@ -318,425 +305,333 @@ export default function PurchasesPage() {
 
   const totalSpent=filteredHistory.reduce((s,p)=>s+Number(p.total_amount||0),0)
   const totalVat=filteredHistory.reduce((s,p)=>s+Number(p.vat_amount||0),0)
-  const totalNet=filteredHistory.reduce((s,p)=>s+Number(p.amount||0),0)
 
-  return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
-      {pendingThanks && (
-        <div style={{position:'fixed',inset:0,zIndex:4000,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
-          <div style={{background:'white',borderRadius:16,width:'100%',maxWidth:380,padding:24,textAlign:'center' as const}}>
-            <div style={{fontSize:32,marginBottom:10}}>🚚</div>
-            <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:6}}>تأكيد استلام الطلبية</div>
-            <div style={{fontSize:12,color:C.text3,marginBottom:20,lineHeight:1.6}}>
-              هل المورد <b>{pendingThanks.supplierName}</b> فعلاً هو اللي وصّل "{pendingThanks.productName}"؟<br/>
-              لو أكدت، بنرسل له رسالة شكر تلقائية عبر واتساب.
-            </div>
-            <div style={{display:'flex',gap:8}}>
-              <button onClick={()=>setPendingThanks(null)} style={{flex:1,padding:11,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,fontSize:12,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>
-                لا، تجاهل
-              </button>
-              <button onClick={confirmSupplierThanks} style={{flex:1,padding:11,background:C.primary,border:'none',borderRadius:10,fontSize:12,fontWeight:700,color:'white',cursor:'pointer',fontFamily:'inherit'}}>
-                ✅ نعم، أرسل شكر
-              </button>
-            </div>
+  const todayStr = todayRiyadh()
+  const overduePayables = payables.filter((p:any)=>p.due_date && p.due_date < todayStr).length
+  const totalPayableAmount = payables.reduce((s:number,p:any)=>s+Number(p.total_amount||0),0)
+
+  const purchaseColumns: StorelyDataTableColumn<any>[] = [
+    {
+      key: 'purchase',
+      header: 'العملية',
+      sortable: true,
+      sortValue: (p:any) => p.name || '',
+      cell: (p:any) => (
+        <div className="min-w-[220px]">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-[#203640]">{p.name || 'بدون اسم'}</span>
+            {p.invoice_image ? (
+              <a
+                href={p.invoice_image}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[#1D4ED8] hover:underline"
+                onClick={(event)=>event.stopPropagation()}
+              >
+                <FileText size={13}/> فاتورة
+              </a>
+            ) : null}
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#66737C]">
+            <StorelyStatusBadge status={p.category===CATS[0] ? 'success' : p.category===CATS[1] ? 'info' : 'warning'}>
+              {p.category || CATS[2]}
+            </StorelyStatusBadge>
+            {p.qty ? <span>{p.qty} {p.unit}</span> : null}
+            {p.sku ? <span>SKU {p.sku}</span> : null}
           </div>
         </div>
+      ),
+    },
+    {
+      key: 'supplier',
+      header: 'المورد',
+      sortable: true,
+      sortValue: (p:any) => p.supplier || '',
+      cell: (p:any) => <span className="text-[#43525B]">{p.supplier || 'غير محدد'}</span>,
+    },
+    {
+      key: 'date',
+      header: 'التاريخ',
+      sortable: true,
+      sortValue: (p:any) => p.invoice_date || p.created_at || '',
+      cell: (p:any) => (
+        <span className="whitespace-nowrap text-[#43525B]">
+          {new Date(p.invoice_date || p.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',day:'numeric',month:'short',year:'numeric'})}
+        </span>
+      ),
+    },
+    {
+      key: 'payment',
+      header: 'الدفع',
+      sortable: true,
+      sortValue: (p:any) => p.payment_status || 'paid',
+      cell: (p:any) => {
+        const unpaid = p.payment_status === 'unpaid'
+        const overdue = unpaid && p.due_date && p.due_date < todayStr
+        return (
+          <div className="flex flex-col items-start gap-1">
+            <StorelyStatusBadge status={overdue ? 'danger' : unpaid ? 'warning' : 'success'}>
+              {overdue ? 'متأخرة' : unpaid ? 'غير مدفوعة' : 'مدفوعة'}
+            </StorelyStatusBadge>
+            {p.due_date ? <span className="text-xs text-[#66737C]">استحقاق {p.due_date}</span> : null}
+          </div>
+        )
+      },
+    },
+    {
+      key: 'amount',
+      header: 'الإجمالي',
+      sortable: true,
+      sortValue: (p:any) => Number(p.total_amount||0),
+      className: 'text-left font-semibold tabular-nums',
+      cell: (p:any) => (
+        <div className="text-left">
+          <div>{Number(p.total_amount||0).toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:2})} {curr}</div>
+          {Number(p.vat_amount||0)>0 ? <div className="text-xs font-medium text-[#B45309]">ضريبة {Number(p.vat_amount||0).toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:2})}</div> : null}
+        </div>
+      ),
+    },
+    {
+      key: 'actions',
+      header: '',
+      className: 'w-[88px] text-left',
+      cell: (p:any) => (
+        <StorelyButton
+          size="sm"
+          variant="danger"
+          icon={<Trash2 size={14}/>}
+          disabled={deletingId===p.id}
+          onClick={(event)=>{event.stopPropagation(); deletePurchase(p)}}
+        >
+          {deletingId===p.id ? '...' : 'حذف'}
+        </StorelyButton>
+      ),
+    },
+  ]
+
+  return (
+    <div className="min-h-full bg-[#F7F3ED] text-[#203640]">
+      {pendingThanks && (
+        <div className="fixed inset-0 z-[4000] flex items-center justify-center bg-[#203640]/50 p-4">
+          <StorelyCard className="w-full max-w-md">
+            <div className="p-5 text-center">
+              <div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full border border-[#E7E1D8] bg-[#F7F3ED] text-[#203640]"><Building2 size={19}/></div>
+              <div className="text-base font-semibold text-[#203640]">تأكيد استلام الطلبية</div>
+              <p className="mt-2 text-sm leading-6 text-[#66737C]">
+                هل المورد <b>{pendingThanks.supplierName}</b> هو الذي وصل «{pendingThanks.productName}»؟ عند التأكيد سنرسل له رسالة شكر تلقائية عبر واتساب.
+              </p>
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                <StorelyButton variant="secondary" onClick={()=>setPendingThanks(null)}>تجاهل</StorelyButton>
+                <StorelyButton variant="primary" onClick={confirmSupplierThanks}>إرسال شكر</StorelyButton>
+              </div>
+            </div>
+          </StorelyCard>
+        </div>
       )}
-      <style>{`
-        @keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-        .u{animation:up .3s ease both}
-        input:focus,select:focus,textarea:focus{border-color:${C.primary}!important;outline:none!important;box-shadow:0 0 0 3px ${C.primaryL}!important}
-        .rh:hover{background:#f9f9f8}
-        .tap{transition:all .12s;cursor:pointer}
-        .tap:active{transform:scale(.97)}
-        @media(max-width:768px){.pgrid{grid-template-columns:1fr!important}}
-      `}</style>
 
       {showScan&&<Suspense fallback={null}><BarcodeScanner onScan={(code:string)=>{setShowScan(false);setForm(f=>({...f,sku:code}))}} onClose={()=>setShowScan(false)}/></Suspense>}
 
-      {/* Header */}
-      <div className="u" style={{marginBottom:16}}>
-        <h1 style={{fontSize:20,fontWeight:700,color:C.text,margin:0,letterSpacing:'-0.3px',display:'flex',alignItems:'center',gap:12}}><PageIcon/>المشتريات</h1>
-        <p style={{fontSize:11,color:C.text4,margin:'3px 0 0'}}>فئة <b style={{color:C.primary}}>مخزون</b> تُضيف المنتج للمخزون تلقائياً</p>
-      </div>
-
-      {/* Stats */}
-      <div className="u" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:16,animationDelay:'.04s'}}>
-        {[
-          {label:'الفواتير',   value:filteredHistory.length,       color:C.info},
-          {label:'بدون ضريبة',value:totalNet.toFixed(0)+' '+curr,   color:C.text},
-          {label:'ضريبة 15%', value:totalVat.toFixed(0)+' '+curr,   color:C.warning},
-          {label:'الإجمالي',  value:totalSpent.toFixed(0)+' '+curr, color:C.primary},
-        ].map((s,i)=>(
-          <div key={i} style={{background:'white',borderRadius:12,padding:'12px 14px',border:`1px solid ${C.border}`,boxShadow:'0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)'}}>
-            <div style={{fontSize:11,color:C.text4,fontWeight:600,marginBottom:5}}>{s.label}</div>
-            <div style={{fontSize:18,fontWeight:700,color:s.color,fontVariantNumeric:'tabular-nums'}}>{s.value}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Main grid */}
-      <div className="pgrid" style={{display:'grid',gridTemplateColumns:'1fr 1.1fr',gap:14,alignItems:'start'}}>
-
-        {/* Form */}
-        <div className="u" style={{background:'white',borderRadius:12,padding:18,border:`1px solid ${C.border}`,animationDelay:'.06s'}}>
-          <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:14}}>تسجيل شراء جديد</div>
-          <form onSubmit={handleSubmit}>
-
-            {/* Category */}
-            <div style={{marginBottom:12}}>
-              <label style={lbl}>نوع الشراء</label>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
-                {CATS.map(c=>(
-                  <button key={c} type="button" onClick={()=>setForm({...form,category:c,name:'',sku:'',unit:'قطعة'})}
-                    style={{padding:'10px 6px',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer',border:`1px solid ${form.category===c?C.primary:C.border2}`,background:form.category===c?C.primaryL:'white',color:form.category===c?C.primary:C.text3,fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:4,transition:'all .15s'}}>
-                    <span style={{fontSize:18}}>{CAT_ICONS[c]}</span>
-                    <span>{c}</span>
-                  </button>
-                ))}
+      {selectedPurchase && (
+        <div className="fixed inset-0 z-[3500] flex justify-end bg-[#203640]/35" onClick={()=>setSelectedPurchase(null)}>
+          <aside className="h-full w-full max-w-lg overflow-y-auto border-r border-[#E7E1D8] bg-white shadow-xl" onClick={(event)=>event.stopPropagation()}>
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#E7E1D8] bg-white px-5 py-4">
+              <div>
+                <div className="text-sm font-semibold text-[#203640]">تفاصيل الفاتورة</div>
+                <div className="mt-1 text-xs text-[#66737C]">{selectedPurchase.id}</div>
               </div>
-              {form.category==='مخزون'&&<div style={{background:C.primaryL,border:`1px solid ${C.primaryB}`,borderRadius:7,padding:'7px 10px',marginTop:8,fontSize:11,color:C.primary,fontWeight:600}}>سيتم إضافة الصنف للمخزون تلقائياً</div>}
-            </div>
-
-            {/* Invoice image */}
-            <div style={{marginBottom:10}}>
-              <label style={lbl}>صورة الفاتورة {form.hasVat==='yes'?<span style={{color:C.danger}}>*</span>:'(اختياري)'}</label>
-              <input ref={fileRef} type="file" accept="image/*,.pdf" style={{display:'none'}} onChange={e=>{if(e.target.files?.[0])handleImage(e.target.files[0])}}/>
-              <button type="button" onClick={()=>fileRef.current?.click()} style={{
-                width:'100%',padding:'10px',borderRadius:8,cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:600,
-                border:`1.5px dashed ${previewUrl?C.primary:form.hasVat==='yes'&&!previewUrl?C.danger:C.border2}`,
-                background:previewUrl?C.primaryL:form.hasVat==='yes'&&!previewUrl?C.dangerL:C.bg,
-                color:previewUrl?C.primary:form.hasVat==='yes'&&!previewUrl?C.danger:C.text3,
-              }}>
-                {uploading?'⏳ جاري الرفع...':previewUrl?'✅ تم الرفع — اضغط للتغيير':form.hasVat==='yes'?'📎 رفع صورة الفاتورة (مطلوب)':'📎 رفع صورة الفاتورة'}
+              <button type="button" className="flex size-8 items-center justify-center rounded-[6px] text-[#66737C] hover:bg-[#F1F5F9]" onClick={()=>setSelectedPurchase(null)} aria-label="إغلاق">
+                <X size={18}/>
               </button>
-              {previewUrl&&previewUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)&&(
-                <img src={previewUrl} alt="فاتورة" style={{width:'100%',maxHeight:80,objectFit:'cover',borderRadius:7,marginTop:6,border:`1px solid ${C.primaryB}`}}/>
-              )}
-              {ocrLoading&&(
-                <div style={{fontSize:11,color:C.text3,marginTop:6,display:'flex',alignItems:'center',gap:6}}>
-                  <span>✨</span><span>جاري استخراج بيانات الفاتورة...</span>
+            </div>
+            <div className="space-y-5 p-5">
+              <div>
+                <h2 className="m-0 text-xl font-semibold text-[#203640]">{selectedPurchase.name || 'بدون اسم'}</h2>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <StorelyStatusBadge status={selectedPurchase.category===CATS[0] ? 'success' : selectedPurchase.category===CATS[1] ? 'info' : 'warning'}>{selectedPurchase.category || CATS[2]}</StorelyStatusBadge>
+                  <StorelyStatusBadge status={selectedPurchase.payment_status==='unpaid' ? 'warning' : 'success'}>{selectedPurchase.payment_status==='unpaid' ? 'غير مدفوعة' : 'مدفوعة'}</StorelyStatusBadge>
                 </div>
-              )}
-              {ocrItems.length>0&&(
-                <div style={{marginTop:8,padding:12,background:C.infoL,borderRadius:10,border:`1px solid ${C.infoB}`}}>
-                  <div style={{fontSize:11,fontWeight:700,color:C.info,marginBottom:8}}>📋 {ocrItems.length} صنف مكتشف بالفاتورة — حدد اللي تبي تحفظه</div>
-                  <div style={{display:'flex',flexDirection:'column' as const,gap:6,marginBottom:10}}>
+              </div>
+              <dl className="grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-[6px] border border-[#E7E1D8] p-3"><dt className="text-xs text-[#66737C]">المورد</dt><dd className="mt-1 font-semibold text-[#203640]">{selectedPurchase.supplier || 'غير محدد'}</dd></div>
+                <div className="rounded-[6px] border border-[#E7E1D8] p-3"><dt className="text-xs text-[#66737C]">الإجمالي</dt><dd className="mt-1 font-semibold text-[#203640]">{Number(selectedPurchase.total_amount||0).toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:2})} {curr}</dd></div>
+                <div className="rounded-[6px] border border-[#E7E1D8] p-3"><dt className="text-xs text-[#66737C]">الكمية</dt><dd className="mt-1 font-semibold text-[#203640]">{selectedPurchase.qty ? `${selectedPurchase.qty} ${selectedPurchase.unit||''}` : 'غير محددة'}</dd></div>
+                <div className="rounded-[6px] border border-[#E7E1D8] p-3"><dt className="text-xs text-[#66737C]">تاريخ الفاتورة</dt><dd className="mt-1 font-semibold text-[#203640]">{new Date(selectedPurchase.invoice_date || selectedPurchase.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'})}</dd></div>
+              </dl>
+              {selectedPurchase.note ? <div className="rounded-[6px] border border-[#E7E1D8] p-3 text-sm leading-6 text-[#43525B]">{selectedPurchase.note}</div> : null}
+              {selectedPurchase.invoice_image ? <a className="inline-flex items-center gap-2 text-sm font-semibold text-[#1D4ED8] hover:underline" href={selectedPurchase.invoice_image} target="_blank" rel="noreferrer"><FileText size={16}/> فتح صورة الفاتورة</a> : null}
+            </div>
+          </aside>
+        </div>
+      )}
+
+      <div className="mx-auto max-w-[1440px] px-0 py-1">
+        <StorelyPageHeader
+          eyebrow="المشتريات"
+          title="إدارة فواتير الشراء"
+          description="سجل مشتريات المخزون والمصاريف، راقب الضريبة والمستحقات، وافتح تفاصيل كل فاتورة من جدول واحد."
+          actions={<StorelyButton variant="primary" icon={<Plus size={16}/>} onClick={()=>document.getElementById('purchase-entry-form')?.scrollIntoView({behavior:'smooth',block:'start'})}>تسجيل شراء</StorelyButton>}
+        />
+
+        <StorelyCard className="mb-4">
+          <div className="grid divide-y divide-[#E7E1D8] md:grid-cols-4 md:divide-x md:divide-y-0 md:divide-x-reverse">
+            {[
+              { label: '????????', value: filteredHistory.length.toLocaleString('ar-SA', {numberingSystem:'latn'}), tone: 'text-[#203640]', Icon: Receipt },
+              { label: '????????', value: totalSpent.toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0}) + ' ' + curr, tone: 'text-[#203640]', Icon: ShoppingCart },
+              { label: '????? 15%', value: totalVat.toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0}) + ' ' + curr, tone: 'text-[#B45309]', Icon: Percent },
+              { label: '??????? ????????', value: totalPayableAmount.toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0}) + ' ' + curr, tone: 'text-[#203640]', Icon: CreditCard, meta: payables.length + ' ??? ??????? ' + overduePayables + ' ??????' },
+            ].map((item) => (
+              <div key={item.label} className="p-3">
+                <div className="flex items-center justify-between gap-3 text-xs font-semibold text-[#66737C]">
+                  <span>{item.label}</span>
+                  <item.Icon size={15} className="text-[#8EA0B1]" />
+                </div>
+                <div className={`mt-1.5 text-lg font-semibold tabular-nums ${item.tone}`}>{item.value}</div>
+                {item.meta ? <div className="mt-1 text-xs text-[#66737C]">{item.meta}</div> : null}
+              </div>
+            ))}
+          </div>
+        </StorelyCard>
+
+        <div className="grid gap-4 xl:grid-cols-[400px_minmax(0,1fr)]">
+          <StorelyCard id="purchase-entry-form" title="تسجيل شراء جديد" description="القيم التي تؤثر على المخزون يتم حفظها من خلال API المشتريات كما هي." actions={<StorelyStatusBadge status={form.category===CATS[0] ? 'success' : 'info'}>{form.category}</StorelyStatusBadge>}>
+            <form onSubmit={handleSubmit} className="space-y-3 p-3">
+              <div>
+                <label className="storely-label">نوع الشراء</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {CATS.map(c=>(
+                    <button key={c} type="button" onClick={()=>setForm({...form,category:c,name:'',sku:'',unit:UNITS[0]})} className={`storely-choice ${form.category===c?'storely-choice-active':''}`}>{c}</button>
+                  ))}
+                </div>
+                {form.category===CATS[0] ? <p className="mt-2 rounded-[6px] border border-[#A7F3D0] bg-[#ECFDF5] px-3 py-2 text-xs font-medium text-[#047857]">سيتم تحديث المخزون تلقائياً بعد حفظ الفاتورة.</p> : null}
+              </div>
+
+              <div>
+                <label className="storely-label">صورة الفاتورة {form.hasVat==='yes'?<span className="text-[#B91C1C]">*</span>:<span className="font-normal text-[#8EA0B1]">اختياري</span>}</label>
+                <input ref={fileRef} type="file" accept="image/*,.pdf" className="hidden" onChange={e=>{if(e.target.files?.[0])handleImage(e.target.files[0])}}/>
+                <button type="button" onClick={()=>fileRef.current?.click()} className="flex min-h-10 w-full items-center justify-center gap-2 rounded-[6px] border border-dashed border-[#D7CDC2] bg-[#F7F3ED] px-3 text-sm font-semibold text-[#66737C] hover:border-[#203640] hover:text-[#203640]">
+                  {uploading ? <Clock size={16}/> : previewUrl ? <CheckCircle2 size={16}/> : <Upload size={16}/>} {uploading?'جاري الرفع...':previewUrl?'تم الرفع، اضغط للتغيير':'رفع صورة أو PDF'}
+                </button>
+                {previewUrl&&previewUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? <img src={previewUrl} alt="فاتورة" className="mt-2 h-24 w-full rounded-[6px] border border-[#E7E1D8] object-cover"/> : null}
+                {ocrLoading ? <div className="mt-2 text-xs text-[#66737C]">جاري استخراج بيانات الفاتورة...</div> : null}
+              </div>
+
+              {ocrItems.length>0 ? (
+                <div className="rounded-[6px] border border-[#BFDBFE] bg-[#EFF6FF] p-3">
+                  <div className="mb-2 text-xs font-semibold text-[#1D4ED8]">{ocrItems.length} صنف مكتشف بالفاتورة</div>
+                  <div className="max-h-52 space-y-2 overflow-y-auto">
                     {ocrItems.map((item,i)=>(
-                      <label key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',borderRadius:7,background:'white',border:`1px solid ${C.infoB}`,cursor:'pointer'}}>
-                        <input type="checkbox" checked={!!ocrSelected[i]} onChange={e=>setOcrSelected(s=>({...s,[i]:e.target.checked}))} style={{width:15,height:15,cursor:'pointer'}}/>
-                        <span style={{fontSize:12,color:C.text,flex:1}}>{item.name}</span>
-                        <span style={{fontSize:11,color:C.text3}}>{item.qty||0} {item.unit||''}</span>
-                        <input type="number" step="0.01" value={ocrPrices[i]||''} onChange={e=>setOcrPrices(p=>({...p,[i]:e.target.value}))}
-                          placeholder="السعر" style={{width:64,padding:'4px 6px',borderRadius:6,border:`1px solid ${C.border}`,fontSize:11,textAlign:'left' as const,fontFamily:'inherit'}}/>
+                      <label key={i} className="grid grid-cols-[auto_1fr_auto_76px] items-center gap-2 rounded-[6px] border border-[#BFDBFE] bg-white px-2 py-2 text-xs">
+                        <input type="checkbox" checked={!!ocrSelected[i]} onChange={e=>setOcrSelected(s=>({...s,[i]:e.target.checked}))}/>
+                        <button type="button" className="truncate text-right font-semibold text-[#203640]" onClick={()=>pickOcrItem(item)}>{item.name}</button>
+                        <span className="text-[#66737C]">{item.qty||0} {item.unit||''}</span>
+                        <input type="number" step="0.01" value={ocrPrices[i]||''} onChange={e=>setOcrPrices(p=>({...p,[i]:e.target.value}))} placeholder="السعر" className="storely-input h-8"/>
                       </label>
                     ))}
                   </div>
-                  <div style={{fontSize:10,color:C.text3,marginBottom:8}}>
-                    * السعر يتوزّع تلقائياً بالتساوي بدايةً — عدّله لكل صنف حسب سعره الفعلي بالفاتورة لدقة أعلى بالتقارير
-                  </div>
-                  <button type="button" onClick={saveBulkOcrItems} disabled={bulkSaving||Object.values(ocrSelected).every(v=>!v)}
-                    style={{width:'100%',padding:10,background:bulkSaving?C.text4:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:bulkSaving?'not-allowed':'pointer',fontFamily:'inherit'}}>
-                    {bulkSaving?'جاري الحفظ...':`✅ حفظ ${Object.values(ocrSelected).filter(Boolean).length} صنف محدد`}
-                  </button>
+                  <StorelyButton className="mt-3 w-full" variant="primary" onClick={saveBulkOcrItems} disabled={bulkSaving||Object.values(ocrSelected).every(v=>!v)}>{bulkSaving?'جاري الحفظ...':`حفظ ${Object.values(ocrSelected).filter(Boolean).length} صنف`}</StorelyButton>
                 </div>
-              )}
-            </div>
+              ) : null}
 
+              {form.category===CATS[0] ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {[{v:true,l:'صنف موجود'},{v:false,l:'صنف جديد'}].map(b=><button key={String(b.v)} type="button" onClick={()=>setIsExisting(b.v)} className={`storely-choice ${isExisting===b.v?'storely-choice-active':''}`}>{b.l}</button>)}
+                </div>
+              ) : null}
 
-            {/* Existing/New toggle */}
-            {form.category==='مخزون'&&(
-              <div style={{display:'flex',gap:6,marginBottom:12}}>
-                {[{v:true,l:'📦 صنف موجود'},{v:false,l:'➕ صنف جديد'}].map(b=>(
-                  <button key={String(b.v)} type="button" onClick={()=>setIsExisting(b.v)}
-                    style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${isExisting===b.v?C.primary:C.border2}`,background:isExisting===b.v?C.primaryL:'white',color:isExisting===b.v?C.primary:C.text3,fontWeight:600,cursor:'pointer',fontFamily:'inherit',fontSize:12,transition:'all .15s'}}>
-                    {b.l}
-                  </button>
-                ))}
+              <div>
+                <label className="storely-label">{form.category===CATS[0]?'اسم الصنف':'اسم الفاتورة'} *</label>
+                {form.category===CATS[0]&&isExisting===true ? (
+                  <div className="relative">
+                    <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} className="storely-input" placeholder="ابحث عن صنف..."/>
+                    {form.name===''||products.filter((p:any)=>p.name.includes(form.name)&&form.name!==p.name).length>0 ? (
+                      <div className="absolute right-0 left-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-[6px] border border-[#E7E1D8] bg-white shadow-lg">
+                        {products.filter((p:any)=>!form.name||p.name.includes(form.name)).slice(0,10).map((p:any)=>(
+                          <button key={p.id} type="button" onClick={()=>setForm({...form,name:p.name,unit:p.unit})} className="flex w-full items-center justify-between border-b border-[#E7E1D8] px-3 py-2 text-right text-sm hover:bg-[#F7F3ED]"><span className="font-semibold text-[#203640]">{p.name}</span><span className="text-xs text-[#66737C]">{p.qty} {p.unit}</span></button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} className="storely-input" placeholder="اسم الصنف أو الفاتورة"/>}
               </div>
-            )}
 
-            {/* Name */}
-            <div style={{marginBottom:10}}>
-              <label style={lbl}>{form.category==='مخزون'?'اسم الصنف':'اسم الفاتورة'} *</label>
-              {form.category==='مخزون'&&isExisting===true?(
-                <div style={{position:'relative'}}>
-                  <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={{...inp,marginBottom:4}} placeholder="ابحث عن صنف..."/>
-                  {form.name===''||products.filter((p:any)=>p.name.includes(form.name)&&form.name!==p.name).length>0?(
-                    <div style={{position:'absolute',top:'100%',right:0,left:0,background:'white',border:`1px solid ${C.border2}`,borderRadius:8,zIndex:50,maxHeight:200,overflowY:'auto',boxShadow:'0 4px 12px rgba(0,0,0,.1)'}}>
-                      {products.filter((p:any)=>!form.name||p.name.includes(form.name)).slice(0,10).map((p:any)=>(
-                        <div key={p.id} onClick={()=>setForm({...form,name:p.name,unit:p.unit})}
-                          style={{padding:'9px 12px',cursor:'pointer',fontSize:12,color:C.text,borderBottom:`1px solid ${C.border}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}
-                          onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background=C.bg}
-                          onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background='white'}>
-                          <span style={{fontWeight:600}}>{p.name}</span>
-                          <span style={{color:C.text4,fontSize:11}}>{p.qty} {p.unit}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ):null}
-                </div>
-              ):(
-                <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp}
-                  placeholder={form.category==='مخزون'?'مثال: اسم الصنف':form.category==='مشتريات'?'مثال: أدوات ومستلزمات':'مثال: مصاريف تشغيلية'}/>
-              )}
-            </div>
-
-            {/* Barcode + qty */}
-            {form.category==='مخزون'&&(
-              <>
-                <div style={{marginBottom:10}}>
-                  <label style={lbl}>باركود (اختياري)</label>
-                  <div style={{display:'flex',gap:5}}>
-                    <input value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} style={{...inp,flex:1}} placeholder="امسح أو أدخل يدوياً"/>
-                    <button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 10px',background:C.primaryL,color:C.primary,border:`1px solid ${C.primaryB}`,borderRadius:8,fontSize:14,cursor:'pointer'}}>📷</button>
-                  </div>
-                </div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:10}}>
+              {form.category===CATS[0] ? (
+                <>
                   <div>
-                    <label style={lbl}>الكمية</label>
-                    <input type="number" min="0" value={form.qty} onChange={e=>setForm({...form,qty:e.target.value})} style={inp} placeholder="0" inputMode="numeric"/>
-                  </div>
-                  <div>
-                    <label style={lbl}>الوحدة</label>
-                    <select value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})} style={inp}>
-                      {UNITS.map(u=><option key={u}>{u}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={lbl}>الحد الأدنى</label>
-                    <input type="number" min="0" value={form.reorder_point} onChange={e=>setForm({...form,reorder_point:e.target.value})} style={inp} inputMode="numeric"/>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Amount */}
-            <div style={{marginBottom:10}}>
-              <label style={lbl}>المبلغ الإجمالي ({curr}) *</label>
-              <input type="number" min="0" step="0.01" required value={form.total_amount}
-                onChange={e=>setForm({...form,total_amount:e.target.value})}
-                style={{...inp,fontSize:16,fontWeight:700}} placeholder="0.00" inputMode="decimal"/>
-              {inputTotal>0&&form.hasVat==='yes'&&(
-                <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:7,padding:'9px 12px',marginTop:6}}>
-                  {[['بدون ضريبة',displayAmount+' '+curr,C.text],['ضريبة 15%',displayVat+' '+curr,C.warning],['الإجمالي',inputTotal.toFixed(2)+' '+curr,C.primary]].map(([k,v,c],i)=>(
-                    <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:i<2?4:0,paddingTop:i===2?6:0,borderTop:i===2?`1px solid ${C.border}`:undefined}}>
-                      <span style={{color:C.text3}}>{k}</span><span style={{fontWeight:700,color:String(c)}}>{v}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Supplier */}
-            <div style={{marginBottom:10}}>
-              <label style={lbl}>المورد *</label>
-              <input required value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})} style={inp} placeholder="اسم المورد أو الشركة"/>
-            </div>
-
-            {/* Payment status */}
-            <div style={{marginBottom:10}}>
-              <label style={lbl}>حالة الدفع</label>
-              <div style={{display:'flex',gap:8}}>
-                <button type="button" onClick={()=>setForm({...form,payment_status:'unpaid'})}
-                  style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.payment_status==='unpaid'?C.danger:C.border}`,background:form.payment_status==='unpaid'?C.dangerL:'white',color:form.payment_status==='unpaid'?C.danger:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-                  <Clock size={13} strokeWidth={2.3}/> غير مدفوعة
-                </button>
-                <button type="button" onClick={()=>setForm({...form,payment_status:'paid'})}
-                  style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.payment_status==='paid'?C.primary:C.border}`,background:form.payment_status==='paid'?C.primaryL:'white',color:form.payment_status==='paid'?C.primary:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-                  <CheckCircle2 size={13} strokeWidth={2.3}/> مدفوعة
-                </button>
-              </div>
-            </div>
-
-            {form.payment_status==='unpaid' && (
-              <div style={{marginBottom:10}}>
-                <label style={lbl}>موعد استحقاق الدفع (اختياري)</label>
-                <input type="date" value={form.due_date} onChange={e=>setForm({...form,due_date:e.target.value})} style={inp}/>
-              </div>
-            )}
-
-            {/* Invoice Date */}
-            <div style={{marginBottom:10}}>
-              <label style={lbl}>تاريخ الفاتورة</label>
-              <input type="date" value={form.invoice_date} onChange={e=>setForm({...form,invoice_date:e.target.value})} style={inp}/>
-            </div>
-
-            {/* VAT */}
-            <div style={{marginBottom:10}}>
-              <label style={lbl}>الفاتورة شاملة ضريبة 15%؟ *</label>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
-                {[{v:'no',l:'بدون ضريبة',c:C.primary,Icon:Ban},{v:'yes',l:'شاملة 15%',c:C.warning,Icon:Percent}].map(b=>(
-                  <button key={b.v} type="button" onClick={()=>setForm({...form,hasVat:b.v,invoice_image:b.v==='no'?'':form.invoice_image})}
-                    style={{padding:'10px',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer',border:`1px solid ${form.hasVat===b.v?b.c:C.border2}`,background:form.hasVat===b.v?b.v==='no'?C.primaryL:C.warningL:'white',color:form.hasVat===b.v?b.c:C.text3,fontFamily:'inherit',transition:'all .15s',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-                    <b.Icon size={13} strokeWidth={2.3}/> {b.l}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Note */}
-            <div style={{marginBottom:14}}>
-              <label style={lbl}>ملاحظات (اختياري)</label>
-              <textarea value={form.note} onChange={e=>setForm({...form,note:e.target.value})}
-                style={{...inp,minHeight:52,resize:'vertical'}} placeholder="أي تفاصيل إضافية..."/>
-            </div>
-
-            <button type="submit" disabled={loading||uploading} style={{
-              width:'100%',padding:'12px',background:loading||uploading?C.text4:C.primary,
-              color:'white',border:'none',borderRadius:8,fontSize:13,fontWeight:700,
-              cursor:loading||uploading?'not-allowed':'pointer',fontFamily:'inherit',
-              opacity:loading||uploading?.7:1,transition:'all .15s',
-            }}>
-              {loading?'جاري الحفظ...':'تسجيل الشراء'}
-            </button>
-          </form>
-        </div>
-
-        {/* Payables — المستحقات للموردين */}
-        {payables.length>0 && (() => {
-          const todayStr = todayRiyadh()
-          const totalOwed = payables.reduce((s:number,p:any)=>s+(p.total_amount||0),0)
-          const overdueCount = payables.filter((p:any)=>p.due_date && p.due_date < todayStr).length
-          const bySupplier: Record<string, any[]> = {}
-          payables.forEach((p:any)=>{ const k=p.supplier||'—'; (bySupplier[k]=bySupplier[k]||[]).push(p) })
-          return (
-            <div className="u" style={{background:'white',borderRadius:12,border:`1px solid ${overdueCount>0?C.dangerB:C.border}`,overflow:'hidden',marginBottom:14,animationDelay:'.06s'}}>
-              <button onClick={()=>setShowPayables(v=>!v)} style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 14px',background:overdueCount>0?C.dangerL:C.bg,border:'none',cursor:'pointer',fontFamily:'inherit'}}>
-                <div style={{display:'flex',alignItems:'center',gap:8}}>
-                  <span style={{fontSize:16}}>💰</span>
-                  <div style={{textAlign:'right'}}>
-                    <div style={{fontSize:13,fontWeight:800,color:overdueCount>0?C.danger:C.text}}>{payables.length} فاتورة غير مدفوعة — {totalOwed.toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0})} {curr}</div>
-                    {overdueCount>0 && <div style={{fontSize:11,color:C.danger,fontWeight:700,marginTop:2}}>⚠️ {overdueCount} متأخرة عن موعد الاستحقاق</div>}
-                  </div>
-                </div>
-                <span style={{fontSize:12,color:C.text3,transform:showPayables?'rotate(180deg)':'none',transition:'transform .2s'}}>▾</span>
-              </button>
-              {showPayables && (
-                <div style={{padding:'10px 14px 14px',display:'flex',flexDirection:'column' as const,gap:10}}>
-                  {Object.entries(bySupplier).map(([supplierName, items]) => {
-                    const subtotal = items.reduce((s,p)=>s+(p.total_amount||0),0)
-                    return (
-                      <div key={supplierName} style={{border:`1px solid ${C.border}`,borderRadius:10,overflow:'hidden'}}>
-                        <div style={{display:'flex',justifyContent:'space-between',padding:'8px 12px',background:C.bg,fontSize:12,fontWeight:700,color:C.text}}>
-                          <span>{supplierName}</span>
-                          <span>{subtotal.toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0})} {curr}</span>
-                        </div>
-                        {items.map((p:any)=>{
-                          const isOverdue = p.due_date && p.due_date < todayStr
-                          const isSoon = p.due_date && !isOverdue && p.due_date <= new Date(Date.now()+3*86400000).toISOString().slice(0,10)
-                          return (
-                            <div key={p.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',borderTop:`1px solid ${C.border}`,fontSize:11}}>
-                              <div>
-                                <div style={{color:C.text2,fontWeight:600}}>{p.name||'—'}</div>
-                                {p.due_date && (
-                                  <div style={{color:isOverdue?C.danger:isSoon?C.warning:C.text4,fontWeight:isOverdue||isSoon?700:500,marginTop:2}}>
-                                    {isOverdue?'⚠️ متأخرة — ':''}استحقاق: {p.due_date}
-                                  </div>
-                                )}
-                              </div>
-                              <div style={{display:'flex',alignItems:'center',gap:8}}>
-                                <span style={{fontWeight:700,color:C.text}}>{(p.total_amount||0).toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0})} {curr}</span>
-                                <button onClick={()=>markPaid(p.id)} disabled={payingId===p.id}
-                                  style={{padding:'4px 10px',borderRadius:7,border:`1px solid ${C.primaryB}`,background:C.primaryL,color:C.primary,fontSize:10,fontWeight:700,cursor:payingId===p.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:payingId===p.id?.6:1}}>
-                                  {payingId===p.id?'...':'✓ دُفعت'}
-                                </button>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )
-        })()}
-
-        {/* History */}
-        <div className="u" style={{background:'white',borderRadius:12,border:`1px solid ${C.border}`,overflow:'hidden',animationDelay:'.08s'}}>
-          {/* Filters */}
-          <div style={{padding:'12px 14px',borderBottom:`1px solid ${C.border}`}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
-              <span style={{fontSize:13,fontWeight:700,color:C.text}}>آخر المشتريات</span>
-              <span style={{fontSize:10,fontWeight:600,color:C.primary,background:C.primaryL,padding:'2px 8px',borderRadius:99,border:`1px solid ${C.primaryB}`}}>{filteredHistory.length} فاتورة</span>
-            </div>
-            <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-              {/* Period */}
-              <div style={{display:'flex',gap:3,background:C.bg,borderRadius:7,padding:3,border:`1px solid ${C.border}`}}>
-                {[{v:'all',l:'الكل'},{v:'today',l:'اليوم'},{v:'week',l:'أسبوع'},{v:'month',l:'شهر'}].map(p=>(
-                  <button key={p.v} onClick={()=>setFilterPeriod(p.v)}
-                    style={{padding:'4px 9px',borderRadius:5,border:'none',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit',background:filterPeriod===p.v?C.primary:'transparent',color:filterPeriod===p.v?'white':C.text3,transition:'all .15s'}}>
-                    {p.l}
-                  </button>
-                ))}
-              </div>
-              {/* Type */}
-              <div style={{display:'flex',gap:3,background:C.bg,borderRadius:7,padding:3,border:`1px solid ${C.border}`}}>
-                {[{v:'all',l:'الكل'},{v:'مخزون',l:'📦'},{v:'مشتريات',l:'🛒'},{v:'أخرى',l:'📋'}].map(c=>(
-                  <button key={c.v} onClick={()=>setFilterCat(c.v)}
-                    style={{padding:'4px 9px',borderRadius:5,border:'none',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit',background:filterCat===c.v?C.primary:'transparent',color:filterCat===c.v?'white':C.text3,transition:'all .15s'}}>
-                    {c.l}
-                  </button>
-                ))}
-              </div>
-              {/* Supplier search */}
-              <input value={filterSupplier} onChange={e=>setFilterSupplier(e.target.value)} placeholder="بحث بالمورد..."
-                style={{flex:1,minWidth:80,padding:'5px 10px',border:`1px solid ${C.border2}`,borderRadius:7,fontSize:11,fontFamily:'inherit',outline:'none',background:'white',color:C.text}}/>
-            </div>
-          </div>
-
-          {/* List */}
-          <div style={{maxHeight:600,overflowY:'auto'}}>
-            {filteredHistory.length===0?(
-              <div style={{padding:'48px 20px',textAlign:'center'}}>
-                <div style={{fontSize:36,marginBottom:8}}>🛒</div>
-                <div style={{fontSize:13,fontWeight:600,color:C.text2,marginBottom:4}}>لا توجد مشتريات</div>
-                <div style={{fontSize:11,color:C.text4}}>سجّل أول فاتورة من النموذج</div>
-              </div>
-            ):filteredHistory.map((p,i)=>{
-              const cc=p.category==='مخزون'?{bg:C.primaryL,color:C.primary,border:C.primaryB}:p.category==='مشتريات'?{bg:C.infoL,color:C.info,border:C.infoB}:{bg:C.bg,color:C.text3,border:C.border2}
-              return(
-                <div key={p.id} className="rh" style={{padding:'12px 14px',borderBottom:i<filteredHistory.length-1?`1px solid ${C.border}`:'none'}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:5,flexWrap:'wrap'}}>
-                        <span style={{background:cc.bg,color:cc.color,border:`1px solid ${cc.border}`,padding:'2px 8px',borderRadius:99,fontSize:10,fontWeight:600}}>
-                          {CAT_ICONS[p.category]} {p.category}
-                        </span>
-                        {p.invoice_image&&(
-                          <a href={p.invoice_image} target="_blank" rel="noreferrer"
-                            style={{color:C.info,fontSize:10,fontWeight:600,textDecoration:'none',background:C.infoL,padding:'2px 8px',borderRadius:99,border:`1px solid ${C.infoB}`}}>
-                            📎 فاتورة
-                          </a>
-                        )}
-                      </div>
-                      <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:2}}>{p.name}</div>
-                      {p.qty&&<div style={{fontSize:11,color:C.text4,marginBottom:1}}>{p.qty} {p.unit}</div>}
-                      <div style={{fontSize:10,color:C.text4,display:'flex',gap:8,flexWrap:'wrap'}}>
-                        {p.supplier&&<span>🏪 {p.supplier}</span>}
-                        <span>{new Date(p.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',day:'numeric',month:'short'})}</span>
-                      </div>
-                    </div>
-                    <div style={{textAlign:'left',flexShrink:0,display:'flex',flexDirection:'column' as const,alignItems:'flex-end',gap:6}}>
-                      <div>
-                        <div style={{fontSize:15,fontWeight:700,color:C.primary,fontVariantNumeric:'tabular-nums'}}>{Number(p.total_amount||0).toFixed(0)}</div>
-                        <div style={{fontSize:10,color:C.text4}}>{curr}</div>
-                        {Number(p.vat_amount||0)>0&&<div style={{fontSize:10,color:C.warning,marginTop:1}}>+{Number(p.vat_amount||0).toFixed(0)} ض</div>}
-                      </div>
-                      <button onClick={()=>deletePurchase(p)} disabled={deletingId===p.id}
-                        style={{padding:'3px 9px',borderRadius:6,border:`1px solid ${C.dangerB}`,background:C.dangerL,color:C.danger,fontSize:10,fontWeight:700,cursor:deletingId===p.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:deletingId===p.id?.6:1}}>
-                        {deletingId===p.id?'...':'🗑️ حذف'}
-                      </button>
+                    <label className="storely-label">باركود</label>
+                    <div className="flex gap-2">
+                      <input value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} className="storely-input" placeholder="امسح أو أدخل يدوياً"/>
+                      <StorelyButton icon={<ScanBarcode size={16}/>} onClick={()=>setShowScan(true)}>مسح</StorelyButton>
                     </div>
                   </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div><label className="storely-label">الكمية</label><input type="number" min="0" value={form.qty} onChange={e=>setForm({...form,qty:e.target.value})} className="storely-input" inputMode="numeric"/></div>
+                    <div><label className="storely-label">الوحدة</label><select value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})} className="storely-input">{UNITS.map(u=><option key={u}>{u}</option>)}</select></div>
+                    <div><label className="storely-label">الحد الأدنى</label><input type="number" min="0" value={form.reorder_point} onChange={e=>setForm({...form,reorder_point:e.target.value})} className="storely-input" inputMode="numeric"/></div>
+                  </div>
+                </>
+              ) : null}
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div><label className="storely-label">الإجمالي ({curr}) *</label><input type="number" min="0" step="0.01" required value={form.total_amount} onChange={e=>setForm({...form,total_amount:e.target.value})} className="storely-input text-base font-semibold" inputMode="decimal"/></div>
+                <div><label className="storely-label">المورد *</label><input required value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})} className="storely-input" placeholder="اسم المورد"/></div>
+              </div>
+
+              {inputTotal>0&&form.hasVat==='yes' ? (
+                <div className="rounded-[6px] border border-[#E7E1D8] bg-[#F7F3ED] p-3 text-xs">
+                  <div className="flex justify-between"><span className="text-[#66737C]">بدون ضريبة</span><b>{displayAmount} {curr}</b></div>
+                  <div className="mt-1 flex justify-between"><span className="text-[#66737C]">ضريبة 15%</span><b className="text-[#B45309]">{displayVat} {curr}</b></div>
+                  <div className="mt-2 flex justify-between border-t border-[#E7E1D8] pt-2"><span className="text-[#66737C]">الإجمالي</span><b className="text-[#203640]">{inputTotal.toFixed(2)} {curr}</b></div>
                 </div>
-              )
-            })}
+              ) : null}
+
+              <div><label className="storely-label">حالة الدفع</label><div className="grid grid-cols-2 gap-2"><button type="button" onClick={()=>setForm({...form,payment_status:'unpaid'})} className={`storely-choice ${form.payment_status==='unpaid'?'storely-choice-danger':''}`}><Clock size={14}/> غير مدفوعة</button><button type="button" onClick={()=>setForm({...form,payment_status:'paid'})} className={`storely-choice ${form.payment_status==='paid'?'storely-choice-active':''}`}><CheckCircle2 size={14}/> مدفوعة</button></div></div>
+              {form.payment_status==='unpaid' ? <div><label className="storely-label">موعد الاستحقاق</label><input type="date" value={form.due_date} onChange={e=>setForm({...form,due_date:e.target.value})} className="storely-input"/></div> : null}
+              <div className="grid gap-3 md:grid-cols-2"><div><label className="storely-label">تاريخ الفاتورة</label><input type="date" value={form.invoice_date} onChange={e=>setForm({...form,invoice_date:e.target.value})} className="storely-input"/></div><div><label className="storely-label">الضريبة *</label><div className="grid grid-cols-2 gap-2"><button type="button" onClick={()=>setForm({...form,hasVat:'no',invoice_image:''})} className={`storely-choice ${form.hasVat==='no'?'storely-choice-active':''}`}><Ban size={14}/> بدون</button><button type="button" onClick={()=>setForm({...form,hasVat:'yes'})} className={`storely-choice ${form.hasVat==='yes'?'storely-choice-warning':''}`}><Percent size={14}/> 15%</button></div></div></div>
+              <div><label className="storely-label">ملاحظات</label><textarea value={form.note} onChange={e=>setForm({...form,note:e.target.value})} className="storely-input min-h-20 resize-y" placeholder="تفاصيل إضافية"/></div>
+              <StorelyButton type="submit" variant="primary" className="w-full" disabled={loading||uploading} icon={<Plus size={16}/>}>{loading?'جاري الحفظ...':'تسجيل الشراء'}</StorelyButton>
+            </form>
+          </StorelyCard>
+
+          <div className="space-y-4">
+            {payables.length>0 ? (
+              <StorelyCard title="مستحقات الموردين" description={`${payables.length} فاتورة غير مدفوعة بقيمة ${totalPayableAmount.toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0})} ${curr}`} actions={<button type="button" className="flex items-center gap-1 text-xs font-semibold text-[#66737C]" onClick={()=>setShowPayables(v=>!v)}>عرض <ChevronDown size={14} className={showPayables?'rotate-180':''}/></button>}>
+                {showPayables ? <div className="divide-y divide-[#E7E1D8]">{payables.map((p:any)=>{ const overdue = p.due_date && p.due_date < todayStr; return <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm"><div><div className="font-semibold text-[#203640]">{p.name||'بدون اسم'}</div><div className="mt-1 text-xs text-[#66737C]">{p.supplier||'غير محدد'} {p.due_date ? `- استحقاق ${p.due_date}` : ''}</div></div><div className="flex items-center gap-3"><StorelyStatusBadge status={overdue?'danger':'warning'}>{overdue?'متأخرة':'مستحقة'}</StorelyStatusBadge><span className="font-semibold tabular-nums">{Number(p.total_amount||0).toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0})} {curr}</span><StorelyButton size="sm" variant="primary" disabled={payingId===p.id} onClick={()=>markPaid(p.id)}>{payingId===p.id?'...':'دُفعت'}</StorelyButton></div></div>})}</div> : null}
+              </StorelyCard>
+            ) : null}
+
+            <StorelyCard title="سجل المشتريات" description="جدول تشغيلي للفواتير مع فرز، فلاتر، وفتح التفاصيل." actions={<StorelyStatusBadge status="info">{filteredHistory.length} فاتورة</StorelyStatusBadge>}>
+              <div className="grid gap-2 border-b border-[#E7E1D8] p-2.5 md:grid-cols-[auto_auto_minmax(180px,1fr)]">
+                <div className="storely-segmented">{[{v:'all',l:'الكل'},{v:'today',l:'اليوم'},{v:'week',l:'أسبوع'},{v:'month',l:'شهر'}].map(p=><button key={p.v} type="button" onClick={()=>setFilterPeriod(p.v)} className={filterPeriod===p.v?'active':''}>{p.l}</button>)}</div>
+                <div className="storely-segmented">{[{v:'all',l:'كل الأنواع'},{v:CATS[0],l:CATS[0]},{v:CATS[1],l:CATS[1]},{v:CATS[2],l:CATS[2]}].map(c=><button key={c.v} type="button" onClick={()=>setFilterCat(c.v)} className={filterCat===c.v?'active':''}>{c.l}</button>)}</div>
+                <input value={filterSupplier} onChange={e=>setFilterSupplier(e.target.value)} placeholder="بحث بالمورد" className="storely-input h-8"/>
+              </div>
+              <StorelyDataTable
+                columns={purchaseColumns}
+                data={filteredHistory}
+                rowKey="id"
+                searchable={false}
+                pageSize={10}
+                onRowClick={setSelectedPurchase}
+                emptyState={<StorelyEmptyState icon={<Package size={18}/>} title="لا توجد مشتريات" description="سجل أول فاتورة من نموذج الشراء لبدء بناء سجل الموردين والمخزون." action={<StorelyButton variant="primary" onClick={()=>document.getElementById('purchase-entry-form')?.scrollIntoView({behavior:'smooth',block:'start'})}>تسجيل شراء</StorelyButton>}/>} 
+              />
+            </StorelyCard>
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .storely-label{display:block;margin-bottom:6px;font-size:12px;font-weight:700;color:#66737C}
+        .storely-input{width:100%;border:1px solid #D7CDC2;border-radius:5px;background:white;padding:8px 10px;font-size:13px;color:#203640;outline:none;transition:border-color .15s,box-shadow .15s}
+        .storely-input:focus{border-color:#203640;box-shadow:0 0 0 3px rgba(32,54,64,.14)}
+        .storely-choice{display:inline-flex;min-height:34px;align-items:center;justify-content:center;gap:6px;border:1px solid #D7CDC2;border-radius:5px;background:white;padding:7px 9px;font-size:12px;font-weight:700;color:#66737C;transition:background .15s,border-color .15s,color .15s}
+        .storely-choice:hover{border-color:#8EA0B1;background:#F7F3ED;color:#203640}
+        .storely-choice-active{border-color:#203640;background:#ECFDF5;color:#203640}
+        .storely-choice-danger{border-color:#FECACA;background:#FEF2F2;color:#B91C1C}
+        .storely-choice-warning{border-color:#FDE68A;background:#FFFBEB;color:#B45309}
+        .storely-segmented{display:flex;gap:3px;align-items:center;border:1px solid #E7E1D8;background:#F7F3ED;border-radius:5px;padding:2px;overflow-x:auto}
+        .storely-segmented button{white-space:nowrap;border:0;border-radius:4px;background:transparent;padding:5px 9px;font-size:12px;font-weight:700;color:#66737C;cursor:pointer}
+        .storely-segmented button.active{background:white;color:#203640;box-shadow:none}
+      `}</style>
     </div>
   )
 }

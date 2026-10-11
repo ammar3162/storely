@@ -1,48 +1,112 @@
 'use client'
-import PageIcon from '@/components/PageIcon'
-import { useState, useEffect, useRef } from 'react'
-import { currencySymbol } from '@/lib/currencySymbol'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { api } from '@/lib/api-client'
-import { getMe, getOrgId } from '@/lib/session'
-import { colors, font, pageTitle, pageSub, card, btnPrimary, btnSecondary, inp } from '@/lib/ds'
-import { toast } from '@/components/toast'
-import { Send, Clock, Trash2, Truck } from 'lucide-react'
-import { cache } from '@/lib/cache'
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps */
+
 export const dynamic = 'force-dynamic'
 
-const DAYS = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت']
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { BarChart3, Clock, Link2, Plus, Search, Send, Settings, Trash2, Truck, Unlink, X } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
+import { api } from '@/lib/api-client'
+import { cache } from '@/lib/cache'
+import { currencySymbol } from '@/lib/currencySymbol'
+import { getMe, getOrgId } from '@/lib/session'
+import { toast } from '@/components/toast'
+import {
+  StorelyButton,
+  StorelyCard,
+  StorelyDataTable,
+  StorelyEmptyState,
+  StorelyFormField,
+  StorelyMetricStrip,
+  StorelyPageHeader,
+  StorelyStatusBadge,
+  StorelyTableAction,
+  StorelyTableActionGroup,
+  type StorelyDataTableColumn,
+  type StorelyMetric,
+} from '@/components/ui'
 
-const NOTIFY_OPTS = [
-  { id:'instant', icon:'⚡', label:'فوري',    desc:'عند كل صرف مباشرة' },
-  { id:'daily',   icon:'📅', label:'يومي',    desc:'مرة يومياً' },
-  { id:'weekly',  icon:'📆', label:'أسبوعي',  desc:'مرة أسبوعياً' },
-]
+const DAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
+const COUNTRY_CODES = ['+966', '+971', '+965', '+973', '+974', '+968', '+20', '+962', '+1', '+44', '+91', '+92']
 
-function UpgradeBlock() {
-  const router = useRouter()
+type Supplier = {
+  id: string
+  name: string
+  phone: string
+  notify_mode?: string | null
+  notify_time?: string | null
+  notify_day?: number | null
+  marketplace_supplier_id?: string | null
+}
+
+type Product = {
+  id: string
+  name: string
+  qty: number
+  unit?: string | null
+  supplier_id?: string | null
+  supplier_reorder_point?: number | null
+  supplier_order_qty?: number | null
+  supplier_notes?: string | null
+}
+
+function formatNumber(value: number) {
+  return value.toLocaleString('ar-SA', { numberingSystem: 'latn' })
+}
+
+function inputClass(extra = '') {
+  return `h-9 w-full rounded-[6px] border border-[#D7CDC2] bg-white px-3 text-sm text-[#203640] outline-none transition placeholder:text-[#8EA0B1] focus:border-[#203640] focus:ring-2 focus:ring-[#203640]/15 ${extra}`
+}
+
+function Modal({
+  title,
+  description,
+  children,
+  onClose,
+  maxWidth = 'max-w-lg',
+}: {
+  title: ReactNode
+  description?: ReactNode
+  children: ReactNode
+  onClose: () => void
+  maxWidth?: string
+}) {
   return (
-    <div style={{minHeight:'60vh',display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
-      <div style={{textAlign:'center',maxWidth:400}}>
-        <div style={{fontSize:64,marginBottom:16}}>🔒</div>
-        <h2 style={{fontSize:22,fontWeight:900,color:'#0f172a',marginBottom:8}}>هذه الميزة غير متاحة في باقتك</h2>
-        <p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:24}}>
-          إدارة الموردين متاحة في الباقة المتوسطة وما فوق.
-        </p>
-        <button className="hide-in-app" onClick={()=>router.push('/settings')}
-          style={{padding:'14px 32px',background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
-          ترقية الباقة ←
-        </button>
+    <div className="fixed inset-0 z-[3500] flex items-center justify-center bg-black/45 p-4" dir="rtl" onClick={onClose}>
+      <div
+        className={`max-h-[82vh] w-full ${maxWidth} overflow-y-auto rounded-[6px] border border-[#E7E1D8] bg-white`}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-[#E7E1D8] px-4 py-3">
+          <div className="min-w-0">
+            <h2 className="m-0 text-base font-semibold leading-6 text-[#203640]">{title}</h2>
+            {description ? <p className="mt-1 text-[13px] leading-5 text-[#66737C]">{description}</p> : null}
+          </div>
+          <button
+            type="button"
+            className="inline-flex size-7 shrink-0 items-center justify-center rounded-[5px] text-[#66737C] transition hover:bg-[#F8EEDF] hover:text-[#203640]"
+            onClick={onClose}
+            aria-label="إغلاق"
+          >
+            <X size={15} />
+          </button>
+        </div>
+        <div className="p-4">{children}</div>
       </div>
     </div>
   )
 }
 
-function NotifyBadge({ mode, time, day }: { mode:string; time:string; day:number }) {
-  const opt = NOTIFY_OPTS.find(o=>o.id===mode)
-  if (mode==='instant') return <span style={{fontSize:11,background:'#fef3c7',color:'#92400e',border:'1px solid #fcd34d',borderRadius:20,padding:'2px 8px',fontWeight:700}}>⚡ فوري</span>
-  if (mode==='daily') return <span style={{fontSize:11,background:'#eff6ff',color:'#1d4ed8',border:'1px solid #bfdbfe',borderRadius:20,padding:'2px 8px',fontWeight:700}}>📅 يومي {time}</span>
-  return <span style={{fontSize:11,background:'#f5f3ff',color:'#6d28d9',border:'1px solid #ddd6fe',borderRadius:20,padding:'2px 8px',fontWeight:700}}>📆 {DAYS[day]} {time}</span>
+function notifyLabel(mode?: string | null, time?: string | null, day?: number | null) {
+  if (mode === 'instant') return 'فوري'
+  if (mode === 'weekly') return `أسبوعي ${DAYS[day ?? 0] ?? DAYS[0]} ${time || '08:00'}`
+  return `يومي ${time || '08:00'}`
+}
+
+function notifyStatus(mode?: string | null) {
+  if (mode === 'instant') return 'warning'
+  if (mode === 'weekly') return 'info'
+  return 'success'
 }
 
 function EscalationChain({ productId, allSuppliers, primarySupplierId, refreshKey }: any) {
@@ -51,7 +115,7 @@ function EscalationChain({ productId, allSuppliers, primarySupplierId, refreshKe
   const [adding, setAdding] = useState(false)
   const [pickSupplier, setPickSupplier] = useState('')
 
-  useEffect(()=>{ load() },[productId, refreshKey])
+  useEffect(() => { load() }, [productId, refreshKey])
 
   async function load() {
     setLoading(true)
@@ -62,9 +126,9 @@ function EscalationChain({ productId, allSuppliers, primarySupplierId, refreshKe
 
   async function addBackup() {
     if (!pickSupplier) return
-    // الأولوية التالية تنحسب على الخادم
     await api.post('/api/suppliers/chain', { org_id: sessionStorage.getItem('s_org_id'), product_id: productId, supplier_id: pickSupplier })
-    setPickSupplier(''); setAdding(false)
+    setPickSupplier('')
+    setAdding(false)
     load()
   }
 
@@ -73,371 +137,392 @@ function EscalationChain({ productId, allSuppliers, primarySupplierId, refreshKe
     load()
   }
 
-  const usedIds = new Set([primarySupplierId, ...chain.map((c:any)=>c.supplier_id)])
-  const available = (allSuppliers||[]).filter((s:any)=>!usedIds.has(s.id))
+  const usedIds = new Set([primarySupplierId, ...chain.map((item: any) => item.supplier_id)])
+  const available = (allSuppliers || []).filter((supplier: Supplier) => !usedIds.has(supplier.id))
 
   if (loading) return null
 
   return (
-    <div style={{ marginTop:8, paddingTop:8, borderTop:'1px dashed #e2e8f0' }}>
-      <div style={{ fontSize:11, fontWeight:700, color:'#94a3b8', marginBottom:6 }}>🔄 سلسلة التصعيد (لو المورد الأساسي "غير متوفر")</div>
-      {chain.length===0 && !adding && (
-        <div style={{ fontSize:11, color:'#94a3b8', marginBottom:6 }}>ما فيه موردين بديلين — يُرسل إشعار يدوي فقط عند عدم التوفر</div>
-      )}
-      {chain.map((c:any,i:number)=>(
-        <div key={c.id} style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
-          <span style={{ fontSize:10, background:'#eff6ff', color:'#2563eb', border:'1px solid #bfdbfe', borderRadius:20, padding:'1px 7px', fontWeight:700 }}>#{i+2}</span>
-          <span style={{ fontSize:12, color:'#0f172a', flex:1 }}>{(c.suppliers as any)?.name || 'مورد'}</span>
-          <button onClick={()=>removeBackup(c.id)} style={{ background:'none', border:'none', color:'#ef4444', fontSize:11, cursor:'pointer', fontFamily:'inherit' }}>حذف</button>
-        </div>
-      ))}
+    <div className="mt-2 border-t border-dashed border-[#E7E1D8] pt-2">
+      <div className="mb-1.5 text-xs font-semibold text-[#66737C]">سلسلة التصعيد عند عدم توفر المورد الأساسي</div>
+      {chain.length === 0 && !adding ? (
+        <div className="mb-2 text-xs text-[#8EA0B1]">لا يوجد موردون بديلون. سيتم الاكتفاء بالإشعار اليدوي عند عدم التوفر.</div>
+      ) : null}
+      <div className="space-y-1.5">
+        {chain.map((item: any, index: number) => (
+          <div key={item.id} className="flex items-center gap-2 text-xs">
+            <span className="rounded-[5px] border border-[#CBD4DC] bg-[#F3F5F6] px-1.5 py-0.5 font-semibold text-[#4F6678]">#{index + 2}</span>
+            <span className="min-w-0 flex-1 truncate font-medium text-[#203640]">{item.suppliers?.name || 'مورد'}</span>
+            <button type="button" className="text-[#B91C1C] hover:underline" onClick={() => removeBackup(item.id)}>حذف</button>
+          </div>
+        ))}
+      </div>
       {adding ? (
-        <div style={{ display:'flex', gap:6, marginTop:6 }}>
-          <select value={pickSupplier} onChange={e=>setPickSupplier(e.target.value)}
-            style={{ flex:1, padding:'6px 8px', border:'1.5px solid #e2e8f0', borderRadius:8, fontSize:12, fontFamily:'inherit', background:'white', color:'#0f172a' }}>
-            <option value="">— اختر مورد —</option>
-            {available.map((sup:any)=><option key={sup.id} value={sup.id}>{sup.name}</option>)}
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <select className={inputClass('min-w-44 flex-1')} value={pickSupplier} onChange={(event) => setPickSupplier(event.target.value)}>
+            <option value="">اختر مورد</option>
+            {available.map((supplier: Supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}
           </select>
-          <button onClick={addBackup} disabled={!pickSupplier} style={{ padding:'6px 12px', background:'#029FA2', color:'white', border:'none', borderRadius:8, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>إضافة</button>
-          <button onClick={()=>setAdding(false)} style={{ padding:'6px 10px', background:'none', border:'1.5px solid #e2e8f0', borderRadius:8, fontSize:11, cursor:'pointer', fontFamily:'inherit', color:'#64748b' }}>إلغاء</button>
+          <StorelyButton size="sm" variant="primary" disabled={!pickSupplier} onClick={addBackup}>إضافة</StorelyButton>
+          <StorelyButton size="sm" variant="ghost" onClick={() => setAdding(false)}>إلغاء</StorelyButton>
         </div>
       ) : (
-        <button onClick={()=>setAdding(true)} disabled={!available.length}
-          style={{ background:'none', border:'1.5px dashed #cbd5e1', color:'#64748b', borderRadius:8, padding:'4px 10px', fontSize:11, fontWeight:600, cursor:available.length?'pointer':'not-allowed', fontFamily:'inherit' }}>
-          + إضافة مورد بديل
-        </button>
+        <StorelyButton size="sm" variant="secondary" className="mt-2" disabled={!available.length} onClick={() => setAdding(true)}>
+          إضافة مورد بديل
+        </StorelyButton>
       )}
     </div>
   )
 }
 
-function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, curr, autoOpen, recentFailedCount }: any) {
+function SupplierWorkspace({
+  supplier,
+  products,
+  orgId,
+  onRefresh,
+  allSuppliers,
+  curr,
+  recentFailedCount,
+  onClose,
+}: {
+  supplier: Supplier
+  products: Product[]
+  orgId: string
+  onRefresh: () => void
+  allSuppliers: Supplier[]
+  curr: string
+  recentFailedCount: number
+  onClose: () => void
+}) {
   const [showTimeline, setShowTimeline] = useState(false)
   const [timelineEvents, setTimelineEvents] = useState<any[]>([])
   const [timelineLoading, setTimelineLoading] = useState(false)
-
-  async function openTimeline() {
-    setShowTimeline(true); setTimelineLoading(true)
-    try {
-      const res = await fetch('/api/supplier-timeline',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,supplier_id:s.id,supplier_name:s.name})})
-      const data = await res.json()
-      setTimelineEvents(data.events || [])
-    } catch { setTimelineEvents([]) }
-    setTimelineLoading(false)
-  }
-  const [open, setOpen]           = useState(!!autoOpen)
-  const cardRef = useRef<HTMLDivElement>(null)
-
-  useEffect(()=>{
-    if (autoOpen && cardRef.current) {
-      setTimeout(()=>cardRef.current?.scrollIntoView({ behavior:'smooth', block:'center' }), 300)
-    }
-  },[autoOpen])
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [mode, setMode]           = useState(s.notify_mode || 'daily')
-  const [time, setTime]           = useState(s.notify_time || '08:00')
-  const [day, setDay]             = useState(String(s.notify_day ?? 0))
-  const [saving, setSaving]       = useState(false)
-  const [sending, setSending]     = useState(false)
+  const [mode, setMode] = useState(supplier.notify_mode || 'daily')
+  const [time, setTime] = useState(supplier.notify_time || '08:00')
+  const [day, setDay] = useState(String(supplier.notify_day ?? 0))
+  const [saving, setSaving] = useState(false)
+  const [sending, setSending] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState('')
   const [productSearch, setProductSearch] = useState('')
-  const [reorderPoint, setReorderPoint]       = useState('')
-  const [orderQty, setOrderQty]               = useState('')
-  const [supplierNotes, setSupplierNotes]     = useState('')
-  const [chainRefreshKey, setChainRefreshKey] = useState(0)
+  const [reorderPoint, setReorderPoint] = useState('')
+  const [orderQty, setOrderQty] = useState('')
+  const [supplierNotes, setSupplierNotes] = useState('')
+  const [chainRefreshKey] = useState(0)
   const [editingPhone, setEditingPhone] = useState(false)
-  const [editPhoneVal, setEditPhoneVal] = useState(s.phone || '')
-  const [savingPhone, setSavingPhone]   = useState(false)
+  const [editPhoneVal, setEditPhoneVal] = useState(supplier.phone || '')
+  const [savingPhone, setSavingPhone] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [catalogItems, setCatalogItems] = useState<any[]>([])
   const [selectedCatalogItem, setSelectedCatalogItem] = useState('')
 
-  useEffect(()=>{
-    if (!s.marketplace_supplier_id) { setCatalogItems([]); return }
-    (async () => {
-      const j = await api.get('/api/suppliers/catalog', { org_id: orgId, supplier_id: s.id })
-      setCatalogItems(j.items || [])
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      if (!supplier.marketplace_supplier_id) {
+        if (!cancelled) setCatalogItems([])
+        return
+      }
+      const j = await api.get('/api/suppliers/catalog', { org_id: orgId, supplier_id: supplier.id })
+      if (!cancelled) setCatalogItems(j.items || [])
     })()
-  },[s.marketplace_supplier_id])
+    return () => {
+      cancelled = true
+    }
+  }, [supplier.marketplace_supplier_id, supplier.id, orgId])
+
+  async function openTimeline() {
+    setShowTimeline(true)
+    setTimelineLoading(true)
+    try {
+      const res = await fetch('/api/supplier-timeline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ org_id: orgId, supplier_id: supplier.id, supplier_name: supplier.name }),
+      })
+      const data = await res.json()
+      setTimelineEvents(data.events || [])
+    } catch {
+      setTimelineEvents([])
+    }
+    setTimelineLoading(false)
+  }
 
   async function savePhone() {
-    if (!editPhoneVal.trim()) { toast('أدخل رقم صحيح', 'warning'); return }
+    if (!editPhoneVal.trim()) {
+      toast('أدخل رقم صحيح', 'warning')
+      return
+    }
     setSavingPhone(true)
-    const r=await api.patch('/api/suppliers',{ org_id: orgId, id: s.id, phone: editPhoneVal.trim() })
+    const result = await api.patch('/api/suppliers', { org_id: orgId, id: supplier.id, phone: editPhoneVal.trim() })
     setSavingPhone(false)
-    if(!r.success){toast('فشل تحديث رقم المورد','error');return}
+    if (!result.success) {
+      toast('فشل تحديث رقم المورد', 'error')
+      return
+    }
     setEditingPhone(false)
-    toast('✅ تم تحديث رقم المورد')
+    toast('تم تحديث رقم المورد')
     onRefresh()
   }
 
-  const linked   = products.filter((p:any) => p.supplier_id === s.id)
-  const unlinked = products.filter((p:any) => p.supplier_id !== s.id && (!productSearch || p.name?.toLowerCase().includes(productSearch.toLowerCase())))
-
   async function saveSettings() {
     setSaving(true)
-    const r=await api.patch('/api/suppliers',{ org_id: orgId, id: s.id, notify_mode: mode, notify_time: time, notify_day: Number(day) })
+    const result = await api.patch('/api/suppliers', { org_id: orgId, id: supplier.id, notify_mode: mode, notify_time: time, notify_day: Number(day) })
     setSaving(false)
-    if(!r.success){toast('فشل حفظ الإعدادات','error');return}
+    if (!result.success) {
+      toast('فشل حفظ الإعدادات', 'error')
+      return
+    }
     setSettingsOpen(false)
-    toast('✅ تم حفظ إعدادات المورد')
+    toast('تم حفظ إعدادات المورد')
     onRefresh()
   }
 
   async function sendNow() {
     setSending(true)
-    const data = await api.post('/api/notify-supplier', { org_id: orgId, supplier_id: s.id, manual: true })
+    const data = await api.post('/api/notify-supplier', { org_id: orgId, supplier_id: supplier.id, manual: true })
     setSending(false)
-    if (data.sent > 0 && data.failed > 0) toast(`⚠️ تم إرسال ${data.sent} صنف، وفشل إرسال ${data.failed} — تحقق من رقم واتساب المورد وحاول مرة أخرى`, 'warning')
-    else if (data.sent > 0) toast(`✅ تم إرسال طلب توريد للمورد ${s.name}`)
-    else if (data.failed > 0) toast(`❌ فشل إرسال طلب التوريد للمورد ${s.name} — تحقق من رقم واتساب المورد وحاول مرة أخرى`, 'error')
+    if (data.sent > 0 && data.failed > 0) toast(`تم إرسال ${data.sent} صنف، وفشل إرسال ${data.failed}. تحقق من رقم واتساب المورد وحاول مرة أخرى`, 'warning')
+    else if (data.sent > 0) toast(`تم إرسال طلب توريد للمورد ${supplier.name}`)
+    else if (data.failed > 0) toast(`فشل إرسال طلب التوريد للمورد ${supplier.name}. تحقق من رقم واتساب المورد وحاول مرة أخرى`, 'error')
     else toast('لا توجد منتجات تحتاج طلب توريد الآن', 'warning')
   }
 
   async function linkProduct() {
-    if (!selectedProduct || !reorderPoint) { toast('اختر منتج وأدخل الحد الأدنى', 'warning'); return }
-    // الربط + مزامنة الأولوية 1 بسلسلة التصعيد على الخادم
-    const r=await api.post('/api/suppliers/link',{ org_id: orgId, supplier_id: s.id, product_id: selectedProduct, reorder_point: reorderPoint, order_qty: orderQty, notes: supplierNotes, catalog_item_id: selectedCatalogItem || null })
-    if(!r.success){toast(r.error||'فشل ربط المنتج بالمورد','error');return}
-    if(r.chain_failed){toast('تم ربط المنتج، لكن فشل تحديث سلسلة التصعيد','warning')}
-    else toast('✅ تم ربط المنتج')
-    setSelectedProduct(''); setReorderPoint(''); setOrderQty(''); setSupplierNotes(''); setSelectedCatalogItem('')
+    if (!selectedProduct || !reorderPoint) {
+      toast('اختر منتج وأدخل الحد الأدنى', 'warning')
+      return
+    }
+    const result = await api.post('/api/suppliers/link', {
+      org_id: orgId,
+      supplier_id: supplier.id,
+      product_id: selectedProduct,
+      reorder_point: reorderPoint,
+      order_qty: orderQty,
+      notes: supplierNotes,
+      catalog_item_id: selectedCatalogItem || null,
+    })
+    if (!result.success) {
+      toast(result.error || 'فشل ربط المنتج بالمورد', 'error')
+      return
+    }
+    if (result.chain_failed) toast('تم ربط المنتج، لكن فشل تحديث سلسلة التصعيد', 'warning')
+    else toast('تم ربط المنتج')
+    setSelectedProduct('')
+    setReorderPoint('')
+    setOrderQty('')
+    setSupplierNotes('')
+    setSelectedCatalogItem('')
     onRefresh()
   }
 
-  async function unlinkProduct(pid: string) {
-    const r=await api.del('/api/suppliers/link',{ org_id: orgId, product_id: pid })
-    if(!r.success){toast('فشل فك الارتباط','error');return}
+  async function unlinkProduct(productId: string) {
+    const result = await api.del('/api/suppliers/link', { org_id: orgId, product_id: productId })
+    if (!result.success) {
+      toast('فشل فك الارتباط', 'error')
+      return
+    }
     toast('تم فك الارتباط')
     onRefresh()
   }
 
   async function deleteSupplier() {
-    const r=await api.del('/api/suppliers',{ org_id: orgId, id: s.id })
+    const result = await api.del('/api/suppliers', { org_id: orgId, id: supplier.id })
     setConfirmDelete(false)
-    if(!r.success){toast('فشل حذف المورد','error');return}
+    if (!result.success) {
+      toast('فشل حذف المورد', 'error')
+      return
+    }
     toast('تم الحذف')
+    onClose()
     onRefresh()
   }
 
+  const linked = products.filter((product) => product.supplier_id === supplier.id)
+  const unlinked = products.filter((product) => product.supplier_id !== supplier.id && (!productSearch || product.name?.toLowerCase().includes(productSearch.toLowerCase())))
+
   return (
-    <div ref={cardRef} style={{ background:'white', border: autoOpen ? '2px solid #029FA2' : '1.5px solid #e2e8f0', borderRadius:16, overflow:'hidden', boxShadow:'0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03)', transition:'box-shadow .2s' }}>
-      {/* Header */}
-      <div style={{ padding:'16px 20px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:12, cursor:'pointer', flex:1 }} onClick={()=>setOpen(o=>!o)}>
-          <div style={{ width:44, height:44, borderRadius:12, background:'linear-gradient(135deg,#0f172a,#1e293b)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:800, color:'white', flexShrink:0 }}>
-            {s.name[0]}
-          </div>
-          <div>
-            <div style={{display:'flex',alignItems:'center',gap:8}}>
-              <div style={{ fontSize:15, fontWeight:700, color:'#0f172a' }}>{s.name}</div>
-              {rating?.hasData && rating?.stars!=null && (
-                <span title={`${rating.details.confirmedOrders}/${rating.details.totalOrders} طلب مؤكد · ${rating.details.dealCount} تعامل`} style={{fontSize:11,fontWeight:700,color:'#b45309',display:'flex',alignItems:'center',gap:2}}>
-                  {'⭐'.repeat(Math.round(rating.stars))}<span style={{color:'#92400e',marginRight:2}}>{rating.stars}</span>
-                </span>
-              )}
-              {linked.length>0 && <span style={{fontSize:11,fontWeight:700,background:'#f0fdfa',color:'#029FA2',border:'1px solid #99f6e4',borderRadius:20,padding:'2px 8px'}}>{linked.length} منتج مرتبط</span>}
-              {linked.length===0 && <span style={{fontSize:11,fontWeight:700,background:'#fef3c7',color:'#92400e',border:'1px solid #fcd34d',borderRadius:20,padding:'2px 8px'}}>⚠️ لا منتجات مرتبطة</span>}
-              {recentFailedCount>0 && (
-                <span onClick={e=>{e.stopPropagation();openTimeline()}} title="اضغط لمشاهدة سجل التواصل" style={{fontSize:11,fontWeight:700,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:20,padding:'2px 8px',cursor:'pointer'}}>
-                  ❌ فشل إرسال ({recentFailedCount})
-                </span>
-              )}
-            </div>
-            <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:3, flexWrap:'wrap' as const }}>
-              {editingPhone ? (
-                <span onClick={e=>e.stopPropagation()} style={{display:'flex',alignItems:'center',gap:4}}>
-                  <input value={editPhoneVal} onChange={e=>setEditPhoneVal(e.target.value)} dir="ltr" autoFocus
-                    style={{fontSize:11,padding:'3px 6px',border:'1.5px solid #029FA2',borderRadius:5,width:110,fontFamily:'inherit'}}/>
-                  <button onClick={savePhone} disabled={savingPhone} style={{fontSize:10,fontWeight:700,color:'white',background:'#029FA2',border:'none',borderRadius:5,padding:'3px 8px',cursor:'pointer',fontFamily:'inherit'}}>{savingPhone?'...':'حفظ'}</button>
-                  <button onClick={()=>{setEditingPhone(false);setEditPhoneVal(s.phone||'')}} style={{fontSize:10,fontWeight:700,color:'#64748b',background:'#f1f5f9',border:'none',borderRadius:5,padding:'3px 8px',cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
-                </span>
-              ) : (
-                <span onClick={e=>{e.stopPropagation();setEditingPhone(true)}} style={{ fontSize:12, color:'#64748b', cursor:'pointer', display:'flex', alignItems:'center', gap:3 }}>
-                  {s.phone} <span style={{fontSize:10,opacity:.5}}>✏️</span>
-                </span>
-              )}
-              <span style={{ fontSize:12, color:'#94a3b8' }}>·</span>
-              <span style={{ fontSize:12, color:'#64748b' }}>{linked.length} منتج</span>
-            </div>
-          </div>
-        </div>
-        <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
-          <button onClick={sendNow} disabled={sending} title="إرسال طلب توريد الآن"
-            style={{ background:'#f0fdfa', color:'#029FA2', border:'1.5px solid #99f6e4', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            {sending ? '...' : <Send size={14} strokeWidth={2.3}/>}
-          </button>
-          <button onClick={openTimeline} title="سجل التواصل"
-            style={{ background:'#eff6ff', color:'#2563eb', border:'1.5px solid #bfdbfe', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <Clock size={14} strokeWidth={2.3}/>
-          </button>
-          <button onClick={()=>setConfirmDelete(true)} title="حذف المورد"
-            style={{ background:'#fef2f2', color:'#ef4444', border:'1.5px solid #fecaca', borderRadius:9, padding:'7px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <Trash2 size={14} strokeWidth={2.3}/>
-          </button>
-          <span style={{ color:'#94a3b8', fontSize:16, transform:open?'rotate(180deg)':'none', transition:'transform .2s', cursor:'pointer' }} onClick={()=>setOpen(o=>!o)}>⌄</span>
-        </div>
-      </div>
-
-      {/* إعدادات الإشعارات */}
-      {/* المنتجات */}
-      {open && (
-        <div style={{ borderTop:'1.5px solid #f1f5f9', padding:'16px 20px' }}>
-          
-          {/* المنتجات المرتبطة */}
-          {linked.length > 0 && (
-            <div style={{ marginBottom:18 }}>
-              <div style={{ fontSize:12, fontWeight:700, color:'#94a3b8', marginBottom:10 }}>المنتجات المرتبطة</div>
-              <div style={{ display:'flex', flexDirection:'column' as const, gap:8 }}>
-                {linked.length===0 && <div style={{textAlign:'center',padding:'20px',color:'#94a3b8',fontSize:13}}>لا توجد منتجات مرتبطة — أضف منتجاً من الأسفل</div>}
-              {linked.map((p:any)=>(
-                  <div key={p.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 14px', background:'#f8fafc', borderRadius:10, border:'1px solid #f1f5f9' }}>
-                    <div style={{ flex:1 }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                        <span style={{ fontSize:13, fontWeight:700, color:'#0f172a' }}>{p.name}</span>
-                        {p.qty <= p.supplier_reorder_point && (
-                          <span style={{ fontSize:10, background:'#fef2f2', color:'#ef4444', border:'1px solid #fecaca', borderRadius:20, padding:'1px 7px', fontWeight:700 }}>⚠️ ناقص</span>
-                        )}
-                      </div>
-                      {p.supplier_notes && <div style={{ fontSize:11, color:'#029FA2', marginTop:3 }}>📝 {p.supplier_notes}</div>}
-                      <div style={{ fontSize:11, color:'#94a3b8', marginTop:3 }}>
-                        المتاح: <b style={{color:'#0f172a'}}>{p.qty} {p.unit}</b> · يُطلب عند: <b style={{color:'#0f172a'}}>{p.supplier_reorder_point}</b> · كمية الطلب: <b style={{color:'#029FA2'}}>{p.supplier_order_qty}</b>
-                      </div>
-                      <EscalationChain productId={p.id} allSuppliers={allSuppliers} primarySupplierId={s.id} refreshKey={chainRefreshKey} />
-                    </div>
-                    <button onClick={()=>unlinkProduct(p.id)}
-                      style={{ background:'none', border:'1.5px solid #e2e8f0', color:'#94a3b8', borderRadius:8, padding:'5px 10px', fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginRight:8 }}>
-                      فك
-                    </button>
-                  </div>
-                ))}
+    <StorelyCard
+      className="mb-4"
+      title={supplier.name}
+      description={`${linked.length} منتج مرتبط · ${notifyLabel(supplier.notify_mode, supplier.notify_time, supplier.notify_day)}`}
+      actions={
+        <>
+          <StorelyButton variant="secondary" size="sm" icon={<Send size={14} />} disabled={sending} onClick={sendNow}>
+            {sending ? 'جاري الإرسال' : 'إرسال طلب'}
+          </StorelyButton>
+          <StorelyButton variant="secondary" size="sm" icon={<Clock size={14} />} onClick={openTimeline}>سجل التواصل</StorelyButton>
+          <StorelyButton variant="ghost" size="sm" icon={<Settings size={14} />} onClick={() => setSettingsOpen((value) => !value)}>الإعدادات</StorelyButton>
+          <StorelyButton variant="ghost" size="sm" onClick={onClose}>إغلاق</StorelyButton>
+        </>
+      }
+    >
+      <div className="space-y-4 p-3">
+        <div className="grid overflow-hidden rounded-[6px] border border-[#E7E1D8] bg-white md:grid-cols-[1.2fr_.8fr]">
+          <div className="border-b border-[#E7E1D8] p-3 md:border-b-0 md:border-l">
+            <div className="mb-2 text-xs font-semibold text-[#66737C]">بيانات التواصل</div>
+            {editingPhone ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <input className={inputClass('max-w-56 text-left')} value={editPhoneVal} onChange={(event) => setEditPhoneVal(event.target.value)} dir="ltr" autoFocus />
+                <StorelyButton size="sm" variant="primary" disabled={savingPhone} onClick={savePhone}>{savingPhone ? 'جاري الحفظ' : 'حفظ'}</StorelyButton>
+                <StorelyButton size="sm" variant="ghost" onClick={() => { setEditingPhone(false); setEditPhoneVal(supplier.phone || '') }}>إلغاء</StorelyButton>
               </div>
-            </div>
-          )}
-
-          {/* ربط منتج جديد */}
-          {unlinked.length > 0 && (
-            <div>
-              <div style={{ fontSize:12, fontWeight:700, color:'#94a3b8', marginBottom:10 }}>ربط منتج جديد</div>
-              <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:8, marginBottom:8 }}>
-                <div>
-                  <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:4 }}>المنتج</label>
-                  <div style={{border:'1.5px solid #e2e8f0',borderRadius:10,overflow:'hidden',background:'white'}}>
-                    <input
-                      value={productSearch}
-                      onChange={e=>setProductSearch(e.target.value)}
-                      placeholder="🔍 ابحث..."
-                      style={{width:'100%',padding:'8px 12px',border:'none',borderBottom:'1px solid #f1f5f9',fontSize:12,fontFamily:'inherit',outline:'none',boxSizing:'border-box',background:'#f8fafc'}}
-                    />
-                    {(() => {
-                      const filteredUnlinked = unlinked.filter((p:any)=>!productSearch||p.name.includes(productSearch))
-                      if (productSearch && filteredUnlinked.length === 0) {
-                        return (
-                          <div style={{padding:'20px 12px',textAlign:'center' as const,fontSize:12,color:'#94a3b8'}}>
-                            🔍 ما فيه منتج مطابق لـ "{productSearch}"
-                          </div>
-                        )
-                      }
-                      return (
-                        <select value={selectedProduct} onChange={e=>setSelectedProduct(e.target.value)}
-                          size={5}
-                          style={{width:'100%',border:'none',fontSize:13,fontFamily:'inherit',background:'white',color:'#0f172a',outline:'none',padding:'4px 0'}}>
-                          <option value="">— اختر —</option>
-                          {filteredUnlinked.map((p:any)=>(
-                            <option key={p.id} value={p.id}>{p.name} ({p.qty} {p.unit})</option>
-                          ))}
-                        </select>
-                      )
-                    })()}
-                  </div>
-                </div>
-                <div>
-                  <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:4 }}>يُطلب عند</label>
-                  <input type="number" value={reorderPoint} onChange={e=>setReorderPoint(e.target.value)}
-                    style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box' as const }} placeholder="5" />
-                </div>
-                <div>
-                  <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:4 }}>كمية الطلب</label>
-                  <input type="number" value={orderQty} onChange={e=>setOrderQty(e.target.value)}
-                    style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box' as const }} placeholder="20" />
-                </div>
-              </div>
-              {s.marketplace_supplier_id && catalogItems.length > 0 && (
-                <div style={{marginBottom:8}}>
-                  <label style={{ fontSize:11, color:'#64748b', display:'block', marginBottom:4 }}>🛒 الصنف المقابل بكتالوج المورد (لطلب التوريد التلقائي)</label>
-                  <select value={selectedCatalogItem} onChange={e=>setSelectedCatalogItem(e.target.value)}
-                    style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box' as const, background:'white' }}>
-                    <option value="">— بدون ربط (إشعار واتساب فقط) —</option>
-                    {catalogItems.map((ci:any)=>(
-                      <option key={ci.id} value={ci.id}>{ci.name} — {ci.price} ر.س / {ci.unit}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <input value={supplierNotes} onChange={e=>setSupplierNotes(e.target.value)}
-                style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', outline:'none', marginBottom:8, boxSizing:'border-box' as const }} 
-                placeholder="📝 ملاحظات لهذا المنتج — مثال: يرجى التوريد مبرداً (اختياري)" />
-              <button onClick={linkProduct} disabled={!selectedProduct}
-                style={{ ...btnPrimary, padding:'10px 20px', fontSize:13, opacity:!selectedProduct?.5:1, cursor:!selectedProduct?'not-allowed':'pointer' }}>
-                ربط المنتج
-              </button>
-            </div>
-          )}
-
-          {unlinked.length === 0 && linked.length === 0 && (
-            <div style={{ textAlign:'center', padding:'24px', color:'#94a3b8', fontSize:13 }}>لا توجد منتجات متاحة للربط</div>
-          )}
-        </div>
-      )}
-
-      {confirmDelete && (
-        <div style={{position:'fixed',inset:0,zIndex:4000,display:'flex',alignItems:'center',justifyContent:'center',padding:20,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)'}}>
-          <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:320,fontFamily:font.family,direction:'rtl'}}>
-            <div style={{fontSize:14,fontWeight:700,color:'#0f172a',marginBottom:6,textAlign:'center'}}>حذف المورد "{s.name}"؟</div>
-            <div style={{fontSize:12,color:'#64748b',textAlign:'center',marginBottom:16,lineHeight:1.6}}>سيتم فك ارتباطه بكل المنتجات المرتبطة به. لا يمكن التراجع عن هذا الإجراء.</div>
-            <div style={{display:'flex',gap:8}}>
-              <button onClick={()=>setConfirmDelete(false)} style={{flex:1,padding:'10px',background:'#f1f5f9',color:'#334155',border:'1px solid #e2e8f0',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
-              <button onClick={deleteSupplier} style={{flex:1,padding:'10px',background:'#ef4444',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>حذف</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showTimeline && (
-        <div style={{position:'fixed',inset:0,zIndex:3500,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}
-          onClick={()=>setShowTimeline(false)}>
-          <div style={{background:'white',borderRadius:16,width:'100%',maxWidth:480,maxHeight:'75vh',overflowY:'auto' as const,padding:20}}
-            onClick={e=>e.stopPropagation()}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-              <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>📋 سجل التواصل — {s.name}</div>
-              <button onClick={()=>setShowTimeline(false)} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:'#94a3b8'}}>✕</button>
-            </div>
-            {timelineLoading ? (
-              <div style={{textAlign:'center' as const,padding:40,color:'#94a3b8',fontSize:12}}>جاري التحميل...</div>
-            ) : timelineEvents.length === 0 ? (
-              <div style={{textAlign:'center' as const,padding:40,color:'#94a3b8',fontSize:12}}>لا يوجد سجل تواصل بعد مع هذا المورد</div>
             ) : (
-              <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
-                {timelineEvents.map((e:any,i:number)=>{
-                  const icons: Record<string,string> = { order_sent:'🟢', order_confirmed:'✅', order_escalated:'⚠️', purchase:'💰', order_failed:'❌' }
-                  const colors: Record<string,string> = { order_sent:'#029FA2', order_confirmed:'#029FA2', order_escalated:'#d97706', purchase:'#2563eb', order_failed:'#dc2626' }
-                  return (
-                    <div key={i} style={{display:'flex',gap:10,paddingBottom:10,borderBottom:i<timelineEvents.length-1?'1px solid #f1f5f9':'none'}}>
-                      <div style={{fontSize:16,flexShrink:0}}>{icons[e.type]||'•'}</div>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:12,fontWeight:700,color:colors[e.type]||'#334155'}}>{e.title}</div>
-                        {e.detail && <div style={{fontSize:11,color:'#64748b',marginTop:2}}>{e.detail}</div>}
-                        <div style={{fontSize:10,color:'#94a3b8',marginTop:3}}>{new Date(e.at).toLocaleDateString('ar-SA', {numberingSystem:'latn',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
-                      </div>
-                    </div>
-                  )
-                })}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-medium text-[#203640]" dir="ltr">{supplier.phone || '-'}</span>
+                <StorelyButton size="sm" variant="secondary" onClick={() => setEditingPhone(true)}>تعديل الرقم</StorelyButton>
               </div>
             )}
           </div>
+          <div className="p-3">
+            <div className="mb-2 text-xs font-semibold text-[#66737C]">الحالة</div>
+            <div className="flex flex-wrap items-center gap-2">
+              <StorelyStatusBadge status={linked.length > 0 ? 'success' : 'warning'}>{linked.length > 0 ? 'نشط' : 'غير نشط'}</StorelyStatusBadge>
+              {recentFailedCount > 0 ? <StorelyStatusBadge status="danger">{recentFailedCount} فشل إرسال آخر 24 ساعة</StorelyStatusBadge> : null}
+              <StorelyStatusBadge status={notifyStatus(supplier.notify_mode) as any}>{notifyLabel(supplier.notify_mode, supplier.notify_time, supplier.notify_day)}</StorelyStatusBadge>
+            </div>
+          </div>
         </div>
-      )}
-    </div>
+
+        {settingsOpen ? (
+          <div className="rounded-[6px] border border-[#E7E1D8] bg-white p-3">
+            <div className="mb-3 text-sm font-semibold text-[#203640]">إعدادات الإشعارات</div>
+            <div className="grid gap-3 md:grid-cols-3">
+              <StorelyFormField label="نمط الإشعار">
+                <select className={inputClass()} value={mode} onChange={(event) => setMode(event.target.value)}>
+                  <option value="instant">فوري</option>
+                  <option value="daily">يومي</option>
+                  <option value="weekly">أسبوعي</option>
+                </select>
+              </StorelyFormField>
+              <StorelyFormField label="الوقت">
+                <input className={inputClass()} type="time" value={time} onChange={(event) => setTime(event.target.value)} />
+              </StorelyFormField>
+              <StorelyFormField label="اليوم">
+                <select className={inputClass()} value={day} disabled={mode !== 'weekly'} onChange={(event) => setDay(event.target.value)}>
+                  {DAYS.map((item, index) => <option key={item} value={index}>{item}</option>)}
+                </select>
+              </StorelyFormField>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <StorelyButton variant="primary" disabled={saving} onClick={saveSettings}>{saving ? 'جاري الحفظ' : 'حفظ الإعدادات'}</StorelyButton>
+              <StorelyButton variant="ghost" onClick={() => setSettingsOpen(false)}>إلغاء</StorelyButton>
+            </div>
+          </div>
+        ) : null}
+
+        <div>
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h3 className="m-0 text-sm font-semibold text-[#203640]">المنتجات المرتبطة</h3>
+            <span className="text-xs text-[#66737C]">{formatNumber(linked.length)} منتج</span>
+          </div>
+          {linked.length > 0 ? (
+            <div className="overflow-hidden rounded-[6px] border border-[#E7E1D8] bg-white">
+              {linked.map((product) => {
+                const low = Number(product.qty) <= Number(product.supplier_reorder_point ?? 0)
+                return (
+                  <div key={product.id} className="border-b border-[#E7E1D8] p-3 last:border-b-0">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-[#203640]">{product.name}</span>
+                          {low ? <StorelyStatusBadge status="warning">ناقص</StorelyStatusBadge> : null}
+                        </div>
+                        {product.supplier_notes ? <div className="mt-1 text-xs text-[#66737C]">{product.supplier_notes}</div> : null}
+                        <div className="mt-1 text-xs text-[#66737C]">
+                          المتاح: <b className="text-[#203640]">{product.qty} {product.unit}</b> · يطلب عند: <b className="text-[#203640]">{product.supplier_reorder_point ?? '-'}</b> · كمية الطلب: <b className="text-[#203640]">{product.supplier_order_qty ?? '-'}</b>
+                        </div>
+                        <EscalationChain productId={product.id} allSuppliers={allSuppliers} primarySupplierId={supplier.id} refreshKey={chainRefreshKey} />
+                      </div>
+                      <StorelyButton size="sm" variant="ghost" icon={<Unlink size={14} />} onClick={() => unlinkProduct(product.id)}>فك الربط</StorelyButton>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <StorelyEmptyState title="لا توجد منتجات مرتبطة" description="اربط منتجاً بهذا المورد لتفعيل طلبات التوريد." />
+          )}
+        </div>
+
+        {unlinked.length > 0 ? (
+          <div className="rounded-[6px] border border-[#E7E1D8] bg-white p-3">
+            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#203640]">
+              <Link2 size={15} />
+              ربط منتج جديد
+            </div>
+            <div className="grid gap-3 md:grid-cols-[2fr_1fr_1fr]">
+              <StorelyFormField label="المنتج">
+                <div className="overflow-hidden rounded-[5px] border border-[#D7CDC2]">
+                  <input className="h-8 w-full border-0 border-b border-[#E7E1D8] bg-[#F8EEDF]/35 px-2.5 text-sm text-[#203640] outline-none" value={productSearch} onChange={(event) => setProductSearch(event.target.value)} placeholder="ابحث عن منتج" />
+                  {unlinked.length === 0 ? (
+                    <div className="px-3 py-4 text-center text-xs text-[#8EA0B1]">لا يوجد منتج مطابق للبحث</div>
+                  ) : (
+                    <select className="h-28 w-full border-0 bg-white px-2 text-sm text-[#203640] outline-none" value={selectedProduct} onChange={(event) => setSelectedProduct(event.target.value)} size={5}>
+                      <option value="">اختر منتج</option>
+                      {unlinked.map((product) => <option key={product.id} value={product.id}>{product.name} ({product.qty} {product.unit})</option>)}
+                    </select>
+                  )}
+                </div>
+              </StorelyFormField>
+              <StorelyFormField label="يطلب عند" required>
+                <input className={inputClass()} type="number" value={reorderPoint} onChange={(event) => setReorderPoint(event.target.value)} placeholder="5" />
+              </StorelyFormField>
+              <StorelyFormField label="كمية الطلب">
+                <input className={inputClass()} type="number" value={orderQty} onChange={(event) => setOrderQty(event.target.value)} placeholder="20" />
+              </StorelyFormField>
+            </div>
+            {supplier.marketplace_supplier_id && catalogItems.length > 0 ? (
+              <StorelyFormField label="الصنف المقابل في كتالوج المورد" className="mt-3">
+                <select className={inputClass()} value={selectedCatalogItem} onChange={(event) => setSelectedCatalogItem(event.target.value)}>
+                  <option value="">بدون ربط، إشعار واتساب فقط</option>
+                  {catalogItems.map((item: any) => <option key={item.id} value={item.id}>{item.name} - {item.price} {curr || 'ر.س'} / {item.unit}</option>)}
+                </select>
+              </StorelyFormField>
+            ) : null}
+            <StorelyFormField label="ملاحظات المنتج" className="mt-3">
+              <input className={inputClass()} value={supplierNotes} onChange={(event) => setSupplierNotes(event.target.value)} placeholder="مثال: يرجى التوريد مبرداً" />
+            </StorelyFormField>
+            <StorelyButton className="mt-3" variant="primary" icon={<Link2 size={14} />} disabled={!selectedProduct} onClick={linkProduct}>ربط المنتج</StorelyButton>
+          </div>
+        ) : linked.length === 0 ? (
+          <StorelyEmptyState title="لا توجد منتجات متاحة للربط" description="كل المنتجات الحالية مرتبطة أو لا توجد منتجات في المخزون." />
+        ) : null}
+
+        <div className="border-t border-[#E7E1D8] pt-3">
+          <StorelyButton variant="danger" size="sm" icon={<Trash2 size={14} />} onClick={() => setConfirmDelete(true)}>حذف المورد</StorelyButton>
+        </div>
+      </div>
+
+      {confirmDelete ? (
+        <Modal title={`حذف المورد "${supplier.name}"؟`} description="سيتم فك ارتباطه بكل المنتجات المرتبطة به. لا يمكن التراجع عن هذا الإجراء." onClose={() => setConfirmDelete(false)} maxWidth="max-w-sm">
+          <div className="flex gap-2">
+            <StorelyButton className="flex-1" variant="secondary" onClick={() => setConfirmDelete(false)}>إلغاء</StorelyButton>
+            <StorelyButton className="flex-1" variant="danger" onClick={deleteSupplier}>حذف</StorelyButton>
+          </div>
+        </Modal>
+      ) : null}
+
+      {showTimeline ? (
+        <Modal title={`سجل التواصل - ${supplier.name}`} description="يعرض الطلبات، التأكيدات، المشتريات، ومحاولات الإرسال خلال الفترة المتاحة." onClose={() => setShowTimeline(false)}>
+          {timelineLoading ? (
+            <div className="py-10 text-center text-sm text-[#66737C]">جاري التحميل...</div>
+          ) : timelineEvents.length === 0 ? (
+            <StorelyEmptyState title="لا يوجد سجل تواصل بعد" description="ستظهر هنا طلبات التوريد والمشتريات المرتبطة بهذا المورد." />
+          ) : (
+            <div className="space-y-2">
+              {timelineEvents.map((event: any, index: number) => (
+                <div key={index} className="border-b border-[#E7E1D8] pb-2 last:border-b-0">
+                  <div className="text-sm font-semibold text-[#203640]">{String(event.title || '').replace('❌ ', '')}</div>
+                  {event.detail ? <div className="mt-1 text-xs leading-5 text-[#66737C]">{event.detail}</div> : null}
+                  <div className="mt-1 text-xs text-[#8EA0B1]">{new Date(event.at).toLocaleDateString('ar-SA', { numberingSystem: 'latn', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Modal>
+      ) : null}
+    </StorelyCard>
   )
 }
 
@@ -445,217 +530,395 @@ export default function SuppliersPage() {
   const searchParams = useSearchParams()
   const msParam = searchParams.get('ms')
   const [maxSuppliers, setMaxSuppliers] = useState<number>(999)
-  const [suppliers, setSuppliers] = useState<any[]>([])
-  const [products, setProducts]   = useState<any[]>([])
-  const [orgId, setOrgId]         = useState('')
-  const [curr, setCurr]           = useState('ر.س')
-  const [loading, setLoading]     = useState(true)
-  const [showAdd, setShowAdd]     = useState(false)
-  const [newName, setNewName]     = useState('')
-  const [newPhone, setNewPhone]   = useState('')
-  const [supCountry, setSupCountry] = useState(()=>sessionStorage.getItem('s_country_code')||'+966')
-  const [newNotes, setNewNotes]   = useState('')
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [products, setProducts] = useState<Product[]>([])
+  const [orgId, setOrgId] = useState('')
+  const [curr, setCurr] = useState('ر.س')
+  const [loading, setLoading] = useState(true)
+  const [showAdd, setShowAdd] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newPhone, setNewPhone] = useState('')
+  const [supCountry, setSupCountry] = useState(() => (typeof window === 'undefined' ? '+966' : sessionStorage.getItem('s_country_code') || '+966'))
+  const [newNotes, setNewNotes] = useState('')
   const [newConsent, setNewConsent] = useState(false)
   const [priceComparisons, setPriceComparisons] = useState<any[]>([])
   const [showPriceComparison, setShowPriceComparison] = useState(false)
-  const [supplierRatings, setSupplierRatings] = useState<Record<string,any>>({})
-  const [failedRecentMap, setFailedRecentMap] = useState<Record<string,number>>({})
+  const [supplierRatings, setSupplierRatings] = useState<Record<string, any>>({})
+  const [failedRecentMap, setFailedRecentMap] = useState<Record<string, number>>({})
+  const [query, setQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'linked' | 'unlinked' | 'failed'>('all')
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null)
+  const detailsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { init() }, [])
+
+  useEffect(() => {
+    if (!msParam || suppliers.length === 0) return
+    const found = suppliers.find((supplier) => supplier.marketplace_supplier_id === msParam)
+    if (found) queueMicrotask(() => setSelectedSupplierId(found.id))
+  }, [msParam, suppliers])
+
+  useEffect(() => {
+    if (selectedSupplierId) setTimeout(() => detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
+  }, [selectedSupplierId])
 
   async function init() {
     setLoading(true)
     let oid = sessionStorage.getItem('s_org_id')
-    // عرض كاش الموردين فوراً لو متوفر
     if (oid) {
-      const cachedSuppliers = cache.get('suppliers:'+oid)
-      if (cachedSuppliers) { setSuppliers(cachedSuppliers); setLoading(false) }
+      const cachedSuppliers = cache.get('suppliers:' + oid)
+      if (cachedSuppliers) {
+        setSuppliers(cachedSuppliers)
+        setLoading(false)
+      }
     }
     if (!oid) {
       oid = await getOrgId()
       if (!oid) return
     }
     setOrgId(oid)
-    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
+    getMe().then((me) => { if (me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
     await Promise.all([loadSuppliers(oid), loadProducts(oid)])
-    fetch('/api/supplier-price-comparison',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid})}).then(r=>r.json()).then(d=>{ if(d.success) setPriceComparisons(d.comparisons||[]) }).catch(()=>{})
-    fetch('/api/supplier-rating',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid})}).then(r=>r.json()).then(d=>{
-      if(d.success){ const map:Record<string,any>={}; d.ratings.forEach((r:any)=>{ map[r.id]=r }); setSupplierRatings(map) }
-    }).catch(()=>{})
+    fetch('/api/supplier-price-comparison', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: oid }) })
+      .then((response) => response.json())
+      .then((data) => { if (data.success) setPriceComparisons(data.comparisons || []) })
+      .catch(() => {})
+    fetch('/api/supplier-rating', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: oid }) })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          const map: Record<string, any> = {}
+          data.ratings.forEach((rating: any) => { map[rating.id] = rating })
+          setSupplierRatings(map)
+        }
+      })
+      .catch(() => {})
     setLoading(false)
   }
 
   async function loadSuppliers(oid: string) {
     const bid = sessionStorage.getItem('s_branch_id')
-    const j = await api.get('/api/suppliers', { org_id: oid, branch_id: bid })
-    if (!j.success) return
-    setSuppliers(j.suppliers || [])
-    cache.set('suppliers:'+oid, j.suppliers || [])
-    setFailedRecentMap(j.failed_recent || {})
-    setMaxSuppliers(j.max_suppliers || 999)
+    const result = await api.get('/api/suppliers', { org_id: oid, branch_id: bid })
+    if (!result.success) return
+    setSuppliers(result.suppliers || [])
+    cache.set('suppliers:' + oid, result.suppliers || [])
+    setFailedRecentMap(result.failed_recent || {})
+    setMaxSuppliers(result.max_suppliers || 999)
   }
 
   async function loadProducts(oid: string) {
     const bid = sessionStorage.getItem('s_branch_id')
-    const j = await api.get('/api/products', { org_id: oid, branch_id: bid, view: 'suppliers' })
-    setProducts(j.products || [])
+    const result = await api.get('/api/products', { org_id: oid, branch_id: bid, view: 'suppliers' })
+    setProducts(result.products || [])
   }
 
   async function addSupplier() {
-    if (!newName.trim() || !newPhone.trim()) { toast('أدخل اسم المورد ورقمه', 'warning'); return }
-    if (!newConsent) { toast('يرجى تأكيد إقرار موافقة المورد على استلام رسائل واتساب', 'warning'); return }
-    const phoneRules2: Record<string,number> = {'+966':9,'+971':9,'+965':8,'+973':8,'+974':8,'+968':8,'+20':10,'+962':9,'+1':10,'+44':10,'+91':10,'+92':10}
-    const reqLen2 = phoneRules2[supCountry] || 9
-    const cleanedPhone2 = newPhone.trim().replace(/^0+/,'')
-    if(cleanedPhone2.length !== reqLen2){toast(`رقم الجوال يجب أن يكون ${reqLen2} أرقام`,'warning');return}
-    const resData = await api.post('/api/add-supplier', { org_id: orgId, branch_id: sessionStorage.getItem('s_branch_id') || null, name: newName.trim(), phone: supCountry + newPhone.trim().replace(/^0+/,''), notes: newNotes.trim(), whatsapp_consent: true })
-    const error = !resData.success ? {message: resData.error} : null
-    if (error) { toast('خطأ: ' + error.message, 'error'); return }
-    toast('✅ تم إضافة المورد')
-    setNewName(''); setNewPhone(''); setNewNotes(''); setNewConsent(false); setShowAdd(false)
+    if (!newName.trim() || !newPhone.trim()) {
+      toast('أدخل اسم المورد ورقمه', 'warning')
+      return
+    }
+    if (!newConsent) {
+      toast('يرجى تأكيد إقرار موافقة المورد على استلام رسائل واتساب', 'warning')
+      return
+    }
+    const phoneRules: Record<string, number> = { '+966': 9, '+971': 9, '+965': 8, '+973': 8, '+974': 8, '+968': 8, '+20': 10, '+962': 9, '+1': 10, '+44': 10, '+91': 10, '+92': 10 }
+    const requiredLength = phoneRules[supCountry] || 9
+    const cleanedPhone = newPhone.trim().replace(/^0+/, '')
+    if (cleanedPhone.length !== requiredLength) {
+      toast(`رقم الجوال يجب أن يكون ${requiredLength} أرقام`, 'warning')
+      return
+    }
+    const result = await api.post('/api/add-supplier', {
+      org_id: orgId,
+      branch_id: sessionStorage.getItem('s_branch_id') || null,
+      name: newName.trim(),
+      phone: supCountry + cleanedPhone,
+      notes: newNotes.trim(),
+      whatsapp_consent: true,
+    })
+    if (!result.success) {
+      toast('خطأ: ' + result.error, 'error')
+      return
+    }
+    toast('تم إضافة المورد')
+    setNewName('')
+    setNewPhone('')
+    setNewNotes('')
+    setNewConsent(false)
+    setShowAdd(false)
     loadSuppliers(orgId)
   }
 
-  const refresh = () => { loadSuppliers(orgId); loadProducts(orgId) }
+  const refresh = () => {
+    loadSuppliers(orgId)
+    loadProducts(orgId)
+  }
 
-  if (loading) return <div style={{ padding:40, textAlign:'center', color:colors.text3, fontFamily:font.family }}>جاري التحميل...</div>
+  const linkedCounts = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const product of products) {
+      if (product.supplier_id) map[product.supplier_id] = (map[product.supplier_id] || 0) + 1
+    }
+    return map
+  }, [products])
 
-  const unlinkedProducts = products.filter((p:any)=>!p.supplier_id)
+  const failedCount = Object.values(failedRecentMap).reduce((sum, value) => sum + value, 0)
+  const unlinkedProducts = products.filter((product) => !product.supplier_id)
+  const selectedSupplier = suppliers.find((supplier) => supplier.id === selectedSupplierId) || null
+
+  const filteredSuppliers = suppliers
+    .filter((supplier) => {
+      const cleanQuery = query.trim().toLowerCase()
+      if (!cleanQuery) return true
+      return `${supplier.name || ''} ${supplier.phone || ''}`.toLowerCase().includes(cleanQuery)
+    })
+    .filter((supplier) => {
+      if (statusFilter === 'linked') return (linkedCounts[supplier.id] || 0) > 0
+      if (statusFilter === 'unlinked') return (linkedCounts[supplier.id] || 0) === 0
+      if (statusFilter === 'failed') return (failedRecentMap[supplier.id] || 0) > 0
+      return true
+    })
+
+  const metrics: StorelyMetric[] = [
+    { label: 'إجمالي الموردين', value: formatNumber(suppliers.length), helper: `الحد المتاح ${formatNumber(maxSuppliers)}` },
+    { label: 'موردون مرتبطون', value: formatNumber(suppliers.filter((supplier) => (linkedCounts[supplier.id] || 0) > 0).length), tone: 'neutral' },
+    { label: 'منتجات بدون مورد', value: formatNumber(unlinkedProducts.length), tone: unlinkedProducts.length ? 'warning' : 'neutral' },
+    ...(failedCount > 0 ? [{ label: 'فشل إرسال آخر 24 ساعة', value: formatNumber(failedCount), tone: 'danger' as const }] : []),
+  ]
+
+  const supplierColumns: StorelyDataTableColumn<Supplier>[] = [
+    {
+      key: 'supplier',
+      header: 'المورد',
+      sortable: true,
+      sortValue: (supplier) => supplier.name,
+      className: 'min-w-[240px]',
+      cell: (supplier) => (
+        <div className="min-w-0">
+          <div className="truncate font-semibold text-[#203640]">{supplier.name}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#66737C]">
+            <span>{formatNumber(linkedCounts[supplier.id] || 0)} منتج مرتبط</span>
+            {supplier.marketplace_supplier_id ? <span>من السوق</span> : null}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'contact',
+      header: 'بيانات التواصل',
+      className: 'whitespace-nowrap text-[#66737C]',
+      cell: (supplier) => <span dir="ltr">{supplier.phone || '-'}</span>,
+    },
+    {
+      key: 'notify',
+      header: 'جدولة الطلب',
+      sortable: true,
+      sortValue: (supplier) => notifyLabel(supplier.notify_mode, supplier.notify_time, supplier.notify_day),
+      className: 'whitespace-nowrap text-[#66737C]',
+      cell: (supplier) => notifyLabel(supplier.notify_mode, supplier.notify_time, supplier.notify_day),
+    },
+    {
+      key: 'status',
+      header: 'الحالة',
+      sortable: true,
+      sortValue: (supplier) => linkedCounts[supplier.id] || 0,
+      cell: (supplier) => {
+        const linked = linkedCounts[supplier.id] || 0
+        const failed = failedRecentMap[supplier.id] || 0
+        return (
+          <div className="flex flex-wrap gap-1.5">
+            <StorelyStatusBadge status={linked > 0 ? 'success' : 'warning'}>{linked > 0 ? 'نشط' : 'غير نشط'}</StorelyStatusBadge>
+            {failed > 0 ? <StorelyStatusBadge status="danger">متأخر</StorelyStatusBadge> : null}
+          </div>
+        )
+      },
+    },
+    {
+      key: 'products',
+      header: 'المنتجات',
+      sortable: true,
+      sortValue: (supplier) => linkedCounts[supplier.id] || 0,
+      className: 'whitespace-nowrap text-[#66737C]',
+      cell: (supplier) => `${formatNumber(linkedCounts[supplier.id] || 0)} منتج`,
+    },
+    {
+      key: 'rating',
+      header: 'الأداء',
+      sortable: true,
+      sortValue: (supplier) => supplierRatings[supplier.id]?.stars ?? 0,
+      className: 'whitespace-nowrap text-[#66737C]',
+      cell: (supplier) => {
+        const rating = supplierRatings[supplier.id]
+        return rating?.hasData && rating?.stars != null ? `${rating.stars} تقييم` : 'لا توجد بيانات'
+      },
+    },
+    {
+      key: 'actions',
+      header: 'الإجراءات',
+      className: 'w-[96px] whitespace-nowrap',
+      cell: (supplier) => (
+        <StorelyTableActionGroup>
+          <StorelyTableAction action="view" onClick={(event) => { event.stopPropagation(); setSelectedSupplierId((current) => current === supplier.id ? null : supplier.id) }} />
+          <StorelyTableAction action="more" aria-label="تفاصيل المورد" title="تفاصيل المورد" onClick={(event) => { event.stopPropagation(); setSelectedSupplierId(supplier.id) }} />
+        </StorelyTableActionGroup>
+      ),
+    },
+  ]
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-10 text-center text-sm text-[#66737C]" dir="rtl">
+        جاري التحميل...
+      </div>
+    )
+  }
 
   return (
-    <div style={{ fontFamily:font.family, direction:'rtl', maxWidth:900, margin:'0 auto' }}>
-      <style>{`@media(max-width:640px){.add-grid{grid-template-columns:1fr!important}}`}</style>
-      
-      <div style={{ marginBottom:22, display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-        <div>
-          <h1 style={pageTitle}><PageIcon/>الموردين</h1>
-          <p style={pageSub}>اربط منتجاتك بموردين وحدد توقيت الإشعار لكل مورد</p>
-        </div>
-        <div style={{display:'flex',gap:8}}>
-          {priceComparisons.length>0&&(
-            <button onClick={()=>setShowPriceComparison(true)} style={{ ...btnSecondary, padding:'10px 18px', fontSize:font.sm, display:'flex', alignItems:'center', gap:6 }}>
-              📊 مقارنة الأسعار
-              <span style={{background:'#dc2626',color:'white',fontSize:10,fontWeight:800,padding:'1px 6px',borderRadius:99}}>{priceComparisons.length}</span>
-            </button>
-          )}
-          <button onClick={()=>setShowAdd(true)} style={{ ...btnPrimary, padding:'10px 18px', fontSize:font.sm }}>+ مورد جديد</button>
-        </div>
-      </div>
+    <div className="mx-auto max-w-6xl px-4 pb-8" dir="rtl">
+      <StorelyPageHeader
+        title="الموردون"
+        description="إدارة الموردين وربط المنتجات وجدولة طلبات التوريد."
+        actions={
+          <>
+            {priceComparisons.length > 0 ? (
+              <StorelyButton variant="secondary" icon={<BarChart3 size={16} />} onClick={() => setShowPriceComparison(true)}>
+                مقارنة الأسعار
+                <span className="mr-1 rounded-[5px] border border-[#E7E1D8] bg-[#F8EEDF]/60 px-1.5 py-0.5 text-[11px] text-[#203640]">{priceComparisons.length}</span>
+              </StorelyButton>
+            ) : null}
+            <StorelyButton variant="primary" icon={<Plus size={16} />} onClick={() => setShowAdd(true)}>إضافة مورد</StorelyButton>
+          </>
+        }
+      />
 
-      {/* شريط إحصائية سريعة */}
-      <div style={{display:'grid',gridTemplateColumns:`repeat(${Object.keys(failedRecentMap).length>0?3:2},1fr)`,gap:8,marginBottom:18}}>
-        <div style={{...card,padding:'12px 14px',textAlign:'center' as const}}>
-          <div style={{fontSize:20,fontWeight:900,color:colors.text}}>{suppliers.length}</div>
-          <div style={{fontSize:10,color:colors.text4,fontWeight:600,marginTop:2}}>إجمالي الموردين</div>
-        </div>
-        <div style={{...card,padding:'12px 14px',textAlign:'center' as const,background:unlinkedProducts.length>0?'#fffbeb':undefined,border:unlinkedProducts.length>0?'1px solid #fde68a':undefined}}>
-          <div style={{fontSize:20,fontWeight:900,color:unlinkedProducts.length>0?'#92400e':colors.text}}>{unlinkedProducts.length}</div>
-          <div style={{fontSize:10,color:unlinkedProducts.length>0?'#92400e':colors.text4,fontWeight:600,marginTop:2}}>منتجات بدون مورد</div>
-        </div>
-        {Object.keys(failedRecentMap).length>0 && (
-          <div style={{...card,padding:'12px 14px',textAlign:'center' as const,background:'#fef2f2',border:'1px solid #fecaca'}}>
-            <div style={{fontSize:20,fontWeight:900,color:'#dc2626'}}>{Object.values(failedRecentMap).reduce((a,b)=>a+b,0)}</div>
-            <div style={{fontSize:10,color:'#dc2626',fontWeight:600,marginTop:2}}>رسائل فشل إرسالها (٢٤ ساعة)</div>
-          </div>
-        )}
-      </div>
-
-      {/* نافذة مقارنة الأسعار */}
-      {showPriceComparison && (
-        <div style={{position:'fixed',inset:0,zIndex:3000,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}
-          onClick={()=>setShowPriceComparison(false)}>
-          <div style={{background:'white',borderRadius:16,width:'100%',maxWidth:560,maxHeight:'80vh',overflowY:'auto' as const,padding:20}}
-            onClick={e=>e.stopPropagation()}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
-              <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>📊 مقارنة أسعار الموردين</div>
-              <button onClick={()=>setShowPriceComparison(false)} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:'#94a3b8'}}>✕</button>
-            </div>
-            <div style={{fontSize:11,color:'#64748b',marginBottom:16}}>بناءً على آخر 6 أشهر من سجل مشترياتك</div>
-            <div style={{display:'flex',flexDirection:'column' as const,gap:12}}>
-              {priceComparisons.map((c,i)=>(
-                <div key={i} style={{border:'1px solid #e2e8f0',borderRadius:12,padding:14}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-                    <span style={{fontSize:13,fontWeight:700,color:'#0f172a'}}>{c.name}</span>
-                    {c.savingsPct>0&&(
-                      <span style={{fontSize:10,fontWeight:800,color:'#029FA2',background:'#f0fdfa',padding:'2px 8px',borderRadius:99,border:'1px solid #99f6e4'}}>
-                        وفّر حتى {c.savingsPct}%
-                      </span>
-                    )}
-                  </div>
-                  <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
-                    {c.suppliers.map((s:any,si:number)=>(
-                      <div key={si} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 10px',background:si===0?'#f0fdfa':'#f8fafc',borderRadius:8,border:si===0?'1px solid #99f6e4':'1px solid #e2e8f0'}}>
-                        <span style={{fontSize:12,fontWeight:600,color:'#334155'}}>{si===0&&'🟢 '}{s.supplier}</span>
-                        <span style={{fontSize:12,fontWeight:800,color:si===0?'#029FA2':'#64748b'}}>{s.unitPrice} {curr||'ر.س'} / {s.unit||'وحدة'}</span>
-                      </div>
-                    ))}
-                  </div>
+      {showAdd ? (
+        <StorelyCard
+          title="إضافة مورد جديد"
+          description="أدخل بيانات التواصل الأساسية، ثم اربط المنتجات من تفاصيل المورد."
+          className="mb-4"
+        >
+          <div className="space-y-3 p-3">
+            <div className="grid gap-3 md:grid-cols-2">
+              <StorelyFormField label="اسم المورد" required>
+                <input className={inputClass()} value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="اسم المورد" />
+              </StorelyFormField>
+              <StorelyFormField label="رقم الجوال" required>
+                <div className="flex gap-2">
+                  <select className={inputClass('w-28 shrink-0')} value={supCountry} onChange={(event) => setSupCountry(event.target.value)}>
+                    {COUNTRY_CODES.map((code) => <option key={code} value={code}>{code}</option>)}
+                  </select>
+                  <input className={inputClass('text-left')} value={newPhone} onChange={(event) => setNewPhone(event.target.value)} dir="ltr" placeholder={supCountry === '+966' ? '5xxxxxxxx' : supCountry === '+20' ? '1xxxxxxxxx' : 'xxxxxxxxxx'} />
                 </div>
-              ))}
+              </StorelyFormField>
+            </div>
+            <StorelyFormField label="ملاحظات عامة">
+              <input className={inputClass()} value={newNotes} onChange={(event) => setNewNotes(event.target.value)} placeholder="اختياري" />
+            </StorelyFormField>
+            <label className="flex cursor-pointer items-start gap-2 rounded-[6px] border border-[#D9CDBE] bg-[#F8EEDF]/45 p-3 text-xs leading-5 text-[#203640]">
+              <input className="mt-1 size-4 shrink-0 accent-[#203640]" type="checkbox" checked={newConsent} onChange={(event) => setNewConsent(event.target.checked)} />
+              <span>أقر بأن هذا المورد وافق على استلام رسائل واتساب مني بخصوص طلبات التوريد.</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <StorelyButton variant="primary" onClick={addSupplier}>حفظ المورد</StorelyButton>
+              <StorelyButton variant="secondary" onClick={() => setShowAdd(false)}>إلغاء</StorelyButton>
             </div>
           </div>
-        </div>
-      )}
+        </StorelyCard>
+      ) : null}
 
-      {/* إضافة مورد */}
-      {showAdd && (
-        <div style={{ background:'white', border:'1.5px solid #e2e8f0', borderRadius:16, padding:20, marginBottom:18 }}>
-          <div style={{ fontSize:14, fontWeight:700, color:'#0f172a', marginBottom:14 }}>إضافة مورد جديد</div>
-          <div className="add-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
-            <input value={newName} onChange={e=>setNewName(e.target.value)} style={inp()} placeholder="اسم المورد *" />
-            <div style={{display:'flex',gap:8}}>
-              <select value={supCountry} onChange={e=>setSupCountry(e.target.value)}
-                style={{padding:'10px 8px',border:'1px solid #e2e8f0',borderRadius:8,fontFamily:'inherit',fontSize:12,background:'white',cursor:'pointer'}}>
-                {[['+966','🇸🇦'],['+971','🇦🇪'],['+965','🇰🇼'],['+973','🇧🇭'],['+974','🇶🇦'],['+968','🇴🇲'],['+20','🇪🇬'],['+962','🇯🇴'],['+1','🇺🇸'],['+44','🇬🇧'],['+91','🇮🇳'],['+92','🇵🇰']].map(([code,flag])=>(
-                <option key={code} value={code}>{flag} {code}</option>
-              ))}
-              </select>
-              <input value={newPhone} onChange={e=>setNewPhone(e.target.value)} style={{...inp(),flex:1,direction:'ltr'}} placeholder={supCountry==='+966'?'5xxxxxxxx':supCountry==='+20'?'1xxxxxxxxx':'xxxxxxxxxx'} />
-            </div>
-          </div>
-          <input value={newNotes} onChange={e=>setNewNotes(e.target.value)} style={{...inp(), width:'100%', marginBottom:14, boxSizing:'border-box' as const}} placeholder="ملاحظات عامة للمورد (اختياري)" />
-          <label style={{display:'flex',alignItems:'flex-start',gap:8,padding:'10px 12px',background:'#f0fdfa',borderRadius:10,border:'1px solid #99f6e4',cursor:'pointer',marginBottom:14}}>
-            <input type="checkbox" checked={newConsent} onChange={e=>setNewConsent(e.target.checked)} style={{marginTop:2,width:16,height:16,flexShrink:0,cursor:'pointer'}}/>
-            <span style={{fontSize:11,color:'#115e59',lineHeight:1.6}}>أقر بأن هذا المورد وافق على استلام رسائل واتساب مني بخصوص طلبات التوريد</span>
-          </label>
-          <div style={{ display:'flex', gap:8 }}>
-            <button onClick={addSupplier} style={{ ...btnPrimary, padding:'10px 20px', fontSize:13 }}>حفظ المورد</button>
-            <button onClick={()=>setShowAdd(false)} style={{ ...btnSecondary, padding:'10px 20px', fontSize:13 }}>إلغاء</button>
-          </div>
-        </div>
-      )}
+      <div className="mb-4 flex flex-col gap-2 rounded-[6px] border border-[#E7E1D8] bg-white p-2.5 md:flex-row md:items-center">
+        <label className="relative block min-w-0 flex-1 md:max-w-sm">
+          <Search className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8EA0B1]" size={15} />
+          <input
+            className={inputClass('pr-8')}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="ابحث باسم المورد أو رقم الجوال"
+          />
+        </label>
+        <select className={inputClass('md:w-44')} value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as any)}>
+          <option value="all">كل الحالات</option>
+          <option value="linked">نشط</option>
+          <option value="unlinked">غير نشط</option>
+          <option value="failed">لديهم فشل إرسال</option>
+        </select>
+        {(query || statusFilter !== 'all') ? (
+          <StorelyButton variant="ghost" onClick={() => { setQuery(''); setStatusFilter('all') }}>إزالة الفلاتر</StorelyButton>
+        ) : null}
+      </div>
 
-      {/* بنر المنتجات غير المرتبطة */}
-      {unlinkedProducts.length>0 && (
-        <div style={{background:'#fffbeb',border:'1.5px solid #fcd34d',borderRadius:12,padding:'14px 18px',marginBottom:16,display:'flex',alignItems:'center',gap:12}}>
-          <span style={{fontSize:20}}>⚠️</span>
-          <div style={{flex:1}}>
-            <div style={{fontSize:13,fontWeight:700,color:'#92400e'}}>{unlinkedProducts.length} منتج بدون مورد مرتبط</div>
-            <div style={{fontSize:11,color:'#b45309',marginTop:2}}>اربط هذه المنتجات بموردين لتفعيل الطلبات التلقائية</div>
-          </div>
-          <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
-            {unlinkedProducts.slice(0,3).map((p:any)=>(
-              <span key={p.id} style={{fontSize:10,background:'#fef3c7',color:'#92400e',padding:'2px 6px',borderRadius:4,border:'1px solid #fcd34d'}}>{p.name}</span>
-            ))}
-            {unlinkedProducts.length>3 && <span style={{fontSize:10,color:'#92400e'}}>+{unlinkedProducts.length-3} أخرى</span>}
-          </div>
-        </div>
-      )}
+      <StorelyMetricStrip metrics={metrics} className="mb-4" />
 
-      {/* قائمة الموردين */}
+      {selectedSupplier ? (
+        <div ref={detailsRef}>
+          <SupplierWorkspace
+            key={selectedSupplier.id}
+            supplier={selectedSupplier}
+            products={products}
+            orgId={orgId}
+            onRefresh={refresh}
+            allSuppliers={suppliers}
+            curr={curr}
+            recentFailedCount={failedRecentMap[selectedSupplier.id] || 0}
+            onClose={() => setSelectedSupplierId(null)}
+          />
+        </div>
+      ) : null}
+
+      {unlinkedProducts.length > 0 ? (
+        <div className="mb-4 rounded-[6px] border border-[#D9CDBE] bg-[#F8EEDF]/35 p-3">
+          <div className="text-sm font-semibold text-[#203640]">{formatNumber(unlinkedProducts.length)} منتج بدون مورد مرتبط</div>
+          <div className="mt-1 text-xs leading-5 text-[#66737C]">اربط هذه المنتجات بموردين لتفعيل الطلبات التلقائية.</div>
+        </div>
+      ) : null}
+
       {suppliers.length === 0 ? (
-        <div style={{ background:'white', border:'1.5px solid #e2e8f0', borderRadius:16, padding:48, textAlign:'center' }}>
-          <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}><Truck size={44} color="#94a3b8" strokeWidth={1.5}/></div>
-          <div style={{ fontSize:15, fontWeight:700, color:'#475569', marginBottom:6 }}>لا يوجد موردين بعد</div>
-          <div style={{ fontSize:13, color:'#94a3b8' }}>أضف أول مورد وابدأ بتتبع طلبات التوريد تلقائياً</div>
-        </div>
+        <StorelyEmptyState
+          icon={<Truck size={16} />}
+          title="لا يوجد موردون بعد"
+          description="أضف أول مورد وابدأ بربط المنتجات وطلبات التوريد."
+          action={<StorelyButton variant="primary" icon={<Plus size={16} />} onClick={() => setShowAdd(true)}>إضافة مورد</StorelyButton>}
+        />
+      ) : filteredSuppliers.length === 0 ? (
+        <StorelyEmptyState
+          title="لا توجد نتائج"
+          description="جرّب تعديل البحث أو الفلاتر الحالية."
+          action={<StorelyButton variant="secondary" onClick={() => { setQuery(''); setStatusFilter('all') }}>إزالة الفلاتر</StorelyButton>}
+        />
       ) : (
-        <div style={{ display:'flex', flexDirection:'column' as const, gap:12 }}>
-          {suppliers.map(s => (
-            <SupplierCard key={s.id} s={s} products={products} orgId={orgId} onRefresh={refresh} allSuppliers={suppliers} rating={supplierRatings[s.id]} curr={curr} autoOpen={!!msParam && s.marketplace_supplier_id===msParam} recentFailedCount={failedRecentMap[s.id]||0} />
-          ))}
-        </div>
+        <StorelyDataTable
+          columns={supplierColumns}
+          data={filteredSuppliers}
+          rowKey="id"
+          searchable={false}
+          pageSize={12}
+          onRowClick={(supplier) => setSelectedSupplierId((current) => current === supplier.id ? null : supplier.id)}
+          emptyState={<StorelyEmptyState title="لا توجد نتائج" description="غيّر البحث أو الفلاتر الحالية." />}
+        />
       )}
+
+      {showPriceComparison ? (
+        <Modal title="مقارنة أسعار الموردين" description="بناءً على آخر 6 أشهر من سجل المشتريات." onClose={() => setShowPriceComparison(false)} maxWidth="max-w-xl">
+          <div className="space-y-3">
+            {priceComparisons.map((comparison, index) => (
+              <div key={index} className="rounded-[6px] border border-[#E7E1D8] p-3">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <span className="font-semibold text-[#203640]">{comparison.name}</span>
+                  {comparison.savingsPct > 0 ? <StorelyStatusBadge status="info">وفر حتى {comparison.savingsPct}%</StorelyStatusBadge> : null}
+                </div>
+                <div className="space-y-1.5">
+                  {comparison.suppliers.map((supplier: any, supplierIndex: number) => (
+                    <div key={supplierIndex} className="flex items-center justify-between gap-3 rounded-[5px] border border-[#E7E1D8] bg-[#F8EEDF]/25 px-2.5 py-2 text-sm">
+                      <span className="text-[#43525B]">{supplier.supplier}</span>
+                      <span className="font-semibold text-[#203640]">{supplier.unitPrice} {curr || 'ر.س'} / {supplier.unit || 'وحدة'}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Modal>
+      ) : null}
     </div>
   )
 }

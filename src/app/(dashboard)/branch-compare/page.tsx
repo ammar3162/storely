@@ -62,7 +62,7 @@ export default function BranchComparePage() {
           topProduct: b.topProducts?.[0] ? `${b.topProducts[0].name} (${b.topProducts[0].qty} ${b.topProducts[0].unit})` : '—',
         })),
         summaryStats: [
-          { label: 'عدد الفروع', value: String(comparison.length), color: '#7c3aed' },
+          { label: 'عدد الفروع', value: String(comparison.length), color: '#717553' },
           { label: 'إجمالي الصرف', value: String(comparison.reduce((s, b) => s + b.dispensed, 0)), color: colors.danger },
           { label: 'إجمالي المشتريات', value: comparison.reduce((s, b) => s + Number(b.purchases || 0), 0).toFixed(0) + ' ' + curr, color: colors.primary },
         ],
@@ -72,7 +72,7 @@ export default function BranchComparePage() {
     setExportingPdf(false)
   }
 
-  const barColors = ['#029FA2', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#0891b2']
+  const barColors = ['#203640', '#4F6678', '#f59e0b', '#8b5cf6', '#ec4899', '#0891b2']
 
   if (loading) return (
     <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 800, margin: '0 auto' }}>
@@ -142,7 +142,7 @@ export default function BranchComparePage() {
                     <div style={{ fontSize: 9, color: colors.text4, marginTop: 2 }}>مشتريات ({curr})</div>
                   </div>
                   <div style={{ background: colors.bg, borderRadius: 8, padding: '8px 6px' }}>
-                    <div style={{ fontSize: 15, fontWeight: 900, color: '#7c3aed' }}>{b.ops}</div>
+                    <div style={{ fontSize: 15, fontWeight: 900, color: '#717553' }}>{b.ops}</div>
                     <div style={{ fontSize: 9, color: colors.text4, marginTop: 2 }}>عملية صرف</div>
                   </div>
                 </div>

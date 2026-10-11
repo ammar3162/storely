@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
+import type React from 'react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
@@ -9,10 +10,62 @@ import { cache } from '@/lib/cache'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
-import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
+import { colors, font, card, btnPrimary, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 
 type FilterPeriod = 'today'|'week'|'month'|'year'|'custom'
+
+const reportSurface: React.CSSProperties = {
+  background: '#FFFFFF',
+  border: '1px solid #DEE6EA',
+  borderRadius: 16,
+  boxShadow: '0 1px 2px rgba(32,54,64,.035)',
+}
+
+const reportCss = `
+  @keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}
+  .sk{animation:sk 1.6s ease-in-out infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spin-icon{animation:spin .8s linear infinite}
+  @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .su{animation:slideUp .4s ease both}
+  .reports-home-shell{font-family:${font.family};direction:rtl;max-width:1320px;margin:0 auto;opacity:var(--reports-visible);transition:opacity .4s ease}
+  .reports-detail-shell{font-family:${font.family};direction:rtl;max-width:1120px;margin:0 auto;padding:0 2px 28px}
+  .reports-hero{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:22px;padding:26px 28px}
+  .reports-filter-panel{margin-bottom:22px;padding:18px}
+  .reports-filter-bar{display:flex;gap:10px;flex-wrap:wrap}
+  .reports-filter-pill{min-height:40px;padding:10px 18px;border-radius:999px;font-family:${font.family};font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s}
+  .reports-filter-custom{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px;background:#F7FAFB;border:1px solid #DEE6EA;border-radius:14px}
+  .reports-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:18px}
+  .reports-card-grid > div:first-child,.reports-card-grid > div:nth-child(2){grid-column:span 1}
+  .report-card-button{width:100%;height:100%;text-align:right;border:none;cursor:pointer;font-family:${font.family};padding:0;background:transparent}
+  .report-card{height:100%;background:#fff;border-radius:16px;border:1px solid #DEE6EA;box-shadow:0 1px 2px rgba(32,54,64,.035);padding:22px 24px;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+  .report-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+  .report-card-title-row{display:flex;align-items:center;gap:12px;min-width:0}
+  .report-card-icon{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .report-card-detail{display:flex;align-items:center;gap:6px;border-radius:999px;padding:7px 12px;border:1px solid #DEE6EA;transition:all .2s;white-space:nowrap}
+  .report-stat-grid{display:grid;gap:10px;margin-bottom:16px}
+  .report-stat{border-radius:13px;padding:13px 10px;text-align:center;border:1px solid #E6ECEF;background:#F7FAFB}
+  .report-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:12px 0 16px}
+  .report-two-column-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:20px}
+  .report-recent-grid{margin-top:16px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  @media (max-width:900px){
+    .reports-home-shell,.reports-detail-shell{padding-inline:2px}
+    .reports-hero{display:block;padding:22px 20px}
+    .reports-card-grid,.report-two-column-grid{grid-template-columns:1fr}
+    .report-recent-grid{grid-template-columns:1fr}
+  }
+  @media (max-width:640px){
+    .reports-hero{padding:20px 16px}
+    .reports-filter-panel{padding:14px}
+    .reports-filter-pill{flex:1 1 calc(50% - 10px);justify-content:center;padding-inline:12px}
+    .reports-filter-custom{grid-template-columns:1fr}
+    .report-card{padding:18px 16px}
+    .report-card-top{flex-direction:column}
+    .report-card-detail{align-self:flex-start}
+    .report-stat-grid{grid-template-columns:1fr !important}
+  }
+`
 
 /** اسم المنشأة/الفرع/العملة لتصدير PDF — من /api/me بدل استعلامات مباشرة */
 async function pdfOrgInfo() {
@@ -56,20 +109,18 @@ function FilterBar({ period, setPeriod, from, setFrom, to, setTo }: any) {
     {key:'today',label:'اليوم'},
   ]
   return (
-    <div style={{marginBottom:24}}>
-      <div style={{display:'flex',gap:10,flexWrap:'wrap' as const,marginBottom:period==='custom'?16:0}}>
+    <div className="reports-filter-panel" style={reportSurface}>
+      <div className="reports-filter-bar">
         {PERIODS.map(p=>{
           const active = period===p.key
           return (
             <button key={p.key} onClick={()=>setPeriod(p.key as FilterPeriod)}
+              className="reports-filter-pill"
               style={{
-                padding:'12px 22px',borderRadius:99,fontFamily:font.family,
-                border:active?`2px solid ${colors.primary}`:`1.5px solid ${colors.border2}`,
-                background:'white',
+                border:active?`1px solid ${colors.primary}`:`1px solid #DEE6EA`,
+                background:active?'#F4F7F8':'white',
                 color:active?colors.primary:colors.text2,
-                fontSize:14,fontWeight:700,cursor:'pointer',
-                display:'flex',alignItems:'center',gap:6,
-                transition:'all .15s',
+                boxShadow:active?'inset 0 0 0 1px rgba(32,54,64,.08)':'none',
               }}>
               {p.icon && <span>{p.icon}</span>}
               {p.label}
@@ -78,7 +129,7 @@ function FilterBar({ period, setPeriod, from, setFrom, to, setTo }: any) {
         })}
       </div>
       {period==='custom'&&(
-        <div style={{...card,padding:16,display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+        <div className="reports-filter-custom">
           <div><label style={{fontSize:font.xs,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>من تاريخ</label><input type="date" value={from} onChange={e=>setFrom(e.target.value)} style={inp()}/></div>
           <div><label style={{fontSize:font.xs,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>إلى تاريخ</label><input type="date" value={to} onChange={e=>setTo(e.target.value)} style={inp()}/></div>
         </div>
@@ -103,44 +154,44 @@ function MiniChart({ data, color }: { data:number[]; color:string }) {
 function ReportCard({ title, subtitle, icon, color, bg, border, stats, onClick, loading, chartData }: any) {
   const [hov, setHov] = useState(false)
   return (
-    <button onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{width:'100%',textAlign:'right' as const,border:'none',cursor:'pointer',fontFamily:font.family,padding:0,background:'transparent'}}>
-      <div style={{
-        background:colors.surface,borderRadius:radius.xl,
-        border:`1.5px solid ${hov?color:colors.border}`,
-        boxShadow:hov?`0 12px 36px ${color}22`:shadow.sm,
-        padding:'22px 24px',transition:'all .25s cubic-bezier(.4,0,.2,1)',
-        transform:hov?'translateY(-4px)':'none',
-      }}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:18}}>
+    <button onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} className="report-card-button">
+      <div
+        className="report-card"
+        style={{
+          borderColor: hov ? color : '#DEE6EA',
+          boxShadow: hov ? `0 18px 42px ${color}18` : '0 1px 2px rgba(32,54,64,.035)',
+          transform: hov ? 'translateY(-3px)' : 'none',
+        }}
+      >
+        <div className="report-card-top">
           <div>
-            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:4}}>
-              <div style={{width:42,height:42,borderRadius:12,background:bg,border:`1.5px solid ${border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>{icon}</div>
+            <div className="report-card-title-row">
+              <div className="report-card-icon" style={{background:bg,border:`1px solid ${border}`,color}}>{icon}</div>
               <div>
-                <div style={{fontSize:font.md,fontWeight:900,color:colors.text}}>{title}</div>
-                <div style={{fontSize:font.xs,color:colors.text3,marginTop:1}}>{subtitle}</div>
+                <div style={{fontSize:17,fontWeight:700,color:colors.text,lineHeight:1.5}}>{title}</div>
+                <div style={{fontSize:13,color:colors.text3,marginTop:3,lineHeight:1.6}}>{subtitle}</div>
               </div>
             </div>
           </div>
-          <div style={{display:'flex',alignItems:'center',gap:6,background:hov?color:colors.bg,borderRadius:20,padding:'6px 12px',border:`1px solid ${hov?color:colors.border}`,transition:'all .2s'}}>
+          <div className="report-card-detail" style={{background:hov?color:'#F7FAFB',borderColor:hov?color:'#DEE6EA'}}>
             <span style={{fontSize:font.xs,fontWeight:700,color:hov?'white':colors.text3}}>التفاصيل</span>
             <svg width={12} height={12} fill="none" stroke={hov?'white':colors.text3} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
           </div>
         </div>
 
-        <div style={{display:'grid',gridTemplateColumns:`repeat(${stats.length},1fr)`,gap:10,marginBottom:chartData?16:0}}>
+        {stats.length > 0 ? <div className="report-stat-grid" style={{gridTemplateColumns:`repeat(${stats.length},1fr)`,marginBottom:chartData?16:0}}>
           {loading?[...Array(stats.length)].map((_,i)=>(
-            <div key={i} style={{background:colors.bg,borderRadius:radius.md,padding:'12px',textAlign:'center' as const}}>
+            <div key={i} className="report-stat">
               <div style={{height:22,background:colors.border2,borderRadius:6,marginBottom:6,animation:'sk 1.4s infinite'}}/>
               <div style={{height:10,background:colors.border,borderRadius:4,animation:'sk 1.4s infinite'}}/>
             </div>
           )):stats.map((s:any,i:number)=>(
-            <div key={i} style={{background:s.highlight?bg:colors.bg,borderRadius:radius.md,padding:'12px 10px',textAlign:'center' as const,border:`1px solid ${s.highlight?border:colors.border}`}}>
-              <div style={{fontSize:18,fontWeight:900,color:s.color,letterSpacing:'-0.5px'}}>{s.value}</div>
-              <div style={{fontSize:10,color:colors.text4,marginTop:3,fontWeight:600}}>{s.label}</div>
+            <div key={i} className="report-stat" style={{background:s.highlight?bg:'#F7FAFB',borderColor:s.highlight?border:'#E6ECEF'}}>
+              <div style={{fontSize:20,fontWeight:700,color:s.color}}>{s.value}</div>
+              <div style={{fontSize:11,color:colors.text4,marginTop:4,fontWeight:600,lineHeight:1.5}}>{s.label}</div>
             </div>
           ))}
-        </div>
+        </div> : null}
 
         {chartData && chartData.length > 0 && (
           <div style={{marginTop:4}}>
@@ -219,7 +270,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
         summaryStats: [
           { label: 'كميات مصروفة', value: String(totalQty), color: colors.danger },
           { label: 'عمليات الصرف', value: String(filtered.length), color: colors.info },
-          { label: 'أصناف مختلفة', value: String(Object.keys(productMap).length), color: '#7c3aed' },
+          { label: 'أصناف مختلفة', value: String(Object.keys(productMap).length), color: '#717553' },
         ],
         fileName: `تقرير-الصرف-${new Date().toISOString().slice(0,10)}.pdf`,
       })
@@ -242,11 +293,11 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
           {exportingPdf?<span style={{display:'inline-flex',alignItems:'center',gap:6}}><Loader2 size={14} strokeWidth={2.25} className="spin-icon"/> جاري التصدير...</span>:<span style={{display:'inline-flex',alignItems:'center',gap:6}}><FileText size={14} strokeWidth={2.25}/> تصدير PDF</span>}
         </button>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16,marginTop:12}}>
+      <div className="report-summary-grid">
         {[
           {label:'كميات مصروفة',value:totalQty,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
           {label:'عمليات الصرف',value:filtered.length,color:colors.info,bg:colors.infoLight,border:colors.infoBorder},
-          {label:'أصناف مختلفة',value:Object.keys(productMap).length,color:'#7c3aed',bg:'#f5f3ff',border:'#ddd6fe'},
+          {label:'أصناف مختلفة',value:Object.keys(productMap).length,color:'#717553',bg:'#F8EEDF',border:'#D9CDBE'},
         ].map((s,i)=>(
           <div key={i} style={{...card,padding:'16px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
             <div style={{fontSize:28,fontWeight:900,color:s.color,letterSpacing:'-1px'}}>{s.value}</div>
@@ -305,7 +356,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
                     <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
                     <td style={{padding:'11px 16px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td>
                     <td style={{padding:'11px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:900}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
-                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f0fdfa',color:'#029FA2',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #99f6e4'}}>
+                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#F8EEDF',color:'#203640',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #D9CDBE'}}>
 {(m.profiles as any)?.full_name||(m.staff_members as any)?.name||(m.note?.match(/بواسطة[^:]*:\s*(.+)/)?.[1])||'—'}
 </span></td>
                     <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text4}}>
@@ -375,7 +426,7 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
         summaryStats: [
           { label: 'كميات مهدورة', value: String(totalQty), color: colors.danger },
           { label: 'عمليات الهدر', value: String(filtered.length), color: colors.info },
-          { label: 'أصناف مختلفة', value: String(Object.keys(productMap).length), color: '#7c3aed' },
+          { label: 'أصناف مختلفة', value: String(Object.keys(productMap).length), color: '#717553' },
         ],
         fileName: `تقرير-الهدر-${new Date().toISOString().slice(0,10)}.pdf`,
       })
@@ -400,11 +451,11 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
           {exportingPdf?<span style={{display:'inline-flex',alignItems:'center',gap:6}}><Loader2 size={14} strokeWidth={2.25} className="spin-icon"/> جاري التصدير...</span>:<span style={{display:'inline-flex',alignItems:'center',gap:6}}><FileText size={14} strokeWidth={2.25}/> تصدير PDF</span>}
         </button>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16,marginTop:12}}>
+      <div className="report-summary-grid">
         {[
           {label:'كميات مهدورة',value:totalQty,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
           {label:'عمليات الهدر',value:filtered.length,color:colors.info,bg:colors.infoLight,border:colors.infoBorder},
-          {label:'أصناف مختلفة',value:Object.keys(productMap).length,color:'#7c3aed',bg:'#f5f3ff',border:'#ddd6fe'},
+          {label:'أصناف مختلفة',value:Object.keys(productMap).length,color:'#717553',bg:'#F8EEDF',border:'#D9CDBE'},
         ].map((s,i)=>(
           <div key={i} style={{...card,padding:'16px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
             <div style={{fontSize:28,fontWeight:900,color:s.color,letterSpacing:'-1px'}}>{s.value}</div>
@@ -467,7 +518,7 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
                     <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#fffbeb',color:'#b45309',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #fde68a'}}>
 {(m as any).waste_reason||'—'}
 </span></td>
-                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f0fdfa',color:'#029FA2',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #99f6e4'}}>
+                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#F8EEDF',color:'#203640',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #D9CDBE'}}>
 {(m.profiles as any)?.full_name||(m.staff_members as any)?.name||(m.note?.match(/بواسطة[^:]*:\s*(.+)/)?.[1])||'—'}
 </span></td>
                     <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text4}}>
@@ -635,7 +686,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
           {exportingPdf?<span style={{display:'inline-flex',alignItems:'center',gap:6}}><Loader2 size={14} strokeWidth={2.25} className="spin-icon"/> جاري التصدير...</span>:<span style={{display:'inline-flex',alignItems:'center',gap:6}}><FileText size={14} strokeWidth={2.25}/> تصدير PDF</span>}
         </button>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16,marginTop:12}}>
+      <div className="report-summary-grid">
         {[
           {label:'بدون ضريبة',value:totalAmount.toFixed(0)+' '+curr,color:colors.text2,bg:colors.bg,border:colors.border2},
           {label:'ضريبة 15%',value:totalVat.toFixed(0)+' '+curr,color:colors.warning,bg:colors.warningLight,border:colors.warningBorder},
@@ -687,7 +738,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
                     <td style={{padding:'11px 12px',fontSize:font.xs,color:colors.text4,maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.supplier||'—'}</td>
                     <td style={{padding:'11px 12px',textAlign:'center' as const}}>
                       {p.invoice_image
-                        ? <a href={p.invoice_image} target="_blank" rel="noreferrer" style={{background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap' as const,display:'inline-flex',alignItems:'center',gap:4}}><Paperclip size={11} strokeWidth={2.25}/> عرض</a>
+                        ? <a href={p.invoice_image} target="_blank" rel="noreferrer" style={{background:'#F3F5F6',color:'#4F6678',border:'1px solid #CBD4DC',borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap' as const,display:'inline-flex',alignItems:'center',gap:4}}><Paperclip size={11} strokeWidth={2.25}/> عرض</a>
                         : <span style={{color:colors.border2}}>—</span>}
                     </td>
                     <td style={{padding:'11px 12px',textAlign:'center' as const}}>
@@ -743,7 +794,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
                       </div>
                     </div>
                     <button onClick={()=>restorePurchase(d)} disabled={restoringId===d.id}
-                      style={{padding:'6px 14px',background:'white',color:'#029FA2',border:'1.5px solid #99f6e4',borderRadius:8,fontSize:11,fontWeight:700,cursor:restoringId===d.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:restoringId===d.id?.6:1,whiteSpace:'nowrap' as const}}>
+                      style={{padding:'6px 14px',background:'white',color:'#203640',border:'1.5px solid #D9CDBE',borderRadius:8,fontSize:11,fontWeight:700,cursor:restoringId===d.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:restoringId===d.id?.6:1,whiteSpace:'nowrap' as const}}>
                       {restoringId===d.id?'...':'↩️ استعادة'}
                     </button>
                   </div>
@@ -842,7 +893,7 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
           status: p.qty===0 ? 'نفد' : p.qty<=p.reorder_point ? 'ناقص' : 'كافٍ',
         })),
         summaryStats: [
-          { label: 'إجمالي الأصناف', value: String(products.length), color: '#7c3aed' },
+          { label: 'إجمالي الأصناف', value: String(products.length), color: '#717553' },
           { label: 'مخزون ناقص', value: String(lowCount), color: colors.warning },
           { label: 'نفد المخزون', value: String(outCount), color: colors.danger },
         ],
@@ -887,9 +938,9 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
           {exportingPdf?<span style={{display:'inline-flex',alignItems:'center',gap:6}}><Loader2 size={14} strokeWidth={2.25} className="spin-icon"/> جاري التصدير...</span>:<span style={{display:'inline-flex',alignItems:'center',gap:6}}><FileText size={14} strokeWidth={2.25}/> تصدير PDF</span>}
         </button>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:(totalTransferredOut+totalTransferredIn)>0?'repeat(5,1fr)':'repeat(4,1fr)',gap:10,marginBottom:16,marginTop:12}}>
+      <div className="report-summary-grid">
         {[
-          {label:'إجمالي الأصناف',value:products.length,color:'#7c3aed',bg:'#f5f3ff',border:'#ddd6fe',clickable:false},
+          {label:'إجمالي الأصناف',value:products.length,color:'#717553',bg:'#F8EEDF',border:'#D9CDBE',clickable:false},
           {label:'وحدات مصروفة',value:totalDispensed,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder,clickable:false},
           {label:'وحدات مشتراة',value:totalPurchased,color:colors.primary,bg:colors.primaryLight,border:colors.primaryBorder,clickable:false},
           {label:'أصناف ناقصة',value:lowCount+outCount,color:colors.warning,bg:colors.warningLight,border:colors.warningBorder,clickable:false},
@@ -997,7 +1048,7 @@ function RecentOpsSection({ recentOps, colors }: { recentOps:any[]; colors:any }
       {sheet==='add'&&<OpsSheet items={additions} title="آخر عمليات الإضافة" color={colors.primary} bg={colors.primaryLight} border={colors.primaryBorder} onClose={()=>setSheet(null)}/>}
       {sheet==='purchase'&&<OpsSheet items={recentOps} title="آخر العمليات" color={colors.info} bg={colors.infoLight} border={colors.infoBorder} onClose={()=>setSheet(null)}/>}
 
-      <div style={{marginTop:16,display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
+      <div className="report-recent-grid">
         {[
           {key:'dispense' as const, title:'آخر الصرف',    count:dispense.length,  color:colors.danger,  bg:colors.dangerLight,  border:colors.dangerBorder,  icon:<Upload size={24} strokeWidth={1.75}/>},
           {key:'add' as const,      title:'آخر الإضافات', count:additions.length, color:colors.primary, bg:colors.primaryLight, border:colors.primaryBorder, icon:<Download size={24} strokeWidth={1.75}/>},
@@ -1057,7 +1108,7 @@ function AttendanceDetail({ onBack }: { onBack:()=>void }) {
   const fmtDate = (d:string) => new Date(d).toLocaleDateString('ar-SA', { numberingSystem:'latn', day:'numeric', month:'short' })
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto'}}>
+    <div className="reports-detail-shell">
       <button onClick={onBack} style={{background:'none',border:'none',color:colors.primary,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginBottom:12,display:'flex',alignItems:'center',gap:4}}>→ رجوع</button>
       <h1 style={pageTitle}><PageIcon/>تقرير الحضور والانصراف</h1>
       <p style={pageSub}>سجل حضور وانصراف الموظفين حسب الفترة المحددة</p>
@@ -1233,7 +1284,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
           {exportingPdf?<span style={{display:'inline-flex',alignItems:'center',gap:6}}><Loader2 size={14} strokeWidth={2.25} className="spin-icon"/> جاري التصدير...</span>:<span style={{display:'inline-flex',alignItems:'center',gap:6}}><FileText size={14} strokeWidth={2.25}/> تصدير PDF</span>}
         </button>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16,marginTop:12}}>
+      <div className="report-summary-grid">
         {[
           {label:'إجمالي التقارير',value:closings.length,color:'#0891b2',bg:'#ecfeff',border:'#a5f3fc'},
           {label:'إجمالي العجز',value:totalDeficit.toFixed(0)+' '+curr,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
@@ -1252,7 +1303,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
             <span style={{fontSize:13,fontWeight:700,color:colors.text,display:'inline-flex',alignItems:'center',gap:6}}><BarChart3 size={15} strokeWidth={2.25}/> مقارنة الأداء الشهري</span>
             <span style={{fontSize:10,color:colors.text4}}>مقابل الشهر السابق</span>
           </div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(120px,1fr))',gap:10}}>
             {[
               {label:'المبيعات', val:monthComp.current.sales, change:monthComp.changes.sales, unit:curr},
               {label:'المشتريات', val:monthComp.current.purchasesTotal, change:monthComp.changes.purchases, unit:curr},
@@ -1462,31 +1513,32 @@ export default function ReportsPage() {
   }
 
   if (view==='inventory') return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} .spin-icon{animation:spin .8s linear infinite}`}</style>
+    <div className="reports-detail-shell">
+      <style>{reportCss}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير الجرد اليومي</h1>
       <InventoryDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
     </div>
   )
 
   if (view==='dispense') return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div className="reports-detail-shell">
+      <style>{reportCss}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير الصرف</h1>
       <DispenseDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
     </div>
   )
 
   if (view==='purchase') return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div className="reports-detail-shell">
+      <style>{reportCss}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير المشتريات</h1>
       <PurchaseDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
     </div>
   )
 
   if (view==='attendance') return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto',padding:'20px 16px'}}>
+    <div className="reports-detail-shell">
+      <style>{reportCss}</style>
       <AttendanceDetail onBack={()=>setView('home')}/>
     </div>
   )
@@ -1494,40 +1546,37 @@ export default function ReportsPage() {
   if (view==='cashier' && orgPlan==='basic') { setView('home'); return null }
 
   if (view==='cashier') return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div className="reports-detail-shell">
+      <style>{reportCss}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>إقفال الكاشير اليومي</h1>
       <CashierClosingDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
     </div>
   )
 
   if (view==='waste') return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div className="reports-detail-shell">
+      <style>{reportCss}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير الهدر</h1>
       <WasteDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
     </div>
   )
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:680,margin:'0 auto',opacity:visible?1:0,transition:'opacity .4s ease'}}>
-      <style>{`
-        @keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.6s ease-in-out infinite}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-        .su{animation:slideUp .4s ease both}
-      `}</style>
+    <div className="reports-home-shell" style={{'--reports-visible': visible ? 1 : 0} as React.CSSProperties}>
+      <style>{reportCss}</style>
 
-      <div style={{marginBottom:20}} className="su">
+      <div className="reports-hero su" style={reportSurface}>
+        <div>
         <h1 style={{...pageTitle}}><PageIcon/>التقارير</h1>
         <p style={{...pageSub}}>اختر الفترة ثم اضغط على التقرير لعرض التفاصيل</p>
+        </div>
       </div>
 
       <div className="su" style={{animationDelay:'.05s'}}>
         <FilterBar period={period} setPeriod={setPeriod} from={from} setFrom={setFrom} to={to} setTo={setTo}/>
       </div>
 
-      <div style={{display:'flex',flexDirection:'column' as const,gap:14}}>
+      <div className="reports-card-grid">
         <div className="su" style={{animationDelay:'.1s'}}>
           <ReportCard
             title="تقرير الصرف"
@@ -1569,13 +1618,13 @@ export default function ReportsPage() {
             title="تقرير الجرد اليومي"
             subtitle="ملخص المخزون الحالي والأصناف الناقصة"
             icon={<ClipboardList size={20} strokeWidth={1.75}/>}
-            color={'#7c3aed'}
-            bg={'#f5f3ff'}
-            border={'#ddd6fe'}
+            color={'#717553'}
+            bg={'#F8EEDF'}
+            border={'#D9CDBE'}
             loading={statsLoading}
             chartData={[]}
             stats={[
-              {label:'إجمالي الأصناف',value:inventoryStats.total,color:'#7c3aed',highlight:true},
+              {label:'إجمالي الأصناف',value:inventoryStats.total,color:'#717553',highlight:true},
               {label:'مخزون ناقص',value:inventoryStats.low,color:colors.warning},
               {label:'نفد المخزون',value:inventoryStats.out,color:colors.danger},
             ]}
@@ -1607,9 +1656,9 @@ export default function ReportsPage() {
             title="الحضور والانصراف"
             subtitle="سجل حضور وانصراف الموظفين"
             icon={<CalendarDays size={20} strokeWidth={1.75}/>}
-            color={'#0f766e'}
-            bg={'#f0fdfa'}
-            border={'#99f6e4'}
+            color={'#203640'}
+            bg={'#F8EEDF'}
+            border={'#D9CDBE'}
             loading={false}
             chartData={[]}
             stats={[]}
@@ -1652,7 +1701,7 @@ export default function ReportsPage() {
         const maxVal = Math.max(...top.map(p=>p.qty),1)
         if(top.length===0) return null
         return (
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20}}>
+          <div className="report-two-column-grid">
             <div style={{...card,padding:'20px 24px'}}>
               <div style={{fontSize:font.md,fontWeight:900,color:colors.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><Flame size={17} strokeWidth={2.25}/> أكثر المنتجات صرفاً</div>
               <div style={{fontSize:font.xs,color:colors.text3,marginBottom:16}}>الفترة المحددة</div>
@@ -1667,7 +1716,7 @@ export default function ReportsPage() {
                       <span style={{fontSize:12,fontWeight:800,color:colors.primary}}>{p.qty} {p.unit}</span>
                     </div>
                     <div style={{height:6,background:colors.border,borderRadius:99,overflow:'hidden'}}>
-                      <div style={{height:'100%',width:`${(p.qty/maxVal)*100}%`,background:i===0?colors.primary:i===1?'#2563eb':i===2?'#7c3aed':colors.border2,borderRadius:99}}/>
+                      <div style={{height:'100%',width:`${(p.qty/maxVal)*100}%`,background:i===0?colors.primary:i===1?'#4F6678':i===2?'#717553':colors.border2,borderRadius:99}}/>
                     </div>
                   </div>
                 ))}

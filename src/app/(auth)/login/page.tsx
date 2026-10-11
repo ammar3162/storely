@@ -57,9 +57,9 @@ const PHONE_RULES: Record<string,{length:number, prefix:string, placeholder:stri
 }
 
 const PLANS = [
-  { v:1,  label:'الأساسية',  price:'99', yearlyPrice:'950', desc:'فرع · 3 موظفين · 3 موردين',                    color:'#029FA2' },
-  { v:3,  label:'المتوسطة',  price:'249', yearlyPrice:'2390', desc:'3 فروع · 10 موظفين · 10 موردين',               color:'#029FA2' },
-  { v:10, label:'المتقدمة',  price:'399', yearlyPrice:'3830', desc:'10 فروع · موظفون وموردون غير محدودين', color:'#7c3aed' },
+  { v:1,  label:'الأساسية',  price:'99', yearlyPrice:'950', desc:'فرع · 3 موظفين · 3 موردين',                    color:'#203640' },
+  { v:3,  label:'المتوسطة',  price:'249', yearlyPrice:'2390', desc:'3 فروع · 10 موظفين · 10 موردين',               color:'#203640' },
+  { v:10, label:'المتقدمة',  price:'399', yearlyPrice:'3830', desc:'10 فروع · موظفون وموردون غير محدودين', color:'#203640' },
 ]
 
 function GoogleIcon() {
@@ -86,7 +86,7 @@ function LoginPage() {
   // oauth: دخل بـ Google وما عنده منشأة بعد — يكمل بيانات المنشأة بدون بريد وكلمة مرور
   const [oauth, setOauth] = useState(() =>
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'complete')
-  const [mode, setMode] = useState<'login'|'register'|'forgot'|'forgot-sent'|'forgot-sent-wa'>(() => {
+  const [mode, setMode] = useState<'login'|'register'|'forgot'|'forgot-sent'|'forgot-sent-wa'|'registered'>(() => {
     if (typeof window !== 'undefined') {
       const m = new URLSearchParams(window.location.search).get('mode')
       if (m === 'register' || m === 'complete') return 'register'
@@ -306,7 +306,7 @@ function LoginPage() {
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) {
       if (error.message.includes('already registered') || error.message.includes('already been registered')) {
-        setError('📧 هذا البريد الإلكتروني مسجّل مسبقاً — سجّل الدخول أو استعد كلمة المرور')
+        setError('هذا البريد الإلكتروني مسجّل مسبقاً — سجّل الدخول أو استعد كلمة المرور')
       } else {
         setError(error.message)
       }
@@ -352,7 +352,7 @@ function LoginPage() {
       if (!signInErr) {
         window.location.href = '/dashboard'
       } else {
-        setMode('registered' as any)
+        setMode('registered')
       }
     }
     setLoading(false)
@@ -362,27 +362,101 @@ function LoginPage() {
   const phonePlaceholder = phoneRule.placeholder
 
   return (
-    <div style={{minHeight:'100vh',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',background:'#ffffff',display:'flex',flexDirection:'column'}}>
+    <div className={`login-shell${mode==='register' ? ' register-shell' : ''}`} style={{minHeight:'100vh',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',background:'#ffffff',display:'flex',flexDirection:'column'}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap');
         *{box-sizing:border-box}
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
         @keyframes spin{to{transform:rotate(360deg)}}
-        .inp{width:100%;padding:13px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;outline:none;background:white;color:#111827;font-family:inherit;transition:border-color .2s}
-        .inp:focus{border-color:#029FA2;box-shadow:0 0 0 3px rgba(13,148,136,.08)}
-        .inp::placeholder{color:#9ca3af}
-        .btn-main{width:100%;padding:14px;background:linear-gradient(180deg,#0d4543 0%,#0b3b3a 100%);color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
-        .btn-main:hover{background:#0a3231}
+        .login-shell{background:#fff!important;color:#203640}
+        .login-nav{height:72px!important;padding:0 clamp(20px,4vw,56px)!important;border-bottom:1px solid #E7EAED!important;background:#fff!important}
+        .login-main{flex:1;display:grid!important;grid-template-columns:minmax(420px,0.95fr) minmax(420px,1.05fr);direction:ltr;background:#fff}
+        .login-form-wrap{padding:clamp(40px,6vw,72px) clamp(28px,5vw,72px)!important;background:#fff!important;direction:rtl;order:2}
+        .login-card{max-width:456px!important}
+        .right-panel{width:auto!important;background:#fff!important;border-right:0!important;border-left:1px solid #E7EAED!important;padding:clamp(44px,6vw,76px)!important;direction:rtl;align-items:flex-start!important;order:1}
+        .brand-panel-inner{max-width:460px!important}
+        .inp{width:100%;min-height:48px!important;padding:0 15px!important;border:1px solid #D7DEE3!important;border-radius:6px!important;font-size:15px!important;line-height:1.6!important;outline:none;background:white;color:#203640!important;font-family:inherit;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}
+        .inp:focus{border-color:#203640!important;box-shadow:0 0 0 3px rgba(32,54,64,.14)!important}
+        .inp::placeholder{color:#8EA0B1}
+        .btn-main{width:100%;min-height:48px!important;padding:0 20px!important;background:#203640!important;color:white;border:1px solid #203640!important;border-radius:6px!important;font-size:15px!important;font-weight:700;cursor:pointer;font-family:inherit;transition:background .16s ease,border-color .16s ease,box-shadow .16s ease}
+        .btn-main:hover{background:#16262D!important;border-color:#16262D!important}
         .btn-main:disabled{opacity:.6;cursor:not-allowed}
-        .tab{flex:1;padding:12px;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .2s}
-        .biz{padding:12px 8px;border-radius:10px;border:1.5px solid #e5e7eb;background:white;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .15s;font-size:12px;font-weight:600;color:#374151}
-        .biz:hover{border-color:#029FA2}
-        .biz.on{border-color:#029FA2;background:#f0fdfa;color:#029FA2}
-        @media(max-width:768px){.right-panel{display:none!important}}
+        .tab{flex:1;padding:11px 12px;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .2s}
+        .biz{min-height:68px;padding:11px 8px;border-radius:6px;border:1px solid #D7DEE3!important;background:white;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;transition:all .15s;font-size:12px;font-weight:600;color:#43525B!important}
+        .biz:hover{border-color:#203640!important;background:#F8EEDF55}
+        .biz.on{border-color:#203640!important;background:#F8EEDF!important;color:#203640!important}
+        .biz span:first-child{font-size:11px!important;color:#8EA0B1!important;font-weight:800;letter-spacing:.04em}
+        .auth-note-icon{width:36px;height:36px;border-radius:6px;border:1px solid #D7DEE3;background:#fff;display:inline-flex;align-items:center;justify-content:center;color:#203640;font-size:13px;font-weight:800;flex-shrink:0}
+        .auth-secondary-btn{width:100%;min-height:48px;padding:0 18px;background:white;border:1px solid #D7DEE3;border-radius:6px;font-size:15px;font-weight:700;color:#203640;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;transition:border-color .16s ease,background .16s ease}
+        .auth-secondary-btn:hover{border-color:#203640;background:#FAFBFC}
+        .auth-divider{display:flex;align-items:center;gap:14px;margin:22px 0;color:#8EA0B1;font-size:13px;font-weight:600}
+        .auth-divider::before,.auth-divider::after{content:"";flex:1;height:1px;background:#E7EAED}
+        .auth-error{background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:12px 14px;margin-bottom:18px;font-size:14px;color:#B91C1C;font-weight:600;line-height:1.7}
+        .auth-link-btn{background:none;border:none;color:#203640;cursor:pointer;font-family:inherit;font-weight:700;padding:0;text-decoration:none}
+        .auth-link-btn:hover{text-decoration:underline}
+        .brand-image{position:relative;border-radius:8px!important;overflow:hidden;border:1px solid #E7EAED;margin-bottom:28px!important;background:#F8FAFC;box-shadow:none!important}
+        .brand-kicker{display:inline-flex!important;align-items:center;gap:8px!important;background:#F8EEDF!important;border:1px solid #E7D9C7!important;border-radius:6px!important;padding:7px 12px!important;font-size:13px!important;font-weight:700;color:#203640!important;margin-bottom:22px!important}
+        .brand-stat-card{margin-top:28px!important;padding:18px 20px!important;background:#fff;border-radius:8px!important;border:1px solid #E7EAED!important}
+        .register-shell .login-main{grid-template-columns:minmax(430px,.9fr) minmax(520px,1.1fr)}
+        .register-shell .login-form-wrap{padding-block:clamp(42px,5vw,68px)!important}
+        .register-card{max-width:588px!important}
+        .register-heading{margin-bottom:32px}
+        .register-progress{display:flex;gap:8px;margin-bottom:24px}
+        .register-progress span{flex:1;height:4px;border-radius:999px;background:#E7EAED;transition:background .18s ease}
+        .register-progress span.active{background:#203640}
+        .register-title{font-size:29px;font-weight:850;color:#203640;margin:0 0 10px;letter-spacing:0;line-height:1.38}
+        .register-subtitle{font-size:15px;color:#66737C;margin:0;line-height:1.9;max-width:520px}
+        .register-form{display:flex;flex-direction:column;gap:22px}
+        .register-field{display:flex;flex-direction:column;gap:8px}
+        .register-label{font-size:13px;font-weight:750;color:#203640;line-height:1.6}
+        .register-help{font-size:12px;color:#8EA0B1;margin-top:3px;line-height:1.75}
+        .register-phone{display:flex;min-height:52px;border:1px solid #D7DEE3;border-radius:6px;overflow:hidden;background:#fff;transition:border-color .16s ease,box-shadow .16s ease}
+        .register-phone:focus-within{border-color:#203640;box-shadow:0 0 0 3px rgba(32,54,64,.14)}
+        .register-business-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+        .register-actions-note{text-align:center;margin-top:24px;font-size:14px;color:#66737C;line-height:1.85}
+        .register-back{background:none;border:none;color:#66737C;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;padding:0;margin-bottom:16px;display:inline-flex;align-items:center;gap:6px}
+        .register-back:hover{color:#203640}
+        .register-billing{display:flex;justify-content:center;margin-bottom:12px}
+        .register-billing-inner{display:inline-flex;gap:4px;background:#F4F6F7;padding:4px;border-radius:8px;border:1px solid #E7EAED}
+        .register-plan{padding:20px;border-radius:8px;border:1px solid #D7DEE3;background:#fff;cursor:pointer;font-family:inherit;text-align:right;transition:border-color .16s ease,background .16s ease,box-shadow .16s ease;display:flex;justify-content:space-between;align-items:center;gap:18px}
+        .register-plan:hover{border-color:#8EA0B1;background:#FAFBFC}
+        .register-plan.selected{border-color:#203640;background:#F8EEDF;box-shadow:inset 0 0 0 1px #203640}
+        .register-trial-note{background:#F6F8F2;border:1px solid #D9DDC6;border-radius:8px;padding:13px 15px;font-size:13px;color:#203640;font-weight:700;line-height:1.8}
+        .register-terms{display:flex;align-items:flex-start;gap:11px;font-size:13px;color:#43525B;cursor:pointer;margin-top:2px;line-height:1.95}
+        .register-terms input{margin-top:6px;flex-shrink:0;cursor:pointer;accent-color:#203640}
+        .register-password-meta{margin-top:8px;display:flex;align-items:center;gap:7px}
+        .register-password-meta span{font-size:12px;color:#8EA0B1;flex-shrink:0}
+        .register-password-bar{flex:1;height:4px;border-radius:99px;transition:background .3s}
+        @media(max-width:980px){
+          .login-main{grid-template-columns:1fr}
+          .right-panel{display:none!important}
+          .login-form-wrap{padding:40px 22px 56px!important}
+          .login-card{max-width:460px!important}
+          .register-card{max-width:608px!important}
+        }
+        @media(max-width:560px){
+          .login-nav{height:auto!important;min-height:66px!important;padding:12px 18px!important;gap:12px}
+          .login-nav > div:last-child{gap:6px!important}
+          .login-nav span{display:none}
+          .login-form-wrap{align-items:flex-start!important;padding:30px 18px 46px!important}
+          .login-card{max-width:none!important}
+          .register-heading{margin-bottom:26px}
+          .register-progress{margin-bottom:20px}
+          .register-title{font-size:24px}
+          .register-subtitle{font-size:14px}
+          .register-form{gap:18px}
+          .register-business-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+          .register-phone{min-height:50px}
+          .register-billing{justify-content:stretch}
+          .register-billing-inner{width:100%}
+          .register-billing-inner button{flex:1;justify-content:center}
+          .register-plan{align-items:flex-start;flex-direction:column;gap:8px}
+          .register-plan .hide-in-app{margin-right:0!important;text-align:right!important}
+        }
       `}</style>
 
       {/* Navbar */}
-      <nav style={{padding:'0 40px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #f3f4f6'}}>
+      <nav className="login-nav" style={{padding:'0 40px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #f3f4f6'}}>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <img src="/storely-logo.png" alt="Storely" style={{width:44,height:44,objectFit:'contain'}}/>
         </div>
@@ -393,24 +467,24 @@ function LoginPage() {
           </button>
           <span style={{fontSize:13,color:'#6b7280'}}>{t('login.haveAccount')}</span>
           <button onClick={()=>{setMode('login');setError('');setStep(1)}}
-            style={{padding:'8px 18px',background:'none',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:'#374151',transition:'border-color .2s'}}
-            onMouseEnter={e=>e.currentTarget.style.borderColor='#029FA2'}
-            onMouseLeave={e=>e.currentTarget.style.borderColor='#e5e7eb'}>
+            style={{minHeight:38,padding:'0 18px',background:'white',border:'1px solid #D7DEE3',borderRadius:6,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',color:'#203640',transition:'border-color .2s,background .2s'}}
+            onMouseEnter={e=>e.currentTarget.style.borderColor='#203640'}
+            onMouseLeave={e=>e.currentTarget.style.borderColor='#D7DEE3'}>
             {t('login.loginNav')}
           </button>
         </div>
       </nav>
 
-      <div style={{flex:1,display:'flex'}}>
+      <div className="login-main" style={{flex:1,display:'flex'}}>
         {/* Left — Form */}
-        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:'40px 24px'}}>
-          <div style={{width:'100%',maxWidth:420,animation:'fadeUp .4s ease'}}>
+        <div className="login-form-wrap" style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:'40px 24px'}}>
+          <div className={`login-card${mode==='register' ? ' register-card' : ''}`} style={{width:'100%',maxWidth:420,animation:'fadeUp .4s ease'}}>
 
             {/* Account suspended/deleted — professional blocking card */}
             {accountStatus && (
               <div style={{textAlign:'center' as const,padding:'8px 4px'}}>
                 <div style={{width:64,height:64,borderRadius:'50%',background:accountStatus==='suspended'?'#fef2f2':'#f3f4f6',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px'}}>
-                  <span style={{fontSize:30}}>{accountStatus==='suspended'?'🔒':'🚫'}</span>
+                  <span style={{fontSize:13,fontWeight:800,color:'#203640'}}>{accountStatus==='suspended'?'LOCK':'STOP'}</span>
                 </div>
                 <h1 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:10,letterSpacing:'-0.4px'}}>
                   {accountStatus==='suspended' ? 'حسابك موقوف مؤقتاً' : 'هذا الحساب غير متاح'}
@@ -422,7 +496,7 @@ function LoginPage() {
                 </p>
                 <a href="https://wa.me/966594351667?text=مرحباً، حسابي في Storely موقوف وأحتاج مساعدة"
                   target="_blank" rel="noopener noreferrer"
-                  style={{display:'inline-flex',alignItems:'center',gap:8,background:'#029FA2',color:'white',padding:'13px 28px',borderRadius:12,fontSize:14,fontWeight:700,textDecoration:'none',boxShadow:'0 4px 14px rgba(22,163,74,.25)'}}>
+                  style={{display:'inline-flex',alignItems:'center',gap:8,background:'#203640',color:'white',padding:'13px 28px',borderRadius:12,fontSize:14,fontWeight:700,textDecoration:'none',boxShadow:'0 4px 14px rgba(22,163,74,.25)'}}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                   تواصل معنا عبر واتساب
                 </a>
@@ -443,15 +517,12 @@ function LoginPage() {
                   <h1 style={{fontSize:28,fontWeight:800,color:'#111827',marginBottom:8,letterSpacing:'-0.5px'}}>{t('login.welcomeBack')}</h1>
                   <p style={{fontSize:15,color:'#6b7280'}}>{t('login.welcomeSub')}</p>
                 </div>
-                {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
-                <button type="button" onClick={handleGoogle} disabled={loading}
-                  style={{width:'100%',padding:'13px',background:'white',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:15,fontWeight:700,color:'#111827',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+                {error && <div className="auth-error">{error}</div>}
+                <button type="button" onClick={handleGoogle} disabled={loading} className="auth-secondary-btn">
                   <GoogleIcon/> {t('login.continueWithGoogle')}
                 </button>
-                <div style={{display:'flex',alignItems:'center',gap:12,margin:'18px 0',color:'#9ca3af',fontSize:12}}>
-                  <div style={{flex:1,height:1,background:'#e5e7eb'}}/>{t('login.orWithEmail')}<div style={{flex:1,height:1,background:'#e5e7eb'}}/>
-                </div>
-                <form onSubmit={handleLogin} style={{display:'flex',flexDirection:'column',gap:14}}>
+                <div className="auth-divider">{t('login.orWithEmail')}</div>
+                <form onSubmit={handleLogin} style={{display:'flex',flexDirection:'column',gap:18}}>
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.email')}</label>
                     <input className="inp" type="email" required value={email}
@@ -463,7 +534,7 @@ function LoginPage() {
                     <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
                       <label style={{fontSize:13,fontWeight:600,color:'#374151'}}>{t('login.password')}</label>
                       <button type="button" onClick={()=>{setMode('forgot');setError('')}}
-                        style={{background:'none',border:'none',fontSize:13,color:'#029FA2',cursor:'pointer',fontFamily:'inherit',fontWeight:600,padding:0}}>
+                        className="auth-link-btn" style={{fontSize:13}}>
                         {t('login.forgotPassword')}
                       </button>
                     </div>
@@ -477,12 +548,12 @@ function LoginPage() {
                 </form>
                 <div style={{textAlign:'center',marginTop:24,fontSize:13,color:'#6b7280'}}>
                   {t('login.noAccount')}{' '}
-                  <button onClick={()=>{setMode('register');setError('');setStep(1)}} style={{background:'none',border:'none',color:'#029FA2',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
+                  <button onClick={()=>{setMode('register');setError('');setStep(1)}} className="auth-link-btn" style={{fontSize:13}}>
                     {t('login.signupNow')}
                   </button>
                 </div>
                 <button type="button" className="show-in-app" onClick={()=>{setStaffDevice(true);window.location.href='/staff'}}
-                  style={{width:'100%',marginTop:14,padding:'12px',background:'white',border:'1.5px solid #e5e7eb',borderRadius:12,fontSize:14,fontWeight:700,color:'#0f766e',cursor:'pointer',fontFamily:'inherit'}}>
+                  style={{width:'100%',marginTop:16,minHeight:46,padding:'0 16px',background:'white',border:'1px solid #D7DEE3',borderRadius:6,fontSize:14,fontWeight:700,color:'#203640',cursor:'pointer',fontFamily:'inherit'}}>
                   أنا موظف — دخول برقم الجوال و PIN
                 </button>
               </>
@@ -491,82 +562,77 @@ function LoginPage() {
             {/* Register Step 1 */}
             {mode==='register' && step===1 && (
               <>
-                <div style={{marginBottom:28}}>
-                  <div style={{display:'flex',gap:4,marginBottom:20}}>
+                <div className="register-heading">
+                  <div className="register-progress">
                     {[1,2].map(s=>(
-                      <div key={s} style={{flex:1,height:3,borderRadius:99,background:step>=s?'#029FA2':'#e5e7eb',transition:'background .3s'}}/>
+                      <span key={s} className={step>=s ? 'active' : ''}/>
                     ))}
                   </div>
-                  <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:6,letterSpacing:'-0.5px'}}>{oauth ? t('login.completeTitle') : t('login.createAccountFree')}</h1>
-                  <p style={{fontSize:14,color:'#6b7280'}}>{oauth ? <>{t('login.completeSub')} <b style={{color:'#111827'}} dir="ltr">{email}</b></> : t('login.freeTrialNoCard')}</p>
+                  <h1 className="register-title">{oauth ? t('login.completeTitle') : t('login.createAccountFree')}</h1>
+                  <p className="register-subtitle">{oauth ? <>{t('login.completeSub')} <b style={{color:'#203640'}} dir="ltr">{email}</b></> : t('login.freeTrialNoCard')}</p>
                 </div>
-                {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
+                {error && <div className="auth-error">{error}</div>}
                 {!oauth && <>
-                  <button type="button" onClick={handleGoogle} disabled={loading}
-                  style={{width:'100%',padding:'13px',background:'white',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:15,fontWeight:700,color:'#111827',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+                  <button type="button" onClick={handleGoogle} disabled={loading} className="auth-secondary-btn">
                   <GoogleIcon/> {t('login.continueWithGoogle')}
                 </button>
-                <div style={{display:'flex',alignItems:'center',gap:12,margin:'18px 0',color:'#9ca3af',fontSize:12}}>
-                  <div style={{flex:1,height:1,background:'#e5e7eb'}}/>{t('login.orWithEmail')}<div style={{flex:1,height:1,background:'#e5e7eb'}}/>
-                </div>
+                <div className="auth-divider">{t('login.orWithEmail')}</div>
                 </>}
-                <form onSubmit={nextStep} style={{display:'flex',flexDirection:'column',gap:14}}>
-                  <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.orgNameLabel')}</label>
+                <form onSubmit={nextStep} className="register-form">
+                  <div className="register-field">
+                    <label className="register-label">{t('login.orgNameLabel')}</label>
                     <input className="inp" type="text" required value={orgName} onChange={e=>setOrgName(e.target.value)} placeholder={t('login.orgNamePlaceholder')}/>
                   </div>
-                  <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:8}}>{t('login.businessTypeLabel')}</label>
-                    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:7}}>
+                  <div className="register-field">
+                    <label className="register-label">{t('login.businessTypeLabel')}</label>
+                    <div className="register-business-grid">
                       {BUSINESS_TYPES.map(b=>(
                         <button key={b.v} type="button" onClick={()=>setBusinessType(b.v)} className={`biz${businessType===b.v?' on':''}`}>
-                          <span style={{fontSize:20}}>{b.icon}</span>
+                          <span style={{fontSize:20}}>{String(BUSINESS_TYPES.findIndex((item) => item.v === b.v) + 1).padStart(2, '0')}</span>
                           <span style={{fontSize:11}}>{b.v}</span>
                         </button>
                       ))}
                     </div>
                   </div>
-                  {!oauth && <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.email')} *</label>
+                  {!oauth && <div className="register-field">
+                    <label className="register-label">{t('login.email')} *</label>
                     <input className="inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
                   </div>}
-                  <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.whatsappLabel')}</label>
-                    <div style={{display:'flex',border:'1.5px solid #e5e7eb',borderRadius:10,overflow:'hidden',background:'white',transition:'border-color .2s'}}
-                      onFocusCapture={e=>(e.currentTarget as HTMLElement).style.borderColor='#029FA2'}
-                      onBlurCapture={e=>(e.currentTarget as HTMLElement).style.borderColor='#e5e7eb'}>
+                  <div className="register-field">
+                    <label className="register-label">{t('login.whatsappLabel')}</label>
+                    <div className="register-phone">
                       <select value={countryCode} onChange={e=>setCountryCode(e.target.value)}
-                        style={{background:'transparent',border:'none',borderLeft:'1.5px solid #e5e7eb',padding:'12px 8px',fontSize:13,fontFamily:'inherit',outline:'none',cursor:'pointer',direction:'ltr',color:'#111827',minWidth:100}}>
+                        style={{background:'transparent',border:'none',borderLeft:'1px solid #D7DEE3',padding:'0 10px',fontSize:14,fontFamily:'inherit',outline:'none',cursor:'pointer',direction:'ltr',color:'#203640',minWidth:104}}>
                         {COUNTRY_CODES.map(c=><option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}
                       </select>
                       <input type="tel" required value={phone} onChange={e=>{setPhone(e.target.value);setOtpSent(false);setOtpVerified(false);setOtp('')}}
                         placeholder={phonePlaceholder} dir="ltr"
-                        style={{background:'transparent',border:'none',padding:'12px 14px',fontSize:14,color:'#111827',flex:1,outline:'none',fontFamily:'inherit'}}/>
+                        style={{background:'transparent',border:'none',padding:'0 15px',fontSize:15,color:'#203640',flex:1,outline:'none',fontFamily:'inherit'}}/>
                     </div>
-                    <div style={{fontSize:11,color:'#9ca3af',marginTop:4}}>
+                    <div className="register-help">
                       {PHONE_RULES[countryCode] ? `${PHONE_RULES[countryCode].length} أرقام${PHONE_RULES[countryCode].prefix ? ` · يبدأ بـ ${PHONE_RULES[countryCode].prefix}` : ''}` : ''}
                     </div>
                     {/* واجهة تحقق OTP معطّلة مؤقتاً (2026-07-24) لحين حل مشكلة توصيل واتساب — راجع notification_logs */}
                   </div>
-                  {!oauth && <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.passwordHintLabel')}</label>
+                  {!oauth && <div className="register-field">
+                    <label className="register-label">{t('login.passwordHintLabel')}</label>
                     <div style={{position:'relative'}}>
                       <input className="inp" type={showPassword?'text':'password'} required value={password} onChange={e=>setPassword(e.target.value)} placeholder={t('login.passwordPlaceholder')} style={{paddingLeft:44}}/>
                       <button type="button" onClick={()=>setShowPassword(s=>!s)}
                         style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',fontSize:16,color:'#9ca3af',padding:4}}
                         aria-label={showPassword?t('login.hidePassword'):t('login.showPassword')}>
-                        {showPassword?'🙈':'👁️'}
+                        {showPassword?'إخفاء':'عرض'}
                       </button>
                     </div>
                     {password.length>0 && (
-                      <div style={{marginTop:6,display:'flex',alignItems:'center',gap:6}}>
+                      <div className="register-password-meta">
                         {[1,2,3,4].map(l=>{
                           const checks = [/[A-Z]/.test(password),/[a-z]/.test(password),/[0-9]/.test(password),/[@#$!%^&*]/.test(password)]
                           const score = checks.filter(Boolean).length
-                          const colors = ['#ef4444','#f59e0b','#3b82f6','#029FA2']
-                          return <div key={l} style={{flex:1,height:3,borderRadius:99,background:score>=l?colors[score-1]:'#e5e7eb',transition:'background .3s'}}/>
+                          const colors = ['#B91C1C','#B45309','#8EA0B1','#203640']
+                          return <div key={l} className="register-password-bar" style={{background:score>=l?colors[score-1]:'#e5e7eb'}}/>
                         })}
-                        <span style={{fontSize:11,color:'#9ca3af',flexShrink:0}}>
+                        <span>
                           {(()=>{const c=[/[A-Z]/.test(password),/[a-z]/.test(password),/[0-9]/.test(password),/[@#$!%^&*]/.test(password)];const s=c.filter(Boolean).length;return s===0?'':s===1?t('login.pwVeryWeak'):s===2?t('login.pwWeak'):s===3?t('login.pwMedium'):t('login.pwStrong')})()}
                         </span>
                       </div>
@@ -575,15 +641,15 @@ function LoginPage() {
                   <button type="submit" className="btn-main" style={{marginTop:4}}>{t('login.nextChoosePlan')}</button>
                 </form>
                 {oauth ? (
-                  <div style={{textAlign:'center',marginTop:20,fontSize:13,color:'#6b7280'}}>
-                    <button onClick={leaveOauth} style={{background:'none',border:'none',color:'#029FA2',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
+                  <div className="register-actions-note">
+                    <button onClick={leaveOauth} className="auth-link-btn" style={{fontSize:13}}>
                       {t('login.useAnotherAccount')}
                     </button>
                   </div>
                 ) : (
-                  <div style={{textAlign:'center',marginTop:20,fontSize:13,color:'#6b7280'}}>
+                  <div className="register-actions-note">
                     {t('login.alreadyHaveAccount')}{' '}
-                    <button onClick={()=>{setMode('login');setError('')}} style={{background:'none',border:'none',color:'#029FA2',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
+                    <button onClick={()=>{setMode('login');setError('')}} className="auth-link-btn" style={{fontSize:13}}>
                       {t('login.loginNow')}
                     </button>
                   </div>
@@ -594,35 +660,35 @@ function LoginPage() {
             {/* Register Step 2 */}
             {mode==='register' && step===2 && (
               <>
-                <div style={{marginBottom:28}}>
-                  <div style={{display:'flex',gap:4,marginBottom:20}}>
+                <div className="register-heading">
+                  <div className="register-progress">
                     {[1,2].map(s=>(
-                      <div key={s} style={{flex:1,height:3,borderRadius:99,background:step>=s?'#029FA2':'#e5e7eb',transition:'background .3s'}}/>
+                      <span key={s} className={step>=s ? 'active' : ''}/>
                     ))}
                   </div>
                   <button type="button" onClick={()=>{setStep(1);setError('')}}
-                    style={{background:'none',border:'none',color:'#6b7280',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:0,marginBottom:12,display:'flex',alignItems:'center',gap:4}}>
+                    className="register-back">
                     {t('login.back')}
                   </button>
-                  <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:6,letterSpacing:'-0.5px'}}>{t('login.choosePlanTitle')}</h1>
-                  <p style={{fontSize:14,color:'#6b7280'}}>{t('login.changePlanLater')}</p>
+                  <h1 className="register-title">{t('login.choosePlanTitle')}</h1>
+                  <p className="register-subtitle">{t('login.changePlanLater')}</p>
                 </div>
-                {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
-                <form onSubmit={handleRegister} style={{display:'flex',flexDirection:'column',gap:10}}>
-                  <div className="hide-in-app" style={{display:'flex',justifyContent:'center',marginBottom:6}}>
-                    <div style={{display:'inline-flex',gap:4,background:'#f3f4f6',padding:4,borderRadius:12}}>
-                      <button type="button" onClick={()=>setBilling('monthly')} style={{padding:'8px 18px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',background:billing==='monthly'?'white':'transparent',color:billing==='monthly'?'#111827':'#6b7280',boxShadow:billing==='monthly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>{t('login.planMonthly')}</button>
-                      <button type="button" onClick={()=>setBilling('yearly')} style={{padding:'8px 18px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6,background:billing==='yearly'?'white':'transparent',color:billing==='yearly'?'#111827':'#6b7280',boxShadow:billing==='yearly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>
-                        {t('login.planYearly')} <span style={{background:'#f0fdfa',color:'#0f766e',fontSize:10,fontWeight:800,padding:'2px 7px',borderRadius:99}}>{t('login.planSave')}</span>
+                {error && <div className="auth-error">{error}</div>}
+                <form onSubmit={handleRegister} className="register-form" style={{gap:16}}>
+                  <div className="hide-in-app register-billing">
+                    <div className="register-billing-inner">
+                      <button type="button" onClick={()=>setBilling('monthly')} style={{padding:'9px 18px',borderRadius:6,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',background:billing==='monthly'?'white':'transparent',color:billing==='monthly'?'#203640':'#66737C',boxShadow:'none'}}>{t('login.planMonthly')}</button>
+                      <button type="button" onClick={()=>setBilling('yearly')} style={{padding:'9px 18px',borderRadius:6,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6,background:billing==='yearly'?'white':'transparent',color:billing==='yearly'?'#203640':'#66737C',boxShadow:'none'}}>
+                        {t('login.planYearly')} <span style={{background:'#F8EEDF',color:'#717553',fontSize:10,fontWeight:800,padding:'2px 7px',borderRadius:6}}>{t('login.planSave')}</span>
                       </button>
                     </div>
                   </div>
                   {PLANS.map(p=>(
                     <button key={p.v} type="button" onClick={()=>setBranchCount(p.v)}
-                      style={{padding:'16px 18px',borderRadius:12,border:`1.5px solid ${branchCount===p.v?p.color:'#e5e7eb'}`,background:branchCount===p.v?p.color+'08':'white',cursor:'pointer',fontFamily:'inherit',textAlign:'right',transition:'all .2s',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                      className={`register-plan${branchCount===p.v?' selected':''}`}>
                       <div>
-                        <div style={{fontSize:15,fontWeight:700,color:branchCount===p.v?p.color:'#111827',marginBottom:3}}>{p.label}</div>
-                        <div style={{fontSize:12,color:'#6b7280'}}>{p.desc}</div>
+                        <div style={{fontSize:16,fontWeight:800,color:branchCount===p.v?p.color:'#203640',marginBottom:4,lineHeight:1.45}}>{p.label}</div>
+                        <div style={{fontSize:13,color:'#66737C',lineHeight:1.7}}>{p.desc}</div>
                       </div>
                       <div className="hide-in-app" style={{flexShrink:0,marginRight:12,textAlign:'left'}}>
                         <span style={{fontSize:20,fontWeight:800,color:branchCount===p.v?p.color:'#111827'}}>{billing==='yearly'?p.yearlyPrice:p.price}</span>
@@ -632,19 +698,19 @@ function LoginPage() {
                   ))}
 
                   {branchCount && (
-                    <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:8,padding:'11px 14px',fontSize:13,color:'#029FA2',fontWeight:600,display:'flex',alignItems:'center',gap:8}}>
-                      ✓ {t('login.freeTrialConfirm')}
+                    <div className="register-trial-note">
+                      {t('login.freeTrialConfirm')}
                     </div>
                   )}
 
-                  <label style={{display:'flex',alignItems:'flex-start',gap:8,fontSize:12,color:'#4b5563',cursor:'pointer',marginTop:4}}>
+                  <label className="register-terms">
                     <input type="checkbox" checked={agreedTerms} onChange={e=>setAgreedTerms(e.target.checked)}
-                      style={{marginTop:2,flexShrink:0,cursor:'pointer'}}/>
+                    />
                     <span>
                       {t('login.agreeTo')}{' '}
-                      <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:'#029FA2',fontWeight:700,textDecoration:'underline'}}>{t('login.termsAndConditions')}</a>
+                      <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:'#203640',fontWeight:700,textDecoration:'underline'}}>{t('login.termsAndConditions')}</a>
                       {' '}{t('login.andWord')}{' '}
-                      <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:'#029FA2',fontWeight:700,textDecoration:'underline'}}>{t('login.privacyPolicy')}</a>
+                      <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:'#203640',fontWeight:700,textDecoration:'underline'}}>{t('login.privacyPolicy')}</a>
                     </span>
                   </label>
 
@@ -665,21 +731,21 @@ function LoginPage() {
                 <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:8,letterSpacing:'-0.5px'}}>{t('login.restorePassword')}</h1>
                 <p style={{fontSize:14,color:'#6b7280',marginBottom:20}}>{t('login.chooseRecoveryMethod')}</p>
 
-                <div style={{display:'flex',gap:8,marginBottom:22,background:'#f3f4f6',borderRadius:10,padding:4}}>
+                <div style={{display:'flex',gap:4,marginBottom:24,background:'#F4F6F7',borderRadius:8,padding:4,border:'1px solid #E7EAED'}}>
                   <button type="button" onClick={()=>{setForgotMethod('email');setError('')}}
-                    style={{flex:1,padding:'8px',border:'none',borderRadius:8,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',background:forgotMethod==='email'?'white':'transparent',color:forgotMethod==='email'?'#111827':'#6b7280',boxShadow:forgotMethod==='email'?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
-                    📧 {t('login.viaEmail')}
+                    style={{flex:1,padding:'10px',border:'none',borderRadius:6,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',background:forgotMethod==='email'?'white':'transparent',color:forgotMethod==='email'?'#203640':'#66737C',boxShadow:'none'}}>
+                    {t('login.viaEmail')}
                   </button>
                   <button type="button" onClick={()=>{setForgotMethod('whatsapp');setError('')}}
-                    style={{flex:1,padding:'8px',border:'none',borderRadius:8,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',background:forgotMethod==='whatsapp'?'white':'transparent',color:forgotMethod==='whatsapp'?'#111827':'#6b7280',boxShadow:forgotMethod==='whatsapp'?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
-                    📲 {t('login.viaWhatsapp')}
+                    style={{flex:1,padding:'10px',border:'none',borderRadius:6,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',background:forgotMethod==='whatsapp'?'white':'transparent',color:forgotMethod==='whatsapp'?'#203640':'#66737C',boxShadow:'none'}}>
+                    {t('login.viaWhatsapp')}
                   </button>
                 </div>
 
-                {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
+                {error && <div className="auth-error">{error}</div>}
 
                 {forgotMethod==='email' ? (
-                  <form onSubmit={handleForgot} style={{display:'flex',flexDirection:'column',gap:14}}>
+                  <form onSubmit={handleForgot} style={{display:'flex',flexDirection:'column',gap:18}}>
                     <div>
                       <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.email')}</label>
                       <input className="inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
@@ -689,7 +755,7 @@ function LoginPage() {
                     </button>
                   </form>
                 ) : (
-                  <form onSubmit={handleForgotWhatsapp} style={{display:'flex',flexDirection:'column',gap:14}}>
+                  <form onSubmit={handleForgotWhatsapp} style={{display:'flex',flexDirection:'column',gap:18}}>
                     <div>
                       <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.registeredPhone')}</label>
                       <input className="inp" type="tel" required dir="ltr" value={forgotPhone} onChange={e=>setForgotPhone(e.target.value)} placeholder="05xxxxxxxx"/>
@@ -704,7 +770,7 @@ function LoginPage() {
 
             {mode==='forgot-sent-wa' && (
               <div style={{textAlign:'center',padding:'40px 0'}}>
-                <div style={{width:64,height:64,borderRadius:16,background:'#f0fdfa',border:'1px solid #99f6e4',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,margin:'0 auto 20px'}}>📲</div>
+                <div className="auth-note-icon" style={{width:64,height:64,margin:'0 auto 20px'}}>WA</div>
                 <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8}}>{t('login.checkWhatsapp')}</h2>
                 <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:8}}>{t('login.ifRegisteredMsg')}</p>
                 <p style={{fontSize:12,color:'#9ca3af',marginBottom:28}}>{t('login.linkValidHour')}</p>
@@ -713,9 +779,9 @@ function LoginPage() {
             )}
 
             {/* Forgot Sent */}
-            {(mode as any)==='registered' && (
+            {mode==='registered' && (
               <div style={{textAlign:'center',padding:'40px 20px'}}>
-                <div style={{fontSize:56,marginBottom:16}}>📬</div>
+                <div className="auth-note-icon" style={{width:64,height:64,margin:'0 auto 16px'}}>MAIL</div>
                 <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8}}>{t('login.checkYourEmail')}</h2>
                 <p style={{fontSize:14,color:'#6b7280',lineHeight:1.8,marginBottom:8}}>
                   {t('login.activationLinkSent')}<br/>
@@ -725,14 +791,14 @@ function LoginPage() {
                   {t('login.clickLinkToActivate')}<br/>
                   {t('login.checkSpam')}
                 </p>
-                <button onClick={()=>setMode('login')} style={{background:'#029FA2',color:'white',border:'none',borderRadius:12,padding:'13px 32px',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                <button onClick={()=>setMode('login')} style={{background:'#203640',color:'white',border:'none',borderRadius:12,padding:'13px 32px',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                   {t('login.backToLogin')}
                 </button>
               </div>
             )}
             {mode==='forgot-sent' && (
               <div style={{textAlign:'center',padding:'40px 0'}}>
-                <div style={{width:64,height:64,borderRadius:16,background:'#f0fdfa',border:'1px solid #99f6e4',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,margin:'0 auto 20px'}}>📧</div>
+                <div className="auth-note-icon" style={{width:64,height:64,margin:'0 auto 20px'}}>MAIL</div>
                 <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8}}>{t('login.sentTitle')}</h2>
                 <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:28}}>{t('login.checkEmailMsg')} <b style={{color:'#111827'}}>{email}</b><br/>{t('login.clickToReset')}</p>
                 <button onClick={()=>{setMode('login');setError('')}} className="btn-main">{t('login.backToLogin')}</button>
@@ -743,42 +809,42 @@ function LoginPage() {
 
         {/* Right — Branding */}
         <div className="right-panel" style={{width:'45%',background:'#f9fafb',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'48px 44px',borderRight:'1px solid #f3f4f6'}}>
-          <div style={{maxWidth:400,width:'100%'}}>
-            <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'6px 14px',fontSize:12,fontWeight:700,color:'#029FA2',marginBottom:20}}>
-              ✓ {t('login.badge')}
+          <div className="brand-panel-inner" style={{maxWidth:400,width:'100%'}}>
+            <div className="brand-kicker" style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'6px 14px',fontSize:12,fontWeight:700,color:'#203640',marginBottom:20}}>
+              {t('login.badge')}
             </div>
-            <h2 style={{fontSize:30,fontWeight:900,color:'#111827',lineHeight:1.2,marginBottom:12,letterSpacing:'-1px'}}>
+            <h2 style={{fontSize:34,fontWeight:900,color:'#203640',lineHeight:1.25,marginBottom:14,letterSpacing:0}}>
               Storely<br/>
-              <span style={{color:'#029FA2'}}>{t('login.headline')}</span>
+              <span style={{color:'#203640'}}>{t('login.headline')}</span>
             </h2>
-            <p style={{fontSize:14,color:'#6b7280',lineHeight:1.75,marginBottom:24}}>
+            <p style={{fontSize:15,color:'#43525B',lineHeight:1.9,marginBottom:28}}>
               {t('login.subtitle')}
             </p>
 
             {/* صورة حقيقية بدل المعاينة المزيّفة */}
-            <div style={{position:'relative',borderRadius:16,overflow:'hidden',boxShadow:'0 16px 40px rgba(15,23,42,.12)',marginBottom:24}}>
+            <div className="brand-image" style={{position:'relative',borderRadius:16,overflow:'hidden',boxShadow:'0 16px 40px rgba(15,23,42,.12)',marginBottom:24}}>
               <img src="/storely-team.jpg" alt="Storely" style={{width:'100%',display:'block',objectFit:'cover'}}/>
             </div>
 
-            <div style={{display:'flex',flexDirection:'column',gap:11,marginTop:24}}>
+            <div style={{display:'flex',flexDirection:'column',gap:14,marginTop:24}}>
               {[
-                {icon:'📦',text:t('login.feature1')},
-                {icon:'📲',text:t('login.feature2')},
-                {icon:'👥',text:t('login.feature3')},
-                {icon:'📊',text:t('login.feature4')},
+                {text:t('login.feature1')},
+                {text:t('login.feature2')},
+                {text:t('login.feature3')},
+                {text:t('login.feature4')},
               ].map((f,i)=>(
                 <div key={i} style={{display:'flex',alignItems:'center',gap:11}}>
-                  <div style={{width:32,height:32,borderRadius:9,background:'white',border:'1px solid #e5e7eb',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>{f.icon}</div>
-                  <span style={{fontSize:13,color:'#374151',fontWeight:500}}>{f.text}</span>
+                  <div className="auth-note-icon">{String(i + 1).padStart(2, '0')}</div>
+                  <span style={{fontSize:14,color:'#43525B',fontWeight:600,lineHeight:1.7}}>{f.text}</span>
                 </div>
               ))}
             </div>
-            <div className="hide-in-app" style={{marginTop:24,padding:'16px 18px',background:'white',borderRadius:12,border:'1px solid #e5e7eb'}}>
-              <div style={{display:'flex',gap:22}}>
+            <div className="hide-in-app brand-stat-card" style={{marginTop:24,padding:'16px 18px',background:'white',borderRadius:12,border:'1px solid #e5e7eb'}}>
+              <div style={{display:'flex',gap:28,justifyContent:'space-between'}}>
                 {[['99 '+(lang==='ar'?'ر.س':'SAR'),t('login.statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('login.statTrial')],['7',t('login.statLangs')]].map(([n,l])=>(
                   <div key={l}>
-                    <div style={{fontSize:18,fontWeight:900,color:'#029FA2'}}>{n}</div>
-                    <div style={{fontSize:10,color:'#9ca3af',marginTop:2}}>{l}</div>
+                    <div style={{fontSize:18,fontWeight:900,color:'#203640'}}>{n}</div>
+                    <div style={{fontSize:11,color:'#66737C',marginTop:4,fontWeight:600}}>{l}</div>
                   </div>
                 ))}
               </div>

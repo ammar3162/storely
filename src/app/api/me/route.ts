@@ -20,7 +20,7 @@ export async function GET() {
     let branchesQ = db.from('branches').select('id,name,location').eq('org_id', profile.orgId).eq('is_active', true)
     if (profile.role === 'manager' && profile.branchId) branchesQ = branchesQ.eq('id', profile.branchId)
 
-    const [{ data: org }, { data: extra }, { data: branches }, { data: branchSubs }] = await Promise.all([
+    const [orgResult, extraResult, branchesResult, branchSubsResult] = await Promise.all([
       db.from('organizations')
         .select('id,name,plan,billing_cycle,currency,logo_url,deletion_scheduled_at,max_staff,max_suppliers,max_branches,country_code,business_type,onboarding_done')
         .eq('id', profile.orgId).single(),
@@ -32,6 +32,21 @@ export async function GET() {
         .select('quantity,expires_at,marketplace_addons!inner(slug)')
         .eq('org_id', profile.orgId).eq('status', 'active').eq('marketplace_addons.slug', EXTRA_BRANCH_SLUG),
     ])
+
+    if (orgResult.error || extraResult.error || branchesResult.error || branchSubsResult.error) {
+      console.error('[api/me] Supabase query failed', {
+        org: orgResult.error,
+        profile: extraResult.error,
+        branches: branchesResult.error,
+        branchSubscriptions: branchSubsResult.error,
+      })
+      return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+    }
+
+    const { data: org } = orgResult
+    const { data: extra } = extraResult
+    const { data: branches } = branchesResult
+    const { data: branchSubs } = branchSubsResult
     const o: any = org || {}
     const e: any = extra || {}
 
@@ -66,7 +81,8 @@ export async function GET() {
       } : null,
       branches: branches || [],
     })
-  } catch {
+  } catch (error) {
+    console.error('[api/me] Unexpected error', error)
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
 }
@@ -92,17 +108,24 @@ export async function PATCH(req: Request) {
 
     if (Object.keys(profileUpdate).length) {
       const { error } = await db.from('profiles').update(profileUpdate as any).eq('id', profile.userId)
-      if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+      if (error) {
+        console.error('[api/me] Profile update failed', error)
+        return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+      }
     }
 
     // تسجيل الدخول يعتبر تراجع عن طلب حذف الحساب المجدول
     if (body.cancel_org_deletion === true && profile.orgId) {
       const { error } = await db.from('organizations').update({ deletion_scheduled_at: null } as any).eq('id', profile.orgId)
-      if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+      if (error) {
+        console.error('[api/me] Cancel org deletion failed', error)
+        return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+      }
     }
 
     return NextResponse.json({ success: true })
-  } catch {
+  } catch (error) {
+    console.error('[api/me] Unexpected PATCH error', error)
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
 }

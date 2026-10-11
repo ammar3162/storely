@@ -781,14 +781,14 @@ const SHELL_CSS = `
   .sh-logo{width:32px;height:32px;border-radius:8px;object-fit:cover;border:1px solid ${C.border};background:white;flex-shrink:0}
   .sh-avatar{width:32px;height:32px;border-radius:50%;background:${C.primaryL};color:${C.primary};border:none;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;cursor:pointer;font-family:inherit}
   .sh-icon-btn{position:relative;width:38px;height:38px;border-radius:8px;border:none;background:transparent;color:${C.text3};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
-  .sh-icon-btn:hover{background:#f2f4f7;color:${C.text}}
+  .sh-icon-btn:hover{background:#F8EEDF;color:${C.text}}
   .sh-icon-sm{width:32px;height:32px}
   .sh-dot{position:absolute;top:8px;right:9px;width:7px;height:7px;border-radius:50%;background:${C.danger};border:1.5px solid white}
   .sh-count{min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:#f2f4f7;color:${C.text2};font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
   .sh-count-float{position:absolute;top:-6px;right:-10px;background:${C.danger};color:white;min-width:17px;height:17px;font-size:10px;border:1.5px solid white}
 
   .sh-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;border-radius:8px;border:1px solid ${C.border2};background:${C.surface};color:${C.text};font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap}
-  .sh-btn:hover:not(:disabled){background:#f9fafb}
+  .sh-btn:hover:not(:disabled){background:#F8EEDF}
   .sh-btn:disabled{opacity:.55;cursor:not-allowed}
   .sh-btn-sm{padding:6px 11px;font-size:12.5px}
   .sh-btn-primary{background:${C.primary};border-color:${C.primary};color:white}
@@ -802,7 +802,7 @@ const SHELL_CSS = `
   .sh-group-label::after{content:'';flex:1;height:1px;background:${C.border}}
   .sh-nav{--nt:${C.primary};--nb:${C.primaryL};position:relative;width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;border:none;background:transparent;color:${C.text2};font-size:13.5px;font-weight:500;font-family:inherit;cursor:pointer;text-align:right;margin-bottom:1px;transition:background .15s,color .15s}
   .sh-nav svg{color:${C.text4};flex-shrink:0;transition:color .15s}
-  .sh-nav:hover{background:#f4f5f7;color:${C.text}}
+  .sh-nav:hover{background:#F8EEDF;color:${C.text}}
   .sh-nav:hover svg{color:var(--nt)}
   .sh-nav.on{background:var(--nb);color:var(--nt);font-weight:600}
   .sh-nav.on svg{color:var(--nt)}
@@ -817,7 +817,7 @@ const SHELL_CSS = `
   .desk-sidebar .sh-nav svg{color:#86b8b0}
   .desk-sidebar .sh-nav:hover{background:rgba(255,255,255,.07);color:#fff}
   .desk-sidebar .sh-nav:hover svg{color:var(--ns,#fff)}
-  .desk-sidebar .sh-nav.on{background:#fff;color:var(--nt);box-shadow:0 2px 8px -2px rgba(0,0,0,.25)}
+  .desk-sidebar .sh-nav.on{background:#fff;color:var(--nt);box-shadow:none}
   .desk-sidebar .sh-nav.on svg{color:var(--nt)}
   .desk-sidebar .sh-nav.on::before{background:var(--ns,#fff)}
   .desk-sidebar .sh-count{background:rgba(255,255,255,.14);color:#fff}
@@ -831,7 +831,7 @@ const SHELL_CSS = `
 
   .sh-branch{margin-top:12px;width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid ${C.border};border-radius:8px;background:${C.surface};color:${C.text2};font-size:13px;font-weight:600;font-family:inherit;cursor:pointer}
   .sh-branch:disabled{cursor:default}
-  .sh-branch:hover:not(:disabled){border-color:${C.border2};background:#f9fafb}
+  .sh-branch:hover:not(:disabled){border-color:${C.border2};background:#F8EEDF}
   .sh-branch-inline{display:inline-flex;align-items:center;gap:3px;max-width:100%;min-width:0;padding:0;border:none;background:none;color:${C.text3};font-size:12px;font-weight:500;font-family:inherit;cursor:pointer}
   .sh-branch-inline:disabled{cursor:default}
 
@@ -857,7 +857,7 @@ const SHELL_CSS = `
   @media(min-width:768px){
     .mob-layout{display:none}
     .desk-layout{display:block;min-height:100vh}
-    .desk-sidebar{position:fixed;top:0;right:0;bottom:0;width:244px;display:flex;flex-direction:column;background:linear-gradient(180deg,#0d4543 0%,#0b3b3a 45%,#0a3231 100%);color-scheme:dark;z-index:100}
+    .desk-sidebar{position:fixed;top:0;right:0;bottom:0;width:244px;display:flex;flex-direction:column;background:${C.primary};color-scheme:dark;z-index:100}
     .desk-topbar{position:fixed;top:0;right:244px;left:0;height:56px;z-index:99;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:${C.surface};border-bottom:1px solid ${C.border}}
     .desk-content{margin-right:244px;padding:80px 28px 40px;min-height:100vh;max-width:calc(100vw - 244px)}
   }

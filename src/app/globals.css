@@ -16,6 +16,12 @@
   --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
   --shadow-md: 0 4px 16px rgba(0,0,0,.08);
   --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
+  --storely-navy: #203640;
+  --storely-muted: #66737C;
+  --storely-subtle: #8EA0B1;
+  --storely-border: #E7E1D8;
+  --storely-control-border: #D7CDC2;
+  --storely-cream: #F8EEDF;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -59,8 +65,46 @@ a { text-decoration: none; color: inherit; }
 /* Focus */
 input:focus, select:focus, textarea:focus {
   outline: none !important;
-  border-color: var(--green) !important;
-  box-shadow: 0 0 0 3px rgba(22,163,74,.12) !important;
+  border-color: var(--storely-navy) !important;
+  box-shadow: 0 0 0 3px rgba(32,54,64,.14) !important;
+}
+
+.storely-input,
+.storely-select,
+.storely-textarea {
+  width: 100%;
+  border: 1px solid var(--storely-control-border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--storely-navy);
+  font-size: 14px;
+  line-height: 1.5;
+  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+.storely-input,
+.storely-select {
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.storely-textarea {
+  min-height: 88px;
+  padding: 10px 12px;
+}
+
+.storely-input::placeholder,
+.storely-textarea::placeholder {
+  color: var(--storely-subtle);
+}
+
+.storely-input:disabled,
+.storely-select:disabled,
+.storely-textarea:disabled {
+  cursor: not-allowed;
+  background: #F3F5F6;
+  color: var(--storely-subtle);
+  opacity: .8;
 }
 
 /* Button press */

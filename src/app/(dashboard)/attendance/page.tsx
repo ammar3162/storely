@@ -1,12 +1,51 @@
 'use client'
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
+
 export const dynamic = 'force-dynamic'
-import PageIcon from '@/components/PageIcon'
-import { useState, useEffect } from 'react'
+
+import { useEffect, useMemo, useState } from 'react'
+import { CalendarDays, Download, LockKeyhole, Plus, Settings, Trash2 } from 'lucide-react'
 import { api } from '@/lib/api-client'
-import { colors, font, card, btnPrimary, pageTitle, pageSub, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { exportReportPdf } from '@/lib/pdfExport'
+import {
+  StorelyButton,
+  StorelyCard,
+  StorelyDataTable,
+  StorelyEmptyState,
+  StorelyFormField,
+  StorelyMetricStrip,
+  StorelyPageHeader,
+  StorelyStatusBadge,
+  StorelyTableAction,
+  StorelyTableActionGroup,
+  type StorelyDataTableColumn,
+  type StorelyMetric,
+} from '@/components/ui'
+
+const inputClass =
+  'h-8 w-full rounded-[5px] border border-[#D7CDC2] bg-white px-2.5 text-sm text-[#203640] outline-none transition focus:border-[#203640] focus:ring-2 focus:ring-[#203640]/15'
+
+function formatNumber(value: number) {
+  return value.toLocaleString('ar-SA', { numberingSystem: 'latn' })
+}
+
+function formatTime(value?: string | null) {
+  if (!value) return '—'
+  return new Date(value).toLocaleTimeString('ar-SA', {
+    numberingSystem: 'latn',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function attendanceTone(status: string, lateMinutes?: number | null) {
+  if (status === 'لم يحضر' || status === 'غائب') return 'danger'
+  if (lateMinutes && lateMinutes > 0) return 'warning'
+  if (status === 'حاضر') return 'success'
+  return 'info'
+}
 
 export default function AttendancePage() {
   const [tab, setTab] = useState<'report'|'settings'>('report')
@@ -24,7 +63,6 @@ export default function AttendancePage() {
   const [exporting, setExporting] = useState(false)
   const [monthStats, setMonthStats] = useState<{totalPenalty:number; attendanceRate:number|null; mostLate:{name:string;minutes:number}|null}|null>(null)
 
-  // إعدادات — شفتات
   const [shifts, setShifts] = useState<any[]>([])
   const [newShiftName, setNewShiftName] = useState('')
   const [newShiftStart, setNewShiftStart] = useState('08:00')
@@ -32,19 +70,13 @@ export default function AttendancePage() {
   const [newShift24h, setNewShift24h] = useState(false)
   const [savingShift, setSavingShift] = useState(false)
 
-  // إعدادات — ربط الموظفين بالشفتات
   const [staffList, setStaffList] = useState<any[]>([])
 
-  // إعدادات — غرامات التأخير
   const [rules, setRules] = useState<any[]>([])
   const [newRuleMin, setNewRuleMin] = useState('')
   const [newRuleMax, setNewRuleMax] = useState('')
   const [newRuleAmount, setNewRuleAmount] = useState('')
   const [savingRule, setSavingRule] = useState(false)
-
-  useEffect(() => { init() }, [])
-  useEffect(() => { if (orgId && periodMode === 'day') load(orgId, date) }, [date, periodMode])
-  useEffect(() => { if (orgId && periodMode === 'range') loadRange(orgId, rangeFrom, rangeTo) }, [rangeFrom, rangeTo, periodMode])
 
   async function init() {
     const me = await api.get('/api/me')
@@ -55,10 +87,9 @@ export default function AttendancePage() {
     setOrgId(oid)
     setOrgName(orgName)
     if (orgPlan === 'basic') {
-      // عميل الأساسية ممكن يكون اشترى إضافة "إدارة الموظفين الكاملة" من المتجر
       const addonRes = await api.get('/api/addons-market', { org_id: oid })
       const hrAddon = (addonRes?.addons||[]).find((a:any)=>a.slug==='hr_full')
-      if (!hrAddon?.subscription?.isValid) setLocked(true)  // ما نوقف التحميل -- نخلي المالك يشوف سجلاته القديمة، السيرفر أصلاً يرفض أي تسجيل جديد بدون اشتراك
+      if (!hrAddon?.subscription?.isValid) setLocked(true)
     }
     const bid = sessionStorage.getItem('s_branch_id')
     setBranchId(bid)
@@ -153,21 +184,21 @@ export default function AttendancePage() {
   }
 
   async function addShift() {
-    if (!newShiftName.trim() || !branchId) { toast('أدخل اسم الشفت — وتأكد إنك حدّدت فرع نشط', 'warning'); return }
+    if (!newShiftName.trim() || !branchId) { toast('أدخل اسم الشفت — وتأكد إنك حددت فرع نشط', 'warning'); return }
     setSavingShift(true)
     const j = await api.post('/api/shifts', { org_id: orgId, branch_id: branchId, name: newShiftName.trim(), start_time: newShiftStart, end_time: newShiftEnd, is_24h: newShift24h })
     setSavingShift(false)
     if (!j.success) { toast(j.error || 'فشل الإضافة', 'error'); return }
     setNewShiftName(''); setNewShift24h(false)
-    toast('✅ تم إضافة الشفت')
+    toast('تم إضافة الشفت')
     loadShifts(orgId, branchId)
   }
 
   async function deleteShift(id: string) {
-    if (!(await confirmDialog({ title: 'حذف الشفت', message: 'حذف هذا الشفت؟ الموظفين المرتبطين فيه راح يفكّون منه تلقائياً' }))) return
+    if (!(await confirmDialog({ title: 'حذف الشفت', message: 'حذف هذا الشفت؟ الموظفين المرتبطين فيه راح ينفكون منه تلقائياً' }))) return
     const j = await api.del('/api/shifts', { id })
     if (!j.success) { toast(j.error || 'فشل الحذف', 'error'); return }
-    toast('🗑️ تم الحذف')
+    toast('تم الحذف')
     loadShifts(orgId, branchId)
     loadStaff(orgId, branchId)
   }
@@ -175,7 +206,7 @@ export default function AttendancePage() {
   async function assignShift(staffId: string, shiftId: string) {
     const j = await api.patch('/api/staff-shifts', { org_id: orgId, staff_id: staffId, shift_id: shiftId || null })
     if (!j.success) { toast(j.error || 'فشل الربط', 'error'); return }
-    toast('✅ تم تحديد شفت الموظف')
+    toast('تم تحديد شفت الموظف')
     setStaffList(prev => prev.map(s => s.id === staffId ? { ...s, shift_id: shiftId || null } : s))
   }
 
@@ -186,7 +217,7 @@ export default function AttendancePage() {
     setSavingRule(false)
     if (!j.success) { toast(j.error || 'فشل الإضافة', 'error'); return }
     setNewRuleMin(''); setNewRuleMax(''); setNewRuleAmount('')
-    toast('✅ تم إضافة نطاق الغرامة')
+    toast('تم إضافة نطاق الغرامة')
     loadRules(orgId)
   }
 
@@ -194,278 +225,412 @@ export default function AttendancePage() {
     if (!(await confirmDialog({ title: 'حذف النطاق', message: 'حذف نطاق الغرامة هذا؟' }))) return
     const j = await api.del('/api/late-penalty-rules', { id })
     if (!j.success) { toast(j.error || 'فشل الحذف', 'error'); return }
-    toast('🗑️ تم الحذف')
+    toast('تم الحذف')
     loadRules(orgId)
   }
+
+  useEffect(() => { init() }, [])
+  useEffect(() => { if (orgId && periodMode === 'day') load(orgId, date) }, [date, periodMode])
+  useEffect(() => { if (orgId && periodMode === 'range') loadRange(orgId, rangeFrom, rangeTo) }, [rangeFrom, rangeTo, periodMode])
 
   const presentCount = rows.filter(r => r.status !== 'لم يحضر').length
   const absentCount = rows.filter(r => r.status === 'لم يحضر').length
 
-  const statusColor = (s: string) =>
-    s === 'حاضر' ? colors.primary : s === 'انصرف' ? colors.info : colors.text4
-  const statusBg = (s: string) =>
-    s === 'حاضر' ? colors.primaryLight : s === 'انصرف' ? colors.infoLight : colors.bg
+  const dailyMetrics: StorelyMetric[] = [
+    { label: 'حضروا اليوم', value: formatNumber(presentCount), tone: 'success' },
+    { label: 'لم يحضروا', value: formatNumber(absentCount), tone: absentCount > 0 ? 'danger' : 'neutral' },
+  ]
+
+  const monthMetrics: StorelyMetric[] = monthStats ? [
+    {
+      label: 'معدل الحضور هذا الشهر',
+      value: monthStats.attendanceRate !== null ? `${formatNumber(monthStats.attendanceRate)}%` : '—',
+      tone: 'neutral',
+    },
+    {
+      label: 'إجمالي الخصومات هذا الشهر',
+      value: monthStats.totalPenalty > 0 ? `${formatNumber(monthStats.totalPenalty)} ر.س` : '—',
+      tone: monthStats.totalPenalty > 0 ? 'danger' : 'neutral',
+    },
+    {
+      label: 'الأكثر تأخيراً هذا الشهر',
+      value: monthStats.mostLate ? monthStats.mostLate.name : '—',
+      helper: monthStats.mostLate ? `${formatNumber(monthStats.mostLate.minutes)} دقيقة` : undefined,
+      tone: monthStats.mostLate ? 'warning' : 'neutral',
+    },
+  ] : []
+
+  const dailyColumns = useMemo<StorelyDataTableColumn<any>[]>(() => [
+    {
+      key: 'employee',
+      header: 'الموظف',
+      className: 'min-w-[180px] font-semibold',
+      cell: (row) => row.name,
+    },
+    {
+      key: 'status',
+      header: 'الحالة',
+      className: 'whitespace-nowrap',
+      cell: (row) => (
+        <div className="flex flex-wrap gap-1.5">
+          <StorelyStatusBadge status={attendanceTone(row.status, row.late_minutes)}>{row.status}</StorelyStatusBadge>
+          {row.is_excused ? <StorelyStatusBadge status="warning">مستأذن</StorelyStatusBadge> : null}
+        </div>
+      ),
+    },
+    {
+      key: 'checkIn',
+      header: 'وقت الحضور',
+      className: 'whitespace-nowrap text-[#66737C]',
+      cell: (row) => formatTime(row.check_in),
+    },
+    {
+      key: 'checkOut',
+      header: 'وقت الانصراف',
+      className: 'whitespace-nowrap text-[#66737C]',
+      cell: (row) => formatTime(row.check_out),
+    },
+    {
+      key: 'hours',
+      header: 'إجمالي الساعات',
+      className: 'whitespace-nowrap text-[#66737C]',
+      cell: (row) => row.hours_worked !== null ? `${formatNumber(row.hours_worked)} ساعة` : '—',
+    },
+    {
+      key: 'late',
+      header: 'التأخير',
+      className: 'whitespace-nowrap',
+      cell: (row) => (
+        <span className={row.late_minutes ? 'font-semibold text-[#B45309]' : 'text-[#8EA0B1]'}>
+          {row.late_minutes ? `${formatNumber(row.late_minutes)} دقيقة` : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'penalty',
+      header: 'الخصم',
+      className: 'whitespace-nowrap',
+      cell: (row) => (
+        <span className={row.penalty_amount ? 'font-semibold text-[#B91C1C]' : 'text-[#8EA0B1]'}>
+          {row.penalty_amount ? `${formatNumber(row.penalty_amount)} ر.س` : '—'}
+        </span>
+      ),
+    },
+  ], [])
+
+  const rangeColumns = useMemo<StorelyDataTableColumn<any>[]>(() => [
+    {
+      key: 'employee',
+      header: 'الموظف',
+      className: 'min-w-[180px] font-semibold',
+      cell: (row) => row.name,
+    },
+    {
+      key: 'present',
+      header: 'أيام الحضور',
+      className: 'whitespace-nowrap text-center font-semibold text-[#047857]',
+      headerClassName: 'text-center',
+      cell: (row) => formatNumber(row.days_present),
+    },
+    {
+      key: 'absent',
+      header: 'أيام الغياب',
+      className: 'whitespace-nowrap text-center font-semibold text-[#B91C1C]',
+      headerClassName: 'text-center',
+      cell: (row) => formatNumber(row.days_absent),
+    },
+    {
+      key: 'late',
+      header: 'إجمالي التأخير',
+      className: 'whitespace-nowrap text-center',
+      headerClassName: 'text-center',
+      cell: (row) => (
+        <span className={row.total_late_minutes ? 'font-semibold text-[#B45309]' : 'text-[#8EA0B1]'}>
+          {row.total_late_minutes ? `${formatNumber(row.total_late_minutes)} دقيقة` : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'penalty',
+      header: 'إجمالي الخصومات',
+      className: 'whitespace-nowrap text-center',
+      headerClassName: 'text-center',
+      cell: (row) => (
+        <span className={row.total_penalty ? 'font-semibold text-[#B91C1C]' : 'text-[#8EA0B1]'}>
+          {row.total_penalty ? `${formatNumber(row.total_penalty)} ر.س` : '—'}
+        </span>
+      ),
+    },
+  ], [])
 
   return (
-    <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 900, margin: '0 auto' }}>
-      <div style={{ marginBottom: 16 }}>
-        <h1 style={pageTitle}><PageIcon/>الحضور والانصراف</h1>
-        <p style={pageSub}>سجل حضور الفريق اليومي — يتحقق تلقائياً من موقعهم الجغرافي ويحسب التأخير</p>
-      </div>
+    <div className="mx-auto max-w-6xl px-4 pb-8" dir="rtl">
+      <StorelyPageHeader
+        title="الحضور والانصراف"
+        description="سجل حضور الفريق اليومي وتقارير الفترات وإعدادات الشفتات والغرامات."
+      />
 
-      {locked && (
-        <div style={{...card,padding:14,marginBottom:18,background:colors.warningLight,border:`1px solid ${colors.warningBorder}`,display:'flex',alignItems:'center',gap:10}}>
-          <span style={{fontSize:20}}>🔒</span>
-          <div>
-            <div style={{fontSize:13,fontWeight:800,color:colors.text}}>وضع قراءة فقط — انتهى اشتراك ميزة "إدارة الموظفين الكاملة"</div>
-            <div style={{fontSize:12,color:colors.text3}}>سجلاتك القديمة محفوظة وتقدر تشوفها، بس ما تقدر تسجّل حضور جديد أو تعدّل الشفتات إلا بعد تجديد الاشتراك</div>
-          </div>
-        </div>
-      )}
-
-      {monthStats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 18 }}>
-          <div style={{ ...card, padding: '14px', textAlign: 'center' as const }}>
-            <div style={{ fontSize: 10, color: colors.text4, fontWeight: 600, marginBottom: 4 }}>معدّل الحضور — هذا الشهر</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: colors.text }}>{monthStats.attendanceRate !== null ? `${monthStats.attendanceRate}%` : '—'}</div>
-          </div>
-          <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: monthStats.totalPenalty>0?colors.dangerLight:undefined, border: monthStats.totalPenalty>0?`1px solid ${colors.dangerBorder}`:undefined }}>
-            <div style={{ fontSize: 10, color: monthStats.totalPenalty>0?colors.danger:colors.text4, fontWeight: 600, marginBottom: 4 }}>إجمالي الخصومات — هذا الشهر</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: monthStats.totalPenalty>0?colors.danger:colors.text }}>{monthStats.totalPenalty>0?`${monthStats.totalPenalty} ر.س`:'—'}</div>
-          </div>
-          <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: monthStats.mostLate?colors.warningLight:undefined, border: monthStats.mostLate?`1px solid ${colors.warningBorder}`:undefined }}>
-            <div style={{ fontSize: 10, color: monthStats.mostLate?colors.warning:colors.text4, fontWeight: 600, marginBottom: 4 }}>الأكثر تأخيراً — هذا الشهر</div>
-            <div style={{ fontSize: monthStats.mostLate?15:22, fontWeight: 900, color: monthStats.mostLate?colors.warning:colors.text }}>{monthStats.mostLate ? `${monthStats.mostLate.name} (${monthStats.mostLate.minutes} د)` : '—'}</div>
-          </div>
-        </div>
-      )}
-
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        {[{ id: 'report', label: '📋 التقرير' }, { id: 'settings', label: '⚙️ الشفتات والغرامات' }].map(t => (
-          <button key={t.id} onClick={() => setTab(t.id as any)}
-            style={{ padding: '9px 16px', borderRadius: 99, border: `1.5px solid ${tab === t.id ? colors.primary : colors.border2}`, background: tab === t.id ? colors.primaryLight : colors.surface, color: tab === t.id ? colors.primary : colors.text3, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'report' && (
-        <>
-          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: 10 }}>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {[{ id: 'day', label: 'يوم واحد' }, { id: 'range', label: 'فترة مخصصة' }].map(m => (
-                <button key={m.id} onClick={() => setPeriodMode(m.id as any)}
-                  style={{ padding: '7px 14px', borderRadius: 99, border: `1.5px solid ${periodMode === m.id ? colors.primary : colors.border2}`, background: periodMode === m.id ? colors.primaryLight : colors.surface, color: periodMode === m.id ? colors.primary : colors.text3, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
-                  {m.label}
-                </button>
-              ))}
+      {locked ? (
+        <div className="mb-4 flex items-start gap-3 rounded-[6px] border border-[#FDE68A] bg-[#FFFBEB] p-3">
+          <LockKeyhole className="mt-0.5 shrink-0 text-[#B45309]" size={16} />
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-[#203640]">وضع قراءة فقط</div>
+            <div className="mt-1 text-xs leading-5 text-[#66737C]">
+              انتهى اشتراك ميزة إدارة الموظفين الكاملة. السجلات القديمة محفوظة ويمكن عرضها.
             </div>
-            {periodMode === 'day' ? (
-              <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ ...inp(), width: 170 }} />
-            ) : (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <input type="date" value={rangeFrom} onChange={e => setRangeFrom(e.target.value)} style={{ ...inp(), width: 150 }} />
-                <span style={{ color: colors.text4, fontSize: 12 }}>إلى</span>
-                <input type="date" value={rangeTo} onChange={e => setRangeTo(e.target.value)} style={{ ...inp(), width: 150 }} />
-                <button onClick={exportRangePdf} disabled={exporting || rangeRows.length===0} style={{ ...btnPrimary, padding: '9px 16px', fontSize: 13 }}>
-                  {exporting ? '...' : '📄 تصدير PDF'}
-                </button>
-              </div>
-            )}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="mb-4 flex flex-col gap-2 rounded-[6px] border border-[#E7E1D8] bg-white p-2.5 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex rounded-[5px] border border-[#D7CDC2] bg-white p-0.5">
+            <button
+              type="button"
+              onClick={() => setTab('report')}
+              className={`h-7 rounded-[4px] px-3 text-xs font-semibold transition ${tab === 'report' ? 'bg-[#203640] text-white' : 'text-[#66737C] hover:bg-[#F8EEDF]'}`}
+            >
+              التقرير
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab('settings')}
+              className={`h-7 rounded-[4px] px-3 text-xs font-semibold transition ${tab === 'settings' ? 'bg-[#203640] text-white' : 'text-[#66737C] hover:bg-[#F8EEDF]'}`}
+            >
+              الشفتات والغرامات
+            </button>
           </div>
 
-          {periodMode === 'day' ? (
-            <>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8, marginBottom: 16 }}>
-                <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}` }}>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: colors.primary }}>{presentCount}</div>
-                  <div style={{ fontSize: 11, color: colors.primary, fontWeight: 600, marginTop: 2 }}>حضروا اليوم</div>
-                </div>
-                <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: colors.dangerLight, border: `1px solid ${colors.dangerBorder}` }}>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: colors.danger }}>{absentCount}</div>
-                  <div style={{ fontSize: 11, color: colors.danger, fontWeight: 600, marginTop: 2 }}>لم يحضروا</div>
-                </div>
-              </div>
+          {tab === 'report' ? (
+            <div className="inline-flex rounded-[5px] border border-[#D7CDC2] bg-white p-0.5">
+              <button
+                type="button"
+                onClick={() => setPeriodMode('day')}
+                className={`h-7 rounded-[4px] px-3 text-xs font-semibold transition ${periodMode === 'day' ? 'bg-[#F8EEDF] text-[#203640]' : 'text-[#66737C] hover:bg-[#F8EEDF]/60'}`}
+              >
+                يوم واحد
+              </button>
+              <button
+                type="button"
+                onClick={() => setPeriodMode('range')}
+                className={`h-7 rounded-[4px] px-3 text-xs font-semibold transition ${periodMode === 'range' ? 'bg-[#F8EEDF] text-[#203640]' : 'text-[#66737C] hover:bg-[#F8EEDF]/60'}`}
+              >
+                فترة مخصصة
+              </button>
+            </div>
+          ) : null}
+        </div>
 
-              <div style={{ ...card, overflow: 'hidden' }}>
-                {loading ? (
-                  <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>جاري التحميل...</div>
-                ) : rows.length === 0 ? (
-                  <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>ما فيه موظفين نشطين بهذا الفرع</div>
-                ) : (
-                  <div style={{ overflowX: 'auto' as const }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 }}>
-                      <thead>
-                        <tr style={{ background: colors.bg, borderBottom: `1px solid ${colors.border2}` }}>
-                          <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الموظف</th>
-                          <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الحالة</th>
-                          <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>وقت الحضور</th>
-                          <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>وقت الانصراف</th>
-                          <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجمالي الساعات</th>
-                          <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>التأخير</th>
-                          <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الخصم</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rows.map((r, i) => (
-                          <tr key={r.staff_id} style={{ borderBottom: i < rows.length - 1 ? `1px solid ${colors.border}` : 'none' }}>
-                            <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}</td>
-                            <td style={{ padding: '11px 14px' }}>
-                              <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(r.status), background: statusBg(r.status), padding: '3px 10px', borderRadius: 99 }}>{r.status}</span>
-                            </td>
-                            <td style={{ padding: '11px 14px', color: colors.text2 }}>
-                              {r.check_in ? new Date(r.check_in).toLocaleTimeString('ar-SA', { numberingSystem: 'latn', hour: '2-digit', minute: '2-digit' }) : '—'}
-                            </td>
-                            <td style={{ padding: '11px 14px', color: colors.text2 }}>
-                              {r.check_out ? new Date(r.check_out).toLocaleTimeString('ar-SA', { numberingSystem: 'latn', hour: '2-digit', minute: '2-digit' }) : '—'}
-                              {r.is_excused && <span style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px' }}>مستأذن</span>}
-                            </td>
-                            <td style={{ padding: '11px 14px', color: colors.text2, fontWeight: 600 }}>
-                              {r.hours_worked !== null ? `${r.hours_worked} ساعة` : '—'}
-                            </td>
-                            <td style={{ padding: '11px 14px', color: r.late_minutes ? colors.warning : colors.text4 }}>
-                              {r.late_minutes ? `${r.late_minutes} دقيقة` : '—'}
-                            </td>
-                            <td style={{ padding: '11px 14px', color: r.penalty_amount ? colors.danger : colors.text4, fontWeight: 700 }}>
-                              {r.penalty_amount ? `${r.penalty_amount} ر.س` : '—'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </>
+        {tab === 'report' ? (
+          periodMode === 'day' ? (
+            <StorelyFormField label="التاريخ" controlClassName="min-w-44">
+              <input className={inputClass} type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+            </StorelyFormField>
           ) : (
-            <div style={{ ...card, overflow: 'hidden' }}>
-              {loading ? (
-                <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>جاري التحميل...</div>
-              ) : rangeRows.length === 0 ? (
-                <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>ما فيه بيانات لهذي الفترة</div>
-              ) : (
-                <div style={{ overflowX: 'auto' as const }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 }}>
-                    <thead>
-                      <tr style={{ background: colors.bg, borderBottom: `1px solid ${colors.border2}` }}>
-                        <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الموظف</th>
-                        <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>أيام الحضور</th>
-                        <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>أيام الغياب</th>
-                        <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجمالي التأخير</th>
-                        <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجمالي الخصومات</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rangeRows.map((r, i) => (
-                        <tr key={r.staff_id} style={{ borderBottom: i < rangeRows.length - 1 ? `1px solid ${colors.border}` : 'none' }}>
-                          <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}</td>
-                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: colors.primary, fontWeight: 700 }}>{r.days_present}</td>
-                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: colors.danger, fontWeight: 700 }}>{r.days_absent}</td>
-                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_late_minutes ? colors.warning : colors.text4 }}>{r.total_late_minutes ? `${r.total_late_minutes} دقيقة` : '—'}</td>
-                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_penalty ? colors.danger : colors.text4, fontWeight: 700 }}>{r.total_penalty ? `${r.total_penalty} ر.س` : '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+            <div className="flex flex-col gap-2 md:flex-row md:items-end">
+              <StorelyFormField label="من" controlClassName="min-w-40">
+                <input className={inputClass} type="date" value={rangeFrom} onChange={(event) => setRangeFrom(event.target.value)} />
+              </StorelyFormField>
+              <StorelyFormField label="إلى" controlClassName="min-w-40">
+                <input className={inputClass} type="date" value={rangeTo} onChange={(event) => setRangeTo(event.target.value)} />
+              </StorelyFormField>
+              <StorelyButton
+                variant="secondary"
+                icon={<Download size={16} />}
+                disabled={exporting || rangeRows.length === 0}
+                onClick={exportRangePdf}
+              >
+                {exporting ? 'جاري التصدير' : 'تصدير PDF'}
+              </StorelyButton>
             </div>
+          )
+        ) : (
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#66737C]">
+            <Settings size={15} />
+            إعدادات الحضور
+          </div>
+        )}
+      </div>
+
+      {tab === 'report' ? (
+        <>
+          {monthMetrics.length ? <StorelyMetricStrip metrics={monthMetrics} className="mb-4" /> : null}
+          {periodMode === 'day' ? <StorelyMetricStrip metrics={dailyMetrics} className="mb-4" /> : null}
+
+          {loading ? (
+            <StorelyCard className="mb-4">
+              <div className="space-y-2 p-3">
+                <div className="h-8 rounded-[5px] bg-[#F3F5F6]" />
+                <div className="h-8 rounded-[5px] bg-[#F3F5F6]" />
+                <div className="h-8 rounded-[5px] bg-[#F3F5F6]" />
+              </div>
+            </StorelyCard>
+          ) : periodMode === 'day' ? (
+            rows.length === 0 ? (
+              <StorelyEmptyState
+                icon={<CalendarDays size={16} />}
+                title="لا يوجد موظفون نشطون بهذا الفرع"
+                description="غيّر الفرع من أعلى النظام أو أضف موظفين نشطين لظهور سجل الحضور."
+              />
+            ) : (
+              <StorelyDataTable
+                columns={dailyColumns}
+                data={rows}
+                rowKey="staff_id"
+                searchable={false}
+                pageSize={rows.length || 12}
+                emptyState={<StorelyEmptyState title="لا توجد بيانات" description="لا توجد سجلات حضور لهذا اليوم." />}
+              />
+            )
+          ) : rangeRows.length === 0 ? (
+            <StorelyEmptyState
+              icon={<CalendarDays size={16} />}
+              title="لا توجد بيانات لهذه الفترة"
+              description="اختر فترة أخرى لعرض تقرير الحضور والانصراف."
+            />
+          ) : (
+            <StorelyDataTable
+              columns={rangeColumns}
+              data={rangeRows}
+              rowKey="staff_id"
+              searchable={false}
+              pageSize={rangeRows.length || 12}
+              emptyState={<StorelyEmptyState title="لا توجد بيانات" description="لا توجد سجلات ضمن الفترة المحددة." />}
+            />
           )}
         </>
-      )}
+      ) : (
+        <div className="space-y-4">
+          <StorelyCard
+            title="الشفتات"
+            description="حدد أوقات الشفتات المستخدمة لحساب التأخير."
+          >
+            <div className="space-y-3 p-3">
+              <div className="grid gap-3 lg:grid-cols-[minmax(180px,1fr)_120px_120px_120px_auto] lg:items-end">
+                <StorelyFormField label="اسم الشفت">
+                  <input
+                    className={inputClass}
+                    value={newShiftName}
+                    onChange={(event) => setNewShiftName(event.target.value)}
+                    placeholder="مثلاً: الشفت الأول"
+                  />
+                </StorelyFormField>
+                {!newShift24h ? (
+                  <>
+                    <StorelyFormField label="وقت البداية">
+                      <input className={inputClass} type="time" value={newShiftStart} onChange={(event) => setNewShiftStart(event.target.value)} />
+                    </StorelyFormField>
+                    <StorelyFormField label="وقت النهاية">
+                      <input className={inputClass} type="time" value={newShiftEnd} onChange={(event) => setNewShiftEnd(event.target.value)} />
+                    </StorelyFormField>
+                  </>
+                ) : (
+                  <div className="hidden lg:block" />
+                )}
+                <label className="flex h-8 items-center gap-2 text-sm font-semibold text-[#43525B]">
+                  <input className="size-4 accent-[#203640]" type="checkbox" checked={newShift24h} onChange={(event) => setNewShift24h(event.target.checked)} />
+                  24 ساعة
+                </label>
+                <StorelyButton variant="primary" icon={<Plus size={16} />} disabled={savingShift} onClick={addShift}>
+                  {savingShift ? 'جاري الإضافة' : 'إضافة'}
+                </StorelyButton>
+              </div>
 
-      {tab === 'settings' && (
-        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
-
-          {/* الشفتات */}
-          <div style={{ ...card, padding: '18px 20px' }}>
-            <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>الشفتات</div>
-            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>حدّد شفت واحد، شفتين، أو 24 ساعة — وحدّد وقت البداية لكل شفت عشان يعرف النظام يحسب التأخير</div>
-
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 12 }}>
-              <input value={newShiftName} onChange={e => setNewShiftName(e.target.value)} placeholder="اسم الشفت (مثلاً: الشفت الأول)" style={{ ...inp(), flex: 1, minWidth: 160 }} />
-              {!newShift24h && (
-                <>
-                  <input type="time" value={newShiftStart} onChange={e => setNewShiftStart(e.target.value)} style={{ ...inp(), width: 110 }} />
-                  <span style={{ alignSelf: 'center', color: colors.text4, fontSize: 12 }}>إلى</span>
-                  <input type="time" value={newShiftEnd} onChange={e => setNewShiftEnd(e.target.value)} style={{ ...inp(), width: 110 }} />
-                </>
+              {shifts.length === 0 ? (
+                <StorelyEmptyState title="لا توجد شفتات بعد" description="أضف أول شفت لربط الموظفين به." />
+              ) : (
+                <div className="overflow-hidden rounded-[6px] border border-[#E7E1D8]">
+                  {shifts.map((shift: any) => (
+                    <div key={shift.id} className="flex flex-col gap-2 border-b border-[#E7E1D8] p-3 last:border-b-0 md:flex-row md:items-center md:justify-between">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold text-[#203640]">{shift.name}</div>
+                        <div className="mt-1 text-xs text-[#66737C]">
+                          {shift.is_24h ? '24 ساعة' : `${shift.start_time?.slice(0,5)} — ${shift.end_time?.slice(0,5)}`}
+                        </div>
+                      </div>
+                      <StorelyTableActionGroup>
+                        <StorelyTableAction action="delete" onClick={() => deleteShift(shift.id)} />
+                      </StorelyTableActionGroup>
+                    </div>
+                  ))}
+                </div>
               )}
-              <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: colors.text3, cursor: 'pointer' }}>
-                <input type="checkbox" checked={newShift24h} onChange={e => setNewShift24h(e.target.checked)} />
-                24 ساعة
-              </label>
-              <button onClick={addShift} disabled={savingShift} style={{ ...btnPrimary, padding: '0 16px' }}>{savingShift ? '...' : '+ إضافة'}</button>
             </div>
+          </StorelyCard>
 
-            {shifts.length === 0 ? (
-              <div style={{ fontSize: 12, color: colors.text4, textAlign: 'center' as const, padding: 12 }}>ما فيه شفتات معرّفة بعد</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
-                {shifts.map((s: any) => (
-                  <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', background: colors.bg, borderRadius: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: colors.text }}>{s.name}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 12, color: colors.text3 }}>{s.is_24h ? '24 ساعة' : `${s.start_time?.slice(0,5)} — ${s.end_time?.slice(0,5)}`}</span>
-                      <button onClick={() => deleteShift(s.id)} style={{ background: 'none', border: 'none', color: colors.danger, cursor: 'pointer', fontSize: 12 }}>🗑️</button>
+          <StorelyCard
+            title="تحديد شفت كل موظف"
+            description="اربط كل موظف بالشفت المناسب لحساب التأخير بشكل صحيح."
+          >
+            <div className="p-3">
+              {staffList.length === 0 ? (
+                <StorelyEmptyState title="لا يوجد موظفون نشطون" description="سيظهر الموظفون النشطون هنا عند توفرهم." />
+              ) : (
+                <div className="overflow-hidden rounded-[6px] border border-[#E7E1D8]">
+                  {staffList.map((staff: any) => (
+                    <div key={staff.id} className="flex flex-col gap-2 border-b border-[#E7E1D8] p-3 last:border-b-0 md:flex-row md:items-center md:justify-between">
+                      <div className="truncate text-sm font-semibold text-[#203640]">{staff.name}</div>
+                      <select
+                        className={`${inputClass} md:max-w-64`}
+                        value={staff.shift_id || ''}
+                        onChange={(event) => assignShift(staff.id, event.target.value)}
+                      >
+                        <option value="">بدون شفت محدد</option>
+                        {shifts.map((shift: any) => <option key={shift.id} value={shift.id}>{shift.name}</option>)}
+                      </select>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ربط الموظفين بالشفتات */}
-          <div style={{ ...card, padding: '18px 20px' }}>
-            <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>تحديد شفت كل موظف</div>
-            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>حدّد أي موظف يتبع أي شفت — عشان النظام يعرف يحسب تأخيره صح</div>
-
-            {staffList.length === 0 ? (
-              <div style={{ fontSize: 12, color: colors.text4, textAlign: 'center' as const, padding: 12 }}>ما فيه موظفين نشطين</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
-                {staffList.map((s: any) => (
-                  <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', background: colors.bg, borderRadius: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: colors.text }}>{s.name}</span>
-                    <select value={s.shift_id || ''} onChange={e => assignShift(s.id, e.target.value)} style={{ ...inp(), width: 180, padding: '6px 10px', fontSize: 12 }}>
-                      <option value="">بدون شفت محدد</option>
-                      {shifts.map((sh: any) => (<option key={sh.id} value={sh.id}>{sh.name}</option>))}
-                    </select>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* غرامات التأخير */}
-          <div style={{ ...card, padding: '18px 20px' }}>
-            <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>غرامات التأخير (اختياري)</div>
-            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>حدّد مبلغ مختلف حسب مدة التأخير بالدقائق — مثلاً: من 0 إلى 30 دقيقة = 10 ر.س</div>
-
-            <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' as const }}>
-              <input type="number" value={newRuleMin} onChange={e => setNewRuleMin(e.target.value)} placeholder="من دقيقة" style={{ ...inp(), width: 110 }} />
-              <input type="number" value={newRuleMax} onChange={e => setNewRuleMax(e.target.value)} placeholder="إلى دقيقة (اختياري)" style={{ ...inp(), width: 140 }} />
-              <input type="number" value={newRuleAmount} onChange={e => setNewRuleAmount(e.target.value)} placeholder="المبلغ (ر.س)" style={{ ...inp(), width: 120 }} />
-              <button onClick={addRule} disabled={savingRule} style={{ ...btnPrimary, padding: '0 16px' }}>{savingRule ? '...' : '+ إضافة'}</button>
+                  ))}
+                </div>
+              )}
             </div>
+          </StorelyCard>
 
-            {rules.length === 0 ? (
-              <div style={{ fontSize: 12, color: colors.text4, textAlign: 'center' as const, padding: 12 }}>ما فيه نطاقات غرامة معرّفة — التأخير راح يُسجّل بدون غرامة</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
-                {rules.map((r: any) => (
-                  <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', background: colors.bg, borderRadius: 8 }}>
-                    <span style={{ fontSize: 13, color: colors.text }}>من {r.min_minutes} دقيقة {r.max_minutes ? `إلى ${r.max_minutes} دقيقة` : 'فأكثر'}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: colors.danger }}>{r.penalty_amount} ر.س</span>
-                      <button onClick={() => deleteRule(r.id)} style={{ background: 'none', border: 'none', color: colors.danger, cursor: 'pointer', fontSize: 12 }}>🗑️</button>
-                    </div>
-                  </div>
-                ))}
+          <StorelyCard
+            title="غرامات التأخير"
+            description="حدد مبلغ الخصم حسب مدة التأخير بالدقائق."
+          >
+            <div className="space-y-3 p-3">
+              <div className="grid gap-3 md:grid-cols-[140px_180px_150px_auto] md:items-end">
+                <StorelyFormField label="من دقيقة">
+                  <input className={inputClass} type="number" value={newRuleMin} onChange={(event) => setNewRuleMin(event.target.value)} placeholder="0" />
+                </StorelyFormField>
+                <StorelyFormField label="إلى دقيقة">
+                  <input className={inputClass} type="number" value={newRuleMax} onChange={(event) => setNewRuleMax(event.target.value)} placeholder="اختياري" />
+                </StorelyFormField>
+                <StorelyFormField label="المبلغ">
+                  <input className={inputClass} type="number" value={newRuleAmount} onChange={(event) => setNewRuleAmount(event.target.value)} placeholder="ر.س" />
+                </StorelyFormField>
+                <StorelyButton variant="primary" icon={<Plus size={16} />} disabled={savingRule} onClick={addRule}>
+                  {savingRule ? 'جاري الإضافة' : 'إضافة'}
+                </StorelyButton>
               </div>
-            )}
-          </div>
 
+              {rules.length === 0 ? (
+                <StorelyEmptyState
+                  title="لا توجد نطاقات غرامة"
+                  description="سيتم تسجيل التأخير بدون غرامة حتى تضيف نطاقاً."
+                />
+              ) : (
+                <div className="overflow-hidden rounded-[6px] border border-[#E7E1D8]">
+                  {rules.map((rule: any) => (
+                    <div key={rule.id} className="flex flex-col gap-2 border-b border-[#E7E1D8] p-3 last:border-b-0 md:flex-row md:items-center md:justify-between">
+                      <div className="text-sm text-[#203640]">
+                        من <span className="font-semibold">{formatNumber(rule.min_minutes)}</span> دقيقة{' '}
+                        {rule.max_minutes ? <>إلى <span className="font-semibold">{formatNumber(rule.max_minutes)}</span> دقيقة</> : 'فأكثر'}
+                      </div>
+                      <div className="flex items-center justify-between gap-3 md:justify-end">
+                        <span className="inline-flex items-center gap-1 text-sm font-semibold text-[#B91C1C]">
+                          <Trash2 size={14} className="text-[#8EA0B1]" />
+                          {formatNumber(rule.penalty_amount)} ر.س
+                        </span>
+                        <StorelyTableAction action="delete" onClick={() => deleteRule(rule.id)} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </StorelyCard>
         </div>
       )}
     </div>

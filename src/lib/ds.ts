@@ -4,10 +4,10 @@
 
 export const colors = {
   // Brand — أخضر غامق
-  primary:      '#0f766e',
-  primaryDark:  '#115e59',
-  primaryLight: '#f0fdfa',
-  primaryBorder:'#b2e3df',
+  primary:      '#203640',
+  primaryDark:  '#16262D',
+  primaryLight: '#F8EEDF',
+  primaryBorder:'#D9CDBE',
 
   // Semantic
   // موحّد مع صفحة الهبوط التسويقية (LandingPageClient.tsx) — نفس القيم بالضبط
@@ -17,20 +17,24 @@ export const colors = {
   warning:      '#b54708',
   warningLight: '#fffbeb',
   warningBorder:'#fedf89',
-  info:         '#175cd3',
-  infoLight:    '#eff6ff',
-  infoBorder:   '#b2ddff',
+  info:         '#4F6678',
+  infoLight:    '#F3F5F6',
+  infoBorder:   '#CBD4DC',
 
   // Neutral — درجة رمادية دافئة مخصصة (مو رمادي Tailwind الافتراضي) — تناسب طابع "دفتر/سجل" لتطبيق مخزون وبيع
-  bg:           '#F6F7F9',
+  bg:           '#F7F3ED',
   surface:      '#FFFFFF',
-  border:       '#E6E8EC',
-  border2:      '#D5D9DF',
-  text:         '#101828',
-  text2:        '#344054',
-  text3:        '#667085',
-  text4:        '#98A2B3',
-  text5:        '#D0D5DD',
+  border:       '#E7E1D8',
+  border2:      '#D7CDC2',
+  text:         '#203640',
+  text2:        '#43525B',
+  text3:        '#66737C',
+  text4:        '#8EA0B1',
+  text5:        '#D9D2CA',
+  secondary:    '#8EA0B1',
+  sage:         '#B6B798',
+  olive:        '#717553',
+  taupe:        '#A3917F',
 }
 
 // زوايا متدرجة حسب كثافة العنصر -- مو زاوية واحدة موحّدة على كل شي
@@ -80,9 +84,9 @@ export const inp = (extra?: object): React.CSSProperties => ({
 
 export const card: React.CSSProperties = {
   background: colors.surface,
-  borderRadius: '14px',
+  borderRadius: radius.xs,
   border: `1px solid ${colors.border}`,
-  boxShadow: shadow.card,
+  boxShadow: 'none',
   overflow: 'hidden',
 }
 

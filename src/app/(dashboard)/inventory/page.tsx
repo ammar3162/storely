@@ -1,8 +1,8 @@
 'use client'
+/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities */
 export const dynamic = 'force-dynamic'
-import PageIcon from '@/components/PageIcon'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
-import { Upload, Download, Paperclip, X, AlertTriangle, Camera, Ruler, CheckCircle2, Trash2, Sparkles, Package, Plus, ScanLine, Search } from 'lucide-react'
+import { Upload, Download, Paperclip, X, AlertTriangle, Camera, Ruler, CheckCircle2, Trash2, Package, Plus, ScanLine, Search } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
 import { cache } from '@/lib/cache'
@@ -10,6 +10,7 @@ import { colors as dsColors } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh'
 import Pagination from '@/components/pagination'
+import { StorelyButton, StorelyDataTable, StorelyEmptyState, StorelyMetricStrip, StorelyPageHeader, StorelyStatusBadge, StorelyTableAction, StorelyTableActionGroup, type StorelyDataTableColumn, type StorelyMetric } from '@/components/ui'
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 import Papa from 'papaparse'
 
@@ -265,22 +266,99 @@ export default function InventoryPage() {
     .filter(p=>catFilter==='all'||(p.category||'أخرى')===catFilter)
   const paginated=filtered.slice((page-1)*PER,page*PER)
   const lowCount=products.filter(p=>p.qty<=p.reorder_point).length
+  const outCount=products.filter(p=>p.qty===0).length
   const totalQty=products.reduce((s,p)=>s+p.qty,0)
+
+  const metrics: StorelyMetric[] = [
+    { label: 'إجمالي المنتجات', value: products.length.toLocaleString('ar-SA', {numberingSystem:'latn'}), helper: `${filtered.length.toLocaleString('ar-SA', {numberingSystem:'latn'})} ضمن الفلاتر` },
+    { label: 'منخفض المخزون', value: lowCount.toLocaleString('ar-SA', {numberingSystem:'latn'}), tone: lowCount ? 'warning' : 'neutral' },
+    { label: 'نافد المخزون', value: outCount.toLocaleString('ar-SA', {numberingSystem:'latn'}), tone: outCount ? 'danger' : 'neutral' },
+    { label: 'إجمالي الكمية', value: totalQty.toLocaleString('ar-SA', {numberingSystem:'latn'}), helper: 'وحدة مسجلة' },
+  ]
+
+  const inventoryColumns: StorelyDataTableColumn<Product>[] = [
+    {
+      key: 'product',
+      header: 'المنتج',
+      className: 'min-w-[220px]',
+      cell: (p) => {
+        const exp=(p as any).expiry_date?Math.ceil((new Date((p as any).expiry_date).getTime()-Date.now())/86400000):null
+        return (
+          <div className="min-w-0">
+            <div className="truncate font-semibold text-[#203640]">{p.name}</div>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#66737C]">
+              {p.sku ? <span dir="ltr">#{p.sku}</span> : null}
+              {exp!==null&&exp<=7 ? <span className={exp<0?'text-[#B91C1C]':'text-[#B45309]'}>{exp<0?'منتهي الصلاحية':exp===0?'ينتهي اليوم':`ينتهي خلال ${exp} يوم`}</span> : null}
+            </div>
+          </div>
+        )
+      },
+    },
+    { key: 'category', header: 'الفئة', className: 'text-[#66737C]', cell: (p) => p.category || '-' },
+    {
+      key: 'qty',
+      header: 'الكمية',
+      className: 'whitespace-nowrap',
+      cell: (p) => <span><span className={p.qty===0?'font-semibold tabular-nums text-[#B91C1C]':p.qty<=p.reorder_point?'font-semibold tabular-nums text-[#B45309]':'font-semibold tabular-nums text-[#203640]'}>{p.qty}</span> <span className="text-xs text-[#66737C]">{p.unit}</span></span>,
+    },
+    { key: 'reorder', header: 'الحد الأدنى', className: 'whitespace-nowrap text-[#66737C]', cell: (p) => `${p.reorder_point} ${p.unit}` },
+    {
+      key: 'status',
+      header: 'الحالة',
+      cell: (p) => p.qty===0 ? <StorelyStatusBadge status="danger">نافد</StorelyStatusBadge> : p.qty<=p.reorder_point ? <StorelyStatusBadge status="warning">منخفض</StorelyStatusBadge> : <StorelyStatusBadge status="success">كافٍ</StorelyStatusBadge>,
+    },
+    {
+      key: 'actions',
+      header: 'الإجراءات',
+      headerClassName: 'text-left',
+      className: 'w-28 text-left',
+      cell: (p) => (
+        <div onClick={(event)=>event.stopPropagation()}>
+          <StorelyTableActionGroup className="justify-end">
+            <StorelyTableAction action="view" onClick={(event)=>{event.stopPropagation();openEdit(p)}} />
+            <StorelyTableAction action="edit" onClick={(event)=>{event.stopPropagation();openEdit(p)}} />
+            <StorelyTableAction action="delete" onClick={(event)=>{event.stopPropagation();setConfirm({id:p.id,name:p.name})}} />
+          </StorelyTableActionGroup>
+        </div>
+      ),
+    },
+  ]
 
   const lbl: React.CSSProperties = {fontSize:10,fontWeight:700,color:C.text3,display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em'}
   const inp = (extra?:any): React.CSSProperties => ({width:'100%',padding:'10px 12px',border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',background:'white',color:C.text,fontFamily:'inherit',...extra})
 
   if(loading) return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
-      <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.4s ease infinite}`}</style>
-      <div style={{display:'flex',justifyContent:'space-between',marginBottom:16}}>
-        <div className="sk" style={{height:24,width:100,background:C.border2,borderRadius:6}}/>
-        <div className="sk" style={{height:34,width:80,background:C.border,borderRadius:8}}/>
+    <div className="iv" style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
+      <style>{IV_CSS}</style>
+      <StorelyPageHeader
+        title="المخزون"
+        description="تحميل بيانات المنتجات والكميات الحالية."
+        actions={<StorelyButton variant="primary" icon={<Plus size={16}/>} disabled>إضافة منتج</StorelyButton>}
+      />
+      <div className="iv-filterbar mb-4">
+        <div className="iv-skeleton h-8 min-w-[240px] flex-1" />
+        <div className="iv-skeleton h-8 w-32" />
+        <div className="iv-skeleton h-8 w-32" />
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:14}}>
-        {[1,2,3,4].map(i=><div key={i} className="sk" style={{height:72,borderRadius:10,background:C.border}}/>)}
+      <StorelyMetricStrip
+        className="mb-4"
+        metrics={[
+          {label:'إجمالي المنتجات',value:<span className="iv-skeleton inline-block h-5 w-16" />},
+          {label:'منخفض المخزون',value:<span className="iv-skeleton inline-block h-5 w-12" />},
+          {label:'نافد المخزون',value:<span className="iv-skeleton inline-block h-5 w-12" />},
+          {label:'إجمالي الكمية',value:<span className="iv-skeleton inline-block h-5 w-16" />},
+        ]}
+      />
+      <div className="overflow-hidden rounded-[6px] border border-[#E7E1D8] bg-white">
+        <div className="grid grid-cols-6 gap-3 border-b border-[#E7E1D8] bg-[#F8EEDF]/45 px-3 py-2">
+          {[1,2,3,4,5,6].map(i=><div key={i} className="iv-skeleton h-4" />)}
+        </div>
+        {[1,2,3,4,5,6,7].map(i=>(
+          <div key={i} className="grid grid-cols-6 gap-3 border-b border-[#E7E1D8] px-3 py-3 last:border-b-0">
+            {[1,2,3,4,5,6].map(j=><div key={j} className="iv-skeleton h-4" />)}
+          </div>
+        ))}
       </div>
-      <div className="sk" style={{height:400,borderRadius:12,background:C.border}}/>
     </div>
   )
 
@@ -511,22 +589,21 @@ export default function InventoryPage() {
       )}
 
       {/* العنوان + الأدوات */}
-      <div className="iv-head">
-        <div style={{minWidth:0}}>
-          <h1 className="iv-title" style={{display:'flex',alignItems:'center',gap:12}}><PageIcon/>المخزون</h1>
-          <p className="iv-sub">{products.length} صنف · {totalQty.toLocaleString('en-US')} وحدة إجمالاً</p>
-        </div>
-        <div className="iv-tools">
-          <button className="sh-btn" onClick={exportCSV} title="تصدير CSV"><Download size={16}/><span className="iv-hide-sm">تصدير</span></button>
-          <button className="sh-btn" onClick={()=>setShowImport(true)} title="استيراد من ملف"><Upload size={16}/><span className="iv-hide-sm">استيراد</span></button>
-          <button className="sh-btn" onClick={()=>setShowJardScan(true)} title="جرد بالكاميرا"><ScanLine size={16}/><span className="iv-hide-sm">جرد بالباركود</span></button>
-          <button className="sh-btn sh-btn-primary" onClick={()=>{setEditItem(null);setAddQty(0);setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:'',recipe_unit:'',recipe_unit_factor:''});setShowAdd(true)}}>
-            <Plus size={16}/> إضافة منتج
-          </button>
-        </div>
-      </div>
-
-      {/* الوحدات الدقيقة الناقصة */}
+      <StorelyPageHeader
+        title="المخزون"
+        description={`${products.length.toLocaleString('ar-SA', {numberingSystem:'latn'})} منتج - ${totalQty.toLocaleString('ar-SA', {numberingSystem:'latn'})} وحدة إجمالاً`}
+        actions={
+          <>
+            <StorelyButton variant="secondary" icon={<Download size={16}/>} onClick={exportCSV}>تصدير</StorelyButton>
+            <StorelyButton variant="secondary" icon={<Upload size={16}/>} onClick={()=>setShowImport(true)}>استيراد</StorelyButton>
+            <StorelyButton variant="secondary" icon={<ScanLine size={16}/>} onClick={()=>setShowJardScan(true)}>جرد بالباركود</StorelyButton>
+            <StorelyButton variant="primary" icon={<Plus size={16}/>} onClick={()=>{setEditItem(null);setAddQty(0);setForm({name:'',sku:'',unit:'ظ‚ط·ط¹ط©',qty:0,reorder_point:5,category:'',expiry_date:'',recipe_unit:'',recipe_unit_factor:''});setShowAdd(true)}}>
+              إضافة منتج
+            </StorelyButton>
+          </>
+        }
+      />
+            {/* الوحدات الدقيقة الناقصة */}
       {(()=>{
         const missing = products.filter((p:any)=>!p.recipe_unit_factor)
         if(missing.length===0) return null
@@ -551,35 +628,32 @@ export default function InventoryPage() {
       })()}
 
       {/* الفلاتر */}
-      <div className="iv-bar">
-        <div className="iv-tabs">
-          {([
-            {k:'all' as const, l:'الكل', n:products.length},
-            {k:'low' as const, l:'ناقص', n:lowCount},
-            {k:'ok' as const, l:'كافٍ', n:products.length-lowCount},
-          ]).map(tb=>(
-            <button key={tb.k} className={`iv-tab${statusFilter===tb.k?' on':''}`} onClick={()=>{setStatusFilter(tb.k);setPage(1)}}>
-              {tb.l} <span className="iv-tab-n" style={tb.k==='low'&&tb.n>0?{color:C.danger}:undefined}>{tb.n}</span>
-            </button>
-          ))}
-        </div>
-        <div className="iv-search">
+      <div className="iv-filterbar">
+        <label className="iv-search">
           <Search size={15}/>
-          <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}} placeholder="ابحث بالاسم أو الباركود"/>
-        </div>
+          <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}} placeholder="ابحث بالاسم أو الفئة أو الباركود"/>
+        </label>
+        <select className="iv-select" value={statusFilter} onChange={e=>{setStatusFilter(e.target.value as 'all'|'low'|'ok');setPage(1)}}>
+          <option value="all">كل الحالات</option>
+          <option value="low">منخفض المخزون</option>
+          <option value="ok">كافٍ</option>
+        </select>
+        {allCats.length>1 && (
+          <select className="iv-select" value={catFilter} onChange={e=>{setCatFilter(e.target.value);setPage(1)}}>
+            {allCats.map(cat=><option key={cat} value={cat}>{cat==='all'?'كل الفئات':cat}</option>)}
+          </select>
+        )}
+        {(search||catFilter!=='all'||statusFilter!=='all') ? (
+          <StorelyButton variant="ghost" onClick={()=>{setSearch('');setCatFilter('all');setStatusFilter('all');setPage(1)}}>إزالة الفلاتر</StorelyButton>
+        ) : null}
       </div>
-      {allCats.length>1 && (
-        <div className="iv-cats">
-          {allCats.map(cat=>(
-            <button key={cat} className={`iv-cat${catFilter===cat?' on':''}`} onClick={()=>{setCatFilter(cat);setPage(1)}}>{cat==='all'?'كل الفئات':cat}</button>
-          ))}
-        </div>
-      )}
+
+      <StorelyMetricStrip metrics={metrics} className="mb-4" />
 
       {filtered.length===0 && !search && catFilter==='all' && STARTER_PRODUCTS[businessType] && !templateDismissed ? (
         <div className="u" style={{background:'white',borderRadius:14,padding:'28px 24px',border:`1.5px solid ${C.primaryB}`}}>
           <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
-            <div style={{display:'flex',justifyContent:'center'}}><Sparkles size={22} strokeWidth={1.75}/></div>
+            <div style={{display:'flex',justifyContent:'center',color:C.text4}}><Package size={18} strokeWidth={1.75}/></div>
             <div style={{fontSize:15,fontWeight:800,color:C.text}}>نقترح عليك هذي الأصناف الشائعة لـ{businessType}</div>
           </div>
           <div style={{fontSize:12,color:C.text4,marginBottom:18}}>اختر اللي يناسبك وراح نضيفها لمخزونك بضغطة وحدة — أو تجاهل وابدأ يدوياً</div>
@@ -613,12 +687,12 @@ export default function InventoryPage() {
           </div>
         </div>
       ) : filtered.length===0?(
-        <div className="u" style={{background:'white',borderRadius:12,padding:'48px 24px',textAlign:'center',border:`1px solid ${C.border}`}}>
-          <div style={{marginBottom:8,display:'flex',justifyContent:'center',color:C.text4}}><Package size={32} strokeWidth={1.5}/></div>
-          <div style={{fontSize:14,fontWeight:600,color:C.text2,marginBottom:4}}>{search||catFilter!=='all'?'لا توجد نتائج':'المخزون فارغ'}</div>
-          <div style={{fontSize:11,color:C.text4,marginBottom:12}}>{search||catFilter!=='all'?'جرب كلمة أو فئة أخرى':'ابدأ بإضافة أول منتج'}</div>
-          {(search||catFilter!=='all')&&<button onClick={()=>{setSearch('');setCatFilter('all');setStatusFilter('all')}} style={{padding:'7px 16px',background:C.bg,color:C.text2,border:`1px solid ${C.border2}`,borderRadius:7,fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إزالة الفلاتر</button>}
-        </div>
+        <StorelyEmptyState
+          icon={<Package size={16}/>}
+          title={search||catFilter!=='all'||statusFilter!=='all'?'لا توجد نتائج':'المخزون فارغ'}
+          description={search||catFilter!=='all'||statusFilter!=='all'?'جرّب تغيير البحث أو الفلاتر الحالية.':'ابدأ بإضافة أول منتج للمخزون.'}
+          action={(search||catFilter!=='all'||statusFilter!=='all') ? <StorelyButton variant="secondary" onClick={()=>{setSearch('');setCatFilter('all');setStatusFilter('all');setPage(1)}}>إزالة الفلاتر</StorelyButton> : <StorelyButton variant="primary" onClick={()=>{setEditItem(null);setAddQty(0);setForm({name:'',sku:'',unit:'ظ‚ط·ط¹ط©',qty:0,reorder_point:5,category:'',expiry_date:'',recipe_unit:'',recipe_unit_factor:''});setShowAdd(true)}}>إضافة منتج</StorelyButton>}
+        />
       ):(
         <>
           {/* الجوال: قائمة */}
@@ -646,40 +720,18 @@ export default function InventoryPage() {
           </div>
 
           {/* الكمبيوتر: جدول */}
-          <div className="dtable iv-table-wrap">
-            <table className="iv-table">
-              <thead>
-                <tr>{['المنتج','الفئة','الكمية','الحد الأدنى','الحالة',''].map((h,i)=><th key={i}>{h}</th>)}</tr>
-              </thead>
-              <tbody>
-                {paginated.map(p=>{
-                  const isOut=p.qty===0,isLow=p.qty<=p.reorder_point
-                  const exp=(p as any).expiry_date?Math.ceil((new Date((p as any).expiry_date).getTime()-Date.now())/86400000):null
-                  return (
-                    <tr key={p.id} onClick={()=>openEdit(p)}>
-                      <td>
-                        <div className="iv-name">{p.name}</div>
-                        <div className="iv-meta">
-                          {p.sku&&<span dir="ltr">#{p.sku}</span>}
-                          {exp!==null&&exp<=7&&<span style={{color:exp<0?C.danger:C.warning}}>{exp<0?'منتهي الصلاحية':exp===0?'ينتهي اليوم':`ينتهي خلال ${exp} يوم`}</span>}
-                        </div>
-                      </td>
-                      <td style={{color:C.text3}}>{p.category||'—'}</td>
-                      <td style={{whiteSpace:'nowrap'}}><span className="iv-qty" style={{color:isOut?C.danger:isLow?C.warning:C.text}}>{p.qty}</span> <span className="iv-unit">{p.unit}</span></td>
-                      <td style={{color:C.text3,whiteSpace:'nowrap'}}>{p.reorder_point} {p.unit}</td>
-                      <td><StatusDot out={isOut} low={isLow}/></td>
-                      <td style={{textAlign:'left',whiteSpace:'nowrap'}} onClick={e=>e.stopPropagation()}>
-                        <button className="iv-act" onClick={()=>openEdit(p)}>تعديل</button>
-                        <button className="iv-act" style={{color:C.danger}} onClick={()=>setConfirm({id:p.id,name:p.name})}>حذف</button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+          <div className="dtable mb-3">
+            <StorelyDataTable
+              columns={inventoryColumns}
+              data={paginated}
+              rowKey="id"
+              searchable={false}
+              pageSize={PER}
+              onRowClick={openEdit}
+              emptyState={<StorelyEmptyState icon={<Package size={16}/>} title="لا توجد منتجات" description="غيّر الفلاتر أو أضف منتجاً جديداً." />}
+            />
           </div>
-
-          <Pagination total={filtered.length} page={page} perPage={PER} onPage={setPage}/>
+                    <Pagination total={filtered.length} page={page} perPage={PER} onPage={setPage}/>
         </>
       )}
     </div>
@@ -692,6 +744,11 @@ function StatusDot({ out, low }: { out: boolean; low: boolean }) {
 }
 
 const IV_CSS = `
+  .iv{color:${C.text}}
+  .iv-filterbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .iv-select{height:32px;min-width:145px;border:1px solid #D7CDC2;border-radius:5px;background:white;color:#203640;padding:0 10px;font-size:13px;font-family:inherit;outline:none}
+  .iv-skeleton{border-radius:5px;background:#E7E1D8;animation:ivPulse 1.3s ease-in-out infinite}
+  @keyframes ivPulse{0%,100%{opacity:1}50%{opacity:.45}}
   .iv-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
   .iv-title{font-size:20px;font-weight:700;color:${C.text};margin:0}
   .iv-sub{font-size:13px;color:${C.text3};margin:4px 0 0;font-variant-numeric:tabular-nums}

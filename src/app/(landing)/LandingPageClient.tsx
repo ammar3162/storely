@@ -1,439 +1,504 @@
 'use client'
-import { useState, useEffect } from 'react'
+
+import { useEffect, useState } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import {
+  ArrowLeft,
+  Bell,
+  Building2,
+  Check,
+  Menu,
+  Package,
+  ShieldCheck,
+  ShoppingCart,
+  Users,
+  X,
+} from 'lucide-react'
 import { isInApp } from '@/lib/inApp'
-import { Package, MessageCircle, Users, Wallet, Globe, BarChart3, Store, Bot, ShoppingBag } from 'lucide-react'
-import { Billing, PLAN_BRANCHES, PLANS, LS, FAQ_ITEMS, FEATURES, TRUST_POINTS, BRANCH_OPTIONS, BRANCH_OPTIONS_EN } from './landing-data'
-import { FaqItem, MiniMockup } from './landing-components'
+import { Billing, BRANCH_OPTIONS, BRANCH_OPTIONS_EN, PLAN_BRANCHES, PLANS } from './landing-data'
+import styles from './LandingPageClient.module.css'
+
+type Lang = 'ar' | 'en'
+
+const copy = {
+  ar: {
+    navProduct: 'المنتج',
+    navPricing: 'الأسعار',
+    navDemo: 'عرض النظام',
+    login: 'دخول',
+    start: 'ابدأ التجربة',
+    eyebrow: 'منصة تشغيل للأعمال التي تعتمد على المخزون',
+    title: 'Storely',
+    subtitle: 'إدارة المخزون والمشتريات والفروع والموظفين من مكان واحد، بواجهة هادئة وواضحة لفريقك اليومي.',
+    primaryCta: 'ابدأ تجربة مجانية',
+    secondaryCta: 'اطلب عرض النظام',
+    previewTitle: 'مركز التشغيل اليومي',
+    previewSubtitle: 'نظرة مركزة على ما يحتاجه الفريق لاتخاذ قرار سريع.',
+    inventory: 'المخزون',
+    purchases: 'المشتريات',
+    staff: 'الفريق',
+    branches: 'الفروع',
+    lowStock: 'منتجات تحتاج إعادة طلب',
+    supplierOrder: 'طلب مورد قيد المتابعة',
+    shiftReady: 'جاهزية الوردية',
+    branchSync: 'تزامن الفروع',
+    review: 'مراجعة',
+    today: 'اليوم',
+    stable: 'مستقر',
+    synced: 'محدّث',
+    valueTitle: 'مصمم للعمل التشغيلي، لا للاستعراض.',
+    valueText: 'Storely يجمع العمليات المتكررة في مسارات واضحة: إدخال مشتريات، متابعة كميات، صلاحيات موظفين، وتنبيهات عند الحاجة فقط.',
+    pillars: [
+      ['مخزون قابل للمتابعة', 'حركات مخزون واضحة بدل تعديل الكميات يدويًا.'],
+      ['مشتريات وموردون', 'سجل واحد للطلبات والتكاليف وحالة الموردين.'],
+      ['فروع وموظفون', 'صلاحيات منظمة ومتابعة تشغيلية حسب الفرع.'],
+      ['تنبيهات عملية', 'إشعارات قليلة ومفيدة عند انخفاض المخزون أو وجود إجراء مطلوب.'],
+    ],
+    plansTitle: 'باقات واضحة حسب حجم التشغيل',
+    monthly: 'شهري',
+    yearly: 'سنوي',
+    save: 'وفر',
+    sar: 'ر.س',
+    perMonth: 'شهريًا',
+    perYear: 'سنويًا',
+    included: 'مشمول',
+    choosePlan: 'اختر الباقة',
+    demoTitle: 'اطلب عرض Storely',
+    demoText: 'اترك بياناتك وسنتواصل معك لمراجعة احتياج المنشأة وطريقة البدء.',
+    firstName: 'الاسم',
+    lastName: 'اسم العائلة',
+    phone: 'رقم الهاتف',
+    email: 'البريد الإلكتروني',
+    business: 'اسم المنشأة',
+    branchesCount: 'عدد الفروع',
+    select: 'اختر',
+    agree: 'أوافق على',
+    terms: 'الشروط',
+    and: 'و',
+    privacy: 'سياسة الخصوصية',
+    sending: 'جاري الإرسال',
+    submit: 'إرسال الطلب',
+    success: 'تم إرسال الطلب بنجاح. سنتواصل معك قريبًا.',
+    mustAgree: 'يجب الموافقة على الشروط وسياسة الخصوصية أولًا.',
+    submitError: 'تعذر إرسال الطلب. حاول مرة أخرى.',
+    connectionError: 'تعذر الاتصال. حاول مرة أخرى.',
+    footerText: 'منصة أعمال موجهة للمخزون والتشغيل اليومي.',
+    legal: 'قانوني',
+    contact: 'تواصل',
+    rights: 'جميع الحقوق محفوظة لدى Storely',
+    whatsapp: 'واتساب',
+  },
+  en: {
+    navProduct: 'Product',
+    navPricing: 'Pricing',
+    navDemo: 'Demo',
+    login: 'Log in',
+    start: 'Start trial',
+    eyebrow: 'Operations platform for inventory-led businesses',
+    title: 'Storely',
+    subtitle: 'Manage inventory, purchasing, branches, and staff from one calm workspace built for daily operations.',
+    primaryCta: 'Start free trial',
+    secondaryCta: 'Book a demo',
+    previewTitle: 'Daily operations center',
+    previewSubtitle: 'A focused view for the decisions your team needs to make today.',
+    inventory: 'Inventory',
+    purchases: 'Purchasing',
+    staff: 'Team',
+    branches: 'Branches',
+    lowStock: 'Products need reordering',
+    supplierOrder: 'Supplier order in progress',
+    shiftReady: 'Shift readiness',
+    branchSync: 'Branch sync',
+    review: 'Review',
+    today: 'Today',
+    stable: 'Stable',
+    synced: 'Synced',
+    valueTitle: 'Designed for operations, not presentation.',
+    valueText: 'Storely organizes repeated work into clear flows: purchasing, stock movement, staff permissions, and alerts only when action is needed.',
+    pillars: [
+      ['Trackable inventory', 'Stock changes flow through clear movement history.'],
+      ['Purchases and suppliers', 'One record for orders, costs, and supplier status.'],
+      ['Branches and staff', 'Organized permissions and branch-level operations.'],
+      ['Practical alerts', 'Fewer, more useful alerts when action is required.'],
+    ],
+    plansTitle: 'Plans that match your operating size',
+    monthly: 'Monthly',
+    yearly: 'Yearly',
+    save: 'Save',
+    sar: 'SAR',
+    perMonth: '/mo',
+    perYear: '/yr',
+    included: 'included',
+    choosePlan: 'Choose plan',
+    demoTitle: 'Book a Storely demo',
+    demoText: 'Share your details and we will review your operation needs and setup path.',
+    firstName: 'First name',
+    lastName: 'Last name',
+    phone: 'Phone',
+    email: 'Email',
+    business: 'Business name',
+    branchesCount: 'Branches',
+    select: 'Select',
+    agree: 'I agree to the',
+    terms: 'Terms',
+    and: 'and',
+    privacy: 'Privacy Policy',
+    sending: 'Sending',
+    submit: 'Send request',
+    success: 'Request sent successfully. We will contact you soon.',
+    mustAgree: 'Please agree to the terms and privacy policy first.',
+    submitError: 'Could not send the request. Please try again.',
+    connectionError: 'Connection failed. Please try again.',
+    footerText: 'Business software for inventory and daily operations.',
+    legal: 'Legal',
+    contact: 'Contact',
+    rights: 'All rights reserved to Storely',
+    whatsapp: 'WhatsApp',
+  },
+} as const
+
+const previewRows = [
+  { icon: Package, label: 'inventory', text: 'lowStock', status: 'review' },
+  { icon: ShoppingCart, label: 'purchases', text: 'supplierOrder', status: 'today' },
+  { icon: Users, label: 'staff', text: 'shiftReady', status: 'stable' },
+  { icon: Building2, label: 'branches', text: 'branchSync', status: 'synced' },
+] as const
+
+function removeDecorativeEmoji(value: string) {
+  return value.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim()
+}
 
 export default function LandingPage() {
   const router = useRouter()
   const [billing, setBilling] = useState<Billing>('monthly')
-  const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [form, setForm] = useState({firstName:'',lastName:'',phone:'',email:'',businessName:'',branchCount:''})
+  const [form, setForm] = useState({ firstName: '', lastName: '', phone: '', email: '', businessName: '', branchCount: '' })
   const [agreed, setAgreed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [submitMsg, setSubmitMsg] = useState<{ok:boolean,text:string}|null>(null)
-  const [partners, setPartners] = useState<any[]>([])
-  const [lang, setLangState] = useState<'ar'|'en'>('ar')
-  function t(key: string) { return (LS as any)[key]?.[lang] || key }
-  function setLang(l: 'ar'|'en') {
-    setLangState(l)
-    try { localStorage.setItem('storely_lang', l) } catch {}
-  }
-  // داخل تطبيق Google Play ما نعرض صفحة التسويق والأسعار — نروح للدخول مباشرة
-  useEffect(() => { if (isInApp()) router.replace('/login') }, [router])
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('storely_lang')
-      if (saved === 'ar' || saved === 'en') setLangState(saved)
-    } catch {}
-  }, [])
+  const [submitMsg, setSubmitMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [partners, setPartners] = useState<Array<{ id: string; name: string; logo_url: string }>>([])
   const [marqueeMsgs, setMarqueeMsgs] = useState<string[]>([])
-  const hasMarquee = marqueeMsgs.length>0
+  const [lang, setLangState] = useState<Lang>(() => {
+    if (typeof window === 'undefined') return 'ar'
+    try {
+      const saved = window.localStorage.getItem('storely_lang')
+      return saved === 'ar' || saved === 'en' ? saved : 'ar'
+    } catch {
+      return 'ar'
+    }
+  })
 
-  useEffect(()=>{
-    import('@/lib/supabase/client').then(({createClient})=>{
-      createClient().auth.getSession().then(({data:{session}})=>{
-        if(session) router.replace('/dashboard')
+  const c = copy[lang]
+  const dir = lang === 'ar' ? 'rtl' : 'ltr'
+
+  function setLang(nextLang: Lang) {
+    setLangState(nextLang)
+    try {
+      localStorage.setItem('storely_lang', nextLang)
+    } catch {}
+  }
+
+  useEffect(() => {
+    if (isInApp()) router.replace('/login')
+  }, [router])
+
+  useEffect(() => {
+    import('@/lib/supabase/client').then(({ createClient }) => {
+      createClient().auth.getSession().then(({ data: { session } }) => {
+        if (session) router.replace('/dashboard')
       })
     })
-  },[router])
+  }, [router])
 
-  useEffect(()=>{
-    const fn=()=>setScrolled(window.scrollY>50)
-    window.addEventListener('scroll',fn)
-    return ()=>window.removeEventListener('scroll',fn)
-  },[])
+  useEffect(() => {
+    fetch('/api/partners')
+      .then((response) => response.json())
+      .then((data) => setPartners(data.partners || []))
+      .catch(() => {})
+  }, [])
 
-  useEffect(()=>{
-    fetch('/api/partners').then(r=>r.json()).then(d=>setPartners(d.partners||[])).catch(()=>{})
-  },[])
+  useEffect(() => {
+    fetch('/api/marquee-messages')
+      .then((response) => response.json())
+      .then((data) => {
+        const messages = (data.messages || [])
+          .map((message: { message: string }) => removeDecorativeEmoji(message.message))
+          .filter(Boolean)
+        if (messages.length > 0) setMarqueeMsgs(messages)
+      })
+      .catch(() => {})
+  }, [])
 
-  useEffect(()=>{
-    fetch('/api/marquee-messages').then(r=>r.json()).then(d=>{
-      const msgs = (d.messages||[]).map((m:any)=>m.message)
-      if(msgs.length>0) setMarqueeMsgs(msgs)
-    }).catch(()=>{})
-  },[])
-
-  async function submitDemoRequest(e: React.FormEvent) {
-    e.preventDefault()
-    if (!agreed) { setSubmitMsg({ok:false,text:'لازم توافق على الشروط والأحكام أولاً'}); return }
-    setSubmitting(true); setSubmitMsg(null)
+  async function submitDemoRequest(event: React.FormEvent) {
+    event.preventDefault()
+    if (!agreed) {
+      setSubmitMsg({ ok: false, text: c.mustAgree })
+      return
+    }
+    setSubmitting(true)
+    setSubmitMsg(null)
     try {
-      const res = await fetch('/api/demo-request', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(form)})
-      const data = await res.json()
+      const response = await fetch('/api/demo-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const data = await response.json()
       if (data.success) {
-        setSubmitMsg({ok:true,text:'✅ تم إرسال طلبك بنجاح! بنتواصل معك قريباً عبر واتساب'})
-        setForm({firstName:'',lastName:'',phone:'',email:'',businessName:'',branchCount:''})
+        setSubmitMsg({ ok: true, text: c.success })
+        setForm({ firstName: '', lastName: '', phone: '', email: '', businessName: '', branchCount: '' })
         setAgreed(false)
       } else {
-        setSubmitMsg({ok:false,text:data.error || 'حدث خطأ، حاول مرة ثانية'})
+        setSubmitMsg({ ok: false, text: data.error || c.submitError })
       }
-    } catch { setSubmitMsg({ok:false,text:'خطأ بالاتصال، حاول مرة ثانية'}) }
+    } catch {
+      setSubmitMsg({ ok: false, text: c.connectionError })
+    }
     setSubmitting(false)
   }
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',background:'white',color:'#111827'}}>
-      <style>{`
-        @keyframes marqueeScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&family=Noto+Naskh+Arabic:wght@500;600;700&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0}
-        html{scroll-behavior:smooth}
-        .nav-link{color:#4b5563;text-decoration:none;font-size:14px;font-weight:500;transition:color .2s}
-        .nav-link:hover{color:#0f766e}
-        .btn-primary{background:#0f766e;color:white;border:none;border-radius:8px;padding:12px 24px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s;text-decoration:none;display:inline-block}
-        .btn-primary:hover{background:#134e4a}
-        .btn-outline{background:white;color:#111827;border:1.5px solid #e5e7eb;border-radius:8px;padding:11px 22px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;text-decoration:none;display:inline-block}
-        .btn-outline:hover{border-color:#0f766e;color:#0f766e}
-        .feat-card{background:white;border:1px solid #f3f4f6;border-radius:16px;padding:28px;transition:all .25s}
-        .feat-card:hover{border-color:#e5e7eb;box-shadow:0 4px 20px rgba(0,0,0,.06)}
-        .plan-card{border:1.5px solid #e5e7eb;border-radius:16px;padding:28px;transition:all .2s;background:white}
-        .plan-card:hover{border-color:#0f766e}
-        .plan-card.popular{border-color:#0f766e;border-width:2px}
-        .demo-input{width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}
-        .demo-input:focus{border-color:#0f766e}
-        @media(max-width:768px){
-          .desk-nav{display:none!important}
-          .mob-menu-btn{display:flex!important}
-          .hero-h1{font-size:34px!important}
-          .hero-btns{flex-direction:column!important}
-          .collage-grid{grid-template-columns:1fr 1fr!important;height:auto!important}
-          .feat-grid{grid-template-columns:1fr!important}
-          .plan-grid{grid-template-columns:1fr!important}
-          .stats-row{flex-wrap:wrap!important;gap:20px!important}
-          .footer-grid{grid-template-columns:1fr!important}
-          .demo-grid{grid-template-columns:1fr!important}
-          .demo-fields{grid-template-columns:1fr!important}
-          .section-pad{padding:60px 20px!important}
-        }
-        @media(min-width:769px){.mob-menu-btn{display:none!important}.mob-menu{display:none!important}}
-      `}</style>
-
-      {/* MARQUEE */}
-      {hasMarquee && (
-        <div style={{position:'fixed',top:0,right:0,left:0,zIndex:1001,height:36,background:'#042f2e',overflow:'hidden',display:'flex',alignItems:'center'}}>
-          <div style={{display:'flex',whiteSpace:'nowrap' as const,animation:'marqueeScroll 35s linear infinite'}}>
-            {[...Array(2)].map((_,i)=>(
-              <div key={i} style={{display:'flex',alignItems:'center'}}>
-                {marqueeMsgs.map((m,j)=>(
-                  <span key={j} style={{color:'white',fontSize:13,fontWeight:700,padding:'0 24px',display:'flex',alignItems:'center',gap:8}}>
-                    {m}
-                    <span style={{opacity:.5}}>•</span>
-                  </span>
-                ))}
-              </div>
+    <main className={styles.page} dir={dir}>
+      {marqueeMsgs.length > 0 && (
+        <div className={styles.announcement}>
+          <div className={styles.announcementInner}>
+            {marqueeMsgs.map((message) => (
+              <span key={message}>{message}</span>
             ))}
           </div>
         </div>
       )}
 
-      {/* NAVBAR */}
-      <div style={{background:'linear-gradient(155deg,#042f2e 0%,#134e4a 45%,#115e59 100%)',paddingBottom:80,position:'relative' as const,overflow:'hidden'}}>
-        <div style={{position:'absolute' as const,top:-120,left:-120,width:400,height:400,borderRadius:'50%',background:'radial-gradient(circle,rgba(255,255,255,.06),transparent 70%)'}}/>
-        <div style={{position:'absolute' as const,bottom:-160,right:-100,width:500,height:500,borderRadius:'50%',background:'radial-gradient(circle,rgba(255,255,255,.05),transparent 70%)'}}/>
+      <header className={styles.header}>
+        <Link className={styles.brand} href="/" aria-label="Storely">
+          <Image src="/storely-logo.png" alt="" className={styles.logo} width={32} height={32} priority />
+          <span>Storely</span>
+        </Link>
 
-        <nav style={{position:'fixed',top:hasMarquee?36:0,right:0,left:0,zIndex:1000,background:scrolled?'rgba(10,31,19,.92)':'transparent',borderBottom:scrolled?'1px solid rgba(255,255,255,.08)':'1px solid transparent',backdropFilter:scrolled?'blur(10px)':'none',transition:'all .3s',padding:'0 40px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-          <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <img src="/storely-logo.png" alt="Storely" style={{width:38,height:38,borderRadius:10,objectFit:'cover'}}/>
-            <span style={{fontSize:18,fontWeight:800,color:'white',letterSpacing:'-0.3px'}}>Storely</span>
-          </div>
-          <div className="desk-nav" style={{display:'flex',gap:28,alignItems:'center'}}>
-            {[[t('navFeatures'),'#features'],[t('navPricing'),'#pricing'],[t('navFaq'),'#faq']].map(([l,h])=>(
-              <a key={h} href={h} style={{color:'rgba(255,255,255,.75)',textDecoration:'none',fontSize:14,fontWeight:500,transition:'color .2s'}}>{l}</a>
-            ))}
-          </div>
-          <div className="desk-nav" style={{display:'flex',gap:10,alignItems:'center'}}>
-            <button onClick={()=>setLang(lang==='ar'?'en':'ar')} style={{display:'none',padding:'8px 14px',fontSize:12,fontWeight:700,background:'rgba(255,255,255,.08)',color:'white',border:'1px solid rgba(255,255,255,.2)',borderRadius:99,cursor:'pointer',fontFamily:'inherit'}}>{lang==='ar'?'EN':'عربي'}</button>
-            <button onClick={()=>router.push('/login')} style={{padding:'8px 18px',fontSize:14,fontWeight:700,background:'transparent',color:'white',border:'1px solid rgba(255,255,255,.25)',borderRadius:99,cursor:'pointer',fontFamily:'inherit'}}>{t('navLogin')}</button>
-            <a href="#demo" style={{padding:'9px 20px',fontSize:14,fontWeight:700,background:'white',color:'#042f2e',borderRadius:99,textDecoration:'none'}}>{t('navDemo')}</a>
-          </div>
-          <button className="mob-menu-btn" onClick={()=>setMenuOpen(o=>!o)}
-            style={{background:'none',border:'none',cursor:'pointer',fontSize:22,color:'white',padding:4}}>
-            {menuOpen?'✕':'☰'}
-          </button>
+        <nav className={styles.desktopNav} aria-label="Primary">
+          <a href="#product">{c.navProduct}</a>
+          <a href="#pricing">{c.navPricing}</a>
+          <a href="#demo">{c.navDemo}</a>
         </nav>
 
-        {menuOpen && (
-          <div className="mob-menu" style={{position:'fixed',top:hasMarquee?100:64,right:0,left:0,zIndex:999,background:'#042f2e',borderBottom:'1px solid rgba(255,255,255,.08)',padding:'20px 24px',display:'flex',flexDirection:'column',gap:16}}>
-            {[[t('navFeatures'),'#features'],[t('navPricing'),'#pricing'],[t('navFaq'),'#faq']].map(([l,h])=>(
-              <a key={h} href={h} onClick={()=>setMenuOpen(false)} style={{color:'rgba(255,255,255,.85)',textDecoration:'none',fontSize:16,fontWeight:500,padding:'8px 0',borderBottom:'1px solid rgba(255,255,255,.08)'}}>{l}</a>
-            ))}
-            <a href="#demo" onClick={()=>setMenuOpen(false)} style={{textAlign:'center',padding:'12px',background:'white',color:'#042f2e',borderRadius:99,fontWeight:700,textDecoration:'none'}}>{t('navDemo')}</a>
-          </div>
-        )}
-
-        {/* HERO */}
-        <section style={{paddingTop:hasMarquee?166:130,paddingBottom:8,padding:hasMarquee?'166px 40px 8px':'130px 40px 8px',maxWidth:1000,margin:'0 auto',textAlign:'center' as const,position:'relative' as const,zIndex:1}}>
-          <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.18)',borderRadius:99,padding:'7px 18px',fontSize:13,fontWeight:600,color:'white',marginBottom:28}}>
-            <span style={{width:6,height:6,borderRadius:'50%',background:'#2dd4bf'}}/>
-            {t('heroBadge')}
-          </div>
-          <h1 className="hero-h1" style={{fontFamily:lang==='ar'?"'Noto Naskh Arabic',serif":"'IBM Plex Sans Arabic',sans-serif",fontSize:58,fontWeight:600,color:'white',lineHeight:1.25,marginBottom:22,letterSpacing:'-0.5px',maxWidth:820,margin:'0 auto 22px'}}>
-            {t('heroH1a')}<br/>
-            <span style={{color:'#5eead4',fontStyle:'italic' as const}}>{t('heroH1b')}</span>
-          </h1>
-          <p style={{fontSize:17,color:'rgba(255,255,255,.65)',maxWidth:580,margin:'0 auto 34px',lineHeight:1.7}}>
-            {t('heroSub')}
-          </p>
-          <div className="hero-btns" style={{display:'flex',gap:12,justifyContent:'center',marginBottom:56}}>
-            <a href="#demo" style={{fontSize:16,padding:'14px 28px',background:'transparent',color:'white',border:'1.5px solid rgba(255,255,255,.3)',borderRadius:99,textDecoration:'none',fontWeight:700}}>{t('heroTry')}</a>
-            <button onClick={()=>router.push('/login?mode=register')} style={{fontSize:16,padding:'14px 32px',background:'white',color:'#042f2e',border:'none',borderRadius:99,cursor:'pointer',fontFamily:'inherit',fontWeight:700}}>
-              {t('heroStart')}
-            </button>
-          </div>
-        </section>
-
-        {/* شعارات العملاء — فوق الخلفية الملوّنة مباشرة، زي Tines */}
-        {partners.length > 0 && (
-          <div style={{maxWidth:1000,margin:'0 auto',padding:'0 40px',position:'relative' as const,zIndex:1}}>
-            <p style={{textAlign:'center' as const,fontSize:12,fontWeight:700,color:'rgba(255,255,255,.4)',letterSpacing:'.1em',textTransform:'uppercase' as const,marginBottom:24}}>{t('trustedBy')}</p>
-            <div style={{display:'flex',flexWrap:'wrap' as const,gap:18,justifyContent:'center',alignItems:'center'}}>
-              {partners.map((p:any)=>(
-                <div key={p.id} style={{background:'white',borderRadius:14,padding:'14px 26px',display:'flex',alignItems:'center',justifyContent:'center',height:68,boxShadow:'0 4px 16px rgba(0,0,0,.18)'}}>
-                  <img src={p.logo_url} alt={p.name} style={{height:38,maxWidth:150,objectFit:'contain'}}/>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* شبكة معاينات — تطفو فوق حافة الخلفية الملوّنة، زي بطاقات Tines */}
-      <div style={{maxWidth:1100,margin:'-60px auto 0',padding:'0 40px',position:'relative' as const,zIndex:2}}>
-        <div className="collage-grid" style={{display:'grid',gridTemplateColumns:'1.1fr 0.9fr 0.9fr 1.3fr',gap:14,height:340,boxShadow:'0 30px 70px rgba(0,0,0,.18)',borderRadius:24}}>
-          <div style={{background:'linear-gradient(160deg,#f0fdfa,#ccfbf1)',borderRadius:20,padding:10}}><MiniMockup variant="whatsapp"/></div>
-          <div style={{background:'linear-gradient(160deg,#eff6ff,#dbeafe)',borderRadius:20,padding:10}}><MiniMockup variant="staff"/></div>
-          <div style={{background:'linear-gradient(160deg,#fefce8,#fef9c3)',borderRadius:20,padding:10}}><MiniMockup variant="chart"/></div>
-          <div style={{background:'linear-gradient(160deg,#f0fdfa,#99f6e4)',borderRadius:20,padding:10}}><MiniMockup variant="stats"/></div>
-        </div>
-
-        <div className="stats-row" style={{display:'flex',gap:40,justifyContent:'center',marginTop:48}}>
-          {[['99 '+(lang==='ar'?'ر.س':'SAR'),t('statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('statFree')],['7',t('statLangs')],['24/7',t('statAlerts')]].map(([n,l])=>(
-            <div key={l}>
-              <div style={{fontSize:24,fontWeight:900,color:'#111827'}}>{n}</div>
-              <div style={{fontSize:12,color:'#9ca3af',marginTop:3}}>{l}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* TRUST */}
-      <section style={{padding:'50px 40px',background:'#fafafa',borderTop:'1px solid #f3f4f6',borderBottom:'1px solid #f3f4f6'}}>
-        <div style={{maxWidth:1000,margin:'0 auto',textAlign:'center' as const}}>
-          <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:32}}>{t('trustTitle')}</h2>
-          <div style={{display:'flex',flexWrap:'wrap' as const,gap:28,justifyContent:'center'}}>
-            {TRUST_POINTS.map((tp,i)=>(
-              <div key={i} style={{display:'flex',alignItems:'center',gap:8,background:'white',border:'1px solid #f3f4f6',borderRadius:99,padding:'10px 18px'}}>
-                <span style={{fontSize:16}}>{tp.icon}</span>
-                <span style={{fontSize:13,fontWeight:600,color:'#374151'}}>{lang==='ar'?tp.label:tp.labelEn}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FEATURES */}
-      <section id="features" className="section-pad" style={{padding:'90px 40px',maxWidth:1200,margin:'0 auto'}}>
-        <div style={{textAlign:'center',marginBottom:56}}>
-          <p style={{fontSize:13,fontWeight:700,color:'#0f766e',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>{t('featuresTag')}</p>
-          <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>{t('featuresTitle')}</h2>
-        </div>
-        <div className="feat-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:20}}>
-          {FEATURES.map((f,i)=>(
-            <div key={i} className="feat-card">
-              <div style={{width:52,height:52,borderRadius:14,background:'linear-gradient(135deg,#f0fdfa,#ccfbf1)',border:'1px solid #99f6e4',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:16,color:'#029FA2'}}>
-                <f.icon size={24} strokeWidth={2}/>
-              </div>
-              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8,flexWrap:'wrap' as const}}>
-                <div style={{fontSize:17,fontWeight:800,color:'#111827'}}>{lang==='ar'?f.title:(f as any).titleEn}</div>
-                {(f as any).badge && (
-                  <span style={{fontSize:11,fontWeight:800,color:'#029FA2',background:'#f0fdfa',border:'1px solid #99f6e4',padding:'2px 9px',borderRadius:99}}>{lang==='ar'?(f as any).badge:(f as any).badgeEn}</span>
-                )}
-              </div>
-              <div style={{fontSize:14,color:'#6b7280',lineHeight:1.7}}>{lang==='ar'?f.desc:(f as any).descEn}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* DEMO REQUEST FORM */}
-      <section id="demo" className="section-pad" style={{padding:'90px 40px',background:'#fafafa'}}>
-        <div className="demo-grid" style={{maxWidth:1000,margin:'0 auto',display:'grid',gridTemplateColumns:'1fr 1fr',gap:0,borderRadius:20,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.08)'}}>
-          <form onSubmit={submitDemoRequest} style={{background:'white',padding:40}}>
-            <h2 style={{fontSize:24,fontWeight:900,color:'#111827',marginBottom:6}}>{t('demoTitle')}</h2>
-            <p style={{fontSize:14,color:'#6b7280',marginBottom:24}}>{t('demoSub')}</p>
-            {submitMsg && (
-              <div style={{background:submitMsg.ok?'#f0fdfa':'#fef2f2',border:`1px solid ${submitMsg.ok?'#99f6e4':'#fecaca'}`,borderRadius:8,padding:'10px 14px',marginBottom:16,fontSize:13,fontWeight:600,color:submitMsg.ok?'#0f766e':'#dc2626'}}>
-                {submitMsg.text}
-              </div>
-            )}
-            <div className="demo-fields" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
-              <div>
-                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoFirstName')}</label>
-                <input required className="demo-input" value={form.firstName} onChange={e=>setForm(f=>({...f,firstName:e.target.value}))}/>
-              </div>
-              <div>
-                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoLastName')}</label>
-                <input required className="demo-input" value={form.lastName} onChange={e=>setForm(f=>({...f,lastName:e.target.value}))}/>
-              </div>
-            </div>
-            <div style={{marginBottom:12}}>
-              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoPhone')}</label>
-              <input required type="tel" placeholder="05xxxxxxxx" className="demo-input" value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))}/>
-            </div>
-            <div style={{marginBottom:12}}>
-              <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoEmail')}</label>
-              <input required type="email" className="demo-input" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/>
-            </div>
-            <div className="demo-fields" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16}}>
-              <div>
-                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoBusiness')}</label>
-                <input required className="demo-input" value={form.businessName} onChange={e=>setForm(f=>({...f,businessName:e.target.value}))}/>
-              </div>
-              <div>
-                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6}}>{t('demoBranches')}</label>
-                <select className="demo-input" value={form.branchCount} onChange={e=>setForm(f=>({...f,branchCount:e.target.value}))}>
-                  <option value="">{t('demoPleaseSelect')}</option>
-                  {(lang==='ar'?BRANCH_OPTIONS:BRANCH_OPTIONS_EN).map((o,oi)=><option key={o} value={BRANCH_OPTIONS[oi]}>{o}</option>)}
-                </select>
-              </div>
-            </div>
-            <label style={{display:'flex',alignItems:'flex-start',gap:8,fontSize:12,color:'#6b7280',marginBottom:20,cursor:'pointer'}}>
-              <input type="checkbox" checked={agreed} onChange={e=>setAgreed(e.target.checked)} style={{marginTop:2}}/>
-              {t('demoAgree')} <a href="/terms" target="_blank" style={{color:'#0f766e'}}>{t('demoTerms')}</a> {t('demoAnd')}<a href="/privacy" target="_blank" style={{color:'#0f766e'}}>{t('demoPrivacy')}</a>
-            </label>
-            <button type="submit" disabled={submitting} className="btn-primary" style={{width:'100%',padding:'13px',fontSize:15,opacity:submitting?.6:1}}>
-              {submitting?t('demoSending'):t('demoSubmit')}
-            </button>
-          </form>
-          <div style={{background:'linear-gradient(160deg,#0f766e,#134e4a)',padding:40,display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',textAlign:'center' as const}}>
-            <div style={{width:70,height:70,borderRadius:18,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:32,marginBottom:20}}>📦</div>
-            <h3 style={{fontSize:22,fontWeight:900,color:'white',marginBottom:12,lineHeight:1.4}}>{t('demoSideTitle')}</h3>
-            <p style={{fontSize:14,color:'rgba(255,255,255,.85)',lineHeight:1.8}}>{t('demoSideSub')}</p>
-          </div>
-        </div>
-      </section>
-
-      {/* PRICING */}
-      <section id="pricing" className="section-pad" style={{padding:'90px 40px',maxWidth:1200,margin:'0 auto'}}>
-        <div style={{textAlign:'center',marginBottom:32}}>
-          <p style={{fontSize:13,fontWeight:700,color:'#0f766e',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>{t('pricingTag')}</p>
-          <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>{t('pricingTitle')}</h2>
-        </div>
-        <div style={{display:'flex',justifyContent:'center',marginBottom:40}}>
-          <div style={{display:'inline-flex',gap:4,background:'#f3f4f6',padding:4,borderRadius:12}}>
-            <button onClick={()=>setBilling('monthly')} style={{padding:'9px 20px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',background:billing==='monthly'?'white':'transparent',color:billing==='monthly'?'#111827':'#6b7280',boxShadow:billing==='monthly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>{t('billMonthly')}</button>
-            <button onClick={()=>setBilling('yearly')} style={{padding:'9px 20px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6,background:billing==='yearly'?'white':'transparent',color:billing==='yearly'?'#111827':'#6b7280',boxShadow:billing==='yearly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>
-              {t('billYearly')} <span style={{background:'#f0fdfa',color:'#0f766e',fontSize:10,fontWeight:800,padding:'2px 7px',borderRadius:99}}>{t('billSave')}</span>
-            </button>
-          </div>
-        </div>
-        <div className="plan-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:20}}>
-          {PLANS.map((p,i)=>(
-            <div key={i} className={`plan-card${p.popular?' popular':''}`} style={{position:'relative'}}>
-              {p.popular && <div style={{position:'absolute',top:-13,right:24,background:'#0f766e',color:'white',fontSize:11,fontWeight:800,padding:'4px 12px',borderRadius:99}}>{t('mostPopular')}</div>}
-              <div style={{fontSize:16,fontWeight:800,color:'#111827',marginBottom:8}}>{lang==='ar'?p.name:p.nameEn}</div>
-              <div style={{display:'flex',alignItems:'baseline',gap:6,marginBottom:10}}>
-                <span style={{fontSize:34,fontWeight:900,color:'#111827'}}>{billing==='yearly'?p.yearlyPrice:p.price}</span>
-                <span style={{fontSize:14,color:'#9ca3af'}}>{lang==='ar'?'ر.س':'SAR'} {billing==='yearly'?t('perYear'):t('perMonth')}</span>
-              </div>
-              <div style={{display:'inline-block',background:'#f0fdfa',color:'#0f766e',fontSize:11,fontWeight:800,padding:'3px 10px',borderRadius:99,marginBottom:16}}>{p.features.length} {t('featuresAvail')}</div>
-              <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:16,paddingBottom:16,borderBottom:'1px solid #f3f4f6'}}>
-                {(lang==='ar'?p.limits:p.limitsEn).map((l,j)=><div key={j} style={{fontSize:13,color:'#6b7280'}}>• {l}</div>)}
-              </div>
-              <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:(p as any).addonNote?12:24}}>
-                {(lang==='ar'?p.features:p.featuresEn).map((f,j)=>(
-                  <div key={j} style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:'#374151'}}>
-                    <span style={{color:'#0f766e'}}>✓</span>{f}
-                  </div>
-                ))}
-              </div>
-              {(p as any).addonNote && (
-                <div style={{display:'flex',alignItems:'flex-start',gap:8,background:'#faf5ff',border:'1px solid #e9d5ff',borderRadius:10,padding:'10px 12px',marginBottom:24,fontSize:12,color:'#6b21a8',lineHeight:1.6}}>
-                  {lang==='ar'?(p as any).addonNote:(p as any).addonNoteEn}
-                </div>
-              )}
-              <button onClick={()=>router.push(`/login?mode=register&branches=${PLAN_BRANCHES[i]}&billing=${billing}`)} className={p.popular?'btn-primary':'btn-outline'} style={{width:'100%',textAlign:'center' as const}}>{t('startNow')}</button>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA BANNER */}
-      <section style={{background:'linear-gradient(135deg,#0f766e,#134e4a)',padding:'70px 40px',textAlign:'center' as const}}>
-        <h2 style={{fontSize:32,fontWeight:900,color:'white',marginBottom:14}}>{t('ctaReady')}</h2>
-        <p style={{fontSize:16,color:'rgba(255,255,255,.85)',marginBottom:32}}>{t('ctaSub')}</p>
-        <div style={{display:'flex',gap:14,justifyContent:'center',flexWrap:'wrap' as const}}>
-          <button onClick={()=>router.push('/login?mode=register')}
-            style={{background:'white',color:'#0f766e',border:'none',borderRadius:9,padding:'14px 32px',fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
-            {t('ctaRegister')}
+        <div className={styles.headerActions}>
+          <button className={styles.langButton} type="button" onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}>
+            {lang === 'ar' ? 'EN' : 'عربي'}
           </button>
-          <a href="https://wa.me/966594351667" target="_blank" rel="noreferrer"
-            style={{display:'flex',alignItems:'center',gap:8,padding:'14px 24px',borderRadius:9,background:'rgba(255,255,255,.15)',color:'white',textDecoration:'none',fontSize:15,fontWeight:700,border:'1.5px solid rgba(255,255,255,.3)'}}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            {t('ctaContact')}
-          </a>
+          <button className={styles.ghostButton} type="button" onClick={() => router.push('/login')}>
+            {c.login}
+          </button>
+          <button className={styles.primaryButton} type="button" onClick={() => router.push('/login?mode=register')}>
+            {c.start}
+          </button>
         </div>
-      </section>
 
-      {/* FAQ */}
-      <section id="faq" style={{padding:'80px 40px',maxWidth:700,margin:'0 auto'}}>
-        <div style={{textAlign:'center',marginBottom:48}}>
-          <p style={{fontSize:13,fontWeight:700,color:'#0f766e',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>{t('faqTag')}</p>
-          <h2 style={{fontSize:38,fontWeight:900,color:'#111827',letterSpacing:'-1px'}}>{t('faqTitle')}</h2>
+        <button className={styles.menuButton} type="button" aria-label="Menu" onClick={() => setMenuOpen((open) => !open)}>
+          {menuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+      </header>
+
+      {menuOpen && (
+        <div className={styles.mobileNav}>
+          <a href="#product" onClick={() => setMenuOpen(false)}>{c.navProduct}</a>
+          <a href="#pricing" onClick={() => setMenuOpen(false)}>{c.navPricing}</a>
+          <a href="#demo" onClick={() => setMenuOpen(false)}>{c.navDemo}</a>
+          <button type="button" onClick={() => router.push('/login')}>{c.login}</button>
         </div>
-        {FAQ_ITEMS.map((f,i)=><FaqItem key={i} q={lang==='ar'?f.q:f.qEn} a={lang==='ar'?f.a:f.aEn}/>)}
-      </section>
+      )}
 
-      {/* FOOTER */}
-      <footer style={{background:'#111827',padding:'56px 40px 32px'}}>
-        <div style={{maxWidth:1100,margin:'0 auto'}}>
-          <div className="footer-grid" style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr',gap:40,marginBottom:48}}>
+      <section className={styles.hero}>
+        <div className={styles.heroText}>
+          <p className={styles.eyebrow}>{c.eyebrow}</p>
+          <h1>{c.title}</h1>
+          <p className={styles.subtitle}>{c.subtitle}</p>
+          <div className={styles.heroActions}>
+            <button className={styles.primaryButton} type="button" onClick={() => router.push('/login?mode=register')}>
+              {c.primaryCta}
+              <ArrowLeft size={17} aria-hidden="true" />
+            </button>
+            <a className={styles.secondaryButton} href="#demo">{c.secondaryCta}</a>
+          </div>
+        </div>
+
+        <div className={styles.productPreview} aria-label={c.previewTitle}>
+          <div className={styles.previewHeader}>
             <div>
-              <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
-                <img src="/storely-logo.png" alt="Storely" style={{width:32,height:32,borderRadius:8}}/>
-                <span style={{fontSize:18,fontWeight:800,color:'white'}}>Storely</span>
-              </div>
-              <p style={{fontSize:13,color:'white',lineHeight:1.7,maxWidth:220}}>{t('footerTagline')}</p>
+              <h2>{c.previewTitle}</h2>
+              <p>{c.previewSubtitle}</p>
             </div>
-            {[
-              {title:t('footerPlatform'),links:[[t('footerLogin'),'/login'],[t('footerSignup'),'/login?mode=register'],[t('footerPricing'),'#pricing']]},
-              {title:t('footerLegal'),links:[[t('footerPrivacy'),'/privacy'],[t('footerTerms'),'/terms'],[t('footerSecurity'),'/security']]},
-              {title:t('footerContact'),links:[[t('footerWhatsapp'),'https://wa.me/966594351667'],[t('footerEmail'),'mailto:support@storely.dev']]},
-            ].map((col,i)=>(
-              <div key={i}>
-                <div style={{fontSize:12,fontWeight:700,color:'#9ca3af',marginBottom:14,letterSpacing:'.08em',textTransform:'uppercase'}}>{col.title}</div>
-                <div style={{display:'flex',flexDirection:'column',gap:10}}>
-                  {col.links.map(([l,h])=>(
-                    <a key={l} href={h} style={{color:'white',textDecoration:'none',fontSize:14,transition:'color .2s'}}
-                      onMouseEnter={e=>(e.currentTarget.style.color='#2dd4bf')}
-                      onMouseLeave={e=>(e.currentTarget.style.color='white')}>{l}</a>
-                  ))}
+            <ShieldCheck size={22} aria-hidden="true" />
+          </div>
+          <div className={styles.previewRows}>
+            {previewRows.map((row) => {
+              const Icon = row.icon
+              return (
+                <div className={styles.previewRow} key={row.label}>
+                  <Icon size={18} aria-hidden="true" />
+                  <div>
+                    <span>{c[row.label]}</span>
+                    <p>{c[row.text]}</p>
+                  </div>
+                  <strong>{c[row.status]}</strong>
                 </div>
-              </div>
-            ))}
-          </div>
-          <div style={{borderTop:'1px solid #1f2937',paddingTop:24,display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12}}>
-            <div>
-              <div style={{fontSize:13,color:'white'}}>{t('footerRights')} {new Date().getFullYear()} ©</div>
-              <div style={{fontSize:11,color:'#6b7280',marginTop:6}}>{lang==='ar'?'مؤسسة باسم علي خلوي لتقنية المعلومات، رقم السجل التجاري 7055023522':'Basim Ali Khulwi Information Technology Est., Commercial Registration No. 7055023522'}</div>
-            </div>
-            <div style={{fontSize:13,color:'white'}}>storely.dev</div>
+              )
+            })}
           </div>
         </div>
-      </footer>
+      </section>
 
-      {/* WhatsApp */}
-      <a href="https://wa.me/966594351667" target="_blank" rel="noreferrer"
-        style={{position:'fixed',bottom:24,left:24,zIndex:9999,width:52,height:52,borderRadius:'50%',background:'#25d366',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 16px rgba(37,211,102,.35)',textDecoration:'none',transition:'transform .2s'}}
-        onMouseEnter={e=>(e.currentTarget.style.transform='scale(1.1)')}
-        onMouseLeave={e=>(e.currentTarget.style.transform='none')}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-      </a>
-    </div>
+      {partners.length > 0 && (
+        <section className={styles.partners} aria-label="Partners">
+          {partners.map((partner) => (
+            // eslint-disable-next-line @next/next/no-img-element -- Partner logos are remote CMS assets without a fixed Next image host.
+            <img key={partner.id} src={partner.logo_url} alt={partner.name} />
+          ))}
+        </section>
+      )}
+
+      <section id="product" className={styles.valueSection}>
+        <div className={styles.sectionIntro}>
+          <Bell size={20} aria-hidden="true" />
+          <h2>{c.valueTitle}</h2>
+          <p>{c.valueText}</p>
+        </div>
+        <div className={styles.pillars}>
+          {c.pillars.map(([title, text]) => (
+            <article key={title}>
+              <h3>{title}</h3>
+              <p>{text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="pricing" className={styles.pricingSection}>
+        <div className={styles.sectionHeading}>
+          <h2>{c.plansTitle}</h2>
+          <div className={styles.billingToggle}>
+            <button type="button" data-active={billing === 'monthly'} onClick={() => setBilling('monthly')}>
+              {c.monthly}
+            </button>
+            <button type="button" data-active={billing === 'yearly'} onClick={() => setBilling('yearly')}>
+              {c.yearly}
+            </button>
+          </div>
+        </div>
+
+        <div className={styles.planGrid}>
+          {PLANS.map((plan, index) => {
+            const planName = lang === 'ar' ? plan.name : plan.nameEn
+            const limits = lang === 'ar' ? plan.limits : plan.limitsEn
+            const features = lang === 'ar' ? plan.features : plan.featuresEn
+            return (
+              <article className={styles.plan} key={planName} data-featured={plan.popular}>
+                <div className={styles.planHeader}>
+                  <h3>{planName}</h3>
+                  {plan.popular && <span>{c.included}</span>}
+                </div>
+                <div className={styles.price}>
+                  <strong>{billing === 'yearly' ? plan.yearlyPrice : plan.price}</strong>
+                  <span>{c.sar} {billing === 'yearly' ? c.perYear : c.perMonth}</span>
+                </div>
+                <ul className={styles.limitList}>
+                  {limits.map((limit, limitIndex) => (
+                    <li key={`${planName}-${limit}-${limitIndex}`}>{limit}</li>
+                  ))}
+                </ul>
+                <ul className={styles.featureList}>
+                  {features.slice(0, 5).map((feature) => (
+                    <li key={feature}>
+                      <Check size={15} aria-hidden="true" />
+                      <span>{removeDecorativeEmoji(feature)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  className={plan.popular ? styles.primaryButton : styles.secondaryButton}
+                  type="button"
+                  onClick={() => router.push(`/login?mode=register&branches=${PLAN_BRANCHES[index]}&billing=${billing}`)}
+                >
+                  {c.choosePlan}
+                </button>
+              </article>
+            )
+          })}
+        </div>
+      </section>
+
+      <section id="demo" className={styles.demoSection}>
+        <div className={styles.demoIntro}>
+          <h2>{c.demoTitle}</h2>
+          <p>{c.demoText}</p>
+        </div>
+
+        <form className={styles.demoForm} onSubmit={submitDemoRequest}>
+          {submitMsg && (
+            <div className={submitMsg.ok ? styles.successMessage : styles.errorMessage}>
+              {submitMsg.text}
+            </div>
+          )}
+
+          <div className={styles.formGrid}>
+            <label>
+              <span>{c.firstName}</span>
+              <input required value={form.firstName} onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))} />
+            </label>
+            <label>
+              <span>{c.lastName}</span>
+              <input required value={form.lastName} onChange={(event) => setForm((current) => ({ ...current, lastName: event.target.value }))} />
+            </label>
+            <label>
+              <span>{c.phone}</span>
+              <input required type="tel" value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
+            </label>
+            <label>
+              <span>{c.email}</span>
+              <input required type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
+            </label>
+            <label>
+              <span>{c.business}</span>
+              <input required value={form.businessName} onChange={(event) => setForm((current) => ({ ...current, businessName: event.target.value }))} />
+            </label>
+            <label>
+              <span>{c.branchesCount}</span>
+              <select value={form.branchCount} onChange={(event) => setForm((current) => ({ ...current, branchCount: event.target.value }))}>
+                <option value="">{c.select}</option>
+                {(lang === 'ar' ? BRANCH_OPTIONS : BRANCH_OPTIONS_EN).map((option, index) => (
+                  <option key={option} value={BRANCH_OPTIONS[index]}>{option}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <label className={styles.checkbox}>
+            <input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} />
+            <span>
+              {c.agree} <a href="/terms" target="_blank">{c.terms}</a> {c.and} <a href="/privacy" target="_blank">{c.privacy}</a>
+            </span>
+          </label>
+
+          <button className={styles.primaryButton} type="submit" disabled={submitting}>
+            {submitting ? c.sending : c.submit}
+          </button>
+        </form>
+      </section>
+
+      <footer className={styles.footer}>
+        <div>
+          <strong>Storely</strong>
+          <p>{c.footerText}</p>
+        </div>
+        <nav>
+          <a href="/privacy">{c.privacy}</a>
+          <a href="/terms">{c.terms}</a>
+          <a href="/security">{c.legal}</a>
+          <a href="https://wa.me/966594351667" target="_blank" rel="noreferrer">{c.whatsapp}</a>
+        </nav>
+        <span>{c.rights} {new Date().getFullYear()}</span>
+      </footer>
+    </main>
   )
 }

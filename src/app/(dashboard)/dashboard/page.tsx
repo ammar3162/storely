@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps, react-hooks/immutability */
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, Component } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -7,9 +8,8 @@ import { getMe } from '@/lib/session'
 import { cache } from '@/lib/cache'
 import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
-import { ShoppingCart, Plus, ArrowUpRight, X, Package, AlertTriangle, Receipt, Send, Sun, Sunset, Moon, Bell, CalendarDays, RotateCcw, Activity, TrendingUp, TrendingDown } from 'lucide-react'
-import { colors as dsColors } from '@/lib/ds'
-import { TONES } from '@/lib/pageTones'
+import { AlertTriangle, ArrowUpRight, Bell, Package, Plus, Send, ShoppingCart, TrendingDown, TrendingUp } from 'lucide-react'
+import { StorelyButton, StorelyCard, StorelyDataTable, StorelyEmptyState, StorelyMetricStrip, StorelyPageHeader, StorelyStatusBadge, StorelyTableAction, StorelyTableActionGroup, type StorelyDataTableColumn, type StorelyMetric } from '@/components/ui'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
 
 class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|null}> {
@@ -21,24 +21,34 @@ class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|nu
   }
 }
 
-function Bar({ data, color, soft }: { data:{label:string;value:number}[]; color:string; soft:string }) {
+function WeeklyBars({ data }: { data:{label:string;value:number}[] }) {
   const max = Math.max(...data.map(d=>d.value), 1)
   return (
-    <div style={{display:'flex',alignItems:'flex-end',gap:6,height:88}}>
+    <div className="flex h-36 items-end gap-4 px-6 py-6">
       {data.map((d,i)=>{
         const last = i===data.length-1
         return (
-          <div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
-            <div style={{width:'100%',height:66,display:'flex',alignItems:'flex-end',overflow:'hidden'}}>
-              <div title={String(d.value)} className="dh-col" style={{width:'100%',borderRadius:'6px 6px 2px 2px',height:`${Math.max((d.value/max)*100,4)}%`,background:last?`linear-gradient(180deg,${color},${color}cc)`:soft}}/>
+          <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-2.5">
+            <div className="flex h-24 w-full items-end overflow-hidden rounded-b-[3px] rounded-t-[7px] bg-[#F4F7F8]">
+              <div
+                title={String(d.value)}
+                className={last ? 'w-full rounded-b-[3px] rounded-t-[7px] bg-[#203640]' : 'w-full rounded-b-[3px] rounded-t-[7px] bg-[#9AA9B1]/60'}
+                style={{height:`${Math.max((d.value/max)*100,4)}%`}}
+              />
             </div>
-            <div style={{fontSize:11,color:last?'#344054':'#98a2b3',fontWeight:last?600:400}}>{d.label}</div>
+            <div className={last ? 'text-[13px] font-semibold leading-6 text-[#203640]' : 'text-[13px] font-medium leading-6 text-[#66737C]'}>{d.label}</div>
           </div>
         )
       })}
     </div>
   )
 }
+
+const surfaceClass = 'border-[#DEE6EA] shadow-[0_1px_2px_rgba(32,54,64,0.035)]'
+const cardClass = `${surfaceClass} [&>div:first-child]:border-[#E6ECEF] [&>div:first-child]:px-6 [&>div:first-child]:py-5 [&_h2]:text-[18px] [&_h2]:leading-7 [&_p]:text-[13px] [&_p]:leading-6`
+const compactCardClass = `${surfaceClass} [&>div:first-child]:border-[#E6ECEF] [&>div:first-child]:px-6 [&>div:first-child]:py-4 [&_h2]:text-[17px] [&_h2]:leading-7 [&_p]:text-[13px] [&_p]:leading-6`
+const tableClass = 'border-0 rounded-none [&_table]:text-[15px] [&_thead]:bg-[#F7F9FA] [&_th]:h-12 [&_th]:border-[#E6ECEF] [&_th]:px-6 [&_th]:py-3 [&_th]:text-[13px] [&_th]:font-semibold [&_th]:text-[#5F6F78] [&_td]:h-14 [&_td]:px-6 [&_td]:py-4 [&_tr]:border-[#E6ECEF] [&_tbody_tr:hover]:bg-[#F7F9FA]'
+const secondaryButtonClass = 'border-[#CED8DD] hover:border-[#B9C8CF] hover:bg-[#F6F9FA]'
 
 export default function DashboardPage() {
   const { t, lang, dir } = useTranslation()
@@ -170,241 +180,184 @@ export default function DashboardPage() {
     if(oid) await api.patch('/api/notifications',{org_id:oid,id})
     setNotifs(prev=>prev.filter(x=>x.id!==id))
   }
-  const toneColor:Record<string,string>={danger:dsColors.danger,warning:dsColors.warning,success:dsColors.primary,info:dsColors.info}
   const attention = notifs.length>0 || smartSuggestions.length>0 || !!subAlert
+  const branchName = typeof window !== 'undefined' ? sessionStorage.getItem('s_branch_name') || '' : ''
+
+  const metrics: StorelyMetric[] = [
+    {
+      label: t('dashboard.statItems'),
+      value: stats.products.toLocaleString('en-US'),
+      helper: t('dashboard.inStock'),
+      tone: 'neutral',
+    },
+    {
+      label: t('dashboard.statTodayDispense'),
+      value: stats.todayDispenses.toLocaleString('en-US'),
+      helper: t('dashboard.operation'),
+      tone: stats.todayDispenses > 0 ? 'success' : 'neutral',
+    },
+    {
+      label: t('dashboard.statTodayPurchase'),
+      value: stats.todayPurchases.toLocaleString('en-US'),
+      helper: t('dashboard.invoice'),
+      tone: 'info',
+    },
+    {
+      label: 'تحت الحد الأدنى',
+      value: stats.lowStock.toLocaleString('en-US'),
+      helper: stats.outOfStock>0 ? 'منها ' + stats.outOfStock + ' نفدت' : 'لا يوجد صنف نافد',
+      tone: stats.lowStock > 0 ? 'danger' : 'success',
+    },
+    {
+      label: 'أداء الفرع',
+      value: monthComp?.success ? fmtMoney(monthComp.current.net) : stats.products.toLocaleString('en-US'),
+      helper: monthComp?.success ? 'الصافي' : t('dashboard.inStock'),
+      tone: monthComp?.success && Number(monthComp.current.net) < 0 ? 'warning' : 'neutral',
+    },
+    {
+      label: 'إجراءات مطلوبة',
+      value: (notifs.length + smartSuggestions.length + (subAlert ? 1 : 0)).toLocaleString('en-US'),
+      helper: attention ? 'تحتاج مراجعة' : 'لا توجد إجراءات معلقة',
+      tone: attention ? 'warning' : 'success',
+    },
+  ]
+
+  const lowStockColumns: StorelyDataTableColumn<any>[] = [
+    { key: 'name', header: 'الصنف', sortable: true, sortValue: (p:any) => p.name || '', cell: (p:any) => <span className="font-semibold leading-7 text-[#203640]">{p.name}</span> },
+    { key: 'qty', header: 'المتاح', sortable: true, sortValue: (p:any) => Number(p.qty || 0), cell: (p:any) => <span className="tabular-nums">{p.qty} {p.unit}</span> },
+    { key: 'reorder', header: 'حد إعادة الطلب', sortable: true, sortValue: (p:any) => Number(p.reorder_point || 0), cell: (p:any) => <span className="tabular-nums text-[#66737C]">{p.reorder_point} {p.unit}</span> },
+    { key: 'status', header: 'الحالة', cell: (p:any) => Number(p.qty) <= 0 ? <StorelyStatusBadge status="danger">نافد</StorelyStatusBadge> : <StorelyStatusBadge status="warning">منخفض</StorelyStatusBadge> },
+    { key: 'action', header: '', className: 'w-12 text-left', cell: () => <StorelyTableActionGroup className="justify-end"><StorelyTableAction action="view" className="hover:bg-[#EEF3F5]" onClick={(event)=>{event.stopPropagation(); router.push('/inventory')}} /></StorelyTableActionGroup> },
+  ]
+
+  const activityColumns: StorelyDataTableColumn<any>[] = [
+    { key: 'product', header: 'الصنف', sortable: true, sortValue: (m:any) => (m.products as any)?.name || '', cell: (m:any) => <span className="font-semibold leading-7 text-[#203640]">{(m.products as any)?.name || '—'}</span> },
+    { key: 'type', header: 'النوع', cell: (m:any) => { const label = m.type==='out' ? 'صرف' : m.type==='in' ? 'إضافة' : m.type==='waste' ? 'هدر' : 'حركة'; const status = m.type==='out' ? 'info' : m.type==='in' ? 'success' : m.type==='waste' ? 'danger' : 'warning'; return <StorelyStatusBadge status={status}>{label}</StorelyStatusBadge> } },
+    { key: 'qty', header: 'الكمية', sortable: true, sortValue: (m:any) => Number(m.qty_change || 0), cell: (m:any) => <span className={m.qty_change < 0 ? 'font-semibold tabular-nums text-[#B91C1C]' : 'font-semibold tabular-nums text-[#047857]'}>{m.qty_change>0?'+':''}{m.qty_change} {(m.products as any)?.unit}</span> },
+    { key: 'date', header: 'الوقت', sortable: true, sortValue: (m:any) => m.created_at || '', cell: (m:any) => <span className="whitespace-nowrap text-[#66737C]">{new Date(m.created_at).toLocaleString('ar-SA',{numberingSystem:'latn',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</span> },
+  ]
+
+  const performanceRows = monthComp?.success ? [
+    { metric:'المبيعات', current:fmtMoney(monthComp.current.sales), change:monthComp.changes.sales, inverse:false },
+    { metric:'المشتريات', current:fmtMoney(monthComp.current.purchasesTotal), change:monthComp.changes.purchases, inverse:true },
+    { metric:'الصافي', current:fmtMoney(monthComp.current.net), change:monthComp.changes.net, inverse:false },
+    { metric:'عمليات الصرف', current:Number(monthComp.current.dispenseCount).toLocaleString('en-US'), change:monthComp.changes.dispenseCount, inverse:false },
+  ] : []
+
+  const performanceColumns: StorelyDataTableColumn<any>[] = [
+    { key:'metric', header:'المؤشر', accessor:'metric', sortable:true },
+    { key:'current', header:'هذا الشهر', accessor:'current', className:'font-semibold tabular-nums' },
+    { key:'change', header:'التغير', cell:(row:any) => row.change===null || row.change===undefined ? <span className="text-[#8EA0B1]">-</span> : <StorelyStatusBadge status={(row.change>=0)!==!!row.inverse ? 'success' : 'warning'}>{row.change>=0?'+':'-'}{Math.abs(row.change)}%</StorelyStatusBadge> },
+  ]
 
   if(loading) return (
-    <div className="dh">
-      <style>{DASH_CSS}</style>
-      <div className="dh-sk" style={{height:44,width:260,marginBottom:20}}/>
-      <div className="dh-kpis">{[1,2,3,4].map(i=><div key={i} className="dh-sk" style={{height:92}}/>)}</div>
-      <div className="dh-sk" style={{height:220,marginTop:16}}/>
+    <div className="mx-auto max-w-[1500px] space-y-7">
+      <div className="h-28 animate-pulse rounded-[8px] border border-[#DEE6EA] bg-white" />
+      <div className="grid gap-5 xl:grid-cols-2">
+        <div className="h-36 animate-pulse rounded-[8px] border border-[#DEE6EA] bg-white" />
+        <div className="h-36 animate-pulse rounded-[8px] border border-[#DEE6EA] bg-white" />
+      </div>
+      <div className="grid gap-7 xl:grid-cols-[minmax(0,1.08fr)_minmax(380px,0.92fr)]">
+        <div className="h-80 animate-pulse rounded-[8px] border border-[#DEE6EA] bg-white" />
+        <div className="h-80 animate-pulse rounded-[8px] border border-[#DEE6EA] bg-white" />
+      </div>
     </div>
   )
 
   return (
     <ErrorBoundary>
-    <div className="dh" dir={dir}>
-      <style>{DASH_CSS}</style>
-
-      {/* العنوان + إجراءات سريعة */}
-      <div className="dh-head">
-        <div className="dh-hello">
-          <span className="dh-hello-icon">{hour<12?<Sun size={22}/>:hour<17?<Sunset size={22}/>:<Moon size={22}/>}</span>
-          <div>
-            <h1 className="dh-title">{greeting}، {userName||t('dashboard.defaultGreeting')}</h1>
-            <div className="dh-sub">
-              <span className="dh-org">{orgName}</span>
-              <span className="dh-date"><CalendarDays size={13}/>{new Date().toLocaleDateString(lang==='ar'?'ar-SA':'en-US',{numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'})}</span>
-            </div>
-          </div>
+      <div className="min-h-full bg-white text-[#203640] [&_button]:rounded-[6px] [&_button]:font-semibold" dir={dir}>
+        <div className="mx-auto max-w-[1500px] space-y-8 px-1 pb-8">
+        <div className="rounded-[8px] border border-[#DEE6EA] bg-white px-5 py-6 shadow-[0_1px_2px_rgba(32,54,64,0.035)] md:px-8 md:py-7">
+        <StorelyPageHeader
+          className="mb-0 gap-6 [&_h1]:text-[28px] [&_h1]:font-semibold [&_h1]:leading-10 [&_p]:mt-2 [&_p]:text-[15px] [&_p]:leading-7 [&_div:first-child>div:first-child]:text-[#66737C]"
+          eyebrow={orgName || undefined}
+          title={greeting + '، ' + (userName || t('dashboard.defaultGreeting'))}
+          description={branchName ? branchName + ' - ' + new Date().toLocaleDateString(lang==='ar'?'ar-SA':'en-US',{numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'}) : new Date().toLocaleDateString(lang==='ar'?'ar-SA':'en-US',{numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'})}
+          actions={<div className="flex flex-wrap items-center gap-3"><StorelyButton variant="secondary" size="lg" className={secondaryButtonClass} icon={<ShoppingCart size={15}/>} onClick={()=>router.push('/purchases')}>تسجيل شراء</StorelyButton><StorelyButton variant="secondary" size="lg" className={secondaryButtonClass} icon={<Plus size={15}/>} onClick={()=>router.push('/inventory')}>إضافة منتج</StorelyButton><StorelyButton variant="primary" size="lg" icon={<ArrowUpRight size={15}/>} onClick={()=>router.push('/dispense')}>تسجيل صرف</StorelyButton></div>}
+        />
         </div>
-        <div className="dh-actions">
-          <button className="sh-btn" onClick={()=>router.push('/purchases')}><ShoppingCart size={16}/> تسجيل شراء</button>
-          <button className="sh-btn" onClick={()=>router.push('/inventory')}><Plus size={16}/> إضافة منتج</button>
-          <button className="sh-btn sh-btn-primary" onClick={()=>router.push('/dispense')}><ArrowUpRight size={16}/> تسجيل صرف</button>
+
+        <div className="grid gap-5 xl:grid-cols-2">
+          <StorelyMetricStrip metrics={metrics.slice(0,3)} className={`${surfaceClass} [&>div]:divide-[#E6ECEF] [&>div>div]:px-6 [&>div>div]:py-5 md:[&>div>div]:px-7 [&_div[class*='text-xl']]:text-[28px] [&_div[class*='text-xl']]:leading-9 [&_div[class*='text-xs']]:text-[13px] [&_div[class*='text-xs']]:leading-5`} />
+          <StorelyMetricStrip metrics={metrics.slice(3)} className={`${surfaceClass} [&>div]:divide-[#E6ECEF] [&>div>div]:px-6 [&>div>div]:py-5 md:[&>div>div]:px-7 [&_div[class*='text-xl']]:text-[28px] [&_div[class*='text-xl']]:leading-9 [&_div[class*='text-xs']]:text-[13px] [&_div[class*='text-xs']]:leading-5`} />
         </div>
-      </div>
 
-      {/* الأرقام */}
-      <div className="dh-kpis">
-        {[
-          {label:t('dashboard.statItems'), val:stats.products, note:t('dashboard.inStock'), href:'/inventory', tone:TONES.teal, Icon:Package},
-          {label:'تحت الحد الأدنى', val:stats.lowStock, note:stats.outOfStock>0?`منها ${stats.outOfStock} نفدت`:'لا يوجد صنف نافد', href:'/inventory', tone:TONES.rose, Icon:AlertTriangle, alert:stats.lowStock>0},
-          {label:t('dashboard.statTodayPurchase'), val:stats.todayPurchases, note:t('dashboard.invoice'), href:'/purchases', tone:TONES.indigo, Icon:Receipt},
-          {label:t('dashboard.statTodayDispense'), val:stats.todayDispenses, note:t('dashboard.operation'), href:'/dispense', tone:TONES.amber, Icon:Send},
-        ].map((k,i)=>(
-          <button key={i} className="dh-kpi" onClick={()=>router.push(k.href)}
-            style={{'--tone':k.tone.fg,'--tone-bg':k.tone.bg,'--tone-soft':k.tone.soft,animationDelay:`${i*60}ms`} as React.CSSProperties}>
-            <div className="dh-kpi-top">
-              <div className="dh-kpi-label">{k.label}</div>
-              <span className="dh-kpi-icon"><k.Icon size={17} strokeWidth={2}/></span>
-            </div>
-            <div className="dh-kpi-val" style={k.alert?{color:k.tone.fg}:undefined}>{k.val.toLocaleString('en-US')}</div>
-            <div className="dh-kpi-note">{k.note}</div>
-          </button>
-        ))}
-      </div>
-
-      <div className="dh-grid">
-        {/* تحتاج انتباهك */}
-        {attention && (
-          <section className="dh-card dh-span">
-            <div className="dh-card-head"><span className="dh-card-title"><span className="dh-card-icon" style={{color:TONES.rose.fg,background:TONES.rose.bg}}><Bell size={15}/></span>تحتاج انتباهك</span></div>
-            {subAlert && (
-              <div className="dh-row">
-                <span className="dh-dot" style={{background:subExpired?dsColors.danger:dsColors.warning}}/>
-                <div className="dh-row-main"><div className="dh-row-title">{subAlert}</div></div>
-                <button className="sh-btn sh-btn-sm hide-in-app" onClick={()=>router.push('/settings')}>التفاصيل</button>
-              </div>
-            )}
-            {smartSuggestions.slice(0,4).map((s:any,i:number)=>(
-              <div key={'s'+i} className="dh-row">
-                <span className="dh-dot" style={{background:s.urgency==='now'?dsColors.danger:dsColors.warning}}/>
-                <div className="dh-row-main">
-                  <div className="dh-row-title">
-                    <span className={'dh-pill '+(s.urgency==='now'?'dh-pill-rose':'dh-pill-amber')}>{s.urgency==='now'?'اطلب الآن':`خلال ${Math.max(s.suggestedOrderInDays,0)} ${t('dashboard.days')}`}</span>
-                    {s.name}
-                  </div>
-                  <div className="dh-row-sub">استهلاك {s.dailyRate} {s.unit} يومياً · التوريد يأخذ {s.avgLeadTimeDays} {t('dashboard.days')} عادة</div>
-                </div>
-                <button className="sh-btn sh-btn-sm" onClick={()=>router.push('/suppliers')}>الموردين</button>
-              </div>
-            ))}
-            {notifs.map((n:any)=>(
-              <div key={n.id} className="dh-row">
-                <span className="dh-dot" style={{background:toneColor[n.type]||dsColors.info}}/>
-                <div className="dh-row-main">
-                  <div className="dh-row-title">{n.title}</div>
-                  <div className="dh-row-sub">{n.message}</div>
-                </div>
-                <button className="sh-icon-btn sh-icon-sm" aria-label="إخفاء" onClick={()=>dismiss(n.id)}><X size={16}/></button>
-              </div>
-            ))}
-          </section>
-        )}
-
-        {/* هذا الشهر */}
-        {monthComp?.success && (
-          <section className="dh-card dh-span">
-            <div className="dh-card-head"><span className="dh-card-title"><span className="dh-card-icon" style={{color:TONES.teal.fg,background:TONES.teal.bg}}><TrendingUp size={15}/></span>هذا الشهر</span><span className="dh-muted">مقارنة بالشهر الماضي</span></div>
-            <div className="dh-month">
-              {[
-                {label:'المبيعات', value:fmtMoney(monthComp.current.sales), change:monthComp.changes.sales},
-                {label:'المشتريات', value:fmtMoney(monthComp.current.purchasesTotal), change:monthComp.changes.purchases, inverse:true},
-                {label:'الصافي', value:fmtMoney(monthComp.current.net), change:monthComp.changes.net},
-                {label:'عمليات الصرف', value:Number(monthComp.current.dispenseCount).toLocaleString('en-US'), change:monthComp.changes.dispenseCount},
-              ].map((m,i)=>(
-                <div key={i} className="dh-month-cell">
-                  <div className="dh-kpi-label">{m.label}</div>
-                  <div className="dh-month-val">{m.value}</div>
-                  {m.change!==null && m.change!==undefined && (
-                    <div className={'dh-change '+((m.change>=0)!==!!m.inverse?'dh-change-up':'dh-change-down')} dir="ltr">
-                      {m.change>=0?<TrendingUp size={13}/>:<TrendingDown size={13}/>}
-                      {m.change>=0?'+':'−'}{Math.abs(m.change)}%
+        {monthComp?.success ? (
+          <StorelyCard title="هذا الشهر" description="مقارنة بالشهر الماضي" className={cardClass}>
+            <div className="grid divide-y divide-[#E6ECEF] sm:grid-cols-2 sm:divide-x sm:divide-y-0 sm:divide-x-reverse xl:grid-cols-4">
+              {performanceRows.map((m,i)=>(
+                <div key={i} className="min-w-0 px-6 py-6 md:px-7">
+                  <div className="text-[13px] font-semibold leading-5 text-[#66737C]">{m.metric}</div>
+                  <div className="mt-2 truncate text-[27px] font-semibold leading-9 tabular-nums text-[#203640]">{m.current}</div>
+                  {m.change!==null && m.change!==undefined ? (
+                    <div className={((m.change>=0)!==!!m.inverse ? 'text-[#047857]' : 'text-[#B45309]') + ' mt-2 inline-flex items-center gap-1 text-[13px] font-semibold'} dir="ltr">
+                      {(m.change>=0)!==!!m.inverse ? <TrendingUp size={14}/> : <TrendingDown size={14}/>}
+                      {m.change>=0?'+':'-'}{Math.abs(m.change)}%
                     </div>
-                  )}
+                  ) : null}
                 </div>
               ))}
             </div>
-          </section>
-        )}
+          </StorelyCard>
+        ) : null}
 
-        {/* تحتاج إعادة طلب */}
-        <section className="dh-card">
-          <div className="dh-card-head">
-            <span className="dh-card-title"><span className="dh-card-icon" style={{color:TONES.amber.fg,background:TONES.amber.bg}}><RotateCcw size={15}/></span>تحتاج إعادة طلب</span>
-            {lowItems.length>0 && <button className="dh-link" onClick={()=>router.push('/inventory')}>عرض المخزون</button>}
-          </div>
-          {lowItems.length===0 ? <div className="dh-empty">كل الأصناف فوق الحد الأدنى</div> : lowItems.map((p:any,i:number)=>{
-            const pct=Math.min(Math.round((p.qty/Math.max(p.reorder_point,1))*100),100)
-            const out=Number(p.qty)<=0
-            return (
-              <button key={i} className="dh-row dh-row-btn" onClick={()=>router.push('/inventory')}>
-                <div className="dh-row-main">
-                  <div className="dh-row-title">{p.name}</div>
-                  <div className="dh-bar"><div style={{width:Math.max(pct,3)+'%',background:out||pct<30?'linear-gradient(90deg,#fb7185,#e11d48)':'linear-gradient(90deg,#fdba74,#ea580c)'}}/></div>
+        <div className="grid items-start gap-7 xl:grid-cols-[minmax(0,1.08fr)_minmax(380px,0.92fr)]">
+          <div className="space-y-6">
+            {attention ? (
+              <StorelyCard title="تحتاج انتباهك" className={`${cardClass} border-[#D7E3E8]`} actions={<StorelyStatusBadge status="warning" className="h-7 px-2.5 text-[13px]">{notifs.length + smartSuggestions.length + (subAlert ? 1 : 0)}</StorelyStatusBadge>}>
+                <div className="divide-y divide-[#E6ECEF]">
+                  {subAlert ? <div className="flex flex-col gap-4 px-6 py-6 text-[15px] sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0 font-semibold leading-7 text-[#203640]">{subAlert}</div><StorelyButton size="md" variant="secondary" className={`${secondaryButtonClass} hide-in-app`} onClick={()=>router.push('/settings')}>التفاصيل</StorelyButton></div> : null}
+                  {smartSuggestions.slice(0,4).map((s:any,i:number)=>(
+                    <div key={'s'+i} className="flex flex-col gap-4 px-6 py-6 text-[15px] sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0"><div className="flex flex-wrap items-center gap-2 font-semibold leading-7 text-[#203640]"><StorelyStatusBadge status={s.urgency==='now'?'danger':'warning'}>{s.urgency==='now'?'اطلب الآن':'خلال ' + Math.max(s.suggestedOrderInDays,0) + ' ' + t('dashboard.days')}</StorelyStatusBadge><span>{s.name}</span></div><div className="mt-1 text-[13px] leading-6 text-[#66737C]">استهلاك {s.dailyRate} {s.unit} يومياً · التوريد يأخذ {s.avgLeadTimeDays} {t('dashboard.days')} عادة</div></div>
+                      <StorelyButton size="md" variant="secondary" className={secondaryButtonClass} onClick={()=>router.push('/suppliers')}>الموردين</StorelyButton>
+                    </div>
+                  ))}
+                  {notifs.map((n:any)=>(
+                    <div key={n.id} className="flex items-start justify-between gap-5 px-6 py-6 text-[15px]"><div className="min-w-0"><div className="font-semibold leading-7 text-[#203640]">{n.title}</div><div className="mt-1.5 text-[13px] leading-6 text-[#66737C]">{n.message}</div></div><StorelyTableActionGroup><StorelyTableAction action="delete" onClick={()=>dismiss(n.id)} aria-label="إخفاء" /></StorelyTableActionGroup></div>
+                  ))}
                 </div>
-                <div className="dh-qty" style={{color:out?dsColors.danger:dsColors.text}}>{p.qty} <span className="dh-muted">/ {p.reorder_point} {p.unit}</span></div>
-              </button>
-            )
-          })}
-        </section>
+              </StorelyCard>
+            ) : null}
 
-        {/* آخر الحركات */}
-        <section className="dh-card">
-          <div className="dh-card-head">
-            <span className="dh-card-title"><span className="dh-card-icon" style={{color:TONES.indigo.fg,background:TONES.indigo.bg}}><Activity size={15}/></span>آخر الحركات</span>
-            {activity.length>0 && <button className="dh-link" onClick={()=>router.push('/reports')}>التقارير</button>}
-          </div>
-          {activity.length===0 ? <div className="dh-empty">ما فيه حركات بعد</div> : activity.map((m:any,i:number)=>(
-            <div key={i} className="dh-row">
-              <div className="dh-row-main">
-                <div className="dh-row-title">{(m.products as any)?.name||'—'}</div>
-                <div className="dh-row-sub">{m.type==='out'?'صرف':m.type==='in'?'إضافة':m.type==='waste'?'هدر':'حركة'} · {new Date(m.created_at).toLocaleString('ar-SA',{numberingSystem:'latn',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>
-              </div>
-              <div className="dh-qty" style={{color:m.qty_change<0?dsColors.danger:dsColors.primary}}>{m.qty_change>0?'+':''}{m.qty_change} <span className="dh-muted">{(m.products as any)?.unit}</span></div>
+            <StorelyCard title="تحتاج إعادة طلب" className={compactCardClass} actions={lowItems.length>0 ? <StorelyButton size="md" variant="secondary" className={secondaryButtonClass} onClick={()=>router.push('/inventory')}>عرض المخزون</StorelyButton> : undefined}>
+              <StorelyDataTable columns={lowStockColumns} data={lowItems} rowKey={(row:any,index:number)=>row.id || row.name || String(index)} searchable={false} pageSize={8} dense={false} className={tableClass} onRowClick={()=>router.push('/inventory')} emptyState={<StorelyEmptyState icon={<Package size={16}/>} title="كل الأصناف فوق الحد الأدنى" />} />
+            </StorelyCard>
+
+            <StorelyCard title="آخر الحركات" className={compactCardClass} actions={activity.length>0 ? <StorelyButton size="md" variant="secondary" className={secondaryButtonClass} onClick={()=>router.push('/reports')}>التقارير</StorelyButton> : undefined}>
+              <StorelyDataTable columns={activityColumns} data={activity} rowKey={(row:any,index:number)=>row.id || row.created_at || String(index)} searchable={false} pageSize={8} dense={false} className={tableClass} emptyState={<StorelyEmptyState icon={<Send size={16}/>} title="ما فيه حركات بعد" />} />
+            </StorelyCard>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              {[
+                {title:'المشتريات آخر 7 أيام', data:weeklyP, unit:'فاتورة'},
+                {title:'الصرف آخر 7 أيام', data:weeklyD, unit:'عملية'},
+              ].map((c,i)=>(
+                <StorelyCard
+                  key={i}
+                  title={c.title}
+                  className={compactCardClass}
+                  actions={<StorelyStatusBadge status="info">{c.data.reduce((s,d)=>s+d.value,0)} {c.unit}</StorelyStatusBadge>}
+                >
+                  <WeeklyBars data={c.data} />
+                </StorelyCard>
+              ))}
             </div>
-          ))}
-        </section>
+          </div>
 
-        {/* الأسبوع */}
-        {[
-          {title:'المشتريات آخر 7 أيام', data:weeklyP, unit:'فاتورة', tone:TONES.indigo, Icon:ShoppingCart},
-          {title:'الصرف آخر 7 أيام', data:weeklyD, unit:'عملية', tone:TONES.amber, Icon:Send},
-        ].map((c,i)=>(
-          <section key={i} className="dh-card">
-            <div className="dh-card-head"><span className="dh-card-title"><span className="dh-card-icon" style={{color:c.tone.fg,background:c.tone.bg}}><c.Icon size={15}/></span>{c.title}</span><span className="dh-total" style={{color:c.tone.fg,background:c.tone.bg}}>{c.data.reduce((s,d)=>s+d.value,0)} {c.unit}</span></div>
-            <div style={{padding:'16px 18px 16px'}}><Bar data={c.data} color={c.tone.fg} soft={c.tone.soft}/></div>
-          </section>
-        ))}
+          <div className="space-y-6">
+            <StorelyCard title="أداء الفرع" description="ملخص تشغيلي مختصر مقارنة بالشهر السابق." className={compactCardClass}>
+              {performanceRows.length>0 ? <StorelyDataTable columns={performanceColumns} data={performanceRows} rowKey="metric" searchable={false} pageSize={8} dense={false} className={tableClass} /> : <StorelyEmptyState icon={<AlertTriangle size={16}/>} title="لا توجد مقارنة بعد" description="تظهر المقارنة عند توفر بيانات شهرية كافية." />}
+            </StorelyCard>
+
+            <StorelyCard title="آخر الإشعارات" description="آخر إشعارات وصلت للمنشأة." className={compactCardClass}>
+              {notifs.length>0 ? <div className="divide-y divide-[#E6ECEF]">{notifs.slice(0,5).map((n:any)=><div key={n.id} className="flex items-start gap-3 px-6 py-5 text-[15px]"><span className="mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-[6px] bg-[#F4F7F8] text-[#66737C]"><Bell size={15} /></span><div className="min-w-0 flex-1"><div className="truncate font-semibold leading-7 text-[#203640]">{n.title}</div><div className="mt-1.5 line-clamp-2 text-[13px] leading-6 text-[#66737C]">{n.message}</div></div></div>)}</div> : <StorelyEmptyState icon={<Bell size={16}/>} title="لا توجد إشعارات" description="ستظهر الإشعارات التشغيلية هنا عند توفرها." />}
+            </StorelyCard>
+          </div>
+        </div>
+        </div>
       </div>
-    </div>
     </ErrorBoundary>
   )
 }
-
-const DASH_CSS = `
-  .dh{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif}
-  .dh *{box-sizing:border-box}
-  .dh-head{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px;padding:20px 22px;border-radius:16px;border:1px solid #d7efe9;
-    background:radial-gradient(circle at 8% 120%,rgba(251,191,36,.16),transparent 38%),radial-gradient(circle at 95% -30%,rgba(15,118,110,.14),transparent 45%),linear-gradient(120deg,#f3fbf8 0%,#fbfcfa 55%,#fffaf2 100%)}
-  .dh-hello{display:flex;align-items:center;gap:14px;min-width:0}
-  .dh-hello-icon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;flex-shrink:0;color:#b45309;background:#fff;box-shadow:0 1px 2px rgba(16,24,40,.06),inset 0 0 0 1px #fde9c8}
-  .dh-title{font-size:21px;font-weight:700;color:${dsColors.text};margin:0;letter-spacing:-.2px}
-  .dh-sub{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:${dsColors.text3};margin-top:5px}
-  .dh-org{font-weight:600;color:#0f766e}
-  .dh-date{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:99px;background:rgba(255,255,255,.75);border:1px solid ${dsColors.border}}
-  .dh-actions{display:flex;gap:8px;flex-wrap:wrap}
-  @media(max-width:640px){.dh-actions{display:none}}
-  .dh-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px}
-  @media(min-width:900px){.dh-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
-  .dh-kpi{position:relative;overflow:hidden;background:${dsColors.surface};border:1px solid ${dsColors.border};border-radius:14px;padding:16px 16px 15px;text-align:right;font-family:inherit;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,border-color .18s;animation:dhIn .4s ease both}
-  .dh-kpi::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--tone-soft),var(--tone))}
-  .dh-kpi::after{content:'';position:absolute;width:120px;height:120px;border-radius:50%;left:-40px;bottom:-60px;background:var(--tone-bg);opacity:.9;pointer-events:none}
-  .dh-kpi>*{position:relative;z-index:1}
-  .dh-kpi:hover{transform:translateY(-2px);border-color:var(--tone-soft);box-shadow:0 10px 22px -12px rgba(16,24,40,.22)}
-  .dh-kpi-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-  .dh-kpi-icon{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;color:var(--tone);background:var(--tone-bg)}
-  .dh-kpi-label{font-size:13px;color:${dsColors.text3};font-weight:500}
-  .dh-kpi-val{font-size:28px;font-weight:700;color:${dsColors.text};margin-top:6px;line-height:1.2;font-variant-numeric:tabular-nums}
-  .dh-kpi-note{font-size:12px;color:${dsColors.text4};margin-top:4px}
-  .dh-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
-  @media(min-width:900px){.dh-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.dh-span{grid-column:1/-1}}
-  .dh-card{background:${dsColors.surface};border:1px solid ${dsColors.border};border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(16,24,40,.04);animation:dhIn .45s ease both}
-  .dh-card-title{display:inline-flex;align-items:center;gap:9px}
-  .dh-card-icon{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;flex-shrink:0}
-  .dh-total{font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px}
-  .dh-pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;margin-left:8px;vertical-align:1px}
-  .dh-pill-rose{color:#be123c;background:#fff1f3}
-  .dh-pill-amber{color:#c2410c;background:#fff7ed}
-  .dh-col{transition:filter .15s}
-  .dh-col:hover{filter:brightness(.93)}
-  .dh-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid ${dsColors.border};font-size:14px;font-weight:600;color:${dsColors.text}}
-  .dh-muted{font-size:12px;font-weight:400;color:${dsColors.text4}}
-  .dh-link{border:none;background:none;padding:0;color:${dsColors.primary};font-size:13px;font-weight:600;font-family:inherit;cursor:pointer}
-  .dh-row{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid ${dsColors.border};width:100%;background:none;border-left:none;border-right:none;border-top:none;font-family:inherit;text-align:right}
-  .dh-row:last-child{border-bottom:none}
-  .dh-row-btn{cursor:pointer}
-  .dh-row-btn:hover{background:#fafbfa}
-  .dh-row-main{flex:1;min-width:0}
-  .dh-row-title{font-size:13.5px;font-weight:500;color:${dsColors.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .dh-row-sub{font-size:12px;color:${dsColors.text3};margin-top:2px}
-  .dh-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-  .dh-qty{font-size:13.5px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
-  .dh-bar{height:5px;background:#f2f4f7;border-radius:99px;overflow:hidden;margin-top:7px;max-width:220px}
-  .dh-bar>div{height:100%;border-radius:99px}
-  .dh-empty{padding:28px 18px;text-align:center;font-size:13px;color:${dsColors.text3}}
-  .dh-month{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
-  @media(min-width:700px){.dh-month{grid-template-columns:repeat(4,minmax(0,1fr))}}
-  .dh-month-cell{padding:16px 18px;border-left:1px solid ${dsColors.border};border-bottom:1px solid ${dsColors.border}}
-  .dh-month-val{font-size:18px;font-weight:700;color:${dsColors.text};margin-top:6px;font-variant-numeric:tabular-nums}
-  .dh-change{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;margin-top:7px;padding:2px 8px;border-radius:99px}
-  .dh-change-up{color:#047857;background:#ecfdf5}
-  .dh-change-down{color:#be123c;background:#fff1f3}
-  .dh-sk{background:#eceef1;border-radius:12px;animation:dhsk 1.4s ease infinite}
-  @keyframes dhsk{0%,100%{opacity:1}50%{opacity:.5}}
-  @keyframes dhIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-  @media(prefers-reduced-motion:reduce){.dh-kpi,.dh-card{animation:none}.dh-kpi:hover{transform:none}}
-`
-

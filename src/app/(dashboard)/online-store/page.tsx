@@ -31,7 +31,7 @@ export default function OnlineStorePage() {
   const [uploadingId, setUploadingId] = useState<string|null>(null)
   const [logoUrl, setLogoUrl] = useState<string|null>(null)
   const [suggestingColor, setSuggestingColor] = useState(false)
-  const [shopColor, setShopColor] = useState('#0f766e')
+  const [shopColor, setShopColor] = useState('#203640')
   const [hoursEnabled, setHoursEnabled] = useState(false)
   const [hours24, setHours24] = useState(true)
   const [openTime, setOpenTime] = useState('09:00')
@@ -75,7 +75,7 @@ export default function OnlineStorePage() {
       setSlug(j.org?.shop_slug || '')
       setEnabled(!!j.org?.shop_enabled)
       setTagline(j.org?.shop_tagline || '')
-      setShopColor(j.org?.shop_color || '#0f766e')
+      setShopColor(j.org?.shop_color || '#203640')
       setDisplayName(j.org?.shop_display_name || '')
       setOrgName(j.org?.name || '')
       setLinks(Array.isArray(j.org?.shop_links) ? j.org.shop_links.map((l:any)=>({type:l.type||'website',label:l.label||'',url:l.url||''})) : [])
@@ -416,10 +416,10 @@ export default function OnlineStorePage() {
         <div style={{ marginBottom: 16 }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 8 }}>لون المتجر</label>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, alignItems: 'center' }}>
-            {['#0f766e', '#0369a1', '#b91c1c', '#7c2d12', '#7c3aed', '#0f172a', '#be185d', '#a16207'].map(c => (
-              <button key={c} onClick={() => setShopColor(c)} style={{ width: 32, height: 32, borderRadius: 10, background: c, border: shopColor === c ? '3px solid #0f172a' : '1px solid #e2e8f0', cursor: 'pointer', boxShadow: shopColor === c ? '0 0 0 2px white inset' : 'none' }} />
+            {['#203640', '#0369a1', '#b91c1c', '#7c2d12', '#717553', '#203640', '#be185d', '#a16207'].map(c => (
+              <button key={c} onClick={() => setShopColor(c)} style={{ width: 32, height: 32, borderRadius: 10, background: c, border: shopColor === c ? '3px solid #203640' : '1px solid #E7E1D8', cursor: 'pointer', boxShadow: shopColor === c ? '0 0 0 2px white inset' : 'none' }} />
             ))}
-            <input type="color" value={shopColor} onChange={e => setShopColor(e.target.value)} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid #e2e8f0', cursor: 'pointer', padding: 0 }} />
+            <input type="color" value={shopColor} onChange={e => setShopColor(e.target.value)} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid #E7E1D8', cursor: 'pointer', padding: 0 }} />
             <button onClick={suggestColorFromLogo} disabled={suggestingColor} style={{ padding: '0 14px', height: 32, borderRadius: 10, border: `1.5px solid ${colors.infoBorder}`, background: colors.infoLight, color: colors.info, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
               {suggestingColor ? '⏳ جاري التحليل...' : '🎨 اقترح من الشعار'}
             </button>

@@ -42,7 +42,15 @@ export async function GET(req: Request) {
     }
 
     const [products, purchases, movements, notifs] = await Promise.all([productsQ, purchasesQ, movementsQ, notifsQ])
-    if (products.error || purchases.error || movements.error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+    if (products.error || purchases.error || movements.error || notifs.error) {
+      console.error('[api/dashboard-summary] Supabase query failed', {
+        products: products.error,
+        purchases: purchases.error,
+        movements: movements.error,
+        notifications: notifs.error,
+      })
+      return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+    }
 
     const prods = products.data || []
     const low = prods.filter((p: any) => p.qty <= p.reorder_point)
@@ -56,7 +64,8 @@ export async function GET(req: Request) {
       movements: movements.data || [],
       notifications: notifs.data || [],
     })
-  } catch {
+  } catch (error) {
+    console.error('[api/dashboard-summary] Unexpected error', error)
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
 }

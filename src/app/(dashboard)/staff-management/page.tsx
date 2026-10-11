@@ -26,10 +26,10 @@ function Avatar({ name, active }: { name:string; active:boolean }) {
   return (
     <div style={{
       width:44,height:44,borderRadius:14,
-      background:active?`linear-gradient(135deg,${colors.primary},#0f766e)`:'linear-gradient(135deg,#94a3b8,#64748b)',
+      background:active?colors.primary:colors.secondary,
       display:'flex',alignItems:'center',justifyContent:'center',
       fontSize:14,fontWeight:900,color:'white',flexShrink:0,
-      boxShadow:active?`0 4px 12px ${colors.primary}33`:'none',
+      boxShadow:'none',
     }}>
       {initials||'؟'}
     </div>
@@ -313,7 +313,7 @@ export default function StaffManagementPage() {
         .su{animation:slideUp .4s ease both}
         input:focus,select:focus{border-color:${colors.primary}!important;box-shadow:0 0 0 3px ${colors.primaryLight}!important}
         .staff-card{transition:all .2s cubic-bezier(.4,0,.2,1)}
-        .staff-card:hover{box-shadow:${shadow.md}!important}
+        .staff-card:hover{border-color:${colors.border2}!important}
         .act-btn{border:none;border-radius:8px;padding:6px 12px;font-size:${font.xs};font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
         .act-btn:hover{transform:scale(1.05)}
       `}</style>
@@ -682,19 +682,19 @@ export default function StaffManagementPage() {
                 {key:'purchases',  label:'المشتريات',  Icon:ShoppingCart, locked:false},
                 {key:'reports',    label:'التقارير',   Icon:BarChart3, locked:false},
               ].map(p=>(
-                <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'12px',background:(editPerms as any)[p.key]?'#f0fdfa':'#f9fafb',borderRadius:10,border:`1.5px solid ${(editPerms as any)[p.key]?'#029FA2':'#e5e7eb'}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
+                <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'12px',background:(editPerms as any)[p.key]?'#F8EEDF':'#f9fafb',borderRadius:10,border:`1.5px solid ${(editPerms as any)[p.key]?'#203640':'#e5e7eb'}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                   <input type="checkbox" checked={(editPerms as any)[p.key]} disabled={p.locked}
                     onChange={e=>!p.locked&&setEditPerms(prev=>({...prev,[p.key]:e.target.checked}))}
-                    style={{accentColor:'#029FA2',width:16,height:16}}/>
+                    style={{accentColor:'#203640',width:16,height:16}}/>
                   <div>
-                    <div style={{fontSize:13,fontWeight:700,color:(editPerms as any)[p.key]?'#029FA2':'#374151',display:'flex',alignItems:'center',gap:5}}><p.Icon size={14} strokeWidth={2.25}/> {p.label}</div>
+                    <div style={{fontSize:13,fontWeight:700,color:(editPerms as any)[p.key]?'#203640':'#374151',display:'flex',alignItems:'center',gap:5}}><p.Icon size={14} strokeWidth={2.25}/> {p.label}</div>
                     {p.locked&&<div style={{fontSize:10,color:'#9ca3af'}}>افتراضي</div>}
                   </div>
                 </label>
               ))}
             </div>
             <div style={{display:'flex',gap:8}}>
-              <button onClick={()=>savePermissions(editingPerms)} style={{flex:2,padding:'12px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Save size={15} strokeWidth={2.25}/> حفظ الصلاحيات</button>
+              <button onClick={()=>savePermissions(editingPerms)} style={{flex:2,padding:'12px',background:'#203640',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Save size={15} strokeWidth={2.25}/> حفظ الصلاحيات</button>
               <button onClick={()=>setEditingPerms(null)} style={{flex:1,padding:'12px',background:'#f3f4f6',color:'#374151',border:'none',borderRadius:10,fontSize:14,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
             </div>
           </div>
@@ -734,7 +734,7 @@ export default function StaffManagementPage() {
                 <div style={{padding:'40px',textAlign:'center',fontSize:13,color:'#888780'}}>لا توجد تقارير إقفال بعد</div>
               ):staffClosings.map((c:any,i:number)=>{
                 const statusLabel:Record<string,string> = {deficit:'عجز',surplus:'زيادة',balanced:'مطابق'}
-                const statusColor:Record<string,string> = {deficit:'#e24b4a',surplus:'#378add',balanced:'#029FA2'}
+                const statusColor:Record<string,string> = {deficit:'#e24b4a',surplus:'#378add',balanced:'#203640'}
                 return(
                   <div key={c.id} style={{display:'flex',alignItems:'center',gap:12,padding:'11px 20px',borderBottom:i<staffClosings.length-1?'1px solid #f5f5f4':'none'}}>
                     <div style={{width:36,height:36,borderRadius:10,background:statusColor[c.status]+'15',border:`1px solid ${statusColor[c.status]}44`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
@@ -770,7 +770,7 @@ export default function StaffManagementPage() {
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,padding:'14px 20px',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
               {[
                 {label:'عمليات الصرف', value:staffReport.length, color:'#378add'},
-                {label:'أصناف مختلفة', value:new Set(staffReport.map((m:any)=>(m.products as any)?.name)).size, color:'#029FA2'},
+                {label:'أصناف مختلفة', value:new Set(staffReport.map((m:any)=>(m.products as any)?.name)).size, color:'#203640'},
                 {label:'إجمالي الكميات', value:staffReport.reduce((s:number,m:any)=>s+Math.abs(m.qty_change),0), color:'#ba7517'},
               ].map((s,i)=>(
                 <div key={i} style={{background:'#f9f9f8',borderRadius:10,padding:'10px 12px',textAlign:'center'}}>
@@ -852,7 +852,7 @@ export default function StaffManagementPage() {
                   )}
                   {s.role==='cashier' && !WHATSAPP_PAUSED && (
                     <button onClick={e=>{e.stopPropagation();toggleSendClosingWA(s.id, s.send_closing_whatsapp!==false)}} className="act-btn"
-                      style={{background:s.send_closing_whatsapp!==false?'#f0fdfa':colors.bg,color:s.send_closing_whatsapp!==false?colors.primary:colors.text3,border:s.send_closing_whatsapp!==false?'none':`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
+                      style={{background:s.send_closing_whatsapp!==false?'#F8EEDF':colors.bg,color:s.send_closing_whatsapp!==false?colors.primary:colors.text3,border:s.send_closing_whatsapp!==false?'none':`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
                       {s.send_closing_whatsapp!==false ? (<><Bell size={13} strokeWidth={2.25}/> تفاصيل الإقفال: مفعّل</>) : (<><BellOff size={13} strokeWidth={2.25}/> تفاصيل الإقفال: موقّف</>)}
                     </button>
                   )}
