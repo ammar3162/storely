@@ -1,47 +1,19 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { X, Plus, Trash2, Lock, ShieldCheck, Pencil } from 'lucide-react'
+import { X, Plus, Trash2, Lock, Pencil } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import { colors, font, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import NumberInput from '@/components/NumberInput'
 import { computeClosing } from '@/lib/cashierClosingCalc'
 
-// رمز الحماية للمالك: لو ما اختاره، يختاره هنا أول مرة (مرتين للتأكيد)
-export function PinBox({ orgId, value, onChange, onReady }: { orgId: string; value: string; onChange: (v: string) => void; onReady?: (ready: boolean) => void }) {
-  const [isSet, setIsSet] = useState<boolean | null>(null)
-  const [a, setA] = useState(''), [b, setB] = useState(''), [busy, setBusy] = useState(false), [err, setErr] = useState('')
-  useEffect(() => { api.get('/api/owner-pin', { org_id: orgId }).then(j => setIsSet(j.success ? !!j.isSet : null)) }, [orgId])
-  useEffect(() => { onReady?.(!!isSet) }, [isSet])
-  const pinInp: React.CSSProperties = { ...inp(), textAlign: 'center', letterSpacing: 8, fontSize: 20, fontWeight: 800 }
-  const digits = (v: string) => v.replace(/\D/g, '').slice(0, 6)
-  async function create() {
-    setErr('')
-    if (a.length < 4) return setErr('الرمز من ٤ إلى ٦ أرقام')
-    if (a !== b) return setErr('الرمزين مو متطابقين')
-    setBusy(true)
-    const j = await api.post('/api/owner-pin', { org_id: orgId, pin: a })
-    setBusy(false)
-    if (!j.success) return setErr(j.error || 'تعذر الحفظ')
-    toast('✅ تم حفظ رمز الحماية'); onChange(a); setIsSet(true)
-  }
-  if (isSet === null) return <div style={{ fontSize: 12, color: colors.text4 }}>جاري التحقق...</div>
-  if (!isSet) return (
-    <div style={{ background: colors.warningLight, border: `1px solid ${colors.warningBorder}`, borderRadius: 12, padding: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 800, color: colors.warning, marginBottom: 4 }}><ShieldCheck size={15} /> اختر رمز الحماية</div>
-      <div style={{ fontSize: 12, color: colors.text2, lineHeight: 1.7, marginBottom: 10 }}>رمز من ٤ إلى ٦ أرقام تعرفه أنت بس — يطلبه النظام قبل تعديل أو حذف أي إقفال.</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        <input value={a} onChange={e => setA(digits(e.target.value))} type="password" inputMode="numeric" placeholder="الرمز" autoComplete="new-password" style={pinInp} />
-        <input value={b} onChange={e => setB(digits(e.target.value))} type="password" inputMode="numeric" placeholder="أعده" autoComplete="new-password" style={pinInp} />
-      </div>
-      {err && <div style={{ fontSize: 12, color: colors.danger, marginTop: 6 }}>{err}</div>}
-      <button onClick={create} disabled={busy} style={{ marginTop: 10, width: '100%', padding: 10, borderRadius: 10, border: 'none', background: colors.warning, color: '#fff', fontWeight: 800, fontFamily: font.family, cursor: 'pointer' }}>{busy ? 'جاري الحفظ...' : 'احفظ الرمز'}</button>
-    </div>
-  )
+// كلمة مرور حساب المالك (نفس كلمة الدخول) — يتحقق منها الخادم قبل التعديل أو الحذف
+export function PasswordBox({ value, onChange, onEnter }: { value: string; onChange: (v: string) => void; onEnter?: () => void }) {
   return (
     <div>
-      <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: 700, color: colors.text2, marginBottom: 6 }}><Lock size={13} /> رمز الحماية</label>
-      <input value={value} onChange={e => onChange(digits(e.target.value))} type="password" inputMode="numeric" autoComplete="one-time-code" placeholder="••••" style={pinInp} />
+      <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: 700, color: colors.text2, marginBottom: 6 }}><Lock size={13} /> كلمة مرور حسابك</label>
+      <input value={value} onChange={e => onChange(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && value) onEnter?.() }}
+        type="password" autoComplete="current-password" placeholder="كلمة المرور" style={{ ...inp(), width: '100%', boxSizing: 'border-box' }} />
     </div>
   )
 }
@@ -60,7 +32,7 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
     if (!Number(closing.mada_amount) && !Number(closing.visa_amount) && !Number(closing.mastercard_amount) && Number(closing.network_amount))
       setF(x => ({ ...x, mada_amount: String(closing.network_amount) }))
   }, [])
-  const [pin, setPin] = useState(''), [busy, setBusy] = useState(false), [err, setErr] = useState(''), [pinReady, setPinReady] = useState(false)
+  const [password, setPassword] = useState(''), [busy, setBusy] = useState(false), [err, setErr] = useState('')
   const calc = useMemo(() => computeClosing({ ...f, purchases: f.purchases }), [f])
   const today = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
   const set = (k: string, v: any) => setF(x => ({ ...x, [k]: v }))
@@ -70,9 +42,9 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
     setErr('')
     if (!calc) return setErr('تأكد من المبالغ')
     if (calc.status === 'deficit' && f.deficit_reason.trim().length < 3) return setErr('فيه عجز — اكتب سببه')
-    if (pin.length < 4) return setErr('اكتب رمز الحماية')
+    if (!password) return setErr('اكتب كلمة مرور حسابك')
     setBusy(true)
-    const j = await api.patch('/api/cashier-closing', { org_id: orgId, id: closing.id, pin, ...f, purchases: f.purchases.filter(p => Number(p.amount) > 0) })
+    const j = await api.patch('/api/cashier-closing', { org_id: orgId, id: closing.id, password, ...f, purchases: f.purchases.filter(p => Number(p.amount) > 0) })
     setBusy(false)
     if (!j.success) return setErr(j.error || 'تعذر حفظ التعديل')
     toast('✅ تم تعديل الإقفال — التقارير والأرباح وتقرير المحاسب تحدّثت')
@@ -145,11 +117,11 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
             <div style={{ fontSize: 12, color: colors.info, background: colors.infoLight, borderRadius: 10, padding: '8px 10px' }}>العجز راح — الخصم اللي انخصم من راتب الكاشير بينشال.</div>
           )}
 
-          <PinBox orgId={orgId} value={pin} onChange={setPin} onReady={setPinReady} />
+          <PasswordBox value={password} onChange={setPassword} onEnter={save} />
           {err && <div style={{ fontSize: 13, color: colors.danger, fontWeight: 600 }}>{err}</div>}
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => !busy && onClose()} style={{ flex: 1, padding: 12, background: colors.bg, color: colors.text3, border: 'none', borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>إلغاء</button>
-            <button onClick={save} disabled={busy || !pinReady} style={{ flex: 2, padding: 12, background: busy || !pinReady ? colors.border2 : colors.primary, color: '#fff', border: 'none', borderRadius: 11, fontSize: 14, fontWeight: 800, cursor: busy || !pinReady ? 'default' : 'pointer', fontFamily: font.family }}>{busy ? 'جاري الحفظ...' : 'حفظ التعديل'}</button>
+            <button onClick={save} disabled={busy || !password} style={{ flex: 2, padding: 12, background: busy || !password ? colors.border2 : colors.primary, color: '#fff', border: 'none', borderRadius: 11, fontSize: 14, fontWeight: 800, cursor: busy || !password ? 'default' : 'pointer', fontFamily: font.family }}>{busy ? 'جاري الحفظ...' : 'حفظ التعديل'}</button>
           </div>
           <div style={{ fontSize: 11, color: colors.text4, textAlign: 'center' }}>{curr} · الإقفالات في شهر مقفل من المحاسب أو في الأرباح ما تتعدّل</div>
         </div>
