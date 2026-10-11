@@ -33,11 +33,12 @@ export async function GET(req: Request) {
       if (!(await isSubscriptionActive(db, a.org_id))) return { ...base, inactive: true }
       const sections = LIGHT.filter(s => a.sections.includes(s))
       if (!sections.length) return { ...base, totals: null }
-      const t = summarize(await loadAccountantReport(db, { orgId: a.org_id, branchId: a.branch_id, period: p, sections, vatRegistered: a.vat_registered }))
+      const rep = await loadAccountantReport(db, { orgId: a.org_id, branchId: a.branch_id, period: p, sections, vatRegistered: a.vat_registered })
+      const t = summarize(rep)
       const has = (s: string) => sections.includes(s as AccSection)
       return { ...base, totals: {
         sales: has('sales') ? t.sales : null, purchases: has('purchases') ? t.purTotal : null,
-        vatNet: has('vat') && a.vat_registered ? t.vatNet : null, payables: has('payables') ? t.payablesTotal : null,
+        vatNet: has('vat') && rep.vatRegistered ? t.vatNet : null, payables: has('payables') ? t.payablesTotal : null,
         taxInvoices: t.taxInvoices, incomplete: t.taxInvoices - t.taxComplete, mismatch: t.taxMismatch,
       } }
     })

@@ -171,11 +171,6 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
             )
           })}
         </div>
-        {form.sections.includes('vat') && (
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: 12.5, color: colors.text2, cursor: 'pointer' }}>
-            <input type="checkbox" checked={form.vat_registered} onChange={e => set('vat_registered', e.target.checked)} /> منشأتي مسجلة في ضريبة القيمة المضافة
-          </label>
-        )}
         {branches.length > 1 && (
           <div style={{ marginTop: 12 }}>
             <label style={label}>الفرع</label>

@@ -135,9 +135,6 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
               <input type="date" value={form.expires_on} min={todaySA()} onChange={e => setForm(f => ({ ...f, expires_on: e.target.value }))} style={{ ...inp(), width: 'auto', padding: '6px 8px' }} />
               <span style={{ color: colors.text4 }}>{form.expires_on ? '' : '(اختياري — فاضي = بدون نهاية)'}</span>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: colors.text2, cursor: 'pointer' }}>
-              <input type="checkbox" checked={form.vat_registered} onChange={e => setForm(f => ({ ...f, vat_registered: e.target.checked }))} /> منشأتي مسجلة في الضريبة
-            </label>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             <button onClick={invite} disabled={busy || !form.email || !form.sections.length} style={{ ...btnPrimary, padding: '10px 18px', opacity: busy || !form.email ? .6 : 1 }}>{busy ? 'جاري الإرسال...' : 'أرسل الدعوة'}</button>

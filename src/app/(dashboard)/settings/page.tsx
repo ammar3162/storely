@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import VatRegistration from '@/components/VatRegistration'
 import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -465,6 +466,7 @@ export default function SettingsPage() {
             </div>
           )}
 
+          {activeTab==='org'&&orgId&&<div style={{marginBottom:18}}><VatRegistration orgId={orgId}/></div>}
           {activeTab==='org'&&(
             <form onSubmit={handleSave}>
               <div style={{display:'flex',flexDirection:'column' as const,gap:18}}>

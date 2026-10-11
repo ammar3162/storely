@@ -10,6 +10,7 @@ import { currencySymbol } from '@/lib/currencySymbol'
 import { ShoppingCart, Plus, ArrowUpRight, X, Package, AlertTriangle, Receipt, Send, Sun, Sunset, Moon, Bell, CalendarDays, RotateCcw, Activity, TrendingUp, TrendingDown } from 'lucide-react'
 import { colors as dsColors } from '@/lib/ds'
 import { TONES } from '@/lib/pageTones'
+import { VatThresholdBanner } from '@/components/VatRegistration'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
 
 class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|null}> {
@@ -44,6 +45,7 @@ export default function DashboardPage() {
   const { t, lang, dir } = useTranslation()
   const [stats, setStats]       = useState({products:0,lowStock:0,outOfStock:0,todayPurchases:0,todayDispenses:0})
   const [lowItems, setLowItems] = useState<any[]>([])
+  const [vatOrg, setVatOrg]     = useState('')
   const [activity, setActivity] = useState<any[]>([])
   const [orgName, setOrgName]   = useState('')
   const [userName, setUserName] = useState('')
@@ -118,6 +120,7 @@ export default function DashboardPage() {
       }
     }
     const orgId=me.org_id
+    setVatOrg(me.role==='owner'?orgId:'')
     sessionStorage.setItem('s_profile_id',me.user_id)
     if(me.org?.currency) setCurr(currencySymbol(me.org.currency))
     const bid=sessionStorage.getItem('s_branch_id')
@@ -205,6 +208,8 @@ export default function DashboardPage() {
           <button className="sh-btn sh-btn-primary" onClick={()=>router.push('/dispense')}><ArrowUpRight size={16}/> تسجيل صرف</button>
         </div>
       </div>
+
+      {vatOrg&&<VatThresholdBanner orgId={vatOrg}/>}
 
       {/* الأرقام */}
       <div className="dh-kpis">

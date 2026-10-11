@@ -127,3 +127,11 @@ describe('watermark', () => {
     expect(wb.worksheets.every(w => String(w.headerFooter?.oddFooter || '').includes('أ. محمد'))).toBe(true)
   })
 })
+
+import { vatLevel } from './vatThreshold'
+describe('vat threshold', () => {
+  it('levels by trailing 12-month sales', () => {
+    expect([vatLevel(0), vatLevel(187499), vatLevel(187500), vatLevel(299999), vatLevel(300000), vatLevel(374999), vatLevel(375000)])
+      .toEqual(['ok', 'ok', 'voluntary', 'voluntary', 'near', 'near', 'over'])
+  })
+})

@@ -19,7 +19,7 @@ export async function loadAccountantReport(db: SupabaseClient, o: {
   const start = `${period.start}T00:00:00.000+03:00`, end = `${period.end}T23:59:59.999+03:00`
 
   const [{ data: org }, { data: branches }] = await Promise.all([
-    db.from('organizations').select('name,plan,currency,business_type').eq('id', orgId).single(),
+    db.from('organizations').select('name,plan,currency,business_type,vat_registered').eq('id', orgId).single(),
     db.from('branches').select('id,name').eq('org_id', orgId),
   ])
   const branchName = new Map(((branches || []) as any[]).map(b => [b.id, b.name]))
@@ -67,7 +67,8 @@ export async function loadAccountantReport(db: SupabaseClient, o: {
   const onlyBranch = branchId ? bn(branchId) : ((branches || []).length <= 1 ? bn((branches as any[])?.[0]?.id || null) : null)
   return {
     orgName: (org as any)?.name || '', branchName: onlyBranch === '—' ? null : onlyBranch, currency: (org as any)?.currency || 'SAR', businessType: (org as any)?.business_type || null,
-    period, label: periodLabel(period), sections, vatRegistered: o.vatRegistered,
+    // التسجيل بالضريبة: إعداد المنشأة أولاً، ولو ما حدده المالك نرجع لإعداد رابط المحاسب
+    period, label: periodLabel(period), sections, vatRegistered: typeof (org as any)?.vat_registered === 'boolean' ? (org as any).vat_registered : o.vatRegistered,
     purchases: (pur.data as any[]).map(p => ({ date: saudiDate(p.created_at), branch: bn(p.branch_id), supplier: p.supplier, name: p.name, category: p.category,
       qty: p.qty, unit: p.unit, net: n(p.amount), vat: n(p.vat_amount), total: n(p.total_amount), paid: p.payment_status !== 'unpaid', invoiceUrl: p.invoice_image || null,
       id: p.id, invoiceNumber: p.invoice_number || null, supplierVat: p.supplier_vat_number || null, group: p.invoice_group || null, verified: !!p.qr_verified, mismatch: !!p.qr_mismatch })),
