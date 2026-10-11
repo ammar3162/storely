@@ -25,7 +25,8 @@ export async function verifyOwnerPassword(db: SupabaseClient, orgId: string, use
     await db.from('organizations').update({ owner_pin_failed: lock ? 0 : fails, owner_pin_locked_until: lock ? new Date(Date.now() + PW_LOCK_MINUTES * 60e3).toISOString() : null } as any).eq('id', orgId)
     return { ok: false, error: lock ? `كلمة المرور غلط — انقفل ${PW_LOCK_MINUTES} دقيقة` : `كلمة المرور غير صحيحة (باقي ${PW_MAX_FAILS - fails} محاولات)`, status: 403 }
   }
-  await auth.auth.signOut().catch(() => {})
+  // scope:'local' = نلغي الجلسة المؤقتة هذي بس — الافتراضي (global) يطلّع المالك من كل أجهزته
+  await auth.auth.signOut({ scope: 'local' }).catch(() => {})
   if ((o as any)?.owner_pin_failed) await db.from('organizations').update({ owner_pin_failed: 0 } as any).eq('id', orgId)
   return { ok: true }
 }

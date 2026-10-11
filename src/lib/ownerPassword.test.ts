@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const signIn = vi.fn()
-vi.mock('@supabase/supabase-js', () => ({ createClient: () => ({ auth: { signInWithPassword: (a: any) => signIn(a), signOut: async () => ({}) } }) }))
+const signOut = vi.fn(async (_o?: any) => ({}))
+vi.mock('@supabase/supabase-js', () => ({ createClient: () => ({ auth: { signInWithPassword: (a: any) => signIn(a), signOut: (o: any) => signOut(o) } }) }))
 
 function fakeDb(state: any) {
   return {
@@ -22,6 +23,8 @@ describe('owner password check', () => {
     expect((await verifyOwnerPassword(fakeDb(st), 'o1', 'u1', 'secret')).ok).toBe(true)
     expect(signIn).toHaveBeenCalledWith({ email: 'owner@x.com', password: 'secret' })
     expect(st.owner_pin_failed).toBe(0)
+    // ما يطلّع المالك من أجهزته: يلغي الجلسة المؤقتة بس
+    expect(signOut).toHaveBeenCalledWith({ scope: 'local' })
   })
   it('wrong password counts and locks after 5', async () => {
     signIn.mockResolvedValue({ data: { user: null }, error: { message: 'Invalid login' } })
