@@ -4,7 +4,9 @@ import PageIcon from '@/components/PageIcon'
 import NumberInput from '@/components/NumberInput'
 import TaxInvoiceFields, { type ZatcaState } from '@/components/TaxInvoiceFields'
 import InvoiceItemsPicker, { type PickedItem } from '@/components/InvoiceItemsPicker'
-import { zatcaFromImage } from '@/lib/zatcaScan'
+import { zatcaFromImage, blobToBase64 } from '@/lib/zatcaScan'
+import { prepareInvoiceFile, isPdfUrl } from '@/lib/invoiceFile'
+import InvoicePickButtons from '@/components/InvoicePickButtons'
 import { zatcaDate } from '@/lib/zatcaQr'
 import { normalizeVat, isValidVat } from '@/lib/taxInvoice'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
@@ -59,7 +61,6 @@ export default function PurchasesPage() {
   const [filterCat, setFilterCat]       = useState('all')
   const [filterPeriod, setFilterPeriod] = useState('all')
   const [filterSupplier, setFilterSupplier] = useState('')
-  const fileRef = useRef<HTMLInputElement>(null)
   function todayRiyadh() {
     return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
   }
@@ -162,52 +163,30 @@ export default function PurchasesPage() {
     cache.invalidate('purchases:');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
   }
 
-  async function compressImage(file:File): Promise<Blob> {
-    return new Promise((resolve)=>{
-      const img = new Image()
-      const url = URL.createObjectURL(file)
-      img.onload = ()=>{
-        const canvas = document.createElement('canvas')
-        const MAX = 1200
-        let w = img.width, h = img.height
-        if(w>MAX){h=Math.round(h*MAX/w);w=MAX}
-        if(h>MAX){w=Math.round(w*MAX/h);h=MAX}
-        canvas.width=w; canvas.height=h
-        canvas.getContext('2d')!.drawImage(img,0,0,w,h)
-        URL.revokeObjectURL(url)
-        canvas.toBlob(b=>resolve(b!), 'image/jpeg', 0.75)
-      }
-      img.src = url
-    })
-  }
-
   async function handleImage(file:File) {
+    const prep = await prepareInvoiceFile(file)
+    if('error' in prep){toast(prep.error,'warning');return}
     setUploading(true)
     // باركود الهيئة من الصورة نفسها (على الجهاز) — بالتوازي مع الرفع
-    if(file.type.startsWith('image/')) zatcaFromImage(file).then(z=>{ if(z&&!zatcaRef.current){ setZatca(z,true); toast('✅ لقينا باركود الهيئة بالفاتورة — البيانات موثقة') } })
+    if(!prep.isPdf) zatcaFromImage(file).then(z=>{ if(z&&!zatcaRef.current){ setZatca(z,true); toast('✅ لقينا باركود الهيئة بالفاتورة — البيانات موثقة') } })
     try {
-      // ضغط الصورة لو كانت أكبر من 500KB
-      const compressed = file.type.startsWith('image/') && file.size > 500*1024
-        ? await compressImage(file)
-        : file
-      const ext = file.type.startsWith('image/') ? 'jpg' : file.name.split('.').pop()
-      const path = 'invoice-'+Date.now()+'.'+ext
-      const{error}=await sb.storage.from('invoices').upload(path, compressed)
-      if(error){toast('فشل رفع الصورة','error');setUploading(false);return}
+      const path = 'invoice-'+Date.now()+'.'+prep.ext
+      const{error}=await sb.storage.from('invoices').upload(path, prep.blob, { contentType: prep.type })
+      if(error){toast('فشل رفع الفاتورة','error');setUploading(false);return}
       const{data:{publicUrl}}=sb.storage.from('invoices').getPublicUrl(path)
       setForm(f=>({...f,invoice_image:publicUrl}));setPreviewUrl(publicUrl)
-      toast('تم رفع الفاتورة ✓')
+      toast(prep.isPdf?'تم إرفاق ملف الفاتورة ✓':'تم رفع الفاتورة ✓')
 
-      // محاولة استخراج بيانات الفاتورة تلقائياً بالذكاء الاصطناعي
-      if (file.type.startsWith('image/')) {
+      // محاولة استخراج بيانات الفاتورة تلقائياً بالذكاء الاصطناعي (صورة أو PDF)
+      if (prep.ocrType) {
         setOcrLoading(true)
         try {
-          const base64 = await fileToBase64(compressed as File)
+          const base64 = await blobToBase64(prep.blob)
           const ocrToken = localStorage.getItem('staff_token')
           const ocrRes = await fetch('/api/ocr-invoice', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...(ocrToken ? {'Authorization':`Bearer ${ocrToken}`} : {}) },
-            body: JSON.stringify({ image: base64, mediaType: 'image/jpeg', org_id: orgId }),
+            body: JSON.stringify({ image: base64, mediaType: prep.ocrType, org_id: orgId }),
           })
           const ocrData = await ocrRes.json()
           if (ocrRes.ok && ocrData.success) {
@@ -236,15 +215,6 @@ export default function PurchasesPage() {
       }
     } catch { toast('فشل رفع الصورة','error') }
     setUploading(false)
-  }
-
-  function fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve((reader.result as string).split(',')[1])
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
   }
 
   async function confirmSupplierThanks() {
@@ -431,16 +401,14 @@ export default function PurchasesPage() {
             {/* Invoice image */}
             <div style={{marginBottom:10}}>
               <label style={lbl}>صورة الفاتورة {form.hasVat==='yes'?<span style={{color:C.danger}}>*</span>:'(اختياري)'}</label>
-              <input ref={fileRef} type="file" accept="image/*,.pdf" style={{display:'none'}} onChange={e=>{if(e.target.files?.[0])handleImage(e.target.files[0])}}/>
-              <button type="button" onClick={()=>fileRef.current?.click()} style={{
-                width:'100%',padding:'10px',borderRadius:8,cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:600,
-                border:`1.5px dashed ${previewUrl?C.primary:form.hasVat==='yes'&&!previewUrl?C.danger:C.border2}`,
-                background:previewUrl?C.primaryL:form.hasVat==='yes'&&!previewUrl?C.dangerL:C.bg,
-                color:previewUrl?C.primary:form.hasVat==='yes'&&!previewUrl?C.danger:C.text3,
-              }}>
-                {uploading?'⏳ جاري الرفع...':previewUrl?'✅ تم الرفع — اضغط للتغيير':form.hasVat==='yes'?'📎 رفع صورة الفاتورة (مطلوب)':'📎 رفع صورة الفاتورة'}
-              </button>
-              {previewUrl&&previewUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)&&(
+              <InvoicePickButtons onFile={handleImage} disabled={uploading} primary={C.primary} primaryL={C.primaryL}
+                labels={{camera:'📷 تصوير',gallery:'🖼️ من الصور',file:'📄 ملف PDF'}}/>
+              {(uploading||previewUrl||form.hasVat==='yes')&&(
+                <div style={{fontSize:11.5,fontWeight:700,marginTop:6,color:uploading?C.text3:previewUrl?C.primary:C.danger}}>
+                  {uploading?'⏳ جاري الرفع...':previewUrl?(isPdfUrl(previewUrl)?'📄 تم إرفاق ملف الفاتورة — اختر من جديد للتغيير':'✅ تم رفع الصورة — اختر من جديد للتغيير'):'الفاتورة مطلوبة لأن فيها ضريبة'}
+                </div>
+              )}
+              {previewUrl&&!isPdfUrl(previewUrl)&&(
                 <img src={previewUrl} alt="فاتورة" style={{width:'100%',maxHeight:80,objectFit:'cover',borderRadius:7,marginTop:6,border:`1px solid ${C.primaryB}`}}/>
               )}
               {ocrLoading&&(

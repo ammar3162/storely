@@ -42,7 +42,8 @@ export async function shrinkImage(file: File, max = 1600, quality = 0.82): Promi
   try {
     const img = await new Promise<HTMLImageElement>((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url })
     const scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight))
-    if (scale === 1 && file.size < 900 * 1024) return file
+    // صيغ يقراها كل شي (القراءة الذكية والمتصفحات) — غيرها مثل HEIC يتحول JPEG
+    if (scale === 1 && file.size < 900 * 1024 && /^image\/(jpeg|png|webp)$/.test(file.type)) return file
     const c = document.createElement('canvas')
     c.width = Math.round(img.naturalWidth * scale); c.height = Math.round(img.naturalHeight * scale)
     c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height)
