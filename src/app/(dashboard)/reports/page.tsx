@@ -4,13 +4,14 @@ import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
-import { CalendarDays, FileText, Trophy, Inbox, Loader2, Paperclip, Trash2, PartyPopper, Lock, AlertTriangle, Download, BarChart3, CreditCard, Upload, Receipt, ClipboardList, Wallet, Flame, X } from 'lucide-react'
+import { CalendarDays, FileText, Trophy, Inbox, Loader2, Paperclip, Trash2, Pencil, PartyPopper, Lock, AlertTriangle, Download, BarChart3, CreditCard, Upload, Receipt, ClipboardList, Wallet, Flame, X } from 'lucide-react'
 import { cache } from '@/lib/cache'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
+import CashierClosingEditor, { PinBox } from '@/components/CashierClosingEditor'
 import StaffMonthlyDetail from '@/components/reports/StaffMonthlyReport'
 
 type FilterPeriod = 'today'|'week'|'month'|'year'|'custom'
@@ -1225,7 +1226,8 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   const [expandedReasons, setExpandedReasons] = useState<Record<string,boolean>>({})
   const [loading, setLoading]   = useState(true)
   const [confirmDelete, setConfirmDelete] = useState<any|null>(null)
-  const [deletePassword, setDeletePassword] = useState('')
+  const [deletePassword, setDeletePassword] = useState('')   // رمز الحماية
+  const [editing, setEditing] = useState<any|null>(null)
   const [deleteError, setDeleteError] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [monthComp, setMonthComp] = useState<any>(null)
@@ -1316,15 +1318,12 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
 
   async function confirmDeleteClosing() {
     setDeleteError(''); setDeleting(true)
-    const sb = createClient()
-    const { data: { user } } = await sb.auth.getUser()
-    if (!user?.email) { setDeleteError('تعذر التحقق من الحساب'); setDeleting(false); return }
-    const { error } = await sb.auth.signInWithPassword({ email: user.email, password: deletePassword })
-    if (error) { setDeleteError('كلمة المرور غير صحيحة'); setDeleting(false); return }
-    const delRes=await api.del('/api/cashier-closing',{org_id:sessionStorage.getItem('s_org_id'),id:confirmDelete.id})
-    if(!delRes.success){setDeleteError('فشل الحذف — حاول مرة أخرى');setDeleting(false);return}
+    // رمز الحماية يتحقق منه السيرفر (مو المتصفح)
+    const delRes=await api.del('/api/cashier-closing',{org_id:sessionStorage.getItem('s_org_id'),id:confirmDelete.id},{pin:deletePassword})
+    if(!delRes.success){setDeleteError(delRes.error||'فشل الحذف — حاول مرة أخرى');setDeleting(false);return}
     setClosings(prev => prev.filter(c => c.id !== confirmDelete.id))
     setConfirmDelete(null); setDeletePassword(''); setDeleting(false)
+    toast('تم حذف الإقفال')
   }
   async function load() {
     setLoading(true)
@@ -1414,6 +1413,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                   <tr key={c.id} style={{borderBottom:`1px solid ${colors.border}`}}>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>
                       <div style={{fontWeight:600,color:colors.text}}>{new Date(c.closing_date+'T12:00:00Z').toLocaleDateString('ar-SA', {numberingSystem:'latn',calendar:'gregory',timeZone:'UTC'})}</div>
+                      {c.edited_at && <div title={`عدّله ${c.edited_by||'المالك'} — ${new Date(c.edited_at).toLocaleString('ar-SA',{numberingSystem:'latn',timeZone:'Asia/Riyadh'})}`} style={{display:'inline-block',fontSize:10,fontWeight:700,color:colors.warning,background:colors.warningLight,borderRadius:5,padding:'1px 6px',marginTop:3}}>✏️ معدّل{c.edit_count>1?` (${c.edit_count})`:''}</div>}
                       {c.created_at && (
                         <div style={{fontSize:11,color:colors.text4,marginTop:2,whiteSpace:'nowrap' as const}}>
                           قُفل {new Date(c.created_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'})}
@@ -1476,10 +1476,16 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                       </div>
                     </td>
                     <td style={{padding:'12px 16px'}}>
+                      {isOwner ? (<div style={{display:'flex',gap:6}}>
+                      <button onClick={()=>setEditing(c)}
+                        style={{background:colors.primaryLight,color:colors.primary,border:`1px solid ${colors.primaryBorder}`,borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
+                        <Pencil size={12} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> تعديل
+                      </button>
                       <button onClick={()=>{setConfirmDelete(c);setDeletePassword('');setDeleteError('')}}
                         style={{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
                         <Trash2 size={12} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> حذف
                       </button>
+                      </div>) : <span style={{fontSize:11,color:colors.text4}}>—</span>}
                     </td>
                   </tr>
                 ))}
@@ -1502,6 +1508,10 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
         )}
       </div>
 
+      {editing && (
+        <CashierClosingEditor orgId={sessionStorage.getItem('s_org_id')||''} closing={editing} curr={curr} onClose={()=>setEditing(null)}
+          onSaved={()=>{ setEditing(null); load() }}/>
+      )}
       {confirmDelete && (
         <div style={{position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
           <div style={{position:'absolute',inset:0,background:'rgba(15,23,42,.4)',backdropFilter:'blur(6px)'}} onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}/>
@@ -1511,10 +1521,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
             <div style={{fontSize:12,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
               سيتم حذف إقفال <b style={{color:colors.text}}>{confirmDelete.staff_name}</b> بتاريخ {confirmDelete?.closing_date ? new Date(confirmDelete.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn'}) : ''} نهائياً.<br/>أدخل كلمة مرور حسابك للتأكيد
             </div>
-            <input type="password" value={deletePassword} onChange={e=>setDeletePassword(e.target.value)}
-              onKeyDown={e=>{if(e.key==='Enter'&&deletePassword&&!deleting) confirmDeleteClosing()}}
-              placeholder="كلمة المرور" autoFocus
-              style={{...inp(),width:'100%',marginBottom:10,boxSizing:'border-box' as const}}/>
+            <div style={{marginBottom:10}}><PinBox orgId={sessionStorage.getItem('s_org_id')||''} value={deletePassword} onChange={setDeletePassword}/></div>
             {deleteError && <div style={{fontSize:12,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><AlertTriangle size={13} strokeWidth={2.25}/> {deleteError}</div>}
             <div style={{display:'flex',gap:8}}>
               <button onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}

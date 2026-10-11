@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import StaffSessionGuard from '@/components/StaffSessionGuard'
+import HelpVideoButton from '@/components/HelpVideoButton'
 
 export function generateMetadata(): Metadata {
   return {
@@ -13,5 +14,5 @@ export function generateMetadata(): Metadata {
 }
 
 export default function StaffLayout({ children }: { children: React.ReactNode }) {
-  return <StaffSessionGuard>{children}</StaffSessionGuard>
+  return <StaffSessionGuard>{children}<HelpVideoButton variant="floating" /></StaffSessionGuard>
 }

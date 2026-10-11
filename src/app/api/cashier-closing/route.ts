@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { sendPushToOrg } from '@/lib/push'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { verifyOwnerPin } from '@/lib/ownerPin'
+import { editClosing, deleteClosing } from '@/lib/cashierClosingEdit'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { computeBusinessDate } from '@/lib/businessDate'
 import { selectAll } from '@/lib/selectAll'
@@ -249,7 +251,7 @@ export async function GET(req: Request) {
     const { data, error } = await selectAll(() => {
       let query = supabase
         .from('cashier_closings')
-        .select('id,branch_id,staff_id,closing_date,created_at,staff_name,total_sales,network_amount,cash_amount,total_purchases,difference,status,deficit_reason,deficit_decision,deficit_decided_at,sales_image,network_image,purchases')
+        .select('id,branch_id,staff_id,closing_date,created_at,staff_name,total_sales,network_amount,mada_amount,visa_amount,mastercard_amount,cash_amount,edited_at,edited_by,edit_count,total_purchases,difference,status,deficit_reason,deficit_decision,deficit_decided_at,sales_image,network_image,purchases')
         .eq('org_id', org_id)
         .order('closing_date', { ascending: false })
         .order('created_at', { ascending: false })
@@ -270,29 +272,42 @@ export async function GET(req: Request) {
   }
 }
 
-async function ownedClosing(org_id: string, id: string, access: any) {
-  const { data } = await sb().from('cashier_closings').select('id,branch_id,closing_date').eq('id', id).eq('org_id', org_id).maybeSingle()
-  if (!data) return null
-  const forced = enforcedBranchId(access)
-  if (forced && (data as any).branch_id !== forced) return null
-  return data
+// تعديل أو حذف إقفال كاشير — للمالك بس وبرمز الحماية (يتحقق منه السيرفر)، وكل شي يتحدث معه
+async function ownerWithPin(org_id: unknown, pin: unknown) {
+  if (typeof org_id !== 'string' || !/^[0-9a-f-]{36}$/i.test(org_id)) return { error: NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 }) }
+  const access = await verifyOrgAccess(org_id)
+  if (!access.authorized) return { error: NextResponse.json({ error: access.error }, { status: access.status }) }
+  if (access.role !== 'owner') return { error: NextResponse.json({ error: 'تعديل وحذف الإقفال لمالك الحساب بس' }, { status: 403 }) }
+  const v = await verifyOwnerPin(sb(), org_id, pin)
+  if (!v.ok) return { error: NextResponse.json({ error: v.error, pinNotSet: !!(v as any).notSet }, { status: v.status }) }
+  return { editor: (await sb().from('profiles').select('full_name').eq('id', access.userId!).maybeSingle()).data?.full_name || 'المالك' }
 }
 
-// حذف إقفال كاشير — الواجهة تطلب كلمة المرور قبل الإرسال
+export async function PATCH(req: Request) {
+  try {
+    const b = await req.json()
+    const g = await ownerWithPin(b.org_id, b.pin); if (g.error) return g.error
+    if (!/^[0-9a-f-]{36}$/i.test(String(b.id || ''))) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+    const r = await editClosing(sb(), b.org_id, b.id, {
+      closing_date: b.closing_date, total_sales: b.total_sales, mada_amount: b.mada_amount, visa_amount: b.visa_amount,
+      mastercard_amount: b.mastercard_amount, cash_amount: b.cash_amount, purchases: b.purchases, deficit_reason: b.deficit_reason,
+    }, g.editor!)
+    if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status })
+    return NextResponse.json({ success: true, closing: r.closing })
+  } catch {
+    return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+  }
+}
+
 export async function DELETE(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
-    const org_id = searchParams.get('org_id')
-    const id = searchParams.get('id')
-    if (!org_id || !id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
-    const access = await verifyOrgAccess(org_id)
-    if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    const owned: any = await ownedClosing(org_id, id, access)
-    if (!owned) return NextResponse.json({ error: 'غير موجود' }, { status: 404 })
-    const locked = await lockedFor(sb(), org_id, [owned.closing_date])
-    if (locked) return NextResponse.json({ error: locked }, { status: 423 })
-    const { error } = await sb().from('cashier_closings').delete().eq('id', id).eq('org_id', org_id)
-    if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+    const org_id = searchParams.get('org_id'), id = searchParams.get('id') || ''
+    const body = await req.json().catch(() => ({}))
+    const g = await ownerWithPin(org_id, (body as any).pin); if (g.error) return g.error
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+    const r = await deleteClosing(sb(), org_id!, id, g.editor!)
+    if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status })
     return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
