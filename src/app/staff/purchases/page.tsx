@@ -5,6 +5,8 @@ import TaxInvoiceFields, { type ZatcaState } from '@/components/TaxInvoiceFields
 import InvoiceItemsPicker, { type PickedItem } from '@/components/InvoiceItemsPicker'
 import { zatcaFromImage, blobToBase64 } from '@/lib/zatcaScan'
 import { prepareInvoiceFile } from '@/lib/invoiceFile'
+import { unitsFor, UNIT_EN } from '@/lib/businessTypes'
+import SelectOrOther from '@/components/SelectOrOther'
 import InvoicePickButtons from '@/components/InvoicePickButtons'
 import { zatcaDate } from '@/lib/zatcaQr'
 import { normalizeVat, isValidVat } from '@/lib/taxInvoice'
@@ -32,8 +34,6 @@ const C = {
 const inp: React.CSSProperties = {width:'100%',padding:'10px 12px',border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box' as const,background:'white',color:C.text,fontFamily:'inherit'}
 const lbl: React.CSSProperties = {fontSize:10,fontWeight:700,color:C.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.06em'}
 
-const UNITS_AR = ['قطعة','كيلو','كيس','كرتون','لتر','علبة','باكيت','درزن','رول','غرام','أخرى']
-const UNITS_EN = ['Piece','Kg','Bag','Carton','Liter','Can','Packet','Dozen','Roll','Gram','Other']
 
 const PUI: Record<string,Record<'ar'|'en',string>> = {
   title:            {ar:'تسجيل مشتريات',en:'Record Purchase'},
@@ -100,6 +100,7 @@ export default function StaffPurchasesPage() {
   const [showScan, setShowScan] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
   const [pdfName, setPdfName] = useState('')
+  const [bizType, setBizType] = useState<string|null>(null)
   const [toast, setToast] = useState('')
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [vatFromSupplier, setVatFromSupplier] = useState(false)
@@ -136,7 +137,7 @@ export default function StaffPurchasesPage() {
     loadSuppliers(s.org_id)
     fetch('/api/staff-products',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('staff_token')}`},body:'{}'})
       .then(r=>r.json()).then(j=>setProducts(j.products||[])).catch(()=>{})
-    getStaffOrg().then(org=>{ if(org?.currency) setCurr(currencySymbol(org.currency)) })
+    getStaffOrg().then(org=>{ if(org?.currency) setCurr(currencySymbol(org.currency)); setBizType(org?.business_type??null) })
   },[])
 
   function showToast(msg: string) {
@@ -325,9 +326,7 @@ export default function StaffPurchasesPage() {
             </div>
             <div>
               <label style={lbl}>{pt('unit',lang)}</label>
-              <select style={inp} value={form.unit} onChange={e=>setForm(f=>({...f,unit:e.target.value}))}>
-                {(lang==='en'?UNITS_EN:UNITS_AR).map((u,i)=><option key={u} value={UNITS_AR[i]}>{u}</option>)}
-              </select>
+              <SelectOrOther style={inp} value={form.unit} onChange={v=>setForm(f=>({...f,unit:v}))} options={unitsFor(bizType)} label={u=>lang==='en'?(UNIT_EN[u]||u):u} placeholder={lang==='en'?'Type the unit':'اكتب اسم الوحدة'}/>
             </div>
           </div>
 

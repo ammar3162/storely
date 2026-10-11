@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { SIGNUP_BUSINESS_TYPES } from '@/lib/businessTypes'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, getCurrentProfile } from '@/lib/verifyOrgAccess'
 
@@ -43,7 +44,7 @@ export async function PATCH(req: Request) {
       update.name = name
     }
     if ('whatsapp_number' in body) update.whatsapp_number = String(body.whatsapp_number || '').trim()
-    if ('business_type' in body) update.business_type = body.business_type || null
+    if ('business_type' in body && SIGNUP_BUSINESS_TYPES.some(b => b.v === body.business_type)) update.business_type = body.business_type
     if (body.onboarding_done === true) update.onboarding_done = true
     if (!Object.keys(update).length) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 

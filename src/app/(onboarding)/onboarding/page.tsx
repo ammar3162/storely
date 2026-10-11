@@ -6,17 +6,9 @@ import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api-client'
 import { colors, radius, shadow, font, btnPrimary, btnSecondary, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
+import { SIGNUP_BUSINESS_TYPES } from '@/lib/businessTypes'
 
-const BUSINESS_TYPES = [
-  { id:'مطعم',          icon:'🍔', desc:'مطاعم ووجبات سريعة' },
-  { id:'كوفي',          icon:'☕', desc:'كافيهات ومحلات قهوة' },
-  { id:'مخبز',          icon:'🥖', desc:'مخابز وحلويات' },
-  { id:'بقالة',         icon:'🛒', desc:'بقالة وسوبرماركت' },
-  { id:'صيدلية',        icon:'💊', desc:'صيدليات ومستلزمات طبية' },
-  { id:'مستودع',        icon:'🏭', desc:'مستودعات وتوزيع' },
-  { id:'متجر إلكتروني', icon:'🛍️', desc:'متاجر أونلاين وشحن' },
-  { id:'أخرى',          icon:'🏢', desc:'نشاط تجاري آخر' },
-]
+const BUSINESS_TYPES = SIGNUP_BUSINESS_TYPES.map(b=>({ id:b.v, icon:b.icon, desc:b.desc }))
 
 const TEMPLATES: Record<string, { category:string; products:{name:string;unit:string;reorder:number}[] }[]> = {
   'مطعم': [
@@ -28,11 +20,12 @@ const TEMPLATES: Record<string, { category:string; products:{name:string;unit:st
     { category:'نظافة', products:[{name:'منظف أرضية',unit:'لتر',reorder:2},{name:'مناديل',unit:'كرتون',reorder:3}] },
   ],
   'كوفي': [
-    { category:'قهوة وشاي', products:[{name:'قهوة عربية',unit:'كيلو',reorder:2},{name:'قهوة إسبريسو',unit:'كيلو',reorder:2},{name:'شاي أحمر',unit:'كيلو',reorder:1}] },
+    { category:'قهوة', products:[{name:'قهوة عربية',unit:'كيلو',reorder:2},{name:'قهوة إسبريسو',unit:'كيلو',reorder:2}] },
+    { category:'شاي وأعشاب', products:[{name:'شاي أحمر',unit:'كيلو',reorder:1}] },
     { category:'حليب وكريمة', products:[{name:'حليب طازج',unit:'لتر',reorder:5},{name:'كريمة سائلة',unit:'لتر',reorder:3},{name:'حليب اللوز',unit:'لتر',reorder:2}] },
     { category:'سكر ومحليات', products:[{name:'سكر أبيض',unit:'كيلو',reorder:2},{name:'سكر بني',unit:'كيلو',reorder:1},{name:'عسل',unit:'كيلو',reorder:1}] },
     { category:'أكواب وأغطية', products:[{name:'أكواب ورقية S',unit:'كرتون',reorder:2},{name:'أكواب ورقية L',unit:'كرتون',reorder:2},{name:'أغطية أكواب',unit:'كرتون',reorder:2}] },
-    { category:'حلويات ومعجنات', products:[{name:'كيك',unit:'قطعة',reorder:5},{name:'كرواسون',unit:'قطعة',reorder:5}] },
+    { category:'حلويات ومخبوزات', products:[{name:'كيك',unit:'قطعة',reorder:5},{name:'كرواسون',unit:'قطعة',reorder:5}] },
     { category:'نظافة', products:[{name:'مناديل',unit:'كرتون',reorder:2},{name:'منظف',unit:'لتر',reorder:1}] },
   ],
   'مخبز': [
@@ -200,7 +193,7 @@ export default function OnboardingPage() {
         .prod-item.selected{border-color:${colors.primary};background:${colors.primaryLight}}
         .check{width:22px;height:22px;border-radius:6px;border:2px solid #e2e8f0;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;cursor:pointer}
         .check.on{background:${colors.primary};border-color:${colors.primary}}
-        @media(max-width:480px){.biz-grid{grid-template-columns:repeat(2,1fr)!important}}
+        @media(max-width:480px){.biz-grid{gap:8px!important}}
       `}</style>
 
       {/* Header */}
@@ -236,7 +229,7 @@ export default function OnboardingPage() {
               <h1 style={{fontSize:26,fontWeight:900,color:colors.text,marginBottom:8}}>أهلاً بك في Storely!</h1>
               <p style={{fontSize:15,color:'#64748b',lineHeight:1.7}}>ما هو نشاطك التجاري؟ سنجهّز لك المخزون بناءً على اختيارك</p>
             </div>
-            <div className="biz-grid" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:32}}>
+            <div className="biz-grid" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:32}}>
               {BUSINESS_TYPES.map(b=>(
                 <button key={b.id} className={`biz-card${businessType===b.id?' active':''}`} onClick={()=>setBusinessType(b.id)}>
                   <span style={{fontSize:28}}>{b.icon}</span>

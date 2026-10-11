@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { isInApp, isStaffDevice, setStaffDevice } from '@/lib/inApp'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
-import StoreMascot from '@/components/StoreMascot'
+import { SIGNUP_BUSINESS_TYPES } from '@/lib/businessTypes'
 import { LanguageProvider, useTranslation } from '@/lib/i18n/LanguageContext'
 
 const COUNTRY_CODES = [
@@ -73,14 +73,10 @@ function GoogleIcon() {
   )
 }
 
-const BUSINESS_TYPES = [
-  {v:'مطعم',icon:'🍔'},{v:'كوفي',icon:'☕'},{v:'مخبز',icon:'🥖'},
-  {v:'بقالة',icon:'🛒'},{v:'صيدلية',icon:'💊'},{v:'مستودع',icon:'🏭'},
-  {v:'متجر إلكتروني',icon:'🛍️'},{v:'أخرى',icon:'🏢'},
-]
+const BUSINESS_TYPES = SIGNUP_BUSINESS_TYPES
 
 function LoginPage() {
-  const { t, lang, setLang } = useTranslation()
+  const { t, lang } = useTranslation()
   const [forgotMethod, setForgotMethod] = useState<'email'|'whatsapp'>('email')
   const [forgotPhone, setForgotPhone] = useState('')
   // oauth: دخل بـ Google وما عنده منشأة بعد — يكمل بيانات المنشأة بدون بريد وكلمة مرور
@@ -100,8 +96,6 @@ function LoginPage() {
   const [sendingOtp, setSendingOtp]   = useState(false)
   const [email, setEmail]             = useState('')
   const [password, setPassword]       = useState('')
-  const [mascotFocus, setMascotFocus] = useState<'email'|'password'|null>(null)
-  const [cursorRatio, setCursorRatio] = useState(0.5)
   const [orgName, setOrgName]         = useState('')
   const [phone, setPhone]             = useState('')
   const [countryCode, setCountryCode] = useState('+966')
@@ -367,7 +361,7 @@ function LoginPage() {
   const phonePlaceholder = phoneRule.placeholder
 
   return (
-    <div style={{minHeight:'100vh',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',background:'#ffffff',display:'flex',flexDirection:'column'}}>
+    <div style={{minHeight:'100vh',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',background:'radial-gradient(900px 420px at 50% -10%,#d9f4f2 0%,rgba(217,244,242,0) 70%),#f7faf9',display:'flex',flexDirection:'column'}}>
       <style>{`
         *{box-sizing:border-box}
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
@@ -382,33 +376,20 @@ function LoginPage() {
         .biz{padding:12px 8px;border-radius:10px;border:1.5px solid #e5e7eb;background:white;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .15s;font-size:12px;font-weight:600;color:#374151}
         .biz:hover{border-color:#029FA2}
         .biz.on{border-color:#029FA2;background:#f0fdfa;color:#029FA2}
-        @media(max-width:768px){.right-panel{display:none!important}}
+        .auth-card{background:white;border:1px solid #e6efee;border-radius:20px;padding:32px 28px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 12px 40px rgba(2,159,162,.08)}
+        @media(max-width:480px){.auth-card{padding:24px 18px;border-radius:16px}}
       `}</style>
 
-      {/* Navbar */}
-      <nav style={{padding:'0 40px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #f3f4f6'}}>
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <img src="/storely-logo.png" alt="Storely" style={{width:44,height:44,objectFit:'contain'}}/>
-        </div>
-        <div style={{display:'flex',gap:8,alignItems:'center'}}>
-          <button onClick={()=>setLang(lang==='ar'?'en':'ar')}
-            style={{display:'none',padding:'8px 14px',background:'none',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',color:'#374151'}}>
-            {lang==='ar'?'EN':'عربي'}
-          </button>
-          <span style={{fontSize:13,color:'#6b7280'}}>{t('login.haveAccount')}</span>
-          <button onClick={()=>{setMode('login');setError('');setStep(1)}}
-            style={{padding:'8px 18px',background:'none',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:'#374151',transition:'border-color .2s'}}
-            onMouseEnter={e=>e.currentTarget.style.borderColor='#029FA2'}
-            onMouseLeave={e=>e.currentTarget.style.borderColor='#e5e7eb'}>
-            {t('login.loginNav')}
-          </button>
-        </div>
-      </nav>
 
       <div style={{flex:1,display:'flex'}}>
-        {/* Left — Form */}
-        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:'40px 24px'}}>
+        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:'40px 16px'}}>
           <div style={{width:'100%',maxWidth:420,animation:'fadeUp .4s ease'}}>
+            {/* الشعار والجملة فوق البطاقة */}
+            <a href="/" style={{display:'flex',flexDirection:'column',alignItems:'center',gap:10,marginBottom:22,textDecoration:'none'}}>
+              <img src="/storely-logo.png" alt="Storely" style={{width:52,height:52,objectFit:'contain'}}/>
+              <span style={{fontSize:14,fontWeight:700,color:'#0f766e'}}>نظام واحد يربط كل أعمال منشأتك</span>
+            </a>
+            <div className="auth-card">
 
             {/* Account suspended/deleted — professional blocking card */}
             {accountStatus && (
@@ -442,9 +423,8 @@ function LoginPage() {
             {/* Login */}
             {!accountStatus && mode==='login' && (
               <>
-                <StoreMascot focused={mascotFocus} cursorRatio={cursorRatio}/>
-                <div style={{marginBottom:32,textAlign:'center' as const}}>
-                  <h1 style={{fontSize:28,fontWeight:800,color:'#111827',marginBottom:8,letterSpacing:'-0.5px'}}>{t('login.welcomeBack')}</h1>
+                <div style={{marginBottom:24,textAlign:'center' as const}}>
+                  <h1 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8,letterSpacing:'-0.5px'}}>{t('login.welcomeBack')}</h1>
                   <p style={{fontSize:15,color:'#6b7280'}}>{t('login.welcomeSub')}</p>
                 </div>
                 {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
@@ -459,8 +439,7 @@ function LoginPage() {
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.email')}</label>
                     <input className="inp" type="email" required value={email}
-                      onChange={e=>{setEmail(e.target.value);const pos=e.target.selectionStart||e.target.value.length;setCursorRatio(e.target.value.length?Math.min(Math.max(pos/Math.max(e.target.value.length,8),0),1):0.5)}}
-                      onFocus={()=>setMascotFocus('email')} onBlur={()=>setMascotFocus(null)}
+                      onChange={e=>setEmail(e.target.value)}
                       placeholder="example@email.com"/>
                   </div>
                   <div>
@@ -472,7 +451,6 @@ function LoginPage() {
                       </button>
                     </div>
                     <input className="inp" type="password" required value={password} onChange={e=>setPassword(e.target.value)}
-                      onFocus={()=>setMascotFocus('password')} onBlur={()=>setMascotFocus(null)}
                       placeholder="••••••••"/>
                   </div>
                   <button type="submit" disabled={loading} className="btn-main" style={{marginTop:8}}>
@@ -521,7 +499,7 @@ function LoginPage() {
                   </div>
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:8}}>{t('login.businessTypeLabel')}</label>
-                    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:7}}>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
                       {BUSINESS_TYPES.map(b=>(
                         <button key={b.v} type="button" onClick={()=>setBusinessType(b.v)} className={`biz${businessType===b.v?' on':''}`}>
                           <span style={{fontSize:20}}>{b.icon}</span>
@@ -747,50 +725,6 @@ function LoginPage() {
                 <button onClick={()=>{setMode('login');setError('')}} className="btn-main">{t('login.backToLogin')}</button>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Right — Branding */}
-        <div className="right-panel" style={{width:'45%',background:'#f9fafb',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'48px 44px',borderRight:'1px solid #f3f4f6'}}>
-          <div style={{maxWidth:400,width:'100%'}}>
-            <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'6px 14px',fontSize:12,fontWeight:700,color:'#029FA2',marginBottom:20}}>
-              ✓ {t('login.badge')}
-            </div>
-            <h2 style={{fontSize:30,fontWeight:900,color:'#111827',lineHeight:1.2,marginBottom:12,letterSpacing:'-1px'}}>
-              Storely<br/>
-              <span style={{color:'#029FA2'}}>{t('login.headline')}</span>
-            </h2>
-            <p style={{fontSize:14,color:'#6b7280',lineHeight:1.75,marginBottom:24}}>
-              {t('login.subtitle')}
-            </p>
-
-            {/* صورة حقيقية بدل المعاينة المزيّفة */}
-            <div style={{position:'relative',borderRadius:16,overflow:'hidden',boxShadow:'0 16px 40px rgba(15,23,42,.12)',marginBottom:24}}>
-              <img src="/storely-team.jpg" alt="Storely" style={{width:'100%',display:'block',objectFit:'cover'}}/>
-            </div>
-
-            <div style={{display:'flex',flexDirection:'column',gap:11,marginTop:24}}>
-              {[
-                {icon:'📦',text:t('login.feature1')},
-                {icon:'📲',text:t('login.feature2')},
-                {icon:'👥',text:t('login.feature3')},
-                {icon:'📊',text:t('login.feature4')},
-              ].map((f,i)=>(
-                <div key={i} style={{display:'flex',alignItems:'center',gap:11}}>
-                  <div style={{width:32,height:32,borderRadius:9,background:'white',border:'1px solid #e5e7eb',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>{f.icon}</div>
-                  <span style={{fontSize:13,color:'#374151',fontWeight:500}}>{f.text}</span>
-                </div>
-              ))}
-            </div>
-            <div className="hide-in-app" style={{marginTop:24,padding:'16px 18px',background:'white',borderRadius:12,border:'1px solid #e5e7eb'}}>
-              <div style={{display:'flex',gap:22}}>
-                {[['99 '+(lang==='ar'?'ر.س':'SAR'),t('login.statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('login.statTrial')],['7',t('login.statLangs')]].map(([n,l])=>(
-                  <div key={l}>
-                    <div style={{fontSize:18,fontWeight:900,color:'#029FA2'}}>{n}</div>
-                    <div style={{fontSize:10,color:'#9ca3af',marginTop:2}}>{l}</div>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </div>

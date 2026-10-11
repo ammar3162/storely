@@ -2,7 +2,9 @@
 import { useState, useEffect, Suspense } from 'react'
 import NumberInput from '@/components/NumberInput'
 import { useRouter, useSearchParams } from 'next/navigation'
+import SelectOrOther from '@/components/SelectOrOther'
 import { getStaffOrg } from '@/lib/session'
+import { unitsFor, catsFor } from '@/lib/businessTypes'
 import { Wheat, Milk, SprayCan, CupSoda, Drumstick, Carrot, FileText, Package, Tag, Search, Globe, LogOut, Send, Boxes, ShoppingCart, ChevronLeft, CheckCircle2, Zap } from 'lucide-react'
 
 interface StaffSession {
@@ -13,7 +15,6 @@ interface StaffSession {
 
 const CATEGORY_COLORS = ['#029FA2','#2563eb','#dc2626','#d97706','#7c3aed','#0891b2','#db2777','#65a30d','#ea580c','#4f46e5']
 const OTHER_CATEGORY = 'أخرى'
-const UNITS = ['قطعة','كيلو','كيس','كرتون','لتر','علبة','باكيت','رول','غرام']
 
 const LANGUAGES = [
   {code:'ar',label:'العربية'},{code:'en',label:'English'},{code:'ur',label:'اردو'},
@@ -77,6 +78,7 @@ function StaffPageInner() {
   const [translating, setTranslating] = useState(false)
   const [loading, setLoading] = useState(true)
   const [orgLogo, setOrgLogo] = useState<string|null>(null)
+  const [bizType, setBizType] = useState<string|null>(null)
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<string|null>(null)
   const [mostUsed, setMostUsed] = useState<any[]>([])
@@ -164,7 +166,7 @@ function StaffPageInner() {
     }
     loadProducts(s)
     loadStats(s)
-    getStaffOrg().then(org=>{ if(org?.logo_url) setOrgLogo(org.logo_url) })
+    getStaffOrg().then(org=>{ if(org?.logo_url) setOrgLogo(org.logo_url); setBizType(org?.business_type??null) })
     const savedLang = localStorage.getItem('staff_lang')
     if(savedLang) setLang(savedLang)
   },[])
@@ -738,13 +740,9 @@ function StaffPageInner() {
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                 <NumberInput value={newProduct.qty} onChange={e=>setNewProduct(p=>({...p,qty:e.target.value}))} placeholder="الكمية *"
                   style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit'}}/>
-                <select value={newProduct.unit} onChange={e=>setNewProduct(p=>({...p,unit:e.target.value}))}
-                  style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',background:'white'}}>
-                  {UNITS.map(u=><option key={u}>{u}</option>)}
-                </select>
+                <SelectOrOther value={newProduct.unit} onChange={v=>setNewProduct(p=>({...p,unit:v}))} options={unitsFor(bizType)} placeholder="اكتب اسم الوحدة" style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',background:'white',width:'100%',boxSizing:'border-box' as const}}/>
               </div>
-              <input value={newProduct.category} onChange={e=>setNewProduct(p=>({...p,category:e.target.value}))} placeholder="الفئة (اختياري)"
-                style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',boxSizing:'border-box' as const}}/>
+              <SelectOrOther value={newProduct.category} onChange={v=>setNewProduct(p=>({...p,category:v}))} options={catsFor(bizType)} emptyLabel="الفئة (اختياري)" placeholder="اكتب اسم الفئة" style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',background:'white',width:'100%',boxSizing:'border-box' as const}}/>
             </div>
             <div style={{display:'flex',gap:8}}>
               <button onClick={addProduct} disabled={savingProduct||!newProduct.name||!newProduct.qty}

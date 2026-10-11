@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { SIGNUP_BUSINESS_TYPES } from '@/lib/businessTypes'
 import { attachReferral } from '@/lib/agentReferral'
 import { REF_COOKIE } from '@/lib/agentRewards'
 import { createClient } from '@supabase/supabase-js'
@@ -37,7 +38,8 @@ export async function POST(req: Request) {
     orgName = sanitizeShortText(orgName, 150)
     fullPhone = formatPhone(sanitizeShortText(fullPhone, 20))
     phone = formatPhone(sanitizeShortText(phone, 20))
-    businessType = businessType ? sanitizeShortText(businessType, 50) : businessType
+    // التسجيل الجديد: مطعم أو كوفي أو أخرى — النوع يحدد الفئات والوحدات داخل النظام
+    businessType = SIGNUP_BUSINESS_TYPES.some(b => b.v === businessType) ? businessType : 'أخرى'
 
     if (!orgName || !fullPhone) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
