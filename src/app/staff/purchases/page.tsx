@@ -3,7 +3,9 @@ import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
 import NumberInput from '@/components/NumberInput'
 import TaxInvoiceFields, { type ZatcaState } from '@/components/TaxInvoiceFields'
 import InvoiceItemsPicker, { type PickedItem } from '@/components/InvoiceItemsPicker'
-import { zatcaFromImage, shrinkImage, blobToBase64 } from '@/lib/zatcaScan'
+import { zatcaFromImage, blobToBase64 } from '@/lib/zatcaScan'
+import { prepareInvoiceFile } from '@/lib/invoiceFile'
+import InvoicePickButtons from '@/components/InvoicePickButtons'
 import { zatcaDate } from '@/lib/zatcaQr'
 import { normalizeVat, isValidVat } from '@/lib/taxInvoice'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
@@ -69,6 +71,8 @@ const PUI: Record<string,Record<'ar'|'en',string>> = {
   errorPrefix:      {ar:'خطأ: ',en:'Error: '},
   snapTitle:        {ar:'صوّر الفاتورة — ونعبّي البيانات عنك',en:'Snap the invoice — we fill it in for you'},
   camera:           {ar:'📷 الكاميرا',en:'📷 Camera'},
+  fileBtn:          {ar:'📄 ملف PDF',en:'📄 PDF file'},
+  pdfAttached:      {ar:'📄 تم إرفاق الملف',en:'📄 File attached'},
   gallery:          {ar:'🖼️ من الصور',en:'🖼️ From photos'},
   reading:          {ar:'⏳ جاري قراءة الفاتورة...',en:'⏳ Reading the invoice...'},
   readOk:           {ar:'✅ قرأنا الفاتورة — راجع البيانات قبل الحفظ',en:'✅ Invoice read — please review before saving'},
@@ -95,6 +99,7 @@ export default function StaffPurchasesPage() {
   const [uploading, setUploading] = useState(false)
   const [showScan, setShowScan] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
+  const [pdfName, setPdfName] = useState('')
   const [toast, setToast] = useState('')
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [vatFromSupplier, setVatFromSupplier] = useState(false)
@@ -150,25 +155,28 @@ export default function StaffPurchasesPage() {
 
   // الصورة (كاميرا أو من الصور): رفع + باركود الهيئة + قراءة ذكية — بالتوازي
   async function handleImage(file: File) {
+    const prep = await prepareInvoiceFile(file)
+    if ('error' in prep) { showToast(prep.error); return }
     setUploading(true); setReadState('reading'); setReadErr(''); setOcrItems([])
-    setPreviewUrl(URL.createObjectURL(file))
+    setForm(f => ({ ...f, invoice_image: '' }))
+    setPreviewUrl(prep.isPdf ? null : URL.createObjectURL(prep.blob)); setPdfName(prep.isPdf ? file.name || 'invoice.pdf' : '')
     const staffToken = localStorage.getItem('staff_token')
-    const small = await shrinkImage(file)
     const upload = (async () => {
       const fd = new FormData()
-      fd.append('file', new File([small], 'invoice.jpg', { type: small.type || 'image/jpeg' }))
+      fd.append('file', new File([prep.blob], 'invoice.' + prep.ext, { type: prep.type }))
       const res = await fetch('/api/staff-upload-invoice', { method: 'POST', headers: { 'Authorization': `Bearer ${staffToken}` }, body: fd })
       const j = await res.json().catch(() => ({}))
       return res.ok && j.success ? j.url as string : null
     })().catch(() => null)
     const ocr = (async () => {
+      if (!prep.ocrType) return null
       const res = await fetch('/api/ocr-invoice', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
-        body: JSON.stringify({ image: await blobToBase64(small), mediaType: 'image/jpeg', org_id: session?.org_id }) })
+        body: JSON.stringify({ image: await blobToBase64(prep.blob), mediaType: prep.ocrType, org_id: session?.org_id }) })
       const j = await res.json().catch(() => ({}))
       if (!(res.ok && j.success)) { if (j.error) setReadErr(j.error); return null }
       return j.data
     })().catch(() => null)
-    const [z, url, d] = await Promise.all([zatcaFromImage(file), upload, ocr])
+    const [z, url, d] = await Promise.all([prep.isPdf ? Promise.resolve(null) : zatcaFromImage(file), upload, ocr])
 
     if (url) setForm(f => ({ ...f, invoice_image: url }))
     else showToast(pt('imgFailed', lang))
@@ -251,7 +259,7 @@ export default function StaffPurchasesPage() {
 
     setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_number:'',supplier_vat_number:''})
     setVatFromSupplier(false); setZatca(null)
-    setPreviewUrl(null);setReadState('');setOcrItems([]);setLoading(false);submitting.current=false
+    setPreviewUrl(null);setPdfName('');setReadState('');setOcrItems([]);setLoading(false);submitting.current=false
     // بعد 2 ثانية ارجع لصفحة الموظف
     setTimeout(()=>router.push('/staff/dispense'), 2000)
   }
@@ -278,17 +286,9 @@ export default function StaffPurchasesPage() {
         <div style={{background:'white',border:`1.5px solid ${previewUrl?C.primary:C.border2}`,borderRadius:14,padding:14,marginBottom:14}}>
           <div style={{fontSize:13.5,fontWeight:800,color:C.text,marginBottom:10}}>{pt('snapTitle',lang)}</div>
           {previewUrl && <img src={previewUrl} alt="invoice" style={{width:'100%',maxHeight:180,objectFit:'cover' as const,borderRadius:10,marginBottom:10}}/>}
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-            {[{k:'cam',l:pt('camera',lang),cap:true},{k:'gal',l:pt('gallery',lang),cap:false}].map(o=>(
-              <label key={o.k} style={{display:'flex',alignItems:'center',justifyContent:'center',padding:'12px 8px',borderRadius:10,cursor:uploading?'wait':'pointer',fontSize:13,fontWeight:800,
-                background:o.cap?C.primary:C.primaryL,color:o.cap?'white':C.primary,border:`1.5px solid ${C.primary}`,opacity:uploading?.6:1}}>
-                {/* capture يفتح الكاميرا مباشرة؛ بدونه يفتح الصور */}
-                <input type="file" accept="image/*" {...(o.cap?{capture:'environment' as const}:{})} disabled={uploading} style={{display:'none'}}
-                  onChange={e=>{const f=e.target.files?.[0]; e.target.value=''; if(f) handleImage(f)}}/>
-                {previewUrl&&!o.cap?pt('changePhoto',lang):o.l}
-              </label>
-            ))}
-          </div>
+          {pdfName && <div style={{background:C.primaryL,color:C.primary,borderRadius:10,padding:'10px 12px',marginBottom:10,fontSize:13,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{pt('pdfAttached',lang)} · {pdfName}</div>}
+          <InvoicePickButtons onFile={handleImage} disabled={uploading} primary={C.primary} primaryL={C.primaryL}
+            labels={{camera:pt('camera',lang),gallery:previewUrl||pdfName?pt('changePhoto',lang):pt('gallery',lang),file:pt('fileBtn',lang)}}/>
           {readState&&<div style={{marginTop:10,fontSize:12.5,fontWeight:700,lineHeight:1.6,color:readState==='fail'?C.warning:readState==='reading'?C.text3:C.primary}}>
             {readState==='fail'&&readErr&&lang!=='en'?`${readErr}`:pt(readState==='reading'?'reading':readState==='qr'?'readQr':readState==='ok'?'readOk':'readFail',lang)}
           </div>}

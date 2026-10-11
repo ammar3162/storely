@@ -4,6 +4,7 @@ import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { staffHasPermission, NO_PURCHASES } from '@/lib/staffPermission'
 import { createClient } from '@supabase/supabase-js'
+import { OCR_TYPES } from '@/lib/invoiceFile'
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!
 // قراءة فاتورة مفصّلة تاخذ أكثر من ١٠ ثواني — بدون هذا السيرفر يقطعها قبل ما تخلص
@@ -17,9 +18,11 @@ export const maxDuration = 60
 export async function POST(req: Request) {
   try {
     const { image, mediaType, org_id } = await req.json()
-    if (!image || !org_id) {
+    if (!image || !org_id || typeof image !== 'string') {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
+    // صورة (JPEG/PNG/WebP/GIF) أو PDF — النوع لازم يطابق الملف وإلا ترفضه خدمة القراءة
+    const type = (OCR_TYPES as readonly string[]).includes(mediaType) ? mediaType as string : 'image/jpeg'
 
     // تحقق مزدوج: توكن موظف أو جلسة مالك
     const staffAuth = await verifyStaffToken(extractStaffToken(req))
@@ -33,7 +36,7 @@ export async function POST(req: Request) {
       if (!ownerAuth.authorized) return NextResponse.json({ error: ownerAuth.error }, { status: ownerAuth.status })
     }
 
-    const prompt = `أنت تحلل صورة فاتورة شراء (مشتريات) لمحل تجاري. استخرج المعلومات التالية بدقة:
+    const prompt = `أنت تحلل فاتورة شراء (صورة أو ملف PDF) (مشتريات) لمحل تجاري. استخرج المعلومات التالية بدقة:
 
 1. اسم المورد أو المحل البائع (supplier)
 2. تاريخ الفاتورة بصيغة YYYY-MM-DD (invoice_date) — إذا غير واضح استخدم null
@@ -73,7 +76,9 @@ export async function POST(req: Request) {
         messages: [{
           role: 'user',
           content: [
-            { type: 'image', source: { type: 'base64', media_type: mediaType || 'image/jpeg', data: image } },
+            type === 'application/pdf'
+              ? { type: 'document', source: { type: 'base64', media_type: type, data: image } }
+              : { type: 'image', source: { type: 'base64', media_type: type, data: image } },
             { type: 'text', text: prompt },
           ],
         }],
@@ -83,7 +88,7 @@ export async function POST(req: Request) {
     if (!res.ok) {
       const detail = await res.text().catch(() => '')
       console.error('OCR_FAILED', res.status, detail.slice(0, 300))
-      return NextResponse.json({ error: res.status === 529 || res.status === 429 ? 'خدمة القراءة مشغولة — جرّب بعد دقيقة' : 'تعذر قراءة الصورة — جرّب صورة أوضح' }, { status: 502 })
+      return NextResponse.json({ error: res.status === 529 || res.status === 429 ? 'خدمة القراءة مشغولة — جرّب بعد دقيقة' : 'تعذر قراءة الفاتورة — جرّب صورة أوضح أو عبّي يدوي' }, { status: 502 })
     }
 
     const data = await res.json()

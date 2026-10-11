@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
+import { INVOICE_TYPES, INVOICE_MAX_BYTES, invoiceType, invoiceExt } from '@/lib/invoiceFile'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,21 +18,24 @@ export async function POST(req: Request) {
     const file = formData.get('file') as File | null
     if (!file) return NextResponse.json({ error: 'ما فيه ملف' }, { status: 400 })
 
-    const ext = file.name.split('.').pop() || 'jpg'
-    const path = `invoices/${orgId}-${Date.now()}.${ext}`
+    // صور أو PDF فقط — ما نخلي أحد يرفع صفحات HTML على رابط عام
+    const type = invoiceType(file)
+    if (!(INVOICE_TYPES as readonly string[]).includes(type)) return NextResponse.json({ error: 'الملف لازم يكون صورة أو PDF' }, { status: 400 })
+    if (file.size > INVOICE_MAX_BYTES) return NextResponse.json({ error: 'الملف أكبر من ٤ ميجا' }, { status: 400 })
+    const path = `invoices/${orgId}-${Date.now()}.${invoiceExt(type)}`
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
     const supabase = sb()
     const { error: upErr } = await supabase.storage.from('invoices').upload(path, buffer, {
       upsert: true,
-      contentType: file.type || 'image/jpeg',
+      contentType: type,
     })
     if (upErr) return NextResponse.json({ error: 'فشل رفع الصورة — حاول مرة أخرى' }, { status: 500 })
 
     const { data: { publicUrl } } = supabase.storage.from('invoices').getPublicUrl(path)
     return NextResponse.json({ success: true, url: publicUrl })
-  } catch (err: any) {
+  } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
 }
