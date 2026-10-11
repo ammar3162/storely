@@ -57,7 +57,7 @@ export type AccStock = { name: string; category: string | null; qty: number; uni
 export type AccPayable = { supplier: string; invoices: number; oldest: string; nextDue: string | null; total: number }
 
 export type AccountantReport = {
-  orgName: string; branchName: string | null; currency: string
+  orgName: string; branchName: string | null; currency: string; businessType?: string | null
   period: { start: string; end: string }; label: string
   sections: AccSection[]; vatRegistered: boolean
   purchases: AccPurchase[]; closings: AccClosing[]; expenses: AccExpense[]
@@ -99,6 +99,49 @@ export function summarize(r: AccountantReport) {
     stockValue: sum(r.stock.filter(s => s.avgCost != null), s => s.qty * Number(s.avgCost)),
     salesNet: r2(sales - outputVat), outputVat, inputVat, vatNet: r2(outputVat - claimable),
     payablesTotal: sum(r.payables, p => p.total),
+  }
+}
+
+// الإقرار الضريبي بنفس خانات نموذج الهيئة (١–١٦) — الخانات اللي ما يسجلها النظام تطلع null ويعبيها المحاسب
+export const FOOD_HIDDEN_BOXES = [2, 3, 4, 8]
+export type VatBox = { no: number; label: string; amount: number | null; adjust: number | null; vat: number | null; total?: boolean }
+const lastDayOfMonth = (d: string) => { const y = Number(d.slice(0, 4)), m = Number(d.slice(5, 7)); return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10) }
+const lastDayOfNextMonth = (d: string) => { const y = Number(d.slice(0, 4)), m = Number(d.slice(5, 7)); return new Date(Date.UTC(y, m + 1, 0)).toISOString().slice(0, 10) }
+export function vatReturn(r: AccountantReport) {
+  const t = summarize(r)
+  const tinv = taxInvoices(r.purchases)
+  const ok = tinv.filter(i => i.complete), bad = tinv.filter(i => !i.complete)
+  const purNet = sum(ok, i => i.net), purVat = sum(ok, i => i.vat)
+  const box = (no: number, label: string, amount: number | null, vat: number | null, total = false): VatBox => ({ no, label, amount, adjust: amount == null ? null : 0, vat, total })
+  const all: VatBox[] = [
+    box(1, 'المبيعات الخاضعة للنسبة الأساسية', t.salesNet, t.outputVat),
+    box(2, 'المبيعات للمواطنين (الخدمات الصحية الخاصة والتعليم الأهلي)', null, null),
+    box(3, 'المبيعات المحلية الخاضعة للنسبة الصفرية', null, null),
+    box(4, 'الصادرات', null, null),
+    box(5, 'المبيعات المعفاة', null, null),
+    box(6, 'إجمالي المبيعات', t.salesNet, t.outputVat, true),
+    box(7, 'المشتريات الخاضعة للنسبة الأساسية', purNet, purVat),
+    box(8, 'الاستيرادات الخاضعة للضريبة بالنسبة الأساسية والمدفوعة في الجمارك', null, null),
+    box(9, 'الاستيرادات الخاضعة للضريبة بآلية الاحتساب العكسي', null, null),
+    box(10, 'المشتريات الخاضعة للنسبة الصفرية', null, null),
+    box(11, 'المشتريات المعفاة', null, null),
+    box(12, 'إجمالي المشتريات', purNet, purVat, true),
+    box(13, 'إجمالي ضريبة القيمة المضافة المستحقة عن الفترة الحالية', null, r2(t.outputVat - purVat), true),
+    box(14, 'تصحيحات من الفترات السابقة (بين ±٥٠٠٠ ريال)', null, null),
+    box(15, 'ضريبة القيمة المضافة المرحّلة من الفترات السابقة', null, null),
+    box(16, 'صافي الضريبة المستحقة (أو المستردة)', null, r2(t.outputVat - purVat), true),
+  ]
+  // المطاعم والكوفيهات: نشيل الخانات اللي ما تخصهم (صحة وتعليم، نسبة صفرية، صادرات، استيراد بالجمارك)
+  const foodService = r.businessType === 'مطعم' || r.businessType === 'كوفي'
+  const boxes = foodService ? all.filter(b => !FOOD_HIDDEN_BOXES.includes(b.no)) : all
+  // آخر موعد للتقديم: نهاية الشهر اللي بعد الفترة (لو الفترة أشهر كاملة)
+  const fullMonths = r.period.start.slice(8) === '01' && r.period.end === lastDayOfMonth(r.period.end)
+  return {
+    boxes, netDue: r2(t.outputVat - purVat), hidden: foodService ? FOOD_HIDDEN_BOXES : [],
+    review: { count: bad.length, net: sum(bad, i => i.net), vat: sum(bad, i => i.vat) },     // فواتير فيها ضريبة بس ناقصة البيانات — ما دخلت خانة ٧
+    nonVat: { count: t.nonVatCount, total: t.nonVatTotal },                                       // مشتريات بدون ضريبة — المحاسب يحدد خانة ١٠ أو ١١ أو خارج النطاق
+    drawerExpenses: t.expenses,                                                                    // مصروفات من درج الكاشير — ما لها فاتورة ضريبية
+    deadline: fullMonths ? lastDayOfNextMonth(r.period.end) : null,
   }
 }
 
@@ -182,7 +225,8 @@ export async function buildAccountantWorkbook(r: AccountantReport, opts: { water
   ], r.closings.map(c => ({ ...c, staff: c.staff || '—', status: CLOSING_STATUS[c.status || ''] || '—' })),
   { date: 'الإجمالي', sales: t.sales, mada: t.mada, visa: t.visa, mastercard: t.mastercard, network: t.network, cash: t.cash, expenses: sum(r.closings, c => c.expenses), difference: sum(r.closings, c => c.difference) })
 
-  if (has('purchases') || has('vat')) {
+  // الفواتير الضريبية تهم المنشأة المسجلة بس (هي اللي تخصم ضريبة المشتريات)
+  if ((has('purchases') || has('vat')) && r.vatRegistered) {
     const list = taxInvoices(r.purchases)
     const tws = addTable(wb, 'الفواتير الضريبية', [
       { header: 'التاريخ', key: 'date', width: 12 }, ...branchCol, { header: 'رقم الفاتورة', key: 'invoiceNumber', width: 15 }, { header: 'المورد', key: 'supplier', width: 22 },
@@ -227,21 +271,31 @@ export async function buildAccountantWorkbook(r: AccountantReport, opts: { water
   }
 
   if (has('vat')) {
-    const vws = wb.addWorksheet('الضريبة', { views: [{ rightToLeft: true }] })
-    vws.columns = [{ width: 42 }, { width: 20 }]
-    const head = vws.addRow(['البند', 'المبلغ'])
-    head.eachCell(c => { c.font = { bold: true, color: { argb: HEAD_TXT } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND } } })
-    if (!r.vatRegistered) vws.addRow(['المنشأة غير مسجلة في ضريبة القيمة المضافة', ''])
+    const vws = wb.addWorksheet('الإقرار الضريبي', { views: [{ rightToLeft: true }] })
+    vws.columns = [{ width: 8 }, { width: 62 }, { width: 18 }, { width: 14 }, { width: 20 }]
+    vws.addRow(['إقرار ضريبة القيمة المضافة — بنفس خانات نموذج الهيئة']).font = { bold: true, size: 14, color: { argb: BRAND } }
+    vws.addRow([`${r.orgName} · الفترة ${r.period.start} إلى ${r.period.end}`]).font = { color: { argb: MUTED } }
+    if (!r.vatRegistered) vws.addRow(['المنشأة غير مسجلة في ضريبة القيمة المضافة'])
     else {
-      const rows: [string, number, boolean?][] = [
-        ['المبيعات شاملة الضريبة', t.sales], ['المبيعات قبل الضريبة', t.salesNet], ['ضريبة المبيعات (المخرجات)', t.outputVat, true],
-        ['ضريبة المشتريات — كل الفواتير', t.inputVat], ['ضريبة المشتريات القابلة للخصم (فواتير مكتملة)', t.inputVatClaimable, true],
-        ['ضريبة بفواتير ناقصة — تحتاج مراجعة', t.inputVatReview], ['صافي الضريبة المستحقة', t.vatNet, true],
-      ]
-      for (const [k, v, b] of rows) { const row = vws.addRow([k, v]); row.getCell(2).numFmt = MONEY; if (b) row.font = { bold: true } }
+      const v = vatReturn(r)
+      if (v.deadline) vws.addRow([`آخر موعد للتقديم والسداد: ${v.deadline}`]).font = { bold: true, color: { argb: 'FFB54708' } }
       vws.addRow([])
-      if (t.inputVatReview > 0) vws.addRow([`لو اكتملت بيانات الفواتير الناقصة (${t.taxInvoices - t.taxComplete}) ينزل المستحق بـ ${t.inputVatReview.toFixed(2)} — شوف ورقة «الفواتير الضريبية».`]).font = { size: 10, color: { argb: 'FFB45309' } }
-      vws.addRow(['تقدير من إقفالات الكاشير وفواتير المشتريات المسجلة — راجعه قبل تقديم الإقرار.']).font = { italic: true, size: 9, color: { argb: 'FF98A2B3' } }
+      const head = vws.addRow(['الخانة', 'البند', 'المبلغ (ر.س)', 'التعديلات', 'ضريبة القيمة المضافة'])
+      head.eachCell(c => { c.font = { bold: true, color: { argb: HEAD_TXT } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND } }; c.alignment = { horizontal: 'center' } })
+      for (const b of v.boxes) {
+        const row = vws.addRow([b.no, b.label, b.amount ?? '—', b.adjust ?? '—', b.vat ?? '—'])
+        row.getCell(1).alignment = { horizontal: 'center' }
+        for (const c of [3, 4, 5]) { row.getCell(c).numFmt = MONEY; row.getCell(c).alignment = { horizontal: 'left' } }
+        if (b.total) row.eachCell({ includeEmpty: true }, c => { c.font = { bold: true }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TOTAL_BG } } })
+      }
+      vws.addRow([])
+      const note = (txt: string, color = MUTED) => { const row = vws.addRow(['', txt]); row.getCell(2).font = { size: 10, color: { argb: color } }; row.getCell(2).alignment = { wrapText: true } }
+      note('«—» = النظام ما يسجّل هذا البند — يعبيه المحاسب من سجلاته لو موجود.')
+      if (v.hidden.length) note(`الخانات ${v.hidden.join(' و')} ما تخص المطاعم والكوفيهات — مخفية، وتبقى فاضية في نموذج الهيئة.`)
+      if (v.review.count > 0) note(`${invoicesLabel(v.review.count)} فيها ضريبة ${v.review.vat.toFixed(2)} ما دخلت خانة ٧ لأنها ناقصة الرقم الضريبي أو رقم الفاتورة — شوف ورقة «الفواتير الضريبية».`, 'FFD92D20')
+      if (v.nonVat.count > 0) note(`مشتريات بدون ضريبة: ${invoicesLabel(v.nonVat.count)} بـ ${v.nonVat.total.toFixed(2)} — حدد هل تدخل خانة ١٠ أو ١١ أو خارج النطاق.`)
+      if (v.drawerExpenses > 0) note(`مصروفات من درج الكاشير ${v.drawerExpenses.toFixed(2)} — بدون فواتير ضريبية، ما دخلت الإقرار.`)
+      note('المبيعات من إقفالات الكاشير (شاملة ضريبة ١٥٪) والمشتريات من الفواتير المسجلة — راجعها قبل التقديم.', 'FF98A2B3')
     }
   }
 

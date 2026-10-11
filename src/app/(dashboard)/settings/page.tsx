@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import VatRegistration from '@/components/VatRegistration'
 import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -512,6 +513,8 @@ export default function SettingsPage() {
                   </div>
                   <div style={{fontSize:11,color:colors.text4,marginTop:6,display:'flex',alignItems:'center',gap:4}}><span>💡</span> يُستخدم لإرسال تنبيهات نقص المخزون</div>
                 </div>
+
+                {orgId&&<VatRegistration orgId={orgId}/>}
 
                 {/* تفاصيل الاشتراك */}
                 <div>

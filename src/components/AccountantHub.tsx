@@ -1,4 +1,5 @@
 'use client'
+import { VatStatusLine } from '@/components/VatRegistration'
 import { useEffect, useState } from 'react'
 import { Users, Send, MessageSquareText, Lock, ShieldCheck, Clock } from 'lucide-react'
 import { api } from '@/lib/api-client'
@@ -118,6 +119,7 @@ export default function AccountantHub({ orgId }: { orgId: string }) {
       </div>
 
       <div style={{ maxWidth: 920 }}>
+        {(sub === 'people' || sub === 'reports') && <VatStatusLine orgId={orgId} />}
         {sub === null && <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: colors.text4, fontSize: 13, padding: 20 }}><Clock size={14} /> جاري التحميل...</div>}
         {sub === 'people' && <AccountantPortalAccess orgId={orgId} onChange={loadSummary} />}
         {sub === 'reports' && <AccountantLinkSettings orgId={orgId} onChange={loadSummary} />}

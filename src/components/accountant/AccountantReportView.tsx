@@ -1,7 +1,7 @@
 'use client'
 import { Download, FileSpreadsheet } from 'lucide-react'
 import { colors, radius } from '@/lib/ds'
-import { invoicesLabel, staffLabel, taxInvoices } from '@/lib/accountantExport'
+import { invoicesLabel, staffLabel, taxInvoices, vatReturn } from '@/lib/accountantExport'
 
 // عرض تقرير المحاسب — صفحة الرابط وبوابة المحاسب تستخدمه
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -68,7 +68,7 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
         rows={r.closings.map((c: any) => [c.date, ...(multi ? [c.branch] : []), c.staff || '—', c.sales, c.network, c.cash])} />
     </Card>}
 
-    {(has('purchases') || has('vat')) && <Card wide title={`الفواتير الضريبية (${invoicesLabel(t.taxInvoices)})`}>
+    {(has('purchases') || has('vat')) && r.vatRegistered && <Card wide title={`الفواتير الضريبية (${invoicesLabel(t.taxInvoices)})`}>
       {t.taxInvoices > 0 && <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: t.taxInvoices === t.taxComplete ? '#059669' : '#b45309' }}>
         {t.taxInvoices === t.taxComplete ? '✓ كل الفواتير مكتملة البيانات' : `${t.taxInvoices - t.taxComplete} ناقصة — تحتاج الرقم الضريبي أو رقم الفاتورة قبل الإقفال`}
         {t.taxVerified > 0 && <span style={{ color: '#059669' }}> · {t.taxVerified} موثقة من باركود الهيئة</span>}
@@ -86,12 +86,8 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
         rows={r.purchases.map((p: any) => [p.date, ...(multi ? [p.branch] : []), p.supplier || '—', p.name, p.net, p.vat, p.total, p.paid ? 'مدفوعة' : 'آجلة'])} />
     </Card>}
 
-    {has('vat') && <Card title="ضريبة القيمة المضافة">
-      {r.vatRegistered
-        ? <><Lines rows={[['المبيعات قبل الضريبة', t.salesNet], ['ضريبة المبيعات (المخرجات)', t.outputVat], ['ضريبة المشتريات القابلة للخصم', t.inputVatClaimable], ['صافي الضريبة المستحقة', t.vatNet, true],
-              ...(t.inputVatReview > 0 ? [['ضريبة بفواتير ناقصة — تحتاج مراجعة', t.inputVatReview] as [string, number]] : [])]} />
-            <div style={{ fontSize: 11.5, color: colors.text4, marginTop: 8 }}>تقدير من إقفالات الكاشير وفواتير المشتريات المسجلة — راجعه قبل تقديم الإقرار.</div></>
-        : <div style={{ fontSize: 13, color: colors.text3 }}>المنشأة غير مسجلة في ضريبة القيمة المضافة.</div>}
+    {has('vat') && <Card wide title="الإقرار الضريبي — ضريبة القيمة المضافة">
+      {r.vatRegistered ? <VatReturnView r={r} /> : <div style={{ fontSize: 13, color: colors.text3 }}>المنشأة غير مسجلة في ضريبة القيمة المضافة.</div>}
     </Card>}
 
     {has('payables') && <Card title="الموردين الآجلين">
@@ -125,4 +121,37 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
 
     </div>
   </>)
+}
+
+// نفس خانات نموذج الإقرار في بوابة الهيئة — المحاسب ينقل الأرقام مباشرة
+function VatReturnView({ r }: { r: any }) {
+  const v = vatReturn(r)
+  const cell = (x: number | null) => x == null ? <span style={{ color: colors.text4 }}>—</span> : fmt(x)
+  const due = v.netDue
+  return <>
+    <Lines rows={[['ضريبة المبيعات (خانة ٦)', v.boxes.find(b => b.no === 6)?.vat || 0], ['ضريبة المشتريات القابلة للخصم (خانة ١٢)', v.boxes.find(b => b.no === 12)?.vat || 0],
+      [due >= 0 ? 'صافي الضريبة المستحقة (خانة ١٦)' : 'ضريبة مستردة (خانة ١٦)', Math.abs(due), true]]} />
+    {v.deadline && <div style={{ marginTop: 10, fontSize: 12.5, fontWeight: 700, color: colors.warning, background: colors.warningLight, borderRadius: 10, padding: '8px 12px' }}>
+      آخر موعد لتقديم الإقرار وسداد الضريبة: {new Date(`${v.deadline}T12:00:00Z`).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' })}</div>}
+    <div style={{ overflowX: 'auto', marginTop: 12 }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, minWidth: 560 }}>
+        <thead><tr>{['الخانة', 'البند', 'المبلغ (ر.س)', 'التعديلات', 'ضريبة القيمة المضافة'].map(h =>
+          <th key={h} style={{ textAlign: 'right', padding: '7px 8px', background: colors.primaryLight, color: colors.primaryDark, fontWeight: 700, whiteSpace: 'nowrap' }}>{h}</th>)}</tr></thead>
+        <tbody>{v.boxes.map(b => (
+          <tr key={b.no} style={{ background: b.total ? '#f8fafc' : undefined, fontWeight: b.total ? 800 : 400 }}>
+            <td style={{ padding: '7px 8px', borderBottom: `1px solid ${colors.border}`, textAlign: 'center', fontWeight: 800, color: colors.primary }}>{b.no}</td>
+            <td style={{ padding: '7px 8px', borderBottom: `1px solid ${colors.border}` }}>{b.label}</td>
+            {[b.amount, b.adjust, b.vat].map((x, k) => <td key={k} dir="ltr" style={{ padding: '7px 8px', borderBottom: `1px solid ${colors.border}`, textAlign: 'left', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{cell(x)}</td>)}
+          </tr>))}</tbody>
+      </table>
+    </div>
+    <div style={{ display: 'grid', gap: 6, marginTop: 12, fontSize: 12, color: colors.text3, lineHeight: 1.7 }}>
+      <div>«—» يعني النظام ما يسجّل هذا البند — عبّه من سجلاتك لو موجود.</div>
+      {v.hidden.length > 0 && <div>الخانات {v.hidden.join(' و')} ما تخص المطاعم والكوفيهات — مخفية، وتبقى فاضية في نموذج الهيئة.</div>}
+      {v.review.count > 0 && <div style={{ color: colors.danger, fontWeight: 700 }}>⚠️ {invoicesLabel(v.review.count)} فيها ضريبة <span dir="ltr">{fmt(v.review.vat)}</span> ما دخلت خانة ٧ لأنها ناقصة الرقم الضريبي أو رقم الفاتورة — شوف «الفواتير الضريبية».</div>}
+      {v.nonVat.count > 0 && <div>مشتريات بدون ضريبة: {invoicesLabel(v.nonVat.count)} بـ <span dir="ltr">{fmt(v.nonVat.total)}</span> — حدد هل تدخل خانة ١٠ أو ١١ أو خارج النطاق.</div>}
+      {v.drawerExpenses > 0 && <div>مصروفات من درج الكاشير <span dir="ltr">{fmt(v.drawerExpenses)}</span> — بدون فواتير ضريبية، ما دخلت الإقرار.</div>}
+      <div style={{ color: colors.text4 }}>المبيعات من إقفالات الكاشير (شاملة ضريبة ١٥٪) والمشتريات من الفواتير المسجلة — راجعها قبل التقديم.</div>
+    </div>
+  </>
 }

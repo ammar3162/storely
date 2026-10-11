@@ -22,7 +22,7 @@ export async function GET() {
 
     const [{ data: org }, { data: extra }, { data: branches }, { data: branchSubs }] = await Promise.all([
       db.from('organizations')
-        .select('id,name,plan,billing_cycle,currency,logo_url,deletion_scheduled_at,max_staff,max_suppliers,max_branches,country_code,business_type,onboarding_done')
+        .select('id,name,plan,billing_cycle,currency,logo_url,deletion_scheduled_at,max_staff,max_suppliers,max_branches,country_code,business_type,onboarding_done,vat_registered')
         .eq('id', profile.orgId).single(),
       db.from('profiles')
         .select('full_name,phone,subscription_ends_at,permissions,whatsapp_consent,whatsapp_first_contact_confirmed,terms_version_accepted')
