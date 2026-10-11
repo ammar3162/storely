@@ -15,7 +15,7 @@ export async function GET(req: Request) {
     if (!auth.valid || !auth.data) return NextResponse.json({ error: auth.error, reason: auth.reason }, { status: 401 })
 
     const db = sb()
-    const { data: org, error } = await db.from('organizations').select('logo_url,currency,plan,staff_salary_visible,business_day_start_hour').eq('id', auth.data.org_id).single()
+    const { data: org, error } = await db.from('organizations').select('logo_url,currency,plan,staff_salary_visible,business_day_start_hour,business_type').eq('id', auth.data.org_id).single()
     if (error || !org) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
     // الميزات المتاحة للموظف — من السيرفر (الموظف ما يقدر يقرأ متجر الإضافات حق المالك)
     const plan = (org as any).plan || 'basic'
@@ -30,6 +30,7 @@ export async function GET(req: Request) {
       plan: (org as any).plan || null,
       staff_salary_visible: (org as any).staff_salary_visible === true,
       business_day_start_hour: (org as any).business_day_start_hour ?? null,
+      business_type: (org as any).business_type || null,
       hr_feature: hr, cashier_feature: cashier,
     })
   } catch {

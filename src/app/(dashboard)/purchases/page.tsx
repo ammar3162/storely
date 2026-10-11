@@ -6,6 +6,7 @@ import TaxInvoiceFields, { type ZatcaState } from '@/components/TaxInvoiceFields
 import InvoiceItemsPicker, { type PickedItem } from '@/components/InvoiceItemsPicker'
 import { zatcaFromImage, blobToBase64 } from '@/lib/zatcaScan'
 import { prepareInvoiceFile, isPdfUrl } from '@/lib/invoiceFile'
+import { unitsFor } from '@/lib/businessTypes'
 import InvoicePickButtons from '@/components/InvoicePickButtons'
 import { zatcaDate } from '@/lib/zatcaQr'
 import { normalizeVat, isValidVat } from '@/lib/taxInvoice'
@@ -34,7 +35,6 @@ const C = {
 
 const CATS = ['مخزون','مشتريات','أخرى']
 const CAT_ICONS: Record<string,string> = {'مخزون':'📦','مشتريات':'🛒','أخرى':'📋'}
-const UNITS = ['قطعة','كيلو','كيس','كرتون','لتر','علبة','باكيت','درزن','رول','غرام','أخرى']
 
 const lbl: React.CSSProperties = {fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}
 const inp: React.CSSProperties = {width:'100%',padding:'10px 12px',border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',background:'white',color:C.text,fontFamily:'inherit'}
@@ -52,6 +52,7 @@ export default function PurchasesPage() {
   const [loading, setLoading]       = useState(false)
   const submitting = useRef(false)
   const [uploading, setUploading]   = useState(false)
+  const [bizType, setBizType]       = useState<string|null>(null)
   const [showScan, setShowScan]     = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
   const [ocrItems, setOcrItems]     = useState<any[]>([])
@@ -103,7 +104,7 @@ export default function PurchasesPage() {
       oid=me.org_id
     }
     setOrgId(oid)
-    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setBizType(me?.org?.business_type??null) })
     loadProducts(oid);loadHistory(oid);loadPayables(oid)
     api.get('/api/suppliers',{org_id:oid}).then(j=>{ if(j.success) setSuppliers((j.suppliers||[]).map((x:any)=>({name:x.name,vat_number:x.vat_number||null}))) }).catch(()=>{})
   }
@@ -481,7 +482,7 @@ export default function PurchasesPage() {
                   <div>
                     <label style={lbl}>الوحدة</label>
                     <select value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})} style={inp}>
-                      {UNITS.map(u=><option key={u}>{u}</option>)}
+                      {unitsFor(bizType,form.unit).map(u=><option key={u}>{u}</option>)}
                     </select>
                   </div>
                   <div>

@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
+import { catsWith, unitsFor } from '@/lib/businessTypes'
 import NumberInput from '@/components/NumberInput'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { Upload, Download, Paperclip, X, AlertTriangle, Camera, Ruler, CheckCircle2, Trash2, Sparkles, Package, Plus, ScanLine, Search } from 'lucide-react'
@@ -30,39 +31,26 @@ interface Product {
   org_id:string; is_active:boolean; created_at:string; updated_at:string
 }
 
-const UNITS = ['قطعة','كيلو','كيس','كرتون','لتر','علبة','باكيت','درزن','رول','غرام','أخرى']
-const CATS_BY_TYPE: Record<string,string[]> = {
-  'مطعم':['مواد غذائية','لحوم ودواجن','خضار وفواكه','توابل وصلصات','تغليف','مشروبات','ورقيات','نظافة','أخرى'],
-  'كوفي':['قهوة وشاي','حليب وكريمة','سكر ومحليات','أكواب وأغطية','حلويات','مشروبات','ورقيات','نظافة','أخرى'],
-  'مخبز':['دقيق وسكر','زبدة وزيوت','بيض وألبان','مكسرات','تغليف','ورقيات','نظافة','أخرى'],
-  'بقالة':['مواد غذائية','مشروبات','ألبان وأجبان','منظفات','ورقيات','معلبات','وجبات خفيفة','أخرى'],
-  'صيدلية':['أدوية','مستلزمات طبية','مستحضرات تجميل','مكملات غذائية','عناية بالطفل','أخرى'],
-  'مستودع':['تغليف','مواد خام','قطع غيار','أدوات','أخرى'],
-  'متجر إلكتروني':['تغليف وشحن','ملصقات وطباعة','منتجات للبيع','أخرى'],
-  'أخرى':['مواد غذائية','مشروبات','ورقيات','تغليف','نظافة','أخرى'],
-}
-const DEFAULT_CATS = ['مواد غذائية','مشروبات','ورقيات','تغليف','نظافة','توابل','أخرى']
-
 // منتجات مقترحة جاهزة حسب نوع النشاط — اختيارية بالكامل، تظهر بس لما يكون المخزون فارغ
 const STARTER_PRODUCTS: Record<string,{name:string;unit:string;category:string}[]> = {
   'مطعم':[
-    {name:'دجاج',unit:'كجم',category:'لحوم ودواجن'},{name:'لحم بقري',unit:'كجم',category:'لحوم ودواجن'},
-    {name:'أرز',unit:'كيس',category:'مواد غذائية'},{name:'طماطم',unit:'كجم',category:'خضار وفواكه'},
-    {name:'بصل',unit:'كجم',category:'خضار وفواكه'},{name:'زيت طبخ',unit:'لتر',category:'مواد غذائية'},
+    {name:'دجاج',unit:'كيلو',category:'لحوم ودواجن'},{name:'لحم بقري',unit:'كيلو',category:'لحوم ودواجن'},
+    {name:'أرز',unit:'كيس',category:'مواد غذائية'},{name:'طماطم',unit:'كيلو',category:'خضار وفواكه'},
+    {name:'بصل',unit:'كيلو',category:'خضار وفواكه'},{name:'زيت طبخ',unit:'لتر',category:'مواد غذائية'},
     {name:'صوص باربكيو',unit:'زجاجة',category:'توابل وصلصات'},{name:'خبز',unit:'كيس',category:'مواد غذائية'},
     {name:'أكياس تغليف',unit:'كرتون',category:'تغليف'},{name:'مياه معدنية',unit:'كرتون',category:'مشروبات'},
   ],
   'كوفي':[
-    {name:'حبوب قهوة',unit:'كيس',category:'قهوة وشاي'},{name:'حليب كامل الدسم',unit:'لتر',category:'حليب وكريمة'},
-    {name:'شاي',unit:'علبة',category:'قهوة وشاي'},{name:'سكر',unit:'كيس',category:'سكر ومحليات'},
+    {name:'حبوب قهوة',unit:'كيس',category:'قهوة'},{name:'حليب كامل الدسم',unit:'لتر',category:'حليب وكريمة'},
+    {name:'شاي',unit:'علبة',category:'شاي وأعشاب'},{name:'سكر',unit:'كيس',category:'سكر ومحليات'},
     {name:'أكواب ورقية',unit:'كرتون',category:'أكواب وأغطية'},{name:'أغطية أكواب',unit:'كرتون',category:'أكواب وأغطية'},
-    {name:'شوكولاتة',unit:'كجم',category:'حلويات'},{name:'كريمة خفق',unit:'لتر',category:'حليب وكريمة'},
+    {name:'شوكولاتة',unit:'كيلو',category:'حلويات ومخبوزات'},{name:'كريمة خفق',unit:'لتر',category:'حليب وكريمة'},
   ],
   'مخبز':[
     {name:'دقيق',unit:'كيس',category:'دقيق وسكر'},{name:'سكر',unit:'كيس',category:'دقيق وسكر'},
-    {name:'زبدة',unit:'كجم',category:'زبدة وزيوت'},{name:'بيض',unit:'طبق',category:'بيض وألبان'},
+    {name:'زبدة',unit:'كيلو',category:'زبدة وزيوت'},{name:'بيض',unit:'طبق',category:'بيض وألبان'},
     {name:'خميرة',unit:'كيس',category:'دقيق وسكر'},{name:'حليب',unit:'لتر',category:'بيض وألبان'},
-    {name:'مكسرات مشكلة',unit:'كجم',category:'مكسرات'},{name:'أكياس تغليف',unit:'كرتون',category:'تغليف'},
+    {name:'مكسرات مشكلة',unit:'كيلو',category:'مكسرات'},{name:'أكياس تغليف',unit:'كرتون',category:'تغليف'},
   ],
   'صيدلية':[
     {name:'باراسيتامول',unit:'علبة',category:'أدوية'},{name:'كمامات',unit:'كرتون',category:'مستلزمات طبية'},
@@ -424,13 +412,13 @@ export default function InventoryPage() {
                       <label style={lbl}>الفئة</label>
                       <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inp()}>
                         <option value="">— اختر —</option>
-                        {(CATS_BY_TYPE[businessType]||DEFAULT_CATS).map(c=><option key={c}>{c}</option>)}
+                        {catsWith(businessType,form.category).map(c=><option key={c}>{c}</option>)}
                       </select>
                     </div>
                     <div>
                       <label style={lbl}>الوحدة</label>
                       <select value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})} style={inp()}>
-                        {UNITS.map(u=><option key={u}>{u}</option>)}
+                        {unitsFor(businessType,form.unit).map(u=><option key={u}>{u}</option>)}
                       </select>
                     </div>
                   </div>

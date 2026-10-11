@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { isInApp, isStaffDevice, setStaffDevice } from '@/lib/inApp'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
+import { SIGNUP_BUSINESS_TYPES } from '@/lib/businessTypes'
 import { LanguageProvider, useTranslation } from '@/lib/i18n/LanguageContext'
 
 const COUNTRY_CODES = [
@@ -72,11 +73,7 @@ function GoogleIcon() {
   )
 }
 
-const BUSINESS_TYPES = [
-  {v:'مطعم',icon:'🍔'},{v:'كوفي',icon:'☕'},{v:'مخبز',icon:'🥖'},
-  {v:'بقالة',icon:'🛒'},{v:'صيدلية',icon:'💊'},{v:'مستودع',icon:'🏭'},
-  {v:'متجر إلكتروني',icon:'🛍️'},{v:'أخرى',icon:'🏢'},
-]
+const BUSINESS_TYPES = SIGNUP_BUSINESS_TYPES
 
 function LoginPage() {
   const { t, lang } = useTranslation()
@@ -502,7 +499,7 @@ function LoginPage() {
                   </div>
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:8}}>{t('login.businessTypeLabel')}</label>
-                    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:7}}>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
                       {BUSINESS_TYPES.map(b=>(
                         <button key={b.v} type="button" onClick={()=>setBusinessType(b.v)} className={`biz${businessType===b.v?' on':''}`}>
                           <span style={{fontSize:20}}>{b.icon}</span>
