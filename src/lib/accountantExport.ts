@@ -57,7 +57,7 @@ export type AccStock = { name: string; category: string | null; qty: number; uni
 export type AccPayable = { supplier: string; invoices: number; oldest: string; nextDue: string | null; total: number }
 
 export type AccountantReport = {
-  orgName: string; branchName: string | null; currency: string
+  orgName: string; branchName: string | null; currency: string; businessType?: string | null
   period: { start: string; end: string }; label: string
   sections: AccSection[]; vatRegistered: boolean
   purchases: AccPurchase[]; closings: AccClosing[]; expenses: AccExpense[]
@@ -103,6 +103,7 @@ export function summarize(r: AccountantReport) {
 }
 
 // الإقرار الضريبي بنفس خانات نموذج الهيئة (١–١٦) — الخانات اللي ما يسجلها النظام تطلع null ويعبيها المحاسب
+export const FOOD_HIDDEN_BOXES = [2, 3, 4, 8]
 export type VatBox = { no: number; label: string; amount: number | null; adjust: number | null; vat: number | null; total?: boolean }
 const lastDayOfMonth = (d: string) => { const y = Number(d.slice(0, 4)), m = Number(d.slice(5, 7)); return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10) }
 const lastDayOfNextMonth = (d: string) => { const y = Number(d.slice(0, 4)), m = Number(d.slice(5, 7)); return new Date(Date.UTC(y, m + 1, 0)).toISOString().slice(0, 10) }
@@ -112,7 +113,7 @@ export function vatReturn(r: AccountantReport) {
   const ok = tinv.filter(i => i.complete), bad = tinv.filter(i => !i.complete)
   const purNet = sum(ok, i => i.net), purVat = sum(ok, i => i.vat)
   const box = (no: number, label: string, amount: number | null, vat: number | null, total = false): VatBox => ({ no, label, amount, adjust: amount == null ? null : 0, vat, total })
-  const boxes: VatBox[] = [
+  const all: VatBox[] = [
     box(1, 'المبيعات الخاضعة للنسبة الأساسية', t.salesNet, t.outputVat),
     box(2, 'المبيعات للمواطنين (الخدمات الصحية الخاصة والتعليم الأهلي)', null, null),
     box(3, 'المبيعات المحلية الخاضعة للنسبة الصفرية', null, null),
@@ -130,10 +131,13 @@ export function vatReturn(r: AccountantReport) {
     box(15, 'ضريبة القيمة المضافة المرحّلة من الفترات السابقة', null, null),
     box(16, 'صافي الضريبة المستحقة (أو المستردة)', null, r2(t.outputVat - purVat), true),
   ]
+  // المطاعم والكوفيهات: نشيل الخانات اللي ما تخصهم (صحة وتعليم، نسبة صفرية، صادرات، استيراد بالجمارك)
+  const foodService = r.businessType === 'مطعم' || r.businessType === 'كوفي'
+  const boxes = foodService ? all.filter(b => !FOOD_HIDDEN_BOXES.includes(b.no)) : all
   // آخر موعد للتقديم: نهاية الشهر اللي بعد الفترة (لو الفترة أشهر كاملة)
   const fullMonths = r.period.start.slice(8) === '01' && r.period.end === lastDayOfMonth(r.period.end)
   return {
-    boxes, netDue: r2(t.outputVat - purVat),
+    boxes, netDue: r2(t.outputVat - purVat), hidden: foodService ? FOOD_HIDDEN_BOXES : [],
     review: { count: bad.length, net: sum(bad, i => i.net), vat: sum(bad, i => i.vat) },     // فواتير فيها ضريبة بس ناقصة البيانات — ما دخلت خانة ٧
     nonVat: { count: t.nonVatCount, total: t.nonVatTotal },                                       // مشتريات بدون ضريبة — المحاسب يحدد خانة ١٠ أو ١١ أو خارج النطاق
     drawerExpenses: t.expenses,                                                                    // مصروفات من درج الكاشير — ما لها فاتورة ضريبية
@@ -286,6 +290,7 @@ export async function buildAccountantWorkbook(r: AccountantReport, opts: { water
       vws.addRow([])
       const note = (txt: string, color = MUTED) => { const row = vws.addRow(['', txt]); row.getCell(2).font = { size: 10, color: { argb: color } }; row.getCell(2).alignment = { wrapText: true } }
       note('«—» = النظام ما يسجّل هذا البند — يعبيه المحاسب من سجلاته لو موجود.')
+      if (v.hidden.length) note(`الخانات ${v.hidden.join(' و')} ما تخص المطاعم والكوفيهات — مخفية، وتبقى فاضية في نموذج الهيئة.`)
       if (v.review.count > 0) note(`${invoicesLabel(v.review.count)} فيها ضريبة ${v.review.vat.toFixed(2)} ما دخلت خانة ٧ لأنها ناقصة الرقم الضريبي أو رقم الفاتورة — شوف ورقة «الفواتير الضريبية».`, 'FFD92D20')
       if (v.nonVat.count > 0) note(`مشتريات بدون ضريبة: ${invoicesLabel(v.nonVat.count)} بـ ${v.nonVat.total.toFixed(2)} — حدد هل تدخل خانة ١٠ أو ١١ أو خارج النطاق.`)
       if (v.drawerExpenses > 0) note(`مصروفات من درج الكاشير ${v.drawerExpenses.toFixed(2)} — بدون فواتير ضريبية، ما دخلت الإقرار.`)

@@ -129,7 +129,7 @@ function VatReturnView({ r }: { r: any }) {
   const cell = (x: number | null) => x == null ? <span style={{ color: colors.text4 }}>—</span> : fmt(x)
   const due = v.netDue
   return <>
-    <Lines rows={[['ضريبة المبيعات (خانة ٦)', v.boxes[5].vat || 0], ['ضريبة المشتريات القابلة للخصم (خانة ١٢)', v.boxes[11].vat || 0],
+    <Lines rows={[['ضريبة المبيعات (خانة ٦)', v.boxes.find(b => b.no === 6)?.vat || 0], ['ضريبة المشتريات القابلة للخصم (خانة ١٢)', v.boxes.find(b => b.no === 12)?.vat || 0],
       [due >= 0 ? 'صافي الضريبة المستحقة (خانة ١٦)' : 'ضريبة مستردة (خانة ١٦)', Math.abs(due), true]]} />
     {v.deadline && <div style={{ marginTop: 10, fontSize: 12.5, fontWeight: 700, color: colors.warning, background: colors.warningLight, borderRadius: 10, padding: '8px 12px' }}>
       آخر موعد لتقديم الإقرار وسداد الضريبة: {new Date(`${v.deadline}T12:00:00Z`).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' })}</div>}
@@ -147,6 +147,7 @@ function VatReturnView({ r }: { r: any }) {
     </div>
     <div style={{ display: 'grid', gap: 6, marginTop: 12, fontSize: 12, color: colors.text3, lineHeight: 1.7 }}>
       <div>«—» يعني النظام ما يسجّل هذا البند — عبّه من سجلاتك لو موجود.</div>
+      {v.hidden.length > 0 && <div>الخانات {v.hidden.join(' و')} ما تخص المطاعم والكوفيهات — مخفية، وتبقى فاضية في نموذج الهيئة.</div>}
       {v.review.count > 0 && <div style={{ color: colors.danger, fontWeight: 700 }}>⚠️ {invoicesLabel(v.review.count)} فيها ضريبة <span dir="ltr">{fmt(v.review.vat)}</span> ما دخلت خانة ٧ لأنها ناقصة الرقم الضريبي أو رقم الفاتورة — شوف «الفواتير الضريبية».</div>}
       {v.nonVat.count > 0 && <div>مشتريات بدون ضريبة: {invoicesLabel(v.nonVat.count)} بـ <span dir="ltr">{fmt(v.nonVat.total)}</span> — حدد هل تدخل خانة ١٠ أو ١١ أو خارج النطاق.</div>}
       {v.drawerExpenses > 0 && <div>مصروفات من درج الكاشير <span dir="ltr">{fmt(v.drawerExpenses)}</span> — بدون فواتير ضريبية، ما دخلت الإقرار.</div>}
