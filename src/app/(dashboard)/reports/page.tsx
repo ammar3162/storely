@@ -11,7 +11,7 @@ import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
-import CashierClosingEditor, { PinBox } from '@/components/CashierClosingEditor'
+import CashierClosingEditor, { PasswordBox } from '@/components/CashierClosingEditor'
 import StaffMonthlyDetail from '@/components/reports/StaffMonthlyReport'
 
 type FilterPeriod = 'today'|'week'|'month'|'year'|'custom'
@@ -1226,7 +1226,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   const [expandedReasons, setExpandedReasons] = useState<Record<string,boolean>>({})
   const [loading, setLoading]   = useState(true)
   const [confirmDelete, setConfirmDelete] = useState<any|null>(null)
-  const [deletePassword, setDeletePassword] = useState('')   // رمز الحماية
+  const [deletePassword, setDeletePassword] = useState('')
   const [editing, setEditing] = useState<any|null>(null)
   const [deleteError, setDeleteError] = useState('')
   const [deleting, setDeleting] = useState(false)
@@ -1318,8 +1318,8 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
 
   async function confirmDeleteClosing() {
     setDeleteError(''); setDeleting(true)
-    // رمز الحماية يتحقق منه السيرفر (مو المتصفح)
-    const delRes=await api.del('/api/cashier-closing',{org_id:sessionStorage.getItem('s_org_id'),id:confirmDelete.id},{pin:deletePassword})
+    // كلمة مرور الحساب يتحقق منها الخادم (مو المتصفح)
+    const delRes=await api.del('/api/cashier-closing',{org_id:sessionStorage.getItem('s_org_id'),id:confirmDelete.id},{password:deletePassword})
     if(!delRes.success){setDeleteError(delRes.error||'فشل الحذف — حاول مرة أخرى');setDeleting(false);return}
     setClosings(prev => prev.filter(c => c.id !== confirmDelete.id))
     setConfirmDelete(null); setDeletePassword(''); setDeleting(false)
@@ -1521,7 +1521,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
             <div style={{fontSize:12,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
               سيتم حذف إقفال <b style={{color:colors.text}}>{confirmDelete.staff_name}</b> بتاريخ {confirmDelete?.closing_date ? new Date(confirmDelete.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn'}) : ''} نهائياً.<br/>أدخل كلمة مرور حسابك للتأكيد
             </div>
-            <div style={{marginBottom:10}}><PinBox orgId={sessionStorage.getItem('s_org_id')||''} value={deletePassword} onChange={setDeletePassword}/></div>
+            <div style={{marginBottom:10}}><PasswordBox value={deletePassword} onChange={setDeletePassword} onEnter={()=>{ if(!deleting) confirmDeleteClosing() }}/></div>
             {deleteError && <div style={{fontSize:12,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><AlertTriangle size={13} strokeWidth={2.25}/> {deleteError}</div>}
             <div style={{display:'flex',gap:8}}>
               <button onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}

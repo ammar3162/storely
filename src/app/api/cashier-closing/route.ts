@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { sendPushToOrg } from '@/lib/push'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
-import { verifyOwnerPin } from '@/lib/ownerPin'
+import { verifyOwnerPassword } from '@/lib/ownerPassword'
 import { editClosing, deleteClosing } from '@/lib/cashierClosingEdit'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { computeBusinessDate } from '@/lib/businessDate'
@@ -272,21 +272,21 @@ export async function GET(req: Request) {
   }
 }
 
-// تعديل أو حذف إقفال كاشير — للمالك بس وبرمز الحماية (يتحقق منه السيرفر)، وكل شي يتحدث معه
-async function ownerWithPin(org_id: unknown, pin: unknown) {
+// تعديل أو حذف إقفال كاشير — للمالك بس وبكلمة مرور حسابه (يتحقق منها الخادم)، وكل شي يتحدث معه
+async function ownerWithPassword(org_id: unknown, password: unknown) {
   if (typeof org_id !== 'string' || !/^[0-9a-f-]{36}$/i.test(org_id)) return { error: NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 }) }
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return { error: NextResponse.json({ error: access.error }, { status: access.status }) }
   if (access.role !== 'owner') return { error: NextResponse.json({ error: 'تعديل وحذف الإقفال لمالك الحساب بس' }, { status: 403 }) }
-  const v = await verifyOwnerPin(sb(), org_id, pin)
-  if (!v.ok) return { error: NextResponse.json({ error: v.error, pinNotSet: !!(v as any).notSet }, { status: v.status }) }
+  const v = await verifyOwnerPassword(sb(), org_id, access.userId!, password)
+  if (!v.ok) return { error: NextResponse.json({ error: v.error }, { status: v.status }) }
   return { editor: (await sb().from('profiles').select('full_name').eq('id', access.userId!).maybeSingle()).data?.full_name || 'المالك' }
 }
 
 export async function PATCH(req: Request) {
   try {
     const b = await req.json()
-    const g = await ownerWithPin(b.org_id, b.pin); if (g.error) return g.error
+    const g = await ownerWithPassword(b.org_id, b.password); if (g.error) return g.error
     if (!/^[0-9a-f-]{36}$/i.test(String(b.id || ''))) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const r = await editClosing(sb(), b.org_id, b.id, {
       closing_date: b.closing_date, total_sales: b.total_sales, mada_amount: b.mada_amount, visa_amount: b.visa_amount,
@@ -304,7 +304,7 @@ export async function DELETE(req: Request) {
     const { searchParams } = new URL(req.url)
     const org_id = searchParams.get('org_id'), id = searchParams.get('id') || ''
     const body = await req.json().catch(() => ({}))
-    const g = await ownerWithPin(org_id, (body as any).pin); if (g.error) return g.error
+    const g = await ownerWithPassword(org_id, (body as any).password); if (g.error) return g.error
     if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const r = await deleteClosing(sb(), org_id!, id, g.editor!)
     if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status })
