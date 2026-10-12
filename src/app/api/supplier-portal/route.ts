@@ -158,7 +158,11 @@ export async function POST(req: Request) {
       case 'account': {
         const business_name = String(body.business_name || '').trim()
         if (!business_name) return fail('أدخل اسم النشاط', 400)
-        const { error } = await db.from('supplier_profiles').update({ business_name, location: String(body.location || '').trim() || null } as any).eq('id', sid)
+        // الشعار: لازم يكون من مخزن صور الموردين، ومن مجلد هذا المورد بالذات
+        const logoPfx = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/supplier-items/${sid}/`
+        const logoPatch = !('logo_url' in body) ? {} : body.logo_url === null ? { logo_url: null } : String(body.logo_url).startsWith(logoPfx) ? { logo_url: String(body.logo_url).slice(0, 500) } : null
+        if (logoPatch === null) return fail('رابط الشعار غير صالح', 400)
+        const { error } = await db.from('supplier_profiles').update({ business_name, location: String(body.location || '').trim() || null, ...logoPatch } as any).eq('id', sid)
         return error ? fail() : ok()
       }
     }

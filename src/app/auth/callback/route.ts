@@ -21,5 +21,10 @@ export async function GET(request: NextRequest) {
   const { data: supplier } = await db.from('supplier_profiles' as any).select('id').eq('id', data.user.id).maybeSingle()
   if (supplier) return NextResponse.redirect(new URL('/supplier-portal/dashboard', origin))
 
+  // جاي من صفحة انضمام الموردين → يرجع يكمل بيانات منشأته هناك
+  // (كوكي قصير تحطه صفحة الموردين قبل Google — بدل باراميتر يحتاج تسجيل رابط جديد في Supabase)
+  if (request.cookies.get('oauth_next')?.value === 'suppliers-join') {
+    const res = NextResponse.redirect(new URL('/suppliers-join', origin)); res.cookies.delete('oauth_next'); return res
+  }
   return NextResponse.redirect(new URL('/login?mode=complete', origin))
 }

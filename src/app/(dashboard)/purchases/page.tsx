@@ -241,6 +241,7 @@ export default function PurchasesPage() {
     if (rows.some(r=>!(r.total>0))) { toast('اكتب سعر كل صنف محدد','warning'); return }
     if (rows.some(r=>!Number.isInteger(r.qty))) { toast('الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)','warning'); return }
     if (!form.supplier.trim()) { toast('يرجى إدخال اسم المورد','warning'); return }
+    if (form.hasVat!=='no' && !form.invoice_image) { toast(uploading?'انتظر — الفاتورة لسا ترتفع':'الفاتورة الضريبية لازم ترفق صورتها أو ملفها','warning'); return }
     setBulkSaving(true)
     const bid = sessionStorage.getItem('s_branch_id')
     const isVat = form.hasVat!=='no'
@@ -269,7 +270,7 @@ export default function PurchasesPage() {
     if(form.qty&&!(Number.isInteger(Number(form.qty))&&Number(form.qty)>=0)){toast('الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)','warning');return}
     submitting.current=true
     if(!form.hasVat){toast('حدد هل الفاتورة تشمل الضريبة','warning');submitting.current=false;return}
-    if(form.hasVat==='yes'&&!form.invoice_image){toast('يرجى رفع صورة الفاتورة','warning');submitting.current=false;return}
+    if(form.hasVat==='yes'&&!form.invoice_image){toast('الفاتورة الضريبية لازم ترفق صورتها أو ملفها','warning');submitting.current=false;return}
     if(!form.supplier.trim()){toast('يرجى إدخال اسم المورد','warning');submitting.current=false;return}
     if(form.hasVat==='yes'&&form.supplier_vat_number.trim()&&!isValidVat(normalizeVat(form.supplier_vat_number))){toast('الرقم الضريبي للمورد غير صحيح — ١٥ رقم يبدأ وينتهي بـ 3','warning');submitting.current=false;return}
     setLoading(true)
@@ -557,6 +558,17 @@ export default function PurchasesPage() {
               </div>
             </div>
 
+            {/* فاتورة ضريبية = لازم صورتها أو ملفها — نطلبها هنا جنب الاختيار مو بس فوق */}
+            {form.hasVat==='yes' && (
+              <div style={{marginBottom:12,borderRadius:10,padding:'12px 12px',border:`1.5px ${form.invoice_image?'solid':'dashed'} ${form.invoice_image?C.primaryB:C.danger}`,background:form.invoice_image?C.primaryL:C.dangerL}}>
+                {form.invoice_image
+                  ? <div style={{fontSize:12.5,fontWeight:700,color:C.primary}}>✅ الفاتورة مرفقة</div>
+                  : <><div style={{fontSize:12.5,fontWeight:700,color:C.danger,marginBottom:8}}>📎 الفاتورة ضريبية — أرفق صورتها أو ملفها (مطلوب)</div>
+                    <InvoicePickButtons onFile={handleImage} disabled={uploading} primary={C.primary} primaryL={'white'}
+                      labels={{camera:'📷 تصوير',gallery:'🖼️ من الصور',file:'📄 ملف PDF'}}/>
+                    {uploading&&<div style={{fontSize:11.5,color:C.text3,marginTop:6}}>⏳ جاري الرفع...</div>}</>}
+              </div>
+            )}
             {form.hasVat==='yes' && (
               <TaxInvoiceFields invoiceNumber={form.invoice_number} vatNumber={form.supplier_vat_number} savedFromSupplier={vatFromSupplier}
                 zatca={zatca} onZatca={z=>setZatca(z)} enteredTotal={Number(form.total_amount)||0} onError={m=>toast(m,'warning')}

@@ -17,7 +17,7 @@ function ratingsOf(reviews: any[]) {
 }
 
 async function activeSupplier(db: DB, id: string) {
-  const { data } = await db.from('supplier_profiles').select('id,business_name,phone,location,status').eq('id', id).eq('status', 'active').maybeSingle()
+  const { data } = await db.from('supplier_profiles').select('id,business_name,phone,location,status,logo_url').eq('id', id).eq('status', 'active').maybeSingle()
   return data as any
 }
 
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
       const [{ data: apps }, { data: profiles }] = await Promise.all([
         db.from('supplier_applications').select('id,company_name,business_type,description,phone,whatsapp,logo_url,offer,website')
           .eq('status', 'approved').eq('marketplace_consent', true).order('created_at', { ascending: false }),
-        db.from('supplier_profiles').select('id,business_name,phone,location').eq('status', 'active').eq('is_visible', true),
+        db.from('supplier_profiles').select('id,business_name,phone,location,logo_url').eq('status', 'active').eq('is_visible', true),
       ])
       let newSuppliers: any[] = [], ratings = {}
       if (profiles?.length) {

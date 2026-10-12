@@ -375,6 +375,17 @@ export default function StaffPurchasesPage() {
             )}
           </div>}
 
+          {/* فاتورة ضريبية = لازم صورتها أو ملفها — نطلبها هنا جنب الاختيار مو بس فوق */}
+          {form.hasVat==='yes'&&(
+            <div style={{marginBottom:12,borderRadius:12,padding:12,border:`1.5px ${form.invoice_image?'solid':'dashed'} ${form.invoice_image?C.primary:C.danger}`,background:form.invoice_image?C.primaryL:C.dangerL}}>
+              {form.invoice_image
+                ? <div style={{fontSize:13,fontWeight:700,color:C.primary}}>{lang==='en'?'✅ Invoice attached':'✅ الفاتورة مرفقة'}</div>
+                : <><div style={{fontSize:13,fontWeight:700,color:C.danger,marginBottom:8}}>{lang==='en'?'📎 Tax invoice — attach a photo or file (required)':'📎 الفاتورة ضريبية — أرفق صورتها أو ملفها (مطلوب)'}</div>
+                  <InvoicePickButtons onFile={handleImage} disabled={uploading} primary={C.primary} primaryL={'white'}
+                    labels={{camera:pt('camera',lang),gallery:pt('gallery',lang),file:pt('fileBtn',lang)}}/>
+                  {uploading&&<div style={{fontSize:12,color:C.text3,marginTop:6}}>{lang==='en'?'Uploading…':'جاري الرفع…'}</div>}</>}
+            </div>
+          )}
           {form.hasVat==='yes'&&(
             <TaxInvoiceFields lang={lang} invoiceNumber={form.invoice_number} vatNumber={form.supplier_vat_number} savedFromSupplier={vatFromSupplier}
               zatca={zatca} onZatca={setZatca} enteredTotal={multi?0:Number(form.total_amount)||0} onError={showToast}

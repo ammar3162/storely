@@ -1,5 +1,6 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 // صفحة انضمام الموردين — عامة (بدون تسجيل دخول). الطلب يروح للإدارة تراجعه وتفعّل المورد
 const TYPES = [
@@ -19,11 +20,48 @@ const inp: React.CSSProperties = { width: '100%', padding: '12px 14px', border: 
 const lbl: React.CSSProperties = { fontSize: 13, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 6 }
 
 export default function SuppliersJoinPage() {
-  const [form, setForm] = useState({ company_name: '', contact_name: '', phone: '', email: '', business_type: [] as string[], description: '', offer: '', website: '', marketplace_consent: false })
+  const [form, setForm] = useState({ company_name: '', contact_name: '', phone: '', business_type: [] as string[], description: '', offer: '', website: '', marketplace_consent: false })
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }))
+  // الحساب: Google أو إيميل وكلمة مرور — الإيميل إلزامي ويجي من الحساب
+  const sb = createClient()
+  const [acct, setAcct] = useState<{ email: string; supplier: boolean } | null | undefined>(undefined)
+  const [cred, setCred] = useState({ email: '', password: '' })
+  const [authBusy, setAuthBusy] = useState(false), [authMsg, setAuthMsg] = useState('')
+  async function loadAcct() {
+    const { data } = await sb.auth.getUser()
+    if (!data.user?.email) return setAcct(null)
+    const r = await fetch('/api/supplier-portal').catch(() => null)
+    setAcct({ email: data.user.email, supplier: !!r?.ok })
+    if (data.user.user_metadata?.full_name) setForm(f => ({ ...f, contact_name: f.contact_name || data.user!.user_metadata.full_name }))
+  }
+  useEffect(() => { loadAcct() }, [])
+  async function google() {
+    setAuthBusy(true); setAuthMsg('')
+    document.cookie = 'oauth_next=suppliers-join; path=/; max-age=600; samesite=lax'
+    const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth/callback` } })
+    if (error) { setAuthBusy(false); setAuthMsg('تعذر الدخول بحساب Google — حاول مرة ثانية') }
+  }
+  async function emailAccount(e: React.FormEvent) {
+    e.preventDefault(); setAuthMsg('')
+    const email = cred.email.trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setAuthMsg('اكتب إيميل صحيح')
+    if (cred.password.length < 8) return setAuthMsg('كلمة المرور ٨ أحرف على الأقل')
+    setAuthBusy(true)
+    const up = await sb.auth.signUp({ email, password: cred.password })
+    let session = up.data.session
+    if (up.error && /registered/i.test(up.error.message)) {
+      const inn = await sb.auth.signInWithPassword({ email, password: cred.password })
+      if (inn.error) { setAuthBusy(false); return setAuthMsg('هذا الإيميل مسجّل — كلمة المرور غير صحيحة') }
+      session = inn.data.session
+    } else if (up.error) { setAuthBusy(false); return setAuthMsg('تعذر إنشاء الحساب — حاول مرة ثانية') }
+    setAuthBusy(false)
+    if (!session) return setAuthMsg('أرسلنا رابط تأكيد على إيميلك — افتحه وارجع لهالصفحة')
+    loadAcct()
+  }
+  async function switchAcct() { await sb.auth.signOut({ scope: 'local' }); setAcct(null) }
   const toggle = (v: string) => set('business_type', form.business_type.includes(v) ? form.business_type.filter(x => x !== v) : [...form.business_type, v])
 
   async function submit(e: React.FormEvent) {
@@ -36,6 +74,7 @@ export default function SuppliersJoinPage() {
     const j = await res.json().catch(() => ({}))
     setLoading(false)
     if (res.ok && j.success) setDone(true)
+    else if (j.reason === 'auth') { setAcct(null); setError(j.error) }
     else setError(j.error || 'تعذر إرسال الطلب، حاول مرة ثانية')
   }
 
@@ -112,14 +151,41 @@ export default function SuppliersJoinPage() {
 
           <form id="join" onSubmit={submit} className="sj-card" style={{ background: '#fff', borderRadius: 20, padding: 30, border: `1px solid ${C.line}`, display: 'grid', gap: 14 }}>
             <h2 style={{ fontSize: 21, fontWeight: 700 }}>سجّل كمورد</h2>
+            {acct === undefined ? <div style={{ fontSize: 14, color: C.muted }}>لحظة…</div>
+            : acct === null ? (
+              <div style={{ display: 'grid', gap: 12 }}>
+                <div style={{ fontSize: 14.5, color: C.muted }}>أول خطوة: أنشئ حسابك. بتدخل فيه بوابة الموردين وتستقبل طلباتك.</div>
+                <button type="button" onClick={google} disabled={authBusy} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 13, borderRadius: 12, border: `1.5px solid ${C.line}`, background: '#fff', fontFamily: 'inherit', fontSize: 15.5, fontWeight: 700, color: C.ink, cursor: 'pointer' }}>
+                  <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+                  المتابعة بحساب Google
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#94a3b8', fontSize: 12.5 }}><span style={{ flex: 1, height: 1, background: C.line }} />أو بالإيميل<span style={{ flex: 1, height: 1, background: C.line }} /></div>
+                <div className="sj-grid2">
+                  <div><label style={lbl}>الإيميل *</label><input className="sj-inp" style={inp} type="email" dir="ltr" autoComplete="email" value={cred.email} onChange={e => setCred(c => ({ ...c, email: e.target.value }))} placeholder="name@company.com" /></div>
+                  <div><label style={lbl}>كلمة المرور *</label><input className="sj-inp" style={inp} type="password" autoComplete="new-password" value={cred.password} onChange={e => setCred(c => ({ ...c, password: e.target.value }))} placeholder="٨ أحرف على الأقل" /></div>
+                </div>
+                <button type="button" onClick={emailAccount} disabled={authBusy} style={{ padding: 13, border: 'none', borderRadius: 12, fontFamily: 'inherit', fontSize: 15.5, fontWeight: 700, color: '#fff', background: C.ink, cursor: authBusy ? 'wait' : 'pointer' }}>{authBusy ? 'لحظة…' : 'أنشئ الحساب وكمّل'}</button>
+                {authMsg && <div role="alert" style={{ fontSize: 13.5, fontWeight: 600, color: authMsg.startsWith('أرسلنا') ? C.teal : '#dc2626' }}>{authMsg}</div>}
+              </div>
+            ) : acct.supplier ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', background: C.mint, borderRadius: 12, padding: '12px 14px', fontSize: 14 }}>
+                <span>عندك حساب مورد بـ <b dir="ltr">{acct.email}</b> — كمّل تحت عشان تصير مورد معتمد</span>
+                <a href="/supplier-portal/dashboard" style={{ color: '#fff', background: C.teal, borderRadius: 10, padding: '8px 14px', fontWeight: 700, textDecoration: 'none' }}>ادخل البوابة</a>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', background: C.mint, borderRadius: 12, padding: '10px 14px', fontSize: 14 }}>
+                <span>✓ مسجّل بـ <b dir="ltr">{acct.email}</b></span>
+                <button type="button" onClick={switchAcct} style={{ background: 'none', border: 'none', color: C.teal, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', fontSize: 13.5 }}>حساب ثاني</button>
+              </div>
+            )}
             {error && <div role="alert" style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '11px 14px', color: '#dc2626', fontSize: 13.5, fontWeight: 600 }}>{error}</div>}
+{acct && <>
             <div className="sj-grid2">
               <div><label style={lbl}>اسم الشركة / المؤسسة *</label><input className="sj-inp" style={inp} value={form.company_name} maxLength={150} onChange={e => set('company_name', e.target.value)} placeholder="مثال: محمصة الريف" /></div>
               <div><label style={lbl}>اسم المسؤول *</label><input className="sj-inp" style={inp} value={form.contact_name} maxLength={100} onChange={e => set('contact_name', e.target.value)} placeholder="الاسم" /></div>
             </div>
             <div className="sj-grid2">
               <div><label style={lbl}>جوال واتساب * <span style={{ fontWeight: 500, color: C.muted }}>(الطلبات توصلك عليه)</span></label><input className="sj-inp" style={inp} type="tel" inputMode="tel" dir="ltr" value={form.phone} maxLength={20} onChange={e => set('phone', e.target.value)} placeholder="05xxxxxxxx" /></div>
-              <div><label style={lbl}>الإيميل</label><input className="sj-inp" style={inp} type="email" dir="ltr" value={form.email} maxLength={150} onChange={e => set('email', e.target.value)} placeholder="name@company.com" /></div>
             </div>
             <div>
               <label style={lbl}>مين تخدم؟ * <span style={{ fontWeight: 500, color: C.muted }}>(اختر واحد أو أكثر)</span></label>
@@ -141,6 +207,7 @@ export default function SuppliersJoinPage() {
             </label>
             <button type="submit" disabled={loading} style={{ padding: 15, border: 'none', borderRadius: 12, fontFamily: 'inherit', fontSize: 16, fontWeight: 800, color: '#fff', cursor: loading ? 'wait' : 'pointer',
               background: loading ? '#94a3b8' : C.teal }}>{loading ? 'جاري الإرسال…' : 'أرسل طلب الانضمام'}</button>
+            </>}
           </form>
         </>}
 
