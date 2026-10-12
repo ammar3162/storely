@@ -254,6 +254,28 @@ export default function SupplierDashboardShared() {
     setAccountSaving(false)
   }
 
+  // شعار المنشأة: يترفع لمجلد المورد ويتحفظ مباشرة — ويظهر للعملاء في قائمة الموردين
+  const [logoBusy, setLogoBusy] = useState(false)
+  async function uploadLogo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]; e.target.value = ''
+    if (!file || !profile) return
+    if (!/^image\/(png|jpe?g|webp)$/.test(file.type)) { alert('الشعار لازم يكون صورة PNG أو JPG'); return }
+    if (file.size > 2 * 1024 * 1024) { alert('حجم الشعار أكبر من ٢ ميجا'); return }
+    setLogoBusy(true)
+    const path = `${profile.id}/logo-${Date.now()}.${file.type.split('/')[1].replace('jpeg','jpg')}`
+    const { error } = await sb.storage.from('supplier-items').upload(path, file, { upsert: true, contentType: file.type })
+    if (!error) {
+      const url = sb.storage.from('supplier-items').getPublicUrl(path).data.publicUrl
+      const r = await act('account', { business_name: profile.business_name, location: profile.location || null, logo_url: url })
+      if (r.success) setProfile((p:any) => ({ ...p, logo_url: url }))
+    }
+    setLogoBusy(false)
+  }
+  async function removeLogo() {
+    const r = await act('account', { business_name: profile.business_name, location: profile.location || null, logo_url: null })
+    if (r.success) setProfile((p:any) => ({ ...p, logo_url: null }))
+  }
+
   async function logout() {
     await sb.auth.signOut()
     window.location.href = '/supplier-portal'
@@ -338,7 +360,7 @@ export default function SupplierDashboardShared() {
       <style>{SD_CSS}</style>
       <aside className="sd-side">
         <div className="sd-brand">
-          <img src="/storely-logo.png" alt="Storely"/>
+          <img src={profile?.logo_url || '/storely-logo.png'} alt=""/>
           <div><b>{profile?.business_name}</b><span>{profile?.location || 'بوابة الموردين'}</span></div>
         </div>
         <nav className="sd-nav" aria-label="أقسام بوابة المورد">
@@ -593,6 +615,17 @@ export default function SupplierDashboardShared() {
           <section className="sd-panel" style={{maxWidth:560}}>
             <h2>بيانات المنشأة</h2>
             <div className="sd-form">
+              <div className="sd-logo">
+                <div className="sd-logo-box">{profile?.logo_url ? <img src={profile.logo_url} alt="شعار المنشأة"/> : <ImagePlus size={24}/>}</div>
+                <div>
+                  <b>شعار المنشأة</b>
+                  <span>يظهر للعملاء في قائمة الموردين. PNG أو JPG، مربع، أقل من ٢ ميجا.</span>
+                  <div className="sd-actions" style={{marginTop:8}}>
+                    <label className="sd-btn ghost" style={{cursor:logoBusy?'wait':'pointer'}}>{logoBusy?'جاري الرفع…':profile?.logo_url?'تغيير الشعار':'ارفع الشعار'}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadLogo} hidden disabled={logoBusy}/></label>
+                    {profile?.logo_url && !logoBusy && <button className="sd-btn ghost" onClick={removeLogo}>حذف</button>}
+                  </div>
+                </div>
+              </div>
               <label>اسم المنشأة<input className="sd-in" value={accountName} onChange={e=>setAccountName(e.target.value)}/></label>
               <label>المدينة<input className="sd-in" value={accountLocation} onChange={e=>setAccountLocation(e.target.value)} placeholder="مثال: الرياض"/></label>
               <label>رقم الجوال<input className="sd-in" value={profile?.phone || ''} disabled dir="ltr"/><small>لتغيير الرقم تواصل مع الدعم</small></label>
@@ -613,7 +646,11 @@ const SD_CSS = `
 .sd *{box-sizing:border-box}
 .sd-side{width:248px;flex-shrink:0;background:var(--ink);color:#d6e2ec;display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh}
 .sd-brand{display:flex;gap:10px;align-items:center;padding:4px 6px 20px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:14px}
-.sd-brand img{width:40px;height:40px;border-radius:10px;background:#fff}
+.sd-brand img{width:40px;height:40px;border-radius:10px;background:#fff;object-fit:cover}
+.sd-logo{display:flex;gap:14px;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.sd-logo-box{width:84px;height:84px;border-radius:18px;border:1.5px dashed #cdd9d8;display:flex;align-items:center;justify-content:center;color:var(--muted);overflow:hidden;flex-shrink:0;background:#fff}
+.sd-logo-box img{width:100%;height:100%;object-fit:cover}
+.sd-logo b{display:block;font-size:14.5px}.sd-logo span{display:block;font-size:12.5px;color:var(--muted);line-height:1.6}
 .sd-brand b{display:block;color:#fff;font-size:15px;line-height:1.3}.sd-brand span{font-size:12px;color:#94a8bf}
 .sd-nav{display:flex;flex-direction:column;gap:3px}
 .sd-nav button{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:10px;border:none;background:none;color:inherit;font:inherit;font-size:14.5px;font-weight:600;cursor:pointer;text-align:right}

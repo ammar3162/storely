@@ -196,7 +196,9 @@ export default function MarketplacePage() {
                         </>
                       ) : null}
                       <div style={{position:'absolute' as const,bottom:0,right:0,left:0,padding:'12px 16px',display:'flex',alignItems:'center',gap:10}}>
-                        <div style={{width:40,height:40,borderRadius:10,background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>🚚</div>
+                        {s.logo_url
+                          ? <img src={s.logo_url} alt="" style={{width:40,height:40,borderRadius:10,objectFit:'cover',background:'white',flexShrink:0}}/>
+                          : <div style={{width:40,height:40,borderRadius:10,background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>🚚</div>}
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{fontSize:14,fontWeight:800,color:'white',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{s.business_name}</div>
                           {s.location && <div style={{fontSize:10,color:'rgba(255,255,255,.75)',marginTop:1}}>📍 {s.location}</div>}
