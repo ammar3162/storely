@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sanitizeShortText, sanitizeLongText } from '@/lib/sanitize'
+import { toLatinDigits } from '@/lib/digits'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,7 +24,8 @@ export async function POST(req: Request) {
     // تنظيف كل الحقول النصية قبل الحفظ (حد أقصى للطول + إزالة رموز التحكم الخفية)
     company_name = sanitizeShortText(company_name, 150)
     contact_name = sanitizeShortText(contact_name, 100)
-    phone = sanitizeShortText(phone, 20)
+    phone = toLatinDigits(sanitizeShortText(phone, 20)).replace(/[^\d+]/g, '')
+    if (!/^(\+?966|0)?5\d{8}$/.test(phone)) return NextResponse.json({ error: 'رقم الجوال غير صحيح — مثال 05xxxxxxxx' }, { status: 400 })
     email = email ? sanitizeShortText(email, 150) : null
     description = description ? sanitizeLongText(description, 1500) : null
     offer = offer ? sanitizeLongText(offer, 500) : null
@@ -40,9 +42,17 @@ export async function POST(req: Request) {
       else return NextResponse.json({ error: 'رابط الموقع يجب أن يبدأ بـ http:// أو https://' }, { status: 400 })
     }
 
-    const { error } = await sb().from('supplier_applications').insert({
+    const db = sb()
+    // نفس الرقم قدّم قبل وطلبه للحين قيد المراجعة → ما نكرر (ونحمي الصفحة من الإغراق)
+    const { data: dup } = await db.from('supplier_applications').select('id').eq('phone', phone).eq('status', 'pending').limit(1)
+    if (dup?.length) return NextResponse.json({ success: true, duplicate: true })
+    const { count } = await db.from('supplier_applications').select('id', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 600e3).toISOString())
+    if ((count || 0) >= 20) return NextResponse.json({ error: 'طلبات كثيرة — جرّب بعد شوي' }, { status: 429 })
+    const types = Array.isArray(business_type) ? business_type.map((x: unknown) => sanitizeShortText(String(x), 40)).filter(Boolean).slice(0, 10) : []
+
+    const { error } = await db.from('supplier_applications').insert({
       company_name, contact_name, phone, email: email||null,
-      business_type: business_type||[],
+      business_type: types,
       description: description||null,
       website: safeWebsite,
       offer: offer||null,
@@ -50,7 +60,7 @@ export async function POST(req: Request) {
       marketplace_consent: true
     })
 
-    if(error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if(error) return NextResponse.json({ error: 'تعذر إرسال الطلب، حاول مرة ثانية' }, { status: 500 })
 
     // إشعار واتساب للأدمن
     await fetch('https://www.wasenderapi.com/api/send-message', {
@@ -62,12 +72,12 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         to: '966594351667',
-        text: `🤝 *طلب شراكة جديد*\n\n🏢 ${company_name}\n👤 ${contact_name}\n📱 ${phone}\n📧 ${email||'—'}\n🏷️ ${business_type?.join('، ')||'—'}\n\n${description||''}`
+        text: `🤝 *طلب شراكة جديد*\n\n🏢 ${company_name}\n👤 ${contact_name}\n📱 ${phone}\n📧 ${email||'—'}\n🏷️ ${types.join('، ')||'—'}\n\n${description||''}`
       })
     }).catch(()=>{})
 
     return NextResponse.json({ success: true })
-  } catch(err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+  } catch {
+    return NextResponse.json({ error: 'تعذر إرسال الطلب، حاول مرة ثانية' }, { status: 500 })
   }
 }
