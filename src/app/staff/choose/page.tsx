@@ -1,4 +1,5 @@
 'use client'
+import { canCloseCashier } from '@/lib/staffRoles'
 import { useEffect, useState } from 'react'
 import NumberInput from '@/components/NumberInput'
 import { useRouter } from 'next/navigation'
@@ -93,10 +94,18 @@ export default function ChoosePage() {
     const parsed = JSON.parse(s)
     setName(parsed.name||'')
     setCanDispense(!!parsed.permissions?.dispense)
-    setIsCashier(parsed.role==='cashier')
+    setIsCashier(canCloseCashier(parsed))
     setCanInventory(!!parsed.permissions?.inventory)
     setCanPurchases(!!parsed.permissions?.purchases)
     setStaffData(parsed)
+    // الصلاحيات من الخادم — لو المالك عدّلها (مثلاً أعطاه إقفال الكاشير) تطلع فوراً بدون تسجيل خروج
+    fetch('/api/staff-permissions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('staff_token')}`},body:'{}'})
+      .then(r=>r.ok?r.json():null).then(d=>{
+        if(!d?.permissions) return
+        const fresh={...parsed,permissions:d.permissions}
+        localStorage.setItem('staff_session',JSON.stringify(fresh))
+        setCanDispense(!!d.permissions.dispense);setCanInventory(!!d.permissions.inventory);setCanPurchases(!!d.permissions.purchases);setIsCashier(canCloseCashier(fresh));setStaffData(fresh)
+      }).catch(()=>{})
     loadToday(parsed)
     loadTaskCount()
     loadNotifications()

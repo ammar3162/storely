@@ -1,4 +1,5 @@
 'use client'
+import { canCloseCashier } from '@/lib/staffRoles'
 import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
 import NumberInput from '@/components/NumberInput'
 import { computeBusinessDate } from '@/lib/businessDate'
@@ -207,7 +208,7 @@ export default function CashierClosingPage() {
     const savedSession = localStorage.getItem('staff_session')
     if(!savedSession){router.push('/staff');return}
     const s = JSON.parse(savedSession) as StaffSession
-    if(s.role !== 'cashier'){router.push('/staff/dispense');return}
+    if(!canCloseCashier(s as any)){router.push('/staff/dispense');return}
     setSession(s)
     getStaffOrg().then(org=>{
         if(org?.logo_url) setOrgLogo(org.logo_url)

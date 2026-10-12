@@ -1,3 +1,4 @@
+import { cleanPerms } from '@/lib/staffRoles'
 import { NextResponse } from 'next/server'
 import { samePhone } from '@/lib/loginThrottle'
 import { encryptPinSafe } from '@/lib/pinVault'
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
 
     const { data: newStaff, error } = await supabase
       .from('staff_members')
-      .insert({ org_id, branch_id: effectiveBranchId || null, name, phone, pin: pinHash, pin_enc: encryptPinSafe(String(pin)), is_active: true, permissions: permissions || {dispense:false,inventory:false,purchases:false,reports:false}, role: role === 'cashier' ? 'cashier' : 'staff', send_closing_whatsapp: send_closing_whatsapp !== false, addon_subscription_id: capacity.addonSubscriptionId })
+      .insert({ org_id, branch_id: effectiveBranchId || null, name, phone, pin: pinHash, pin_enc: encryptPinSafe(String(pin)), is_active: true, permissions: permissions ? cleanPerms(permissions) : {dispense:false,inventory:false,purchases:false,reports:false,cashier:false}, role: role === 'cashier' ? 'cashier' : 'staff', send_closing_whatsapp: send_closing_whatsapp !== false, addon_subscription_id: capacity.addonSubscriptionId })
       .select()
       .single()
 

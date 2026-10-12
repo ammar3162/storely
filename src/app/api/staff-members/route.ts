@@ -1,3 +1,4 @@
+import { cleanPerms } from '@/lib/staffRoles'
 import { NextResponse } from 'next/server'
 import { samePhone } from '@/lib/loginThrottle'
 import { createClient } from '@supabase/supabase-js'
@@ -113,7 +114,7 @@ export async function PATCH(req: Request) {
         if (Array.isArray(staff.assigned_products) && staff.assigned_products.length) { update.assigned_products = []; moveNotes.push('انمسحت المنتجات المخصصة له (كانت من الفرع القديم)') }
       }
     }
-    if ('permissions' in body && body.permissions && typeof body.permissions === 'object') update.permissions = body.permissions
+    if ('permissions' in body && body.permissions && typeof body.permissions === 'object') update.permissions = cleanPerms(body.permissions)
     if ('send_closing_whatsapp' in body) update.send_closing_whatsapp = !!body.send_closing_whatsapp
 
     if ('is_active' in body) {

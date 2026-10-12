@@ -1,3 +1,4 @@
+import { canCloseCashier } from '@/lib/staffRoles'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
@@ -23,7 +24,8 @@ export async function GET(req: Request) {
     const staff = await loadOwnedStaff(db, access, org_id, staff_id)
     if (!staff) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
 
-    if (staff.role === 'cashier') {
+    // كاشير بالدور → إقفالاته فقط. موظف عنده صلاحية الإقفال → ?view=closings يجيب إقفالاته
+    if (staff.role === 'cashier' || (new URL(req.url).searchParams.get('view') === 'closings' && canCloseCashier(staff as any))) {
       const { data, error } = await db.from('cashier_closings')
         .select('id,status,closing_date,total_sales,network_amount,difference,deficit_reason')
         .eq('org_id', org_id).eq('staff_id', staff_id)
