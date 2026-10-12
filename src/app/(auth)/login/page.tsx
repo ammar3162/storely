@@ -147,6 +147,7 @@ function LoginPage() {
 
   async function handleGoogle() {
     setError(''); setLoading(true)
+    document.cookie = 'oauth_next=; path=/; max-age=0'   // دخول عميل — مو تسجيل مورد
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback` },
