@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     if (hasVat && !invoice_image) return NextResponse.json({ error: 'الفاتورة الضريبية لازم ترفق صورتها أو ملفها' }, { status: 400 })
     const sup = String(supplier || '').trim().slice(0, 120) || null
     const tax = await resolvePurchaseTax(db, org_id, sup, body, hasVat, items.reduce((s, it) => s + it.total, 0))   // كل الأصناف = فاتورة وحدة للمحاسب
-    if (!tax.ok) return NextResponse.json({ error: tax.error }, { status: tax.status })
+    if (!tax.ok) return NextResponse.json({ error: tax.error, duplicate: tax.duplicate || undefined }, { status: tax.status })
 
     const results = await saveInvoiceItems(db, { orgId: org_id, branchId: bid || null, items, hasVat, supplier: sup || '—', invoiceImage: invoice_image || null,
       tax: tax.tax, createdAt: invoiceTimestamp(invoice_date), profileId: access.userId })

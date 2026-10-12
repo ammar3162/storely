@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     const hasVat = body.has_vat !== false
     if (hasVat && !body.invoice_image) return NextResponse.json({ error: 'صوّر الفاتورة أول' }, { status: 400 })
     const tax = await resolvePurchaseTax(db, org_id, supplier, body, hasVat, items.reduce((s, it) => s + it.total, 0))
-    if (!tax.ok) return NextResponse.json({ error: tax.error }, { status: tax.status })
+    if (!tax.ok) return NextResponse.json({ error: tax.error, duplicate: tax.duplicate || undefined }, { status: tax.status })
 
     const { data: me } = await db.from('staff_members').select('name,assigned_products').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
     const staffName = (me as any)?.name || 'موظف'

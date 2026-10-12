@@ -100,7 +100,7 @@ export async function POST(req: Request) {
     const locked = await lockedFor(db, org_id, [body.invoice_date])
     if (locked) return NextResponse.json({ error: locked }, { status: 423 })
     const tax = await resolvePurchaseTax(db, org_id, supplier, body, hasVat, total)
-    if (!tax.ok) return NextResponse.json({ error: tax.error }, { status: tax.status })
+    if (!tax.ok) return NextResponse.json({ error: tax.error, duplicate: tax.duplicate || undefined }, { status: tax.status })
 
     const { error: insErr } = await db.from('purchases').insert({
       org_id, profile_id: access.userId, branch_id: purchaseBranch,
