@@ -130,8 +130,8 @@ export async function GET(req: Request) {
         if (bid) q = q.eq('branch_id', bid)
         return q.order('id')
       })
-      let rq = db.from('stock_movements').select('id,qty_change,type,created_at,products!inner(name,unit,org_id,branch_id)')
-        .eq('products.org_id', org_id).order('created_at', { ascending: false }).limit(10)
+      let rq = db.from('stock_movements').select('id,qty_change,type,created_at:recorded_at,products!inner(name,unit,org_id,branch_id)')   // آخر العمليات = حسب وقت الإدخال
+        .eq('products.org_id', org_id).order('recorded_at', { ascending: false }).limit(10)
       if (bid) rq = rq.eq('products.branch_id', bid)
 
       const [mv, pu, wv, inv, closings, recent] = await Promise.all([

@@ -58,8 +58,8 @@ export async function GET(req: Request) {
     }
 
     let q = db.from('purchases')
-      .select('id,category,name,qty,unit,amount,vat_amount,total_amount,supplier,invoice_image,created_at')
-      .eq('org_id', org_id).is('deleted_at', null).order('created_at', { ascending: false }).limit(50)
+      .select('id,category,name,qty,unit,amount,vat_amount,total_amount,supplier,invoice_image,created_at,recorded_at')
+      .eq('org_id', org_id).is('deleted_at', null).order('recorded_at', { ascending: false }).limit(50)   // آخر ما سُجّل فوق (created_at = تاريخ الفاتورة)
     if (bid) q = q.eq('branch_id', bid)
     const { data, error } = await q
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
