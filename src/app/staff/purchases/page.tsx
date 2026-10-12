@@ -208,10 +208,13 @@ export default function StaffPurchasesPage() {
     if (rows.some(r => !Number.isInteger(r.qty))) return stop(pt('needQty', lang))
     if (form.hasVat !== 'no' && !form.invoice_image) return stop(uploading ? (lang === 'en' ? 'Wait — the photo is still uploading' : 'انتظر — الصورة لسا ترتفع') : pt('invoiceRequired', lang))
     setBulkSaving(true)
-    const res = await fetch('/api/staff-purchase/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('staff_token')}` },
+    const send = (extra = {}) => fetch('/api/staff-purchase/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('staff_token')}` },
       body: JSON.stringify({ supplier: form.supplier, has_vat: form.hasVat !== 'no', invoice_image: form.invoice_image || null,
-        invoice_number: form.invoice_number || null, supplier_vat_number: form.supplier_vat_number || null, zatca_qr: zatca?.raw || null, items: rows }) })
-    const j = await res.json().catch(() => ({}))
+        invoice_number: form.invoice_number || null, supplier_vat_number: form.supplier_vat_number || null, zatca_qr: zatca?.raw || null, items: rows, ...extra }) })
+    let res = await send()
+    let j = await res.json().catch(() => ({}))
+    // نفس الفاتورة مسجلة قبل → نسأل الموظف بدل ما تتكرر
+    if (j.duplicate && window.confirm(`${j.error}\n\n${lang === 'en' ? 'Save it again?' : 'تسجلها مرة ثانية؟'}`)) { res = await send({ allow_duplicate: true }); j = await res.json().catch(() => ({})) }
     setBulkSaving(false)
     if (!res.ok || !j.success) return stop(j.error || (lang === 'en' ? 'Could not save — try again' : 'ما انحفظت الفاتورة — حاول مرة ثانية'))
     showToast(`${pt('itemsSaved', lang)} — ${j.summary || j.saved}`)
@@ -235,7 +238,7 @@ export default function StaffPurchasesPage() {
     const total_amount = (Math.round(Number(form.total_amount) * 100) / 100).toFixed(2)
 
     const staffToken = localStorage.getItem('staff_token')
-    const res = await fetch('/api/staff-purchase', {
+    const sendOne = (extra = {}) => fetch('/api/staff-purchase', {
       method: 'POST',
       headers: {'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},
       body: JSON.stringify({
@@ -251,10 +254,12 @@ export default function StaffPurchasesPage() {
         supplier_vat_number:form.hasVat==='yes'?form.supplier_vat_number||null:null,
         zatca_qr:form.hasVat==='yes'?zatca?.raw||null:null,
         staff_name:session.name,
-        staff_id:session.id
+        staff_id:session.id, ...extra
       })
     })
-    const resData = await res.json()
+    let res = await sendOne()
+    let resData = await res.json()
+    if(resData.duplicate&&window.confirm(`${resData.error}\n\n${lang==='en'?'Save it again?':'تسجلها مرة ثانية؟'}`)){res=await sendOne({allow_duplicate:true});resData=await res.json()}
     if(!res.ok){showToast(pt('errorPrefix',lang)+resData.error);setLoading(false);submitting.current=false;return}
     showToast(form.category==='مخزون'?`${pt('inventoryUpdated',lang)} (+${form.qty||0})`:pt('purchaseRecorded',lang))
 

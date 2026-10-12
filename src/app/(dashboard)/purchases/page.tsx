@@ -245,15 +245,19 @@ export default function PurchasesPage() {
     setBulkSaving(true)
     const bid = sessionStorage.getItem('s_branch_id')
     const isVat = form.hasVat!=='no'
-    const r = await api.post('/api/purchases/bulk', {
+    const bbody:any = {
       org_id:orgId, branch_id:bid||null, supplier:form.supplier,
       invoice_image:form.invoice_image||null, has_vat:isVat, invoice_date:form.invoice_date,
       invoice_number:isVat?form.invoice_number||null:null, supplier_vat_number:isVat?form.supplier_vat_number||null:null, zatca_qr:isVat?zatca?.raw||null:null,
       items: rows,
-    })
+    }
+    let r = await api.post('/api/purchases/bulk', bbody)
+    if(!r.success&&r.duplicate&&await confirmDialog({title:'الفاتورة مسجلة قبل',message:r.error+'\n\nتسجلها مرة ثانية؟',confirmText:'سجّلها'}))
+      r = await api.post('/api/purchases/bulk', {...bbody, allow_duplicate:true})
     setBulkSaving(false)
-    if(!r.success){ toast(r.error||'فشل الحفظ','error'); return }
+    if(!r.success){ if(!r.duplicate) toast(r.error||'فشل الحفظ','error'); return }
     toast(`✅ تم تسجيل الفاتورة — ${r.summary||`${r.saved} صنف`}`)
+    if(form.invoice_date&&form.invoice_date!==todayRiyadh()) toast(`📅 انحفظت بتاريخ الفاتورة ${form.invoice_date} — تلقاها في التقارير بهالتاريخ`)
     setOcrItems([])
     setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:'',invoice_number:'',supplier_vat_number:''});setZatca(null);setVatFromSupplier(false)
     setPreviewUrl(null)
@@ -275,15 +279,19 @@ export default function PurchasesPage() {
     if(form.hasVat==='yes'&&form.supplier_vat_number.trim()&&!isValidVat(normalizeVat(form.supplier_vat_number))){toast('الرقم الضريبي للمورد غير صحيح — ١٥ رقم يبدأ وينتهي بـ 3','warning');submitting.current=false;return}
     setLoading(true)
     // حفظ الفاتورة + الإشعار + تحديث المخزون ومتوسط التكلفة كلها على الخادم
-    const res=await api.post('/api/purchases',{
+    const body:any={
       org_id:orgId, branch_id:sessionStorage.getItem('s_branch_id')||null,
       category:form.category, name:form.name, sku:form.sku||null, qty:form.qty||null,
       unit:form.unit||null, reorder_point:form.reorder_point, total_amount:form.total_amount,
       supplier:form.supplier, note:form.note||null, invoice_image:form.invoice_image||null,
       has_vat:form.hasVat==='yes', invoice_date:form.invoice_date, payment_status:form.payment_status, due_date:form.due_date||null,
       invoice_number:form.hasVat==='yes'?form.invoice_number||null:null, supplier_vat_number:form.hasVat==='yes'?form.supplier_vat_number||null:null, zatca_qr:form.hasVat==='yes'?zatca?.raw||null:null,
-    })
-    if(!res.success){toast(res.error||'حدث خطأ','error');setLoading(false);submitting.current=false;return}
+    }
+    let res=await api.post('/api/purchases',body)
+    // نفس الفاتورة مسجلة قبل؟ نسأل بدل ما تنكرر وتزيد المخزون مرتين
+    if(!res.success&&res.duplicate&&await confirmDialog({title:'الفاتورة مسجلة قبل',message:res.error+'\n\nتسجلها مرة ثانية؟',confirmText:'سجّلها'}))
+      res=await api.post('/api/purchases',{...body,allow_duplicate:true})
+    if(!res.success){if(!res.duplicate)toast(res.error||'حدث خطأ','error');setLoading(false);submitting.current=false;return}
 
     if(res.product_action==='updated') toast(`✅ تم تحديث المخزون (+${res.qty})`,'success')
     else if(res.product_action==='created'){
@@ -291,6 +299,7 @@ export default function PurchasesPage() {
       api.post('/api/sync-product-to-staff',{org_id:orgId,product_id:res.product_id})
     }
     else toast('✅ تم تسجيل الشراء')
+    if(form.invoice_date&&form.invoice_date!==todayRiyadh()) toast(`📅 انحفظت بتاريخ الفاتورة ${form.invoice_date} — تلقاها في التقارير بهالتاريخ`)
 
     // تأكيد يدوي قبل إرسال رسالة الشكر — يظهر فقط لو المورد مسجّل فعلياً بالنظام والمنتج مرتبط فيه تحديداً
     if (res.thanks_candidate && res.product_id) {

@@ -60,13 +60,20 @@ const TOL = 0.5   // سماحية التقريب بالريال
  * - المسجّل يتجاوز مبلغ الفاتورة الأصلي → ينحفظ لكن يتعلّم ويتنبّه المالك
  */
 export async function resolvePurchaseTax(db: SupabaseClient, orgId: string, supplierName: string | null,
-  body: { invoice_number?: unknown; supplier_vat_number?: unknown; zatca_qr?: unknown }, hasVat: boolean, enteredTotal: number)
-  : Promise<{ ok: true; tax: PurchaseTax; alert: string | null } | { ok: false; error: string; status: number }> {
+  body: { invoice_number?: unknown; supplier_vat_number?: unknown; zatca_qr?: unknown; invoice_date?: unknown; allow_duplicate?: unknown }, hasVat: boolean, enteredTotal: number)
+  : Promise<{ ok: true; tax: PurchaseTax; alert: string | null } | { ok: false; error: string; status: number; duplicate?: boolean }> {
   const qr = hasVat && typeof body.zatca_qr === 'string' ? parseZatcaQr(body.zatca_qr) : null
   const base = await resolveTaxInfo(db, orgId, supplierName, qr ? { ...body, supplier_vat_number: qr.vatNumber } : body, hasVat)
   if (!base.ok) return { ok: false, error: base.error, status: 400 }
   const tax: PurchaseTax = { ...base.info, invoice_group: crypto.randomUUID(), qr_verified: false, qr_fingerprint: null, qr_total: null, qr_vat: null, qr_issued_at: null, qr_mismatch: false }
-  if (!qr) return { ok: true, tax, alert: null }
+  if (!qr) {
+    // بدون باركود: نفس رقم الفاتورة من نفس المورد، أو نفس المورد ونفس اليوم ونفس المبلغ = غالباً تكرار
+    if (body.allow_duplicate !== true) {
+      const dup = await findDuplicateInvoice(db, orgId, supplierName, tax.invoice_number, enteredTotal, typeof body.invoice_date === 'string' ? body.invoice_date : null)
+      if (dup) return { ok: false, status: 409, duplicate: true, error: `هذي الفاتورة مسجلة قبل (${dup}) — لو هي فاتورة ثانية فعلاً أكّد التسجيل` }
+    }
+    return { ok: true, tax, alert: null }
+  }
 
   const fp = zatcaFingerprint(qr)
   const { data: prev } = await db.from('purchases').select('invoice_group,total_amount,created_at,invoice_number')
@@ -87,6 +94,34 @@ export async function resolvePurchaseTax(db: SupabaseClient, orgId: string, supp
     ? `المبلغ المسجّل (${(already + enteredTotal).toFixed(2)}) أكبر من مبلغ الفاتورة الأصلي في باركود الهيئة (${qr.total.toFixed(2)}) — فاتورة ${qr.sellerName}`
     : null
   return { ok: true, tax, alert }
+}
+
+/** يرجّع تاريخ الفاتورة المسجّلة قبل لو لقى تكرار، وإلا null */
+export async function findDuplicateInvoice(db: SupabaseClient, orgId: string, supplierName: string | null, invoiceNumber: string | null,
+  total: number, invoiceDate: string | null): Promise<string | null> {
+  const day = (iso: string) => new Date(Date.parse(iso) + 3 * 3600e3).toISOString().slice(0, 10)
+  const sup = (supplierName || '').trim().replace(/[%_\\]/g, '\\$&')   // ilike: نهرّب الرموز الخاصة
+  if (invoiceNumber) {
+    let q = db.from('purchases').select('created_at').eq('org_id', orgId).eq('invoice_number', invoiceNumber).is('deleted_at', null)
+    if (sup) q = q.ilike('supplier', sup)
+    const { data } = await q.limit(1)
+    if (data?.length) return day((data[0] as any).created_at)
+  }
+  if (!sup || !(total > 0)) return null
+  // نفس المورد بنفس يوم الفاتورة (أو آخر ٣ أيام لو ما فيه تاريخ) — نجمع كل فاتورة (أصنافها) ونقارن المبلغ
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(invoiceDate || '') ? invoiceDate! : null
+  const from = d ? `${d}T00:00:00+03:00` : new Date(Date.now() - 3 * 86400e3).toISOString()
+  const to = d ? `${d}T23:59:59.999+03:00` : new Date(Date.now() + 60e3).toISOString()
+  const { data } = await db.from('purchases').select('invoice_group,total_amount,created_at').eq('org_id', orgId).ilike('supplier', sup)
+    .gte('created_at', from).lte('created_at', to).is('deleted_at', null).limit(500)
+  const groups = new Map<string, { sum: number; at: string }>()
+  for (const r of (data || []) as any[]) {
+    const k = r.invoice_group || r.created_at
+    const g = groups.get(k) || { sum: 0, at: r.created_at }
+    g.sum += Number(r.total_amount) || 0; groups.set(k, g)
+  }
+  for (const g of groups.values()) if (Math.abs(g.sum - total) <= TOL) return day(g.at)
+  return null
 }
 
 /** تنبيه المالك: مبلغ فاتورة مسجّل أكبر من الأصلي */

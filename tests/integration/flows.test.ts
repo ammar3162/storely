@@ -104,7 +104,7 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
     it('a VAT invoice for a new product stores net + 15% VAT and adds stock', async () => {
       const r = await call(purchases.POST, 'POST', '/api/purchases', {
         org_id: orgId, branch_id: branchA, category: 'مخزون', name: 'حليب', qty: 10, unit: 'كرتون',
-        total_amount: 115, supplier: 'مورد تجريبي', invoice_date: today, has_vat: true, payment_status: 'paid',
+        total_amount: 115, supplier: 'مورد تجريبي', invoice_date: today, has_vat: true, payment_status: 'paid', invoice_image: 'https://example.test/invoice.jpg',
       })
       expect(r.status).toBe(200)
       expect(r.json.product_action).toBe('created')

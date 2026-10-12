@@ -58,8 +58,8 @@ export async function GET(req: Request) {
     }
 
     let q = db.from('purchases')
-      .select('id,category,name,qty,unit,amount,vat_amount,total_amount,supplier,invoice_image,created_at')
-      .eq('org_id', org_id).is('deleted_at', null).order('created_at', { ascending: false }).limit(50)
+      .select('id,category,name,qty,unit,amount,vat_amount,total_amount,supplier,invoice_image,created_at,recorded_at')
+      .eq('org_id', org_id).is('deleted_at', null).order('recorded_at', { ascending: false }).limit(50)   // آخر ما سُجّل فوق (created_at = تاريخ الفاتورة)
     if (bid) q = q.eq('branch_id', bid)
     const { data, error } = await q
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
     const locked = await lockedFor(db, org_id, [body.invoice_date])
     if (locked) return NextResponse.json({ error: locked }, { status: 423 })
     const tax = await resolvePurchaseTax(db, org_id, supplier, body, hasVat, total)
-    if (!tax.ok) return NextResponse.json({ error: tax.error }, { status: tax.status })
+    if (!tax.ok) return NextResponse.json({ error: tax.error, duplicate: tax.duplicate || undefined }, { status: tax.status })
 
     const { error: insErr } = await db.from('purchases').insert({
       org_id, profile_id: access.userId, branch_id: purchaseBranch,

@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     const supabase = sb()
     if (!(await staffHasPermission(supabase, staff_id, org_id, 'purchases'))) return NextResponse.json({ error: NO_PURCHASES }, { status: 403 })
     const tax = await resolvePurchaseTax(supabase, org_id, supplier || null, body, hasVat, Number.isFinite(total) && total > 0 ? total : amount)
-    if (!tax.ok) return NextResponse.json({ error: tax.error }, { status: tax.status })
+    if (!tax.ok) return NextResponse.json({ error: tax.error, duplicate: tax.duplicate || undefined }, { status: tax.status })
 
     const { error } = await supabase.from('purchases').insert({
       org_id, branch_id: branch_id || null,

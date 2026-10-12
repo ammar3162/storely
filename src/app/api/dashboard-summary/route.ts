@@ -28,10 +28,10 @@ export async function GET(req: Request) {
     const since = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString()
 
     let productsQ = db.from('products').select('id,name,qty,reorder_point,unit').eq('org_id', org_id).eq('is_active', true)
-    let purchasesQ = db.from('purchases').select('created_at').eq('org_id', org_id).gte('created_at', since)
+    let purchasesQ = db.from('purchases').select('created_at:recorded_at').eq('org_id', org_id).is('deleted_at', null).gte('recorded_at', since)
     let movementsQ = db.from('stock_movements')
-      .select('qty_change,type,created_at,products!inner(name,unit,org_id,branch_id)')
-      .eq('products.org_id', org_id).order('created_at', { ascending: false }).limit(50)
+      .select('qty_change,type,created_at:recorded_at,products!inner(name,unit,org_id,branch_id)')   // وقت الإدخال الفعلي (فاتورة بتاريخ قديم تطلع فوق)
+      .eq('products.org_id', org_id).order('recorded_at', { ascending: false }).limit(50)
     const notifsQ = db.from('notifications').select('id,title,message,type').eq('org_id', org_id).eq('read', false)
       .or(bid ? `branch_id.is.null,branch_id.eq.${bid}` : 'branch_id.is.null,branch_id.not.is.null')
       .order('created_at', { ascending: false }).limit(5)

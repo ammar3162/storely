@@ -4,7 +4,7 @@ import { buildZatcaQr } from './zatcaQr'
 
 // قاعدة بيانات وهمية: فواتير سابقة بنفس البصمة
 function fakeDb(prev: any[]) {
-  const q = (rows: any[]) => { const o: any = {}; for (const m of ['select', 'eq', 'is', 'limit', 'update', 'order']) o[m] = () => o; o.then = (r: any) => r({ data: rows, error: null }); return o }
+  const q = (rows: any[]) => { const o: any = {}; for (const m of ['select', 'eq', 'is', 'limit', 'update', 'order', 'ilike', 'gte', 'lte']) o[m] = () => o; o.then = (r: any) => r({ data: rows, error: null }); return o }
   return { from: (t: string) => q(t === 'purchases' ? prev : []) } as any
 }
 const zatca_qr = buildZatcaQr({ sellerName: 'المراعي', vatNumber: '300012345678903', issuedAt: '2026-10-05T10:00:00Z', total: '1150.00', vat: '150.00' })

@@ -21,10 +21,10 @@ export async function GET(req: Request) {
     const effectiveBranchId = enforcedBranchId(access, branch_id)
 
     let q = sb().from('stock_movements')
-      .select('id,qty_change,type,waste_reason,created_at,products!inner(name,unit,org_id,branch_id)')
+      .select('id,qty_change,type,waste_reason,created_at:recorded_at,products!inner(name,unit,org_id,branch_id)')
       .in('type', ['out', 'waste']).eq('products.org_id', org_id)
     if (effectiveBranchId) q = q.eq('products.branch_id', effectiveBranchId)
-    const { data, error } = await q.order('created_at', { ascending: false }).limit(limit)
+    const { data, error } = await q.order('recorded_at', { ascending: false }).limit(limit)
 
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
     return NextResponse.json({ success: true, movements: data || [] })
