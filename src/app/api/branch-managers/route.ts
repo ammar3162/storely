@@ -41,13 +41,18 @@ export async function POST(req: Request) {
   const { data: branch } = await db.from('branches').select('id').eq('id', branch_id).eq('org_id', org_id).maybeSingle()
   if (!branch) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
 
-  const { data: newUser, error: createErr } = await db.auth.admin.createUser({
-    email: String(email).trim().toLowerCase(),
-    password: String(password),
-    email_confirm: true,
-  })
+  const cleanEmail = String(email).trim().toLowerCase()
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) return NextResponse.json({ error: 'الإيميل غير صحيح' }, { status: 400 })
+  const { data: newUser, error: createErr } = await db.auth.admin.createUser({ email: cleanEmail, password: String(password), email_confirm: true })
   if (createErr || !newUser?.user) {
-    return NextResponse.json({ error: createErr?.message || 'فشل إنشاء حساب الدخول' }, { status: 500 })
+    // الإيميل مستخدم: نوضح بأي حساب بدل رسالة Supabase الإنجليزية
+    if ((createErr as any)?.code === 'email_exists' || /already (been )?registered/i.test(createErr?.message || '')) {
+      const { data: sup } = await db.from('supplier_profiles').select('id').ilike('email', cleanEmail).limit(1)
+      return NextResponse.json({ error: sup?.length
+        ? 'هذا الإيميل مسجّل كحساب مورد في ستورلي — استخدم إيميل ثاني للمدير'
+        : 'هذا الإيميل مسجّل بحساب ثاني في ستورلي (مالك منشأة أو مدير) — استخدم إيميل ثاني' }, { status: 409 })
+    }
+    return NextResponse.json({ error: 'تعذر إنشاء حساب الدخول — حاول مرة ثانية' }, { status: 500 })
   }
 
   const { error: profileErr } = await (db as any).from('profiles').insert({
@@ -99,7 +104,9 @@ export async function DELETE(req: Request) {
   const { data: mgr } = await db.from('profiles').select('id').eq('id', id).eq('org_id', org_id).eq('role', 'manager').maybeSingle()
   if (!mgr) return NextResponse.json({ error: 'غير موجود' }, { status: 404 })
 
-  await db.from('profiles').delete().eq('id', id)
-  await db.auth.admin.deleteUser(id).catch(() => {})
+  // نحذف حساب الدخول أول (ملفه ينحذف معه) — لو فشل ما نحذف شي، عشان الإيميل ما يعلق ويقدر ينضاف مرة ثانية
+  const { error: delErr } = await db.auth.admin.deleteUser(id)
+  if (delErr) return NextResponse.json({ error: 'تعذر حذف حساب المدير — حاول مرة ثانية' }, { status: 500 })
+  await db.from('profiles').delete().eq('id', id)   // احتياط لو ما انحذف تلقائياً
   return NextResponse.json({ success: true })
 }
