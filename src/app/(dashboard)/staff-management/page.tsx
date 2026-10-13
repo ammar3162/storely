@@ -52,9 +52,11 @@ export default function StaffManagementPage() {
   const [orgNotifyClosingWA, setOrgNotifyClosingWA] = useState(true)
   const [loading, setLoading]       = useState(true)
   const [showAdd, setShowAdd]       = useState(false)
-  const [newPermissions, setNewPermissions] = useState({dispense:false,inventory:false,purchases:false,reports:false})
+  const [newPermissions, setNewPermissions] = useState({dispense:false,inventory:false,purchases:false,reports:false,cashier:false})
   const [editingPerms, setEditingPerms] = useState<string|null>(null)
-  const [editPerms, setEditPerms] = useState({dispense:true,inventory:false,purchases:false,reports:false})
+  const [editingRole, setEditingRole] = useState<string|null>(null)
+  const [reportMode, setReportMode] = useState<'dispense'|'closings'>('dispense')
+  const [editPerms, setEditPerms] = useState({dispense:true,inventory:false,purchases:false,reports:false,cashier:false})
   const [newName, setNewName]       = useState('')
   const [newPhone, setNewPhone]     = useState('')
   const [staffCountry, setStaffCountry] = useState(()=>sessionStorage.getItem('s_country_code')||'+966')
@@ -163,11 +165,11 @@ export default function StaffManagementPage() {
     setProducts(j.products||[])
   }
 
-  async function openReport(s:any) {
-    setReportStaff(s)
+  async function openReport(s:any, mode:'dispense'|'closings' = s.role==='cashier'?'closings':'dispense') {
+    setReportStaff(s); setReportMode(mode)
     setReportLoading(true)
-    const j = await api.get('/api/staff-members/report', { org_id: orgId, staff_id: s.id })
-    if(s.role==='cashier'){
+    const j = await api.get('/api/staff-members/report', { org_id: orgId, staff_id: s.id, ...(mode==='closings'?{view:'closings'}:{}) })
+    if(mode==='closings'){
       setStaffClosings(j.closings||[])
       setReportLoading(false)
       return
@@ -586,6 +588,7 @@ export default function StaffManagementPage() {
                     {key:'inventory',  label:'المخزون',    Icon:Package, locked:false},
                     {key:'purchases',  label:'المشتريات',  Icon:ShoppingCart, locked:false},
                     {key:'reports',    label:'التقارير',   Icon:BarChart3, locked:false},
+                    {key:'cashier',    label:'إقفال الكاشير', Icon:Wallet, locked:orgPlan==='basic'},
                   ].map(p=>(
                     <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:'white',borderRadius:8,border:`1.5px solid ${(newPermissions as any)[p.key]?colors.primary:colors.border}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                       <input type="checkbox" checked={(newPermissions as any)[p.key]} disabled={p.locked}
@@ -757,6 +760,7 @@ export default function StaffManagementPage() {
                 {key:'inventory',  label:'المخزون',    Icon:Package, locked:false},
                 {key:'purchases',  label:'المشتريات',  Icon:ShoppingCart, locked:false},
                 {key:'reports',    label:'التقارير',   Icon:BarChart3, locked:false},
+                {key:'cashier',    label:'إقفال الكاشير', Icon:Wallet, locked:orgPlan==='basic'||editingRole==='cashier'},
               ].map(p=>(
                 <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'12px',background:(editPerms as any)[p.key]?'#f0fdfa':'#f9fafb',borderRadius:10,border:`1.5px solid ${(editPerms as any)[p.key]?'#029FA2':'#e5e7eb'}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                   <input type="checkbox" checked={(editPerms as any)[p.key]} disabled={p.locked}
@@ -764,7 +768,7 @@ export default function StaffManagementPage() {
                     style={{accentColor:'#029FA2',width:16,height:16}}/>
                   <div>
                     <div style={{fontSize:13,fontWeight:700,color:(editPerms as any)[p.key]?'#029FA2':'#374151',display:'flex',alignItems:'center',gap:5}}><p.Icon size={14} strokeWidth={2.25}/> {p.label}</div>
-                    {p.locked&&<div style={{fontSize:10,color:'#9ca3af'}}>افتراضي</div>}
+                    {p.locked&&<div style={{fontSize:10,color:'#9ca3af'}}>{p.key==='cashier'?(orgPlan==='basic'?'يحتاج الباقة المتوسطة':'دوره كاشير'):'افتراضي'}</div>}
                   </div>
                 </label>
               ))}
@@ -777,13 +781,14 @@ export default function StaffManagementPage() {
         </div>
       )}
 
-      {reportStaff && reportStaff.role==='cashier' && (
+      {reportStaff && reportMode==='closings' && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
           <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:560,maxHeight:'85vh',display:'flex',flexDirection:'column',fontFamily:'inherit',direction:'rtl'}}>
             <div style={{padding:'18px 20px',borderBottom:'1px solid #f0f0f0',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
               <div>
                 <div style={{fontSize:15,fontWeight:700,color:'#1c1c1a'}}>تقارير إقفال {reportStaff.name}</div>
                 <div style={{fontSize:11,color:'#888780',marginTop:2}}>آخر 50 تقرير إقفال</div>
+                {reportStaff.role!=='cashier' && <button onClick={()=>openReport(reportStaff,'dispense')} style={{marginTop:6,padding:'4px 10px',borderRadius:99,border:'1px solid #e0e0dd',background:'#f5f5f4',color:'#374151',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>عرض عمليات الصرف</button>}
               </div>
               <button onClick={()=>setReportStaff(null)} style={{width:30,height:30,borderRadius:'50%',border:'1px solid #e0e0dd',background:'#f5f5f4',cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',color:'#5f5e5a'}}>✕</button>
             </div>
@@ -832,13 +837,14 @@ export default function StaffManagementPage() {
         </div>
       )}
 
-      {reportStaff && reportStaff.role!=='cashier' && (
+      {reportStaff && reportMode==='dispense' && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
           <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:540,maxHeight:'85vh',display:'flex',flexDirection:'column',fontFamily:'inherit',direction:'rtl'}}>
             <div style={{padding:'18px 20px',borderBottom:'1px solid #f0f0f0',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
               <div>
                 <div style={{fontSize:15,fontWeight:700,color:'#1c1c1a'}}>تقرير {reportStaff.name}</div>
                 <div style={{fontSize:11,color:'#888780',marginTop:2}}>آخر 50 عملية صرف</div>
+                {reportStaff.permissions?.cashier && <button onClick={()=>openReport(reportStaff,'closings')} style={{marginTop:6,padding:'4px 10px',borderRadius:99,border:'1px solid #99f6e4',background:'#f0fdfa',color:'#0f766e',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>عرض إقفالات الكاشير</button>}
               </div>
               <button onClick={()=>setReportStaff(null)} style={{width:30,height:30,borderRadius:'50%',border:'1px solid #e0e0dd',background:'#f5f5f4',cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',color:'#5f5e5a'}}>✕</button>
             </div>
@@ -954,7 +960,7 @@ export default function StaffManagementPage() {
                   <button onClick={e=>{e.stopPropagation();openReport(s)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
                     <BarChart3 size={13} strokeWidth={2.25}/> تقرير
                   </button>
-                  <button onClick={e=>{e.stopPropagation();setEditingPerms(s.id);setEditPerms(s.permissions||{dispense:true,inventory:false,purchases:false,reports:false})}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
+                  <button onClick={e=>{e.stopPropagation();setEditingPerms(s.id);setEditPerms({dispense:true,inventory:false,purchases:false,reports:false,cashier:false,...(s.permissions||{}),...(s.role==='cashier'?{cashier:true}:{})});setEditingRole(s.role)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
                     <ShieldCheck size={13} strokeWidth={2.25}/> صلاحيات
                   </button>
                   {s.permissions?.dispense && (

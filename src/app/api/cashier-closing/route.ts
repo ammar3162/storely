@@ -5,6 +5,7 @@ import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { sendPushToOrg } from '@/lib/push'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { verifyOwnerPassword } from '@/lib/ownerPassword'
+import { canCloseCashier } from '@/lib/staffRoles'
 import { editClosing, deleteClosing } from '@/lib/cashierClosingEdit'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { computeBusinessDate } from '@/lib/businessDate'
@@ -47,9 +48,9 @@ export async function POST(req: Request) {
 
     // الاسم والفرع والدور من قاعدة البيانات — وما يقفل الصندوق إلا كاشير فعّال
     const { data: staffRow } = await sb().from('staff_members')
-      .select('name,branch_id,role,is_active').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
+      .select('name,branch_id,role,is_active,permissions').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
     if (!staffRow || (staffRow as any).is_active === false) return NextResponse.json({ error: 'الحساب غير فعّال' }, { status: 403 })
-    if ((staffRow as any).role !== 'cashier') return NextResponse.json({ error: 'إقفال الصندوق للكاشير فقط' }, { status: 403 })
+    if (!canCloseCashier(staffRow as any)) return NextResponse.json({ error: 'إقفال الصندوق للكاشير أو لموظف عنده صلاحية إقفال الكاشير' }, { status: 403 })
     const staff_name: string = (staffRow as any).name
     const branch_id: string | null = (staffRow as any).branch_id ?? auth.data.branch_id ?? null
 
