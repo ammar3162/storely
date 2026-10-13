@@ -1,3 +1,4 @@
+import { managerMay } from '@/lib/managerPerms'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
@@ -16,6 +17,7 @@ export async function GET(req: Request) {
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    if (!managerMay(access as any, 'attendance', 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على هالقسم — كلّم مالك المنشأة' }, { status: 403 })
     const effectiveBranchId = enforcedBranchId(access, branch_id)
 
     const supabase = sb()
@@ -37,6 +39,7 @@ export async function POST(req: Request) {
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    if (!managerMay(access as any, 'attendance', 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على هالقسم — كلّم مالك المنشأة' }, { status: 403 })
     if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
 
     const supabase = sb()
@@ -66,6 +69,7 @@ export async function DELETE(req: Request) {
 
     const access = await verifyOrgAccess((existing as any).org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    if (!managerMay(access as any, 'attendance', 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على هالقسم — كلّم مالك المنشأة' }, { status: 403 })
     if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
 
     // فكّ ربط أي موظف بهذا الشفت قبل الحذف

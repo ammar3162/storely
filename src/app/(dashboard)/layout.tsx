@@ -1,4 +1,5 @@
 'use client'
+import { managerPageAllowed } from '@/lib/managerPerms'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
@@ -421,17 +422,15 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     window.location.reload()
   }
 
-  const PERM_MAP: Record<string,string> = {
-    '/inventory':'inventory', '/dispense':'dispense', '/purchases':'purchases',
-    '/reports':'reports', '/profitability':'profitability', '/suppliers':'suppliers', '/staff-management':'staff',
-  }
-  const MANAGER_HIDDEN = ['/branches','/branch-compare','/settings','/ai-tools','/marketplace','/branch-managers','/transfer-stock']
+  // صلاحيات مدير الفرع من مصدر واحد (lib/managerPerms) — نفس القواعد اللي يطبقها الخادم
   function navVisible(href:string) {
     if(userRole!=='manager') return true
-    if(MANAGER_HIDDEN.includes(href)) return false
-    if(PERM_MAP[href]) return !!managerPermissions?.[PERM_MAP[href]]
-    return true
+    return managerPageAllowed(href, managerPermissions)
   }
+  // فتح صفحة بالرابط مباشرة بدون صلاحية → نرجعه للرئيسية
+  useEffect(()=>{
+    if(userRole==='manager' && managerPermissions && pathname && !managerPageAllowed(pathname, managerPermissions)) router.replace('/dashboard')
+  },[userRole, managerPermissions, pathname])
 
   const isActive=(href:string)=>pathname===href||(href!=='/dashboard'&&pathname.startsWith(href))
 
