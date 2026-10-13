@@ -22,3 +22,19 @@ describe('help videos', () => {
     expect(helpKeyFor('/storely-admin')).toBeNull()
   })
 })
+
+import { HELP_PAGES } from './helpVideos'
+describe('help pages cover every page', () => {
+  it('maps the add-ons, approved suppliers and staff inventory pages', () => {
+    expect(helpKeyFor('/addons-market')).toBe('/addons-market')
+    expect(helpKeyFor('/marketplace/abc')).toBe('/marketplace')
+    expect(helpKeyFor('/staff/inventory')).toBe('/staff/inventory')
+  })
+  it('every dashboard and staff page has an entry', async () => {
+    const fs = await import('fs')
+    const dash = fs.readdirSync('src/app/(dashboard)', { withFileTypes: true }).filter(d => d.isDirectory()).map(d => '/' + d.name)
+    const staff = fs.readdirSync('src/app/staff', { withFileTypes: true }).filter(d => d.isDirectory() && !d.name.startsWith('qa-') && d.name !== 'choose').map(d => '/staff/' + d.name)
+    const keys = new Set(HELP_PAGES.map(p => p.key))
+    expect([...dash, ...staff].filter(k => !keys.has(k))).toEqual([])
+  })
+})
