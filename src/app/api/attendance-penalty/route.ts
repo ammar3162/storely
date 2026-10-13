@@ -1,3 +1,4 @@
+import { managerMay } from '@/lib/managerPerms'
 import { NextResponse } from 'next/server'
 import { notifyStaffDeduction } from '@/lib/staffDeductionNotice'
 import { createClient } from '@supabase/supabase-js'
@@ -15,6 +16,7 @@ export async function POST(req: Request) {
     if (!org_id || !attendance_id || typeof waived !== 'boolean') return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    if (!managerMay(access as any, 'attendance', 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على هالقسم — كلّم مالك المنشأة' }, { status: 403 })
     if (access.role !== 'owner') return NextResponse.json({ error: 'إلغاء الغرامة للمالك فقط' }, { status: 403 })
 
     // الغرامات اللي انخصمت سابقاً كخصم مجمّع (penalty_applied) ما تتعدّل من هنا

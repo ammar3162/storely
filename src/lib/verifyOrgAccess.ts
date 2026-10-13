@@ -29,9 +29,10 @@ export async function getCurrentProfile() {
   const { data: { user } } = token ? await supabase.auth.getUser(token) : await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: profile } = await supabase
+  // permissions (صلاحيات مدير الفرع) مو بأنواع قاعدة البيانات المولّدة — نقرأها بدون أنواع
+  const { data: profile } = await (supabase as any)
     .from('profiles')
-    .select('org_id, role, branch_id, status')
+    .select('org_id, role, branch_id, status, permissions')
     .eq('id', user.id)
     .single()
 
@@ -42,6 +43,7 @@ export async function getCurrentProfile() {
     orgId: (profile?.org_id as string | null) ?? null,
     role: ((profile as any)?.role as string | null) ?? null,
     branchId: ((profile as any)?.branch_id as string | null) ?? null,
+    permissions: ((profile as any)?.permissions as Record<string, unknown> | null) ?? null,
   }
 }
 
@@ -72,6 +74,7 @@ export async function verifyOrgAccess(requestedOrgId: string) {
     authorized: true, userId: profile.userId, orgId: profile.orgId,
     role: profile.role,
     branchId: profile.branchId,
+    permissions: profile.permissions,
   }
 }
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { cleanManagerPerms } from '@/lib/managerPerms'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
     id: newUser.user.id,
     org_id, branch_id,
     full_name, role: 'manager',
-    permissions: permissions || {},
+    permissions: cleanManagerPerms(permissions),
     status: 'active',
   })
   if (profileErr) {
@@ -73,8 +74,13 @@ export async function PATCH(req: Request) {
 
   const db = sb()
   const update: any = {}
-  if (branch_id !== undefined) update.branch_id = branch_id
-  if (permissions !== undefined) update.permissions = permissions
+  if (branch_id !== undefined) {
+    // الفرع لازم يكون من نفس المنشأة
+    const { data: br } = await db.from('branches').select('id').eq('id', branch_id).eq('org_id', org_id).maybeSingle()
+    if (!br) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
+    update.branch_id = branch_id
+  }
+  if (permissions !== undefined) update.permissions = cleanManagerPerms(permissions)
   const { error } = await db.from('profiles').update(update).eq('id', id).eq('org_id', org_id).eq('role', 'manager')
   if (error) return NextResponse.json({ error: 'حدث خطأ أثناء التعديل' }, { status: 500 })
   return NextResponse.json({ success: true })

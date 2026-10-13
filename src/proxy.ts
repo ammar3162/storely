@@ -1,3 +1,4 @@
+import { managerPageAllowed } from '@/lib/managerPerms'
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
@@ -104,13 +105,17 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user && !isPublic) {
-    const { data: profile } = await supabase
-      .from('profiles').select('status,subscription_type,subscription_ends_at,role').eq('id', user.id).single()
+    const { data: profile } = await (supabase as any)
+      .from('profiles').select('status,subscription_type,subscription_ends_at,role,permissions').eq('id', user.id).single()
     if (!profile && !isSupplierDashboard) return NextResponse.redirect(new URL('/login?mode=complete', request.url))
     if (profile?.status === 'pending') return NextResponse.redirect(new URL('/pending', request.url))
     if (profile?.status === 'suspended' || profile?.status === 'deleted') {
       await supabase.auth.signOut()
       return NextResponse.redirect(new URL('/login?reason='+(profile.status === 'suspended' ? 'suspended' : 'deleted'), request.url))
+    }
+    // مدير الفرع: صفحات المالك والصفحات اللي ما عنده صلاحيتها ترجعه للرئيسية (حتى لو كتب الرابط)
+    if (profile?.role === 'manager' && !managerPageAllowed(path, profile.permissions)) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
     }
     if (profile?.subscription_type === 'paid' && profile?.subscription_ends_at) {
       if (new Date(profile.subscription_ends_at).getTime() < Date.now()) {
