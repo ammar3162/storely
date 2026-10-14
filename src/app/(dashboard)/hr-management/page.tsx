@@ -394,7 +394,7 @@ export default function HRManagementPage() {
   )
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto'}}>
+    <div style={{fontFamily:font.family,direction:'rtl'}}>
       <div style={{marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap' as const}}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
           <div>

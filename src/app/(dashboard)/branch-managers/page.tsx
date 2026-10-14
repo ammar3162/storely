@@ -138,7 +138,7 @@ export default function BranchManagersPage() {
   const lbl: React.CSSProperties = { fontSize: 12, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 5 }
 
   return (
-    <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 1000, margin: '0 auto' }}>
+    <div style={{ fontFamily: font.family, direction: 'rtl' }}>
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ ...pageTitle }}><PageIcon />مديرو الفروع</h1>
         <p style={{ ...pageSub }}>كل مدير يدخل بإيميله وكلمة مروره، ويشوف فرعه بس — والصفحات اللي تحددها له فقط</p>

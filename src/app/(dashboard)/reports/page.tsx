@@ -1110,7 +1110,7 @@ function AttendanceDetail({ onBack }: { onBack:()=>void }) {
   )
 
   return (
-    <div style={{ fontFamily:font.family, direction:'rtl', maxWidth:1000, margin:'0 auto' }}>
+    <div style={{ fontFamily:font.family, direction:'rtl' }}>
       <button onClick={onBack} style={{ background:'none', border:'none', color:colors.primary, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', marginBottom:12, display:'flex', alignItems:'center', gap:4 }}>→ رجوع</button>
       <h1 style={pageTitle}><PageIcon/>تقرير الحضور والانصراف</h1>
       <p style={pageSub}>حضور الموظفين وتأخيرهم والأوفر تايم خلال الفترة — اختر موظف عشان تشوف سجله يوم بيوم</p>
@@ -1594,7 +1594,7 @@ export default function ReportsPage() {
   }
 
   if (view==='inventory') return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
+    <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} .spin-icon{animation:spin .8s linear infinite}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير الجرد اليومي</h1>
       <InventoryDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
@@ -1602,7 +1602,7 @@ export default function ReportsPage() {
   )
 
   if (view==='dispense') return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
+    <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير الصرف</h1>
       <DispenseDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
@@ -1610,7 +1610,7 @@ export default function ReportsPage() {
   )
 
   if (view==='purchase') return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
+    <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير المشتريات</h1>
       <PurchaseDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
@@ -1618,13 +1618,13 @@ export default function ReportsPage() {
   )
 
   if (view==='staffMonthly') return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
+    <div style={{fontFamily:font.family,direction:'rtl'}}>
       <StaffMonthlyDetail onBack={()=>setView('home')}/>
     </div>
   )
 
   if (view==='attendance') return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
+    <div style={{fontFamily:font.family,direction:'rtl'}}>
       <AttendanceDetail onBack={()=>setView('home')}/>
     </div>
   )
@@ -1632,7 +1632,7 @@ export default function ReportsPage() {
   if (view==='cashier' && orgPlan==='basic') { setView('home'); return null }
 
   if (view==='cashier') return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
+    <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>إقفال الكاشير اليومي</h1>
       <CashierClosingDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
@@ -1640,7 +1640,7 @@ export default function ReportsPage() {
   )
 
   if (view==='waste') return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
+    <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير الهدر</h1>
       <WasteDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
@@ -1648,7 +1648,7 @@ export default function ReportsPage() {
   )
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:680,margin:'0 auto',opacity:visible?1:0,transition:'opacity .4s ease'}}>
+    <div style={{fontFamily:font.family,direction:'rtl',opacity:visible?1:0,transition:'opacity .4s ease'}}>
       <style>{`
         @keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.6s ease-in-out infinite}
         @keyframes spin{to{transform:rotate(360deg)}}

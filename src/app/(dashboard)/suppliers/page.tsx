@@ -550,7 +550,7 @@ export default function SuppliersPage() {
   const unlinkedProducts = products.filter((p:any)=>!p.supplier_id)
 
   return (
-    <div style={{ fontFamily:font.family, direction:'rtl', maxWidth:900, margin:'0 auto' }}>
+    <div style={{ fontFamily:font.family, direction:'rtl' }}>
       <style>{`@media(max-width:640px){.add-grid{grid-template-columns:1fr!important}}`}</style>
       
       <div style={{ marginBottom:22, display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>

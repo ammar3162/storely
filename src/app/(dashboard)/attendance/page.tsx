@@ -320,7 +320,7 @@ export default function AttendancePage() {
     s.startsWith('حاضر') ? colors.primaryLight : s.startsWith('انصرف') ? colors.infoLight : s.startsWith('إجازة') ? '#eff6ff' : colors.bg
 
   return (
-    <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ fontFamily: font.family, direction: 'rtl' }}>
       <div style={{ marginBottom: 16 }}>
         <h1 style={pageTitle}><PageIcon/>الحضور والانصراف</h1>
         <p style={pageSub}>سجل حضور الفريق اليومي — يتحقق تلقائياً من موقعهم الجغرافي ويحسب التأخير</p>

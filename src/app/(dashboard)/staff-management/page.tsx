@@ -346,7 +346,7 @@ export default function StaffManagementPage() {
   const inactiveCount = visibleStaff.filter(s=>!s.is_active).length
 
   if(loading) return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto'}}>
+    <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.6s ease-in-out infinite}`}</style>
       <div style={{height:20,width:120,background:colors.border2,borderRadius:6,marginBottom:8}} className="sk"/>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:20}}>
@@ -359,7 +359,7 @@ export default function StaffManagementPage() {
   )
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto',opacity:visible?1:0,transition:'opacity .4s ease'}}>
+    <div style={{fontFamily:font.family,direction:'rtl',opacity:visible?1:0,transition:'opacity .4s ease'}}>
       <style>{`
         @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
         @keyframes modalIn{from{opacity:0;transform:scale(.96) translateY(10px)}to{opacity:1;transform:none}}
