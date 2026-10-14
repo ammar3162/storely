@@ -75,7 +75,7 @@ export default function BranchComparePage() {
   const barColors = ['#029FA2', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#0891b2']
 
   if (loading) return (
-    <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 800, margin: '0 auto' }}>
+    <div style={{ fontFamily: font.family, direction: 'rtl' }}>
       <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.4}}.sk{animation:sk 1.4s infinite}`}</style>
       <div style={{ ...card, padding: 40 }}>
         <div className="sk" style={{ height: 16, width: '40%', background: colors.border, borderRadius: 6, marginBottom: 20 }} />
@@ -85,7 +85,7 @@ export default function BranchComparePage() {
   )
 
   return (
-    <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 800, margin: '0 auto' }}>
+    <div style={{ fontFamily: font.family, direction: 'rtl' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap' as const, gap: 12 }}>
         <div>
           <h1 style={{ ...pageTitle }}><PageIcon/>مقارنة الفروع</h1>

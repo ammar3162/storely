@@ -118,7 +118,7 @@ export default function AccountantHub({ orgId }: { orgId: string }) {
         })}
       </div>
 
-      <div style={{ maxWidth: 920 }}>
+      <div>
         {(sub === 'people' || sub === 'reports') && <VatStatusLine orgId={orgId} />}
         {sub === null && <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: colors.text4, fontSize: 13, padding: 20 }}><Clock size={14} /> جاري التحميل...</div>}
         {sub === 'people' && <AccountantPortalAccess orgId={orgId} onChange={loadSummary} />}

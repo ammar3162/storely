@@ -204,7 +204,7 @@ export default function TransferStockPage() {
   const cartTotalQty = cart.reduce((s,c)=>s+c.qty,0)
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:960,margin:'0 auto'}}>
+    <div style={{fontFamily:font.family,direction:'rtl'}}>
       <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:20}}>
         <div>
           <h1 style={{...pageTitle,marginBottom:1}}><PageIcon/>نقل مخزون بين الفروع</h1>

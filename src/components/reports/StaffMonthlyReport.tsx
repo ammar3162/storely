@@ -141,7 +141,7 @@ export default function StaffMonthlyDetail({ onBack }: { onBack: () => void }) {
 
   const t = all?.totals
   return (
-    <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 1000, margin: '0 auto' }}>
+    <div style={{ fontFamily: font.family, direction: 'rtl' }}>
       <button onClick={onBack} style={{ background: 'none', border: 'none', color: colors.primary, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 4 }}>→ رجوع</button>
       <h1 style={pageTitle}><PageIcon />تقرير الموظف الشهري</h1>
       <p style={pageSub}>الراتب والأوفر تايم وغرامات التأخير والخصومات والسلف — بنفس أرقام كشف راتب الموظف</p>

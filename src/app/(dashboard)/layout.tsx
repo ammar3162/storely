@@ -181,9 +181,14 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }
 
   const load = useCallback(async()=>{
+    // كل طلبات بداية الصفحة تنطلق مع بعض (كانت ورا بعض = ثواني انتظار قبل ما تفتح أي صفحة)
     const meRes = getMeResult()
+    const msP = fetch('/api/platform-settings').then(r=>r.json())
+    const subP = fetch('/api/check-subscription').then(r=>r.json())
+    const tvP = fetch('/api/terms-version').then(r=>r.json())
+    msP.catch(()=>{}); subP.catch(()=>{}); tvP.catch(()=>{})
     try {
-      const ms = await fetch('/api/platform-settings').then(r=>r.json())
+      const ms = await msP
       if (ms.maintenanceMode) { setMaintenanceMsg(ms.maintenanceMessage); setShowMaintenance(true); return }
     } catch {}
     const { me, reason } = await meRes
@@ -195,7 +200,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     // فحص انتهاء الاشتراك -- بوقت السيرفر عبر api/check-subscription، مو وقت جهاز العميل
     // (وقت المتصفح لو مضبوط غلط كان يقفل حسابات عملاء اشتراكهم فعلياً ساري)
     try {
-      const subRes = await fetch('/api/check-subscription').then(r=>r.json())
+      const subRes = await subP
       if (subRes?.hasSubscription) {
         if (subRes.expired) {
           router.replace('/expired'); return
@@ -240,7 +245,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     }
     if((p as any).role==='owner'){
       try {
-        const tv = await fetch('/api/terms-version').then(r=>r.json())
+        const tv = await tvP
         if(!(p as any).terms_version_accepted || (p as any).terms_version_accepted !== tv.version){ setShowTermsConsent(true) }
       } catch {}
     }

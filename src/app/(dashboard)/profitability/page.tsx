@@ -239,7 +239,7 @@ export default function ProfitabilityPage() {
   const netColor = data && data.netProfit>=0 ? '#029FA2' : '#dc2626'
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
+    <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} .pf-scroll::-webkit-scrollbar{height:0}`}</style>
       <div style={{marginBottom:16}}>
         <h1 style={{...pageTitle}}><PageIcon/>الربحية الشهرية</h1>

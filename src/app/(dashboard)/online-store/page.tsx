@@ -386,7 +386,7 @@ export default function OnlineStorePage() {
   }
 
   return (
-    <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ fontFamily: font.family, direction: 'rtl' }}>
       <div style={{ marginBottom: 20 }}>
         <h1 style={pageTitle}><PageIcon/>المنيو الإلكتروني</h1>
         <p style={pageSub}>ابنِ صفحة عامة تعرض منتجاتك للعملاء — بالسعر والوصف والصورة</p>

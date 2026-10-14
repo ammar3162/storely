@@ -97,14 +97,14 @@ export default function NotificationsPage() {
     : notifications.filter(n => n.type === filter)
 
   if (loading) return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:800,margin:'0 auto'}}>
+    <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.4}}.sk{animation:sk 1.4s infinite}`}</style>
       {[1,2,3].map(i=>(<div key={i} style={{...card,padding:16,marginBottom:10,display:'flex',gap:12}}><div className="sk" style={{width:40,height:40,borderRadius:radius.md,background:colors.border,flexShrink:0}}/><div style={{flex:1}}><div className="sk" style={{height:12,width:'60%',background:colors.border,borderRadius:6,marginBottom:8}}/><div className="sk" style={{height:10,width:'80%',background:colors.border,borderRadius:6}}/></div></div>))}
     </div>
   )
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:800,margin:'0 auto'}}>
+    <div style={{fontFamily:font.family,direction:'rtl'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20,flexWrap:'wrap' as const,gap:12}}>
         <div>
           <h1 style={{...pageTitle}}><PageIcon/>الإشعارات</h1>

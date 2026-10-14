@@ -217,7 +217,7 @@ export default function BranchesPage() {
   if (loading) return <div style={{padding:40,textAlign:'center',color:colors.text3,fontFamily:font.family}}>جاري التحميل...</div>
 
   return (
-    <div style={{padding:'24px',maxWidth:900,margin:'0 auto',fontFamily:font.family,direction:'rtl'}}>
+    <div style={{padding:'24px',fontFamily:font.family,direction:'rtl'}}>
       <h1 style={pageTitle}><PageIcon/>إدارة الفروع</h1>
       <p style={pageSub}>كل فرع له مخزونه المستقل. باقتك مع الإضافات تسمح بـ <b style={{color:colors.primary}}>{maxBranches} فرع</b>.</p>
 

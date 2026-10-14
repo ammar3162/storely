@@ -332,7 +332,7 @@ export default function SettingsPage() {
   const bill = billLines(pk, billingCycle, billAddons)
 
   if(loading) return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:640,margin:'0 auto'}}>
+    <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.6s ease-in-out infinite}`}</style>
       <div className="sk" style={{height:20,width:120,background:colors.border2,borderRadius:6,marginBottom:8}}/>
       <div className="sk" style={{height:12,width:200,background:colors.border,borderRadius:6,marginBottom:24}}/>
@@ -342,7 +342,7 @@ export default function SettingsPage() {
   )
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1280,margin:'0 auto',opacity:visible?1:0,transition:'opacity .4s ease',position:'relative'}}>
+    <div style={{fontFamily:font.family,direction:'rtl',opacity:visible?1:0,transition:'opacity .4s ease',position:'relative'}}>
       <style>{`
         @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
         .su{animation:slideUp .4s ease both}
