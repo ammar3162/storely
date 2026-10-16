@@ -1,4 +1,5 @@
 'use client'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import { useState, useEffect, Suspense } from 'react'
 import NumberInput from '@/components/NumberInput'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -103,6 +104,8 @@ function StaffPageInner() {
   const router = useRouter()
 
   // Permissions polling
+  // تحديث فوري: لما تتغير البيانات من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(session?.org_id, ['products','stock_movements'], ()=>{ if(session){ refreshProductsQuietly(session); loadStats(session) } })
   useEffect(()=>{
     async function checkPermissions() {
       const saved = localStorage.getItem('staff_session')
@@ -147,7 +150,7 @@ function StaffPageInner() {
       if(!saved) return
       const s = JSON.parse(saved) as StaffSession
       refreshProductsQuietly(s)
-    }, 30000)
+    }, 90000)   // احتياط — المخزون يتحدث فوراً عبر useLiveRefresh
     return ()=>clearInterval(productsInterval)
   },[])
 

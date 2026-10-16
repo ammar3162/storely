@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import PageIcon from '@/components/PageIcon'
 import NumberInput from '@/components/NumberInput'
 import { useState, useEffect, useRef } from 'react'
@@ -37,6 +38,8 @@ export default function DispensePage() {
   const orgRef  = useRef<string|null>(null)
   const profRef = useRef<string|null>(null)
 
+  // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null, ['products','stock_movements'], ()=>{ const o=typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null; if(o){ loadProducts(o); loadHistory(o) } })
   useEffect(()=>{
     let a=0
     const c=setInterval(()=>{

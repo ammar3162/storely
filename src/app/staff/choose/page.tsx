@@ -1,4 +1,5 @@
 'use client'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import { canCloseCashier } from '@/lib/staffRoles'
 import { useEffect, useState } from 'react'
 import NumberInput from '@/components/NumberInput'
@@ -88,6 +89,8 @@ export default function ChoosePage() {
   const [showPermRequestModal, setShowPermRequestModal] = useState(false)
   const [orgLogo, setOrgLogo] = useState('')
 
+  // تحديث فوري: لما تتغير البيانات من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(staffData?.org_id, ['staff_notifications','staff_tasks','staff_leave_requests','attendance_permission_requests','staff_payroll_adjustments','staff_attendance'], ()=>{ loadNotifications(); loadTaskCount(); const s=localStorage.getItem('staff_session'); if(s) loadToday(JSON.parse(s)) })
   useEffect(()=>{
     const s = localStorage.getItem('staff_session')
     if(!s) { router.replace('/staff'); return }
@@ -120,9 +123,9 @@ export default function ChoosePage() {
       })
     const savedLang = localStorage.getItem('staff_lang')
     if (savedLang === 'en') setLang('en')
-    const interval = setInterval(loadNotifications, 5000) // مسرّع لـ5 ثوانٍ (شبه لحظي) بدل 30 — نظام الموظف يستخدم توكن مخصص مو حساب Supabase عادي، فما نقدر نستخدم Realtime مباشر بأمان هنا
+    const interval = setInterval(loadNotifications, 30000) // احتياط — الإشعارات توصل فوراً عبر useLiveRefresh
     // تحديث دوري لحالة الحضور وطلب الاستئذان -- بدونه الموظف يفضل يشوف "قيد الانتظار" حتى لو انوافق عليه فعلياً، لين يسوي رفرش يدوي
-    const attendanceInterval = setInterval(()=>loadToday(parsed), 15000)
+    const attendanceInterval = setInterval(()=>loadToday(parsed), 60000)
     return () => { clearInterval(interval); clearInterval(attendanceInterval) }
   },[])
 

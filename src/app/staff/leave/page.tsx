@@ -1,4 +1,5 @@
 'use client'
+import { useLiveRefresh, liveStaffOrg } from '@/lib/useLiveRefresh'
 import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -26,6 +27,8 @@ export default function StaffLeavePage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
+  // تحديث فوري: لما تتغير البيانات من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(liveStaffOrg(), ['staff_leave_requests','attendance_permission_requests'], ()=>loadRequests())
   useEffect(()=>{
     const saved = localStorage.getItem('staff_session')
     if(!saved){ router.push('/staff'); return }

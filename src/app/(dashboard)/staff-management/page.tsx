@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
@@ -104,6 +105,8 @@ export default function StaffManagementPage() {
   const [savingHours, setSavingHours] = useState(false)
 
 
+  // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(orgId, ['staff_members'], ()=>{ if(orgId) loadStaff(orgId) })
   useEffect(() => { init() }, [])
 
   async function init() {

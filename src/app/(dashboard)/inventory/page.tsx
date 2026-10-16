@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import PageIcon from '@/components/PageIcon'
 import { catsFor, unitsFor } from '@/lib/businessTypes'
 import SelectOrOther from '@/components/SelectOrOther'
@@ -112,12 +113,14 @@ export default function InventoryPage() {
     load()
   }
 
+  // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null, ['products','stock_movements'], ()=>load(true))
   useEffect(()=>{ load() },[])
   useVisibilityRefresh(load, 20*60*1000)
 
   // تحديث صامت كل 20 ثانية — بدون شاشة تحميل، عشان يبان صرف موظف من فرع تاني بدون تحديث يدوي
   useEffect(() => {
-    const interval = setInterval(() => load(true), 20000)
+    const interval = setInterval(() => load(true), 90000)   // احتياط — التحديث الفوري يجي من useLiveRefresh
     return () => clearInterval(interval)
   }, [])
 

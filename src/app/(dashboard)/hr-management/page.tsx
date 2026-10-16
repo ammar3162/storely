@@ -1,4 +1,5 @@
 'use client'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import PageIcon from '@/components/PageIcon'
 import NumberInput from '@/components/NumberInput'
 import { useState, useEffect } from 'react'
@@ -57,6 +58,8 @@ export default function HRManagementPage() {
   const [showReport, setShowReport] = useState(false)
 
 
+  // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(orgId, ['staff_payroll_adjustments','staff_leave_requests','staff_tasks','attendance_permission_requests'], ()=>{ if(expandedId){ loadAdjustments(expandedId); loadTasks(expandedId); loadLeave(expandedId); loadExcuse(expandedId) } })
   useEffect(()=>{ init() },[])
   useEffect(()=>{ if (showReport && orgId) loadReport() },[showReport, reportMonth, orgId])
 

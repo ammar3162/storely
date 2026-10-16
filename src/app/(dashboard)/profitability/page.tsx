@@ -1,4 +1,5 @@
 'use client'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import PageIcon from '@/components/PageIcon'
 import NumberInput from '@/components/NumberInput'
 import { useState, useEffect } from 'react'
@@ -60,6 +61,8 @@ export default function ProfitabilityPage() {
   const [newDeliveryAmount, setNewDeliveryAmount] = useState('')
   const [savingDelivery, setSavingDelivery] = useState(false)
 
+  // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null, ['purchases','cashier_closings','fixed_expenses','monthly_fixed_expenses','delivery_income'], ()=>loadAll())
   useEffect(()=>{ init() },[])
   useEffect(()=>{ if(orgId) { loadAll(); loadClosedMonths() } },[orgId, month])
 

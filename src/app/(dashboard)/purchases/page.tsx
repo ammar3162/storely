@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import PageIcon from '@/components/PageIcon'
 import NumberInput from '@/components/NumberInput'
 import TaxInvoiceFields, { type ZatcaState } from '@/components/TaxInvoiceFields'
@@ -93,6 +94,8 @@ export default function PurchasesPage() {
   }
   const sb = createClient()
 
+  // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(orgId, ['purchases','products','suppliers'], ()=>{ if(orgId){ loadHistory(orgId); loadPayables(orgId); loadProducts(orgId) } })
   useEffect(()=>{
     let a=0;const c=setInterval(()=>{a++;const b=sessionStorage.getItem('s_branch_id'),o=sessionStorage.getItem('s_org_id');if((b&&o)||a>20){clearInterval(c);init()}},100);return()=>clearInterval(c)
   },[])
