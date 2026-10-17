@@ -1,3 +1,4 @@
+import { reportAiFailure, aiFailureKind } from '@/lib/aiAlert'
 import { NextResponse } from 'next/server'
 import { normalizeVat, isValidVat, normalizeInvoiceNumber } from '@/lib/taxInvoice'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
@@ -88,6 +89,8 @@ export async function POST(req: Request) {
     if (!res.ok) {
       const detail = await res.text().catch(() => '')
       console.error('OCR_FAILED', res.status, detail.slice(0, 300))
+      await reportAiFailure(res.status, detail, 'قراءة الفواتير')
+      if (aiFailureKind(res.status, detail)) return NextResponse.json({ error: 'القراءة التلقائية متوقفة مؤقتاً — عبّي بيانات الفاتورة يدوي', unavailable: true }, { status: 503 })
       return NextResponse.json({ error: res.status === 529 || res.status === 429 ? 'خدمة القراءة مشغولة — جرّب بعد دقيقة' : 'تعذر قراءة الفاتورة — جرّب صورة أوضح أو عبّي يدوي' }, { status: 502 })
     }
 

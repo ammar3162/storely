@@ -1,3 +1,4 @@
+import { reportAiFailure } from '@/lib/aiAlert'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
@@ -67,6 +68,7 @@ ${itemsToTranslate.map((t: any) => `- id: ${t.id}\n  title: ${t.title}\n  descri
     })
 
     let newTranslations: Record<string, { title: string; description: string }> = {}
+    if (!res.ok) await reportAiFailure(res.status, await res.text().catch(() => ''), 'ترجمة المهام')
     if (res.ok) {
       const data = await res.json()
       const text = data.content?.[0]?.text || '{}'

@@ -214,8 +214,13 @@ export default function PurchasesPage() {
               setOcrItems(d.items)   // الكمية والسعر و«ينضاف إلى» تتعبى بمكوّن الأصناف
             }
             toast('✨ تم استخراج بيانات الفاتورة تلقائياً')
+          } else if (!zatcaRef.current) {
+            // الصورة انرفعت — بس القراءة فشلت: نقول له يعبّي يدوي بدل ما نسكت
+            toast(ocrData.error || 'ما قدرنا نقرأ الفاتورة تلقائياً — عبّي البيانات يدوي', 'warning')
           }
-        } catch {}
+        } catch {
+          if (!zatcaRef.current) toast('ما قدرنا نقرأ الفاتورة تلقائياً — عبّي البيانات يدوي', 'warning')
+        }
         setOcrLoading(false)
       }
     } catch { toast('فشل رفع الصورة','error') }
