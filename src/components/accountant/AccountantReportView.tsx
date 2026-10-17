@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import { Download, FileSpreadsheet } from 'lucide-react'
 import { colors, radius } from '@/lib/ds'
 import { invoicesLabel, staffLabel, taxInvoices, vatReturn } from '@/lib/accountantExport'
@@ -41,8 +42,13 @@ function Table({ head, rows, moneyCols = [] }: { head: string[]; rows: (string |
   )
 }
 
-export default function AccountantReportView({ data, downloadHref, kicker = 'تقرير المحاسب', onRequest, hideHeader }: { data: any; downloadHref: string; kicker?: string; onRequest?: (inv: any) => void; hideHeader?: boolean }) {
+export default function AccountantReportView({ data, downloadHref, kicker = 'تقرير المحاسب', onRequest, onRequestMissing, hideHeader }: { data: any; downloadHref: string; kicker?: string; onRequest?: (inv: any) => void; onRequestMissing?: (invs: any[]) => void; hideHeader?: boolean }) {
   const r = data.report, t = data.totals
+  // «اعرض الناقصة»: من تنبيه الإقرار ينزل لجدول الفواتير الضريبية ويعرض الناقصة بس
+  const [onlyMissing, setOnlyMissing] = useState(false)
+  const allTax = taxInvoices(r.purchases)
+  const missing = allTax.filter(i => !i.complete)
+  const showMissing = () => { setOnlyMissing(true); requestAnimationFrame(() => document.getElementById('rv-tax')?.scrollIntoView({ behavior: 'smooth', block: 'start' })) }
   const has = (s: string) => r.sections.includes(s)
   const multi = !r.branchName
   const diffs = r.closings.filter((c: any) => c.difference !== 0)
@@ -68,17 +74,22 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
         rows={r.closings.map((c: any) => [c.date, ...(multi ? [c.branch] : []), c.staff || '—', c.sales, c.network, c.cash])} />
     </Card>}
 
-    {(has('purchases') || has('vat')) && r.vatRegistered && <Card wide title={`الفواتير الضريبية (${invoicesLabel(t.taxInvoices)})`}>
+    {(has('purchases') || has('vat')) && r.vatRegistered && <div id="rv-tax" className="rv-wide" style={{ scrollMarginTop: 16 }}><Card wide title={`الفواتير الضريبية (${invoicesLabel(t.taxInvoices)})`}>
       {t.taxInvoices > 0 && <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: t.taxInvoices === t.taxComplete ? '#059669' : '#b45309' }}>
         {t.taxInvoices === t.taxComplete ? '✓ كل الفواتير مكتملة البيانات' : `${t.taxInvoices - t.taxComplete} ناقصة — تحتاج الرقم الضريبي أو رقم الفاتورة قبل الإقفال`}
         {t.taxVerified > 0 && <span style={{ color: '#059669' }}> · {t.taxVerified} موثقة من باركود الهيئة</span>}
       </div>}
       {t.taxMismatch > 0 && <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: '#dc2626' }}>⚠️ {t.taxMismatch} فاتورة مبلغها المسجّل أكبر من الأصلية — راجعها</div>}
+      {onlyMissing && <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontSize: 12.5, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '8px 12px', marginTop: 6 }}>
+        تعرض الفواتير الناقصة بس ({missing.length})
+        {onRequestMissing && missing.length > 0 && <button onClick={() => onRequestMissing(missing)} style={btn(true)}>اطلب من المنشأة تكمّلها</button>}
+        <button onClick={() => setOnlyMissing(false)} style={btn(false)}>اعرض الكل</button>
+      </div>}
       <Table head={['التاريخ', 'رقم الفاتورة', 'المورد', 'الرقم الضريبي', 'الضريبة', 'الإجمالي', 'الحالة', 'الفاتورة', ...(onRequest ? [''] : [])]} moneyCols={[4, 5]}
-        rows={taxInvoices(r.purchases).map(i => [i.date, i.invoiceNumber || '—', i.supplier || '—', i.supplierVat || '—', i.vat, i.total, (i.mismatch ? '⚠️ أكبر من الأصلية · ' : '') + (!i.complete ? `ناقص: ${i.missing.filter(m => m !== 'صورة الفاتورة').join('، ')}` : i.verified ? '✓ موثقة' : '✓ مكتملة'),
+        rows={(onlyMissing ? missing : allTax).map(i => [i.date, i.invoiceNumber || '—', i.supplier || '—', i.supplierVat || '—', i.vat, i.total, (i.mismatch ? '⚠️ أكبر من الأصلية · ' : '') + (!i.complete ? `ناقص: ${i.missing.filter(m => m !== 'صورة الفاتورة').join('، ')}` : i.verified ? '✓ موثقة' : '✓ مكتملة'),
           i.invoiceUrl && /^https:\/\//.test(i.invoiceUrl) ? <a href={i.invoiceUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>عرض</a> : '—',
           ...(onRequest ? [<button key="rq" onClick={() => onRequest(i)} style={{ fontSize: 12, fontWeight: 800, color: colors.primary, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, borderRadius: 8, padding: '4px 9px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>اطلب</button>] : [])])} />
-    </Card>}
+    </Card></div>}
 
     {has('purchases') && <Card wide title={`المشتريات (${invoicesLabel(t.invoices)})`}>
       <Lines rows={[['قبل الضريبة', t.purNet], ['الضريبة', t.purVat], ['الإجمالي', t.purTotal, true], ['منها آجلة', t.purUnpaid]]} />
@@ -87,7 +98,7 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
     </Card>}
 
     {has('vat') && <Card wide title="الإقرار الضريبي — ضريبة القيمة المضافة">
-      {r.vatRegistered ? <VatReturnView r={r} /> : <div style={{ fontSize: 13, color: colors.text3 }}>المنشأة غير مسجلة في ضريبة القيمة المضافة.</div>}
+      {r.vatRegistered ? <VatReturnView r={r} onShowMissing={showMissing} onRequestMissing={onRequestMissing ? () => onRequestMissing(missing) : undefined} /> : <div style={{ fontSize: 13, color: colors.text3 }}>المنشأة غير مسجلة في ضريبة القيمة المضافة.</div>}
     </Card>}
 
     {has('payables') && <Card title="الموردين الآجلين">
@@ -124,7 +135,7 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
 }
 
 // نفس خانات نموذج الإقرار في بوابة الهيئة — المحاسب ينقل الأرقام مباشرة
-function VatReturnView({ r }: { r: any }) {
+function VatReturnView({ r, onShowMissing, onRequestMissing }: { r: any; onShowMissing?: () => void; onRequestMissing?: () => void }) {
   const v = vatReturn(r)
   const cell = (x: number | null) => x == null ? <span style={{ color: colors.text4 }}>—</span> : fmt(x)
   const due = v.netDue
@@ -148,10 +159,22 @@ function VatReturnView({ r }: { r: any }) {
     <div style={{ display: 'grid', gap: 6, marginTop: 12, fontSize: 12, color: colors.text3, lineHeight: 1.7 }}>
       <div>«—» يعني النظام ما يسجّل هذا البند — عبّه من سجلاتك لو موجود.</div>
       {v.hidden.length > 0 && <div>الخانات {v.hidden.join(' و')} ما تخص المطاعم والكوفيهات — مخفية، وتبقى فاضية في نموذج الهيئة.</div>}
-      {v.review.count > 0 && <div style={{ color: colors.danger, fontWeight: 700 }}>⚠️ {invoicesLabel(v.review.count)} فيها ضريبة <span dir="ltr">{fmt(v.review.vat)}</span> ما دخلت خانة ٧ لأنها ناقصة الرقم الضريبي أو رقم الفاتورة — شوف «الفواتير الضريبية».</div>}
+      {v.review.count > 0 && <div style={{ color: colors.danger, fontWeight: 700, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '9px 12px' }}>
+        ⚠️ {invoicesLabel(v.review.count)} فيها ضريبة <span dir="ltr">{fmt(v.review.vat)}</span> ما دخلت خانة ٧ لأنها ناقصة الرقم الضريبي أو رقم الفاتورة.
+        {(onShowMissing || onRequestMissing) && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+          {onShowMissing && <button onClick={onShowMissing} style={btn(false)}>اعرض الفواتير الناقصة</button>}
+          {onRequestMissing && <button onClick={onRequestMissing} style={btn(true)}>اطلب من المنشأة تكمّلها</button>}
+        </div>}
+      </div>}
       {v.nonVat.count > 0 && <div>مشتريات بدون ضريبة: {invoicesLabel(v.nonVat.count)} بـ <span dir="ltr">{fmt(v.nonVat.total)}</span> — حدد هل تدخل خانة ١٠ أو ١١ أو خارج النطاق.</div>}
       {v.drawerExpenses > 0 && <div>مصروفات من درج الكاشير <span dir="ltr">{fmt(v.drawerExpenses)}</span> — بدون فواتير ضريبية، ما دخلت الإقرار.</div>}
       <div style={{ color: colors.text4 }}>المبيعات من إقفالات الكاشير (شاملة ضريبة ١٥٪) والمشتريات من الفواتير المسجلة — راجعها قبل التقديم.</div>
     </div>
   </>
+}
+
+// زر صغير لتنبيهات التقرير — أساسي (تعبئة) أو ثانوي (حد)
+function btn(primary: boolean): React.CSSProperties {
+  return { fontSize: 12.5, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', borderRadius: 9, padding: '6px 12px', whiteSpace: 'nowrap',
+    border: `1px solid ${primary ? colors.primary : colors.border}`, background: primary ? colors.primary : '#fff', color: primary ? '#fff' : colors.primary }
 }
