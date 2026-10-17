@@ -12,4 +12,7 @@ create policy "authenticated_upload_invoices_bucket" on storage.objects for inse
 create policy "authenticated_upload_shop_images" on storage.objects for insert to authenticated with check (bucket_id = 'shop-product-images');
 create policy "public_read_shop_images" on storage.objects for select to public using (bucket_id = 'shop-product-images');
 create policy "public_read_supplier_items" on storage.objects for select to public using (bucket_id = 'supplier-items');
+-- كانت موجودة بالإنتاج فقط
+create policy "allow read" on storage.objects for select to public using (bucket_id = 'invoices');
+create policy "allow upload" on storage.objects for insert to public with check (bucket_id = 'invoices');
 commit;

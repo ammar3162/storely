@@ -14,6 +14,9 @@ drop policy if exists "authenticated_upload_invoices_bucket" on storage.objects;
 drop policy if exists "authenticated_upload_shop_images" on storage.objects;
 drop policy if exists "public_read_shop_images" on storage.objects;
 drop policy if exists "public_read_supplier_items" on storage.objects;
+-- موجودة بالإنتاج فقط: رفع وقراءة الفواتير لأي زائر (حتى بدون دخول)
+drop policy if exists "allow read" on storage.objects;
+drop policy if exists "allow upload" on storage.objects;
 
 -- الفواتير والشعارات: مجلد المنشأة بس
 create policy "org_folder_invoices_insert" on storage.objects for insert to authenticated

@@ -78,10 +78,15 @@ create policy "org members can manage recipe items" on public."recipe_items" as 
    FROM (recipes r
      JOIN profiles pr ON ((pr.org_id = r.org_id)))
   WHERE ((r.id = recipe_items.recipe_id) AND (pr.id = auth.uid())))));
-create policy "org members can insert recipe sales log" on public."recipe_sales_log" as permissive for insert to public
+-- recipe_sales_log موجود بـ staging بس
+do $$ begin
+  if to_regclass('public.recipe_sales_log') is not null then
+    execute $p$create policy "org members can insert recipe sales log" on public."recipe_sales_log" as permissive for insert to public
   with check ((EXISTS ( SELECT 1
    FROM profiles pr
-  WHERE ((pr.org_id = recipe_sales_log.org_id) AND (pr.id = auth.uid())))));
+  WHERE ((pr.org_id = recipe_sales_log.org_id) AND (pr.id = auth.uid())))))$p$;
+  end if;
+end $$;
 create policy "org members can manage recipes" on public."recipes" as permissive for all to public
   using ((EXISTS ( SELECT 1
    FROM profiles pr
