@@ -1,4 +1,5 @@
 'use client'
+import { useLiveRefresh, liveStaffOrg } from '@/lib/useLiveRefresh'
 import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -49,6 +50,8 @@ export default function StaffTasksPage() {
   const [translating, setTranslating] = useState(false)
   const [taskTranslations, setTaskTranslations] = useState<Record<string,{title:string,description:string|null}>>({})
 
+  // تحديث فوري: لما تتغير البيانات من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(liveStaffOrg(), ['staff_tasks'], ()=>loadTasks())
   useEffect(()=>{
     const saved = localStorage.getItem('staff_session')
     if(!saved){ router.push('/staff'); return }

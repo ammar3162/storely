@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -177,6 +178,8 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
   const [exportingPdf, setExportingPdf] = useState(false)
+  // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null, ['stock_movements'], ()=>load())
   useEffect(()=>{ load() },[period,from,to])
   async function load() {
     setLoading(true)
@@ -334,6 +337,8 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
   const [exportingPdf, setExportingPdf] = useState(false)
+  // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null, ['stock_movements'], ()=>load())
   useEffect(()=>{ load() },[period,from,to])
   async function load() {
     setLoading(true)
@@ -507,6 +512,8 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
   const [loadingDeleted, setLoadingDeleted] = useState(false)
   const [restoringId, setRestoringId] = useState<string|null>(null)
   const sb = createClient()
+  // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null, ['purchases'], ()=>load())
   useEffect(()=>{ load() },[period,from,to])
 
   async function loadDeletedLog() {
@@ -797,6 +804,8 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
   const [filter, setFilter]     = useState<'all'|'low'|'out'>('all')
   const [exportingPdf, setExportingPdf] = useState(false)
 
+  // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null, ['products','stock_movements'], ()=>load())
   useEffect(()=>{ load() },[period,from,to])
 
   async function load() {
@@ -1235,6 +1244,8 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   const [curr, setCurr] = useState('ر.س')
   const [isOwner, setIsOwner] = useState(false)
   const [deciding, setDeciding] = useState<string|null>(null)
+  // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null, ['cashier_closings'], ()=>load())
   useEffect(()=>{
     getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setIsOwner(me?.role==='owner') })
   },[])
@@ -1559,6 +1570,8 @@ export default function ReportsPage() {
   const [cashierStats, setCS]     = useState({count:0,deficit:0,surplus:0})
   const [topMovements, setTopMovements] = useState<any[]>([])
 
+  // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null, ['stock_movements','purchases','cashier_closings','products'], ()=>loadStats())
   useEffect(()=>{ loadStats() },[period,from,to])
 
   async function loadStats() {

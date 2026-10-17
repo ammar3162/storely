@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import PageIcon from '@/components/PageIcon'
 import NumberInput from '@/components/NumberInput'
 import { useState, useEffect } from 'react'
@@ -55,6 +56,8 @@ export default function AttendancePage() {
   const [ot, setOt] = useState<{mode:'auto'|'fixed'|'off'; multiplier:string; fixedRate:string; minMinutes:string}|null>(null)
   const [savingOt, setSavingOt] = useState(false)
 
+  // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(orgId, ['staff_attendance','attendance_permission_requests','shifts','staff_members'], ()=>{ if(!orgId) return; if(periodMode==='day') load(orgId, date); else loadRange(orgId, rangeFrom, rangeTo) })
   useEffect(() => { init() }, [])
   useEffect(() => { if (orgId && periodMode === 'day') load(orgId, date) }, [date, periodMode, staffFilter])
   useEffect(() => { if (orgId && periodMode === 'range') loadRange(orgId, rangeFrom, rangeTo) }, [rangeFrom, rangeTo, periodMode, staffFilter])

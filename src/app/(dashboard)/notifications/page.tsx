@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
@@ -22,6 +23,8 @@ export default function NotificationsPage() {
   const [filter, setFilter]   = useState<'all'|'unread'|'warning'|'success'|'info'>('all')
   const [deciding, setDeciding] = useState<string|null>(null)
 
+  // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null, ['notifications','staff_leave_requests','attendance_permission_requests','staff_payroll_adjustments'], ()=>load())
   useEffect(() => { load() }, [])
 
   async function load() {

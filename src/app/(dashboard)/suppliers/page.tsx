@@ -1,4 +1,5 @@
 'use client'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import PageIcon from '@/components/PageIcon'
 import NumberInput from '@/components/NumberInput'
 import { useState, useEffect, useRef } from 'react'
@@ -488,6 +489,8 @@ export default function SuppliersPage() {
   const [supplierRatings, setSupplierRatings] = useState<Record<string,any>>({})
   const [failedRecentMap, setFailedRecentMap] = useState<Record<string,number>>({})
 
+  // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
+  useLiveRefresh(typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null, ['suppliers','supplier_orders','products'], ()=>{ const o=typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null; if(o){ loadSuppliers(o); loadProducts(o) } })
   useEffect(() => { init() }, [])
 
   async function init() {
