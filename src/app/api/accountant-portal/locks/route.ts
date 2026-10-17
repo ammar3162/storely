@@ -23,18 +23,18 @@ export async function GET(req: Request) {
       const me = await currentAccountant(db, req)
       if (!me) return NextResponse.json({ error: 'سجّل دخولك' }, { status: 401 })
       const months = closedMonths(6)
-      const { data: acc } = await db.from('accountant_access').select('org_id,expires_on,organizations(name,logo_url)').eq('accountant_id', me.id).eq('status', 'active')
+      const { data: acc } = await db.from('accountant_access').select('org_id,branch_id,expires_on,organizations(name,logo_url)').eq('accountant_id', me.id).eq('status', 'active')
       const orgs = ((acc || []) as any[]).filter(a => !accessExpired(a.expires_on))
       const { data: locks } = orgs.length ? await db.from('period_locks').select('org_id,month,locked_by_name,locked_at').in('org_id', orgs.map(o => o.org_id)).in('month', months) : { data: [] }
       return NextResponse.json({ success: true, months: months.map(m => ({ month: m, label: monthName(m) })),
-        orgs: orgs.map(o => ({ org_id: o.org_id, name: o.organizations?.name || '—', logo_url: o.organizations?.logo_url || null,
+        orgs: orgs.map(o => ({ org_id: o.org_id, name: o.organizations?.name || '—', logo_url: o.organizations?.logo_url || null, can_lock: !o.branch_id,
           locked: Object.fromEntries(((locks || []) as any[]).filter(l => l.org_id === o.org_id).map(l => [l.month, { by: l.locked_by_name, at: l.locked_at }])) })) })
     }
     const g = await guard(req, searchParams.get('org_id')); if (g.error) return g.error
     const months = closedMonths(12)
     const { data } = await g.db.from('period_locks').select('month,locked_by_name,locked_at').eq('org_id', g.access.org_id).in('month', months)
     const map = new Map(((data || []) as any[]).map(l => [l.month, l]))
-    return NextResponse.json({ success: true, months: months.map(m => ({ month: m, label: monthName(m), locked: map.has(m), locked_by_name: map.get(m)?.locked_by_name || null, locked_at: map.get(m)?.locked_at || null })) })
+    return NextResponse.json({ success: true, can_lock: !g.access.branch_id, months: months.map(m => ({ month: m, label: monthName(m), locked: map.has(m), locked_by_name: map.get(m)?.locked_by_name || null, locked_at: map.get(m)?.locked_at || null })) })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
@@ -45,6 +45,8 @@ export async function POST(req: Request) {
   try {
     const b = await req.json()
     const g = await guard(req, b.org_id); if (g.error) return g.error
+    // الشهر يقفل المنشأة كاملة — فلازم يكون إذن المحاسب على المنشأة كاملة، مو فرع واحد
+    if (g.access.branch_id) return NextResponse.json({ error: 'إقفال الشهر لمحاسب المنشأة كاملة — إذنك على فرع واحد' }, { status: 403 })
     const month = String(b.month || '')
     if (!isClosedMonth(month)) return NextResponse.json({ error: 'تقدر تقفل الشهور اللي خلصت بس' }, { status: 400 })
     if (!['lock', 'unlock'].includes(b.action)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
