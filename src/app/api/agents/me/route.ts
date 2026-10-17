@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { currentAgent, encryptIban } from '@/lib/agentAuth'
 import { normalizeIban, isValidSaIban } from '@/lib/agentRewards'
 import { siteUrl } from '@/lib/accountantSend'
+import { notifyAgent } from '@/lib/agentNotify'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -40,14 +41,28 @@ export async function PATCH(req: Request) {
     const b = await req.json()
     if (b.payout_method === 'cash') {
       await db.from('sales_agents').update({ payout_method: 'cash' } as any).eq('id', me.id)
+      if (me.payout_method !== 'cash') await payoutChanged(db, me.id, 'صارت طريقة استلام مكافآتك: كاش.')
       return NextResponse.json({ success: true })
     }
     if (b.payout_method !== 'transfer') return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const iban = normalizeIban(b.iban)
     if (!isValidSaIban(iban)) return NextResponse.json({ error: 'رقم الآيبان غير صحيح — ٢٤ خانة يبدأ بـ SA' }, { status: 400 })
     await db.from('sales_agents').update({ payout_method: 'transfer', iban_enc: encryptIban(iban), iban_last4: iban.slice(-4) } as any).eq('id', me.id)
+    await payoutChanged(db, me.id, `صارت مكافآتك تنحوّل للآيبان المنتهي بـ ${iban.slice(-4)}.`)
     return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ error: 'تعذر الحفظ' }, { status: 500 })
   }
+}
+
+// تنبيه على الإيميل والواتساب كل ما تغيّرت طريقة الاستلام — لو أحد غيّرها بدون علم المندوب يعرف فوراً
+async function payoutChanged(db: any, agentId: string, what: string) {
+  const when = new Date().toLocaleString('ar-SA', { timeZone: 'Asia/Riyadh', dateStyle: 'medium', timeStyle: 'short' })
+  try {
+    await notifyAgent(db, agentId, {
+      title: 'تم تغيير طريقة استلام المكافآت',
+      lines: [what, `وقت التغيير: ${when}`, 'إذا ما سويت هالتغيير أنت، تواصل معنا فوراً ولا تطلب أي صرف.'],
+      whatsapp: `🔐 *تنبيه أمني — Storely*\n\n${what}\nوقت التغيير: ${when}\n\nإذا ما سويت هالتغيير أنت، تواصل معنا فوراً.`,
+    })
+  } catch {}
 }

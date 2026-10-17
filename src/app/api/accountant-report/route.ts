@@ -20,7 +20,7 @@ export async function GET(req: Request) {
     if (Date.parse((rep as any).expires_at) < Date.now()) return NextResponse.json({ error: 'انتهت صلاحية الرابط — اطلب من المنشأة ترسل التقرير من جديد', expired: true }, { status: 410 })
     const { data: link } = await db.from('accountant_links').select('branch_id,sections,vat_registered,is_active').eq('id', (rep as any).link_id).maybeSingle()
     // المالك شال الربط = الرابط يوقف
-    if (!link) return NextResponse.json({ error: 'أوقفت المنشأة الربط مع المحاسب' }, { status: 410 })
+    if (!link || !(link as any).is_active) return NextResponse.json({ error: 'أوقفت المنشأة الربط مع المحاسب' }, { status: 410 })
 
     const report = await loadAccountantReport(db, { orgId: (rep as any).org_id, branchId: (link as any).branch_id,
       period: { start: (rep as any).period_start, end: (rep as any).period_end }, sections: (link as any).sections, vatRegistered: (link as any).vat_registered })

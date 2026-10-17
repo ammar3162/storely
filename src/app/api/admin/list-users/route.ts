@@ -4,7 +4,6 @@ import { requirePermission } from '@/lib/adminAuth'
 
 export async function GET(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
-  const correct = process.env.ADMIN_PASSWORD || 'storely@2026'
   if (!(await requirePermission(adminKey, 'manage_users'))) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
