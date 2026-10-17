@@ -48,11 +48,18 @@ export async function POST(req: Request) {
   try {
     const b = await req.json()
     const g = await guard(req, b.org_id); if (g.error) return g.error
+    if (Array.isArray(b.targets)) return requestMissingVat(g, b.targets)
     if (!isKind(b.kind)) return NextResponse.json({ error: 'اختر نوع الطلب' }, { status: 400 })
     const message = String(b.message || '').trim().slice(0, 500) || null
     if ((b.kind === 'other' || b.kind === 'document') && !message) return NextResponse.json({ error: 'اكتب وش تحتاج' }, { status: 400 })
     const target = await validateTarget(g.db, g.access.org_id, b)
     if (!target) return NextResponse.json({ error: 'الفاتورة غير موجودة' }, { status: 404 })
+    // نفس الطلب على نفس الفاتورة وهو لسا مفتوح = تكرار
+    if (target.invoice_group || target.purchase_id) {
+      const { data: same } = await g.db.from('accountant_requests').select('id').eq('org_id', g.access.org_id).eq('kind', b.kind).neq('status', 'resolved')
+        .eq(target.invoice_group ? 'invoice_group' : 'purchase_id', (target.invoice_group || target.purchase_id) as string).limit(1)
+      if (same?.length) return NextResponse.json({ error: 'فيه طلب مفتوح بنفس النوع على هالفاتورة — انتظر رد المنشأة' }, { status: 409 })
+    }
     const { count } = await g.db.from('accountant_requests').select('id', { count: 'exact', head: true }).eq('org_id', g.access.org_id).neq('status', 'resolved')
     if ((count || 0) >= MAX_OPEN_PER_ORG) return NextResponse.json({ error: 'فيه طلبات مفتوحة كثيرة لهالمنشأة — اقفل اللي انحلت أول' }, { status: 429 })
 
@@ -79,4 +86,30 @@ export async function PATCH(req: Request) {
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
+}
+
+// «اطلب تكملتها كلها»: طلب «ناقص الرقم الضريبي أو رقم الفاتورة» لكل فاتورة ناقصة — بإشعار واحد للمنشأة
+// الفاتورة اللي عليها طلب مفتوح من قبل تنتخطى
+async function requestMissingVat(g: any, raw: unknown[]) {
+  const org = g.access.org_id
+  const targets: { invoice_group: string | null; purchase_id: string | null; closing_id: null }[] = []
+  for (const t of raw.slice(0, 50) as any[]) {
+    const v = await validateTarget(g.db, org, { invoice_group: t?.invoice_group || null, purchase_id: t?.invoice_group ? null : t?.purchase_id || null })
+    if (v && (v.invoice_group || v.purchase_id)) targets.push({ invoice_group: v.invoice_group, purchase_id: v.purchase_id, closing_id: null })
+  }
+  if (!targets.length) return NextResponse.json({ error: 'ما لقينا الفواتير' }, { status: 404 })
+  const { data: open } = await g.db.from('accountant_requests').select('invoice_group,purchase_id').eq('org_id', org).eq('kind', 'missing_vat').neq('status', 'resolved')
+  const have = new Set(((open || []) as any[]).map(r => r.invoice_group || r.purchase_id))
+  const seen = new Set<string>()
+  const fresh = targets.filter(t => { const k = (t.invoice_group || t.purchase_id) as string; if (have.has(k) || seen.has(k)) return false; seen.add(k); return true })
+  if (!fresh.length) return NextResponse.json({ success: true, created: 0, skipped: targets.length })
+  const { count } = await g.db.from('accountant_requests').select('id', { count: 'exact', head: true }).eq('org_id', org).neq('status', 'resolved')
+  const room = MAX_OPEN_PER_ORG - (count || 0)
+  if (room <= 0) return NextResponse.json({ error: 'فيه طلبات مفتوحة كثيرة لهالمنشأة — اقفل اللي انحلت أول' }, { status: 429 })
+  const rows = fresh.slice(0, room).map(t => ({ org_id: org, accountant_id: g.me.id, kind: 'missing_vat', message: null, ...t }))
+  const { error } = await g.db.from('accountant_requests').insert(rows as any)
+  if (error) return NextResponse.json({ error: 'تعذر إرسال الطلب' }, { status: 500 })
+  await g.db.from('notifications').insert({ org_id: org, type: 'warning', read: false, title: '📝 طلب من محاسبك', ref_type: 'accountant_request',
+    message: `${g.me.name || g.me.email}: كمّلوا الرقم الضريبي أو رقم الفاتورة لـ ${rows.length} ${rows.length === 1 ? 'فاتورة' : 'فواتير'} — من «طلبات المحاسب»` } as any)
+  return NextResponse.json({ success: true, created: rows.length, skipped: targets.length - rows.length })
 }

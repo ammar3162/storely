@@ -36,6 +36,18 @@ export default function PortalClientPage() {
   const xlsx = range ? `/api/accountant-portal/report?org_id=${orgId}&from=${range.from}&to=${range.to}&format=xlsx` : '#'
   const TABS: { k: Tab; l: string; icon: any }[] = [{ k: 'report', l: 'التقرير', icon: BarChart3 }, { k: 'requests', l: 'الطلبات', icon: MessageSquareText }, { k: 'locks', l: 'إقفال الشهور', icon: Lock }]
 
+  // طلب واحد لكل فاتورة ناقصة (الرقم الضريبي أو رقم الفاتورة) — المنشأة يوصلها إشعار واحد وتعبّيها من «طلبات المحاسب»
+  async function requestMissing(invs: any[]) {
+    if (!invs.length || !window.confirm(`نرسل للمنشأة طلب تكمّل الرقم الضريبي أو رقم الفاتورة لـ ${invs.length === 1 ? 'فاتورة وحدة' : `${invs.length} فواتير`}؟`)) return
+    const j = await fetch('/api/accountant-portal/requests', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ org_id: orgId, targets: invs.map(i => ({ invoice_group: i.group || null, purchase_id: i.firstId || null })) }) })
+      .then(r => r.json()).catch(() => ({ error: 'تأكد من الإنترنت' }))
+    if (j.error) { window.alert(j.error); return }
+    if (!j.created) { window.alert('كل الفواتير الناقصة عليها طلبات مفتوحة من قبل — تابعها من «الطلبات»'); setTab('requests'); return }
+    window.alert(`انرسل للمنشأة ${j.created === 1 ? 'طلب واحد' : `${j.created} طلبات`}${j.skipped ? ` (${j.skipped} عليها طلب من قبل)` : ''} ✓`)
+    setReqKey(k => k + 1); setTab('requests')
+  }
+
   return (
     <PortalShell title={name || 'المنشأة'} subtitle={data ? `${data.report.branchName || 'كل الفروع'} · ${data.report.label}` : undefined}
       orgLogo={name ? { name, url: data?.logo_url || null } : undefined}
@@ -55,7 +67,8 @@ export default function PortalClientPage() {
         {error ? <div style={{ color: colors.danger, fontSize: 14, padding: 20 }}>{error}</div>
           : !data ? <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={24} color={colors.primary} className="spin" /></div>
           : <AccountantReportView data={data} kicker="بوابة المحاسب" hideHeader downloadHref={xlsx}
-              onRequest={inv => setReqTarget({ invoice_group: inv.group, purchase_id: inv.firstId, label: `${inv.supplier || '—'} · ${inv.date} · ${Number(inv.total).toFixed(2)}${inv.invoiceNumber ? ` · ${inv.invoiceNumber}` : ''}` })} />}
+              onRequest={inv => setReqTarget({ invoice_group: inv.group, purchase_id: inv.firstId, label: `${inv.supplier || '—'} · ${inv.date} · ${Number(inv.total).toFixed(2)}${inv.invoiceNumber ? ` · ${inv.invoiceNumber}` : ''}` })}
+              onRequestMissing={requestMissing} />}
       </>}
       {tab === 'requests' && <AccountantRequestsPanel orgId={orgId} refreshKey={reqKey} onNew={() => setReqTarget(null)} />}
       {tab === 'locks' && <PortalLocks orgId={orgId} />}

@@ -1,3 +1,4 @@
+import { reportAiFailure, aiFailureKind } from '@/lib/aiAlert'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
@@ -158,6 +159,10 @@ ${neverDispensed.map((p:any)=>`• ${p.name}: كمية ${p.qty} ${p.unit}`).join
   })
 
   const data = await response.json()
+  if (!response.ok) {
+    await reportAiFailure(response.status, JSON.stringify(data), 'المساعد الذكي')
+    if (aiFailureKind(response.status, JSON.stringify(data))) return NextResponse.json({ reply: 'المساعد متوقف مؤقتاً — جرّب بعد شوي' })
+  }
   const reply = data.content?.[0]?.text || 'عذراً، حدث خطأ'
   return NextResponse.json({ reply })
 }

@@ -1,3 +1,4 @@
+import { reportAiFailure, aiFailureKind } from '@/lib/aiAlert'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
@@ -148,6 +149,8 @@ ${branchSummary ? `═══ مقارنة الفروع ═══\n${branchSummar
   const data = await response.json()
   if (!response.ok) {
     console.error('anthropic api error:', JSON.stringify(data))
+    await reportAiFailure(response.status, JSON.stringify(data), 'الرؤى الذكية')
+    if (aiFailureKind(response.status, JSON.stringify(data))) return NextResponse.json({ error: 'التحليل الذكي متوقف مؤقتاً — جرّب لاحقاً' }, { status: 503 })
     return NextResponse.json({ error: `خطأ من خدمة الذكاء الاصطناعي: ${data.error?.message || response.status}` }, { status: 500 })
   }
   const raw = data.content?.[0]?.text || ''
