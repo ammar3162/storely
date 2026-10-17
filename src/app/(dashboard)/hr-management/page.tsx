@@ -56,6 +56,8 @@ export default function HRManagementPage() {
   const [reportData, setReportData] = useState<any[]>([])
   const [loadingReport, setLoadingReport] = useState(false)
   const [showReport, setShowReport] = useState(false)
+  // تبويبات لوحة الموظف — تفتح على أول تبويب فيه شي ينتظر قرارك
+  const [hrTab, setHrTab] = useState<'salary'|'adj'|'leave'|'excuse'|'tasks'>('salary')
 
 
   // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
@@ -175,6 +177,7 @@ export default function HRManagementPage() {
   function toggleExpand(s:any) {
     if (expandedId === s.id) { setExpandedId(null); return }
     setExpandedId(s.id)
+    setHrTab(pendingLeaveCounts[s.id] > 0 ? 'leave' : pendingAdvanceCounts[s.id] > 0 ? 'adj' : 'salary')
     setSalaryForm({
       base: String(s.monthly_salary || 0),
       housing: String(s.housing_allowance || 0),
@@ -528,13 +531,13 @@ export default function HRManagementPage() {
                     <div style={{display:'flex',alignItems:'center',gap:8}}>
                       <div style={{fontSize:font.base,fontWeight:700,color:colors.text}}>{s.name}</div>
                       {pendingLeaveCounts[s.id] > 0 && (
-                        <span style={{background:colors.danger,color:'white',fontSize:10,fontWeight:800,minWidth:18,height:18,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 5px'}} title="عنده طلب إجازة بانتظار الموافقة">
-                          {pendingLeaveCounts[s.id]}
+                        <span style={{background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,fontSize:11,fontWeight:800,borderRadius:99,padding:'2px 9px'}} title="طلب إجازة بانتظار موافقتك">
+                          إجازة {pendingLeaveCounts[s.id]}
                         </span>
                       )}
                       {pendingAdvanceCounts[s.id] > 0 && (
-                        <span style={{background:'#f79009',color:'white',fontSize:10,fontWeight:800,minWidth:18,height:18,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 5px'}} title="عنده طلب سلفة/خصم بانتظار الموافقة">
-                          {pendingAdvanceCounts[s.id]}
+                        <span style={{background:colors.warningLight,color:colors.warning,border:`1px solid ${colors.warningBorder}`,fontSize:11,fontWeight:800,borderRadius:99,padding:'2px 9px'}} title="طلب سلفة بانتظار موافقتك">
+                          سلفة {pendingAdvanceCounts[s.id]}
                         </span>
                       )}
                     </div>
@@ -574,12 +577,34 @@ export default function HRManagementPage() {
                 })()}
 
                 {isOpen && (
-                  <div style={{marginTop:18,paddingTop:18,borderTop:`1px solid ${colors.border}`,display:'flex',flexDirection:'column' as const,gap:22}}>
+                  <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${colors.border}`,display:'flex',flexDirection:'column' as const,gap:16}}>
+                    {(() => {
+                      const pend = {
+                        adj: adjustments.filter((a:any)=>a.status==='pending').length,
+                        leave: leaveRequests.filter((l:any)=>l.status==='pending').length,
+                        excuse: excuseRequests.filter((e:any)=>e.status==='pending').length,
+                        tasks: tasks.filter((t:any)=>t.status==='completed').length,
+                      }
+                      const TABS: { k: typeof hrTab; l: string; n?: number }[] = [
+                        { k:'salary', l:'الراتب والبدلات' }, { k:'adj', l:'الخصومات والسلف', n:pend.adj },
+                        { k:'leave', l:'الإجازات', n:pend.leave }, { k:'excuse', l:'الاستئذان', n:pend.excuse }, { k:'tasks', l:'المهام', n:pend.tasks },
+                      ]
+                      return (
+                        <div role="tablist" style={{display:'flex',gap:6,flexWrap:'wrap' as const,background:colors.bg,padding:5,borderRadius:12}}>
+                          {TABS.map(t=>(
+                            <button key={t.k} role="tab" aria-selected={hrTab===t.k} onClick={()=>setHrTab(t.k)}
+                              style={{flex:'1 1 auto',display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'9px 12px',borderRadius:9,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:700,
+                                background:hrTab===t.k?'white':'transparent',color:hrTab===t.k?colors.primary:colors.text3,boxShadow:hrTab===t.k?'0 1px 3px rgba(15,23,42,.1)':'none'}}>
+                              {t.l}{!!t.n && <span style={{background:colors.warning,color:'white',fontSize:11,fontWeight:800,borderRadius:99,minWidth:18,height:18,padding:'0 5px',display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{t.n}</span>}
+                            </button>
+                          ))}
+                        </div>
+                      )
+                    })()}
 
                     {/* الراتب والبدلات */}
-                    <div>
-                      <div style={{fontSize:12,fontWeight:700,color:colors.text3,marginBottom:10}}>الراتب الأساسي والبدلات</div>
-                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                    {hrTab==='salary' && <div>
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))',gap:10,marginBottom:12}}>
                         <div>
                           <label style={{fontSize:10,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>الراتب الأساسي</label>
                           <NumberInput value={salaryForm.base} onChange={e=>setSalaryForm({...salaryForm,base:e.target.value})} style={{...inp(),fontSize:13}} placeholder="0"/>
@@ -597,16 +622,14 @@ export default function HRManagementPage() {
                           <NumberInput value={salaryForm.food} onChange={e=>setSalaryForm({...salaryForm,food:e.target.value})} style={{...inp(),fontSize:13}} placeholder="0"/>
                         </div>
                       </div>
-                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:10}}>
-                        <span style={{fontSize:12,fontWeight:700,color:colors.primary}}>الإجمالي الشهري</span>
-                        <span style={{fontSize:18,fontWeight:900,color:colors.primary}}>{totalSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap' as const,background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`,borderRadius:radius.md,padding:'10px 14px'}}>
+                        <span style={{fontSize:13,fontWeight:700,color:colors.primary}}>الإجمالي الشهري: <b style={{fontSize:18,fontWeight:900}}>{totalSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</b></span>
+                        <button onClick={()=>saveSalary(s.id)} disabled={savingSalary} style={{...btnPrimary,padding:'9px 22px',fontSize:13,opacity:savingSalary?0.6:1}}>{savingSalary?'جاري الحفظ…':'حفظ الراتب'}</button>
                       </div>
-                      <button onClick={()=>saveSalary(s.id)} disabled={savingSalary} style={{...btnPrimary,width:'100%',padding:'10px',fontSize:13,opacity:savingSalary?0.6:1}}>{savingSalary?'...':'حفظ الراتب والبدلات'}</button>
-                    </div>
+                    </div>}
 
                     {/* السلف والخصومات */}
-                    <div>
-                      <div style={{fontSize:12,fontWeight:700,color:colors.text3,marginBottom:10}}>الخصومات والسلف</div>
+                    {hrTab==='adj' && <div>
                       {loadingAdjustments ? (
                         <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
                       ) : (
@@ -631,12 +654,10 @@ export default function HRManagementPage() {
                               </div>
                             </div>
                           )}
-                          <div style={{background:colors.bg,borderRadius:radius.md,padding:'14px',marginBottom:12}}>
-                            <div style={{display:'grid',gridTemplateColumns:'1fr 2fr',gap:8,marginBottom:8}}>
-                              <NumberInput value={newAdjAmount} onChange={e=>setNewAdjAmount(e.target.value)} placeholder="المبلغ" style={{...inp(),fontSize:13}}/>
-                              <input value={newAdjReason} onChange={e=>setNewAdjReason(e.target.value)} placeholder="السبب (اختياري)" style={{...inp(),fontSize:13}}/>
-                            </div>
-                            <button onClick={()=>addDeduction(s.id)} disabled={savingAdj||!newAdjAmount} style={{...btnSecondary,width:'100%',padding:'9px',fontSize:13,opacity:(savingAdj||!newAdjAmount)?0.6:1}}>{savingAdj?'...':'+ إضافة خصم'}</button>
+                          <div style={{display:'flex',flexWrap:'wrap' as const,gap:8,background:colors.bg,borderRadius:radius.md,padding:10,marginBottom:12}}>
+                            <NumberInput value={newAdjAmount} onChange={e=>setNewAdjAmount(e.target.value)} placeholder="مبلغ الخصم" style={{...inp(),fontSize:13,flex:'1 1 120px'}}/>
+                            <input value={newAdjReason} onChange={e=>setNewAdjReason(e.target.value)} placeholder="السبب (اختياري)" style={{...inp(),fontSize:13,flex:'3 1 200px'}}/>
+                            <button onClick={()=>addDeduction(s.id)} disabled={savingAdj||!newAdjAmount} style={{...btnPrimary,padding:'10px 18px',flex:'1 0 auto',fontSize:13,opacity:(savingAdj||!newAdjAmount)?0.5:1,whiteSpace:'nowrap' as const}}>{savingAdj?'…':'+ أضف خصم'}</button>
                           </div>
                           {adjustments.length>0 && (
                             <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
@@ -654,13 +675,12 @@ export default function HRManagementPage() {
                           )}
                         </>
                       )}
-                    </div>
+                    </div>}
 
                     {/* الإجازات */}
-                    <div>
-                      <div style={{fontSize:12,fontWeight:700,color:colors.text3,marginBottom:10,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                        <span style={{display:'flex',alignItems:'center',gap:6}}><CalendarDays size={14} strokeWidth={2.25}/> الإجازات</span>
-                        <span style={{fontSize:11,color:colors.primary,fontWeight:800}}>الرصيد المتبقي: {s.leave_balance_days ?? 21} يوم</span>
+                    {hrTab==='leave' && <div>
+                      <div style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:13,fontWeight:800,color:colors.primary,background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`,borderRadius:99,padding:'5px 12px',marginBottom:12}}>
+                        <CalendarDays size={14} strokeWidth={2.25}/> الرصيد المتبقي: {s.leave_balance_days ?? 21} يوم
                       </div>
                       {loadingLeave ? (
                         <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
@@ -697,11 +717,11 @@ export default function HRManagementPage() {
                           )}
                         </>
                       )}
-                    </div>
+                    </div>}
 
                     {/* طلبات الاستئذان */}
-                    <div>
-                      <div style={{fontSize:12,fontWeight:700,color:colors.text3,marginBottom:10}}>طلبات الاستئذان (انصراف مبكر)</div>
+                    {hrTab==='excuse' && <div>
+                      <div style={{fontSize:12.5,color:colors.text3,marginBottom:10}}>طلبات الانصراف المبكر من الدوام</div>
                       {loadingExcuse ? (
                         <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
                       ) : excuseRequests.filter((e:any)=>e.status==='pending').length===0 ? (
@@ -719,19 +739,20 @@ export default function HRManagementPage() {
                           ))}
                         </div>
                       )}
-                    </div>
+                    </div>}
 
                     {/* المهام */}
-                    <div>
-                      <div style={{fontSize:12,fontWeight:700,color:colors.text3,marginBottom:10,display:'flex',alignItems:'center',gap:6}}><ClipboardList size={14} strokeWidth={2.25}/> المهام</div>
-                      <div style={{background:colors.bg,borderRadius:radius.md,padding:'14px',marginBottom:12}}>
-                        <input value={newTaskTitle} onChange={e=>setNewTaskTitle(e.target.value)} placeholder="عنوان المهمة" style={{...inp(),fontSize:13,marginBottom:8}}/>
-                        <input value={newTaskDesc} onChange={e=>setNewTaskDesc(e.target.value)} placeholder="تفاصيل إضافية (اختياري)" style={{...inp(),fontSize:13,marginBottom:8}}/>
-                        <label style={{display:'flex',alignItems:'center',gap:8,marginBottom:10,cursor:'pointer'}}>
+                    {hrTab==='tasks' && <div>
+                      <div style={{background:colors.bg,borderRadius:radius.md,padding:10,marginBottom:12,display:'grid',gap:8}}>
+                        <div style={{display:'flex',flexWrap:'wrap' as const,gap:8}}>
+                          <input value={newTaskTitle} onChange={e=>setNewTaskTitle(e.target.value)} placeholder="المهمة — مثال: تنظيف الثلاجة" style={{...inp(),fontSize:13,flex:'2 1 200px'}}/>
+                          <input value={newTaskDesc} onChange={e=>setNewTaskDesc(e.target.value)} placeholder="تفاصيل (اختياري)" style={{...inp(),fontSize:13,flex:'2 1 200px'}}/>
+                          <button onClick={()=>createTask(s.id)} disabled={savingTask||!newTaskTitle.trim()} style={{...btnPrimary,padding:'10px 18px',flex:'1 0 auto',justifyContent:'center',fontSize:13,opacity:(savingTask||!newTaskTitle.trim())?0.5:1,display:'flex',alignItems:'center',gap:6,whiteSpace:'nowrap' as const}}><Plus size={14} strokeWidth={2.25}/> أضف مهمة</button>
+                        </div>
+                        <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
                           <input type="checkbox" checked={newTaskPhoto} onChange={e=>setNewTaskPhoto(e.target.checked)} style={{accentColor:colors.primary,width:14,height:14}}/>
-                          <span style={{fontSize:12,color:colors.text2,display:'flex',alignItems:'center',gap:5}}><Camera size={13} strokeWidth={2.25}/> تتطلب صورة إثبات عند الإكمال</span>
+                          <span style={{fontSize:12,color:colors.text2,display:'flex',alignItems:'center',gap:5}}><Camera size={13} strokeWidth={2.25}/> يرفق صورة إثبات لما يخلصها</span>
                         </label>
-                        <button onClick={()=>createTask(s.id)} disabled={savingTask||!newTaskTitle.trim()} style={{...btnSecondary,width:'100%',padding:'9px',fontSize:13,opacity:(savingTask||!newTaskTitle.trim())?0.6:1,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Plus size={14} strokeWidth={2.25}/> إنشاء مهمة</button>
                       </div>
                       {loadingTasks ? (
                         <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
@@ -770,7 +791,7 @@ export default function HRManagementPage() {
                           })}
                         </div>
                       )}
-                    </div>
+                    </div>}
 
                   </div>
                 )}
