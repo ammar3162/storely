@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { authenticator } from 'otplib'
 import crypto from 'crypto'
+import { lockedUntil, lockedMessage, recordFailure, recordSuccess } from '@/lib/loginThrottle'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,8 +30,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'حساب غير صالح' }, { status: 401 })
     }
 
+    // حد للمحاولات: ٥ رموز غلط = قفل مؤقت للحساب، وتنلغي الجلسة المؤقتة (لازم يدخل كلمة المرور من جديد)
+    const key = `admin2fa:${admin.id}`
+    const lock = await lockedUntil(db, [key])
+    if (lock) return NextResponse.json({ error: lockedMessage(lock) }, { status: 429 })
     const valid = authenticator.verify({ token: String(code).trim(), secret: (admin as any).totp_secret })
-    if (!valid) return NextResponse.json({ error: 'الرمز غير صحيح' }, { status: 401 })
+    if (!valid) {
+      const r = await recordFailure(db, key)
+      if (r.lockedUntil) {
+        await (db as any).from('admin_2fa_pending').delete().eq('admin_id', admin.id)
+        return NextResponse.json({ error: lockedMessage(r.lockedUntil) }, { status: 429 })
+      }
+      return NextResponse.json({ error: 'الرمز غير صحيح' }, { status: 401 })
+    }
+    await recordSuccess(db, key)
 
     await (db as any).from('admin_2fa_pending').delete().eq('token', pendingToken)
 

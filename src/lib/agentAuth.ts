@@ -44,7 +44,8 @@ export async function currentAgent(db: SupabaseClient, req: Request): Promise<Sa
     db.from('sales_agents').select('id,code,name,email,phone,payout_method,iban_last4,status').eq('id', s.gid).maybeSingle(),
     db.from('agent_sessions').select('id,last_seen_at,revoked_at').eq('id', s.sid).eq('agent_id', s.gid).maybeSingle(),
   ])
-  if (!a || !sess || (sess as any).revoked_at) return null
+  // الموقوف يطلع حتى لو جلسته لسا صالحة (ما يقدر يغيّر الآيبان أو يشوف المحفظة)
+  if (!a || !sess || (sess as any).revoked_at || (a as any).status !== 'active') return null
   if (Date.now() - Date.parse((sess as any).last_seen_at) > 5 * 60e3) await db.from('agent_sessions').update({ last_seen_at: new Date().toISOString() } as any).eq('id', s.sid)
   return { ...(a as any), sessionId: s.sid }
 }
