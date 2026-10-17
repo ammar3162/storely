@@ -33,13 +33,14 @@ export default function PortalLocksPage() {
             <tbody>{data.orgs.map((o: any) => (
               <tr key={o.org_id} style={{ borderTop: `1px solid ${colors.border}` }}>
                 <td style={{ padding: '10px 16px', position: 'sticky', right: 0, background: '#fff' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><OrgLogo name={o.name} url={o.logo_url} size={30} /><b style={{ fontSize: 13.5, whiteSpace: 'nowrap' }}>{o.name}</b></div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><OrgLogo name={o.name} url={o.logo_url} size={30} /><div><b style={{ fontSize: 13.5, whiteSpace: 'nowrap' }}>{o.name}</b>{o.can_lock === false && <div style={{ fontSize: 11, color: colors.text4 }}>عرض فقط · إذنك على فرع</div>}</div></div>
                 </td>
                 {data.months.map((m: any) => {
                   const l = o.locked[m.month], k = o.org_id + m.month
+                  // إذن على فرع واحد: الحالة بس بدون زر (الإقفال لمحاسب المنشأة كاملة)
                   return <td key={m.month} style={{ textAlign: 'center', padding: 6 }}>
-                    <button onClick={() => toggle(o, m)} disabled={!!busy} title={l ? `مقفل · ${l.by || ''} · ${String(l.at).slice(0, 10)}` : 'مفتوح — اضغط للإقفال'}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 11px', borderRadius: 10, cursor: 'pointer', fontFamily: font.family, fontSize: 12, fontWeight: 800,
+                    <button onClick={() => o.can_lock !== false && toggle(o, m)} disabled={!!busy || o.can_lock === false} title={o.can_lock === false ? 'إذنك على فرع واحد — الإقفال لمحاسب المنشأة كاملة' : l ? `مقفل · ${l.by || ''} · ${String(l.at).slice(0, 10)}` : 'مفتوح — اضغط للإقفال'}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 11px', borderRadius: 10, cursor: o.can_lock === false ? 'default' : 'pointer', fontFamily: font.family, fontSize: 12, fontWeight: 800,
                         border: `1px solid ${l ? '#a7f3d0' : colors.border}`, background: l ? '#ecfdf5' : '#fff', color: l ? '#047857' : colors.text4, opacity: busy === k ? .5 : 1 }}>
                       {l ? <Lock size={13} /> : <Unlock size={13} />}{l ? 'مقفل' : 'مفتوح'}</button>
                   </td>
