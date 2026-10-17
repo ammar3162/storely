@@ -1,3 +1,4 @@
+import { isStoredInvoiceUrl } from '@/lib/invoiceUrl'
 import { NextResponse } from 'next/server'
 import { lockedFor, lockedFromError } from '@/lib/periodLock'
 import { invoiceTimestamp } from '@/lib/invoiceTime'
@@ -36,6 +37,7 @@ export async function POST(req: Request) {
     const locked = await lockedFor(db, org_id, [invoice_date])
     if (locked) return NextResponse.json({ error: locked }, { status: 423 })
     const hasVat = has_vat !== false
+    if (invoice_image && !isStoredInvoiceUrl(invoice_image)) return NextResponse.json({ error: 'رابط الفاتورة غير صالح — ارفع الصورة من جديد' }, { status: 400 })
     if (hasVat && !invoice_image) return NextResponse.json({ error: 'الفاتورة الضريبية لازم ترفق صورتها أو ملفها' }, { status: 400 })
     const sup = String(supplier || '').trim().slice(0, 120) || null
     const tax = await resolvePurchaseTax(db, org_id, sup, body, hasVat, items.reduce((s, it) => s + it.total, 0))   // كل الأصناف = فاتورة وحدة للمحاسب

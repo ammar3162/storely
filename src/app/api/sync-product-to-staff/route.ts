@@ -23,7 +23,8 @@ export async function POST(req: Request) {
     const supabase = sb()
 
     // جيب فرع المنتج — نزامن بس للموظفين بنفس فرع المنتج (يمنع تسريب صلاحية منتج فرع لموظف فرع ثاني)
-    const { data: productRow } = await supabase.from('products').select('branch_id').eq('id', product_id).maybeSingle()
+    const { data: productRow } = await supabase.from('products').select('branch_id').eq('id', product_id).eq('org_id', org_id).maybeSingle()
+    if (!productRow) return NextResponse.json({ success: false, error: 'الصنف غير موجود' }, { status: 404 })
     const productBranchId = (productRow as any)?.branch_id || null
 
     let staffQ = supabase

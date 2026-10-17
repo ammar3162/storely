@@ -1,3 +1,4 @@
+import { managerMay } from '@/lib/managerPerms'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { randomBytes } from 'crypto'
@@ -76,6 +77,7 @@ export async function PUT(req: Request) {
     } else {
       const access = await verifyOrgAccess(org_id)
       if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+      if (!managerMay(access as any, 'hr', 'attendance')) return NextResponse.json({ error: 'ما عندك صلاحية على هالقسم — كلّم مالك المنشأة' }, { status: 403 })
       const { data } = await supabase.from('attendance_permission_requests').select('id,status,org_id,staff_id,branch_id').eq('id', id).eq('org_id', org_id).maybeSingle()
       // مدير الفرع يرد على طلبات فرعه بس
       const forced = enforcedBranchId(access)
@@ -120,6 +122,7 @@ export async function GET(req: Request) {
     if (org_id) {
       const access = await verifyOrgAccess(org_id)
       if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+      if (!managerMay(access as any, 'hr', 'attendance')) return NextResponse.json({ error: 'ما عندك صلاحية على هالقسم — كلّم مالك المنشأة' }, { status: 403 })
       let q = supabase.from('attendance_permission_requests')
         .select('id,org_id,branch_id,staff_id,staff_name,reason,status,requested_at,resolved_at').eq('org_id', org_id)
       const forced = enforcedBranchId(access)

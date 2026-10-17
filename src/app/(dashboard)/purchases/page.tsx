@@ -175,7 +175,7 @@ export default function PurchasesPage() {
     // باركود الهيئة من الصورة نفسها (على الجهاز) — بالتوازي مع الرفع
     if(!prep.isPdf) zatcaFromImage(file).then(z=>{ if(z&&!zatcaRef.current){ setZatca(z,true); toast('✅ لقينا باركود الهيئة بالفاتورة — البيانات موثقة') } })
     try {
-      const path = 'invoice-'+Date.now()+'.'+prep.ext
+      const path = orgId+'/invoice-'+Date.now()+'.'+prep.ext   // مجلد المنشأة (سياسة التخزين تسمح بمجلدها بس)
       const{error}=await sb.storage.from('invoices').upload(path, prep.blob, { contentType: prep.type })
       if(error){toast('فشل رفع الفاتورة','error');setUploading(false);return}
       const{data:{publicUrl}}=sb.storage.from('invoices').getPublicUrl(path)

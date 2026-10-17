@@ -24,7 +24,11 @@ export async function proxy(request: NextRequest) {
   // طلبات /api ما تحتاج فحص الجلسة هنا — كل API يتحقق بنفسه (verifyOrgAccess / توكن الموظف / مفتاح الأدمن).
   // كان هذا الفحص رحلة إضافية لخادم Supabase مع كل طلب بيانات.
   if (request.nextUrl.pathname.startsWith('/api')) {
-    const res = NextResponse.next({ request })
+    // المسار والطريقة لـ verifyOrgAccess (حارس صلاحيات مدير الفرع) — نكتبها دايماً فوق أي قيمة من العميل
+    const reqHeaders = new Headers(request.headers)
+    reqHeaders.set('x-storely-path', request.nextUrl.pathname)
+    reqHeaders.set('x-storely-method', request.method)
+    const res = NextResponse.next({ request: { headers: reqHeaders } })
     if (isAppApiRequest) for (const [k, v] of Object.entries(corsHeaders(origin))) res.headers.set(k, v)
     return res
   }

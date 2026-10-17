@@ -1,3 +1,4 @@
+import { isStoredInvoiceUrl } from '@/lib/invoiceUrl'
 import { NextResponse } from 'next/server'
 import { lockedFor, lockedFromError } from '@/lib/periodLock'
 import { invoiceTimestamp } from '@/lib/invoiceTime'
@@ -92,6 +93,7 @@ export async function POST(req: Request) {
     // has_vat: الفاتورة شاملة ضريبة 15% ← المبلغ قبل الضريبة = الإجمالي ÷ 1.15؛ بدون ضريبة ← المبلغ = الإجمالي
     // (vat_amount و total_amount تحسبها قاعدة البيانات من amount و has_vat)
     const hasVat = body.has_vat !== false
+    if (body.invoice_image && !isStoredInvoiceUrl(body.invoice_image)) return NextResponse.json({ error: 'رابط الفاتورة غير صالح — ارفع الصورة من جديد' }, { status: 400 })
     if (hasVat && !body.invoice_image) return NextResponse.json({ error: 'الفاتورة الضريبية لازم ترفق صورتها أو ملفها' }, { status: 400 })
     const amount = netFromTotal(total, hasVat)
     const invoiceTs = invoiceTimestamp(body.invoice_date)   // اليوم = الوقت الفعلي، تاريخ سابق = 12 الظهر

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { managerMay } from '@/lib/managerPerms'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 
 const sb = () => createClient(
@@ -27,9 +28,13 @@ export async function GET(req: Request) {
       // طرف المالك — يشوف كل المهام (القوالب اليومية + العادية)، بدون توليد تلقائي
       const access = await verifyOrgAccess(orgIdParam)
       if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+      if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على الرواتب والإجازات — كلّم مالك المنشأة' }, { status: 403 })
 
-      let q = supabase.from('staff_tasks').select('*,staff_members(name)').eq('org_id', orgIdParam).order('created_at', { ascending: false })
+      // مدير الفرع يشوف مهام موظفين فرعه بس
+      const forced = enforcedBranchId(access)
+      let q = supabase.from('staff_tasks').select(forced ? '*,staff_members!inner(name,branch_id)' : '*,staff_members(name)').eq('org_id', orgIdParam).order('created_at', { ascending: false })
       if (staffIdParam) q = q.eq('staff_id', staffIdParam)
+      if (forced) q = q.eq('staff_members.branch_id', forced)
       const { data, error } = await q
       if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
       return NextResponse.json({ success: true, tasks: data || [] })
@@ -79,13 +84,15 @@ export async function GET(req: Request) {
 // المالك يولّد مهمة أو عدة مهام لموظف/موظفين
 export async function POST(req: Request) {
   try {
-    const { org_id, branch_id, staff_ids, title, description, requires_photo } = await req.json()
-    if (!org_id || !title || !Array.isArray(staff_ids) || staff_ids.length === 0) {
+    const { org_id, staff_ids, title, description, requires_photo } = await req.json()
+    const cleanTitle = String(title || '').trim().slice(0, 200)
+    if (!org_id || !cleanTitle || !Array.isArray(staff_ids) || staff_ids.length === 0 || staff_ids.length > 200) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على الرواتب والإجازات — كلّم مالك المنشأة' }, { status: 403 })
 
     const supabase = sb()
     const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
@@ -102,9 +109,16 @@ export async function POST(req: Request) {
       }
     }
 
-    const rows = staff_ids.map((sid: string) => ({
-      org_id, branch_id: branch_id || null, staff_id: sid,
-      title, description: description || null, requires_photo: !!requires_photo,
+    // كل الموظفين لازم يكونون من المنشأة (ومن فرع المدير لو مدير فرع) — والفرع يجي من الموظف نفسه
+    const ids = [...new Set(staff_ids.map(String))]
+    const { data: members } = await supabase.from('staff_members').select('id,branch_id').eq('org_id', org_id).in('id', ids)
+    const forced = enforcedBranchId(access)
+    const allowed = ((members || []) as any[]).filter(m => !forced || m.branch_id === forced)
+    if (allowed.length !== ids.length) return NextResponse.json({ error: 'موظف غير موجود' }, { status: 404 })
+
+    const rows = allowed.map(m => ({
+      org_id, branch_id: m.branch_id || null, staff_id: m.id,
+      title: cleanTitle, description: description ? String(description).trim().slice(0, 1000) : null, requires_photo: !!requires_photo,
       status: 'pending',
     }))
 
@@ -127,11 +141,15 @@ export async function PATCH(req: Request) {
       const { org_id, task_id } = body
       const access = await verifyOrgAccess(org_id)
       if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+      if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على الرواتب والإجازات — كلّم مالك المنشأة' }, { status: 403 })
+      // مدير الفرع يتحكم بمهام موظفين فرعه بس
+      const forced = enforcedBranchId(access)
+      const inScope = (t: any) => !!t && (!forced || t.staff_members?.branch_id === forced)
 
       if (body.toggle_daily !== undefined) {
         // تفعيل/إيقاف تكرار المهمة اليومي
-        const { data: task } = await supabase.from('staff_tasks').select('id,is_daily').eq('id', task_id).eq('org_id', org_id).maybeSingle()
-        if (!task) return NextResponse.json({ error: 'المهمة غير موجودة' }, { status: 404 })
+        const { data: task } = await supabase.from('staff_tasks').select('id,is_daily,staff_members(branch_id)').eq('id', task_id).eq('org_id', org_id).maybeSingle()
+        if (!inScope(task)) return NextResponse.json({ error: 'المهمة غير موجودة' }, { status: 404 })
         const { error } = await supabase.from('staff_tasks').update({ is_daily: !((task as any).is_daily) } as any).eq('id', task_id)
         if (error) return NextResponse.json({ error: 'فشل التحديث' }, { status: 500 })
         return NextResponse.json({ success: true, is_daily: !((task as any).is_daily) })
@@ -142,8 +160,8 @@ export async function PATCH(req: Request) {
       if (!task_id || !['confirmed', 'rejected'].includes(decision)) {
         return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
       }
-      const { data: task } = await supabase.from('staff_tasks').select('id,status').eq('id', task_id).eq('org_id', org_id).maybeSingle()
-      if (!task) return NextResponse.json({ error: 'المهمة غير موجودة' }, { status: 404 })
+      const { data: task } = await supabase.from('staff_tasks').select('id,status,staff_members(branch_id)').eq('id', task_id).eq('org_id', org_id).maybeSingle()
+      if (!inScope(task)) return NextResponse.json({ error: 'المهمة غير موجودة' }, { status: 404 })
       if ((task as any).status !== 'completed') return NextResponse.json({ error: 'المهمة لسه ما اكتملت من الموظف' }, { status: 400 })
 
       const { error } = await supabase.from('staff_tasks').update({
