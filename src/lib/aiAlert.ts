@@ -32,7 +32,7 @@ export async function reportAiFailure(status: number, detail: string, feature: s
     const db = sb()
     const type = `ai_${kind}`
     const since = new Date(Date.now() - AI_ALERT_HOURS * 3600e3).toISOString()
-    const { data: recent } = await db.from('health_check_logs').select('id').gte('checked_at', since).contains('issues', [{ type }]).limit(1)
+    const { data: recent } = await db.from('health_check_logs').select('id').gte('checked_at', since).filter('issues', 'cs', JSON.stringify([{ type }])).limit(1)   // jsonb @> (contains بمصفوفة يترسل كمصفوفة postgres وينرفض)
     if (recent?.length) return false
     const t = TEXT[kind]
     await db.from('health_check_logs').insert({ issues_count: 1, issues: [{ type, severity: 'critical', detail: `${t.body} (أول عطل: ${feature})`, count: 1 }], checked_at: new Date().toISOString() } as any)

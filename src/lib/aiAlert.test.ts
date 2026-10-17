@@ -8,7 +8,7 @@ vi.mock('@supabase/supabase-js', () => ({
   createClient: () => ({
     from: (t: string) => {
       const q: any = {
-        select: () => q, gte: () => q, contains: () => q, eq: () => q,
+        select: () => q, gte: () => q, filter: () => q, eq: () => q,
         limit: async () => ({ data: state.recent }),
         insert: async (row: any) => { state.inserted.push(row); return { error: null } },
         then: (r: any) => r({ data: t === 'admin_users' ? [{ email: 'owner@storely.dev' }] : [] }),
