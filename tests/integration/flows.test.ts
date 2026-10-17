@@ -19,7 +19,7 @@ if (fs.existsSync(envFile)) {
 }
 const URL_ = process.env.TEST_SUPABASE_URL || ''
 const KEY = process.env.TEST_SUPABASE_SERVICE_ROLE_KEY || ''
-const STAGING_REF = 'ruouijoyrvkwlebxnbrx'
+const STAGING_REF = 'vmdhaqpuobxeyydbksfu'
 const enabled = !!URL_ && !!KEY && !KEY.includes('الصق') && URL_.includes(STAGING_REF)
 if (enabled) {
   process.env.NEXT_PUBLIC_SUPABASE_URL = URL_
