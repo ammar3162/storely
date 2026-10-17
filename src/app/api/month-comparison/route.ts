@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { selectAll } from '@/lib/selectAll'
-import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,11 +20,12 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const org_id = searchParams.get('org_id')
-    const branch_id = searchParams.get('branch_id')
+    const requestedBranch = searchParams.get('branch_id')
     if (!org_id) return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    const branch_id = enforcedBranchId(access, requestedBranch)   // مدير الفرع: فرعه بس مهما أرسل الطلب
 
     const supabase = sb()
     const now = new Date()

@@ -1,6 +1,7 @@
 import { createClient as createCookieClient } from '@/lib/supabase/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { headers } from 'next/headers'
+import { managerApiAllowed } from '@/lib/managerPerms'
 import type { Database } from '@/lib/database.types'
 
 /**
@@ -68,6 +69,15 @@ export async function verifyOrgAccess(requestedOrgId: string) {
 
   if (!profile.orgId || profile.orgId !== requestedOrgId) {
     return { authorized: false, error: 'غير مصرح بالوصول لهذا الحساب', status: 403 as const }
+  }
+
+  // مدير الفرع: نفس صلاحيات صفحاته على مستوى الـ API (المسار يجي من proxy)
+  if (profile.role === 'manager') {
+    const h = await headers()
+    const path = h.get('x-storely-path')
+    if (path && !managerApiAllowed(path, h.get('x-storely-method') || 'GET', profile.permissions)) {
+      return { authorized: false, error: 'ما عندك صلاحية على هالقسم — كلّم مالك المنشأة', status: 403 as const }
+    }
   }
 
   return {

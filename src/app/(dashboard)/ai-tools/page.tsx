@@ -137,8 +137,9 @@ export default function AIToolsPage() {
   const [reportLoading, setReportLoading] = useState(false)
   const router = useRouter()
   const [curr, setCurr] = useState('ر.س')
+  const [isOwner, setIsOwner] = useState(false)   // مقارنة الفروع للمالك فقط
   useEffect(()=>{
-    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)) })
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setIsOwner(me?.role==='owner') })
   },[])
 
   async function applyReorderSuggestion(productId: string, newReorderPoint: number) {
@@ -572,7 +573,7 @@ export default function AIToolsPage() {
       </div>
 
       {/* مقارنة الفروع — الباقة المتوسطة أو المتقدمة */}
-      {(plan!=='basic'||hasAiAddon) && (
+      {(plan!=='basic'||hasAiAddon) && isOwner && (
       <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
           <div>

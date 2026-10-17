@@ -36,11 +36,14 @@ export async function deleteOrgCompletely(orgId: string, userId?: string): Promi
     if (r4.error) errors.push(`supplier_performance_log: ${r4.error.message}`)
   }
 
-  // 3) جداول تعتمد على المؤسسة مباشرة
+  // 3) جداول تعتمد على المؤسسة مباشرة — كل جدول قيده يمنع حذف المؤسسة لازم يكون هنا
+  // (ملفات الموظفين قبل staff_members، وprofitability_closings قبل profiles لأنها تشير لها)
   const directTables = [
+    'stock_movements','staff_tasks','staff_payroll_adjustments','staff_leave_requests','staff_notifications',
+    'profitability_closings',
     'notifications','purchases','staff_members','whatsapp_logs',
     'push_subscriptions','cashier_closings','fixed_expenses','monthly_fixed_expenses',
-    'inventory_snapshots','supplier_orders','data_backups','org_addon_subscriptions',
+    'inventory_snapshots','supplier_orders','data_backups',
   ]
   for (const t of directTables) {
     const r = await (supabase as any).from(t).delete().eq('org_id', orgId)
@@ -52,6 +55,13 @@ export async function deleteOrgCompletely(orgId: string, userId?: string): Promi
   if (r5.error) errors.push(`products: ${r5.error.message}`)
   const r6 = await supabase.from('suppliers').delete().eq('org_id', orgId)
   if (r6.error) errors.push(`suppliers: ${r6.error.message}`)
+
+  // الاشتراكات بعد الموردين والموظفين (يشيرون لها عبر addon_subscription_id)
+  const rSub = await (supabase as any).from('org_addon_subscriptions').delete().eq('org_id', orgId)
+  if (rSub.error) errors.push(`org_addon_subscriptions: ${rSub.error.message}`)
+  // طلبات العرض التجريبي تبقى، بس نفك ربطها بالمنشأة
+  const rDemo = await (supabase as any).from('demo_requests').update({ matched_org_id: null }).eq('matched_org_id', orgId)
+  if (rDemo.error) errors.push(`demo_requests: ${rDemo.error.message}`)
 
   // 5) الفروع
   const r7 = await supabase.from('branches').delete().eq('org_id', orgId)
@@ -114,9 +124,14 @@ export async function deleteBranchCompletely(branchId: string, orgId: string): P
     if (r4.error) errors.push(`supplier_performance_log: ${r4.error.message}`)
   }
 
-  const directTables = ['purchases', 'cashier_closings', 'supplier_orders', 'staff_members', 'notifications']
+  const directTables = ['staff_tasks', 'purchases', 'cashier_closings', 'supplier_orders', 'staff_members', 'notifications']
   for (const t of directTables) {
     const r = await (supabase as any).from(t).delete().eq('branch_id', branchId)
+    if (r.error) errors.push(`${t}: ${r.error.message}`)
+  }
+  // حركات أصناف فروع ثانية (تحويل مخزون) واشتراك الفرع الإضافي: نفك الربط بس — حذفها يغيّر كميات فروع ثانية
+  for (const t of ['stock_movements', 'org_addon_subscriptions']) {
+    const r = await (supabase as any).from(t).update({ branch_id: null }).eq('branch_id', branchId)
     if (r.error) errors.push(`${t}: ${r.error.message}`)
   }
 

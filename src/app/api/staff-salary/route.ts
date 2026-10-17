@@ -1,7 +1,7 @@
 import { managerMay } from '@/lib/managerPerms'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     const housing = Number(housing_allowance) || 0
     const transport = Number(transport_allowance) || 0
     const food = Number(food_allowance) || 0
-    if (!(salary >= 0) || !(housing >= 0) || !(transport >= 0) || !(food >= 0)) {
+    if (!(salary >= 0) || salary > 1_000_000 || !(housing >= 0) || !(transport >= 0) || !(food >= 0)) {
       return NextResponse.json({ error: 'قيم غير صالحة' }, { status: 400 })
     }
 
@@ -33,8 +33,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'ميزة الرواتب متاحة فقط بالباقة المتوسطة أو المتقدمة — يرجى ترقية الباقة' }, { status: 403 })
     }
 
-    const { data: staff } = await supabase.from('staff_members').select('id').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
-    if (!staff) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
+    // مدير الفرع يعدّل رواتب موظفين فرعه بس
+    const { data: staff } = await supabase.from('staff_members').select('id,branch_id').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
+    const forced = enforcedBranchId(access)
+    if (!staff || (forced && (staff as any).branch_id !== forced)) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
 
     const { error } = await supabase.from('staff_members').update({
       monthly_salary: salary,

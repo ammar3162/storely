@@ -1,3 +1,4 @@
+import { isStoredInvoiceUrl } from '@/lib/invoiceUrl'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
@@ -23,6 +24,7 @@ export async function POST(req: Request) {
     const db = sb()
     if (!(await staffHasPermission(db, staff_id, org_id, 'purchases'))) return NextResponse.json({ error: NO_PURCHASES }, { status: 403 })
     const hasVat = body.has_vat !== false
+    if (body.invoice_image && !isStoredInvoiceUrl(body.invoice_image)) return NextResponse.json({ error: 'رابط الفاتورة غير صالح — ارفع الصورة من جديد' }, { status: 400 })
     if (hasVat && !body.invoice_image) return NextResponse.json({ error: 'صوّر الفاتورة أول' }, { status: 400 })
     const tax = await resolvePurchaseTax(db, org_id, supplier, body, hasVat, items.reduce((s, it) => s + it.total, 0))
     if (!tax.ok) return NextResponse.json({ error: tax.error, duplicate: tax.duplicate || undefined }, { status: tax.status })

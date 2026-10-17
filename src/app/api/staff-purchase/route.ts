@@ -1,3 +1,4 @@
+import { isStoredInvoiceUrl } from '@/lib/invoiceUrl'
 import { NextResponse } from 'next/server'
 import { lockedFor, lockedFromError } from '@/lib/periodLock'
 import { netFromTotal } from '@/lib/vat'
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
     // المبلغ قبل الضريبة يُحسب هنا: شاملة ضريبة ← الإجمالي ÷ 1.15، بدون ← الإجمالي نفسه
     // (توافق مع النسخة القديمة من الصفحة اللي كانت ترسل amount جاهز وتعتبر الكل شامل ضريبة)
     const hasVat = body.has_vat !== false
+    if (invoice_image && !isStoredInvoiceUrl(invoice_image)) return NextResponse.json({ error: 'رابط الفاتورة غير صالح — ارفع الصورة من جديد' }, { status: 400 })
     if (hasVat && !invoice_image) return NextResponse.json({ error: 'الفاتورة الضريبية لازم ترفق صورتها أو ملفها' }, { status: 400 })
     const total = Number(body.total_amount)
     const amount = Number.isFinite(total) && total > 0

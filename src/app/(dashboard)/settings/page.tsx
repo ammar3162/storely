@@ -240,7 +240,7 @@ export default function SettingsPage() {
     if (!orgId) return
     setLogoUploading(true)
     const ext = file.name.split('.').pop()
-    const path = `logos/${orgId}-${Date.now()}.${ext}`
+    const path = `${orgId}/logo-${Date.now()}.${ext}`   // مجلد المنشأة (سياسة التخزين تسمح بمجلدها بس)
     const { error: upErr } = await sb.storage.from('invoices').upload(path, file, { upsert: true })
     if (upErr) { alert('فشل رفع الصورة: ' + upErr.message); setLogoUploading(false); return }
     const { data: pub } = sb.storage.from('invoices').getPublicUrl(path)

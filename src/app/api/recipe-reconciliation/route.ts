@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -13,9 +13,10 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
  */
 export async function POST(req: Request) {
   try {
-    const { org_id, branch_id, from, to } = await req.json()
+    const { org_id, branch_id: requestedBranch, from, to } = await req.json()
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    const branch_id = enforcedBranchId(access, requestedBranch)   // مدير الفرع: فرعه بس مهما أرسل الطلب
 
     const db = sb()
     // لو ما تحدد نطاق تاريخ، افتراضياً آخر 30 يوم. لو تحدد، نطاق مخصص (تشمل اليوم كامل بالنهاية)

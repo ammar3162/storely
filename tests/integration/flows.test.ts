@@ -30,10 +30,12 @@ if (enabled) {
 vi.setConfig({ testTimeout: 60_000 })
 
 // ─── هوية المستخدم الحالي (بدل جلسة الدخول) ───
-type Access = { userId: string; orgId: string; role: string; branchId: string | null }
+type Access = { userId: string; orgId: string; role: string; branchId: string | null; permissions?: Record<string, boolean> | null }
 const auth: { current: Access | null } = { current: null }
 
 vi.mock('next/headers', () => ({ headers: async () => new Headers(), cookies: async () => ({ getAll: () => [], set: () => {} }) }))
+// ما نرسل واتساب حقيقي من الاختبارات
+vi.mock('@/lib/whatsapp', () => ({ sendWhatsAppMessage: async () => ({ success: true }), formatPhone: (x: string) => x }))
 vi.mock('@/lib/verifyOrgAccess', async (importOriginal) => {
   const real: any = await importOriginal()
   return {
@@ -42,7 +44,7 @@ vi.mock('@/lib/verifyOrgAccess', async (importOriginal) => {
       ? { userId: auth.current.userId, email: null, status: 'active', orgId: auth.current.orgId, role: auth.current.role, branchId: auth.current.branchId }
       : null,
     verifyOrgAccess: async (orgId: string) => auth.current && auth.current.orgId === orgId
-      ? { authorized: true, userId: auth.current.userId, orgId, role: auth.current.role, branchId: auth.current.branchId }
+      ? { authorized: true, userId: auth.current.userId, orgId, role: auth.current.role, branchId: auth.current.branchId, permissions: auth.current.permissions ?? null }
       : { authorized: false, error: 'غير مصرح', status: 403 },
   }
 })
@@ -104,7 +106,7 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
     it('a VAT invoice for a new product stores net + 15% VAT and adds stock', async () => {
       const r = await call(purchases.POST, 'POST', '/api/purchases', {
         org_id: orgId, branch_id: branchA, category: 'مخزون', name: 'حليب', qty: 10, unit: 'كرتون',
-        total_amount: 115, supplier: 'مورد تجريبي', invoice_date: today, has_vat: true, payment_status: 'paid', invoice_image: 'https://example.test/invoice.jpg',
+        total_amount: 115, supplier: 'مورد تجريبي', invoice_date: today, has_vat: true, payment_status: 'paid', invoice_image: `${URL_}/storage/v1/object/public/invoices/it/invoice.jpg`,
       })
       expect(r.status).toBe(200)
       expect(r.json.product_action).toBe('created')
@@ -330,6 +332,153 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       expect(pay.netSalary).toBe(3100)
       const { data: notes } = await db.from('staff_notifications').select('title').eq('staff_id', staffId)
       expect((notes || []).length).toBe(2)
+    })
+  })
+
+  describe('HR: branch managers are limited to their permission and branch', () => {
+    it('blocks managers without the HR permission, hides other branches, and rejects staff from another org', async () => {
+      const adj = await import('@/app/api/staff-payroll-adjustments/route')
+      const salary = await import('@/app/api/staff-salary/route')
+      const tasks = await import('@/app/api/staff-tasks/route')
+      const leave = await import('@/app/api/staff-leave/route')
+      const { data: brB } = await db.from('branches').insert({ org_id: orgId, name: 'فرع موارد ب', is_active: true } as any).select('id').single()
+      const mk = async (o: string, b: string | null, n: number) => ((await db.from('staff_members').insert({
+        org_id: o, branch_id: b, name: 'موظف ' + n, phone: `9665${String(stamp + 40 + n).slice(-8)}`, pin: 'x', is_active: true, role: 'staff', monthly_salary: 3000, leave_balance_days: 5,
+      } as any).select('id').single()).data as any).id
+      const stA = await mk(orgId, branchA, 1), stB = await mk(orgId, (brB as any).id, 2)
+      const { data: other } = await db.from('organizations').insert({ name: `__it_other_${stamp}`, whatsapp_number: '966500000000', plan: 'pro', max_branches: 1, currency: 'SAR' } as any).select('id').single()
+      const stX = await mk((other as any).id, null, 3)
+      await db.from('staff_payroll_adjustments').insert({ org_id: orgId, staff_id: stB, type: 'deduction', amount: 99, status: 'approved', requested_by: 'owner' } as any)
+      try {
+        const manager = (permissions: Record<string, boolean>) => { auth.current = { userId, orgId, role: 'manager', branchId: branchA, permissions } }
+
+        manager({ inventory: true })
+        expect((await call(adj.POST, 'POST', '/api/staff-payroll-adjustments', { org_id: orgId, staff_id: stA, type: 'deduction', amount: 10 })).status).toBe(403)
+        expect((await call(adj.GET, 'GET', `/api/staff-payroll-adjustments?org_id=${orgId}`)).status).toBe(403)
+        expect((await call(leave.GET, 'GET', `/api/staff-leave?org_id=${orgId}`)).status).toBe(403)
+        expect((await call(tasks.POST, 'POST', '/api/staff-tasks', { org_id: orgId, staff_ids: [stA], title: 'ترتيب' })).status).toBe(403)
+
+        manager({ hr: true })
+        const list = await call(adj.GET, 'GET', `/api/staff-payroll-adjustments?org_id=${orgId}`)
+        expect(list.status).toBe(200)
+        expect(list.json.adjustments.some((a: any) => a.staff_id === stB)).toBe(false)
+        expect((await call(salary.POST, 'POST', '/api/staff-salary', { org_id: orgId, staff_id: stB, monthly_salary: 1 })).status).toBe(404)
+        expect(((await db.from('staff_members').select('monthly_salary').eq('id', stB).single()).data as any).monthly_salary).toBe(3000)
+        expect((await call(tasks.POST, 'POST', '/api/staff-tasks', { org_id: orgId, staff_ids: [stB], title: 'ترتيب' })).status).toBe(404)
+        expect((await call(salary.POST, 'POST', '/api/staff-salary', { org_id: orgId, staff_id: stA, monthly_salary: 3500 })).status).toBe(200)
+
+        auth.current = { userId, orgId, role: 'owner', branchId: null }
+        expect((await call(tasks.POST, 'POST', '/api/staff-tasks', { org_id: orgId, staff_ids: [stX], title: 'دخيل' })).status).toBe(404)
+        expect((await db.from('staff_tasks').select('id').eq('staff_id', stX)).data?.length).toBe(0)
+        const ok = await call(tasks.POST, 'POST', '/api/staff-tasks', { org_id: orgId, staff_ids: [stA, stB], title: 'جرد' })
+        expect(ok.status).toBe(200)
+        const rows = (await db.from('staff_tasks').select('staff_id,branch_id').eq('org_id', orgId).eq('title', 'جرد')).data as any[]
+        expect(rows.find(r => r.staff_id === stB).branch_id).toBe((brB as any).id)
+      } finally {
+        auth.current = { userId, orgId, role: 'owner', branchId: null }
+        const { deleteOrgCompletely } = await import('@/lib/deleteOrg')
+        await deleteOrgCompletely((other as any).id)
+      }
+    })
+
+    it('leave: pending requests count against the balance, and approval re-checks it', async () => {
+      process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
+      const { generateStaffToken } = await import('@/lib/staffAuth')
+      const leave = await import('@/app/api/staff-leave/route')
+      const { data: st } = await db.from('staff_members').insert({
+        org_id: orgId, branch_id: branchA, name: 'موظف إجازة', phone: `9665${String(stamp + 60).slice(-8)}`, pin: 'x', is_active: true, role: 'staff', leave_balance_days: 5,
+      } as any).select('id').single()
+      const token = generateStaffToken((st as any).id, orgId, branchA)
+      const ask = async (start_date: string, end_date: string) => {
+        const res = await leave.POST(new Request('http://test/api/staff-leave', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ start_date, end_date }) }))
+        return { status: res.status, json: await res.json() as any }
+      }
+      expect((await ask('غلط', '2026-12-02')).status).toBe(400)
+      expect((await ask('2026-12-01', '2026-12-03')).status).toBe(200)   // 3 أيام
+      expect((await ask('2026-12-10', '2026-12-12')).status).toBe(400)   // 3 + 3 > 5
+      expect((await ask('2026-12-10', '2026-12-11')).status).toBe(200)   // 3 + 2 = 5
+
+      const reqs = (await db.from('staff_leave_requests').select('id,days_count').eq('staff_id', (st as any).id).order('days_count')).data as any[]
+      await db.from('staff_members').update({ leave_balance_days: 2 } as any).eq('id', (st as any).id)
+      expect((await call(leave.PATCH, 'PATCH', '/api/staff-leave', { org_id: orgId, request_id: reqs[1].id, decision: 'approved' })).status).toBe(400)  // 3 > 2
+      expect((await call(leave.PATCH, 'PATCH', '/api/staff-leave', { org_id: orgId, request_id: reqs[0].id, decision: 'approved' })).status).toBe(200)  // 2
+      expect(((await db.from('staff_members').select('leave_balance_days').eq('id', (st as any).id).single()).data as any).leave_balance_days).toBe(0)
+    })
+  })
+
+  describe('VAT invoice attachment must be a Storely upload', () => {
+    it('rejects an external link as the invoice image', async () => {
+      const r = await call(purchases.POST, 'POST', '/api/purchases', {
+        org_id: orgId, branch_id: branchA, category: 'مخزون', name: 'رابط خارجي', qty: 1, unit: 'حبة',
+        total_amount: 23, supplier: 'مورد', invoice_date: today, has_vat: true, payment_status: 'paid', invoice_image: 'https://evil.example/fake.jpg',
+      })
+      expect(r.status).toBe(400)
+    })
+  })
+
+  describe('deleting an organization', () => {
+    it('removes an org that has HR records (tasks, deductions, leave, staff notifications)', async () => {
+      const { deleteOrgCompletely } = await import('@/lib/deleteOrg')
+      const { data: o } = await db.from('organizations').insert({ name: `__it_del_${stamp}`, whatsapp_number: '966500000000', plan: 'pro', max_branches: 1, currency: 'SAR' } as any).select('id').single()
+      const oid = (o as any).id
+      const { data: b } = await db.from('branches').insert({ org_id: oid, name: 'ف', is_active: true } as any).select('id').single()
+      const { data: s } = await db.from('staff_members').insert({ org_id: oid, branch_id: (b as any).id, name: 'م', phone: `9665${String(stamp + 70).slice(-8)}`, pin: 'x', is_active: true, role: 'staff' } as any).select('id').single()
+      const sid = (s as any).id
+      await db.from('staff_tasks').insert({ org_id: oid, branch_id: (b as any).id, staff_id: sid, title: 'م', status: 'pending' } as any)
+      await db.from('staff_payroll_adjustments').insert({ org_id: oid, staff_id: sid, type: 'deduction', amount: 5, status: 'approved', requested_by: 'owner' } as any)
+      await db.from('staff_leave_requests').insert({ org_id: oid, staff_id: sid, start_date: '2026-12-01', end_date: '2026-12-01', days_count: 1, status: 'pending' } as any)
+      await db.from('staff_notifications').insert({ org_id: oid, staff_id: sid, type: 'info', title: 'ت', message: 'ت' } as any)
+      const r = await deleteOrgCompletely(oid)
+      expect(r.errors).toEqual([])
+      expect((await db.from('organizations').select('id').eq('id', oid)).data?.length).toBe(0)
+    })
+  })
+
+  describe('security: the browser cannot write to the database directly', () => {
+    const ANON = process.env.TEST_SUPABASE_ANON_KEY || ''
+    it.skipIf(!ANON)('a signed-in manager cannot promote themselves, upgrade the plan, change stock, or read staff PINs', async () => {
+      const anon = createClient(URL_, ANON, { auth: { persistSession: false } })
+      // أي زائر: دالة حذف الحسابات ممنوعة
+      const del = await anon.rpc('delete_auth_user' as any, { user_id: '00000000-0000-0000-0000-000000000000' } as any)
+      expect(del.error).not.toBeNull()
+
+      const email = `it-mgr-${stamp}@storely.test`, password = `It-${stamp}-m!`
+      const { data: u } = await db.auth.admin.createUser({ email, password, email_confirm: true })
+      const mid = u.user!.id
+      try {
+        await db.from('profiles').upsert({ id: mid, full_name: 'مدير', org_id: orgId, role: 'manager', branch_id: branchA, status: 'active' } as any)
+        await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: 'موظف سري', phone: `9665${String(stamp + 80).slice(-8)}`, pin: '$2a$10$x', is_active: true, role: 'staff' } as any)
+        const user = createClient(URL_, ANON, { auth: { persistSession: false } })
+        const { error: signErr } = await user.auth.signInWithPassword({ email, password })
+        expect(signErr).toBeNull()
+
+        await user.from('profiles').update({ role: 'owner', branch_id: null } as any).eq('id', mid)
+        expect(((await db.from('profiles').select('role').eq('id', mid).single()).data as any).role).toBe('manager')
+
+        const before = ((await db.from('organizations').select('plan,max_branches').eq('id', orgId).single()).data as any)
+        await user.from('organizations').update({ plan: 'pro', max_branches: 99 } as any).eq('id', orgId)
+        expect((await db.from('organizations').select('plan,max_branches').eq('id', orgId).single()).data).toEqual(before)
+
+        const { data: prod } = await db.from('products').insert({ org_id: orgId, branch_id: branchA, name: 'منتج حماية', qty: 0, is_active: true } as any).select('id').single()
+        const ins = await user.from('stock_movements').insert({ org_id: orgId, product_id: (prod as any).id, type: 'in', qty_change: 1000 } as any)
+        expect(ins.error).not.toBeNull()
+
+        expect((await user.from('staff_members').select('pin').eq('org_id', orgId)).data || []).toEqual([])
+        // القراءة اللي يحتاجها التحديث الفوري لسا شغالة
+        expect(((await user.from('notifications').select('id').eq('org_id', orgId)).error)).toBeNull()
+
+        // التخزين: الزائر ما يشوف قائمة الفواتير، والمستخدم يرفع بمجلد منشأته بس
+        expect((await anon.storage.from('invoices').list('', { limit: 5 })).data || []).toEqual([])
+        const png = new Blob([new Uint8Array([137, 80, 78, 71])], { type: 'image/png' })
+        expect((await user.storage.from('invoices').upload(`00000000-0000-0000-0000-000000000000/x-${stamp}.png`, png)).error).not.toBeNull()
+        expect((await user.storage.from('invoices').upload(`x-${stamp}.png`, png)).error).not.toBeNull()
+        const own = `${orgId}/it-${stamp}.png`
+        expect((await user.storage.from('invoices').upload(own, png, { contentType: 'image/png' })).error).toBeNull()
+        await db.storage.from('invoices').remove([own])
+      } finally {
+        await db.from('profiles').delete().eq('id', mid)
+        await db.auth.admin.deleteUser(mid).catch(() => {})
+      }
     })
   })
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { loadOwnedSupplier } from '@/lib/supplierAccess'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -13,20 +14,26 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
  */
 export async function POST(req: Request) {
   try {
-    const { org_id, supplier_id, supplier_name } = await req.json()
+    const { org_id, supplier_id } = await req.json()
     if (!org_id || !supplier_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
     const db = sb()
+    // المورد لازم يكون من المنشأة (وفرع المدير) — واسمه من قاعدة البيانات مو من الطلب
+    const owned = await loadOwnedSupplier(db as any, access, org_id, supplier_id)
+    if (!owned) return NextResponse.json({ error: 'المورد غير موجود' }, { status: 404 })
+    const { data: supRow } = await db.from('suppliers').select('name').eq('id', supplier_id).maybeSingle()
+    const supplier_name = String((supRow as any)?.name || '').replace(/[\\%_]/g, m => '\\' + m)
+    const forced = enforcedBranchId(access)
     const since180 = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString()
 
     const [{ data: orders }, { data: purchases }, { data: failedLogs }] = await Promise.all([
       (db as any).from('supplier_orders').select('id,status,items,created_at,confirmed_at,escalated_at')
         .eq('org_id', org_id).eq('supplier_id', supplier_id).gte('created_at', since180).order('created_at', { ascending: false }),
       supplier_name
-        ? db.from('purchases').select('name,qty,unit,total_amount,created_at').eq('org_id', org_id).ilike('supplier', supplier_name.trim()).gte('created_at', since180).order('created_at', { ascending: false })
+        ? (forced ? db.from('purchases').select('name,qty,unit,total_amount,created_at').eq('branch_id', forced) : db.from('purchases').select('name,qty,unit,total_amount,created_at')).eq('org_id', org_id).ilike('supplier', supplier_name.trim()).gte('created_at', since180).order('created_at', { ascending: false })
         : Promise.resolve({ data: [] as any[] }),
       // سجلات فشل إرسال واتساب الفعلية — منفصلة عن مجرد إنشاء الطلب بقاعدة البيانات
       (db as any).from('supplier_order_logs').select('id,status,created_at,products(name)')
