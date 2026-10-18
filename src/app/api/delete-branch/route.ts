@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { deleteBranchCompletely } from '@/lib/deleteOrg'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { monthName, lockedFromError } from '@/lib/periodLock'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,9 +35,15 @@ export async function POST(req: Request) {
     }
 
     const result = await deleteBranchCompletely(branch_id, org_id)
+    if (result.lockedMonths?.length) {
+      // ما انحذف شي — الفرع فيه سجلات بشهور راجعها المحاسب وأقفلها
+      const months = result.lockedMonths.map(monthName).join('، ')
+      return NextResponse.json({ error: `ما ينقدر ينحذف: الفرع فيه مشتريات أو إقفالات كاشير في ${result.lockedMonths.length > 1 ? 'شهور مقفلة' : 'شهر مقفل'} من المحاسب (${months}). اطلب من المحاسب يفتح الشهر، أو أوقف الفرع بدل حذفه — الإيقاف يحفظ بياناته.`, locked_months: result.lockedMonths }, { status: 409 })
+    }
     if (!result.success) {
       console.error('delete-branch partial failure:', result.errors)
-      return NextResponse.json({ error: 'حدث خطأ أثناء الحذف — راجع الدعم الفني', details: result.errors }, { status: 500 })
+      const locked = result.errors.map(e => lockedFromError({ message: e })).find(Boolean)
+      return NextResponse.json({ error: locked || 'حدث خطأ أثناء الحذف — راجع الدعم الفني', details: result.errors }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })

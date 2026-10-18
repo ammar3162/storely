@@ -15,6 +15,10 @@ export async function deleteOrgCompletely(orgId: string, userId?: string): Promi
   const supabase = sb()
   const errors: string[] = []
 
+  // حذف المنشأة كاملة: إقفالات الشهور تنشال أول — وإلا قاعدة البيانات ترفض حذف مشترياتها وإقفالات كاشيرها
+  const rLocks = await (supabase as any).from('period_locks').delete().eq('org_id', orgId)
+  if (rLocks.error) errors.push(`period_locks: ${rLocks.error.message}`)
+
   const { data: prods } = await supabase.from('products').select('id').eq('org_id', orgId)
   const pids = (prods || []).map((p: any) => p.id)
 
@@ -101,9 +105,14 @@ export async function deleteOrgCompletely(orgId: string, userId?: string): Promi
  * لا يحذف أبداً الملف الشخصي لصاحب الحساب (profiles) — بس يفكّ ارتباطه بالفرع (branch_id = null)
  * لأن حذف حساب دخول العميل بسبب حذف فرع كارثة أكبر بكثير من فقدان تفضيل الفرع الافتراضي.
  */
-export async function deleteBranchCompletely(branchId: string, orgId: string): Promise<{ success: boolean; errors: string[] }> {
+export async function deleteBranchCompletely(branchId: string, orgId: string): Promise<{ success: boolean; errors: string[]; lockedMonths?: string[] }> {
   const supabase = sb()
   const errors: string[] = []
+
+  // قبل ما نحذف أي شي: لو الفرع فيه مشتريات أو إقفالات كاشير بشهر مقفل، قاعدة البيانات بترفض حذفها
+  // ونطلع بحذف ناقص — فنوقف من البداية بدون ما نلمس شي
+  const lockedMonths = await branchLockedMonths(supabase, orgId, branchId)
+  if (lockedMonths.length) return { success: false, errors: [], lockedMonths }
 
   const { data: prods } = await supabase.from('products').select('id').eq('org_id', orgId).eq('branch_id', branchId)
   const pids = (prods || []).map((p: any) => p.id)
@@ -150,4 +159,23 @@ export async function deleteBranchCompletely(branchId: string, orgId: string): P
   }
 
   return { success: errors.length === 0, errors }
+}
+
+const nextMonth = (m: string) => { const y = Number(m.slice(0, 4)), mo = Number(m.slice(5, 7)); return new Date(Date.UTC(y, mo, 1)).toISOString().slice(0, 10) }
+
+/** الشهور المقفلة اللي فيها مشتريات أو إقفالات كاشير لهالفرع (نفس حساب قاعدة البيانات: الشهر بتوقيت الرياض) */
+export async function branchLockedMonths(db: any, orgId: string, branchId: string): Promise<string[]> {
+  const { data: locks } = await db.from('period_locks').select('month').eq('org_id', orgId)
+  const out: string[] = []
+  for (const l of (locks || []) as { month: string }[]) {
+    const m = String(l.month).slice(0, 10), n = nextMonth(m)
+    const [{ count: p }, { count: c }] = await Promise.all([
+      db.from('purchases').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('branch_id', branchId)
+        .gte('created_at', `${m}T00:00:00+03:00`).lt('created_at', `${n}T00:00:00+03:00`),
+      db.from('cashier_closings').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('branch_id', branchId)
+        .gte('closing_date', m).lt('closing_date', n),
+    ])
+    if ((p || 0) + (c || 0) > 0) out.push(m)
+  }
+  return out.sort()
 }

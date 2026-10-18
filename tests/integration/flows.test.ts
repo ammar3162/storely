@@ -434,6 +434,30 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
     })
   })
 
+  describe('deleting a branch with records in a locked month', () => {
+    it('refuses before touching anything, and whole-org deletion still works', async () => {
+      const { deleteBranchCompletely, deleteOrgCompletely } = await import('@/lib/deleteOrg')
+      const { data: o } = await db.from('organizations').insert({ name: `__it_lock_${stamp}`, whatsapp_number: '966500000000', plan: 'pro', max_branches: 2, currency: 'SAR' } as any).select('id').single()
+      const oid = (o as any).id
+      const { data: b } = await db.from('branches').insert({ org_id: oid, name: 'فرع مقفل', is_active: true } as any).select('id').single()
+      const bid = (b as any).id
+      await db.from('products').insert({ org_id: oid, branch_id: bid, name: 'صنف الفرع', qty: 0, is_active: true } as any)
+      await db.from('purchases').insert({ org_id: oid, branch_id: bid, name: 'شراء سبتمبر', category: 'أخرى', qty: 1, amount: 10, has_vat: false, supplier: 'م', created_at: '2026-09-15T10:00:00+03:00' } as any)
+      await db.from('period_locks').insert({ org_id: oid, month: '2026-09-01', locked_by_name: 'اختبار' } as any)
+
+      const r = await deleteBranchCompletely(bid, oid)
+      expect(r.success).toBe(false)
+      expect(r.lockedMonths).toEqual(['2026-09-01'])
+      // ما انحذف شي من الفرع
+      expect((await db.from('products').select('id').eq('branch_id', bid)).data?.length).toBe(1)
+      expect((await db.from('branches').select('id').eq('id', bid)).data?.length).toBe(1)
+
+      const d = await deleteOrgCompletely(oid)
+      expect(d.errors).toEqual([])
+      expect((await db.from('organizations').select('id').eq('id', oid)).data?.length).toBe(0)
+    })
+  })
+
   describe('security: the browser cannot write to the database directly', () => {
     const ANON = process.env.TEST_SUPABASE_ANON_KEY || ''
     it.skipIf(!ANON)('a signed-in manager cannot promote themselves, upgrade the plan, change stock, or read staff PINs', async () => {
