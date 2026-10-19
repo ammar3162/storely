@@ -52,7 +52,8 @@ export type AccClosing = { date: string; branch?: string | null; staff: string |
   cash: number; expenses: number; difference: number; status: string | null; deficitReason: string | null; deficitDecision: string | null }
 export type AccExpense = { date: string; branch?: string | null; staff: string | null; item: string; amount: number }
 export type AccPayroll = { name: string; basic: number; housing: number; transport: number; food: number; gross: number; overtime: number; bonuses: number
-  deductions: number; latePenalties: number; advances: number; net: number }
+  deductions: number; latePenalties: number; advances: number; net: number
+  leftOn?: string; workedDays?: number }   // موظف ترك خلال الشهر: آخر يوم له وعدد أيامه
 export type AccStock = { name: string; category: string | null; qty: number; unit: string | null; avgCost: number | null; branch?: string | null }
 export type AccPayable = { supplier: string; invoices: number; oldest: string; nextDue: string | null; total: number }
 
@@ -64,6 +65,10 @@ export type AccountantReport = {
   payroll: AccPayroll[] | null   // null = ما ينطبق (الفترة مو شهر كامل، أو ما عنده إدارة الرواتب)
   stock: AccStock[]; payables: AccPayable[]
 }
+
+/** اسم الموظف بجدول الرواتب — اللي ترك خلال الشهر ينكتب جنبه آخر يوم وعدد أيامه */
+export const payrollName = (p: Pick<AccPayroll, 'name' | 'leftOn' | 'workedDays'>) =>
+  p.leftOn ? `${p.name} (ترك ${p.leftOn} · ${p.workedDays} يوم)` : p.name
 
 // عدد بالعربي: فاتورة، فاتورتين، ٣ فواتير، ١١ فاتورة
 export function arCount(n: number, one: string, two: string, few: string) {
@@ -309,7 +314,7 @@ export async function buildAccountantWorkbook(r: AccountantReport, opts: { water
     { header: 'بدل نقل', key: 'transport', width: 11, money: true }, { header: 'بدل طعام', key: 'food', width: 11, money: true }, { header: 'إجمالي الراتب', key: 'gross', width: 13, money: true },
     { header: 'الإضافي', key: 'overtime', width: 11, money: true }, { header: 'مكافآت', key: 'bonuses', width: 11, money: true }, { header: 'خصومات', key: 'deductions', width: 11, money: true },
     { header: 'منها غرامات تأخير', key: 'latePenalties', width: 14, money: true }, { header: 'سلف', key: 'advances', width: 11, money: true }, { header: 'الصافي', key: 'net', width: 13, money: true },
-  ], r.payroll, { name: 'الإجمالي', basic: sum(r.payroll, p => p.basic), housing: sum(r.payroll, p => p.housing), transport: sum(r.payroll, p => p.transport),
+  ], r.payroll.map(p => ({ ...p, name: payrollName(p) })), { name: 'الإجمالي', basic: sum(r.payroll, p => p.basic), housing: sum(r.payroll, p => p.housing), transport: sum(r.payroll, p => p.transport),
     food: sum(r.payroll, p => p.food), gross: t.payrollGross, overtime: sum(r.payroll, p => p.overtime), bonuses: sum(r.payroll, p => p.bonuses),
     deductions: sum(r.payroll, p => p.deductions), latePenalties: sum(r.payroll, p => p.latePenalties), advances: sum(r.payroll, p => p.advances), net: t.payrollNet })
 

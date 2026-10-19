@@ -84,13 +84,18 @@ export async function computeStaffPayroll(db: SupabaseClient, staff: any, month:
   const { start, end, lastDay } = monthRange(month)
   const orgId: string | undefined = staff.org_id
 
-  const basic = Number(staff.monthly_salary || 0)
+  // موظف ترك (payroll_until = آخر يوم له): الراتب والبدلات بنسبة الأيام اللي اشتغلها بالشهر
+  const until: string | null = typeof staff.payroll_until === 'string' ? staff.payroll_until.slice(0, 10) : null
+  const workedDays = !until || until > `${month}-${String(lastDay).padStart(2, '0')}` ? lastDay : until < `${month}-01` ? 0 : Number(until.slice(8, 10))
+  const share = (v: unknown) => round2(Number(v || 0) * workedDays / lastDay)
+  const fullBasic = Number(staff.monthly_salary || 0)
+  const basic = share(staff.monthly_salary)
   const allowances = {
-    housing: Number(staff.housing_allowance || 0),
-    transport: Number(staff.transport_allowance || 0),
-    food: Number(staff.food_allowance || 0),
+    housing: share(staff.housing_allowance),
+    transport: share(staff.transport_allowance),
+    food: share(staff.food_allowance),
   }
-  const grossSalary = basic + allowances.housing + allowances.transport + allowances.food
+  const grossSalary = round2(basic + allowances.housing + allowances.transport + allowances.food)
 
   // كل الاستعلامات مقيّدة بالموظف + المنشأة (لو معروفة) عشان ما يدخل أي سجل من منشأة ثانية
   const scoped = (q: any) => (orgId ? q.eq('org_id', orgId) : q)
@@ -141,7 +146,7 @@ export async function computeStaffPayroll(db: SupabaseClient, staff: any, month:
       perDay.set(day, Math.max(perDay.get(day) || 0, ot))
     }
   }
-  const rate = overtimeHourRate(basic, shiftRow as Shift, settings)
+  const rate = overtimeHourRate(fullBasic, shiftRow as Shift, settings)   // سعر الساعة من الراتب الكامل
   const overtimeDays = [...perDay.entries()].map(([date, minutes]) => ({ date, minutes, pay: round2((minutes / 60) * rate) }))
   const overtimeMinutesTotal = overtimeDays.reduce((s, d) => s + d.minutes, 0)
   const overtimePay = round2(overtimeDays.reduce((s, d) => s + d.pay, 0))
@@ -156,6 +161,7 @@ export async function computeStaffPayroll(db: SupabaseClient, staff: any, month:
   return {
     month,
     basic, allowances, grossSalary,
+    workedDays, endedOn: until && workedDays < lastDay ? until : null,
     overtime: { minutes: overtimeMinutesTotal, pay: overtimePay, hourRate: rate, mode: settings.mode, days: overtimeDays },
     bonuses,
     bonusesTotal,
@@ -174,4 +180,34 @@ export async function computeStaffPayroll(db: SupabaseClient, staff: any, month:
       weeklyOffDays: weeklyOffCount(month, staff) },
     leaveDaysTaken: ((leaves || []) as any[]).reduce((s, l) => s + Number(l.days_count), 0),
   }
+}
+
+const riyadhDay = (iso: string) => new Date(Date.parse(iso) + 3 * 3600e3).toISOString().slice(0, 10)
+
+/**
+ * موظفين رواتب الشهر: النشطين + اللي تركوا خلاله أو بعده (مع payroll_until = آخر يوم لهم)
+ * الموقوفين قبل تسجيل تاريخ الإيقاف: آخر حضور أو حركة لهم بالشهر = آخر يوم
+ */
+export async function staffForPayrollMonth(db: SupabaseClient, o: { orgId: string; branchId?: string | null; month: string; select: string }): Promise<any[]> {
+  const { start, end } = monthRange(o.month)
+  let q = db.from('staff_members').select(`${o.select},is_active,deactivated_at`).eq('org_id', o.orgId)
+  if (o.branchId) q = q.eq('branch_id', o.branchId)
+  const { data } = await q
+  const all = (data || []) as any[]
+  const oldInactive = all.filter(s => !s.is_active && !s.deactivated_at).map(s => s.id)
+  const lastSeen = new Map<string, string>()
+  if (oldInactive.length) {
+    const [{ data: att }, { data: adj }] = await Promise.all([
+      db.from('staff_attendance').select('staff_id,recorded_at').eq('org_id', o.orgId).in('staff_id', oldInactive).gte('recorded_at', start).lte('recorded_at', end),
+      db.from('staff_payroll_adjustments').select('staff_id,created_at').eq('org_id', o.orgId).in('staff_id', oldInactive).gte('created_at', start).lte('created_at', end),
+    ])
+    for (const [id, at] of [...((att || []) as any[]).map(x => [x.staff_id, x.recorded_at]), ...((adj || []) as any[]).map(x => [x.staff_id, x.created_at])] as [string, string][]) {
+      const d = riyadhDay(at); if (!lastSeen.has(id) || d > lastSeen.get(id)!) lastSeen.set(id, d)
+    }
+  }
+  return all.flatMap(s => {
+    if (s.is_active) return [s]
+    const until = s.deactivated_at ? riyadhDay(s.deactivated_at) : lastSeen.get(s.id)
+    return until && until >= `${o.month}-01` ? [{ ...s, payroll_until: until }] : []
+  })
 }

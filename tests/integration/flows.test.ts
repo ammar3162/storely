@@ -434,6 +434,40 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
     })
   })
 
+  describe('accountant payroll includes staff who left during the month', () => {
+    it('stamps the leave date, prorates salary, and keeps their deductions', async () => {
+      const { loadAccountantReport } = await import('@/lib/accountantData')
+      const now = new Date(Date.now() + 3 * 3600e3)
+      const y = now.getUTCFullYear(), m = now.getUTCMonth() + 1, last = new Date(Date.UTC(y, m, 0)).getUTCDate()
+      const month = `${y}-${String(m).padStart(2, '0')}`, today = now.toISOString().slice(0, 10)
+      const { data: st } = await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: 'موظف ترك', phone: `9665${String(stamp + 90).slice(-8)}`, pin: 'x', is_active: true, role: 'staff', monthly_salary: 3100 } as any).select('id').single()
+      const sid = (st as any).id
+      await db.from('staff_payroll_adjustments').insert({ org_id: orgId, staff_id: sid, type: 'deduction', amount: 50, status: 'approved', requested_by: 'owner' } as any)
+      await db.from('staff_members').update({ is_active: false } as any).eq('id', sid)
+      const row = (await db.from('staff_members').select('deactivated_at').eq('id', sid).single()).data as any
+      expect(row.deactivated_at).toBeTruthy()
+
+      const rep = await loadAccountantReport(db as any, { orgId, branchId: null, period: { start: `${month}-01`, end: `${month}-${last}` }, sections: ['payroll'] as any, vatRegistered: false })
+      const p = rep.payroll!.find(x => x.name === 'موظف ترك')!
+      expect(p).toBeTruthy()
+      expect(p.leftOn).toBe(today)
+      expect(p.workedDays).toBe(Number(today.slice(8)))
+      expect(p.gross).toBeCloseTo(Math.round(3100 * Number(today.slice(8)) / last * 100) / 100, 2)
+      expect(p.deductions).toBe(50)
+
+      // نفس الشي بتقرير الموظفين عند المالك
+      const sr = await import('@/app/api/staff-report/route')
+      const r = await call(sr.GET, 'GET', `/api/staff-report?org_id=${orgId}&month=${month}`)
+      const hrRow = r.json.report.find((x: any) => x.staffId === sid)
+      expect(hrRow.leftOn).toBe(today)
+      expect(hrRow.deductionsTotal).toBe(50)
+
+      // رجع للعمل = يرجع راتب كامل وينمسح تاريخ الإيقاف
+      await db.from('staff_members').update({ is_active: true } as any).eq('id', sid)
+      expect(((await db.from('staff_members').select('deactivated_at').eq('id', sid).single()).data as any).deactivated_at).toBeNull()
+    })
+  })
+
   describe('deleting a branch with records in a locked month', () => {
     it('refuses before touching anything, and whole-org deletion still works', async () => {
       const { deleteBranchCompletely, deleteOrgCompletely } = await import('@/lib/deleteOrg')

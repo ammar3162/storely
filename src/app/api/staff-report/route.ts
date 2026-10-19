@@ -2,7 +2,7 @@ import { managerMay } from '@/lib/managerPerms'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
-import { computeStaffPayroll, loadOvertimeSettings } from '@/lib/payroll'
+import { computeStaffPayroll, loadOvertimeSettings, staffForPayrollMonth } from '@/lib/payroll'
 import { orgHasHrFeature } from '@/lib/hrAccess'
 import { mapLimit } from '@/lib/mapLimit'
 
@@ -37,13 +37,9 @@ export async function GET(req: Request) {
 
     // مدير الفرع يشوف موظفين فرعه بس
     const forcedBranch = enforcedBranchId(access)
-    let staffQ = supabase
-      .from('staff_members')
-      .select('id,org_id,name,monthly_salary,housing_allowance,transport_allowance,food_allowance,leave_balance_days,is_active,shift_id,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates')
-      .eq('org_id', org_id)
-      .eq('is_active', true)
-    if (forcedBranch) staffQ = staffQ.eq('branch_id', forcedBranch)
-    const { data: staffList } = await staffQ
+    // النشطين + اللي تركوا خلال الشهر (راتب أيامهم وخصوماتهم — نفس تقرير المحاسب)
+    const staffList = await staffForPayrollMonth(supabase as any, { orgId: org_id, branchId: forcedBranch, month,
+      select: 'id,org_id,name,monthly_salary,housing_allowance,transport_allowance,food_allowance,leave_balance_days,shift_id,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates' })
 
     const overtimeSettings = await loadOvertimeSettings(supabase, org_id)
     // 6 موظفين بنفس الوقت — أسرع بكثير مع الفروع الكبيرة
@@ -54,7 +50,7 @@ export async function GET(req: Request) {
       const deductions = pay.deductions
       const daysPresent = pay.attendance.daysPresent
       const lateCount = pay.attendance.lateCount
-      const attendanceRate = daysInMonth > 0 ? Math.min(1, daysPresent / daysInMonth) : 0
+      const attendanceRate = pay.workedDays > 0 ? Math.min(1, daysPresent / pay.workedDays) : 0   // اللي ترك: على أيامه بس
 
       const { data: leaveThisMonth } = await supabase
         .from('staff_leave_requests')
@@ -83,7 +79,7 @@ export async function GET(req: Request) {
       const rating = Math.round(attendanceScore + taskScore + lateScore + deductionScore)
 
       return {
-        staffId: s.id, name: s.name,
+        staffId: s.id, name: pay.endedOn ? `${s.name} (ترك ${pay.endedOn})` : s.name, leftOn: pay.endedOn, workedDays: pay.workedDays,
         grossSalary, deductionsTotal, advancesTotal, netSalary,
         overtimeMinutes: pay.overtime.minutes, overtimePay: pay.overtime.pay, bonusesTotal: pay.bonusesTotal,
         latePenaltiesTotal: pay.latePenaltiesTotal, latePenaltiesCount: pay.latePenalties.length,
