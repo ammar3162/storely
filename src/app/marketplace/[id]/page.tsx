@@ -221,9 +221,9 @@ export default function SupplierStorefrontPage() {
                     const vatAmount = finalPrice - basePrice
                     return (
                       <>
-                        <div style={{fontSize:16,fontWeight:900,color:'#029FA2',marginTop:8}}>{finalPrice.toFixed(2)} ر.س</div>
+                        <div style={{fontSize:16,fontWeight:900,color:'#029FA2',marginTop:8}}>{finalPrice.toFixed(2)} ⃁</div>
                         <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>
-                          الأساسي {basePrice.toFixed(2)} + ضريبة {vatAmount.toFixed(2)} ر.س
+                          الأساسي {basePrice.toFixed(2)} + ضريبة {vatAmount.toFixed(2)} ⃁
                         </div>
                       </>
                     )
@@ -326,7 +326,7 @@ export default function SupplierStorefrontPage() {
                     {(r.status==='quoted'||r.status==='accepted'||r.status==='confirmed'||r.status==='fulfilled') && (
                       <div style={{background:'#f0fdfa',borderRadius:10,padding:'10px 14px',marginBottom:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                         <span style={{fontSize:12,color:'#0f766e',fontWeight:700}}>💰 السعر المقترح</span>
-                        <span style={{fontSize:16,fontWeight:900,color:'#029FA2'}}>{r.quoted_price} ر.س</span>
+                        <span style={{fontSize:16,fontWeight:900,color:'#029FA2'}}>{r.quoted_price} ⃁</span>
                       </div>
                     )}
                     {r.quoted_note && (r.status==='quoted'||r.status==='accepted'||r.status==='confirmed'||r.status==='fulfilled') && (

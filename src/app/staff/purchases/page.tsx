@@ -123,7 +123,7 @@ export default function StaffPurchasesPage() {
     invoice_image:'', hasVat:'', invoice_number:'', supplier_vat_number:''
   })
   const submitting = useRef(false)
-  const [curr, setCurr] = useState('ر.س')
+  const [curr, setCurr] = useState('⃁')
   const router = useRouter()
 
   useEffect(()=>{

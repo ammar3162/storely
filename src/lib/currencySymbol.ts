@@ -1,6 +1,6 @@
 // رمز العملة المعروض بالتقارير والفواتير حسب كود العملة (ISO 4217)
 export const CURRENCY_SYMBOLS: Record<string, string> = {
-  SAR: 'ر.س',
+  SAR: '⃁',
   AED: 'د.إ',
   KWD: 'د.ك',
   BHD: 'د.ب',

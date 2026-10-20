@@ -30,7 +30,7 @@ export default function StaffMonthlyDetail({ onBack }: { onBack: () => void }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [exporting, setExporting] = useState(false)
-  const [curr, setCurr] = useState('ر.س')
+  const [curr, setCurr] = useState('⃁')
   useEffect(() => { getMe().then(me => { if (me?.org?.currency) setCurr(currencySymbol(me.org.currency)) }) }, [])
 
   useEffect(() => {

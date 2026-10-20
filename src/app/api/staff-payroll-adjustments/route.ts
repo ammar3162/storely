@@ -100,7 +100,7 @@ export async function POST(req: Request) {
       if (amountNum > 1_000_000) return NextResponse.json({ error: 'مبلغ غير صالح' }, { status: 400 })
       const s = staffRow as any
       const monthly = Number(s.monthly_salary || 0) + Number(s.housing_allowance || 0) + Number(s.transport_allowance || 0) + Number(s.food_allowance || 0)
-      if (monthly > 0 && amountNum > monthly) return NextResponse.json({ error: `السلفة أكبر من راتبك الشهري (${monthly} ر.س)` }, { status: 400 })
+      if (monthly > 0 && amountNum > monthly) return NextResponse.json({ error: `السلفة أكبر من راتبك الشهري (${monthly} ⃁)` }, { status: 400 })
       // طلب واحد بانتظار الرد — يمنع تكرار الطلب ورسائل الواتساب للمالك
       const { data: pendingAdv } = await supabase.from('staff_payroll_adjustments').select('id').eq('org_id', org_id).eq('staff_id', staff_id).eq('type', 'advance').eq('status', 'pending').limit(1).maybeSingle()
       if (pendingAdv) return NextResponse.json({ error: 'عندك طلب سلفة بانتظار الرد — انتظر رد صاحب العمل' }, { status: 409 })
@@ -117,7 +117,7 @@ export async function POST(req: Request) {
       await supabase.from('notifications').insert({
         org_id, branch_id: branchId, type: 'info',
         title: 'طلب سلفة جديد',
-        message: `${staffName} يطلب سلفة بمبلغ ${amountNum} ر.س${reason ? ` — السبب: ${reason}` : ''}`,
+        message: `${staffName} يطلب سلفة بمبلغ ${amountNum} ⃁${reason ? ` — السبب: ${reason}` : ''}`,
         ref_type: 'advance_request', ref_id: (created as any)?.id,
       } as any)
 
@@ -171,7 +171,7 @@ export async function PATCH(req: Request) {
 
       const titleMap = { ar: decision==='approved'?'تمت الموافقة على طلب السلفة':'تم رفض طلب السلفة', en: decision==='approved'?'Advance Request Approved':'Advance Request Rejected' }
       const messageMap = {
-        ar: decision==='approved' ? `تمت الموافقة على سلفتك بمبلغ ${amount} ر.س — راجع صاحب العمل لاستلامها` : `تم رفض طلب السلفة بمبلغ ${amount} ر.س`,
+        ar: decision==='approved' ? `تمت الموافقة على سلفتك بمبلغ ${amount} ⃁ — راجع صاحب العمل لاستلامها` : `تم رفض طلب السلفة بمبلغ ${amount} ⃁`,
         en: decision==='approved' ? `Your advance of ${amount} SAR was approved — check with your employer to collect it` : `Your advance request of ${amount} SAR was rejected`,
       }
 

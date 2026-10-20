@@ -5,7 +5,7 @@ import { confirmDialog } from '@/components/ConfirmDialog'
 import NumberInput from '@/components/NumberInput'
 import { A, Badge, Btn, Card, Empty, Loading, PageHeader, Stat, adminFetch, fmtDate, inputStyle } from '../_admin/kit'
 
-const sar = (n: number) => `${Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س`
+const sar = (n: number) => `${Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })} ⃁`
 
 // المناديب: مين جاب مين، وكم يستاهل كل واحد، وتسجيل الصرف
 export default function AgentsPage() {

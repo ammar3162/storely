@@ -137,7 +137,7 @@ export const FAQ_ITEMS = [
    qEn:'How does payment work?',aEn:'Payment is via bank transfer. Your account is activated within 24 hours after transfer.'},
   {q:'كم عدد الموردين في كل باقة؟',a:'الأساسية: 3 موردين، المتوسطة: 10 موردين، المتقدمة: غير محدود.',
    qEn:'How many suppliers per plan?',aEn:'Basic: 3 suppliers, Standard: 10 suppliers, Advanced: unlimited.'},
-  {q:'هل يدعم متعدد الفروع؟',a:'نعم — الأساسية: فرع واحد، المتوسطة: 3 فروع، المتقدمة: 10 فروع. وتقدر تضيف فرع لأي باقة بـ 49 ر.س/شهر.',
+  {q:'هل يدعم متعدد الفروع؟',a:'نعم — الأساسية: فرع واحد، المتوسطة: 3 فروع، المتقدمة: 10 فروع. وتقدر تضيف فرع لأي باقة بـ 49 ⃁/شهر.',
    qEn:'Does it support multiple branches?',aEn:'Yes — Basic: 1 branch, Standard: 3 branches, Advanced: 10 branches. Extra branches can be added to any plan for 49 SAR/month.'},
   {q:'هل الموظفون يحتاجون تدريب؟',a:'لا — واجهة الموظفين بسيطة جداً بضغطة واحدة، وتدعم 7 لغات لأي جنسية.',
    qEn:'Do staff need training?',aEn:'No — the staff interface is extremely simple (one-tap), and supports 7 languages for any nationality.'},

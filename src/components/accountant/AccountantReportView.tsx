@@ -146,7 +146,7 @@ function VatReturnView({ r, onShowMissing, onRequestMissing }: { r: any; onShowM
       آخر موعد لتقديم الإقرار وسداد الضريبة: {new Date(`${v.deadline}T12:00:00Z`).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' })}</div>}
     <div style={{ overflowX: 'auto', marginTop: 12 }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, minWidth: 560 }}>
-        <thead><tr>{['الخانة', 'البند', 'المبلغ (ر.س)', 'التعديلات', 'ضريبة القيمة المضافة'].map(h =>
+        <thead><tr>{['الخانة', 'البند', 'المبلغ (⃁)', 'التعديلات', 'ضريبة القيمة المضافة'].map(h =>
           <th key={h} style={{ textAlign: 'right', padding: '7px 8px', background: colors.primaryLight, color: colors.primaryDark, fontWeight: 700, whiteSpace: 'nowrap' }}>{h}</th>)}</tr></thead>
         <tbody>{v.boxes.map(b => (
           <tr key={b.no} style={{ background: b.total ? '#f8fafc' : undefined, fontWeight: b.total ? 800 : 400 }}>

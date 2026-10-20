@@ -67,7 +67,7 @@ export async function POST(req: Request) {
         type: 'purchase',
         at: p.created_at,
         title: `مشترية مسجّلة: ${p.name}`,
-        detail: `${p.qty || ''} ${p.unit || ''} — ${p.total_amount || 0} ر.س`,
+        detail: `${p.qty || ''} ${p.unit || ''} — ${p.total_amount || 0} ⃁`,
       })
     }
 

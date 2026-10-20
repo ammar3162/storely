@@ -5,7 +5,7 @@ describe('deduction notice text', () => {
   it('manual deduction with reason, in Arabic', () => {
     const t = deductionNoticeText('ar', { kind: 'manual', amount: 100, reason: 'كسر صحن' })
     expect(t.title).toBe('خصم على راتبك')
-    expect(t.message).toContain('100 ر.س'); expect(t.message).toContain('كسر صحن')
+    expect(t.message).toContain('100 ⃁'); expect(t.message).toContain('كسر صحن')
   })
   it('late deduction in English with minutes', () => {
     const t = deductionNoticeText('en', { kind: 'late', amount: 1.17, minutes: 14 })

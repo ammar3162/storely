@@ -221,7 +221,7 @@ export async function POST(req: Request) {
         const hrs = Math.floor(lateMinutes / 60)
         const mins = lateMinutes % 60
         const durationText = hrs > 0 ? `${hrs} ساعة${mins > 0 ? ` و${mins} دقيقة` : ''}` : `${mins} دقيقة`
-        const penaltyText = penaltyAmount ? ` — غرامة ${penaltyAmount} ر.س تنخصم تلقائياً (تقدر تلغيها من تقرير الحضور)` : ''
+        const penaltyText = penaltyAmount ? ` — غرامة ${penaltyAmount} ⃁ تنخصم تلقائياً (تقدر تلغيها من تقرير الحضور)` : ''
         await supabase.from('notifications').insert({
           org_id, branch_id, type: 'warning',
           title: 'تأخير موظف',

@@ -194,7 +194,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {PLAN_KEYS.map(k => {
             const on = c.plan === k
-            const price = c.billing_cycle === 'yearly' ? `${PLAN_PRICING[k].yearly} ر.س/سنة` : `${PLAN_PRICING[k].monthly} ر.س/شهر`
+            const price = c.billing_cycle === 'yearly' ? `${PLAN_PRICING[k].yearly} ⃁/سنة` : `${PLAN_PRICING[k].monthly} ⃁/شهر`
             return (
               <button key={k} onClick={() => changePlan(k)} disabled={!!busy} className="adm-hover"
                 style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, textAlign: 'right', fontFamily: 'inherit', cursor: on ? 'default' : 'pointer',
@@ -226,7 +226,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 700 }}>{a.name}</div>
                       <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>
-                        {on ? `مفعّلة${isQty ? ` (${a.subscription?.quantity || 1})` : ''} حتى ${fmtDate(a.subscription.expires_at)}` : `${a.monthly_price} ر.س${isQty ? ' للوحدة' : ''} / شهر`}
+                        {on ? `مفعّلة${isQty ? ` (${a.subscription?.quantity || 1})` : ''} حتى ${fmtDate(a.subscription.expires_at)}` : `${a.monthly_price} ⃁${isQty ? ' للوحدة' : ''} / شهر`}
                       </div>
                     </div>
                     {canEditQty && (
@@ -250,11 +250,11 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {bill.lines.map((l, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 13, color: A.text2 }}>
-              <span>{l.label}</span><span style={{ fontWeight: 700, color: A.text, whiteSpace: 'nowrap' }}>{l.amount} ر.س</span>
+              <span>{l.label}</span><span style={{ fontWeight: 700, color: A.text, whiteSpace: 'nowrap' }}>{l.amount} ⃁</span>
             </div>
           ))}
           <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${A.border}`, paddingTop: 8, marginTop: 4, fontSize: 14, fontWeight: 800 }}>
-            <span>الإجمالي</span><span>{bill.total} ر.س</span>
+            <span>الإجمالي</span><span>{bill.total} ⃁</span>
           </div>
         </div>
         <div style={{ marginTop: 14 }}>

@@ -124,7 +124,7 @@ export default function AttendancePage() {
           ...d,
           check_in: fmtTime(d.check_in), check_out: fmtTime(d.check_out),
           hours_worked: d.hours_worked ?? '—', late_minutes: d.late_minutes || '—',
-          overtime: d.overtime_minutes ? `${fmtMinutes(d.overtime_minutes)} (${d.overtime_pay} ر.س)` : '—',
+          overtime: d.overtime_minutes ? `${fmtMinutes(d.overtime_minutes)} (${d.overtime_pay} ⃁)` : '—',
         }))
         await exportReportPdf({
           title: `سجل حضور ${one.name}`,
@@ -142,7 +142,7 @@ export default function AttendancePage() {
           totalsRow: {
             date: 'الإجمالي', check_in: `${one.days_present} يوم`, check_out: '', hours_worked: '',
             late_minutes: one.total_late_minutes,
-            overtime: one.total_overtime_minutes ? `${fmtMinutes(one.total_overtime_minutes)} (${one.total_overtime_pay} ر.س)` : '—',
+            overtime: one.total_overtime_minutes ? `${fmtMinutes(one.total_overtime_minutes)} (${one.total_overtime_pay} ⃁)` : '—',
           },
           fileName: `حضور-${one.name}-${rangeFrom}-${rangeTo}`,
         })
@@ -160,9 +160,9 @@ export default function AttendancePage() {
           { header: 'إجازات', key: 'days_off', align: 'center' },
           { header: 'أيام إضافية', key: 'extra_days', align: 'center' },
           { header: 'إجمالي دقائق التأخير', key: 'total_late_minutes', align: 'center' },
-          { header: 'إجمالي الخصومات (ر.س)', key: 'total_penalty', align: 'center' },
+          { header: 'إجمالي الخصومات (⃁)', key: 'total_penalty', align: 'center' },
           { header: 'دقائق الأوفر تايم', key: 'total_overtime_minutes', align: 'center' },
-          { header: 'مبلغ الأوفر تايم (ر.س)', key: 'total_overtime_pay', align: 'center' },
+          { header: 'مبلغ الأوفر تايم (⃁)', key: 'total_overtime_pay', align: 'center' },
         ],
         rows: rangeRows,
         totalsRow: {
@@ -207,11 +207,11 @@ export default function AttendancePage() {
   function penaltyCell(r: any) {
     const amount = r.penalty_original ?? r.penalty_amount
     if (!amount) return <span style={{ color: colors.text4 }}>—</span>
-    if (r.penalty_legacy) return <span style={{ color: colors.text4, whiteSpace: 'nowrap' as const }} title="غرامة قبل تفعيل الخصم التلقائي — ما تنخصم">{amount} ر.س · <span style={{ fontSize: 10, fontWeight: 700 }}>ما انخصمت</span></span>
+    if (r.penalty_legacy) return <span style={{ color: colors.text4, whiteSpace: 'nowrap' as const }} title="غرامة قبل تفعيل الخصم التلقائي — ما تنخصم">{amount} ⃁ · <span style={{ fontSize: 10, fontWeight: 700 }}>ما انخصمت</span></span>
     const canToggle = isOwner && r.attendance_id && !r.penalty_locked
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' as const }}>
-        <span style={{ color: r.penalty_waived ? colors.text4 : colors.danger, fontWeight: 700, textDecoration: r.penalty_waived ? 'line-through' : 'none' }}>{amount} ر.س</span>
+        <span style={{ color: r.penalty_waived ? colors.text4 : colors.danger, fontWeight: 700, textDecoration: r.penalty_waived ? 'line-through' : 'none' }}>{amount} ⃁</span>
         {r.penalty_waived && <span style={{ fontSize: 10, fontWeight: 700, color: colors.text3 }}>ملغاة</span>}
         {canToggle && (
           <button onClick={() => toggleWaive(r.attendance_id, !r.penalty_waived)} disabled={waiving === r.attendance_id}
@@ -347,7 +347,7 @@ export default function AttendancePage() {
           </div>
           <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: monthStats.totalPenalty>0?colors.dangerLight:undefined, border: monthStats.totalPenalty>0?`1px solid ${colors.dangerBorder}`:undefined }}>
             <div style={{ fontSize: 10, color: monthStats.totalPenalty>0?colors.danger:colors.text4, fontWeight: 600, marginBottom: 4 }}>إجمالي الخصومات — هذا الشهر</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: monthStats.totalPenalty>0?colors.danger:colors.text }}>{monthStats.totalPenalty>0?`${monthStats.totalPenalty} ر.س`:'—'}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: monthStats.totalPenalty>0?colors.danger:colors.text }}>{monthStats.totalPenalty>0?`${monthStats.totalPenalty} ⃁`:'—'}</div>
           </div>
           <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: monthStats.mostLate?colors.warningLight:undefined, border: monthStats.mostLate?`1px solid ${colors.warningBorder}`:undefined }}>
             <div style={{ fontSize: 10, color: monthStats.mostLate?colors.warning:colors.text4, fontWeight: 600, marginBottom: 4 }}>الأكثر تأخيراً — هذا الشهر</div>
@@ -457,7 +457,7 @@ export default function AttendancePage() {
                               {penaltyCell(r)}
                             </td>
                             <td style={{ padding: '11px 14px', color: r.overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
-                              {r.overtime_minutes ? <>{fmtMinutes(r.overtime_minutes)}{r.overtime_pay ? <span style={{ fontSize: 11, fontWeight: 600, color: colors.text3 }}> · {r.overtime_pay} ر.س</span> : null}</> : '—'}
+                              {r.overtime_minutes ? <>{fmtMinutes(r.overtime_minutes)}{r.overtime_pay ? <span style={{ fontSize: 11, fontWeight: 600, color: colors.text3 }}> · {r.overtime_pay} ⃁</span> : null}</> : '—'}
                             </td>
                           </tr>
                         ))}
@@ -497,9 +497,9 @@ export default function AttendancePage() {
                             {r.days_off || '—'}{r.extra_days ? <div style={{ fontSize: 10.5, color: colors.primary, fontWeight: 700 }}>+{r.extra_days} يوم إضافي</div> : null}
                           </td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_late_minutes ? colors.warning : colors.text4 }}>{r.total_late_minutes ? `${r.total_late_minutes} دقيقة` : '—'}</td>
-                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_penalty ? colors.danger : colors.text4, fontWeight: 700 }}>{r.total_penalty ? `${r.total_penalty} ر.س` : '—'}</td>
+                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_penalty ? colors.danger : colors.text4, fontWeight: 700 }}>{r.total_penalty ? `${r.total_penalty} ⃁` : '—'}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
-                            {r.total_overtime_minutes ? <>{fmtMinutes(r.total_overtime_minutes)}{r.total_overtime_pay ? <div style={{ fontSize: 11, fontWeight: 600, color: colors.text3 }}>{r.total_overtime_pay} ر.س</div> : null}</> : '—'}
+                            {r.total_overtime_minutes ? <>{fmtMinutes(r.total_overtime_minutes)}{r.total_overtime_pay ? <div style={{ fontSize: 11, fontWeight: 600, color: colors.text3 }}>{r.total_overtime_pay} ⃁</div> : null}</> : '—'}
                           </td>
                         </tr>
                       ))}
@@ -535,7 +535,7 @@ export default function AttendancePage() {
                             <td style={{ padding: '10px 14px', color: d.late_minutes ? colors.warning : colors.text4 }}>{d.late_minutes ? `${d.late_minutes} دقيقة` : '—'}</td>
                             <td style={{ padding: '10px 14px', fontWeight: 700 }}>{penaltyCell(d)}</td>
                             <td style={{ padding: '10px 14px', color: d.overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
-                              {d.overtime_minutes ? <>{fmtMinutes(d.overtime_minutes)}{d.overtime_pay ? <span style={{ fontSize: 11, fontWeight: 600, color: colors.text3 }}> · {d.overtime_pay} ر.س</span> : null}</> : '—'}
+                              {d.overtime_minutes ? <>{fmtMinutes(d.overtime_minutes)}{d.overtime_pay ? <span style={{ fontSize: 11, fontWeight: 600, color: colors.text3 }}> · {d.overtime_pay} ⃁</span> : null}</> : '—'}
                             </td>
                           </tr>
                         ))}
@@ -700,7 +700,7 @@ export default function AttendancePage() {
             return (
               <div style={box}>
                 {step(3, 'التأخير والخصم', 'التأخير ضمن وقت السماح ما يتسجّل. لو تعدّاه ينحسب التأخير كامل من بداية الشفت، وينخصم من الراتب بالنسبة والتناسب. وتقدر تلغي خصم أي يوم من تبويب التقرير.',
-                  rate > 0 ? pill(`${rate} ر.س للساعة`, 'ok') : pill('بدون خصم', 'muted'))}
+                  rate > 0 ? pill(`${rate} ⃁ للساعة`, 'ok') : pill('بدون خصم', 'muted'))}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12 }}>
                   <div>
                     <label style={fieldLabel}>وقت السماح</label>
@@ -713,14 +713,14 @@ export default function AttendancePage() {
                     <label style={fieldLabel}>الخصم لكل ساعة تأخير</label>
                     <div style={{ position: 'relative' as const }}>
                       <NumberInput min={0} step="0.5" inputMode="decimal" value={late.perHour} onChange={e => setLate({ ...late, perHour: e.target.value })} placeholder="فاضي = بدون خصم" style={{ ...inp(), paddingInlineEnd: 50 }} />
-                      <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>ر.س</span>
+                      <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>⃁</span>
                     </div>
                   </div>
                 </div>
                 <div style={{ fontSize: 12.5, color: colors.text2, background: colors.bg, borderRadius: 10, padding: '11px 14px', marginTop: 12, lineHeight: 1.8 }}>
                   {g > 0 ? <>تأخير لين <b>{g} دقيقة</b> ما يتسجّل. </> : <>أي تأخير يتسجّل من أول دقيقة. </>}
                   {rate > 0
-                    ? <>مثال: تأخر <b>{exLate} دقيقة</b> ← خصم <b style={{ color: colors.danger }}>{exAmount} ر.س</b> ({rate} × {exLate} ÷ 60).</>
+                    ? <>مثال: تأخر <b>{exLate} دقيقة</b> ← خصم <b style={{ color: colors.danger }}>{exAmount} ⃁</b> ({rate} × {exLate} ÷ 60).</>
                     : <>بدون مبلغ للساعة: التأخير يتسجّل بدون خصم.</>}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
@@ -734,7 +734,7 @@ export default function AttendancePage() {
           {ot && (
           <div style={box}>
             {step(4, 'الأوفر تايم', 'ينحسب من وقت انصراف الموظف بعد نهاية شفته، ويطلع له بكشف الراتب ولك بتقرير الموظفين.',
-              ot.mode === 'off' ? pill('موقّف', 'muted') : ot.mode === 'fixed' ? pill(ot.fixedRate ? `${ot.fixedRate} ر.س للساعة` : 'مبلغ ثابت', 'ok') : pill(`تلقائي × ${ot.multiplier}`, 'ok'))}
+              ot.mode === 'off' ? pill('موقّف', 'muted') : ot.mode === 'fixed' ? pill(ot.fixedRate ? `${ot.fixedRate} ⃁ للساعة` : 'مبلغ ثابت', 'ok') : pill(`تلقائي × ${ot.multiplier}`, 'ok'))}
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 8, marginBottom: 14 }}>
               {([
@@ -766,7 +766,7 @@ export default function AttendancePage() {
                     <label style={fieldLabel}>مبلغ الساعة</label>
                     <div style={{ position: 'relative' as const }}>
                       <NumberInput min="0" step="0.5" value={ot.fixedRate} onChange={e => setOt({ ...ot, fixedRate: e.target.value })} placeholder="مثلاً 25" style={{ ...inp(), paddingInlineEnd: 50 }} />
-                      <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>ر.س</span>
+                      <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>⃁</span>
                     </div>
                   </div>
                 )}
@@ -782,7 +782,7 @@ export default function AttendancePage() {
 
             {ot.mode === 'auto' && (
               <div style={{ fontSize: 12.5, color: colors.text2, background: colors.bg, borderRadius: 10, padding: '11px 14px', marginBottom: 12, lineHeight: 1.8 }}>
-                مثال: راتب أساسي 3,000 وشفت 8 ساعات ← أجر الساعة {Math.round(3000 / 30 / 8 * 100) / 100} ر.س ← الساعة الإضافية <b>{Math.round(3000 / 30 / 8 * (Number(ot.multiplier) || 1.5) * 100) / 100} ر.س</b>
+                مثال: راتب أساسي 3,000 وشفت 8 ساعات ← أجر الساعة {Math.round(3000 / 30 / 8 * 100) / 100} ⃁ ← الساعة الإضافية <b>{Math.round(3000 / 30 / 8 * (Number(ot.multiplier) || 1.5) * 100) / 100} ⃁</b>
               </div>
             )}
             {ot.mode !== 'off' && (

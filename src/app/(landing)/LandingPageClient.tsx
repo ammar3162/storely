@@ -189,7 +189,7 @@ export default function LandingPage({ initialMarquee }: { initialMarquee?: strin
 
         <div className="lp-wrap">
           <div className="lp-stats">
-            {[['99 '+(lang==='ar'?'ر.س':'SAR'),t('statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('statFree')],['7',t('statLangs')],['24/7',t('statAlerts')]].map(([n,l])=>(
+            {[['99 '+(lang==='ar'?'⃁':'SAR'),t('statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('statFree')],['7',t('statLangs')],['24/7',t('statAlerts')]].map(([n,l])=>(
               <div key={l}><strong>{n}</strong><span>{l}</span></div>
             ))}
           </div>
@@ -295,7 +295,7 @@ export default function LandingPage({ initialMarquee }: { initialMarquee?: strin
               <div key={i} className={`lp-plan rv${p.popular?' pop':''}`}>
                 {p.popular && <div className="lp-plan-badge">{t('mostPopular')}</div>}
                 <div className="lp-plan-name">{lang==='ar'?p.name:p.nameEn}</div>
-                <div className="lp-plan-price"><strong>{billing==='yearly'?p.yearlyPrice:p.price}</strong><span>{lang==='ar'?'ر.س':'SAR'} {billing==='yearly'?t('perYear'):t('perMonth')}</span></div>
+                <div className="lp-plan-price"><strong>{billing==='yearly'?p.yearlyPrice:p.price}</strong><span>{lang==='ar'?'⃁':'SAR'} {billing==='yearly'?t('perYear'):t('perMonth')}</span></div>
                 <div className="lp-plan-limits">{(lang==='ar'?p.limits:p.limitsEn).join(' · ')}</div>
                 <button onClick={()=>router.push(`/login?mode=register&branches=${PLAN_BRANCHES[i]}&billing=${billing}`)} className={`lp-btn lp-btn-lg ${p.popular?'lp-btn-dark':'lp-btn-line'}`} style={{width:'100%'}}>{t('startNow')}</button>
                 <ul>

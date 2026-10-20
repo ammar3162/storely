@@ -127,3 +127,25 @@
   src: url(/fonts/noto-naskh-arabic-latin-700-normal.woff2) format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
+
+/* رمز الريال السعودي الجديد ⃁ (U+20C1) — خط مفتوح (SIL OFL 1.1، Saudi-Riyal-Font). نفس اسم خطوطنا وبنطاق الرمز بس،
+   فالمتصفح ياخذ الرمز منه والباقي من الخط الأصلي — يطلع صح حتى بالأجهزة اللي ما تعرف الرمز.
+   كل وزن لحاله (مو مدى): كروم يجمع الأوجه حسب الوزن بالضبط، والمدى ينتجاهل جنب الأوزان المحددة */
+@font-face { font-family: 'IBM Plex Sans Arabic'; font-style: normal; font-display: swap; font-weight: 100; src: url(/fonts/saudi-riyal-400.woff2) format('woff2'); unicode-range: U+20C1; }
+@font-face { font-family: 'IBM Plex Sans Arabic'; font-style: normal; font-display: swap; font-weight: 200; src: url(/fonts/saudi-riyal-400.woff2) format('woff2'); unicode-range: U+20C1; }
+@font-face { font-family: 'IBM Plex Sans Arabic'; font-style: normal; font-display: swap; font-weight: 300; src: url(/fonts/saudi-riyal-400.woff2) format('woff2'); unicode-range: U+20C1; }
+@font-face { font-family: 'IBM Plex Sans Arabic'; font-style: normal; font-display: swap; font-weight: 400; src: url(/fonts/saudi-riyal-400.woff2) format('woff2'); unicode-range: U+20C1; }
+@font-face { font-family: 'IBM Plex Sans Arabic'; font-style: normal; font-display: swap; font-weight: 500; src: url(/fonts/saudi-riyal-400.woff2) format('woff2'); unicode-range: U+20C1; }
+@font-face { font-family: 'IBM Plex Sans Arabic'; font-style: normal; font-display: swap; font-weight: 600; src: url(/fonts/saudi-riyal-700.woff2) format('woff2'); unicode-range: U+20C1; }
+@font-face { font-family: 'IBM Plex Sans Arabic'; font-style: normal; font-display: swap; font-weight: 700; src: url(/fonts/saudi-riyal-700.woff2) format('woff2'); unicode-range: U+20C1; }
+@font-face { font-family: 'IBM Plex Sans Arabic'; font-style: normal; font-display: swap; font-weight: 800; src: url(/fonts/saudi-riyal-700.woff2) format('woff2'); unicode-range: U+20C1; }
+@font-face { font-family: 'IBM Plex Sans Arabic'; font-style: normal; font-display: swap; font-weight: 900; src: url(/fonts/saudi-riyal-700.woff2) format('woff2'); unicode-range: U+20C1; }
+@font-face { font-family: 'Noto Naskh Arabic'; font-style: normal; font-display: swap; font-weight: 100; src: url(/fonts/saudi-riyal-400.woff2) format('woff2'); unicode-range: U+20C1; }
+@font-face { font-family: 'Noto Naskh Arabic'; font-style: normal; font-display: swap; font-weight: 200; src: url(/fonts/saudi-riyal-400.woff2) format('woff2'); unicode-range: U+20C1; }
+@font-face { font-family: 'Noto Naskh Arabic'; font-style: normal; font-display: swap; font-weight: 300; src: url(/fonts/saudi-riyal-400.woff2) format('woff2'); unicode-range: U+20C1; }
+@font-face { font-family: 'Noto Naskh Arabic'; font-style: normal; font-display: swap; font-weight: 400; src: url(/fonts/saudi-riyal-400.woff2) format('woff2'); unicode-range: U+20C1; }
+@font-face { font-family: 'Noto Naskh Arabic'; font-style: normal; font-display: swap; font-weight: 500; src: url(/fonts/saudi-riyal-400.woff2) format('woff2'); unicode-range: U+20C1; }
+@font-face { font-family: 'Noto Naskh Arabic'; font-style: normal; font-display: swap; font-weight: 600; src: url(/fonts/saudi-riyal-700.woff2) format('woff2'); unicode-range: U+20C1; }
+@font-face { font-family: 'Noto Naskh Arabic'; font-style: normal; font-display: swap; font-weight: 700; src: url(/fonts/saudi-riyal-700.woff2) format('woff2'); unicode-range: U+20C1; }
+@font-face { font-family: 'Noto Naskh Arabic'; font-style: normal; font-display: swap; font-weight: 800; src: url(/fonts/saudi-riyal-700.woff2) format('woff2'); unicode-range: U+20C1; }
+@font-face { font-family: 'Noto Naskh Arabic'; font-style: normal; font-display: swap; font-weight: 900; src: url(/fonts/saudi-riyal-700.woff2) format('woff2'); unicode-range: U+20C1; }

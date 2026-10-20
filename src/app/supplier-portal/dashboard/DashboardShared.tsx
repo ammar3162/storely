@@ -397,14 +397,14 @@ export default function SupplierDashboardShared() {
                 <label>اسم الصنف<input className="sd-in" value={name} onChange={e=>setName(e.target.value)} placeholder="مثال: حليب طازج"/></label>
                 <div className="sd-row2">
                   <label>الوحدة<input className="sd-in" value={unit} onChange={e=>setUnit(e.target.value)} placeholder="لتر، كيلو، كرتون"/></label>
-                  <label>السعر (ر.س)<NumberInput className="sd-in" value={price} onChange={e=>setPrice(e.target.value)} placeholder="0.00"/></label>
+                  <label>السعر (⃁)<NumberInput className="sd-in" value={price} onChange={e=>setPrice(e.target.value)} placeholder="0.00"/></label>
                 </div>
                 <div className="sd-seg" role="group" aria-label="هل السعر شامل الضريبة؟">
                   <span>السعر شامل الضريبة؟</span>
                   <button type="button" className={priceIncludesVat?'on':''} onClick={()=>setPriceIncludesVat(true)}>نعم</button>
                   <button type="button" className={!priceIncludesVat?'on':''} onClick={()=>setPriceIncludesVat(false)}>لا</button>
                 </div>
-                {price && !priceIncludesVat && <div className="sd-note">العميل يشوف السعر بعد الضريبة: <b>{(Number(price)*1.15).toFixed(2)} ر.س</b></div>}
+                {price && !priceIncludesVat && <div className="sd-note">العميل يشوف السعر بعد الضريبة: <b>{(Number(price)*1.15).toFixed(2)} ⃁</b></div>}
                 <label className="sd-img">
                   {(imagePreview || existingImageUrl) ? <img src={imagePreview || existingImageUrl} alt=""/> : <ImagePlus size={20}/>}
                   <span>{imagePreview||existingImageUrl?'تغيير الصورة':'صورة الصنف (اختياري)'}</span>
@@ -427,7 +427,7 @@ export default function SupplierDashboardShared() {
                     <div key={item.id} className={'sd-item'+(item.is_available?'':' off')}>
                       <div className="sd-thumb">{item.image_url ? <img src={item.image_url} alt=""/> : <Package size={20}/>}</div>
                       <div className="sd-item-main"><b>{item.name}</b><span>{item.unit || '—'}</span></div>
-                      <div className="sd-price">{money(item.price)} <small>ر.س</small></div>
+                      <div className="sd-price">{money(item.price)} <small>⃁</small></div>
                       <button onClick={()=>toggleAvailable(item)} className={'sd-switch'+(item.is_available?' on':'')} role="switch" aria-checked={!!item.is_available} title={item.is_available?'متوفر — اضغط لإيقافه':'غير متوفر — اضغط لتفعيله'}><i/></button>
                       <div className="sd-icons">
                         <button onClick={()=>startEdit(item)} aria-label="تعديل"><Pencil size={15}/></button>
@@ -468,13 +468,13 @@ export default function SupplierDashboardShared() {
                           {reps.length===0 && <div className="sd-warn">أضف مندوب أول من «المناديب»</div>}
                         </div>
                       ) : (
-                        <div className="sd-order-foot"><span>سعرك: <b>{money(r.quoted_price)} ر.س</b> — العميل وافق</span><button className="sd-btn" onClick={()=>startApprove(r.id)}>أكّد التوريد</button></div>
+                        <div className="sd-order-foot"><span>سعرك: <b>{money(r.quoted_price)} ⃁</b> — العميل وافق</span><button className="sd-btn" onClick={()=>startApprove(r.id)}>أكّد التوريد</button></div>
                       )
                     ) : r.status==='confirmed' ? (
                       <div className="sd-order-foot"><span>المندوب {r.rep_name} ({r.rep_phone}) · موعد التوريد {r.delivery_date}</span><button className="sd-btn" onClick={()=>markFulfilled(r.id)}>تم التوريد</button></div>
                     ) : r.status==='fulfilled' ? (
                       <div className="sd-order-foot">
-                        <span>سعرك: <b>{money(r.quoted_price)} ر.س</b>{r.rep_name && ` · المندوب ${r.rep_name}`}</span>
+                        <span>سعرك: <b>{money(r.quoted_price)} ⃁</b>{r.rep_name && ` · المندوب ${r.rep_name}`}</span>
                         {!myGivenReviewIds.includes(r.id) && (ratingCustomerId===r.id ? (
                           <span className="sd-rate">
                             {[1,2,3,4,5].map(n=>(<button key={n} onClick={()=>setCustomerRating(n)} aria-label={`${n} نجوم`} style={{opacity:n<=customerRating?1:.3}}>⭐</button>))}
@@ -484,7 +484,7 @@ export default function SupplierDashboardShared() {
                         ) : <button className="sd-btn ghost" onClick={()=>setRatingCustomerId(r.id)}>قيّم العميل</button>)}
                       </div>
                     ) : r.status==='quoted' ? (
-                      <div className="sd-order-foot"><span>سعرك المرسل: <b>{money(r.quoted_price)} ر.س</b> — بانتظار رد العميل</span></div>
+                      <div className="sd-order-foot"><span>سعرك المرسل: <b>{money(r.quoted_price)} ⃁</b> — بانتظار رد العميل</span></div>
                     ) : respondingId===r.id ? (
                       <div className="sd-inline">
                         <NumberInput className="sd-in" value={respondPrice} onChange={e=>setRespondPrice(e.target.value)} placeholder="السعر الإجمالي" style={{maxWidth:150}}/>
@@ -566,30 +566,30 @@ export default function SupplierDashboardShared() {
 
         {activeTab==='reports' && (<>
           <div className="sd-figs">
-            <div><span>مبيعات منفّذة</span><b>{money(totalRevenue)} <small>ر.س</small></b></div>
+            <div><span>مبيعات منفّذة</span><b>{money(totalRevenue)} <small>⃁</small></b></div>
             <div><span>كل الطلبات</span><b>{totalOrders}</b></div>
             <div><span>طلبات منفّذة</span><b>{fulfilledCount}</b></div>
-            <div className="warn"><span>آجل لك عند العملاء</span><b>{money(unpaidTotal)} <small>ر.س</small></b></div>
+            <div className="warn"><span>آجل لك عند العملاء</span><b>{money(unpaidTotal)} <small>⃁</small></b></div>
           </div>
           <div className="sd-grid-2">
             <section className="sd-panel"><h2>أكثر الأصناف طلباً</h2>
               {topItems.length===0 ? <div className="sd-muted">ما فيه بيانات للحين</div> : <ul className="sd-rank">{topItems.map(([n,q])=>(<li key={n}><span>{n}</span><b>{q} وحدة</b></li>))}</ul>}
             </section>
             <section className="sd-panel"><h2>أكثر العملاء طلباً</h2>
-              {topCustomers.length===0 ? <div className="sd-muted">ما فيه بيانات للحين</div> : <ul className="sd-rank">{topCustomers.map(([n,a])=>(<li key={n}><span>{n}</span><b>{a.count} طلب · {money(a.total)} ر.س</b></li>))}</ul>}
+              {topCustomers.length===0 ? <div className="sd-muted">ما فيه بيانات للحين</div> : <ul className="sd-rank">{topCustomers.map(([n,a])=>(<li key={n}><span>{n}</span><b>{a.count} طلب · {money(a.total)} ⃁</b></li>))}</ul>}
             </section>
           </div>
           <section className="sd-panel"><h2>التوريد حسب المندوب</h2>
             {repStats.length===0 ? <div className="sd-muted">ما فيه توريدات مسندة للحين</div> : <ul className="sd-rank">{repStats.map(([n,c])=>(<li key={n}><span>{n}</span><b>{c} توريد</b></li>))}</ul>}
           </section>
           <section className="sd-panel">
-            <h2>الفواتير <small>آجلة {unpaidInvoices.length} · مسددة {paidInvoices.length} ({money(paidTotal)} ر.س)</small></h2>
+            <h2>الفواتير <small>آجلة {unpaidInvoices.length} · مسددة {paidInvoices.length} ({money(paidTotal)} ⃁)</small></h2>
             {fulfilledRequests.length===0 ? <div className="sd-muted">الفواتير تطلع هنا بعد ما تأكد توريد أي طلب.</div> : (
               <div className="sd-list">
                 {fulfilledRequests.map((r:any)=>(
                   <div key={r.id} className="sd-item">
                     <div className="sd-item-main"><b>{r.org_name || 'عميل'}</b><span>{r.delivery_date || new Date(r.created_at).toLocaleDateString('ar-SA',{numberingSystem:'latn'})}</span></div>
-                    <div className="sd-price">{money(r.quoted_price)} <small>ر.س</small></div>
+                    <div className="sd-price">{money(r.quoted_price)} <small>⃁</small></div>
                     <button onClick={()=>togglePaymentStatus(r.id, r.payment_status)} className={'sd-badge '+(r.payment_status==='paid'?'t-green':'t-amber')} title="اضغط لتغيير حالة السداد">{r.payment_status==='paid'?'مسددة':'آجلة'}</button>
                   </div>
                 ))}

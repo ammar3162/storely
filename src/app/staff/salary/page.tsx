@@ -38,7 +38,7 @@ export default function PayslipPage() {
   const [month, setMonth] = useState(thisMonth())
   const [data, setData] = useState<Payroll | null>(null)
   const [name, setName] = useState('')
-  const [curr, setCurr] = useState('ر.س')
+  const [curr, setCurr] = useState('⃁')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<'' | 'disabled' | 'loadError' | 'network'>('')
 

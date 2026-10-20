@@ -65,7 +65,7 @@ export async function editClosing(db: SupabaseClient, orgId: string, id: string,
   await db.from('cashier_closing_edits').insert({ org_id: orgId, closing_id: id, action: 'edit', before: pick(c), after: pick(after), edited_by: editor } as any)
   if (!isDeficit) await db.from('notifications').update({ read: true } as any).eq('org_id', orgId).eq('ref_type', 'cashier_deficit').eq('ref_id', id)
   if (isDeficit && !wasDeficit) await db.from('notifications').insert({ org_id: orgId, branch_id: c.branch_id, type: 'warning', read: false,
-    title: `عجز بانتظار قرارك: ${c.staff_name}`, message: `بعد تعديل إقفال ${date} صار فيه عجز ${amount.toFixed(2)} ر.س — السبب: ${reason}. تخصمه من راتب الكاشير؟`,
+    title: `عجز بانتظار قرارك: ${c.staff_name}`, message: `بعد تعديل إقفال ${date} صار فيه عجز ${amount.toFixed(2)} ⃁ — السبب: ${reason}. تخصمه من راتب الكاشير؟`,
     ref_type: 'cashier_deficit', ref_id: id } as any)
   return { ok: true, closing: after }
 }

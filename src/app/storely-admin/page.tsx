@@ -91,7 +91,7 @@ export default function OverviewPage() {
 
           {/* الأرقام */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12 }}>
-            <Stat label="الإيراد الشهري المتوقع" value={`${s.revenue.toLocaleString('en')} ر.س`} hint={`من ${s.paid} مشترك مدفوع`} tone="primary" />
+            <Stat label="الإيراد الشهري المتوقع" value={`${s.revenue.toLocaleString('en')} ⃁`} hint={`من ${s.paid} مشترك مدفوع`} tone="primary" />
             <Stat label="المنشآت المسجّلة" value={s.total} hint={`${s.newThisMonth} جديدة هذا الشهر`} onClick={() => router.push('/storely-admin/customers')} />
             <Stat label="مفعّلة" value={s.active} hint={`${s.paid} مدفوع · ${s.trial} تجربة`} />
             <Stat label="بانتظار التفعيل" value={s.pending.length} tone={s.pending.length ? 'warning' : 'default'} onClick={() => router.push('/storely-admin/customers?filter=pending')} />

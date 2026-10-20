@@ -145,14 +145,14 @@ export async function POST(req: Request) {
       // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
       const closingStatusText = status === 'balanced' ? 'مطابق تماماً' : status === 'deficit' ? `يوجد عجز: ${Math.abs(difference).toFixed(2)} ر.س — السبب: ${deficitReason}` : `يوجد زيادة: ${Math.abs(difference).toFixed(2)} ر.س`
       await (supabase as any).from('notifications').insert({
-        org_id, branch_id: branch_id || null, title: `إقفال كاشير: ${staff_name}`, message: `إجمالي المبيعات: ${sales.toFixed(2)} ر.س — ${closingStatusText}`, type: 'info', read: false
+        org_id, branch_id: branch_id || null, title: `إقفال كاشير: ${staff_name}`, message: `إجمالي المبيعات: ${sales.toFixed(2)} ⃁ — ${closingStatusText}`, type: 'info', read: false
       })
       // قرار العجز — إشعار داخل النظام فقط، فيه زر اعتماد الخصم أو رفضه
       if (status === 'deficit' && data) {
         await (supabase as any).from('notifications').insert({
           org_id, branch_id: branch_id || null, type: 'warning', read: false,
           title: `عجز بانتظار قرارك: ${staff_name}`,
-          message: `عجز ${Math.abs(difference).toFixed(2)} ر.س بإقفال ${businessDate} — السبب: ${deficitReason}. تخصمه من راتب الكاشير؟`,
+          message: `عجز ${Math.abs(difference).toFixed(2)} ⃁ بإقفال ${businessDate} — السبب: ${deficitReason}. تخصمه من راتب الكاشير؟`,
           ref_type: 'cashier_deficit', ref_id: (data as any).id,
         })
       }

@@ -50,7 +50,7 @@ export default function PurchasesPage() {
   const [products, setProducts]     = useState<any[]>([])
   const [isExisting, setIsExisting] = useState<boolean|null>(null)
   const [orgId, setOrgId]           = useState('')
-  const [curr, setCurr]             = useState('ر.س')
+  const [curr, setCurr]             = useState('⃁')
   const [loading, setLoading]       = useState(false)
   const submitting = useRef(false)
   const [uploading, setUploading]   = useState(false)

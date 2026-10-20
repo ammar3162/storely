@@ -32,7 +32,7 @@ export function MiniMockup({ variant }: { variant: 'stats'|'whatsapp'|'staff'|'c
   if (variant === 'whatsapp') return (
     <div style={{background:'white',borderRadius:16,padding:14,height:'100%',display:'flex',flexDirection:'column',gap:7,justifyContent:'center'}}>
       <div style={{fontSize:10,fontWeight:800,color:'#111827',marginBottom:2}}>آخر المشتريات</div>
-      {[['خضار','400 ر.س'],['بيض','20 ر.س'],['هالاينو','200 ر.س']].map(([n,v])=>(
+      {[['خضار','400 ⃁'],['بيض','20 ⃁'],['هالاينو','200 ⃁']].map(([n,v])=>(
         <div key={n} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 9px',background:'#fafafa',borderRadius:7}}>
           <span style={{fontSize:9,fontWeight:700,color:'#374151'}}>{n}</span>
           <span style={{fontSize:9,fontWeight:800,color:'#0f766e'}}>{v}</span>
@@ -68,11 +68,11 @@ export function MiniMockup({ variant }: { variant: 'stats'|'whatsapp'|'staff'|'c
         <div style={{fontSize:8,fontWeight:800,color:'#374151',marginBottom:6}}>أداء هذا الشهر</div>
         <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
           <span style={{fontSize:8,color:'#6b7280'}}>المبيعات</span>
-          <span style={{fontSize:9,fontWeight:800,color:'#111827'}}>88,090 ر.س</span>
+          <span style={{fontSize:9,fontWeight:800,color:'#111827'}}>88,090 ⃁</span>
         </div>
         <div style={{display:'flex',justifyContent:'space-between'}}>
           <span style={{fontSize:8,color:'#6b7280'}}>المشتريات</span>
-          <span style={{fontSize:9,fontWeight:800,color:'#111827'}}>567 ر.س</span>
+          <span style={{fontSize:9,fontWeight:800,color:'#111827'}}>567 ⃁</span>
         </div>
       </div>
     </div>

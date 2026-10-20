@@ -64,7 +64,7 @@ export default function AddonsMarketPage() {
     const d = dueNow(addon, qty)
     return (
       <div style={{ fontSize: 11, color: colors.text3, lineHeight: 1.7, marginBottom: 12 }}>
-        تدفع الحين <b style={{ color: colors.text }}>{d.amount} ر.س</b> عن {d.days} يوم لين تجديد باقتك ({d.endStr})، وبعدها تتجدد مع الباقة.
+        تدفع الحين <b style={{ color: colors.text }}>{d.amount} ⃁</b> عن {d.days} يوم لين تجديد باقتك ({d.endStr})، وبعدها تتجدد مع الباقة.
       </div>
     )
   }
@@ -74,10 +74,10 @@ export default function AddonsMarketPage() {
     const isQtyAddon = addon.slug === 'extra_staff' || addon.slug === 'extra_suppliers' || addon.slug === 'extra_branch'
     const branchName = branchId ? (branches.find(b => b.id === branchId)?.name || '') : ''
     const text = isStaffAddon
-      ? `مرحباً، أبي أشترك بميزة "${addon.name}" لفرع "${branchName}" — الكمية: ${qty} (${qty * addon.monthly_price} ر.س/شهر) لمنشأة: ${orgName}`
+      ? `مرحباً، أبي أشترك بميزة "${addon.name}" لفرع "${branchName}" — الكمية: ${qty} (${qty * addon.monthly_price} ⃁/شهر) لمنشأة: ${orgName}`
       : isQtyAddon
-      ? `مرحباً، أبي أشترك بميزة "${addon.name}" — الكمية: ${qty} (${qty * addon.monthly_price} ر.س/شهر) لمنشأة: ${orgName}`
-      : `مرحباً، أبي أشترك بميزة "${addon.name}" (${addon.monthly_price} ر.س/شهر) لمنشأة: ${orgName}`
+      ? `مرحباً، أبي أشترك بميزة "${addon.name}" — الكمية: ${qty} (${qty * addon.monthly_price} ⃁/شهر) لمنشأة: ${orgName}`
+      : `مرحباً، أبي أشترك بميزة "${addon.name}" (${addon.monthly_price} ⃁/شهر) لمنشأة: ${orgName}`
     const d = dueNow(addon, qty)
     return `https://wa.me/966594351667?text=${encodeURIComponent(`${text}\nالمستحق الحين: ${d.amount} ر.س (${d.days} يوم لين تجديد الباقة)`)}`
   }
@@ -119,11 +119,11 @@ export default function AddonsMarketPage() {
             <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10 }}>فاتورتك الحالية</div>
             {bill.lines.map((l, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, color: colors.text3, padding: '4px 0' }}>
-                <span>{l.label}</span><span style={{ fontWeight: 700, color: colors.text, whiteSpace: 'nowrap' }}>{l.amount} ر.س</span>
+                <span>{l.label}</span><span style={{ fontWeight: 700, color: colors.text, whiteSpace: 'nowrap' }}>{l.amount} ⃁</span>
               </div>
             ))}
             <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${colors.border}`, marginTop: 8, paddingTop: 10, fontSize: 14, fontWeight: 900, color: colors.primary }}>
-              <span>الإجمالي</span><span>{bill.total} ر.س</span>
+              <span>الإجمالي</span><span>{bill.total} ⃁</span>
             </div>
           </div>
         )
@@ -145,7 +145,7 @@ export default function AddonsMarketPage() {
                   <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
                   <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14 }}>{a.description}</div>
                   <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 14 }}>
-                    {a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text4 }}>ر.س / وحدة / شهر — لكل فرع لحاله</span>
+                    {a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text4 }}>⃁ / وحدة / شهر — لكل فرع لحاله</span>
                   </div>
 
                   {subs.length > 0 && (
@@ -181,7 +181,7 @@ export default function AddonsMarketPage() {
                       </div>
                       <a href={subscribeLink(a, qty, selectedBranch)} target="_blank" rel="noopener noreferrer"
                         style={{ display: 'block', textAlign: 'center' as const, padding: '11px', background: colors.primary, color: 'white', borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-                        اشتراك عبر واتساب ({qty * a.monthly_price} ر.س)
+                        اشتراك عبر واتساب ({qty * a.monthly_price} ⃁)
                       </a>
                     </>
                   ) : (
@@ -209,7 +209,7 @@ export default function AddonsMarketPage() {
                   const qty = qtyMap[a.id] || 1
                   return (
                     <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 14 }}>
-                      {isQtyAddon && !active ? qty * a.monthly_price : a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text4 }}>ر.س / شهر{isQtyAddon ? ` (${a.monthly_price} ر.س/وحدة)` : ''}</span>
+                      {isQtyAddon && !active ? qty * a.monthly_price : a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text4 }}>⃁ / شهر{isQtyAddon ? ` (${a.monthly_price} ⃁/وحدة)` : ''}</span>
                     </div>
                   )
                 })()}

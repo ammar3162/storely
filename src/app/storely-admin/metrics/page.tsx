@@ -72,8 +72,8 @@ export default function MetricsPage() {
         <>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:14,marginBottom:24}}>
             {[
-              { label:'الإيراد الشهري (MRR)', value:`${data.mrr.toLocaleString()} ر.س`, color:C.green, icon:'💰' },
-              { label:'الإيراد السنوي المتوقع (ARR)', value:`${data.arr.toLocaleString()} ر.س`, color:C.blue, icon:'📈' },
+              { label:'الإيراد الشهري (MRR)', value:`${data.mrr.toLocaleString()} ⃁`, color:C.green, icon:'💰' },
+              { label:'الإيراد السنوي المتوقع (ARR)', value:`${data.arr.toLocaleString()} ⃁`, color:C.blue, icon:'📈' },
               { label:'معدل التحويل لمدفوع', value:`${data.conversionRate}%`, color:C.purple, icon:'🎯' },
               { label:'مشتركون مدفوعون نشطون', value:data.paidCount, color:C.green, icon:'✅' },
               { label:'بالتجربة المجانية', value:data.trialCount, color:C.blue, icon:'🎁' },
