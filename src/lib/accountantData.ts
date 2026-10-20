@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { selectAll } from '@/lib/selectAll'
 import { mapLimit } from '@/lib/mapLimit'
 import { orgHasHrFeature } from '@/lib/hrAccess'
-import { computeStaffPayroll, loadOvertimeSettings } from '@/lib/payroll'
+import { computeStaffPayroll, loadOvertimeSettings, staffForPayrollMonth } from '@/lib/payroll'
 import { isFullMonth, periodLabel, type Period } from '@/lib/accountantSchedule'
 import type { AccountantReport, AccSection } from '@/lib/accountantExport'
 
@@ -41,16 +41,16 @@ export async function loadAccountantReport(db: SupabaseClient, o: {
   // الرواتب: شهر كامل + عنده إدارة الموظفين
   let payroll: AccountantReport['payroll'] = null
   if (has('payroll') && isFullMonth(period) && await orgHasHrFeature(db, orgId, (org as any)?.plan)) {
-    let sq = db.from('staff_members').select('id,org_id,name,monthly_salary,housing_allowance,transport_allowance,food_allowance,shift_id,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates')
-      .eq('org_id', orgId).eq('is_active', true)
-    if (branchId) sq = sq.eq('branch_id', branchId)
-    const { data: staff } = await sq
     const settings = await loadOvertimeSettings(db, orgId)
     const month = period.start.slice(0, 7)
-    payroll = await mapLimit(((staff || []) as any[]).sort((a, b) => String(a.name).localeCompare(String(b.name), 'ar')), 6, async s => {
+    // النشطين + اللي تركوا خلال الشهر — الموظف اللي مشى بنص الشهر له راتب أيامه وخصوماته وسلفه
+    const staff = await staffForPayrollMonth(db, { orgId, branchId, month,
+      select: 'id,org_id,name,monthly_salary,housing_allowance,transport_allowance,food_allowance,shift_id,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates' })
+    payroll = await mapLimit(staff.sort((a, b) => String(a.name).localeCompare(String(b.name), 'ar')), 6, async s => {
       const p = await computeStaffPayroll(db, s, month, settings)
       return { name: s.name, basic: p.basic, housing: p.allowances.housing, transport: p.allowances.transport, food: p.allowances.food, gross: p.grossSalary,
-        overtime: p.overtime.pay, bonuses: p.bonusesTotal, deductions: p.deductionsTotal, latePenalties: p.latePenaltiesTotal, advances: p.advancesTotal, net: p.netSalary }
+        overtime: p.overtime.pay, bonuses: p.bonusesTotal, deductions: p.deductionsTotal, latePenalties: p.latePenaltiesTotal, advances: p.advancesTotal, net: p.netSalary,
+        ...(p.endedOn ? { leftOn: p.endedOn, workedDays: p.workedDays } : {}) }
     })
   }
 

@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { Download, FileSpreadsheet } from 'lucide-react'
 import { colors, radius } from '@/lib/ds'
-import { invoicesLabel, staffLabel, taxInvoices, vatReturn } from '@/lib/accountantExport'
+import { invoicesLabel, staffLabel, taxInvoices, vatReturn, payrollName } from '@/lib/accountantExport'
 
 // عرض تقرير المحاسب — صفحة الرابط وبوابة المحاسب تستخدمه
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -110,7 +110,7 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
     {has('payroll') && r.payroll && <Card wide title={`الرواتب (${staffLabel(r.payroll.length)})`}>
       <Lines rows={[['إجمالي الرواتب', t.payrollGross], ['صافي الرواتب', t.payrollNet, true]]} />
       <Table head={['الموظف', 'الإجمالي', 'الإضافي', 'مكافآت', 'خصومات', 'سلف', 'الصافي']} moneyCols={[1, 2, 3, 4, 5, 6]}
-        rows={r.payroll.map((p: any) => [p.name, p.gross, p.overtime, p.bonuses, p.deductions, p.advances, p.net])} />
+        rows={r.payroll.map((p: any) => [payrollName(p), p.gross, p.overtime, p.bonuses, p.deductions, p.advances, p.net])} />
     </Card>}
 
     {has('expenses') && <Card title="المصروفات من الدرج">
