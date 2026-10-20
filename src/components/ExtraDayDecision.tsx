@@ -28,12 +28,12 @@ export default function ExtraDayDecision({ item, orgId, canDecide = true, onDone
     setBusy(false)
     if (!r.success) { toast(r.error || 'تعذر حفظ القرار', 'error'); return }
     setStatus(decision)
-    toast(decision === 'paid' ? `تم — ينضاف ${amount} ر.س لراتب الموظف` : decision === 'comp' ? `تم — إجازته البديلة ${dayLabel(compDate)}` : 'تم رفض التعويض')
+    toast(decision === 'paid' ? `تم — ينضاف ${amount} ⃁ لراتب الموظف` : decision === 'comp' ? `تم — إجازته البديلة ${dayLabel(compDate)}` : 'تم رفض التعويض')
     onDone?.(decision)
   }
 
   if (status !== 'pending') {
-    const txt = status === 'paid' ? `✓ تعويض مالي${item.amount ? ` ${item.amount} ر.س` : ''}` : status === 'comp' ? `✓ يوم بديل${item.comp_date ? `: ${dayLabel(item.comp_date)}` : ''}` : 'تم رفض التعويض'
+    const txt = status === 'paid' ? `✓ تعويض مالي${item.amount ? ` ${item.amount} ⃁` : ''}` : status === 'comp' ? `✓ يوم بديل${item.comp_date ? `: ${dayLabel(item.comp_date)}` : ''}` : 'تم رفض التعويض'
     return <div style={{ fontSize: 12, fontWeight: 700, color: status === 'rejected' ? colors.text3 : colors.primary, margin: '4px 0' }}>{txt}</div>
   }
   if (!canDecide) return <div style={{ fontSize: 11.5, color: colors.text4, margin: '4px 0' }}>بانتظار قرار المالك</div>
@@ -50,10 +50,10 @@ export default function ExtraDayDecision({ item, orgId, canDecide = true, onDone
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' as const }}>
           <div style={{ position: 'relative' as const }}>
             <NumberInput min="1" step="0.5" value={amount} onChange={e => setAmount(e.target.value)} style={{ ...inp(), width: 150, paddingInlineEnd: 44 }} />
-            <span style={{ position: 'absolute' as const, insetInlineEnd: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>ر.س</span>
+            <span style={{ position: 'absolute' as const, insetInlineEnd: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>⃁</span>
           </div>
           <button onClick={() => decide('paid')} disabled={busy || !(Number(amount) > 0)} style={{ padding: '9px 14px', borderRadius: 8, border: 'none', background: colors.primary, color: 'white', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, opacity: busy || !(Number(amount) > 0) ? .6 : 1 }}>اعتماد المبلغ</button>
-          {item.suggested_amount ? <span style={{ fontSize: 11, color: colors.text4 }}>المقترح: أجر يوم ({item.suggested_amount} ر.س = الراتب ÷ 30)</span> : null}
+          {item.suggested_amount ? <span style={{ fontSize: 11, color: colors.text4 }}>المقترح: أجر يوم ({item.suggested_amount} ⃁ = الراتب ÷ 30)</span> : null}
         </div>
       )}
       {mode === 'comp' && (

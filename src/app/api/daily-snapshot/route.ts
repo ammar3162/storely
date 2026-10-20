@@ -41,7 +41,7 @@ export async function POST(req: Request) {
           await (db as any).from('notifications').insert({
             org_id: org.id, branch_id: inv.branch_id || null,
             title: 'تذكير: فاتورة مستحقة اليوم',
-            message: `${inv.name || 'فاتورة'} — ${Number(inv.total_amount||0).toFixed(2)} ر.س — المورد: ${inv.supplier||'—'}`,
+            message: `${inv.name || 'فاتورة'} — ${Number(inv.total_amount||0).toFixed(2)} ⃁ — المورد: ${inv.supplier||'—'}`,
             type: 'danger', read: false,
           })
         }

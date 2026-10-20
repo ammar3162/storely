@@ -188,7 +188,7 @@ export default async function ShopPage({ params }: { params: Promise<{ slug: str
                       )}
                       <span style={{flex:1,minWidth:20,borderBottom:'1.5px dotted #d6d0c8',position:'relative' as const,top:-3}}/>
                       {p.price != null && (
-                        <span style={{fontSize:15,fontWeight:900,color,whiteSpace:'nowrap' as const}}>{p.price} ر.س</span>
+                        <span style={{fontSize:15,fontWeight:900,color,whiteSpace:'nowrap' as const}}>{p.price} ⃁</span>
                       )}
                     </div>
                     {p.description && (

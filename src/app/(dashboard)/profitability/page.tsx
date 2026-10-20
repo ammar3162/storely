@@ -37,7 +37,7 @@ function monthLabel(m: string) {
 export default function ProfitabilityPage() {
   const [month, setMonth] = useState(currentMonth())
   const [orgId, setOrgId] = useState('')
-  const [curr, setCurr] = useState('ر.س')
+  const [curr, setCurr] = useState('⃁')
   // المنشأة غير المسجلة بالضريبة ما تاخذ ضريبة من العميل — ما نعرض لها ضريبة تقديرية
   const [showVat, setShowVat] = useState(true)
   const [loading, setLoading] = useState(true)

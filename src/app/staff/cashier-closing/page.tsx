@@ -110,7 +110,7 @@ function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconColor, err
           onFocus={e=>{if(!error)e.target.style.borderColor=iconColor}}
           onBlur={e=>{if(!error)e.target.style.borderColor='#e5e5e2'}}
         />
-        <span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:11,fontWeight:700,color:'#a8a7a1'}}>{currency || 'ر.س'}</span>
+        <span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:11,fontWeight:700,color:'#a8a7a1'}}>{currency || '⃁'}</span>
       </div>
       {error && <div style={{fontSize:11,color:'#dc2626',fontWeight:700,marginTop:6,display:'flex',alignItems:'center',gap:4}}>⚠️ {error}</div>}
     </div>
@@ -197,7 +197,7 @@ export default function CashierClosingPage() {
   const [saved, setSaved] = useState(false)
   const [locked, setLocked] = useState(false)
   const [thankYouMsg, setThankYouMsg] = useState('')
-  const [curr, setCurr] = useState('ر.س')
+  const [curr, setCurr] = useState('⃁')
   const [toast, setToast] = useState<{msg:string,type:'success'|'error'}|null>(null)
   const router = useRouter()
 

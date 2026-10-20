@@ -328,7 +328,7 @@ export default function SettingsPage() {
 
   const pk = planKeyOf(planKey, maxBranches)
   const planPrice = PLAN_PRICING[pk]
-  const planLabel = `الباقة ${planPrice.label} — ${billingCycle==='yearly' ? `${planPrice.yearly} ر.س/سنة` : `${planPrice.monthly} ر.س/شهر`}`
+  const planLabel = `الباقة ${planPrice.label} — ${billingCycle==='yearly' ? `${planPrice.yearly} ⃁/سنة` : `${planPrice.monthly} ⃁/شهر`}`
   const bill = billLines(pk, billingCycle, billAddons)
 
   if(loading) return (
@@ -451,11 +451,11 @@ export default function SettingsPage() {
                     <div style={{fontSize:font.xs,fontWeight:800,color:colors.text2,marginBottom:8}}>تفاصيل الفاتورة</div>
                     {bill.lines.map((l,i)=>(
                       <div key={i} style={{display:'flex',justifyContent:'space-between',gap:12,fontSize:font.xs,color:colors.text3,padding:'4px 0'}}>
-                        <span>{l.label}</span><span style={{fontWeight:700,color:colors.text,whiteSpace:'nowrap'}}>{l.amount} ر.س</span>
+                        <span>{l.label}</span><span style={{fontWeight:700,color:colors.text,whiteSpace:'nowrap'}}>{l.amount} ⃁</span>
                       </div>
                     ))}
                     <div style={{display:'flex',justifyContent:'space-between',borderTop:`1px solid ${colors.border}`,marginTop:6,paddingTop:8,fontSize:font.sm,fontWeight:800,color:colors.primary}}>
-                      <span>الإجمالي</span><span>{bill.total} ر.س</span>
+                      <span>الإجمالي</span><span>{bill.total} ⃁</span>
                     </div>
                   </div>
                 )}

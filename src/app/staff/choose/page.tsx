@@ -168,7 +168,7 @@ export default function ChoosePage() {
       const combined: any[] = []
       if (advRes?.success) for (const a of (advRes.adjustments||[])) {
         if (a.type !== 'advance') continue
-        combined.push({ kind:'advance', id:a.id, date:a.created_at, status:a.status, label:`طلب سلفة ${a.amount} ر.س` })
+        combined.push({ kind:'advance', id:a.id, date:a.created_at, status:a.status, label:`طلب سلفة ${a.amount} ⃁` })
       }
       if (leaveRes?.success) for (const l of (leaveRes.requests||[])) {
         combined.push({ kind:'leave', id:l.id, date:l.requested_at, status:l.status, label:`طلب إجازة ${l.days_count} يوم` })

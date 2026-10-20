@@ -609,7 +609,7 @@ function LoginPage() {
                       </div>
                       <div className="hide-in-app" style={{flexShrink:0,marginRight:12,textAlign:'left'}}>
                         <span style={{fontSize:20,fontWeight:800,color:branchCount===p.v?p.color:'#111827'}}>{billing==='yearly'?p.yearlyPrice:p.price}</span>
-                        <span style={{fontSize:12,color:'#9ca3af'}}> {lang==='ar'?'ر.س':'SAR'}/{billing==='yearly'?(lang==='ar'?'سنة':'yr'):(lang==='ar'?'شهر':'mo')}</span>
+                        <span style={{fontSize:12,color:'#9ca3af'}}> {lang==='ar'?'⃁':'SAR'}/{billing==='yearly'?(lang==='ar'?'سنة':'yr'):(lang==='ar'?'شهر':'mo')}</span>
                       </div>
                     </button>
                   ))}

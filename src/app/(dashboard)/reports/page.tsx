@@ -506,7 +506,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
   const [deleteError, setDeleteError] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [exportingPdf, setExportingPdf] = useState(false)
-  const [curr, setCurr] = useState('ر.س')
+  const [curr, setCurr] = useState('⃁')
   const [showDeletedLog, setShowDeletedLog] = useState(false)
   const [deletedList, setDeletedList] = useState<any[]>([])
   const [loadingDeleted, setLoadingDeleted] = useState(false)
@@ -1085,8 +1085,8 @@ function AttendanceDetail({ onBack }: { onBack:()=>void }) {
             { header: 'التاريخ', key: 'date' }, { header: 'الحضور', key: 'in', align: 'center' }, { header: 'الانصراف', key: 'out', align: 'center' },
             { header: 'الساعات', key: 'hours', align: 'center' }, { header: 'التأخير', key: 'late', align: 'center' }, { header: 'الأوفر تايم', key: 'ot', align: 'center' },
           ],
-          rows: person.days.map((d: any) => ({ date: attDay(d.date), in: attTime(d.check_in), out: attTime(d.check_out), hours: d.hours_worked ?? '—', late: d.late_minutes ? attMin(d.late_minutes) : '—', ot: d.overtime_minutes ? `${attMin(d.overtime_minutes)} (${d.overtime_pay} ر.س)` : '—' })),
-          totalsRow: { date: 'الإجمالي', in: `${person.days_present} يوم`, out: '', hours: '', late: lateMin ? attMin(lateMin) : '—', ot: otMin ? `${attMin(otMin)} (${otPay} ر.س)` : '—' },
+          rows: person.days.map((d: any) => ({ date: attDay(d.date), in: attTime(d.check_in), out: attTime(d.check_out), hours: d.hours_worked ?? '—', late: d.late_minutes ? attMin(d.late_minutes) : '—', ot: d.overtime_minutes ? `${attMin(d.overtime_minutes)} (${d.overtime_pay} ⃁)` : '—' })),
+          totalsRow: { date: 'الإجمالي', in: `${person.days_present} يوم`, out: '', hours: '', late: lateMin ? attMin(lateMin) : '—', ot: otMin ? `${attMin(otMin)} (${otPay} ⃁)` : '—' },
           fileName: `حضور-${person.name}-${dFrom}-${dTo}`,
         })
       } else {
@@ -1094,8 +1094,8 @@ function AttendanceDetail({ onBack }: { onBack:()=>void }) {
           title: 'تقرير الحضور والانصراف', subtitle: `من ${dFrom} إلى ${dTo}`, orgName: org?.name || '',
           columns: [
             { header: 'الموظف', key: 'name' }, { header: 'أيام الحضور', key: 'days_present', align: 'center' }, { header: 'أيام الغياب', key: 'days_absent', align: 'center' },
-            { header: 'التأخير (دقيقة)', key: 'total_late_minutes', align: 'center' }, { header: 'الخصومات (ر.س)', key: 'total_penalty', align: 'center' },
-            { header: 'أوفر تايم (دقيقة)', key: 'total_overtime_minutes', align: 'center' }, { header: 'مبلغ الأوفر (ر.س)', key: 'total_overtime_pay', align: 'center' },
+            { header: 'التأخير (دقيقة)', key: 'total_late_minutes', align: 'center' }, { header: 'الخصومات (⃁)', key: 'total_penalty', align: 'center' },
+            { header: 'أوفر تايم (دقيقة)', key: 'total_overtime_minutes', align: 'center' }, { header: 'مبلغ الأوفر (⃁)', key: 'total_overtime_pay', align: 'center' },
           ],
           rows: summary,
           totalsRow: { name: 'الإجمالي', days_present: present, days_absent: sum('days_absent'), total_late_minutes: lateMin, total_penalty: penalty, total_overtime_minutes: otMin, total_overtime_pay: otPay },
@@ -1147,8 +1147,8 @@ function AttendanceDetail({ onBack }: { onBack:()=>void }) {
 
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))', gap:10, marginBottom:14 }}>
         {stat('نسبة الحضور', rate === null ? '—' : `${rate}%`, `${present} يوم حضور من ${possible}`, colors.primary, colors.primaryLight)}
-        {stat('التأخير', lateMin ? attMin(lateMin) : '—', penalty ? `خصومات ${penalty} ر.س` : 'بدون خصومات', colors.warning, colors.warningLight)}
-        {stat('الأوفر تايم', otMin ? attMin(otMin) : '—', otPay ? `المستحق ${otPay} ر.س` : 'ما فيه ساعات إضافية', colors.info, colors.infoLight)}
+        {stat('التأخير', lateMin ? attMin(lateMin) : '—', penalty ? `خصومات ${penalty} ⃁` : 'بدون خصومات', colors.warning, colors.warningLight)}
+        {stat('الأوفر تايم', otMin ? attMin(otMin) : '—', otPay ? `المستحق ${otPay} ⃁` : 'ما فيه ساعات إضافية', colors.info, colors.infoLight)}
       </div>
 
       {!loading && !person && summary.some((r: any) => r.shift_warning === 'none') && (
@@ -1187,10 +1187,10 @@ function AttendanceDetail({ onBack }: { onBack:()=>void }) {
                       <td style={td}>{attTime(d.check_out)}{d.is_excused && <span style={{ marginRight:6 }}>{pill('مستأذن', colors.warning, colors.warningLight)}</span>}</td>
                       <td style={{ ...td, fontWeight:600 }}>{d.hours_worked !== null ? `${d.hours_worked} ساعة` : '—'}</td>
                       <td style={{ ...td, color: d.late_minutes ? colors.warning : colors.text4, fontWeight: d.late_minutes ? 700 : 400 }}>
-                        {d.late_minutes ? attMin(d.late_minutes) : '—'}{d.penalty_amount ? <div style={{ fontSize:11, color:colors.danger }}>خصم {d.penalty_amount} ر.س</div> : null}
+                        {d.late_minutes ? attMin(d.late_minutes) : '—'}{d.penalty_amount ? <div style={{ fontSize:11, color:colors.danger }}>خصم {d.penalty_amount} ⃁</div> : null}
                       </td>
                       <td style={{ ...td, color: d.overtime_minutes ? colors.info : colors.text4, fontWeight: d.overtime_minutes ? 700 : 400 }}>
-                        {d.overtime_minutes ? attMin(d.overtime_minutes) : '—'}{d.overtime_pay ? <div style={{ fontSize:11, color:colors.text3 }}>{d.overtime_pay} ر.س</div> : null}
+                        {d.overtime_minutes ? attMin(d.overtime_minutes) : '—'}{d.overtime_pay ? <div style={{ fontSize:11, color:colors.text3 }}>{d.overtime_pay} ⃁</div> : null}
                       </td>
                     </tr>
                   ))}
@@ -1214,9 +1214,9 @@ function AttendanceDetail({ onBack }: { onBack:()=>void }) {
                     <td style={td}>{pill(`${r.days_present} يوم`, colors.primary, colors.primaryLight)}</td>
                     <td style={td}>{r.days_absent ? pill(`${r.days_absent} يوم`, colors.danger, colors.dangerLight) : '—'}</td>
                     <td style={{ ...td, color: r.total_late_minutes ? colors.warning : colors.text4, fontWeight:600 }}>{r.total_late_minutes ? attMin(r.total_late_minutes) : '—'}</td>
-                    <td style={{ ...td, color: r.total_penalty ? colors.danger : colors.text4, fontWeight:600 }}>{r.total_penalty ? `${r.total_penalty} ر.س` : '—'}</td>
+                    <td style={{ ...td, color: r.total_penalty ? colors.danger : colors.text4, fontWeight:600 }}>{r.total_penalty ? `${r.total_penalty} ⃁` : '—'}</td>
                     <td style={{ ...td, color: r.total_overtime_minutes ? colors.info : colors.text4, fontWeight:600 }}>
-                      {r.total_overtime_minutes ? attMin(r.total_overtime_minutes) : '—'}{r.total_overtime_pay ? <div style={{ fontSize:11, color:colors.text3 }}>{r.total_overtime_pay} ر.س</div> : null}
+                      {r.total_overtime_minutes ? attMin(r.total_overtime_minutes) : '—'}{r.total_overtime_pay ? <div style={{ fontSize:11, color:colors.text3 }}>{r.total_overtime_pay} ⃁</div> : null}
                     </td>
                     <td style={{ ...td, color:colors.primary, fontSize:12, fontWeight:700 }}>السجل ←</td>
                   </tr>
@@ -1241,7 +1241,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   const [deleting, setDeleting] = useState(false)
   const [monthComp, setMonthComp] = useState<any>(null)
   const [exportingPdf, setExportingPdf] = useState(false)
-  const [curr, setCurr] = useState('ر.س')
+  const [curr, setCurr] = useState('⃁')
   const [isOwner, setIsOwner] = useState(false)
   const [deciding, setDeciding] = useState<string|null>(null)
   // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
@@ -1560,7 +1560,7 @@ export default function ReportsPage() {
   const [dispenseStats, setDS]    = useState({ops:0,qty:0,items:0})
   const [wasteStats, setWS]       = useState({ops:0,qty:0,items:0})
   const [purchaseStats, setPS]    = useState({invoices:0,total:0,vat:0})
-  const [homeCurr, setHomeCurr]   = useState('ر.س')
+  const [homeCurr, setHomeCurr]   = useState('⃁')
   const [statsLoading, setSL]     = useState(true)
   const [weeklyD, setWD]          = useState<number[]>([])
   const [inventoryStats, setIS]   = useState({low:0,out:0,total:0})

@@ -136,7 +136,7 @@ export default function AIToolsPage() {
   const [branchLoading, setBranchLoading] = useState(false)
   const [reportLoading, setReportLoading] = useState(false)
   const router = useRouter()
-  const [curr, setCurr] = useState('ر.س')
+  const [curr, setCurr] = useState('⃁')
   const [isOwner, setIsOwner] = useState(false)   // مقارنة الفروع للمالك فقط
   useEffect(()=>{
     getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setIsOwner(me?.role==='owner') })
@@ -760,7 +760,7 @@ export default function AIToolsPage() {
                 return grandTotal>0 && (
                   <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:10,padding:'12px 14px',marginBottom:12,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                     <span style={{fontSize:12,fontWeight:700,color:'#115e59'}}>💰 إجمالي تكلفة الإنتاج التقديرية</span>
-                    <span style={{fontSize:18,fontWeight:900,color:'#029FA2'}}>{grandTotal.toFixed(2)} ر.س</span>
+                    <span style={{fontSize:18,fontWeight:900,color:'#029FA2'}}>{grandTotal.toFixed(2)} ⃁</span>
                   </div>
                 )
               })()}
@@ -773,8 +773,8 @@ export default function AIToolsPage() {
                   </div>
                   {r.totalCost!==null && r.totalCost!==undefined && (
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,background:'#f0fdfa',borderRadius:7,padding:'6px 10px'}}>
-                      <span style={{fontSize:10,color:'#115e59'}}>تكلفة الوحدة: {r.costPerUnit} ر.س</span>
-                      <span style={{fontSize:12,fontWeight:800,color:'#029FA2'}}>الإجمالي: {r.totalCost} ر.س</span>
+                      <span style={{fontSize:10,color:'#115e59'}}>تكلفة الوحدة: {r.costPerUnit} ⃁</span>
+                      <span style={{fontSize:12,fontWeight:800,color:'#029FA2'}}>الإجمالي: {r.totalCost} ⃁</span>
                     </div>
                   )}
                   {r.bottleneckName && (
@@ -1183,7 +1183,7 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,branchId,editingR
               <div key={c.component_product_id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'#f9fafb',border:'1px solid #e5e7eb',borderRadius:8,padding:'6px 10px'}}>
                 <span style={{fontSize:11}}>{comp?.name||'—'} — {c.qty} {comp?.unit}</span>
                 <div style={{display:'flex',alignItems:'center',gap:8}}>
-                  {unitPrice>0 && <span style={{fontSize:10,color:'#029FA2',fontWeight:700}}>{compCost.toFixed(2)} ر.س</span>}
+                  {unitPrice>0 && <span style={{fontSize:10,color:'#029FA2',fontWeight:700}}>{compCost.toFixed(2)} ⃁</span>}
                   <button onClick={()=>setComponents(prev=>prev.filter(x=>x.component_product_id!==c.component_product_id))} style={{background:'none',border:'none',color:'#ef4444',cursor:'pointer',fontSize:14}}>×</button>
                 </div>
               </div>
@@ -1232,7 +1232,7 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,branchId,editingR
           <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:10,padding:12,marginBottom:16}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:hasCostData?10:0}}>
               <span style={{fontSize:11,fontWeight:700,color:'#115e59'}}>💰 التكلفة التقديرية</span>
-              <span style={{fontSize:15,fontWeight:900,color:'#029FA2'}}>{hasCostData ? totalCost.toFixed(2)+' ر.س' : 'لا توجد بيانات أسعار'}</span>
+              <span style={{fontSize:15,fontWeight:900,color:'#029FA2'}}>{hasCostData ? totalCost.toFixed(2)+' ⃁' : 'لا توجد بيانات أسعار'}</span>
             </div>
             {hasCostData && (
               <div style={{display:'flex',gap:8,alignItems:'center'}}>

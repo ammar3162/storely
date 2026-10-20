@@ -12,7 +12,7 @@ export default function BranchComparePage() {
   const [loading, setLoading] = useState(true)
   const [exportingPdf, setExportingPdf] = useState(false)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-  const [curr, setCurr] = useState('ر.س')
+  const [curr, setCurr] = useState('⃁')
 
   useEffect(() => { load() }, [])
   useEffect(() => {

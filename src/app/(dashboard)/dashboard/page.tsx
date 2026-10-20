@@ -58,7 +58,7 @@ export default function DashboardPage() {
   const [weeklyD, setWeeklyD]   = useState<{label:string;value:number}[]>([])
   const [visible, setVisible]   = useState(false)
   const [notifs, setNotifs]     = useState<any[]>([])
-  const [curr, setCurr]         = useState('ر.س')
+  const [curr, setCurr]         = useState('⃁')
   const [subExpired, setSubExpired] = useState(false)
   const sb = createClient()
   const router = useRouter()

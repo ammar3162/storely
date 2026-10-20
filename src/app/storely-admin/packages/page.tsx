@@ -31,9 +31,9 @@ export default function PackagesPage() {
                 <Badge tone={PLAN_TONE[k]}>{p.label}</Badge>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 12 }}>
                   <span style={{ fontSize: 30, fontWeight: 800 }}>{p.monthly}</span>
-                  <span style={{ fontSize: 13, color: A.text2 }}>ر.س / شهر</span>
+                  <span style={{ fontSize: 13, color: A.text2 }}>⃁ / شهر</span>
                 </div>
-                <div style={{ fontSize: 12.5, color: A.text3, marginTop: 2 }}>{p.yearly} ر.س / سنة</div>
+                <div style={{ fontSize: 12.5, color: A.text3, marginTop: 2 }}>{p.yearly} ⃁ / سنة</div>
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16, fontSize: 13, color: A.text2 }}>
                   <li>{lim(l.branches, 'فروع')}</li>
                   <li>{lim(l.staff, 'موظفين')} لكل فرع</li>
@@ -51,7 +51,7 @@ export default function PackagesPage() {
         </div>
       )}
       <div style={{ marginTop: 16, fontSize: 12.5, color: A.text3 }}>
-        الفرع الإضافي: 49 ر.س للفرع شهرياً لأي باقة — يُفعَّل من صفحة العميل ← الإضافات.
+        الفرع الإضافي: 49 ⃁ للفرع شهرياً لأي باقة — يُفعَّل من صفحة العميل ← الإضافات.
       </div>
     </>
   )

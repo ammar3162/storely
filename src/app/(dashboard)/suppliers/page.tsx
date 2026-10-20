@@ -397,7 +397,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
                     style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e2e8f0', borderRadius:10, fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box' as const, background:'white' }}>
                     <option value="">— بدون ربط (إشعار واتساب فقط) —</option>
                     {catalogItems.map((ci:any)=>(
-                      <option key={ci.id} value={ci.id}>{ci.name} — {ci.price} ر.س / {ci.unit}</option>
+                      <option key={ci.id} value={ci.id}>{ci.name} — {ci.price} ⃁ / {ci.unit}</option>
                     ))}
                   </select>
                 </div>
@@ -476,7 +476,7 @@ export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [products, setProducts]   = useState<any[]>([])
   const [orgId, setOrgId]         = useState('')
-  const [curr, setCurr]           = useState('ر.س')
+  const [curr, setCurr]           = useState('⃁')
   const [loading, setLoading]     = useState(true)
   const [showAdd, setShowAdd]     = useState(false)
   const [newName, setNewName]     = useState('')
@@ -616,7 +616,7 @@ export default function SuppliersPage() {
                     {c.suppliers.map((s:any,si:number)=>(
                       <div key={si} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 10px',background:si===0?'#f0fdfa':'#f8fafc',borderRadius:8,border:si===0?'1px solid #99f6e4':'1px solid #e2e8f0'}}>
                         <span style={{fontSize:12,fontWeight:600,color:'#334155'}}>{si===0&&'🟢 '}{s.supplier}</span>
-                        <span style={{fontSize:12,fontWeight:800,color:si===0?'#029FA2':'#64748b'}}>{s.unitPrice} {curr||'ر.س'} / {s.unit||'وحدة'}</span>
+                        <span style={{fontSize:12,fontWeight:800,color:si===0?'#029FA2':'#64748b'}}>{s.unitPrice} {curr||'⃁'} / {s.unit||'وحدة'}</span>
                       </div>
                     ))}
                   </div>

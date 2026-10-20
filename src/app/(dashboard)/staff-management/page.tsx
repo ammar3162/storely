@@ -49,7 +49,7 @@ export default function StaffManagementPage() {
   const [moveTo, setMoveTo]         = useState('')
   const [moving, setMoving]         = useState(false)
   const [orgId, setOrgId]           = useState('')
-  const [curr, setCurr]             = useState('ر.س')
+  const [curr, setCurr]             = useState('⃁')
   const [orgNotifyClosingWA, setOrgNotifyClosingWA] = useState(true)
   const [loading, setLoading]       = useState(true)
   const [showAdd, setShowAdd]       = useState(false)

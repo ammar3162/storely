@@ -229,7 +229,7 @@ export default function MarketplacePage() {
                                 <div style={{fontSize:12,fontWeight:700,color:'#0f172a'}}>{it.name}</div>
                                 <div style={{fontSize:10,color:'#64748b'}}>{it.unit}</div>
                               </div>
-                              <div style={{fontSize:13,fontWeight:800,color:'#029FA2'}}>{it.price} ر.س</div>
+                              <div style={{fontSize:13,fontWeight:800,color:'#029FA2'}}>{it.price} ⃁</div>
                             </div>
                           ))}
                         </div>

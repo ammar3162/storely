@@ -16,7 +16,7 @@ export default function HRManagementPage() {
   const [orgId, setOrgId] = useState('')
   const [salaryVisible, setSalaryVisible] = useState<boolean|null>(null)
   const [isOwner, setIsOwner] = useState(false)
-  const [curr, setCurr] = useState('ر.س')
+  const [curr, setCurr] = useState('⃁')
   const [orgPlan, setOrgPlan] = useState<string | null>(null)   // null = لسا ما عرفنا الباقة — لا نعرض القفل قبلها
   const [hasHrAddon, setHasHrAddon] = useState(false)
   const [staff, setStaff] = useState<any[]>([])
