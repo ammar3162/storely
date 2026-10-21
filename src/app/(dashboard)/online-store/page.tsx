@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { getOrgId } from '@/lib/session'
 import { colors, font, card, btnPrimary, pageTitle, pageSub, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
+import MenuItemsEditor from '@/components/shop/MenuItemsEditor'
 
 export default function OnlineStorePage() {
   const [orgId, setOrgId] = useState('')
@@ -29,7 +30,6 @@ export default function OnlineStorePage() {
   ]
   const [products, setProducts] = useState<any[]>([])
   const [shopItems, setShopItems] = useState<any[]>([])
-  const [uploadingId, setUploadingId] = useState<string|null>(null)
   const [logoUrl, setLogoUrl] = useState<string|null>(null)
   const [suggestingColor, setSuggestingColor] = useState(false)
   const [shopColor, setShopColor] = useState('#0f766e')
@@ -37,18 +37,8 @@ export default function OnlineStorePage() {
   const [hours24, setHours24] = useState(true)
   const [openTime, setOpenTime] = useState('09:00')
   const [closeTime, setCloseTime] = useState('22:00')
-  const [newItem, setNewItem] = useState({ name:'', category:'', price:'', description:'', image_url:'', is_featured:false })
-  const [addingItem, setAddingItem] = useState(false)
-  const [catEdits, setCatEdits] = useState<Record<string,string>>({})
-  const [creatingNewCat, setCreatingNewCat] = useState(false)
-  const [editingId, setEditingId] = useState<string|null>(null)
-  const [editForm, setEditForm] = useState<any>({})
-  const [savingEdit, setSavingEdit] = useState(false)
-  const [uploadingEditImg, setUploadingEditImg] = useState(false)
-  const [savingCat, setSavingCat] = useState<string|null>(null)
   const [loadError, setLoadError] = useState('')
   const [branchNotSubscribed, setBranchNotSubscribed] = useState('')
-  const [uploadingNewItem, setUploadingNewItem] = useState(false)
   // منيو لكل فرع: mode=branch → نعرض فرع واحد (أصنافه + أصناف كل الفروع)
   const [mode, setMode] = useState<'org'|'branch'>('org')
   const [branchId, setBranchId] = useState<string|null>(null)
@@ -61,12 +51,7 @@ export default function OnlineStorePage() {
   const [bOpen, setBOpen] = useState('09:00')
   const [bClose, setBClose] = useState('22:00')
   const [savingBranch, setSavingBranch] = useState(false)
-  const [newScope, setNewScope] = useState<'branch'|'all'>('branch')
   const [recipes, setRecipes] = useState<any[]>([])
-  const [showImport, setShowImport] = useState(false)
-  const [importCat, setImportCat] = useState('')
-  const [importSel, setImportSel] = useState<Record<string, boolean>>({})
-  const [importing, setImporting] = useState(false)
   const sb = createClient()
 
   useEffect(() => { init() }, [])
@@ -93,8 +78,8 @@ export default function OnlineStorePage() {
     } catch { setHasSubscription(false); setLoading(false) }
   }
 
-  async function load(oid: string, wantBranch?: string | null) {
-    setLoading(true)
+  async function load(oid: string, wantBranch?: string | null, quiet = false) {
+    if (!quiet) setLoading(true)
     const bid = wantBranch || sessionStorage.getItem('s_branch_id') || branchId
     const params = new URLSearchParams({ org_id: oid })
     if (bid) params.set('branch_id', bid)
@@ -185,76 +170,6 @@ export default function OnlineStorePage() {
     img.src = logoUrl
   }
 
-  async function updateProduct(p: any, patch: any) {
-    const updated = { ...p, ...patch }
-    setProducts(prev => prev.map(x => x.id === p.id ? updated : x))
-    await fetch('/api/shop-product', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        org_id: orgId, product_id: p.id,
-        show_on_shop: updated.show_on_shop, public_price: updated.public_price,
-        public_description: updated.public_description, public_image_url: updated.public_image_url,
-      }),
-    })
-  }
-
-  async function uploadImage(p: any, file: File) {
-    setUploadingId(p.id)
-    try {
-      const ext = file.name.split('.').pop()
-      const path = `${orgId}/${p.id}-${Date.now()}.${ext}`
-      const { error } = await sb.storage.from('shop-product-images').upload(path, file, { upsert: true })
-      if (error) { toast('فشل رفع الصورة', 'error'); setUploadingId(null); return }
-      const { data: { publicUrl } } = sb.storage.from('shop-product-images').getPublicUrl(path)
-      await updateProduct(p, { public_image_url: publicUrl })
-      toast('✅ تم رفع الصورة')
-    } catch { toast('فشل رفع الصورة', 'error') }
-    setUploadingId(null)
-  }
-
-  async function uploadNewItemImage(file: File) {
-    setUploadingNewItem(true)
-    try {
-      const ext = file.name.split('.').pop()
-      const path = `${orgId}/external-${Date.now()}.${ext}`
-      const { error } = await sb.storage.from('shop-product-images').upload(path, file, { upsert: true })
-      if (error) { toast('فشل رفع الصورة', 'error'); setUploadingNewItem(false); return }
-      const { data: { publicUrl } } = sb.storage.from('shop-product-images').getPublicUrl(path)
-      setNewItem(prev => ({ ...prev, image_url: publicUrl }))
-    } catch { toast('فشل رفع الصورة', 'error') }
-    setUploadingNewItem(false)
-  }
-
-  async function addShopItem() {
-    if (!newItem.name.trim()) { toast('اكتب اسم المنتج أول', 'warning'); return }
-    setAddingItem(true)
-    const res = await fetch('/api/shop-items', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, ...newItem, branch_id: branchId, scope: mode === 'branch' ? newScope : undefined }),
-    })
-    const j = await res.json()
-    setAddingItem(false)
-    if (!j.success) { toast(j.error || 'فشل الإضافة', 'error'); return }
-    toast('✅ تمت إضافة المنتج')
-    setNewItem({ name:'', category:'', price:'', description:'', image_url:'', is_featured:false })
-    setCreatingNewCat(false)
-    load(orgId)
-  }
-
-  async function deleteShopItem(item_id: string) {
-    const before = shopItems
-    setShopItems(prev => prev.filter(x => x.id !== item_id))
-    const res = await fetch('/api/shop-items', {
-      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, item_id }),
-    })
-    const j = await res.json().catch(() => ({}))
-    if (!j.success) { setShopItems(before); toast(j.error || 'فشل الحذف', 'error') }
-  }
-
-  // صنف "كل الفروع" يعدّله المالك بس
-  const canEdit = (it: any) => mode === 'org' || !!it.branch_id || canManageOrg
-
   async function saveBranchSettings() {
     if (!branchId) return
     setSavingBranch(true)
@@ -270,178 +185,6 @@ export default function OnlineStorePage() {
       setMenuBranches(prev => prev.map(b => b.id === branchId ? { ...b, shop_slug: j.shop_slug } : b))
     }
     toast('✅ تم حفظ إعدادات الفرع')
-  }
-
-  async function importItems() {
-    const recipe_ids = recipes.filter(r => importSel['r:' + r.id]).map(r => r.id)
-    const product_ids = products.filter(p => importSel['p:' + p.id]).map(p => p.id)
-    if (!importCat.trim()) { toast('اختر أو اكتب اسم القسم أول', 'warning'); return }
-    if (!recipe_ids.length && !product_ids.length) { toast('اختر صنف واحد على الأقل', 'warning'); return }
-    setImporting(true)
-    const res = await fetch('/api/shop-items/import', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, branch_id: branchId, scope: mode === 'branch' ? newScope : undefined, category: importCat, recipe_ids, product_ids }),
-    })
-    const j = await res.json()
-    setImporting(false)
-    if (!j.success) { toast(j.error || 'فشل الإضافة', 'error'); return }
-    toast(j.added ? `✅ تمت إضافة ${j.added} صنف${j.skipped ? ` (${j.skipped} موجود من قبل)` : ''}` : 'الأصناف المختارة موجودة بالمنيو من قبل', j.added ? 'success' : 'warning')
-    setImportSel({}); setShowImport(false)
-    load(orgId)
-  }
-
-  // ═══ السحب والإفلات (Pointer Events — يدعم الماوس واللمس معاً) ═══
-  const [draggingItem, setDraggingItem] = useState<{ id: string; cat: string } | null>(null)
-  const [dragOverItem, setDragOverItem] = useState<string | null>(null)
-  const [draggingCat, setDraggingCat] = useState<string | null>(null)
-  const [dragOverCat, setDragOverCat] = useState<string | null>(null)
-  const longPressTimer = useRef<any>(null)
-  const pointerStart = useRef<{ x: number; y: number } | null>(null)
-
-  function getGroupedCategories() {
-    const grouped: Record<string, any[]> = {}
-    shopItems.forEach((it: any) => { const c = it.category || 'منتجات خارجية'; if (!grouped[c]) grouped[c] = []; grouped[c].push(it) })
-    return grouped
-  }
-
-  function cancelLongPress() {
-    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
-    pointerStart.current = null
-  }
-
-  function watchForScroll(e: React.PointerEvent) {
-    if (!pointerStart.current) return
-    const dx = Math.abs(e.clientX - pointerStart.current.x)
-    const dy = Math.abs(e.clientY - pointerStart.current.y)
-    if ((dx > 8 || dy > 8) && longPressTimer.current) cancelLongPress() // تحرك قبل انتهاء الضغطة المطوّلة = تمرير عادي، نلغي السحب
-  }
-
-  function startItemLongPress(e: React.PointerEvent, itemId: string, cat: string) {
-    pointerStart.current = { x: e.clientX, y: e.clientY }
-    longPressTimer.current = setTimeout(() => { setDraggingItem({ id: itemId, cat }); longPressTimer.current = null }, 400)
-  }
-
-  function startCatLongPress(e: React.PointerEvent, cat: string) {
-    pointerStart.current = { x: e.clientX, y: e.clientY }
-    longPressTimer.current = setTimeout(() => { setDraggingCat(cat); longPressTimer.current = null }, 400)
-  }
-
-  async function performItemReorder(cat: string, draggedId: string, targetId: string) {
-    const grouped = getGroupedCategories()
-    const items = grouped[cat] || []
-    const fromIdx = items.findIndex((it: any) => it.id === draggedId)
-    const toIdx = items.findIndex((it: any) => it.id === targetId)
-    if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return
-    const reordered = [...items]
-    const [moved] = reordered.splice(fromIdx, 1)
-    reordered.splice(toIdx, 0, moved)
-    const others = shopItems.filter((it: any) => (it.category || 'منتجات خارجية') !== cat)
-    setShopItems([...others, ...reordered])
-    await fetch('/api/shop-reorder', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, items: reordered.filter(canEdit).map((it: any) => ({ id: it.id, type: 'shop_item' })) }),
-    })
-  }
-
-  async function performCategoryReorder(draggedCat: string, targetCat: string) {
-    const grouped = getGroupedCategories()
-    const catNames = Object.keys(grouped)
-    const fromIdx = catNames.indexOf(draggedCat)
-    const toIdx = catNames.indexOf(targetCat)
-    if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return
-    const reorderedCats = [...catNames]
-    reorderedCats.splice(fromIdx, 1)
-    reorderedCats.splice(toIdx, 0, draggedCat)
-    const flatItems = reorderedCats.flatMap(c => grouped[c])
-    setShopItems(flatItems)
-    await fetch('/api/shop-reorder', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, items: flatItems.filter(canEdit).map((it: any) => ({ id: it.id, type: 'shop_item' })) }),
-    })
-  }
-
-  useEffect(() => {
-    function onGlobalPointerUp() {
-      if (draggingItem && dragOverItem && draggingItem.id !== dragOverItem) {
-        performItemReorder(draggingItem.cat, draggingItem.id, dragOverItem)
-      }
-      if (draggingCat && dragOverCat && draggingCat !== dragOverCat) {
-        performCategoryReorder(draggingCat, dragOverCat)
-      }
-      setDraggingItem(null); setDragOverItem(null); setDraggingCat(null); setDragOverCat(null)
-      cancelLongPress()
-    }
-    window.addEventListener('pointerup', onGlobalPointerUp)
-    return () => window.removeEventListener('pointerup', onGlobalPointerUp)
-  }, [draggingItem, dragOverItem, draggingCat, dragOverCat, shopItems, orgId])
-
-  async function moveItem(cat: string, itemId: string, direction: 'up' | 'down') {
-    const catItems = shopItems.filter((it: any) => (it.category || 'منتجات خارجية') === cat)
-    const idx = catItems.findIndex((it: any) => it.id === itemId)
-    const swapWith = direction === 'up' ? idx - 1 : idx + 1
-    if (idx < 0 || swapWith < 0 || swapWith >= catItems.length) return
-
-    const reordered = [...catItems]
-    ;[reordered[idx], reordered[swapWith]] = [reordered[swapWith], reordered[idx]]
-
-    // نحدّث الترتيب محلياً فوراً لإحساس سلس
-    setShopItems(prev => {
-      const others = prev.filter((it: any) => (it.category || 'منتجات خارجية') !== cat)
-      return [...others, ...reordered]
-    })
-
-    await fetch('/api/shop-reorder', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, items: reordered.filter(canEdit).map((it: any) => ({ id: it.id, type: 'shop_item' })) }),
-    })
-  }
-
-  function startEdit(it: any) {
-    setEditingId(it.id)
-    setEditForm({ name: it.name, category: it.category, price: it.price ?? '', description: it.description ?? '', image_url: it.image_url ?? '', is_featured: !!it.is_featured, ...(mode === 'branch' && canManageOrg ? { scope: it.branch_id ? 'branch' : 'all' } : {}) })
-  }
-
-  async function uploadEditImage(file: File) {
-    setUploadingEditImg(true)
-    try {
-      const ext = file.name.split('.').pop()
-      const path = `${orgId}/edit-${Date.now()}.${ext}`
-      const { error } = await sb.storage.from('shop-product-images').upload(path, file, { upsert: true })
-      if (error) { toast('فشل رفع الصورة', 'error'); setUploadingEditImg(false); return }
-      const { data: { publicUrl } } = sb.storage.from('shop-product-images').getPublicUrl(path)
-      setEditForm((prev: any) => ({ ...prev, image_url: publicUrl }))
-    } catch { toast('فشل رفع الصورة', 'error') }
-    setUploadingEditImg(false)
-  }
-
-  async function saveEdit() {
-    if (!editForm.name?.trim()) { toast('اكتب اسم المنتج', 'warning'); return }
-    setSavingEdit(true)
-    const res = await fetch('/api/shop-items', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, item_id: editingId, ...editForm, branch_id: branchId }),
-    })
-    const j = await res.json()
-    setSavingEdit(false)
-    if (!j.success) { toast(j.error || 'فشل الحفظ', 'error'); return }
-    toast('✅ تم حفظ التعديل')
-    setEditingId(null)
-    load(orgId)
-  }
-
-  async function renameCategory(oldCat: string) {
-    const newCat = (catEdits[oldCat] ?? oldCat).trim()
-    if (!newCat || newCat === oldCat) return
-    setSavingCat(oldCat)
-    const res = await fetch('/api/shop-items', {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, old_category: oldCat, new_category: newCat, branch_id: branchId }),
-    })
-    const j = await res.json()
-    setSavingCat(null)
-    if (!j.success) { toast(j.error || 'فشل تغيير الاسم', 'error'); return }
-    toast('✅ تم تغيير اسم القسم لكل منتجاته')
-    load(orgId)
   }
 
   function addLink() { setLinks(prev => [...prev, { type: 'instagram', label: '', url: '' }]) }
@@ -668,203 +411,11 @@ export default function OnlineStorePage() {
         </div>
       )}
 
-      {/* منتجات المتجر */}
+      {/* أصناف المنيو */}
       {!loadError && (
-      <div style={{ ...card, padding: '20px' }}>
-        <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>منتجات المتجر</div>
-        <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>أنشئ قسم (مثل "مشروبات حارة")، وأضف كل منتج جواه بصورته واسمه وسعره ووصفه{mode === 'branch' ? ` — هذي أصناف ${currentBranch?.name || ''} وأصناف «كل الفروع»` : ''}</div>
-
-        {shopItems.length > 0 && (() => {
-          const grouped: Record<string, any[]> = {}
-          shopItems.forEach((it: any) => { const c = it.category || 'منتجات خارجية'; if (!grouped[c]) grouped[c] = []; grouped[c].push(it) })
-          return (
-            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 18, marginBottom: 16 }}>
-              {Object.entries(grouped).map(([cat, items]) => (
-                <div key={cat}
-                  onPointerEnter={() => { if (draggingCat && draggingCat !== cat) setDragOverCat(cat) }}
-                  style={{ opacity: draggingCat === cat ? 0.4 : 1, border: dragOverCat === cat && draggingCat ? `2px dashed ${colors.primary}` : '2px dashed transparent', borderRadius: 12, padding: dragOverCat === cat && draggingCat ? 6 : 0, transition: 'opacity .15s' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                    <span onPointerDown={e => startCatLongPress(e, cat)} onPointerMove={watchForScroll} onPointerUp={cancelLongPress}
-                      style={{ cursor: 'grab', fontSize: 16, color: colors.text4, touchAction: 'none', userSelect: 'none' as const, padding: '2px 4px' }}>⠿</span>
-                    <input value={catEdits[cat] ?? cat} onChange={e => setCatEdits(prev => ({ ...prev, [cat]: e.target.value }))}
-                      onBlur={() => renameCategory(cat)} onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
-                      style={{ ...inp(), fontWeight: 800, fontSize: 13, border: 'none', background: 'transparent', padding: '4px 6px', width: 220 }} />
-                    {savingCat === cat && <span style={{ fontSize: 10, color: colors.text4 }}>جاري الحفظ...</span>}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
-                    {items.map((it: any, j: number) => (
-                      editingId === it.id ? (
-                        <div key={it.id} style={{ border: `1.5px solid ${colors.primaryBorder}`, borderRadius: 12, padding: 14, background: colors.primaryLight }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 12, marginBottom: 10 }}>
-                            <div>
-                              <div style={{ width: 80, height: 80, borderRadius: 10, background: colors.surface, border: `1px dashed ${colors.border2}`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: 6 }}>
-                                {editForm.image_url ? <img src={editForm.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 20, opacity: .3 }}>📦</span>}
-                              </div>
-                              <label style={{ fontSize: 10, color: colors.info, cursor: 'pointer', textDecoration: 'underline' }}>
-                                {uploadingEditImg ? 'جاري الرفع...' : 'تغيير الصورة'}
-                                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadEditImage(f) }} />
-                              </label>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
-                              <input placeholder="اسم المنتج" value={editForm.name} onChange={e => setEditForm((p:any) => ({ ...p, name: e.target.value }))} style={{ ...inp(), width: '100%' }} />
-                              <NumberInput placeholder="السعر" value={editForm.price} onChange={e => setEditForm((p:any) => ({ ...p, price: e.target.value }))} style={{ ...inp(), width: '100%' }} />
-                            </div>
-                          </div>
-                          <textarea placeholder="وصف قصير..." value={editForm.description} onChange={e => setEditForm((p:any) => ({ ...p, description: e.target.value }))} rows={2} style={{ ...inp(), width: '100%', resize: 'vertical' as const, marginBottom: 10 }} />
-                          <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: colors.text2 }}>
-                            <input type="checkbox" checked={!!editForm.is_featured} onChange={e => setEditForm((p:any) => ({ ...p, is_featured: e.target.checked }))} />
-                            ⭐ وسم "الأكثر مبيعاً"
-                          </label>
-                          {editForm.scope && (
-                            <select value={editForm.scope} onChange={e => setEditForm((p:any) => ({ ...p, scope: e.target.value }))} style={{ ...inp(), width: '100%', marginBottom: 10 }}>
-                              <option value="branch">يظهر في {currentBranch?.name || ''} بس</option>
-                              <option value="all">يظهر بكل الفروع</option>
-                            </select>
-                          )}
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <button onClick={saveEdit} disabled={savingEdit} style={{ ...btnPrimary, flex: 1 }}>{savingEdit ? 'جاري الحفظ...' : 'حفظ التعديل'}</button>
-                            <button onClick={() => setEditingId(null)} style={{ padding: '10px 18px', borderRadius: 10, border: `1px solid ${colors.border2}`, background: 'white', color: colors.text2, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>إلغاء</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div key={it.id}
-                          onPointerEnter={() => { if (draggingItem && draggingItem.cat === cat && draggingItem.id !== it.id) setDragOverItem(it.id) }}
-                          style={{ display: 'flex', alignItems: 'center', gap: 12, border: dragOverItem === it.id && draggingItem ? `1.5px dashed ${colors.primary}` : `1px solid ${colors.border}`, borderRadius: 12, padding: 12, opacity: draggingItem?.id === it.id ? 0.4 : 1, transition: 'opacity .15s' }}>
-                          <span onPointerDown={e => { if (canEdit(it)) startItemLongPress(e, it.id, cat) }} onPointerMove={watchForScroll} onPointerUp={cancelLongPress}
-                            style={{ cursor: canEdit(it) ? 'grab' : 'default', fontSize: 15, color: colors.text4, touchAction: 'none', userSelect: 'none' as const, flexShrink: 0, opacity: canEdit(it) ? 1 : .3 }}>⠿</span>
-                          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 2, flexShrink: 0 }}>
-                            <button onClick={() => moveItem(cat, it.id, 'up')} disabled={j === 0}
-                              style={{ width: 22, height: 18, border: 'none', borderRadius: 5, background: j === 0 ? colors.bg : colors.surface, color: j === 0 ? colors.text4 : colors.text2, cursor: j === 0 ? 'not-allowed' : 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▲</button>
-                            <button onClick={() => moveItem(cat, it.id, 'down')} disabled={j === items.length - 1}
-                              style={{ width: 22, height: 18, border: 'none', borderRadius: 5, background: j === items.length - 1 ? colors.bg : colors.surface, color: j === items.length - 1 ? colors.text4 : colors.text2, cursor: j === items.length - 1 ? 'not-allowed' : 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▼</button>
-                          </div>
-                          <div style={{ width: 48, height: 48, borderRadius: 8, background: colors.surface, flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {it.image_url ? <img src={it.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 16, opacity: .3 }}>📦</span>}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{it.name}{it.is_featured && ' ⭐'}
-                              {mode === 'branch' && !it.branch_id && <span style={{ marginInlineStart: 6, fontSize: 9, fontWeight: 800, color: colors.info, background: colors.infoLight, border: `1px solid ${colors.infoBorder}`, borderRadius: 99, padding: '1px 7px' }}>كل الفروع</span>}
-                            </div>
-                            {it.price != null && <div style={{ fontSize: 11, color: colors.text4 }}>{it.price} ⃁</div>}
-                          </div>
-                          {canEdit(it) && <>
-                          <button onClick={() => startEdit(it)} style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${colors.infoBorder}`, background: colors.infoLight, color: colors.info, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>تعديل</button>
-                          <button onClick={() => deleteShopItem(it.id)} style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>حذف</button>
-                          </>}
-                        </div>
-                      )
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
-        })()}
-
-        {(() => {
-          const existingCats = Array.from(new Set(shopItems.map((it: any) => it.category || 'منتجات خارجية')))
-          return (
-            <div style={{ border: `1.5px dashed ${colors.border2}`, borderRadius: 12, padding: 14 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const, marginBottom: 10 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: colors.text2 }}>+ إضافة منتج خارجي جديد</div>
-                {(recipes.length > 0 || products.length > 0) && (
-                  <button onClick={() => setShowImport(v => !v)} style={{ padding: '6px 12px', borderRadius: 8, border: `1.5px solid ${colors.primaryBorder}`, background: colors.primaryLight, color: colors.primary, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
-                    {showImport ? 'إخفاء' : '⚡ أضف من الوصفات أو المخزون'}
-                  </button>
-                )}
-              </div>
-
-              {mode === 'branch' && canManageOrg && (
-                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                  {(['branch', 'all'] as const).map(v => (
-                    <button key={v} onClick={() => setNewScope(v)} style={{ flex: 1, padding: '8px', borderRadius: 8, fontSize: 12, fontWeight: 700, fontFamily: font.family, cursor: 'pointer', border: `1.5px solid ${newScope === v ? colors.primary : colors.border2}`, background: newScope === v ? colors.primaryLight : 'white', color: newScope === v ? colors.primary : colors.text2 }}>
-                      {v === 'branch' ? `لـ${currentBranch?.name || ''} بس` : 'لكل الفروع'}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {showImport && (
-                <div style={{ border: `1px solid ${colors.primaryBorder}`, background: colors.primaryLight, borderRadius: 12, padding: 12, marginBottom: 14 }}>
-                  <div style={{ fontSize: 11, color: colors.text3, marginBottom: 10, lineHeight: 1.7 }}>اختر الأصناف وتنضاف للمنيو مباشرة بأسمائها — الوصفات تجي بسعر البيع، وتقدر تعدّل الصورة والوصف بعدين</div>
-                  <select value={existingCats.includes(importCat) ? importCat : (importCat ? '__new' : '')} onChange={e => setImportCat(e.target.value === '__new' ? ' ' : e.target.value)} style={{ ...inp(), width: '100%', marginBottom: 8 }}>
-                    <option value="">— اختر القسم —</option>
-                    {existingCats.map(c => <option key={c as string} value={c as string}>{c as string}</option>)}
-                    <option value="__new">+ قسم جديد</option>
-                  </select>
-                  {importCat !== '' && !existingCats.includes(importCat) && (
-                    <input autoFocus placeholder="اسم القسم الجديد" value={importCat.trim() ? importCat : ''} onChange={e => setImportCat(e.target.value || ' ')} style={{ ...inp(), width: '100%', marginBottom: 8 }} />
-                  )}
-                  <div style={{ maxHeight: 260, overflowY: 'auto' as const, background: 'white', borderRadius: 10, border: `1px solid ${colors.border}`, padding: 8 }}>
-                    {recipes.length > 0 && <div style={{ fontSize: 10, fontWeight: 800, color: colors.text4, padding: '4px 6px' }}>الوصفات</div>}
-                    {recipes.map(r => (
-                      <label key={'r' + r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px', fontSize: 12, cursor: 'pointer' }}>
-                        <input type="checkbox" checked={!!importSel['r:' + r.id]} onChange={e => setImportSel(p => ({ ...p, ['r:' + r.id]: e.target.checked }))} />
-                        <span style={{ flex: 1 }}>{r.name}</span>
-                        {Number(r.sell_price) > 0 && <span style={{ color: colors.text4 }}>{r.sell_price} ⃁</span>}
-                      </label>
-                    ))}
-                    {products.length > 0 && <div style={{ fontSize: 10, fontWeight: 800, color: colors.text4, padding: '8px 6px 4px' }}>منتجات المخزون{mode === 'branch' ? ` — ${currentBranch?.name || ''}` : ''}</div>}
-                    {products.map(pr => (
-                      <label key={'p' + pr.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px', fontSize: 12, cursor: 'pointer' }}>
-                        <input type="checkbox" checked={!!importSel['p:' + pr.id]} onChange={e => setImportSel(p => ({ ...p, ['p:' + pr.id]: e.target.checked }))} />
-                        <span style={{ flex: 1 }}>{pr.name}</span>
-                        {pr.category && <span style={{ color: colors.text4, fontSize: 10 }}>{pr.category}</span>}
-                      </label>
-                    ))}
-                  </div>
-                  <button onClick={importItems} disabled={importing} style={{ ...btnPrimary, width: '100%', marginTop: 10 }}>
-                    {importing ? 'جاري الإضافة...' : `أضف المختار (${Object.values(importSel).filter(Boolean).length})`}
-                  </button>
-                </div>
-              )}
-
-              <div style={{ marginBottom: 10 }}>
-                <label style={{ fontSize: 10, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 5 }}>١) اختر القسم أو أنشئ قسم جديد *</label>
-                {!creatingNewCat ? (
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <select value={newItem.category} onChange={e => setNewItem(prev => ({ ...prev, category: e.target.value }))} style={{ ...inp(), flex: 1 }}>
-                      <option value="">— اختر قسم —</option>
-                      {existingCats.map(c => <option key={c as string} value={c as string}>{c as string}</option>)}
-                    </select>
-                    <button onClick={() => { setCreatingNewCat(true); setNewItem(prev => ({ ...prev, category: '' })) }} style={{ padding: '0 14px', borderRadius: 8, border: `1.5px solid ${colors.primaryBorder}`, background: colors.primaryLight, color: colors.primary, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>+ قسم جديد</button>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input autoFocus placeholder="اسم القسم الجديد (مثال: المشروبات الباردة)" value={newItem.category} onChange={e => setNewItem(prev => ({ ...prev, category: e.target.value }))} style={{ ...inp(), flex: 1 }} />
-                    {existingCats.length > 0 && (
-                      <button onClick={() => setCreatingNewCat(false)} style={{ padding: '0 14px', borderRadius: 8, border: `1px solid ${colors.border2}`, background: colors.bg, color: colors.text2, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>إلغاء</button>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 12, marginBottom: 10 }}>
-                <div>
-                  <div style={{ width: 80, height: 80, borderRadius: 10, background: colors.surface, border: `1px dashed ${colors.border2}`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: 6 }}>
-                    {newItem.image_url ? <img src={newItem.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 20, opacity: .3 }}>📦</span>}
-                  </div>
-                  <label style={{ fontSize: 10, color: colors.info, cursor: 'pointer', textDecoration: 'underline' }}>
-                    {uploadingNewItem ? 'جاري الرفع...' : 'رفع صورة'}
-                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadNewItemImage(f) }} />
-                  </label>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
-                  <label style={{ fontSize: 10, fontWeight: 700, color: colors.text3 }}>٢) تفاصيل المنتج</label>
-                  <input placeholder="اسم المنتج *" value={newItem.name} onChange={e => setNewItem(prev => ({ ...prev, name: e.target.value }))} style={{ ...inp(), width: '100%' }} />
-                  <NumberInput placeholder="السعر (⃁)" value={newItem.price} onChange={e => setNewItem(prev => ({ ...prev, price: e.target.value }))} style={{ ...inp(), width: '100%' }} />
-                </div>
-              </div>
-              <textarea placeholder="وصف قصير..." value={newItem.description} onChange={e => setNewItem(prev => ({ ...prev, description: e.target.value }))} rows={2} style={{ ...inp(), width: '100%', resize: 'vertical' as const, marginBottom: 10 }} />
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: colors.text2 }}>
-                <input type="checkbox" checked={newItem.is_featured} onChange={e => setNewItem(prev => ({ ...prev, is_featured: e.target.checked }))} />
-                ⭐ وسم "الأكثر مبيعاً"
-              </label>
-              <button onClick={() => { if (!newItem.category.trim()) { toast('اختر أو اكتب اسم القسم أول', 'warning'); return } addShopItem() }} disabled={addingItem} style={{ ...btnPrimary, width: '100%' }}>{addingItem ? 'جاري الإضافة...' : '+ إضافة المنتج للقسم'}</button>
-            </div>
-          )
-        })()}
-      </div>
+        <MenuItemsEditor orgId={orgId} mode={mode} branchId={branchId} canManageOrg={canManageOrg}
+          branches={menuBranches} items={shopItems} setItems={setShopItems} recipes={recipes} products={products}
+          reload={() => load(orgId, null, true)} />
       )}
     </div>
   )

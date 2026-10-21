@@ -99,12 +99,12 @@ export function safeDecode(v: string) {
   try { return decodeURIComponent(v) } catch { return v }
 }
 
-export type PublicMenuItem = { name: string; category: string; price: number | null; description: string | null; image_url: string | null; is_featured: boolean; sort_order: number }
+export type PublicMenuItem = { name: string; category: string; price: number | null; description: string | null; image_url: string | null; is_featured: boolean; sort_order: number; sold_out?: boolean }
 
 async function loadItems(db: SupabaseClient, orgId: string, branchId: string | null): Promise<PublicMenuItem[]> {
   let prodQ = db.from('products').select('name,category,public_price,public_description,public_image_url,sort_order')
     .eq('org_id', orgId).eq('show_on_shop', true).eq('is_active', true)
-  let itemsQ = db.from('shop_items').select('name,category,price,description,image_url,is_featured,sort_order').eq('org_id', orgId)
+  let itemsQ = db.from('shop_items').select('name,category,price,description,image_url,is_featured,is_available,sort_order').eq('org_id', orgId).eq('is_hidden', false)
   if (branchId) {
     prodQ = prodQ.eq('branch_id', branchId)
     itemsQ = itemsQ.or(`branch_id.eq.${branchId},branch_id.is.null`)
@@ -112,7 +112,7 @@ async function loadItems(db: SupabaseClient, orgId: string, branchId: string | n
   const [{ data: invProducts }, { data: shopItems }] = await Promise.all([prodQ, itemsQ])
   const all: PublicMenuItem[] = [
     ...(invProducts || []).map((p: any) => ({ name: p.name, category: p.category || 'المنتجات', price: p.public_price, description: p.public_description, image_url: p.public_image_url, is_featured: false, sort_order: p.sort_order || 0 })),
-    ...(shopItems || []).map((it: any) => ({ name: it.name, category: it.category || 'منتجات المتجر', price: it.price, description: it.description, image_url: it.image_url, is_featured: !!it.is_featured, sort_order: it.sort_order || 0 })),
+    ...(shopItems || []).map((it: any) => ({ name: it.name, category: it.category || 'منتجات المتجر', price: it.price, description: it.description, image_url: it.image_url, is_featured: !!it.is_featured, sort_order: it.sort_order || 0, sold_out: it.is_available === false })),
   ].sort((a, b) => a.sort_order - b.sort_order)
   // نفس الصنف بنفس السعر والقسم (مثلاً مفعّل بفرعين بالمنيو الموحد) يطلع مرة وحدة
   const seen = new Set<string>()

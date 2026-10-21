@@ -136,7 +136,7 @@ export function ShopMenuView({ data, slug }: { data: Extract<PublicMenu, { kind:
 
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(420px,100%),1fr))',gap:'40px 56px'}}>
               {products.filter((p: any) => p.category === cat).map((p: any, pi: number) => (
-                <div key={pi} style={{display:'flex',gap:20,alignItems:'flex-start'}}>
+                <div key={pi} style={{display:'flex',gap:20,alignItems:'flex-start',opacity:p.sold_out?.5:1}}>
                   <div className="shop-row-img" style={{width:118,height:118,borderRadius:14,background:'#f0ece5',flexShrink:0,overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',position:'relative' as const}}>
                     {p.image_url ? (
                       <img src={p.image_url} alt={p.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
@@ -149,6 +149,9 @@ export function ShopMenuView({ data, slug }: { data: Extract<PublicMenu, { kind:
                       <span className="shop-row-name" style={{fontSize:16,fontWeight:800,color:'#1c1917',whiteSpace:'nowrap' as const}}>{p.name}</span>
                       {p.is_featured && (
                         <span style={{fontSize:9,fontWeight:800,color:'#b45309',background:'#fffbeb',border:'1px solid #fde68a',borderRadius:99,padding:'2px 8px',whiteSpace:'nowrap' as const}}>⭐ الأكثر مبيعاً</span>
+                      )}
+                      {p.sold_out && (
+                        <span style={{fontSize:9,fontWeight:800,color:'#57534e',background:'#f5f5f4',border:'1px solid #d6d3d1',borderRadius:99,padding:'2px 8px',whiteSpace:'nowrap' as const}}>نفدت</span>
                       )}
                       <span style={{flex:1,minWidth:20,borderBottom:'1.5px dotted #d6d0c8',position:'relative' as const,top:-3}}/>
                       {p.price != null && (

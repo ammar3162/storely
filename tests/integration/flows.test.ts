@@ -620,6 +620,8 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       expect((await call(shopItems.POST, 'POST', '/api/shop-items', { org_id: orgId, branch_id: branchA, scope: 'all', name: 'x', category: 'y' })).status).toBe(403)
       expect((await call(shopSettings.POST, 'POST', '/api/shop-settings', { org_id: orgId, shop_slug: 'hijack', shop_enabled: true })).status).toBe(403)
       expect((await call(shopSettings.PATCH, 'PATCH', '/api/shop-settings', { org_id: orgId, branch_id: branchA, shop_slug: 'x1' })).status).toBe(403)
+      expect((await call(shopItems.PATCH, 'PATCH', '/api/shop-items', { org_id: orgId, item_id: itemAll, field: 'is_hidden', value: true })).status).toBe(403)
+      expect((await call(shopItems.PATCH, 'PATCH', '/api/shop-items', { org_id: orgId, item_id: itemA, field: 'is_available', value: false })).status).toBe(403)
       const itemB = (await call(shopItems.POST, 'POST', '/api/shop-items', { org_id: orgId, branch_id: branchA, name: 'سبانش النرجس', category: 'قهوة', price: 20 })).json.id
       expect(((await db.from('shop_items').select('branch_id').eq('id', itemB).single()).data as any).branch_id).toBe(branchB)
       await call(shopItems.PUT, 'PUT', '/api/shop-items', { org_id: orgId, old_category: 'قهوة', new_category: 'قهوة مختصة' })
@@ -628,11 +630,20 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       expect((await call(shopSettings.PATCH, 'PATCH', '/api/shop-settings', { org_id: orgId, branch_id: branchB, shop_hours: { enabled: true, is24h: false, open: '16:00', close: '02:00' } })).json.success).toBe(true)
       auth.current = owner
 
+      // المالك: صنف للفرعين = صنف واحد لكل الفروع، وصنف نفد/مخفي
+      const both = await call(shopItems.POST, 'POST', '/api/shop-items', { org_id: orgId, branch_id: branchA, scope: 'branch', branch_ids: [branchA, branchB], name: 'موهيتو', category: 'بارد', price: 15 })
+      expect(both.json.count).toBe(1)
+      expect(((await db.from('shop_items').select('branch_id').eq('id', both.json.id).single()).data as any).branch_id).toBeNull()
+      expect((await call(shopItems.PATCH, 'PATCH', '/api/shop-items', { org_id: orgId, item_id: both.json.id, field: 'is_hidden', value: true })).json.success).toBe(true)
+      expect((await call(shopItems.PATCH, 'PATCH', '/api/shop-items', { org_id: orgId, item_id: itemA, field: 'is_available', value: false })).json.success).toBe(true)
+      expect((await call(shopItems.PATCH, 'PATCH', '/api/shop-items', { org_id: orgId, item_id: itemA, field: 'price', value: 1 })).status).toBe(400)
+
       // الزبون: الرابط العام = اختيار الفرع، ورابط الفرع = أصناف فرعه + كل الفروع
       const pick = await getPublicMenu(db as any, slug)
       expect(pick?.kind).toBe('pick')
       const menuA = await getPublicMenu(db as any, slug, encodeURIComponent('الفرع-الرئيسي'))
       expect(menuA?.kind === 'menu' && menuA.products.map(p => p.name).sort()).toEqual(['كابتشينو', 'لاتيه العليا', 'ماء'].sort())
+      expect(menuA?.kind === 'menu' && menuA.products.find(p => p.name === 'لاتيه العليا')?.sold_out).toBe(true)
       const menuB = await getPublicMenu(db as any, slug, 'فرع-النرجس')
       expect(menuB?.kind === 'menu' && menuB.products.map(p => p.name).sort()).toEqual(['سبانش النرجس', 'ماء'].sort())
       expect(menuB?.kind === 'menu' && menuB.hours.open).toBe('16:00')

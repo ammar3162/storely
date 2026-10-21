@@ -7,6 +7,9 @@ alter table public.org_addon_subscriptions add column if not exists branch_ids u
 
 alter table public.shop_items add column if not exists branch_id uuid references public.branches(id) on delete cascade;
 create index if not exists shop_items_org_branch_idx on public.shop_items (org_id, branch_id);
+-- متوفر/نفدت (يظهر باهت للزبون) وإخفاء من المنيو بدون حذف
+alter table public.shop_items add column if not exists is_available boolean not null default true;
+alter table public.shop_items add column if not exists is_hidden boolean not null default false;
 
 alter table public.branches add column if not exists shop_slug text;
 alter table public.branches add column if not exists shop_hours jsonb;

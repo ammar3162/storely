@@ -113,7 +113,7 @@ export async function GET(req: Request) {
     const bid = scope.mode === 'branch' ? scope.branchId : enforcedBranchId(access, searchParams.get('branch_id'))
     let q = supabase.from('products').select('id,name,unit,category,show_on_shop,public_price,public_description,public_image_url,sort_order').eq('org_id', org_id).eq('is_active', true)
     if (bid) q = q.eq('branch_id', bid)
-    let itemsQ = supabase.from('shop_items').select('id,name,category,price,description,image_url,is_featured,sort_order,branch_id').eq('org_id', org_id)
+    let itemsQ = supabase.from('shop_items').select('id,name,category,price,description,image_url,is_featured,is_available,is_hidden,sort_order,branch_id').eq('org_id', org_id)
     if (scope.mode === 'branch') itemsQ = itemsQ.or(`branch_id.eq.${scope.branchId},branch_id.is.null`)
     let recipesQ = supabase.from('recipes').select('id,name,sell_price').eq('org_id', org_id)
     if (bid) recipesQ = recipesQ.or(`branch_id.eq.${bid},branch_id.is.null`)
