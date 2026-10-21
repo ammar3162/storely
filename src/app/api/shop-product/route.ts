@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,8 +16,10 @@ export async function POST(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
     const supabase = sb()
-    const { data: product } = await supabase.from('products').select('org_id').eq('id', product_id).maybeSingle()
+    const { data: product } = await supabase.from('products').select('org_id,branch_id').eq('id', product_id).maybeSingle()
     if (!product || (product as any).org_id !== org_id) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
+    const forced = enforcedBranchId(access, null)
+    if (forced && (product as any).branch_id !== forced) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
 
     const { error } = await supabase.from('products').update({
       show_on_shop: !!show_on_shop,

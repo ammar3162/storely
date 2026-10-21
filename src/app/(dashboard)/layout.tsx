@@ -108,6 +108,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [subDaysLeft, setSubDaysLeft] = useState<number|null>(null)
   const [orgLogo, setOrgLogo]       = useState<string|null>(null)
   const [hasMenuAddon, setHasMenuAddon] = useState(false)
+  // المنيو بالفروع: الفروع المشتركة (null = اشتراك للمنشأة كلها)
+  const [menuBranchIds, setMenuBranchIds] = useState<string[] | null>(null)
   const [hasHrAddon, setHasHrAddon] = useState(false)
   const [hasProfitAddon, setHasProfitAddon] = useState(false)
   const [hasAiAddon, setHasAiAddon] = useState(false)
@@ -219,6 +221,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         if (j.success) {
           const menuAddon = (j.addons||[]).find((a:any)=>a.slug==='online_menu')
           setHasMenuAddon(!!menuAddon?.subscription?.isValid)
+          const mb = menuAddon?.subscription?.branch_ids
+          setMenuBranchIds(Array.isArray(mb) && mb.length ? mb : null)
           const hrAddon = (j.addons||[]).find((a:any)=>a.slug==='hr_full')
           setHasHrAddon(!!hrAddon?.subscription?.isValid)
           const profitAddon = (j.addons||[]).find((a:any)=>a.slug==='profitability')
@@ -456,6 +460,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     if((href==='/attendance'||href==='/hr-management') && orgPlan==='basic' && !hasHrAddon) return false
     if(href==='/profitability' && orgPlan==='basic' && !hasProfitAddon) return false
     if(href==='/online-store' && !hasMenuAddon) return false
+    // المنيو مشترك لفروع معيّنة: يختفي من القائمة لما الفرع المختار غير مشترك
+    if(href==='/online-store' && menuBranchIds && typeof window!=='undefined' && !menuBranchIds.includes(sessionStorage.getItem('s_branch_id')||'')) return false
     if(['/branch-compare','/branch-managers','/transfer-stock'].includes(href) && branches.length<=1) return false
     return navVisible(href)
   }

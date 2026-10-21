@@ -8,8 +8,8 @@ export const PLAN_PRICING: Record<PlanKey, { label: string; monthly: number; yea
   advanced: { label: 'المتقدمة', monthly: 399, yearly: 3830 },
 }
 
-// إضافات تنباع بالوحدة (السعر × الكمية)
-export const QTY_ADDON_SLUGS = ['extra_branch', 'extra_staff', 'extra_suppliers']
+// إضافات تنباع بالوحدة (السعر × الكمية) — المنيو: الكمية = عدد الفروع المشتركة
+export const QTY_ADDON_SLUGS = ['extra_branch', 'extra_staff', 'extra_suppliers', 'online_menu']
 
 export function planKeyOf(plan: string | null | undefined, maxBranches?: number | null): PlanKey {
   if (plan === 'basic' || plan === 'pro' || plan === 'advanced') return plan
