@@ -47,6 +47,7 @@ export default function OnlineStorePage() {
   const [uploadingEditImg, setUploadingEditImg] = useState(false)
   const [savingCat, setSavingCat] = useState<string|null>(null)
   const [loadError, setLoadError] = useState('')
+  const [branchNotSubscribed, setBranchNotSubscribed] = useState('')
   const [uploadingNewItem, setUploadingNewItem] = useState(false)
   // منيو لكل فرع: mode=branch → نعرض فرع واحد (أصنافه + أصناف كل الفروع)
   const [mode, setMode] = useState<'org'|'branch'>('org')
@@ -78,15 +79,23 @@ export default function OnlineStorePage() {
       const subRes = await fetch(`/api/addons-market?org_id=${oid}`)
       const subJ = await subRes.json()
       const menuAddon = (subJ.addons || []).find((a: any) => a.slug === 'online_menu')
-      setHasSubscription(!!menuAddon?.subscription?.isValid)
-      if (menuAddon?.subscription?.isValid) load(oid!)
+      const valid = !!menuAddon?.subscription?.isValid
+      // المنيو مشترك لفروع معيّنة: الصفحة تتبع الفرع المختار بالقائمة — فرع غير مشترك = رسالة بدل المنيو
+      const ids = menuAddon?.subscription?.branch_ids
+      const cur = sessionStorage.getItem('s_branch_id')
+      if (valid && Array.isArray(ids) && ids.length && cur && !ids.includes(cur)) {
+        setBranchNotSubscribed(sessionStorage.getItem('s_branch_name') || 'هذا الفرع')
+        setHasSubscription(true); setLoading(false); return
+      }
+      setHasSubscription(valid)
+      if (valid) load(oid!)
       else setLoading(false)
     } catch { setHasSubscription(false); setLoading(false) }
   }
 
   async function load(oid: string, wantBranch?: string | null) {
     setLoading(true)
-    const bid = wantBranch || branchId || sessionStorage.getItem('s_branch_id')
+    const bid = wantBranch || sessionStorage.getItem('s_branch_id') || branchId
     const params = new URLSearchParams({ org_id: oid })
     if (bid) params.set('branch_id', bid)
     const res = await fetch(`/api/shop-settings?${params.toString()}`)
@@ -245,13 +254,6 @@ export default function OnlineStorePage() {
 
   // صنف "كل الفروع" يعدّله المالك بس
   const canEdit = (it: any) => mode === 'org' || !!it.branch_id || canManageOrg
-
-  function switchBranch(id: string) {
-    if (id === branchId) return
-    setEditingId(null); setShowImport(false); setImportSel({}); setCatEdits({}); setImportCat('')
-    setNewItem({ name:'', category:'', price:'', description:'', image_url:'', is_featured:false }); setCreatingNewCat(false); setNewScope('branch')
-    load(orgId, id)
-  }
 
   async function saveBranchSettings() {
     if (!branchId) return
@@ -455,6 +457,19 @@ export default function OnlineStorePage() {
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontFamily: font.family }}>جاري التحميل...</div>
 
+  if (branchNotSubscribed) {
+    return (
+      <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 480, margin: '80px auto', textAlign: 'center' as const, ...card, padding: 40 }}>
+        <div style={{ fontSize: 44, marginBottom: 14 }}>📋</div>
+        <div style={{ fontSize: 18, fontWeight: 800, color: colors.text, marginBottom: 8 }}>{branchNotSubscribed} غير مشترك بالمنيو الإلكتروني</div>
+        <div style={{ fontSize: 13, color: colors.text3, lineHeight: 1.8, marginBottom: 20 }}>
+          <span className="hide-in-app">بدّل للفرع المشترك من القائمة، أو أضف هذا الفرع للمنيو من الإضافات</span>
+        </div>
+        <a className="hide-in-app" href="/addons-market" style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '12px 28px' }}>روح لالإضافات</a>
+      </div>
+    )
+  }
+
   if (hasSubscription === false) {
     return (
       <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 480, margin: '80px auto', textAlign: 'center' as const, ...card, padding: 40 }}>
@@ -479,16 +494,6 @@ export default function OnlineStorePage() {
         <div style={{ ...card, padding: 24, marginBottom: 16, textAlign: 'center' as const, color: colors.text3, fontSize: 13 }}>{loadError}</div>
       )}
 
-      {mode === 'branch' && menuBranches.length > 1 && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, marginBottom: 16 }}>
-          {menuBranches.map(b => (
-            <button key={b.id} onClick={() => switchBranch(b.id)}
-              style={{ padding: '8px 16px', borderRadius: 99, fontSize: 13, fontWeight: 700, fontFamily: font.family, cursor: 'pointer', border: `1.5px solid ${b.id === branchId ? colors.primary : colors.border2}`, background: b.id === branchId ? colors.primary : 'white', color: b.id === branchId ? 'white' : colors.text2 }}>
-              📍 {b.name}
-            </button>
-          ))}
-        </div>
-      )}
 
       {canManageOrg && !loadError && (
       <div style={{ ...card, padding: '20px', marginBottom: 16 }}>
