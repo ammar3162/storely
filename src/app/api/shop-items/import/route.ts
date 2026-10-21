@@ -8,14 +8,14 @@ const sb = () => createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// يضيف أصناف للمنيو من الوصفات (بسعر البيع) أو من مخزون الفرع — الاسم والسعر من قاعدة البيانات
+// يضيف أصناف للمنيو من الوصفات (بسعر البيع) — الاسم والسعر من قاعدة البيانات.
+// منتجات المخزون ما تنضاف: أغلبها خامات (حليب، بن، أكواب) مو أصناف تنباع للزبون
 export async function POST(req: Request) {
   try {
-    const { org_id, branch_id, scope: target, category, recipe_ids, product_ids } = await req.json()
+    const { org_id, branch_id, scope: target, category, recipe_ids } = await req.json()
     const recipeIds = Array.isArray(recipe_ids) ? recipe_ids.filter((x: any) => typeof x === 'string').slice(0, 200) : []
-    const productIds = Array.isArray(product_ids) ? product_ids.filter((x: any) => typeof x === 'string').slice(0, 200) : []
-    if (!org_id || !String(category || '').trim() || (!recipeIds.length && !productIds.length)) {
-      return NextResponse.json({ error: 'اختر القسم والأصناف' }, { status: 400 })
+    if (!org_id || !String(category || '').trim() || !recipeIds.length) {
+      return NextResponse.json({ error: 'اختر القسم والوصفات' }, { status: 400 })
     }
 
     const access = await verifyOrgAccess(org_id)
@@ -28,25 +28,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'أصناف كل الفروع يضيفها مالك المنشأة' }, { status: 403 })
     }
     const itemBranch = scope.mode === 'branch' && target !== 'all' ? scope.branchId : null
-    // مصدر الأصناف: الفرع المختار (أو فرع المدير بالمنيو الموحد)
+    // الوصفات العامة + وصفات الفرع المختار (أو فرع المدير بالمنيو الموحد)
     const srcBranch = scope.branchId || enforcedBranchId(access, null)
 
-    const [{ data: recipes }, { data: products }] = await Promise.all([
-      recipeIds.length
-        ? (() => {
-            let q = supabase.from('recipes').select('id,name,sell_price').eq('org_id', org_id).in('id', recipeIds)
-            if (srcBranch) q = q.or(`branch_id.eq.${srcBranch},branch_id.is.null`)
-            return q
-          })()
-        : Promise.resolve({ data: [] as any[] }),
-      productIds.length
-        ? (() => {
-            let q = supabase.from('products').select('id,name,public_price,public_image_url,public_description').eq('org_id', org_id).eq('is_active', true).in('id', productIds)
-            if (srcBranch) q = q.eq('branch_id', srcBranch)
-            return q
-          })()
-        : Promise.resolve({ data: [] as any[] }),
-    ])
+    let recipesQ = supabase.from('recipes').select('id,name,sell_price').eq('org_id', org_id).in('id', recipeIds)
+    if (srcBranch) recipesQ = recipesQ.or(`branch_id.eq.${srcBranch},branch_id.is.null`)
+    const { data: recipes } = await recipesQ
 
     // ما نكرر صنف موجود بنفس الاسم بهالمنيو
     let existingQ = supabase.from('shop_items').select('name').eq('org_id', org_id)
@@ -67,12 +54,11 @@ export async function POST(req: Request) {
       })
     }
     for (const r of recipes || []) add((r as any).name, (r as any).sell_price, null, null)
-    for (const p of products || []) add((p as any).name, (p as any).public_price, (p as any).public_image_url, (p as any).public_description)
 
-    if (!rows.length) return NextResponse.json({ success: true, added: 0, skipped: recipeIds.length + productIds.length })
+    if (!rows.length) return NextResponse.json({ success: true, added: 0, skipped: recipeIds.length })
     const { error } = await supabase.from('shop_items').insert(rows)
     if (error) return NextResponse.json({ error: 'فشل الإضافة' }, { status: 500 })
-    return NextResponse.json({ success: true, added: rows.length, skipped: recipeIds.length + productIds.length - rows.length })
+    return NextResponse.json({ success: true, added: rows.length, skipped: recipeIds.length - rows.length })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }

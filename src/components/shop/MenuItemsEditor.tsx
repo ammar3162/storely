@@ -1,6 +1,6 @@
 'use client'
 // محرر أصناف المنيو: نموذج واحد للإضافة والتعديل (ضغطة على الصنف تفتحه)، مفتاح متوفر/نفدت،
-// وقائمة خيارات (تمييز، إخفاء، ترتيب، حذف)، وبحث وفلتر بالقسم، وإضافة من الوصفات/المخزون
+// وقائمة خيارات (تمييز، إخفاء، ترتيب، حذف)، وبحث وفلتر بالقسم، وإضافة من الوصفات (المخزون خامات — ما ينعرض للزبون)
 import { useEffect, useMemo, useState } from 'react'
 import NumberInput from '@/components/NumberInput'
 import { Ellipsis, Eye, EyeOff, ImagePlus, ListPlus, Search, Pencil, Trash2, ArrowUp, ArrowDown, Star, X, Check, Plus, UtensilsCrossed } from 'lucide-react'
@@ -16,7 +16,7 @@ const DEFAULT_CAT = 'منتجات خارجية'
 const catOf = (it: Item) => it.category || DEFAULT_CAT
 const EMPTY = { name: '', category: '', price: '' as string | number, description: '', image_url: '', is_featured: false }
 
-export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, branches, items, setItems, recipes, products, reload }: {
+export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, branches, items, setItems, recipes, reload }: {
   orgId: string
   mode: 'org' | 'branch'
   branchId: string | null
@@ -25,7 +25,6 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
   items: Item[]
   setItems: (fn: (prev: Item[]) => Item[]) => void
   recipes: { id: string; name: string; sell_price: number | null }[]
-  products: { id: string; name: string; category: string | null }[]
   reload: () => void
 }) {
   const sb = createClient()
@@ -50,7 +49,7 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
   const [menuFor, setMenuFor] = useState<string | null>(null)
   const [renaming, setRenaming] = useState<{ cat: string; value: string } | null>(null)
 
-  // ─── من الوصفات/المخزون ───
+  // ─── من الوصفات ───
   const [showImport, setShowImport] = useState(false)
   const [importCat, setImportCat] = useState('')
   const [importNewCat, setImportNewCat] = useState(false)
@@ -167,11 +166,10 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
 
   async function importItems() {
     const recipe_ids = recipes.filter(r => importSel['r:' + r.id]).map(r => r.id)
-    const product_ids = products.filter(p => importSel['p:' + p.id]).map(p => p.id)
     if (!importCat.trim()) { toast('اختر القسم أو اكتب قسم جديد', 'warning'); return }
-    if (!recipe_ids.length && !product_ids.length) { toast('اختر صنف واحد على الأقل', 'warning'); return }
+    if (!recipe_ids.length) { toast('اختر وصفة وحدة على الأقل', 'warning'); return }
     setImporting(true)
-    const res = await fetch('/api/shop-items/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: orgId, branch_id: branchId, scope: mode === 'branch' ? 'branch' : undefined, category: importCat, recipe_ids, product_ids }) })
+    const res = await fetch('/api/shop-items/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: orgId, branch_id: branchId, scope: mode === 'branch' ? 'branch' : undefined, category: importCat, recipe_ids }) })
     const j = await res.json().catch(() => ({}))
     setImporting(false)
     if (!j.success) { toast(j.error || 'فشل الإضافة', 'error'); return }
@@ -249,14 +247,14 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
     </div>
   )
 
-  // ─── من الوصفات / المخزون ───
+  // ─── من الوصفات ───
   const importCard = showImport && (
     <div style={{ ...card, padding: 16, border: `1.5px solid ${colors.primaryBorder}` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>إضافة من الوصفات أو المخزون</div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>إضافة من الوصفات</div>
         <button onClick={() => setShowImport(false)} style={iconBtn} aria-label="إغلاق"><X size={16} /></button>
       </div>
-      <div style={{ fontSize: 11, color: colors.text4, marginBottom: 12, lineHeight: 1.7 }}>اختر الأصناف وتنضاف{mode === 'branch' ? ` لـ${current?.name || 'هذا الفرع'}` : ''} مباشرة، والوصفات تجي بسعر البيع</div>
+      <div style={{ fontSize: 11, color: colors.text4, marginBottom: 12, lineHeight: 1.7 }}>اختر الوصفات وتنضاف{mode === 'branch' ? ` لـ${current?.name || 'هذا الفرع'}` : ''} مباشرة، والوصفات تجي بسعر البيع</div>
       <label style={label}>القسم *</label>
       {!importNewCat && cats.length ? (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 12 }}>
@@ -267,20 +265,11 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
         <input placeholder="اسم القسم" value={importCat} onChange={e => setImportCat(e.target.value)} style={{ ...inp(), width: '100%', marginBottom: 12 }} />
       )}
       <div style={{ maxHeight: 280, overflowY: 'auto' as const, border: `1px solid ${colors.border}`, borderRadius: 10, padding: 6 }}>
-        {recipes.length > 0 && <div style={{ fontSize: 10, fontWeight: 800, color: colors.text4, padding: '4px 6px' }}>الوصفات</div>}
         {recipes.map(r => (
           <label key={'r' + r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 6px', fontSize: 13, cursor: 'pointer' }}>
             <input type="checkbox" checked={!!importSel['r:' + r.id]} onChange={e => setImportSel(p => ({ ...p, ['r:' + r.id]: e.target.checked }))} />
             <span style={{ flex: 1 }}>{r.name}</span>
             {Number(r.sell_price) > 0 && <span style={{ color: colors.text3, fontSize: 12 }}>{r.sell_price} ⃁</span>}
-          </label>
-        ))}
-        {products.length > 0 && <div style={{ fontSize: 10, fontWeight: 800, color: colors.text4, padding: '8px 6px 4px' }}>منتجات المخزون</div>}
-        {products.map(pr => (
-          <label key={'p' + pr.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 6px', fontSize: 13, cursor: 'pointer' }}>
-            <input type="checkbox" checked={!!importSel['p:' + pr.id]} onChange={e => setImportSel(p => ({ ...p, ['p:' + pr.id]: e.target.checked }))} />
-            <span style={{ flex: 1 }}>{pr.name}</span>
-            {pr.category && <span style={{ color: colors.text4, fontSize: 10 }}>{pr.category}</span>}
           </label>
         ))}
       </div>
@@ -301,8 +290,8 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
           <div style={{ fontSize: 11, color: colors.text4, marginTop: 2 }}>اضغط على الصنف لتعديله، والمفتاح يخلّيه متوفر أو نفدت</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          {(recipes.length > 0 || products.length > 0) && (
-            <button onClick={() => { setShowImport(v => !v); setFormOpen(false) }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 10, border: `1px solid ${colors.border2}`, background: 'white', color: colors.text2, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}><ListPlus size={16} />من الوصفات أو المخزون</button>
+          {recipes.length > 0 && (
+            <button onClick={() => { setShowImport(v => !v); setFormOpen(false) }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 10, border: `1px solid ${colors.border2}`, background: 'white', color: colors.text2, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}><ListPlus size={16} />من الوصفات</button>
           )}
           <button onClick={() => { setShowImport(false); openNew() }} style={{ ...btnPrimary, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', fontSize: 13 }}><Plus size={16} strokeWidth={2.4} />صنف جديد</button>
         </div>

@@ -29,7 +29,6 @@ export default function OnlineStorePage() {
     { v: 'google_maps', l: 'قوقل ماب' },
     { v: 'website', l: 'رابط مخصص' },
   ]
-  const [products, setProducts] = useState<any[]>([])
   const [shopItems, setShopItems] = useState<any[]>([])
   const [logoUrl, setLogoUrl] = useState<string|null>(null)
   const [suggestingColor, setSuggestingColor] = useState(false)
@@ -109,7 +108,6 @@ export default function OnlineStorePage() {
       const h = j.org?.shop_hours || {}
       setHoursEnabled(!!h.enabled); setHours24(h.is24h !== false); setOpenTime(h.open || '09:00'); setCloseTime(h.close || '22:00')
       setLogoUrl(j.org?.logo_url || null)
-      setProducts(j.products || [])
       setShopItems(j.shopItems || [])
     }
     setLoading(false)
@@ -192,7 +190,6 @@ export default function OnlineStorePage() {
   function updateLink(i: number, patch: any) { setLinks(prev => prev.map((l, idx) => idx === i ? { ...l, ...patch } : l)) }
   function removeLink(i: number) { setLinks(prev => prev.filter((_, idx) => idx !== i)) }
 
-  const shownCount = products.filter(p => p.show_on_shop).length
   const previewUrl = slug && typeof window !== 'undefined' ? `${window.location.origin}/shop/${slug}` : ''
   const currentBranch = menuBranches.find(b => b.id === branchId)
   const savedBranchSlug = currentBranch?.shop_slug || ''
@@ -415,7 +412,7 @@ export default function OnlineStorePage() {
       {/* أصناف المنيو */}
       {!loadError && (
         <MenuItemsEditor orgId={orgId} mode={mode} branchId={branchId} canManageOrg={canManageOrg}
-          branches={menuBranches} items={shopItems} setItems={setShopItems} recipes={recipes} products={products}
+          branches={menuBranches} items={shopItems} setItems={setShopItems} recipes={recipes}
           reload={() => load(orgId, null, true)} />
       )}
     </div>
