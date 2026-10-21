@@ -1,9 +1,9 @@
 'use client'
 // محرر أصناف المنيو: نموذج واحد للإضافة والتعديل (ضغطة على الصنف تفتحه)، مفتاح متوفر/نفدت،
 // وقائمة خيارات (تمييز، إخفاء، ترتيب، حذف)، وبحث وفلتر بالقسم، وإضافة من الوصفات (المخزون خامات — ما ينعرض للزبون)
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import NumberInput from '@/components/NumberInput'
-import { Ellipsis, Eye, EyeOff, ImagePlus, ListPlus, Search, Pencil, Trash2, ArrowUp, ArrowDown, Star, X, Check, Plus, UtensilsCrossed } from 'lucide-react'
+import { GripVertical, Ellipsis, Eye, EyeOff, ImagePlus, ListPlus, Search, Pencil, Trash2, ArrowUp, ArrowDown, Star, X, Check, Plus, UtensilsCrossed } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { toast } from '@/components/toast'
 import { createClient } from '@/lib/supabase/client'
@@ -49,6 +49,11 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
   const [menuFor, setMenuFor] = useState<string | null>(null)
   const [renaming, setRenaming] = useState<{ cat: string; value: string } | null>(null)
 
+  // ─── السحب: ضغطة مطوّلة على الصنف أو القسم ثم تحريك (ماوس ولمس) ───
+  const [drag, setDrag] = useState<{ kind: 'item' | 'cat'; id: string; cat: string } | null>(null)
+  const [over, setOver] = useState<string | null>(null)
+  const pressRef = useRef({ timer: null as any, x: 0, y: 0, justDragged: false, over: null as string | null })
+
   // ─── من الوصفات ───
   const [showImport, setShowImport] = useState(false)
   const [importCat, setImportCat] = useState('')
@@ -78,7 +83,95 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
     scrollToForm()
   }
 
+  function pressStart(e: React.PointerEvent, kind: 'item' | 'cat', id: string, cat: string) {
+    if (e.button !== 0 || renaming) return
+    pressRef.current.x = e.clientX; pressRef.current.y = e.clientY
+    clearTimeout(pressRef.current.timer)
+    pressRef.current.timer = setTimeout(() => {
+      pressRef.current.timer = null
+      pressRef.current.over = null
+      setDrag({ kind, id, cat }); setOver(null); setMenuFor(null)
+      try { navigator.vibrate?.(25) } catch {}
+    }, 420)
+  }
+  function pressMove(e: React.PointerEvent) {
+    // تحرك قبل ما تكتمل الضغطة المطوّلة = تمرير عادي
+    if (pressRef.current.timer && (Math.abs(e.clientX - pressRef.current.x) > 8 || Math.abs(e.clientY - pressRef.current.y) > 8)) { clearTimeout(pressRef.current.timer); pressRef.current.timer = null }
+  }
+  function pressEnd() { if (pressRef.current.timer) { clearTimeout(pressRef.current.timer); pressRef.current.timer = null } }
+
+  // يبدّل أصناف قسم واحد بمكانها بدون ما يتغير ترتيب الأقسام، ويرجّع القائمة كاملة
+  function withCat(list: Item[], cat: string, re: Item[]): Item[] {
+    let k = 0
+    return list.map(x => catOf(x) === cat ? re[k++] : x)
+  }
+
+  // نحفظ ترتيب القائمة كاملة (عشان ترتيب الأقسام يثبت بعد التحديث)
+  function saveOrder(list: Item[]) {
+    fetch('/api/shop-reorder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: orgId, items: list.filter(canEdit).map(x => ({ id: x.id, type: 'shop_item' })) }) })
+      .then(r => r.json()).then(j => { if (!j.success) toast(j.error || 'فشل حفظ الترتيب', 'error') }).catch(() => toast('فشل حفظ الترتيب', 'error'))
+  }
+
+  function drop(d: { kind: 'item' | 'cat'; id: string; cat: string }, target: string) {
+    if (d.kind === 'item') {
+      const sib = items.filter(x => catOf(x) === d.cat)
+      const from = sib.findIndex(x => x.id === d.id), to = sib.findIndex(x => x.id === target)
+      if (from < 0 || to < 0) return
+      const re = [...sib]; const [m] = re.splice(from, 1); re.splice(to, 0, m)
+      const full = withCat(items, d.cat, re)
+      setItems(() => full)
+      saveOrder(full)
+    } else {
+      const from = cats.indexOf(d.id), to = cats.indexOf(target)
+      if (from < 0 || to < 0) return
+      const order = [...cats]; order.splice(from, 1); order.splice(to, 0, d.id)
+      const flat = order.flatMap(c => items.filter(x => catOf(x) === c))
+      setItems(() => flat)
+      saveOrder(flat)
+    }
+  }
+
+  useEffect(() => {
+    if (!drag) return
+    const onMove = (e: PointerEvent) => {
+      const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null
+      if (drag.kind === 'item') {
+        const t = el?.closest('[data-item-id]') as HTMLElement | null
+        pressRef.current.over = t && t.dataset.cat === drag.cat ? t.dataset.itemId || null : null
+        setOver(pressRef.current.over)
+      } else {
+        const t = el?.closest('[data-cat-block]') as HTMLElement | null
+        pressRef.current.over = t ? t.dataset.catBlock || null : null
+        setOver(pressRef.current.over)
+      }
+      if (e.clientY < 90) window.scrollBy(0, -12)
+      else if (e.clientY > window.innerHeight - 90) window.scrollBy(0, 12)
+    }
+    const stopScroll = (e: TouchEvent) => e.preventDefault()
+    const onUp = () => {
+      const target = pressRef.current.over
+      pressRef.current.over = null
+      setOver(null); setDrag(null)
+      if (target && target !== drag.id) drop(drag, target)
+      pressRef.current.justDragged = true
+      setTimeout(() => { pressRef.current.justDragged = false }, 50)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
+    document.addEventListener('touchmove', stopScroll, { passive: false })
+    document.body.style.userSelect = 'none'
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+      document.removeEventListener('touchmove', stopScroll)
+      document.body.style.userSelect = ''
+    }
+  }, [drag]) // eslint-disable-line react-hooks/exhaustive-deps
+
   function startEdit(it: Item) {
+    if (pressRef.current.justDragged) return
     if (!canEdit(it)) { toast('هذا الصنف لكل الفروع — يعدّله مالك المنشأة', 'warning'); return }
     setEditingId(it.id)
     setForm({ name: it.name, category: catOf(it), price: it.price ?? '', description: it.description ?? '', image_url: it.image_url ?? '', is_featured: !!it.is_featured })
@@ -143,13 +236,14 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
     toast('تم حذف الصنف')
   }
 
-  async function move(it: Item, dir: -1 | 1) {
+  function move(it: Item, dir: -1 | 1) {
     const sib = items.filter(x => catOf(x) === catOf(it))
     const i = sib.findIndex(x => x.id === it.id), j = i + dir
     if (i < 0 || j < 0 || j >= sib.length) return
     const re = [...sib]; [re[i], re[j]] = [re[j], re[i]]
-    setItems(prev => { const others = prev.filter(x => catOf(x) !== catOf(it)); return [...others, ...re] })
-    await fetch('/api/shop-reorder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: orgId, items: re.filter(canEdit).map(x => ({ id: x.id, type: 'shop_item' })) }) })
+    const full = withCat(items, catOf(it), re)
+    setItems(() => full)
+    saveOrder(full)
   }
 
   async function renameCat() {
@@ -323,14 +417,16 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
           ) : grouped.length === 0 ? (
             <div style={{ textAlign: 'center' as const, padding: 24, color: colors.text4, fontSize: 12 }}>ما فيه صنف بهذا الاسم</div>
           ) : grouped.map(({ cat, list }) => (
-            <div key={cat} style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 2px', borderBottom: `1px solid ${colors.border}`, marginBottom: 4 }}>
+            <div key={cat} data-cat-block={cat} style={{ marginBottom: 16, borderRadius: 12, outline: drag?.kind === 'cat' && over === cat && drag.id !== cat ? `2px dashed ${colors.primary}` : 'none', outlineOffset: 2, opacity: drag?.kind === 'cat' && drag.id === cat ? .45 : 1 }}>
+              <div onPointerDown={e => { if (!(e.target as HTMLElement).closest('[data-nodrag]')) pressStart(e, 'cat', cat, cat) }} onPointerMove={pressMove} onPointerUp={pressEnd} onPointerLeave={pressEnd} onContextMenu={e => e.preventDefault()}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 2px', borderBottom: `1px solid ${colors.border}`, marginBottom: 4, cursor: drag?.kind === 'cat' ? 'grabbing' : 'grab', userSelect: 'none' as const, WebkitTouchCallout: 'none' as any }}>
+                <GripVertical size={15} color={colors.text4} style={{ flexShrink: 0 }} />
                 {renaming?.cat === cat ? (
                   <input autoFocus value={renaming.value} onChange={e => setRenaming({ cat, value: e.target.value })} onBlur={renameCat} onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setRenaming(null) }} style={{ ...inp(), fontWeight: 800, fontSize: 13, padding: '4px 8px', width: 200 }} />
                 ) : (
                   <>
                     <span style={{ fontSize: 13, fontWeight: 800, color: colors.text }}>{cat}</span>
-                    <button onClick={() => setRenaming({ cat, value: cat })} title="تغيير اسم القسم" aria-label="تغيير اسم القسم" style={{ ...iconBtn, width: 24, height: 24 }}><Pencil size={13} /></button>
+                    <button data-nodrag onClick={() => setRenaming({ cat, value: cat })} title="تغيير اسم القسم" aria-label="تغيير اسم القسم" style={{ ...iconBtn, width: 24, height: 24 }}><Pencil size={13} /></button>
                   </>
                 )}
                 <span style={{ fontSize: 11, color: colors.text4, marginInlineStart: 'auto' }}>{list.length} صنف</span>
@@ -341,7 +437,10 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
                 const editable = canEdit(it)
                 const sib = items.filter(x => catOf(x) === cat), pos = sib.findIndex(x => x.id === it.id)
                 return (
-                  <div key={it.id} className="mie-row" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 6px', borderRadius: 10, background: editingId === it.id ? colors.infoLight : undefined, opacity: it.is_hidden ? .55 : 1 }}>
+                  <div key={it.id} className="mie-row" data-item-id={it.id} data-cat={cat}
+                    onPointerDown={e => { if (editable && !(e.target as HTMLElement).closest('[data-nodrag]')) pressStart(e, 'item', it.id, cat) }} onPointerMove={pressMove} onPointerUp={pressEnd} onPointerLeave={pressEnd} onContextMenu={e => { if (editable) e.preventDefault() }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 6px', borderRadius: 10, background: drag?.id === it.id ? colors.primaryLight : editingId === it.id ? colors.infoLight : undefined, opacity: drag?.kind === 'item' && drag.id === it.id ? .5 : it.is_hidden ? .55 : 1, outline: drag?.kind === 'item' && over === it.id && drag.id !== it.id ? `2px dashed ${colors.primary}` : 'none', userSelect: 'none' as const, WebkitTouchCallout: 'none' as any, cursor: drag?.kind === 'item' ? 'grabbing' : undefined }}>
+                    {editable && <GripVertical size={15} color={colors.text4} style={{ flexShrink: 0, cursor: 'grab' }} />}
                     <button onClick={() => startEdit(it)} style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, border: 'none', background: 'none', padding: 0, cursor: editable ? 'pointer' : 'default', textAlign: 'right' as const, fontFamily: font.family }}>
                       <span style={{ width: 46, height: 46, borderRadius: 10, background: colors.bg, flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', filter: available ? undefined : 'grayscale(1)' }}>
                         {it.image_url ? <img src={it.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <UtensilsCrossed size={17} strokeWidth={1.5} color={colors.text5} />}
@@ -359,7 +458,7 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
                     </button>
 
                     {editable && (
-                      <button onClick={() => toggle(it, 'is_available')} role="switch" aria-checked={available} title={available ? 'متوفر — اضغط إذا نفد' : 'نفد — اضغط إذا توفر'}
+                      <button data-nodrag onClick={() => toggle(it, 'is_available')} role="switch" aria-checked={available} title={available ? 'متوفر — اضغط إذا نفد' : 'نفد — اضغط إذا توفر'}
                         style={{ display: 'flex', alignItems: 'center', gap: 6, border: 'none', background: 'none', cursor: 'pointer', padding: 2, fontFamily: font.family, flexShrink: 0 }}>
                         <span style={{ width: 34, height: 20, borderRadius: 99, background: available ? colors.primary : colors.border2, position: 'relative' as const, transition: 'background .15s' }}>
                           <span style={{ position: 'absolute' as const, top: 2, width: 16, height: 16, borderRadius: '50%', background: 'white', transition: 'right .15s', right: available ? 2 : 16 }} />
@@ -369,7 +468,7 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
                     )}
 
                     {editable && (
-                      <div style={{ position: 'relative' as const, flexShrink: 0 }}>
+                      <div data-nodrag style={{ position: 'relative' as const, flexShrink: 0 }}>
                         <button onClick={e => { e.stopPropagation(); setMenuFor(menuFor === it.id ? null : it.id) }} aria-label="خيارات" style={{ ...iconBtn, border: `1px solid ${colors.border}`, background: 'white' }}><Ellipsis size={16} /></button>
                         {menuFor === it.id && (
                           <div onClick={e => e.stopPropagation()} style={{ position: 'absolute' as const, top: 34, left: 0, zIndex: 30, background: 'white', border: `1px solid ${colors.border}`, borderRadius: 12, boxShadow: '0 10px 30px rgba(16,24,40,.12)', padding: 6, minWidth: 170 }}>
