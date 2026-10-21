@@ -189,7 +189,10 @@ export function ShopBranchPicker({ data, slug }: { data: Extract<PublicMenu, { k
         )}
         <h1 style={{fontSize:22,fontWeight:900,margin:'14px 0 4px'}}>{displayName}</h1>
         {org.shop_tagline && <div style={{fontSize:12,color:'#a8a29e'}}>{org.shop_tagline}</div>}
-        <div style={{fontSize:14,fontWeight:800,color:'#57534e',margin:'32px 0 14px'}}>اختر الفرع</div>
+        {data.missing && (
+          <div style={{background:'#fef2f2',border:'1px solid #fecaca',color:'#b91c1c',borderRadius:12,padding:'12px 14px',fontSize:13,fontWeight:700,marginTop:24}}>منيو هذا الفرع غير متاح حالياً</div>
+        )}
+        <div style={{fontSize:14,fontWeight:800,color:'#57534e',margin:'32px 0 14px'}}>{data.missing ? 'الفروع المتاحة' : 'اختر الفرع'}</div>
         <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
           {data.branches.map(b => {
             const st = isOpenNow(b.shop_hours || org.shop_hours)

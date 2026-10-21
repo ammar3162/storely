@@ -125,7 +125,7 @@ async function loadItems(db: SupabaseClient, orgId: string, branchId: string | n
 
 export type PublicMenu =
   | { kind: 'menu'; org: any; branch: MenuBranch | null; branchCount: number; hours: any; products: PublicMenuItem[] }
-  | { kind: 'pick'; org: any; branches: MenuBranch[] }
+  | { kind: 'pick'; org: any; branches: MenuBranch[]; missing?: boolean }
 
 /** بيانات الصفحة العامة: منيو فرع، أو صفحة اختيار الفرع، أو null لو المنيو غير متاح */
 export async function getPublicMenu(db: SupabaseClient, slugRaw: string, branchRaw?: string | null): Promise<PublicMenu | null> {
@@ -147,6 +147,8 @@ export async function getPublicMenu(db: SupabaseClient, slugRaw: string, branchR
   if (!branches.length) return null
   const key = branchRaw ? safeDecode(branchRaw) : ''
   const branch = key ? branches.find(b => b.shop_slug === key || b.id === key) : null
+  // رابط فرع انسحبت منه الإضافة (أو انحذف): ما نعرض منيو فرع ثاني مكانه — "غير متاح" + الفروع المتاحة
+  if (key && !branch) return { kind: 'pick', org, branches, missing: true }
   const chosen = branch || (branches.length === 1 ? branches[0] : null)
   if (!chosen) return { kind: 'pick', org, branches }
   return {

@@ -651,6 +651,9 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       expect((await db.from('shop_items').select('id').eq('id', itemB)).data).toEqual([])
       const single = await getPublicMenu(db as any, slug)
       expect(single?.kind === 'menu' && single.branch?.id).toBe(branchA)
+      // رابط الفرع المحذوف/المسحوب ما يعرض منيو فرع ثاني
+      const gone = await getPublicMenu(db as any, slug, 'فرع-النرجس')
+      expect(gone?.kind === 'pick' && gone.missing).toBe(true)
 
       // إلغاء الاشتراك: المنيو العام يختفي
       expect((await adminCall('DELETE', { org_id: orgId, addon_id: addonId })).json.success).toBe(true)
