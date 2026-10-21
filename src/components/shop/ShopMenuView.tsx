@@ -1,5 +1,6 @@
 // واجهة المنيو العامة — مشتركة بين رابط المنشأة ورابط الفرع
 import type { PublicMenu } from '@/lib/shopMenu'
+import { MapPin, SearchX, UtensilsCrossed, ChevronLeft } from 'lucide-react'
 
 export function isOpenNow(hours: any): { known: boolean; open: boolean; label: string } {
   if (!hours?.enabled) return { known: false, open: true, label: '' }
@@ -17,7 +18,7 @@ export function ShopUnavailable() {
   return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',background:'#faf8f5',padding:20,textAlign:'center' as const}}>
       <div>
-        <div style={{fontSize:48,marginBottom:16}}>🔍</div>
+        <div style={{marginBottom:16,color:'#a8a29e',display:'flex',justifyContent:'center'}}><SearchX size={44} strokeWidth={1.4} /></div>
         <div style={{fontSize:18,fontWeight:800,color:'#0f172a'}}>هذا المتجر غير متاح حالياً</div>
       </div>
     </div>
@@ -104,7 +105,7 @@ export function ShopMenuView({ data, slug }: { data: Extract<PublicMenu, { kind:
               {(org as any).shop_tagline && <div style={{fontSize:11,color:'#a8a29e',marginTop:2}}>{(org as any).shop_tagline}</div>}
               {data.branch && data.branchCount > 1 && (
                 <div style={{display:'flex',alignItems:'center',gap:8,fontSize:11,color:'#78716c',marginTop:3}}>
-                  <span>📍 {data.branch.name}</span>
+                  <span style={{display:'inline-flex',alignItems:'center',gap:3}}><MapPin size={12} />{data.branch.name}</span>
                   <a href={`/shop/${encodeURIComponent(slug)}`} style={{color,fontWeight:700,textDecoration:'none'}}>تغيير الفرع</a>
                 </div>
               )}
@@ -141,14 +142,14 @@ export function ShopMenuView({ data, slug }: { data: Extract<PublicMenu, { kind:
                     {p.image_url ? (
                       <img src={p.image_url} alt={p.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
                     ) : (
-                      <span style={{fontSize:28,opacity:.25}}>✦</span>
+                      <UtensilsCrossed size={30} strokeWidth={1.3} color="#c8c0b4" />
                     )}
                   </div>
                   <div style={{flex:1,minWidth:0,paddingTop:6}}>
                     <div style={{display:'flex',alignItems:'baseline',gap:10,flexWrap:'wrap' as const}}>
                       <span className="shop-row-name" style={{fontSize:16,fontWeight:800,color:'#1c1917',whiteSpace:'nowrap' as const}}>{p.name}</span>
                       {p.is_featured && (
-                        <span style={{fontSize:9,fontWeight:800,color:'#b45309',background:'#fffbeb',border:'1px solid #fde68a',borderRadius:99,padding:'2px 8px',whiteSpace:'nowrap' as const}}>⭐ الأكثر مبيعاً</span>
+                        <span style={{fontSize:9,fontWeight:800,color:'#b45309',background:'#fffbeb',border:'1px solid #fde68a',borderRadius:99,padding:'2px 8px',whiteSpace:'nowrap' as const}}>الأكثر مبيعاً</span>
                       )}
                       {p.sold_out && (
                         <span style={{fontSize:9,fontWeight:800,color:'#57534e',background:'#f5f5f4',border:'1px solid #d6d3d1',borderRadius:99,padding:'2px 8px',whiteSpace:'nowrap' as const}}>نفدت</span>
@@ -202,10 +203,10 @@ export function ShopBranchPicker({ data, slug }: { data: Extract<PublicMenu, { k
             return (
               <a key={b.id} href={`/shop/${encodeURIComponent(slug)}/${encodeURIComponent(b.shop_slug || b.id)}`}
                 style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,background:'white',border:'1px solid #ece8e2',borderRadius:14,padding:'16px 18px',textDecoration:'none',color:'#1c1917'}}>
-                <span style={{fontSize:15,fontWeight:800}}>📍 {b.name}</span>
+                <span style={{display:'inline-flex',alignItems:'center',gap:8,fontSize:15,fontWeight:800}}><MapPin size={17} color={color} />{b.name}</span>
                 <span style={{display:'flex',alignItems:'center',gap:10}}>
                   {st.known && <span style={{fontSize:10,fontWeight:700,color:st.open?'#029FA2':'#dc2626'}}>{st.open ? 'مفتوح الآن' : 'مغلق الآن'}</span>}
-                  <span style={{fontSize:18,color}}>‹</span>
+                  <ChevronLeft size={18} color={color} />
                 </span>
               </a>
             )

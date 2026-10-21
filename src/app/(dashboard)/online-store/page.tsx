@@ -8,6 +8,7 @@ import { getOrgId } from '@/lib/session'
 import { colors, font, card, btnPrimary, pageTitle, pageSub, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import MenuItemsEditor from '@/components/shop/MenuItemsEditor'
+import { ClipboardList, Palette, ExternalLink, Download, X } from 'lucide-react'
 
 export default function OnlineStorePage() {
   const [orgId, setOrgId] = useState('')
@@ -21,12 +22,12 @@ export default function OnlineStorePage() {
   const [orgName, setOrgName] = useState('')
   const [links, setLinks] = useState<{type:string;label:string;url:string}[]>([])
   const PLATFORMS = [
-    { v: 'instagram', l: '📷 إنستقرام' },
-    { v: 'tiktok', l: '🎵 تيك توك' },
-    { v: 'snapchat', l: '👻 سناب شات' },
-    { v: 'whatsapp', l: '💬 واتساب' },
-    { v: 'google_maps', l: '📍 قوقل ماب' },
-    { v: 'website', l: '🔗 رابط مخصص' },
+    { v: 'instagram', l: 'إنستقرام' },
+    { v: 'tiktok', l: 'تيك توك' },
+    { v: 'snapchat', l: 'سناب شات' },
+    { v: 'whatsapp', l: 'واتساب' },
+    { v: 'google_maps', l: 'قوقل ماب' },
+    { v: 'website', l: 'رابط مخصص' },
   ]
   const [products, setProducts] = useState<any[]>([])
   const [shopItems, setShopItems] = useState<any[]>([])
@@ -124,7 +125,7 @@ export default function OnlineStorePage() {
     setSaving(false)
     if (!j.success) { toast(j.error || 'فشل الحفظ', 'error'); return }
     setSlug(j.slug || '')
-    toast('✅ تم حفظ إعدادات المتجر')
+    toast('تم حفظ إعدادات المتجر')
   }
 
   function suggestColorFromLogo() {
@@ -157,7 +158,7 @@ export default function OnlineStorePage() {
         if (sorted[0]) {
           const hex = '#' + [sorted[0].r, sorted[0].g, sorted[0].b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('')
           setShopColor(hex)
-          toast('✅ تم اقتراح لون من شعارك — قدر تعدّله لو حبيت')
+          toast('تم اقتراح لون من شعارك، وتقدر تعدّله')
         } else {
           toast('ما قدرنا نحدد لون واضح من الشعار', 'warning')
         }
@@ -184,7 +185,7 @@ export default function OnlineStorePage() {
       setBranchSlug(j.shop_slug)
       setMenuBranches(prev => prev.map(b => b.id === branchId ? { ...b, shop_slug: j.shop_slug } : b))
     }
-    toast('✅ تم حفظ إعدادات الفرع')
+    toast('تم حفظ إعدادات الفرع')
   }
 
   function addLink() { setLinks(prev => [...prev, { type: 'instagram', label: '', url: '' }]) }
@@ -203,7 +204,7 @@ export default function OnlineStorePage() {
   if (branchNotSubscribed) {
     return (
       <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 480, margin: '80px auto', textAlign: 'center' as const, ...card, padding: 40 }}>
-        <div style={{ fontSize: 44, marginBottom: 14 }}>📋</div>
+        <div style={{ width: 56, height: 56, borderRadius: 16, background: colors.primaryLight, color: colors.primary, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}><ClipboardList size={26} strokeWidth={1.7} /></div>
         <div style={{ fontSize: 18, fontWeight: 800, color: colors.text, marginBottom: 8 }}>{branchNotSubscribed} غير مشترك بالمنيو الإلكتروني</div>
         <div style={{ fontSize: 13, color: colors.text3, lineHeight: 1.8, marginBottom: 20 }}>
           <span className="hide-in-app">بدّل للفرع المشترك من القائمة، أو أضف هذا الفرع للمنيو من الإضافات</span>
@@ -216,7 +217,7 @@ export default function OnlineStorePage() {
   if (hasSubscription === false) {
     return (
       <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 480, margin: '80px auto', textAlign: 'center' as const, ...card, padding: 40 }}>
-        <div style={{ fontSize: 44, marginBottom: 14 }}>📋</div>
+        <div style={{ width: 56, height: 56, borderRadius: 16, background: colors.primaryLight, color: colors.primary, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}><ClipboardList size={26} strokeWidth={1.7} /></div>
         <div style={{ fontSize: 18, fontWeight: 800, color: colors.text, marginBottom: 8 }}>ميزة "المنتجات" غير مفعّلة</div>
         <div style={{ fontSize: 13, color: colors.text3, lineHeight: 1.8, marginBottom: 20 }}>
           <span className="hide-in-app">اشترك بميزة المنيو الإلكتروني من الإضافات عشان تقدر تبني صفحة منتجاتك العامة</span>
@@ -272,7 +273,7 @@ export default function OnlineStorePage() {
             ))}
             <input type="color" value={shopColor} onChange={e => setShopColor(e.target.value)} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid #e2e8f0', cursor: 'pointer', padding: 0 }} />
             <button onClick={suggestColorFromLogo} disabled={suggestingColor} style={{ padding: '0 14px', height: 32, borderRadius: 10, border: `1.5px solid ${colors.infoBorder}`, background: colors.infoLight, color: colors.info, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
-              {suggestingColor ? '⏳ جاري التحليل...' : '🎨 اقترح من الشعار'}
+              <Palette size={14} style={{ verticalAlign: '-2px', marginLeft: 5 }} />{suggestingColor ? 'جاري التحليل...' : 'اقترح من الشعار'}
             </button>
           </div>
         </div>
@@ -294,7 +295,7 @@ export default function OnlineStorePage() {
                       {PLATFORMS.map(p => <option key={p.v} value={p.v}>{p.l}</option>)}
                     </select>
                     <input value={l.url} onChange={e => updateLink(i, { url: e.target.value })} placeholder={l.type==='whatsapp'?'https://wa.me/9665xxxxxxxx':'https://...'} style={{ ...inp(), flex: 1 }} dir="ltr" />
-                    <button onClick={() => removeLink(i)} style={{ padding: '0 10px', borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', fontSize: 12 }}>✕</button>
+                    <button onClick={() => removeLink(i)} style={{ padding: '0 10px', borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }} aria-label="حذف الرابط"><X size={14} /></button>
                   </div>
                   {l.type === 'website' && (
                     <input value={l.label} onChange={e => updateLink(i, { label: e.target.value })} placeholder="اسم يظهر للرابط (مثال: الموقع الرسمي)" style={{ ...inp(), width: '100%' }} />
@@ -341,7 +342,7 @@ export default function OnlineStorePage() {
           <button onClick={saveShopSettings} disabled={saving} style={{ ...btnPrimary, flex: 1 }}>{saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}</button>
           {previewUrl && (
             <a href={previewUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '10px 20px', borderRadius: 10, border: `1.5px solid ${colors.border2}`, color: colors.text2, fontSize: 13, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-              👁️ معاينة
+              <ExternalLink size={15} style={{ marginLeft: 6 }} />معاينة
             </a>
           )}
         </div>
@@ -388,7 +389,7 @@ export default function OnlineStorePage() {
             <button onClick={saveBranchSettings} disabled={savingBranch} style={{ ...btnPrimary, flex: 1 }}>{savingBranch ? 'جاري الحفظ...' : 'حفظ إعدادات الفرع'}</button>
             {branchUrl && (
               <a href={branchUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '10px 20px', borderRadius: 10, border: `1.5px solid ${colors.border2}`, color: colors.text2, fontSize: 13, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-                👁️ معاينة
+                <ExternalLink size={15} style={{ marginLeft: 6 }} />معاينة
               </a>
             )}
           </div>
@@ -405,7 +406,7 @@ export default function OnlineStorePage() {
             <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 6 }}>{mode === 'branch' ? `رمز QR لـ${currentBranch?.name || ''}` : 'رمز QR لمتجرك'}</div>
             <div style={{ fontSize: 11, color: colors.text4, marginBottom: 12, lineHeight: 1.7 }}>اطبعه وحطّه على الطاولات أو ملصقات المحل — العميل يمسحه ويوصل لمنتجات{mode === 'branch' ? ' هالفرع' : 'ك'} مباشرة</div>
             <a href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(qrUrl)}`} download={`qr-${slug}${mode === 'branch' ? '-' + savedBranchSlug : ''}.png`} style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '9px 18px', fontSize: 12 }}>
-              ⬇️ تحميل بجودة عالية
+              <Download size={14} style={{ verticalAlign: '-2px', marginLeft: 6 }} />تحميل بجودة عالية
             </a>
           </div>
         </div>

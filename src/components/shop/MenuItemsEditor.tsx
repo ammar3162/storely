@@ -1,8 +1,9 @@
 'use client'
 // محرر أصناف المنيو: نموذج واحد للإضافة والتعديل (ضغطة على الصنف تفتحه)، مفتاح متوفر/نفدت،
-// وقائمة ⋯ (تمييز، إخفاء، ترتيب، حذف)، وبحث وفلتر بالقسم، وإضافة من الوصفات/المخزون
+// وقائمة خيارات (تمييز، إخفاء، ترتيب، حذف)، وبحث وفلتر بالقسم، وإضافة من الوصفات/المخزون
 import { useEffect, useMemo, useState } from 'react'
 import NumberInput from '@/components/NumberInput'
+import { Ellipsis, Eye, EyeOff, ImagePlus, ListPlus, Search, Pencil, Trash2, ArrowUp, ArrowDown, Star, X, Check, Plus, UtensilsCrossed } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { toast } from '@/components/toast'
 import { createClient } from '@/lib/supabase/client'
@@ -117,7 +118,7 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
     const j = await res.json().catch(() => ({}))
     setSaving(false)
     if (!j.success) { toast(j.error || 'فشل الحفظ', 'error'); return }
-    toast(editingId ? '✅ تم حفظ التعديل' : j.count > 1 ? `✅ تمت إضافة الصنف في ${j.count} فروع` : '✅ تمت إضافة الصنف')
+    toast(editingId ? 'تم حفظ التعديل' : j.count > 1 ? `تمت إضافة الصنف في ${j.count} فروع` : 'تمت إضافة الصنف')
     closeForm(); reload()
   }
 
@@ -129,7 +130,7 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
     if (!j.success) { setItems(prev => prev.map(x => x.id === it.id ? { ...x, [field]: cur } : x)); toast(j.error || 'فشل التحديث', 'error'); return }
     toast(field === 'is_available' ? (cur ? 'صار الصنف: نفدت' : 'صار الصنف: متوفر')
       : field === 'is_hidden' ? (cur ? 'الصنف ظاهر بالمنيو' : 'تم إخفاء الصنف من المنيو')
-      : (cur ? 'تمت إزالة التمييز' : '⭐ تم تمييز الصنف'))
+      : (cur ? 'تمت إزالة التمييز' : 'تم تمييز الصنف'))
   }
 
   async function remove(it: Item) {
@@ -161,7 +162,7 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
     setRenaming(null)
     if (!j.success) { toast(j.error || 'فشل تغيير الاسم', 'error'); return }
     if (catFilter === renaming.cat) setCatFilter(to)
-    toast('✅ تم تغيير اسم القسم'); reload()
+    toast('تم تغيير اسم القسم'); reload()
   }
 
   async function importItems() {
@@ -174,25 +175,26 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
     const j = await res.json().catch(() => ({}))
     setImporting(false)
     if (!j.success) { toast(j.error || 'فشل الإضافة', 'error'); return }
-    toast(j.added ? `✅ تمت إضافة ${j.added} صنف${j.skipped ? ` (${j.skipped} موجود من قبل)` : ''}` : 'الأصناف المختارة موجودة بالمنيو من قبل', j.added ? 'success' : 'warning')
+    toast(j.added ? `تمت إضافة ${j.added} صنف${j.skipped ? ` (${j.skipped} موجود من قبل)` : ''}` : 'الأصناف المختارة موجودة بالمنيو من قبل', j.added ? 'success' : 'warning')
     setImportSel({}); setShowImport(false); reload()
   }
 
   const chip = (on: boolean): React.CSSProperties => ({ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '6px 11px', borderRadius: 99, cursor: 'pointer', border: `1.5px solid ${on ? colors.primary : colors.border2}`, background: on ? colors.primaryLight : 'white', color: on ? colors.primary : colors.text2, fontWeight: 700, fontFamily: font.family })
   const label: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 5 }
   const selCount = Object.values(importSel).filter(Boolean).length
+  const iconBtn: React.CSSProperties = { width: 30, height: 30, borderRadius: 8, border: 'none', background: 'none', color: colors.text3, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, flexShrink: 0 }
 
   // ─── النموذج (إضافة / تعديل) ───
   const formCard = (
     <div id="mie-form" style={{ ...card, padding: 18, border: `1.5px solid ${editingId ? colors.infoBorder : colors.primaryBorder}`, scrollMarginTop: 80 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>{editingId ? '✏️ تعديل الصنف' : '+ صنف جديد'}</div>
-        <button onClick={closeForm} style={{ border: 'none', background: 'none', color: colors.text3, fontSize: 18, cursor: 'pointer', lineHeight: 1 }} aria-label="إغلاق">✕</button>
+        <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>{editingId ? 'تعديل الصنف' : 'صنف جديد'}</div>
+        <button onClick={closeForm} style={iconBtn} aria-label="إغلاق"><X size={16} /></button>
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
         <label style={{ width: 84, height: 84, flexShrink: 0, borderRadius: 12, background: colors.bg, border: `1.5px dashed ${colors.border2}`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: 'pointer', position: 'relative' as const }}>
-          {form.image_url ? <img src={form.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 11, color: colors.text4, textAlign: 'center' as const }}>{uploading ? 'جاري الرفع...' : '📷 صورة'}</span>}
+          {form.image_url ? <img src={form.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 4, fontSize: 10.5, color: colors.text4 }}><ImagePlus size={20} strokeWidth={1.6} />{uploading ? 'جاري الرفع...' : 'صورة'}</span>}
           <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f) }} />
         </label>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' as const, gap: 8, minWidth: 0 }}>
@@ -218,7 +220,7 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
       <textarea placeholder="وصف قصير (اختياري)" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={2} style={{ ...inp(), width: '100%', resize: 'vertical' as const, marginBottom: 10 }} />
       <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: colors.text2 }}>
         <input type="checkbox" checked={form.is_featured} onChange={e => setForm(p => ({ ...p, is_featured: e.target.checked }))} />
-        ⭐ تمييز كـ«الأكثر مبيعاً»
+        تمييز كـ«الأكثر مبيعاً»
       </label>
 
       {!editingId && multiBranch && (
@@ -227,7 +229,7 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
             {branches.map(b => {
               const on = targets.includes(b.id)
-              return <button key={b.id} type="button" onClick={() => setTargets(t => on ? t.filter(x => x !== b.id) : [...t, b.id])} style={chip(on)}>{on ? '✓ ' : ''}{b.name}</button>
+              return <button key={b.id} type="button" onClick={() => setTargets(t => on ? t.filter(x => x !== b.id) : [...t, b.id])} style={chip(on)}>{on && <Check size={13} strokeWidth={2.5} />}{b.name}</button>
             })}
           </div>
           {targets.length === branches.length && <div style={{ fontSize: 10, color: colors.text4, marginTop: 6 }}>كل الفروع: صنف واحد يتعدّل مرة وحدة ويظهر بكل الفروع</div>}
@@ -251,10 +253,10 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
   const importCard = showImport && (
     <div style={{ ...card, padding: 16, border: `1.5px solid ${colors.primaryBorder}` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>⚡ أضف من الوصفات أو المخزون</div>
-        <button onClick={() => setShowImport(false)} style={{ border: 'none', background: 'none', color: colors.text3, fontSize: 18, cursor: 'pointer' }} aria-label="إغلاق">✕</button>
+        <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>إضافة من الوصفات أو المخزون</div>
+        <button onClick={() => setShowImport(false)} style={iconBtn} aria-label="إغلاق"><X size={16} /></button>
       </div>
-      <div style={{ fontSize: 11, color: colors.text4, marginBottom: 12, lineHeight: 1.7 }}>اختر الأصناف وتنضاف{mode === 'branch' ? ` لـ${current?.name || 'هذا الفرع'}` : ''} مباشرة — الوصفات تجي بسعر البيع</div>
+      <div style={{ fontSize: 11, color: colors.text4, marginBottom: 12, lineHeight: 1.7 }}>اختر الأصناف وتنضاف{mode === 'branch' ? ` لـ${current?.name || 'هذا الفرع'}` : ''} مباشرة، والوصفات تجي بسعر البيع</div>
       <label style={label}>القسم *</label>
       {!importNewCat && cats.length ? (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 12 }}>
@@ -300,9 +302,9 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {(recipes.length > 0 || products.length > 0) && (
-            <button onClick={() => { setShowImport(v => !v); setFormOpen(false) }} style={{ padding: '9px 14px', borderRadius: 10, border: `1.5px solid ${colors.primaryBorder}`, background: colors.primaryLight, color: colors.primary, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>⚡ من الوصفات أو المخزون</button>
+            <button onClick={() => { setShowImport(v => !v); setFormOpen(false) }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 10, border: `1px solid ${colors.border2}`, background: 'white', color: colors.text2, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}><ListPlus size={16} />من الوصفات أو المخزون</button>
           )}
-          <button onClick={() => { setShowImport(false); openNew() }} style={{ ...btnPrimary, padding: '9px 16px', fontSize: 13 }}>+ صنف جديد</button>
+          <button onClick={() => { setShowImport(false); openNew() }} style={{ ...btnPrimary, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', fontSize: 13 }}><Plus size={16} strokeWidth={2.4} />صنف جديد</button>
         </div>
       </div>
 
@@ -312,7 +314,10 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
         <div style={{ minWidth: 0 }}>
           {items.length > 0 && (
             <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-              <input placeholder="🔍 بحث في الأصناف..." value={q} onChange={e => setQ(e.target.value)} style={{ ...inp(), flex: 1, minWidth: 0 }} />
+              <div style={{ position: 'relative' as const, flex: 1, minWidth: 0 }}>
+                <Search size={15} style={{ position: 'absolute' as const, right: 11, top: '50%', transform: 'translateY(-50%)', color: colors.text4, pointerEvents: 'none' }} />
+                <input placeholder="بحث في الأصناف" value={q} onChange={e => setQ(e.target.value)} style={{ ...inp(), width: '100%', paddingRight: 34 }} />
+              </div>
               {cats.length > 1 && (
                 <select value={catFilter} onChange={e => setCatFilter(e.target.value)} style={{ ...inp(), width: 'auto', maxWidth: 160 }}>
                   <option value="all">كل الأقسام</option>
@@ -324,7 +329,7 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
 
           {items.length === 0 ? (
             <div style={{ textAlign: 'center' as const, padding: '36px 12px', color: colors.text3, fontSize: 13, border: `1.5px dashed ${colors.border2}`, borderRadius: 12 }}>
-              ما فيه أصناف بالمنيو للحين — أضف أول صنف أو اختر من الوصفات
+              ما فيه أصناف بالمنيو للحين. أضف أول صنف أو اختر من الوصفات
             </div>
           ) : grouped.length === 0 ? (
             <div style={{ textAlign: 'center' as const, padding: 24, color: colors.text4, fontSize: 12 }}>ما فيه صنف بهذا الاسم</div>
@@ -336,7 +341,7 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
                 ) : (
                   <>
                     <span style={{ fontSize: 13, fontWeight: 800, color: colors.text }}>{cat}</span>
-                    <button onClick={() => setRenaming({ cat, value: cat })} title="تغيير اسم القسم" style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 11, color: colors.text4, padding: 2 }}>✏️</button>
+                    <button onClick={() => setRenaming({ cat, value: cat })} title="تغيير اسم القسم" aria-label="تغيير اسم القسم" style={{ ...iconBtn, width: 24, height: 24 }}><Pencil size={13} /></button>
                   </>
                 )}
                 <span style={{ fontSize: 11, color: colors.text4, marginInlineStart: 'auto' }}>{list.length} صنف</span>
@@ -350,12 +355,12 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
                   <div key={it.id} className="mie-row" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 6px', borderRadius: 10, background: editingId === it.id ? colors.infoLight : undefined, opacity: it.is_hidden ? .55 : 1 }}>
                     <button onClick={() => startEdit(it)} style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, border: 'none', background: 'none', padding: 0, cursor: editable ? 'pointer' : 'default', textAlign: 'right' as const, fontFamily: font.family }}>
                       <span style={{ width: 46, height: 46, borderRadius: 10, background: colors.bg, flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', filter: available ? undefined : 'grayscale(1)' }}>
-                        {it.image_url ? <img src={it.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 16, opacity: .3 }}>✦</span>}
+                        {it.image_url ? <img src={it.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <UtensilsCrossed size={17} strokeWidth={1.5} color={colors.text5} />}
                       </span>
                       <span style={{ flex: 1, minWidth: 0 }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' as const }}>
                           <span style={{ fontSize: 13, fontWeight: 700, color: colors.text, textDecoration: available ? undefined : 'line-through' }}>{it.name}</span>
-                          {it.is_featured && <span style={{ fontSize: 9, fontWeight: 800, color: colors.warning, background: colors.warningLight, border: `1px solid ${colors.warningBorder}`, borderRadius: 99, padding: '1px 7px' }}>⭐ مميز</span>}
+                          {it.is_featured && <span style={{ fontSize: 9, fontWeight: 800, color: colors.warning, background: colors.warningLight, border: `1px solid ${colors.warningBorder}`, borderRadius: 99, padding: '1px 7px' }}>مميز</span>}
                           {it.is_hidden && <span style={{ fontSize: 9, fontWeight: 800, color: colors.text2, background: colors.bg, border: `1px solid ${colors.border2}`, borderRadius: 99, padding: '1px 7px' }}>مخفي</span>}
                           {mode === 'branch' && !it.branch_id && branches.length > 1 && <span style={{ fontSize: 9, fontWeight: 800, color: colors.info, background: colors.infoLight, border: `1px solid ${colors.infoBorder}`, borderRadius: 99, padding: '1px 7px' }}>كل الفروع</span>}
                         </span>
@@ -376,19 +381,19 @@ export default function MenuItemsEditor({ orgId, mode, branchId, canManageOrg, b
 
                     {editable && (
                       <div style={{ position: 'relative' as const, flexShrink: 0 }}>
-                        <button onClick={e => { e.stopPropagation(); setMenuFor(menuFor === it.id ? null : it.id) }} aria-label="خيارات" style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${colors.border}`, background: 'white', cursor: 'pointer', fontSize: 16, color: colors.text2, lineHeight: 1 }}>⋯</button>
+                        <button onClick={e => { e.stopPropagation(); setMenuFor(menuFor === it.id ? null : it.id) }} aria-label="خيارات" style={{ ...iconBtn, border: `1px solid ${colors.border}`, background: 'white' }}><Ellipsis size={16} /></button>
                         {menuFor === it.id && (
                           <div onClick={e => e.stopPropagation()} style={{ position: 'absolute' as const, top: 34, left: 0, zIndex: 30, background: 'white', border: `1px solid ${colors.border}`, borderRadius: 12, boxShadow: '0 10px 30px rgba(16,24,40,.12)', padding: 6, minWidth: 170 }}>
                             {([
-                              ['✏️ تعديل', () => startEdit(it)],
-                              [it.is_featured ? '☆ إلغاء التمييز' : '⭐ تمييز الصنف', () => toggle(it, 'is_featured')],
-                              [it.is_hidden ? '👁️ إظهار بالمنيو' : '🙈 إخفاء من المنيو', () => toggle(it, 'is_hidden')],
-                              ['↑ تحريك لفوق', () => move(it, -1), pos <= 0],
-                              ['↓ تحريك لتحت', () => move(it, 1), pos >= sib.length - 1],
-                              ['🗑️ حذف', () => remove(it), false, true],
-                            ] as [string, () => void, boolean?, boolean?][]).map(([l, fn, disabled, danger]) => (
+                              [Pencil, 'تعديل', () => startEdit(it)],
+                              [Star, it.is_featured ? 'إلغاء التمييز' : 'تمييز الصنف', () => toggle(it, 'is_featured')],
+                              [it.is_hidden ? Eye : EyeOff, it.is_hidden ? 'إظهار بالمنيو' : 'إخفاء من المنيو', () => toggle(it, 'is_hidden')],
+                              [ArrowUp, 'تحريك لفوق', () => move(it, -1), pos <= 0],
+                              [ArrowDown, 'تحريك لتحت', () => move(it, 1), pos >= sib.length - 1],
+                              [Trash2, 'حذف', () => remove(it), false, true],
+                            ] as [typeof Pencil, string, () => void, boolean?, boolean?][]).map(([Icon, l, fn, disabled, danger]) => (
                               <button key={l} disabled={!!disabled} onClick={() => { setMenuFor(null); fn() }}
-                                style={{ display: 'block', width: '100%', textAlign: 'right' as const, border: 'none', background: 'none', padding: '8px 10px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, fontFamily: font.family, cursor: disabled ? 'default' : 'pointer', color: disabled ? colors.text5 : danger ? colors.danger : colors.text2 }}>{l}</button>
+                                style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', textAlign: 'right' as const, border: 'none', background: 'none', padding: '8px 10px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, fontFamily: font.family, cursor: disabled ? 'default' : 'pointer', color: disabled ? colors.text5 : danger ? colors.danger : colors.text2 }}><Icon size={15} strokeWidth={1.8} />{l}</button>
                             ))}
                           </div>
                         )}
