@@ -156,6 +156,16 @@ export async function deleteBranchCompletely(branchId: string, orgId: string): P
   if (errors.length === 0) {
     const { error: branchErr } = await supabase.from('branches').delete().eq('id', branchId)
     if (branchErr) errors.push(`branches: ${branchErr.message}`)
+    // المنيو بالفروع: الفرع يطلع من الاشتراك والكمية (الفاتورة) تنقص — أصنافه انحذفت مع الفرع (on delete cascade)
+    if (!branchErr) {
+      const { data: menuSubs } = await (supabase as any).from('org_addon_subscriptions').select('id,branch_ids').eq('org_id', orgId).contains('branch_ids', [branchId])
+      for (const s of menuSubs || []) {
+        const rest = (s.branch_ids || []).filter((id: string) => id !== branchId)
+        const r = await (supabase as any).from('org_addon_subscriptions')
+          .update(rest.length ? { branch_ids: rest, quantity: rest.length } : { branch_ids: null, quantity: 1 }).eq('id', s.id)
+        if (r.error) errors.push(`org_addon_subscriptions(menu): ${r.error.message}`)
+      }
+    }
   }
 
   return { success: errors.length === 0, errors }

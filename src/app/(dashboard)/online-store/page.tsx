@@ -46,7 +46,26 @@ export default function OnlineStorePage() {
   const [savingEdit, setSavingEdit] = useState(false)
   const [uploadingEditImg, setUploadingEditImg] = useState(false)
   const [savingCat, setSavingCat] = useState<string|null>(null)
+  const [loadError, setLoadError] = useState('')
   const [uploadingNewItem, setUploadingNewItem] = useState(false)
+  // منيو لكل فرع: mode=branch → نعرض فرع واحد (أصنافه + أصناف كل الفروع)
+  const [mode, setMode] = useState<'org'|'branch'>('org')
+  const [branchId, setBranchId] = useState<string|null>(null)
+  const [menuBranches, setMenuBranches] = useState<{id:string;name:string;shop_slug:string|null;shop_hours:any}[]>([])
+  const [canManageOrg, setCanManageOrg] = useState(true)
+  const [orgHours, setOrgHours] = useState<any>(null)
+  const [branchSlug, setBranchSlug] = useState('')
+  const [bHoursEnabled, setBHoursEnabled] = useState(false)
+  const [bHours24, setBHours24] = useState(true)
+  const [bOpen, setBOpen] = useState('09:00')
+  const [bClose, setBClose] = useState('22:00')
+  const [savingBranch, setSavingBranch] = useState(false)
+  const [newScope, setNewScope] = useState<'branch'|'all'>('branch')
+  const [recipes, setRecipes] = useState<any[]>([])
+  const [showImport, setShowImport] = useState(false)
+  const [importCat, setImportCat] = useState('')
+  const [importSel, setImportSel] = useState<Record<string, boolean>>({})
+  const [importing, setImporting] = useState(false)
   const sb = createClient()
 
   useEffect(() => { init() }, [])
@@ -65,14 +84,26 @@ export default function OnlineStorePage() {
     } catch { setHasSubscription(false); setLoading(false) }
   }
 
-  async function load(oid: string) {
+  async function load(oid: string, wantBranch?: string | null) {
     setLoading(true)
-    const bid = sessionStorage.getItem('s_branch_id')
+    const bid = wantBranch || branchId || sessionStorage.getItem('s_branch_id')
     const params = new URLSearchParams({ org_id: oid })
     if (bid) params.set('branch_id', bid)
     const res = await fetch(`/api/shop-settings?${params.toString()}`)
     const j = await res.json()
+    if (!j.success && j.error) { toast(j.error, 'error'); setLoadError(j.error) }
     if (j.success) {
+      setLoadError('')
+      setMode(j.mode === 'branch' ? 'branch' : 'org')
+      setBranchId(j.branchId || null)
+      setMenuBranches(j.branches || [])
+      setCanManageOrg(j.canManageOrg !== false)
+      setRecipes(j.recipes || [])
+      setOrgHours(j.org?.shop_hours || null)
+      const br = (j.branches || []).find((b: any) => b.id === j.branchId)
+      setBranchSlug(br?.shop_slug || '')
+      const bh = br?.shop_hours || j.org?.shop_hours || {}
+      setBHoursEnabled(!!bh.enabled); setBHours24(bh.is24h !== false); setBOpen(bh.open || '09:00'); setBClose(bh.close || '22:00')
       setSlug(j.org?.shop_slug || '')
       setEnabled(!!j.org?.shop_enabled)
       setTagline(j.org?.shop_tagline || '')
@@ -190,7 +221,7 @@ export default function OnlineStorePage() {
     setAddingItem(true)
     const res = await fetch('/api/shop-items', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, ...newItem }),
+      body: JSON.stringify({ org_id: orgId, ...newItem, branch_id: branchId, scope: mode === 'branch' ? newScope : undefined }),
     })
     const j = await res.json()
     setAddingItem(false)
@@ -202,11 +233,59 @@ export default function OnlineStorePage() {
   }
 
   async function deleteShopItem(item_id: string) {
+    const before = shopItems
     setShopItems(prev => prev.filter(x => x.id !== item_id))
-    await fetch('/api/shop-items', {
+    const res = await fetch('/api/shop-items', {
       method: 'DELETE', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ org_id: orgId, item_id }),
     })
+    const j = await res.json().catch(() => ({}))
+    if (!j.success) { setShopItems(before); toast(j.error || 'فشل الحذف', 'error') }
+  }
+
+  // صنف "كل الفروع" يعدّله المالك بس
+  const canEdit = (it: any) => mode === 'org' || !!it.branch_id || canManageOrg
+
+  function switchBranch(id: string) {
+    if (id === branchId) return
+    setEditingId(null); setShowImport(false); setImportSel({}); setCatEdits({}); setImportCat('')
+    setNewItem({ name:'', category:'', price:'', description:'', image_url:'', is_featured:false }); setCreatingNewCat(false); setNewScope('branch')
+    load(orgId, id)
+  }
+
+  async function saveBranchSettings() {
+    if (!branchId) return
+    setSavingBranch(true)
+    const res = await fetch('/api/shop-settings', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ org_id: orgId, branch_id: branchId, shop_slug: branchSlug, shop_hours: { enabled: bHoursEnabled, is24h: bHours24, open: bOpen, close: bClose } }),
+    })
+    const j = await res.json()
+    setSavingBranch(false)
+    if (!j.success) { toast(j.error || 'فشل الحفظ', 'error'); return }
+    if (j.shop_slug) {
+      setBranchSlug(j.shop_slug)
+      setMenuBranches(prev => prev.map(b => b.id === branchId ? { ...b, shop_slug: j.shop_slug } : b))
+    }
+    toast('✅ تم حفظ إعدادات الفرع')
+  }
+
+  async function importItems() {
+    const recipe_ids = recipes.filter(r => importSel['r:' + r.id]).map(r => r.id)
+    const product_ids = products.filter(p => importSel['p:' + p.id]).map(p => p.id)
+    if (!importCat.trim()) { toast('اختر أو اكتب اسم القسم أول', 'warning'); return }
+    if (!recipe_ids.length && !product_ids.length) { toast('اختر صنف واحد على الأقل', 'warning'); return }
+    setImporting(true)
+    const res = await fetch('/api/shop-items/import', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ org_id: orgId, branch_id: branchId, scope: mode === 'branch' ? newScope : undefined, category: importCat, recipe_ids, product_ids }),
+    })
+    const j = await res.json()
+    setImporting(false)
+    if (!j.success) { toast(j.error || 'فشل الإضافة', 'error'); return }
+    toast(j.added ? `✅ تمت إضافة ${j.added} صنف${j.skipped ? ` (${j.skipped} موجود من قبل)` : ''}` : 'الأصناف المختارة موجودة بالمنيو من قبل', j.added ? 'success' : 'warning')
+    setImportSel({}); setShowImport(false)
+    load(orgId)
   }
 
   // ═══ السحب والإفلات (Pointer Events — يدعم الماوس واللمس معاً) ═══
@@ -258,7 +337,7 @@ export default function OnlineStorePage() {
     setShopItems([...others, ...reordered])
     await fetch('/api/shop-reorder', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, items: reordered.map((it: any) => ({ id: it.id, type: 'shop_item' })) }),
+      body: JSON.stringify({ org_id: orgId, items: reordered.filter(canEdit).map((it: any) => ({ id: it.id, type: 'shop_item' })) }),
     })
   }
 
@@ -275,7 +354,7 @@ export default function OnlineStorePage() {
     setShopItems(flatItems)
     await fetch('/api/shop-reorder', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, items: flatItems.map((it: any) => ({ id: it.id, type: 'shop_item' })) }),
+      body: JSON.stringify({ org_id: orgId, items: flatItems.filter(canEdit).map((it: any) => ({ id: it.id, type: 'shop_item' })) }),
     })
   }
 
@@ -311,13 +390,13 @@ export default function OnlineStorePage() {
 
     await fetch('/api/shop-reorder', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, items: reordered.map((it: any) => ({ id: it.id, type: 'shop_item' })) }),
+      body: JSON.stringify({ org_id: orgId, items: reordered.filter(canEdit).map((it: any) => ({ id: it.id, type: 'shop_item' })) }),
     })
   }
 
   function startEdit(it: any) {
     setEditingId(it.id)
-    setEditForm({ name: it.name, category: it.category, price: it.price ?? '', description: it.description ?? '', image_url: it.image_url ?? '', is_featured: !!it.is_featured })
+    setEditForm({ name: it.name, category: it.category, price: it.price ?? '', description: it.description ?? '', image_url: it.image_url ?? '', is_featured: !!it.is_featured, ...(mode === 'branch' && canManageOrg ? { scope: it.branch_id ? 'branch' : 'all' } : {}) })
   }
 
   async function uploadEditImage(file: File) {
@@ -338,7 +417,7 @@ export default function OnlineStorePage() {
     setSavingEdit(true)
     const res = await fetch('/api/shop-items', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, item_id: editingId, ...editForm }),
+      body: JSON.stringify({ org_id: orgId, item_id: editingId, ...editForm, branch_id: branchId }),
     })
     const j = await res.json()
     setSavingEdit(false)
@@ -354,7 +433,7 @@ export default function OnlineStorePage() {
     setSavingCat(oldCat)
     const res = await fetch('/api/shop-items', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id: orgId, old_category: oldCat, new_category: newCat }),
+      body: JSON.stringify({ org_id: orgId, old_category: oldCat, new_category: newCat, branch_id: branchId }),
     })
     const j = await res.json()
     setSavingCat(null)
@@ -369,6 +448,10 @@ export default function OnlineStorePage() {
 
   const shownCount = products.filter(p => p.show_on_shop).length
   const previewUrl = slug && typeof window !== 'undefined' ? `${window.location.origin}/shop/${slug}` : ''
+  const currentBranch = menuBranches.find(b => b.id === branchId)
+  const savedBranchSlug = currentBranch?.shop_slug || ''
+  const branchUrl = mode === 'branch' && previewUrl && savedBranchSlug ? `${previewUrl}/${savedBranchSlug}` : ''
+  const qrUrl = mode === 'branch' ? branchUrl : previewUrl
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontFamily: font.family }}>جاري التحميل...</div>
 
@@ -392,8 +475,27 @@ export default function OnlineStorePage() {
         <p style={pageSub}>ابنِ صفحة عامة تعرض منتجاتك للعملاء — بالسعر والوصف والصورة</p>
       </div>
 
+      {loadError && (
+        <div style={{ ...card, padding: 24, marginBottom: 16, textAlign: 'center' as const, color: colors.text3, fontSize: 13 }}>{loadError}</div>
+      )}
+
+      {mode === 'branch' && menuBranches.length > 1 && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, marginBottom: 16 }}>
+          {menuBranches.map(b => (
+            <button key={b.id} onClick={() => switchBranch(b.id)}
+              style={{ padding: '8px 16px', borderRadius: 99, fontSize: 13, fontWeight: 700, fontFamily: font.family, cursor: 'pointer', border: `1.5px solid ${b.id === branchId ? colors.primary : colors.border2}`, background: b.id === branchId ? colors.primary : 'white', color: b.id === branchId ? 'white' : colors.text2 }}>
+              📍 {b.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {canManageOrg && !loadError && (
       <div style={{ ...card, padding: '20px', marginBottom: 16 }}>
-        <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 14 }}>إعدادات المتجر</div>
+        <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>إعدادات المتجر</div>
+        {mode === 'branch'
+          ? <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>الاسم والشعار واللون والروابط لكل الفروع — والرابط العام يفتح صفحة يختار منها الزبون الفرع</div>
+          : <div style={{ marginBottom: 10 }} />}
 
         <div style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }}>رابط المتجر</label>
@@ -455,6 +557,7 @@ export default function OnlineStorePage() {
           )}
         </div>
 
+        {mode === 'org' && (
         <div style={{ marginBottom: 16, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14 }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: hoursEnabled ? 12 : 0, cursor: 'pointer', fontSize: 12, fontWeight: 700, color: colors.text2 }}>
             <input type="checkbox" checked={hoursEnabled} onChange={e => setHoursEnabled(e.target.checked)} />
@@ -479,6 +582,7 @@ export default function OnlineStorePage() {
             </div>
           )}
         </div>
+        )}
 
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: colors.text2 }}>
           <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} />
@@ -495,13 +599,64 @@ export default function OnlineStorePage() {
         </div>
       </div>
 
-      {previewUrl && enabled && (
+      )}
+
+      {mode === 'branch' && currentBranch && !loadError && (
+        <div style={{ ...card, padding: '20px', marginBottom: 16 }}>
+          <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>إعدادات {currentBranch.name}</div>
+          <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>رابط الفرع وأوقاته — كل فرع له منيو وQR خاص فيه</div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }}>رابط الفرع</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const }}>
+              <span style={{ fontSize: 12, color: colors.text4, whiteSpace: 'nowrap' as const }} dir="ltr">storely.dev/shop/{slug || '…'}/</span>
+              <input value={branchSlug} onChange={e => setBranchSlug(e.target.value)} placeholder="اسم-الفرع" style={{ ...inp(), flex: 1, minWidth: 120 }} dir="ltr" />
+            </div>
+          </div>
+        <div style={{ marginBottom: 16, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: bHoursEnabled ? 12 : 0, cursor: 'pointer', fontSize: 12, fontWeight: 700, color: colors.text2 }}>
+            <input type="checkbox" checked={bHoursEnabled} onChange={e => setBHoursEnabled(e.target.checked)} />
+            عرض حالة "مفتوح/مغلق" لهالفرع
+          </label>
+          {bHoursEnabled && (
+            <div>
+              <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer' }}>
+                  <input type="radio" checked={bHours24} onChange={() => setBHours24(true)} /> يفتح 24 ساعة
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer' }}>
+                  <input type="radio" checked={!bHours24} onChange={() => setBHours24(false)} /> أوقات محددة
+                </label>
+              </div>
+              {!bHours24 && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div><label style={{ fontSize: 10, color: colors.text4, display: 'block', marginBottom: 3 }}>يفتح</label><input type="time" value={bOpen} onChange={e => setBOpen(e.target.value)} style={{ ...inp() }} /></div>
+                  <div><label style={{ fontSize: 10, color: colors.text4, display: 'block', marginBottom: 3 }}>يغلق</label><input type="time" value={bClose} onChange={e => setBClose(e.target.value)} style={{ ...inp() }} /></div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={saveBranchSettings} disabled={savingBranch} style={{ ...btnPrimary, flex: 1 }}>{savingBranch ? 'جاري الحفظ...' : 'حفظ إعدادات الفرع'}</button>
+            {branchUrl && (
+              <a href={branchUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '10px 20px', borderRadius: 10, border: `1.5px solid ${colors.border2}`, color: colors.text2, fontSize: 13, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+                👁️ معاينة
+              </a>
+            )}
+          </div>
+          {(!slug || !enabled) && (
+            <div style={{ fontSize: 11, color: colors.warning, marginTop: 10 }}>{canManageOrg ? 'فعّل المتجر واحفظ رابطه من «إعدادات المتجر» فوق عشان يشتغل رابط الفرع' : 'المنيو مو منشور للحين — مالك المنشأة يفعّله من إعدادات المتجر'}</div>
+          )}
+        </div>
+      )}
+
+      {qrUrl && enabled && !loadError && (
         <div style={{ ...card, padding: '20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' as const }}>
-          <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(previewUrl)}`} alt="QR" style={{ width: 130, height: 130, borderRadius: 12, border: `1px solid ${colors.border}` }} />
+          <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrUrl)}`} alt="QR" style={{ width: 130, height: 130, borderRadius: 12, border: `1px solid ${colors.border}` }} />
           <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 6 }}>رمز QR لمتجرك</div>
-            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 12, lineHeight: 1.7 }}>اطبعه وحطّه على الطاولات أو ملصقات المحل — العميل يمسحه ويوصل لمنتجاتك مباشرة</div>
-            <a href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(previewUrl)}`} download={`qr-${slug}.png`} style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '9px 18px', fontSize: 12 }}>
+            <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 6 }}>{mode === 'branch' ? `رمز QR لـ${currentBranch?.name || ''}` : 'رمز QR لمتجرك'}</div>
+            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 12, lineHeight: 1.7 }}>اطبعه وحطّه على الطاولات أو ملصقات المحل — العميل يمسحه ويوصل لمنتجات{mode === 'branch' ? ' هالفرع' : 'ك'} مباشرة</div>
+            <a href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(qrUrl)}`} download={`qr-${slug}${mode === 'branch' ? '-' + savedBranchSlug : ''}.png`} style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '9px 18px', fontSize: 12 }}>
               ⬇️ تحميل بجودة عالية
             </a>
           </div>
@@ -509,9 +664,10 @@ export default function OnlineStorePage() {
       )}
 
       {/* منتجات المتجر */}
+      {!loadError && (
       <div style={{ ...card, padding: '20px' }}>
         <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>منتجات المتجر</div>
-        <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>أنشئ قسم (مثل "مشروبات حارة")، وأضف كل منتج جواه بصورته واسمه وسعره ووصفه</div>
+        <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>أنشئ قسم (مثل "مشروبات حارة")، وأضف كل منتج جواه بصورته واسمه وسعره ووصفه{mode === 'branch' ? ` — هذي أصناف ${currentBranch?.name || ''} وأصناف «كل الفروع»` : ''}</div>
 
         {shopItems.length > 0 && (() => {
           const grouped: Record<string, any[]> = {}
@@ -554,6 +710,12 @@ export default function OnlineStorePage() {
                             <input type="checkbox" checked={!!editForm.is_featured} onChange={e => setEditForm((p:any) => ({ ...p, is_featured: e.target.checked }))} />
                             ⭐ وسم "الأكثر مبيعاً"
                           </label>
+                          {editForm.scope && (
+                            <select value={editForm.scope} onChange={e => setEditForm((p:any) => ({ ...p, scope: e.target.value }))} style={{ ...inp(), width: '100%', marginBottom: 10 }}>
+                              <option value="branch">يظهر في {currentBranch?.name || ''} بس</option>
+                              <option value="all">يظهر بكل الفروع</option>
+                            </select>
+                          )}
                           <div style={{ display: 'flex', gap: 8 }}>
                             <button onClick={saveEdit} disabled={savingEdit} style={{ ...btnPrimary, flex: 1 }}>{savingEdit ? 'جاري الحفظ...' : 'حفظ التعديل'}</button>
                             <button onClick={() => setEditingId(null)} style={{ padding: '10px 18px', borderRadius: 10, border: `1px solid ${colors.border2}`, background: 'white', color: colors.text2, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>إلغاء</button>
@@ -563,8 +725,8 @@ export default function OnlineStorePage() {
                         <div key={it.id}
                           onPointerEnter={() => { if (draggingItem && draggingItem.cat === cat && draggingItem.id !== it.id) setDragOverItem(it.id) }}
                           style={{ display: 'flex', alignItems: 'center', gap: 12, border: dragOverItem === it.id && draggingItem ? `1.5px dashed ${colors.primary}` : `1px solid ${colors.border}`, borderRadius: 12, padding: 12, opacity: draggingItem?.id === it.id ? 0.4 : 1, transition: 'opacity .15s' }}>
-                          <span onPointerDown={e => startItemLongPress(e, it.id, cat)} onPointerMove={watchForScroll} onPointerUp={cancelLongPress}
-                            style={{ cursor: 'grab', fontSize: 15, color: colors.text4, touchAction: 'none', userSelect: 'none' as const, flexShrink: 0 }}>⠿</span>
+                          <span onPointerDown={e => { if (canEdit(it)) startItemLongPress(e, it.id, cat) }} onPointerMove={watchForScroll} onPointerUp={cancelLongPress}
+                            style={{ cursor: canEdit(it) ? 'grab' : 'default', fontSize: 15, color: colors.text4, touchAction: 'none', userSelect: 'none' as const, flexShrink: 0, opacity: canEdit(it) ? 1 : .3 }}>⠿</span>
                           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 2, flexShrink: 0 }}>
                             <button onClick={() => moveItem(cat, it.id, 'up')} disabled={j === 0}
                               style={{ width: 22, height: 18, border: 'none', borderRadius: 5, background: j === 0 ? colors.bg : colors.surface, color: j === 0 ? colors.text4 : colors.text2, cursor: j === 0 ? 'not-allowed' : 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▲</button>
@@ -575,11 +737,15 @@ export default function OnlineStorePage() {
                             {it.image_url ? <img src={it.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 16, opacity: .3 }}>📦</span>}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{it.name}{it.is_featured && ' ⭐'}</div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{it.name}{it.is_featured && ' ⭐'}
+                              {mode === 'branch' && !it.branch_id && <span style={{ marginInlineStart: 6, fontSize: 9, fontWeight: 800, color: colors.info, background: colors.infoLight, border: `1px solid ${colors.infoBorder}`, borderRadius: 99, padding: '1px 7px' }}>كل الفروع</span>}
+                            </div>
                             {it.price != null && <div style={{ fontSize: 11, color: colors.text4 }}>{it.price} ⃁</div>}
                           </div>
+                          {canEdit(it) && <>
                           <button onClick={() => startEdit(it)} style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${colors.infoBorder}`, background: colors.infoLight, color: colors.info, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>تعديل</button>
                           <button onClick={() => deleteShopItem(it.id)} style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>حذف</button>
+                          </>}
                         </div>
                       )
                     ))}
@@ -594,7 +760,59 @@ export default function OnlineStorePage() {
           const existingCats = Array.from(new Set(shopItems.map((it: any) => it.category || 'منتجات خارجية')))
           return (
             <div style={{ border: `1.5px dashed ${colors.border2}`, borderRadius: 12, padding: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: colors.text2, marginBottom: 10 }}>+ إضافة منتج خارجي جديد</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const, marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: colors.text2 }}>+ إضافة منتج خارجي جديد</div>
+                {(recipes.length > 0 || products.length > 0) && (
+                  <button onClick={() => setShowImport(v => !v)} style={{ padding: '6px 12px', borderRadius: 8, border: `1.5px solid ${colors.primaryBorder}`, background: colors.primaryLight, color: colors.primary, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
+                    {showImport ? 'إخفاء' : '⚡ أضف من الوصفات أو المخزون'}
+                  </button>
+                )}
+              </div>
+
+              {mode === 'branch' && canManageOrg && (
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                  {(['branch', 'all'] as const).map(v => (
+                    <button key={v} onClick={() => setNewScope(v)} style={{ flex: 1, padding: '8px', borderRadius: 8, fontSize: 12, fontWeight: 700, fontFamily: font.family, cursor: 'pointer', border: `1.5px solid ${newScope === v ? colors.primary : colors.border2}`, background: newScope === v ? colors.primaryLight : 'white', color: newScope === v ? colors.primary : colors.text2 }}>
+                      {v === 'branch' ? `لـ${currentBranch?.name || ''} بس` : 'لكل الفروع'}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {showImport && (
+                <div style={{ border: `1px solid ${colors.primaryBorder}`, background: colors.primaryLight, borderRadius: 12, padding: 12, marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, color: colors.text3, marginBottom: 10, lineHeight: 1.7 }}>اختر الأصناف وتنضاف للمنيو مباشرة بأسمائها — الوصفات تجي بسعر البيع، وتقدر تعدّل الصورة والوصف بعدين</div>
+                  <select value={existingCats.includes(importCat) ? importCat : (importCat ? '__new' : '')} onChange={e => setImportCat(e.target.value === '__new' ? ' ' : e.target.value)} style={{ ...inp(), width: '100%', marginBottom: 8 }}>
+                    <option value="">— اختر القسم —</option>
+                    {existingCats.map(c => <option key={c as string} value={c as string}>{c as string}</option>)}
+                    <option value="__new">+ قسم جديد</option>
+                  </select>
+                  {importCat !== '' && !existingCats.includes(importCat) && (
+                    <input autoFocus placeholder="اسم القسم الجديد" value={importCat.trim() ? importCat : ''} onChange={e => setImportCat(e.target.value || ' ')} style={{ ...inp(), width: '100%', marginBottom: 8 }} />
+                  )}
+                  <div style={{ maxHeight: 260, overflowY: 'auto' as const, background: 'white', borderRadius: 10, border: `1px solid ${colors.border}`, padding: 8 }}>
+                    {recipes.length > 0 && <div style={{ fontSize: 10, fontWeight: 800, color: colors.text4, padding: '4px 6px' }}>الوصفات</div>}
+                    {recipes.map(r => (
+                      <label key={'r' + r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px', fontSize: 12, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={!!importSel['r:' + r.id]} onChange={e => setImportSel(p => ({ ...p, ['r:' + r.id]: e.target.checked }))} />
+                        <span style={{ flex: 1 }}>{r.name}</span>
+                        {Number(r.sell_price) > 0 && <span style={{ color: colors.text4 }}>{r.sell_price} ⃁</span>}
+                      </label>
+                    ))}
+                    {products.length > 0 && <div style={{ fontSize: 10, fontWeight: 800, color: colors.text4, padding: '8px 6px 4px' }}>منتجات المخزون{mode === 'branch' ? ` — ${currentBranch?.name || ''}` : ''}</div>}
+                    {products.map(pr => (
+                      <label key={'p' + pr.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px', fontSize: 12, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={!!importSel['p:' + pr.id]} onChange={e => setImportSel(p => ({ ...p, ['p:' + pr.id]: e.target.checked }))} />
+                        <span style={{ flex: 1 }}>{pr.name}</span>
+                        {pr.category && <span style={{ color: colors.text4, fontSize: 10 }}>{pr.category}</span>}
+                      </label>
+                    ))}
+                  </div>
+                  <button onClick={importItems} disabled={importing} style={{ ...btnPrimary, width: '100%', marginTop: 10 }}>
+                    {importing ? 'جاري الإضافة...' : `أضف المختار (${Object.values(importSel).filter(Boolean).length})`}
+                  </button>
+                </div>
+              )}
 
               <div style={{ marginBottom: 10 }}>
                 <label style={{ fontSize: 10, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 5 }}>١) اختر القسم أو أنشئ قسم جديد *</label>
@@ -642,6 +860,7 @@ export default function OnlineStorePage() {
           )
         })()}
       </div>
+      )}
     </div>
   )
 }

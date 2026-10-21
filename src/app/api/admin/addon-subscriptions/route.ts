@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
 import { addonPeriodEnd, proratedCharge } from '@/lib/planPricing'
+import { MENU_ADDON_SLUG } from '@/lib/shopMenu'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,15 +15,27 @@ export async function POST(req: Request) {
   const admin = await requirePermission(adminKey, 'manage_users')
   if (!admin) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
-  const { org_id, addon_id, org_name, addon_name, quantity } = await req.json()
+  const { org_id, addon_id, org_name, addon_name, quantity, branch_ids } = await req.json()
   if (!org_id || !addon_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
   const supabase = sb()
+  const { data: addonRow } = await supabase.from('marketplace_addons').select('slug,monthly_price').eq('id', addon_id).single()
+  const slug = (addonRow as any)?.slug
+
+  // المنيو بالفروع: الفروع المختارة لازم تكون فروع نشطة لنفس المنشأة، والكمية = عددها
+  let menuBranchIds: string[] | null = null
+  if (slug === MENU_ADDON_SLUG && Array.isArray(branch_ids)) {
+    const wanted = Array.from(new Set(branch_ids.filter((x: any) => typeof x === 'string')))
+    if (!wanted.length) return NextResponse.json({ error: 'اختر فرع واحد على الأقل' }, { status: 400 })
+    const { data: owned } = await supabase.from('branches').select('id').eq('org_id', org_id).eq('is_active', true).in('id', wanted)
+    if ((owned || []).length !== wanted.length) return NextResponse.json({ error: 'فرع غير صحيح' }, { status: 400 })
+    menuBranchIds = wanted as string[]
+  }
   // الإضافة تنتهي مع الباقة (نفس تاريخ التجديد) — الدفع الحين بالتناسب عن الأيام الباقية
   const { data: owner } = await supabase.from('profiles').select('subscription_ends_at').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
   const periodEnd = addonPeriodEnd((owner as any)?.subscription_ends_at)
   const expiresAt = periodEnd.toISOString()
-  const qty = Math.max(1, Math.min(20, Number(quantity) || 1)) // موظف/مورد إضافي: حد أقصى 20 بالطلب الواحد
+  const qty = menuBranchIds ? menuBranchIds.length : Math.max(1, Math.min(20, Number(quantity) || 1)) // موظف/مورد إضافي: حد أقصى 20 بالطلب الواحد
 
   const { data: existingRow } = await supabase.from('org_addon_subscriptions').select('id,quantity,status').eq('org_id', org_id).eq('addon_id', addon_id).maybeSingle()
   // الفرق بين الكمية الجديدة والقديمة -- لو كان الاشتراك أصلاً ملغى، نعتبر قديمه صفر
@@ -32,13 +45,12 @@ export async function POST(req: Request) {
 
   const { error } = await supabase.from('org_addon_subscriptions').upsert({
     org_id, addon_id, status: 'active', activated_at: new Date().toISOString(), expires_at: expiresAt, cancelled_at: null, quantity: qty,
+    ...(menuBranchIds ? { branch_ids: menuBranchIds } : {}),
   } as any, { onConflict: 'org_id,addon_id' })
 
   if (error) return NextResponse.json({ error: 'فشل التفعيل' }, { status: 500 })
 
   // نطبّق الفرق بس على حدود المنشأة -- لو كان أصلاً نشط وتم تفعيله من جديد (تحديث كمية)، ما نضيف الكمية كاملة فوق القديمة
-  const { data: addonRow } = await supabase.from('marketplace_addons').select('slug,monthly_price').eq('id', addon_id).single()
-  const slug = (addonRow as any)?.slug
   if (slug === 'extra_branch') {
     // الحد ينحسب من الكمية وقت الطلب (lib/branchLimit) — ما نعدّل max_branches.
     // نقصت الكمية: نوقف الزايد. زادت أو تجدّدت: نرجّع الفروع الموقوفة بسبب الحد
@@ -55,7 +67,7 @@ export async function POST(req: Request) {
   const chargedQty = wasActive ? Math.max(0, qtyDelta) : qty
   const prorated = proratedCharge(Number((addonRow as any)?.monthly_price) || 0, chargedQty, periodEnd)
 
-  await logAdminAction(admin, 'activate_addon', org_id, org_name || null, { addon_id, addon_name, expires_at: expiresAt, quantity: qty, prorated_amount: prorated.amount })
+  await logAdminAction(admin, 'activate_addon', org_id, org_name || null, { addon_id, addon_name, expires_at: expiresAt, quantity: qty, prorated_amount: prorated.amount, ...(menuBranchIds ? { branch_ids: menuBranchIds } : {}) })
 
   return NextResponse.json({ success: true, expiresAt, proratedAmount: prorated.amount, proratedDays: prorated.days })
 }
@@ -120,7 +132,8 @@ export async function GET(req: Request) {
   const addons = orgPlan === 'basic'
     ? addonsRaw
     : (addonsRaw || []).filter((a: any) => !INCLUDED_FROM_STANDARD.includes(a.slug))
-  const { data: subs } = await supabase.from('org_addon_subscriptions').select('addon_id,status,expires_at,quantity').eq('org_id', org_id)
+  const { data: subs } = await supabase.from('org_addon_subscriptions').select('addon_id,status,expires_at,quantity,branch_ids').eq('org_id', org_id)
+  const { data: branches } = await supabase.from('branches').select('id,name').eq('org_id', org_id).eq('is_active', true).order('created_at')
 
   const now = new Date()
   const subsMap: Record<string, any> = {}
@@ -131,5 +144,5 @@ export async function GET(req: Request) {
     return { ...a, subscription: s ? { ...s, isValid: s.status === 'active' && new Date(s.expires_at) > now } : null }
   })
 
-  return NextResponse.json({ success: true, addons: result })
+  return NextResponse.json({ success: true, addons: result, branches: branches || [] })
 }

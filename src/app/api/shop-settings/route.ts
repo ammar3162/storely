@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { resolveMenuScope, ensureBranchSlugs, slugifyShop, cleanShopHours } from '@/lib/shopMenu'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,6 +27,12 @@ export async function POST(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
     const supabase = sb()
+    // منيو بالفروع: إعدادات المنشأة (الرابط، الاسم، اللون، الروابط) للمالك بس — مدير الفرع يعدّل فرعه
+    if (access.role === 'manager') {
+      const scope = await resolveMenuScope(supabase, org_id, access)
+      if (!scope.ok) return NextResponse.json({ error: scope.error }, { status: scope.status })
+      if (!scope.canManageOrg) return NextResponse.json({ error: 'إعدادات المنيو العامة يعدّلها مالك المنشأة' }, { status: 403 })
+    }
     const cleanSlug = shop_slug ? slugify(shop_slug) : null
 
     if (cleanSlug) {
@@ -55,6 +62,39 @@ export async function POST(req: Request) {
   }
 }
 
+// إعدادات فرع بالمنيو: رابطه وأوقاته (shop_hours null = نفس أوقات المنشأة)
+export async function PATCH(req: Request) {
+  try {
+    const { org_id, branch_id, shop_slug, shop_hours } = await req.json()
+    if (!org_id || !branch_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+
+    const access = await verifyOrgAccess(org_id)
+    if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+
+    const supabase = sb()
+    const scope = await resolveMenuScope(supabase, org_id, access, branch_id)
+    if (!scope.ok) return NextResponse.json({ error: scope.error }, { status: scope.status })
+    if (scope.mode !== 'branch' || scope.branchId !== branch_id) return NextResponse.json({ error: 'هذا الفرع غير مشترك بالمنيو' }, { status: 403 })
+
+    const patch: Record<string, unknown> = {}
+    if (shop_slug !== undefined) {
+      const clean = slugifyShop(shop_slug)
+      if (clean.length < 2) return NextResponse.json({ error: 'رابط الفرع قصير جداً (حرفين على الأقل)' }, { status: 400 })
+      const { data: dup } = await supabase.from('branches').select('id').eq('org_id', org_id).eq('shop_slug', clean).neq('id', branch_id).maybeSingle()
+      if (dup) return NextResponse.json({ error: 'هذا الرابط مستخدم لفرع ثاني' }, { status: 400 })
+      patch.shop_slug = clean
+    }
+    if (shop_hours !== undefined) patch.shop_hours = cleanShopHours(shop_hours)
+    if (!Object.keys(patch).length) return NextResponse.json({ success: true })
+
+    const { error } = await supabase.from('branches').update(patch as any).eq('id', branch_id).eq('org_id', org_id)
+    if (error) return NextResponse.json({ error: 'فشل حفظ إعدادات الفرع' }, { status: 500 })
+    return NextResponse.json({ success: true, shop_slug: patch.shop_slug })
+  } catch {
+    return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+  }
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
@@ -65,17 +105,31 @@ export async function GET(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
     const supabase = sb()
-    const bid = searchParams.get('branch_id')
+    const scope = await resolveMenuScope(supabase, org_id, access, searchParams.get('branch_id'))
+    if (!scope.ok) return NextResponse.json({ error: scope.error }, { status: scope.status })
+    if (scope.mode === 'branch') await ensureBranchSlugs(supabase, org_id, scope.branches)
+
+    // منيو بالفروع: أصناف الفرع + أصناف "كل الفروع". المنيو الموحد: كل الأصناف مثل قبل
+    const bid = scope.mode === 'branch' ? scope.branchId : enforcedBranchId(access, searchParams.get('branch_id'))
     let q = supabase.from('products').select('id,name,unit,category,show_on_shop,public_price,public_description,public_image_url,sort_order').eq('org_id', org_id).eq('is_active', true)
     if (bid) q = q.eq('branch_id', bid)
+    let itemsQ = supabase.from('shop_items').select('id,name,category,price,description,image_url,is_featured,sort_order,branch_id').eq('org_id', org_id)
+    if (scope.mode === 'branch') itemsQ = itemsQ.or(`branch_id.eq.${scope.branchId},branch_id.is.null`)
+    let recipesQ = supabase.from('recipes').select('id,name,sell_price').eq('org_id', org_id)
+    if (bid) recipesQ = recipesQ.or(`branch_id.eq.${bid},branch_id.is.null`)
 
-    const [{ data: org }, { data: products }, { data: shopItems }] = await Promise.all([
+    const [{ data: org }, { data: products }, { data: shopItems }, { data: recipes }] = await Promise.all([
       supabase.from('organizations').select('shop_slug,shop_enabled,shop_tagline,shop_color,shop_display_name,shop_links,shop_hours,name,logo_url').eq('id', org_id).maybeSingle(),
       q.order('sort_order').order('name'),
-      supabase.from('shop_items').select('id,name,category,price,description,image_url,is_featured,sort_order').eq('org_id', org_id).order('sort_order').order('created_at'),
+      itemsQ.order('sort_order').order('created_at'),
+      recipesQ.order('name'),
     ])
 
-    return NextResponse.json({ success: true, org, products: products || [], shopItems: shopItems || [] })
+    return NextResponse.json({
+      success: true, org, products: products || [], shopItems: shopItems || [], recipes: recipes || [],
+      mode: scope.mode, branchId: scope.branchId, canManageOrg: scope.canManageOrg,
+      branches: scope.branches.map(b => ({ id: b.id, name: b.name, shop_slug: b.shop_slug, shop_hours: b.shop_hours })),
+    })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }

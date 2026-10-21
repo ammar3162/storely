@@ -22,17 +22,19 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   const [busy, setBusy] = useState<string | null>(null)
   const [days, setDays] = useState(30)
   const [qty, setQty] = useState<Record<string, number>>({})
+  const [branches, setBranches] = useState<{ id: string; name: string }[]>([])
+  const [menuSel, setMenuSel] = useState<string[] | null>(null)
 
   const c = customer
   useEffect(() => {
-    setAddons([]); setQty({}); setDays(30)
+    setAddons([]); setQty({}); setDays(30); setBranches([]); setMenuSel(null)
     if (c?.org_id) loadAddons(c.org_id)
   }, [c?.org_id])
 
   async function loadAddons(orgId: string) {
     setLoadingAddons(true)
     const j = await adminFetch(`/api/admin/addon-subscriptions?org_id=${orgId}`)
-    if (j.success) setAddons(j.addons || [])
+    if (j.success) { setAddons(j.addons || []); setBranches(j.branches || []); setMenuSel(null) }
     setLoadingAddons(false)
   }
 
@@ -98,23 +100,35 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
     toast(j.success ? `تم إرسال الفاتورة #${j.invoiceNumber}` : (j.error || 'فشل الإرسال'), j.success ? 'success' : 'error')
   }
 
+  // المنيو: الفروع المختارة (افتراضياً: المشتركة حالياً، أو كل الفروع)
+  function menuPick(a: any): string[] {
+    if (menuSel) return menuSel
+    const cur = a.subscription?.isValid && Array.isArray(a.subscription?.branch_ids) ? a.subscription.branch_ids : null
+    return (cur && cur.length ? cur : branches.map(b => b.id)).filter((id: string) => branches.some(b => b.id === id))
+  }
+  const branchNames = (ids: string[]) => ids.map(id => branches.find(b => b.id === id)?.name).filter(Boolean).join('، ')
+
   async function setAddon(a: any, on: boolean, quantity?: number) {
-    const q = quantity || qty[a.id] || (a.subscription?.quantity || 1)
+    const isMenu = a.slug === 'online_menu' && branches.length > 0
+    const menuIds = isMenu ? menuPick(a) : []
+    if (on && isMenu && !menuIds.length) { toast('اختر فرع واحد على الأقل', 'warning'); return }
+    const q = isMenu && on ? menuIds.length : (quantity || qty[a.id] || (a.subscription?.quantity || 1))
+    const menuNote = isMenu && on && branches.length > 1 ? ` — ${branchNames(menuIds)}` : ''
     if (on) {
       const wasActive = !!a.subscription?.isValid
       const charged = wasActive ? Math.max(0, q - (a.subscription?.quantity || 1)) : q
       const end = addonPeriodEnd(c!.subscription_ends_at)
       const pr = proratedCharge(Number(a.monthly_price) || 0, charged, end)
       if (!(await confirmDialog({ title: `${wasActive ? 'تحديث' : 'تفعيل'} "${a.name}"${q > 1 ? ` × ${q}` : ''}`, message:
-        `تنتهي مع الباقة بتاريخ ${fmtDate(end.toISOString())}.\n\nالمستحق الحين: ${pr.amount} ر.س (${pr.days} يوم)\nومن التجديد: ${q * (Number(a.monthly_price) || 0)} ر.س شهرياً` }))) return
+        `${menuNote ? `الفروع: ${menuNote.slice(3)}\n\n` : ''}تنتهي مع الباقة بتاريخ ${fmtDate(end.toISOString())}.\n\nالمستحق الحين: ${pr.amount} ر.س (${pr.days} يوم)\nومن التجديد: ${q * (Number(a.monthly_price) || 0)} ر.س شهرياً` }))) return
     } else if (!(await confirmDialog({ title: `إلغاء "${a.name}"`, message: 'تتوقف الإضافة فوراً، وأي فروع أو موظفين زايدين عن الحد يتوقفون مؤقتاً.' }))) return
     setBusy('addon:' + a.id)
-    const j = await adminFetch('/api/admin/addon-subscriptions', { method: on ? 'POST' : 'DELETE', body: { org_id: c!.org_id, addon_id: a.id, org_name: c!.org_name, addon_name: a.name, quantity: q } })
+    const j = await adminFetch('/api/admin/addon-subscriptions', { method: on ? 'POST' : 'DELETE', body: { org_id: c!.org_id, addon_id: a.id, org_name: c!.org_name, addon_name: a.name, quantity: q, ...(isMenu && on ? { branch_ids: menuIds } : {}) } })
     setBusy(null)
     if (!j.success) { toast(j.error || 'فشل', 'error'); return }
     await loadAddons(c!.org_id)
     if (on && j.proratedAmount > 0 && hasPhone) {
-      await sendInvoice([{ label: `إضافة "${a.name}"${q > 1 ? ` × ${q}` : ''} — ${j.proratedDays} يوم لين تجديد الباقة`, amount: j.proratedAmount }], 'إرسال فاتورة الإضافة؟')
+      await sendInvoice([{ label: `إضافة "${a.name}"${q > 1 ? ` × ${q}` : ''}${menuNote} — ${j.proratedDays} يوم لين تجديد الباقة`, amount: j.proratedAmount }], 'إرسال فاتورة الإضافة؟')
     }
   }
 
@@ -220,13 +234,18 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
                 const on = !!a.subscription?.isValid
                 const isQty = QTY_SLUGS.includes(a.slug)
                 const q = qty[a.id] || (on ? a.subscription?.quantity || 1 : 1)
-                const canEditQty = isQty && (!on || a.slug === 'extra_branch')
+                const isMenu = a.slug === 'online_menu' && branches.length > 1
+                const canEditQty = isQty && !isMenu && a.slug !== 'online_menu' && (!on || a.slug === 'extra_branch')
+                const subIds: string[] = on && Array.isArray(a.subscription?.branch_ids) ? a.subscription.branch_ids : []
+                const picked = isMenu ? menuPick(a) : []
                 return (
-                  <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: `1px solid ${on ? A.primary + '55' : A.border}`, background: on ? A.primarySoft : A.surface }}>
+                  <div key={a.id} style={{ padding: '10px 12px', borderRadius: 10, border: `1px solid ${on ? A.primary + '55' : A.border}`, background: on ? A.primarySoft : A.surface }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 700 }}>{a.name}</div>
                       <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>
-                        {on ? `مفعّلة${isQty ? ` (${a.subscription?.quantity || 1})` : ''} حتى ${fmtDate(a.subscription.expires_at)}` : `${a.monthly_price} ⃁${isQty ? ' للوحدة' : ''} / شهر`}
+                        {on ? `مفعّلة${isQty ? ` (${a.subscription?.quantity || 1})` : ''} حتى ${fmtDate(a.subscription.expires_at)}` : `${a.monthly_price} ⃁${a.slug === 'online_menu' ? ' لكل فرع' : isQty ? ' للوحدة' : ''} / شهر`}
+                        {on && a.slug === 'online_menu' && branches.length > 1 && (subIds.length ? ` — ${branchNames(subIds)}` : ' — منيو موحد لكل الفروع (اشتراك قديم)')}
                       </div>
                     </div>
                     {canEditQty && (
@@ -234,10 +253,25 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
                         onChange={e => setQty(p => ({ ...p, [a.id]: Math.max(1, Math.min(20, Number(e.target.value) || 1)) }))}
                         style={{ ...inputStyle, width: 58, padding: '6px', textAlign: 'center' }} />
                     )}
-                    {on && a.slug === 'extra_branch' && <Btn small disabled={!!busy} onClick={() => setAddon(a, true, q)}>تحديث</Btn>}
+                    {on && (a.slug === 'extra_branch' || isMenu) && <Btn small disabled={!!busy} onClick={() => setAddon(a, true, q)}>تحديث</Btn>}
                     <Btn small kind={on ? 'danger' : 'primary'} loading={busy === 'addon:' + a.id} disabled={!!busy && busy !== 'addon:' + a.id} onClick={() => setAddon(a, !on, q)}>
                       {on ? 'إلغاء' : 'تفعيل'}
                     </Btn>
+                  </div>
+                  {isMenu && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                      {branches.map(b => {
+                        const checked = picked.includes(b.id)
+                        return (
+                          <label key={b.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, padding: '4px 9px', borderRadius: 99, border: `1px solid ${checked ? A.primary : A.border}`, background: checked ? A.primarySoft : A.surface, cursor: 'pointer' }}>
+                            <input type="checkbox" checked={checked} onChange={() => setMenuSel(checked ? picked.filter(x => x !== b.id) : [...picked, b.id])} />
+                            {b.name}
+                          </label>
+                        )
+                      })}
+                      <span style={{ fontSize: 11, color: A.text3, alignSelf: 'center' }}>{picked.length} × {a.monthly_price} = {picked.length * (Number(a.monthly_price) || 0)} ⃁ / شهر</span>
+                    </div>
+                  )}
                   </div>
                 )
               })}

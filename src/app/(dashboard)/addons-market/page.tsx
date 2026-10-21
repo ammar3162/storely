@@ -43,6 +43,7 @@ export default function AddonsMarketPage() {
 
   const [qtyMap, setQtyMap] = useState<Record<string, number>>({})
   const [staffBranchMap, setStaffBranchMap] = useState<Record<string, string>>({})
+  const [menuSel, setMenuSel] = useState<string[] | null>(null)
 
   async function load(oid: string) {
     const j = await api.get('/api/addons-market', { org_id: oid })
@@ -67,6 +68,16 @@ export default function AddonsMarketPage() {
         تدفع الحين <b style={{ color: colors.text }}>{d.amount} ⃁</b> عن {d.days} يوم لين تجديد باقتك ({d.endStr})، وبعدها تتجدد مع الباقة.
       </div>
     )
+  }
+
+  // المنيو الإلكتروني: كل فرع بسعر الإضافة
+  function menuLink(addon: any, ids: string[], adding: boolean) {
+    const names = ids.map(id => branches.find(b => b.id === id)?.name).filter(Boolean).join('، ')
+    const text = adding
+      ? `مرحباً، أبي أضيف فروع لميزة "${addon.name}": ${names} — ${ids.length} × ${addon.monthly_price} ⃁/شهر لمنشأة: ${orgName}`
+      : `مرحباً، أبي أشترك بميزة "${addon.name}" للفروع: ${names} — ${ids.length} × ${addon.monthly_price} = ${ids.length * addon.monthly_price} ⃁/شهر لمنشأة: ${orgName}`
+    const d = dueNow(addon, ids.length)
+    return `https://wa.me/966594351667?text=${encodeURIComponent(`${text}\nالمستحق الحين: ${d.amount} ر.س (${d.days} يوم لين تجديد الباقة)`)}`
   }
 
   function subscribeLink(addon: any, qty: number = 1, branchId?: string) {
@@ -192,6 +203,65 @@ export default function AddonsMarketPage() {
             }
 
             const active = a.subscription?.isValid
+            if (a.slug === 'online_menu' && branches.length > 1) {
+              const covered: string[] = active && Array.isArray(a.subscription?.branch_ids) ? a.subscription.branch_ids : []
+              const legacyAll = active && !covered.length
+              const options = branches.filter(b => !covered.includes(b.id))
+              const picked = (menuSel ?? (active ? [] : branches.map(b => b.id))).filter(id => options.some(b => b.id === id))
+              return (
+                <div key={a.id} style={{ ...card, padding: 20, position: 'relative' as const, border: active ? `1.5px solid ${colors.primaryBorder}` : undefined, background: active ? colors.primaryLight : undefined }}>
+                  {active && (
+                    <button onClick={() => cancelAddon(a)} disabled={cancelling === a.id} title="إلغاء الاشتراك"
+                      style={{ position: 'absolute' as const, top: 12, left: 12, width: 26, height: 26, borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>
+                      {cancelling === a.id ? '…' : '🗑️'}
+                    </button>
+                  )}
+                  <div style={{ fontSize: 32, marginBottom: 10 }}>{a.icon}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
+                  <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14 }}>{a.description}</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 14 }}>
+                    {a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text4 }}>⃁ / فرع / شهر — لكل فرع منيو ورابط خاص</span>
+                  </div>
+
+                  {active && (
+                    <div style={{ fontSize: 12, color: colors.text, marginBottom: 12, lineHeight: 1.8 }}>
+                      <div style={{ fontWeight: 800, color: colors.primary }}>✅ مفعّلة حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA', { numberingSystem: 'latn' })}</div>
+                      {legacyAll
+                        ? <div style={{ color: colors.text3 }}>منيو موحد لكل الفروع</div>
+                        : <div style={{ color: colors.text3 }}>الفروع: {covered.map(id => branches.find(b => b.id === id)?.name).filter(Boolean).join('، ')}</div>}
+                    </div>
+                  )}
+
+                  {!legacyAll && options.length > 0 && (
+                    <>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: colors.text3, marginBottom: 8 }}>{active ? 'تبي تضيف فروع؟' : 'اختر الفروع:'}</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginBottom: 12 }}>
+                        {options.map(b => {
+                          const checked = picked.includes(b.id)
+                          return (
+                            <label key={b.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '6px 10px', borderRadius: 99, cursor: 'pointer', border: `1px solid ${checked ? colors.primaryBorder : colors.border2}`, background: checked ? colors.primaryLight : 'white', color: colors.text }}>
+                              <input type="checkbox" checked={checked} onChange={() => setMenuSel(checked ? picked.filter(x => x !== b.id) : [...picked, b.id])} />
+                              {b.name}
+                            </label>
+                          )
+                        })}
+                      </div>
+                      {picked.length > 0 ? (
+                        <>
+                          <DueNote addon={a} qty={picked.length} />
+                          <a href={menuLink(a, picked, !!active)} target="_blank" rel="noopener noreferrer"
+                            style={{ display: 'block', textAlign: 'center' as const, padding: '11px', background: colors.primary, color: 'white', borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+                            {active ? 'اطلب إضافة الفروع عبر واتساب' : 'اشتراك عبر واتساب'} ({picked.length * a.monthly_price} ⃁/شهر)
+                          </a>
+                        </>
+                      ) : (
+                        <div style={{ fontSize: 11, color: colors.text4, textAlign: 'center' as const }}>اختر فرع واحد على الأقل</div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )
+            }
             return (
               <div key={a.id} style={{ ...card, padding: 20, position: 'relative' as const, border: active ? `1.5px solid ${colors.primaryBorder}` : undefined, background: active ? colors.primaryLight : undefined }}>
                 {active && (
