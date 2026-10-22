@@ -671,4 +671,24 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       expect(await getPublicMenu(db as any, slug)).toBeNull()
     }, 240_000)
   })
+
+  describe('marketing emails', () => {
+    it('unsubscribe link adds the email to opt-outs, and test accounts never receive campaigns', async () => {
+      const unsub = await import('@/app/api/unsubscribe/route')
+      const m = await import('@/lib/marketing')
+      const email = `it-optout-${stamp}@example.org`
+      const bad = await unsub.POST(new Request(`http://test/api/unsubscribe?e=${encodeURIComponent(email)}&t=wrong`, { method: 'POST' }))
+      expect(bad.status).toBe(400)
+      const ok = await unsub.POST(new Request(`http://test/api/unsubscribe?e=${encodeURIComponent(email)}&t=${m.unsubToken(email)}`, { method: 'POST', body: 'List-Unsubscribe=One-Click', headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }))
+      expect(ok.status).toBe(200)
+      expect((await db.from('email_optouts').select('email').eq('email', email)).data).toHaveLength(1)
+      // نفس الرابط مرتين ما يسبب خطأ
+      expect((await unsub.POST(new Request(`http://test/api/unsubscribe?e=${encodeURIComponent(email)}&t=${m.unsubToken(email)}`, { method: 'POST' }))).status).toBe(200)
+      await db.from('email_optouts').delete().eq('email', email)
+
+      const all = await m.segmentRecipients(db as any, 'all')
+      expect(all.some(r => r.email.endsWith('@storely.test'))).toBe(false)
+      expect(new Set(all.map(r => r.email.toLowerCase())).size).toBe(all.length)
+    })
+  })
 })
