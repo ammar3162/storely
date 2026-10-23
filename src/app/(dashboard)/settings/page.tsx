@@ -119,7 +119,6 @@ export default function SettingsPage() {
   const [logoUploading, setLogoUploading] = useState(false)
   const [planName, setPlanName]         = useState('')
   const [billingCycle, setBillingCycle] = useState<'monthly'|'yearly'>('monthly')
-  const [checkoutLoading, setCheckoutLoading] = useState<string|null>(null)
   const [userEmail, setUserEmail]       = useState('')
   const [userPhone, setUserPhone]       = useState('')
   const [userFullName, setUserFullName] = useState('')
@@ -165,22 +164,6 @@ export default function SettingsPage() {
     if (error) { setPwMsg({ok:false,text:'حدث خطأ في تغيير كلمة المرور'}); return }
     setPwMsg({ok:true,text:'تم تغيير كلمة المرور بنجاح ✅'})
     setPwForm({current:'',newPw:'',confirm:''})
-  }
-
-  async function handleUpgrade(plan: string) {
-    setCheckoutLoading(plan)
-    try {
-      const orgId = sessionStorage.getItem('s_org_id')
-      const res = await fetch('/api/stripe-checkout', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ plan, org_id: orgId, user_id: userId, email: userEmail })
-      })
-      const data = await res.json()
-      if (data.url) window.location.href = data.url
-      else alert('حدث خطأ، حاول مرة أخرى')
-    } catch { alert('حدث خطأ، حاول مرة أخرى') }
-    setCheckoutLoading(null)
   }
 
   async function load() {
