@@ -48,6 +48,7 @@ export async function deleteOrgCompletely(orgId: string, userId?: string): Promi
     'notifications','purchases','staff_members','whatsapp_logs',
     'push_subscriptions','cashier_closings','fixed_expenses','monthly_fixed_expenses',
     'inventory_snapshots','supplier_orders','data_backups',
+    'recipes', // مكوّناتها (recipe_items) تنحذف معها — الجدول ما فيه ربط بالمنشأة فما ينحذف لحاله
   ]
   for (const t of directTables) {
     const r = await (supabase as any).from(t).delete().eq('org_id', orgId)
@@ -67,7 +68,9 @@ export async function deleteOrgCompletely(orgId: string, userId?: string): Promi
   const rDemo = await (supabase as any).from('demo_requests').update({ matched_org_id: null }).eq('matched_org_id', orgId)
   if (rDemo.error) errors.push(`demo_requests: ${rDemo.error.message}`)
 
-  // 5) الفروع
+  // 5) الفروع — نفك ارتباط مديري الفروع أول (ملفاتهم تشير للفرع وتمنع حذفه)
+  const rMgr = await (supabase as any).from('profiles').update({ branch_id: null }).eq('org_id', orgId).not('branch_id', 'is', null)
+  if (rMgr.error) errors.push(`profiles(branch): ${rMgr.error.message}`)
   const r7 = await supabase.from('branches').delete().eq('org_id', orgId)
   if (r7.error) errors.push(`branches: ${r7.error.message}`)
 
@@ -82,6 +85,10 @@ export async function deleteOrgCompletely(orgId: string, userId?: string): Promi
   // 6+7) الملف الشخصي والمؤسسة نفسها — خطوتين أخيرتين مترابطتين، وبس لو كل شي قبلهم نجح
   // (قبل هذا الإصلاح: كان حذف profiles ينفّذ بدون شرط، فلو فشلت خطوة سابقة كان يبقى صف
   // organizations "يتيم" بدون صاحب حساب يقدر يعيد محاولة الحذف — راجع سجل الحوادث)
+  // حسابات الدخول التابعة (المالك + مديرو الفروع) — نحفظها قبل حذف ملفاتهم عشان ما يبقى دخول بدون منشأة
+  const { data: orgProfiles } = await supabase.from('profiles').select('id').eq('org_id', orgId)
+  const loginIds = new Set<string>([...(orgProfiles || []).map((p: any) => p.id), ...(userId ? [userId] : [])])
+
   if (errors.length === 0) {
     const { error: profileErr } = await supabase.from('profiles').delete().eq('org_id', orgId)
     if (profileErr) errors.push(`profiles: ${profileErr.message}`)
@@ -92,9 +99,12 @@ export async function deleteOrgCompletely(orgId: string, userId?: string): Promi
     if (orgErr) errors.push(`organizations: ${orgErr.message}`)
   }
 
-  // حذف حساب الدخول — بس لو كل شي نجح بدون أي خطأ (يمنع حذف حساب الدخول مع بقاء بيانات عالقة)
-  if (errors.length === 0 && userId) {
-    await supabase.auth.admin.deleteUser(userId).catch((e: any) => errors.push(`auth user: ${e.message}`))
+  // حذف حسابات الدخول — بس لو كل شي نجح بدون أي خطأ (يمنع حذف حساب الدخول مع بقاء بيانات عالقة)
+  if (errors.length === 0) {
+    for (const id of loginIds) {
+      const { error } = await supabase.auth.admin.deleteUser(id)
+      if (error && !/not.?found/i.test(error.message)) errors.push(`auth user: ${error.message}`)
+    }
   }
 
   return { success: errors.length === 0, errors }
@@ -133,7 +143,7 @@ export async function deleteBranchCompletely(branchId: string, orgId: string): P
     if (r4.error) errors.push(`supplier_performance_log: ${r4.error.message}`)
   }
 
-  const directTables = ['staff_tasks', 'purchases', 'cashier_closings', 'supplier_orders', 'staff_members', 'notifications']
+  const directTables = ['staff_tasks', 'purchases', 'cashier_closings', 'supplier_orders', 'staff_members', 'notifications', 'recipes']
   for (const t of directTables) {
     const r = await (supabase as any).from(t).delete().eq('branch_id', branchId)
     if (r.error) errors.push(`${t}: ${r.error.message}`)

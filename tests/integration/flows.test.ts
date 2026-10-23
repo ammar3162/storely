@@ -691,4 +691,34 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       expect(new Set(all.map(r => r.email.toLowerCase())).size).toBe(all.length)
     })
   })
+
+  describe('admin deletes a customer', () => {
+    it('removes the org, its recipes and every login (owner + branch manager)', async () => {
+      const del = await import('@/app/api/admin/delete-user/route')
+      const s2 = Date.now()
+      const { data: o } = await db.auth.admin.createUser({ email: `it-del-owner-${s2}@storely.test`, password: `It-${s2}-x!`, email_confirm: true })
+      const { data: mgr } = await db.auth.admin.createUser({ email: `it-del-mgr-${s2}@storely.test`, password: `It-${s2}-y!`, email_confirm: true })
+      const { data: org } = await db.from('organizations').insert({ name: `__it_del_${s2}`, whatsapp_number: '966500000000', plan: 'pro', max_branches: 2, currency: 'SAR' } as any).select('id').single()
+      const oid = (org as any).id
+      const { data: br } = await db.from('branches').insert({ org_id: oid, name: 'فرع', is_active: true } as any).select('id').single()
+      await db.from('profiles').upsert([
+        { id: o.user!.id, full_name: 'مالك', org_id: oid, role: 'owner', status: 'active' },
+        { id: mgr.user!.id, full_name: 'مدير', org_id: oid, role: 'manager', branch_id: (br as any).id, status: 'active' },
+      ] as any)
+      await db.from('recipes').insert({ org_id: oid, name: 'لاتيه', sell_price: 18 } as any)
+      await db.from('demo_requests').insert({ first_name: 'x', last_name: 'y', phone: '966500000001', business_name: 'z', status: 'new', matched_org_id: oid } as any)
+
+      const res = await del.POST(new Request('http://test/api/admin/delete-user', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify({ userId: o.user!.id, orgId: oid }) }))
+      const j = await res.json()
+      expect(j.success, JSON.stringify(j)).toBe(true)
+      expect((await db.from('organizations').select('id').eq('id', oid)).data).toEqual([])
+      expect((await db.from('recipes').select('id').eq('org_id', oid)).data).toEqual([])
+      expect((await db.auth.admin.getUserById(o.user!.id)).data.user).toBeNull()
+      expect((await db.auth.admin.getUserById(mgr.user!.id)).data.user).toBeNull()
+      // طلب العرض يبقى، بس ينفك ربطه
+      const { data: demo } = await db.from('demo_requests').select('id,matched_org_id').eq('phone', '966500000001')
+      expect((demo || []).every((d: any) => d.matched_org_id === null)).toBe(true)
+      await db.from('demo_requests').delete().eq('phone', '966500000001')
+    })
+  })
 })
