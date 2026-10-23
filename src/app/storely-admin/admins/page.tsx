@@ -12,6 +12,7 @@ const PERMS: Record<string, string> = {
   view_metrics: 'مقاييس الإيراد',
   manage_packages: 'الباقات والأسعار',
   manage_backups: 'النسخ الاحتياطية',
+  send_marketing: 'إعلانات الإيميل للعملاء',
 }
 
 type Form = { id?: string; full_name: string; email: string; password: string; permissions: Record<string, boolean> }

@@ -53,6 +53,7 @@ export function brandEmail(o: {
   small?: string
   rawLinkFallback?: string
   rawSections?: string   // HTML جاهز ومحمي مسبقاً (جداول التقارير)
+  rawFooter?: string     // HTML جاهز أسفل الإيميل (رابط إلغاء الاشتراك بالإعلانات)
 }) {
   const b = BRAND
   const btnUrl = o.button ? (o.button.rawUrl ?? esc(o.button.url || '')) : ''
@@ -118,6 +119,7 @@ export function brandEmail(o: {
       ${o.small ? `<div style="font-size:12px;color:${b.muted};line-height:1.8;margin-bottom:12px">${esc(o.small)}</div>` : ''}
       <a href="https://wa.me/${b.whatsapp}" style="display:inline-block;color:${b.color};text-decoration:none;font-weight:bold;font-size:12px;border:1px solid rgba(2,159,162,.35);padding:9px 18px;border-radius:10px">تواصل معنا عبر واتساب</a>
       <div style="font-size:11px;color:#94a3b8;margin-top:14px;line-height:1.8">Storely — نظام واحد يربط كل أعمال منشأتك<br><a href="${b.site}" style="color:#94a3b8" dir="ltr">storely.dev</a></div>
+      ${o.rawFooter || ''}
     </td></tr>
   </table>
 </div>
