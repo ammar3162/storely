@@ -1,4 +1,5 @@
 -- تراجع: يرجّع الدالتين والتريقرات كما كانت بالإنتاج بالضبط (منسوخة من قاعدة الإنتاج 2026-10-23)، والرسائل الملغاة ترجع "pending"
+-- ملاحظة: الرسائل الملغاة (1896 بالإنتاج، 24 بـ staging) انحذفت نهائياً بطلب المالك 2026-10-23 — التراجع يرجّع الدوال والتريقرات بس
 begin;
 update public.whatsapp_logs set status = 'pending' where status = 'skipped';
 alter table public.whatsapp_logs drop constraint if exists whatsapp_logs_status_check;
