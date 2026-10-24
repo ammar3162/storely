@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { escalateOrder } from '@/lib/escalateSupplierOrder'
+import { isSubscriptionActive } from '@/lib/subscription'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -57,7 +58,11 @@ export async function POST(req: Request) {
     if (!staleOrders.length) return NextResponse.json({ success: true, escalated: 0, checked: pendingOrders.length, message: 'لا توجد طلبات تجاوزت المهلة' })
 
     let escalatedCount = 0
+    const orgActive: Record<string, boolean> = {}
     for (const order of staleOrders) {
+      // منشأة موقوفة أو منتهية: ما نصعّد طلبها لمورد ثاني
+      if (orgActive[order.org_id] === undefined) orgActive[order.org_id] = await isSubscriptionActive(db, order.org_id)
+      if (!orgActive[order.org_id]) continue
       const result = await escalateOrder(order, 'timeout')
       if (result.escalated) escalatedCount++
     }

@@ -35,7 +35,7 @@ const auth: { current: Access | null } = { current: null }
 
 vi.mock('next/headers', () => ({ headers: async () => new Headers(), cookies: async () => ({ getAll: () => [], set: () => {} }) }))
 // ما نرسل واتساب حقيقي من الاختبارات
-vi.mock('@/lib/whatsapp', () => ({ sendWhatsAppMessage: async () => ({ success: true }), formatPhone: (x: string) => x }))
+vi.mock('@/lib/whatsapp', () => ({ sendWhatsAppMessage: async () => ({ ok: true, success: true }), formatPhone: (x: string) => x }))
 // لوحة الأدمن: جلسة أدمن وهمية للاختبار بس
 vi.mock('@/lib/adminAuth', () => ({
   requirePermission: async (key: string | null) => (key === 'it-admin' ? { id: 'it-admin', name: 'اختبار' } : null),
@@ -719,6 +719,31 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       const { data: demo } = await db.from('demo_requests').select('id,matched_org_id').eq('phone', '966500000001')
       expect((demo || []).every((d: any) => d.matched_org_id === null)).toBe(true)
       await db.from('demo_requests').delete().eq('phone', '966500000001')
+    })
+  })
+
+  describe('renewal reminders', () => {
+    it('expired owners get a renewal reminder every two days, not daily', async () => {
+      process.env.CRON_SECRET = process.env.CRON_SECRET || 'it-cron'
+      const rem = await import('@/app/api/subscription-reminders/route')
+      const run = async () => (await rem.POST(new Request('http://test/api/subscription-reminders', { method: 'POST', headers: { authorization: `Bearer ${process.env.CRON_SECRET}` } }))).json()
+      const s3 = Date.now()
+      const { data: u } = await db.auth.admin.createUser({ email: `it-rem-${s3}@storely.test`, password: `It-${s3}-x!`, email_confirm: true })
+      const { data: org } = await db.from('organizations').insert({ name: `__it_rem_${s3}`, whatsapp_number: '966500000009', plan: 'pro', max_branches: 1, currency: 'SAR' } as any).select('id').single()
+      const oid = (org as any).id
+      await db.from('profiles').upsert({ id: u.user!.id, full_name: 'منتهي', org_id: oid, role: 'owner', status: 'active', subscription_type: 'paid', subscription_ends_at: new Date(Date.now() - 3 * 864e5).toISOString() } as any)
+      const at = async () => ((await db.from('profiles').select('renewal_reminder_at').eq('id', u.user!.id).single()).data as any).renewal_reminder_at
+      try {
+        await run(); const first = await at(); expect(first).toBeTruthy()
+        await run(); expect(await at()).toBe(first) // نفس اليوم: ما يتكرر
+        await db.from('profiles').update({ renewal_reminder_at: new Date(Date.now() - 2 * 864e5).toISOString() } as any).eq('id', u.user!.id)
+        await run(); expect(new Date(await at()).getTime()).toBeGreaterThan(Date.now() - 60000) // بعد يومين: يرجع يرسل
+        await db.from('profiles').update({ renewal_reminder_at: null, subscription_ends_at: new Date(Date.now() - 40 * 864e5).toISOString() } as any).eq('id', u.user!.id)
+        await run(); expect(await at()).toBeNull() // بعد ٣٠ يوم: يوقف
+      } finally {
+        const { deleteOrgCompletely } = await import('@/lib/deleteOrg')
+        await deleteOrgCompletely(oid, u.user!.id).catch(() => {})
+      }
     })
   })
 })

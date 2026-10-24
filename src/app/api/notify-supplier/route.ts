@@ -5,6 +5,7 @@ import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { isCronRequest } from '@/lib/cronAuth'
 import { orderedSinceLastRestock, failedRecently } from '@/lib/supplierOrderGate'
+import { isSubscriptionActive } from '@/lib/subscription'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -48,7 +49,9 @@ async function run(body: any) {
 
     // طلب التوريد يوصل للمورد مرة وحدة لما يوصل الصنف للحد الأدنى — بغض النظر عن جدول الإرسال.
     // الجدولة تفحص كل المنشآت كل 30 دقيقة كشبكة أمان (المسار الأساسي هو لحظة الصرف)
-    const eligibleOrgIds: string[] = (orgs || []).map((o: any) => o.id)
+    // منشأة موقوفة أو منتهي اشتراكها أو محذوفة: ما نرسل لموردينها شي
+    const eligibleOrgIds: string[] = []
+    for (const o of orgs || []) if (await isSubscriptionActive(supabase, (o as any).id)) eligibleOrgIds.push((o as any).id)
     if (!eligibleOrgIds.length) return NextResponse.json({ success: true, sent: 0, message: 'لا توجد مؤسسات' })
 
     let query = supabase
