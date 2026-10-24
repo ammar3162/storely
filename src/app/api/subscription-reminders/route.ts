@@ -18,7 +18,9 @@ export async function POST(req: Request) {
   const db = sb()
   const now = new Date()
   const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
-  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
+  const DAY = 24 * 60 * 60 * 1000
+  // تذكير التجديد: كل يومين لمدة ٣٠ يوم بعد الانتهاء (المهمة يومية، ونسمح بفرق ساعة بتوقيتها)
+  const REMIND_EVERY = 2 * DAY - 60 * 60 * 1000, REMIND_FOR = 30 * DAY
 
   // إضافة "فرع إضافي" انتهت بدون تجديد: نوقف الفروع الزايدة عن الحد (مؤقتاً — ترجع بالتجديد)
   let branchesLocked = 0
@@ -32,7 +34,7 @@ export async function POST(req: Request) {
 
   const { data: profiles } = await db
     .from('profiles')
-    .select('id,full_name,phone,subscription_type,subscription_ends_at,trial_reminder_sent,expiry_notice_sent,organizations(whatsapp_number)')
+    .select('id,full_name,phone,subscription_type,subscription_ends_at,trial_reminder_sent,renewal_reminder_at,organizations(whatsapp_number)')
     .eq('role', 'owner')
     .eq('status', 'active')
     .not('subscription_ends_at', 'is', null)
@@ -55,8 +57,8 @@ export async function POST(req: Request) {
       const daysLeft = Math.ceil((endsAt.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
       const isTrial = p.subscription_type === 'trial'
       const text = isTrial
-        ? `مرحباً ${p.full_name || ''} 👋\n\nتجربتك المجانية بـ Storely راح تنتهي خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'} 📅\n\nلا تفوّت الفرصة — رقّي اشتراكك الآن واستمر بدون أي انقطاع في إدارة مخزونك:\nstorely.dev`
-        : `مرحباً ${p.full_name || ''} 👋\n\nاشتراكك بـ Storely راح ينتهي خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'} 📅\n\nجدّد اشتراكك الآن عشان تكمل إدارة مخزونك وفريقك بدون أي انقطاع:\nstorely.dev`
+        ? `مرحباً ${p.full_name || ''}\n\nتجربتك المجانية بـ Storely تنتهي خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'}.\n\nاشترك الحين وكمّل إدارة مخزونك بدون انقطاع:\nstorely.dev`
+        : `مرحباً ${p.full_name || ''}\n\nاشتراكك بـ Storely ينتهي خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'}.\n\nجدّد اشتراكك الحين وكمّل إدارة مخزونك وفريقك بدون انقطاع:\nstorely.dev`
       const res = await sendWhatsAppMessage(to, text)
       if (res.ok) {
         await db.from('profiles').update({ trial_reminder_sent: true } as any).eq('id', p.id)
@@ -64,13 +66,16 @@ export async function POST(req: Request) {
       }
     }
 
-    // إشعار انتهاء الاشتراك فعلياً — مرة وحدة بس
-    // (للي انتهى خلال آخر ٣ أيام فقط — عشان ما نرسل للحسابات المنتهية من زمان)
-    if (!p.expiry_notice_sent && endsAt <= now && endsAt > threeDaysAgo) {
-      const text = `مرحباً ${p.full_name || ''}،\n\nانتهى اشتراكك بـ Storely 😔\n\nجدّد اشتراكك الآن عشان تكمل إدارة مخزونك وفريقك بدون انقطاع:\nstorely.dev/login`
+    // انتهى الاشتراك: تذكير كل يومين لمدة ٣٠ يوم (التنبيهات والطلبات التلقائية متوقفة لين يجدد)
+    const last = p.renewal_reminder_at ? new Date(p.renewal_reminder_at).getTime() : 0
+    if (endsAt <= now && now.getTime() - endsAt.getTime() <= REMIND_FOR && now.getTime() - last >= REMIND_EVERY) {
+      const days = Math.max(1, Math.floor((now.getTime() - endsAt.getTime()) / DAY))
+      const text = days <= 1
+        ? `مرحباً ${p.full_name || ''}،\n\nانتهى اشتراكك بـ Storely، وتوقفت تنبيهات المخزون وطلبات الموردين التلقائية.\n\nجدّد اشتراكك الحين وترجع كل بياناتك وتنبيهاتك مثل ما كانت:\nstorely.dev/login`
+        : `مرحباً ${p.full_name || ''}،\n\nاشتراكك بـ Storely منتهي من ${days} يوم، وبياناتك محفوظة بانتظارك.\n\nجدّد الحين وترجع تنبيهات المخزون وطلبات الموردين على طول:\nstorely.dev/login`
       const res = await sendWhatsAppMessage(to, text)
       if (res.ok) {
-        await db.from('profiles').update({ expiry_notice_sent: true } as any).eq('id', p.id)
+        await db.from('profiles').update({ renewal_reminder_at: now.toISOString(), expiry_notice_sent: true } as any).eq('id', p.id)
         expirySent++
       }
     }
