@@ -1,22 +1,19 @@
+// هل المنشأة شغّالة؟ — كل الإرسال التلقائي (واتساب، طلبات الموردين، تقارير المحاسب) يمر من هنا.
+// الحساب الموقوف، أو اللي انتهى اشتراكه، أو بدون مالك (انحذف) = ما يوصله شي، ولا لموردينه أو محاسبه.
 export async function isSubscriptionActive(supabase: any, orgId: string): Promise<boolean> {
   try {
-    const { data: profile } = await supabase
+    const { data: owner } = await supabase
       .from('profiles')
-      .select('subscription_ends_at,subscription_type')
+      .select('status,subscription_ends_at')
       .eq('org_id', orgId)
-      .not('subscription_ends_at', 'is', null)
-      .order('subscription_ends_at', { ascending: false })
-      .limit(1)
+      .eq('role', 'owner')
       .maybeSingle()
 
-    if (!profile?.subscription_ends_at) return true // ما فيه تاريخ انتهاء مسجّل = بدون قيود
-
-    const ends = new Date(profile.subscription_ends_at)
-    if (ends < new Date() && profile.subscription_type !== 'paid') {
-      return false
-    }
-    return true
+    if (!owner) return false // منشأة بدون مالك = محذوفة أو ناقصة
+    if (owner.status === 'suspended') return false
+    if (!owner.subscription_ends_at) return true // حسابات قديمة بدون تاريخ انتهاء
+    return new Date(owner.subscription_ends_at) > new Date()
   } catch {
-    return true // عند أي خطأ بالتحقق، لا نمنع الإرسال (fail-open)
+    return true // عند خطأ مؤقت بالتحقق ما نوقف تنبيهات منشأة شغّالة
   }
 }
