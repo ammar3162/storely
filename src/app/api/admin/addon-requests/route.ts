@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { activateAddon } from '@/lib/addonActivation'
 import { targetForRequest } from '@/lib/addonRequests'
+import { sendPushToOrg } from '@/lib/push'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -11,6 +12,11 @@ export async function GET(req: Request) {
   const admin = await requirePermission(req.headers.get('x-admin-key'), 'manage_users')
   if (!admin) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const db = sb()
+  // عدّاد القائمة الجانبية: المعلّق بس
+  if (new URL(req.url).searchParams.get('count')) {
+    const { count } = await db.from('addon_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending')
+    return NextResponse.json({ success: true, pending: count || 0 })
+  }
   const { data: rows } = await db.from('addon_requests')
     .select('id,org_id,addon_id,quantity,branch_ids,note,status,reason,prorated_amount,decided_by_name,created_at,decided_at,organizations(name),marketplace_addons(name,slug,monthly_price)')
     .order('created_at', { ascending: false }).limit(100)
@@ -52,6 +58,7 @@ export async function POST(req: Request) {
     const why = typeof reason === 'string' ? reason.trim().slice(0, 300) : ''
     await db.from('addon_requests').update({ status: 'rejected', reason: why || null, decided_at: now, decided_by_name: admin.full_name } as any).eq('id', id).eq('status', 'pending')
     await db.from('notifications').insert({ org_id: req0.org_id, title: `طلب «${addonName}»`, message: why ? `ما تمت الموافقة على الطلب: ${why}` : 'ما تمت الموافقة على الطلب — تواصل معنا لو عندك استفسار', type: 'warning', read: false } as any)
+    sendPushToOrg(req0.org_id, `طلب «${addonName}»`, why ? `ما تمت الموافقة: ${why}` : 'ما تمت الموافقة على الطلب', '/addons-market').catch(() => {})
     await logAdminAction(admin, 'reject_addon_request', req0.org_id, orgName, { request_id: id, addon_name: addonName, reason: why })
     return NextResponse.json({ success: true })
   }
@@ -63,6 +70,7 @@ export async function POST(req: Request) {
   if (!res.ok) return NextResponse.json({ error: res.error }, { status: res.status })
   await db.from('addon_requests').update({ status: 'approved', decided_at: now, decided_by_name: admin.full_name, prorated_amount: res.proratedAmount } as any).eq('id', id)
   await db.from('notifications').insert({ org_id: req0.org_id, title: `تم تفعيل «${addonName}»`, message: res.proratedAmount > 0 ? `تفعّلت الإضافة — المستحق ${res.proratedAmount} ⃁ عن الأيام الباقية لين تجديد باقتك` : 'تفعّلت الإضافة وتقدر تستخدمها الحين', type: 'success', read: false } as any)
+  sendPushToOrg(req0.org_id, `تم تفعيل «${addonName}»`, 'تفعّلت الإضافة وتقدر تستخدمها الحين', '/addons-market').catch(() => {})
   await logAdminAction(admin, 'approve_addon_request', req0.org_id, orgName, { request_id: id, addon_name: addonName, quantity: res.quantity, prorated_amount: res.proratedAmount })
   return NextResponse.json({ success: true, proratedAmount: res.proratedAmount, proratedDays: res.proratedDays, quantity: res.quantity })
 }

@@ -79,6 +79,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => { setMenuOpen(false) }, [pathname])
 
+  // طلبات الإضافات المعلّقة: عدّاد بالقائمة + تنبيه لما يوصل طلب جديد
+  const [pendingAddons, setPendingAddons] = useState(0)
+  const [newAlert, setNewAlert] = useState(false)
+  useEffect(() => {
+    if (!admin || !can('manage_users')) return
+    let last = -1
+    const tick = () => fetch('/api/admin/addon-requests?count=1', { headers: { 'x-admin-key': adminKey() } })
+      .then(r => r.ok ? r.json() : null).then(j => {
+        if (!j) return
+        if (last >= 0 && j.pending > last) setNewAlert(true)
+        last = j.pending; setPendingAddons(j.pending)
+      }).catch(() => {})
+    tick()
+    const t = setInterval(tick, 60_000)
+    return () => clearInterval(t)
+  }, [admin, pathname])
+
   const can = useCallback((perm?: string | string[]) => {
     if (!admin) return false
     if (admin.role === 'super_admin') return true
@@ -101,6 +118,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="adm-root" dir="rtl" style={{ minHeight: '100vh', background: A.bg, fontFamily: A.font, color: A.text }}>
       <style>{ADMIN_CSS + SHELL_CSS}</style>
       {content}
+      {newAlert && (
+        <div role="alert" style={{ position: 'fixed', bottom: 20, left: 20, zIndex: 1000, background: A.surface, border: `1px solid ${A.border}`, borderRadius: 12, boxShadow: '0 10px 30px rgba(0,0,0,.18)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, maxWidth: 'calc(100vw - 40px)' }}>
+          <PackagePlus size={20} color={A.primary} />
+          <div style={{ fontSize: 13, fontWeight: 700 }}>وصل طلب إضافة جديد</div>
+          <button onClick={() => { setNewAlert(false); router.push('/storely-admin/addon-requests') }} style={{ background: A.primary, color: 'white', border: 'none', borderRadius: 8, padding: '7px 12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>عرض</button>
+          <button onClick={() => setNewAlert(false)} aria-label="إغلاق" style={{ background: 'none', border: 'none', cursor: 'pointer', color: A.text3 }}><X size={16} /></button>
+        </div>
+      )}
     </div>
   )
 
@@ -131,6 +156,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   className={`adm-nav${active ? ' on' : ''}`}>
                   <Icon size={17} />
                   <span>{item.label}</span>
+                  {item.href === '/storely-admin/addon-requests' && pendingAddons > 0 && (
+                    <span style={{ marginInlineStart: 'auto', background: '#ef4444', color: 'white', borderRadius: 99, fontSize: 11, fontWeight: 800, minWidth: 20, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>{pendingAddons}</span>
+                  )}
                 </a>
               )
             })}
