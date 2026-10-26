@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { componentPriceMap } from '@/lib/recipeCost'
+
+// أيام التقرير بتوقيت السعودية (UTC+3) — مو UTC، عشان صرف الساعة 1 الفجر يحسب لليوم الصح
+const KSA_MS = 3 * 3600_000
+const ksaDay = (iso: string | Date) => new Date(new Date(iso).getTime() + KSA_MS).toISOString().slice(0, 10)
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -20,8 +25,8 @@ export async function POST(req: Request) {
 
     const db = sb()
     // لو ما تحدد نطاق تاريخ، افتراضياً آخر 30 يوم. لو تحدد، نطاق مخصص (تشمل اليوم كامل بالنهاية)
-    const since30 = from ? new Date(from + 'T00:00:00').toISOString() : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-    const untilDate = to ? new Date(to + 'T23:59:59').toISOString() : null
+    const since30 = from ? new Date(from + 'T00:00:00+03:00').toISOString() : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    const untilDate = to ? new Date(to + 'T23:59:59.999+03:00').toISOString() : null
 
     // الوصفات مشتركة على مستوى الشركة كاملة — نجيبها كلها بغض النظر عن الفرع المختار حالياً
     let recipesQ = (db as any).from('recipes').select('id,name').eq('org_id', org_id)
@@ -39,7 +44,7 @@ export async function POST(req: Request) {
     }
 
     const componentIds = [...new Set(recipeItems.map((r: any) => r.component_product_id))]
-    const { data: componentProducts } = await db.from('products').select('id,name,unit').in('id', componentIds as string[])
+    const { data: componentProducts } = await db.from('products').select('id,name,unit,recipe_unit,recipe_unit_factor').in('id', componentIds as string[])
     const compMap: Record<string, any> = {}
     for (const c of (componentProducts || [])) compMap[(c as any).id] = c
 
@@ -60,12 +65,12 @@ export async function POST(req: Request) {
     const resolvedIds = [...new Set(Object.values(resolveMap))]
 
     let movesQ = (db as any).from('stock_movements')
-      .select('product_id,qty_change,created_at,products!inner(org_id,branch_id)')
+      .select('product_id,qty_change,recorded_at,products!inner(org_id,branch_id)')
       .eq('type', 'out')
       .in('product_id', resolvedIds)
       .eq('products.org_id', org_id)
-      .gte('created_at', since30)
-    if (untilDate) movesQ = movesQ.lte('created_at', untilDate)
+      .gte('recorded_at', since30)
+    if (untilDate) movesQ = movesQ.lte('recorded_at', untilDate)
     if (branch_id) movesQ = movesQ.eq('products.branch_id', branch_id)
     const { data: moves } = await movesQ
 
@@ -79,53 +84,50 @@ export async function POST(req: Request) {
     const dailyConsumed: Record<string, Record<string, number>> = {}
     for (const m of (moves || [])) {
       const r = m as any
-      const dateKey = new Date(r.created_at).toISOString().slice(0, 10)
+      const dateKey = ksaDay(r.recorded_at)
       if (!dailyConsumed[dateKey]) dailyConsumed[dateKey] = {}
       dailyConsumed[dateKey][r.product_id] = (dailyConsumed[dateKey][r.product_id] || 0) + Math.abs(r.qty_change)
     }
     const dayKeys: string[] = []
     {
-      const startD = new Date(since30)
-      const endD = untilDate ? new Date(untilDate) : new Date()
-      const cursor = new Date(Date.UTC(startD.getUTCFullYear(), startD.getUTCMonth(), startD.getUTCDate()))
-      const endCursor = new Date(Date.UTC(endD.getUTCFullYear(), endD.getUTCMonth(), endD.getUTCDate()))
+      const cursor = new Date(ksaDay(since30) + 'T00:00:00Z')
+      const endCursor = new Date(ksaDay(untilDate || new Date()) + 'T00:00:00Z')
       while (cursor <= endCursor) {
         dayKeys.push(cursor.toISOString().slice(0, 10))
         cursor.setUTCDate(cursor.getUTCDate() + 1)
       }
     }
+    const usedIn: Record<string, Set<string>> = {}
+    for (const ri of recipeItems as any[]) (usedIn[ri.component_product_id] ??= new Set()).add(ri.recipe_id)
+    // اليومي: نفس القاعدة — المكوّنات الخاصة بالوصفة أول
+    const dailyItems = (rid: string) => {
+      const items = recipeItems.filter((ri: any) => ri.recipe_id === rid)
+      const own = items.filter((ri: any) => (usedIn[ri.component_product_id]?.size || 0) <= 1)
+      return own.length ? own : items
+    }
     const daily = dayKeys.map(dateKey => {
       const dayConsumed = dailyConsumed[dateKey] || {}
       const dayRecipes = recipes.map((r: any) => {
-        const items = recipeItems.filter((ri: any) => ri.recipe_id === r.id)
+        const items = dailyItems(r.id)
         const counts = items.map((ri: any) => {
           const pid = resolveMap[ri.component_product_id] || ri.component_product_id
           const c = dayConsumed[pid] || 0
           return ri.qty > 0 ? c / ri.qty : 0
         })
-        const min = counts.length ? Math.round(Math.min(...counts) * 10) / 10 : 0
+        const min = counts.length ? Math.floor(Math.min(...counts) * 10) / 10 : 0
         return { id: r.id, name: r.name, estimatedProduced: min }
       })
       return { date: dateKey, recipes: dayRecipes }
     })
 
-    // متوسط سعر الوحدة لكل مكوّن (من سجل المشتريات، بنفس منهج تقرير الهدر وحاسبة التكلفة بنافذة الوصفة)
-    let purQ = db.from('purchases').select('name,qty,total_amount').eq('org_id', org_id).not('total_amount', 'is', null).not('qty', 'is', null)
-    if (branch_id) purQ = purQ.eq('branch_id', branch_id)
-    const { data: purchases } = await purQ
-    const priceTotals: Record<string, { total: number; qty: number }> = {}
-    for (const p of (purchases || []) as any[]) {
-      const nm = p.name; const qty = Number(p.qty) || 0; const amt = Number(p.total_amount) || 0
-      if (!nm || qty <= 0) continue
-      if (!priceTotals[nm]) priceTotals[nm] = { total: 0, qty: 0 }
-      priceTotals[nm].total += amt; priceTotals[nm].qty += qty
-    }
-    const priceMap: Record<string, number> = {}
-    for (const nm in priceTotals) priceMap[nm] = priceTotals[nm].qty > 0 ? priceTotals[nm].total / priceTotals[nm].qty : 0
+    const priceMap = await componentPriceMap(db as any, org_id, branch_id)
 
     const { data: stockRows } = await db.from('products').select('id,qty').in('id', resolvedIds as string[])
     const stockMap: Record<string, number> = {}
     for (const s of (stockRows || []) as any[]) stockMap[s.id] = Number(s.qty) || 0
+
+    // مكوّن داخل أكثر من وصفة (مثل الحليب): استهلاكه موزّع بينها، فما يصلح نقدّر منه وصفة لحالها.
+    // نعتمد على المكوّنات الخاصة بالوصفة لو موجودة، والمشتركة بس إذا ما فيه غيرها (ونوضح إنه تقدير أعلى)
 
     const report = recipes.map((r: any) => {
       const items = recipeItems.filter((ri: any) => ri.recipe_id === r.id)
@@ -139,7 +141,8 @@ export async function POST(req: Request) {
         const untracked = totalConsumed === 0 && currentStock !== null && currentStock > 0
         return {
           name: comp?.name || '—',
-          unit: comp?.unit || '',
+          unit: comp?.unit || '', recipe_unit: comp?.recipe_unit || null, recipe_unit_factor: comp?.recipe_unit_factor || null,
+          shared: (usedIn[ri.component_product_id]?.size || 0) > 1,
           consumed: Math.round(totalConsumed * 100) / 100,
           qtyPerUnit: ri.qty,
           impliedCount,
@@ -147,9 +150,12 @@ export async function POST(req: Request) {
           untracked,
         }
       })
-      const trackedComponents = components.filter((c: any) => !c.untracked)
+      const tracked = components.filter((c: any) => !c.untracked)
+      const exclusive = tracked.filter((c: any) => !c.shared)
+      const trackedComponents = exclusive.length ? exclusive : tracked
+      const basis = !tracked.length ? 'none' : exclusive.length ? 'exclusive' : 'shared'
       const allCounts = trackedComponents.map((c: any) => c.impliedCount)
-      const min = allCounts.length ? Math.min(...allCounts) : 0
+      const min = allCounts.length ? Math.floor(Math.min(...allCounts) * 10) / 10 : 0
       const avg = allCounts.length ? Math.round((allCounts.reduce((s: number, n: number) => s + n, 0) / allCounts.length) * 10) / 10 : 0
       const max = allCounts.length ? Math.max(...allCounts) : 0
       const bottleneck = trackedComponents.find((c: any) => c.impliedCount === min)
@@ -161,7 +167,7 @@ export async function POST(req: Request) {
 
       return {
         id: r.id, name: r.name, estimatedProduced: min, avgEstimate: avg, maxEstimate: max,
-        bottleneckName: bottleneck?.name || null, components,
+        bottleneckName: bottleneck?.name || null, components, basis,
         costPerUnit: hasCostData ? Math.round(costPerUnit * 100) / 100 : null,
         totalCost,
       }

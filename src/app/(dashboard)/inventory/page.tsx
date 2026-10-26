@@ -8,6 +8,7 @@ import NumberInput from '@/components/NumberInput'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { Upload, Download, Paperclip, X, AlertTriangle, Camera, Ruler, CheckCircle2, Trash2, Sparkles, Package, Plus, ScanLine, Search } from 'lucide-react'
 import { api } from '@/lib/api-client'
+import { needsConversion } from '@/lib/recipeUnits'
 import { getMe, getOrgId } from '@/lib/session'
 import { cache } from '@/lib/cache'
 import { colors as dsColors } from '@/lib/ds'
@@ -516,7 +517,7 @@ export default function InventoryPage() {
 
       {/* الوحدات الدقيقة الناقصة */}
       {(()=>{
-        const missing = products.filter((p:any)=>!p.recipe_unit_factor)
+        const missing = products.filter((p:any)=>needsConversion(p))
         if(missing.length===0) return null
         return (
           <div className="iv-note">

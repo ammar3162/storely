@@ -722,6 +722,43 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
     })
   })
 
+  describe('recipe production estimate', () => {
+    it('uses the recipe-specific ingredient, shows grams, and counts the Saudi day', async () => {
+      const recon = await import('@/app/api/recipe-reconciliation/route')
+      const mk = async (name: string, unit: string) => (await db.from('products').insert({ org_id: orgId, branch_id: branchA, name: `${name}_${stamp}`, unit, qty: 0, is_active: true } as any).select('id').single()).data as any
+      const milk = await mk('حليب_وصفة', 'لتر'), cupA = await mk('كوب_لاتيه', 'قطعة'), beans = await mk('بن_وصفة', 'كيلو')
+      const recipe = async (name: string, items: any[]) => {
+        const { data: r } = await db.from('recipes').insert({ org_id: orgId, name: `${name}_${stamp}` } as any).select('id').single()
+        await db.from('recipe_items').insert(items.map(i => ({ recipe_id: (r as any).id, ...i })) as any)
+        return (r as any).id
+      }
+      const latte = await recipe('لاتيه', [{ component_product_id: milk.id, qty: 0.2 }, { component_product_id: cupA.id, qty: 1 }, { component_product_id: beans.id, qty: 0.018 }])
+      const flat = await recipe('فلات', [{ component_product_id: milk.id, qty: 0.15 }])
+      // الحليب مشترك بين الوصفتين: صرف 10 لتر ما يعني 50 لاتيه — الأكواب (12) هي المرجع
+      const at = new Date(Date.now() - 3600_000).toISOString()
+      await db.from('stock_movements').insert([
+        { product_id: milk.id, type: 'in', qty_change: 20, recorded_at: at, org_id: orgId, branch_id: branchA },
+        { product_id: cupA.id, type: 'in', qty_change: 50, recorded_at: at, org_id: orgId, branch_id: branchA },
+        { product_id: beans.id, type: 'in', qty_change: 2, recorded_at: at, org_id: orgId, branch_id: branchA },
+        { product_id: milk.id, type: 'out', qty_change: -10, recorded_at: at, org_id: orgId, branch_id: branchA },
+        { product_id: cupA.id, type: 'out', qty_change: -12, recorded_at: at, org_id: orgId, branch_id: branchA },
+        { product_id: beans.id, type: 'out', qty_change: -1, recorded_at: at, org_id: orgId, branch_id: branchA },
+      ] as any).then(({ error }) => expect(error).toBeNull())
+      const r = await call(recon.POST, 'POST', '/api/recipe-reconciliation', { org_id: orgId, branch_id: branchA })
+      expect(r.status).toBe(200)
+      const L = r.json.recipes.find((x: any) => x.id === latte), F = r.json.recipes.find((x: any) => x.id === flat)
+      expect(L.basis).toBe('exclusive')
+      expect(L.estimatedProduced).toBe(12)
+      expect(L.components.find((c: any) => c.unit === 'لتر').shared).toBe(true)
+      expect(F.basis).toBe('shared')
+      const todayKsa = new Date(Date.now() - 3600_000 + 3 * 3600_000).toISOString().slice(0, 10)
+      const day = r.json.daily.find((d: any) => d.date === todayKsa)
+      expect(day.recipes.find((x: any) => x.id === latte).estimatedProduced).toBe(12)
+
+      await db.from('recipes').delete().in('id', [latte, flat])
+    }, 180_000)
+  })
+
   describe('addon requests (approved from the admin panel)', () => {
     it('owner requests, admin approves on top of the current quantity, rejects with a reason; managers cannot request', async () => {
       const reqs = await import('@/app/api/addons-market/requests/route')

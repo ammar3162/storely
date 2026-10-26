@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { componentPriceMap } from '@/lib/recipeCost'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 
@@ -25,20 +26,7 @@ export async function GET(req: Request) {
 
     if (searchParams.get('view') === 'prices') {
       const bid = enforcedBranchId(access, searchParams.get('branch_id'))
-      let q = db.from('purchases').select('name,qty,total_amount').eq('org_id', org_id).not('total_amount', 'is', null).not('qty', 'is', null)
-      if (bid) q = q.eq('branch_id', bid)
-      const { data, error } = await q
-      if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
-      const totals: Record<string, { total: number; qty: number }> = {}
-      for (const p of (data || []) as any[]) {
-        const qty = Number(p.qty) || 0
-        if (!p.name || qty <= 0) continue
-        totals[p.name] ??= { total: 0, qty: 0 }
-        totals[p.name].total += Number(p.total_amount) || 0
-        totals[p.name].qty += qty
-      }
-      const price_map: Record<string, number> = {}
-      for (const nm in totals) price_map[nm] = totals[nm].qty > 0 ? totals[nm].total / totals[nm].qty : 0
+      const price_map = await componentPriceMap(db, org_id, bid)
       return NextResponse.json({ success: true, price_map })
     }
 
