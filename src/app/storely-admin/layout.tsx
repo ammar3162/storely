@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState, type ComponentType } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { PlayCircle, Wallet, Mail,
+import { PlayCircle, Wallet, Mail, PackagePlus,
   LayoutDashboard, Users, TrendingUp, Inbox, Truck, Handshake, Bell, Megaphone,
   Activity, MessageCircle, HardDrive, ScrollText, FileCheck, ShieldAlert,
   Package, UserCog, Settings, LogOut, Menu, X,
@@ -19,6 +19,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
     { href: '/storely-admin/metrics', label: 'مقاييس الإيراد', icon: TrendingUp, perm: 'view_metrics' },
   ] },
   { title: 'المبيعات والشراكات', items: [
+    { href: '/storely-admin/addon-requests', label: 'طلبات الإضافات', icon: PackagePlus, perm: 'manage_users' },
     { href: '/storely-admin/demo-requests', label: 'طلبات العرض', icon: Inbox },
     { href: '/storely-admin/supplier-applications', label: 'طلبات الموردين', icon: Truck, perm: 'manage_suppliers' },
     { href: '/storely-admin/partners', label: 'الشركاء', icon: Handshake },

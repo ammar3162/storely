@@ -47,6 +47,7 @@ export default function AddonsMarketPage() {
 
   async function load(oid: string) {
     const j = await api.get('/api/addons-market', { org_id: oid })
+    loadRequests(oid)
     if (j.success) {
       setAddons(j.addons)
       setBranches(j.branches || [])
@@ -70,27 +71,47 @@ export default function AddonsMarketPage() {
     )
   }
 
-  // المنيو الإلكتروني: كل فرع بسعر الإضافة
-  function menuLink(addon: any, ids: string[], adding: boolean) {
-    const names = ids.map(id => branches.find(b => b.id === id)?.name).filter(Boolean).join('، ')
-    const text = adding
-      ? `مرحباً، أبي أضيف فروع لميزة "${addon.name}": ${names} — ${ids.length} × ${addon.monthly_price} ⃁/شهر لمنشأة: ${orgName}`
-      : `مرحباً، أبي أشترك بميزة "${addon.name}" للفروع: ${names} — ${ids.length} × ${addon.monthly_price} = ${ids.length * addon.monthly_price} ⃁/شهر لمنشأة: ${orgName}`
-    const d = dueNow(addon, ids.length)
-    return `https://wa.me/966594351667?text=${encodeURIComponent(`${text}\nالمستحق الحين: ${d.amount} ر.س (${d.days} يوم لين تجديد الباقة)`)}`
+  // طلب إضافة: يوصل للأدمن بلوحته ويوافق عليه (بدل رسالة واتساب)
+  const [requests, setRequests] = useState<any[]>([])
+  const [sending, setSending] = useState<string | null>(null)
+  async function loadRequests(oid: string) {
+    const j = await api.get('/api/addons-market/requests', { org_id: oid })
+    if (j.success) setRequests(j.requests || [])
   }
-
-  function subscribeLink(addon: any, qty: number = 1, branchId?: string) {
-    const isStaffAddon = addon.slug === 'extra_staff'
-    const isQtyAddon = addon.slug === 'extra_staff' || addon.slug === 'extra_suppliers' || addon.slug === 'extra_branch'
-    const branchName = branchId ? (branches.find(b => b.id === branchId)?.name || '') : ''
-    const text = isStaffAddon
-      ? `مرحباً، أبي أشترك بميزة "${addon.name}" لفرع "${branchName}" — الكمية: ${qty} (${qty * addon.monthly_price} ⃁/شهر) لمنشأة: ${orgName}`
-      : isQtyAddon
-      ? `مرحباً، أبي أشترك بميزة "${addon.name}" — الكمية: ${qty} (${qty * addon.monthly_price} ⃁/شهر) لمنشأة: ${orgName}`
-      : `مرحباً، أبي أشترك بميزة "${addon.name}" (${addon.monthly_price} ⃁/شهر) لمنشأة: ${orgName}`
-    const d = dueNow(addon, qty)
-    return `https://wa.me/966594351667?text=${encodeURIComponent(`${text}\nالمستحق الحين: ${d.amount} ر.س (${d.days} يوم لين تجديد الباقة)`)}`
+  const pendingFor = (addonId: string) => requests.find(r => r.addon_id === addonId && r.status === 'pending')
+  async function requestAddon(addon: any, quantity: number, branchIds?: string[]) {
+    setSending(addon.id)
+    const j = await api.post('/api/addons-market/requests', { org_id: orgId, addon_id: addon.id, quantity, branch_ids: branchIds })
+    setSending(null)
+    if (!j.success) { toast(j.error || 'فشل إرسال الطلب', 'error'); return }
+    toast('وصلنا طلبك — نراجعه ونفعّل الإضافة ويوصلك إشعار')
+    loadRequests(orgId)
+  }
+  async function cancelRequest(r: any) {
+    const j = await api.del('/api/addons-market/requests', undefined, { org_id: orgId, id: r.id })
+    if (!j.success) { toast(j.error || 'فشل الإلغاء', 'error'); return }
+    toast('تم إلغاء الطلب'); loadRequests(orgId)
+  }
+  function RequestBtn({ addon, quantity, branchIds, label, link }: { addon: any; quantity: number; branchIds?: string[]; label: string; link?: boolean }) {
+    const pend = pendingFor(addon.id)
+    if (pend) return (
+      <div style={{ marginTop: link ? 10 : 0, padding: '10px 12px', borderRadius: 10, background: colors.warningLight, border: `1px solid ${colors.warningBorder}`, fontSize: 12, color: colors.warning, fontWeight: 700, textAlign: 'center' as const }}>
+        طلبك قيد المراجعة
+        <button onClick={() => cancelRequest(pend)} style={{ display: 'block', margin: '6px auto 0', border: 'none', background: 'none', color: colors.text3, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>إلغاء الطلب</button>
+      </div>
+    )
+    if (link) return (
+      <button onClick={() => requestAddon(addon, quantity, branchIds)} disabled={sending === addon.id}
+        style={{ display: 'inline-block', marginTop: 10, fontSize: 11, fontWeight: 700, color: colors.primary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+        {sending === addon.id ? 'جاري الإرسال...' : label}
+      </button>
+    )
+    return (
+      <button onClick={() => requestAddon(addon, quantity, branchIds)} disabled={sending === addon.id}
+        style={{ display: 'block', width: '100%', textAlign: 'center' as const, padding: '11px', background: colors.primary, color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: sending === addon.id ? .7 : 1 }}>
+        {sending === addon.id ? 'جاري الإرسال...' : label}
+      </button>
+    )
   }
 
   async function cancelAddon(addon: any, branchId?: string) {
@@ -190,10 +211,7 @@ export default function AddonsMarketPage() {
                           onChange={e => setQtyMap(prev => ({ ...prev, [a.id]: Math.max(1, Math.min(20, Number(e.target.value) || 1)) }))}
                           style={{ width: 56, padding: '6px 4px', borderRadius: 8, border: `1px solid ${colors.border2}`, fontSize: 12, textAlign: 'center' as const, fontFamily: 'inherit' }} />
                       </div>
-                      <a href={subscribeLink(a, qty, selectedBranch)} target="_blank" rel="noopener noreferrer"
-                        style={{ display: 'block', textAlign: 'center' as const, padding: '11px', background: colors.primary, color: 'white', borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-                        اشتراك عبر واتساب ({qty * a.monthly_price} ⃁)
-                      </a>
+                      <RequestBtn addon={a} quantity={qty} branchIds={selectedBranch ? [selectedBranch] : undefined} label={`اطلب الإضافة (${qty * a.monthly_price} ⃁)`} />
                     </>
                   ) : (
                     <div style={{ fontSize: 11, color: colors.text4, textAlign: 'center' as const }}>ما فيه فروع نشطة حالياً</div>
@@ -249,10 +267,7 @@ export default function AddonsMarketPage() {
                       {picked.length > 0 ? (
                         <>
                           <DueNote addon={a} qty={picked.length} />
-                          <a href={menuLink(a, picked, !!active)} target="_blank" rel="noopener noreferrer"
-                            style={{ display: 'block', textAlign: 'center' as const, padding: '11px', background: colors.primary, color: 'white', borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-                            {active ? 'اطلب إضافة الفروع عبر واتساب' : 'اشتراك عبر واتساب'} ({picked.length * a.monthly_price} ⃁/شهر)
-                          </a>
+                          <RequestBtn addon={a} quantity={picked.length} branchIds={picked} label={`${active ? 'اطلب إضافة الفروع' : 'اطلب الإضافة'} (${picked.length * a.monthly_price} ⃁/شهر)`} />
                         </>
                       ) : (
                         <div style={{ fontSize: 11, color: colors.text4, textAlign: 'center' as const }}>اختر فرع واحد على الأقل</div>
@@ -289,10 +304,7 @@ export default function AddonsMarketPage() {
                     <div style={{ fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 4 }}>✅ مفعّلة{(a.slug==='extra_suppliers'||a.slug==='extra_branch') ? ` (${a.subscription?.quantity||1})` : ''}</div>
                     <div style={{ fontSize: 10, color: colors.text4 }}>حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA', { numberingSystem: 'latn' })}</div>
                     {a.slug === 'extra_branch' && (
-                      <a href={subscribeLink(a, (a.subscription?.quantity || 1) + 1)} target="_blank" rel="noopener noreferrer"
-                        style={{ display: 'inline-block', marginTop: 10, fontSize: 11, fontWeight: 700, color: colors.primary }}>
-                        تحتاج فرع زيادة؟ اطلب عبر واتساب
-                      </a>
+                      <RequestBtn addon={a} quantity={1} label="تحتاج فرع زيادة؟ اطلب فرع إضافي" link />
                     )}
                   </div>
                 ) : (
@@ -306,10 +318,7 @@ export default function AddonsMarketPage() {
                       </div>
                     )}
                     <DueNote addon={a} qty={qtyMap[a.id] || 1} />
-                    <a href={subscribeLink(a, qtyMap[a.id] || 1)} target="_blank" rel="noopener noreferrer"
-                      style={{ display: 'block', textAlign: 'center' as const, padding: '11px', background: colors.primary, color: 'white', borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-                      اشتراك عبر واتساب
-                    </a>
+                    <RequestBtn addon={a} quantity={qtyMap[a.id] || 1} label="اطلب الإضافة" />
                   </>
                 )}
               </div>
