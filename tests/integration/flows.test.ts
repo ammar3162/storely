@@ -751,9 +751,28 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       expect(L.estimatedProduced).toBe(12)
       expect(L.components.find((c: any) => c.unit === 'لتر').shared).toBe(true)
       expect(F.basis).toBe('shared')
-      const todayKsa = new Date(Date.now() - 3600_000 + 3 * 3600_000).toISOString().slice(0, 10)
-      const day = r.json.daily.find((d: any) => d.date === todayKsa)
-      expect(day.recipes.find((x: any) => x.id === latte).estimatedProduced).toBe(12)
+
+      // طريقة الجرد: جرد 50 كوب، وصل 50 + 20، هدر 2، جرد آخر 40 → استُهلك 78 كوب = 78 لاتيه (مهما كان الصرف المسجّل)
+      const counts = await import('@/app/api/stock-counts/route')
+      const t0 = new Date(Date.now() - 3 * 864e5).toISOString()
+      await db.from('stock_counts').insert({ org_id: orgId, branch_id: branchA, product_id: cupA.id, counted_qty: 50, system_qty: 50, counted_at: t0 } as any)
+      await db.from('stock_movements').insert([
+        { product_id: cupA.id, org_id: orgId, branch_id: branchA, type: 'in', qty_change: 20, recorded_at: new Date(Date.now() - 2 * 864e5).toISOString() },
+        { product_id: cupA.id, org_id: orgId, branch_id: branchA, type: 'waste', qty_change: -2, recorded_at: new Date(Date.now() - 864e5).toISOString() },
+      ] as any)
+      const { data: cupNow } = await db.from('products').select('qty').eq('id', cupA.id).single()
+      const saved = await call(counts.POST, 'POST', '/api/stock-counts', { org_id: orgId, counts: [{ product_id: cupA.id, counted_qty: 40 }] })
+      expect(saved.status).toBe(200)
+      expect((await db.from('products').select('qty').eq('id', cupA.id).single()).data).toMatchObject({ qty: 40 })
+      expect(saved.json.adjusted).toBe((cupNow as any).qty === 40 ? 0 : 1)
+      expect((await call(counts.POST, 'POST', '/api/stock-counts', { org_id: orgId, counts: [{ product_id: cupA.id, counted_qty: 1.5 }] })).status).toBe(400)
+
+      const from = new Date(Date.now() - 4 * 864e5 + 3 * 3600e3).toISOString().slice(0, 10)
+      const rc = await call(recon.POST, 'POST', '/api/recipe-reconciliation', { org_id: orgId, branch_id: branchA, method: 'count', from })
+      const LC = rc.json.recipes.find((x: any) => x.id === latte)
+      expect(rc.json.method).toBe('count')
+      expect(LC.estimatedProduced).toBe(78)
+      expect(LC.bottleneckName).toContain('كوب_لاتيه')
 
       await db.from('recipes').delete().in('id', [latte, flat])
     }, 180_000)

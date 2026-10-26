@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { componentPriceMap } from '@/lib/recipeCost'
+import { usageFromCounts, type CountUsage } from '@/lib/countUsage'
 
-// أيام التقرير بتوقيت السعودية (UTC+3) — مو UTC، عشان صرف الساعة 1 الفجر يحسب لليوم الصح
-const KSA_MS = 3 * 3600_000
-const ksaDay = (iso: string | Date) => new Date(new Date(iso).getTime() + KSA_MS).toISOString().slice(0, 10)
+// حدود الفترة بتوقيت السعودية (UTC+3)
+
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -18,7 +18,8 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
  */
 export async function POST(req: Request) {
   try {
-    const { org_id, branch_id: requestedBranch, from, to } = await req.json()
+    const { org_id, branch_id: requestedBranch, from, to, method } = await req.json()
+    const byCount = method === 'count'
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
     const branch_id = enforcedBranchId(access, requestedBranch)   // مدير الفرع: فرعه بس مهما أرسل الطلب
@@ -33,14 +34,14 @@ export async function POST(req: Request) {
     const { data: recipes } = await recipesQ
 
     if (!recipes || recipes.length === 0) {
-      return NextResponse.json({ hasData: false, recipes: [], daily: [] })
+      return NextResponse.json({ hasData: false, recipes: [] })
     }
 
     const recipeIds = recipes.map((r: any) => r.id)
     const { data: recipeItems } = await (db as any).from('recipe_items').select('recipe_id,component_product_id,qty').in('recipe_id', recipeIds)
 
     if (!recipeItems || recipeItems.length === 0) {
-      return NextResponse.json({ hasData: true, recipes: recipes.map((r: any) => ({ id: r.id, name: r.name, estimatedProduced: 0, costPerUnit: null, totalCost: null, components: [] })), daily: [] })
+      return NextResponse.json({ hasData: true, recipes: recipes.map((r: any) => ({ id: r.id, name: r.name, estimatedProduced: 0, costPerUnit: null, totalCost: null, components: [] })) })
     }
 
     const componentIds = [...new Set(recipeItems.map((r: any) => r.component_product_id))]
@@ -81,45 +82,16 @@ export async function POST(req: Request) {
     }
 
     // نفس منطق "العنق الزجاجي" بس محسوب لكل يوم لحاله — عشان نعرض جدول يومي بدل رقم مجمّع واحد
-    const dailyConsumed: Record<string, Record<string, number>> = {}
-    for (const m of (moves || [])) {
-      const r = m as any
-      const dateKey = ksaDay(r.recorded_at)
-      if (!dailyConsumed[dateKey]) dailyConsumed[dateKey] = {}
-      dailyConsumed[dateKey][r.product_id] = (dailyConsumed[dateKey][r.product_id] || 0) + Math.abs(r.qty_change)
+    // طريقة الجرد: الاستهلاك = الفرق بين جردين بعد الوارد والهدر، بدل مجموع الصرف المسجّل
+    let countMap: Record<string, CountUsage> = {}
+    if (byCount) {
+      countMap = await usageFromCounts(db as any, org_id, resolvedIds as string[], since30, untilDate)
+      for (const k in consumed) delete consumed[k]
+      for (const pid in countMap) consumed[pid] = countMap[pid].used
     }
-    const dayKeys: string[] = []
-    {
-      const cursor = new Date(ksaDay(since30) + 'T00:00:00Z')
-      const endCursor = new Date(ksaDay(untilDate || new Date()) + 'T00:00:00Z')
-      while (cursor <= endCursor) {
-        dayKeys.push(cursor.toISOString().slice(0, 10))
-        cursor.setUTCDate(cursor.getUTCDate() + 1)
-      }
-    }
+
     const usedIn: Record<string, Set<string>> = {}
     for (const ri of recipeItems as any[]) (usedIn[ri.component_product_id] ??= new Set()).add(ri.recipe_id)
-    // اليومي: نفس القاعدة — المكوّنات الخاصة بالوصفة أول
-    const dailyItems = (rid: string) => {
-      const items = recipeItems.filter((ri: any) => ri.recipe_id === rid)
-      const own = items.filter((ri: any) => (usedIn[ri.component_product_id]?.size || 0) <= 1)
-      return own.length ? own : items
-    }
-    const daily = dayKeys.map(dateKey => {
-      const dayConsumed = dailyConsumed[dateKey] || {}
-      const dayRecipes = recipes.map((r: any) => {
-        const items = dailyItems(r.id)
-        const counts = items.map((ri: any) => {
-          const pid = resolveMap[ri.component_product_id] || ri.component_product_id
-          const c = dayConsumed[pid] || 0
-          return ri.qty > 0 ? c / ri.qty : 0
-        })
-        const min = counts.length ? Math.floor(Math.min(...counts) * 10) / 10 : 0
-        return { id: r.id, name: r.name, estimatedProduced: min }
-      })
-      return { date: dateKey, recipes: dayRecipes }
-    })
-
     const priceMap = await componentPriceMap(db as any, org_id, branch_id)
 
     const { data: stockRows } = await db.from('products').select('id,qty').in('id', resolvedIds as string[])
@@ -138,7 +110,7 @@ export async function POST(req: Request) {
         const impliedCount = ri.qty > 0 ? Math.round((totalConsumed / ri.qty) * 10) / 10 : 0
         const unitPrice = comp ? (priceMap[comp.name] || 0) : 0
         const currentStock = stockMap[pid] ?? null
-        const untracked = totalConsumed === 0 && currentStock !== null && currentStock > 0
+        const untracked = byCount ? !countMap[pid] : (totalConsumed === 0 && currentStock !== null && currentStock > 0)
         return {
           name: comp?.name || '—',
           unit: comp?.unit || '', recipe_unit: comp?.recipe_unit || null, recipe_unit_factor: comp?.recipe_unit_factor || null,
@@ -147,7 +119,7 @@ export async function POST(req: Request) {
           qtyPerUnit: ri.qty,
           impliedCount,
           costPerUnit: Math.round(unitPrice * ri.qty * 100) / 100,
-          untracked,
+          untracked, countFrom: countMap[pid]?.from || null, countTo: countMap[pid]?.to || null,
         }
       })
       const tracked = components.filter((c: any) => !c.untracked)
@@ -173,7 +145,7 @@ export async function POST(req: Request) {
       }
     })
 
-    return NextResponse.json({ hasData: true, recipes: report, daily })
+    return NextResponse.json({ hasData: true, method: byCount ? 'count' : 'dispense', recipes: report })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

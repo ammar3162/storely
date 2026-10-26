@@ -6,7 +6,7 @@ import { catsFor, unitsFor } from '@/lib/businessTypes'
 import SelectOrOther from '@/components/SelectOrOther'
 import NumberInput from '@/components/NumberInput'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
-import { Upload, Download, Paperclip, X, AlertTriangle, Camera, Ruler, CheckCircle2, Trash2, Sparkles, Package, Plus, ScanLine, Search } from 'lucide-react'
+import { Upload, Download, Paperclip, X, AlertTriangle, Camera, Ruler, CheckCircle2, Trash2, Sparkles, Package, Plus, ScanLine, Search, ClipboardCheck } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import { needsConversion } from '@/lib/recipeUnits'
 import { getMe, getOrgId } from '@/lib/session'
@@ -16,6 +16,7 @@ import { toast } from '@/components/toast'
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh'
 import Pagination from '@/components/pagination'
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
+const StockCountSheet = lazy(() => import('@/components/StockCountSheet'))
 import Papa from 'papaparse'
 
 // موحّد مع نظام التصميم المشترك (@/lib/ds)
@@ -85,6 +86,11 @@ export default function InventoryPage() {
   const [showAudit, setShowAudit] = useState(false)
   const [showScan, setShowScan]   = useState(false)
   const [showJardScan, setShowJardScan] = useState(false)
+  const [countSheet, setCountSheet] = useState<Record<string, any> | null>(null)
+  async function openCount() {
+    const j = await api.get('/api/stock-counts', { org_id: sessionStorage.getItem('s_org_id'), branch_id: sessionStorage.getItem('s_branch_id') })
+    setCountSheet(j.latest || {})
+  }
   const [showImport, setShowImport] = useState(false)
   const [importPreview, setImportPreview] = useState<any[]>([])
   const [importing, setImporting] = useState(false)
@@ -319,6 +325,8 @@ export default function InventoryPage() {
 
       {/* Barcode */}
       {showScan&&<Suspense fallback={null}><BarcodeScanner onScan={(code:string)=>{setForm(f=>({...f,sku:code}));setShowScan(false)}} onClose={()=>setShowScan(false)}/></Suspense>}
+      {countSheet&&<Suspense fallback={null}><StockCountSheet orgId={sessionStorage.getItem('s_org_id')||''} products={products as any} lastCounts={countSheet}
+        onClose={()=>setCountSheet(null)} onSaved={()=>{setCountSheet(null);load(true)}}/></Suspense>}
       {showJardScan&&<Suspense fallback={null}><BarcodeScanner onScan={(code:string)=>{
         setShowJardScan(false)
         const found=products.find(p=>p.sku===code)
@@ -508,6 +516,7 @@ export default function InventoryPage() {
         <div className="iv-tools">
           <button className="sh-btn" onClick={exportCSV} title="تصدير CSV"><Download size={16}/><span className="iv-hide-sm">تصدير</span></button>
           <button className="sh-btn" onClick={()=>setShowImport(true)} title="استيراد من ملف"><Upload size={16}/><span className="iv-hide-sm">استيراد</span></button>
+          <button className="sh-btn" onClick={openCount} title="جرد المخزون الفعلي"><ClipboardCheck size={16}/><span className="iv-hide-sm">جرد</span></button>
           <button className="sh-btn" onClick={()=>setShowJardScan(true)} title="جرد بالكاميرا"><ScanLine size={16}/><span className="iv-hide-sm">جرد بالباركود</span></button>
           <button className="sh-btn sh-btn-primary" onClick={()=>{setEditItem(null);setAddQty(0);setForm({name:'',sku:'',unit:'قطعة',qty:0,reorder_point:5,category:'',expiry_date:'',recipe_unit:'',recipe_unit_factor:''});setShowAdd(true)}}>
             <Plus size={16}/> إضافة منتج

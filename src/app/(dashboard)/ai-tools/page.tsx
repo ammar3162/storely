@@ -94,6 +94,7 @@ export default function AIToolsPage() {
   const [editingRecipeId, setEditingRecipeId] = useState<string|null>(null)
   const [deletingRecipeId, setDeletingRecipeId] = useState<string|null>(null)
   const [reconFrom, setReconFrom] = useState('')
+  const [reconMethod, setReconMethod] = useState<'count'|'dispense'>('count')
   const [reconTo, setReconTo] = useState('')
 
   async function loadRecipesList() {
@@ -691,6 +692,22 @@ export default function AIToolsPage() {
               <div style={{fontSize:11,color:C.text3}}>عرّف وصفة (اسم + مكوناتها)، والنظام يقدّر كم وحدة تم تحضيرها بناءً على استهلاك موظفيك الفعلي للمواد الخام</div>
             </div>
           </div>
+          <div style={{display:'flex',background:C.surface,border:`1px solid ${C.border2}`,borderRadius:9,padding:3,gap:3}}>
+            {([['count','حسب الجرد (الأدق)'],['dispense','حسب الصرف المسجّل']] as const).map(([k,l])=>(
+              <button key={k} onClick={()=>{setReconMethod(k);setRecipeReconReport(null)}} style={{flex:1,padding:'7px',border:'none',borderRadius:7,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',background:reconMethod===k?'#7c3aed':'transparent',color:reconMethod===k?'white':C.text3}}>{l}</button>
+            ))}
+          </div>
+          <div style={{fontSize:10,color:C.text3,lineHeight:1.6}}>
+            {reconMethod==='count'
+              ? 'الاستهلاك = جرد أول الفترة + المشتريات − الهدر − جرد آخر الفترة. يحتاج جردين من صفحة المخزون (زر «جرد»)'
+              : 'من الكميات اللي سجّلها الموظفون كصرف. الموظف ياخذ بالوحدة الكاملة، فاستخدمها لفترة أسبوع أو أكثر'}
+          </div>
+          <div style={{display:'flex',gap:6}}>
+            {([[7,'آخر أسبوع'],[30,'آخر شهر']] as const).map(([d,l])=>(
+              <button key={d} onClick={()=>{const t=new Date(Date.now()+3*3600e3);const f=new Date(t.getTime()-d*864e5);setReconFrom(f.toISOString().slice(0,10));setReconTo(t.toISOString().slice(0,10))}}
+                style={{padding:'4px 10px',background:'white',border:`1px solid ${C.border2}`,borderRadius:99,fontSize:10,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>{l}</button>
+            ))}
+          </div>
           <div style={{display:'flex',gap:6,alignItems:'center'}}>
             <span style={{fontSize:10,color:C.text4,whiteSpace:'nowrap' as const}}>من</span>
             <input type="date" value={reconFrom} onChange={e=>setReconFrom(e.target.value)} style={{flex:1,padding:'6px 8px',border:`1px solid ${C.border2}`,borderRadius:7,fontSize:10,fontFamily:'inherit'}}/>
@@ -715,7 +732,7 @@ export default function AIToolsPage() {
               const orgId=sessionStorage.getItem('s_org_id')
               if(!orgId) return
               setReconLoading(true)
-              const res=await fetch('/api/recipe-reconciliation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id'),from:reconFrom||undefined,to:reconTo||undefined})})
+              const res=await fetch('/api/recipe-reconciliation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id'),from:reconFrom||undefined,to:reconTo||undefined,method:reconMethod})})
               const data=await res.json()
               setRecipeReconReport(data)
               setReconLoading(false)
@@ -748,7 +765,7 @@ export default function AIToolsPage() {
       {recipeReconReport && (
         <div style={{marginTop:16,background:C.surface,borderRadius:14,padding:'20px',border:'1.5px solid #ddd6fe'}}>
           <div style={{fontSize:14,fontWeight:800,color:'#5b21b6',marginBottom:4}}>تقدير الإنتاج ({reconFrom||reconTo ? `${reconFrom||'البداية'} إلى ${reconTo||'اليوم'}` : 'آخر 30 يوم'})</div>
-          <div style={{fontSize:11,color:'#7c3aed',marginBottom:16}}>محسوب من الصرف الفعلي للمواد الخام ÷ كمية كل مكوّن بالوصفة، بتوقيت السعودية. الرقم تقديري ومقرّب للأقل</div>
+          <div style={{fontSize:11,color:'#7c3aed',marginBottom:16}}>{recipeReconReport.method==='count'?'محسوب من الفرق بين الجرد الفعلي أول وآخر الفترة':'محسوب من الصرف المسجّل للمواد الخام'} ÷ كمية كل مكوّن بالوصفة. الرقم تقديري ومقرّب للأقل</div>
 
           {!recipeReconReport.hasData ? (
             <div style={{textAlign:'center',padding:'24px',color:'#9ca3af',fontSize:13}}>
@@ -783,7 +800,7 @@ export default function AIToolsPage() {
                     <div style={{fontSize:10,color:'#475569',background:'#f1f5f9',borderRadius:7,padding:'6px 10px',marginBottom:8,display:'flex',gap:6,alignItems:'flex-start'}}><Info size={12} style={{flexShrink:0,marginTop:2}}/>كل مكوّنات هذي الوصفة مستخدمة بوصفات ثانية، فالرقم حد أعلى. أضف مكوّن خاص بها (مثل الكوب أو العلبة) عشان يصير التقدير أدق</div>
                   )}
                   {r.basis==='none' && (
-                    <div style={{fontSize:10,color:'#475569',marginBottom:8}}>ما فيه صرف مسجّل لمكوّنات هذي الوصفة خلال الفترة</div>
+                    <div style={{fontSize:10,color:'#475569',marginBottom:8}}>{recipeReconReport.method==='count'?'ما فيه جردين لمكوّنات هذي الوصفة خلال الفترة — سوّ جرد من صفحة المخزون أول الفترة وآخرها':'ما فيه صرف مسجّل لمكوّنات هذي الوصفة خلال الفترة'}</div>
                   )}
                   {r.bottleneckName && r.basis!=='none' && (
                     <div style={{fontSize:10,color:'#b45309',marginBottom:8,display:'flex',gap:5,alignItems:'center'}}><AlertTriangle size={12}/>التقدير مبني على: {r.bottleneckName} (أقل مكوّن صرفاً نسبةً لكميته بالوصفة)</div>
@@ -794,8 +811,8 @@ export default function AIToolsPage() {
                         const isBottleneck = c.name===r.bottleneckName
                         return (
                           <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:10,color:isBottleneck?'#b45309':c.untracked?'#94a3b8':C.text4,fontWeight:isBottleneck?700:400}}>
-                            <span>{c.name}{c.shared?' (مشترك)':''}: صُرف {formatQty(c.consumed,c)} · بالوصفة {formatQty(c.qtyPerUnit,c)}</span>
-                            <span>{c.untracked ? 'ما ينصرف بالنظام — مستثنى' : `يكفي لـ ${c.impliedCount} وحدة`}</span>
+                            <span>{c.name}{c.shared?' (مشترك)':''}: {recipeReconReport.method==='count'?'استُهلك':'صُرف'} {formatQty(c.consumed,c)} · بالوصفة {formatQty(c.qtyPerUnit,c)}</span>
+                            <span>{c.untracked ? (recipeReconReport.method==='count'?'ما له جردين — مستثنى':'ما ينصرف بالنظام — مستثنى') : `يكفي لـ ${c.impliedCount} وحدة`}</span>
                           </div>
                         )
                       })}

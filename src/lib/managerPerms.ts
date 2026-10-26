@@ -68,6 +68,7 @@ export const API_GUARDS: Record<string, { read?: Rule; write?: Rule }> = {
   '/api/products/import': { read: ['inventory'], write: ['inventory'] },
   '/api/sync-product-to-staff': { write: ['inventory', 'purchases'] },
   '/api/stock-movements': { write: ['dispense'] },
+  '/api/stock-counts': { read: ['inventory', 'ai_tools'], write: ['inventory'] },
   '/api/notify-low-stock-instant': { write: ['dispense'] },
   '/api/notify-staff-dispense': { write: ['dispense'] },
   '/api/notify-waste': { write: ['dispense'] },
