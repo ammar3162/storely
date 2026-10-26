@@ -722,6 +722,64 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
     })
   })
 
+  describe('addon requests (approved from the admin panel)', () => {
+    it('owner requests, admin approves on top of the current quantity, rejects with a reason; managers cannot request', async () => {
+      const reqs = await import('@/app/api/addons-market/requests/route')
+      const adminReqs = await import('@/app/api/admin/addon-requests/route')
+      const admin = async (body: any) => {
+        const res = await adminReqs.POST(new Request('http://test/api/admin/addon-requests', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify(body) }))
+        return { status: res.status, json: await res.json() as any }
+      }
+      const { data: addon } = await db.from('marketplace_addons').select('id').eq('slug', 'extra_suppliers').single()
+      const addonId = (addon as any).id
+      const { data: org0 } = await db.from('organizations').select('max_suppliers').eq('id', orgId).single()
+      const base = (org0 as any).max_suppliers || 0
+
+      auth.current = { userId, orgId, role: 'manager', branchId: branchA }
+      expect((await call(reqs.POST, 'POST', '/api/addons-market/requests', { org_id: orgId, addon_id: addonId, quantity: 1 })).status).toBe(403)
+      auth.current = { userId, orgId, role: 'owner', branchId: null }
+
+      // طلبين لنفس الإضافة = طلب معلّق واحد
+      expect((await call(reqs.POST, 'POST', '/api/addons-market/requests', { org_id: orgId, addon_id: addonId, quantity: 1 })).status).toBe(200)
+      expect((await call(reqs.POST, 'POST', '/api/addons-market/requests', { org_id: orgId, addon_id: addonId, quantity: 2 })).status).toBe(200)
+      let mine = (await call(reqs.GET, 'GET', `/api/addons-market/requests?org_id=${orgId}`)).json.requests.filter((r: any) => r.status === 'pending')
+      expect(mine).toHaveLength(1)
+      expect(mine[0].quantity).toBe(2)
+
+      const list = await adminReqs.GET(new Request('http://test/api/admin/addon-requests', { headers: { 'x-admin-key': 'it-admin' } }))
+      expect(((await list.json()) as any).requests.some((r: any) => r.id === mine[0].id)).toBe(true)
+
+      expect((await admin({ id: mine[0].id, action: 'approve' })).status).toBe(200)
+      const sub = async () => (await db.from('org_addon_subscriptions').select('quantity,status').eq('org_id', orgId).eq('addon_id', addonId).single()).data as any
+      expect(await sub()).toMatchObject({ quantity: 2, status: 'active' })
+      expect((await admin({ id: mine[0].id, action: 'approve' })).status).toBe(409)
+
+      // طلب ثاني يضيف فوق الموجود
+      await call(reqs.POST, 'POST', '/api/addons-market/requests', { org_id: orgId, addon_id: addonId, quantity: 1 })
+      mine = (await call(reqs.GET, 'GET', `/api/addons-market/requests?org_id=${orgId}`)).json.requests.filter((r: any) => r.status === 'pending')
+      await admin({ id: mine[0].id, action: 'approve' })
+      expect((await sub()).quantity).toBe(3)
+      const { data: org1 } = await db.from('organizations').select('max_suppliers').eq('id', orgId).single()
+      expect((org1 as any).max_suppliers).toBe(base + 3)
+
+      // رفض بسبب + إشعار للعميل
+      await call(reqs.POST, 'POST', '/api/addons-market/requests', { org_id: orgId, addon_id: addonId, quantity: 1 })
+      mine = (await call(reqs.GET, 'GET', `/api/addons-market/requests?org_id=${orgId}`)).json.requests.filter((r: any) => r.status === 'pending')
+      expect((await admin({ id: mine[0].id, action: 'reject', reason: 'اختبار' })).status).toBe(200)
+      expect((await sub()).quantity).toBe(3)
+      const { data: notes } = await db.from('notifications').select('message').eq('org_id', orgId).ilike('message', '%اختبار%')
+      expect((notes || []).length).toBe(1)
+
+      // إلغاء من العميل
+      await call(reqs.POST, 'POST', '/api/addons-market/requests', { org_id: orgId, addon_id: addonId, quantity: 1 })
+      mine = (await call(reqs.GET, 'GET', `/api/addons-market/requests?org_id=${orgId}`)).json.requests.filter((r: any) => r.status === 'pending')
+      expect((await call(reqs.DELETE, 'DELETE', '/api/addons-market/requests', { org_id: orgId, id: mine[0].id })).status).toBe(200)
+
+      await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).eq('addon_id', addonId)
+      await db.from('organizations').update({ max_suppliers: base } as any).eq('id', orgId)
+    }), 180_000
+  })
+
   describe('renewal reminders', () => {
     it('expired owners get a renewal reminder every two days, not daily', async () => {
       process.env.CRON_SECRET = process.env.CRON_SECRET || 'it-cron'
