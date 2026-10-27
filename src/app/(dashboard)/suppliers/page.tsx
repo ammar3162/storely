@@ -47,72 +47,6 @@ function NotifyBadge({ mode, time, day }: { mode:string; time:string; day:number
   return <span style={{fontSize:11,background:'#f5f3ff',color:'#6d28d9',border:'1px solid #ddd6fe',borderRadius:20,padding:'2px 8px',fontWeight:700}}>📆 {DAYS[day]} {time}</span>
 }
 
-function EscalationChain({ productId, allSuppliers, primarySupplierId, refreshKey }: any) {
-  const [chain, setChain] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [adding, setAdding] = useState(false)
-  const [pickSupplier, setPickSupplier] = useState('')
-
-  useEffect(()=>{ load() },[productId, refreshKey])
-
-  async function load() {
-    setLoading(true)
-    const j = await api.get('/api/suppliers/chain', { org_id: sessionStorage.getItem('s_org_id'), product_id: productId })
-    setChain(j.chain || [])
-    setLoading(false)
-  }
-
-  async function addBackup() {
-    if (!pickSupplier) return
-    // الأولوية التالية تنحسب على الخادم
-    await api.post('/api/suppliers/chain', { org_id: sessionStorage.getItem('s_org_id'), product_id: productId, supplier_id: pickSupplier })
-    setPickSupplier(''); setAdding(false)
-    load()
-  }
-
-  async function removeBackup(id: string) {
-    await api.del('/api/suppliers/chain', { org_id: sessionStorage.getItem('s_org_id'), id })
-    load()
-  }
-
-  const usedIds = new Set([primarySupplierId, ...chain.map((c:any)=>c.supplier_id)])
-  const available = (allSuppliers||[]).filter((s:any)=>!usedIds.has(s.id))
-
-  if (loading) return null
-
-  return (
-    <div style={{ marginTop:8, paddingTop:8, borderTop:'1px dashed #e2e8f0' }}>
-      <div style={{ fontSize:11, fontWeight:700, color:'#94a3b8', marginBottom:6 }}>🔄 سلسلة التصعيد (لو المورد الأساسي "غير متوفر")</div>
-      {chain.length===0 && !adding && (
-        <div style={{ fontSize:11, color:'#94a3b8', marginBottom:6 }}>ما فيه موردين بديلين — يُرسل إشعار يدوي فقط عند عدم التوفر</div>
-      )}
-      {chain.map((c:any,i:number)=>(
-        <div key={c.id} style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
-          <span style={{ fontSize:10, background:'#eff6ff', color:'#2563eb', border:'1px solid #bfdbfe', borderRadius:20, padding:'1px 7px', fontWeight:700 }}>#{i+2}</span>
-          <span style={{ fontSize:12, color:'#0f172a', flex:1 }}>{(c.suppliers as any)?.name || 'مورد'}</span>
-          <button onClick={()=>removeBackup(c.id)} style={{ background:'none', border:'none', color:'#ef4444', fontSize:11, cursor:'pointer', fontFamily:'inherit' }}>حذف</button>
-        </div>
-      ))}
-      {adding ? (
-        <div style={{ display:'flex', gap:6, marginTop:6 }}>
-          <select value={pickSupplier} onChange={e=>setPickSupplier(e.target.value)}
-            style={{ flex:1, padding:'6px 8px', border:'1.5px solid #e2e8f0', borderRadius:8, fontSize:12, fontFamily:'inherit', background:'white', color:'#0f172a' }}>
-            <option value="">— اختر مورد —</option>
-            {available.map((sup:any)=><option key={sup.id} value={sup.id}>{sup.name}</option>)}
-          </select>
-          <button onClick={addBackup} disabled={!pickSupplier} style={{ padding:'6px 12px', background:'#029FA2', color:'white', border:'none', borderRadius:8, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>إضافة</button>
-          <button onClick={()=>setAdding(false)} style={{ padding:'6px 10px', background:'none', border:'1.5px solid #e2e8f0', borderRadius:8, fontSize:11, cursor:'pointer', fontFamily:'inherit', color:'#64748b' }}>إلغاء</button>
-        </div>
-      ) : (
-        <button onClick={()=>setAdding(true)} disabled={!available.length}
-          style={{ background:'none', border:'1.5px dashed #cbd5e1', color:'#64748b', borderRadius:8, padding:'4px 10px', fontSize:11, fontWeight:600, cursor:available.length?'pointer':'not-allowed', fontFamily:'inherit' }}>
-          + إضافة مورد بديل
-        </button>
-      )}
-    </div>
-  )
-}
-
 function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, curr, autoOpen, recentFailedCount }: any) {
   const [showTimeline, setShowTimeline] = useState(false)
   const [timelineEvents, setTimelineEvents] = useState<any[]>([])
@@ -146,7 +80,6 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
   const [reorderPoint, setReorderPoint]       = useState('')
   const [orderQty, setOrderQty]               = useState('')
   const [supplierNotes, setSupplierNotes]     = useState('')
-  const [chainRefreshKey, setChainRefreshKey] = useState(0)
   const [editingPhone, setEditingPhone] = useState(false)
   const [editPhoneVal, setEditPhoneVal] = useState(s.phone || '')
   const [savingPhone, setSavingPhone]   = useState(false)
@@ -211,11 +144,9 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
 
   async function linkProduct() {
     if (!selectedProduct || !reorderPoint) { toast('اختر منتج وأدخل الحد الأدنى', 'warning'); return }
-    // الربط + مزامنة الأولوية 1 بسلسلة التصعيد على الخادم
     const r=await api.post('/api/suppliers/link',{ org_id: orgId, supplier_id: s.id, product_id: selectedProduct, reorder_point: reorderPoint, order_qty: orderQty, notes: supplierNotes, catalog_item_id: selectedCatalogItem || null })
     if(!r.success){toast(r.error||'فشل ربط المنتج بالمورد','error');return}
-    if(r.chain_failed){toast('تم ربط المنتج، لكن فشل تحديث سلسلة التصعيد','warning')}
-    else toast('✅ تم ربط المنتج')
+    toast('تم ربط المنتج')
     setSelectedProduct(''); setReorderPoint(''); setOrderQty(''); setSupplierNotes(''); setSelectedCatalogItem('')
     onRefresh()
   }
@@ -246,9 +177,9 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
           <div>
             <div style={{display:'flex',alignItems:'center',gap:8}}>
               <div style={{ fontSize:15, fontWeight:700, color:'#0f172a' }}>{s.name}</div>
-              {rating?.hasData && rating?.stars!=null && (
-                <span title={`${rating.details.confirmedOrders}/${rating.details.totalOrders} طلب مؤكد · ${rating.details.dealCount} تعامل`} style={{fontSize:11,fontWeight:700,color:'#b45309',display:'flex',alignItems:'center',gap:2}}>
-                  {'⭐'.repeat(Math.round(rating.stars))}<span style={{color:'#92400e',marginRight:2}}>{rating.stars}</span>
+              {rating?.details?.dealCount>0 && (
+                <span title="عدد فواتير الشراء المسجّلة من هذا المورد" style={{fontSize:11,fontWeight:700,background:'#f8fafc',color:'#475569',border:'1px solid #e2e8f0',borderRadius:20,padding:'2px 8px'}}>
+                  {rating.details.dealCount} تعامل
                 </span>
               )}
               {linked.length>0 && <span style={{fontSize:11,fontWeight:700,background:'#f0fdfa',color:'#029FA2',border:'1px solid #99f6e4',borderRadius:20,padding:'2px 8px'}}>{linked.length} منتج مرتبط</span>}
@@ -331,7 +262,6 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
                       <div style={{ fontSize:11, color:'#94a3b8', marginTop:3 }}>
                         المتاح: <b style={{color:'#0f172a'}}>{p.qty} {p.unit}</b> · يُطلب عند: <b style={{color:'#0f172a'}}>{p.supplier_reorder_point}</b> · كمية الطلب: <b style={{color:'#029FA2'}}>{p.supplier_order_qty}</b>
                       </div>
-                      <EscalationChain productId={p.id} allSuppliers={allSuppliers} primarySupplierId={s.id} refreshKey={chainRefreshKey} />
                     </div>
                     <button onClick={()=>unlinkProduct(p.id)}
                       style={{ background:'none', border:'1.5px solid #e2e8f0', color:'#94a3b8', borderRadius:8, padding:'5px 10px', fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginRight:8 }}>

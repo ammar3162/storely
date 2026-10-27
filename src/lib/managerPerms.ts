@@ -81,7 +81,6 @@ export const API_GUARDS: Record<string, { read?: Rule; write?: Rule }> = {
   // الموردين والسوق
   '/api/suppliers': { read: ['suppliers', 'purchases'], write: ['suppliers'] },
   '/api/suppliers/catalog': { read: ['suppliers'], write: ['suppliers'] },
-  '/api/suppliers/chain': { read: ['suppliers'], write: ['suppliers'] },
   '/api/suppliers/link': { read: ['suppliers'], write: ['suppliers'] },
   '/api/add-supplier': { write: ['suppliers'] },
   '/api/notify-supplier': { write: ['suppliers'] },

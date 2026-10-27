@@ -132,7 +132,7 @@ export async function POST(req: Request) {
           return NextResponse.json({ success: false, debug: orderErr.message })
         }
 
-        const supplierMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\nطلب توريد من *${(org as any).name}*\n\n• ${(product as any).name} — *${orderQty} ${(product as any).unit}*${notesLine}\nللتأكيد رد بكلمة: *تم*\nلو الصنف غير متوفر حالياً، رد بـ: *0*`
+        const supplierMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\nطلب توريد من *${(org as any).name}*\n\n• ${(product as any).name} — *${orderQty} ${(product as any).unit}*${notesLine}\nإذا الصنف غير متوفر أو عندك ملاحظات، تواصل مع *${(org as any).name}*`
         const sent = await sendWA((supplier as any).phone, supplierMsg)
         await logSupplierOrder(db as any, { product_id, supplier_id: (product as any).supplier_id, qty_at_trigger: Number((product as any).qty), ok: sent.ok })
         sentToSupplier = sent.ok
@@ -191,7 +191,7 @@ export async function POST(req: Request) {
 ${daysMsg}
 
 ✅ *تم إرسال طلب توريد للمورد تلقائياً*
-سيتواصل معك المورد قريباً للتأكيد`
+تابع مع المورد مباشرة لو احتجت`
         : `╔══════════════════════╗
    📦 Storely Alert
 ╚══════════════════════╝

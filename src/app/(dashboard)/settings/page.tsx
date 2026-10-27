@@ -550,14 +550,6 @@ export default function SettingsPage() {
                       <div style={{fontSize:11,color:colors.text4,marginTop:2}}>رسالة فورية كل ما موظف يقفل الصندوق</div>
                     </div>
                   </label>
-                  <label style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',background:colors.bg,borderRadius:radius.md,border:`1.5px solid ${form.notify_supplier_wa?colors.primaryBorder:colors.border}`,cursor:'pointer'}}>
-                    <input type="checkbox" checked={form.notify_supplier_wa} onChange={e=>setForm({...form,notify_supplier_wa:e.target.checked})}
-                      style={{accentColor:colors.primary,width:16,height:16}}/>
-                    <div>
-                      <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>🚚 تحديثات الموردين</div>
-                      <div style={{fontSize:11,color:colors.text4,marginTop:2}}>تأكيد الاستلام وتصعيد الطلبات المتأخرة</div>
-                    </div>
-                  </label>
                 </div>
 
               </div>
