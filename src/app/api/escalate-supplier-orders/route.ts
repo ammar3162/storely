@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { isCronRequest } from '@/lib/cronAuth'
 import { createClient } from '@supabase/supabase-js'
 import { escalateOrder } from '@/lib/escalateSupplierOrder'
 import { isSubscriptionActive } from '@/lib/subscription'
@@ -12,8 +13,7 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
  */
 export async function POST(req: Request) {
   try {
-    const authHeader = req.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (!isCronRequest(req)) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
     const db = sb()

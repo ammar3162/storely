@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { timingSafeEqual } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { escalateOrder, logConfirmation } from '@/lib/escalateSupplierOrder'
 import { isSupplierConfirmation, findPendingOrderForPhone, notifyOwnerSupplierConfirmed } from '@/lib/supplierConfirmation'
@@ -234,8 +235,18 @@ async function searchProduct(to: string, orgId: string, query: string) {
   await send(to, `🔍 *نتائج البحث عن "${query}"*\n\n${list}\n\nاكتب 0 للقائمة`)
 }
 
+// Wasender يرسل سر الـ webhook بالهيدر — بدونه أي أحد يقدر يزوّر «تم» من رقم مورد ويأكد طلب ما تأكد
+function validWebhook(req: Request) {
+  const secret = process.env.WASENDER_WEBHOOK_SECRET
+  if (!secret) return true // لين يتضبط السر بـ Vercel و Wasender
+  const got = Buffer.from(req.headers.get('x-webhook-signature') || '')
+  const want = Buffer.from(secret)
+  return got.length === want.length && timingSafeEqual(got, want)
+}
+
 export async function POST(req: Request) {
   try {
+    if (!validWebhook(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     const body = await req.json()
 
 
