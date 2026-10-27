@@ -17,6 +17,13 @@ export type Recipient = { email: string; name: string; orgName: string }
 // إيميلات الاختبار والحسابات الوهمية ما توصلها إعلانات
 const TEST_EMAIL = /@(storely\.test|example\.(com|org|net))$/i
 
+// Resend يرفض الدفعة كاملة (100 إيميل) لو عنوان واحد غلط — فنفلتر قبل الإرسال
+const VALID_EMAIL = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/
+export function isSendableEmail(email?: string | null) {
+  const e = (email || '').trim()
+  return e.length <= 254 && VALID_EMAIL.test(e) && !e.includes('..')
+}
+
 const secret = () => process.env.MARKETING_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 export function unsubToken(email: string) {
@@ -64,7 +71,7 @@ export async function segmentRecipients(db: SupabaseClient, segment: Segment): P
     if (!inSegment(p, segment)) continue
     const email = emails.get(p.id)?.trim()
     const key = email?.toLowerCase()
-    if (!email || !key || TEST_EMAIL.test(key) || optedOut.has(key) || seen.has(key)) continue
+    if (!email || !key || !isSendableEmail(email) || TEST_EMAIL.test(key) || optedOut.has(key) || seen.has(key)) continue
     seen.add(key)
     list.push({ email, name: (p.full_name || '').trim(), orgName: (p.organizations?.name || '').trim() })
   }
@@ -109,7 +116,7 @@ export async function sendCampaign(c: CampaignContent, recipients: Recipient[], 
   let sent = 0, failed = 0
   for (let i = 0; i < recipients.length; i += 100) {
     const chunk = recipients.slice(i, i + 100)
-    const { data, error } = await resend.batch.send(chunk.map(r => {
+    const msgs = chunk.map(r => {
       const unsub = unsubUrl(origin, r.email)
       return {
         from, to: r.email,
@@ -119,9 +126,18 @@ export async function sendCampaign(c: CampaignContent, recipients: Recipient[], 
         headers: { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
         ...(process.env.MARKETING_REPLY_TO ? { replyTo: process.env.MARKETING_REPLY_TO } : {}),
       }
-    }))
-    if (error) { console.error('MARKETING_BATCH_FAILED:', error); failed += chunk.length }
-    else sent += (data as any)?.data?.length ?? chunk.length
+    })
+    const { data, error } = await resend.batch.send(msgs)
+    if (!error) sent += (data as any)?.data?.length ?? chunk.length
+    else {
+      // فشل الدفعة: نرسل واحد واحد عشان عنوان غلط ما يحرم الباقين
+      console.error('MARKETING_BATCH_FAILED:', error)
+      for (const m of msgs) {
+        const one = await resend.emails.send(m as any)
+        if (one.error) { failed++; console.error('MARKETING_SEND_FAILED:', one.error.message) } else sent++
+        await delay(550)
+      }
+    }
     if (i + 100 < recipients.length) await delay(700) // حد Resend: طلبين بالثانية
   }
   return { sent, failed }
