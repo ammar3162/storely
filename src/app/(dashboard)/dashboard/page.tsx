@@ -329,7 +329,7 @@ export default function DashboardPage() {
             <div key={i} className="dh-row">
               <div className="dh-row-main">
                 <div className="dh-row-title">{(m.products as any)?.name||'—'}</div>
-                <div className="dh-row-sub">{m.type==='out'?'صرف':m.type==='in'?'إضافة':m.type==='waste'?'هدر':'حركة'} · {new Date(m.created_at).toLocaleString('ar-SA',{numberingSystem:'latn',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>
+                <div className="dh-row-sub">{m.type==='out'?'صرف':m.type==='in'?'إضافة':m.type==='waste'?'هدر':m.type==='adjustment'?'تسوية جرد':m.type==='transfer_in'||m.type==='transfer_out'?'تحويل':'حركة'} · {new Date(m.created_at).toLocaleString('ar-SA',{numberingSystem:'latn',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>
               </div>
               <div className="dh-qty" style={{color:m.qty_change<0?dsColors.danger:dsColors.primary}}>{m.qty_change>0?'+':''}{m.qty_change} <span className="dh-muted">{(m.products as any)?.unit}</span></div>
             </div>

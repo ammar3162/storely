@@ -9,6 +9,8 @@ import { getMe } from '@/lib/session'
 import { colors as dsColors } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
+import { subUnitOptions, hasKnownConversion, formatQty } from '@/lib/recipeUnits'
+import { ClipboardList, Pencil, Trash2, AlertTriangle, Wallet, X, Info } from 'lucide-react'
 
 // موحّد مع نظام التصميم المشترك (@/lib/ds)
 const C = {
@@ -92,6 +94,7 @@ export default function AIToolsPage() {
   const [editingRecipeId, setEditingRecipeId] = useState<string|null>(null)
   const [deletingRecipeId, setDeletingRecipeId] = useState<string|null>(null)
   const [reconFrom, setReconFrom] = useState('')
+  const [reconMethod, setReconMethod] = useState<'count'|'dispense'>('count')
   const [reconTo, setReconTo] = useState('')
 
   async function loadRecipesList() {
@@ -683,11 +686,27 @@ export default function AIToolsPage() {
       <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
         <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <span style={{fontSize:18}}>📋</span>
+            <span style={{width:34,height:34,borderRadius:9,background:'#f5f3ff',color:'#7c3aed',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><ClipboardList size={18}/></span>
             <div style={{flex:1}}>
               <div style={{fontSize:13,fontWeight:700,color:C.text}}>الوصفات وتقدير الإنتاج</div>
               <div style={{fontSize:11,color:C.text3}}>عرّف وصفة (اسم + مكوناتها)، والنظام يقدّر كم وحدة تم تحضيرها بناءً على استهلاك موظفيك الفعلي للمواد الخام</div>
             </div>
+          </div>
+          <div style={{display:'flex',background:C.surface,border:`1px solid ${C.border2}`,borderRadius:9,padding:3,gap:3}}>
+            {([['count','حسب الجرد (الأدق)'],['dispense','حسب الصرف المسجّل']] as const).map(([k,l])=>(
+              <button key={k} onClick={()=>{setReconMethod(k);setRecipeReconReport(null)}} style={{flex:1,padding:'7px',border:'none',borderRadius:7,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',background:reconMethod===k?'#7c3aed':'transparent',color:reconMethod===k?'white':C.text3}}>{l}</button>
+            ))}
+          </div>
+          <div style={{fontSize:10,color:C.text3,lineHeight:1.6}}>
+            {reconMethod==='count'
+              ? 'الاستهلاك = جرد أول الفترة + المشتريات − الهدر − جرد آخر الفترة. يحتاج جردين من صفحة المخزون (زر «جرد»)'
+              : 'من الكميات اللي سجّلها الموظفون كصرف. الموظف ياخذ بالوحدة الكاملة، فاستخدمها لفترة أسبوع أو أكثر'}
+          </div>
+          <div style={{display:'flex',gap:6}}>
+            {([[7,'آخر أسبوع'],[30,'آخر شهر']] as const).map(([d,l])=>(
+              <button key={d} onClick={()=>{const t=new Date(Date.now()+3*3600e3);const f=new Date(t.getTime()-d*864e5);setReconFrom(f.toISOString().slice(0,10));setReconTo(t.toISOString().slice(0,10))}}
+                style={{padding:'4px 10px',background:'white',border:`1px solid ${C.border2}`,borderRadius:99,fontSize:10,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>{l}</button>
+            ))}
           </div>
           <div style={{display:'flex',gap:6,alignItems:'center'}}>
             <span style={{fontSize:10,color:C.text4,whiteSpace:'nowrap' as const}}>من</span>
@@ -713,12 +732,12 @@ export default function AIToolsPage() {
               const orgId=sessionStorage.getItem('s_org_id')
               if(!orgId) return
               setReconLoading(true)
-              const res=await fetch('/api/recipe-reconciliation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id'),from:reconFrom||undefined,to:reconTo||undefined})})
+              const res=await fetch('/api/recipe-reconciliation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id'),from:reconFrom||undefined,to:reconTo||undefined,method:reconMethod})})
               const data=await res.json()
               setRecipeReconReport(data)
               setReconLoading(false)
             }} style={{flex:1,padding:'8px 14px',background:'#7c3aed',color:'white',border:'none',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-              {reconLoading?'⏳ جاري...':'تقدير الإنتاج'}
+              {reconLoading?'جاري الحساب...':'تقدير الإنتاج'}
             </button>
           </div>
           <button onClick={async()=>{ if(!showRecipesList) await loadRecipesList(); setShowRecipesList(v=>!v) }}
@@ -733,8 +752,8 @@ export default function AIToolsPage() {
                 <div key={r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'white',border:`1px solid ${C.border2}`,borderRadius:8,padding:'8px 12px'}}>
                   <span style={{fontSize:12,fontWeight:600,color:C.text}}>{r.name}</span>
                   <div style={{display:'flex',gap:6}}>
-                    <button onClick={()=>openEditRecipe(r.id)} style={{padding:'4px 10px',background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:7,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>✏️ تعديل</button>
-                    <button onClick={()=>deleteRecipe(r.id)} disabled={deletingRecipeId===r.id} style={{padding:'4px 10px',background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:7,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:deletingRecipeId===r.id?.6:1}}>{deletingRecipeId===r.id?'...':'🗑️ حذف'}</button>
+                    <button onClick={()=>openEditRecipe(r.id)} style={{padding:'4px 10px',background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:7,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}><Pencil size={11} style={{verticalAlign:'-2px',marginLeft:3}}/>تعديل</button>
+                    <button onClick={()=>deleteRecipe(r.id)} disabled={deletingRecipeId===r.id} style={{padding:'4px 10px',background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:7,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:deletingRecipeId===r.id?.6:1}}>{deletingRecipeId===r.id?'...':<><Trash2 size={11} style={{verticalAlign:'-2px',marginLeft:3}}/>حذف</>}</button>
                   </div>
                 </div>
               ))}
@@ -745,8 +764,8 @@ export default function AIToolsPage() {
 
       {recipeReconReport && (
         <div style={{marginTop:16,background:C.surface,borderRadius:14,padding:'20px',border:'1.5px solid #ddd6fe'}}>
-          <div style={{fontSize:14,fontWeight:800,color:'#5b21b6',marginBottom:4}}>📋 تقدير الإنتاج ({reconFrom||reconTo ? `${reconFrom||'البداية'} إلى ${reconTo||'اليوم'}` : 'آخر 30 يوم'})</div>
-          <div style={{fontSize:11,color:'#7c3aed',marginBottom:16}}>محسوب من استهلاك المواد الخام الفعلي ÷ مكونات كل وصفة</div>
+          <div style={{fontSize:14,fontWeight:800,color:'#5b21b6',marginBottom:4}}>تقدير الإنتاج ({reconFrom||reconTo ? `${reconFrom||'البداية'} إلى ${reconTo||'اليوم'}` : 'آخر 30 يوم'})</div>
+          <div style={{fontSize:11,color:'#7c3aed',marginBottom:16}}>{recipeReconReport.method==='count'?'محسوب من الفرق بين الجرد الفعلي أول وآخر الفترة':'محسوب من الصرف المسجّل للمواد الخام'} ÷ كمية كل مكوّن بالوصفة. الرقم تقديري ومقرّب للأقل</div>
 
           {!recipeReconReport.hasData ? (
             <div style={{textAlign:'center',padding:'24px',color:'#9ca3af',fontSize:13}}>
@@ -759,7 +778,7 @@ export default function AIToolsPage() {
                 const grandTotal = recipeReconReport.recipes.reduce((s:number,r:any)=>s+(r.totalCost||0),0)
                 return grandTotal>0 && (
                   <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:10,padding:'12px 14px',marginBottom:12,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                    <span style={{fontSize:12,fontWeight:700,color:'#115e59'}}>💰 إجمالي تكلفة الإنتاج التقديرية</span>
+                    <span style={{fontSize:12,fontWeight:700,color:'#115e59',display:'flex',alignItems:'center',gap:6}}><Wallet size={14}/>إجمالي تكلفة الإنتاج التقديرية</span>
                     <span style={{fontSize:18,fontWeight:900,color:'#029FA2'}}>{grandTotal.toFixed(2)} ⃁</span>
                   </div>
                 )
@@ -769,16 +788,22 @@ export default function AIToolsPage() {
                 <div key={r.id} style={{background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,padding:'12px 14px'}}>
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
                     <span style={{fontSize:13,fontWeight:700,color:C.text}}>{r.name}</span>
-                    <span style={{fontSize:16,fontWeight:900,color:'#7c3aed'}}>{r.estimatedProduced} وحدة</span>
+                    <span style={{fontSize:16,fontWeight:900,color:'#7c3aed'}}>{r.basis==='shared'?'حتى ':''}{r.estimatedProduced} وحدة</span>
                   </div>
                   {r.totalCost!==null && r.totalCost!==undefined && (
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,background:'#f0fdfa',borderRadius:7,padding:'6px 10px'}}>
-                      <span style={{fontSize:10,color:'#115e59'}}>تكلفة الوحدة: {r.costPerUnit} ⃁</span>
-                      <span style={{fontSize:12,fontWeight:800,color:'#029FA2'}}>الإجمالي: {r.totalCost} ⃁</span>
+                      <span style={{fontSize:10,color:'#115e59'}}>تكلفة الوحدة: {Number(r.costPerUnit).toFixed(2)} ⃁</span>
+                      <span style={{fontSize:12,fontWeight:800,color:'#029FA2'}}>الإجمالي: {Number(r.totalCost).toFixed(2)} ⃁</span>
                     </div>
                   )}
-                  {r.bottleneckName && (
-                    <div style={{fontSize:9,color:'#b45309',marginBottom:8}}>⚠️ محدَّد بواسطة: {r.bottleneckName} (المكوّن الأقل توفراً)</div>
+                  {r.basis==='shared' && (
+                    <div style={{fontSize:10,color:'#475569',background:'#f1f5f9',borderRadius:7,padding:'6px 10px',marginBottom:8,display:'flex',gap:6,alignItems:'flex-start'}}><Info size={12} style={{flexShrink:0,marginTop:2}}/>كل مكوّنات هذي الوصفة مستخدمة بوصفات ثانية، فالرقم حد أعلى. أضف مكوّن خاص بها (مثل الكوب أو العلبة) عشان يصير التقدير أدق</div>
+                  )}
+                  {r.basis==='none' && (
+                    <div style={{fontSize:10,color:'#475569',marginBottom:8}}>{recipeReconReport.method==='count'?'ما فيه جردين لمكوّنات هذي الوصفة خلال الفترة — سوّ جرد من صفحة المخزون أول الفترة وآخرها':'ما فيه صرف مسجّل لمكوّنات هذي الوصفة خلال الفترة'}</div>
+                  )}
+                  {r.bottleneckName && r.basis!=='none' && (
+                    <div style={{fontSize:10,color:'#b45309',marginBottom:8,display:'flex',gap:5,alignItems:'center'}}><AlertTriangle size={12}/>التقدير مبني على: {r.bottleneckName} (أقل مكوّن صرفاً نسبةً لكميته بالوصفة)</div>
                   )}
                   {r.components.length>0 ? (
                     <div style={{display:'flex',flexDirection:'column' as const,gap:4}}>
@@ -786,8 +811,8 @@ export default function AIToolsPage() {
                         const isBottleneck = c.name===r.bottleneckName
                         return (
                           <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:10,color:isBottleneck?'#b45309':c.untracked?'#94a3b8':C.text4,fontWeight:isBottleneck?700:400}}>
-                            <span>{isBottleneck?'🔻 ':''}{c.name}: استهلاك {c.consumed} {c.unit}</span>
-                            <span>{c.untracked ? 'غير متابَع بالصرف — تم استثناؤه' : `يكفي لـ ${c.impliedCount} وحدة`}</span>
+                            <span>{c.name}{c.shared?' (مشترك)':''}: {recipeReconReport.method==='count'?'استُهلك':'صُرف'} {formatQty(c.consumed,c)} · بالوصفة {formatQty(c.qtyPerUnit,c)}</span>
+                            <span>{c.untracked ? (recipeReconReport.method==='count'?'ما له جردين — مستثنى':'ما ينصرف بالنظام — مستثنى') : `يكفي لـ ${c.impliedCount} وحدة`}</span>
                           </div>
                         )
                       })}
@@ -1094,18 +1119,6 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,branchId,editingR
     })()
   },[orgId])
 
-  function subUnitOptions(component:any) {
-    const u=(component?.unit||'').trim()
-    if(['كيلو','كجم','كيلوجرام','كيلو جرام'].includes(u)) return [{label:'جرام',factor:1000},{label:'كيلو',factor:1}]
-    if(['لتر','ليتر'].includes(u)) return [{label:'مل',factor:1000},{label:'لتر',factor:1}]
-    if(component?.recipe_unit_factor) return [{label:component.recipe_unit||'وحدة',factor:component.recipe_unit_factor},{label:u||'وحدة',factor:1}]
-    return [{label:u||'وحدة',factor:1}]
-  }
-  function hasKnownConversion(component:any) {
-    const u=(component?.unit||'').trim()
-    return ['كيلو','كجم','كيلوجرام','كيلو جرام','لتر','ليتر'].includes(u) || !!component?.recipe_unit_factor
-  }
-
   async function addComp() {
     if(!newCompId||!newCompQty||Number(newCompQty)<=0) return
     if(components.some(c=>c.component_product_id===newCompId)) return
@@ -1153,22 +1166,22 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,branchId,editingR
       items: finalComponents.map(c=>({component_product_id:c.component_product_id,qty:Number(c.qty)})) })
     if(!r.success){toast(r.error || (editingRecipeId?'فشل تحديث الوصفة — حاول مرة أخرى':'فشل حفظ الوصفة — حاول مرة أخرى'),'error');setSaving(false);return}
     if(finalComponents.length===0) {
-      toast('⚠️ تنبيه: الوصفة اتحفظت بدون أي مكوّنات — أضف مكوّناتها لاحقاً من "تعديل"','warning')
+      toast('الوصفة اتحفظت بدون مكوّنات — أضفها لاحقاً من "تعديل"','warning')
     }
     setSaving(false)
-    if(finalComponents.length>0) toast(editingRecipeId?'✅ تم تحديث الوصفة':'✅ تم حفظ الوصفة بمكوناتها')
+    if(finalComponents.length>0) toast(editingRecipeId?'تم تحديث الوصفة':'تم حفظ الوصفة بمكوناتها')
     onSaved()
   }
 
   if(loadingEdit) return (
     <div onClick={(e:any)=>e.stopPropagation()} style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,padding:40,textAlign:'center' as const,fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
-      <div style={{fontSize:13,color:'#6b7280'}}>⏳ جاري تحميل بيانات الوصفة...</div>
+      <div style={{fontSize:13,color:'#6b7280'}}>جاري تحميل بيانات الوصفة...</div>
     </div>
   )
 
   return (
     <div onClick={(e:any)=>e.stopPropagation()} style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,maxHeight:'85vh',overflowY:'auto',padding:20,fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl' as const}}>
-      <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>📋 {editingRecipeId?'تعديل الوصفة':'وصفة جديدة'}</div>
+      <div style={{fontSize:15,fontWeight:800,marginBottom:14,display:'flex',alignItems:'center',gap:8}}><ClipboardList size={18} color="#7c3aed"/>{editingRecipeId?'تعديل الوصفة':'وصفة جديدة'}</div>
       <label style={{fontSize:11,fontWeight:700,color:'#6b7280',display:'block',marginBottom:5}}>اسم الوصفة *</label>
       <input value={name} onChange={(e:any)=>setName(e.target.value)} placeholder="مثال: اسم المنتج النهائي" style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e7eb',borderRadius:9,fontSize:13,marginBottom:14,fontFamily:'inherit'}}/>
 
@@ -1181,10 +1194,10 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,branchId,editingR
             const compCost = unitPrice * Number(c.qty)
             return (
               <div key={c.component_product_id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'#f9fafb',border:'1px solid #e5e7eb',borderRadius:8,padding:'6px 10px'}}>
-                <span style={{fontSize:11}}>{comp?.name||'—'} — {c.qty} {comp?.unit}</span>
+                <span style={{fontSize:11}}>{comp?.name||'—'} — {formatQty(Number(c.qty),comp)}</span>
                 <div style={{display:'flex',alignItems:'center',gap:8}}>
                   {unitPrice>0 && <span style={{fontSize:10,color:'#029FA2',fontWeight:700}}>{compCost.toFixed(2)} ⃁</span>}
-                  <button onClick={()=>setComponents(prev=>prev.filter(x=>x.component_product_id!==c.component_product_id))} style={{background:'none',border:'none',color:'#ef4444',cursor:'pointer',fontSize:14}}>×</button>
+                  <button onClick={()=>setComponents(prev=>prev.filter(x=>x.component_product_id!==c.component_product_id))} aria-label="حذف المكوّن" style={{background:'none',border:'none',color:'#ef4444',cursor:'pointer',display:'flex'}}><X size={14}/></button>
                 </div>
               </div>
             )
@@ -1201,7 +1214,7 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,branchId,editingR
       </div>
       {newCompId && !hasKnownConversion(rawMaterials.find(x=>x.id===newCompId)) && (
         <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:8,padding:8,marginBottom:8}}>
-          <div style={{fontSize:10,color:'#92400e',marginBottom:6}}>كم قطعة/وحدة بكل {rawMaterials.find(x=>x.id===newCompId)?.unit} واحد؟ (اختياري)</div>
+          <div style={{fontSize:10,color:'#92400e',marginBottom:6}}>كم قطعة/وحدة بكل {rawMaterials.find(x=>x.id===newCompId)?.unit} واحد؟ — مطلوب عشان الحساب يطلع صح</div>
           <div style={{display:'flex',gap:6}}>
             <input value={customSubLabel} onChange={(e:any)=>setCustomSubLabel(e.target.value)} placeholder="اسم الوحدة (مثال: رغيف)" style={{flex:2,padding:'7px',border:'1.5px solid #fde68a',borderRadius:7,fontSize:10}}/>
             <NumberInput min="1" value={customSubCount} onChange={(e:any)=>setCustomSubCount(e.target.value)} placeholder="العدد" style={{flex:1,padding:'7px',border:'1.5px solid #fde68a',borderRadius:7,fontSize:10}}/>
@@ -1231,7 +1244,7 @@ function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,branchId,editingR
         return (
           <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:10,padding:12,marginBottom:16}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:hasCostData?10:0}}>
-              <span style={{fontSize:11,fontWeight:700,color:'#115e59'}}>💰 التكلفة التقديرية</span>
+              <span style={{fontSize:11,fontWeight:700,color:'#115e59',display:'flex',alignItems:'center',gap:5}}><Wallet size={13}/>تكلفة الوصفة</span>
               <span style={{fontSize:15,fontWeight:900,color:'#029FA2'}}>{hasCostData ? totalCost.toFixed(2)+' ⃁' : 'لا توجد بيانات أسعار'}</span>
             </div>
             {hasCostData && (

@@ -55,6 +55,7 @@ export async function DELETE(req: Request) {
   const { org_id, id } = await req.json().catch(() => ({}))
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+  if (access.role === 'manager') return NextResponse.json({ error: 'طلب الإضافات لمالك المنشأة' }, { status: 403 })
   const { data, error } = await sb().from('addon_requests').update({ status: 'cancelled', decided_at: new Date().toISOString() } as any)
     .eq('id', id).eq('org_id', org_id).eq('status', 'pending').select('id')
   if (error || !data?.length) return NextResponse.json({ error: 'ما فيه طلب معلّق' }, { status: 404 })

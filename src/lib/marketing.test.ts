@@ -45,3 +45,12 @@ describe('marketing emails', async () => {
     expect(html).toContain('unsubscribe?e=a&amp;t=b')
   })
 })
+
+describe('sendable emails', async () => {
+  const { isSendableEmail } = await import('./marketing')
+  it('rejects addresses Resend would refuse', () => {
+    expect(isSendableEmail('owner@cafe.sa')).toBe(true)
+    expect(isSendableEmail(' owner@cafe.sa ')).toBe(true)
+    for (const bad of ['', 'owner', 'owner@cafe', 'own er@cafe.sa', 'مالك@cafe.sa', 'a@b..sa', 'a@@b.sa', '966500000000@phone']) expect(isSendableEmail(bad)).toBe(false)
+  })
+})

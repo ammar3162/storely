@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
-import { SEGMENTS, type Segment, segmentRecipients, campaignHtml, validateContent, sendCampaign, unsubUrl } from '@/lib/marketing'
+import { SEGMENTS, type Segment, segmentRecipients, campaignHtml, validateContent, sendCampaign, unsubUrl, isSendableEmail } from '@/lib/marketing'
 
 export const maxDuration = 300
 
@@ -44,10 +44,11 @@ export async function POST(req: Request) {
   if (invalid) return NextResponse.json({ error: invalid }, { status: 400 })
 
   if (action === 'test') {
-    if (!admin.email) return NextResponse.json({ error: 'ما فيه إيميل لحسابك' }, { status: 400 })
-    const r = await sendCampaign(content, [{ email: admin.email, ...sample }], origin)
+    const to = (admin.email || '').trim()
+    if (!isSendableEmail(to)) return NextResponse.json({ error: 'إيميل حسابك بلوحة الأدمن غير صالح للإرسال — عدّله من «المشرفين»' }, { status: 400 })
+    const r = await sendCampaign(content, [{ email: to, ...sample }], origin)
     if (!r.sent) return NextResponse.json({ error: 'فشل إرسال التجربة' }, { status: 502 })
-    return NextResponse.json({ success: true, to: admin.email })
+    return NextResponse.json({ success: true, to })
   }
 
   if (action !== 'send') return NextResponse.json({ error: 'إجراء غير معروف' }, { status: 400 })
