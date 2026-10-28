@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
+import { orgFeatures } from '@/lib/planFeatures'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
-import { orgHasHrFeature, orgHasAddon } from '@/lib/hrAccess'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,9 +19,7 @@ export async function GET(req: Request) {
     if (error || !org) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
     // الميزات المتاحة للموظف — من السيرفر (الموظف ما يقدر يقرأ متجر الإضافات حق المالك)
     const plan = (org as any).plan || 'basic'
-    const [hr, cashier] = plan !== 'basic' ? [true, true] : await Promise.all([
-      orgHasHrFeature(db, auth.data.org_id, plan), orgHasAddon(db, auth.data.org_id, 'cashier_closing'),
-    ])
+    const { hr, cashier } = await orgFeatures(db, auth.data.org_id, plan)
 
     return NextResponse.json({
       success: true,

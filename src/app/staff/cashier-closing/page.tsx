@@ -223,7 +223,8 @@ export default function CashierClosingPage() {
         if(org?.logo_url) setOrgLogo(org.logo_url)
         if(org?.business_day_start_hour != null) setDayStartHour(org.business_day_start_hour)
         if(org?.currency) setCurr(currencySymbol(org.currency))
-        if(org?.plan==='basic') setLocked(true)
+        // نفس قرار الخادم: المتوسطة/المتقدمة أو إضافة «إقفال الكاشير»
+        if(org && org.cashier_feature===false) setLocked(true)
       })
   },[])
 

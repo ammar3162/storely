@@ -63,6 +63,8 @@ export default function StaffManagementPage() {
   const [staffCountry, setStaffCountry] = useState(()=>sessionStorage.getItem('s_country_code')||'+966')
   const [newBranch, setNewBranch]   = useState(typeof window!=='undefined' ? (sessionStorage.getItem('s_branch_id')||'') : '')
   const [newRole, setNewRole]       = useState<'staff'|'cashier'>('staff')
+  // الكاشير متاح بالمتوسطة/المتقدمة أو بإضافة «إقفال الكاشير» — من نفس مصدر الخادم (/api/me)
+  const [hasCashier, setHasCashier] = useState(orgPlan!=='basic')
   const [newSendClosingWA, setNewSendClosingWA] = useState(true)
   const [revealedPin, setRevealedPin] = useState<{name:string,phone:string,pin:string}|null>(null)
   const [visiblePins, setVisiblePins] = useState<Record<string,boolean>>({})
@@ -119,7 +121,7 @@ export default function StaffManagementPage() {
       oid = await getOrgId(); if(!oid) return
     }
     setOrgId(oid)
-    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setIsOwnerSM(me?.role==='owner') })
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setIsOwnerSM(me?.role==='owner'); if(me?.org?.features) setHasCashier(!!me.org.features.cashier) })
     const settingsRes = await api.get('/api/org-settings', { org_id: oid })
     const orgLimits = settingsRes.settings
     const h = Number((orgLimits as any)?.business_day_start_hour ?? 4)
@@ -533,10 +535,10 @@ export default function StaffManagementPage() {
                     <div style={{fontSize:10,color:newRole==='staff'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يستخدم نظام الصرف والمخزون</div>
                   </button>
                   <button type="button" onClick={()=>{
-                      if(orgPlan==='basic'){toast('ميزة الكاشير تتطلب الباقة المتوسطة فأعلى — يرجى الترقية','warning');return}
+                      if(!hasCashier){toast('الكاشير يحتاج الباقة المتوسطة أو إضافة «إقفال الكاشير» من صفحة الإضافات','warning');return}
                       setNewRole('cashier')
-                    }} style={{padding:'12px 10px',borderRadius:10,border:`1.5px solid ${newRole==='cashier'?colors.primary:colors.border}`,background:newRole==='cashier'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='cashier'?`0 2px 8px ${colors.primary}22`:'none',opacity:orgPlan==='basic'?.55:1,position:'relative' as const}}>
-                    {orgPlan==='basic' && (
+                    }} style={{padding:'12px 10px',borderRadius:10,border:`1.5px solid ${newRole==='cashier'?colors.primary:colors.border}`,background:newRole==='cashier'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='cashier'?`0 2px 8px ${colors.primary}22`:'none',opacity:!hasCashier?.55:1,position:'relative' as const}}>
+                    {!hasCashier && (
                       <div style={{position:'absolute',top:-8,left:-6,background:'#1c1c1a',color:'white',fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:99,display:'flex',alignItems:'center',gap:4}}><Lock size={9} strokeWidth={2.5}/> المتوسطة</div>
                     )}
                     <div style={{fontWeight:800,fontSize:font.sm,color:newRole==='cashier'?colors.primary:colors.text2,marginBottom:3,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><Wallet size={14} strokeWidth={2.25}/> كاشير</div>
@@ -582,7 +584,7 @@ export default function StaffManagementPage() {
                     {key:'inventory',  label:'المخزون',    Icon:Package, locked:false},
                     {key:'purchases',  label:'المشتريات',  Icon:ShoppingCart, locked:false},
                     {key:'reports',    label:'التقارير',   Icon:BarChart3, locked:false},
-                    {key:'cashier',    label:'إقفال الكاشير', Icon:Wallet, locked:orgPlan==='basic'},
+                    {key:'cashier',    label:'إقفال الكاشير', Icon:Wallet, locked:!hasCashier},
                   ].map(p=>(
                     <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:'white',borderRadius:8,border:`1.5px solid ${(newPermissions as any)[p.key]?colors.primary:colors.border}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                       <input type="checkbox" checked={(newPermissions as any)[p.key]} disabled={p.locked}
@@ -756,7 +758,7 @@ export default function StaffManagementPage() {
                 {key:'inventory',  label:'المخزون',    Icon:Package, locked:false},
                 {key:'purchases',  label:'المشتريات',  Icon:ShoppingCart, locked:false},
                 {key:'reports',    label:'التقارير',   Icon:BarChart3, locked:false},
-                {key:'cashier',    label:'إقفال الكاشير', Icon:Wallet, locked:orgPlan==='basic'||editingRole==='cashier'},
+                {key:'cashier',    label:'إقفال الكاشير', Icon:Wallet, locked:!hasCashier||editingRole==='cashier'},
               ].map(p=>(
                 <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'12px',background:(editPerms as any)[p.key]?'#f0fdfa':'#f9fafb',borderRadius:10,border:`1.5px solid ${(editPerms as any)[p.key]?'#029FA2':'#e5e7eb'}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                   <input type="checkbox" checked={(editPerms as any)[p.key]} disabled={p.locked}
@@ -764,7 +766,7 @@ export default function StaffManagementPage() {
                     style={{accentColor:'#029FA2',width:16,height:16}}/>
                   <div>
                     <div style={{fontSize:13,fontWeight:700,color:(editPerms as any)[p.key]?'#029FA2':'#374151',display:'flex',alignItems:'center',gap:5}}><p.Icon size={14} strokeWidth={2.25}/> {p.label}</div>
-                    {p.locked&&<div style={{fontSize:10,color:'#9ca3af'}}>{p.key==='cashier'?(orgPlan==='basic'?'يحتاج الباقة المتوسطة':'دوره كاشير'):'افتراضي'}</div>}
+                    {p.locked&&<div style={{fontSize:10,color:'#9ca3af'}}>{p.key==='cashier'?(!hasCashier?'يحتاج المتوسطة أو إضافة الكاشير':'دوره كاشير'):'افتراضي'}</div>}
                   </div>
                 </label>
               ))}

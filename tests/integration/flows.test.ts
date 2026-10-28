@@ -722,6 +722,41 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
     })
   })
 
+  describe('basic plan + add-ons open the same features everywhere', () => {
+    it('a cashier can be added on basic only with the cashier-closing add-on, and staff see it too', async () => {
+      process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
+      const addStaff = await import('@/app/api/add-staff/route')
+      const staffOrg = await import('@/app/api/staff-org/route')
+      const { orgFeatures } = await import('@/lib/planFeatures')
+      const { generateStaffToken } = await import('@/lib/staffAuth')
+      process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
+      await db.from('organizations').update({ plan: 'basic', max_staff: 10 } as any).eq('id', orgId)
+      const body = (n: number) => ({ org_id: orgId, branch_id: branchA, name: `كاشير ${n}`, phone: `9665${String(stamp + 60 + n).slice(-8)}`, pin: '4821', role: 'cashier', permissions: { dispense: true } })
+
+      expect((await call(addStaff.POST, 'POST', '/api/add-staff', body(1))).status).toBe(403)
+      expect((await orgFeatures(db as any, orgId)).cashier).toBe(false)
+
+      const { data: addon } = await db.from('marketplace_addons').select('id').eq('slug', 'cashier_closing').single()
+      await db.from('org_addon_subscriptions').upsert({ org_id: orgId, addon_id: (addon as any).id, status: 'active', quantity: 1,
+        activated_at: new Date().toISOString(), expires_at: new Date(Date.now() + 864e5).toISOString() } as any, { onConflict: 'org_id,addon_id' })
+      expect((await orgFeatures(db as any, orgId)).cashier).toBe(true)
+      const added = await call(addStaff.POST, 'POST', '/api/add-staff', body(2))
+      expect(added.status).toBe(200)
+
+      const { data: cashier } = await db.from('staff_members').select('id').eq('org_id', orgId).eq('name', 'كاشير 2').single()
+      const res = await staffOrg.GET(new Request('http://test/api/staff-org', { headers: { Authorization: `Bearer ${generateStaffToken((cashier as any).id, orgId, branchA)}` } }))
+      expect(((await res.json()) as any).cashier_feature).toBe(true)
+
+      // الإضافة انتهت → يرجع مقفل
+      await db.from('org_addon_subscriptions').update({ expires_at: new Date(Date.now() - 1000).toISOString() } as any).eq('org_id', orgId).eq('addon_id', (addon as any).id)
+      expect((await orgFeatures(db as any, orgId)).cashier).toBe(false)
+
+      await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).eq('addon_id', (addon as any).id)
+      await db.from('staff_members').delete().eq('org_id', orgId).like('name', 'كاشير %')
+      await db.from('organizations').update({ plan: 'pro', max_staff: 1 } as any).eq('id', orgId)
+    }, 120_000)
+  })
+
   describe('products shared between staff', () => {
     it('two staff can have the same product, and products from another branch are refused', async () => {
       const assign = await import('@/app/api/staff-members/assign/route')

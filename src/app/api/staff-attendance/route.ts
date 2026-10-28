@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { orgHasFeature, lockedMessage } from '@/lib/planFeatures'
 import { notifyStaffDeduction } from '@/lib/staffDeductionNotice'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
@@ -80,16 +81,8 @@ export async function POST(req: Request) {
     const supabase = sb()
 
     const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
-    if ((orgCheck as any)?.plan === 'basic') {
-      // ميزة الحضور مضمّنة أيضاً بإضافة "إدارة الموظفين الكاملة" (hr_full) حتى للباقة الأساسية -- نتحقق منها كبديل
-      const { data: hrAddon } = await supabase
-        .from('org_addon_subscriptions')
-        .select('status,expires_at,marketplace_addons!inner(slug)')
-        .eq('org_id', org_id).eq('status', 'active').eq('marketplace_addons.slug', 'hr_full').maybeSingle()
-      const hasHrAddon = !!hrAddon && new Date((hrAddon as any).expires_at) > new Date()
-      if (!hasHrAddon) {
-        return NextResponse.json({ error: 'ميزة الحضور والانصراف متاحة فقط بالباقة المتوسطة أو المتقدمة، أو عبر إضافة "إدارة الموظفين الكاملة" — يرجى إبلاغ صاحب المنشأة' }, { status: 403 })
-      }
+    if (!(await orgHasFeature(supabase, org_id, 'hr', (orgCheck as any)?.plan))) {
+      return NextResponse.json({ error: lockedMessage('hr') }, { status: 403 })
     }
 
     // تأكد الموظف فعلاً تابع لهذا الفرع/المنشأة
@@ -252,15 +245,8 @@ export async function GET(req: Request) {
     const supabase = sb()
 
     const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
-    if ((orgCheck as any)?.plan === 'basic') {
-      const { data: hrAddon } = await supabase
-        .from('org_addon_subscriptions')
-        .select('status,expires_at,marketplace_addons!inner(slug)')
-        .eq('org_id', org_id).eq('status', 'active').eq('marketplace_addons.slug', 'hr_full').maybeSingle()
-      const hasHrAddon = !!hrAddon && new Date((hrAddon as any).expires_at) > new Date()
-      if (!hasHrAddon) {
-        return NextResponse.json({ success: true, locked: true, today: [], shift: null })
-      }
+    if (!(await orgHasFeature(supabase, org_id, 'hr', (orgCheck as any)?.plan))) {
+      return NextResponse.json({ success: true, locked: true, today: [], shift: null })
     }
 
     const { data: staffRow } = await supabase.from('staff_members').select('id,shift_id,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates').eq('id', staff_id).eq('org_id', org_id).maybeSingle()

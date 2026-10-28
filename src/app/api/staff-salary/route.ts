@@ -1,4 +1,5 @@
 import { managerMay } from '@/lib/managerPerms'
+import { orgHasFeature, lockedMessage } from '@/lib/planFeatures'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
@@ -29,8 +30,8 @@ export async function POST(req: Request) {
     const supabase = sb()
 
     const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
-    if ((orgCheck as any)?.plan === 'basic') {
-      return NextResponse.json({ error: 'ميزة الرواتب متاحة فقط بالباقة المتوسطة أو المتقدمة — يرجى ترقية الباقة' }, { status: 403 })
+    if (!(await orgHasFeature(supabase, org_id, 'hr', (orgCheck as any)?.plan))) {
+      return NextResponse.json({ error: lockedMessage('hr') }, { status: 403 })
     }
 
     // مدير الفرع يعدّل رواتب موظفين فرعه بس

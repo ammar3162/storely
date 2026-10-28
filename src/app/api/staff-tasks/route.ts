@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { orgHasFeature, lockedMessage } from '@/lib/planFeatures'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { managerMay } from '@/lib/managerPerms'
@@ -96,17 +97,8 @@ export async function POST(req: Request) {
 
     const supabase = sb()
     const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
-    if ((orgCheck as any)?.plan === 'basic') {
-      // عميل الأساسية ممكن يكون اشترى إضافة "إدارة الموظفين الكاملة" من المتجر
-      const { data: addonRow } = await supabase.from('marketplace_addons').select('id').eq('slug', 'hr_full').single()
-      let hasAddon = false
-      if (addonRow) {
-        const { data: sub } = await supabase.from('org_addon_subscriptions').select('expires_at').eq('org_id', org_id).eq('addon_id', (addonRow as any).id).eq('status', 'active').single()
-        hasAddon = !!sub && new Date((sub as any).expires_at) > new Date()
-      }
-      if (!hasAddon) {
-        return NextResponse.json({ error: 'ميزة المهام متاحة فقط بالباقة المتوسطة أو المتقدمة، أو عبر إضافة إدارة الموظفين من المتجر' }, { status: 403 })
-      }
+    if (!(await orgHasFeature(supabase, org_id, 'hr', (orgCheck as any)?.plan))) {
+      return NextResponse.json({ error: lockedMessage('hr') }, { status: 403 })
     }
 
     // كل الموظفين لازم يكونون من المنشأة (ومن فرع المدير لو مدير فرع) — والفرع يجي من الموظف نفسه
