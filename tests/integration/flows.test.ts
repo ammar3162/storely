@@ -18,6 +18,8 @@ if (fs.existsSync(envFile)) {
   }
 }
 const URL_ = process.env.TEST_SUPABASE_URL || ''
+// رقم جوال فريد لموظفين الاختبارات (ما يتعارض بين الاختبارات أو التشغيلات)
+const uniqPhone = () => `9665${String(Math.floor(Math.random() * 1e8)).padStart(8, '0')}`
 const KEY = process.env.TEST_SUPABASE_SERVICE_ROLE_KEY || ''
 const STAGING_REF = 'vmdhaqpuobxeyydbksfu'
 const enabled = !!URL_ && !!KEY && !KEY.includes('الصق') && URL_.includes(STAGING_REF)
@@ -348,7 +350,7 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       const leave = await import('@/app/api/staff-leave/route')
       const { data: brB } = await db.from('branches').insert({ org_id: orgId, name: 'فرع موارد ب', is_active: true } as any).select('id').single()
       const mk = async (o: string, b: string | null, n: number) => ((await db.from('staff_members').insert({
-        org_id: o, branch_id: b, name: 'موظف ' + n, phone: `9665${String(stamp + 40 + n).slice(-8)}`, pin: 'x', is_active: true, role: 'staff', monthly_salary: 3000, leave_balance_days: 5,
+        org_id: o, branch_id: b, name: 'موظف ' + n, phone: uniqPhone(), pin: 'x', is_active: true, role: 'staff', monthly_salary: 3000, leave_balance_days: 5,
       } as any).select('id').single()).data as any).id
       const stA = await mk(orgId, branchA, 1), stB = await mk(orgId, (brB as any).id, 2)
       const { data: other } = await db.from('organizations').insert({ name: `__it_other_${stamp}`, whatsapp_number: '966500000000', plan: 'pro', max_branches: 1, currency: 'SAR' } as any).select('id').single()
@@ -754,7 +756,7 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       const { data: es } = await db.from('marketplace_addons').select('id').eq('slug', 'extra_staff').single()
       await db.from('org_addon_subscriptions').upsert({ org_id: orgId, addon_id: (es as any).id, status: 'active', quantity: 2,
         activated_at: new Date().toISOString(), expires_at: new Date(Date.now() - 1000).toISOString() } as any, { onConflict: 'org_id,addon_id' })
-      for (let i = 0; i < 3; i++) await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: `سعة ${i}`, phone: `9665${String(stamp + 80 + i).slice(-8)}`, pin: 'x', is_active: true, role: 'staff' } as any)
+      for (let i = 0; i < 3; i++) await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: `سعة ${i}`, phone: uniqPhone(), pin: 'x', is_active: true, role: 'staff' } as any)
       expect((await checkStaffCapacity(db as any, orgId, branchA)).ok).toBe(false)
       // تجديدها يرجع الرصيد، وتغيير الباقة ما يمسح وحداتها من الحد المعروض
       await db.from('org_addon_subscriptions').update({ expires_at: new Date(Date.now() + 864e5).toISOString() } as any).eq('org_id', orgId).eq('addon_id', (es as any).id)
@@ -783,7 +785,8 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       const { generateStaffToken } = await import('@/lib/staffAuth')
       process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
       await db.from('organizations').update({ plan: 'basic', max_staff: 10 } as any).eq('id', orgId)
-      const body = (n: number) => ({ org_id: orgId, branch_id: branchA, name: `كاشير ${n}`, phone: `9665${String(stamp + 60 + n).slice(-8)}`, pin: '4821', role: 'cashier', permissions: { dispense: true } })
+      const { data: cb } = await db.from('branches').insert({ org_id: orgId, name: 'فرع كاشير', is_active: true } as any).select('id').single()
+      const body = (n: number) => ({ org_id: orgId, branch_id: (cb as any).id, name: `كاشير ${n}`, phone: uniqPhone(), pin: '4821', role: 'cashier', permissions: { dispense: true } })
 
       expect((await call(addStaff.POST, 'POST', '/api/add-staff', body(1))).status).toBe(403)
       expect((await orgFeatures(db as any, orgId)).cashier).toBe(false)
@@ -796,7 +799,7 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       expect(added.status).toBe(200)
 
       const { data: cashier } = await db.from('staff_members').select('id').eq('org_id', orgId).eq('name', 'كاشير 2').single()
-      const res = await staffOrg.GET(new Request('http://test/api/staff-org', { headers: { Authorization: `Bearer ${generateStaffToken((cashier as any).id, orgId, branchA)}` } }))
+      const res = await staffOrg.GET(new Request('http://test/api/staff-org', { headers: { Authorization: `Bearer ${generateStaffToken((cashier as any).id, orgId, (cb as any).id)}` } }))
       expect(((await res.json()) as any).cashier_feature).toBe(true)
 
       // الإضافة انتهت → يرجع مقفل
@@ -805,6 +808,7 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
 
       await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).eq('addon_id', (addon as any).id)
       await db.from('staff_members').delete().eq('org_id', orgId).like('name', 'كاشير %')
+      await db.from('branches').update({ is_active: false } as any).eq('id', (cb as any).id)
       await db.from('organizations').update({ plan: 'pro', max_staff: 1 } as any).eq('id', orgId)
     }, 120_000)
   })
@@ -814,7 +818,7 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       const assign = await import('@/app/api/staff-members/assign/route')
       const mkStaff = async (n: number) => {
         const r = await db.from('staff_members').insert({
-          org_id: orgId, branch_id: branchA, name: `مشترك ${n}`, phone: `9665${String(stamp + 40 + n).slice(-8)}`, pin: 'x', is_active: true, role: 'staff',
+          org_id: orgId, branch_id: branchA, name: `مشترك ${n}`, phone: uniqPhone(), pin: 'x', is_active: true, role: 'staff',
         } as any).select('id').single()
         if (r.error) throw new Error('staff insert: ' + r.error.message)
         return r.data as any
