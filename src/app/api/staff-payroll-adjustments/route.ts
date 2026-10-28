@@ -1,4 +1,5 @@
 import { managerMay } from '@/lib/managerPerms'
+import { orgHasFeature, lockedMessage } from '@/lib/planFeatures'
 import { NextResponse } from 'next/server'
 import { notifyStaffDeduction } from '@/lib/staffDeductionNotice'
 import { createClient } from '@supabase/supabase-js'
@@ -70,8 +71,8 @@ export async function POST(req: Request) {
       if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على الرواتب والإجازات — كلّم مالك المنشأة' }, { status: 403 })
 
       const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', body.org_id).single()
-      if ((orgCheck as any)?.plan === 'basic') {
-        return NextResponse.json({ error: 'ميزة الرواتب متاحة فقط بالباقة المتوسطة أو المتقدمة' }, { status: 403 })
+      if (!(await orgHasFeature(supabase, body.org_id, 'hr', (orgCheck as any)?.plan))) {
+        return NextResponse.json({ error: lockedMessage('hr') }, { status: 403 })
       }
 
       // الموظف لازم يكون من نفس المنشأة (ومن فرع المدير لو كان مدير فرع)

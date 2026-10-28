@@ -19,12 +19,16 @@ function formatPhone(raw: string): string {
 
 export async function POST(req: Request) {
   try {
-    const { name, phone } = await req.json()
+    const { phone } = await req.json()
     if (!phone) return NextResponse.json({ success: false })
 
+    // رابط مفتوح (يُستدعى بعد التسجيل مباشرة) — فما نثق بأي نص من الطلب:
+    // الاسم من قاعدة البيانات، وبس لمالك سجّل خلال آخر 15 دقيقة. غير كذا أي أحد يقدر يرسل نص من رقمنا لعملائنا
     const cleanPhone = normalizePhone(phone)
-    const { data: profile } = await sb().from('profiles').select('whatsapp_consent').eq('phone', cleanPhone).maybeSingle()
+    const { data: profile } = await sb().from('profiles').select('whatsapp_consent,role,created_at,organizations(name)').eq('phone', cleanPhone).eq('role', 'owner').maybeSingle()
     if ((profile as any)?.whatsapp_consent !== true) return NextResponse.json({ success: false, message: 'لا يوجد موافقة واتساب' })
+    if (!(profile as any)?.created_at || Date.now() - new Date((profile as any).created_at).getTime() > 15 * 60_000) return NextResponse.json({ success: false })
+    const name = String((profile as any)?.organizations?.name || '').slice(0, 80)
 
     const msg = `🟢 *Storely*
 

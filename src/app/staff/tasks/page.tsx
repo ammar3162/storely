@@ -1,5 +1,7 @@
 'use client'
 import { useLiveRefresh, liveStaffOrg } from '@/lib/useLiveRefresh'
+import { useStaffLang, isRtlLang } from '@/lib/staffLang'
+import { Globe } from 'lucide-react'
 import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -15,6 +17,8 @@ const LANGUAGES = [
 ]
 
 const UI_STRINGS: Record<string, Record<string,string>> = {
+  error:          { ar:'حدث خطأ', en:'Something went wrong', ur:'خرابی ہوئی', hi:'कुछ गलत हुआ', tl:'May error', bn:'একটি সমস্যা হয়েছে', fr:'Une erreur est survenue' },
+  uploadFailed:   { ar:'فشل رفع الصورة', en:'Photo upload failed', ur:'تصویر اپ لوڈ نہیں ہوئی', hi:'फोटो अपलोड नहीं हुई', tl:'Hindi na-upload ang larawan', bn:'ছবি আপলোড হয়নি', fr:"Échec de l'envoi de la photo" },
   myTasks:        { ar:'مهامي', en:'My Tasks', ur:'میرے کام', hi:'मेरे कार्य', tl:'Aking mga Gawain', bn:'আমার কাজ', fr:'Mes tâches' },
   back:           { ar:'رجوع', en:'Back', ur:'واپس', hi:'वापस', tl:'Bumalik', bn:'ফিরে যান', fr:'Retour' },
   loading:        { ar:'جاري التحميل...', en:'Loading...', ur:'لوڈ ہو رہا ہے...', hi:'लोड हो रहा है...', tl:'Naglo-load...', bn:'লোড হচ্ছে...', fr:'Chargement...' },
@@ -45,22 +49,23 @@ export default function StaffTasksPage() {
   const [loading, setLoading] = useState(true)
   const [completingId, setCompletingId] = useState<string|null>(null)
   const [uploadingId, setUploadingId] = useState<string|null>(null)
-  const [lang, setLang] = useState('ar')
+  const { lang, setLang } = useStaffLang()
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [translating, setTranslating] = useState(false)
   const [taskTranslations, setTaskTranslations] = useState<Record<string,{title:string,description:string|null}>>({})
 
   // تحديث فوري: لما تتغير البيانات من أي جهاز، الصفحة تعيد جلبها
-  useLiveRefresh(liveStaffOrg(), ['staff_tasks'], ()=>loadTasks())
+  // مهمة جديدة توصل على طول — وتنترجم للغة الموظف (الترجمة تنحفظ مرة وحدة، فما تتكرر)
+  useLiveRefresh(liveStaffOrg(), ['staff_tasks'], ()=>{ loadTasks().then(()=>{ if (lang !== 'ar') fetchTranslation(lang) }) })
   useEffect(()=>{
     const saved = localStorage.getItem('staff_session')
     if(!saved){ router.push('/staff'); return }
     const s = JSON.parse(saved) as StaffSession
     setSession(s)
-    const savedLang = localStorage.getItem('staff_lang')
-    if (savedLang) setLang(savedLang)
-    loadTasks().then(()=>{ if (savedLang && savedLang!=='ar') fetchTranslation(savedLang) })
+    loadTasks()
   },[])
+  // ترجمة نصوص المهام كل ما تغيّرت اللغة (من هالصفحة أو من أي صفحة ثانية)
+  useEffect(()=>{ if (lang !== 'ar') fetchTranslation(lang) },[lang])
 
   async function fetchTranslation(targetLang: string) {
     setTranslating(true)
@@ -100,7 +105,7 @@ export default function StaffTasksPage() {
     })
     const j = await res.json()
     setCompletingId(null)
-    if (!j.success) { alert(j.error || 'حدث خطأ'); return }
+    if (!j.success) { alert(j.error || t('error')); return }
     loadTasks()
   }
 
@@ -112,7 +117,7 @@ export default function StaffTasksPage() {
       fd.append('file', file)
       const upRes = await fetch('/api/staff-upload-task-photo', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd })
       const upJ = await upRes.json()
-      if (!upJ.success) { alert(upJ.error || 'فشل رفع الصورة'); setUploadingId(null); return }
+      if (!upJ.success) { alert(upJ.error || t('uploadFailed')); setUploadingId(null); return }
 
       const res = await fetch('/api/staff-tasks', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -120,15 +125,15 @@ export default function StaffTasksPage() {
       })
       const j = await res.json()
       setUploadingId(null)
-      if (!j.success) { alert(j.error || 'حدث خطأ'); return }
+      if (!j.success) { alert(j.error || t('error')); return }
       loadTasks()
     } catch {
       setUploadingId(null)
-      alert('حدث خطأ')
+      alert(t('error'))
     }
   }
 
-  function t(key: string) { return UI_STRINGS[key]?.[lang] || UI_STRINGS[key]?.ar || key }
+  function t(key: string) { return UI_STRINGS[key]?.[lang] || UI_STRINGS[key]?.en || UI_STRINGS[key]?.ar || key }
   const isRtl = lang==='ar' || lang==='ur'
 
   const pendingTasks = tasks.filter((t:any)=>t.status==='pending')
@@ -142,20 +147,20 @@ export default function StaffTasksPage() {
   )
 
   return (
-    <div style={{minHeight:'100vh',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',paddingBottom:40}}>
+    <div style={{minHeight:'100vh',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:isRtlLang(lang as any)?'rtl':'ltr',paddingBottom:40}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
-      <StaffHeader title={t('myTasks')} subtitle={session.name} end={
+      <StaffHeader title={t('myTasks')} subtitle={session.name} rtl={isRtlLang(lang as any)} end={
         <div style={{position:'relative' as const}}>
           <button onClick={()=>setShowLangMenu(v=>!v)} disabled={translating}
             style={{...staffHeaderBtn,opacity:translating?0.6:1}}>
-            🌐 {LANGUAGES.find(l=>l.code===lang)?.label || 'العربية'}
+            <Globe size={14} strokeWidth={2.25}/> {LANGUAGES.find(l=>l.code===lang)?.label || 'العربية'}
           </button>
           {showLangMenu && (
             <div style={{position:'absolute' as const,top:'100%',insetInlineEnd:0,marginTop:6,background:'white',border:'1px solid #ece8e2',borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.15)',overflow:'hidden',minWidth:140,zIndex:50}}>
               {LANGUAGES.map(l=>(
                 <button key={l.code}
-                  onClick={()=>{setLang(l.code);localStorage.setItem('staff_lang',l.code);if(l.code!=='ar')fetchTranslation(l.code);setShowLangMenu(false)}}
+                  onClick={()=>{setLang(l.code as any);setShowLangMenu(false)}}
                   style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#f0fdfa':'white',color:lang===l.code?'#029FA2':'#1c1c1a',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
                   {lang===l.code?'✓ ':''}{l.label}
                 </button>

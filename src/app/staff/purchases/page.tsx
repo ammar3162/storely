@@ -14,6 +14,10 @@ import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter } from 'next/navigation'
 import { getStaffOrg } from '@/lib/session'
+import { useStaffLang, isRtlLang } from '@/lib/staffLang'
+import { PURCHASES_EXTRA } from '@/lib/staffI18n/purchases'
+import StaffLangButton from '@/components/StaffLangButton'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 
@@ -89,11 +93,15 @@ const PUI: Record<string,Record<'ar'|'en',string>> = {
   needAmount:       {ar:'اكتب المبلغ الإجمالي',en:'Enter the total amount'},
   needQty:          {ar:'الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)',en:'Quantity must be a whole number — use a smaller unit (grams instead of kg)'},
 }
-const pt = (key: string, lang: 'ar'|'en') => PUI[key]?.[lang] || PUI[key]?.ar || key
-const itemsCount = (n: number, lang: 'ar'|'en') => lang === 'en' ? `${n} items` : n === 2 ? 'صنفين' : n <= 10 ? `${n} أصناف` : `${n} صنف`
+// العربي والإنجليزي هنا، وباقي اللغات من staffI18n/purchases
+const pt = (key: string, lang: string) =>
+  (lang === 'ar' || lang === 'en' ? PUI[key]?.[lang] : (PURCHASES_EXTRA[key] as any)?.[lang]) || PUI[key]?.en || PUI[key]?.ar || key
+const itemsCount = (n: number, lang: string) => lang === 'en' ? `${n} items` : lang !== 'ar' ? pt('items', lang).replace('{n}', String(n)) : n === 2 ? 'صنفين' : n <= 10 ? `${n} أصناف` : `${n} صنف`
 
 export default function StaffPurchasesPage() {
-  const [lang, setPageLang] = useState<'ar'|'en'>('ar')
+  const { lang } = useStaffLang()
+  const rtl = isRtlLang(lang)
+  const subLang: 'ar'|'en' = lang === 'ar' ? 'ar' : 'en'   // مكوّنات الفاتورة المشتركة: عربي أو إنجليزي
   const [session, setSession] = useState<StaffSession|null>(null)
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -127,8 +135,6 @@ export default function StaffPurchasesPage() {
   const router = useRouter()
 
   useEffect(()=>{
-    const savedLang = localStorage.getItem('staff_lang')
-    if(savedLang==='en') setPageLang('en')
     const saved = localStorage.getItem('staff_session')
     if (!saved) { router.push('/staff'); return }
     const s = JSON.parse(saved) as StaffSession
@@ -139,6 +145,14 @@ export default function StaffPurchasesPage() {
       .then(r=>r.json()).then(j=>setProducts(j.products||[])).catch(()=>{})
     getStaffOrg().then(org=>{ if(org?.currency) setCurr(currencySymbol(org.currency)); setBizType(org?.business_type??null) })
   },[])
+
+  // تحديث فوري: لو المالك أضاف مورد أو منتج، يظهر على طول
+  useLiveRefresh(session?.org_id, ['suppliers','products'], ()=>{
+    if(!session) return
+    loadSuppliers(session.org_id)
+    fetch('/api/staff-products',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('staff_token')}`},body:'{}'})
+      .then(r=>r.json()).then(j=>setProducts(j.products||[])).catch(()=>{})
+  })
 
   function showToast(msg: string) {
     setToast(msg)
@@ -206,7 +220,7 @@ export default function StaffPurchasesPage() {
     }
     if (rows.some(r => !(r.total > 0))) return stop(pt('pickPrice', lang))
     if (rows.some(r => !Number.isInteger(r.qty))) return stop(pt('needQty', lang))
-    if (form.hasVat !== 'no' && !form.invoice_image) return stop(uploading ? (lang === 'en' ? 'Wait — the photo is still uploading' : 'انتظر — الصورة لسا ترتفع') : pt('invoiceRequired', lang))
+    if (form.hasVat !== 'no' && !form.invoice_image) return stop(uploading ? (lang === 'ar' ? 'انتظر — الصورة لسا ترتفع' : lang === 'en' ? 'Wait — the photo is still uploading' : pt('waitUpload', lang)) : pt('invoiceRequired', lang))
     setBulkSaving(true)
     const send = (extra = {}) => fetch('/api/staff-purchase/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('staff_token')}` },
       body: JSON.stringify({ supplier: form.supplier, has_vat: form.hasVat !== 'no', invoice_image: form.invoice_image || null,
@@ -214,9 +228,9 @@ export default function StaffPurchasesPage() {
     let res = await send()
     let j = await res.json().catch(() => ({}))
     // نفس الفاتورة مسجلة قبل → نسأل الموظف بدل ما تتكرر
-    if (j.duplicate && window.confirm(`${j.error}\n\n${lang === 'en' ? 'Save it again?' : 'تسجلها مرة ثانية؟'}`)) { res = await send({ allow_duplicate: true }); j = await res.json().catch(() => ({})) }
+    if (j.duplicate && window.confirm(`${j.error}\n\n${lang === 'ar' ? 'تسجلها مرة ثانية؟' : pt('saveAgain', lang)}`)) { res = await send({ allow_duplicate: true }); j = await res.json().catch(() => ({})) }
     setBulkSaving(false)
-    if (!res.ok || !j.success) return stop(j.error || (lang === 'en' ? 'Could not save — try again' : 'ما انحفظت الفاتورة — حاول مرة ثانية'))
+    if (!res.ok || !j.success) return stop(j.error || (lang === 'ar' ? 'ما انحفظت الفاتورة — حاول مرة ثانية' : lang === 'en' ? 'Could not save — try again' : pt('saveFailed', lang)))
     showToast(`${pt('itemsSaved', lang)} — ${j.summary || j.saved}`)
     setTimeout(() => router.push('/staff/dispense'), 2200)
   }
@@ -259,7 +273,7 @@ export default function StaffPurchasesPage() {
     })
     let res = await sendOne()
     let resData = await res.json()
-    if(resData.duplicate&&window.confirm(`${resData.error}\n\n${lang==='en'?'Save it again?':'تسجلها مرة ثانية؟'}`)){res=await sendOne({allow_duplicate:true});resData=await res.json()}
+    if(resData.duplicate&&window.confirm(`${resData.error}\n\n${lang==='ar'?'تسجلها مرة ثانية؟':pt('saveAgain',lang)}`)){res=await sendOne({allow_duplicate:true});resData=await res.json()}
     if(!res.ok){showToast(pt('errorPrefix',lang)+resData.error);setLoading(false);submitting.current=false;return}
     showToast(form.category==='مخزون'?`${pt('inventoryUpdated',lang)} (+${form.qty||0})`:pt('purchaseRecorded',lang))
 
@@ -278,11 +292,11 @@ export default function StaffPurchasesPage() {
   if(!session) return null
 
   return (
-    <div style={{minHeight:'100vh',background:C.bg,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:lang==='en'?'ltr':'rtl'}}>
+    <div style={{minHeight:'100vh',background:C.bg,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:rtl?'rtl':'ltr'}}>
       {showScan&&<Suspense fallback={null}><BarcodeScanner onScan={(code:string)=>{setShowScan(false);setForm(f=>({...f,sku:code}))}} onClose={()=>setShowScan(false)}/></Suspense>}
 
       {/* Header */}
-      <StaffHeader title={pt('title',lang)} subtitle={`${session.name} · ${session.org_name}`} rtl={lang!=='en'} />
+      <StaffHeader title={pt('title',lang)} subtitle={`${session.name} · ${session.org_name}`} rtl={rtl} end={<StaffLangButton/>} />
 
       {/* الرسالة ثابتة بأسفل الشاشة — كانت فوق الصفحة وما تبين لو الموظف نازل عند زر الحفظ */}
       {toast&&<div role="status" style={{position:'fixed',left:16,right:16,bottom:20,zIndex:1000,maxWidth:520,margin:'0 auto',background:toast.startsWith('✅')?C.primaryL:C.dangerL,color:toast.startsWith('✅')?C.primary:C.danger,border:`1.5px solid ${toast.startsWith('✅')?C.primary:C.danger}`,borderRadius:12,padding:'12px 16px',fontSize:13.5,fontWeight:800,textAlign:'center',boxShadow:'0 10px 30px rgba(0,0,0,.18)'}}>{toast}</div>}
@@ -296,7 +310,7 @@ export default function StaffPurchasesPage() {
           <InvoicePickButtons onFile={handleImage} disabled={uploading} primary={C.primary} primaryL={C.primaryL}
             labels={{camera:pt('camera',lang),gallery:previewUrl||pdfName?pt('changePhoto',lang):pt('gallery',lang),file:pt('fileBtn',lang)}}/>
           {readState&&<div style={{marginTop:10,fontSize:12.5,fontWeight:700,lineHeight:1.6,color:readState==='fail'?C.warning:readState==='reading'?C.text3:C.primary}}>
-            {readState==='fail'&&readErr&&lang!=='en'?`${readErr}`:pt(readState==='reading'?'reading':readState==='qr'?'readQr':readState==='ok'?'readOk':'readFail',lang)}
+            {readState==='fail'&&readErr&&lang==='ar'?`${readErr}`:pt(readState==='reading'?'reading':readState==='qr'?'readQr':readState==='ok'?'readOk':'readFail',lang)}
           </div>}
         </div>
 
@@ -331,7 +345,7 @@ export default function StaffPurchasesPage() {
             </div>
             <div>
               <label style={lbl}>{pt('unit',lang)}</label>
-              <SelectOrOther style={inp} value={form.unit} onChange={v=>setForm(f=>({...f,unit:v}))} options={unitsFor(bizType)} label={u=>lang==='en'?(UNIT_EN[u]||u):u} placeholder={lang==='en'?'Type the unit':'اكتب اسم الوحدة'}/>
+              <SelectOrOther style={inp} value={form.unit} onChange={v=>setForm(f=>({...f,unit:v}))} options={unitsFor(bizType)} label={u=>lang==='ar'?u:(UNIT_EN[u]||u)} placeholder={lang==='ar'?'اكتب اسم الوحدة':lang==='en'?'Type the unit':pt('unitPh',lang)}/>
             </div>
           </div>
 
@@ -384,21 +398,21 @@ export default function StaffPurchasesPage() {
           {form.hasVat==='yes'&&(
             <div style={{marginBottom:12,borderRadius:12,padding:12,border:`1.5px ${form.invoice_image?'solid':'dashed'} ${form.invoice_image?C.primary:C.danger}`,background:form.invoice_image?C.primaryL:C.dangerL}}>
               {form.invoice_image
-                ? <div style={{fontSize:13,fontWeight:700,color:C.primary}}>{lang==='en'?'✅ Invoice attached':'✅ الفاتورة مرفقة'}</div>
-                : <><div style={{fontSize:13,fontWeight:700,color:C.danger,marginBottom:8}}>{lang==='en'?'📎 Tax invoice — attach a photo or file (required)':'📎 الفاتورة ضريبية — أرفق صورتها أو ملفها (مطلوب)'}</div>
+                ? <div style={{fontSize:13,fontWeight:700,color:C.primary}}>{lang==='ar'?'✅ الفاتورة مرفقة':lang==='en'?'✅ Invoice attached':pt('invoiceAttached',lang)}</div>
+                : <><div style={{fontSize:13,fontWeight:700,color:C.danger,marginBottom:8}}>{lang==='ar'?'📎 الفاتورة ضريبية — أرفق صورتها أو ملفها (مطلوب)':lang==='en'?'📎 Tax invoice — attach a photo or file (required)':pt('taxInvoiceReq',lang)}</div>
                   <InvoicePickButtons onFile={handleImage} disabled={uploading} primary={C.primary} primaryL={'white'}
                     labels={{camera:pt('camera',lang),gallery:pt('gallery',lang),file:pt('fileBtn',lang)}}/>
-                  {uploading&&<div style={{fontSize:12,color:C.text3,marginTop:6}}>{lang==='en'?'Uploading…':'جاري الرفع…'}</div>}</>}
+                  {uploading&&<div style={{fontSize:12,color:C.text3,marginTop:6}}>{lang==='ar'?'جاري الرفع…':lang==='en'?'Uploading…':pt('uploadingShort',lang)}</div>}</>}
             </div>
           )}
           {form.hasVat==='yes'&&(
-            <TaxInvoiceFields lang={lang} invoiceNumber={form.invoice_number} vatNumber={form.supplier_vat_number} savedFromSupplier={vatFromSupplier}
+            <TaxInvoiceFields lang={subLang} invoiceNumber={form.invoice_number} vatNumber={form.supplier_vat_number} savedFromSupplier={vatFromSupplier}
               zatca={zatca} onZatca={setZatca} enteredTotal={multi?0:Number(form.total_amount)||0} onError={showToast}
               onChange={p=>{ if('supplier_vat_number' in p) setVatFromSupplier(false); setForm(f=>({...f,...p})) }} inputStyle={inp} labelStyle={lbl}/>
           )}
 
           {/* الفاتورة فيها أكثر من صنف */}
-          {multi&&<InvoiceItemsPicker items={ocrItems} products={products} lang={lang} invoiceTotal={zatca?.inv.total ?? (Number(form.total_amount)||null)}
+          {multi&&<InvoiceItemsPicker items={ocrItems} products={products} lang={subLang} invoiceTotal={zatca?.inv.total ?? (Number(form.total_amount)||null)}
             saving={bulkSaving} onSave={saveItems} color={C.primary} error={bulkErr}/>}
 
           {/* ملاحظة */}

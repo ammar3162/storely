@@ -722,6 +722,129 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
     })
   })
 
+  describe('changing plans keeps data, limits and features consistent', () => {
+    it('pro → basic → pro: no data lost, extra branch paused then restored, features follow, expired add-ons give nothing', async () => {
+      const updatePlan = await import('@/app/api/admin/update-plan/route')
+      const { orgFeatures } = await import('@/lib/planFeatures')
+      const { checkStaffCapacity } = await import('@/lib/staffCapacity')
+      const admin = async (body: any) => {
+        const res = await updatePlan.POST(new Request('http://test/api/admin/update-plan', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify(body) }))
+        return { status: res.status, json: await res.json() as any }
+      }
+      const counts = async () => {
+        const n = async (t: string) => (await db.from(t).select('id', { count: 'exact', head: true }).eq('org_id', orgId)).count
+        return { products: await n('products'), staff: await n('staff_members'), branches: await n('branches'), purchases: await n('purchases'), moves: await n('stock_movements') }
+      }
+
+      await admin({ orgId, planName: 'pro', maxBranches: 3, maxStaff: 10, maxSuppliers: 10 })
+      const { data: br2 } = await db.from('branches').insert({ org_id: orgId, name: 'فرع ترقية', is_active: true } as any).select('id').single()
+      const before = await counts()
+      expect(await orgFeatures(db as any, orgId)).toEqual({ cashier: true, hr: true, ai: true, profitability: true })
+
+      // تخفيض للأساسية: الفرع الزايد يتوقف مؤقتاً، والبيانات كلها باقية
+      const down = await admin({ orgId, planName: 'basic', maxBranches: 1, maxStaff: 3, maxSuppliers: 3 })
+      expect(down.status).toBe(200)
+      expect(await counts()).toEqual(before)
+      expect((await db.from('branches').select('is_active').eq('id', (br2 as any).id).single()).data).toMatchObject({ is_active: false })
+      expect(await orgFeatures(db as any, orgId)).toEqual({ cashier: false, hr: false, ai: false, profitability: false })
+
+      // إضافة «موظف إضافي» منتهية ما تعطي رصيد
+      const { data: es } = await db.from('marketplace_addons').select('id').eq('slug', 'extra_staff').single()
+      await db.from('org_addon_subscriptions').upsert({ org_id: orgId, addon_id: (es as any).id, status: 'active', quantity: 2,
+        activated_at: new Date().toISOString(), expires_at: new Date(Date.now() - 1000).toISOString() } as any, { onConflict: 'org_id,addon_id' })
+      for (let i = 0; i < 3; i++) await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: `سعة ${i}`, phone: `9665${String(stamp + 80 + i).slice(-8)}`, pin: 'x', is_active: true, role: 'staff' } as any)
+      expect((await checkStaffCapacity(db as any, orgId, branchA)).ok).toBe(false)
+      // تجديدها يرجع الرصيد، وتغيير الباقة ما يمسح وحداتها من الحد المعروض
+      await db.from('org_addon_subscriptions').update({ expires_at: new Date(Date.now() + 864e5).toISOString() } as any).eq('org_id', orgId).eq('addon_id', (es as any).id)
+      expect((await checkStaffCapacity(db as any, orgId, branchA)).ok).toBe(true)
+      await admin({ orgId, planName: 'basic', maxBranches: 1, maxStaff: 3, maxSuppliers: 3 })
+      expect((await db.from('organizations').select('max_staff').eq('id', orgId).single()).data).toMatchObject({ max_staff: 5 })
+
+      // ترقية مرة ثانية: الفرع يرجع والميزات تنفتح
+      await admin({ orgId, planName: 'pro', maxBranches: 3, maxStaff: 10, maxSuppliers: 10 })
+      expect((await db.from('branches').select('is_active').eq('id', (br2 as any).id).single()).data).toMatchObject({ is_active: true })
+      expect((await orgFeatures(db as any, orgId)).cashier).toBe(true)
+
+      await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).eq('addon_id', (es as any).id)
+      await db.from('staff_members').delete().eq('org_id', orgId).like('name', 'سعة %')
+      await db.from('branches').update({ is_active: false } as any).eq('id', (br2 as any).id)
+      await db.from('organizations').update({ plan: 'pro', max_branches: 1, max_staff: 1 } as any).eq('id', orgId)
+    }, 180_000)
+  })
+
+  describe('basic plan + add-ons open the same features everywhere', () => {
+    it('a cashier can be added on basic only with the cashier-closing add-on, and staff see it too', async () => {
+      process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
+      const addStaff = await import('@/app/api/add-staff/route')
+      const staffOrg = await import('@/app/api/staff-org/route')
+      const { orgFeatures } = await import('@/lib/planFeatures')
+      const { generateStaffToken } = await import('@/lib/staffAuth')
+      process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
+      await db.from('organizations').update({ plan: 'basic', max_staff: 10 } as any).eq('id', orgId)
+      const body = (n: number) => ({ org_id: orgId, branch_id: branchA, name: `كاشير ${n}`, phone: `9665${String(stamp + 60 + n).slice(-8)}`, pin: '4821', role: 'cashier', permissions: { dispense: true } })
+
+      expect((await call(addStaff.POST, 'POST', '/api/add-staff', body(1))).status).toBe(403)
+      expect((await orgFeatures(db as any, orgId)).cashier).toBe(false)
+
+      const { data: addon } = await db.from('marketplace_addons').select('id').eq('slug', 'cashier_closing').single()
+      await db.from('org_addon_subscriptions').upsert({ org_id: orgId, addon_id: (addon as any).id, status: 'active', quantity: 1,
+        activated_at: new Date().toISOString(), expires_at: new Date(Date.now() + 864e5).toISOString() } as any, { onConflict: 'org_id,addon_id' })
+      expect((await orgFeatures(db as any, orgId)).cashier).toBe(true)
+      const added = await call(addStaff.POST, 'POST', '/api/add-staff', body(2))
+      expect(added.status).toBe(200)
+
+      const { data: cashier } = await db.from('staff_members').select('id').eq('org_id', orgId).eq('name', 'كاشير 2').single()
+      const res = await staffOrg.GET(new Request('http://test/api/staff-org', { headers: { Authorization: `Bearer ${generateStaffToken((cashier as any).id, orgId, branchA)}` } }))
+      expect(((await res.json()) as any).cashier_feature).toBe(true)
+
+      // الإضافة انتهت → يرجع مقفل
+      await db.from('org_addon_subscriptions').update({ expires_at: new Date(Date.now() - 1000).toISOString() } as any).eq('org_id', orgId).eq('addon_id', (addon as any).id)
+      expect((await orgFeatures(db as any, orgId)).cashier).toBe(false)
+
+      await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).eq('addon_id', (addon as any).id)
+      await db.from('staff_members').delete().eq('org_id', orgId).like('name', 'كاشير %')
+      await db.from('organizations').update({ plan: 'pro', max_staff: 1 } as any).eq('id', orgId)
+    }, 120_000)
+  })
+
+  describe('products shared between staff', () => {
+    it('two staff can have the same product, and products from another branch are refused', async () => {
+      const assign = await import('@/app/api/staff-members/assign/route')
+      const mkStaff = async (n: number) => (await db.from('staff_members').insert({
+        org_id: orgId, branch_id: branchA, name: `مشترك ${n}`, phone: `9665${String(stamp + 40 + n).slice(-8)}`, pin: 'x', is_active: true, role: 'staff',
+      } as any).select('id').single()).data as any
+      const a = await mkStaff(1), b = await mkStaff(2)
+      const { data: p } = await db.from('products').insert({ org_id: orgId, branch_id: branchA, name: `مشترك_${stamp}`, unit: 'قطعة', qty: 0, is_active: true } as any).select('id').single()
+      const pid = (p as any).id
+      expect((await call(assign.POST, 'POST', '/api/staff-members/assign', { org_id: orgId, staff_id: a.id, product_ids: [pid] })).status).toBe(200)
+      expect((await call(assign.POST, 'POST', '/api/staff-members/assign', { org_id: orgId, staff_id: b.id, add_product_id: pid })).status).toBe(200)
+      const { data: rows } = await db.from('staff_members').select('id,assigned_products').in('id', [a.id, b.id])
+      for (const r of rows as any[]) expect(r.assigned_products).toEqual([pid])
+
+      const { data: other } = await db.from('branches').insert({ org_id: orgId, name: 'فرع ثاني تخصيص', is_active: true } as any).select('id').single()
+      const { data: p2 } = await db.from('products').insert({ org_id: orgId, branch_id: (other as any).id, name: `بعيد_${stamp}`, unit: 'قطعة', qty: 0, is_active: true } as any).select('id').single()
+      expect((await call(assign.POST, 'POST', '/api/staff-members/assign', { org_id: orgId, staff_id: a.id, product_ids: [pid, (p2 as any).id] })).status).toBe(400)
+
+      // الاثنين يصرفون نفس المنتج بنفس اللحظة — ولا صرفة تضيع
+      process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
+      const { generateStaffToken } = await import('@/lib/staffAuth')
+      const dispense = await import('@/app/api/staff-dispense/route')
+      await db.from('stock_movements').insert({ product_id: pid, org_id: orgId, branch_id: branchA, type: 'in', qty_change: 10 } as any)
+      const go = (sid: string) => dispense.POST(new Request('http://test/api/staff-dispense', { method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${generateStaffToken(sid, orgId, branchA)}` },
+        body: JSON.stringify({ productId: pid, qty: 3, staffName: 'اسم مزوّر' }) }))
+      const res = await Promise.all([go(a.id), go(b.id)])
+      expect(res.map(r => r.status)).toEqual([200, 200])
+      expect((await db.from('products').select('qty').eq('id', pid).single()).data).toMatchObject({ qty: 4 })
+      const { data: outs } = await db.from('stock_movements').select('staff_name').eq('product_id', pid).eq('type', 'out')
+      expect((outs as any[]).map(o => o.staff_name).sort()).toEqual(['مشترك 1', 'مشترك 2'])
+
+      await db.from('stock_movements').delete().eq('product_id', pid)
+      await db.from('staff_members').delete().in('id', [a.id, b.id])
+      await db.from('branches').update({ is_active: false } as any).eq('id', (other as any).id)
+    }, 120_000)
+  })
+
   describe('recipe production estimate', () => {
     it('uses the recipe-specific ingredient, shows grams, and counts the Saudi day', async () => {
       const recon = await import('@/app/api/recipe-reconciliation/route')

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/verifyOrgAccess'
 import { combineBranchLimit, EXTRA_BRANCH_SLUG } from '@/lib/branchLimit'
+import { orgFeatures } from '@/lib/planFeatures'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,6 +34,8 @@ export async function GET() {
         .eq('org_id', profile.orgId).eq('status', 'active').eq('marketplace_addons.slug', EXTRA_BRANCH_SLUG),
     ])
     const o: any = org || {}
+    // الميزات المفتوحة (الباقة + الإضافات) — نفس المصدر اللي يستخدمه الخادم للقفل
+    const features = await orgFeatures(db, profile.orgId, o.plan || 'basic')
     const e: any = extra || {}
 
     return NextResponse.json({
@@ -63,6 +66,7 @@ export async function GET() {
         country_code: o.country_code || '+966',
         business_type: o.business_type || null,
         onboarding_done: o.onboarding_done !== false,
+        features,
       } : null,
       branches: branches || [],
     })

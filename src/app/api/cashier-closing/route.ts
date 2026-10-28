@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { orgHasFeature, lockedMessage } from '@/lib/planFeatures'
 import { lockedFor, lockedFromError } from '@/lib/periodLock'
 import { createClient } from '@supabase/supabase-js'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
@@ -55,16 +56,8 @@ export async function POST(req: Request) {
     const branch_id: string | null = (staffRow as any).branch_id ?? auth.data.branch_id ?? null
 
     const { data: orgCheck } = await sb().from('organizations').select('plan').eq('id', org_id).single()
-    if ((orgCheck as any)?.plan === 'basic') {
-      // عميل الأساسية يقدر يستخدم إقفال الكاشير لو اشترى إضافة cashier_closing تحديداً
-      const { data: cashierAddon } = await sb().from('marketplace_addons').select('id').eq('slug', 'cashier_closing').maybeSingle()
-      const now = new Date().toISOString()
-      const { data: sub } = cashierAddon
-        ? await sb().from('org_addon_subscriptions').select('id').eq('org_id', org_id).eq('addon_id', (cashierAddon as any).id).eq('status', 'active').gt('expires_at', now).maybeSingle()
-        : { data: null }
-      if (!sub) {
-        return NextResponse.json({ error: 'ميزة إقفال الكاشير متاحة بالباقة المتوسطة أو المتقدمة، أو عبر شراء إضافة "إقفال الكاشير اليومي" من متجر الإضافات' }, { status: 403 })
-      }
+    if (!(await orgHasFeature(sb(), org_id, 'cashier', (orgCheck as any)?.plan))) {
+      return NextResponse.json({ error: lockedMessage('cashier') }, { status: 403 })
     }
 
     // مبالغ موجبة ومعقولة بس — أي قيمة غريبة تنرفض

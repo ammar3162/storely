@@ -25,6 +25,7 @@ export async function checkStaffCapacity(db: SupabaseClient, org_id: string, bra
     .eq('org_id', org_id)
     .eq('status', 'active')
     .eq('marketplace_addons.slug', 'extra_staff')
+    .gt('expires_at', new Date().toISOString())   // الإضافة المنتهية ما تعطي رصيد (حالتها تبقى active لين يجددها)
     .maybeSingle()
 
   if (!extraStaffSub) {

@@ -1553,6 +1553,8 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
 
 export default function ReportsPage() {
   const orgPlan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
+  // تبويب الكاشير: المتوسطة/المتقدمة أو إضافة «إقفال الكاشير»
+  const [hasCashier, setHasCashier] = useState(orgPlan!=='basic')
   const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'|'cashier'|'waste'|'attendance'|'staffMonthly'>('home')
   const [period, setPeriod]       = useState<FilterPeriod>('today')
   const [from, setFrom]           = useState('')
@@ -1577,7 +1579,7 @@ export default function ReportsPage() {
   async function loadStats() {
     setSL(true)
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setSL(false);return}
-    getMe().then(me=>{ if(me?.org?.currency) setHomeCurr(currencySymbol(me.org.currency)) })
+    getMe().then(me=>{ if(me?.org?.currency) setHomeCurr(currencySymbol(me.org.currency)); if(me?.org?.features) setHasCashier(!!me.org.features.cashier) })
     const{start,end}=getRange(period,from,to)
     const sum=await reportData('summary',start,end)
     if(!sum.success){setSL(false);return}
@@ -1642,7 +1644,7 @@ export default function ReportsPage() {
     </div>
   )
 
-  if (view==='cashier' && orgPlan==='basic') { setView('home'); return null }
+  if (view==='cashier' && !hasCashier) { setView('home'); return null }
 
   if (view==='cashier') return (
     <div style={{fontFamily:font.family,direction:'rtl'}}>
@@ -1733,7 +1735,7 @@ export default function ReportsPage() {
             onClick={()=>setView('inventory')}
           />
         </div>
-        {orgPlan!=='basic' && (
+        {hasCashier && (
         <div className="su" style={{animationDelay:'.25s'}}>
           <ReportCard
             title="إقفال الكاشير اليومي"

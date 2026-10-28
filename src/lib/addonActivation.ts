@@ -30,8 +30,9 @@ export async function activateAddon(db: SupabaseClient, input: { orgId: string; 
   const expiresAt = periodEnd.toISOString()
   const qty = menuBranchIds ? menuBranchIds.length : Math.max(1, Math.min(20, Number(input.quantity) || 1))
 
-  const { data: existingRow } = await db.from('org_addon_subscriptions').select('id,quantity,status').eq('org_id', orgId).eq('addon_id', addonId).maybeSingle()
-  const wasActive = (existingRow as any)?.status === 'active'
+  const { data: existingRow } = await db.from('org_addon_subscriptions').select('id,quantity,status,expires_at').eq('org_id', orgId).eq('addon_id', addonId).maybeSingle()
+  // سارية فعلاً = active وما انتهت — المنتهية تنحسب كاشتراك جديد بالكامل
+  const wasActive = (existingRow as any)?.status === 'active' && (!(existingRow as any)?.expires_at || new Date((existingRow as any).expires_at) > new Date())
   const oldQty = wasActive ? ((existingRow as any)?.quantity || 0) : 0
   const qtyDelta = qty - oldQty
 

@@ -1,4 +1,5 @@
 import { reportAiFailure, aiFailureKind } from '@/lib/aiAlert'
+import { orgHasFeature, lockedMessage } from '@/lib/planFeatures'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
@@ -19,8 +20,8 @@ export async function POST(req: NextRequest) {
   // تحقق من الباقة server-side — أدوات الذكاء الاصطناعي مقفولة على الأساسية
   // (إخفاء الأزرار بالواجهة وحده غير كافٍ، يقدر أي شخص يستدعي هالـAPI مباشرة)
   const { data: orgPlan } = await sb.from('organizations').select('plan').eq('id', org_id).single()
-  if ((orgPlan as any)?.plan === 'basic') {
-    return NextResponse.json({ error: 'أدوات الذكاء الاصطناعي تتطلب الباقة المتوسطة فأعلى — يرجى ترقية الباقة' }, { status: 403 })
+  if (!(await orgHasFeature(sb, org_id, 'ai', (orgPlan as any)?.plan))) {
+    return NextResponse.json({ error: lockedMessage('ai') }, { status: 403 })
   }
 
   // جلب كل المنتجات

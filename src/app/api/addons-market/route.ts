@@ -40,8 +40,8 @@ export async function DELETE(req: Request) {
       await syncBranchesToLimit(supabase, org_id)
     } else if (slug === 'extra_staff') {
       if (branch_id) {
-        const { data: br } = await supabase.from('branches').select('max_staff').eq('id', branch_id).single()
-        await supabase.from('branches').update({ max_staff: Math.max(0, ((br as any)?.max_staff || existingQty) - existingQty) } as any).eq('id', branch_id)
+        const { data: br } = await supabase.from('branches').select('max_staff').eq('id', branch_id).eq('org_id', org_id).single()
+        await supabase.from('branches').update({ max_staff: Math.max(0, ((br as any)?.max_staff || existingQty) - existingQty) } as any).eq('id', branch_id).eq('org_id', org_id)
       }
       await supabase.from('staff_members').update({ is_active: false, hidden_from_list: true } as any).eq('addon_subscription_id', existingSubId)
     } else if (slug === 'extra_suppliers') {

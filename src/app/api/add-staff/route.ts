@@ -1,4 +1,5 @@
 import { cleanPerms } from '@/lib/staffRoles'
+import { orgHasFeature, lockedMessage } from '@/lib/planFeatures'
 import { NextResponse } from 'next/server'
 import { samePhone } from '@/lib/loginThrottle'
 import { encryptPinSafe } from '@/lib/pinVault'
@@ -28,10 +29,8 @@ export async function POST(req: Request) {
     const supabase = sb()
 
     const { data: org } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
-    if (role === 'cashier' && ((org as any)?.plan || 'basic') === 'basic') {
-      return NextResponse.json({
-        error: 'ميزة الكاشير تتطلب الباقة المتوسطة فأعلى — يرجى ترقية الباقة'
-      }, { status: 403 })
+    if (role === 'cashier' && !(await orgHasFeature(supabase, org_id, 'cashier', (org as any)?.plan))) {
+      return NextResponse.json({ error: lockedMessage('cashier') }, { status: 403 })
     }
 
     const capacity = await checkStaffCapacity(supabase, org_id, effectiveBranchId)

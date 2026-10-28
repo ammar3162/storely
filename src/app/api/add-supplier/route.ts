@@ -43,6 +43,7 @@ export async function POST(req: Request) {
         .eq('org_id', org_id)
         .eq('status', 'active')
         .eq('marketplace_addons.slug', 'extra_suppliers')
+        .gt('expires_at', new Date().toISOString())   // الإضافة المنتهية ما تعطي رصيد
         .maybeSingle()
 
       if (!extraSupSub) {

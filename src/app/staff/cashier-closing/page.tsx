@@ -7,6 +7,9 @@ import { useState, useEffect } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter } from 'next/navigation'
 import { getStaffOrg } from '@/lib/session'
+import { useStaffLang, localeOf, isRtlLang } from '@/lib/staffLang'
+import { CASHIER_EXTRA, THANKS_EXTRA } from '@/lib/staffI18n/cashier'
+import StaffLangButton from '@/components/StaffLangButton'
 
 interface StaffSession {
   id: string; name: string; org_id: string; branch_id: string | null
@@ -29,6 +32,10 @@ const STEPS_EN = [
 ]
 
 const CUI: Record<string,Record<'ar'|'en',string>> = {
+  recordedOn:       {ar:'هذا الإقفال بيتسجّل على:',en:'This closing will be recorded on:'},
+  afterMidnight:    {ar:'لأنك تقفل بعد 12 الليل، ينحسب على يوم العمل اللي قبل.',en:'Closed after midnight — it counts on the previous business day.'},
+  sessionExpired:   {ar:'انتهت الجلسة — ادخل بالرمز من جديد',en:'Session expired — log in again'},
+  backHome:         {ar:'رجوع للرئيسية',en:'Back'},
   thankYouTitle:    {ar:'شكراً لك {name} على مجهودك اليوم 🙏',en:'Thank you {name} for your effort today 🙏'},
   logout:           {ar:'خروج',en:'Logout'},
   cashierBadge:     {ar:'كاشير',en:'Cashier'},
@@ -92,7 +99,9 @@ const CUI: Record<string,Record<'ar'|'en',string>> = {
   deficitReasonReq: {ar:'فيه عجز — اختر سبب العجز قبل التقفيل',en:'There is a deficit — choose the reason before closing'},
   deficitOtherReq:  {ar:'اكتب سبب العجز',en:'Write the reason'},
 }
-const ct = (key: string, lang: 'ar'|'en') => CUI[key]?.[lang] || CUI[key]?.ar || key
+// العربي والإنجليزي هنا، وباقي اللغات من staffI18n/cashier
+const ct = (key: string, lang: string) =>
+  (lang === 'ar' || lang === 'en' ? CUI[key]?.[lang] : (CASHIER_EXTRA[key] as any)?.[lang]) || CUI[key]?.en || CUI[key]?.ar || key
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -117,8 +126,9 @@ function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconColor, err
   )
 }
 
-function ProgressBar({ step, lang }: { step: number; lang: 'ar'|'en' }) {
-  const STEPS = lang==='en' ? STEPS_EN : STEPS_AR
+const STEP_KEYS = ['s_data','s_expenses','s_photos','s_review']
+function ProgressBar({ step, lang }: { step: number; lang: string }) {
+  const STEPS = lang==='en' ? STEPS_EN : lang==='ar' ? STEPS_AR : STEPS_AR.map((s,i)=>({ ...s, label: (CASHIER_EXTRA[STEP_KEYS[i]] as any)?.[lang] || STEPS_EN[i].label }))
   return (
     <div style={{display:'flex',alignItems:'center',marginBottom:26}}>
       {STEPS.map((s, i) => (
@@ -173,7 +183,8 @@ const DEFICIT_REASONS: { key: string; ar: string; en: string }[] = [
 ]
 
 export default function CashierClosingPage() {
-  const [lang, setPageLang] = useState<'ar'|'en'>('ar')
+  const { lang } = useStaffLang()
+  const rtl = isRtlLang(lang)
   const [session, setSession] = useState<StaffSession|null>(null)
   const [orgLogo, setOrgLogo] = useState<string|null>(null)
   const [dayStartHour, setDayStartHour] = useState<number|null>(null)
@@ -203,8 +214,6 @@ export default function CashierClosingPage() {
 
   useEffect(()=>{ const t=setInterval(()=>setClockTick(x=>x+1),60000); return ()=>clearInterval(t) },[])
   useEffect(()=>{
-    const savedLang = localStorage.getItem('staff_lang')
-    if(savedLang==='en') setPageLang('en')
     const savedSession = localStorage.getItem('staff_session')
     if(!savedSession){router.push('/staff');return}
     const s = JSON.parse(savedSession) as StaffSession
@@ -214,7 +223,8 @@ export default function CashierClosingPage() {
         if(org?.logo_url) setOrgLogo(org.logo_url)
         if(org?.business_day_start_hour != null) setDayStartHour(org.business_day_start_hour)
         if(org?.currency) setCurr(currencySymbol(org.currency))
-        if(org?.plan==='basic') setLocked(true)
+        // نفس قرار الخادم: المتوسطة/المتقدمة أو إضافة «إقفال الكاشير»
+        if(org && org.cashier_feature===false) setLocked(true)
       })
   },[])
 
@@ -317,7 +327,7 @@ export default function CashierClosingPage() {
   // نفس قاعدة السيرفر بالضبط — الكاشير يشوف التاريخ اللي بينحفظ قبل ما يحفظ
   void clockTick
   const businessDate = computeBusinessDate({ startHour: dayStartHour })
-  const businessDateLabel = new Date(businessDate+'T12:00:00Z').toLocaleDateString(lang==='en'?'en-US':'ar-SA', {numberingSystem:'latn',weekday:'long',year:'numeric',month:'long',day:'numeric',calendar:'gregory',timeZone:'UTC'})
+  const businessDateLabel = new Date(businessDate+'T12:00:00Z').toLocaleDateString(localeOf(lang), {numberingSystem:'latn',weekday:'long',year:'numeric',month:'long',day:'numeric',calendar:'gregory',timeZone:'UTC'})
   const isAfterMidnightCarry = businessDate !== new Date(Date.now()+3*3600e3).toISOString().slice(0,10)
 
   async function saveClosing() {
@@ -339,13 +349,13 @@ export default function CashierClosingPage() {
       })
       if(res.status===401){
         // الجلسة انتهت — نرجّعه يدخل بالـPIN (البيانات اللي عبّاها تضيع، فننبّهه)
-        showToast(lang==='en'?'Session expired — log in again':'انتهت الجلسة — ادخل بالرمز من جديد','error')
+        showToast(ct('sessionExpired',lang),'error')
         setSubmitting(false)
         setTimeout(()=>{ localStorage.removeItem('staff_session'); router.push('/staff') }, 1500)
         return
       }
       if(!res.ok){ const j = await res.json().catch(()=>null); showToast(j?.error || ct('saveError',lang),'error'); setSubmitting(false); return }
-      const templates = lang==='en' ? THANK_YOU_TEMPLATES_EN : THANK_YOU_TEMPLATES_AR
+      const templates = lang==='en' ? THANK_YOU_TEMPLATES_EN : lang==='ar' ? THANK_YOU_TEMPLATES_AR : ((THANKS_EXTRA as any)[lang] || THANK_YOU_TEMPLATES_EN)
       const template = templates[Math.floor(Math.random()*templates.length)]
       setThankYouMsg(template.replace('{name}', session?.name || ''))
       setSaved(true)
@@ -371,18 +381,18 @@ export default function CashierClosingPage() {
   )
 
   if(locked) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl',padding:20,textAlign:'center' as const}}>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:rtl?'rtl':'ltr',padding:20,textAlign:'center' as const}}>
       <div>
         <div style={{fontSize:44,marginBottom:12}}>🔒</div>
         <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:8}}>{ct('lockedTitle',lang)}</div>
         <div style={{fontSize:13,color:'#78716c'}}>{ct('lockedSub',lang)}</div>
-        <button onClick={()=>router.push('/staff/choose')} style={{marginTop:20,height:44,padding:'0 22px',background:'#0f766e',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{lang==='en'?'Back':'رجوع للرئيسية'}</button>
+        <button onClick={()=>router.push('/staff/choose')} style={{marginTop:20,height:44,padding:'0 22px',background:'#0f766e',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{ct('backHome',lang)}</button>
       </div>
     </div>
   )
 
   return (
-    <div style={{minHeight:'100vh',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl',paddingBottom:50}}>
+    <div style={{minHeight:'100vh',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:rtl?'rtl':'ltr',paddingBottom:50}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}} .fu{animation:fadeUp .3s ease both}`}</style>
 
       {toast && (
@@ -391,8 +401,8 @@ export default function CashierClosingPage() {
         </div>
       )}
 
-      <StaffHeader title={session.name} subtitle={`${session.org_name}${session.branch_name?` · ${session.branch_name}`:''} · ${ct('cashierBadge',lang)}`} rtl={lang!=='en'}
-        end={<button onClick={logout} style={staffHeaderBtn}>{ct('logout',lang)}</button>} />
+      <StaffHeader title={session.name} subtitle={`${session.org_name}${session.branch_name?` · ${session.branch_name}`:''} · ${ct('cashierBadge',lang)}`} rtl={rtl}
+        end={<div style={{display:'flex',gap:8}}><StaffLangButton/><button onClick={logout} style={staffHeaderBtn}>{ct('logout',lang)}</button></div>} />
 
       <div style={{maxWidth:520,margin:'0 auto',padding:'28px 16px'}}>
         {!saved && (
@@ -590,8 +600,8 @@ export default function CashierClosingPage() {
                 )}
                 <div style={{display:'flex',alignItems:'flex-start',gap:10,background:'#f0f9ff',border:'1px solid #bae6fd',borderRadius:12,padding:'11px 13px',marginBottom:12,textAlign:'start' as const}}>
                   <div>
-                    <div style={{fontSize:13,fontWeight:800,color:'#075985'}}>{lang==='en'?'This closing will be recorded on:':'هذا الإقفال بيتسجّل على:'} {businessDateLabel}</div>
-                    {isAfterMidnightCarry && <div style={{fontSize:11.5,color:'#0369a1',marginTop:3,lineHeight:1.5}}>{lang==='en'?'Closed after midnight — it counts on the previous business day.':'لأنك تقفل بعد 12 الليل، ينحسب على يوم العمل اللي قبل.'}</div>}
+                    <div style={{fontSize:13,fontWeight:800,color:'#075985'}}>{ct('recordedOn',lang)} {businessDateLabel}</div>
+                    {isAfterMidnightCarry && <div style={{fontSize:11.5,color:'#0369a1',marginTop:3,lineHeight:1.5}}>{ct('afterMidnight',lang)}</div>}
                   </div>
                 </div>
                 <div style={{
@@ -620,7 +630,7 @@ export default function CashierClosingPage() {
                             <span style={{width:18,height:18,borderRadius:'50%',border:`2px solid ${on?'#dc2626':'#d4d4d0'}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                               {on && <span style={{width:8,height:8,borderRadius:'50%',background:'#dc2626'}}/>}
                             </span>
-                            <span style={{fontSize:13.5,fontWeight:on?800:600,color:on?'#991b1b':'#1c1c1a'}}>{lang==='en'?r.en:r.ar}</span>
+                            <span style={{fontSize:13.5,fontWeight:on?800:600,color:on?'#991b1b':'#1c1c1a'}}>{lang==='en'?r.en:lang==='ar'?r.ar:((CASHIER_EXTRA['r_'+r.key] as any)?.[lang]||r.en)}</span>
                           </button>
                         )
                       })}

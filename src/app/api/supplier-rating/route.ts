@@ -19,60 +19,19 @@ export async function POST(req: Request) {
 
     const db = sb()
 
-    const [{ data: suppliers }, { data: perfLogs }, { data: purchases }] = await Promise.all([
+    // تأكيد الموردين عبر الواتساب انشال — المرجع الحين عدد التعاملات الفعلية (فواتير الشراء)
+    const [{ data: suppliers }, { data: purchases }] = await Promise.all([
       db.from('suppliers').select('id,name').eq('org_id', org_id).eq('is_active', true),
-      (db as any).from('supplier_performance_log').select('supplier_id,event_type,response_minutes').eq('org_id', org_id),
       db.from('purchases').select('supplier').eq('org_id', org_id).not('supplier', 'is', null),
     ])
-
-    // عدد مرات التعامل الفعلي لكل مورد (بالاسم، لأن purchases.supplier نص حر)
     const dealCountByName: Record<string, number> = {}
-    for (const p of (purchases || [])) {
+    for (const p of (purchases || []) as any[]) {
       const name = (p.supplier || '').trim()
-      if (!name) continue
-      dealCountByName[name] = (dealCountByName[name] || 0) + 1
+      if (name) dealCountByName[name] = (dealCountByName[name] || 0) + 1
     }
-    const maxDeals = Math.max(...Object.values(dealCountByName), 1)
-
     const ratings = (suppliers || []).map((s: any) => {
-      const logs = (perfLogs || []).filter((l: any) => l.supplier_id === s.id)
-      const confirmed = logs.filter((l: any) => l.event_type === 'confirmed')
-      const failed = logs.filter((l: any) => l.event_type === 'unavailable' || l.event_type === 'timeout')
-      const totalEvents = confirmed.length + failed.length
-
-      // 1. نقاط الالتزام (0-5)
-      const commitmentScore = totalEvents > 0 ? (confirmed.length / totalEvents) * 5 : null
-
-      // 2. نقاط السرعة (0-5) — كل ما كان وقت الاستجابة أقصر، نقاط أعلى (نعتبر 60 دقيقة = ممتاز، 24 ساعة = ضعيف)
-      const responseTimes = confirmed.map((l: any) => l.response_minutes).filter((m: any) => m != null)
-      const avgResponseMin = responseTimes.length > 0 ? responseTimes.reduce((s: number, m: number) => s + m, 0) / responseTimes.length : null
-      const speedScore = avgResponseMin != null ? Math.max(0, Math.min(5, 5 - (avgResponseMin / 288))) : null // 1440 دقيقة (24 ساعة) تعطي 0 نقطة تقريباً
-
-      // 3. نقاط الاستمرارية (0-5) — نسبية لأكثر مورد تعامل معه
       const dealCount = dealCountByName[s.name.trim()] || 0
-      const consistencyScore = (dealCount / maxDeals) * 5
-
-      const scores = [commitmentScore, speedScore, consistencyScore].filter((v): v is number => v != null)
-      const overall = scores.length > 0 ? scores.reduce((s, v) => s + v, 0) / scores.length : null
-
-      // حد أدنى من البيانات قبل عرض أي تقييم — تجنب تقييم مضلل من صفقة أو صفقتين بس
-      const totalDataPoints = totalEvents + dealCount
-      const MIN_DATA_POINTS = 3
-      const hasEnoughData = totalDataPoints >= MIN_DATA_POINTS
-
-      return {
-        id: s.id,
-        name: s.name,
-        stars: hasEnoughData && overall != null ? Math.round(overall * 10) / 10 : null,
-        hasData: hasEnoughData,
-        details: {
-          totalOrders: totalEvents,
-          confirmedOrders: confirmed.length,
-          avgResponseHours: avgResponseMin != null ? Math.round((avgResponseMin / 60) * 10) / 10 : null,
-          dealCount,
-          totalDataPoints,
-        },
-      }
+      return { id: s.id, name: s.name, stars: null, hasData: dealCount > 0, details: { dealCount } }
     })
 
     return NextResponse.json({ success: true, ratings })

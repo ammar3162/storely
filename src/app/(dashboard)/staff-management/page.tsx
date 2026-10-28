@@ -63,6 +63,8 @@ export default function StaffManagementPage() {
   const [staffCountry, setStaffCountry] = useState(()=>sessionStorage.getItem('s_country_code')||'+966')
   const [newBranch, setNewBranch]   = useState(typeof window!=='undefined' ? (sessionStorage.getItem('s_branch_id')||'') : '')
   const [newRole, setNewRole]       = useState<'staff'|'cashier'>('staff')
+  // الكاشير متاح بالمتوسطة/المتقدمة أو بإضافة «إقفال الكاشير» — من نفس مصدر الخادم (/api/me)
+  const [hasCashier, setHasCashier] = useState(orgPlan!=='basic')
   const [newSendClosingWA, setNewSendClosingWA] = useState(true)
   const [revealedPin, setRevealedPin] = useState<{name:string,phone:string,pin:string}|null>(null)
   const [visiblePins, setVisiblePins] = useState<Record<string,boolean>>({})
@@ -96,9 +98,7 @@ export default function StaffManagementPage() {
   const [selectedProds, setSelectedProds] = useState<string[]>([])
   const [assignSearch, setAssignSearch] = useState('')
 
-  const [takenProducts, setTakenProducts] = useState<Record<string,string>>({})
   const [sharedProducts, setSharedProducts] = useState<Record<string,string[]>>({})
-  const [overrideTaken, setOverrideTaken] = useState<Set<string>>(new Set())
   const [dayStartHour, setDayStartHour] = useState(4)   // بداية يوم العمل الجديد لإقفال الكاشير
   const [dayStartLoaded, setDayStartLoaded] = useState(4)
   const [showHoursModal, setShowHoursModal] = useState(false)
@@ -121,7 +121,7 @@ export default function StaffManagementPage() {
       oid = await getOrgId(); if(!oid) return
     }
     setOrgId(oid)
-    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setIsOwnerSM(me?.role==='owner') })
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setIsOwnerSM(me?.role==='owner'); if(me?.org?.features) setHasCashier(!!me.org.features.cashier) })
     const settingsRes = await api.get('/api/org-settings', { org_id: oid })
     const orgLimits = settingsRes.settings
     const h = Number((orgLimits as any)?.business_day_start_hour ?? 4)
@@ -184,26 +184,19 @@ export default function StaffManagementPage() {
   async function openAssign(s:any) {
     setAssigningId(s.id)
     setSelectedProds(s.assigned_products||[])
-    // المنتجات اللي عنده أصلاً تبقى له حتى لو مشتركة مع غيره (تخصيص قديم) — نعرضها كعادية مع اسم اللي يشاركه
-    const own = new Set<string>(s.assigned_products||[])
-    const taken: Record<string,string> = {}, shared: Record<string,string[]> = {}
+    // المنتج ممكن يكون عند أكثر من موظف — نعرض بس مين عنده بعد للمعلومية
+    const shared: Record<string,string[]> = {}
     staff.forEach((other:any)=>{
       if(other.id===s.id) return
-      ;(other.assigned_products||[]).forEach((pid:string)=>{
-        if (own.has(pid)) (shared[pid] ||= []).push(other.name)
-        else taken[pid] = other.name
-      })
+      ;(other.assigned_products||[]).forEach((pid:string)=>{ (shared[pid] ||= []).push(other.name) })
     })
-    setTakenProducts(taken)
     setSharedProducts(shared)
-    setOverrideTaken(new Set())
   }
 
   async function saveAssigned() {
-    // التحقق من التعارض يصير على الخادم مباشرة من قاعدة البيانات — يمنع تعارض التخصيص حتى لو فُتحت نافذتان بنفس الوقت
-    const r = await api.post('/api/staff-members/assign', { org_id: orgId, staff_id: assigningId, product_ids: selectedProds, override_ids: Array.from(overrideTaken) })
+    const r = await api.post('/api/staff-members/assign', { org_id: orgId, staff_id: assigningId, product_ids: selectedProds })
     if (!r.success) { toast(r.error || 'فشل الحفظ', 'error'); return }
-    toast('✅ تم حفظ المنتجات المخصصة')
+    toast('تم حفظ منتجات الموظف')
     setAssigningId(null)
     loadStaff(orgId)
   }
@@ -391,7 +384,7 @@ export default function StaffManagementPage() {
         </button>
       </div>
 
-      {!orgNotifyClosingWA && staff.some((s:any)=>s.role==='cashier') && (
+      {hasCashier && !orgNotifyClosingWA && staff.some((s:any)=>s.role==='cashier') && (
         <div style={{background:colors.warningLight,border:`1.5px solid ${colors.warningBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16,fontSize:font.sm,color:colors.warning,display:'flex',alignItems:'center',gap:10}}>
           <AlertTriangle size={18} strokeWidth={2} style={{flexShrink:0}}/>
           <div>
@@ -542,10 +535,10 @@ export default function StaffManagementPage() {
                     <div style={{fontSize:10,color:newRole==='staff'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يستخدم نظام الصرف والمخزون</div>
                   </button>
                   <button type="button" onClick={()=>{
-                      if(orgPlan==='basic'){toast('ميزة الكاشير تتطلب الباقة المتوسطة فأعلى — يرجى الترقية','warning');return}
+                      if(!hasCashier){toast('الكاشير يحتاج الباقة المتوسطة أو إضافة «إقفال الكاشير» من صفحة الإضافات','warning');return}
                       setNewRole('cashier')
-                    }} style={{padding:'12px 10px',borderRadius:10,border:`1.5px solid ${newRole==='cashier'?colors.primary:colors.border}`,background:newRole==='cashier'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='cashier'?`0 2px 8px ${colors.primary}22`:'none',opacity:orgPlan==='basic'?.55:1,position:'relative' as const}}>
-                    {orgPlan==='basic' && (
+                    }} style={{padding:'12px 10px',borderRadius:10,border:`1.5px solid ${newRole==='cashier'?colors.primary:colors.border}`,background:newRole==='cashier'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='cashier'?`0 2px 8px ${colors.primary}22`:'none',opacity:!hasCashier?.55:1,position:'relative' as const}}>
+                    {!hasCashier && (
                       <div style={{position:'absolute',top:-8,left:-6,background:'#1c1c1a',color:'white',fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:99,display:'flex',alignItems:'center',gap:4}}><Lock size={9} strokeWidth={2.5}/> المتوسطة</div>
                     )}
                     <div style={{fontWeight:800,fontSize:font.sm,color:newRole==='cashier'?colors.primary:colors.text2,marginBottom:3,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><Wallet size={14} strokeWidth={2.25}/> كاشير</div>
@@ -591,7 +584,7 @@ export default function StaffManagementPage() {
                     {key:'inventory',  label:'المخزون',    Icon:Package, locked:false},
                     {key:'purchases',  label:'المشتريات',  Icon:ShoppingCart, locked:false},
                     {key:'reports',    label:'التقارير',   Icon:BarChart3, locked:false},
-                    {key:'cashier',    label:'إقفال الكاشير', Icon:Wallet, locked:orgPlan==='basic'},
+                    {key:'cashier',    label:'إقفال الكاشير', Icon:Wallet, locked:!hasCashier},
                   ].map(p=>(
                     <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:'white',borderRadius:8,border:`1.5px solid ${(newPermissions as any)[p.key]?colors.primary:colors.border}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                       <input type="checkbox" checked={(newPermissions as any)[p.key]} disabled={p.locked}
@@ -615,14 +608,14 @@ export default function StaffManagementPage() {
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
               <div>
                 <div style={{fontSize:font.md,fontWeight:800,color:colors.text}}>تخصيص المنتجات</div>
-                <div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>اختر المنتجات التي يراها هذا الموظف فقط</div>
+                <div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>اختر المنتجات اللي يشوفها هالموظف — المنتج ممكن يكون عند أكثر من موظف. لو ما اخترت شي يشوف كل منتجات الفرع</div>
               </div>
               <button onClick={()=>setAssigningId(null)} style={{width:32,height:32,borderRadius:radius.sm,border:`1.5px solid ${colors.border2}`,background:colors.bg,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',color:colors.text3}}>×</button>
             </div>
             
             {/* اختيار الكل */}
             <div style={{display:'flex',gap:8,marginBottom:12}}>
-              <button onClick={()=>setSelectedProds(products.filter((p:any)=>!takenProducts[p.id]).map((p:any)=>p.id))}
+              <button onClick={()=>setSelectedProds(products.map((p:any)=>p.id))}
                 style={{padding:'6px 14px',borderRadius:8,border:`1px solid ${colors.border2}`,background:colors.bg,color:colors.text2,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                 اختيار الكل
               </button>
@@ -648,20 +641,6 @@ export default function StaffManagementPage() {
                 <div style={{padding:'20px',textAlign:'center' as const,fontSize:12,color:colors.text4}}>ما فيه منتجات مطابقة</div>
               ) : products.filter((p:any)=>!assignSearch.trim()||p.name.includes(assignSearch.trim())).map((p:any)=>{
                 const selected = selectedProds.includes(p.id)
-                const takenBy = takenProducts[p.id]
-                if(takenBy && !overrideTaken.has(p.id)){
-                  return (
-                    <div key={p.id} onClick={()=>{setOverrideTaken(prev=>new Set([...prev,p.id]));setSelectedProds(prev=>[...prev,p.id])}}
-                      style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${colors.border}`,background:'#f5f5f4',cursor:'pointer'}}>
-                      <div style={{width:20,height:20,borderRadius:6,border:`2px solid ${colors.border2}`,background:'white',flexShrink:0}}/>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:font.sm,fontWeight:700,color:colors.text3}}>{p.name}</div>
-                        <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit} · دوس لنقله من {takenBy}</div>
-                      </div>
-                      <span style={{fontSize:9,fontWeight:700,color:colors.warning||'#d97706',background:colors.warningLight||'#fffbeb',padding:'3px 8px',borderRadius:20,whiteSpace:'nowrap' as const,flexShrink:0,display:'flex',alignItems:'center',gap:3}}><Lock size={9} strokeWidth={2.5}/> {takenBy}</span>
-                    </div>
-                  )
-                }
                 return (
                   <div key={p.id} onClick={()=>setSelectedProds(prev=>selected?prev.filter(id=>id!==p.id):[...prev,p.id])}
                     style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${selected?colors.primary:colors.border}`,background:selected?colors.primaryLight:colors.bg,cursor:'pointer',transition:'all .15s'}}>
@@ -670,7 +649,23 @@ export default function StaffManagementPage() {
                     </div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{p.name}</div>
-                      <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit}{sharedProducts[p.id] ? ` · مشترك مع ${sharedProducts[p.id].join('، ')}` : ''}</div>
+                      <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit}</div>
+                      {(()=>{
+                        // مين عنده هالمنتج: الموظفين الثانيين + هالموظف لو اخترته
+                        const me = staff.find((x:any)=>x.id===assigningId)?.name
+                        const holders = [...(selected && me ? [me] : []), ...(sharedProducts[p.id]||[])]
+                        if(!holders.length) return null
+                        return (
+                          <div style={{display:'flex',flexWrap:'wrap' as const,gap:4,marginTop:5}}>
+                            {holders.map((n:string,i:number)=>(
+                              <span key={n+i} style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:99,
+                                background:i===0&&selected?colors.primary:colors.surface,color:i===0&&selected?'white':colors.text2,border:`1px solid ${i===0&&selected?colors.primary:colors.border2}`}}>
+                                <User size={10} strokeWidth={2.5}/>{n}
+                              </span>
+                            ))}
+                          </div>
+                        )
+                      })()}
                     </div>
                   </div>
                 )
@@ -763,7 +758,7 @@ export default function StaffManagementPage() {
                 {key:'inventory',  label:'المخزون',    Icon:Package, locked:false},
                 {key:'purchases',  label:'المشتريات',  Icon:ShoppingCart, locked:false},
                 {key:'reports',    label:'التقارير',   Icon:BarChart3, locked:false},
-                {key:'cashier',    label:'إقفال الكاشير', Icon:Wallet, locked:orgPlan==='basic'||editingRole==='cashier'},
+                {key:'cashier',    label:'إقفال الكاشير', Icon:Wallet, locked:!hasCashier||editingRole==='cashier'},
               ].map(p=>(
                 <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'12px',background:(editPerms as any)[p.key]?'#f0fdfa':'#f9fafb',borderRadius:10,border:`1.5px solid ${(editPerms as any)[p.key]?'#029FA2':'#e5e7eb'}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                   <input type="checkbox" checked={(editPerms as any)[p.key]} disabled={p.locked}
@@ -771,7 +766,7 @@ export default function StaffManagementPage() {
                     style={{accentColor:'#029FA2',width:16,height:16}}/>
                   <div>
                     <div style={{fontSize:13,fontWeight:700,color:(editPerms as any)[p.key]?'#029FA2':'#374151',display:'flex',alignItems:'center',gap:5}}><p.Icon size={14} strokeWidth={2.25}/> {p.label}</div>
-                    {p.locked&&<div style={{fontSize:10,color:'#9ca3af'}}>{p.key==='cashier'?(orgPlan==='basic'?'يحتاج الباقة المتوسطة':'دوره كاشير'):'افتراضي'}</div>}
+                    {p.locked&&<div style={{fontSize:10,color:'#9ca3af'}}>{p.key==='cashier'?(!hasCashier?'يحتاج المتوسطة أو إضافة الكاشير':'دوره كاشير'):'افتراضي'}</div>}
                   </div>
                 </label>
               ))}
@@ -971,12 +966,17 @@ export default function StaffManagementPage() {
                       <Package size={13} strokeWidth={2.25}/> {s.assigned_products?.length>0?`${s.assigned_products.length} منتج`:'كل المنتجات'}
                     </button>
                   )}
-                  {s.role==='cashier' && (
+                  {s.role==='cashier' && !hasCashier && (
+                    <span title="الباقة الحالية ما فيها إقفال الكاشير — يرجع يشتغل بالترقية للمتوسطة أو بإضافة «إقفال الكاشير»" className="act-btn" style={{background:'#fffbeb',color:'#b45309',border:'1.5px solid #fde68a',display:'flex',alignItems:'center',gap:5,cursor:'default'}}>
+                      <Lock size={13} strokeWidth={2.25}/> الكاشير مقفل بالباقة الحالية
+                    </span>
+                  )}
+                  {s.role==='cashier' && hasCashier && (
                     <button onClick={e=>{e.stopPropagation();setShowHoursModal(true)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
                       <Clock size={13} strokeWidth={2.25}/> بداية يوم العمل
                     </button>
                   )}
-                  {s.role==='cashier' && !WHATSAPP_PAUSED && (
+                  {s.role==='cashier' && hasCashier && !WHATSAPP_PAUSED && (
                     <button onClick={e=>{e.stopPropagation();toggleSendClosingWA(s.id, s.send_closing_whatsapp!==false)}} className="act-btn"
                       style={{background:s.send_closing_whatsapp!==false?'#f0fdfa':colors.bg,color:s.send_closing_whatsapp!==false?colors.primary:colors.text3,border:s.send_closing_whatsapp!==false?'none':`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
                       {s.send_closing_whatsapp!==false ? (<><Bell size={13} strokeWidth={2.25}/> تفاصيل الإقفال: مفعّل</>) : (<><BellOff size={13} strokeWidth={2.25}/> تفاصيل الإقفال: موقّف</>)}
