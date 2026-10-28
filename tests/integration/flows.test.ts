@@ -736,6 +736,8 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
         return { products: await n('products'), staff: await n('staff_members'), branches: await n('branches'), purchases: await n('purchases'), moves: await n('stock_movements') }
       }
 
+      // فروع اختبارات سابقة: نقفلها يدوي (مو بسبب الباقة) عشان ما ترجع مكان فرع هالاختبار
+      await db.from('branches').update({ is_active: false, plan_locked_at: null } as any).eq('org_id', orgId).neq('id', branchA)
       await admin({ orgId, planName: 'pro', maxBranches: 3, maxStaff: 10, maxSuppliers: 10 })
       const { data: br2 } = await db.from('branches').insert({ org_id: orgId, name: 'فرع ترقية', is_active: true } as any).select('id').single()
       const before = await counts()
@@ -810,9 +812,13 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
   describe('products shared between staff', () => {
     it('two staff can have the same product, and products from another branch are refused', async () => {
       const assign = await import('@/app/api/staff-members/assign/route')
-      const mkStaff = async (n: number) => (await db.from('staff_members').insert({
-        org_id: orgId, branch_id: branchA, name: `مشترك ${n}`, phone: `9665${String(stamp + 40 + n).slice(-8)}`, pin: 'x', is_active: true, role: 'staff',
-      } as any).select('id').single()).data as any
+      const mkStaff = async (n: number) => {
+        const r = await db.from('staff_members').insert({
+          org_id: orgId, branch_id: branchA, name: `مشترك ${n}`, phone: `9665${String(stamp + 40 + n).slice(-8)}`, pin: 'x', is_active: true, role: 'staff',
+        } as any).select('id').single()
+        if (r.error) throw new Error('staff insert: ' + r.error.message)
+        return r.data as any
+      }
       const a = await mkStaff(1), b = await mkStaff(2)
       const { data: p } = await db.from('products').insert({ org_id: orgId, branch_id: branchA, name: `مشترك_${stamp}`, unit: 'قطعة', qty: 0, is_active: true } as any).select('id').single()
       const pid = (p as any).id
@@ -833,11 +839,13 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       const go = (sid: string) => dispense.POST(new Request('http://test/api/staff-dispense', { method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${generateStaffToken(sid, orgId, branchA)}` },
         body: JSON.stringify({ productId: pid, qty: 3, staffName: 'اسم مزوّر' }) }))
-      const res = await Promise.all([go(a.id), go(b.id)])
-      expect(res.map(r => r.status)).toEqual([200, 200])
+      await db.from('stock_movements').insert({ product_id: pid, org_id: orgId, branch_id: branchA, type: 'in', qty_change: 9 } as any)
+      // 5 صرفات بنفس اللحظة من موظفين (19 − 5×3 = 4) — قبل قفل صف المنتج كانت وحدة تضيع
+      const res = await Promise.all([go(a.id), go(b.id), go(a.id), go(b.id), go(a.id)])
+      expect(res.map(r => r.status)).toEqual([200, 200, 200, 200, 200])
       expect((await db.from('products').select('qty').eq('id', pid).single()).data).toMatchObject({ qty: 4 })
       const { data: outs } = await db.from('stock_movements').select('staff_name').eq('product_id', pid).eq('type', 'out')
-      expect((outs as any[]).map(o => o.staff_name).sort()).toEqual(['مشترك 1', 'مشترك 2'])
+      expect((outs as any[]).map(o => o.staff_name).sort()).toEqual(['مشترك 1', 'مشترك 1', 'مشترك 1', 'مشترك 2', 'مشترك 2'])
 
       await db.from('stock_movements').delete().eq('product_id', pid)
       await db.from('staff_members').delete().in('id', [a.id, b.id])
