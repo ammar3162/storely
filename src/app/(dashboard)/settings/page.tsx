@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
 import { getMe } from '@/lib/session'
-import { PLAN_PRICING, planKeyOf, billLines } from '@/lib/planPricing'
+import { PLAN_PRICING, planKeyOf, billLines, planPriceFor } from '@/lib/planPricing'
 import { colors, radius, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import AccountantHub from '@/components/AccountantHub'
 
@@ -127,6 +127,7 @@ export default function SettingsPage() {
   const [personalSaveOk, setPersonalSaveOk] = useState(false)
   const [subEndsAt, setSubEndsAt]       = useState<string|null>(null)
   const [planKey, setPlanKey]           = useState<string>('')
+  const [lockedPlan, setLockedPlan]     = useState<number|null>(null)  // سعر مثبّت لمشترك قبل تغيير الأسعار
   const [billAddons, setBillAddons]     = useState<any[]>([])
   const [form, setForm] = useState({
     name:'', whatsapp_number:'',
@@ -197,6 +198,7 @@ export default function SettingsPage() {
       const planMap: Record<string,string> = {'basic':'الأساسية','pro':'المتوسطة','advanced':'المتقدمة'}
       setPlanName(planMap[org.plan||'']||org.plan||'')
       setPlanKey(org.plan||'')
+      setLockedPlan(org.locked_plan_monthly ?? null)
       setBillingCycle(org.billing_cycle==='yearly'?'yearly':'monthly')
       setSubEndsAt(org.subscription_ends_at||null)
       setBranches(bList||[])
@@ -310,9 +312,9 @@ export default function SettingsPage() {
   }
 
   const pk = planKeyOf(planKey, maxBranches)
-  const planPrice = PLAN_PRICING[pk]
+  const planPrice = planPriceFor(pk, lockedPlan)
   const planLabel = `الباقة ${planPrice.label} — ${billingCycle==='yearly' ? `${planPrice.yearly} ⃁/سنة` : `${planPrice.monthly} ⃁/شهر`}`
-  const bill = billLines(pk, billingCycle, billAddons)
+  const bill = billLines(pk, billingCycle, billAddons, lockedPlan)
 
   if(loading) return (
     <div style={{fontFamily:font.family,direction:'rtl'}}>
@@ -520,7 +522,7 @@ export default function SettingsPage() {
                     <div style={{fontSize:22}}>📲</div>
                     <div>
                       <div style={{fontSize:13,fontWeight:700,color:'#92400e',marginBottom:2}}>للترقية تواصل معنا عبر واتساب</div>
-                      <div style={{fontSize:11,color:'#b45309'}}>الأساسية 99 · المتوسطة 249 · المتقدمة 399 ريال/شهر</div>
+                      <div style={{fontSize:11,color:'#b45309'}}>الأساسية 99 · المتوسطة 249 · المتقدمة 499 ريال/شهر</div>
                     </div>
                     <a href="https://wa.me/966594351667?text=أريد الترقية في Storely" target="_blank" rel="noopener noreferrer"
                       style={{marginRight:'auto',padding:'8px 16px',background:'#029FA2',color:'white',borderRadius:8,fontSize:12,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap'}}>

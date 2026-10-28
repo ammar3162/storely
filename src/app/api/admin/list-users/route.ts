@@ -15,7 +15,7 @@ export async function GET(req: Request) {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id,full_name,phone,role,status,created_at,org_id,subscription_type,subscription_ends_at,branch_count,organizations(name,max_branches,billing_cycle,plan,requested_plan,whatsapp_number)')
+    .select('id,full_name,phone,role,status,created_at,org_id,subscription_type,subscription_ends_at,branch_count,organizations(name,max_branches,billing_cycle,plan,requested_plan,whatsapp_number,locked_plan_monthly)')
     .eq('role', 'owner') // نعرض حساب المالك بس — مديرو الفروع حسابات تابعة، مو مؤسسات مستقلة
     .order('created_at', { ascending: false })
 

@@ -60,7 +60,7 @@ const PHONE_RULES: Record<string,{length:number, prefix:string, placeholder:stri
 const PLANS = [
   { v:1,  label:'الأساسية',  price:'99', yearlyPrice:'950', desc:'فرع · 3 موظفين · 3 موردين',                    color:'#029FA2' },
   { v:3,  label:'المتوسطة',  price:'249', yearlyPrice:'2390', desc:'3 فروع · 10 موظفين · 10 موردين',               color:'#029FA2' },
-  { v:10, label:'المتقدمة',  price:'399', yearlyPrice:'3830', desc:'10 فروع · موظفون وموردون غير محدودين', color:'#7c3aed' },
+  { v:10, label:'المتقدمة',  price:'499', yearlyPrice:'4790', desc:'10 فروع · موظفون وموردون غير محدودين', color:'#7c3aed' },
 ]
 
 function GoogleIcon() {

@@ -724,6 +724,39 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
     })
   })
 
+  describe('price lock for subscribers before the price change', () => {
+    it('an active add-on keeps its locked price on renewal, a lapsed one comes back at the new price; changing plan drops the plan lock', async () => {
+      const { activateAddon } = await import('@/lib/addonActivation')
+      const updatePlan = await import('@/app/api/admin/update-plan/route')
+      const { data: ad } = await db.from('marketplace_addons').select('id,monthly_price').eq('slug', 'ai_tools').single()
+      const addonId = (ad as any).id, newPrice = Number((ad as any).monthly_price)
+      const end = new Date(Date.now() + 10 * 864e5).toISOString()
+      await db.from('profiles').update({ subscription_ends_at: end } as any).eq('id', userId)
+      await db.from('org_addon_subscriptions').upsert({ org_id: orgId, addon_id: addonId, status: 'active', quantity: 1, locked_price: 20,
+        activated_at: new Date().toISOString(), expires_at: end } as any, { onConflict: 'org_id,addon_id' })
+      const sub = async () => (await db.from('org_addon_subscriptions').select('locked_price').eq('org_id', orgId).eq('addon_id', addonId).single()).data as any
+
+      expect((await activateAddon(db as any, { orgId, addonId })).ok).toBe(true)
+      expect(Number((await sub()).locked_price)).toBe(20)
+
+      await db.from('org_addon_subscriptions').update({ expires_at: new Date(Date.now() - 1000).toISOString() } as any).eq('org_id', orgId).eq('addon_id', addonId)
+      const back = await activateAddon(db as any, { orgId, addonId })
+      expect(back.ok && back.proratedAmount).toBe(Math.round(newPrice * 10 / 30))
+      expect((await sub()).locked_price).toBeNull()
+
+      await db.from('organizations').update({ plan: 'advanced', locked_plan_monthly: 399 } as any).eq('id', orgId)
+      const call2 = (body: any) => updatePlan.POST(new Request('http://test/api/admin/update-plan', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify(body) }))
+      await call2({ orgId, planName: 'advanced', maxBranches: 10, maxStaff: 999, maxSuppliers: 999 })
+      expect((await db.from('organizations').select('locked_plan_monthly').eq('id', orgId).single()).data).toMatchObject({ locked_plan_monthly: 399 })
+      await call2({ orgId, planName: 'pro', maxBranches: 3, maxStaff: 10, maxSuppliers: 10 })
+      expect((await db.from('organizations').select('locked_plan_monthly').eq('id', orgId).single()).data).toMatchObject({ locked_plan_monthly: null })
+
+      await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).eq('addon_id', addonId)
+      await db.from('branches').update({ is_active: false, plan_locked_at: null } as any).eq('org_id', orgId).neq('id', branchA)
+      await db.from('organizations').update({ plan: 'pro', max_branches: 1, max_staff: 1 } as any).eq('id', orgId)
+    }, 120_000)
+  })
+
   describe('changing plans keeps data, limits and features consistent', () => {
     it('pro → basic → pro: no data lost, extra branch paused then restored, features follow, expired add-ons give nothing', async () => {
       const updatePlan = await import('@/app/api/admin/update-plan/route')

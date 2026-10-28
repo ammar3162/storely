@@ -83,7 +83,7 @@ export async function GET(req: Request) {
   const addons = orgPlan === 'basic'
     ? addonsRaw
     : (addonsRaw || []).filter((a: any) => !INCLUDED_FROM_STANDARD.includes(a.slug))
-  const { data: subs } = await supabase.from('org_addon_subscriptions').select('addon_id,status,expires_at,quantity,branch_ids').eq('org_id', org_id)
+  const { data: subs } = await supabase.from('org_addon_subscriptions,locked_price').select('addon_id,status,expires_at,quantity,branch_ids').eq('org_id', org_id)
   const { data: branches } = await supabase.from('branches').select('id,name').eq('org_id', org_id).eq('is_active', true).order('created_at')
 
   const now = new Date()

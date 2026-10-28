@@ -1,4 +1,4 @@
-import { PLAN_PRICING, planKeyOf, type PlanKey } from '@/lib/planPricing'
+import { PLAN_PRICING, planKeyOf, planPriceFor, type PlanKey } from '@/lib/planPricing'
 import type { Tone } from './kit'
 
 export type Customer = {
@@ -6,6 +6,7 @@ export type Customer = {
   status: string; created_at: string; org_id: string; org_name: string
   subscription_type: string; subscription_ends_at: string | null; billing_cycle: 'monthly' | 'yearly'
   max_branches: number; plan: PlanKey; requested_plan: string
+  locked_plan_monthly: number | null   // سعر مثبّت لمشترك قبل تغيير الأسعار
 }
 
 export const STATUS: Record<string, { label: string; tone: Tone }> = {
@@ -39,6 +40,7 @@ export function mapCustomer(p: any): Customer {
     max_branches: maxB,
     plan: planKeyOf(p.organizations?.plan, maxB),
     requested_plan: p.organizations?.requested_plan || '',
+    locked_plan_monthly: p.organizations?.locked_plan_monthly ?? null,
   }
 }
 
@@ -46,5 +48,5 @@ export function mapCustomer(p: any): Customer {
 export function monthlyRevenue(list: Customer[]) {
   return list
     .filter(u => u.subscription_type === 'paid' && u.status === 'active')
-    .reduce((s, u) => s + (u.billing_cycle === 'yearly' ? PLAN_PRICING[u.plan].yearly / 12 : PLAN_PRICING[u.plan].monthly), 0)
+    .reduce((s, u) => { const p = planPriceFor(u.plan, u.locked_plan_monthly); return s + (u.billing_cycle === 'yearly' ? p.yearly / 12 : p.monthly) }, 0)
 }

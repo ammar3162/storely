@@ -4,7 +4,7 @@ import NumberInput from '@/components/NumberInput'
 import { MessageCircle, Send, Trash2, PauseCircle, PlayCircle } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { toast } from '@/components/toast'
-import { billLines, PLAN_PRICING, addonPeriodEnd, proratedCharge } from '@/lib/planPricing'
+import { billLines, PLAN_PRICING, addonPeriodEnd, proratedCharge, planPriceFor, unitPrice } from '@/lib/planPricing'
 import { A, Badge, Btn, Card, Drawer, adminFetch, daysLeft, fmtDate, inputStyle } from './kit'
 import { type Customer, STATUS, PLAN_KEYS, PLAN_LIMITS, planLabel } from './customers'
 
@@ -41,7 +41,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   if (!c) return null
   const st = STATUS[c.status] || STATUS.pending
   const dl = daysLeft(c.subscription_ends_at)
-  const bill = billLines(c.plan, c.billing_cycle, addons)
+  const bill = billLines(c.plan, c.billing_cycle, addons, c.locked_plan_monthly)
   const hasPhone = !!c.phone
 
   async function activate(type: 'trial' | 'paid', d: number) {
@@ -118,7 +118,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
       const wasActive = !!a.subscription?.isValid
       const charged = wasActive ? Math.max(0, q - (a.subscription?.quantity || 1)) : q
       const end = addonPeriodEnd(c!.subscription_ends_at)
-      const pr = proratedCharge(Number(a.monthly_price) || 0, charged, end)
+      const pr = proratedCharge(unitPrice(a.monthly_price, wasActive ? a.subscription : null), charged, end)
       if (!(await confirmDialog({ title: `${wasActive ? 'تحديث' : 'تفعيل'} "${a.name}"${q > 1 ? ` × ${q}` : ''}`, message:
         `${menuNote ? `الفروع: ${menuNote.slice(3)}\n\n` : ''}تنتهي مع الباقة بتاريخ ${fmtDate(end.toISOString())}.\n\nالمستحق الحين: ${pr.amount} ر.س (${pr.days} يوم)\nومن التجديد: ${q * (Number(a.monthly_price) || 0)} ر.س شهرياً` }))) return
     } else if (!(await confirmDialog({ title: `إلغاء "${a.name}"`, message: 'تتوقف الإضافة فوراً، وأي فروع أو موظفين زايدين عن الحد يتوقفون مؤقتاً.' }))) return
@@ -208,7 +208,9 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {PLAN_KEYS.map(k => {
             const on = c.plan === k
-            const price = c.billing_cycle === 'yearly' ? `${PLAN_PRICING[k].yearly} ⃁/سنة` : `${PLAN_PRICING[k].monthly} ⃁/شهر`
+            // باقته الحالية بسعره المثبّت (لو مشترك قبل تغيير الأسعار)، والباقي بالسعر الحالي
+            const pp = c.plan === k ? planPriceFor(k, c.locked_plan_monthly) : PLAN_PRICING[k]
+            const price = c.billing_cycle === 'yearly' ? `${pp.yearly} ⃁/سنة` : `${pp.monthly} ⃁/شهر`
             return (
               <button key={k} onClick={() => changePlan(k)} disabled={!!busy} className="adm-hover"
                 style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, textAlign: 'right', fontFamily: 'inherit', cursor: on ? 'default' : 'pointer',

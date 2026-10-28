@@ -1,7 +1,7 @@
 // تفعيل إضافة لمنشأة — مكان واحد يستخدمه الأدمن من ملف العميل ومن الموافقة على طلبات الإضافات
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
-import { addonPeriodEnd, proratedCharge } from '@/lib/planPricing'
+import { addonPeriodEnd, proratedCharge, unitPrice } from '@/lib/planPricing'
 import { MENU_ADDON_SLUG } from '@/lib/shopMenu'
 
 export type ActivateResult =
@@ -30,7 +30,7 @@ export async function activateAddon(db: SupabaseClient, input: { orgId: string; 
   const expiresAt = periodEnd.toISOString()
   const qty = menuBranchIds ? menuBranchIds.length : Math.max(1, Math.min(20, Number(input.quantity) || 1))
 
-  const { data: existingRow } = await db.from('org_addon_subscriptions').select('id,quantity,status,expires_at').eq('org_id', orgId).eq('addon_id', addonId).maybeSingle()
+  const { data: existingRow } = await db.from('org_addon_subscriptions').select('id,quantity,status,expires_at,locked_price').eq('org_id', orgId).eq('addon_id', addonId).maybeSingle()
   // سارية فعلاً = active وما انتهت — المنتهية تنحسب كاشتراك جديد بالكامل
   const wasActive = (existingRow as any)?.status === 'active' && (!(existingRow as any)?.expires_at || new Date((existingRow as any).expires_at) > new Date())
   const oldQty = wasActive ? ((existingRow as any)?.quantity || 0) : 0
@@ -38,6 +38,8 @@ export async function activateAddon(db: SupabaseClient, input: { orgId: string; 
 
   const { error } = await db.from('org_addon_subscriptions').upsert({
     org_id: orgId, addon_id: addonId, status: 'active', activated_at: new Date().toISOString(), expires_at: expiresAt, cancelled_at: null, quantity: qty,
+    // اشتراك جديد أو بعد انتهاء = السعر الحالي؛ الساري يحتفظ بسعره المثبّت
+    ...(wasActive ? {} : { locked_price: null }),
     ...(menuBranchIds ? { branch_ids: menuBranchIds } : {}),
   } as any, { onConflict: 'org_id,addon_id' })
   if (error) return { ok: false, status: 500, error: 'فشل التفعيل' }
@@ -55,6 +57,6 @@ export async function activateAddon(db: SupabaseClient, input: { orgId: string; 
 
   // المستحق الحين: الوحدات الجديدة فقط × الأيام الباقية لين التجديد
   const chargedQty = wasActive ? Math.max(0, qtyDelta) : qty
-  const prorated = proratedCharge(Number((addonRow as any).monthly_price) || 0, chargedQty, periodEnd)
+  const prorated = proratedCharge(unitPrice((addonRow as any).monthly_price, wasActive ? (existingRow as any) : null), chargedQty, periodEnd)
   return { ok: true, expiresAt, quantity: qty, proratedAmount: prorated.amount, proratedDays: prorated.days, branchIds: menuBranchIds, slug, name: (addonRow as any).name }
 }
