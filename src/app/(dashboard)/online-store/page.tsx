@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import NumberInput from '@/components/NumberInput'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -77,6 +78,8 @@ export default function OnlineStorePage() {
       else setLoading(false)
     } catch { setHasSubscription(false); setLoading(false) }
   }
+
+  useLiveRefresh(orgId || null, ['org_addon_subscriptions'], () => { init() })
 
   async function load(oid: string, wantBranch?: string | null, quiet = false) {
     if (!quiet) setLoading(true)

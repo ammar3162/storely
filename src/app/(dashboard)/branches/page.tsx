@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { getOrgId } from '@/lib/session'
@@ -93,6 +94,9 @@ export default function BranchesPage() {
     setInactiveBranches(j.inactive||[])
     setLoading(false)
   }
+
+  // تحديث فوري: فرع انضاف/توقف من جهاز ثاني أو تغيّرت إضافة الفروع
+  useLiveRefresh(orgId || null, ['branches', 'org_addon_subscriptions'], () => { init() })
 
   async function addBranch() {
     if(!newBranch.name.trim()) return

@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import VatRegistration from '@/components/VatRegistration'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -79,6 +80,9 @@ export default function SettingsPage() {
   const [branches, setBranches]         = useState<any[]>([])
   const [inactiveBranches, setInactiveBranches] = useState<any[]>([])
   const [reactivatingId, setReactivatingId] = useState<string|null>(null)
+
+  // الفروع الموقوفة تتحدث فوراً (باقي الإعدادات نموذج يعدّله المالك، ما نكتب فوقه)
+  useLiveRefresh(orgId || null, ['branches'], () => { if (orgId) loadInactiveBranches(orgId) })
 
   async function loadInactiveBranches(oid:string) {
     const j=await api.get('/api/branches',{org_id:oid,include_inactive:1})

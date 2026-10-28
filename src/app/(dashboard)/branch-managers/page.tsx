@@ -1,5 +1,6 @@
 'use client'
 import PageIcon from '@/components/PageIcon'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { getOrgId } from '@/lib/session'
@@ -90,6 +91,8 @@ export default function BranchManagersPage() {
     if (cached) { setManagers(cached); setLoading(false) }
     await loadManagers(oid)
   }
+
+  useLiveRefresh(orgId || null, ['branches'], () => { init() })
 
   async function loadManagers(oid: string) {
     const j = await api.get('/api/branch-managers', { org_id: oid })
