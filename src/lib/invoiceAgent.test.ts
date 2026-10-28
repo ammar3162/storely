@@ -47,4 +47,10 @@ describe('invoice agent', () => {
     expect(skipped.status).toBe('skip')
     expect(draftStatus([skipped])).toBe('needs_review')   // ما فيه شي ينسجّل
   })
+  it('an expense (not inventory) only needs a price', () => {
+    let [it] = classifyItems([{ name: 'منظف أرضيات', qty: null, total: 25 }], products, {})
+    it = applyAnswer(it, { action: 'expense' })
+    expect(it).toMatchObject({ status: 'expense', question: null })
+    expect(draftStatus([it])).toBe('ready')
+  })
 })

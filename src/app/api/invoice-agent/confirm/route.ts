@@ -31,8 +31,8 @@ export async function POST(req: Request) {
     if (!claimed?.length) return NextResponse.json({ error: 'الفاتورة انحفظت قبل' }, { status: 409 })
     const release = () => db.from('invoice_drafts').update({ status: 'ready', saved_at: null } as any).eq('id', id).eq('status', 'saved')
 
-    const items = ((dr.items || []) as AgentItem[]).filter(it => it.status === 'matched' || it.status === 'new')
-      .map(it => ({ name: it.name, qty: it.qty, unit: it.unit || 'قطعة', total: it.total, product_id: it.status === 'new' ? 'new' : it.product_id }))
+    const items = ((dr.items || []) as AgentItem[]).filter(it => it.status === 'matched' || it.status === 'new' || it.status === 'expense')
+      .map(it => ({ name: it.name, qty: it.qty ?? 0, unit: it.unit || 'قطعة', total: it.total, product_id: it.status === 'new' ? 'new' : it.status === 'expense' ? 'expense' : it.product_id }))
     let r: Awaited<ReturnType<typeof saveInvoice>>
     try {
       r = await saveInvoice(db, { orgId: org_id, branchId: dr.branch_id || null, profileId: access.userId ?? null, body: {

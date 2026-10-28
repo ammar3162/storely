@@ -738,13 +738,14 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
         invoice_number: null, supplier_vat_number: null, items: [
           { name: `سكر ناعم ${stamp}`, qty: 5, unit: 'كيلو', total: 50 },     // واضح
           { name: `كوب ورقي ${stamp}`, qty: 2, unit: 'كرتون', total: 80 },     // 12 ولا 8؟
-          { name: 'زعفران فاخر', qty: 1, unit: 'علبة', total: 100 },          // مو موجود
+          { name: 'زعفران فاخر', qty: 1, unit: 'علبة', total: 100 },          // مو موجود → صنف مخزون جديد
+          { name: 'منظف أرضيات', qty: null, unit: null, total: 25 },          // مو مخزون → مشتريات
         ] } }
       const created = await call(agent.POST, 'POST', '/api/invoice-agent', { org_id: orgId, branch_id: branchA, image: 'x', mediaType: 'image/jpeg', invoice_image: image })
       expect(created.status).toBe(200)
       let d = created.json.draft
       expect(d.status).toBe('needs_review')
-      expect(d.items.map((i: any) => i.status)).toEqual(['matched', 'ask', 'ask'])
+      expect(d.items.map((i: any) => i.status)).toEqual(['matched', 'ask', 'ask', 'ask'])
       expect(d.items[0].product_id).toBe(sugar.id)
 
       // حفظ قبل الإجابات مرفوض
@@ -754,6 +755,7 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
 
       d = (await call(agent.PATCH, 'PATCH', '/api/invoice-agent', { org_id: orgId, id: d.id, index: 1, action: 'match', product_id: cup12.id })).json.draft
       d = (await call(agent.PATCH, 'PATCH', '/api/invoice-agent', { org_id: orgId, id: d.id, index: 2, action: 'new' })).json.draft
+      d = (await call(agent.PATCH, 'PATCH', '/api/invoice-agent', { org_id: orgId, id: d.id, index: 3, action: 'expense' })).json.draft
       expect(d.status).toBe('ready')
 
       // ضغطتين حفظ بنفس اللحظة = تنحفظ مرة وحدة
@@ -762,8 +764,12 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
         call(confirm.POST, 'POST', '/api/invoice-agent/confirm', { org_id: orgId, id: d.id }),
       ])
       expect([a1.status, a2.status].sort()).toEqual([200, 409])
-      const { data: rows } = await db.from('purchases').select('name,qty').eq('org_id', orgId).eq('supplier', 'مورد الوكيل')
-      expect((rows as any[]).length).toBe(3)
+      const { data: rows } = await db.from('purchases').select('name,category').eq('org_id', orgId).eq('supplier', 'مورد الوكيل')
+      expect((rows as any[]).length).toBe(4)
+      // المخزون فئة «مخزون»، والمنظف «مشتريات» وما انضاف للمخزون
+      expect((rows as any[]).filter(r => r.category === 'مخزون').length).toBe(3)
+      expect((rows as any[]).find(r => r.name === 'منظف أرضيات')?.category).toBe('مشتريات')
+      expect((await db.from('products').select('id').eq('org_id', orgId).eq('name', 'منظف أرضيات')).data).toEqual([])
       const qty = async (id: string) => ((await db.from('products').select('qty').eq('id', id).single()).data as any).qty
       expect([await qty(sugar.id), await qty(cup12.id), await qty(cup8.id)]).toEqual([5, 2, 0])
       const { data: saffron } = await db.from('products').select('qty').eq('org_id', orgId).eq('name', 'زعفران فاخر').maybeSingle()

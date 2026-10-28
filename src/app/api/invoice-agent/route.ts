@@ -97,7 +97,7 @@ export async function PATCH(req: Request) {
     let items: AgentItem[] = Array.isArray(dr.items) ? dr.items : []
     if (Number.isInteger(body.index)) {
       const i = body.index as number
-      if (i < 0 || i >= items.length || !['match', 'new', 'skip', 'set'].includes(body.action)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+      if (i < 0 || i >= items.length || !['match', 'new', 'expense', 'skip', 'set'].includes(body.action)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
       let productName: string | null = null
       if (body.action === 'match') {
         // الصنف لازم يكون من نفس المنشأة والفرع

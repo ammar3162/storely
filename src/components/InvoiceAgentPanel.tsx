@@ -2,7 +2,7 @@
 // وكيل الفواتير: يرفع العميل الفاتورة، الوكيل يقرأها ويطابق أصنافها مع المخزون،
 // يسجّل الواضح ويسأل عن الباقي — وبعد ما يجاوب، ضغطة «حفظ» وتنسجّل مشتريات.
 import { useEffect, useState } from 'react'
-import { Sparkles, Check, HelpCircle, Plus, X, Loader2, Trash2, PackageCheck } from 'lucide-react'
+import { Sparkles, Check, HelpCircle, Plus, Loader2, Trash2, PackageCheck, Receipt } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
 import { toast } from '@/components/toast'
@@ -15,7 +15,7 @@ import NumberInput from '@/components/NumberInput'
 import { colors } from '@/lib/ds'
 
 type Cand = { id: string; name: string; unit?: string | null; score: number }
-type Item = { name: string; qty: number | null; unit: string | null; total: number | null; status: 'matched' | 'new' | 'skip' | 'ask'; product_id: string | null; product_name?: string | null; candidates: Cand[]; question?: string | null; learned?: boolean }
+type Item = { name: string; qty: number | null; unit: string | null; total: number | null; status: 'matched' | 'new' | 'expense' | 'skip' | 'ask'; product_id: string | null; product_name?: string | null; candidates: Cand[]; question?: string | null; learned?: boolean }
 type Draft = { id: string; supplier: string | null; invoice_date: string | null; has_vat: boolean; total: number | null; items: Item[]; status: 'needs_review' | 'ready'; invoice_image: string | null; created_at: string }
 
 const fmt = (n: number | null | undefined) => (Number(n) || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })
@@ -107,7 +107,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
 
       {drafts.map(d => {
         const asks = d.items.filter(i => i.status === 'ask').length
-        const saving = d.items.filter(i => i.status === 'matched' || i.status === 'new')
+        const saving = d.items.filter(i => i.status === 'matched' || i.status === 'new' || i.status === 'expense')
         const sum = saving.reduce((s, i) => s + (Number(i.total) || 0), 0)
         return (
           <div key={d.id} style={{ marginTop: 14, border: `1.5px solid ${d.status === 'ready' ? colors.primary : '#fde68a'}`, borderRadius: 12, padding: 14 }}>
@@ -131,11 +131,18 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                     <div style={{ flex: 1, minWidth: 160 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{it.name}</div>
                       <div style={{ fontSize: 11.5, color: colors.text3, marginTop: 2 }}>
-                        {it.qty ? `${it.qty} ${it.unit || ''}` : 'الكمية ناقصة'} · {it.total ? `${fmt(it.total)} ${curr}` : 'السعر ناقص'}
+                        {it.qty ? `${it.qty} ${it.unit || ''} · ` : it.status === 'expense' ? '' : 'الكمية ناقصة · '}{it.total ? `${fmt(it.total)} ${curr}` : 'السعر ناقص'}
                       </div>
                     </div>
-                    {it.status === 'matched' && <span style={pill(colors.primaryLight, colors.primary)}><Check size={12} /> {it.product_name}{it.learned ? ' (تعلّمها)' : ''}</span>}
-                    {it.status === 'new' && <span style={pill('#eff6ff', '#1d4ed8')}><Plus size={12} /> صنف جديد بالمخزون</span>}
+                    {it.status === 'matched' && <span style={pill(colors.primaryLight, colors.primary)}><Check size={12} /> مخزون: {it.product_name}{it.learned ? ' (تعلّمها)' : ''}</span>}
+                    {it.status === 'new' && <span style={pill('#eff6ff', '#1d4ed8')}><Plus size={12} /> مخزون: صنف جديد</span>}
+                    {it.status === 'expense' && <span style={pill('#faf5ff', '#7e22ce')}><Receipt size={12} /> مشتريات — ما تنضاف للمخزون</span>}
+                    {(it.status === 'new' || it.status === 'expense') && (
+                      <button onClick={() => patch(d, { index: i, action: it.status === 'new' ? 'expense' : 'new' })} disabled={busy === d.id}
+                        style={{ border: 'none', background: 'none', color: colors.text3, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>
+                        {it.status === 'new' ? 'خلّه مشتريات' : 'خلّه مخزون'}
+                      </button>
+                    )}
                     {it.status === 'skip' && <span style={pill('#f1f5f9', colors.text3)}>ما ينسجّل</span>}
                     {it.status !== 'ask' && (
                       <button onClick={() => patch(d, { index: i, action: it.status === 'skip' ? 'new' : 'skip' })} disabled={busy === d.id}
@@ -148,7 +155,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                   {it.status === 'ask' && it.question === 'which_product' && (
                     <div style={{ marginTop: 10 }}>
                       <div style={{ fontSize: 12.5, fontWeight: 700, color: '#92400e', marginBottom: 8 }}>
-                        {it.candidates.length ? 'هذا أي صنف بمخزونك؟' : 'ما لقيته بمخزونك — أضيفه صنف جديد؟'}
+                        {it.candidates.length ? 'هذا أي صنف بمخزونك؟' : 'ما لقيته بمخزونك — صنف مخزون جديد، ولا مشتريات ما تنحسب مخزون؟'}
                       </div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                         {it.candidates.map(c => (
@@ -159,7 +166,8 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                           <option value="">صنف ثاني من المخزون...</option>
                           {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                         </select>
-                        <button onClick={() => patch(d, { index: i, action: 'new' })} disabled={busy === d.id} style={{ ...opt, color: '#1d4ed8', borderColor: '#bfdbfe', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}><Plus size={12} /> صنف جديد</button>
+                        <button onClick={() => patch(d, { index: i, action: 'new' })} disabled={busy === d.id} style={{ ...opt, color: '#1d4ed8', borderColor: '#bfdbfe', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}><Plus size={12} /> صنف مخزون جديد</button>
+                        <button onClick={() => patch(d, { index: i, action: 'expense' })} disabled={busy === d.id} style={{ ...opt, color: '#7e22ce', borderColor: '#e9d5ff', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}><Receipt size={12} /> مشتريات (بدون مخزون)</button>
                         <button onClick={() => patch(d, { index: i, action: 'skip' })} disabled={busy === d.id} style={{ ...opt, color: colors.text3 }}>لا تسجّله</button>
                       </div>
                     </div>
