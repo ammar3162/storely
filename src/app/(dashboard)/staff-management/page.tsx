@@ -384,7 +384,7 @@ export default function StaffManagementPage() {
         </button>
       </div>
 
-      {!orgNotifyClosingWA && staff.some((s:any)=>s.role==='cashier') && (
+      {hasCashier && !orgNotifyClosingWA && staff.some((s:any)=>s.role==='cashier') && (
         <div style={{background:colors.warningLight,border:`1.5px solid ${colors.warningBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16,fontSize:font.sm,color:colors.warning,display:'flex',alignItems:'center',gap:10}}>
           <AlertTriangle size={18} strokeWidth={2} style={{flexShrink:0}}/>
           <div>
@@ -966,12 +966,17 @@ export default function StaffManagementPage() {
                       <Package size={13} strokeWidth={2.25}/> {s.assigned_products?.length>0?`${s.assigned_products.length} منتج`:'كل المنتجات'}
                     </button>
                   )}
-                  {s.role==='cashier' && (
+                  {s.role==='cashier' && !hasCashier && (
+                    <span title="الباقة الحالية ما فيها إقفال الكاشير — يرجع يشتغل بالترقية للمتوسطة أو بإضافة «إقفال الكاشير»" className="act-btn" style={{background:'#fffbeb',color:'#b45309',border:'1.5px solid #fde68a',display:'flex',alignItems:'center',gap:5,cursor:'default'}}>
+                      <Lock size={13} strokeWidth={2.25}/> الكاشير مقفل بالباقة الحالية
+                    </span>
+                  )}
+                  {s.role==='cashier' && hasCashier && (
                     <button onClick={e=>{e.stopPropagation();setShowHoursModal(true)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
                       <Clock size={13} strokeWidth={2.25}/> بداية يوم العمل
                     </button>
                   )}
-                  {s.role==='cashier' && !WHATSAPP_PAUSED && (
+                  {s.role==='cashier' && hasCashier && !WHATSAPP_PAUSED && (
                     <button onClick={e=>{e.stopPropagation();toggleSendClosingWA(s.id, s.send_closing_whatsapp!==false)}} className="act-btn"
                       style={{background:s.send_closing_whatsapp!==false?'#f0fdfa':colors.bg,color:s.send_closing_whatsapp!==false?colors.primary:colors.text3,border:s.send_closing_whatsapp!==false?'none':`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
                       {s.send_closing_whatsapp!==false ? (<><Bell size={13} strokeWidth={2.25}/> تفاصيل الإقفال: مفعّل</>) : (<><BellOff size={13} strokeWidth={2.25}/> تفاصيل الإقفال: موقّف</>)}

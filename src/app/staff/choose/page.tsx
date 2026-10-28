@@ -276,7 +276,7 @@ export default function ChoosePage() {
     isCashier && hasCashierFeature && { key:'c', icon:<Store size={20} strokeWidth={2}/>, title:t('cashierClosing'), sub:t('cashierSub'), c:'#334155', bg:'#f1f5f9', go:()=>router.push('/staff/cashier-closing') },
     canInventory && { key:'i', icon:<Boxes size={20} strokeWidth={2}/>, title:t('inventory'), sub:t('inventorySub'), c:'#6d28d9', bg:'#f5f3ff', go:()=>router.push('/staff/inventory') },
     canPurchases && { key:'p', icon:<ShoppingCart size={20} strokeWidth={2}/>, title:t('purchases'), sub:t('purchasesSub'), c:'#1d4ed8', bg:'#eff6ff', go:()=>router.push('/staff/purchases') },
-    !canDispense && !isCashier && { key:'e', icon:<Package size={20} strokeWidth={2}/>, title:t('enterSystem'), sub:t('dispenseSub'), c:'#0f766e', bg:'#f0fdfa', go:()=>router.push('/staff/dispense') },
+    !canDispense && !(isCashier && hasCashierFeature) && { key:'e', icon:<Package size={20} strokeWidth={2}/>, title:t('enterSystem'), sub:t('dispenseSub'), c:'#0f766e', bg:'#f0fdfa', go:()=>router.push('/staff/dispense') },
   ].filter(Boolean) as { key:string; icon:any; title:string; sub:string; c:string; bg:string; go:()=>void }[]
 
   const sectionTitle = (txt: string) => (
