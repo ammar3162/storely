@@ -1,0 +1,12 @@
+drop index if exists public.idx_products_org_branch;
+drop index if exists public.idx_staff_members_org_branch;
+drop index if exists public.idx_staff_tasks_org_staff;
+drop index if exists public.idx_staff_notif_staff;
+drop index if exists public.idx_suppliers_org;
+drop index if exists public.idx_branches_org;
+drop index if exists public.idx_supplier_orders_product;
+drop index if exists public.idx_push_subs_org;
+create index if not exists idx_products_org_id on public.products (org_id);
+create index if not exists idx_cashier_closings_org on public.cashier_closings (org_id, closing_date);
+drop trigger if exists trg_org_live_ping on public.addon_requests;
+drop trigger if exists trg_org_live_ping on public.org_addon_subscriptions;

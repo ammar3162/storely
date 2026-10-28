@@ -1,5 +1,6 @@
 'use client'
 import PageIcon from '@/components/PageIcon'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import NumberInput from '@/components/NumberInput'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
@@ -44,6 +45,12 @@ export default function TransferStockPage() {
     setBranches(bj.branches||[])
     loadHistory(oid)
   }
+
+  useLiveRefresh(orgId || null, ['stock_movements', 'branches'], () => {
+    if (!orgId) return
+    loadHistory(orgId)
+    api.get('/api/branches', { org_id: orgId }).then(bj => { if (bj.branches) setBranches(bj.branches) })
+  })
 
   async function loadProducts() {
     const pj = await api.get('/api/products', { org_id: orgId, branch_id: fromBranch })

@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import PageIcon from '@/components/PageIcon'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { CalendarDays, FileText, Trophy, Inbox, Loader2, Paperclip, Trash2, Pencil, PartyPopper, Lock, AlertTriangle, Download, BarChart3, CreditCard, Upload, Receipt, ClipboardList, Wallet, Flame, X } from 'lucide-react'
@@ -12,8 +12,10 @@ import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
-import CashierClosingEditor, { PasswordBox } from '@/components/CashierClosingEditor'
-import StaffMonthlyDetail from '@/components/reports/StaffMonthlyReport'
+// أجزاء تنفتح عند الطلب بس — ما تنحمّل مع الصفحة
+const CashierClosingEditor = lazy(() => import('@/components/CashierClosingEditor'))
+const PasswordBox = lazy(() => import('@/components/CashierClosingEditor').then(m => ({ default: m.PasswordBox })))
+const StaffMonthlyDetail = lazy(() => import('@/components/reports/StaffMonthlyReport'))
 
 type FilterPeriod = 'today'|'week'|'month'|'year'|'custom'
 
@@ -1520,8 +1522,8 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
       </div>
 
       {editing && (
-        <CashierClosingEditor orgId={sessionStorage.getItem('s_org_id')||''} closing={editing} curr={curr} onClose={()=>setEditing(null)}
-          onSaved={()=>{ setEditing(null); load() }}/>
+        <Suspense fallback={null}><CashierClosingEditor orgId={sessionStorage.getItem('s_org_id')||''} closing={editing} curr={curr} onClose={()=>setEditing(null)}
+          onSaved={()=>{ setEditing(null); load() }}/></Suspense>
       )}
       {confirmDelete && (
         <div style={{position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
@@ -1532,7 +1534,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
             <div style={{fontSize:12,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
               سيتم حذف إقفال <b style={{color:colors.text}}>{confirmDelete.staff_name}</b> بتاريخ {confirmDelete?.closing_date ? new Date(confirmDelete.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn'}) : ''} نهائياً.<br/>أدخل كلمة مرور حسابك للتأكيد
             </div>
-            <div style={{marginBottom:10}}><PasswordBox value={deletePassword} onChange={setDeletePassword} onEnter={()=>{ if(!deleting) confirmDeleteClosing() }}/></div>
+            <div style={{marginBottom:10}}><Suspense fallback={null}><PasswordBox value={deletePassword} onChange={setDeletePassword} onEnter={()=>{ if(!deleting) confirmDeleteClosing() }}/></Suspense></div>
             {deleteError && <div style={{fontSize:12,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><AlertTriangle size={13} strokeWidth={2.25}/> {deleteError}</div>}
             <div style={{display:'flex',gap:8}}>
               <button onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}
@@ -1634,7 +1636,7 @@ export default function ReportsPage() {
 
   if (view==='staffMonthly') return (
     <div style={{fontFamily:font.family,direction:'rtl'}}>
-      <StaffMonthlyDetail onBack={()=>setView('home')}/>
+      <Suspense fallback={<div style={{padding:40,textAlign:'center',color:'#94a3b8',fontSize:13}}>جاري التحميل...</div>}><StaffMonthlyDetail onBack={()=>setView('home')}/></Suspense>
     </div>
   )
 

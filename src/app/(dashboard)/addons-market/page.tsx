@@ -1,6 +1,8 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
+import { cache } from '@/lib/cache'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import NumberInput from '@/components/NumberInput'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
@@ -46,9 +48,13 @@ export default function AddonsMarketPage() {
   const [menuSel, setMenuSel] = useState<string[] | null>(null)
 
   async function load(oid: string) {
+    // آخر نسخة محفوظة تطلع على طول، وبعدها تتحدث من الخادم
+    const cached = cache.get('addons:' + oid)
+    if (cached) { setAddons(cached.addons); setBranches(cached.branches || []); setLoading(false) }
     const j = await api.get('/api/addons-market', { org_id: oid })
     loadRequests(oid)
     if (j.success) {
+      cache.set('addons:' + oid, { addons: j.addons, branches: j.branches || [] })
       setAddons(j.addons)
       setBranches(j.branches || [])
       if ((j.branches || []).length) setStaffBranchMap(prev => ({ 'extra_staff_default': prev['extra_staff_default'] || j.branches[0].id }))
@@ -76,6 +82,9 @@ export default function AddonsMarketPage() {
   // طلب إضافة: يوصل للأدمن بلوحته ويوافق عليه (بدل رسالة واتساب)
   const [requests, setRequests] = useState<any[]>([])
   const [sending, setSending] = useState<string | null>(null)
+  // تحديث فوري: موافقة الأدمن على طلب أو تغيّر اشتراك يظهر بدون تحديث الصفحة
+  useLiveRefresh(orgId || null, ['addon_requests', 'org_addon_subscriptions'], () => { if (orgId) load(orgId) })
+
   async function loadRequests(oid: string) {
     const j = await api.get('/api/addons-market/requests', { org_id: oid })
     if (j.success) setRequests(j.requests || [])
