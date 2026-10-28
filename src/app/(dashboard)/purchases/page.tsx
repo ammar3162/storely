@@ -188,10 +188,10 @@ export default function PurchasesPage() {
         setOcrLoading(true)
         try {
           const base64 = await blobToBase64(prep.blob)
-          const ocrToken = localStorage.getItem('staff_token')
+          // صفحة المالك: جلسة المالك بس — ما نرسل توكن موظف لو المتصفح فيه دخول موظف قديم
           const ocrRes = await fetch('/api/ocr-invoice', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...(ocrToken ? {'Authorization':`Bearer ${ocrToken}`} : {}) },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ image: base64, mediaType: prep.ocrType, org_id: orgId }),
           })
           const ocrData = await ocrRes.json()
