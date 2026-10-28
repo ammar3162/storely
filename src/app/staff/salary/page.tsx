@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronRight, ChevronLeft, CalendarCheck, Clock, TrendingUp, Globe } from 'lucide-react'
 import { currencySymbol } from '@/lib/currencySymbol'
+import { useStaffLang } from '@/lib/staffLang'
+import { useLiveRefresh, liveStaffOrg } from '@/lib/useLiveRefresh'
 import { PAYSLIP_LANGS, payslipT, normalizeLang, type PayslipLang } from '@/lib/payslipI18n'
 
 type Payroll = {
@@ -33,7 +35,7 @@ const num = (n: number) => Number(n || 0).toLocaleString('en-US', { maximumFract
 // كشف الراتب — الموظف يشوف مستحقاته وكل خصم بسببه وتاريخه وصافي راتبه، بلغته
 export default function PayslipPage() {
   const router = useRouter()
-  const [lang, setLang] = useState<PayslipLang>('ar')
+  const { lang, setLang } = useStaffLang()
   const [showLang, setShowLang] = useState(false)
   const [month, setMonth] = useState(thisMonth())
   const [data, setData] = useState<Payroll | null>(null)
@@ -42,7 +44,6 @@ export default function PayslipPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<'' | 'disabled' | 'loadError' | 'network'>('')
 
-  useEffect(() => { try { setLang(normalizeLang(localStorage.getItem('staff_lang'))) } catch {} }, [])
 
   const t = payslipT(lang)
   const L = PAYSLIP_LANGS.find(l => l.code === lang)!
@@ -54,13 +55,8 @@ export default function PayslipPage() {
     : new Date(d).toLocaleDateString(L.locale, { weekday: 'short', day: 'numeric', month: 'short', calendar: 'gregory', numberingSystem: 'latn', timeZone: 'Asia/Riyadh' })
   const dur = (min: number) => { const h = Math.floor(min / 60), m = min % 60; return h && m ? `${h}${t('h')} ${m}${t('m')}` : h ? `${h} ${t('hour')}` : `${m} ${t('minute')}` }
 
-  function chooseLang(code: PayslipLang) {
-    setLang(code); setShowLang(false)
-    try { localStorage.setItem('staff_lang', code) } catch {}
-    // نفس تفضيل اللغة لإشعارات الموظف
-    const token = localStorage.getItem('staff_token')
-    fetch('/api/staff-set-lang', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ lang: code }) }).catch(() => {})
-  }
+  function chooseLang(code: PayslipLang) { setLang(code); setShowLang(false) }
+
 
   const load = useCallback(async (m: string) => {
     setLoading(true); setError('')
@@ -77,6 +73,8 @@ export default function PayslipPage() {
   }, [router])
 
   useEffect(() => { load(month) }, [month, load])
+  // تحديث فوري: خصم أو مكافأة أو حضور جديد يظهر بالكشف على طول
+  useLiveRefresh(liveStaffOrg(), ['staff_payroll_adjustments','staff_attendance','staff_members'], () => load(month))
 
   const isCurrent = month === thisMonth()
   const card: React.CSSProperties = { background: 'white', border: '1px solid #e8ecf1', borderRadius: 16, boxShadow: '0 1px 2px rgba(16,24,40,.04)' }

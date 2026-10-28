@@ -1,5 +1,6 @@
 'use client'
 import { useLiveRefresh } from '@/lib/useLiveRefresh'
+import { useStaffLang } from '@/lib/staffLang'
 import { useState, useEffect, Suspense } from 'react'
 import NumberInput from '@/components/NumberInput'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -36,10 +37,77 @@ const UI: Record<string,Record<string,string>> = {
   success:       {ar:'✅ تم الصرف بنجاح',en:'✅ Dispensed!',ur:'✅ کامیاب',hi:'✅ सफल',tl:'✅ Matagumpay',bn:'✅ সফল',fr:'✅ Succès'},
   tooMuch:       {ar:'الكمية أكبر من المتاح',en:'Exceeds available',ur:'مقدار زیادہ ہے',hi:'मात्रा अधिक है',tl:'Sobra sa available',bn:'পরিমাণ বেশি',fr:'Quantité dépassée'},
   error:         {ar:'حدث خطأ، حاول مرة أخرى',en:'Error, try again',ur:'خرابی، دوبارہ کوشش کریں',hi:'त्रुटि, फिर से प्रयास करें',tl:'May error',bn:'ত্রুটি হয়েছে',fr:'Erreur, réessayez'},
+  netError:      {ar:'تعذر الاتصال',en:'Connection failed',ur:'کنکشن نہیں ہو سکا',hi:'कनेक्शन विफल',tl:'Hindi makakonekta',bn:'সংযোগ ব্যর্থ',fr:'Connexion impossible'},
+  netRetry:      {ar:'خطأ بالاتصال — حاول مرة ثانية',en:'Connection error — try again',ur:'کنکشن کی خرابی — دوبارہ کوشش کریں',hi:'कनेक्शन त्रुटि — फिर कोशिश करें',tl:'Error sa koneksyon — subukan ulit',bn:'সংযোগে সমস্যা — আবার চেষ্টা করুন',fr:'Erreur de connexion — réessayez'},
+  wasteSaved:    {ar:'تم تسجيل الهدر بنجاح',en:'Waste recorded',ur:'ضیاع درج ہو گیا',hi:'बर्बादी दर्ज हुई',tl:'Naitala ang sira',bn:'অপচয় নথিভুক্ত হয়েছে',fr:'Perte enregistrée'},
+  addFailed:     {ar:'تعذر إضافة المنتج — حاول مرة ثانية',en:"Couldn't add the product — try again",ur:'سامان شامل نہیں ہو سکا — دوبارہ کوشش کریں',hi:'उत्पाद नहीं जुड़ा — फिर कोशिश करें',tl:'Hindi naidagdag ang produkto — subukan ulit',bn:'পণ্য যোগ করা যায়নি — আবার চেষ্টা করুন',fr:"Impossible d'ajouter le produit — réessayez"},
+  added:         {ar:'تمت إضافة {name}',en:'{name} added',ur:'{name} شامل ہو گیا',hi:'{name} जोड़ा गया',tl:'Naidagdag ang {name}',bn:'{name} যোগ হয়েছে',fr:'{name} ajouté'},
+  qtyAdded:      {ar:'تمت إضافة الكمية لـ {name}',en:'Quantity added to {name}',ur:'{name} میں مقدار شامل ہو گئی',hi:'{name} में मात्रा जोड़ी गई',tl:'Nadagdagan ang dami ng {name}',bn:'{name}-এ পরিমাণ যোগ হয়েছে',fr:'Quantité ajoutée à {name}'},
+  wrongPin:      {ar:'رمز PIN غير صحيح',en:'Wrong PIN',ur:'غلط PIN',hi:'गलत PIN',tl:'Maling PIN',bn:'ভুল PIN',fr:'PIN incorrect'},
+  errorRetry:    {ar:'حدث خطأ — حاول مرة أخرى',en:'Something went wrong — try again',ur:'خرابی ہوئی — دوبارہ کوشش کریں',hi:'कुछ गलत हुआ — फिर कोशिश करें',tl:'May error — subukan ulit',bn:'সমস্যা হয়েছে — আবার চেষ্টা করুন',fr:'Erreur — réessayez'},
+  noPerm:        {ar:'ما عندك أي صلاحية مفعّلة',en:'You have no permissions enabled',ur:'آپ کی کوئی اجازت فعال نہیں',hi:'आपकी कोई अनुमति सक्रिय नहीं',tl:'Wala kang aktibong pahintulot',bn:'আপনার কোনো অনুমতি চালু নেই',fr:"Aucune autorisation n'est activée"},
+  noPermSub:     {ar:'تواصل مع صاحب المنشأة عشان يفعّل لك صلاحية دخول',en:'Ask the business owner to enable access for you',ur:'رسائی کے لیے مالک سے رابطہ کریں',hi:'पहुंच के लिए मालिक से संपर्क करें',tl:'Hilingin sa may-ari na bigyan ka ng access',bn:'অ্যাক্সেসের জন্য মালিকের সাথে যোগাযোগ করুন',fr:"Demandez au propriétaire d'activer votre accès"},
+  tabDispense:   {ar:'الصرف',en:'Dispense',ur:'نکالنا',hi:'निकासी',tl:'Paglabas',bn:'বের করা',fr:'Sorties'},
+  tabInventory:  {ar:'المخزون',en:'Inventory',ur:'اسٹاک',hi:'इन्वेंटरी',tl:'Imbentaryo',bn:'ইনভেন্টরি',fr:'Inventaire'},
+  tabPurchases:  {ar:'المشتريات',en:'Purchases',ur:'خریداری',hi:'खरीदारी',tl:'Mga Pagbili',bn:'ক্রয়',fr:'Achats'},
+  subExpired:    {ar:'انتهت صلاحية اشتراك المنشأة',en:"The business's subscription has expired",ur:'ادارے کی سبسکرپشن ختم ہو گئی',hi:'संस्थान की सदस्यता समाप्त हो गई',tl:'Nag-expire na ang subscription',bn:'প্রতিষ্ঠানের সাবস্ক্রিপশন শেষ',fr:"L'abonnement a expiré"},
+  subExpiredSub: {ar:'انتهت فترة الاشتراك. يرجى إبلاغ صاحب المنشأة لتجديد الاشتراك',en:'Please tell the business owner to renew the subscription',ur:'براہ کرم مالک کو سبسکرپشن کی تجدید کا کہیں',hi:'कृपया मालिक को सदस्यता नवीनीकरण के लिए कहें',tl:'Sabihin sa may-ari na i-renew ang subscription',bn:'মালিককে সাবস্ক্রিপশন নবায়ন করতে বলুন',fr:"Demandez au propriétaire de renouveler l'abonnement"},
+  signOut:       {ar:'تسجيل خروج',en:'Sign out',ur:'لاگ آؤٹ',hi:'साइन आउट',tl:'Mag-sign out',bn:'সাইন আউট',fr:'Se déconnecter'},
+  sessionEnded:  {ar:'انتهت الجلسة',en:'Session ended',ur:'سیشن ختم ہو گیا',hi:'सत्र समाप्त',tl:'Natapos ang session',bn:'সেশন শেষ',fr:'Session terminée'},
+  enterPin:      {ar:'أدخل رمز PIN للمتابعة، {name}',en:'Enter your PIN to continue, {name}',ur:'جاری رکھنے کے لیے PIN لکھیں، {name}',hi:'जारी रखने के लिए PIN डालें, {name}',tl:'Ilagay ang PIN para magpatuloy, {name}',bn:'চালিয়ে যেতে PIN দিন, {name}',fr:'Saisissez votre PIN pour continuer, {name}'},
+  verifying:     {ar:'جاري التحقق...',en:'Verifying...',ur:'تصدیق ہو رہی ہے...',hi:'जांच हो रही है...',tl:'Bine-verify...',bn:'যাচাই হচ্ছে...',fr:'Vérification...'},
+  login:         {ar:'دخول',en:'Log in',ur:'داخل ہوں',hi:'लॉग इन',tl:'Mag-log in',bn:'লগ ইন',fr:'Connexion'},
+  fullSignOut:   {ar:'تسجيل خروج كامل',en:'Sign out completely',ur:'مکمل لاگ آؤٹ',hi:'पूरी तरह साइन आउट',tl:'Mag-sign out nang buo',bn:'সম্পূর্ণ সাইন আউট',fr:'Déconnexion complète'},
+  todayCount:    {ar:'صرفت {n} صنف اليوم',en:'You dispensed {n} items today',ur:'آج آپ نے {n} اشیاء نکالیں',hi:'आज आपने {n} आइटम निकाले',tl:'Nakapaglabas ka ng {n} item ngayon',bn:'আজ আপনি {n}টি আইটেম বের করেছেন',fr:"{n} articles sortis aujourd'hui"},
+  mostUsed:      {ar:'الأكثر استخداماً',en:'Most used',ur:'سب سے زیادہ استعمال',hi:'सबसे ज़्यादा इस्तेमाल',tl:'Pinakamadalas gamitin',bn:'সবচেয়ে বেশি ব্যবহৃত',fr:'Les plus utilisés'},
+  last14:        {ar:'آخر 14 يوم',en:'last 14 days',ur:'پچھلے 14 دن',hi:'पिछले 14 दिन',tl:'huling 14 araw',bn:'গত ১৪ দিন',fr:'14 derniers jours'},
+  timesUsed:     {ar:'صُرف {n} مرة',en:'Used {n}×',ur:'{n} بار',hi:'{n} बार',tl:'{n} beses',bn:'{n} বার',fr:'{n} fois'},
+  categories:    {ar:'الفئات',en:'Categories',ur:'زمرے',hi:'श्रेणियां',tl:'Mga Kategorya',bn:'বিভাগ',fr:'Catégories'},
+  inventory:     {ar:'المخزون',en:'Inventory',ur:'اسٹاک',hi:'इन्वेंटरी',tl:'Imbentaryo',bn:'ইনভেন্টরি',fr:'Inventaire'},
+  addProduct:    {ar:'إضافة منتج',en:'Add product',ur:'سامان شامل کریں',hi:'उत्पाद जोड़ें',tl:'Magdagdag ng produkto',bn:'পণ্য যোগ করুন',fr:'Ajouter un produit'},
+  searchProduct: {ar:'ابحث عن منتج...',en:'Search for a product...',ur:'سامان تلاش کریں...',hi:'उत्पाद खोजें...',tl:'Maghanap ng produkto...',bn:'পণ্য খুঁজুন...',fr:'Rechercher un produit...'},
+  noProducts:    {ar:'لا توجد منتجات',en:'No products',ur:'کوئی سامان نہیں',hi:'कोई उत्पाद नहीं',tl:'Walang produkto',bn:'কোনো পণ্য নেই',fr:'Aucun produit'},
+  lowStock:      {ar:'مخزون منخفض',en:'Low stock',ur:'اسٹاک کم ہے',hi:'स्टॉक कम है',tl:'Mababa ang stock',bn:'স্টক কম',fr:'Stock bas'},
+  edit:          {ar:'تعديل',en:'Edit',ur:'ترمیم',hi:'बदलें',tl:'I-edit',bn:'সম্পাদনা',fr:'Modifier'},
+  purchasesTitle:{ar:'تسجيل المشتريات',en:'Record purchases',ur:'خریداری درج کریں',hi:'खरीदारी दर्ज करें',tl:'Itala ang mga pagbili',bn:'ক্রয় নথিভুক্ত করুন',fr:'Saisir les achats'},
+  purchasesSub:  {ar:'سجّل فواتير الشراء مع الضريبة وصور الفواتير',en:'Record purchase invoices with VAT and photos',ur:'ٹیکس اور تصاویر کے ساتھ خریداری کے بل درج کریں',hi:'टैक्स और फोटो के साथ खरीद बिल दर्ज करें',tl:'Itala ang mga resibo kasama ang VAT at larawan',bn:'ভ্যাট ও ছবিসহ ক্রয়ের বিল নথিভুক্ত করুন',fr:"Saisissez les factures d'achat avec TVA et photos"},
+  newPurchase:   {ar:'تسجيل شراء جديد',en:'New purchase',ur:'نئی خریداری',hi:'नई खरीद',tl:'Bagong pagbili',bn:'নতুন ক্রয়',fr:'Nouvel achat'},
+  reports:       {ar:'التقارير',en:'Reports',ur:'رپورٹس',hi:'रिपोर्ट',tl:'Mga Ulat',bn:'রিপোর্ট',fr:'Rapports'},
+  soon:          {ar:'هذه الميزة ستكون متاحة قريباً',en:'Coming soon',ur:'جلد دستیاب ہوگا',hi:'जल्द उपलब्ध',tl:'Malapit nang dumating',bn:'শীঘ্রই আসছে',fr:'Bientôt disponible'},
+  normalOut:     {ar:'صرف عادي',en:'Dispense',ur:'عام نکالنا',hi:'सामान्य निकासी',tl:'Karaniwang labas',bn:'সাধারণ বের করা',fr:'Sortie normale'},
+  recordWaste:   {ar:'تسجيل هدر',en:'Record waste',ur:'ضیاع درج کریں',hi:'बर्बादी दर्ज करें',tl:'Itala ang sira',bn:'অপচয় নথিভুক্ত করুন',fr:'Enregistrer une perte'},
+  wasteReason:   {ar:'سبب الهدر *',en:'Reason *',ur:'وجہ *',hi:'कारण *',tl:'Dahilan *',bn:'কারণ *',fr:'Motif *'},
+  noteOptional:  {ar:'ملاحظة (اختياري)',en:'Note (optional)',ur:'نوٹ (اختیاری)',hi:'नोट (वैकल्पिक)',tl:'Tala (opsyonal)',bn:'নোট (ঐচ্ছিক)',fr:'Note (facultatif)'},
+  wasteNotePh:   {ar:'أي تفاصيل إضافية عن الهدر...',en:'Any extra details...',ur:'کوئی اضافی تفصیل...',hi:'कोई अतिरिक्त जानकारी...',tl:'Iba pang detalye...',bn:'অতিরিক্ত বিবরণ...',fr:'Détails supplémentaires...'},
+  recordWasteQty:{ar:'تسجيل هدر {q} {u}',en:'Record waste {q} {u}',ur:'ضیاع درج کریں {q} {u}',hi:'बर्बादी दर्ज करें {q} {u}',tl:'Itala ang sira {q} {u}',bn:'অপচয় নথিভুক্ত {q} {u}',fr:'Enregistrer la perte {q} {u}'},
+  currentQty:    {ar:'الكمية الحالية',en:'Current quantity',ur:'موجودہ مقدار',hi:'मौजूदा मात्रा',tl:'Kasalukuyang dami',bn:'বর্তমান পরিমাণ',fr:'Quantité actuelle'},
+  newQty:        {ar:'الكمية الجديدة',en:'New quantity',ur:'نئی مقدار',hi:'नई मात्रा',tl:'Bagong dami',bn:'নতুন পরিমাণ',fr:'Nouvelle quantité'},
+  saveQty:       {ar:'حفظ الكمية',en:'Save quantity',ur:'مقدار محفوظ کریں',hi:'मात्रा सहेजें',tl:'I-save ang dami',bn:'পরিমাণ সংরক্ষণ',fr:'Enregistrer la quantité'},
+  cancel:        {ar:'إلغاء',en:'Cancel',ur:'منسوخ',hi:'रद्द करें',tl:'Kanselahin',bn:'বাতিল',fr:'Annuler'},
+  newProduct:    {ar:'إضافة منتج جديد',en:'Add new product',ur:'نیا سامان شامل کریں',hi:'नया उत्पाद जोड़ें',tl:'Magdagdag ng bagong produkto',bn:'নতুন পণ্য যোগ করুন',fr:'Nouveau produit'},
+  productName:   {ar:'اسم المنتج *',en:'Product name *',ur:'سامان کا نام *',hi:'उत्पाद का नाम *',tl:'Pangalan ng produkto *',bn:'পণ্যের নাম *',fr:'Nom du produit *'},
+  qtyRequired:   {ar:'الكمية *',en:'Quantity *',ur:'مقدار *',hi:'मात्रा *',tl:'Dami *',bn:'পরিমাণ *',fr:'Quantité *'},
+  unitPh:        {ar:'اكتب اسم الوحدة',en:'Type the unit',ur:'اکائی لکھیں',hi:'इकाई लिखें',tl:'Isulat ang unit',bn:'একক লিখুন',fr:"Saisissez l'unité"},
+  categoryOpt:   {ar:'الفئة (اختياري)',en:'Category (optional)',ur:'زمرہ (اختیاری)',hi:'श्रेणी (वैकल्पिक)',tl:'Kategorya (opsyonal)',bn:'বিভাগ (ঐচ্ছিক)',fr:'Catégorie (facultatif)'},
+  categoryPh:    {ar:'اكتب اسم الفئة',en:'Type the category',ur:'زمرہ لکھیں',hi:'श्रेणी लिखें',tl:'Isulat ang kategorya',bn:'বিভাগ লিখুন',fr:'Saisissez la catégorie'},
+  adding:        {ar:'جاري الإضافة...',en:'Adding...',ur:'شامل ہو رہا ہے...',hi:'जोड़ा जा रहा है...',tl:'Idinadagdag...',bn:'যোগ হচ্ছে...',fr:'Ajout...'},
+  add:           {ar:'إضافة',en:'Add',ur:'شامل کریں',hi:'जोड़ें',tl:'Idagdag',bn:'যোগ করুন',fr:'Ajouter'},
+  w_damaged:     {ar:'تالف',en:'Damaged',ur:'خراب',hi:'खराब',tl:'Sira',bn:'নষ্ট',fr:'Abîmé'},
+  w_expired:     {ar:'منتهي الصلاحية',en:'Expired',ur:'میعاد ختم',hi:'एक्सपायर',tl:'Expired',bn:'মেয়াদোত্তীর্ণ',fr:'Périmé'},
+  w_broken:      {ar:'كسر',en:'Broken',ur:'ٹوٹا ہوا',hi:'टूटा',tl:'Basag',bn:'ভাঙা',fr:'Cassé'},
+  w_lost:        {ar:'سرقة/فقدان',en:'Theft/lost',ur:'چوری/گم',hi:'चोरी/गुम',tl:'Nanakaw/nawala',bn:'চুরি/হারানো',fr:'Vol/perte'},
+  w_prep:        {ar:'خطأ تحضير',en:'Preparation error',ur:'تیاری میں غلطی',hi:'तैयारी में गलती',tl:'Mali sa paghahanda',bn:'প্রস্তুতিতে ভুল',fr:'Erreur de préparation'},
+  w_other:       {ar:'أخرى',en:'Other',ur:'دیگر',hi:'अन्य',tl:'Iba pa',bn:'অন্যান্য',fr:'Autre'},
   translating:   {ar:'⏳ جاري تجهيز الترجمة...',en:'⏳ Preparing translation...',ur:'⏳ ترجمہ تیار ہو رہا ہے...',hi:'⏳ अनुवाद तैयार हो रहा है...',tl:'⏳ Inihahanda...',bn:'⏳ অনুবাদ হচ্ছে...',fr:'⏳ Traduction en cours...'},
 }
 
-const T = (key: string, lang: string) => UI[key]?.[lang] || UI[key]?.ar || key
+const T = (key: string, lang: string, vars?: Record<string, string | number>) => {
+  let v = UI[key]?.[lang] || UI[key]?.en || UI[key]?.ar || key
+  if (vars) for (const k in vars) v = v.split(`{${k}}`).join(String(vars[k]))
+  return v
+}
+// أسباب الهدر تنحفظ بالعربي (قيمة ثابتة للتقارير) وتنعرض بلغة الموظف
+const WASTE_KEYS: Record<string, string> = { 'تالف':'w_damaged','منتهي الصلاحية':'w_expired','كسر':'w_broken','سرقة/فقدان':'w_lost','خطأ تحضير':'w_prep','أخرى':'w_other' }
 
 function colorFor(cat: string) {
   // لون ثابت حسب اسم الفئة نفسه — مو حسب ترتيبها بقائمة متغيّرة (كانت تتغيّر مع تغيّر نمط الاستخدام)
@@ -74,7 +142,7 @@ function StaffPageInner() {
   const [tab, setTab] = useState<'dispense'|'inventory'|'purchases'|'reports'>('dispense')
   const [products, setProducts] = useState<any[]>([])
   const [translations, setTranslations] = useState<Record<string,Record<string,string>>>({})
-  const [lang, setLang] = useState('ar')
+  const { lang, setLang } = useStaffLang()
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [translating, setTranslating] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -105,7 +173,7 @@ function StaffPageInner() {
 
   // Permissions polling
   // تحديث فوري: لما تتغير البيانات من أي جهاز، الصفحة تعيد جلبها
-  useLiveRefresh(session?.org_id, ['products','stock_movements'], ()=>{ if(session){ refreshProductsQuietly(session); loadStats(session) } })
+  useLiveRefresh(session?.org_id, ['products','stock_movements','staff_members'], ()=>{ if(session){ refreshProductsQuietly(session); loadStats(session) } })
   useEffect(()=>{
     async function checkPermissions() {
       const saved = localStorage.getItem('staff_session')
@@ -170,8 +238,6 @@ function StaffPageInner() {
     loadProducts(s)
     loadStats(s)
     getStaffOrg().then(org=>{ if(org?.logo_url) setOrgLogo(org.logo_url); setBizType(org?.business_type??null) })
-    const savedLang = localStorage.getItem('staff_lang')
-    if(savedLang) setLang(savedLang)
   },[])
 
   useEffect(()=>{
@@ -247,7 +313,7 @@ function StaffPageInner() {
       showMsg(T('success',lang))
       setSelected(null); setDispenseQty('')
       loadProducts(session)
-    } catch (e:any) { showMsg(`${T('error',lang)} — ${e?.message||'تعذر الاتصال'}`,'error') }
+    } catch (e:any) { showMsg(`${T('error',lang)} — ${e?.message||T('netError',lang)}`,'error') }
     setSubmitting(false)
   }
 
@@ -268,10 +334,10 @@ function StaffPageInner() {
       }
       fetch('/api/notify-waste',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},body:JSON.stringify({staff_name:session.name,product_name:selected.name,qty:Number(dispenseQty),unit:selected.unit,waste_reason:wasteReason})}).catch(()=>{})
       fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${staffToken}`},body:JSON.stringify({org_id:session.org_id,product_id:selected.id,new_qty:selected.qty-Number(dispenseQty),reorder_point:(selected.supplier_reorder_point ?? selected.reorder_point)})}).catch(()=>{})
-      showMsg('🗑️ تم تسجيل الهدر بنجاح')
+      showMsg(T('wasteSaved',lang))
       setSelected(null); setDispenseQty(''); setWasteMode(false); setWasteReason(''); setWasteNote('')
       loadProducts(session)
-    } catch (e:any) { showMsg(`${T('error',lang)} — ${e?.message||'تعذر الاتصال'}`,'error') }
+    } catch (e:any) { showMsg(`${T('error',lang)} — ${e?.message||T('netError',lang)}`,'error') }
     setSubmitting(false)
   }
 
@@ -285,7 +351,7 @@ function StaffPageInner() {
       if(!res.ok||!j.success){ showMsg(j.error||T('error',lang),'error'); setSavingQty(false); return }
       setEditingProduct(null)
       loadProducts(session)
-    } catch (e:any) { showMsg(`${T('error',lang)} — ${e?.message||'تعذر الاتصال'}`,'error') }
+    } catch (e:any) { showMsg(`${T('error',lang)} — ${e?.message||T('netError',lang)}`,'error') }
     setSavingQty(false)
   }
 
@@ -296,12 +362,12 @@ function StaffPageInner() {
       const res = await fetch('/api/staff-add-product',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('staff_token')}`},
         body:JSON.stringify({name:newProduct.name.trim(),qty:Number(newProduct.qty),unit:newProduct.unit,category:newProduct.category.trim()||null})})
       const j = await res.json().catch(()=>({}))
-      if(!res.ok || !j.success){ showMsg(j.error || 'تعذر إضافة المنتج — حاول مرة ثانية','error'); setSavingProduct(false); return }
-      showMsg(j.created ? `تمت إضافة ${newProduct.name.trim()}` : `تمت إضافة الكمية لـ ${newProduct.name.trim()}`,'success')
+      if(!res.ok || !j.success){ showMsg(j.error || T('addFailed',lang),'error'); setSavingProduct(false); return }
+      showMsg(T(j.created ? 'added' : 'qtyAdded',lang,{name:newProduct.name.trim()}),'success')
       setNewProduct({name:'',qty:'',unit:'قطعة',category:''})
       setShowAddProduct(false)
       loadProducts(session)
-    } catch { showMsg('خطأ بالاتصال — حاول مرة ثانية','error') }
+    } catch { showMsg(T('netRetry',lang),'error') }
     setSavingProduct(false)
   }
 
@@ -314,7 +380,7 @@ function StaffPageInner() {
       const res = await fetch('/api/staff-reauth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({staff_id:session.id,pin:reauthPin})})
       const data = await res.json()
       if(!res.ok){
-        setReauthError(data.error||'رمز PIN غير صحيح')
+        setReauthError(data.error||T('wrongPin',lang))
         setReauthPin('')
         setReauthLoading(false)
         return
@@ -324,7 +390,7 @@ function StaffPageInner() {
       setSession(data.staff)
       setNeedsReauth(false); setReauthPin(''); setReauthError(''); setReauthLoading(false)
     } catch {
-      setReauthError('حدث خطأ — حاول مرة أخرى')
+      setReauthError(T('errorRetry',lang))
       setReauthLoading(false)
     }
   }
@@ -346,8 +412,8 @@ function StaffPageInner() {
     return (
       <div style={{minHeight:'100vh',display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',background:'#f5f5f4',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:20,textAlign:'center' as const}}>
         <div style={{fontSize:48,marginBottom:16}}>🔒</div>
-        <div style={{fontSize:16,fontWeight:800,color:'#1c1c1a',marginBottom:8}}>ما عندك أي صلاحية مفعّلة</div>
-        <div style={{fontSize:13,color:'#5f5e5a',marginBottom:20}}>تواصل مع صاحب المنشأة عشان يفعّل لك صلاحية دخول</div>
+        <div style={{fontSize:16,fontWeight:800,color:'#1c1c1a',marginBottom:8}}>{T('noPerm',lang)}</div>
+        <div style={{fontSize:13,color:'#5f5e5a',marginBottom:20}}>{T('noPermSub',lang)}</div>
         <button onClick={()=>{localStorage.removeItem('staff_session');localStorage.removeItem('staff_token');router.push('/staff')}}
           style={{padding:'10px 24px',borderRadius:10,border:'1px solid #e5e5e3',background:'white',fontSize:13,fontWeight:700,cursor:'pointer',color:'#5f5e5a'}}>
           خروج
@@ -358,9 +424,9 @@ function StaffPageInner() {
 
   const isRTL = lang==='ar'||lang==='ur'
   const tabs = [
-    {key:'dispense',label:'الصرف',icon:<Send size={15} strokeWidth={2.25}/>,show:session.permissions?.dispense},
-    {key:'inventory',label:'المخزون',icon:<Boxes size={15} strokeWidth={2.25}/>,show:session.permissions?.inventory},
-    {key:'purchases',label:'المشتريات',icon:<ShoppingCart size={15} strokeWidth={2.25}/>,show:session.permissions?.purchases},
+    {key:'dispense',label:T('tabDispense',lang),icon:<Send size={15} strokeWidth={2.25}/>,show:session.permissions?.dispense},
+    {key:'inventory',label:T('tabInventory',lang),icon:<Boxes size={15} strokeWidth={2.25}/>,show:session.permissions?.inventory},
+    {key:'purchases',label:T('tabPurchases',lang),icon:<ShoppingCart size={15} strokeWidth={2.25}/>,show:session.permissions?.purchases},
   ].filter(t=>t.show)
 
   return (
@@ -387,12 +453,12 @@ function StaffPageInner() {
         <div style={{position:'fixed',inset:0,zIndex:6000,background:'#0C213B',display:'flex',alignItems:'center',justifyContent:'center',padding:24,textAlign:'center' as const}}>
           <div>
             <div style={{fontSize:56,marginBottom:16}}>⏰</div>
-            <div style={{fontSize:18,fontWeight:800,color:'white',marginBottom:8}}>انتهت صلاحية اشتراك المنشأة</div>
+            <div style={{fontSize:18,fontWeight:800,color:'white',marginBottom:8}}>{T('subExpired',lang)}</div>
             <div style={{fontSize:13,color:'rgba(255,255,255,.7)',lineHeight:1.8,maxWidth:320,marginLeft:'auto',marginRight:'auto',marginBottom:24}}>
-              انتهت فترة الاشتراك. يرجى إبلاغ صاحب المنشأة لتجديد الاشتراك
+              {T('subExpiredSub',lang)}
             </div>
             <button onClick={logout} style={{padding:'12px 28px',background:'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-              تسجيل خروج
+              {T('signOut',lang)}
             </button>
           </div>
         </div>
@@ -402,8 +468,8 @@ function StaffPageInner() {
         <div style={{position:'fixed',inset:0,zIndex:5000,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,animation:'fadeIn .2s ease'}}>
           <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:340,padding:28,textAlign:'center' as const,animation:'slideUp .3s ease'}}>
             <div style={{fontSize:40,marginBottom:10}}>🔒</div>
-            <div style={{fontSize:15,fontWeight:800,color:'#0f172a',marginBottom:4}}>انتهت الجلسة</div>
-            <div style={{fontSize:12,color:'#64748b',marginBottom:18}}>أدخل رمز PIN للمتابعة، {session?.name}</div>
+            <div style={{fontSize:15,fontWeight:800,color:'#0f172a',marginBottom:4}}>{T('sessionEnded',lang)}</div>
+            <div style={{fontSize:12,color:'#64748b',marginBottom:18}}>{T('enterPin',lang,{name:session?.name||''})}</div>
             <input
               type="password" inputMode="numeric" maxLength={6} autoFocus
               value={reauthPin}
@@ -415,10 +481,10 @@ function StaffPageInner() {
             {reauthError && <div style={{fontSize:12,color:'#ef4444',fontWeight:600,marginBottom:10}}>{reauthError}</div>}
             <button onClick={submitReauth} disabled={!reauthPin||reauthLoading}
               style={{width:'100%',padding:13,background:!reauthPin||reauthLoading?'#cbd5e1':'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:!reauthPin||reauthLoading?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:10}}>
-              {reauthLoading?'جاري التحقق...':'دخول'}
+              {reauthLoading?T('verifying',lang):T('login',lang)}
             </button>
             <button onClick={logout} style={{width:'100%',padding:10,background:'none',border:'none',fontSize:12,color:'#94a3b8',cursor:'pointer',fontFamily:'inherit'}}>
-              تسجيل خروج كامل
+              {T('fullSignOut',lang)}
             </button>
           </div>
         </div>
@@ -454,7 +520,7 @@ function StaffPageInner() {
               <div style={{position:'absolute' as const,top:'100%',insetInlineEnd:0,marginTop:6,background:'white',borderRadius:12,border:'1px solid #e8ecf1',boxShadow:'0 12px 28px rgba(15,23,42,.16)',overflow:'hidden',minWidth:150,zIndex:50}}>
                 {LANGUAGES.map(l=>(
                   <button key={l.code}
-                    onClick={()=>{setLang(l.code);localStorage.setItem('staff_lang',l.code);if(l.code!=='ar'&&session)fetchTranslation(session,l.code);setShowLangMenu(false)}}
+                    onClick={()=>{setLang(l.code as any);if(l.code!=='ar'&&session)fetchTranslation(session,l.code);setShowLangMenu(false)}}
                     style={{width:'100%',padding:'11px 14px',border:'none',borderBottom:'1px solid #f1f5f9',background:lang===l.code?'#f0fdfa':'white',color:lang===l.code?'#0f766e':'#1e293b',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'start' as const,display:'block'}}>
                     {lang===l.code?'✓ ':''}{l.label}
                   </button>
@@ -519,23 +585,23 @@ function StaffPageInner() {
           <div style={{animation:'fadeIn .3s'}}>
             {todayCount>0 && (
               <div style={{display:'inline-flex',alignItems:'center',gap:7,background:'#ecfdf5',color:'#047857',borderRadius:99,padding:'7px 13px',marginBottom:16,fontSize:12.5,fontWeight:700}}>
-                <CheckCircle2 size={15} strokeWidth={2.25}/> صرفت {todayCount} صنف اليوم
+                <CheckCircle2 size={15} strokeWidth={2.25}/> {T('todayCount',lang,{n:todayCount})}
               </div>
             )}
             {mostUsed.length>0 && (
               <div style={{marginBottom:16}}>
-                <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,fontWeight:700,color:'#64748b',margin:'0 2px 10px'}}><Zap size={14} strokeWidth={2.25} color="#f59e0b"/> الأكثر استخداماً <span style={{fontWeight:500,color:'#94a3b8'}}>· آخر 14 يوم</span></div>
+                <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,fontWeight:700,color:'#64748b',margin:'0 2px 10px'}}><Zap size={14} strokeWidth={2.25} color="#f59e0b"/> {T('mostUsed',lang)} <span style={{fontWeight:500,color:'#94a3b8'}}>· {T('last14',lang)}</span></div>
                 <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4,scrollbarWidth:'none' as const}}>
                   {mostUsed.map((p:any,i:number)=>(
                     <button key={p.id} className="mu-btn" onClick={()=>setSelected(p)} style={{animationDelay:`${i*0.06}s`,flexShrink:0,background:'white',border:'1px solid #e8ecf1',borderRadius:14,padding:'11px 14px',cursor:'pointer',fontFamily:'inherit',minWidth:118,maxWidth:160,textAlign:'start' as const,boxShadow:'0 1px 2px rgba(16,24,40,.04)'}}>
                       <div style={{fontSize:13.5,fontWeight:700,color:'#0f172a',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{tx(p.name)}</div>
-                      <div style={{fontSize:11,color:'#94a3b8',marginTop:3,whiteSpace:'nowrap' as const}}>صُرف {p.dispense_count} {p.dispense_count>=3&&p.dispense_count<=10?"مرات":"مرة"}</div>
+                      <div style={{fontSize:11,color:'#94a3b8',marginTop:3,whiteSpace:'nowrap' as const}}>{lang==='ar'?`صُرف ${p.dispense_count} ${p.dispense_count>=3&&p.dispense_count<=10?'مرات':'مرة'}`:T('timesUsed',lang,{n:p.dispense_count})}</div>
                     </button>
                   ))}
                 </div>
               </div>
             )}
-            <div style={{fontSize:12,fontWeight:700,color:'#64748b',margin:'0 2px 10px'}}>الفئات</div>
+            <div style={{fontSize:12,fontWeight:700,color:'#64748b',margin:'0 2px 10px'}}>{T('categories',lang)}</div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
               {categories.map((cat,i)=>(
                 <button key={cat} className="cat-card" onClick={()=>setActiveCategory(cat)}
@@ -584,17 +650,17 @@ function StaffPageInner() {
       {tab==='inventory' && (
         <div style={{padding:'16px 20px',maxWidth:560,margin:'0 auto',animation:'fadeIn .3s'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-            <div style={{fontSize:18,fontWeight:800,color:'#0f172a'}}>📦 المخزون</div>
+            <div style={{fontSize:18,fontWeight:800,color:'#0f172a'}}>{T('inventory',lang)}</div>
             <button onClick={()=>setShowAddProduct(true)}
               style={{padding:'9px 16px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 12px rgba(22,163,74,.3)'}}>
-              ＋ إضافة منتج
+              ＋ {T('addProduct',lang)}
             </button>
           </div>
-          <input value={invSearch} onChange={e=>setInvSearch(e.target.value)} placeholder="🔍 ابحث عن منتج..."
+          <input value={invSearch} onChange={e=>setInvSearch(e.target.value)} placeholder={T('searchProduct',lang)}
             style={{width:'100%',padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:14,background:'white',fontFamily:'inherit',marginBottom:14,boxSizing:'border-box' as const}}/>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
             {filteredInventory.length===0 ? (
-              <div className="card" style={{padding:40,textAlign:'center',color:'#94a3b8',gridColumn:'span 2'}}>لا توجد منتجات</div>
+              <div className="card" style={{padding:40,textAlign:'center',color:'#94a3b8',gridColumn:'span 2'}}>{T('noProducts',lang)}</div>
             ) : filteredInventory.map(p=>(
               <div key={p.id} className="card" style={{padding:'16px',display:'flex',flexDirection:'column' as const,gap:6}}>
                 <div style={{fontSize:14,fontWeight:700,color:'#0f172a',lineHeight:1.3}}>{tx(p.name)}</div>
@@ -603,10 +669,10 @@ function StaffPageInner() {
                   <span style={{fontSize:30,fontWeight:900,color:p.qty<=p.reorder_point?'#ef4444':'#029FA2',lineHeight:1}}>{p.qty}</span>
                   <span style={{fontSize:12,color:'#94a3b8'}}>{p.unit}</span>
                 </div>
-                {p.qty<=p.reorder_point && <div style={{fontSize:10,color:'#ef4444',fontWeight:700}}>⚠️ مخزون منخفض</div>}
+                {p.qty<=p.reorder_point && <div style={{fontSize:10,color:'#ef4444',fontWeight:700}}>{T('lowStock',lang)}</div>}
                 <button onClick={()=>{setEditingProduct(p);setEditQty(String(p.qty))}}
                   style={{width:'100%',padding:'8px',background:'#f0fdfa',color:'#029FA2',border:'1.5px solid #99f6e4',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginTop:'auto'}}>
-                  ✏️ تعديل
+                  {T('edit',lang)}
                 </button>
               </div>
             ))}
@@ -618,11 +684,11 @@ function StaffPageInner() {
       {tab==='purchases' && (
         <div style={{padding:'60px 20px',textAlign:'center',animation:'fadeIn .3s'}}>
           <div style={{fontSize:64,marginBottom:16}}>🛒</div>
-          <div style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:8}}>تسجيل المشتريات</div>
-          <div style={{fontSize:14,color:'#64748b',marginBottom:28,maxWidth:300,margin:'0 auto 28px'}}>سجّل فواتير الشراء مع الضريبة وصور الفواتير</div>
+          <div style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:8}}>{T('purchasesTitle',lang)}</div>
+          <div style={{fontSize:14,color:'#64748b',marginBottom:28,maxWidth:300,margin:'0 auto 28px'}}>{T('purchasesSub',lang)}</div>
           <button onClick={()=>router.push('/staff/purchases')}
             style={{padding:'16px 36px',background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 8px 24px rgba(22,163,74,.35)',display:'inline-flex',alignItems:'center',gap:8}}>
-            📝 تسجيل شراء جديد
+            {T('newPurchase',lang)}
           </button>
         </div>
       )}
@@ -631,8 +697,8 @@ function StaffPageInner() {
       {tab==='reports' && (
         <div style={{padding:'60px 20px',textAlign:'center',animation:'fadeIn .3s'}}>
           <div style={{fontSize:64,marginBottom:16}}>📊</div>
-          <div style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:8}}>التقارير</div>
-          <div style={{fontSize:14,color:'#64748b'}}>هذه الميزة ستكون متاحة قريباً</div>
+          <div style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:8}}>{T('reports',lang)}</div>
+          <div style={{fontSize:14,color:'#64748b'}}>{T('soon',lang)}</div>
         </div>
       )}
 
@@ -652,26 +718,26 @@ function StaffPageInner() {
             </div>
             <div style={{display:'flex',gap:8,marginBottom:20,background:'#f1f5f9',borderRadius:12,padding:4}}>
               <button onClick={()=>setWasteMode(false)} style={{flex:1,padding:'10px',borderRadius:9,border:'none',background:!wasteMode?'white':'transparent',color:!wasteMode?'#029FA2':'#64748b',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:!wasteMode?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
-                📤 صرف عادي
+                {T('normalOut',lang)}
               </button>
               <button onClick={()=>setWasteMode(true)} style={{flex:1,padding:'10px',borderRadius:9,border:'none',background:wasteMode?'white':'transparent',color:wasteMode?'#d97706':'#64748b',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:wasteMode?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
-                🗑️ تسجيل هدر
+                {T('recordWaste',lang)}
               </button>
             </div>
             {wasteMode && (
               <>
-                <div style={{fontSize:13,fontWeight:700,color:'#64748b',marginBottom:8}}>سبب الهدر *</div>
+                <div style={{fontSize:13,fontWeight:700,color:'#64748b',marginBottom:8}}>{T('wasteReason',lang)}</div>
                 <div style={{display:'flex',flexWrap:'wrap' as const,gap:8,marginBottom:16}}>
                   {WASTE_REASONS.map(r=>(
                     <button key={r} onClick={()=>setWasteReason(r)}
                       style={{padding:'8px 14px',borderRadius:99,border:`1.5px solid ${wasteReason===r?'#d97706':'#e2e8f0'}`,background:wasteReason===r?'#fffbeb':'white',color:wasteReason===r?'#b45309':'#64748b',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                      {r}
+                      {T(WASTE_KEYS[r]||r,lang)}
                     </button>
                   ))}
                 </div>
-                <div style={{fontSize:13,fontWeight:700,color:'#64748b',marginBottom:8}}>ملاحظة (اختياري)</div>
+                <div style={{fontSize:13,fontWeight:700,color:'#64748b',marginBottom:8}}>{T('noteOptional',lang)}</div>
                 <textarea value={wasteNote} onChange={e=>setWasteNote(e.target.value)}
-                  placeholder="أي تفاصيل إضافية عن الهدر..."
+                  placeholder={T('wasteNotePh',lang)}
                   style={{width:'100%',padding:'12px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:14,fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:16,minHeight:60,resize:'none' as const}}/>
               </>
             )}
@@ -697,7 +763,7 @@ function StaffPageInner() {
             {wasteMode ? (
               <button onClick={handleWaste} disabled={!dispenseQty||!wasteReason||submitting}
                 style={{width:'100%',padding:18,background:(!dispenseQty||!wasteReason||submitting)?'#94a3b8':'linear-gradient(135deg,#d97706,#b45309)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:800,cursor:(!dispenseQty||!wasteReason||submitting)?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:(!dispenseQty||!wasteReason||submitting)?'none':'0 8px 24px rgba(217,119,6,.35)'}}>
-                {submitting?T('saving',lang):`🗑️ تسجيل هدر ${dispenseQty||''} ${selected.unit}`}
+                {submitting?T('saving',lang):T('recordWasteQty',lang,{q:dispenseQty||'',u:selected.unit})}
               </button>
             ) : (
               <button onClick={handleDispense} disabled={!dispenseQty||submitting}
@@ -714,18 +780,18 @@ function StaffPageInner() {
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:200,backdropFilter:'blur(4px)'}} onClick={()=>setEditingProduct(null)}>
           <div style={{background:'white',borderRadius:'24px 24px 0 0',padding:28,width:'100%',maxWidth:480,animation:'slideUp .3s ease'}} onClick={e=>e.stopPropagation()}>
             <div style={{fontSize:18,fontWeight:800,color:'#0f172a',marginBottom:4}}>{editingProduct.name}</div>
-            <div style={{fontSize:13,color:'#64748b',marginBottom:20}}>الكمية الحالية: <b>{editingProduct.qty}</b> {editingProduct.unit}</div>
-            <div style={{fontSize:13,fontWeight:700,color:'#374151',marginBottom:8}}>الكمية الجديدة</div>
+            <div style={{fontSize:13,color:'#64748b',marginBottom:20}}>{T('currentQty',lang)}: <b>{editingProduct.qty}</b> {editingProduct.unit}</div>
+            <div style={{fontSize:13,fontWeight:700,color:'#374151',marginBottom:8}}>{T('newQty',lang)}</div>
             <NumberInput value={editQty} onChange={e=>setEditQty(e.target.value)} min="0" autoFocus
               style={{width:'100%',padding:'16px',border:'2px solid #e2e8f0',borderRadius:14,fontSize:28,fontWeight:800,textAlign:'center',fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:16}}/>
             <div style={{display:'flex',gap:8}}>
               <button onClick={updateQty} disabled={savingQty}
                 style={{flex:2,padding:16,background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>
-                {savingQty?'جاري الحفظ...':'✅ حفظ الكمية'}
+                {savingQty?T('saving',lang):T('saveQty',lang)}
               </button>
               <button onClick={()=>setEditingProduct(null)}
                 style={{flex:1,padding:16,background:'#f3f4f6',color:'#374151',border:'none',borderRadius:14,fontSize:15,cursor:'pointer',fontFamily:'inherit'}}>
-                إلغاء
+                {T('cancel',lang)}
               </button>
             </div>
           </div>
@@ -736,25 +802,25 @@ function StaffPageInner() {
       {showAddProduct && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:200,backdropFilter:'blur(4px)'}} onClick={()=>setShowAddProduct(false)}>
           <div style={{background:'white',borderRadius:'24px 24px 0 0',padding:28,width:'100%',maxWidth:480,animation:'slideUp .3s ease'}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:18,fontWeight:800,color:'#0f172a',marginBottom:20}}>➕ إضافة منتج جديد</div>
+            <div style={{fontSize:18,fontWeight:800,color:'#0f172a',marginBottom:20}}>{T('newProduct',lang)}</div>
             <div style={{display:'flex',flexDirection:'column' as const,gap:10,marginBottom:20}}>
-              <input value={newProduct.name} onChange={e=>setNewProduct(p=>({...p,name:e.target.value}))} placeholder="اسم المنتج *" autoFocus
+              <input value={newProduct.name} onChange={e=>setNewProduct(p=>({...p,name:e.target.value}))} placeholder={T('productName',lang)} autoFocus
                 style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',boxSizing:'border-box' as const}}/>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                <NumberInput value={newProduct.qty} onChange={e=>setNewProduct(p=>({...p,qty:e.target.value}))} placeholder="الكمية *"
+                <NumberInput value={newProduct.qty} onChange={e=>setNewProduct(p=>({...p,qty:e.target.value}))} placeholder={T('qtyRequired',lang)}
                   style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit'}}/>
-                <SelectOrOther value={newProduct.unit} onChange={v=>setNewProduct(p=>({...p,unit:v}))} options={unitsFor(bizType)} placeholder="اكتب اسم الوحدة" style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',background:'white',width:'100%',boxSizing:'border-box' as const}}/>
+                <SelectOrOther value={newProduct.unit} onChange={v=>setNewProduct(p=>({...p,unit:v}))} options={unitsFor(bizType)} placeholder={T('unitPh',lang)} style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',background:'white',width:'100%',boxSizing:'border-box' as const}}/>
               </div>
-              <SelectOrOther value={newProduct.category} onChange={v=>setNewProduct(p=>({...p,category:v}))} options={catsFor(bizType)} emptyLabel="الفئة (اختياري)" placeholder="اكتب اسم الفئة" style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',background:'white',width:'100%',boxSizing:'border-box' as const}}/>
+              <SelectOrOther value={newProduct.category} onChange={v=>setNewProduct(p=>({...p,category:v}))} options={catsFor(bizType)} emptyLabel={T('categoryOpt',lang)} placeholder={T('categoryPh',lang)} style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',background:'white',width:'100%',boxSizing:'border-box' as const}}/>
             </div>
             <div style={{display:'flex',gap:8}}>
               <button onClick={addProduct} disabled={savingProduct||!newProduct.name||!newProduct.qty}
                 style={{flex:2,padding:16,background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',opacity:savingProduct||!newProduct.name||!newProduct.qty?0.6:1}}>
-                {savingProduct?'جاري الإضافة...':'✅ إضافة'}
+                {savingProduct?T('adding',lang):T('add',lang)}
               </button>
               <button onClick={()=>setShowAddProduct(false)}
                 style={{flex:1,padding:16,background:'#f3f4f6',color:'#374151',border:'none',borderRadius:14,fontSize:15,cursor:'pointer',fontFamily:'inherit'}}>
-                إلغاء
+                {T('cancel',lang)}
               </button>
             </div>
           </div>
