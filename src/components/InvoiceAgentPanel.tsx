@@ -20,8 +20,9 @@ type Draft = { id: string; supplier: string | null; invoice_date: string | null;
 
 const fmt = (n: number | null | undefined) => (Number(n) || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })
 
-export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onSaved }: {
+export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onSaved, onManual, manualOpen }: {
   orgId: string; branchId: string | null; products: { id: string; name: string; unit?: string | null }[]; curr: string; onSaved: () => void
+  onManual?: () => void; manualOpen?: boolean   // «ما عندك صورة؟» يفتح التسجيل اليدوي
 }) {
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [reading, setReading] = useState(false)
@@ -92,8 +93,8 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
         <span style={{ width: 36, height: 36, borderRadius: 10, background: colors.primaryLight, color: colors.primary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Sparkles size={18} /></span>
         <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>الوكيل الذكي للفواتير</div>
-          <div style={{ fontSize: 11.5, color: colors.text3, marginTop: 2 }}>ارفع الفاتورة — يقرأها ويطابق الأصناف مع مخزونك، ويسألك بس عن اللي مو واضح</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>تسجيل المشتريات</div>
+          <div style={{ fontSize: 11.5, color: colors.text3, marginTop: 2 }}>ارفع الفاتورة — الوكيل الذكي يقرأها ويطابق الأصناف مع مخزونك، ويسألك بس عن اللي مو واضح</div>
         </div>
       </div>
 
@@ -103,6 +104,11 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
         </div>
       ) : (
         <InvoicePickButtons onFile={onFile} primary={colors.primary} primaryL={colors.primaryLight} labels={{ camera: 'صوّر الفاتورة', gallery: 'من الصور', file: 'ملف PDF' }} />
+      )}
+      {onManual && !manualOpen && !reading && (
+        <button onClick={onManual} style={{ marginTop: 10, border: 'none', background: 'none', color: colors.text3, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>
+          ما عندك صورة فاتورة؟ سجّل يدوي
+        </button>
       )}
 
       {drafts.map(d => {

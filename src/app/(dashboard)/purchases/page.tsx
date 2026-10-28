@@ -54,6 +54,8 @@ export default function PurchasesPage() {
   const [loading, setLoading]       = useState(false)
   const submitting = useRef(false)
   const [uploading, setUploading]   = useState(false)
+  // قسم واحد: الوكيل هو الطريق الأساسي، والتسجيل اليدوي يفتح عند الطلب بس
+  const [showManual, setShowManual] = useState(false)
   const [bizType, setBizType]       = useState<string|null>(null)
   const [showScan, setShowScan]     = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
@@ -309,7 +311,7 @@ export default function PurchasesPage() {
       </div>
 
       {/* الوكيل الذكي: يقرأ الفاتورة ويطابقها مع المخزون ويسأل عن اللي مو واضح */}
-      {orgId && <InvoiceAgentPanel orgId={orgId} branchId={typeof window!=='undefined'?sessionStorage.getItem('s_branch_id'):null} products={products} curr={curr}
+      {orgId && <InvoiceAgentPanel manualOpen={showManual} onManual={()=>{ setShowManual(true); setTimeout(()=>document.querySelector('form')?.scrollIntoView({behavior:'smooth',block:'start'}),50) }} orgId={orgId} branchId={typeof window!=='undefined'?sessionStorage.getItem('s_branch_id'):null} products={products} curr={curr}
         onSaved={()=>{ cache.invalidate('purchases:'); cache.invalidate('inventory:'); cache.invalidate('dashboard:'); cache.invalidate('products:'); loadHistory(orgId); loadProducts(orgId) }}/>}
 
       {/* Stats */}
@@ -328,12 +330,15 @@ export default function PurchasesPage() {
       </div>
 
       {/* Main grid */}
-      <div className="pgrid" style={{display:'grid',gridTemplateColumns:'1fr 1.1fr',gap:14,alignItems:'start'}}>
+      <div className="pgrid" style={{display:'grid',gridTemplateColumns:(showManual||payables.length>0)?'1fr 1.1fr':'1fr',gap:14,alignItems:'start'}}>
 
         {/* Form */}
+        {showManual && (
         <div className="u" style={{background:'white',borderRadius:12,padding:18,border:`1px solid ${C.border}`,animationDelay:'.06s'}}>
-          <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:14}}>تسجيل يدوي</div>
-          <div style={{fontSize:11.5,color:C.text3,margin:'-8px 0 14px'}}>عندك صورة الفاتورة؟ استخدم «الوكيل الذكي» فوق — يقرأها ويسجّلها عنك</div>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+            <div style={{fontSize:14,fontWeight:700,color:C.text}}>تسجيل يدوي</div>
+            <button type="button" onClick={()=>setShowManual(false)} style={{border:'none',background:'none',color:C.text3,fontSize:12,cursor:'pointer',fontFamily:'inherit',textDecoration:'underline'}}>إخفاء</button>
+          </div>
           <form onSubmit={handleSubmit} noValidate>
 
             {/* Category */}
@@ -531,6 +536,7 @@ export default function PurchasesPage() {
             </button>
           </form>
         </div>
+        )}
 
         {/* Payables — المستحقات للموردين */}
         {payables.length>0 && (() => {
