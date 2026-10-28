@@ -4,8 +4,8 @@ import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import PageIcon from '@/components/PageIcon'
 import NumberInput from '@/components/NumberInput'
 import TaxInvoiceFields, { type ZatcaState } from '@/components/TaxInvoiceFields'
-import InvoiceItemsPicker, { type PickedItem } from '@/components/InvoiceItemsPicker'
-import { zatcaFromImage, blobToBase64 } from '@/lib/zatcaScan'
+import InvoiceAgentPanel from '@/components/InvoiceAgentPanel'
+import { zatcaFromImage } from '@/lib/zatcaScan'
 import { prepareInvoiceFile, isPdfUrl } from '@/lib/invoiceFile'
 import { unitsFor } from '@/lib/businessTypes'
 import SelectOrOther from '@/components/SelectOrOther'
@@ -54,13 +54,12 @@ export default function PurchasesPage() {
   const [loading, setLoading]       = useState(false)
   const submitting = useRef(false)
   const [uploading, setUploading]   = useState(false)
+  // قسم واحد: الوكيل هو الطريق الأساسي، والتسجيل اليدوي يفتح عند الطلب بس
+  const [showManual, setShowManual] = useState(false)
   const [bizType, setBizType]       = useState<string|null>(null)
   const [showScan, setShowScan]     = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string|null>(null)
-  const [ocrItems, setOcrItems]     = useState<any[]>([])
-  const [bulkSaving, setBulkSaving] = useState(false)
   const [pendingThanks, setPendingThanks] = useState<{productId:string; productName:string; supplierName:string}|null>(null)
-  const [ocrLoading, setOcrLoading] = useState(false)
   const [filterCat, setFilterCat]       = useState('all')
   const [filterPeriod, setFilterPeriod] = useState('all')
   const [filterSupplier, setFilterSupplier] = useState('')
@@ -182,47 +181,6 @@ export default function PurchasesPage() {
       setForm(f=>({...f,invoice_image:publicUrl}));setPreviewUrl(publicUrl)
       toast(prep.isPdf?'تم إرفاق ملف الفاتورة ✓':'تم رفع الفاتورة ✓')
 
-      // محاولة استخراج بيانات الفاتورة تلقائياً بالذكاء الاصطناعي (صورة أو PDF)
-      if (prep.ocrType) {
-        setOcrLoading(true)
-        try {
-          const base64 = await blobToBase64(prep.blob)
-          const ocrToken = localStorage.getItem('staff_token')
-          const ocrRes = await fetch('/api/ocr-invoice', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...(ocrToken ? {'Authorization':`Bearer ${ocrToken}`} : {}) },
-            body: JSON.stringify({ image: base64, mediaType: prep.ocrType, org_id: orgId }),
-          })
-          const ocrData = await ocrRes.json()
-          if (ocrRes.ok && ocrData.success) {
-            const d = ocrData.data
-            setForm(f => ({
-              ...f,
-              ...(zatcaRef.current ? {} : {
-                supplier: d.supplier || f.supplier,
-                total_amount: Number(d.total_amount) > 0 ? String(Math.round(Number(d.total_amount) * 100) / 100) : f.total_amount,
-                invoice_date: d.invoice_date || f.invoice_date,
-                hasVat: d.has_vat ? 'yes' : f.hasVat,
-                supplier_vat_number: d.supplier_vat_number || f.supplier_vat_number,
-              }),
-              invoice_number: f.invoice_number || d.invoice_number || '',
-              name: d.items?.length === 1 ? d.items[0].name : f.name,
-              qty: d.items?.length === 1 && d.items[0].qty ? String(d.items[0].qty) : f.qty,
-              unit: d.items?.length === 1 && d.items[0].unit ? d.items[0].unit : f.unit,
-            }))
-            if (d.items?.length > 1) {
-              setOcrItems(d.items)   // الكمية والسعر و«ينضاف إلى» تتعبى بمكوّن الأصناف
-            }
-            toast('✨ تم استخراج بيانات الفاتورة تلقائياً')
-          } else if (!zatcaRef.current) {
-            // الصورة انرفعت — بس القراءة فشلت: نقول له يعبّي يدوي بدل ما نسكت
-            toast(ocrData.error || 'ما قدرنا نقرأ الفاتورة تلقائياً — عبّي البيانات يدوي', 'warning')
-          }
-        } catch {
-          if (!zatcaRef.current) toast('ما قدرنا نقرأ الفاتورة تلقائياً — عبّي البيانات يدوي', 'warning')
-        }
-        setOcrLoading(false)
-      }
     } catch { toast('فشل رفع الصورة','error') }
     setUploading(false)
   }
@@ -244,34 +202,6 @@ export default function PurchasesPage() {
   }
 
   // حفظ أصناف الفاتورة: الصنف الموجود تزيد كميته، والجديد ينضاف — والفاتورة كلها تنسجل وحدة
-  async function saveBulkOcrItems(rows: PickedItem[]) {
-    if (!rows.length || bulkSaving || !orgId) return
-    if (rows.some(r=>!(r.total>0))) { toast('اكتب سعر كل صنف محدد','warning'); return }
-    if (rows.some(r=>!Number.isInteger(r.qty))) { toast('الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)','warning'); return }
-    if (!form.supplier.trim()) { toast('يرجى إدخال اسم المورد','warning'); return }
-    if (form.hasVat!=='no' && !form.invoice_image) { toast(uploading?'انتظر — الفاتورة لسا ترتفع':'الفاتورة الضريبية لازم ترفق صورتها أو ملفها','warning'); return }
-    setBulkSaving(true)
-    const bid = sessionStorage.getItem('s_branch_id')
-    const isVat = form.hasVat!=='no'
-    const bbody:any = {
-      org_id:orgId, branch_id:bid||null, supplier:form.supplier,
-      invoice_image:form.invoice_image||null, has_vat:isVat, invoice_date:form.invoice_date,
-      invoice_number:isVat?form.invoice_number||null:null, supplier_vat_number:isVat?form.supplier_vat_number||null:null, zatca_qr:isVat?zatca?.raw||null:null,
-      items: rows,
-    }
-    let r = await api.post('/api/purchases/bulk', bbody)
-    if(!r.success&&r.duplicate&&await confirmDialog({title:'الفاتورة مسجلة قبل',message:r.error+'\n\nتسجلها مرة ثانية؟',confirmText:'سجّلها'}))
-      r = await api.post('/api/purchases/bulk', {...bbody, allow_duplicate:true})
-    setBulkSaving(false)
-    if(!r.success){ if(!r.duplicate) toast(r.error||'فشل الحفظ','error'); return }
-    toast(`✅ تم تسجيل الفاتورة — ${r.summary||`${r.saved} صنف`}`)
-    if(form.invoice_date&&form.invoice_date!==todayRiyadh()) toast(`📅 انحفظت بتاريخ الفاتورة ${form.invoice_date} — تلقاها في التقارير بهالتاريخ`)
-    setOcrItems([])
-    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:'',invoice_number:'',supplier_vat_number:''});setZatca(null);setVatFromSupplier(false)
-    setPreviewUrl(null)
-    cache.invalidate('inventory:');cache.invalidate('products:')
-    loadHistory(orgId); loadProducts(orgId)
-  }
 
 
   async function handleSubmit(e:React.FormEvent) {
@@ -380,6 +310,10 @@ export default function PurchasesPage() {
         <p style={{fontSize:11,color:C.text4,margin:'3px 0 0'}}>فئة <b style={{color:C.primary}}>مخزون</b> تُضيف المنتج للمخزون تلقائياً</p>
       </div>
 
+      {/* الوكيل الذكي: يقرأ الفاتورة ويطابقها مع المخزون ويسأل عن اللي مو واضح */}
+      {orgId && <InvoiceAgentPanel manualOpen={showManual} onManual={()=>{ setShowManual(true); setTimeout(()=>document.querySelector('form')?.scrollIntoView({behavior:'smooth',block:'start'}),50) }} orgId={orgId} branchId={typeof window!=='undefined'?sessionStorage.getItem('s_branch_id'):null} products={products} curr={curr}
+        onSaved={()=>{ cache.invalidate('purchases:'); cache.invalidate('inventory:'); cache.invalidate('dashboard:'); cache.invalidate('products:'); loadHistory(orgId); loadProducts(orgId) }}/>}
+
       {/* Stats */}
       <div className="u" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:8,marginBottom:16,animationDelay:'.04s'}}>
         {[
@@ -396,11 +330,15 @@ export default function PurchasesPage() {
       </div>
 
       {/* Main grid */}
-      <div className="pgrid" style={{display:'grid',gridTemplateColumns:'1fr 1.1fr',gap:14,alignItems:'start'}}>
+      <div className="pgrid" style={{display:'grid',gridTemplateColumns:(showManual||payables.length>0)?'1fr 1.1fr':'1fr',gap:14,alignItems:'start'}}>
 
         {/* Form */}
+        {showManual && (
         <div className="u" style={{background:'white',borderRadius:12,padding:18,border:`1px solid ${C.border}`,animationDelay:'.06s'}}>
-          <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:14}}>تسجيل شراء جديد</div>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+            <div style={{fontSize:14,fontWeight:700,color:C.text}}>تسجيل يدوي</div>
+            <button type="button" onClick={()=>setShowManual(false)} style={{border:'none',background:'none',color:C.text3,fontSize:12,cursor:'pointer',fontFamily:'inherit',textDecoration:'underline'}}>إخفاء</button>
+          </div>
           <form onSubmit={handleSubmit} noValidate>
 
             {/* Category */}
@@ -430,17 +368,6 @@ export default function PurchasesPage() {
               )}
               {previewUrl&&!isPdfUrl(previewUrl)&&(
                 <img src={previewUrl} alt="فاتورة" style={{width:'100%',maxHeight:80,objectFit:'cover',borderRadius:7,marginTop:6,border:`1px solid ${C.primaryB}`}}/>
-              )}
-              {ocrLoading&&(
-                <div style={{fontSize:11,color:C.text3,marginTop:6,display:'flex',alignItems:'center',gap:6}}>
-                  <span>✨</span><span>جاري استخراج بيانات الفاتورة...</span>
-                </div>
-              )}
-              {ocrItems.length>1&&(
-                <div style={{marginTop:8}}>
-                  <InvoiceItemsPicker items={ocrItems} products={products as any} invoiceTotal={zatca?.inv.total ?? (Number(form.total_amount)||null)}
-                    saving={bulkSaving} onSave={saveBulkOcrItems} color={C.primary}/>
-                </div>
               )}
             </div>
 
@@ -609,6 +536,7 @@ export default function PurchasesPage() {
             </button>
           </form>
         </div>
+        )}
 
         {/* Payables — المستحقات للموردين */}
         {payables.length>0 && (() => {

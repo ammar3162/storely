@@ -63,6 +63,7 @@ export const API_GUARDS: Record<string, { read?: Rule; write?: Rule }> = {
   '/api/branches/copy-products': { read: OWNER, write: OWNER },
   '/api/notify-low-stock': { write: OWNER },
   '/api/addons-market': { write: OWNER },
+  '/api/plan-requests': { write: OWNER },
   // المخزون والصرف
   '/api/products': { write: ['inventory', 'ai_tools'] },
   '/api/products/import': { read: ['inventory'], write: ['inventory'] },
@@ -75,6 +76,7 @@ export const API_GUARDS: Record<string, { read?: Rule; write?: Rule }> = {
   // المشتريات
   '/api/purchases': { read: ['purchases', 'reports'], write: ['purchases', 'reports'] },
   '/api/purchases/bulk': { write: ['purchases'] },
+  '/api/invoice-agent': { read: ['purchases'], write: ['purchases'] },
   '/api/purchases/restore': { write: ['purchases', 'reports'] },
   '/api/ocr-invoice': { write: ['purchases'] },
   '/api/supplier-delivery-thanks': { write: ['purchases'] },

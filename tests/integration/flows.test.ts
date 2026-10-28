@@ -43,6 +43,9 @@ vi.mock('@/lib/adminAuth', () => ({
   requirePermission: async (key: string | null) => (key === 'it-admin' ? { id: 'it-admin', name: 'اختبار' } : null),
   logAdminAction: async () => {},
 }))
+// قراءة الفاتورة بالذكاء الاصطناعي: فاتورة ثابتة بدل الخدمة المدفوعة
+const ocrFixture: { current: any } = { current: null }
+vi.mock('@/lib/invoiceOcr', () => ({ readInvoice: async () => ocrFixture.current }))
 vi.mock('@/lib/verifyOrgAccess', async (importOriginal) => {
   const real: any = await importOriginal()
   return {
@@ -722,6 +725,115 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       expect((demo || []).every((d: any) => d.matched_org_id === null)).toBe(true)
       await db.from('demo_requests').delete().eq('phone', '966500000001')
     })
+  })
+
+  describe('invoice agent (reads the invoice, records clear items, asks about the rest)', () => {
+    it('matches clear items, asks about unclear ones, learns the answer, and saves once on confirm', async () => {
+      const agent = await import('@/app/api/invoice-agent/route')
+      const confirm = await import('@/app/api/invoice-agent/confirm/route')
+      const mk = async (name: string, unit: string) => (await db.from('products').insert({ org_id: orgId, branch_id: branchA, name: `${name} ${stamp}`, unit, qty: 0, is_active: true } as any).select('id,name').single()).data as any
+      const sugar = await mk('سكر ناعم', 'كيلو'), cup12 = await mk('كوب ورقي 12', 'كرتون'), cup8 = await mk('كوب ورقي 8', 'كرتون')
+      const image = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/invoices/${orgId}/agent-${stamp}.jpg`
+      ocrFixture.current = { ok: true, data: { supplier: 'مورد الوكيل', invoice_date: new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10), has_vat: false, total_amount: 230,
+        invoice_number: null, supplier_vat_number: null, items: [
+          { name: `سكر ناعم ${stamp}`, qty: 5, unit: 'كيلو', total: 50 },     // واضح
+          { name: `كوب ورقي ${stamp}`, qty: 2, unit: 'كرتون', total: 80 },     // 12 ولا 8؟
+          { name: 'زعفران فاخر', qty: 1, unit: 'علبة', total: 100 },          // مو موجود → صنف مخزون جديد
+          { name: 'منظف أرضيات', qty: null, unit: null, total: 25 },          // مو مخزون → مشتريات
+        ] } }
+      const created = await call(agent.POST, 'POST', '/api/invoice-agent', { org_id: orgId, branch_id: branchA, image: 'x', mediaType: 'image/jpeg', invoice_image: image })
+      expect(created.status).toBe(200)
+      let d = created.json.draft
+      expect(d.status).toBe('needs_review')
+      expect(d.items.map((i: any) => i.status)).toEqual(['matched', 'ask', 'ask', 'ask'])
+      expect(d.items[0].product_id).toBe(sugar.id)
+
+      // حفظ قبل الإجابات مرفوض
+      expect((await call(confirm.POST, 'POST', '/api/invoice-agent/confirm', { org_id: orgId, id: d.id })).status).toBe(400)
+      // صنف من منشأة ثانية مرفوض
+      expect((await call(agent.PATCH, 'PATCH', '/api/invoice-agent', { org_id: orgId, id: d.id, index: 1, action: 'match', product_id: '00000000-0000-0000-0000-000000000000' })).status).toBe(404)
+
+      d = (await call(agent.PATCH, 'PATCH', '/api/invoice-agent', { org_id: orgId, id: d.id, index: 1, action: 'match', product_id: cup12.id })).json.draft
+      d = (await call(agent.PATCH, 'PATCH', '/api/invoice-agent', { org_id: orgId, id: d.id, index: 2, action: 'new' })).json.draft
+      d = (await call(agent.PATCH, 'PATCH', '/api/invoice-agent', { org_id: orgId, id: d.id, index: 3, action: 'expense' })).json.draft
+      expect(d.status).toBe('ready')
+
+      // ضغطتين حفظ بنفس اللحظة = تنحفظ مرة وحدة
+      const [a1, a2] = await Promise.all([
+        call(confirm.POST, 'POST', '/api/invoice-agent/confirm', { org_id: orgId, id: d.id }),
+        call(confirm.POST, 'POST', '/api/invoice-agent/confirm', { org_id: orgId, id: d.id }),
+      ])
+      expect([a1.status, a2.status].sort()).toEqual([200, 409])
+      const { data: rows } = await db.from('purchases').select('name,category').eq('org_id', orgId).eq('supplier', 'مورد الوكيل')
+      expect((rows as any[]).length).toBe(4)
+      // المخزون فئة «مخزون»، والمنظف «مشتريات» وما انضاف للمخزون
+      expect((rows as any[]).filter(r => r.category === 'مخزون').length).toBe(3)
+      expect((rows as any[]).find(r => r.name === 'منظف أرضيات')?.category).toBe('مشتريات')
+      expect((await db.from('products').select('id').eq('org_id', orgId).eq('name', 'منظف أرضيات')).data).toEqual([])
+      const qty = async (id: string) => ((await db.from('products').select('qty').eq('id', id).single()).data as any).qty
+      expect([await qty(sugar.id), await qty(cup12.id), await qty(cup8.id)]).toEqual([5, 2, 0])
+      const { data: saffron } = await db.from('products').select('qty').eq('org_id', orgId).eq('name', 'زعفران فاخر').maybeSingle()
+      expect((saffron as any)?.qty).toBe(1)
+
+      // تعلّم: نفس الاسم بالفاتورة الجاية ينربط على طول بدون سؤال
+      ocrFixture.current = { ok: true, data: { supplier: 'مورد الوكيل', has_vat: false, total_amount: 40, items: [{ name: `كوب ورقي ${stamp}`, qty: 1, unit: 'كرتون', total: 40 }] } }
+      const again = (await call(agent.POST, 'POST', '/api/invoice-agent', { org_id: orgId, branch_id: branchA, image: 'x', mediaType: 'image/jpeg', invoice_image: image })).json.draft
+      expect(again.items[0]).toMatchObject({ status: 'matched', product_id: cup12.id, learned: true })
+      expect((await call(agent.DELETE, 'DELETE', '/api/invoice-agent', { org_id: orgId, id: again.id })).status).toBe(200)
+
+      await db.from('purchases').delete().eq('org_id', orgId).eq('supplier', 'مورد الوكيل')
+      await db.from('invoice_drafts').delete().eq('org_id', orgId)
+      await db.from('product_aliases').delete().eq('org_id', orgId)
+    }, 180_000)
+  })
+
+  describe('upgrade requests (basic → standard, approved by admin)', () => {
+    it('owner asks, admin approves: plan becomes standard with its limits, included add-ons are cancelled, extra staff kept', async () => {
+      const reqs = await import('@/app/api/plan-requests/route')
+      const adminReqs = await import('@/app/api/admin/plan-requests/route')
+      const listUsers = await import('@/app/api/admin/list-users/route')
+      const admin = async (body: any) => {
+        const res = await adminReqs.POST(new Request('http://test/api/admin/plan-requests', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify(body) }))
+        return { status: res.status, json: await res.json() as any }
+      }
+      await db.from('organizations').update({ plan: 'basic', max_branches: 1 } as any).eq('id', orgId)
+      const slugs = ['cashier_closing', 'hr_full', 'extra_staff']
+      const { data: ads } = await db.from('marketplace_addons').select('id,slug').in('slug', slugs)
+      const idOf = (sl: string) => (ads as any[]).find(a => a.slug === sl).id
+      const end = new Date(Date.now() + 10 * 864e5).toISOString()
+      for (const sl of slugs) await db.from('org_addon_subscriptions').upsert({ org_id: orgId, addon_id: idOf(sl), status: 'active', quantity: sl === 'extra_staff' ? 2 : 1,
+        activated_at: new Date().toISOString(), expires_at: end } as any, { onConflict: 'org_id,addon_id' })
+
+      // الأدمن يشوفه مرشّح للترقية (99 + 29 + 39 + 2×10 = 187)
+      const lu = await (await listUsers.GET(new Request('http://test/api/admin/list-users', { headers: { 'x-admin-key': 'it-admin' } }))).json() as any
+      expect((lu.users || []).find((u: any) => u.org_id === orgId)?.monthly_bill).toBeGreaterThanOrEqual(150)
+
+      auth.current = { userId, orgId, role: 'manager', branchId: branchA }
+      expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'pro' })).status).toBe(403)
+      auth.current = { userId, orgId, role: 'owner', branchId: null }
+      expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'pro' })).status).toBe(200)
+      expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'pro' })).status).toBe(409)
+      const mine = (await call(reqs.GET, 'GET', `/api/plan-requests?org_id=${orgId}`)).json.requests[0]
+      expect(mine.status).toBe('pending')
+
+      expect((await admin({ id: mine.id, action: 'approve' })).status).toBe(200)
+      expect((await admin({ id: mine.id, action: 'approve' })).status).toBe(409)
+      const { data: org } = await db.from('organizations').select('plan,max_branches').eq('id', orgId).single()
+      expect(org).toMatchObject({ plan: 'pro', max_branches: 3 })
+      const { data: subs } = await db.from('org_addon_subscriptions').select('addon_id,status').eq('org_id', orgId).in('addon_id', slugs.map(idOf))
+      const st = (sl: string) => (subs as any[]).find(x => x.addon_id === idOf(sl))?.status
+      expect([st('cashier_closing'), st('hr_full'), st('extra_staff')]).toEqual(['cancelled', 'cancelled', 'active'])
+      const { data: n } = await db.from('notifications').select('title').eq('org_id', orgId).ilike('title', '%تمت ترقيتك%')
+      expect((n || []).length).toBe(1)
+
+      // من المتوسطة ما يقدر يطلب المتوسطة مرة ثانية
+      expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'pro' })).status).toBe(400)
+
+      await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).in('addon_id', slugs.map(idOf))
+      await db.from('plan_requests').delete().eq('org_id', orgId)
+      await db.from('branches').update({ is_active: false, plan_locked_at: null } as any).eq('org_id', orgId).neq('id', branchA)
+      await db.from('organizations').update({ plan: 'pro', max_branches: 1, max_staff: 1 } as any).eq('id', orgId)
+    }, 180_000)
   })
 
   describe('price lock for subscribers before the price change', () => {

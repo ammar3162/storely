@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import { Search, RefreshCw } from 'lucide-react'
 import { A, Badge, Btn, Card, Empty, Loading, PageHeader, Table, adminFetch, daysLeft, fmtDate, inputStyle, td } from '../_admin/kit'
 import { type Customer, STATUS, PLAN_TONE, mapCustomer, planLabel } from '../_admin/customers'
+import { upgradeCandidate, PLAN_PRICING } from '@/lib/planPricing'
 import CustomerDrawer from '../_admin/CustomerDrawer'
 
 const FILTERS = [
@@ -89,7 +90,7 @@ function CustomersPage() {
                   <td style={{ ...td, fontWeight: 700 }}>{u.org_name}</td>
                   <td style={td}>{u.full_name}</td>
                   <td style={{ ...td, color: A.text2 }}><span dir="ltr">{u.phone || '—'}</span></td>
-                  <td style={td}><Badge tone={PLAN_TONE[u.plan]}>{planLabel(u.plan)}</Badge></td>
+                  <td style={td}><div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}><Badge tone={PLAN_TONE[u.plan]}>{planLabel(u.plan)}</Badge>{u.monthly_bill != null && upgradeCandidate(u.plan, u.monthly_bill) && <span title={`فاتورته ${u.monthly_bill} ⃁/شهر — المتوسطة ${PLAN_PRICING.pro.monthly} ⃁ وفيها كل الميزات و3 فروع`}><Badge tone="warning">مرشّح للترقية</Badge></span>}</div></td>
                   <td style={td}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
                       <span style={{ fontSize: 12.5, fontWeight: 600 }}>{u.subscription_type === 'paid' ? 'مدفوع' : 'تجربة'} · {u.billing_cycle === 'yearly' ? 'سنوي' : 'شهري'}</span>

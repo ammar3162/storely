@@ -6,8 +6,8 @@ import type { PurchaseTax } from '@/lib/taxInvoice'
 // حفظ أصناف فاتورة وحدة (بعد قراءة الصورة): كل صنف سطر مشتريات، والمخزون:
 //   صنف موجود (اختاره المستخدم أو تطابق قوي بالاسم) → تزيد كميته ويتحدّث متوسط التكلفة
 //   «صنف جديد» أو ما فيه تطابق → ينضاف للمخزون
-export type InvoiceItem = { name: string; qty: number; unit: string; total: number; product_id?: string | null }   // product_id: 'new' = صنف جديد
-export type ItemResult = { name: string; product: string; action: 'added' | 'created' | 'no_stock' | 'failed'; productId?: string }
+export type InvoiceItem = { name: string; qty: number; unit: string; total: number; product_id?: string | null }   // product_id: 'new' = صنف جديد، 'expense' = مشتريات بدون مخزون
+export type ItemResult = { name: string; product: string; action: 'added' | 'created' | 'no_stock' | 'expense' | 'failed'; productId?: string }
 
 const AUTO_MATCH = 0.85   // بدون اختيار من المستخدم نطابق بس لو التشابه قوي جداً
 
@@ -31,6 +31,16 @@ export async function saveInvoiceItems(db: SupabaseClient, o: {
   const results: ItemResult[] = []
 
   for (const it of o.items) {
+    // «مشتريات»: مصروف بدون مخزون (أدوات تنظيف، غاز، صيانة...) — سطر مشتريات بس
+    if (it.product_id === 'expense') {
+      const { error } = await db.from('purchases').insert({
+        org_id: o.orgId, branch_id: o.branchId, profile_id: o.profileId ?? null, category: 'مشتريات', name: it.name, qty: it.qty || null, unit: it.unit,
+        amount: netFromTotal(it.total, o.hasVat), has_vat: o.hasVat, supplier: o.supplier, note: o.staffName ? `تسجيل بواسطة الموظف: ${o.staffName}` : null,
+        invoice_image: o.invoiceImage, payment_status: 'paid', ...(o.createdAt ? { created_at: o.createdAt } : {}), ...o.tax,
+      } as any)
+      results.push({ name: it.name, product: it.name, action: error ? 'failed' : 'expense' })
+      continue
+    }
     // الصنف المقصود: اختيار المستخدم (لازم يكون من نفس المنشأة والفرع) أو تطابق قوي
     let target: any = null
     if (it.product_id && it.product_id !== 'new') target = byId.get(it.product_id) || null
@@ -73,6 +83,7 @@ export async function saveInvoiceItems(db: SupabaseClient, o: {
 /** ملخص للمستخدم: «زادت كمية ٢ أصناف موجودة · انضاف ١ صنف جديد» */
 export function itemsSummary(r: ItemResult[]) {
   const added = r.filter(x => x.action === 'added').length, created = r.filter(x => x.action === 'created').length, failed = r.filter(x => x.action === 'failed').length
+  const expense = r.filter(x => x.action === 'expense').length
   return [added && `زادت كمية ${added} ${added === 1 ? 'صنف موجود' : 'أصناف موجودة'}`, created && `انضاف ${created} ${created === 1 ? 'صنف جديد' : 'أصناف جديدة'}`,
-    failed && `ما انحفظ ${failed}`].filter(Boolean).join(' · ')
+    expense && `${expense} مشتريات بدون مخزون`, failed && `ما انحفظ ${failed}`].filter(Boolean).join(' · ')
 }
