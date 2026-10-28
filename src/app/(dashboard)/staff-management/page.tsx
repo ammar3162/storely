@@ -96,9 +96,7 @@ export default function StaffManagementPage() {
   const [selectedProds, setSelectedProds] = useState<string[]>([])
   const [assignSearch, setAssignSearch] = useState('')
 
-  const [takenProducts, setTakenProducts] = useState<Record<string,string>>({})
   const [sharedProducts, setSharedProducts] = useState<Record<string,string[]>>({})
-  const [overrideTaken, setOverrideTaken] = useState<Set<string>>(new Set())
   const [dayStartHour, setDayStartHour] = useState(4)   // بداية يوم العمل الجديد لإقفال الكاشير
   const [dayStartLoaded, setDayStartLoaded] = useState(4)
   const [showHoursModal, setShowHoursModal] = useState(false)
@@ -184,26 +182,19 @@ export default function StaffManagementPage() {
   async function openAssign(s:any) {
     setAssigningId(s.id)
     setSelectedProds(s.assigned_products||[])
-    // المنتجات اللي عنده أصلاً تبقى له حتى لو مشتركة مع غيره (تخصيص قديم) — نعرضها كعادية مع اسم اللي يشاركه
-    const own = new Set<string>(s.assigned_products||[])
-    const taken: Record<string,string> = {}, shared: Record<string,string[]> = {}
+    // المنتج ممكن يكون عند أكثر من موظف — نعرض بس مين عنده بعد للمعلومية
+    const shared: Record<string,string[]> = {}
     staff.forEach((other:any)=>{
       if(other.id===s.id) return
-      ;(other.assigned_products||[]).forEach((pid:string)=>{
-        if (own.has(pid)) (shared[pid] ||= []).push(other.name)
-        else taken[pid] = other.name
-      })
+      ;(other.assigned_products||[]).forEach((pid:string)=>{ (shared[pid] ||= []).push(other.name) })
     })
-    setTakenProducts(taken)
     setSharedProducts(shared)
-    setOverrideTaken(new Set())
   }
 
   async function saveAssigned() {
-    // التحقق من التعارض يصير على الخادم مباشرة من قاعدة البيانات — يمنع تعارض التخصيص حتى لو فُتحت نافذتان بنفس الوقت
-    const r = await api.post('/api/staff-members/assign', { org_id: orgId, staff_id: assigningId, product_ids: selectedProds, override_ids: Array.from(overrideTaken) })
+    const r = await api.post('/api/staff-members/assign', { org_id: orgId, staff_id: assigningId, product_ids: selectedProds })
     if (!r.success) { toast(r.error || 'فشل الحفظ', 'error'); return }
-    toast('✅ تم حفظ المنتجات المخصصة')
+    toast('تم حفظ منتجات الموظف')
     setAssigningId(null)
     loadStaff(orgId)
   }
@@ -615,14 +606,14 @@ export default function StaffManagementPage() {
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
               <div>
                 <div style={{fontSize:font.md,fontWeight:800,color:colors.text}}>تخصيص المنتجات</div>
-                <div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>اختر المنتجات التي يراها هذا الموظف فقط</div>
+                <div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>اختر المنتجات اللي يشوفها هالموظف — المنتج ممكن يكون عند أكثر من موظف. لو ما اخترت شي يشوف كل منتجات الفرع</div>
               </div>
               <button onClick={()=>setAssigningId(null)} style={{width:32,height:32,borderRadius:radius.sm,border:`1.5px solid ${colors.border2}`,background:colors.bg,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',color:colors.text3}}>×</button>
             </div>
             
             {/* اختيار الكل */}
             <div style={{display:'flex',gap:8,marginBottom:12}}>
-              <button onClick={()=>setSelectedProds(products.filter((p:any)=>!takenProducts[p.id]).map((p:any)=>p.id))}
+              <button onClick={()=>setSelectedProds(products.map((p:any)=>p.id))}
                 style={{padding:'6px 14px',borderRadius:8,border:`1px solid ${colors.border2}`,background:colors.bg,color:colors.text2,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                 اختيار الكل
               </button>
@@ -648,20 +639,6 @@ export default function StaffManagementPage() {
                 <div style={{padding:'20px',textAlign:'center' as const,fontSize:12,color:colors.text4}}>ما فيه منتجات مطابقة</div>
               ) : products.filter((p:any)=>!assignSearch.trim()||p.name.includes(assignSearch.trim())).map((p:any)=>{
                 const selected = selectedProds.includes(p.id)
-                const takenBy = takenProducts[p.id]
-                if(takenBy && !overrideTaken.has(p.id)){
-                  return (
-                    <div key={p.id} onClick={()=>{setOverrideTaken(prev=>new Set([...prev,p.id]));setSelectedProds(prev=>[...prev,p.id])}}
-                      style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${colors.border}`,background:'#f5f5f4',cursor:'pointer'}}>
-                      <div style={{width:20,height:20,borderRadius:6,border:`2px solid ${colors.border2}`,background:'white',flexShrink:0}}/>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:font.sm,fontWeight:700,color:colors.text3}}>{p.name}</div>
-                        <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit} · دوس لنقله من {takenBy}</div>
-                      </div>
-                      <span style={{fontSize:9,fontWeight:700,color:colors.warning||'#d97706',background:colors.warningLight||'#fffbeb',padding:'3px 8px',borderRadius:20,whiteSpace:'nowrap' as const,flexShrink:0,display:'flex',alignItems:'center',gap:3}}><Lock size={9} strokeWidth={2.5}/> {takenBy}</span>
-                    </div>
-                  )
-                }
                 return (
                   <div key={p.id} onClick={()=>setSelectedProds(prev=>selected?prev.filter(id=>id!==p.id):[...prev,p.id])}
                     style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${selected?colors.primary:colors.border}`,background:selected?colors.primaryLight:colors.bg,cursor:'pointer',transition:'all .15s'}}>
@@ -670,7 +647,7 @@ export default function StaffManagementPage() {
                     </div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{p.name}</div>
-                      <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit}{sharedProducts[p.id] ? ` · مشترك مع ${sharedProducts[p.id].join('، ')}` : ''}</div>
+                      <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit}{sharedProducts[p.id] ? ` · عند ${sharedProducts[p.id].join('، ')} بعد` : ''}</div>
                     </div>
                   </div>
                 )

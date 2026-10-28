@@ -8,12 +8,13 @@ const sb = () => createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// تخصيص منتجات لموظف — كل منتج لموظف واحد فقط. التعارض يُفحص هنا من قاعدة البيانات مباشرة.
-//   { product_ids, override_ids? }: يستبدل القائمة كاملة؛ override_ids = منتجات يسحبها المالك صراحة من موظف آخر
-//   { add_product_id }: يضيف منتج واحد (يرفض لو مخصص لغيره)
+// تخصيص منتجات لموظف — المنتج ممكن يكون عند أكثر من موظف، والمالك يحدد مين.
+// الموظف بدون قائمة (فاضية) يشوف كل منتجات فرعه.
+//   { product_ids }: يستبدل قائمة الموظف كاملة
+//   { add_product_id }: يضيف منتج واحد لقائمته
 export async function POST(req: Request) {
   try {
-    const { org_id, staff_id, product_ids, override_ids, add_product_id } = await req.json()
+    const { org_id, staff_id, product_ids, add_product_id } = await req.json()
     if (!org_id || !staff_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
     const access = await verifyOrgAccess(org_id)
@@ -23,44 +24,21 @@ export async function POST(req: Request) {
     const target = await loadOwnedStaff(db, access, org_id, staff_id)
     if (!target) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
 
-    const { data: others } = await db.from('staff_members').select('id,name,assigned_products').eq('org_id', org_id).neq('id', staff_id)
+    const wanted: string[] = add_product_id
+      ? Array.from(new Set([...(target.assigned_products || []), String(add_product_id)]))
+      : Array.isArray(product_ids) ? Array.from(new Set(product_ids.map(String))) : (null as any)
+    if (!wanted) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
-    if (add_product_id) {
-      if ((target.assigned_products || []).includes(add_product_id)) return NextResponse.json({ success: true })
-      const conflict = (others || []).find((s: any) => (s.assigned_products || []).includes(add_product_id))
-      if (conflict) return NextResponse.json({ error: `تعذّر التخصيص — هذا المنتج مخصص أصلاً لـ${(conflict as any).name}` }, { status: 409 })
-      const updated = Array.from(new Set([...(target.assigned_products || []), add_product_id]))
-      const { error } = await db.from('staff_members').update({ assigned_products: updated } as any).eq('id', staff_id)
-      if (error) return NextResponse.json({ error: 'فشل التخصيص' }, { status: 500 })
-      return NextResponse.json({ success: true })
+    // المنتجات لازم تكون من نفس المنشأة ومن فرع الموظف
+    if (wanted.length) {
+      let q = db.from('products').select('id').eq('org_id', org_id).in('id', wanted)
+      if ((target as any).branch_id) q = q.or(`branch_id.eq.${(target as any).branch_id},branch_id.is.null`)
+      const { data: ok } = await q
+      if ((ok || []).length !== wanted.length) return NextResponse.json({ error: 'فيه منتج مو من فرع الموظف' }, { status: 400 })
     }
 
-    if (!Array.isArray(product_ids)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
-    const selected: string[] = product_ids.map(String)
-    const overrides = new Set<string>((Array.isArray(override_ids) ? override_ids : []).map(String))
-
-    // منتجات عنده من قبل (حتى لو مشتركة مع غيره من تخصيص قديم) تبقى له — ما تعتبر تعارض
-    const already = new Set<string>((target.assigned_products || []).map(String))
-    const conflictNames = new Set<string>()
-    const toStrip: { id: string; assigned_products: string[] }[] = []
-    for (const s of (others || []) as any[]) {
-      const overlap = (s.assigned_products || []).filter((pid: string) => selected.includes(pid) && (!already.has(pid) || overrides.has(pid)))
-      if (!overlap.length) continue
-      if (overlap.every((pid: string) => overrides.has(pid))) {
-        toStrip.push({ id: s.id, assigned_products: (s.assigned_products || []).filter((pid: string) => !overlap.includes(pid)) })
-      } else {
-        conflictNames.add(s.name)
-      }
-    }
-    if (conflictNames.size) {
-      return NextResponse.json({ error: `ما انحفظ — فيه منتجات اخترتها مخصصة لـ${Array.from(conflictNames).join('، ')}. سكّر النافذة وافتحها من جديد عشان تشوف التخصيص الحالي.` }, { status: 409 })
-    }
-
-    for (const s of toStrip) {
-      await db.from('staff_members').update({ assigned_products: s.assigned_products } as any).eq('id', s.id).eq('org_id', org_id)
-    }
-    const { error } = await db.from('staff_members').update({ assigned_products: selected } as any).eq('id', staff_id)
-    if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+    const { error } = await db.from('staff_members').update({ assigned_products: wanted } as any).eq('id', staff_id).eq('org_id', org_id)
+    if (error) return NextResponse.json({ error: 'فشل الحفظ' }, { status: 500 })
     return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })

@@ -722,6 +722,29 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
     })
   })
 
+  describe('products shared between staff', () => {
+    it('two staff can have the same product, and products from another branch are refused', async () => {
+      const assign = await import('@/app/api/staff-members/assign/route')
+      const mkStaff = async (n: number) => (await db.from('staff_members').insert({
+        org_id: orgId, branch_id: branchA, name: `مشترك ${n}`, phone: `9665${String(stamp + 40 + n).slice(-8)}`, pin: 'x', is_active: true, role: 'staff',
+      } as any).select('id').single()).data as any
+      const a = await mkStaff(1), b = await mkStaff(2)
+      const { data: p } = await db.from('products').insert({ org_id: orgId, branch_id: branchA, name: `مشترك_${stamp}`, unit: 'قطعة', qty: 0, is_active: true } as any).select('id').single()
+      const pid = (p as any).id
+      expect((await call(assign.POST, 'POST', '/api/staff-members/assign', { org_id: orgId, staff_id: a.id, product_ids: [pid] })).status).toBe(200)
+      expect((await call(assign.POST, 'POST', '/api/staff-members/assign', { org_id: orgId, staff_id: b.id, add_product_id: pid })).status).toBe(200)
+      const { data: rows } = await db.from('staff_members').select('id,assigned_products').in('id', [a.id, b.id])
+      for (const r of rows as any[]) expect(r.assigned_products).toEqual([pid])
+
+      const { data: other } = await db.from('branches').insert({ org_id: orgId, name: 'فرع ثاني تخصيص', is_active: true } as any).select('id').single()
+      const { data: p2 } = await db.from('products').insert({ org_id: orgId, branch_id: (other as any).id, name: `بعيد_${stamp}`, unit: 'قطعة', qty: 0, is_active: true } as any).select('id').single()
+      expect((await call(assign.POST, 'POST', '/api/staff-members/assign', { org_id: orgId, staff_id: a.id, product_ids: [pid, (p2 as any).id] })).status).toBe(400)
+
+      await db.from('staff_members').delete().in('id', [a.id, b.id])
+      await db.from('branches').update({ is_active: false } as any).eq('id', (other as any).id)
+    }, 120_000)
+  })
+
   describe('recipe production estimate', () => {
     it('uses the recipe-specific ingredient, shows grams, and counts the Saudi day', async () => {
       const recon = await import('@/app/api/recipe-reconciliation/route')
