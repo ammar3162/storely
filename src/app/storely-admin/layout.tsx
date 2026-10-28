@@ -19,7 +19,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
     { href: '/storely-admin/metrics', label: 'مقاييس الإيراد', icon: TrendingUp, perm: 'view_metrics' },
   ] },
   { title: 'المبيعات والشراكات', items: [
-    { href: '/storely-admin/addon-requests', label: 'طلبات الإضافات', icon: PackagePlus, perm: 'manage_users' },
+    { href: '/storely-admin/addon-requests', label: 'طلبات الإضافات والترقية', icon: PackagePlus, perm: 'manage_users' },
     { href: '/storely-admin/demo-requests', label: 'طلبات العرض', icon: Inbox },
     { href: '/storely-admin/supplier-applications', label: 'طلبات الموردين', icon: Truck, perm: 'manage_suppliers' },
     { href: '/storely-admin/partners', label: 'الشركاء', icon: Handshake },
@@ -85,12 +85,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!admin || !can('manage_users')) return
     let last = -1
-    const tick = () => fetch('/api/admin/addon-requests?count=1', { headers: { 'x-admin-key': adminKey() } })
-      .then(r => r.ok ? r.json() : null).then(j => {
-        if (!j) return
-        if (last >= 0 && j.pending > last) setNewAlert(true)
-        last = j.pending; setPendingAddons(j.pending)
-      }).catch(() => {})
+    // طلبات الإضافات + طلبات الترقية بعدّاد واحد
+    const count = (url: string) => fetch(url, { headers: { 'x-admin-key': adminKey() } }).then(r => r.ok ? r.json() : null).then(j => j?.pending || 0).catch(() => 0)
+    const tick = () => Promise.all([count('/api/admin/addon-requests?count=1'), count('/api/admin/plan-requests?count=1')]).then(([a, b]) => {
+      const n = a + b
+      if (last >= 0 && n > last) setNewAlert(true)
+      last = n; setPendingAddons(n)
+    })
     tick()
     const t = setInterval(tick, 60_000)
     return () => clearInterval(t)
@@ -121,7 +122,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {newAlert && (
         <div role="alert" style={{ position: 'fixed', bottom: 20, left: 20, zIndex: 1000, background: A.surface, border: `1px solid ${A.border}`, borderRadius: 12, boxShadow: '0 10px 30px rgba(0,0,0,.18)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, maxWidth: 'calc(100vw - 40px)' }}>
           <PackagePlus size={20} color={A.primary} />
-          <div style={{ fontSize: 13, fontWeight: 700 }}>وصل طلب إضافة جديد</div>
+          <div style={{ fontSize: 13, fontWeight: 700 }}>وصل طلب جديد (إضافة أو ترقية)</div>
           <button onClick={() => { setNewAlert(false); router.push('/storely-admin/addon-requests') }} style={{ background: A.primary, color: 'white', border: 'none', borderRadius: 8, padding: '7px 12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>عرض</button>
           <button onClick={() => setNewAlert(false)} aria-label="إغلاق" style={{ background: 'none', border: 'none', cursor: 'pointer', color: A.text3 }}><X size={16} /></button>
         </div>

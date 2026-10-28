@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { monthlyBills } from '@/lib/orgBill'
 import { requirePermission } from '@/lib/adminAuth'
 
 export async function GET(req: Request) {
@@ -21,5 +22,8 @@ export async function GET(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ users: data })
+  // الفاتورة الشهرية لكل منشأة — عشان نعلّم المرشّحين للترقية
+  const orgs = ((data || []) as any[]).filter(u => u.org_id).map(u => ({ id: u.org_id, plan: u.organizations?.plan, max_branches: u.organizations?.max_branches, locked_plan_monthly: u.organizations?.locked_plan_monthly }))
+  const bills = await monthlyBills(supabase, orgs).catch(() => ({} as Record<string, number>))
+  return NextResponse.json({ users: ((data || []) as any[]).map(u => ({ ...u, monthly_bill: u.org_id ? bills[u.org_id] ?? null : null })) })
 }

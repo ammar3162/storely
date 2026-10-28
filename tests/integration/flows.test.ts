@@ -724,6 +724,55 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
     })
   })
 
+  describe('upgrade requests (basic → standard, approved by admin)', () => {
+    it('owner asks, admin approves: plan becomes standard with its limits, included add-ons are cancelled, extra staff kept', async () => {
+      const reqs = await import('@/app/api/plan-requests/route')
+      const adminReqs = await import('@/app/api/admin/plan-requests/route')
+      const listUsers = await import('@/app/api/admin/list-users/route')
+      const admin = async (body: any) => {
+        const res = await adminReqs.POST(new Request('http://test/api/admin/plan-requests', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify(body) }))
+        return { status: res.status, json: await res.json() as any }
+      }
+      await db.from('organizations').update({ plan: 'basic', max_branches: 1 } as any).eq('id', orgId)
+      const slugs = ['cashier_closing', 'hr_full', 'extra_staff']
+      const { data: ads } = await db.from('marketplace_addons').select('id,slug').in('slug', slugs)
+      const idOf = (sl: string) => (ads as any[]).find(a => a.slug === sl).id
+      const end = new Date(Date.now() + 10 * 864e5).toISOString()
+      for (const sl of slugs) await db.from('org_addon_subscriptions').upsert({ org_id: orgId, addon_id: idOf(sl), status: 'active', quantity: sl === 'extra_staff' ? 2 : 1,
+        activated_at: new Date().toISOString(), expires_at: end } as any, { onConflict: 'org_id,addon_id' })
+
+      // الأدمن يشوفه مرشّح للترقية (99 + 29 + 39 + 2×10 = 187)
+      const lu = await (await listUsers.GET(new Request('http://test/api/admin/list-users', { headers: { 'x-admin-key': 'it-admin' } }))).json() as any
+      expect((lu.users || []).find((u: any) => u.org_id === orgId)?.monthly_bill).toBeGreaterThanOrEqual(150)
+
+      auth.current = { userId, orgId, role: 'manager', branchId: branchA }
+      expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'pro' })).status).toBe(403)
+      auth.current = { userId, orgId, role: 'owner', branchId: null }
+      expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'pro' })).status).toBe(200)
+      expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'pro' })).status).toBe(409)
+      const mine = (await call(reqs.GET, 'GET', `/api/plan-requests?org_id=${orgId}`)).json.requests[0]
+      expect(mine.status).toBe('pending')
+
+      expect((await admin({ id: mine.id, action: 'approve' })).status).toBe(200)
+      expect((await admin({ id: mine.id, action: 'approve' })).status).toBe(409)
+      const { data: org } = await db.from('organizations').select('plan,max_branches').eq('id', orgId).single()
+      expect(org).toMatchObject({ plan: 'pro', max_branches: 3 })
+      const { data: subs } = await db.from('org_addon_subscriptions').select('addon_id,status').eq('org_id', orgId).in('addon_id', slugs.map(idOf))
+      const st = (sl: string) => (subs as any[]).find(x => x.addon_id === idOf(sl))?.status
+      expect([st('cashier_closing'), st('hr_full'), st('extra_staff')]).toEqual(['cancelled', 'cancelled', 'active'])
+      const { data: n } = await db.from('notifications').select('title').eq('org_id', orgId).ilike('title', '%تمت ترقيتك%')
+      expect((n || []).length).toBe(1)
+
+      // من المتوسطة ما يقدر يطلب المتوسطة مرة ثانية
+      expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'pro' })).status).toBe(400)
+
+      await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).in('addon_id', slugs.map(idOf))
+      await db.from('plan_requests').delete().eq('org_id', orgId)
+      await db.from('branches').update({ is_active: false, plan_locked_at: null } as any).eq('org_id', orgId).neq('id', branchA)
+      await db.from('organizations').update({ plan: 'pro', max_branches: 1, max_staff: 1 } as any).eq('id', orgId)
+    }, 180_000)
+  })
+
   describe('price lock for subscribers before the price change', () => {
     it('an active add-on keeps its locked price on renewal, a lapsed one comes back at the new price; changing plan drops the plan lock', async () => {
       const { activateAddon } = await import('@/lib/addonActivation')

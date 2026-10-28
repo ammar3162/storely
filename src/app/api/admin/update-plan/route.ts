@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
-import { syncBranchesToLimit } from '@/lib/branchLimit'
-import { PLAN_PRICING, planKeyOf, planPriceFor } from '@/lib/planPricing'
+import { changeOrgPlan } from '@/lib/changePlan'
 
 export async function POST(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
@@ -19,44 +18,9 @@ export async function POST(req: Request) {
   const { orgId, maxBranches, maxStaff, maxSuppliers, planName, orgName, billingCycle } = await req.json()
   if (!orgId || !maxBranches) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
-  const { data: oldOrg } = await supabase.from('organizations').select('max_branches,plan,locked_plan_monthly').eq('id', orgId).maybeSingle()
-  const oldBranches = (oldOrg as any)?.max_branches || 1
-
-  // تغيير الباقة ما يمسح وحدات اشتراها العميل كإضافات (موظف/مورد إضافي)
-  const { data: extraSubs } = await supabase.from('org_addon_subscriptions')
-    .select('quantity,expires_at,marketplace_addons!inner(slug)')
-    .eq('org_id', orgId).eq('status', 'active').in('marketplace_addons.slug', ['extra_staff', 'extra_suppliers'])
-  const live = ((extraSubs || []) as any[]).filter(s => !s.expires_at || new Date(s.expires_at) > new Date())
-  const extraOf = (slug: string) => live.filter(s => s.marketplace_addons?.slug === slug).reduce((n, s) => n + (Number(s.quantity) || 0), 0)
-  const updatePayload: any = { max_branches: maxBranches, plan: planName, max_staff: (Number(maxStaff) || 0) + extraOf('extra_staff'), max_suppliers: (Number(maxSuppliers) || 0) + extraOf('extra_suppliers') }
-  if (billingCycle === 'monthly' || billingCycle === 'yearly') updatePayload.billing_cycle = billingCycle
-  // باقة مختلفة = سعرها الحالي؛ نفس الباقة = يبقى سعره المثبّت
-  if ((oldOrg as any)?.plan !== planName) updatePayload.locked_plan_monthly = null
-
-  const { error } = await supabase
-    .from('organizations')
-    .update(updatePayload)
-    .eq('id', orgId)
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  // تخفيض: الفروع الزايدة تتوقف مؤقتاً (مع موظفينها). ترقية: ترجع تلقائياً
-  const branchSync = await syncBranchesToLimit(supabase, orgId)
-
+  const res = await changeOrgPlan(supabase, orgId, { planName, maxBranches, maxStaff, maxSuppliers, billingCycle })
+  if (!res.ok) return NextResponse.json({ error: res.error }, { status: 500 })
   await logAdminAction(admin, 'update_plan', orgId, orgName || null, { new_plan: planName, maxBranches })
-
-  if (maxBranches !== oldBranches) {
-    const newAmount = PLAN_PRICING[planKeyOf(planName, maxBranches)].monthly
-    const oldAmount = planPriceFor(planKeyOf((oldOrg as any)?.plan, oldBranches), (oldOrg as any)?.locked_plan_monthly).monthly
-    try {
-      await (supabase as any).from('subscription_events').insert({
-        org_id: orgId,
-        event_type: newAmount > oldAmount ? 'upgraded' : 'downgraded',
-        plan: planName,
-        amount: newAmount,
-      })
-    } catch {}
-  }
-
+  const { ok: _ok, ...branchSync } = res
   return NextResponse.json({ success: true, ...branchSync })
 }

@@ -18,6 +18,12 @@ export function planPriceFor(plan: PlanKey, lockedMonthly?: number | string | nu
   return locked > 0 ? { label: p.label, monthly: locked, yearly: yearlyOf(locked) } : p
 }
 
+// متى نقترح الترقية للمتوسطة: فاتورة الأساسية الشهرية وصلت هالحد أو أكثر
+export const UPGRADE_HINT_FROM = 150
+/** مرشّح للترقية: على الأساسية وفاتورته الشهرية قريبة من سعر المتوسطة */
+export const upgradeCandidate = (plan: string | null | undefined, monthlyBill: number) =>
+  (plan || 'basic') === 'basic' && monthlyBill >= UPGRADE_HINT_FROM
+
 // إضافات تنباع بالوحدة (السعر × الكمية) — المنيو: الكمية = عدد الفروع المشتركة
 export const QTY_ADDON_SLUGS = ['extra_branch', 'extra_staff', 'extra_suppliers', 'online_menu']
 
