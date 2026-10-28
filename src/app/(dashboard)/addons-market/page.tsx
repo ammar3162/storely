@@ -10,8 +10,7 @@ import { getMe } from '@/lib/session'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { colors, font, card, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
-import { billLines, planKeyOf, addonPeriodEnd, proratedCharge, unitPrice, upgradeCandidate, PLAN_PRICING } from '@/lib/planPricing'
-import { ArrowUpCircle, Check } from 'lucide-react'
+import { billLines, planKeyOf, addonPeriodEnd, proratedCharge, unitPrice } from '@/lib/planPricing'
 import { isInApp } from '@/lib/inApp'
 
 export default function AddonsMarketPage() {
@@ -78,29 +77,6 @@ export default function AddonsMarketPage() {
         تدفع الحين <b style={{ color: colors.text }}>{d.amount} ⃁</b> عن {d.days} يوم لين تجديد باقتك ({d.endStr})، وبعدها تتجدد مع الباقة.
       </div>
     )
-  }
-
-  // طلب الترقية للمتوسطة — يوصل للأدمن ويوافق عليه
-  const [planReq, setPlanReq] = useState<any | null>(null)
-  const [sendingPlan, setSendingPlan] = useState(false)
-  async function loadPlanReq(oid: string) {
-    const j = await api.get('/api/plan-requests', { org_id: oid })
-    if (j.success) setPlanReq((j.requests || []).find((r: any) => r.status === 'pending') || null)
-  }
-  useEffect(() => { if (orgId) loadPlanReq(orgId) }, [orgId])
-  useLiveRefresh(orgId || null, ['plan_requests'], () => { if (orgId) { loadPlanReq(orgId); getMe().then(me => me && setPlan(p => p && ({ ...p, key: me.org?.plan || p.key, maxBranches: me.org?.max_branches || p.maxBranches }))) } })
-  async function requestUpgrade() {
-    if (!(await confirmDialog({ title: 'طلب الترقية للمتوسطة', message: `يوصل طلبك لفريق Storely، وبعد الموافقة تنتقل للمتوسطة (${PLAN_PRICING.pro.monthly} ⃁/شهر) وتنفتح لك كل الميزات و3 فروع.`, confirmText: 'أرسل الطلب', type: 'success' }))) return
-    setSendingPlan(true)
-    const j = await api.post('/api/plan-requests', { org_id: orgId, target_plan: 'pro' })
-    setSendingPlan(false)
-    if (!j.success) { toast(j.error || 'فشل إرسال الطلب', 'error'); return }
-    toast('وصلنا طلب الترقية — نراجعه ويوصلك إشعار'); loadPlanReq(orgId)
-  }
-  async function cancelPlanReq() {
-    const j = await api.del('/api/plan-requests', undefined, { org_id: orgId, id: planReq?.id })
-    if (!j.success) { toast(j.error || 'فشل الإلغاء', 'error'); return }
-    toast('تم إلغاء طلب الترقية'); loadPlanReq(orgId)
   }
 
   // طلب إضافة: يوصل للأدمن بلوحته ويوافق عليه (بدل رسالة واتساب)
@@ -192,37 +168,6 @@ export default function AddonsMarketPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${colors.border}`, marginTop: 8, paddingTop: 10, fontSize: 14, fontWeight: 900, color: colors.primary }}>
               <span>الإجمالي</span><span>{bill.total} ⃁</span>
             </div>
-          </div>
-        )
-      })()}
-
-      {plan && (() => {
-        // عميل الأساسية وفاتورته قريبة من المتوسطة: نوضح له الفرق ونخليه يطلب الترقية بضغطة
-        const monthly = billLines(planKeyOf(plan.key, plan.maxBranches), 'monthly', addons, plan.locked).total
-        if (!upgradeCandidate(planKeyOf(plan.key, plan.maxBranches), monthly)) return null
-        const diff = PLAN_PRICING.pro.monthly - monthly
-        return (
-          <div style={{ ...card, padding: 18, marginBottom: 20, border: `1.5px solid ${colors.primary}`, background: colors.primaryLight }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 800, color: colors.text, marginBottom: 6 }}>
-              <ArrowUpCircle size={18} color={colors.primary} />
-              {diff > 0 ? `فاتورتك ${monthly} ⃁ — بـ ${diff} ⃁ زيادة تاخذ المتوسطة كاملة` : `فاتورتك ${monthly} ⃁ — المتوسطة أرخص لك (${PLAN_PRICING.pro.monthly} ⃁) وفيها أكثر`}
-            </div>
-            <div style={{ display: 'grid', gap: 4, fontSize: 12.5, color: colors.text2, margin: '8px 0 14px' }}>
-              {['كل الميزات: إقفال الكاشير، إدارة الموظفين، الربحية، الذكاء الاصطناعي', '3 فروع بدل فرع واحد', '10 موظفين و10 موردين'].map(t => (
-                <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Check size={14} color={colors.primary} />{t}</div>
-              ))}
-            </div>
-            {planReq ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, fontSize: 12.5, fontWeight: 700, color: colors.warning }}>
-                طلب الترقية قيد المراجعة
-                <button onClick={cancelPlanReq} style={{ border: 'none', background: 'none', color: colors.text3, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>إلغاء الطلب</button>
-              </div>
-            ) : (
-              <button onClick={requestUpgrade} disabled={sendingPlan}
-                style={{ width: '100%', padding: 11, background: colors.primary, color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: sendingPlan ? .7 : 1 }}>
-                {sendingPlan ? 'جاري الإرسال...' : 'اطلب الترقية للمتوسطة'}
-              </button>
-            )}
           </div>
         )
       })()}
