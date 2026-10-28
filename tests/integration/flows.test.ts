@@ -739,6 +739,19 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       expect((await activateAddon(db as any, { orgId, addonId })).ok).toBe(true)
       expect(Number((await sub()).locked_price)).toBe(20)
 
+      // لوحة الأدمن تشوف الإضافة مفعّلة وبسعرها المثبّت (كان الاستعلام يفشل ويعرضها غير مفعّلة)
+      await db.from('organizations').update({ plan: 'basic' } as any).eq('id', orgId)   // الأساسية تعرض كل الإضافات
+      const adminSubs = await import('@/app/api/admin/addon-subscriptions/route')
+      const ar = await adminSubs.GET(new Request(`http://test/api/admin/addon-subscriptions?org_id=${orgId}`, { headers: { 'x-admin-key': 'it-admin' } }))
+      const aj = await ar.json() as any
+      const row = (aj.addons || []).find((x: any) => x.id === addonId)
+      expect(row?.subscription?.isValid).toBe(true)
+      expect(Number(row?.subscription?.locked_price)).toBe(20)
+      // وصفحة العميل نفس الشي
+      const market = await import('@/app/api/addons-market/route')
+      const mj = (await call(market.GET, 'GET', `/api/addons-market?org_id=${orgId}`)).json
+      expect(Number((mj.addons || []).find((x: any) => x.id === addonId)?.subscription?.locked_price)).toBe(20)
+
       await db.from('org_addon_subscriptions').update({ expires_at: new Date(Date.now() - 1000).toISOString() } as any).eq('org_id', orgId).eq('addon_id', addonId)
       const back = await activateAddon(db as any, { orgId, addonId })
       expect(back.ok && back.proratedAmount).toBe(Math.round(newPrice * 10 / 30))
