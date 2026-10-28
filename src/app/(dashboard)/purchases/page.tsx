@@ -5,6 +5,7 @@ import PageIcon from '@/components/PageIcon'
 import NumberInput from '@/components/NumberInput'
 import TaxInvoiceFields, { type ZatcaState } from '@/components/TaxInvoiceFields'
 import InvoiceItemsPicker, { type PickedItem } from '@/components/InvoiceItemsPicker'
+import InvoiceAgentPanel from '@/components/InvoiceAgentPanel'
 import { zatcaFromImage, blobToBase64 } from '@/lib/zatcaScan'
 import { prepareInvoiceFile, isPdfUrl } from '@/lib/invoiceFile'
 import { unitsFor } from '@/lib/businessTypes'
@@ -379,6 +380,10 @@ export default function PurchasesPage() {
         <h1 style={{fontSize:20,fontWeight:700,color:C.text,margin:0,letterSpacing:'-0.3px',display:'flex',alignItems:'center',gap:12}}><PageIcon/>المشتريات</h1>
         <p style={{fontSize:11,color:C.text4,margin:'3px 0 0'}}>فئة <b style={{color:C.primary}}>مخزون</b> تُضيف المنتج للمخزون تلقائياً</p>
       </div>
+
+      {/* الوكيل الذكي: يقرأ الفاتورة ويطابقها مع المخزون ويسأل عن اللي مو واضح */}
+      {orgId && <InvoiceAgentPanel orgId={orgId} branchId={typeof window!=='undefined'?sessionStorage.getItem('s_branch_id'):null} products={products} curr={curr}
+        onSaved={()=>{ cache.invalidate('purchases:'); cache.invalidate('inventory:'); cache.invalidate('dashboard:'); cache.invalidate('products:'); loadHistory(orgId); loadProducts(orgId) }}/>}
 
       {/* Stats */}
       <div className="u" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:8,marginBottom:16,animationDelay:'.04s'}}>

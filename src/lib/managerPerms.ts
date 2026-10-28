@@ -76,6 +76,7 @@ export const API_GUARDS: Record<string, { read?: Rule; write?: Rule }> = {
   // المشتريات
   '/api/purchases': { read: ['purchases', 'reports'], write: ['purchases', 'reports'] },
   '/api/purchases/bulk': { write: ['purchases'] },
+  '/api/invoice-agent': { read: ['purchases'], write: ['purchases'] },
   '/api/purchases/restore': { write: ['purchases', 'reports'] },
   '/api/ocr-invoice': { write: ['purchases'] },
   '/api/supplier-delivery-thanks': { write: ['purchases'] },
