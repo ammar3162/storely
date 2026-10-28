@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { normalizeWhatsapp } from '@/lib/phoneNormalize'
 import { SIGNUP_BUSINESS_TYPES } from '@/lib/businessTypes'
 import { attachReferral } from '@/lib/agentReferral'
 import { REF_COOKIE } from '@/lib/agentRewards'
@@ -36,7 +37,8 @@ export async function POST(req: Request) {
     }
 
     orgName = sanitizeShortText(orgName, 150)
-    fullPhone = formatPhone(sanitizeShortText(fullPhone, 20))
+    // رقم واتساب المنشأة: صيغة ثابتة، ويشيل مفتاح الدولة لو تكرر (+966966…)
+    fullPhone = normalizeWhatsapp(sanitizeShortText(fullPhone, 20), typeof countryCode === 'string' ? countryCode : '+966')
     phone = formatPhone(sanitizeShortText(phone, 20))
     // التسجيل الجديد: مطعم أو كوفي أو أخرى — النوع يحدد الفئات والوحدات داخل النظام
     businessType = SIGNUP_BUSINESS_TYPES.some(b => b.v === businessType) ? businessType : 'أخرى'

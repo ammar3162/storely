@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { normalizeWhatsapp } from '@/lib/phoneNormalize'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { MAX_BUSINESS_DAY_START_HOUR } from '@/lib/businessDate'
@@ -55,7 +56,7 @@ export async function PATCH(req: Request) {
       if (!name) return NextResponse.json({ error: 'أدخل اسم المنشأة' }, { status: 400 })
       update.name = name
     }
-    if ('whatsapp_number' in body) update.whatsapp_number = String(body.whatsapp_number || '').trim()
+    if ('whatsapp_number' in body) update.whatsapp_number = normalizeWhatsapp(String(body.whatsapp_number || ''))
     if ('notify_schedule' in body) {
       if (!['daily', 'weekly', 'manual'].includes(body.notify_schedule)) return NextResponse.json({ error: 'جدولة غير صالحة' }, { status: 400 })
       update.notify_schedule = body.notify_schedule
