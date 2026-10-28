@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
+import { PLAN_PRICING, planKeyOf, planPriceFor } from '@/lib/planPricing'
 
 export async function POST(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
   const { orgId, maxBranches, maxStaff, maxSuppliers, planName, orgName, billingCycle } = await req.json()
   if (!orgId || !maxBranches) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
 
-  const { data: oldOrg } = await supabase.from('organizations').select('max_branches').eq('id', orgId).maybeSingle()
+  const { data: oldOrg } = await supabase.from('organizations').select('max_branches,plan,locked_plan_monthly').eq('id', orgId).maybeSingle()
   const oldBranches = (oldOrg as any)?.max_branches || 1
 
   // تغيير الباقة ما يمسح وحدات اشتراها العميل كإضافات (موظف/مورد إضافي)
@@ -29,6 +30,8 @@ export async function POST(req: Request) {
   const extraOf = (slug: string) => live.filter(s => s.marketplace_addons?.slug === slug).reduce((n, s) => n + (Number(s.quantity) || 0), 0)
   const updatePayload: any = { max_branches: maxBranches, plan: planName, max_staff: (Number(maxStaff) || 0) + extraOf('extra_staff'), max_suppliers: (Number(maxSuppliers) || 0) + extraOf('extra_suppliers') }
   if (billingCycle === 'monthly' || billingCycle === 'yearly') updatePayload.billing_cycle = billingCycle
+  // باقة مختلفة = سعرها الحالي؛ نفس الباقة = يبقى سعره المثبّت
+  if ((oldOrg as any)?.plan !== planName) updatePayload.locked_plan_monthly = null
 
   const { error } = await supabase
     .from('organizations')
@@ -43,8 +46,8 @@ export async function POST(req: Request) {
   await logAdminAction(admin, 'update_plan', orgId, orgName || null, { new_plan: planName, maxBranches })
 
   if (maxBranches !== oldBranches) {
-    const newAmount = maxBranches===1?99:maxBranches<=3?249:399
-    const oldAmount = oldBranches===1?99:oldBranches<=3?249:399
+    const newAmount = PLAN_PRICING[planKeyOf(planName, maxBranches)].monthly
+    const oldAmount = planPriceFor(planKeyOf((oldOrg as any)?.plan, oldBranches), (oldOrg as any)?.locked_plan_monthly).monthly
     try {
       await (supabase as any).from('subscription_events').insert({
         org_id: orgId,

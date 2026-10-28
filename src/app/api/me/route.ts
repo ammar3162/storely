@@ -23,7 +23,7 @@ export async function GET() {
 
     const [{ data: org }, { data: extra }, { data: branches }, { data: branchSubs }] = await Promise.all([
       db.from('organizations')
-        .select('id,name,plan,billing_cycle,currency,logo_url,deletion_scheduled_at,max_staff,max_suppliers,max_branches,country_code,business_type,onboarding_done,vat_registered')
+        .select('id,name,plan,billing_cycle,currency,logo_url,deletion_scheduled_at,max_staff,max_suppliers,max_branches,country_code,business_type,onboarding_done,vat_registered,locked_plan_monthly')
         .eq('id', profile.orgId).single(),
       db.from('profiles')
         .select('full_name,phone,subscription_ends_at,permissions,whatsapp_consent,whatsapp_first_contact_confirmed,terms_version_accepted')
@@ -67,6 +67,7 @@ export async function GET() {
         business_type: o.business_type || null,
         onboarding_done: o.onboarding_done !== false,
         features,
+        locked_plan_monthly: o.locked_plan_monthly ?? null,
       } : null,
       branches: branches || [],
     })

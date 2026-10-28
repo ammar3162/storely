@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { planPriceFor, planKeyOf } from '@/lib/planPricing'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission } from '@/lib/adminAuth'
 
@@ -7,8 +8,9 @@ const sb = () => createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-function priceFor(maxBranches: number) {
-  return maxBranches === 1 ? 99 : maxBranches <= 3 ? 249 : 399
+// سعر باقة المنشأة: المثبّت لها أو الحالي (مصدر واحد مع الفواتير)
+function priceFor(maxBranches: number, plan?: string | null, locked?: number | null) {
+  return planPriceFor(planKeyOf(plan, maxBranches), locked).monthly
 }
 
 export async function GET(req: Request) {
@@ -21,7 +23,7 @@ export async function GET(req: Request) {
 
     const { data: owners } = await supabase
       .from('profiles')
-      .select('id,status,subscription_type,organizations(max_branches)')
+      .select('id,status,subscription_type,organizations(max_branches,plan,locked_plan_monthly)')
       .eq('role', 'owner')
 
     const ownersList = owners || []
@@ -30,7 +32,7 @@ export async function GET(req: Request) {
     const trialActive = ownersList.filter((o: any) => o.subscription_type === 'trial' && o.status === 'active')
     const suspended = ownersList.filter((o: any) => o.status === 'suspended')
 
-    const mrr = paidActive.reduce((sum: number, o: any) => sum + priceFor(o.organizations?.max_branches || 1), 0)
+    const mrr = paidActive.reduce((sum: number, o: any) => sum + priceFor(o.organizations?.max_branches || 1, o.organizations?.plan, o.organizations?.locked_plan_monthly), 0)
     const arr = mrr * 12
     const conversionRate = totalOwners > 0 ? Math.round((paidActive.length / totalOwners) * 1000) / 10 : 0
 

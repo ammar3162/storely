@@ -7,7 +7,7 @@ describe('billLines', () => {
   it('charges extra branches by quantity', () => {
     const { lines, total } = billLines('advanced', 'monthly', [branch(2)])
     expect(lines[1]).toEqual({ label: 'إضافة "فرع إضافي" (2 × 49 ر.س)', amount: 98 })
-    expect(total).toBe(399 + 98)
+    expect(total).toBe(499 + 98)
   })
 
   it('leaves out cancelled or expired addons', () => {
@@ -20,6 +20,17 @@ describe('billLines', () => {
       { name: 'موظف إضافي', slug: 'extra_staff', monthly_price: 20, subscriptions: [{ isValid: true, quantity: 2 }, { isValid: true, quantity: 1 }] },
     ]
     expect(billLines('pro', 'yearly', addons).total).toBe(2390 + 30 * 12 + 60 * 12)
+  })
+})
+
+describe('locked prices (subscribed before the price change)', () => {
+  it('uses the locked plan and addon prices, and the new ones otherwise', () => {
+    expect(billLines('advanced', 'monthly', [], 399).total).toBe(399)
+    expect(billLines('advanced', 'yearly', [], 399).total).toBe(3830)
+    expect(billLines('advanced', 'monthly', []).total).toBe(499)
+    const cashier = (locked: number | null) => ({ name: 'كاشير', slug: 'cashier_closing', monthly_price: 29, subscription: { isValid: true, quantity: 1, locked_price: locked } })
+    expect(billLines('basic', 'monthly', [cashier(20)]).total).toBe(99 + 20)
+    expect(billLines('basic', 'monthly', [cashier(null)]).total).toBe(99 + 29)
   })
 })
 

@@ -8,7 +8,7 @@ import { getMe } from '@/lib/session'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { colors, font, card, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
-import { billLines, planKeyOf, addonPeriodEnd, proratedCharge } from '@/lib/planPricing'
+import { billLines, planKeyOf, addonPeriodEnd, proratedCharge, unitPrice } from '@/lib/planPricing'
 import { isInApp } from '@/lib/inApp'
 
 export default function AddonsMarketPage() {
@@ -18,7 +18,7 @@ export default function AddonsMarketPage() {
   const [orgName, setOrgName] = useState('')
   const [orgId, setOrgId] = useState('')
   const [cancelling, setCancelling] = useState<string|null>(null)
-  const [plan, setPlan] = useState<{ key: string; cycle: 'monthly'|'yearly'; maxBranches: number } | null>(null)
+  const [plan, setPlan] = useState<{ key: string; cycle: 'monthly'|'yearly'; maxBranches: number; locked?: number | null } | null>(null)
   const [subEndsAt, setSubEndsAt] = useState<string | null>(null)
   const [inApp, setInApp] = useState(false)
   useEffect(() => { setInApp(isInApp()) }, [])
@@ -35,7 +35,7 @@ export default function AddonsMarketPage() {
     if (!me) return
     setOrgId(me.org_id)
     setOrgName(me.org?.name || '')
-    setPlan({ key: me.org?.plan || '', cycle: me.org?.billing_cycle || 'monthly', maxBranches: me.org?.max_branches || 1 })
+    setPlan({ key: me.org?.plan || '', cycle: me.org?.billing_cycle || 'monthly', maxBranches: me.org?.max_branches || 1, locked: me.org?.locked_plan_monthly ?? null })
     setSubEndsAt(me.subscription_ends_at || null)
     if (!cachedOid) await load(me.org_id)
     setLoading(false)
@@ -58,7 +58,9 @@ export default function AddonsMarketPage() {
   // الإضافة تنتهي مع الباقة: المستحق الحين بالتناسب عن الأيام الباقية لين التجديد
   function dueNow(addon: any, qty: number) {
     const end = addonPeriodEnd(subEndsAt)
-    const pr = proratedCharge(Number(addon.monthly_price) || 0, qty, end)
+    // الوحدات الزايدة على اشتراك ساري بسعره المثبّت، والجديدة بالسعر الحالي
+    const live = addon.subscription?.isValid ? addon.subscription : null
+    const pr = proratedCharge(unitPrice(addon.monthly_price, live), qty, end)
     return { ...pr, endStr: end.toLocaleDateString('ar-SA', { numberingSystem: 'latn', month: 'long', day: 'numeric' }) }
   }
 
@@ -145,7 +147,7 @@ export default function AddonsMarketPage() {
       </div>
 
       {plan && (() => {
-        const bill = billLines(planKeyOf(plan.key, plan.maxBranches), plan.cycle, addons)
+        const bill = billLines(planKeyOf(plan.key, plan.maxBranches), plan.cycle, addons, plan.locked)
         return (
           <div style={{ ...card, padding: 18, marginBottom: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10 }}>فاتورتك الحالية</div>

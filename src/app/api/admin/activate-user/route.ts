@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { planPriceFor, planKeyOf } from '@/lib/planPricing'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
 
   const { userId, type, ends } = await req.json()
 
-  const { data: profile } = await supabase.from('profiles').select('org_id,full_name,organizations(name,max_branches)').eq('id', userId).maybeSingle()
+  const { data: profile } = await supabase.from('profiles').select('org_id,full_name,organizations(name,max_branches,plan,locked_plan_monthly)').eq('id', userId).maybeSingle()
 
   const orgIdForUpdate = (profile as any)?.org_id
   const updateQuery = supabase
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
     const orgId = (profile as any)?.org_id
     const maxBranches = (profile as any)?.organizations?.max_branches || 1
     const planName = maxBranches === 1 ? 'basic' : maxBranches <= 3 ? 'pro' : 'advanced'
-    const amount = maxBranches === 1 ? 99 : maxBranches <= 3 ? 249 : 399
+    const amount = planPriceFor(planKeyOf((profile as any)?.organizations?.plan, maxBranches), (profile as any)?.organizations?.locked_plan_monthly).monthly
     if (orgId) {
       await (supabase as any).from('subscription_events').insert({
         org_id: orgId,

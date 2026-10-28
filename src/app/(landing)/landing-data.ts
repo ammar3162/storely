@@ -17,7 +17,7 @@ export const PLANS = [
     limitsEn:['3 branches','10 staff','10 suppliers'],
     features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين','تقارير متقدمة','إقفال الكاشير اليومي','الحضور والانصراف بـGPS 📍','اقتراح الشراء الذكي 🤖','توقع نفاد المخزون 🔮','تحليل الموسمية','تحسين نقطة إعادة الطلب 🎯'],
     featuresEn:['Inventory tracking','WhatsApp alerts','Staff management','Basic reports','Supplier management','Advanced reports','Daily cashier closing','GPS attendance 📍','Smart purchase suggestions 🤖','Stock-out prediction 🔮','Seasonality analysis','Reorder point optimization 🎯'] },
-  { name:'المتقدمة', nameEn:'Advanced', price:'399', yearlyPrice:'3830', color:'#0f766e', popular:false,
+  { name:'المتقدمة', nameEn:'Advanced', price:'499', yearlyPrice:'4790', color:'#0f766e', popular:false,
     limits:['10 فروع','غير محدود','غير محدود'],
     limitsEn:['10 branches','Unlimited','Unlimited'],
     features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين','تقارير متقدمة','إقفال الكاشير اليومي','الحضور والانصراف بـGPS 📍','اقتراح الشراء الذكي 🤖','توقع نفاد المخزون 🔮','تحليل الموسمية','تحسين نقطة إعادة الطلب 🎯','مقارنة الفروع 🤖','المخزون الراكد 🐌','كشف الهدر الحقيقي 🗑️','دعم ذو أولوية','دعم 24/7'],

@@ -23,6 +23,7 @@ export type Me = {
     deletion_scheduled_at: string | null; max_staff: number; max_suppliers: number
     max_branches: number; country_code: string; business_type: string | null; onboarding_done: boolean; vat_registered?: boolean | null
     features?: { cashier: boolean; hr: boolean; ai: boolean; profitability: boolean }
+    locked_plan_monthly?: number | null
   } | null
   branches: { id: string; name: string; location: string | null }[]
 }
