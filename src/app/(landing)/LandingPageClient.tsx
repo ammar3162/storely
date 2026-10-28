@@ -183,7 +183,14 @@ export default function LandingPage({ initialMarquee }: { initialMarquee?: strin
         {partners.length > 0 && (
           <div className="lp-wrap lp-partners">
             <p>{t('trustedBy')}</p>
-            <div>{partners.map((p:any)=><img key={p.id} src={p.logo_url} alt={p.name} loading="lazy" decoding="async"/>)}</div>
+            <ul className="lp-partner-grid">
+              {partners.map((p:any)=>(
+                <li key={p.id} className="lp-partner">
+                  <span className="lp-partner-logo"><img src={p.logo_url} alt={p.name} loading="lazy" decoding="async"/></span>
+                  <span className="lp-partner-name">{p.name}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 
@@ -481,8 +488,13 @@ html{scroll-behavior:smooth}
 @keyframes lpBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 .lp-partners{text-align:center;margin-top:56px}
 .lp-partners p{font-size:12.5px;color:var(--ink3);margin-bottom:18px}
-.lp-partners>div{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
-.lp-partners img{height:54px;max-width:150px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 18px}
+/* شعارات العملاء: بطاقات بنفس المقاس — الشعار المربع والعريض يطلعون بنفس الوضوح */
+.lp-partner-grid{list-style:none;margin:0 auto;padding:0;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;max-width:1040px}
+.lp-partner{width:140px;display:flex;flex-direction:column;align-items:center;gap:9px}
+.lp-partner-logo{width:100%;aspect-ratio:1/1;overflow:hidden;background:#fff;border:1px solid var(--line);border-radius:18px;display:flex;align-items:center;justify-content:center;padding:10px;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:transform .2s,box-shadow .2s}
+.lp-partner-logo img{width:100%;height:100%;min-height:0;min-width:0;object-fit:contain;display:block;border-radius:10px}
+.lp-partner:hover .lp-partner-logo{transform:translateY(-2px);box-shadow:0 10px 24px rgba(15,23,42,.08)}
+.lp-partner-name{font-size:12.5px;font-weight:600;color:var(--ink2,#334155);text-align:center;line-height:1.3}
 .lp-stats{display:grid;grid-template-columns:repeat(4,1fr);margin-top:64px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .lp-stats>div{padding:24px 10px;text-align:center;border-left:1px solid var(--line)}
 .lp-stats>div:last-child{border-left:none}
@@ -617,6 +629,10 @@ html{scroll-behavior:smooth}
   .lp-foot-grid{grid-template-columns:1fr 1fr}
 }
 @media(max-width:720px){
+.lp-partner-grid{gap:10px}
+.lp-partner{width:calc((100% - 20px)/3)}
+.lp-partner-logo{border-radius:14px;padding:8px}
+.lp-partner-name{font-size:11.5px}
   .lp-desk{display:none!important}
   .lp-mob{display:block}
   .lp-wrap{padding:0 18px}
