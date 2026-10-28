@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
+import { signupErrorAr } from '@/lib/authErrors'
 import { isInApp, isStaffDevice, setStaffDevice } from '@/lib/inApp'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
@@ -304,11 +305,7 @@ function LoginPage() {
     }
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) {
-      if (error.message.includes('already registered') || error.message.includes('already been registered')) {
-        setError('📧 هذا البريد الإلكتروني مسجّل مسبقاً — سجّل الدخول أو استعد كلمة المرور')
-      } else {
-        setError(error.message)
-      }
+      setError(signupErrorAr(error.message))
       setLoading(false); return
     }
     if (data.user) {
