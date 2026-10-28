@@ -647,7 +647,23 @@ export default function StaffManagementPage() {
                     </div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{p.name}</div>
-                      <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit}{sharedProducts[p.id] ? ` · عند ${sharedProducts[p.id].join('، ')} بعد` : ''}</div>
+                      <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit}</div>
+                      {(()=>{
+                        // مين عنده هالمنتج: الموظفين الثانيين + هالموظف لو اخترته
+                        const me = staff.find((x:any)=>x.id===assigningId)?.name
+                        const holders = [...(selected && me ? [me] : []), ...(sharedProducts[p.id]||[])]
+                        if(!holders.length) return null
+                        return (
+                          <div style={{display:'flex',flexWrap:'wrap' as const,gap:4,marginTop:5}}>
+                            {holders.map((n:string,i:number)=>(
+                              <span key={n+i} style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:99,
+                                background:i===0&&selected?colors.primary:colors.surface,color:i===0&&selected?'white':colors.text2,border:`1px solid ${i===0&&selected?colors.primary:colors.border2}`}}>
+                                <User size={10} strokeWidth={2.5}/>{n}
+                              </span>
+                            ))}
+                          </div>
+                        )
+                      })()}
                     </div>
                   </div>
                 )
