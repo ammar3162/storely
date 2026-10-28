@@ -740,6 +740,21 @@ describe.skipIf(!enabled)('integration (staging)', async () => {
       const { data: p2 } = await db.from('products').insert({ org_id: orgId, branch_id: (other as any).id, name: `بعيد_${stamp}`, unit: 'قطعة', qty: 0, is_active: true } as any).select('id').single()
       expect((await call(assign.POST, 'POST', '/api/staff-members/assign', { org_id: orgId, staff_id: a.id, product_ids: [pid, (p2 as any).id] })).status).toBe(400)
 
+      // الاثنين يصرفون نفس المنتج بنفس اللحظة — ولا صرفة تضيع
+      process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
+      const { generateStaffToken } = await import('@/lib/staffAuth')
+      const dispense = await import('@/app/api/staff-dispense/route')
+      await db.from('stock_movements').insert({ product_id: pid, org_id: orgId, branch_id: branchA, type: 'in', qty_change: 10 } as any)
+      const go = (sid: string) => dispense.POST(new Request('http://test/api/staff-dispense', { method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${generateStaffToken(sid, orgId, branchA)}` },
+        body: JSON.stringify({ productId: pid, qty: 3, staffName: 'اسم مزوّر' }) }))
+      const res = await Promise.all([go(a.id), go(b.id)])
+      expect(res.map(r => r.status)).toEqual([200, 200])
+      expect((await db.from('products').select('qty').eq('id', pid).single()).data).toMatchObject({ qty: 4 })
+      const { data: outs } = await db.from('stock_movements').select('staff_name').eq('product_id', pid).eq('type', 'out')
+      expect((outs as any[]).map(o => o.staff_name).sort()).toEqual(['مشترك 1', 'مشترك 2'])
+
+      await db.from('stock_movements').delete().eq('product_id', pid)
       await db.from('staff_members').delete().in('id', [a.id, b.id])
       await db.from('branches').update({ is_active: false } as any).eq('id', (other as any).id)
     }, 120_000)
