@@ -21,7 +21,13 @@ export async function POST(req: Request) {
   const { data: oldOrg } = await supabase.from('organizations').select('max_branches').eq('id', orgId).maybeSingle()
   const oldBranches = (oldOrg as any)?.max_branches || 1
 
-  const updatePayload: any = { max_branches: maxBranches, plan: planName, max_staff: maxStaff, max_suppliers: maxSuppliers }
+  // تغيير الباقة ما يمسح وحدات اشتراها العميل كإضافات (موظف/مورد إضافي)
+  const { data: extraSubs } = await supabase.from('org_addon_subscriptions')
+    .select('quantity,expires_at,marketplace_addons!inner(slug)')
+    .eq('org_id', orgId).eq('status', 'active').in('marketplace_addons.slug', ['extra_staff', 'extra_suppliers'])
+  const live = ((extraSubs || []) as any[]).filter(s => !s.expires_at || new Date(s.expires_at) > new Date())
+  const extraOf = (slug: string) => live.filter(s => s.marketplace_addons?.slug === slug).reduce((n, s) => n + (Number(s.quantity) || 0), 0)
+  const updatePayload: any = { max_branches: maxBranches, plan: planName, max_staff: (Number(maxStaff) || 0) + extraOf('extra_staff'), max_suppliers: (Number(maxSuppliers) || 0) + extraOf('extra_suppliers') }
   if (billingCycle === 'monthly' || billingCycle === 'yearly') updatePayload.billing_cycle = billingCycle
 
   const { error } = await supabase
