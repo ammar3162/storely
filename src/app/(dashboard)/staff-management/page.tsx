@@ -11,7 +11,6 @@ import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { cache } from '@/lib/cache'
-import StaffDayShiftsEditor, { type SchedulePatch } from '@/components/StaffDayShiftsEditor'
 import { UserPlus, Users, UserCheck, PauseCircle, Package, BarChart3, ShieldCheck, Clock, Bell, BellOff, RefreshCw, Copy, AlertTriangle, ChevronDown, User, Lock, Wallet, Smartphone, Check, Send, ShoppingCart, Save, CheckCircle2, AlertCircle, TrendingUp, Pencil, Search, X, ThumbsUp, ThumbsDown } from 'lucide-react'
 
 function generatePin() { return String(Math.floor(1000 + Math.random() * 9000)) }
@@ -137,26 +136,11 @@ export default function StaffManagementPage() {
     } else {
       setMaxStaff(999) // ما فيه فرع محدد (يشوف كل الفروع) -- ما نقدر نطبّق حد واحد، السيرفر هو اللي يتحقق أصلاً
     }
-    await Promise.all([loadStaff(oid),loadBranches(oid),loadProducts(oid),loadShifts(oid)])
+    await Promise.all([loadStaff(oid),loadBranches(oid),loadProducts(oid)])
     setLoading(false); setTimeout(()=>setVisible(true),50)
   }
 
   const [orphans, setOrphans] = useState<any[]>([])   // موظفين فروعهم موقوفة
-
-  // الشفتات (تنضاف من صفحة الحضور) — هنا نحدد لكل موظف شفته الأساسي وشفتاته حسب الأيام.
-  // null = ما عنده صلاحية على الحضور، فنخفي القسم
-  const [shifts, setShifts] = useState<any[]|null>(null)
-  async function loadShifts(oid:string) {
-    const j = await api.get('/api/shifts', { org_id: oid })
-    setShifts(j.success ? (j.shifts||[]) : null)
-  }
-  async function patchStaffShift(staffId:string, patch:{shift_id?:string|null}|SchedulePatch) {
-    const before = staff.find((x:any)=>x.id===staffId)
-    setStaff(prev=>prev.map((x:any)=>x.id===staffId?{...x,...patch}:x))
-    const j = await api.patch('/api/staff-shifts', { org_id: orgId, staff_id: staffId, ...patch })
-    if (!j.success) { toast(j.error||'تعذر الحفظ','error'); setStaff(prev=>prev.map((x:any)=>x.id===staffId?before:x)); return }
-    if ('shift_id' in patch) toast('تم تحديد الشفت — لو الموظف داخل دوامه الحين يكمله على شفته القديم، والجديد يبدأ من دوامه الجاي')
-  }
 
   async function loadStaff(oid:string) {
     const bid = sessionStorage.getItem('s_branch_id')
@@ -1062,26 +1046,6 @@ export default function StaffManagementPage() {
                       )}
                     </div>
                   </div>
-                  {shifts && (()=>{
-                    const branchShifts = shifts.filter((sh:any)=>!sh.branch_id || !s.branch_id || sh.branch_id===s.branch_id)
-                    const t12 = (t?:string|null)=>{ if(!t) return '—'; const [h,m]=t.slice(0,5).split(':').map(Number); return `${h%12===0?12:h%12}${m?`:${String(m).padStart(2,'0')}`:''} ${h<12?'ص':'م'}` }
-                    return (
-                      <div style={{background:colors.bg,borderRadius:radius.md,padding:'12px 14px',border:`1px solid ${colors.border}`,marginBottom:14,display:'flex',flexDirection:'column' as const,gap:10}}>
-                        <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap' as const}}>
-                          <div style={{fontSize:10,fontWeight:700,color:colors.text4,display:'flex',alignItems:'center',gap:5}}><Clock size={12} strokeWidth={2.25}/> الشفت الأساسي</div>
-                          {branchShifts.length ? (
-                            <select value={s.shift_id||''} onChange={e=>patchStaffShift(s.id,{shift_id:e.target.value||null})} style={{...inp(),width:260,maxWidth:'100%',padding:'7px 10px',fontSize:13}}>
-                              <option value="">بدون شفت</option>
-                              {branchShifts.map((sh:any)=>(<option key={sh.id} value={sh.id}>{sh.name}{sh.is_24h?' (24 ساعة)':` (${t12(sh.start_time)} – ${t12(sh.end_time)})`}</option>))}
-                            </select>
-                          ) : (
-                            <span style={{fontSize:12,color:'#b45309'}}>ما فيه شفتات بفرعه — أضفها من <a href="/attendance" style={{color:colors.primary,fontWeight:700}}>صفحة الحضور</a> ← «الشفتات والغرامات»</span>
-                          )}
-                        </div>
-                        {branchShifts.length>0 && <StaffDayShiftsEditor staff={s} shifts={branchShifts} onPatch={p=>patchStaffShift(s.id,p)}/>}
-                      </div>
-                    )
-                  })()}
                   <div>
                     <div style={{fontSize:10,fontWeight:700,color:colors.text4,marginBottom:6,textTransform:'uppercase' as const}}>رابط دخول الموظف</div>
                     <div style={{display:'flex',gap:8,alignItems:'center'}}>
