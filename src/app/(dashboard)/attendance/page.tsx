@@ -10,6 +10,7 @@ import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { exportReportPdf } from '@/lib/pdfExport'
 import StaffDaysOffEditor, { type OffPatch } from '@/components/StaffDaysOffEditor'
+import StaffDayShiftsEditor, { type SchedulePatch } from '@/components/StaffDayShiftsEditor'
 
 // كل الأوقات والتواريخ بالتقرير بتوقيت السعودية
 const saudiToday = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
@@ -262,7 +263,7 @@ export default function AttendancePage() {
 
 
   // إعداد إجازة الموظف — ينحفظ على طول مع كل تغيير، ويرجع لو فشل
-  async function patchOff(staffId: string, patch: OffPatch) {
+  async function patchOff(staffId: string, patch: OffPatch | SchedulePatch) {
     const before = staffList.find((x: any) => x.id === staffId)
     setStaffList(prev => prev.map((x: any) => x.id === staffId ? { ...x, ...patch } : x))
     const j = await api.patch('/api/staff-shifts', { org_id: orgId, staff_id: staffId, ...patch })
@@ -667,7 +668,7 @@ export default function AttendancePage() {
 
           {/* 2) شفت كل موظف */}
           <div style={box}>
-            {step(2, 'شفت كل موظف وإجازته', 'اختر لكل موظف شفته ونظام إجازته: أيام ثابتة، أسبوع وأسبوع، أيام تحددها، أو رصيد بالشهر. يوم إجازته ما ينحسب غياب، ولو داوم فيه ينحسب يوم إضافي. تغيير الشفت وهو داخل دوامه يتطبّق من دوامه الجاي.',
+            {step(2, 'شفت كل موظف وإجازته', 'اختر لكل موظف شفته الأساسي، ولو يوم عنده شفت مختلف (مثل الجمعة) حدده من «شفت مختلف لأيام معيّنة». ونظام إجازته: أيام ثابتة، أسبوع وأسبوع، أيام تحددها، أو رصيد بالشهر. يوم إجازته ما ينحسب غياب، ولو داوم فيه ينحسب يوم إضافي. تغيير الشفت وهو داخل دوامه يتطبّق من دوامه الجاي.',
               staffList.length === 0 ? null : withoutShift ? pill(`${withoutShift} بدون شفت`, 'warn') : pill('كل الموظفين مربوطين', 'ok'))}
             {staffList.length === 0 ? (
               <div style={{ fontSize: 13, color: colors.text4, textAlign: 'center' as const, padding: 16 }}>ما فيه موظفين نشطين بهذا الفرع</div>
@@ -685,6 +686,7 @@ export default function AttendancePage() {
                       <option value="">بدون شفت</option>
                       {shifts.map((sh: any) => (<option key={sh.id} value={sh.id}>{sh.name}{sh.is_24h ? ' (24 ساعة)' : ` (${t12(sh.start_time)} – ${t12(sh.end_time)})`}</option>))}
                     </select>
+                    <StaffDayShiftsEditor staff={x} shifts={shifts} onPatch={p => patchOff(x.id, p)} />
                     <StaffDaysOffEditor staff={x} onPatch={p => patchOff(x.id, p)} />
                   </div>
                 ))}

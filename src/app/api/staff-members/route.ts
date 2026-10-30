@@ -111,6 +111,11 @@ export async function PATCH(req: Request) {
           const { data: sh } = await db.from('shifts').select('branch_id').eq('id', staff.shift_id).maybeSingle()
           if ((sh as any)?.branch_id && (sh as any).branch_id !== targetId) { update.shift_id = null; moveNotes.push('انفك عن شفته القديم — حدد له شفت بالفرع الجديد') }
         }
+        // شفتات الأيام والتواريخ من شفتات الفرع القديم
+        if (Object.keys(staff.weekday_shifts || {}).length || Object.keys(staff.date_shifts || {}).length) {
+          update.weekday_shifts = {}; update.date_shifts = {}
+          moveNotes.push('انمسحت شفتاته حسب الأيام (كانت من الفرع القديم)')
+        }
         if (Array.isArray(staff.assigned_products) && staff.assigned_products.length) { update.assigned_products = []; moveNotes.push('انمسحت المنتجات المخصصة له (كانت من الفرع القديم)') }
       }
     }

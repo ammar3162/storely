@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { normalizeOffDays, parseDateOnly } from '@/lib/daysOff'
+import { normalizeWeekdayShifts, normalizeDateShifts } from '@/lib/shiftSchedule'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,7 +21,7 @@ export async function GET(req: Request) {
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
     const effectiveBranchId = enforcedBranchId(access, branch_id)
 
-    let q = sb().from('staff_members').select('id,name,shift_id,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates').eq('org_id', org_id).eq('is_active', true)
+    let q = sb().from('staff_members').select('id,name,shift_id,weekday_shifts,date_shifts,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates').eq('org_id', org_id).eq('is_active', true)
     if (effectiveBranchId) q = q.eq('branch_id', effectiveBranchId)
     const { data, error } = await q.order('name')
 
@@ -49,6 +50,31 @@ export async function PATCH(req: Request) {
     const effectiveBranchId = enforcedBranchId(access)
     if (effectiveBranchId && (staff as any).branch_id !== effectiveBranchId) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
+    }
+
+    // شفت مختلف لأيام أسبوع معيّنة أو تواريخ محددة — كل شفت لازم يكون من نفس المنشأة
+    if ('weekday_shifts' in body || 'date_shifts' in body) {
+      const upd: Record<string, unknown> = {}
+      if ('weekday_shifts' in body) {
+        const w = normalizeWeekdayShifts(body.weekday_shifts)
+        if (!w) return NextResponse.json({ error: 'شفتات أيام الأسبوع غير صالحة' }, { status: 400 })
+        upd.weekday_shifts = w
+      }
+      if ('date_shifts' in body) {
+        const d = normalizeDateShifts(body.date_shifts)
+        if (!d) return NextResponse.json({ error: 'شفتات التواريخ غير صالحة (حد أقصى 400 تاريخ)' }, { status: 400 })
+        upd.date_shifts = d
+      }
+      const ids = [...new Set([...Object.values((upd.weekday_shifts || {}) as Record<string, string>), ...Object.values((upd.date_shifts || {}) as Record<string, string>)])]
+      if (ids.length) {
+        const { data: found } = await supabase.from('shifts').select('id,branch_id').eq('org_id', org_id).in('id', ids)
+        if ((found || []).length !== ids.length) return NextResponse.json({ error: 'الشفت غير موجود' }, { status: 404 })
+        const staffBranch = (staff as any).branch_id
+        if (staffBranch && ((found || []) as any[]).some(f => f.branch_id && f.branch_id !== staffBranch)) return NextResponse.json({ error: 'الشفت من فرع ثاني — اختر شفت من فرع الموظف' }, { status: 400 })
+      }
+      const { error } = await supabase.from('staff_members').update(upd as any).eq('id', staff_id).eq('org_id', org_id)
+      if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+      return NextResponse.json({ success: true, ...upd })
     }
 
     // نوع الإجازة: أيام ثابتة بالأسبوع أو رصيد أيام بالشهر

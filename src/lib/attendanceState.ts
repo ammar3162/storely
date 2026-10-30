@@ -35,7 +35,8 @@ export function currentShiftStart(nowMs: number, shift: Shift): number | null {
 
 const saudiDayStart = (ms: number) => Math.floor((ms + RIYADH) / DAY) * DAY - RIYADH
 
-export function attendanceState(opts: { now?: Date; events: AttEvent[]; shift: Shift }) {
+// shiftStartMs (اختياري): بداية الدوام محسوبة مسبقاً من جدول الشفتات حسب اليوم (lib/shiftSchedule)
+export function attendanceState(opts: { now?: Date; events: AttEvent[]; shift: Shift; shiftStartMs?: number | null }) {
   const nowMs = (opts.now ?? new Date()).getTime()
   const sorted = [...opts.events].sort((a, b) => Date.parse(b.recorded_at) - Date.parse(a.recorded_at))
   const last = sorted[0]
@@ -46,7 +47,7 @@ export function attendanceState(opts: { now?: Date; events: AttEvent[]; shift: S
   const lastCheckOut = sorted.find(e => e.type === 'check_out') || null
 
   let canCheckIn = !openCheckIn
-  const shiftStart = currentShiftStart(nowMs, opts.shift)
+  const shiftStart = opts.shiftStartMs !== undefined ? opts.shiftStartMs : currentShiftStart(nowMs, opts.shift)
   if (canCheckIn && lastCheckOut) {
     const outMs = Date.parse(lastCheckOut.recorded_at)
     // دوام جديد: الشفت الحالي يبدأ بعد آخر انصراف. بدون شفت محدد: يوم جديد (بتوقيت السعودية)
