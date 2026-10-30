@@ -31,7 +31,7 @@ function dateRange(from: string, to: string): string[] {
   return dates
 }
 
-type Ev = { id: string; staff_id: string; on_day_off?: boolean | null; type: string; recorded_at: string; late_minutes: number | null; penalty_amount: number | null; penalty_waived?: boolean | null; penalty_applied?: boolean | null; overtime_minutes?: number | null; is_excused: boolean | null }
+type Ev = { id: string; staff_id: string; on_day_off?: boolean | null; type: string; recorded_at: string; late_minutes: number | null; penalty_amount: number | null; penalty_waived?: boolean | null; penalty_applied?: boolean | null; overtime_minutes?: number | null; is_excused: boolean | null; latitude?: number | null }
 
 // كل حضور مع انصرافه (أول انصراف بعده وقبل الحضور التالي، خلال 20 ساعة) — يغطي الشفتات بعد منتصف الليل
 function sessions(events: Ev[]) {
@@ -149,6 +149,8 @@ export async function GET(req: Request) {
         penalty_locked: !!x?.checkIn.penalty_applied,
         attendance_id: x?.checkIn.id ?? null,
         is_excused: !!x?.checkOut?.is_excused,
+        // انصراف سجّله المالك عن الموظف (بدون موقع) — /api/attendance-manual-checkout
+        checkout_by_owner: !!x?.checkOut && x.checkOut.latitude == null,
         overtime_minutes: ot.minutes,
         overtime_pay: ot.pay,
         status: x
@@ -163,7 +165,7 @@ export async function GET(req: Request) {
       // نهاية الفترة + 20 ساعة عشان انصراف آخر يوم بعد منتصف الليل
       const end = new Date(Date.parse(`${endDay}T23:59:59.999+03:00`) + 20 * 3600e3).toISOString()
       const { data } = await selectAll<Ev>(() => {
-        let q = supabase.from('staff_attendance').select('id,staff_id,type,recorded_at,late_minutes,penalty_amount,penalty_waived,penalty_applied,overtime_minutes,is_excused,on_day_off')
+        let q = supabase.from('staff_attendance').select('id,staff_id,type,recorded_at,late_minutes,penalty_amount,penalty_waived,penalty_applied,overtime_minutes,is_excused,on_day_off,latitude')
           .eq('org_id', org_id).gte('recorded_at', `${startDay}T00:00:00+03:00`).lte('recorded_at', end).order('recorded_at').order('id')
         if (effectiveBranchId) q = q.eq('branch_id', effectiveBranchId)
         if (staff_id) q = q.eq('staff_id', staff_id)

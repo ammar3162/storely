@@ -99,6 +99,7 @@ export const API_GUARDS: Record<string, { read?: Rule; write?: Rule }> = {
   '/api/add-staff': { write: ['staff'] },
   // الحضور
   '/api/attendance-penalty': { read: ['attendance'], write: ['attendance'] },
+  '/api/attendance-manual-checkout': { write: ['attendance'] },
   '/api/apply-late-penalties': { read: ['attendance'], write: ['attendance'] },
   '/api/late-penalty-rules': { read: ['attendance'], write: ['attendance'] },
   '/api/shifts': { read: ['attendance', 'staff', 'hr'], write: ['attendance'] },

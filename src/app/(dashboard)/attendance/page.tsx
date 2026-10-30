@@ -24,6 +24,11 @@ export default function AttendancePage() {
   const [orgName, setOrgName] = useState('')
   const [isOwner, setIsOwner] = useState(false)
   const [waiving, setWaiving] = useState<string|null>(null)
+  // انصراف يسجّله المالك عن الموظف (طلع بدون ما يسجّل)
+  const [checkoutFor, setCheckoutFor] = useState<{ attendance_id: string; name: string; check_in: string } | null>(null)
+  const [coTime, setCoTime] = useState('')
+  const [coExcused, setCoExcused] = useState(false)
+  const [savingCo, setSavingCo] = useState(false)
   const [locked, setLocked] = useState(false)
   const [branchId, setBranchId] = useState<string|null>(null)
   const [periodMode, setPeriodMode] = useState<'day'|'range'>('day')
@@ -203,6 +208,45 @@ export default function AttendancePage() {
     if (!j.success) { toast(j.error || 'تعذر التعديل', 'error'); return }
     toast(waived ? 'تم إلغاء الغرامة — ما تنخصم من الراتب' : 'تم إرجاع الغرامة')
     if (periodMode === 'day') load(orgId, date); else loadRange(orgId, rangeFrom, rangeTo)
+  }
+
+  function openManualCheckout(r: any, name: string) {
+    const now = new Date(Date.now() + 3 * 3600e3)
+    setCoTime(`${String(now.getUTCHours()).padStart(2, '0')}:${String(now.getUTCMinutes()).padStart(2, '0')}`)
+    setCoExcused(false)
+    setCheckoutFor({ attendance_id: r.attendance_id, name, check_in: r.check_in })
+  }
+
+  async function submitManualCheckout() {
+    if (!orgId || !checkoutFor || !coTime) return
+    setSavingCo(true)
+    const j = await api.post('/api/attendance-manual-checkout', { org_id: orgId, attendance_id: checkoutFor.attendance_id, time: coTime, excused: coExcused })
+    setSavingCo(false)
+    if (!j.success) { toast(j.error || 'تعذر تسجيل الانصراف', 'error'); return }
+    toast(`تم تسجيل انصراف ${checkoutFor.name}`)
+    setCheckoutFor(null)
+    if (periodMode === 'day') load(orgId, date); else loadRange(orgId, rangeFrom, rangeTo)
+  }
+
+  // خانة الانصراف: الوقت + «مستأذن» + «سجّله المالك»، أو زر تسجيل الانصراف للمالك لو الموظف ما انصرف
+  function checkOutCell(r: any, name: string) {
+    const badge = (txt: string, c: { fg: string; bg: string; bd: string }) =>
+      <span style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: c.fg, background: c.bg, border: `1px solid ${c.bd}`, borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{txt}</span>
+    if (!r.check_out && r.check_in && r.attendance_id && isOwner) {
+      return (
+        <button onClick={() => openManualCheckout(r, name)} title="الموظف طلع بدون ما يسجّل انصرافه — سجّله عنه"
+          style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text2, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
+          تسجيل انصراف
+        </button>
+      )
+    }
+    return (
+      <>
+        {fmtTime(r.check_out)}
+        {r.is_excused && badge('مستأذن', { fg: '#b45309', bg: '#fffbeb', bd: '#fde68a' })}
+        {r.checkout_by_owner && badge('سجّله المالك', { fg: colors.text3, bg: colors.bg, bd: colors.border2 })}
+      </>
+    )
   }
 
   function penaltyCell(r: any) {
@@ -445,8 +489,7 @@ export default function AttendancePage() {
                               {fmtTime(r.check_in)}
                             </td>
                             <td style={{ padding: '11px 14px', color: colors.text2 }}>
-                              {fmtTime(r.check_out)}
-                              {r.is_excused && <span style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px' }}>مستأذن</span>}
+                              {checkOutCell(r, r.name)}
                             </td>
                             <td style={{ padding: '11px 14px', color: colors.text2, fontWeight: 600 }}>
                               {r.hours_worked !== null ? `${r.hours_worked} ساعة` : '—'}
@@ -529,8 +572,7 @@ export default function AttendancePage() {
                             </td>
                             <td style={{ padding: '10px 14px', color: colors.text2 }}>{fmtTime(d.check_in)}</td>
                             <td style={{ padding: '10px 14px', color: colors.text2 }}>
-                              {fmtTime(d.check_out)}
-                              {d.is_excused && <span style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px' }}>مستأذن</span>}
+                              {checkOutCell(d, rangeRows[0].name)}
                             </td>
                             <td style={{ padding: '10px 14px', color: colors.text2, fontWeight: 600 }}>{d.hours_worked !== null ? `${d.hours_worked} ساعة` : '—'}</td>
                             <td style={{ padding: '10px 14px', color: d.late_minutes ? colors.warning : colors.text4 }}>{d.late_minutes ? `${d.late_minutes} دقيقة` : '—'}</td>
@@ -800,6 +842,28 @@ export default function AttendancePage() {
         </div>
         )
       })()}
+
+      {checkoutFor && (
+        <div onClick={() => !savingCo && setCheckoutFor(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={e => e.stopPropagation()} role="dialog" aria-label="تسجيل انصراف" style={{ ...card, width: '100%', maxWidth: 380, padding: 20 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: colors.text }}>تسجيل انصراف {checkoutFor.name}</div>
+            <div style={{ fontSize: 12, color: colors.text3, marginTop: 6, lineHeight: 1.8 }}>
+              حضر الساعة {fmtTime(checkoutFor.check_in)} وطلع بدون ما يسجّل انصرافه. اختر وقت انصرافه، وينسجّل إنه من المالك.
+            </div>
+            <label style={{ fontSize: 11.5, fontWeight: 700, color: colors.text3, display: 'block', margin: '14px 0 6px' }}>وقت الانصراف</label>
+            <input type="time" value={coTime} onChange={e => setCoTime(e.target.value)} style={inp()} />
+            <div style={{ fontSize: 11, color: colors.text4, marginTop: 5 }}>لو الوقت قبل وقت حضوره، ينحسب على اليوم اللي بعده (الشفت الليلي).</div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: colors.text2, cursor: 'pointer', fontWeight: 600, marginTop: 12 }}>
+              <input type="checkbox" checked={coExcused} onChange={e => setCoExcused(e.target.checked)} style={{ width: 16, height: 16, accentColor: colors.primary }} />
+              مستأذن (انصراف مبكر بإذنك — بدون أوفر تايم)
+            </label>
+            <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+              <button onClick={submitManualCheckout} disabled={savingCo || !coTime} style={{ ...btnPrimary, flex: 2, padding: '10px 14px' }}>{savingCo ? 'جاري التسجيل...' : 'تسجيل الانصراف'}</button>
+              <button onClick={() => setCheckoutFor(null)} disabled={savingCo} style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text2, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
