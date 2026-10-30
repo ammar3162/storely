@@ -37,14 +37,17 @@ export async function sendAccountantReport(db: SupabaseClient, link: AccountantL
 
   if (link.channels.includes('email') && link.email) {
     try {
-      const { data: owner } = await db.from('profiles').select('email').eq('org_id', link.org_id).eq('role', 'owner').maybeSingle()
+      // إيميل المالك (للرد) من حسابه — جدول profiles ما فيه إيميل
+      const { data: ownerProfile } = await db.from('profiles').select('id').eq('org_id', link.org_id).eq('role', 'owner').limit(1).maybeSingle()
+      let ownerEmail: string | undefined
+      try { if (ownerProfile) ownerEmail = (await db.auth.admin.getUserById((ownerProfile as any).id)).data?.user?.email } catch { /* الرد اختياري — ما يوقف الإرسال */ }
       // لو المحاسب قبل دعوة البوابة: زر يدخله صفحته
       const { data: acc } = await db.from('accountant_access').select('status').eq('org_id', link.org_id).eq('email', link.email.toLowerCase()).maybeSingle()
       const { subject, html } = accountantEmail(report, { ...msg, portalUrl: (acc as any)?.status === 'active' ? `${siteUrl()}/accountant-portal` : undefined })
       const xlsx = await buildAccountantWorkbook(report, { watermark: `أُرسل إلى ${link.name}` })
       const r = await sendEmail({
         to: link.email, subject, html, fromName: `${report.orgName} عبر Storely`, fromAddress: 'reports@storely.dev',
-        replyTo: (owner as any)?.email || undefined,
+        replyTo: ownerEmail || undefined,
         attachments: [{ filename: fileName, content: xlsx }],
       })
       email_status = r.success ? 'sent' : 'failed'

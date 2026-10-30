@@ -40,9 +40,11 @@ export async function POST(req: NextRequest) {
     .limit(500)
 
   // جلب المشتريات آخر 90 يوم
+  // أسماء الأعمدة الصحيحة (supplier/name) — كانت supplier_name/items غير موجودة فيرجع الطلب فاضي بصمت
   const { data: purchases } = await sb.from('purchases')
-    .select('amount,created_at,supplier_name,items')
+    .select('amount,created_at,supplier,name')
     .eq('org_id', org_id)
+    .is('deleted_at', null)
     .gte('created_at', since90)
     .order('created_at', { ascending: false })
     .limit(100)
