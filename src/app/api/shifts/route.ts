@@ -2,6 +2,7 @@ import { managerMay } from '@/lib/managerPerms'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { withoutShift } from '@/lib/shiftSchedule'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -74,6 +75,12 @@ export async function DELETE(req: Request) {
 
     // فكّ ربط أي موظف بهذا الشفت قبل الحذف
     await supabase.from('staff_members').update({ shift_id: null } as any).eq('shift_id', id)
+    // ونشيله من شفتات الأيام والتواريخ (الأيام ترجع على الشفت الأساسي)
+    const { data: scheduled } = await supabase.from('staff_members').select('id,weekday_shifts,date_shifts').eq('org_id', (existing as any).org_id)
+    for (const st of (scheduled || []) as any[]) {
+      const next = withoutShift(st, id)
+      if (next) await supabase.from('staff_members').update(next as any).eq('id', st.id).eq('org_id', (existing as any).org_id)
+    }
     const { error } = await supabase.from('shifts').delete().eq('id', id)
     if (error) return NextResponse.json({ error: 'حدث خطأ أثناء الحذف' }, { status: 500 })
     return NextResponse.json({ success: true })

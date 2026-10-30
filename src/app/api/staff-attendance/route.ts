@@ -3,17 +3,17 @@ import { orgHasFeature, lockedMessage } from '@/lib/planFeatures'
 import { notifyStaffDeduction } from '@/lib/staffDeductionNotice'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
-import { attendanceState, lateMinutesAt, activeShift, canCheckOutAt, type AttEvent } from '@/lib/attendanceState'
+import { attendanceState, activeShift, canCheckOutAt, type AttEvent } from '@/lib/attendanceState'
+import { resolveShiftAt, scheduleShiftIds, lateMinutesFor, type ShiftSchedule } from '@/lib/shiftSchedule'
 import { overtimeMinutes, loadOvertimeSettings, type Shift } from '@/lib/payroll'
 import { applyLateRules } from '@/lib/latePenalty'
-import { workDateFor, offReason, isMonthlyExtraDay, type OffReason, type OffConfig } from '@/lib/daysOff'
+import { offReason, isMonthlyExtraDay, type OffReason, type OffConfig } from '@/lib/daysOff'
 
 // يوم إجازة؟ (أسبوعية من المالك أو إجازة معتمدة) — لتاريخ دوام الموظف الحالي
 type StaffOff = OffConfig & { id: string; monthly_off_days?: number | null }
 
 // يوم إجازة؟ ثابت (أسبوعي، إجازة معتمدة، يوم بديل) أو — لرصيد الشهر المرن — خلّص أيام دوامه المطلوبة
-async function dayOffFor(supabase: any, staff: StaffOff, org_id: string, shift: Shift): Promise<OffReason | null> {
-  const date = workDateFor(Date.now(), shift)
+async function dayOffFor(supabase: any, staff: StaffOff, org_id: string, date: string): Promise<OffReason | null> {
   const monthly = staff.days_off_mode === 'monthly'
   const [{ data: leaves }, { data: comp }] = await Promise.all([
     supabase.from('staff_leave_requests').select('start_date,end_date')
@@ -39,10 +39,15 @@ async function recentEvents(supabase: any, staff_id: string, org_id: string): Pr
   return (data || []) as AttEvent[]
 }
 
-async function staffShift(supabase: any, shift_id: string | null): Promise<Shift> {
-  if (!shift_id) return null
-  const { data } = await supabase.from('shifts').select('start_time,end_time,is_24h').eq('id', shift_id).maybeSingle()
-  return (data as Shift) || null
+// شفت الموظف الحين حسب جدوله (الأساسي + أيام الأسبوع + التواريخ المحددة) — lib/shiftSchedule
+const SCHEDULE_COLS = 'shift_id,weekday_shifts,date_shifts'
+async function staffShiftNow(supabase: any, staff: ShiftSchedule, org_id: string) {
+  const ids = scheduleShiftIds(staff)
+  const { data } = ids.length
+    ? await supabase.from('shifts').select('id,start_time,end_time,is_24h').eq('org_id', org_id).in('id', ids)
+    : { data: [] }
+  const byId = new Map<string, Shift>(((data || []) as any[]).map(r => [r.id, { start_time: r.start_time, end_time: r.end_time, is_24h: r.is_24h }]))
+  return resolveShiftAt(Date.now(), staff, id => byId.get(id) || null)
 }
 
 const sb = () => createClient(
@@ -86,14 +91,15 @@ export async function POST(req: Request) {
     }
 
     // تأكد الموظف فعلاً تابع لهذا الفرع/المنشأة
-    const { data: staff } = await supabase.from('staff_members').select('id,name,branch_id,shift_id,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates,monthly_salary').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
+    const { data: staff } = await supabase.from('staff_members').select(`id,name,branch_id,${SCHEDULE_COLS},weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates,monthly_salary`).eq('id', staff_id).eq('org_id', org_id).maybeSingle()
     if (!staff) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
     // موقع التحقق لازم يكون فرع الموظف نفسه (مو أي فرع يرسله الطلب)
     if ((staff as any).branch_id && (staff as any).branch_id !== branch_id) return NextResponse.json({ error: 'الفرع غير صحيح' }, { status: 403 })
 
     // نفس قاعدة الواجهة: ما فيه حضور مرتين، ولا انصراف بدون حضور، والحضور يرجع يفتح لدوام جديد بس
-    const currentShift = await staffShift(supabase, (staff as any).shift_id)
-    const state = attendanceState({ events: await recentEvents(supabase, staff_id, org_id), shift: currentShift })
+    const sched = await staffShiftNow(supabase, staff as any, org_id)
+    const currentShift = sched.shift
+    const state = attendanceState({ events: await recentEvents(supabase, staff_id, org_id), shift: currentShift, shiftStartMs: sched.dutyStartMs })
     if (type === 'check_in' && !state.canCheckIn) {
       return NextResponse.json({ error: state.checkedIn ? 'أنت مسجّل حضور بالفعل' : 'سجّلت انصرافك لهذا الدوام — الحضور يفتح مع بداية دوامك الجاي' }, { status: 409 })
     }
@@ -148,14 +154,14 @@ export async function POST(req: Request) {
     let penaltyAmount: number | null = null
 
     // يوم إجازة؟ الحضور فيه ينسجّل «دوام يوم إجازة» (يوم إضافي) بدون تأخير
-    const offKind = type === 'check_in' ? await dayOffFor(supabase, staff as any, org_id, currentShift) : null
+    const offKind = type === 'check_in' ? await dayOffFor(supabase, staff as any, org_id, sched.date) : null
     const onDayOff = !!offKind
 
     // حساب التأخير — بس عند تسجيل الحضور، على بداية الشفت الأقرب (يغطي الشفت الليلي)
     if (type === 'check_in' && !onDayOff && currentShift && !currentShift.is_24h && currentShift.start_time) {
       // وقت السماح + مبلغ لكل ساعة (إعداد المالك بصفحة الحضور)
       const { data: lateCfg } = await supabase.from('organizations').select('late_grace_minutes,late_penalty_per_hour').eq('id', org_id).single()
-      const r = applyLateRules(lateMinutesAt(Date.now(), currentShift), {
+      const r = applyLateRules(lateMinutesFor(Date.now(), sched.startMs), {
         graceMinutes: Number((lateCfg as any)?.late_grace_minutes || 0),
         perHour: (lateCfg as any)?.late_penalty_per_hour == null ? null : Number((lateCfg as any).late_penalty_per_hour),
       })
@@ -188,7 +194,7 @@ export async function POST(req: Request) {
 
     // دوام بيوم إجازة = يوم إضافي ينتظر قرار المالك (تعويض مالي / يوم بديل / رفض)
     if (type === 'check_in' && offKind && insRow) {
-      const workDate = workDateFor(Date.now(), currentShift)
+      const workDate = sched.date
       const { data: extra } = await supabase.from('staff_extra_days').insert({
         org_id, staff_id, attendance_id: (insRow as any).id, work_date: workDate, reason: offKind === 'monthly' ? 'monthly' : 'weekly',
       } as any).select('id').single()
@@ -249,9 +255,10 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: true, locked: true, today: [], shift: null })
     }
 
-    const { data: staffRow } = await supabase.from('staff_members').select('id,shift_id,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
-    const currentShift = await staffShift(supabase, (staffRow as any)?.shift_id || null)
-    const st = attendanceState({ events: await recentEvents(supabase, staff_id, org_id), shift: currentShift })
+    const { data: staffRow } = await supabase.from('staff_members').select(`id,${SCHEDULE_COLS},weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates`).eq('id', staff_id).eq('org_id', org_id).maybeSingle()
+    const sched = await staffShiftNow(supabase, (staffRow as any) || {}, org_id)
+    const currentShift = sched.shift
+    const st = attendanceState({ events: await recentEvents(supabase, staff_id, org_id), shift: currentShift, shiftStartMs: sched.dutyStartMs })
     // وهو حاضر: نعرض شفت دوامه الحالي (اللي حضر عليه) — الشفت الجديد يبدأ من دوامه الجاي
     const shift = st.checkedIn ? activeShift(st.sessionIn, currentShift) : currentShift
     // today = الدوام الحالي/الأخير بس (حضور + انصراف) — الواجهة تبني الأزرار على state
@@ -259,7 +266,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ success: true, today: data, shift,
       state: { checkedIn: st.checkedIn, canCheckIn: st.canCheckIn, canCheckOut: st.canCheckOut, shiftStart: st.shiftStartMs ? new Date(st.shiftStartMs).toISOString() : null,
-        dayOff: staffRow ? await dayOffFor(supabase, staffRow as any, org_id, currentShift) : null } })
+        dayOff: staffRow ? await dayOffFor(supabase, staffRow as any, org_id, sched.date) : null } })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
