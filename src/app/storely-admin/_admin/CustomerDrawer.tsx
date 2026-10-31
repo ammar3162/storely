@@ -93,6 +93,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
 
   async function changeCycle(cycle: 'monthly' | 'yearly') {
     if (cycle === c!.billing_cycle) return
+    if (!(await confirmDialog({ title: 'تغيير دورة الدفع', message: `تحويل "${c!.org_name}" إلى الدفع ${cycle === 'yearly' ? 'السنوي (بخصم 20%)' : 'الشهري'}؟ الفاتورة الجاية تنحسب على الدورة الجديدة.`, type: 'warning', confirmText: 'تأكيد' }))) return
     setBusy('cycle')
     const j = await adminFetch('/api/admin/update-plan', { method: 'POST', body: { orgId: c!.org_id, maxBranches: c!.max_branches, planName: c!.plan, orgName: c!.org_name, billingCycle: cycle } })
     setBusy(null)
@@ -117,6 +118,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
     const v = Number(disc.value)
     if (!remove && (!(v > 0) || (disc.type === 'percent' && v > 100))) { toast(disc.type === 'percent' ? 'النسبة بين 1 و 100' : 'اكتب مبلغ الخصم', 'error'); return }
     if (remove && !(await confirmDialog({ title: 'إلغاء الخصم', message: `إلغاء خصم "${c!.org_name}"؟ فاتورته الجاية ترجع بدون خصم.`, type: 'warning' }))) return
+    if (!remove && !(await confirmDialog({ title: 'حفظ الخصم', message: `خصم ${disc.type === 'percent' ? `${v}% من فاتورة` : `${v} ر.س شهرياً من فاتورة`} "${c!.org_name}"${disc.note ? ` (${disc.note})` : ''}${disc.until ? `\nلين ${fmtDate(disc.until)}` : '\nبدون تاريخ انتهاء'}؟`, type: 'success', confirmText: 'تأكيد' }))) return
     setBusy('discount')
     const body = remove ? { orgId: c!.org_id, orgName: c!.org_name, type: null } : { orgId: c!.org_id, orgName: c!.org_name, type: disc.type, value: v, note: disc.note, until: disc.until || null }
     const j = await adminFetch('/api/admin/org-discount', { method: 'POST', body })
@@ -141,11 +143,17 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
     const q = quantity || qty[a.id] || (a.subscription?.quantity || 1)
     if (on) {
       const wasActive = !!a.subscription?.isValid
-      const charged = wasActive ? Math.max(0, q - (a.subscription?.quantity || 1)) : q
+      const oldQty = wasActive ? (a.subscription?.quantity || 1) : 0
+      const charged = wasActive ? Math.max(0, q - oldQty) : q
       const end = addonPeriodEnd(c!.subscription_ends_at)
-      const pr = proratedCharge(unitPrice(a.monthly_price, wasActive ? a.subscription : null), charged, end)
-      if (!(await confirmDialog({ title: `${wasActive ? 'تحديث' : 'تفعيل'} "${a.name}"${q > 1 ? ` × ${q}` : ''}`, message:
-        `تنتهي مع الباقة بتاريخ ${fmtDate(end.toISOString())}.\n\nالمستحق الحين: ${pr.amount} ر.س (${pr.days} يوم)\nومن التجديد: ${q * (Number(a.monthly_price) || 0)} ر.س شهرياً` }))) return
+      const unit = unitPrice(a.monthly_price, wasActive ? a.subscription : null)
+      const pr = proratedCharge(unit, charged, end)
+      // تقليل الكمية: ما فيه مستحق، والزايدين عن الحد الجديد يتوقفون مؤقتاً
+      const lessNote = wasActive && q < oldQty
+        ? `\n\nالكمية تنقص من ${oldQty} إلى ${q}.${a.slug === 'extra_staff' ? ' لو موظفينه أكثر من الحد الجديد، يتوقف الأحدث مؤقتاً.' : a.slug === 'extra_branch' ? ' لو فروعه أكثر من الحد الجديد، يتوقف الأحدث مؤقتاً مع موظفينه.' : ''}`
+        : ''
+      if (!(await confirmDialog({ title: `${wasActive ? 'تغيير كمية' : 'تفعيل'} "${a.name}"${q > 1 ? ` × ${q}` : ''}`, type: lessNote ? 'warning' : 'success', confirmText: 'تأكيد', message:
+        `تنتهي مع الباقة بتاريخ ${fmtDate(end.toISOString())}.\n\nالمستحق الحين: ${pr.amount} ر.س (${pr.days} يوم)\nومن التجديد: ${q * unit} ر.س شهرياً${lessNote}` }))) return
     } else if (!(await confirmDialog({ title: `إلغاء "${a.name}"`, message: 'تتوقف الإضافة فوراً، وأي فروع أو موظفين زايدين عن الحد يتوقفون مؤقتاً.' }))) return
     setBusy('addon:' + a.id)
     const j = await adminFetch('/api/admin/addon-subscriptions', { method: on ? 'POST' : 'DELETE', body: { org_id: c!.org_id, addon_id: a.id, org_name: c!.org_name, addon_name: a.name, quantity: q } })
@@ -278,7 +286,8 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
                 const on = !!a.subscription?.isValid
                 const isQty = QTY_SLUGS.includes(a.slug)
                 const q = qty[a.id] || (on ? a.subscription?.quantity || 1 : 1)
-                const canEditQty = isQty && (!on || a.slug === 'extra_branch')
+                const canEditQty = isQty
+                const curQty = on ? (a.subscription?.quantity || 1) : 0
                 return (
                   <div key={a.id} style={{ padding: '10px 12px', borderRadius: 10, border: `1px solid ${on ? A.primary + '55' : A.border}`, background: on ? A.primarySoft : A.surface }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -293,7 +302,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
                         onChange={e => setQty(p => ({ ...p, [a.id]: Math.max(1, Math.min(20, Number(e.target.value) || 1)) }))}
                         style={{ ...inputStyle, width: 58, padding: '6px', textAlign: 'center' }} />
                     )}
-                    {on && a.slug === 'extra_branch' && <Btn small disabled={!!busy} onClick={() => setAddon(a, true, q)}>تحديث</Btn>}
+                    {on && isQty && q !== curQty && <Btn small kind="primary" disabled={!!busy} onClick={() => setAddon(a, true, q)}>حفظ الكمية</Btn>}
                     <Btn small kind={on ? 'danger' : 'primary'} loading={busy === 'addon:' + a.id} disabled={!!busy && busy !== 'addon:' + a.id} onClick={() => setAddon(a, !on, q)}>
                       {on ? 'إلغاء' : 'تفعيل'}
                     </Btn>
