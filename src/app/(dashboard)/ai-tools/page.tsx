@@ -14,6 +14,7 @@ import { subUnitOptions, hasKnownConversion, formatQty } from '@/lib/recipeUnits
 import { ClipboardList, Pencil, Trash2, AlertTriangle, Wallet, Info } from 'lucide-react'
 import { riyal } from '@/lib/aiPhrases'
 import SmartOrder from '@/components/SmartOrder'
+import TodayDecisions from '@/components/TodayDecisions'
 // نافذة الوصفة تنحمّل بس لما تنفتح
 const RecipeCreateModal = lazy(() => import('@/components/RecipeCreateModal'))
 
@@ -37,7 +38,7 @@ const TOOLS = [
     minPlan:'basic',
   },
   {
-    href:'/purchase-suggestion',
+    href:'#smart-order',
     icon:'🛒',
     title:'اقتراح الشراء الذكي',
     desc:'يحسب الكمية المثلى لكل صنف بناءً على معدل الصرف الفعلي ويرسلها للمورد عبر واتساب',
@@ -171,6 +172,9 @@ export default function AIToolsPage() {
         </div>
       </div>
 
+      {/* قرارات اليوم — أعلى الصفحة (بعد ما نعرف صلاحية الذكاء عشان أدوات الهدر) */}
+      {aiKnown && <TodayDecisions full={plan!=='basic'||!!hasAiAddon} curr={curr} />}
+
       {/* التحليل الذكي الشامل */}
       <div className="fu" style={{marginBottom:20,background:'linear-gradient(135deg,#042f2e,#0C213B)',borderRadius:18,padding:22}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:insights||insightsError?16:0,flexWrap:'wrap' as const,gap:10}}>
@@ -263,7 +267,7 @@ export default function AIToolsPage() {
       <div style={{display:'flex',flexDirection:'column',gap:12}}>
         {TOOLS.map((tool,i)=>(
           <div key={i} className="fu" style={{animationDelay:`${i*.08}s`}}>
-            <button onClick={()=>planAllows(plan,tool.minPlan,!!hasAiAddon)?router.push(tool.href):router.push('/settings')}
+            <button onClick={()=>planAllows(plan,tool.minPlan,!!hasAiAddon)?(tool.href.startsWith('#')?document.getElementById(tool.href.slice(1))?.scrollIntoView({behavior:'smooth',block:'start'}):router.push(tool.href)):router.push('/settings')}
               style={{width:'100%',background:'white',border:`1.5px solid ${tool.border}`,borderRadius:16,padding:'20px',cursor:'pointer',fontFamily:'inherit',textAlign:'right',transition:'all .2s',boxShadow:`0 2px 8px ${tool.color}10`,opacity:planAllows(plan,tool.minPlan,!!hasAiAddon)?1:.6,position:'relative'}}
               onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow=`0 8px 24px ${tool.color}20`}}
               onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='none';(e.currentTarget as HTMLElement).style.boxShadow=`0 2px 8px ${tool.color}10`}}>
@@ -299,7 +303,7 @@ export default function AIToolsPage() {
       {(plan!=='basic'||hasAiAddon) && (
         <>
       {/* الطلب الذكي: توقع النفاد + توقيت الطلب + الكميات + حد إعادة الطلب (lib/smartOrder) */}
-      <SmartOrder />
+      <div id="smart-order"><SmartOrder /></div>
 
       {/* تحليل الموسمية */}
       <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
@@ -437,7 +441,7 @@ export default function AIToolsPage() {
       {/* أدوات الهدر — الباقة المتوسطة أو المتقدمة */}
       {(plan!=='basic'||hasAiAddon) && (
       <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
-        <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:10}}>وين تخسر فلوس؟</div>
+        <div id="waste" style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:10,scrollMarginTop:80}}>وين تخسر فلوس؟</div>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <span style={{fontSize:18}}>🐌</span>

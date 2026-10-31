@@ -33,7 +33,7 @@ export async function POST(req: Request) {
       movMap[name].qtys.push(Math.abs(m.qty_change))
     }
 
-    const todayDay = new Date().getDay()
+    const todayDay = new Date(Date.now() + 3 * 3600e3).getUTCDay()   // اليوم بتوقيت السعودية
     const dayNames = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت']
     const alpha = 0.3
 
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
       // معامل كل يوم من الأسبوع
       const dayFactors: Record<number,{total:number,count:number}> = {}
       data.dates.forEach((d,i)=>{
-        const day = d.getDay()
+        const day = new Date(d.getTime() + 3 * 3600e3).getUTCDay()
         if(!dayFactors[day]) dayFactors[day] = {total:0,count:0}
         dayFactors[day].total += data.qtys[i]
         dayFactors[day].count++

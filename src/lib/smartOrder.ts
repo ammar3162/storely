@@ -5,6 +5,7 @@ export type SmartOrderRow = {
   name: string
   unit: string
   productId: string | null
+  supplierId: string | null        // مورد الصنف (null = غير مربوط بمورد)
   currentQty: number | null
   dailyRate: number
   daysLeft: number | null          // متى يخلص (null = ما يخلص قريب / ما فيه صرف)
@@ -23,7 +24,7 @@ export function mergeSmartOrder(input: { forecast?: Any[]; timing?: Any[]; buy?:
   const by = new Map<string, SmartOrderRow>()
   const row = (x: Any): SmartOrderRow => {
     const key = String(x.name || '')
-    if (!by.has(key)) by.set(key, { name: key, unit: x.unit || '', productId: x.id || null, currentQty: num(x.currentQty), dailyRate: 0,
+    if (!by.has(key)) by.set(key, { name: key, unit: x.unit || '', productId: x.id || null, supplierId: null, currentQty: num(x.currentQty), dailyRate: 0,
       daysLeft: null, suggestedQty: null, weeklyNeed: null, orderInDays: null, leadDays: null, reorder: null, urgent: false })
     const r = by.get(key)!
     if (!r.productId && x.id) r.productId = x.id
@@ -33,7 +34,7 @@ export function mergeSmartOrder(input: { forecast?: Any[]; timing?: Any[]; buy?:
   }
   for (const f of input.forecast || []) { if (!f?.name) continue; const r = row(f); r.daysLeft = num(f.daysLeft) }
   for (const t of input.timing || []) { if (!t?.name) continue; const r = row(t); r.orderInDays = num(t.suggestedOrderInDays); r.leadDays = num(t.avgLeadTimeDays) }
-  for (const b of input.buy || []) { if (!b?.name) continue; const r = row(b); r.suggestedQty = num(b.suggestedQty); r.weeklyNeed = num(b.weeklyNeed); if (b.urgency === 'urgent') r.urgent = true }
+  for (const b of input.buy || []) { if (!b?.name) continue; const r = row(b); r.suggestedQty = num(b.suggestedQty); r.weeklyNeed = num(b.weeklyNeed); if (b.supplierId) r.supplierId = b.supplierId; if (b.urgency === 'urgent') r.urgent = true }
   for (const o of input.reorder || []) {
     if (!o?.name) continue
     const r = row(o), cur = num(o.currentReorderPoint), sug = num(o.suggestedReorderPoint)

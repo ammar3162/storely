@@ -134,6 +134,7 @@ export async function POST(req: Request) {
       noHistory: i.noHistory,
       method: i.method,
       growthPct: i.growthPct,
+      supplierId: i.supplier_id || null,
     }))
 
     if (items.length === 0) {

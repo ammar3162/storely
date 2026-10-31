@@ -27,10 +27,11 @@ export async function POST(req: Request) {
     const weekMap: Record<string,{total:number,count:number}> = {}
 
     for(const m of (movements||[])) {
-      const d = new Date(m.created_at)
-      const day = d.getDay() // 0=أحد ... 6=سبت
-      const hour = d.getHours()
-      const week = `${d.getFullYear()}-W${Math.ceil(d.getDate()/7)}`
+      // بتوقيت السعودية (السيرفر UTC — كانت الذروة تطلع متأخرة 3 ساعات: 8:00 بدال 11:00)
+      const d = new Date(Date.parse(m.created_at) + 3 * 3600e3)
+      const day = d.getUTCDay() // 0=أحد ... 6=سبت
+      const hour = d.getUTCHours()
+      const week = `${d.getUTCFullYear()}-W${Math.ceil(d.getUTCDate()/7)}`
 
       if(!dayMap[day]) dayMap[day] = {total:0,count:0}
       dayMap[day].total += Math.abs(m.qty_change)
