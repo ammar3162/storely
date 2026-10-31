@@ -11,6 +11,7 @@ import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { subUnitOptions, hasKnownConversion, formatQty } from '@/lib/recipeUnits'
 import { ClipboardList, Pencil, Trash2, AlertTriangle, Wallet, Info } from 'lucide-react'
+import { runOutText, orderWhenText, usageReason, leadReason, riyal } from '@/lib/aiPhrases'
 // نافذة الوصفة تنحمّل بس لما تنفتح
 const RecipeCreateModal = lazy(() => import('@/components/RecipeCreateModal'))
 
@@ -378,11 +379,12 @@ export default function AIToolsPage() {
                   </div>
                   <div style={{background:p.status==='critical'?'#fee2e2':p.status==='warning'?'#fef3c7':'#f0fdfa',borderRadius:6,padding:'6px'}}>
                     <div style={{fontSize:13,fontWeight:900,color:p.status==='critical'?'#dc2626':p.status==='warning'?'#d97706':'#029FA2'}}>
-                      {p.daysLeft===null?'∞':p.daysLeft+' يوم'}
+                      {runOutText(p.daysLeft)}
                     </div>
                     <div style={{fontSize:9,color:C.text4}}>وقت النفاد</div>
                   </div>
                 </div>
+                <div style={{fontSize:11,color:C.text3,marginTop:8}}>{usageReason(p.dailyRate,p.unit,p.currentQty)}</div>
               </div>
             ))}
           </div>
@@ -424,7 +426,7 @@ export default function AIToolsPage() {
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
                     <div style={{fontSize:13,fontWeight:800,color:C.text}}>{s.name}</div>
                     <span style={{fontSize:11,fontWeight:700,padding:'2px 10px',borderRadius:99,background:s.urgency==='now'?'#fee2e2':'#fde68a',color:s.urgency==='now'?'#dc2626':'#b45309'}}>
-                      {s.urgency==='now'?'⚠️ اطلب الآن':`اطلب خلال ${Math.max(s.suggestedOrderInDays,0)} يوم`}
+                      {orderWhenText(s.suggestedOrderInDays)}
                     </span>
                   </div>
                   <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,textAlign:'center' as const}}>
@@ -441,6 +443,7 @@ export default function AIToolsPage() {
                       <div style={{fontSize:9,color:C.text4}}>مدة التوريد المعتادة</div>
                     </div>
                   </div>
+                  <div style={{fontSize:11,color:C.text3,marginTop:8}}>{leadReason(s.dailyRate,s.unit,s.avgLeadTimeDays)}</div>
                 </div>
               ))}
             </div>
@@ -489,7 +492,7 @@ export default function AIToolsPage() {
                       </span>
                     )}
                   </div>
-                  <div style={{fontSize:10,color:C.text4}}>نقطة الطلب: {p.reorderPoint} {p.unit}</div>
+                  <div style={{fontSize:10,color:C.text4}}>نقطة الطلب: {p.reorderPoint} {p.unit}{p.weeklyNeed>0?` · تحتاج تقريباً ${p.weeklyNeed} ${p.unit} بالأسبوع`:''}</div>
                 </div>
                 <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:C.text}}>{p.currentQty} {p.unit}</div>
                 <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'#7c3aed'}}>{p.dailyRate}</div>
@@ -614,7 +617,7 @@ export default function AIToolsPage() {
                         <span style={{fontSize:14,fontWeight:800,color:C.text}}>{b.name}</span>
                       </div>
                       <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:99,background:i===0?'#029FA2':'#e2e8f0',color:i===0?'white':C.text3}}>
-                        كفاءة {b.efficiency}%
+                        {b.ops} عملية صرف
                       </span>
                     </div>
                     <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,textAlign:'center'}}>
@@ -906,7 +909,7 @@ export default function AIToolsPage() {
                   </div>
                 </div>
                 <div style={{marginTop:8,display:'flex',justifyContent:'space-between',fontSize:11,color:'#9ca3af'}}>
-                  <span>الهدر: {p.wasteQty} {p.unit}</span>
+                  <span>الهدر: {p.wasteQty} {p.unit}{riyal(p.estimatedValue,curr)?` · قيمته ${riyal(p.estimatedValue,curr)}`:''}</span>
                   <span>الفعلي: {p.endStock} {p.unit}</span>
                   <span style={{fontWeight:700,color:p.risk==='high'?'#dc2626':'#d97706'}}>نسبة الاستخدام: {p.usageRatio}%</span>
                 </div>
