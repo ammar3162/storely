@@ -77,12 +77,8 @@ export default function AttendancePage() {
     setOrgId(oid)
     setOrgName(orgName)
     setIsOwner(me.role === 'owner')
-    if (orgPlan === 'basic') {
-      // عميل الأساسية ممكن يكون اشترى إضافة "إدارة الموظفين الكاملة" من المتجر
-      const addonRes = await api.get('/api/addons-market', { org_id: oid })
-      const hrAddon = (addonRes?.addons||[]).find((a:any)=>a.slug==='hr_full')
-      if (!hrAddon?.subscription?.isValid) setLocked(true)  // ما نوقف التحميل -- نخلي المالك يشوف سجلاته القديمة، السيرفر أصلاً يرفض أي تسجيل جديد بدون اشتراك
-    }
+    // نفس قرار الخادم (/api/me features): الباقة، أو إضافة «إدارة الموظفين»، أو التجربة المجانية
+    if (orgPlan === 'basic' && !me.org?.features?.hr) setLocked(true)  // ما نوقف التحميل -- نخلي المالك يشوف سجلاته القديمة، السيرفر أصلاً يرفض أي تسجيل جديد بدون اشتراك
     const bid = sessionStorage.getItem('s_branch_id')
     setBranchId(bid)
     load(oid, date)

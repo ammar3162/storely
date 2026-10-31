@@ -1,4 +1,4 @@
-// مصدر واحد يحدد الميزات المتاحة للمنشأة: الباقة + الإضافات السارية.
+// مصدر واحد يحدد الميزات المتاحة للمنشأة: الباقة + الإضافات السارية (والتجربة المجانية: كل المميزات مفتوحة، والعدد حسب باقتها).
 // الشاملة (pro) والمتقدمة فيها كل الميزات، والأساسية تفتح كل ميزة بإضافتها من المتجر.
 // أي مكان يقفل/يفتح ميزة (API أو صفحة) لازم يمر من هنا — عشان ما يصير الكاشير مفتوح بصفحة ومقفل بصفحة.
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -22,9 +22,9 @@ export const FEATURE_LABEL: Record<Feature, string> = {
   profitability: 'الربحية',
 }
 
-/** يحسب الميزات من الباقة وقائمة الإضافات السارية (slugs) */
-export function featuresFrom(plan: string | null | undefined, activeAddons: string[]): Features {
-  const full = FULL_PLANS.includes(plan || 'basic')
+/** يحسب الميزات من الباقة وقائمة الإضافات السارية (slugs) — trial = تجربة مجانية سارية: كل الميزات */
+export function featuresFrom(plan: string | null | undefined, activeAddons: string[], trial = false): Features {
+  const full = trial || FULL_PLANS.includes(plan || 'basic')
   const out = {} as Features
   for (const f of Object.keys(FEATURE_ADDONS) as Feature[]) out[f] = full || FEATURE_ADDONS[f].some(slug => activeAddons.includes(slug))
   return out
@@ -49,7 +49,14 @@ export async function orgFeatures(db: SupabaseClient, orgId: string, plan?: stri
   }
   // الباقة الكاملة ما تحتاج تقرأ الإضافات
   if (FULL_PLANS.includes(p || 'basic')) return featuresFrom(p, [])
+  if (await orgOnTrial(db, orgId)) return featuresFrom(p, [], true)
   return featuresFrom(p, await activeAddonSlugs(db, orgId))
+}
+
+/** المنشأة بتجربتها المجانية الحين (حساب المالك trial وما انتهت) */
+export async function orgOnTrial(db: SupabaseClient, orgId: string): Promise<boolean> {
+  const { data } = await db.from('profiles').select('subscription_type,subscription_ends_at').eq('org_id', orgId).eq('role', 'owner').maybeSingle()
+  return (data as any)?.subscription_type === 'trial' && !!(data as any)?.subscription_ends_at && new Date((data as any).subscription_ends_at).getTime() > Date.now()
 }
 
 export async function orgHasFeature(db: SupabaseClient, orgId: string, f: Feature, plan?: string | null) {

@@ -131,6 +131,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }, [unread])
   const [branches, setBranches]     = useState<any[]>([])
   const [orgPlan, setOrgPlan]       = useState<string>('basic')
+  // الميزات من الخادم (/api/me): الباقة + الإضافات + التجربة المجانية
+  const [orgFeat, setOrgFeat]       = useState<{ hr?: boolean; profitability?: boolean }>({})
   // الإضافات المفعّلة (الحضور، الربحية، الذكاء، الفروع الإضافية) — تتحدث لحالها لما تتغير (useLiveRefresh تحت)
   const loadAddons = useCallback((oid: string) => {
     fetch(`/api/addons-market?org_id=${oid}`).then(r=>r.json()).then(j=>{
@@ -149,7 +151,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   useLiveRefresh(typeof window!=='undefined' ? sessionStorage.getItem('s_org_id') : null, ['org_addon_subscriptions','plan_requests'], () => {
     const oid = sessionStorage.getItem('s_org_id'); if (!oid) return
     loadAddons(oid)
-    refreshMe().then(me => { if (me?.org?.plan) setOrgPlan(me.org.plan) }).catch(()=>{})
+    refreshMe().then(me => { if (me?.org?.plan) setOrgPlan(me.org.plan); if (me?.org?.features) setOrgFeat(me.org.features) }).catch(()=>{})
   })
   const [orgMaxBranches, setOrgMaxBranches] = useState<number>(1)
   const [userRole, setUserRole]     = useState<string>('owner')
@@ -256,6 +258,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     const orgData=me.org
     const orgPlan=(orgData as any)?.plan||'basic'
     setOrgPlan(orgPlan)
+    setOrgFeat((orgData as any)?.features || {})
     setOrgMaxBranches((orgData as any)?.max_branches||1)
     sessionStorage.setItem('s_plan',orgPlan)
     sessionStorage.setItem('s_country_code',(orgData as any)?.country_code||'+966')
@@ -457,8 +460,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     if(href==='/addons-market' && inApp) return false
     const branchPages=['/branches','/branch-compare','/branch-managers','/transfer-stock']
     if(branchPages.includes(href) && orgPlan==='basic' && !hasExtraBranchAddon && orgMaxBranches<=1) return false
-    if((href==='/attendance'||href==='/hr-management') && orgPlan==='basic' && !hasHrAddon) return false
-    if(href==='/profitability' && orgPlan==='basic' && !hasProfitAddon) return false
+    if((href==='/attendance'||href==='/hr-management') && orgPlan==='basic' && !hasHrAddon && !orgFeat.hr) return false
+    if(href==='/profitability' && orgPlan==='basic' && !hasProfitAddon && !orgFeat.profitability) return false
     if(['/branch-compare','/branch-managers','/transfer-stock'].includes(href) && branches.length<=1) return false
     return navVisible(href)
   }

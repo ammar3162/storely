@@ -11,4 +11,7 @@ describe('plan features', () => {
     expect(featuresFrom('basic', ['hr_full', 'ai_tools'])).toMatchObject({ hr: true, ai: true, cashier: false })
     expect(featuresFrom(null, ['profitability']).profitability).toBe(true)
   })
+  it('a running free trial opens every feature, whatever the plan', () => {
+    expect(featuresFrom('basic', [], true)).toEqual({ cashier: true, hr: true, ai: true, profitability: true })
+  })
 })
