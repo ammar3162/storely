@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
     let wasteQ = (db as any).from('stock_movements')
-      .select('qty_change,waste_reason,created_at,products!inner(id,name,unit,org_id,branch_id)')
+      .select('qty_change,waste_reason,created_at,products!inner(id,name,unit,org_id,branch_id,avg_cost)')
       .eq('products.org_id', org_id)
       .eq('type', 'waste')
       .gte('created_at', since30)
@@ -45,11 +45,11 @@ export async function POST(req: Request) {
       priceMap[name].qty += qty
     }
 
-    const byProduct: Record<string, { name: string; unit: string; totalQty: number; reasons: Record<string, number> }> = {}
+    const byProduct: Record<string, { name: string; unit: string; totalQty: number; reasons: Record<string, number>; avgCost: number }> = {}
     for (const m of (wasteMoves || [])) {
       const p = (m as any).products
       if (!p) continue
-      if (!byProduct[p.name]) byProduct[p.name] = { name: p.name, unit: p.unit || '', totalQty: 0, reasons: {} }
+      if (!byProduct[p.name]) byProduct[p.name] = { name: p.name, unit: p.unit || '', totalQty: 0, reasons: {}, avgCost: Number(p.avg_cost) || 0 }
       const qty = Math.abs((m as any).qty_change)
       byProduct[p.name].totalQty += qty
       const reason = (m as any).waste_reason || 'غير محدد'
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     const report = Object.values(byProduct).map(item => {
       const avgUnitPrice = priceMap[item.name] && priceMap[item.name].qty > 0
         ? priceMap[item.name].total / priceMap[item.name].qty
-        : null
+        : item.avgCost > 0 ? item.avgCost : null   // بدون فواتير بنفس الاسم: متوسط تكلفة الصنف
       const estimatedCost = avgUnitPrice !== null ? Math.round(avgUnitPrice * item.totalQty) : null
       const topReason = Object.entries(item.reasons).sort((a, b) => b[1] - a[1])[0]
       return {

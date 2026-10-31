@@ -10,6 +10,7 @@ import { toast } from '@/components/toast'
 import { cache } from '@/lib/cache'
 import { exportReportPdf } from '@/lib/pdfExport'
 import { confirmDialog } from '@/components/ConfirmDialog'
+import { changePctVisible } from '@/lib/aiPhrases'
 
 const ARABIC_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
 
@@ -317,7 +318,8 @@ export default function ProfitabilityPage() {
             {label:'تكلفة الرواتب',value:data.salaryExpenseTotal||0,prev:prevData?.salaryExpenseTotal},
             ...(showVat?[{label:'الضريبة (تقديري)',value:vatAmount,prev:prevData?(prevData.totalIn-(prevData.totalIn/1.15)):undefined}]:[]),
           ].map((s,i)=>{
-            const change = (prevData && s.prev!==undefined) ? pctChange(s.value, s.prev) : null
+            // النسبة تنعرض بس لو المقارنة منطقية (مثلاً ▲1281% لما الشهر السابق شبه فاضي تضلل)
+            const change = (prevData && s.prev!==undefined && changePctVisible(s.value, s.prev)) ? pctChange(s.value, s.prev) : null
             return (
               <div key={i} style={{...card,padding:14}}>
                 <div style={{fontSize:11,color:colors.text3,marginBottom:6}}>{s.label}</div>

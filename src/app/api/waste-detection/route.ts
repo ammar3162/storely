@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       .gte('created_at', since30)
     if (branch_id) movQ4 = movQ4.eq('products.branch_id', branch_id)
     let prodQ4 = db.from('products')
-      .select('id,name,qty,unit,reorder_point')
+      .select('id,name,qty,unit,reorder_point,avg_cost')
       .eq('org_id', org_id)
       .eq('is_active', true)
     if (branch_id) prodQ4 = prodQ4.eq('branch_id', branch_id)
@@ -29,9 +29,9 @@ export async function POST(req: Request) {
       prodQ4,
     ])
 
-    const currentStock: Record<string,{qty:number,unit:string}> = {}
+    const currentStock: Record<string,{qty:number,unit:string,cost:number}> = {}
     for(const p of (products||[])) {
-      currentStock[p.name] = {qty:p.qty, unit:p.unit}
+      currentStock[p.name] = {qty:p.qty, unit:p.unit, cost:Number((p as any).avg_cost)||0}
     }
 
     const movMap: Record<string,{name:string,unit:string,added:number,dispensed:number}> = {}
@@ -67,7 +67,9 @@ export async function POST(req: Request) {
         return {
           name, unit, startStock, added, dispensed, endStock,
           usageRatio, wasteType, risk,
-          wasteQty: added - dispensed
+          wasteQty: added - dispensed,
+          // قيمة الكمية الراكدة بالريال (متوسط تكلفة الصنف) — null لو التكلفة مو معروفة
+          estimatedValue: (currentStock[name]?.cost || 0) > 0 ? Math.round((added - dispensed) * currentStock[name].cost) : null,
         }
       })
       .filter(p => p.wasteType !== '' && p.added > 2)
