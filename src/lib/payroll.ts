@@ -161,7 +161,8 @@ export async function computeStaffPayroll(db: SupabaseClient, staff: any, month:
   return {
     month,
     basic, allowances, grossSalary,
-    workedDays, endedOn: until && workedDays < lastDay ? until : null,
+    // آخر يوم للموظف لو ترك خلال هالشهر — حتى لو كان آخر يوم بالشهر (الراتب كامل بس المحاسب لازم يعرف إنه ترك)
+    workedDays, endedOn: until && until >= `${month}-01` && until <= `${month}-${String(lastDay).padStart(2, '0')}` ? until : null,
     overtime: { minutes: overtimeMinutesTotal, pay: overtimePay, hourRate: rate, mode: settings.mode, days: overtimeDays },
     bonuses,
     bonusesTotal,
