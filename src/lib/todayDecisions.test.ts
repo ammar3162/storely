@@ -5,7 +5,7 @@ import { buildDecisions } from './todayDecisions'
 const base = {
   forecast: [{ name: 'دجاج', unit: 'كيس', currentQty: 4, dailyRate: 3, daysLeft: 1, status: 'critical' }, { name: 'باستا', unit: 'كرتون', currentQty: 4, dailyRate: 0.5, daysLeft: 6 }],
   timing: [{ id: 'p', name: 'باستا', unit: 'كرتون', currentQty: 4, avgLeadTimeDays: 3, suggestedOrderInDays: -5, urgency: 'now' }],
-  buy: [{ name: 'دجاج', unit: 'كيس', currentQty: 4, weeklyNeed: 22, suggestedQty: 54, urgency: 'urgent' }],
+  buy: [{ name: 'دجاج', unit: 'كيس', currentQty: 4, weeklyNeed: 22, suggestedQty: 54, urgency: 'urgent', supplierId: 'sup-1' }],
   season: { byDay: [{ day: 'السبت', total: 528 }, { day: 'الخميس', total: 408 }, { day: 'الجمعة', total: 383 }, { day: 'الأحد', total: 300 }], peakHour: { hour: 11 } },
   waste: { report: [{ name: 'دجاج', totalQty: 5, estimatedCost: 300, topReason: 'منتهي الصلاحية' }, { name: 'خبز', totalQty: 3, estimatedCost: 120 }], totalEstimatedCost: 420, totalWasteEntries: 7 },
   dead: [{ name: 'فلاتر كافاك 02', unit: 'وحدة', dispensed: 0, wasteQty: 10, estimatedValue: 450 }],
@@ -17,7 +17,8 @@ describe('buildDecisions', () => {
     const d = buildDecisions({ ...base, todayDow: 5 })   // الجمعة → بكرة السبت الذروة
     expect(d.map(x => x.level)).toEqual(['urgent', 'urgent', 'warn', 'warn', 'info'])
     expect(d[0].title).toBe('باستا: طلبه متأخر 5 أيام')
-    expect(d[1]).toMatchObject({ title: 'اطلب دجاج اليوم', detail: 'يخلص بكرة · باقي 4 كيس · تحتاج 54 كيس', action: { href: '/purchase-suggestion' } })
+    expect(d[1]).toMatchObject({ title: 'اطلب دجاج اليوم', detail: 'يخلص بكرة · باقي 4 كيس · تحتاج 54 كيس', action: { label: 'أرسل للمورد', href: '/suppliers?sid=sup-1' } })
+    expect(d[0].action).toEqual({ label: 'اربط بمورد', href: '/suppliers' })   // باستا بدون مورد
     expect(d[2]).toMatchObject({ title: 'خسرت 420 ريال هدر آخر 30 يوم', detail: 'أغلبه دجاج (منتهي الصلاحية) — قلّل كمية طلبه أو راجع التخزين' })
     expect(d[3]).toMatchObject({ title: 'بكرة (السبت) أكثر يوم زحمة عندك', detail: 'جهّز مخزونك من اليوم قبل 11 الصباح' })
     expect(d[4].title).toBe('فلاتر كافاك 02 ما انصرف منه شي من شهر')

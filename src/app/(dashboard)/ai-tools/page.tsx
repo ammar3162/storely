@@ -38,7 +38,7 @@ const TOOLS = [
     minPlan:'basic',
   },
   {
-    href:'/purchase-suggestion',
+    href:'#smart-order',
     icon:'🛒',
     title:'اقتراح الشراء الذكي',
     desc:'يحسب الكمية المثلى لكل صنف بناءً على معدل الصرف الفعلي ويرسلها للمورد عبر واتساب',
@@ -267,7 +267,7 @@ export default function AIToolsPage() {
       <div style={{display:'flex',flexDirection:'column',gap:12}}>
         {TOOLS.map((tool,i)=>(
           <div key={i} className="fu" style={{animationDelay:`${i*.08}s`}}>
-            <button onClick={()=>planAllows(plan,tool.minPlan,!!hasAiAddon)?router.push(tool.href):router.push('/settings')}
+            <button onClick={()=>planAllows(plan,tool.minPlan,!!hasAiAddon)?(tool.href.startsWith('#')?document.getElementById(tool.href.slice(1))?.scrollIntoView({behavior:'smooth',block:'start'}):router.push(tool.href)):router.push('/settings')}
               style={{width:'100%',background:'white',border:`1.5px solid ${tool.border}`,borderRadius:16,padding:'20px',cursor:'pointer',fontFamily:'inherit',textAlign:'right',transition:'all .2s',boxShadow:`0 2px 8px ${tool.color}10`,opacity:planAllows(plan,tool.minPlan,!!hasAiAddon)?1:.6,position:'relative'}}
               onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow=`0 8px 24px ${tool.color}20`}}
               onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='none';(e.currentTarget as HTMLElement).style.boxShadow=`0 2px 8px ${tool.color}10`}}>
@@ -303,7 +303,7 @@ export default function AIToolsPage() {
       {(plan!=='basic'||hasAiAddon) && (
         <>
       {/* الطلب الذكي: توقع النفاد + توقيت الطلب + الكميات + حد إعادة الطلب (lib/smartOrder) */}
-      <SmartOrder />
+      <div id="smart-order"><SmartOrder /></div>
 
       {/* تحليل الموسمية */}
       <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>

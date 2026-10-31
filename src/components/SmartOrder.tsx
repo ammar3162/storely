@@ -98,7 +98,7 @@ export default function SmartOrder() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginTop: 4, flexWrap: 'wrap' as const }}>
             <span style={{ fontSize: 11, color: C.text4 }}>{data.safeCount > 0 ? `و${data.safeCount === 1 ? ' صنف واحد' : data.safeCount === 2 ? ' صنفين' : ` ${data.safeCount} أصناف`} وضعها آمن` : ''}</span>
             {data.rows.some(r => (r.suggestedQty ?? 0) > 0) && (
-              <button onClick={() => router.push('/purchase-suggestion')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: `1px solid ${C.primary}`, background: C.surface, color: C.primary, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
+              <button onClick={() => router.push('/suppliers')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: `1px solid ${C.primary}`, background: C.surface, color: C.primary, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
                 <Send size={14} /> أرسل الطلب للموردين
               </button>
             )}

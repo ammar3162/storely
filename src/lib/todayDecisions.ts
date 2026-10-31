@@ -33,7 +33,9 @@ export function buildDecisions(input: {
     const parts = [runOutText(r.daysLeft)]
     if (r.currentQty != null) parts.push(`باقي ${r.currentQty} ${r.unit}`)
     if (r.suggestedQty) parts.push(`تحتاج ${r.suggestedQty} ${r.unit}`)
-    out.push({ level: 'urgent', title, detail: parts.join(' · '), action: { label: 'أرسل للمورد', href: '/purchase-suggestion' } })
+    out.push({ level: 'urgent', title, detail: parts.join(' · '), action: r.supplierId
+      ? { label: 'أرسل للمورد', href: `/suppliers?sid=${r.supplierId}` }   // يفتح كرت المورد وفيه «إرسال طلب توريد الآن»
+      : { label: 'اربط بمورد', href: '/suppliers' } })
   }
 
   // ٢) خسارة فلوس: الهدر آخر 30 يوم

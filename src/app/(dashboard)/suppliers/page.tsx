@@ -402,6 +402,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
 export default function SuppliersPage() {
   const searchParams = useSearchParams()
   const msParam = searchParams.get('ms')
+  const sidParam = searchParams.get('sid')   // من «قرارات اليوم» في أدوات الذكاء
   const [maxSuppliers, setMaxSuppliers] = useState<number>(999)
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [products, setProducts]   = useState<any[]>([])
@@ -612,7 +613,7 @@ export default function SuppliersPage() {
       ) : (
         <div style={{ display:'flex', flexDirection:'column' as const, gap:12 }}>
           {suppliers.map(s => (
-            <SupplierCard key={s.id} s={s} products={products} orgId={orgId} onRefresh={refresh} allSuppliers={suppliers} rating={supplierRatings[s.id]} curr={curr} autoOpen={!!msParam && s.marketplace_supplier_id===msParam} recentFailedCount={failedRecentMap[s.id]||0} />
+            <SupplierCard key={s.id} s={s} products={products} orgId={orgId} onRefresh={refresh} allSuppliers={suppliers} rating={supplierRatings[s.id]} curr={curr} autoOpen={(!!msParam && s.marketplace_supplier_id===msParam) || (!!sidParam && s.id===sidParam)} recentFailedCount={failedRecentMap[s.id]||0} />
           ))}
         </div>
       )}
