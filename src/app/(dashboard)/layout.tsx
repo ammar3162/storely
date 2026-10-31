@@ -3,7 +3,8 @@ import { managerPageAllowed } from '@/lib/managerPerms'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
-import { getMeResult } from '@/lib/session'
+import { getMeResult, refreshMe } from '@/lib/session'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import { useRouter, usePathname } from 'next/navigation'
 
 import AIAssistant from '@/components/AIAssistant'
@@ -134,6 +135,31 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }, [unread])
   const [branches, setBranches]     = useState<any[]>([])
   const [orgPlan, setOrgPlan]       = useState<string>('basic')
+  // الإضافات المفعّلة (المنيو، الحضور، الربحية، الذكاء، الفروع الإضافية) — تتحدث لحالها لما تتغير (useLiveRefresh تحت)
+  const loadAddons = useCallback((oid: string) => {
+    fetch(`/api/addons-market?org_id=${oid}`).then(r=>r.json()).then(j=>{
+      if (j.success) {
+        const menuAddon = (j.addons||[]).find((a:any)=>a.slug==='online_menu')
+        setHasMenuAddon(!!menuAddon?.subscription?.isValid)
+        const mb = menuAddon?.subscription?.branch_ids
+        setMenuBranchIds(Array.isArray(mb) && mb.length ? mb : null)
+        const hrAddon = (j.addons||[]).find((a:any)=>a.slug==='hr_full')
+        setHasHrAddon(!!hrAddon?.subscription?.isValid)
+        const profitAddon = (j.addons||[]).find((a:any)=>a.slug==='profitability')
+        setHasProfitAddon(!!profitAddon?.subscription?.isValid)
+        const aiAddon = (j.addons||[]).find((a:any)=>a.slug==='ai_tools')
+        setHasAiAddon(!!aiAddon?.subscription?.isValid)
+        const branchAddon = (j.addons||[]).find((a:any)=>a.slug==='extra_branch')
+        setHasExtraBranchAddon(!!branchAddon?.subscription?.isValid)
+      }
+    }).catch(()=>{})
+  }, [])
+  // إضافة تفعّلت/انتهت أو الباقة تغيّرت والصفحة مفتوحة → القائمة تتحدث بدون تحديث الصفحة
+  useLiveRefresh(typeof window!=='undefined' ? sessionStorage.getItem('s_org_id') : null, ['org_addon_subscriptions','plan_requests'], () => {
+    const oid = sessionStorage.getItem('s_org_id'); if (!oid) return
+    loadAddons(oid)
+    refreshMe().then(me => { if (me?.org?.plan) setOrgPlan(me.org.plan) }).catch(()=>{})
+  })
   const [orgMaxBranches, setOrgMaxBranches] = useState<number>(1)
   const [userRole, setUserRole]     = useState<string>('owner')
   const [managerPermissions, setManagerPermissions] = useState<Record<string,boolean>|null>(null)
@@ -216,24 +242,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     const orgLogoUrl=(p.organizations as any)?.logo_url||null
     const userN=p.full_name||''
     setOrgName(orgN); setUserName(userN); setUserInit(userN[0]||'م'); setOrgLogo(orgLogoUrl)
-    if (p.org_id) {
-      fetch(`/api/addons-market?org_id=${p.org_id}`).then(r=>r.json()).then(j=>{
-        if (j.success) {
-          const menuAddon = (j.addons||[]).find((a:any)=>a.slug==='online_menu')
-          setHasMenuAddon(!!menuAddon?.subscription?.isValid)
-          const mb = menuAddon?.subscription?.branch_ids
-          setMenuBranchIds(Array.isArray(mb) && mb.length ? mb : null)
-          const hrAddon = (j.addons||[]).find((a:any)=>a.slug==='hr_full')
-          setHasHrAddon(!!hrAddon?.subscription?.isValid)
-          const profitAddon = (j.addons||[]).find((a:any)=>a.slug==='profitability')
-          setHasProfitAddon(!!profitAddon?.subscription?.isValid)
-          const aiAddon = (j.addons||[]).find((a:any)=>a.slug==='ai_tools')
-          setHasAiAddon(!!aiAddon?.subscription?.isValid)
-          const branchAddon = (j.addons||[]).find((a:any)=>a.slug==='extra_branch')
-          setHasExtraBranchAddon(!!branchAddon?.subscription?.isValid)
-        }
-      }).catch(()=>{})
-    }
+    if (p.org_id) loadAddons(p.org_id)
     setUserRole((p as any).role||'owner')
     if((p as any).role==='manager') setManagerPermissions((p as any).permissions||{})
     sessionStorage.setItem('s_org_id',p.org_id)

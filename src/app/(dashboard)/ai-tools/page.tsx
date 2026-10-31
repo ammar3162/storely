@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { api } from '@/lib/api-client'
-import { getMe } from '@/lib/session'
+import { getMe, refreshMe } from '@/lib/session'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import { colors as dsColors } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
@@ -145,12 +146,14 @@ export default function AIToolsPage() {
   // صلاحية أدوات الذكاء من السيرفر (/api/me → features.ai: الباقة أو إضافة فعّالة ما انتهت).
   // null = لسه ما وصل الرد — ما نعرض القفل ولا الأدوات لين نعرف (كان يطلع القفل لحظة وبعدين ينفتح)
   const [hasAiAddon, setHasAiAddon] = useState<boolean|null>(null)
-  useEffect(() => {
-    getMe().then(me => {
-      if (me?.org?.plan) setPlan(me.org.plan)
-      setHasAiAddon(!!me?.org?.features?.ai)
-    }).catch(() => setHasAiAddon(false))
-  }, [])
+  const applyAccess = (me: Awaited<ReturnType<typeof getMe>>) => {
+    if (me?.org?.plan) setPlan(me.org.plan)
+    setHasAiAddon(!!me?.org?.features?.ai)
+  }
+  useEffect(() => { getMe().then(applyAccess).catch(() => setHasAiAddon(false)) }, [])
+  // تفعيل/انتهاء إضافة أو تغيير الباقة والصفحة مفتوحة → يفتح/يقفل بدون تحديث
+  useLiveRefresh(typeof window !== 'undefined' ? sessionStorage.getItem('s_org_id') : null, ['org_addon_subscriptions', 'plan_requests'],
+    () => { refreshMe().then(applyAccess).catch(() => {}) })
   const aiKnown = hasAiAddon !== null
 
   return (
