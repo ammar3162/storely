@@ -4,7 +4,7 @@ import NumberInput from '@/components/NumberInput'
 import { MessageCircle, Send, Trash2, PauseCircle, PlayCircle } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { toast } from '@/components/toast'
-import { billLines, PLAN_PRICING, addonPeriodEnd, proratedCharge, planPriceFor, unitPrice } from '@/lib/planPricing'
+import { billLines, activeDiscount, PLAN_PRICING, PLAN_CAPS, ENTERPRISE_LABEL, addonPeriodEnd, proratedCharge, planPriceFor, unitPrice, type PlanKey } from '@/lib/planPricing'
 import { A, Badge, Btn, Card, Drawer, adminFetch, daysLeft, fmtDate, inputStyle } from './kit'
 import { type Customer, STATUS, PLAN_KEYS, PLAN_LIMITS, planLabel } from './customers'
 
@@ -23,30 +23,39 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   const [days, setDays] = useState(30)
   const [qty, setQty] = useState<Record<string, number>>({})
   const [branches, setBranches] = useState<{ id: string; name: string }[]>([])
-  const [menuSel, setMenuSel] = useState<string[] | null>(null)
+  const [staffUsage, setStaffUsage] = useState<{ active: number; limit: number } | null>(null)
+  const [ent, setEnt] = useState({ branches: '', staff: '', suppliers: '', price: '' })
+  // الخصم الخاص: نسبة أو مبلغ شهري، وملاحظة، وتاريخ انتهاء اختياري
+  const [disc, setDisc] = useState<{ type: 'percent' | 'amount'; value: string; note: string; until: string }>({ type: 'percent', value: '', note: '', until: '' })
 
   const c = customer
   useEffect(() => {
-    setAddons([]); setQty({}); setDays(30); setBranches([]); setMenuSel(null)
+    setAddons([]); setQty({}); setDays(30); setBranches([])
     if (c?.org_id) loadAddons(c.org_id)
   }, [c?.org_id])
 
   async function loadAddons(orgId: string) {
     setLoadingAddons(true)
     const j = await adminFetch(`/api/admin/addon-subscriptions?org_id=${orgId}`)
-    if (j.success) { setAddons(j.addons || []); setBranches(j.branches || []); setMenuSel(null) }
+    if (j.success) { setAddons(j.addons || []); setBranches(j.branches || []); setStaffUsage(j.staff_usage || null) }
     setLoadingAddons(false)
   }
 
   if (!c) return null
   const st = STATUS[c.status] || STATUS.pending
   const dl = daysLeft(c.subscription_ends_at)
-  const bill = billLines(c.plan, c.billing_cycle, addons, c.locked_plan_monthly)
+  const bill = billLines(c.plan, c.billing_cycle, addons, c.locked_plan_monthly, c.discount)
+  const curDiscount = activeDiscount(c.discount)
   const hasPhone = !!c.phone
 
   async function activate(type: 'trial' | 'paid', d: number) {
     const label = type === 'paid' ? 'تفعيل مدفوع' : 'تفعيل تجربة'
-    if (!(await confirmDialog({ title: label, message: `${label} لـ"${c!.org_name}" لمدة ${DURATIONS.find(x => x.d === d)?.l || d + ' يوم'}؟\n\nالإضافات المفعّلة تتجدد لنفس التاريخ.` }))) return
+    // أول اشتراك مدفوع بعد التجربة (على الشاملة): ذكّر الأدمن يحوّله للباقة اللي اختارها — مكافأة المندوب والفاتورة تنحسب على باقته الحالية
+    const wanted = c!.requested_plan as PlanKey | undefined
+    const planNote = type === 'paid' && c!.subscription_type === 'trial' && wanted && wanted !== c!.plan && (PLAN_KEYS as string[]).includes(wanted)
+      ? `\n\nانتبه: باقته الحالية «${planLabel(c!.plan)}» (التجربة)، واللي اختارها عند التسجيل «${planLabel(wanted)}». غيّر الباقة أول لو بيشترك فيها — الفاتورة ومكافأة المندوب تنحسب على الباقة الحالية.`
+      : ''
+    if (!(await confirmDialog({ title: label, message: `${label} لـ"${c!.org_name}" لمدة ${DURATIONS.find(x => x.d === d)?.l || d + ' يوم'}؟\n\nالإضافات المفعّلة تتجدد لنفس التاريخ.${planNote}`, type: planNote ? 'warning' : undefined }))) return
     setBusy('activate')
     const ends = new Date(Date.now() + d * 86400000).toISOString()
     const j = await adminFetch('/api/admin/activate-user', { method: 'POST', body: { userId: c!.id, type, ends } })
@@ -71,23 +80,51 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   async function changePlan(k: typeof PLAN_KEYS[number]) {
     if (k === c!.plan) return
     const lim = PLAN_LIMITS[k]
-    if (!(await confirmDialog({ title: 'تغيير الباقة', message: `تغيير الباقة إلى "${planLabel(k)}"؟\n\nلو فروعه أكثر من ${lim.branches} (+ الفروع المشتراة)، الأحدث تتوقف مؤقتاً مع موظفينها — بياناتها تبقى وترجع لو رقّى.` }))) return
+    if (!(await confirmDialog({ title: 'تغيير الباقة', message: `تغيير الباقة إلى "${planLabel(k)}"؟\n\nلو فروعه أكثر من ${lim.branches} (+ الفروع المشتراة)، الأحدث تتوقف مؤقتاً مع موظفينها. ولو موظفينه أكثر من ${lim.staff} (+ الإضافات)، يتوقف الأحدث مؤقتاً. البيانات كلها تبقى وترجع لو رقّى.` }))) return
     setBusy('plan')
     const j = await adminFetch('/api/admin/update-plan', { method: 'POST', body: { orgId: c!.org_id, maxBranches: lim.branches, maxStaff: lim.staff, maxSuppliers: lim.suppliers, planName: k, orgName: c!.org_name, billingCycle: c!.billing_cycle } })
     setBusy(null)
     if (!j.success) { toast(j.error || 'فشل تغيير الباقة', 'error'); return }
-    toast(j.locked ? `تم — توقف ${j.locked} فرع زايد عن الحد` : j.restored ? `تم — رجع ${j.restored} فرع` : 'تم تغيير الباقة', 'success')
+    const notes = [j.locked && `توقف ${j.locked} فرع`, j.restored && `رجع ${j.restored} فرع`, j.staffLocked && `توقف ${j.staffLocked} موظف (الأحدث) زايدين عن الحد`, j.staffRestored && `رجع ${j.staffRestored} موظف`].filter(Boolean)
+    toast(notes.length ? `تم — ${notes.join('، ')}` : 'تم تغيير الباقة', 'success')
+    loadAddons(c!.org_id)
     onChanged({ plan: k, max_branches: lim.branches })
   }
 
   async function changeCycle(cycle: 'monthly' | 'yearly') {
     if (cycle === c!.billing_cycle) return
-    const lim = PLAN_LIMITS[c!.plan]
     setBusy('cycle')
-    const j = await adminFetch('/api/admin/update-plan', { method: 'POST', body: { orgId: c!.org_id, maxBranches: c!.max_branches, maxStaff: lim.staff, maxSuppliers: lim.suppliers, planName: c!.plan, orgName: c!.org_name, billingCycle: cycle } })
+    const j = await adminFetch('/api/admin/update-plan', { method: 'POST', body: { orgId: c!.org_id, maxBranches: c!.max_branches, planName: c!.plan, orgName: c!.org_name, billingCycle: cycle } })
     setBusy(null)
     if (!j.success) { toast(j.error || 'فشل التغيير', 'error'); return }
     onChanged({ billing_cycle: cycle })
+  }
+
+  // باقة المؤسسات: المتقدمة بحدود وسعر يتفق عليها مع العميل
+  async function setEnterprise() {
+    const br = Number(ent.branches), st = Number(ent.staff), su = Number(ent.suppliers), pr = Number(ent.price)
+    if (!(br > PLAN_CAPS.advanced.maxBranches) || !(st > 0) || !(su > 0) || !(pr > 0)) { toast('عبّ الفروع (أكثر من ' + PLAN_CAPS.advanced.maxBranches + ') والموظفين والموردين والسعر', 'error'); return }
+    if (!(await confirmDialog({ title: 'باقة المؤسسات', message: `${br} فرع · ${st} موظف · ${su} مورد\nالسعر: ${pr} ⃁ شهرياً`, type: 'warning' }))) return
+    setBusy('plan')
+    const j = await adminFetch('/api/admin/update-plan', { method: 'POST', body: { orgId: c!.org_id, maxBranches: br, maxStaff: st, maxSuppliers: su, planName: 'advanced', orgName: c!.org_name, billingCycle: c!.billing_cycle, lockedMonthly: pr } })
+    setBusy(null)
+    if (!j.success) { toast(j.error || 'فشل التفعيل', 'error'); return }
+    toast('تم تفعيل باقة المؤسسات', 'success')
+    onChanged({ plan: 'advanced', max_branches: br, locked_plan_monthly: pr })
+  }
+
+  async function saveDiscount(remove = false) {
+    const v = Number(disc.value)
+    if (!remove && (!(v > 0) || (disc.type === 'percent' && v > 100))) { toast(disc.type === 'percent' ? 'النسبة بين 1 و 100' : 'اكتب مبلغ الخصم', 'error'); return }
+    if (remove && !(await confirmDialog({ title: 'إلغاء الخصم', message: `إلغاء خصم "${c!.org_name}"؟ فاتورته الجاية ترجع بدون خصم.`, type: 'warning' }))) return
+    setBusy('discount')
+    const body = remove ? { orgId: c!.org_id, orgName: c!.org_name, type: null } : { orgId: c!.org_id, orgName: c!.org_name, type: disc.type, value: v, note: disc.note, until: disc.until || null }
+    const j = await adminFetch('/api/admin/org-discount', { method: 'POST', body })
+    setBusy(null)
+    if (!j.success) { toast(j.error || 'فشل حفظ الخصم', 'error'); return }
+    toast(remove ? 'انلغى الخصم' : 'انحفظ الخصم — يطلع بفاتورته', 'success')
+    onChanged({ discount: j.discount })
+    if (!remove) setDisc({ type: 'percent', value: '', note: '', until: '' })
   }
 
   async function sendInvoice(items = bill.lines, title = 'إرسال الفاتورة') {
@@ -100,35 +137,23 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
     toast(j.success ? `تم إرسال الفاتورة #${j.invoiceNumber}` : (j.error || 'فشل الإرسال'), j.success ? 'success' : 'error')
   }
 
-  // المنيو: الفروع المختارة (افتراضياً: المشتركة حالياً، أو كل الفروع)
-  function menuPick(a: any): string[] {
-    if (menuSel) return menuSel
-    const cur = a.subscription?.isValid && Array.isArray(a.subscription?.branch_ids) ? a.subscription.branch_ids : null
-    return (cur && cur.length ? cur : branches.map(b => b.id)).filter((id: string) => branches.some(b => b.id === id))
-  }
-  const branchNames = (ids: string[]) => ids.map(id => branches.find(b => b.id === id)?.name).filter(Boolean).join('، ')
-
   async function setAddon(a: any, on: boolean, quantity?: number) {
-    const isMenu = a.slug === 'online_menu' && branches.length > 0
-    const menuIds = isMenu ? menuPick(a) : []
-    if (on && isMenu && !menuIds.length) { toast('اختر فرع واحد على الأقل', 'warning'); return }
-    const q = isMenu && on ? menuIds.length : (quantity || qty[a.id] || (a.subscription?.quantity || 1))
-    const menuNote = isMenu && on && branches.length > 1 ? ` — ${branchNames(menuIds)}` : ''
+    const q = quantity || qty[a.id] || (a.subscription?.quantity || 1)
     if (on) {
       const wasActive = !!a.subscription?.isValid
       const charged = wasActive ? Math.max(0, q - (a.subscription?.quantity || 1)) : q
       const end = addonPeriodEnd(c!.subscription_ends_at)
       const pr = proratedCharge(unitPrice(a.monthly_price, wasActive ? a.subscription : null), charged, end)
       if (!(await confirmDialog({ title: `${wasActive ? 'تحديث' : 'تفعيل'} "${a.name}"${q > 1 ? ` × ${q}` : ''}`, message:
-        `${menuNote ? `الفروع: ${menuNote.slice(3)}\n\n` : ''}تنتهي مع الباقة بتاريخ ${fmtDate(end.toISOString())}.\n\nالمستحق الحين: ${pr.amount} ر.س (${pr.days} يوم)\nومن التجديد: ${q * (Number(a.monthly_price) || 0)} ر.س شهرياً` }))) return
+        `تنتهي مع الباقة بتاريخ ${fmtDate(end.toISOString())}.\n\nالمستحق الحين: ${pr.amount} ر.س (${pr.days} يوم)\nومن التجديد: ${q * (Number(a.monthly_price) || 0)} ر.س شهرياً` }))) return
     } else if (!(await confirmDialog({ title: `إلغاء "${a.name}"`, message: 'تتوقف الإضافة فوراً، وأي فروع أو موظفين زايدين عن الحد يتوقفون مؤقتاً.' }))) return
     setBusy('addon:' + a.id)
-    const j = await adminFetch('/api/admin/addon-subscriptions', { method: on ? 'POST' : 'DELETE', body: { org_id: c!.org_id, addon_id: a.id, org_name: c!.org_name, addon_name: a.name, quantity: q, ...(isMenu && on ? { branch_ids: menuIds } : {}) } })
+    const j = await adminFetch('/api/admin/addon-subscriptions', { method: on ? 'POST' : 'DELETE', body: { org_id: c!.org_id, addon_id: a.id, org_name: c!.org_name, addon_name: a.name, quantity: q } })
     setBusy(null)
     if (!j.success) { toast(j.error || 'فشل', 'error'); return }
     await loadAddons(c!.org_id)
     if (on && j.proratedAmount > 0 && hasPhone) {
-      await sendInvoice([{ label: `إضافة "${a.name}"${q > 1 ? ` × ${q}` : ''}${menuNote} — ${j.proratedDays} يوم لين تجديد الباقة`, amount: j.proratedAmount }], 'إرسال فاتورة الإضافة؟')
+      await sendInvoice([{ label: `إضافة "${a.name}"${q > 1 ? ` × ${q}` : ''} — ${j.proratedDays} يوم لين تجديد الباقة`, amount: j.proratedAmount }], 'إرسال فاتورة الإضافة؟')
     }
   }
 
@@ -153,7 +178,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         <Badge tone={st.tone}>{st.label}</Badge>
         <Badge tone={c.subscription_type === 'paid' ? 'info' : 'violet'}>{c.subscription_type === 'paid' ? 'مدفوع' : 'تجربة'}</Badge>
-        <Badge tone="neutral">{planLabel(c.plan)} · {c.billing_cycle === 'yearly' ? 'سنوي' : 'شهري'}</Badge>
+        <Badge tone="neutral">{planLabel(c.plan, c.max_branches)} · {c.billing_cycle === 'yearly' ? 'سنوي' : 'شهري'}</Badge>
         {dl !== null && <Badge tone={dl <= 0 ? 'danger' : dl <= 7 ? 'warning' : 'neutral'}>{dl <= 0 ? 'الاشتراك منتهي' : `باقي ${dl} يوم`}</Badge>}
       </div>
       <Card pad={16}>
@@ -223,8 +248,25 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
               </button>
             )
           })}
+          <div style={{ border: `1.5px dashed ${A.border}`, borderRadius: 10, padding: '11px 14px' }}>
+            <div style={{ fontSize: 13.5, fontWeight: 800, color: A.text }}>{ENTERPRISE_LABEL} <span style={{ fontSize: 11.5, fontWeight: 600, color: A.text3 }}>— أكثر من {PLAN_CAPS.advanced.maxBranches} فروع، بسعر متفق عليه</span></div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginTop: 8 }}>
+              {([['branches', 'فروع'], ['staff', 'موظفين'], ['suppliers', 'موردين'], ['price', '⃁ شهرياً']] as const).map(([k, l]) => (
+                <input key={k} inputMode="numeric" placeholder={l} value={ent[k]} onChange={e => setEnt(v => ({ ...v, [k]: e.target.value.replace(/[^0-9]/g, '') }))}
+                  style={{ padding: '7px 8px', borderRadius: 8, border: `1px solid ${A.border}`, fontSize: 12.5, fontFamily: 'inherit', textAlign: 'center' }} />
+              ))}
+            </div>
+            <button onClick={setEnterprise} disabled={!!busy} style={{ marginTop: 8, width: '100%', padding: '8px', borderRadius: 8, border: 'none', background: A.primary, color: 'white', fontSize: 12.5, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer' }}>تفعيل باقة {ENTERPRISE_LABEL}</button>
+          </div>
         </div>
       </Card>
+
+      {staffUsage && staffUsage.active > staffUsage.limit && staffUsage.limit < 999 && (
+        <div style={{ padding: '12px 14px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fcd34d', fontSize: 12.5, color: '#92400e', lineHeight: 1.8 }}>
+          <b>الموظفين فوق حد الباقة:</b> عنده {staffUsage.active} موظف نشط والحد {staffUsage.limit}.
+          فعّل له «موظف إضافي» × {staffUsage.active - staffUsage.limit}، أو رقّ باقته — أو لو ألغيت/قلّلت إضافة يتوقف الأحدث تلقائياً.
+        </div>
+      )}
 
       {/* الإضافات */}
       <Card title="الإضافات" subtitle="تنتهي وتتجدد مع الباقة، والدفع بالتناسب">
@@ -236,18 +278,14 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
                 const on = !!a.subscription?.isValid
                 const isQty = QTY_SLUGS.includes(a.slug)
                 const q = qty[a.id] || (on ? a.subscription?.quantity || 1 : 1)
-                const isMenu = a.slug === 'online_menu' && branches.length > 1
-                const canEditQty = isQty && !isMenu && a.slug !== 'online_menu' && (!on || a.slug === 'extra_branch')
-                const subIds: string[] = on && Array.isArray(a.subscription?.branch_ids) ? a.subscription.branch_ids : []
-                const picked = isMenu ? menuPick(a) : []
+                const canEditQty = isQty && (!on || a.slug === 'extra_branch')
                 return (
                   <div key={a.id} style={{ padding: '10px 12px', borderRadius: 10, border: `1px solid ${on ? A.primary + '55' : A.border}`, background: on ? A.primarySoft : A.surface }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 700 }}>{a.name}</div>
                       <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>
-                        {on ? `مفعّلة${isQty ? ` (${a.subscription?.quantity || 1})` : ''} حتى ${fmtDate(a.subscription.expires_at)}` : `${a.monthly_price} ⃁${a.slug === 'online_menu' ? ' لكل فرع' : isQty ? ' للوحدة' : ''} / شهر`}
-                        {on && a.slug === 'online_menu' && branches.length > 1 && (subIds.length ? ` — ${branchNames(subIds)}` : ' — منيو موحد لكل الفروع (اشتراك قديم)')}
+                        {on ? `مفعّلة${isQty ? ` (${a.subscription?.quantity || 1})` : ''} حتى ${fmtDate(a.subscription.expires_at)}` : `${a.monthly_price} ⃁${isQty ? ' للوحدة' : ''} / شهر`}
                       </div>
                     </div>
                     {canEditQty && (
@@ -255,30 +293,45 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
                         onChange={e => setQty(p => ({ ...p, [a.id]: Math.max(1, Math.min(20, Number(e.target.value) || 1)) }))}
                         style={{ ...inputStyle, width: 58, padding: '6px', textAlign: 'center' }} />
                     )}
-                    {on && (a.slug === 'extra_branch' || isMenu) && <Btn small disabled={!!busy} onClick={() => setAddon(a, true, q)}>تحديث</Btn>}
+                    {on && a.slug === 'extra_branch' && <Btn small disabled={!!busy} onClick={() => setAddon(a, true, q)}>تحديث</Btn>}
                     <Btn small kind={on ? 'danger' : 'primary'} loading={busy === 'addon:' + a.id} disabled={!!busy && busy !== 'addon:' + a.id} onClick={() => setAddon(a, !on, q)}>
                       {on ? 'إلغاء' : 'تفعيل'}
                     </Btn>
                   </div>
-                  {isMenu && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                      {branches.map(b => {
-                        const checked = picked.includes(b.id)
-                        return (
-                          <label key={b.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, padding: '4px 9px', borderRadius: 99, border: `1px solid ${checked ? A.primary : A.border}`, background: checked ? A.primarySoft : A.surface, cursor: 'pointer' }}>
-                            <input type="checkbox" checked={checked} onChange={() => setMenuSel(checked ? picked.filter(x => x !== b.id) : [...picked, b.id])} />
-                            {b.name}
-                          </label>
-                        )
-                      })}
-                      <span style={{ fontSize: 11, color: A.text3, alignSelf: 'center' }}>{picked.length} × {a.monthly_price} = {picked.length * (Number(a.monthly_price) || 0)} ⃁ / شهر</span>
-                    </div>
-                  )}
                   </div>
                 )
               })}
             </div>
           )}
+      </Card>
+
+      {/* الخصم */}
+      <Card title="الخصم" subtitle="خصم خاص لهالعميل — يطلع سطر بفاتورته وبصفحة الإضافات والإعدادات عنده">
+        {curDiscount && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: A.primarySoft, border: `1px solid ${A.primary}55`, marginBottom: 10, fontSize: 13 }}>
+            <div style={{ flex: 1 }}>
+              <b>{curDiscount.type === 'percent' ? `${curDiscount.value}%` : `${curDiscount.value} ⃁ شهرياً`}</b>
+              {curDiscount.note && ` — ${curDiscount.note}`}
+              <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>{curDiscount.until ? `لين ${fmtDate(curDiscount.until)}` : 'بدون تاريخ انتهاء'}</div>
+            </div>
+            <Btn small kind="danger" loading={busy === 'discount'} disabled={!!busy && busy !== 'discount'} onClick={() => saveDiscount(true)}>إلغاء الخصم</Btn>
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <select value={disc.type} onChange={e => setDisc(d => ({ ...d, type: e.target.value as any }))} style={{ ...inputStyle, width: 110 }}>
+            <option value="percent">نسبة %</option>
+            <option value="amount">مبلغ ⃁ شهرياً</option>
+          </select>
+          <input inputMode="decimal" placeholder={disc.type === 'percent' ? 'مثلاً 20' : 'مثلاً 50'} value={disc.value}
+            onChange={e => setDisc(d => ({ ...d, value: e.target.value.replace(/[٠-٩]/g, x => String('٠١٢٣٤٥٦٧٨٩'.indexOf(x))).replace(/[^0-9.]/g, '') }))}
+            style={{ ...inputStyle, width: 90, textAlign: 'center' }} />
+          <input placeholder="سبب الخصم (يطلع بالفاتورة)" value={disc.note} maxLength={60} onChange={e => setDisc(d => ({ ...d, note: e.target.value }))} style={{ ...inputStyle, flex: 1, minWidth: 140 }} />
+          <input type="date" value={disc.until} onChange={e => setDisc(d => ({ ...d, until: e.target.value }))} title="ينتهي في (اختياري)" style={{ ...inputStyle, width: 150 }} />
+        </div>
+        <div style={{ fontSize: 11.5, color: A.text3, marginTop: 6 }}>النسبة من الفاتورة كلها (الباقة + الإضافات). المبلغ شهري (×12 بالسنوي). تاريخ الانتهاء اختياري.</div>
+        <div style={{ marginTop: 10 }}>
+          <Btn kind="primary" full loading={busy === 'discount'} disabled={!!busy && busy !== 'discount'} onClick={() => saveDiscount()}>{curDiscount ? 'تغيير الخصم' : 'حفظ الخصم'}</Btn>
+        </div>
       </Card>
 
       {/* الفاتورة */}

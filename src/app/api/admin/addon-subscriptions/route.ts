@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { INCLUDED_FROM_STANDARD } from '@/lib/changePlan'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
+import { syncStaffToLimit, staffLimitFor } from '@/lib/staffCapacity'
 import { activateAddon } from '@/lib/addonActivation'
 
 const sb = () => createClient(
@@ -59,6 +61,8 @@ export async function DELETE(req: Request) {
       await supabase.from('suppliers').update({ is_active: false } as any).eq('addon_subscription_id', existingSubId)
     }
   }
+  // الموظفين الزايدين عن الحد بعد الإلغاء (حتى اللي ما انربطوا بالإضافة) يتوقفون مؤقتاً — الأحدث أول
+  if (slug === 'extra_staff' || slug === 'extra_branch') await syncStaffToLimit(supabase, org_id)
 
   await logAdminAction(admin, 'cancel_addon', org_id, org_name || null, { addon_id, addon_name })
 
@@ -77,13 +81,15 @@ export async function GET(req: Request) {
   const supabase = sb()
   const { data: org } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
   const orgPlan = (org as any)?.plan || 'basic'
-  const INCLUDED_FROM_STANDARD = ['hr_full', 'profitability', 'ai_tools', 'cashier_closing']
 
-  const { data: addonsRaw } = await supabase.from('marketplace_addons').select('*').eq('is_active', true).order('sort_order')
+  const { data: subs } = await supabase.from('org_addon_subscriptions').select('addon_id,status,expires_at,quantity,branch_ids,locked_price').eq('org_id', org_id)
+  // المعروض: الإضافات اللي تنباع الحين + المتوقفة عن البيع اللي العميل مشترك فيها (يقدر الأدمن يلغيها)
+  const activeSubIds = new Set((subs || []).filter((s: any) => s.status === 'active').map((s: any) => s.addon_id))
+  const { data: allAddons } = await supabase.from('marketplace_addons').select('*').order('sort_order')
+  const addonsRaw = (allAddons || []).filter((a: any) => a.is_active || activeSubIds.has(a.id))
   const addons = orgPlan === 'basic'
     ? addonsRaw
-    : (addonsRaw || []).filter((a: any) => !INCLUDED_FROM_STANDARD.includes(a.slug))
-  const { data: subs } = await supabase.from('org_addon_subscriptions').select('addon_id,status,expires_at,quantity,branch_ids,locked_price').eq('org_id', org_id)
+    : addonsRaw.filter((a: any) => !INCLUDED_FROM_STANDARD.includes(a.slug))
   const { data: branches } = await supabase.from('branches').select('id,name').eq('org_id', org_id).eq('is_active', true).order('created_at')
 
   const now = new Date()
@@ -95,5 +101,10 @@ export async function GET(req: Request) {
     return { ...a, subscription: s ? { ...s, isValid: s.status === 'active' && new Date(s.expires_at) > now } : null }
   })
 
-  return NextResponse.json({ success: true, addons: result, branches: branches || [] })
+  // استخدام الموظفين مقابل حد الباقة — تنبيه للأدمن لو المنشأة فوق حدها
+  const [{ count: activeStaff }, staffLimit] = await Promise.all([
+    supabase.from('staff_members').select('id', { count: 'exact', head: true }).eq('org_id', org_id).eq('is_active', true),
+    staffLimitFor(supabase, org_id),
+  ])
+  return NextResponse.json({ success: true, addons: result, branches: branches || [], staff_usage: { active: activeStaff || 0, limit: staffLimit } })
 }

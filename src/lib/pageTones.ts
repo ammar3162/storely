@@ -32,7 +32,6 @@ export const PAGE_TONES: Record<string, { tone: Tone; Icon: LucideIcon }> = {
   '/hr-management':    { tone: TONES.violet,  Icon: UserCog },
   '/attendance':       { tone: TONES.violet,  Icon: Clock },
   '/branch-managers':  { tone: TONES.violet,  Icon: UserRound },
-  '/online-store':     { tone: TONES.pink,    Icon: Store },
   '/addons-market':    { tone: TONES.pink,    Icon: Puzzle },
   '/branches':         { tone: TONES.sky,     Icon: Building2 },
   '/branch-compare':   { tone: TONES.sky,     Icon: GitCompare },

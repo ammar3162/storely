@@ -18,7 +18,6 @@ export const HELP_PAGES: { key: string; label: string; group: 'المالك' | '
   { key: '/reports', label: 'التقارير', group: 'المالك' },
   { key: '/profitability', label: 'الربحية', group: 'المالك' },
   { key: '/ai-tools', label: 'أدوات الذكاء', group: 'المالك' },
-  { key: '/online-store', label: 'المنيو الإلكتروني', group: 'المالك' },
   { key: '/addons-market', label: 'الإضافات', group: 'المالك' },
   { key: '/notifications', label: 'الإشعارات', group: 'المالك' },
   { key: '/settings', label: 'الإعدادات', group: 'المالك' },

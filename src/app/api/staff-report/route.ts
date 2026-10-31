@@ -24,9 +24,9 @@ export async function GET(req: Request) {
 
     const supabase = sb()
     const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
-    // نفس شرط صفحة الموظف: الباقة المتوسطة/المتقدمة أو إضافة «إدارة الموظفين الكاملة»
+    // نفس شرط صفحة الموظف: الباقة الشاملة/المتقدمة أو إضافة «إدارة الموظفين الكاملة»
     if (!(await orgHasHrFeature(supabase, org_id, (orgCheck as any)?.plan))) {
-      return NextResponse.json({ error: 'ميزة تقرير الموظفين متاحة بالباقة المتوسطة أو المتقدمة، أو بإضافة إدارة الموظفين الكاملة' }, { status: 403 })
+      return NextResponse.json({ error: 'ميزة تقرير الموظفين متاحة بالباقة الشاملة أو المتقدمة، أو بإضافة إدارة الموظفين الكاملة' }, { status: 403 })
     }
 
     const [year, monthNum] = month.split('-').map(Number)

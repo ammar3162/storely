@@ -1555,7 +1555,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
 
 export default function ReportsPage() {
   const orgPlan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
-  // تبويب الكاشير: المتوسطة/المتقدمة أو إضافة «إقفال الكاشير»
+  // تبويب الكاشير: الشاملة/المتقدمة أو إضافة «إقفال الكاشير»
   const [hasCashier, setHasCashier] = useState(orgPlan!=='basic')
   const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'|'cashier'|'waste'|'attendance'|'staffMonthly'>('home')
   const [period, setPeriod]       = useState<FilterPeriod>('today')

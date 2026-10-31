@@ -1,27 +1,74 @@
-import { Package, MessageCircle, Users, Wallet, Globe, BarChart3, Store, Bot, ShoppingBag } from 'lucide-react'
+import { Package, MessageCircle, Users, Wallet, Globe, BarChart3, Store, Bot, TrendingUp } from 'lucide-react'
 
 export type Billing = 'monthly'|'yearly'
 
-export const PLAN_BRANCHES = [1, 3, 10]
+export const PLAN_BRANCHES = [1, 3, 6, 11]
 
+// معاينة محلية للترتيب الجديد (لم تُعتمد بعد)
 export const PLANS = [
   { name:'الأساسية', nameEn:'Basic', price:'99', yearlyPrice:'950', color:'#0f766e', popular:false,
-    limits:['فرع واحد','3 موظفين','3 موردين'],
-    limitsEn:['1 branch','3 staff','3 suppliers'],
-    features:['تتبع المخزون لحظياً','صرف يومي بصلاحيات موظفين','المشتريات وإدارة الموردين','تنبيهات واتساب تلقائية','كشف الهدر','تقارير أساسية قابلة للتصدير','نسخ احتياطي يومي','دعم عبر واتساب'],
-    featuresEn:['Real-time inventory tracking','Daily dispensing with staff permissions','Purchasing and supplier management','Automatic WhatsApp alerts','Waste detection','Exportable basic reports','Daily backups','Support via WhatsApp'],
-    addonNote:'🧩 تقدر تفعّل ميزات إضافية اختيارية لاحقاً، كل وحدة بسعرها الخاص — مثل موظف/مورد إضافي، إدارة موظفين كاملة، إقفال الكاشير، وأدوات الذكاء الاصطناعي',
-    addonNoteEn:'🧩 You can enable optional extra features later, each priced separately — like extra staff/suppliers, full HR management, cashier closing, and AI tools' },
-  { name:'المتوسطة', nameEn:'Standard', price:'249', yearlyPrice:'2390', color:'#0f766e', popular:true,
-    limits:['3 فروع','10 موظفين','10 موردين'],
-    limitsEn:['3 branches','10 staff','10 suppliers'],
-    features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين','تقارير متقدمة','إقفال الكاشير اليومي','الحضور والانصراف بـGPS 📍','اقتراح الشراء الذكي 🤖','توقع نفاد المخزون 🔮','تحليل الموسمية','تحسين نقطة إعادة الطلب 🎯'],
-    featuresEn:['Inventory tracking','WhatsApp alerts','Staff management','Basic reports','Supplier management','Advanced reports','Daily cashier closing','GPS attendance 📍','Smart purchase suggestions 🤖','Stock-out prediction 🔮','Seasonality analysis','Reorder point optimization 🎯'] },
+    who:'لمنشأة بفرع واحد تبدأ', whoEn:'For a single-branch business getting started',
+    extra:'+ 79 ⃁ لفرع ثاني (معه 3 موظفين و5 موردين)', extraEn:'+ 79 SAR for a second branch (adds 3 staff and 5 suppliers)',
+    limits:['فرع واحد','3 موظفين','5 موردين'],
+    limitsEn:['1 branch','3 staff','5 suppliers'],
+    features:['تتبع المخزون لحظياً','الصرف اليومي برمز PIN للموظفين','المشتريات وإدارة الموردين','تنبيهات واتساب تلقائية','التقارير الأساسية','نسخ احتياطي يومي','دعم فني عبر واتساب'],
+    featuresEn:['Real-time inventory','Daily dispensing with staff PIN','Purchasing and suppliers','Automatic WhatsApp alerts','Basic reports','Daily backups','WhatsApp support'],
+    addons:[['إقفال الكاشير اليومي','29'],['إدارة الموظفين (الحضور، الشفتات، الرواتب)','59'],['الربحية والمصروفات','29'],['الذكاء الاصطناعي (قرارات اليوم، الطلب الذكي، مسح الفواتير)','29']],
+    addonsEn:[['Daily cashier closing','29'],['Staff management (attendance, shifts, payroll)','59'],['Profitability and expenses','29'],['AI tools (daily decisions, smart ordering, invoice scan)','29']] },
+  { name:'الشاملة', nameEn:'Complete', price:'249', yearlyPrice:'2390', color:'#0f766e', popular:true,
+    who:'كل المميزات + لين 3 فروع', whoEn:'All features + up to 3 branches',
+    extra:'+ 79 ⃁ لكل فرع إضافي لين 5 فروع (معه 5 موظفين و5 موردين)', extraEn:'+ 79 SAR per extra branch up to 5 (adds 5 staff and 5 suppliers)',
+    limits:['3 فروع','15 موظف','20 مورد'],
+    limitsEn:['3 branches','15 staff','20 suppliers'],
+    features:['كل مميزات الأساسية','إقفال الكاشير اليومي','إدارة الموظفين والحضور بـGPS','الشفتات والرواتب','الربحية والمصروفات','قرارات اليوم والطلب الذكي','مسح الفواتير بالذكاء الاصطناعي','تقارير متقدمة ومقارنة الفروع','المخزون الراكد وكشف الهدر','نقل المخزون بين الفروع'],
+    featuresEn:['Everything in Basic','Daily cashier closing','Staff and GPS attendance','Shifts and payroll','Profitability and expenses','Daily decisions and smart ordering','AI invoice scanning','Advanced reports and branch comparison','Slow stock and waste detection','Stock transfer between branches'] },
   { name:'المتقدمة', nameEn:'Advanced', price:'499', yearlyPrice:'4790', color:'#0f766e', popular:false,
-    limits:['10 فروع','غير محدود','غير محدود'],
-    limitsEn:['10 branches','Unlimited','Unlimited'],
-    features:['تتبع المخزون','تنبيهات واتساب','إدارة الموظفين','تقارير أساسية','إدارة الموردين','تقارير متقدمة','إقفال الكاشير اليومي','الحضور والانصراف بـGPS 📍','اقتراح الشراء الذكي 🤖','توقع نفاد المخزون 🔮','تحليل الموسمية','تحسين نقطة إعادة الطلب 🎯','مقارنة الفروع 🤖','المخزون الراكد 🐌','كشف الهدر الحقيقي 🗑️','دعم ذو أولوية','دعم 24/7'],
-    featuresEn:['Inventory tracking','WhatsApp alerts','Staff management','Basic reports','Supplier management','Advanced reports','Daily cashier closing','GPS attendance 📍','Smart purchase suggestions 🤖','Stock-out prediction 🔮','Seasonality analysis','Reorder point optimization 🎯','Branch comparison 🤖','Stagnant inventory 🐌','Real waste detection 🗑️','Priority support','24/7 support'] },
+    who:'كل المميزات للمنشآت من 6 فروع وفوق', whoEn:'All features for 6+ branches',
+    extra:'+ 59 ⃁ لكل فرع إضافي لين 10 فروع (معه 5 موظفين و5 موردين)', extraEn:'+ 59 SAR per extra branch up to 10 (adds 5 staff and 5 suppliers)',
+    limits:['6 فروع','50 موظف','50 مورد'],
+    limitsEn:['6 branches','50 staff','50 suppliers'],
+    features:['كل مميزات الشاملة','فروع أكثر بسعر أقل للفرع','50 موظف و50 مورد'],
+    featuresEn:['Everything in Complete','More branches at a lower price per branch','50 staff and 50 suppliers'] },
+  { name:'المؤسسات', nameEn:'Enterprise', price:'', yearlyPrice:'', color:'#0f766e', popular:false, custom:true,
+    who:'لأكثر من 10 فروع', whoEn:'For more than 10 branches',
+    limits:['فروع وموظفين وموردين حسب احتياجك'],
+    limitsEn:['Branches, staff and suppliers as you need'],
+    features:['كل مميزات المتقدمة','سعر مخصص لحجم منشأتك','متابعة وتجهيز خاص لمنشأتك','تدريب الموظفين وتجهيز البيانات','أولوية في التطوير حسب احتياجكم'],
+    featuresEn:['Everything in Advanced','Custom price for your size','Dedicated follow-up and setup','Staff training and data setup','Priority support and roadmap'] },
+]
+
+// جدول مقارنة الباقات (معاينة) — true/false أو نص؛ 'addon' = متاح كإضافة
+type Cell = boolean | string
+export const COMPARE: { group: string; rows: [string, Cell, Cell, Cell, Cell][] }[] = [
+  { group: 'الحجم', rows: [
+    ['الفروع المشمولة', '1', '3', '6', 'حسب الاتفاق'],
+    ['أقصى عدد فروع', '2', '5', '10', 'بدون حد'],
+    ['الموظفين', '3 (و6 مع الفرع الثاني)', '15', '50', 'حسب الاتفاق'],
+    ['الموردين', '5', '20', '50', 'حسب الاتفاق'],
+  ]},
+  { group: 'المخزون والمشتريات', rows: [
+    ['تتبع المخزون لحظياً', true, true, true, true],
+    ['الصرف اليومي برمز PIN للموظفين', true, true, true, true],
+    ['المشتريات وطلبات التوريد للموردين', true, true, true, true],
+    ['تنبيهات واتساب تلقائية', true, true, true, true],
+    ['نقل المخزون بين الفروع', false, true, true, true],
+  ]},
+  { group: 'التشغيل والموظفين', rows: [
+    ['إقفال الكاشير اليومي', 'addon', true, true, true],
+    ['الحضور والانصراف بالموقع', 'addon', true, true, true],
+    ['الشفتات والرواتب', 'addon', true, true, true],
+    ['واجهة موظفين بـ7 لغات', true, true, true, true],
+  ]},
+  { group: 'الربحية والذكاء الاصطناعي', rows: [
+    ['الربحية والمصروفات', 'addon', true, true, true],
+    ['قرارات اليوم والطلب الذكي', 'addon', true, true, true],
+    ['مسح الفواتير بالذكاء الاصطناعي', 'addon', true, true, true],
+    ['مقارنة الفروع والمخزون الراكد', false, true, true, true],
+  ]},
+  { group: 'الدعم', rows: [
+    ['دعم فني عبر واتساب', true, true, true, true],
+    ['متابعة وتجهيز خاص وتدريب الموظفين', false, false, false, true],
+  ]},
 ]
 
 export const LS: Record<string, {ar:string, en:string}> = {
@@ -33,7 +80,7 @@ export const LS: Record<string, {ar:string, en:string}> = {
   heroBadge:     { ar:'تجربة مجانية 14 يوماً — بدون بطاقة ائتمانية', en:'14-day free trial — no credit card required' },
   heroH1a:       { ar:'نصمّم مستقبل الإدارة الذكية', en:'We design the future of smart management' },
   heroH1b:       { ar:'لكل منشأة تطمح للنمو', en:'for every business aiming to grow' },
-  heroSub:       { ar:'من المخزون والمشتريات، لصفحة عرض منتجاتك الإلكترونية، وإدارة الموظفين والفروع — كل شي بمكان واحد', en:'From inventory and purchasing, to your product showcase page, to staff and branch management — all in one place' },
+  heroSub:       { ar:'من المخزون والمشتريات، لإقفال الكاشير والأرباح، وإدارة الموظفين والفروع — كل شي بمكان واحد', en:'From inventory and purchasing, to cashier closing and profit, to staff and branch management — all in one place' },
   heroTry:       { ar:'جرب نظام Storely', en:'Try Storely' },
   heroStart:     { ar:'ابدأ تجربتك المجانية', en:'Start your free trial' },
   trustedBy:     { ar:'موثوق من قبل منشآت رائدة', en:'Trusted by leading businesses' },
@@ -135,10 +182,10 @@ export const FAQ_ITEMS = [
    qEn:'Is there a free trial?',aEn:"Yes — a full 14 days free, no credit card required. Explore all the features from day one."},
   {q:'كيف يتم الدفع؟',a:'الدفع عبر تحويل بنكي. بعد التحويل يتم تفعيل حسابك خلال 24 ساعة.',
    qEn:'How does payment work?',aEn:'Payment is via bank transfer. Your account is activated within 24 hours after transfer.'},
-  {q:'كم عدد الموردين في كل باقة؟',a:'الأساسية: 3 موردين، المتوسطة: 10 موردين، المتقدمة: غير محدود.',
-   qEn:'How many suppliers per plan?',aEn:'Basic: 3 suppliers, Standard: 10 suppliers, Advanced: unlimited.'},
-  {q:'هل يدعم متعدد الفروع؟',a:'نعم — الأساسية: فرع واحد، المتوسطة: 3 فروع، المتقدمة: 10 فروع. وتقدر تضيف فرع لأي باقة بـ 49 ⃁/شهر.',
-   qEn:'Does it support multiple branches?',aEn:'Yes — Basic: 1 branch, Standard: 3 branches, Advanced: 10 branches. Extra branches can be added to any plan for 49 SAR/month.'},
+  {q:'كم عدد الموردين في كل باقة؟',a:'الأساسية: 5 موردين، الشاملة: 20 مورد، المتقدمة: 50 مورد. وكل فرع إضافي يزيد عدد الموردين، وتقدر تضيف موردين من داخل النظام.',
+   qEn:'How many suppliers per plan?',aEn:'Basic: 5 suppliers, Complete: 20, Advanced: 50. Each extra branch adds more, and you can add suppliers from inside the app.'},
+  {q:'هل يدعم متعدد الفروع؟',a:'نعم — الأساسية: فرع واحد وتقدر توصل لفرعين، الشاملة: 3 فروع وتقدر توصل لـ5، المتقدمة: 6 فروع وتقدر توصل لـ10. وتضيف الفروع بنفسك من داخل النظام، وللمنشآت الأكبر تواصل معنا.',
+   qEn:'Does it support multiple branches?',aEn:'Yes — Basic: 1 branch (up to 2), Complete: 3 (up to 5), Advanced: 6 (up to 10). Add branches yourself from inside the app; larger chains, contact us.'},
   {q:'هل الموظفون يحتاجون تدريب؟',a:'لا — واجهة الموظفين بسيطة جداً بضغطة واحدة، وتدعم 7 لغات لأي جنسية.',
    qEn:'Do staff need training?',aEn:'No — the staff interface is extremely simple (one-tap), and supports 7 languages for any nationality.'},
   {q:'هل يمكن الإلغاء في أي وقت؟',a:'نعم — لا يوجد عقود. يمكنك إلغاء اشتراكك في أي وقت.',
@@ -164,5 +211,5 @@ export const FEATURES = [
   { icon:BarChart3, title:'تقارير ذكية', titleEn:'Smart reports', desc:'تقارير الصرف والمشتريات والجرد وإقفال الكاشير. صدّرها بـ PDF أو CSV بضغطة واحدة.', descEn:'Dispense, purchase, inventory, and cashier closing reports. Export to PDF or CSV in one click.' },
   { icon:Store, title:'متعدد الفروع', titleEn:'Multi-branch', desc:'أدر جميع فروعك من لوحة تحكم واحدة مع مخزون مستقل لكل فرع.', descEn:'Manage all your branches from one dashboard with independent inventory per branch.' },
   { icon:Bot, title:'أدوات الذكاء الاصطناعي', titleEn:'AI tools', desc:'اقتراح الشراء الذكي بناءً على اتجاه استهلاكك الفعلي، ومقارنة أداء الفروع تلقائياً.', descEn:'Smart purchase suggestions based on your actual consumption trend, and automatic branch performance comparison.' },
-  { icon:ShoppingBag, title:'المتجر — حل تقني متكامل', titleEn:'The Store — a complete tech solution', desc:'صفحة عرض منتجات أنيقة برابط أو QR، تشاركها بسهولة مع عملائك — كل شي تحت سقف واحد.', descEn:'An elegant product showcase page via link or QR, easy to share with your customers — all under one roof.', badge:'حل تقني', badgeEn:'Tech Solution' },
+  { icon:TrendingUp, title:'الأرباح والمصروفات', titleEn:'Profit & expenses', desc:'اعرف صافي ربحك كل شهر بعد المشتريات والمصروفات الثابتة والمتغيرة والرواتب، وقارنه بالشهر اللي قبله.', descEn:'See your net profit every month after purchases, fixed and variable expenses and salaries, compared with last month.' },
 ]

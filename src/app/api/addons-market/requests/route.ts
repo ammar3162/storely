@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requestExtraBranch } from '@/lib/extraBranch'
+import { EXTRA_BRANCH_SLUG } from '@/lib/branchLimit'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -24,8 +26,13 @@ export async function POST(req: Request) {
     if (access.role === 'manager') return NextResponse.json({ error: 'طلب الإضافات لمالك المنشأة' }, { status: 403 })
 
     const db = sb()
-    const { data: addon } = await db.from('marketplace_addons').select('id,name').eq('id', addon_id).eq('is_active', true).maybeSingle()
+    const { data: addon } = await db.from('marketplace_addons').select('id,name,slug').eq('id', addon_id).eq('is_active', true).maybeSingle()
     if (!addon) return NextResponse.json({ error: 'الإضافة غير متاحة' }, { status: 404 })
+    // الفرع الإضافي: نفس طلب صفحة الفروع (حد الباقة وسعرها)
+    if ((addon as any).slug === EXTRA_BRANCH_SLUG) {
+      const res = await requestExtraBranch(db, org_id, access.userId || null)
+      return res.ok ? NextResponse.json({ success: true }) : NextResponse.json({ error: res.error, code: res.code }, { status: res.status })
+    }
 
     let branchIds: string[] | null = null
     if (Array.isArray(branch_ids) && branch_ids.length) {

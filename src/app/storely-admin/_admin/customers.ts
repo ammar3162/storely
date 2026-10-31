@@ -1,4 +1,4 @@
-import { PLAN_PRICING, planKeyOf, planPriceFor, type PlanKey } from '@/lib/planPricing'
+import { PLAN_CAPS, planKeyOf, planPriceFor, planLabel as planLabelLib, type PlanKey, type OrgDiscount } from '@/lib/planPricing'
 import type { Tone } from './kit'
 
 export type Customer = {
@@ -7,7 +7,8 @@ export type Customer = {
   subscription_type: string; subscription_ends_at: string | null; billing_cycle: 'monthly' | 'yearly'
   max_branches: number; plan: PlanKey; requested_plan: string
   locked_plan_monthly: number | null   // سعر مثبّت لمشترك قبل تغيير الأسعار
-  monthly_bill: number | null          // الباقة + الإضافات السارية شهرياً
+  monthly_bill: number | null          // الباقة + الإضافات السارية شهرياً (بعد الخصم)
+  discount: OrgDiscount                // خصم خاص من لوحة الإدارة
 }
 
 export const STATUS: Record<string, { label: string; tone: Tone }> = {
@@ -18,14 +19,17 @@ export const STATUS: Record<string, { label: string; tone: Tone }> = {
 }
 
 // حدود كل باقة (فروع الباقة الأساسية — الفروع الإضافية تنحسب من الإضافات)
+// من مصدر واحد (lib/planPricing PLAN_CAPS) — الموظفين والموردين للمنشأة كلها
+const capsDesc = (k: PlanKey) => { const c = PLAN_CAPS[k]; return `${c.branches === 1 ? 'فرع' : c.branches + ' فروع'} · ${c.staff} موظف · ${c.suppliers} مورد · ${k === 'basic' ? 'المميزات بالإضافات' : 'كل المميزات'} · يوصل ${c.maxBranches} فروع` }
 export const PLAN_LIMITS: Record<PlanKey, { branches: number; staff: number; suppliers: number; desc: string }> = {
-  basic: { branches: 1, staff: 3, suppliers: 3, desc: 'فرع · 3 موظفين · 3 موردين · بدون حضور/انصراف أو إقفال كاشير' },
-  pro: { branches: 3, staff: 10, suppliers: 10, desc: '3 فروع · 10 موظفين · 10 موردين · كل المميزات' },
-  advanced: { branches: 10, staff: 999, suppliers: 999, desc: '10 فروع · موظفين وموردين بلا حد' },
+  basic: { ...PLAN_CAPS.basic, desc: capsDesc('basic') },
+  pro: { ...PLAN_CAPS.pro, desc: capsDesc('pro') },
+  advanced: { ...PLAN_CAPS.advanced, desc: capsDesc('advanced') },
 }
 
 export const PLAN_KEYS: PlanKey[] = ['basic', 'pro', 'advanced']
-export const planLabel = (k: PlanKey) => PLAN_PRICING[k].label
+// المتقدمة بفروع فوق حدها = «المؤسسات»
+export const planLabel = (k: PlanKey, maxBranches?: number | null) => planLabelLib(k, maxBranches)
 export const PLAN_TONE: Record<PlanKey, Tone> = { basic: 'primary', pro: 'info', advanced: 'violet' }
 
 export function mapCustomer(p: any): Customer {
@@ -43,6 +47,7 @@ export function mapCustomer(p: any): Customer {
     requested_plan: p.organizations?.requested_plan || '',
     locked_plan_monthly: p.organizations?.locked_plan_monthly ?? null,
     monthly_bill: p.monthly_bill ?? null,
+    discount: { discount_type: p.organizations?.discount_type ?? null, discount_value: p.organizations?.discount_value ?? null, discount_note: p.organizations?.discount_note ?? null, discount_until: p.organizations?.discount_until ?? null },
   }
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { billLines, planKeyOf, addonPeriodEnd, proratedCharge } from './planPricing'
+import { billLines, activeDiscount, planKeyOf, addonPeriodEnd, proratedCharge, staffBase, supplierBase, maxSelfServeBranches, branchPriceFor, planLabel, PLAN_CAPS } from './planPricing'
 
 const branch = (qty: number, isValid = true) => ({ name: 'فرع إضافي', slug: 'extra_branch', monthly_price: 49, subscription: { isValid, quantity: qty } })
 
@@ -56,5 +56,59 @@ describe('proration', () => {
     expect(addonPeriodEnd('2026-09-01T00:00:00Z', now).toISOString()).toBe('2026-10-21T00:00:00.000Z')
     expect(addonPeriodEnd(null, now).toISOString()).toBe('2026-10-21T00:00:00.000Z')
     expect(proratedCharge(49, 1, addonPeriodEnd(null, now), now)).toEqual({ days: 30, amount: 49 })
+  })
+})
+
+describe('new plans (الأساسية / الشاملة / المتقدمة / المؤسسات)', () => {
+  it('staff and suppliers are for the whole org, plus each extra branch', () => {
+    expect(staffBase('basic', 3, 0)).toBe(3)
+    expect(staffBase('basic', 3, 1)).toBe(6)
+    expect(staffBase('pro', 10, 0)).toBe(15)       // كان 10 — صار 15
+    expect(staffBase('pro', 15, 2)).toBe(25)
+    expect(staffBase('advanced', 50, 4)).toBe(70)
+    expect(supplierBase('basic', 5, 1)).toBe(10)
+    expect(supplierBase('pro', 20, 0)).toBe(20)
+  })
+  it('old unlimited orgs keep unlimited', () => {
+    expect(staffBase('advanced', 999, 0)).toBe(999)
+    expect(supplierBase('advanced', 999, 0)).toBe(999)
+  })
+  it('self-serve branch caps and prices per plan', () => {
+    expect([maxSelfServeBranches('basic', 1), maxSelfServeBranches('pro', 3), maxSelfServeBranches('advanced', 6)]).toEqual([2, 5, 10])
+    expect(maxSelfServeBranches('advanced', 10)).toBe(10)       // متقدمة قديمة بـ10 فروع
+    expect(maxSelfServeBranches('advanced', 15)).toBe(15)       // مؤسسات
+    expect([branchPriceFor('basic'), branchPriceFor('pro'), branchPriceFor('advanced')]).toEqual([79, 79, 59])
+    expect(PLAN_CAPS.pro).toMatchObject({ branches: 3, staff: 15, suppliers: 20 })
+  })
+  it('labels: الشاملة, and المؤسسات above 10 branches', () => {
+    expect(planLabel('pro', 3)).toBe('الشاملة')
+    expect(planLabel('advanced', 10)).toBe('المتقدمة')
+    expect(planLabel('advanced', 15)).toBe('المؤسسات')
+  })
+  it('yearly bill gives the extra branch the same 20% discount', () => {
+    const br = { name: 'فرع إضافي', slug: 'extra_branch', monthly_price: 79, subscription: { isValid: true, quantity: 1 } }
+    expect(billLines('pro', 'yearly', [br]).total).toBe(2390 + Math.round(79 * 12 * 0.8))
+    expect(billLines('pro', 'monthly', [br]).total).toBe(249 + 79)
+  })
+})
+
+describe('org discount (from the admin panel)', () => {
+  const cashier = { name: 'كاشير', slug: 'cashier_closing', monthly_price: 29, subscription: { isValid: true, quantity: 1 } }
+  it('percent takes a share of the whole bill and shows as its own line', () => {
+    const b = billLines('basic', 'monthly', [cashier], null, { discount_type: 'percent', discount_value: 20, discount_note: 'عميل مميز' })
+    expect(b.lines.at(-1)).toEqual({ label: 'خصم "عميل مميز" (20%)', amount: -26 })
+    expect(b.total).toBe(128 - 26)
+  })
+  it('a fixed amount is monthly, ×12 on yearly, and never makes the bill negative', () => {
+    expect(billLines('pro', 'monthly', [], null, { discount_type: 'amount', discount_value: 50 }).total).toBe(199)
+    expect(billLines('pro', 'yearly', [], null, { discount_type: 'amount', discount_value: 50 }).total).toBe(2390 - 600)
+    expect(billLines('basic', 'monthly', [], null, { discount_type: 'amount', discount_value: 500 }).total).toBe(0)
+  })
+  it('stops after its end date (Saudi day) and ignores empty values', () => {
+    const now = new Date('2026-11-10T22:00:00Z')   // 11 نوفمبر بتوقيت السعودية
+    expect(activeDiscount({ discount_type: 'percent', discount_value: 10, discount_until: '2026-11-11' }, now)).not.toBeNull()
+    expect(activeDiscount({ discount_type: 'percent', discount_value: 10, discount_until: '2026-11-10' }, now)).toBeNull()
+    expect(activeDiscount({ discount_type: 'percent', discount_value: 0 })).toBeNull()
+    expect(billLines('basic', 'monthly', [], null, null).total).toBe(99)
   })
 })

@@ -14,7 +14,7 @@ export default function AddonRequestsPage() {
   const [busy, setBusy] = useState<string | null>(null)
   const [msg, setMsg] = useState('')
   const [planReqs, setPlanReqs] = useState<any[]>([])
-  const PLAN_AR: Record<string, string> = { basic: 'الأساسية', pro: 'المتوسطة', advanced: 'المتقدمة' }
+  const PLAN_AR: Record<string, string> = { basic: 'الأساسية', pro: 'الشاملة', advanced: 'المتقدمة' }
 
   async function load() {
     setLoading(true)

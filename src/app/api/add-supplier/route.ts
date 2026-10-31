@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { checkSupplierCapacity } from '@/lib/supplierCapacity'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 
 const sb = () => createClient(
@@ -7,8 +8,7 @@ const sb = () => createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// نفس مبدأ الموظفين -- حد الباقة الأساسي صارم لكل فرع لحاله، وإضافة "مورد إضافي" رصيد مشترك يُستخدم بأي فرع
-const PLAN_BASE_SUPPLIERS: Record<string, number> = { basic: 3, pro: 5, advanced: 999 }
+// حد الموردين للمنشأة كلها، وإضافة "مورد إضافي" رصيد فوقه يُستخدم بأي فرع
 
 export async function POST(req: Request) {
   try {
@@ -26,48 +26,10 @@ export async function POST(req: Request) {
 
     const supabase = sb()
 
-    const { data: org } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
-    const orgPlan = (org as any)?.plan || 'basic'
-    const baseLimit = PLAN_BASE_SUPPLIERS[orgPlan] ?? 3
-
-    let branchCountQ = supabase.from('suppliers').select('id', { count: 'exact', head: true }).eq('org_id', org_id).eq('is_active', true)
-    branchCountQ = branch_id ? branchCountQ.eq('branch_id', branch_id) : branchCountQ.is('branch_id', null)
-    const { count: branchCount } = await branchCountQ
-
-    let addonSubscriptionId: string | null = null
-
-    if ((branchCount || 0) >= baseLimit) {
-      const { data: extraSupSub } = await supabase
-        .from('org_addon_subscriptions')
-        .select('id,quantity,marketplace_addons!inner(slug)')
-        .eq('org_id', org_id)
-        .eq('status', 'active')
-        .eq('marketplace_addons.slug', 'extra_suppliers')
-        .gt('expires_at', new Date().toISOString())   // الإضافة المنتهية ما تعطي رصيد
-        .maybeSingle()
-
-      if (!extraSupSub) {
-        return NextResponse.json({
-          error: `هذا الفرع وصل حده الأساسي (${baseLimit} مورد) — يرجى ترقية الباقة أو شراء إضافة "مورد إضافي"`
-        }, { status: 403 })
-      }
-
-      const addonQty = (extraSupSub as any).quantity || 0
-      const { count: usedAddonSlots } = await supabase
-        .from('suppliers')
-        .select('id', { count: 'exact', head: true })
-        .eq('org_id', org_id)
-        .eq('is_active', true)
-        .eq('addon_subscription_id', (extraSupSub as any).id)
-
-      if ((usedAddonSlots || 0) >= addonQty) {
-        return NextResponse.json({
-          error: `هذا الفرع وصل حده الأساسي (${baseLimit} مورد)، ورصيد إضافة "مورد إضافي" (${addonQty}) مستهلك بالكامل — زوّد الكمية من صفحة الإضافات`
-        }, { status: 403 })
-      }
-
-      addonSubscriptionId = (extraSupSub as any).id
-    }
+    // حد الموردين للمنشأة كلها (lib/supplierCapacity)
+    const capacity = await checkSupplierCapacity(supabase, org_id)
+    if (!capacity.ok) return NextResponse.json({ error: capacity.error }, { status: 403 })
+    const addonSubscriptionId = capacity.addonSubscriptionId
 
     const { data: newSup, error } = await supabase
       .from('suppliers')

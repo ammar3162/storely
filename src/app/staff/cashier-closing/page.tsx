@@ -39,7 +39,7 @@ const CUI: Record<string,Record<'ar'|'en',string>> = {
   thankYouTitle:    {ar:'شكراً لك {name} على مجهودك اليوم 🙏',en:'Thank you {name} for your effort today 🙏'},
   logout:           {ar:'خروج',en:'Logout'},
   cashierBadge:     {ar:'كاشير',en:'Cashier'},
-  lockedTitle:      {ar:'ميزة إقفال الكاشير متاحة بالباقة المتوسطة أو المتقدمة',en:'Cashier closing is available on the Standard or Advanced plan'},
+  lockedTitle:      {ar:'ميزة إقفال الكاشير متاحة بالباقة الشاملة أو المتقدمة',en:'Cashier closing is available on the Complete or Advanced plan'},
   lockedSub:        {ar:'رقّي باقتك عشان تفعّل إقفال الكاشير اليومي وتتابع المبيعات والمصروفات تلقائياً',en:'Upgrade your plan to enable daily cashier closing and automatically track sales and expenses'},
   pageTitle:        {ar:'إقفال الكاشير اليومي',en:'Daily Cashier Closing'},
   savedTitle:       {ar:'تم حفظ تقرير الإقفال بنجاح',en:'Closing report saved successfully'},
@@ -223,7 +223,7 @@ export default function CashierClosingPage() {
         if(org?.logo_url) setOrgLogo(org.logo_url)
         if(org?.business_day_start_hour != null) setDayStartHour(org.business_day_start_hour)
         if(org?.currency) setCurr(currencySymbol(org.currency))
-        // نفس قرار الخادم: المتوسطة/المتقدمة أو إضافة «إقفال الكاشير»
+        // نفس قرار الخادم: الشاملة/المتقدمة أو إضافة «إقفال الكاشير»
         if(org && org.cashier_feature===false) setLocked(true)
       })
   },[])

@@ -72,7 +72,7 @@ export async function POST(req: Request) {
 
     const db = sb()
     const [max, active] = await Promise.all([maxBranchesFor(db, org_id), activeCount(db, org_id)])
-    if (active >= max) return NextResponse.json({ error: `وصلت للحد الأقصى (${max} فرع) — أضف فرعاً من صفحة الإضافات`, code: 'branch_limit' }, { status: 403 })
+    if (active >= max) return NextResponse.json({ error: `وصلت حد فروع باقتك (${max} فرع) — اطلب فرع إضافي من صفحة الفروع`, code: 'branch_limit' }, { status: 403 })
 
     const { data, error } = await db.from('branches')
       .insert({ org_id, name: String(name).trim(), location: String(location || '').trim() || null } as any)
@@ -125,7 +125,7 @@ export async function PATCH(req: Request) {
         const active = await activeCount(db, org_id)
         if (body.is_active === true) {
           const max = await maxBranchesFor(db, org_id)
-          if (active >= max) return NextResponse.json({ error: 'وصلت للحد الأقصى — أوقف فرعاً آخر أو أضف فرعاً من صفحة الإضافات', code: 'branch_limit' }, { status: 403 })
+          if (active >= max) return NextResponse.json({ error: 'وصلت حد فروع باقتك — أوقف فرعاً آخر أو اطلب فرع إضافي', code: 'branch_limit' }, { status: 403 })
         } else if (active <= 1) {
           return NextResponse.json({ error: 'لا يمكن إيقاف الفرع الوحيد' }, { status: 400 })
         }

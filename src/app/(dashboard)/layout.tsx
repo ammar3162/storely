@@ -54,7 +54,6 @@ const NAV_GROUPS = [
   {
     label: 'المتجر', labelKey: 'nav.groupStore',
     items: [
-      { href:'/online-store', label:'المنيو الإلكتروني', labelKey:'nav.onlineStore', icon:'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
       { href:'/addons-market', label:'الإضافات', labelKey:'nav.addonsMarket', icon:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
     ]
   },
@@ -108,9 +107,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [orgName, setOrgName]       = useState('')
   const [subDaysLeft, setSubDaysLeft] = useState<number|null>(null)
   const [orgLogo, setOrgLogo]       = useState<string|null>(null)
-  const [hasMenuAddon, setHasMenuAddon] = useState(false)
-  // المنيو بالفروع: الفروع المشتركة (null = اشتراك للمنشأة كلها)
-  const [menuBranchIds, setMenuBranchIds] = useState<string[] | null>(null)
   const [hasHrAddon, setHasHrAddon] = useState(false)
   const [hasProfitAddon, setHasProfitAddon] = useState(false)
   const [hasAiAddon, setHasAiAddon] = useState(false)
@@ -135,20 +131,15 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }, [unread])
   const [branches, setBranches]     = useState<any[]>([])
   const [orgPlan, setOrgPlan]       = useState<string>('basic')
-  // الإضافات المفعّلة (المنيو، الحضور، الربحية، الذكاء، الفروع الإضافية) — تتحدث لحالها لما تتغير (useLiveRefresh تحت)
+  // الإضافات المفعّلة (الحضور، الربحية، الذكاء، الفروع الإضافية) — تتحدث لحالها لما تتغير (useLiveRefresh تحت)
   const loadAddons = useCallback((oid: string) => {
     fetch(`/api/addons-market?org_id=${oid}`).then(r=>r.json()).then(j=>{
       if (j.success) {
-        const menuAddon = (j.addons||[]).find((a:any)=>a.slug==='online_menu')
-        setHasMenuAddon(!!menuAddon?.subscription?.isValid)
-        const mb = menuAddon?.subscription?.branch_ids
-        setMenuBranchIds(Array.isArray(mb) && mb.length ? mb : null)
         const hrAddon = (j.addons||[]).find((a:any)=>a.slug==='hr_full')
         setHasHrAddon(!!hrAddon?.subscription?.isValid)
-        const profitAddon = (j.addons||[]).find((a:any)=>a.slug==='profitability')
-        setHasProfitAddon(!!profitAddon?.subscription?.isValid)
-        const aiAddon = (j.addons||[]).find((a:any)=>a.slug==='ai_tools')
-        setHasAiAddon(!!aiAddon?.subscription?.isValid)
+        const live = (slug:string) => !!(j.addons||[]).find((a:any)=>a.slug===slug)?.subscription?.isValid
+        setHasProfitAddon(live('profitability'))
+        setHasAiAddon(live('ai_tools'))
         const branchAddon = (j.addons||[]).find((a:any)=>a.slug==='extra_branch')
         setHasExtraBranchAddon(!!branchAddon?.subscription?.isValid)
       }
@@ -468,9 +459,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     if(branchPages.includes(href) && orgPlan==='basic' && !hasExtraBranchAddon && orgMaxBranches<=1) return false
     if((href==='/attendance'||href==='/hr-management') && orgPlan==='basic' && !hasHrAddon) return false
     if(href==='/profitability' && orgPlan==='basic' && !hasProfitAddon) return false
-    if(href==='/online-store' && !hasMenuAddon) return false
-    // المنيو مشترك لفروع معيّنة: يختفي من القائمة لما الفرع المختار غير مشترك
-    if(href==='/online-store' && menuBranchIds && typeof window!=='undefined' && !menuBranchIds.includes(sessionStorage.getItem('s_branch_id')||'')) return false
     if(['/branch-compare','/branch-managers','/transfer-stock'].includes(href) && branches.length<=1) return false
     return navVisible(href)
   }

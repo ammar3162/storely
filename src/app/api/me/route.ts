@@ -23,7 +23,7 @@ export async function GET() {
 
     const [{ data: org }, { data: extra }, { data: branches }, { data: branchSubs }] = await Promise.all([
       db.from('organizations')
-        .select('id,name,plan,billing_cycle,currency,logo_url,deletion_scheduled_at,max_staff,max_suppliers,max_branches,country_code,business_type,onboarding_done,vat_registered,locked_plan_monthly')
+        .select('id,name,plan,billing_cycle,currency,logo_url,deletion_scheduled_at,max_staff,max_suppliers,max_branches,country_code,business_type,onboarding_done,vat_registered,locked_plan_monthly,discount_type,discount_value,discount_note,discount_until')
         .eq('id', profile.orgId).single(),
       db.from('profiles')
         .select('full_name,phone,subscription_ends_at,permissions,whatsapp_consent,whatsapp_first_contact_confirmed,terms_version_accepted')
@@ -68,6 +68,8 @@ export async function GET() {
         onboarding_done: o.onboarding_done !== false,
         features,
         locked_plan_monthly: o.locked_plan_monthly ?? null,
+        // الخصم الخاص (من لوحة الإدارة) — يطلع سطر بالفاتورة
+        discount_type: o.discount_type ?? null, discount_value: o.discount_value ?? null, discount_note: o.discount_note ?? null, discount_until: o.discount_until ?? null,
       } : null,
       branches: branches || [],
     })
