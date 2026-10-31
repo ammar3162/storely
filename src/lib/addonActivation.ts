@@ -1,6 +1,7 @@
 // تفعيل إضافة لمنشأة — مكان واحد يستخدمه الأدمن من ملف العميل ومن الموافقة على طلبات الإضافات
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
+import { syncStaffToLimit } from '@/lib/staffCapacity'
 import { addonPeriodEnd, branchPriceFor, planKeyOf, proratedCharge, unitPrice, YEARLY_FACTOR } from '@/lib/planPricing'
 
 export type ActivateResult =
@@ -53,6 +54,8 @@ export async function activateAddon(db: SupabaseClient, input: { orgId: string; 
     const { data: org } = await db.from('organizations').select('max_suppliers').eq('id', orgId).single()
     await db.from('organizations').update({ max_suppliers: Math.max(0, ((org as any)?.max_suppliers || 0) + qtyDelta) } as any).eq('id', orgId)
   }
+  // تغيّر حد الموظفين: الزايدين يتوقفون، ولو فيه مكان يرجع الموقوفين بسبب الحد
+  if (slug === 'extra_staff' || slug === 'extra_branch') await syncStaffToLimit(db, orgId)
 
   // المستحق الحين: الوحدات الجديدة فقط × الأيام الباقية لين التجديد
   const chargedQty = wasActive ? Math.max(0, qtyDelta) : qty

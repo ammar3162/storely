@@ -1,6 +1,7 @@
 // تغيير باقة منشأة — مكان واحد يستخدمه الأدمن (تغيير مباشر) والموافقة على طلب الترقية
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
+import { syncStaffToLimit } from '@/lib/staffCapacity'
 import { PLAN_PRICING, PLAN_CAPS, planKeyOf, planPriceFor } from '@/lib/planPricing'
 
 export { PLAN_CAPS }
@@ -46,6 +47,7 @@ export async function changeOrgPlan(db: SupabaseClient, orgId: string, input: { 
 
   // تخفيض: الفروع الزايدة تتوقف مؤقتاً (مع موظفينها). ترقية: ترجع تلقائياً
   const branchSync = await syncBranchesToLimit(db, orgId)
+  const staffSync = await syncStaffToLimit(db, orgId)
 
   // الشاملة فما فوق فيها الكاشير والموظفين والذكاء والربحية — نلغي إضافاتها عشان ما تنحسب عليه
   // ولا تبقى مفتوحة بدون دفع لو رجع للأساسية لاحقاً
@@ -63,5 +65,5 @@ export async function changeOrgPlan(db: SupabaseClient, orgId: string, input: { 
       await (db as any).from('subscription_events').insert({ org_id: orgId, event_type: newAmount > oldAmount ? 'upgraded' : 'downgraded', plan: planName, amount: newAmount })
     } catch {}
   }
-  return { ok: true as const, ...branchSync }
+  return { ok: true as const, ...branchSync, staffLocked: staffSync.locked, staffRestored: staffSync.restored }
 }

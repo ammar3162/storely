@@ -98,6 +98,18 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
       expect(sub).toMatchObject({ quantity: 1, status: 'active' })
       expect(Number((sub as any).locked_price)).toBe(79)
 
+      // إلغاء الفرع الإضافي: الموظفين الزايدين عن الحد (حتى اللي ما انربطوا بإضافة) يتوقفون مؤقتاً — الأحدث أول — ويرجعون لو رجع الحد
+      const adminSubs = await import('@/app/api/admin/addon-subscriptions/route')
+      const { data: brAddon } = await db.from('marketplace_addons').select('id').eq('slug', 'extra_branch').single()
+      for (let i = 3; i < 5; i++) await staff(i, branchA)   // ٥ نشطين = حد الأساسية مع الفرع (٦) ما تعداه
+      const del = await adminSubs.DELETE(new Request('http://test/api/admin/addon-subscriptions', { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify({ org_id: orgId, addon_id: (brAddon as any).id }) }))
+      expect(del.status).toBe(200)
+      const actives = async () => ((await db.from('staff_members').select('name').eq('org_id', orgId).eq('is_active', true).like('name', 'خطة %')).data || []).map((x: any) => x.name).sort()
+      expect(await actives()).toEqual(['خطة 0', 'خطة 1', 'خطة 2'])
+      const { activateAddon } = await import('@/lib/addonActivation')
+      expect((await activateAddon(db as any, { orgId, addonId: (brAddon as any).id, quantity: 1 })).ok).toBe(true)
+      expect(await actives()).toEqual(['خطة 0', 'خطة 1', 'خطة 2', 'خطة 3', 'خطة 4'])
+
       // إدارة الموظفين: يكمل على 39 لين التجديد، ومن التجديد على السعر الجديد
       const { data: hr } = await db.from('marketplace_addons').select('id').eq('slug', 'hr_full').single()
       await db.from('org_addon_subscriptions').upsert({ org_id: orgId, addon_id: (hr as any).id, status: 'active', quantity: 1, locked_price: 39,

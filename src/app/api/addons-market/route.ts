@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 import { INCLUDED_FROM_STANDARD } from '@/lib/changePlan'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
+import { syncStaffToLimit } from '@/lib/staffCapacity'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -50,6 +51,8 @@ export async function DELETE(req: Request) {
       await supabase.from('organizations').update({ max_suppliers: Math.max(0, ((org as any)?.max_suppliers || existingQty) - existingQty) } as any).eq('id', org_id)
       await supabase.from('suppliers').update({ is_active: false } as any).eq('addon_subscription_id', existingSubId)
     }
+    // الموظفين الزايدين عن الحد بعد الإلغاء يتوقفون مؤقتاً — الأحدث أول
+    if (slug === 'extra_staff' || slug === 'extra_branch') await syncStaffToLimit(supabase, org_id)
 
     return NextResponse.json({ success: true })
   } catch {

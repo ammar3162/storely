@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { INCLUDED_FROM_STANDARD } from '@/lib/changePlan'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
+import { syncStaffToLimit } from '@/lib/staffCapacity'
 import { activateAddon } from '@/lib/addonActivation'
 
 const sb = () => createClient(
@@ -60,6 +61,8 @@ export async function DELETE(req: Request) {
       await supabase.from('suppliers').update({ is_active: false } as any).eq('addon_subscription_id', existingSubId)
     }
   }
+  // الموظفين الزايدين عن الحد بعد الإلغاء (حتى اللي ما انربطوا بالإضافة) يتوقفون مؤقتاً — الأحدث أول
+  if (slug === 'extra_staff' || slug === 'extra_branch') await syncStaffToLimit(supabase, org_id)
 
   await logAdminAction(admin, 'cancel_addon', org_id, org_name || null, { addon_id, addon_name })
 

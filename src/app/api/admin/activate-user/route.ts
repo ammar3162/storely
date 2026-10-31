@@ -3,6 +3,7 @@ import { planPriceFor, planKeyOf, PRICE_UPDATE_ON_RENEWAL } from '@/lib/planPric
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
+import { syncStaffToLimit } from '@/lib/staffCapacity'
 import { awardAgentCommission } from '@/lib/agentReferral'
 
 export async function POST(req: Request) {
@@ -44,6 +45,7 @@ export async function POST(req: Request) {
     if (repricedIds.length) await supabase.from('org_addon_subscriptions').update({ locked_price: null } as any)
       .eq('org_id', orgIdForUpdate).eq('status', 'active').in('addon_id', repricedIds)
     await syncBranchesToLimit(supabase, orgIdForUpdate)
+    await syncStaffToLimit(supabase, orgIdForUpdate)
   }
 
   await logAdminAction(admin, 'activate_user', (profile as any)?.org_id, (profile as any)?.organizations?.name, { userId, type, ends })
