@@ -24,6 +24,7 @@ export type Me = {
     max_branches: number; country_code: string; business_type: string | null; onboarding_done: boolean; vat_registered?: boolean | null
     features?: { cashier: boolean; hr: boolean; ai: boolean; profitability: boolean }
     locked_plan_monthly?: number | null
+    discount_type?: string | null; discount_value?: number | null; discount_note?: string | null; discount_until?: string | null
   } | null
   branches: { id: string; name: string; location: string | null }[]
 }

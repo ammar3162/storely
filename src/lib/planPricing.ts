@@ -89,7 +89,20 @@ export const unitPrice = (addonPrice: number | string, sub?: AddonSub | null) =>
 type AddonRow = { name: string; slug: string; monthly_price: number | string; subscription?: AddonSub | null; subscriptions?: AddonSub[] }
 export type BillLine = { label: string; amount: number }
 
-export function billLines(plan: PlanKey, cycle: BillingCycle, addons: AddonRow[], lockedPlanMonthly?: number | string | null): { lines: BillLine[]; total: number } {
+// خصم خاص للمنشأة (من لوحة الإدارة): نسبة من الفاتورة كلها، أو مبلغ ثابت شهرياً (×12 بالسنوي) — لين تاريخ انتهائه لو محدد
+export type OrgDiscount = { discount_type?: string | null; discount_value?: number | string | null; discount_note?: string | null; discount_until?: string | null }
+
+/** الخصم الساري (أو null لو ما فيه/انتهى) — until = آخر يوم يشمله الخصم */
+export function activeDiscount(d: OrgDiscount | null | undefined, now = new Date()): { type: 'percent' | 'amount'; value: number; note: string; until: string | null } | null {
+  if (!d || (d.discount_type !== 'percent' && d.discount_type !== 'amount')) return null
+  const value = Number(d.discount_value) || 0
+  if (value <= 0) return null
+  const until = d.discount_until ? String(d.discount_until).slice(0, 10) : null
+  if (until && until < new Date(now.getTime() + 3 * 3600e3).toISOString().slice(0, 10)) return null   // بتوقيت السعودية
+  return { type: d.discount_type, value: d.discount_type === 'percent' ? Math.min(100, value) : value, note: String(d.discount_note || '').trim(), until }
+}
+
+export function billLines(plan: PlanKey, cycle: BillingCycle, addons: AddonRow[], lockedPlanMonthly?: number | string | null, discount?: OrgDiscount | null): { lines: BillLine[]; total: number } {
   const p = planPriceFor(plan, lockedPlanMonthly)
   const lines: BillLine[] = [{
     label: `اشتراك باقة "${p.label}" (${cycle === 'yearly' ? 'سنوياً' : 'شهرياً'})`,
@@ -110,6 +123,13 @@ export function billLines(plan: PlanKey, cycle: BillingCycle, addons: AddonRow[]
     } else {
       lines.push({ label: `إضافة "${a.name}" (${per})`, amount: price * months })
     }
+  }
+  const subtotal = lines.reduce((s, l) => s + l.amount, 0)
+  const d = activeDiscount(discount)
+  if (d && subtotal > 0) {
+    const raw = d.type === 'percent' ? subtotal * d.value / 100 : d.value * (cycle === 'yearly' ? 12 : 1)
+    const off = Math.min(subtotal, Math.round(raw))
+    if (off > 0) lines.push({ label: `خصم${d.note ? ` "${d.note}"` : ''} (${d.type === 'percent' ? `${d.value}%` : `${d.value} ر.س${cycle === 'yearly' ? ' × 12 شهر' : ' شهرياً'}`})`, amount: -off })
   }
   return { lines, total: lines.reduce((s, l) => s + l.amount, 0) }
 }

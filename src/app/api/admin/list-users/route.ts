@@ -16,14 +16,14 @@ export async function GET(req: Request) {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id,full_name,phone,role,status,created_at,org_id,subscription_type,subscription_ends_at,branch_count,organizations(name,max_branches,billing_cycle,plan,requested_plan,whatsapp_number,locked_plan_monthly)')
+    .select('id,full_name,phone,role,status,created_at,org_id,subscription_type,subscription_ends_at,branch_count,organizations(name,max_branches,billing_cycle,plan,requested_plan,whatsapp_number,locked_plan_monthly,discount_type,discount_value,discount_note,discount_until)')
     .eq('role', 'owner') // نعرض حساب المالك بس — مديرو الفروع حسابات تابعة، مو مؤسسات مستقلة
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // الفاتورة الشهرية لكل منشأة — عشان نعلّم المرشّحين للترقية
-  const orgs = ((data || []) as any[]).filter(u => u.org_id).map(u => ({ id: u.org_id, plan: u.organizations?.plan, max_branches: u.organizations?.max_branches, locked_plan_monthly: u.organizations?.locked_plan_monthly }))
+  const orgs = ((data || []) as any[]).filter(u => u.org_id).map(u => ({ id: u.org_id, plan: u.organizations?.plan, max_branches: u.organizations?.max_branches, locked_plan_monthly: u.organizations?.locked_plan_monthly, discount_type: u.organizations?.discount_type, discount_value: u.organizations?.discount_value, discount_until: u.organizations?.discount_until }))
   const bills = await monthlyBills(supabase, orgs).catch(() => ({} as Record<string, number>))
   return NextResponse.json({ users: ((data || []) as any[]).map(u => ({ ...u, monthly_bill: u.org_id ? bills[u.org_id] ?? null : null })) })
 }

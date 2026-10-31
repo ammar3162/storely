@@ -2,7 +2,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { billLines, planKeyOf } from '@/lib/planPricing'
 
-type Org = { id: string; plan?: string | null; max_branches?: number | null; locked_plan_monthly?: number | null }
+import type { OrgDiscount } from '@/lib/planPricing'
+
+type Org = { id: string; plan?: string | null; max_branches?: number | null; locked_plan_monthly?: number | null } & OrgDiscount
 
 /** فواتير عدة منشآت باستعلامين بس (لقائمة العملاء بالأدمن) */
 export async function monthlyBills(db: SupabaseClient, orgs: Org[]): Promise<Record<string, number>> {
@@ -19,13 +21,13 @@ export async function monthlyBills(db: SupabaseClient, orgs: Org[]): Promise<Rec
     const rows = ((addons || []) as any[]).map(a => ({
       ...a, subscriptions: mine.filter(s => s.addon_id === a.id).map(s => ({ ...s, isValid: new Date(s.expires_at).getTime() > now })),
     }))
-    out[o.id] = billLines(planKeyOf(o.plan, o.max_branches), 'monthly', rows, o.locked_plan_monthly).total
+    out[o.id] = billLines(planKeyOf(o.plan, o.max_branches), 'monthly', rows, o.locked_plan_monthly, o).total
   }
   return out
 }
 
 export async function monthlyBill(db: SupabaseClient, orgId: string) {
-  const { data: org } = await db.from('organizations').select('id,plan,max_branches,locked_plan_monthly').eq('id', orgId).maybeSingle()
+  const { data: org } = await db.from('organizations').select('id,plan,max_branches,locked_plan_monthly,discount_type,discount_value,discount_note,discount_until').eq('id', orgId).maybeSingle()
   if (!org) return 0
   return (await monthlyBills(db, [org as any]))[orgId] || 0
 }

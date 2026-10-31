@@ -4,7 +4,7 @@ import NumberInput from '@/components/NumberInput'
 import { MessageCircle, Send, Trash2, PauseCircle, PlayCircle } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { toast } from '@/components/toast'
-import { billLines, PLAN_PRICING, PLAN_CAPS, ENTERPRISE_LABEL, addonPeriodEnd, proratedCharge, planPriceFor, unitPrice, type PlanKey } from '@/lib/planPricing'
+import { billLines, activeDiscount, PLAN_PRICING, PLAN_CAPS, ENTERPRISE_LABEL, addonPeriodEnd, proratedCharge, planPriceFor, unitPrice, type PlanKey } from '@/lib/planPricing'
 import { A, Badge, Btn, Card, Drawer, adminFetch, daysLeft, fmtDate, inputStyle } from './kit'
 import { type Customer, STATUS, PLAN_KEYS, PLAN_LIMITS, planLabel } from './customers'
 
@@ -25,6 +25,8 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   const [branches, setBranches] = useState<{ id: string; name: string }[]>([])
   const [staffUsage, setStaffUsage] = useState<{ active: number; limit: number } | null>(null)
   const [ent, setEnt] = useState({ branches: '', staff: '', suppliers: '', price: '' })
+  // الخصم الخاص: نسبة أو مبلغ شهري، وملاحظة، وتاريخ انتهاء اختياري
+  const [disc, setDisc] = useState<{ type: 'percent' | 'amount'; value: string; note: string; until: string }>({ type: 'percent', value: '', note: '', until: '' })
 
   const c = customer
   useEffect(() => {
@@ -42,7 +44,8 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   if (!c) return null
   const st = STATUS[c.status] || STATUS.pending
   const dl = daysLeft(c.subscription_ends_at)
-  const bill = billLines(c.plan, c.billing_cycle, addons, c.locked_plan_monthly)
+  const bill = billLines(c.plan, c.billing_cycle, addons, c.locked_plan_monthly, c.discount)
+  const curDiscount = activeDiscount(c.discount)
   const hasPhone = !!c.phone
 
   async function activate(type: 'trial' | 'paid', d: number) {
@@ -108,6 +111,20 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
     if (!j.success) { toast(j.error || 'فشل التفعيل', 'error'); return }
     toast('تم تفعيل باقة المؤسسات', 'success')
     onChanged({ plan: 'advanced', max_branches: br, locked_plan_monthly: pr })
+  }
+
+  async function saveDiscount(remove = false) {
+    const v = Number(disc.value)
+    if (!remove && (!(v > 0) || (disc.type === 'percent' && v > 100))) { toast(disc.type === 'percent' ? 'النسبة بين 1 و 100' : 'اكتب مبلغ الخصم', 'error'); return }
+    if (remove && !(await confirmDialog({ title: 'إلغاء الخصم', message: `إلغاء خصم "${c!.org_name}"؟ فاتورته الجاية ترجع بدون خصم.`, type: 'warning' }))) return
+    setBusy('discount')
+    const body = remove ? { orgId: c!.org_id, orgName: c!.org_name, type: null } : { orgId: c!.org_id, orgName: c!.org_name, type: disc.type, value: v, note: disc.note, until: disc.until || null }
+    const j = await adminFetch('/api/admin/org-discount', { method: 'POST', body })
+    setBusy(null)
+    if (!j.success) { toast(j.error || 'فشل حفظ الخصم', 'error'); return }
+    toast(remove ? 'انلغى الخصم' : 'انحفظ الخصم — يطلع بفاتورته', 'success')
+    onChanged({ discount: j.discount })
+    if (!remove) setDisc({ type: 'percent', value: '', note: '', until: '' })
   }
 
   async function sendInvoice(items = bill.lines, title = 'إرسال الفاتورة') {
@@ -286,6 +303,35 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
               })}
             </div>
           )}
+      </Card>
+
+      {/* الخصم */}
+      <Card title="الخصم" subtitle="خصم خاص لهالعميل — يطلع سطر بفاتورته وبصفحة الإضافات والإعدادات عنده">
+        {curDiscount && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: A.primarySoft, border: `1px solid ${A.primary}55`, marginBottom: 10, fontSize: 13 }}>
+            <div style={{ flex: 1 }}>
+              <b>{curDiscount.type === 'percent' ? `${curDiscount.value}%` : `${curDiscount.value} ⃁ شهرياً`}</b>
+              {curDiscount.note && ` — ${curDiscount.note}`}
+              <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>{curDiscount.until ? `لين ${fmtDate(curDiscount.until)}` : 'بدون تاريخ انتهاء'}</div>
+            </div>
+            <Btn small kind="danger" loading={busy === 'discount'} disabled={!!busy && busy !== 'discount'} onClick={() => saveDiscount(true)}>إلغاء الخصم</Btn>
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <select value={disc.type} onChange={e => setDisc(d => ({ ...d, type: e.target.value as any }))} style={{ ...inputStyle, width: 110 }}>
+            <option value="percent">نسبة %</option>
+            <option value="amount">مبلغ ⃁ شهرياً</option>
+          </select>
+          <input inputMode="decimal" placeholder={disc.type === 'percent' ? 'مثلاً 20' : 'مثلاً 50'} value={disc.value}
+            onChange={e => setDisc(d => ({ ...d, value: e.target.value.replace(/[٠-٩]/g, x => String('٠١٢٣٤٥٦٧٨٩'.indexOf(x))).replace(/[^0-9.]/g, '') }))}
+            style={{ ...inputStyle, width: 90, textAlign: 'center' }} />
+          <input placeholder="سبب الخصم (يطلع بالفاتورة)" value={disc.note} maxLength={60} onChange={e => setDisc(d => ({ ...d, note: e.target.value }))} style={{ ...inputStyle, flex: 1, minWidth: 140 }} />
+          <input type="date" value={disc.until} onChange={e => setDisc(d => ({ ...d, until: e.target.value }))} title="ينتهي في (اختياري)" style={{ ...inputStyle, width: 150 }} />
+        </div>
+        <div style={{ fontSize: 11.5, color: A.text3, marginTop: 6 }}>النسبة من الفاتورة كلها (الباقة + الإضافات). المبلغ شهري (×12 بالسنوي). تاريخ الانتهاء اختياري.</div>
+        <div style={{ marginTop: 10 }}>
+          <Btn kind="primary" full loading={busy === 'discount'} disabled={!!busy && busy !== 'discount'} onClick={() => saveDiscount()}>{curDiscount ? 'تغيير الخصم' : 'حفظ الخصم'}</Btn>
+        </div>
       </Card>
 
       {/* الفاتورة */}

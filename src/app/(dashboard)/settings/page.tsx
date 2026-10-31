@@ -134,6 +134,7 @@ export default function SettingsPage() {
   const [planKey, setPlanKey]           = useState<string>('')
   const [lockedPlan, setLockedPlan]     = useState<number|null>(null)  // سعر مثبّت لمشترك قبل تغيير الأسعار
   const [billAddons, setBillAddons]     = useState<any[]>([])
+  const [discount, setDiscount]         = useState<any>(null)  // خصم خاص من لوحة الإدارة
   const [form, setForm] = useState({
     name:'', whatsapp_number:'',
     notify_schedule:'daily',
@@ -203,6 +204,7 @@ export default function SettingsPage() {
       setPlanName(planLabelFor(org.plan, me.org?.max_branches||org.max_branches))
       setPlanKey(org.plan||'')
       setLockedPlan(org.locked_plan_monthly ?? null)
+      setDiscount(me.org || null)
       setBillingCycle(org.billing_cycle==='yearly'?'yearly':'monthly')
       setSubEndsAt(org.subscription_ends_at||null)
       setBranches(bList||[])
@@ -318,7 +320,7 @@ export default function SettingsPage() {
   const pk = planKeyOf(planKey, maxBranches)
   const planPrice = planPriceFor(pk, lockedPlan)
   const planLabel = `الباقة ${planPrice.label} — ${billingCycle==='yearly' ? `${planPrice.yearly} ⃁/سنة` : `${planPrice.monthly} ⃁/شهر`}`
-  const bill = billLines(pk, billingCycle, billAddons, lockedPlan)
+  const bill = billLines(pk, billingCycle, billAddons, lockedPlan, discount)
 
   if(loading) return (
     <div style={{fontFamily:font.family,direction:'rtl'}}>

@@ -20,7 +20,7 @@ export default function AddonsMarketPage() {
   const [orgName, setOrgName] = useState('')
   const [orgId, setOrgId] = useState('')
   const [cancelling, setCancelling] = useState<string|null>(null)
-  const [plan, setPlan] = useState<{ key: string; cycle: 'monthly'|'yearly'; maxBranches: number; locked?: number | null } | null>(null)
+  const [plan, setPlan] = useState<{ key: string; cycle: 'monthly'|'yearly'; maxBranches: number; locked?: number | null; discount?: any } | null>(null)
   const [subEndsAt, setSubEndsAt] = useState<string | null>(null)
   const [inApp, setInApp] = useState(false)
   useEffect(() => { setInApp(isInApp()) }, [])
@@ -37,7 +37,7 @@ export default function AddonsMarketPage() {
     if (!me) return
     setOrgId(me.org_id)
     setOrgName(me.org?.name || '')
-    setPlan({ key: me.org?.plan || '', cycle: me.org?.billing_cycle || 'monthly', maxBranches: me.org?.max_branches || 1, locked: me.org?.locked_plan_monthly ?? null })
+    setPlan({ key: me.org?.plan || '', cycle: me.org?.billing_cycle || 'monthly', maxBranches: me.org?.max_branches || 1, locked: me.org?.locked_plan_monthly ?? null, discount: me.org })
     setSubEndsAt(me.subscription_ends_at || null)
     if (!cachedOid) await load(me.org_id)
     setLoading(false)
@@ -155,7 +155,7 @@ export default function AddonsMarketPage() {
       </div>
 
       {plan && (() => {
-        const bill = billLines(planKeyOf(plan.key, plan.maxBranches), plan.cycle, addons, plan.locked)
+        const bill = billLines(planKeyOf(plan.key, plan.maxBranches), plan.cycle, addons, plan.locked, plan.discount)
         return (
           <div style={{ ...card, padding: 18, marginBottom: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10 }}>فاتورتك الحالية</div>

@@ -134,6 +134,32 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
     }, 180_000)
   })
 
+  describe('per-customer discount (admin)', () => {
+    it('admin sets a discount, it shows as a bill line for the owner and in the admin bill; removing it restores the bill', async () => {
+      const disc = await import('@/app/api/admin/org-discount/route')
+      const { monthlyBill } = await import('@/lib/orgBill')
+      const me = await import('@/app/api/me/route')
+      const post = async (body: any) => {
+        const res = await disc.POST(new Request('http://test/api/admin/org-discount', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify(body) }))
+        return { status: res.status, json: await res.json() as any }
+      }
+      await db.from('organizations').update({ plan: 'pro', max_branches: 3, locked_plan_monthly: null, billing_cycle: 'monthly' } as any).eq('id', orgId)
+      const before = await monthlyBill(db as any, orgId)
+      expect((await post({ orgId, type: 'percent', value: 150 })).status).toBe(400)
+      expect((await post({ orgId, type: 'percent', value: 20, note: 'عميل مميز', until: '2099-12-31' })).status).toBe(200)
+      expect(await monthlyBill(db as any, orgId)).toBe(Math.round(before * 0.8))
+      const mj = await (await me.GET()).json() as any
+      expect(mj.org).toMatchObject({ discount_type: 'percent', discount_note: 'عميل مميز' })
+      expect(Number(mj.org.discount_value)).toBe(20)
+      // منتهي = ما ينحسب
+      await db.from('organizations').update({ discount_until: '2020-01-01' } as any).eq('id', orgId)
+      expect(await monthlyBill(db as any, orgId)).toBe(before)
+      expect((await post({ orgId, type: null })).status).toBe(200)
+      expect((await db.from('organizations').select('discount_type,discount_value').eq('id', orgId).single()).data).toMatchObject({ discount_type: null, discount_value: null })
+      await db.from('organizations').update({ max_branches: 1 } as any).eq('id', orgId)
+    }, 120_000)
+  })
+
   describe('marketing emails', () => {
     it('unsubscribe link adds the email to opt-outs, and test accounts never receive campaigns', async () => {
       const unsub = await import('@/app/api/unsubscribe/route')

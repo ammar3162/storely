@@ -1,4 +1,4 @@
-import { PLAN_CAPS, planKeyOf, planPriceFor, planLabel as planLabelLib, type PlanKey } from '@/lib/planPricing'
+import { PLAN_CAPS, planKeyOf, planPriceFor, planLabel as planLabelLib, type PlanKey, type OrgDiscount } from '@/lib/planPricing'
 import type { Tone } from './kit'
 
 export type Customer = {
@@ -7,7 +7,8 @@ export type Customer = {
   subscription_type: string; subscription_ends_at: string | null; billing_cycle: 'monthly' | 'yearly'
   max_branches: number; plan: PlanKey; requested_plan: string
   locked_plan_monthly: number | null   // سعر مثبّت لمشترك قبل تغيير الأسعار
-  monthly_bill: number | null          // الباقة + الإضافات السارية شهرياً
+  monthly_bill: number | null          // الباقة + الإضافات السارية شهرياً (بعد الخصم)
+  discount: OrgDiscount                // خصم خاص من لوحة الإدارة
 }
 
 export const STATUS: Record<string, { label: string; tone: Tone }> = {
@@ -46,6 +47,7 @@ export function mapCustomer(p: any): Customer {
     requested_plan: p.organizations?.requested_plan || '',
     locked_plan_monthly: p.organizations?.locked_plan_monthly ?? null,
     monthly_bill: p.monthly_bill ?? null,
+    discount: { discount_type: p.organizations?.discount_type ?? null, discount_value: p.organizations?.discount_value ?? null, discount_note: p.organizations?.discount_note ?? null, discount_until: p.organizations?.discount_until ?? null },
   }
 }
 
