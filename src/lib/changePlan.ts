@@ -6,8 +6,8 @@ import { PLAN_PRICING, PLAN_CAPS, planKeyOf, planPriceFor } from '@/lib/planPric
 
 export { PLAN_CAPS }
 
-// إضافات مضمّنة بالشاملة والمتقدمة (profit_ai = حزمة الأرباح والذكاء، والربحية/الذكاء القديمة لمشتركيها)
-export const INCLUDED_FROM_STANDARD = ['hr_full', 'profitability', 'ai_tools', 'profit_ai', 'cashier_closing']
+// إضافات مضمّنة بالشاملة والمتقدمة
+export const INCLUDED_FROM_STANDARD = ['hr_full', 'profitability', 'ai_tools', 'cashier_closing']
 
 /** lockedMonthly = سعر شهري خاص (باقة المؤسسات) — يتثبّت للمنشأة */
 export async function changeOrgPlan(db: SupabaseClient, orgId: string, input: { planName: string; maxBranches: number; maxStaff?: number; maxSuppliers?: number; billingCycle?: string; lockedMonthly?: number | null }) {

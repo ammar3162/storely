@@ -13,8 +13,8 @@ export const PLANS = [
     limitsEn:['1 branch','3 staff','5 suppliers'],
     features:['تتبع المخزون لحظياً','الصرف اليومي برمز PIN للموظفين','المشتريات وإدارة الموردين','تنبيهات واتساب تلقائية','التقارير الأساسية','نسخ احتياطي يومي','دعم فني عبر واتساب'],
     featuresEn:['Real-time inventory','Daily dispensing with staff PIN','Purchasing and suppliers','Automatic WhatsApp alerts','Basic reports','Daily backups','WhatsApp support'],
-    addons:[['إقفال الكاشير اليومي','29'],['إدارة الموظفين (الحضور، الشفتات، الرواتب)','59'],['الأرباح والذكاء (الربحية، قرارات اليوم، الطلب الذكي، مسح الفواتير)','69']],
-    addonsEn:[['Daily cashier closing','29'],['Staff management (attendance, shifts, payroll)','59'],['Profit & AI (profitability, daily decisions, smart ordering, invoice scan)','69']] },
+    addons:[['إقفال الكاشير اليومي','29'],['إدارة الموظفين (الحضور، الشفتات، الرواتب)','59'],['الربحية والمصروفات','29'],['الذكاء الاصطناعي (قرارات اليوم، الطلب الذكي، مسح الفواتير)','29']],
+    addonsEn:[['Daily cashier closing','29'],['Staff management (attendance, shifts, payroll)','59'],['Profitability and expenses','29'],['AI tools (daily decisions, smart ordering, invoice scan)','29']] },
   { name:'الشاملة', nameEn:'Complete', price:'249', yearlyPrice:'2390', color:'#0f766e', popular:true,
     who:'كل المميزات + لين 3 فروع', whoEn:'All features + up to 3 branches',
     extra:'+ 79 ⃁ لكل فرع إضافي لين 5 فروع (معه 5 موظفين و5 موردين)', extraEn:'+ 79 SAR per extra branch up to 5 (adds 5 staff and 5 suppliers)',
@@ -59,7 +59,7 @@ export const COMPARE: { group: string; rows: [string, Cell, Cell, Cell, Cell][] 
     ['الشفتات والرواتب', 'addon', true, true, true],
     ['واجهة موظفين بـ7 لغات', true, true, true, true],
   ]},
-  { group: 'الأرباح والذكاء', rows: [
+  { group: 'الربحية والذكاء الاصطناعي', rows: [
     ['الربحية والمصروفات', 'addon', true, true, true],
     ['قرارات اليوم والطلب الذكي', 'addon', true, true, true],
     ['مسح الفواتير بالذكاء الاصطناعي', 'addon', true, true, true],

@@ -58,7 +58,7 @@ export async function POST(req: Request) {
       const daysLeft = Math.ceil((endsAt.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
       const isTrial = p.subscription_type === 'trial'
       const text = isTrial
-        ? `مرحباً ${p.full_name || ''}\n\nتجربتك المجانية بـ Storely تنتهي خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'}، وجربت فيها كل المميزات.\n\nاختر باقتك:\n• ${PLAN_PRICING.basic.label} ${PLAN_PRICING.basic.monthly} ريال — المخزون والمشتريات، وتضيف اللي تحتاجه (الكاشير، الموظفين، الأرباح والذكاء)\n• ${PLAN_PRICING.pro.label} ${PLAN_PRICING.pro.monthly} ريال — كل المميزات و3 فروع\n• ${PLAN_PRICING.advanced.label} ${PLAN_PRICING.advanced.monthly} ريال — كل المميزات و6 فروع\n\nرد علينا باسم الباقة ونفعّلها لك، أو اشترك من:\nstorely.dev`
+        ? `مرحباً ${p.full_name || ''}\n\nتجربتك المجانية بـ Storely تنتهي خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'}، وجربت فيها كل المميزات.\n\nاختر باقتك:\n• ${PLAN_PRICING.basic.label} ${PLAN_PRICING.basic.monthly} ريال — المخزون والمشتريات، وتضيف اللي تحتاجه (الكاشير، الموظفين، الربحية، الذكاء الاصطناعي)\n• ${PLAN_PRICING.pro.label} ${PLAN_PRICING.pro.monthly} ريال — كل المميزات و3 فروع\n• ${PLAN_PRICING.advanced.label} ${PLAN_PRICING.advanced.monthly} ريال — كل المميزات و6 فروع\n\nرد علينا باسم الباقة ونفعّلها لك، أو اشترك من:\nstorely.dev`
         : `مرحباً ${p.full_name || ''}\n\nاشتراكك بـ Storely ينتهي خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'}.\n\nجدّد اشتراكك الحين وكمّل إدارة مخزونك وفريقك بدون انقطاع:\nstorely.dev`
       const res = await sendWhatsAppMessage(to, text)
       if (res.ok) {

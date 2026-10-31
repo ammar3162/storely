@@ -3,13 +3,12 @@
 // أي مكان يقفل/يفتح ميزة (API أو صفحة) لازم يمر من هنا — عشان ما يصير الكاشير مفتوح بصفحة ومقفل بصفحة.
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-// الإضافات اللي تفتح كل ميزة — حزمة «الأرباح والذكاء» (profit_ai) تفتح الربحية والذكاء،
-// و ai_tools / profitability القديمة تبقى شغالة لمشتركيها
+// الإضافة اللي تفتح كل ميزة على الأساسية
 export const FEATURE_ADDONS = {
   cashier: ['cashier_closing'],
   hr: ['hr_full'],
-  ai: ['ai_tools', 'profit_ai'],
-  profitability: ['profitability', 'profit_ai'],
+  ai: ['ai_tools'],
+  profitability: ['profitability'],
 } as const
 export type Feature = keyof typeof FEATURE_ADDONS
 export type Features = Record<Feature, boolean>
@@ -19,8 +18,8 @@ const FULL_PLANS = ['pro', 'advanced']
 export const FEATURE_LABEL: Record<Feature, string> = {
   cashier: 'إقفال الكاشير',
   hr: 'إدارة الموظفين',
-  ai: 'الأرباح والذكاء',
-  profitability: 'الأرباح والذكاء',
+  ai: 'الذكاء الاصطناعي',
+  profitability: 'الربحية',
 }
 
 /** يحسب الميزات من الباقة وقائمة الإضافات السارية (slugs) */

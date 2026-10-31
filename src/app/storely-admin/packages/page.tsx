@@ -38,7 +38,7 @@ export default function PackagesPage() {
                   <li>{lim(l.branches, 'فروع')} — ويوصل {PLAN_CAPS[k].maxBranches} بفرع إضافي {PLAN_CAPS[k].branchPrice} ⃁</li>
                   <li>{lim(l.staff, 'موظفين')} للمنشأة كلها (+{PLAN_CAPS[k].branchStaff} مع كل فرع إضافي)</li>
                   <li>{lim(l.suppliers, 'موردين')} (+{PLAN_CAPS[k].branchSuppliers} مع كل فرع إضافي)</li>
-                  <li>{k === 'basic' ? 'المميزات بالإضافات: الكاشير، إدارة الموظفين، الأرباح والذكاء' : 'كل المميزات مشمولة'}</li>
+                  <li>{k === 'basic' ? 'المميزات بالإضافات: الكاشير، إدارة الموظفين، الربحية، الذكاء الاصطناعي' : 'كل المميزات مشمولة'}</li>
                 </ul>
                 {can('manage_users') && (
                   <div style={{ borderTop: `1px solid ${A.border}`, marginTop: 16, paddingTop: 12, display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>

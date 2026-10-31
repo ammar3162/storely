@@ -137,10 +137,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       if (j.success) {
         const hrAddon = (j.addons||[]).find((a:any)=>a.slug==='hr_full')
         setHasHrAddon(!!hrAddon?.subscription?.isValid)
-        // حزمة «الأرباح والذكاء» تفتح الاثنين، والإضافات القديمة تبقى شغالة لمشتركيها
         const live = (slug:string) => !!(j.addons||[]).find((a:any)=>a.slug===slug)?.subscription?.isValid
-        setHasProfitAddon(live('profitability') || live('profit_ai'))
-        setHasAiAddon(live('ai_tools') || live('profit_ai'))
+        setHasProfitAddon(live('profitability'))
+        setHasAiAddon(live('ai_tools'))
         const branchAddon = (j.addons||[]).find((a:any)=>a.slug==='extra_branch')
         setHasExtraBranchAddon(!!branchAddon?.subscription?.isValid)
       }
