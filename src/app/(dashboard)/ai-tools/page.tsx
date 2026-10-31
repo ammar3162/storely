@@ -5,13 +5,15 @@ import { useRouter } from 'next/navigation'
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { api } from '@/lib/api-client'
-import { getMe } from '@/lib/session'
+import { getMe, refreshMe } from '@/lib/session'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import { colors as dsColors } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { subUnitOptions, hasKnownConversion, formatQty } from '@/lib/recipeUnits'
 import { ClipboardList, Pencil, Trash2, AlertTriangle, Wallet, Info } from 'lucide-react'
-import { runOutText, orderWhenText, usageReason, leadReason, riyal } from '@/lib/aiPhrases'
+import { riyal } from '@/lib/aiPhrases'
+import SmartOrder from '@/components/SmartOrder'
 // نافذة الوصفة تنحمّل بس لما تنفتح
 const RecipeCreateModal = lazy(() => import('@/components/RecipeCreateModal'))
 
@@ -127,15 +129,6 @@ export default function AIToolsPage() {
     setShowRecipeModal(true)
   }
   const [realWasteLoading, setRealWasteLoading] = useState(false)
-  const [reorderSuggestions, setReorderSuggestions] = useState<any>(null)
-  const [reorderLoading, setReorderLoading] = useState(false)
-  const [applyingId, setApplyingId] = useState<string|null>(null)
-  const [forecast, setForecast] = useState<any[]>([])
-  const [forecastLoading, setForecastLoading] = useState(false)
-  const [smartTiming, setSmartTiming] = useState<any[]>([])
-  const [smartTimingLoading, setSmartTimingLoading] = useState(false)
-  const [suggestions, setSuggestions] = useState<any[]>([])
-  const [suggestLoading, setSuggestLoading] = useState(false)
   const [seasonality, setSeasonality] = useState<any>(null)
   const [seasonLoading, setSeasonLoading] = useState(false)
   const [branchComp, setBranchComp] = useState<any[]>([])
@@ -148,28 +141,20 @@ export default function AIToolsPage() {
     getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setIsOwner(me?.role==='owner') })
   },[])
 
-  async function applyReorderSuggestion(productId: string, newReorderPoint: number) {
-    setApplyingId(productId)
-    await api.patch('/api/products', { org_id: sessionStorage.getItem('s_org_id'), id: productId, reorder_point: newReorderPoint })
-    setReorderSuggestions((prev: any) => ({
-      ...prev,
-      suggestions: prev.suggestions.filter((s: any) => s.id !== productId),
-    }))
-    setApplyingId(null)
-  }
   const [visible] = useState(true)
-  const plan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
-  const [hasAiAddon, setHasAiAddon] = useState(false)
-  useEffect(() => {
-    const orgId = typeof window!=='undefined' ? sessionStorage.getItem('s_org_id') : null
-    if (!orgId) return
-    fetch(`/api/addons-market?org_id=${orgId}`).then(r=>r.json()).then(j=>{
-      if (j.success) {
-        const addon = (j.addons||[]).find((a:any)=>a.slug==='ai_tools')
-        setHasAiAddon(!!addon?.subscription?.isValid)
-      }
-    }).catch(()=>{})
-  }, [])
+  const [plan, setPlan] = useState(() => typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic')
+  // صلاحية أدوات الذكاء من السيرفر (/api/me → features.ai: الباقة أو إضافة فعّالة ما انتهت).
+  // null = لسه ما وصل الرد — ما نعرض القفل ولا الأدوات لين نعرف (كان يطلع القفل لحظة وبعدين ينفتح)
+  const [hasAiAddon, setHasAiAddon] = useState<boolean|null>(null)
+  const applyAccess = (me: Awaited<ReturnType<typeof getMe>>) => {
+    if (me?.org?.plan) setPlan(me.org.plan)
+    setHasAiAddon(!!me?.org?.features?.ai)
+  }
+  useEffect(() => { getMe().then(applyAccess).catch(() => setHasAiAddon(false)) }, [])
+  // تفعيل/انتهاء إضافة أو تغيير الباقة والصفحة مفتوحة → يفتح/يقفل بدون تحديث
+  useLiveRefresh(typeof window !== 'undefined' ? sessionStorage.getItem('s_org_id') : null, ['org_addon_subscriptions', 'plan_requests'],
+    () => { refreshMe().then(applyAccess).catch(() => {}) })
+  const aiKnown = hasAiAddon !== null
 
   return (
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',opacity:visible?1:0,transition:'opacity .3s'}}>
@@ -278,11 +263,11 @@ export default function AIToolsPage() {
       <div style={{display:'flex',flexDirection:'column',gap:12}}>
         {TOOLS.map((tool,i)=>(
           <div key={i} className="fu" style={{animationDelay:`${i*.08}s`}}>
-            <button onClick={()=>planAllows(plan,tool.minPlan,hasAiAddon)?router.push(tool.href):router.push('/settings')}
-              style={{width:'100%',background:'white',border:`1.5px solid ${tool.border}`,borderRadius:16,padding:'20px',cursor:'pointer',fontFamily:'inherit',textAlign:'right',transition:'all .2s',boxShadow:`0 2px 8px ${tool.color}10`,opacity:planAllows(plan,tool.minPlan,hasAiAddon)?1:.6,position:'relative'}}
+            <button onClick={()=>planAllows(plan,tool.minPlan,!!hasAiAddon)?router.push(tool.href):router.push('/settings')}
+              style={{width:'100%',background:'white',border:`1.5px solid ${tool.border}`,borderRadius:16,padding:'20px',cursor:'pointer',fontFamily:'inherit',textAlign:'right',transition:'all .2s',boxShadow:`0 2px 8px ${tool.color}10`,opacity:planAllows(plan,tool.minPlan,!!hasAiAddon)?1:.6,position:'relative'}}
               onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow=`0 8px 24px ${tool.color}20`}}
               onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='none';(e.currentTarget as HTMLElement).style.boxShadow=`0 2px 8px ${tool.color}10`}}>
-              {!planAllows(plan,tool.minPlan,hasAiAddon) && (
+              {aiKnown && !planAllows(plan,tool.minPlan,!!hasAiAddon) && (
                 <div style={{position:'absolute',top:12,left:12,background:'#1c1c1a',color:'white',fontSize:10,fontWeight:700,padding:'4px 10px',borderRadius:99,display:'flex',alignItems:'center',gap:4,zIndex:1}}>
                   🔒 {tool.minPlan==='advanced'?'المتقدمة':'المتوسطة'}
                 </div>
@@ -313,209 +298,15 @@ export default function AIToolsPage() {
 
       {(plan!=='basic'||hasAiAddon) && (
         <>
-      {/* توقع نفاد المخزون */}
-      <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-          <div>
-            <div style={{fontSize:14,fontWeight:800,color:C.text}}>🔮 توقع نفاد المخزون</div>
-            <div style={{fontSize:11,color:C.text3,marginTop:2}}>يحسب متى سينفد كل منتج بناءً على معدل الصرف</div>
-          </div>
-          <button onClick={async()=>{
-            const orgId=sessionStorage.getItem('s_org_id')
-            if(!orgId) return
-            setForecastLoading(true)
-            const res=await fetch('/api/stock-forecast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id')})})
-            const data=await res.json()
-            setForecast(data.forecast||[])
-            setForecastLoading(false)
-          }} style={{padding:'8px 16px',background:C.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
-            {forecastLoading?'⏳ جاري...':'تحليل المخزون'}
-          </button>
-        </div>
-
-        {forecast.length>0 && (
-          <>
-            <div style={{display:'flex',justifyContent:'flex-end',marginTop:8}}>
-              <button onClick={()=>setForecast([])}
-                style={{background:'none',border:'1px solid #e5e7eb',color:'#6b7280',borderRadius:8,padding:'4px 10px',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>
-                ✕ إغلاق النتائج
-              </button>
-            </div>
-          <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:8}}>
-            {forecast.map((p:any,i:number)=>(
-              <div key={i} style={{padding:'12px 14px',borderRadius:10,background:
-                p.status==='critical'?'#fef2f2':
-                p.status==='warning'?'#fffbeb':
-                p.status==='watch'?'#eff6ff':'#f0fdfa',
-                border:`1px solid ${
-                  p.status==='critical'?'#fecaca':
-                  p.status==='warning'?'#fde68a':
-                  p.status==='watch'?'#bfdbfe':'#99f6e4'}`}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-                  <div style={{fontSize:13,fontWeight:800,color:C.text}}>{p.name}</div>
-                  <span style={{fontSize:11,fontWeight:700,padding:'2px 10px',borderRadius:99,background:
-                    p.status==='critical'?'#fee2e2':
-                    p.status==='warning'?'#fde68a':
-                    p.status==='watch'?'#bfdbfe':'#99f6e4',
-                    color:
-                    p.status==='critical'?'#dc2626':
-                    p.status==='warning'?'#d97706':
-                    p.status==='watch'?'#2563eb':'#029FA2'}}>
-                    {p.status==='critical'?'🔴 حرج':p.status==='warning'?'🟡 تحذير':p.status==='watch'?'🔵 مراقبة':'🟢 آمن'}
-                  </span>
-                </div>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,textAlign:'center'}}>
-                  <div style={{background:'white',borderRadius:6,padding:'6px'}}>
-                    <div style={{fontSize:13,fontWeight:900,color:C.text}}>{p.currentQty} {p.unit}</div>
-                    <div style={{fontSize:9,color:C.text4}}>المخزون</div>
-                  </div>
-                  <div style={{background:'white',borderRadius:6,padding:'6px'}}>
-                    <div style={{fontSize:13,fontWeight:900,color:'#7c3aed'}}>{p.avgQtyPerDispense} {p.unit}</div>
-                    <div style={{fontSize:9,color:C.text4}}>كمية الصرفة</div>
-                  </div>
-                  <div style={{background:'white',borderRadius:6,padding:'6px'}}>
-                    <div style={{fontSize:13,fontWeight:900,color:'#2563eb'}}>كل {p.avgDaysBetween} يوم</div>
-                    <div style={{fontSize:9,color:C.text4}}>تكرار الصرف</div>
-                  </div>
-                  <div style={{background:p.status==='critical'?'#fee2e2':p.status==='warning'?'#fef3c7':'#f0fdfa',borderRadius:6,padding:'6px'}}>
-                    <div style={{fontSize:13,fontWeight:900,color:p.status==='critical'?'#dc2626':p.status==='warning'?'#d97706':'#029FA2'}}>
-                      {runOutText(p.daysLeft)}
-                    </div>
-                    <div style={{fontSize:9,color:C.text4}}>وقت النفاد</div>
-                  </div>
-                </div>
-                <div style={{fontSize:11,color:C.text3,marginTop:8}}>{usageReason(p.dailyRate,p.unit,p.currentQty)}</div>
-              </div>
-            ))}
-          </div>
-          </>
-        )}
-      </div>
-
-      {/* توقيت الطلب الذكي */}
-      <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-          <div>
-            <div style={{fontSize:14,fontWeight:800,color:C.text}}>🔔 توقيت الطلب الذكي</div>
-            <div style={{fontSize:11,color:C.text3,marginTop:2}}>يتعلم مدة التوريد الفعلية من تاريخك ويقترح متى بالضبط تطلب</div>
-          </div>
-          <button onClick={async()=>{
-            const orgId=sessionStorage.getItem('s_org_id')
-            if(!orgId) return
-            setSmartTimingLoading(true)
-            const res=await fetch('/api/smart-reorder-timing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id')})})
-            const data=await res.json()
-            setSmartTiming(data.suggestions||[])
-            setSmartTimingLoading(false)
-          }} style={{padding:'8px 16px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
-            {smartTimingLoading?'⏳ جاري...':'تحليل التوقيت'}
-          </button>
-        </div>
-
-        {smartTiming.length>0 && (
-          <>
-            <div style={{display:'flex',justifyContent:'flex-end',marginTop:8}}>
-              <button onClick={()=>setSmartTiming([])}
-                style={{background:'none',border:'1px solid #e5e7eb',color:'#6b7280',borderRadius:8,padding:'4px 10px',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>
-                ✕ إغلاق النتائج
-              </button>
-            </div>
-            <div style={{display:'flex',flexDirection:'column' as const,gap:8,marginTop:8}}>
-              {smartTiming.map((s:any,i:number)=>(
-                <div key={i} style={{padding:'12px 14px',borderRadius:10,background:s.urgency==='now'?'#fef2f2':'#fffbeb',border:`1px solid ${s.urgency==='now'?'#fecaca':'#fde68a'}`}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-                    <div style={{fontSize:13,fontWeight:800,color:C.text}}>{s.name}</div>
-                    <span style={{fontSize:11,fontWeight:700,padding:'2px 10px',borderRadius:99,background:s.urgency==='now'?'#fee2e2':'#fde68a',color:s.urgency==='now'?'#dc2626':'#b45309'}}>
-                      {orderWhenText(s.suggestedOrderInDays)}
-                    </span>
-                  </div>
-                  <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,textAlign:'center' as const}}>
-                    <div style={{background:'white',borderRadius:6,padding:'6px'}}>
-                      <div style={{fontSize:13,fontWeight:900,color:C.text}}>{s.currentQty} {s.unit}</div>
-                      <div style={{fontSize:9,color:C.text4}}>المخزون الحالي</div>
-                    </div>
-                    <div style={{background:'white',borderRadius:6,padding:'6px'}}>
-                      <div style={{fontSize:13,fontWeight:900,color:'#2563eb'}}>{s.dailyRate}/يوم</div>
-                      <div style={{fontSize:9,color:C.text4}}>معدل الاستهلاك</div>
-                    </div>
-                    <div style={{background:'white',borderRadius:6,padding:'6px'}}>
-                      <div style={{fontSize:13,fontWeight:900,color:'#7c3aed'}}>{s.avgLeadTimeDays} يوم</div>
-                      <div style={{fontSize:9,color:C.text4}}>مدة التوريد المعتادة</div>
-                    </div>
-                  </div>
-                  <div style={{fontSize:11,color:C.text3,marginTop:8}}>{leadReason(s.dailyRate,s.unit,s.avgLeadTimeDays)}</div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* اقتراح كميات الشراء */}
-      <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-          <div>
-            <div style={{fontSize:14,fontWeight:800,color:C.text}}>🛒 اقتراح كميات الشراء</div>
-            <div style={{fontSize:11,color:C.text3,marginTop:2}}>بناءً على معدل الاستهلاك يقترح كم تشتري</div>
-          </div>
-          <button onClick={async()=>{
-            const orgId=sessionStorage.getItem('s_org_id')
-            if(!orgId) return
-            setSuggestLoading(true)
-            const res=await fetch('/api/purchase-suggestion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id')})})
-            const data=await res.json()
-            setSuggestions(data.suggestions||[])
-            setSuggestLoading(false)
-          }} style={{padding:'8px 16px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
-            {suggestLoading?'⏳ جاري...':'احسب الاحتياج'}
-          </button>
-        </div>
-
-        {suggestions.length>0 && (
-          <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:12}}>
-            <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr',gap:8,padding:'6px 12px'}}>
-              {['المنتج','المخزون','يومي','أسبوعي','اشترِ الآن'].map((h,i)=>(
-                <div key={i} style={{fontSize:10,fontWeight:700,color:C.text4,textAlign:i>0?'center':'right'}}>{h}</div>
-              ))}
-            </div>
-            {suggestions.map((p:any,i:number)=>(
-              <div key={i} style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr',gap:8,padding:'10px 12px',borderRadius:10,background:
-                p.urgency==='urgent'?'#fef2f2':p.urgency==='soon'?'#fffbeb':'#f8fafc',
-                border:`1px solid ${p.urgency==='urgent'?'#fecaca':p.urgency==='soon'?'#fde68a':'#e2e8f0'}`}}>
-                <div>
-                  <div style={{fontSize:12,fontWeight:700,color:C.text,display:'flex',alignItems:'center',gap:6,flexWrap:'wrap' as const}}>
-                    {p.name}
-                    {p.noHistory && <span style={{fontSize:9,fontWeight:800,padding:'1px 6px',borderRadius:99,background:'#fee2e2',color:'#dc2626'}}>نافد بدون تاريخ صرف</span>}
-                    {p.method==='trend' && p.growthPct!==null && (
-                      <span style={{fontSize:9,fontWeight:800,padding:'1px 6px',borderRadius:99,background:p.growthPct>=0?'#ccfbf1':'#fee2e2',color:p.growthPct>=0?'#029FA2':'#dc2626'}}>
-                        {p.growthPct>=0?'↑':'↓'} اتجاه شهري {p.growthPct>=0?'+':''}{p.growthPct}%
-                      </span>
-                    )}
-                  </div>
-                  <div style={{fontSize:10,color:C.text4}}>نقطة الطلب: {p.reorderPoint} {p.unit}{p.weeklyNeed>0?` · تحتاج تقريباً ${p.weeklyNeed} ${p.unit} بالأسبوع`:''}</div>
-                </div>
-                <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:C.text}}>{p.currentQty} {p.unit}</div>
-                <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'#7c3aed'}}>{p.dailyRate}</div>
-                <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'#2563eb'}}>{p.weeklyNeed}</div>
-                <div style={{textAlign:'center',fontSize:14,fontWeight:900,color:
-                  p.urgency==='urgent'?'#dc2626':p.urgency==='soon'?'#d97706':'#029FA2'}}>
-                  {p.suggestedQty} {p.unit}
-                </div>
-              </div>
-            ))}
-            <div style={{fontSize:11,color:C.text4,textAlign:'center',marginTop:4}}>
-              * المقترح يكفي أسبوعين + هامش أمان 25%. يعتمد على اتجاه استهلاكك الشهري الفعلي (بعد توفر شهرين بيانات فأكثر)، وإلا يعتمد على آخر أسبوع
-            </div>
-          </div>
-        )}
-      </div>
+      {/* الطلب الذكي: توقع النفاد + توقيت الطلب + الكميات + حد إعادة الطلب (lib/smartOrder) */}
+      <SmartOrder />
 
       {/* تحليل الموسمية */}
       <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
           <div>
-            <div style={{fontSize:14,fontWeight:800,color:C.text}}>📈 تحليل الموسمية</div>
-            <div style={{fontSize:11,color:C.text3,marginTop:2}}>يكتشف أيام وأوقات الذروة خلال آخر 90 يوم</div>
+            <div style={{fontSize:14,fontWeight:800,color:C.text}}>متى زحمتك؟</div>
+            <div style={{fontSize:11,color:C.text3,marginTop:2}}>أكثر الأيام والأوقات صرفاً خلال آخر 90 يوم — عشان تجهّز مخزونك وموظفينك قبلها</div>
           </div>
           <button onClick={async()=>{
             const orgId=sessionStorage.getItem('s_org_id')
@@ -585,8 +376,8 @@ export default function AIToolsPage() {
       <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
           <div>
-            <div style={{fontSize:14,fontWeight:800,color:C.text}}>🏪 مقارنة الفروع</div>
-            <div style={{fontSize:11,color:C.text3,marginTop:2}}>أي فرع يصرف أكثر وأيهم أكثر كفاءة</div>
+            <div style={{fontSize:14,fontWeight:800,color:C.text}}>أي فرع يصرف أكثر؟</div>
+            <div style={{fontSize:11,color:C.text3,marginTop:2}}>مقارنة الصرف والمشتريات والأصناف الناقصة بين فروعك</div>
           </div>
           <button onClick={async()=>{
             const orgId=sessionStorage.getItem('s_org_id')
@@ -646,11 +437,12 @@ export default function AIToolsPage() {
       {/* أدوات الهدر — الباقة المتوسطة أو المتقدمة */}
       {(plan!=='basic'||hasAiAddon) && (
       <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
+        <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:10}}>وين تخسر فلوس؟</div>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <span style={{fontSize:18}}>🐌</span>
             <div style={{flex:1}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.text}}>المخزون الراكد</div>
+              <div style={{fontSize:13,fontWeight:700,color:C.text}}>مخزون ما ينصرف (راكد)</div>
               <div style={{fontSize:11,color:C.text3}}>يكتشف ما تشتريه ولا تصرفه (بطيء الحركة)</div>
             </div>
             <button onClick={async()=>{
@@ -668,7 +460,7 @@ export default function AIToolsPage() {
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <span style={{fontSize:18}}>🗑️</span>
             <div style={{flex:1}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.text}}>كشف الهدر الحقيقي</div>
+              <div style={{fontSize:13,fontWeight:700,color:C.text}}>الهدر: تالف ومنتهي</div>
               <div style={{fontSize:11,color:C.text3}}>من عمليات الهدر المسجّلة فعلياً (تالف، منتهي، كسر...)</div>
             </div>
             <button onClick={async()=>{
@@ -693,7 +485,7 @@ export default function AIToolsPage() {
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <span style={{width:34,height:34,borderRadius:9,background:'#f5f3ff',color:'#7c3aed',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><ClipboardList size={18}/></span>
             <div style={{flex:1}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.text}}>الوصفات وتقدير الإنتاج</div>
+              <div style={{fontSize:13,fontWeight:700,color:C.text}}>كم حضّرت فعلاً؟</div>
               <div style={{fontSize:11,color:C.text3}}>عرّف وصفة (اسم + مكوناتها)، والنظام يقدّر كم وحدة تم تحضيرها بناءً على استهلاك موظفيك الفعلي للمواد الخام</div>
             </div>
           </div>
@@ -837,24 +629,6 @@ export default function AIToolsPage() {
       <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`,animationDelay:'.2s'}}>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <span style={{fontSize:18}}>🎯</span>
-            <div style={{flex:1}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.text}}>تحسين نقطة إعادة الطلب</div>
-              <div style={{fontSize:11,color:C.text3}}>يقترح حد إعادة طلب أدق بناءً على معدل الصرف ومدة التوريد</div>
-            </div>
-            <button onClick={async()=>{
-              const orgId=sessionStorage.getItem('s_org_id')
-              if(!orgId) return
-              setReorderLoading(true)
-              const res=await fetch('/api/reorder-optimizer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,branch_id:sessionStorage.getItem('s_branch_id')})})
-              const data=await res.json()
-              setReorderSuggestions(data)
-              setReorderLoading(false)
-            }} style={{padding:'6px 14px',background:'#7c3aed',color:'white',border:'none',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
-              {reorderLoading?'⏳ جاري...':'فحص الحدود'}
-            </button>
-          </div>
-          <div style={{display:'flex',alignItems:'center',gap:10}}>
             <span style={{fontSize:18}}>📅</span>
             <div style={{flex:1}}>
               <div style={{fontSize:13,fontWeight:700,color:C.text}}>التقرير الأسبوعي</div>
@@ -961,51 +735,6 @@ export default function AIToolsPage() {
         </div>
       )}
 
-      {/* تحسين نقطة إعادة الطلب */}
-      {reorderSuggestions && (
-        <div style={{marginTop:16,background:C.surface,borderRadius:14,padding:'20px',border:'1.5px solid #ddd6fe'}}>
-          <div style={{fontSize:14,fontWeight:800,color:'#5b21b6',marginBottom:4}}>🎯 تحسين نقطة إعادة الطلب</div>
-          <div style={{fontSize:11,color:'#7c3aed',marginBottom:16}}>مقارنة الحد الحالي بالحد المقترح بناءً على معدل الصرف ومدة توريد المورد</div>
-
-          {reorderSuggestions.suggestions?.length===0 ? (
-            <div style={{textAlign:'center',padding:'24px',color:'#9ca3af',fontSize:13}}>
-              ✅ كل حدود إعادة الطلب مضبوطة بشكل جيد ({reorderSuggestions.totalChecked} منتج تم فحصه)
-            </div>
-          ) : (
-            <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
-              {(reorderSuggestions.suggestions||[]).map((s:any)=>(
-                <div key={s.id} style={{padding:'12px 14px',background:'#f5f3ff',borderRadius:10,border:'1px solid #ddd6fe'}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-                    <div style={{fontSize:13,fontWeight:800,color:'#4c1d95'}}>{s.name}</div>
-                    <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:99,background:s.status==='low'?'#fee2e2':'#fef3c7',color:s.status==='low'?'#dc2626':'#d97706'}}>
-                      {s.status==='low'?'⚠️ منخفض جداً':'📦 مرتفع زيادة'}
-                    </span>
-                  </div>
-                  <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:8}}>
-                    <div>
-                      <div style={{fontSize:10,color:'#9ca3af'}}>الحالي</div>
-                      <div style={{fontSize:16,fontWeight:900,color:'#6b7280'}}>{s.currentReorderPoint} {s.unit}</div>
-                    </div>
-                    <span style={{fontSize:14,color:'#9ca3af'}}>←</span>
-                    <div>
-                      <div style={{fontSize:10,color:'#9ca3af'}}>المقترح</div>
-                      <div style={{fontSize:16,fontWeight:900,color:'#7c3aed'}}>{s.suggestedReorderPoint} {s.unit}</div>
-                    </div>
-                    <div style={{flex:1,textAlign:'left' as const,fontSize:10,color:'#9ca3af'}}>
-                      معدل الصرف: {s.dailyRate}/يوم · مدة التوريد: {s.leadTimeDays} يوم
-                    </div>
-                  </div>
-                  <button onClick={()=>applyReorderSuggestion(s.id, s.suggestedReorderPoint)} disabled={applyingId===s.id}
-                    style={{width:'100%',padding:'8px',background:'#7c3aed',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:applyingId===s.id?.6:1}}>
-                    {applyingId===s.id?'⏳ جاري التطبيق...':'✓ تطبيق الاقتراح'}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* التقرير الأسبوعي */}
       {weeklyReport && (
         <div style={{marginTop:16,background:C.surface,borderRadius:14,padding:'20px',border:`1px solid ${C.border2}`}}>
@@ -1064,7 +793,7 @@ export default function AIToolsPage() {
         </>
       )}
 
-      {plan==='basic' && !hasAiAddon && (
+      {plan==='basic' && hasAiAddon===false && (
         <div className="fu" style={{marginTop:16,background:'linear-gradient(135deg,#042f2e,#0C213B)',borderRadius:16,padding:'28px 24px',textAlign:'center' as const}}>
           <div style={{fontSize:36,marginBottom:10}}>🔒✨</div>
           <div style={{fontSize:16,fontWeight:800,color:'white',marginBottom:6}}>أدوات ذكاء اصطناعي بانتظارك</div>

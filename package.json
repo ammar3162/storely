@@ -10,7 +10,8 @@
     "lint": "eslint",
     "test": "vitest run --exclude \"tests/integration/**\"",
     "test:watch": "vitest",
-    "test:integration": "vitest run tests/integration"
+    "test:integration": "vitest run tests/integration",
+    "check": "rm -rf .next/dev/types && tsc --noEmit -p . && vitest run"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",

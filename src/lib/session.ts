@@ -51,6 +51,14 @@ export async function getMe(): Promise<Me | null> {
   return (await getMeResult()).me
 }
 
+/** يجيب /api/me من جديد (بدون الذاكرة) — لما تتغير الباقة أو الإضافات والصفحة مفتوحة (useLiveRefresh) */
+export async function refreshMe(): Promise<Me | null> {
+  mePromise = null
+  const me = await getMe()
+  if (me?.org?.plan) sessionStorage.setItem('s_plan', me.org.plan)
+  return me
+}
+
 /** معرّف المؤسسة — من الجلسة لو محفوظ (أسرع)، وإلا من /api/me */
 export async function getOrgId(): Promise<string | null> {
   const cached = sessionStorage.getItem('s_org_id')
