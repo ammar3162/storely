@@ -14,6 +14,7 @@ import { subUnitOptions, hasKnownConversion, formatQty } from '@/lib/recipeUnits
 import { ClipboardList, Pencil, Trash2, AlertTriangle, Wallet, Info } from 'lucide-react'
 import { riyal } from '@/lib/aiPhrases'
 import SmartOrder from '@/components/SmartOrder'
+import TodayDecisions from '@/components/TodayDecisions'
 // نافذة الوصفة تنحمّل بس لما تنفتح
 const RecipeCreateModal = lazy(() => import('@/components/RecipeCreateModal'))
 
@@ -170,6 +171,9 @@ export default function AIToolsPage() {
           </div>
         </div>
       </div>
+
+      {/* قرارات اليوم — أعلى الصفحة (بعد ما نعرف صلاحية الذكاء عشان أدوات الهدر) */}
+      {aiKnown && <TodayDecisions full={plan!=='basic'||!!hasAiAddon} curr={curr} />}
 
       {/* التحليل الذكي الشامل */}
       <div className="fu" style={{marginBottom:20,background:'linear-gradient(135deg,#042f2e,#0C213B)',borderRadius:18,padding:22}}>
@@ -437,7 +441,7 @@ export default function AIToolsPage() {
       {/* أدوات الهدر — الباقة المتوسطة أو المتقدمة */}
       {(plan!=='basic'||hasAiAddon) && (
       <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
-        <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:10}}>وين تخسر فلوس؟</div>
+        <div id="waste" style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:10,scrollMarginTop:80}}>وين تخسر فلوس؟</div>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <span style={{fontSize:18}}>🐌</span>
