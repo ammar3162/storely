@@ -4,6 +4,7 @@ import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { isStoredInvoiceUrl } from '@/lib/invoiceUrl'
 import { OCR_TYPES } from '@/lib/invoiceFile'
 import { readInvoice } from '@/lib/invoiceOcr'
+import { noteInvoiceScan } from '@/lib/scanUsage'
 import { classifyItems, applyAnswer, draftStatus, aliasKey, type AgentItem } from '@/lib/invoiceAgent'
 
 // قراءة فاتورة مفصّلة تاخذ أكثر من ١٠ ثواني
@@ -68,6 +69,7 @@ export async function POST(req: Request) {
       items, status: draftStatus(items),
     } as any).select(DRAFT_COLS).single()
     if (error || !draft) return NextResponse.json({ error: 'تعذر حفظ المسودة' }, { status: 500 })
+    await noteInvoiceScan(db, org_id)
     return NextResponse.json({ success: true, draft })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ أثناء قراءة الفاتورة' }, { status: 500 })

@@ -273,7 +273,7 @@ export default function AIToolsPage() {
               onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='none';(e.currentTarget as HTMLElement).style.boxShadow=`0 2px 8px ${tool.color}10`}}>
               {aiKnown && !planAllows(plan,tool.minPlan,!!hasAiAddon) && (
                 <div style={{position:'absolute',top:12,left:12,background:'#1c1c1a',color:'white',fontSize:10,fontWeight:700,padding:'4px 10px',borderRadius:99,display:'flex',alignItems:'center',gap:4,zIndex:1}}>
-                  🔒 {tool.minPlan==='advanced'?'المتقدمة':'المتوسطة'}
+                  🔒 {tool.minPlan==='advanced'?'المتقدمة':'الشاملة'}
                 </div>
               )}
               <div style={{display:'flex',alignItems:'flex-start',gap:14}}>
@@ -375,7 +375,7 @@ export default function AIToolsPage() {
         )}
       </div>
 
-      {/* مقارنة الفروع — الباقة المتوسطة أو المتقدمة */}
+      {/* مقارنة الفروع — الباقة الشاملة أو المتقدمة */}
       {(plan!=='basic'||hasAiAddon) && isOwner && (
       <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
@@ -438,7 +438,7 @@ export default function AIToolsPage() {
       </div>
       )}
 
-      {/* أدوات الهدر — الباقة المتوسطة أو المتقدمة */}
+      {/* أدوات الهدر — الباقة الشاملة أو المتقدمة */}
       {(plan!=='basic'||hasAiAddon) && (
       <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
         <div id="waste" style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:10,scrollMarginTop:80}}>وين تخسر فلوس؟</div>
@@ -802,7 +802,7 @@ export default function AIToolsPage() {
           <div style={{fontSize:36,marginBottom:10}}>🔒✨</div>
           <div style={{fontSize:16,fontWeight:800,color:'white',marginBottom:6}}>أدوات ذكاء اصطناعي بانتظارك</div>
           <div style={{fontSize:12,color:'rgba(255,255,255,.65)',marginBottom:18,lineHeight:1.7,maxWidth:420,marginLeft:'auto',marginRight:'auto'}}>
-            توقع نفاد المخزون، اقتراح كميات الشراء، تحليل الموسمية، تحسين نقطة إعادة الطلب، والتقرير الأسبوعي التلقائي — مع الباقة المتوسطة أو المتقدمة.
+            توقع نفاد المخزون، اقتراح كميات الشراء، تحليل الموسمية، تحسين نقطة إعادة الطلب، والتقرير الأسبوعي التلقائي — مع الباقة الشاملة أو المتقدمة.
           </div>
           <a className="hide-in-app" href="/settings" style={{display:'inline-block',padding:'12px 28px',background:'#029FA2',color:'white',borderRadius:10,fontSize:13,fontWeight:800,textDecoration:'none'}}>ترقية الباقة</a>
         </div>

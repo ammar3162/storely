@@ -12,7 +12,6 @@ export const MANAGER_PERMS: ManagerPerm[] = [
   { key: 'hr', label: 'الرواتب والإجازات', hint: 'الرواتب والسلف والإجازات والخصومات', group: 'الفريق', pages: ['/hr-management'] },
   { key: 'reports', label: 'التقارير', hint: 'تقارير الصرف والمشتريات والكاشير', group: 'التقارير والأرباح', pages: ['/reports'] },
   { key: 'profitability', label: 'الربحية', hint: 'المصاريف وصافي الربح', group: 'التقارير والأرباح', pages: ['/profitability'] },
-  { key: 'online_store', label: 'المنيو الإلكتروني', hint: 'المنيو وطلبات العملاء', group: 'أخرى', pages: ['/online-store'] },
   { key: 'ai_tools', label: 'أدوات الذكاء', hint: 'التوقعات واقتراحات الطلب', group: 'أخرى', pages: ['/ai-tools'] },
 ]
 export const MANAGER_PERM_KEYS = MANAGER_PERMS.map(p => p.key)
@@ -61,6 +60,7 @@ export const API_GUARDS: Record<string, { read?: Rule; write?: Rule }> = {
   '/api/delete-account': { read: OWNER, write: OWNER },
   '/api/branch-managers': { read: OWNER, write: OWNER },
   '/api/branches/copy-products': { read: OWNER, write: OWNER },
+  '/api/branches/extra': { read: OWNER, write: OWNER },
   '/api/notify-low-stock': { write: OWNER },
   '/api/addons-market': { write: OWNER },
   '/api/plan-requests': { write: OWNER },
@@ -123,13 +123,8 @@ export const API_GUARDS: Record<string, { read?: Rule; write?: Rule }> = {
   '/api/fixed-expenses': { read: ['profitability'], write: ['profitability'] },
   '/api/monthly-fixed-expenses': { read: ['profitability'], write: ['profitability'] },
   '/api/delivery-income': { read: ['profitability'], write: ['profitability'] },
-  // المنيو الإلكتروني
-  '/api/shop-items': { read: ['online_store'], write: ['online_store'] },
-  '/api/shop-product': { read: ['online_store'], write: ['online_store'] },
-  '/api/shop-reorder': { read: ['online_store'], write: ['online_store'] },
-  '/api/shop-settings': { read: ['online_store'], write: ['online_store'] },
-  '/api/reservation-wa-qrcode': { read: ['online_store'], write: ['online_store'] },
-  '/api/reservation-wa-status': { read: ['online_store'], write: ['online_store'] },
+  '/api/reservation-wa-qrcode': { read: OWNER, write: OWNER },
+  '/api/reservation-wa-status': { read: OWNER, write: OWNER },
   // أدوات الذكاء
   '/api/purchase-suggestion': { read: ['ai_tools'], write: ['ai_tools'] },
   '/api/recipe-reconciliation': { read: ['ai_tools'], write: ['ai_tools'] },

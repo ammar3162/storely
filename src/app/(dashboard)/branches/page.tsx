@@ -14,6 +14,9 @@ export default function BranchesPage() {
   const [loading, setLoading] = useState(true)
   const [orgId, setOrgId] = useState('')
   const [maxBranches, setMaxBranches] = useState(1)
+  // إضافة فرع بنفسه فوق باقته (lib/extraBranch): السعر وكم يقدر يوصل
+  const [offer, setOffer] = useState<any>(null)
+  const [buyingBranch, setBuyingBranch] = useState(false)
   const [branches, setBranches] = useState<any[]>([])
   const [inactiveBranches, setInactiveBranches] = useState<any[]>([])
   const [newBranch, setNewBranch] = useState({name:'',location:''})
@@ -89,6 +92,7 @@ export default function BranchesPage() {
     const j = await api.get('/api/branches', { org_id: oid, include_inactive: 1 })
     if (!j.success) { setLoading(false); return }
     setMaxBranches(j.max_branches||1)
+    api.get('/api/branches/extra', { org_id: oid }).then(o => setOffer(o.success ? o.offer : null)).catch(() => setOffer(null))
     setBranches(j.branches||[])
     cache.set('branches:'+oid, j.branches||[])
     setInactiveBranches(j.inactive||[])
@@ -97,6 +101,23 @@ export default function BranchesPage() {
 
   // تحديث فوري: فرع انضاف/توقف من جهاز ثاني أو تغيّرت إضافة الفروع
   useLiveRefresh(orgId || null, ['branches', 'org_addon_subscriptions'], () => { init() })
+
+  // يضيف فرع لباقته (ينضاف لفاتورته) — بعدها يقدر يسجّل الفرع الجديد
+  async function buyBranch() {
+    if (!offer?.canAdd) return
+    const ok = await confirmDialog({
+      title: 'إضافة فرع لباقتك',
+      message: `الفرع الإضافي بـ${offer.price} ريال شهرياً${offer.yearly ? ' (بخصم السنوي)' : ''}، ومعه ${offer.staff} موظفين و${offer.suppliers} موردين. ينضاف لفاتورتك، ومحسوب على الأيام الباقية من اشتراكك بس.`,
+      confirmText: 'تأكيد وإضافة الفرع', type: 'success',
+    })
+    if (!ok) return
+    setBuyingBranch(true)
+    const r = await api.post('/api/branches/extra', { org_id: orgId })
+    setBuyingBranch(false)
+    if (!r.success) { toast(r.error || 'فشلت الإضافة — حاول مرة أخرى', 'error'); return }
+    toast(r.prorated_amount > 0 ? `انضاف فرع لباقتك — المستحق ${r.prorated_amount} ريال عن الأيام الباقية` : 'انضاف فرع لباقتك')
+    init()
+  }
 
   async function addBranch() {
     if(!newBranch.name.trim()) return
@@ -332,7 +353,7 @@ export default function BranchesPage() {
             فروع موقوفة ({inactiveBranches.length})
             {branches.length<maxBranches
               ? <span style={{fontWeight:600,color:colors.primary}}> — عندك مكان لـ{maxBranches-branches.length} فرع، اختر اللي تبي تفعّله</span>
-              : <span style={{fontWeight:600}}> — لتفعيل فرع: أوقف فرعاً شغّالاً بداله<span className="hide-in-app">، أو <a href="/addons-market" style={{color:colors.primary,fontWeight:700}}>أضف فرعاً</a></span></span>}
+              : <span style={{fontWeight:600}}> — لتفعيل فرع: أوقف فرعاً شغّالاً بداله{offer?.canAdd && <span className="hide-in-app">، أو أضف فرع لباقتك من تحت</span>}</span>}
           </div>
           {inactiveBranches.map((b:any,i:number)=>(
             <div key={b.id} style={{padding:'14px 16px',borderBottom:i<inactiveBranches.length-1?`1px solid ${colors.border}`:'none',display:'flex',alignItems:'center',gap:12}}>
@@ -365,8 +386,19 @@ export default function BranchesPage() {
         </div>
       ) : (
         <div style={{...card,padding:'16px',background:colors.warningLight||'#fffbeb',textAlign:'center',fontSize:font.sm,color:colors.text3}}>
-          وصلت للحد الأقصى ({maxBranches} فرع).
-          <a className="hide-in-app" href="/addons-market" style={{display:'block',marginTop:10,color:colors.primary,fontWeight:700,textDecoration:'none'}}>+ أضف فرعاً (من صفحة الإضافات)</a>
+          باقتك فيها {maxBranches} {maxBranches===1?'فرع':'فروع'} وكلها مستخدمة.
+          {offer?.canAdd ? (
+            <div className="hide-in-app" style={{marginTop:12}}>
+              <button onClick={buyBranch} disabled={buyingBranch} style={{...btnPrimary,padding:'10px 18px'}}>
+                {buyingBranch ? 'جاري الإضافة...' : `+ أضف فرع لباقتك (${offer.price} ريال شهرياً)`}
+              </button>
+              <div style={{fontSize:font.xs,color:colors.text3,marginTop:8}}>معه {offer.staff} موظفين و{offer.suppliers} موردين · تقدر توصل لـ{offer.maxTotal} فروع</div>
+            </div>
+          ) : offer?.nextPlan ? (
+            <a className="hide-in-app" href="/settings" style={{display:'block',marginTop:10,color:colors.primary,fontWeight:700,textDecoration:'none'}}>وصلت أقصى فروع باقتك ({offer.maxTotal}) — رقّ باقتك من الإعدادات عشان تضيف أكثر</a>
+          ) : offer ? (
+            <a className="hide-in-app" href="https://wa.me/966594351667" target="_blank" rel="noreferrer" style={{display:'block',marginTop:10,color:colors.primary,fontWeight:700,textDecoration:'none'}}>تحتاج أكثر من {offer.maxTotal} فروع؟ تواصل معنا لباقة المؤسسات</a>
+          ) : null}
         </div>
       )}
 

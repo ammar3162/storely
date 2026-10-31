@@ -1,31 +1,33 @@
 // مصدر واحد يحدد الميزات المتاحة للمنشأة: الباقة + الإضافات السارية.
-// المتوسطة (pro) والمتقدمة فيها كل الميزات، والأساسية تفتح كل ميزة بإضافتها من المتجر.
+// الشاملة (pro) والمتقدمة فيها كل الميزات، والأساسية تفتح كل ميزة بإضافتها من المتجر.
 // أي مكان يقفل/يفتح ميزة (API أو صفحة) لازم يمر من هنا — عشان ما يصير الكاشير مفتوح بصفحة ومقفل بصفحة.
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-export const FEATURE_ADDON = {
-  cashier: 'cashier_closing',
-  hr: 'hr_full',
-  ai: 'ai_tools',
-  profitability: 'profitability',
+// الإضافات اللي تفتح كل ميزة — حزمة «الأرباح والذكاء» (profit_ai) تفتح الربحية والذكاء،
+// و ai_tools / profitability القديمة تبقى شغالة لمشتركيها
+export const FEATURE_ADDONS = {
+  cashier: ['cashier_closing'],
+  hr: ['hr_full'],
+  ai: ['ai_tools', 'profit_ai'],
+  profitability: ['profitability', 'profit_ai'],
 } as const
-export type Feature = keyof typeof FEATURE_ADDON
+export type Feature = keyof typeof FEATURE_ADDONS
 export type Features = Record<Feature, boolean>
 
 const FULL_PLANS = ['pro', 'advanced']
 
 export const FEATURE_LABEL: Record<Feature, string> = {
   cashier: 'إقفال الكاشير',
-  hr: 'إدارة الموظفين الكاملة',
-  ai: 'الذكاء الاصطناعي',
-  profitability: 'الربحية',
+  hr: 'إدارة الموظفين',
+  ai: 'الأرباح والذكاء',
+  profitability: 'الأرباح والذكاء',
 }
 
 /** يحسب الميزات من الباقة وقائمة الإضافات السارية (slugs) */
 export function featuresFrom(plan: string | null | undefined, activeAddons: string[]): Features {
   const full = FULL_PLANS.includes(plan || 'basic')
   const out = {} as Features
-  for (const f of Object.keys(FEATURE_ADDON) as Feature[]) out[f] = full || activeAddons.includes(FEATURE_ADDON[f])
+  for (const f of Object.keys(FEATURE_ADDONS) as Feature[]) out[f] = full || FEATURE_ADDONS[f].some(slug => activeAddons.includes(slug))
   return out
 }
 
@@ -57,5 +59,5 @@ export async function orgHasFeature(db: SupabaseClient, orgId: string, f: Featur
 
 /** رسالة موحّدة لما الميزة مقفلة */
 export function lockedMessage(f: Feature) {
-  return `ميزة ${FEATURE_LABEL[f]} متاحة بالباقة المتوسطة أو المتقدمة، أو بإضافة «${FEATURE_LABEL[f]}» من صفحة الإضافات`
+  return `ميزة ${FEATURE_LABEL[f]} متاحة بالباقة الشاملة أو المتقدمة، أو بإضافة «${FEATURE_LABEL[f]}» من صفحة الإضافات`
 }

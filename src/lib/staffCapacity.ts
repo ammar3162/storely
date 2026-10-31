@@ -1,23 +1,27 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { staffBase } from '@/lib/planPricing'
+import { getBranchLimit } from '@/lib/branchLimit'
 
-// حد الباقة الأساسي مستقل وصارم لكل فرع لحاله (ما تقدر تسحب من فرع فاضي لفرع ثاني).
-// إضافة "موظف إضافي" رصيد مشترك للمؤسسة كلها، يُستخدم بأي فرع تحتاجه فيه.
-export const PLAN_BASE_STAFF: Record<string, number> = { basic: 3, pro: 5, advanced: 999 }
+// حد الموظفين للمنشأة كلها (يتوزّع على الفروع مثل ما يبي المالك): حد الباقة + موظفين كل فرع إضافي (lib/planPricing).
+// إضافة "موظف إضافي" رصيد فوق هالحد — الموظف اللي ياخذ منها ينربط فيها (addon_subscription_id) عشان يتوقف لو انلغت.
 
 /**
- * هل فيه مكان لموظف نشط إضافي بهذا الفرع؟
- * - تحت حد الباقة الأساسي: ok بدون إضافة
+ * هل فيه مكان لموظف نشط إضافي بالمنشأة؟
+ * - تحت حد الباقة: ok بدون إضافة
  * - فوقه: يحتاج رصيد من إضافة "موظف إضافي" — يرجّع addonSubscriptionId اللي لازم ينربط فيه الموظف
+ * branch_id ما عاد يأثر على الحد (باقي بالتوقيع عشان المستدعين)
  */
-export async function checkStaffCapacity(db: SupabaseClient, org_id: string, branch_id: string | null):
+export async function checkStaffCapacity(db: SupabaseClient, org_id: string, _branch_id?: string | null):
   Promise<{ ok: true; addonSubscriptionId: string | null } | { ok: false; error: string }> {
-  const { data: org } = await db.from('organizations').select('plan').eq('id', org_id).single()
-  const baseLimit = PLAN_BASE_STAFF[(org as any)?.plan || 'basic'] ?? 3
+  const [{ data: org }, branchLimit] = await Promise.all([
+    db.from('organizations').select('plan,max_staff').eq('id', org_id).single(),
+    getBranchLimit(db, org_id),
+  ])
+  const baseLimit = staffBase((org as any)?.plan, (org as any)?.max_staff, branchLimit.extra)
 
-  let branchCountQ = db.from('staff_members').select('id', { count: 'exact', head: true }).eq('org_id', org_id).eq('is_active', true)
-  branchCountQ = branch_id ? branchCountQ.eq('branch_id', branch_id) : branchCountQ.is('branch_id', null)
-  const { count: branchCount } = await branchCountQ
-  if ((branchCount || 0) < baseLimit) return { ok: true, addonSubscriptionId: null }
+  const { count: baseUsed } = await db.from('staff_members').select('id', { count: 'exact', head: true })
+    .eq('org_id', org_id).eq('is_active', true).is('addon_subscription_id', null)
+  if ((baseUsed || 0) < baseLimit) return { ok: true, addonSubscriptionId: null }
 
   const { data: extraStaffSub } = await db
     .from('org_addon_subscriptions')
@@ -29,7 +33,7 @@ export async function checkStaffCapacity(db: SupabaseClient, org_id: string, bra
     .maybeSingle()
 
   if (!extraStaffSub) {
-    return { ok: false, error: `هذا الفرع وصل حده الأساسي (${baseLimit} موظف) — يرجى ترقية الباقة أو شراء إضافة "موظف إضافي"` }
+    return { ok: false, error: `وصلت حد موظفين باقتك (${baseLimit} موظف) — أضف "موظف إضافي" من صفحة الإضافات أو رقّ باقتك` }
   }
 
   const addonQty = (extraStaffSub as any).quantity || 0
@@ -41,7 +45,7 @@ export async function checkStaffCapacity(db: SupabaseClient, org_id: string, bra
     .eq('addon_subscription_id', (extraStaffSub as any).id)
 
   if ((usedAddonSlots || 0) >= addonQty) {
-    return { ok: false, error: `هذا الفرع وصل حده الأساسي (${baseLimit} موظف)، ورصيد إضافة "موظف إضافي" (${addonQty}) مستهلك بالكامل — زوّد الكمية من صفحة الإضافات` }
+    return { ok: false, error: `وصلت حد موظفين باقتك (${baseLimit} موظف)، ورصيد "موظف إضافي" (${addonQty}) مستهلك بالكامل — زوّد الكمية من صفحة الإضافات` }
   }
 
   return { ok: true, addonSubscriptionId: (extraStaffSub as any).id }

@@ -11,4 +11,7 @@ describe('plan features', () => {
     expect(featuresFrom('basic', ['hr_full', 'ai_tools'])).toMatchObject({ hr: true, ai: true, cashier: false })
     expect(featuresFrom(null, ['profitability']).profitability).toBe(true)
   })
+  it('the profit & AI bundle opens both profitability and AI', () => {
+    expect(featuresFrom('basic', ['profit_ai'])).toEqual({ cashier: false, hr: false, ai: true, profitability: true })
+  })
 })

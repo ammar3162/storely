@@ -63,7 +63,7 @@ export default function StaffManagementPage() {
   const [staffCountry, setStaffCountry] = useState(()=>sessionStorage.getItem('s_country_code')||'+966')
   const [newBranch, setNewBranch]   = useState(typeof window!=='undefined' ? (sessionStorage.getItem('s_branch_id')||'') : '')
   const [newRole, setNewRole]       = useState<'staff'|'cashier'>('staff')
-  // الكاشير متاح بالمتوسطة/المتقدمة أو بإضافة «إقفال الكاشير» — من نفس مصدر الخادم (/api/me)
+  // الكاشير متاح بالشاملة/المتقدمة أو بإضافة «إقفال الكاشير» — من نفس مصدر الخادم (/api/me)
   const [hasCashier, setHasCashier] = useState(orgPlan!=='basic')
   const [newSendClosingWA, setNewSendClosingWA] = useState(true)
   const [revealedPin, setRevealedPin] = useState<{name:string,phone:string,pin:string}|null>(null)
@@ -535,11 +535,11 @@ export default function StaffManagementPage() {
                     <div style={{fontSize:10,color:newRole==='staff'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يستخدم نظام الصرف والمخزون</div>
                   </button>
                   <button type="button" onClick={()=>{
-                      if(!hasCashier){toast('الكاشير يحتاج الباقة المتوسطة أو إضافة «إقفال الكاشير» من صفحة الإضافات','warning');return}
+                      if(!hasCashier){toast('الكاشير يحتاج الباقة الشاملة أو إضافة «إقفال الكاشير» من صفحة الإضافات','warning');return}
                       setNewRole('cashier')
                     }} style={{padding:'12px 10px',borderRadius:10,border:`1.5px solid ${newRole==='cashier'?colors.primary:colors.border}`,background:newRole==='cashier'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='cashier'?`0 2px 8px ${colors.primary}22`:'none',opacity:!hasCashier?.55:1,position:'relative' as const}}>
                     {!hasCashier && (
-                      <div style={{position:'absolute',top:-8,left:-6,background:'#1c1c1a',color:'white',fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:99,display:'flex',alignItems:'center',gap:4}}><Lock size={9} strokeWidth={2.5}/> المتوسطة</div>
+                      <div style={{position:'absolute',top:-8,left:-6,background:'#1c1c1a',color:'white',fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:99,display:'flex',alignItems:'center',gap:4}}><Lock size={9} strokeWidth={2.5}/> الشاملة</div>
                     )}
                     <div style={{fontWeight:800,fontSize:font.sm,color:newRole==='cashier'?colors.primary:colors.text2,marginBottom:3,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><Wallet size={14} strokeWidth={2.25}/> كاشير</div>
                     <div style={{fontSize:10,color:newRole==='cashier'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يقفل الصندوق يومياً فقط</div>
@@ -766,7 +766,7 @@ export default function StaffManagementPage() {
                     style={{accentColor:'#029FA2',width:16,height:16}}/>
                   <div>
                     <div style={{fontSize:13,fontWeight:700,color:(editPerms as any)[p.key]?'#029FA2':'#374151',display:'flex',alignItems:'center',gap:5}}><p.Icon size={14} strokeWidth={2.25}/> {p.label}</div>
-                    {p.locked&&<div style={{fontSize:10,color:'#9ca3af'}}>{p.key==='cashier'?(!hasCashier?'يحتاج المتوسطة أو إضافة الكاشير':'دوره كاشير'):'افتراضي'}</div>}
+                    {p.locked&&<div style={{fontSize:10,color:'#9ca3af'}}>{p.key==='cashier'?(!hasCashier?'يحتاج الشاملة أو إضافة الكاشير':'دوره كاشير'):'افتراضي'}</div>}
                   </div>
                 </label>
               ))}

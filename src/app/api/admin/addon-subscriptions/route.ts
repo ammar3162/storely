@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { INCLUDED_FROM_STANDARD } from '@/lib/changePlan'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
 import { activateAddon } from '@/lib/addonActivation'
@@ -77,13 +78,15 @@ export async function GET(req: Request) {
   const supabase = sb()
   const { data: org } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
   const orgPlan = (org as any)?.plan || 'basic'
-  const INCLUDED_FROM_STANDARD = ['hr_full', 'profitability', 'ai_tools', 'cashier_closing']
 
-  const { data: addonsRaw } = await supabase.from('marketplace_addons').select('*').eq('is_active', true).order('sort_order')
+  const { data: subs } = await supabase.from('org_addon_subscriptions').select('addon_id,status,expires_at,quantity,branch_ids,locked_price').eq('org_id', org_id)
+  // المعروض: الإضافات اللي تنباع الحين + المتوقفة عن البيع اللي العميل مشترك فيها (يقدر الأدمن يلغيها)
+  const activeSubIds = new Set((subs || []).filter((s: any) => s.status === 'active').map((s: any) => s.addon_id))
+  const { data: allAddons } = await supabase.from('marketplace_addons').select('*').order('sort_order')
+  const addonsRaw = (allAddons || []).filter((a: any) => a.is_active || activeSubIds.has(a.id))
   const addons = orgPlan === 'basic'
     ? addonsRaw
-    : (addonsRaw || []).filter((a: any) => !INCLUDED_FROM_STANDARD.includes(a.slug))
-  const { data: subs } = await supabase.from('org_addon_subscriptions').select('addon_id,status,expires_at,quantity,branch_ids,locked_price').eq('org_id', org_id)
+    : addonsRaw.filter((a: any) => !INCLUDED_FROM_STANDARD.includes(a.slug))
   const { data: branches } = await supabase.from('branches').select('id,name').eq('org_id', org_id).eq('is_active', true).order('created_at')
 
   const now = new Date()

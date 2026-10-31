@@ -29,7 +29,7 @@ function UpgradeBlock() {
         <div style={{fontSize:64,marginBottom:16}}>🔒</div>
         <h2 style={{fontSize:22,fontWeight:900,color:'#0f172a',marginBottom:8}}>هذه الميزة غير متاحة في باقتك</h2>
         <p style={{fontSize:14,color:'#64748b',lineHeight:1.8,marginBottom:24}}>
-          إدارة الموردين متاحة في الباقة المتوسطة وما فوق.
+          إدارة الموردين متاحة في الباقة الشاملة وما فوق.
         </p>
         <button className="hide-in-app" onClick={()=>router.push('/settings')}
           style={{padding:'14px 32px',background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>

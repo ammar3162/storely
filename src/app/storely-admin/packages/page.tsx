@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { PLAN_PRICING } from '@/lib/planPricing'
+import { PLAN_PRICING, PLAN_CAPS, ENTERPRISE_LABEL } from '@/lib/planPricing'
 import { A, Badge, Card, Loading, PageHeader, adminFetch, useAdmin } from '../_admin/kit'
 import { type Customer, PLAN_KEYS, PLAN_LIMITS, PLAN_TONE, mapCustomer } from '../_admin/customers'
 
@@ -35,9 +35,10 @@ export default function PackagesPage() {
                 </div>
                 <div style={{ fontSize: 12.5, color: A.text3, marginTop: 2 }}>{p.yearly} ⃁ / سنة</div>
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16, fontSize: 13, color: A.text2 }}>
-                  <li>{lim(l.branches, 'فروع')}</li>
-                  <li>{lim(l.staff, 'موظفين')} لكل فرع</li>
-                  <li>{lim(l.suppliers, 'موردين')}</li>
+                  <li>{lim(l.branches, 'فروع')} — ويوصل {PLAN_CAPS[k].maxBranches} بفرع إضافي {PLAN_CAPS[k].branchPrice} ⃁</li>
+                  <li>{lim(l.staff, 'موظفين')} للمنشأة كلها (+{PLAN_CAPS[k].branchStaff} مع كل فرع إضافي)</li>
+                  <li>{lim(l.suppliers, 'موردين')} (+{PLAN_CAPS[k].branchSuppliers} مع كل فرع إضافي)</li>
+                  <li>{k === 'basic' ? 'المميزات بالإضافات: الكاشير، إدارة الموظفين، الأرباح والذكاء' : 'كل المميزات مشمولة'}</li>
                 </ul>
                 {can('manage_users') && (
                   <div style={{ borderTop: `1px solid ${A.border}`, marginTop: 16, paddingTop: 12, display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
@@ -51,7 +52,7 @@ export default function PackagesPage() {
         </div>
       )}
       <div style={{ marginTop: 16, fontSize: 12.5, color: A.text3 }}>
-        الفرع الإضافي: 49 ⃁ للفرع شهرياً لأي باقة — يُفعَّل من صفحة العميل ← الإضافات.
+        الفرع الإضافي يضيفه العميل بنفسه من صفحة الفروع (بدون موافقة) ويوصلك بطلبات الإضافات كـ«موافَق تلقائياً». باقة {ENTERPRISE_LABEL} (أكثر من {PLAN_CAPS.advanced.maxBranches} فروع) تتفعّل من ملف العميل بحدود وسعر خاص. التجربة المجانية على الشاملة بكل المميزات، والباقة اللي اختارها العميل تبان بملفه «الباقة المطلوبة عند التسجيل».
       </div>
     </>
   )

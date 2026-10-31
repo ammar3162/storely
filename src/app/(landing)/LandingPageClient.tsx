@@ -2,8 +2,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { isInApp } from '@/lib/inApp'
-import { Check, Play, ArrowLeft, MessageCircle } from 'lucide-react'
-import { Billing, PLAN_BRANCHES, PLANS, LS, FAQ_ITEMS, FEATURES, BRANCH_OPTIONS, BRANCH_OPTIONS_EN } from './landing-data'
+import { Check, Minus, Play, ArrowLeft, MessageCircle } from 'lucide-react'
+import { Billing, PLAN_BRANCHES, PLANS, COMPARE, LS, FAQ_ITEMS, FEATURES, BRANCH_OPTIONS, BRANCH_OPTIONS_EN } from './landing-data'
 import { FaqItem } from './landing-components'
 
 // لون لكل ميزة — نفس ألوان صفحات لوحة التحكم
@@ -292,25 +292,62 @@ export default function LandingPage({ initialMarquee }: { initialMarquee?: strin
           <div className="lp-head rv">
             <span className="lp-tag">{t('pricingTag')}</span>
             <h2 className="lp-h2">{t('pricingTitle')}</h2>
+            <p className="lp-plans-trial">{lang==='ar'?'جرّب كل المميزات مجاناً لمدة 14 يوم، وبعدها اختر الباقة اللي تناسبك':'Try every feature free for 14 days, then pick the plan that fits you'}</p>
             <div className="lp-toggle">
               <button className={billing==='monthly'?'on':''} onClick={()=>setBilling('monthly')}>{t('billMonthly')}</button>
               <button className={billing==='yearly'?'on':''} onClick={()=>setBilling('yearly')}>{t('billYearly')} <span>{t('billSave')}</span></button>
             </div>
           </div>
           <div className="lp-plans">
-            {PLANS.map((p,i)=>(
+            {PLANS.map((p:any,i)=>(
               <div key={i} className={`lp-plan rv${p.popular?' pop':''}`}>
                 {p.popular && <div className="lp-plan-badge">{t('mostPopular')}</div>}
                 <div className="lp-plan-name">{lang==='ar'?p.name:p.nameEn}</div>
-                <div className="lp-plan-price"><strong>{billing==='yearly'?p.yearlyPrice:p.price}</strong><span>{lang==='ar'?'⃁':'SAR'} {billing==='yearly'?t('perYear'):t('perMonth')}</span></div>
+                <div className="lp-plan-who">{lang==='ar'?p.who:p.whoEn}</div>
+                {p.custom
+                  ? <div className="lp-plan-price"><strong style={{fontSize:30}}>{lang==='ar'?'سعر مخصص':'Custom'}</strong></div>
+                  : <>
+                      <div className="lp-plan-price"><strong>{billing==='yearly'?Math.round(Number(p.yearlyPrice)/12):p.price}</strong><span>{lang==='ar'?'⃁':'SAR'} {t('perMonth')}</span></div>
+                      {billing==='yearly' && <div className="lp-plan-yearly">{lang==='ar'?`تُدفع سنوياً: ${p.yearlyPrice} ⃁ بدل ${Number(p.price)*12}`:`Billed yearly: ${p.yearlyPrice} SAR instead of ${Number(p.price)*12}`}</div>}
+                    </>}
                 <div className="lp-plan-limits">{(lang==='ar'?p.limits:p.limitsEn).join(' · ')}</div>
-                <button onClick={()=>router.push(`/login?mode=register&branches=${PLAN_BRANCHES[i]}&billing=${billing}`)} className={`lp-btn lp-btn-lg ${p.popular?'lp-btn-dark':'lp-btn-line'}`} style={{width:'100%'}}>{t('startNow')}</button>
+                {p.extra && <div className="lp-plan-extra">{lang==='ar'?p.extra:p.extraEn}</div>}
+                {p.custom
+                  ? <a href="#demo" className="lp-btn lp-btn-lg lp-btn-line" style={{width:'100%'}}>{lang==='ar'?'تواصل معنا':'Contact us'}</a>
+                  : <button onClick={()=>router.push(`/login?mode=register&branches=${PLAN_BRANCHES[i]}&billing=${billing}`)} className={`lp-btn lp-btn-lg ${p.popular?'lp-btn-dark':'lp-btn-line'}`} style={{width:'100%'}}>{t('startNow')}</button>}
                 <ul>
-                  {(lang==='ar'?p.features:p.featuresEn).map((f,j)=><li key={j}><Check size={15}/>{f}</li>)}
+                  {(lang==='ar'?p.features:p.featuresEn).map((f:string,j:number)=><li key={j}><Check size={15}/>{f}</li>)}
                 </ul>
-                {(p as any).addonNote && <div className="lp-plan-note">{lang==='ar'?(p as any).addonNote:(p as any).addonNoteEn}</div>}
+                {p.addons && (
+                  <div className="lp-plan-note">
+                    <div style={{fontWeight:700,marginBottom:6}}>{lang==='ar'?'أضف اللي تحتاجه — إضافات تبدأ من 29 ⃁:':'Add what you need — add-ons from 29 SAR:'}</div>
+                    {(lang==='ar'?p.addons:p.addonsEn).map(([n]:string[],j:number)=>(
+                      <div key={j} style={{padding:'3px 0'}}>{n}</div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
+          </div>
+          <p className="lp-plans-foot">{lang==='ar'?'أضف فروع وموظفين وموردين بنفسك من داخل النظام في أي وقت. الموظفين والموردين لكل المنشأة، توزعهم على فروعك مثل ما تبي.':'Add branches, staff and suppliers yourself anytime from inside the app. Staff and suppliers are shared across your branches.'}</p>
+          <div className="lp-compare rv">
+            <h3>{lang==='ar'?'قارن الباقات':'Compare plans'}</h3>
+            <div className="lp-compare-scroll">
+              <table>
+                <thead><tr><th></th>{PLANS.map((p:any,i)=><th key={i} className={p.popular?'pop':''}>{lang==='ar'?p.name:p.nameEn}</th>)}</tr></thead>
+                {COMPARE.map((g,gi)=>(
+                  <tbody key={gi}>
+                    <tr className="grp"><td colSpan={5}>{g.group}</td></tr>
+                    {g.rows.map(([label,...cells],ri)=>(
+                      <tr key={ri}><td>{label}</td>{cells.map((c,ci)=>(
+                        <td key={ci} className={PLANS[ci]?.popular?'pop':''}>
+                          {c===true?<Check size={17} className="yes"/>:c===false?<Minus size={15} className="no"/>:c==='addon'?<span className="addon">{lang==='ar'?'إضافة':'Add-on'}</span>:<b>{c}</b>}
+                        </td>))}</tr>
+                    ))}
+                  </tbody>
+                ))}
+              </table>
+            </div>
           </div>
         </div>
       </section>
@@ -552,8 +589,27 @@ html{scroll-behavior:smooth}
 .lp-toggle button{border:none;background:none;padding:9px 20px;border-radius:999px;font:600 14px 'IBM Plex Sans Arabic',sans-serif;color:var(--ink3);cursor:pointer;display:flex;align-items:center;gap:6px}
 .lp-toggle button.on{background:var(--teal);color:#fff}
 .lp-toggle button span{font-size:11px;background:rgba(94,234,212,.25);color:inherit;padding:2px 8px;border-radius:99px}
-.lp-plans{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:start}
-.lp-plan{position:relative;background:#fff;border:1px solid var(--line);border-radius:28px;padding:30px}
+.lp-plans{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:start}
+.lp-plan-who{font-size:13px;opacity:.7;margin:-6px 0 14px}
+.lp-plan-extra{font-size:12.5px;font-weight:700;color:var(--teal2);margin:-12px 0 18px}
+.lp-plan.pop .lp-plan-extra{color:var(--mint)}
+.lp-plans-trial{font-size:15px;color:var(--ink2);margin:-4px 0 18px}
+.lp-plan-yearly{font-size:12px;opacity:.7;margin:-4px 0 10px}
+.lp-compare{margin-top:56px}
+.lp-compare h3{font-size:22px;font-weight:800;text-align:center;margin-bottom:18px}
+.lp-compare-scroll{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:22px}
+.lp-compare table{width:100%;border-collapse:collapse;min-width:640px;font-size:14px}
+.lp-compare th{padding:16px 12px;font-size:15px;font-weight:800;text-align:center;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff}
+.lp-compare th:first-child,.lp-compare td:first-child{text-align:right;padding-right:22px;width:34%}
+.lp-compare td{padding:12px;text-align:center;border-bottom:1px solid var(--line)}
+.lp-compare .pop{background:rgba(15,118,110,.06)}
+.lp-compare th.pop{color:var(--teal)}
+.lp-compare tr.grp td{background:var(--sand);font-weight:800;font-size:13px;color:var(--ink2);text-align:right;padding:10px 22px}
+.lp-compare .yes{color:var(--teal2)}
+.lp-compare .no{color:#cbd5e1}
+.lp-compare .addon{font-size:12px;font-weight:700;color:var(--ink2);background:var(--sand);padding:3px 10px;border-radius:99px}
+.lp-plans-foot{text-align:center;font-size:14px;color:var(--ink2);margin-top:26px}
+.lp-plan{position:relative;background:#fff;border:1px solid var(--line);border-radius:28px;padding:26px}
 .lp-plan.pop{background:var(--teal);color:#fff;border-color:var(--teal);box-shadow:0 40px 70px -40px rgba(11,59,58,.7)}
 .lp-plan-badge{position:absolute;top:-13px;right:28px;background:var(--mint);color:var(--teal);font-size:12px;font-weight:700;padding:5px 14px;border-radius:99px}
 .lp-plan-name{font-size:17px;font-weight:700;margin-bottom:12px}

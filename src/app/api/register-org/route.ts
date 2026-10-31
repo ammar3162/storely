@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { PLAN_CAPS, type PlanKey } from '@/lib/planPricing'
 import { normalizeWhatsapp } from '@/lib/phoneNormalize'
 import { SIGNUP_BUSINESS_TYPES } from '@/lib/businessTypes'
 import { attachReferral } from '@/lib/agentReferral'
@@ -57,10 +58,12 @@ export async function POST(req: Request) {
     const { data: settingsRow } = await supabase.from('platform_settings').select('terms_version').eq('id', 1).single()
     const TERMS_VERSION = (settingsRow as any)?.terms_version || '2026-06-b'
 
-    const maxB = branchCount===1?1:branchCount<=3?3:10
-    const maxStaff = branchCount===1?3:branchCount<=3?10:999
-    const maxSup = branchCount===1?3:branchCount<=3?10:999
-    const plan = branchCount===1?'basic':branchCount<=3?'pro':'advanced'
+    // الباقة اللي اختارها (requested_plan) — والتجربة المجانية على الشاملة بكل المميزات (أو المتقدمة لو اختارها)
+    // عشان يجرب كل شي، وبعد التجربة يختار باقته
+    const requestedPlan: PlanKey = branchCount===1?'basic':branchCount<=5?'pro':'advanced'
+    const plan: PlanKey = requestedPlan === 'advanced' ? 'advanced' : 'pro'
+    const caps = PLAN_CAPS[plan]
+    const maxB = caps.branches, maxStaff = caps.staff, maxSup = caps.suppliers
 
     const { data: org, error: orgErr } = await supabase
       .from('organizations')
@@ -71,7 +74,7 @@ export async function POST(req: Request) {
         whatsapp_number: fullPhone,
         low_stock_threshold: 5,
         business_type: businessType||'مطعم',
-        requested_plan: plan,
+        requested_plan: requestedPlan,
         max_branches: maxB,
         max_staff: maxStaff,
         max_suppliers: maxSup,

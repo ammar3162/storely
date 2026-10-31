@@ -56,7 +56,7 @@ export default function AgentsPage() {
           <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: 20, padding: 22 }}>
             <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 14 }}>مكافأتك على كل منشأة تشترك</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 10 }}>
-              {([['الأساسية', AGENT_REWARD.basic], ['المتوسطة', AGENT_REWARD.pro], ['المتقدمة', AGENT_REWARD.advanced]] as const).map(([l, v]) => (
+              {([['الأساسية', AGENT_REWARD.basic], ['الشاملة', AGENT_REWARD.pro], ['المتقدمة', AGENT_REWARD.advanced]] as const).map(([l, v]) => (
                 <div key={l} style={{ background: '#f0fdfa', border: `1px solid ${colors.primaryBorder}`, borderRadius: 14, padding: '14px 10px', textAlign: 'center' }}>
                   <div style={{ fontSize: 12.5, color: colors.text3 }}>{l}</div>
                   <div style={{ fontSize: 24, fontWeight: 900, color: colors.primary, margin: '4px 0' }}>{v}</div>

@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { orgHasFeature } from '@/lib/planFeatures'
 
-// ميزة "إدارة الموظفين": الباقة المتوسطة/المتقدمة، أو إضافة hr_full سارية على الباقة الأساسية
+// ميزة "إدارة الموظفين": الباقة الشاملة/المتقدمة، أو إضافة hr_full سارية على الباقة الأساسية
 export async function orgHasHrFeature(db: SupabaseClient, orgId: string, plan?: string | null) {
   return orgHasFeature(db, orgId, 'hr', plan)
 }

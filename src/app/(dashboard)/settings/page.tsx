@@ -7,7 +7,8 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
 import { getMe } from '@/lib/session'
-import { PLAN_PRICING, planKeyOf, billLines, planPriceFor } from '@/lib/planPricing'
+import { PLAN_PRICING, planKeyOf, billLines, planPriceFor, planLabel as planLabelFor } from '@/lib/planPricing'
+import PlanUpgrade from '@/components/PlanUpgrade'
 import { colors, radius, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import AccountantHub from '@/components/AccountantHub'
 
@@ -199,8 +200,7 @@ export default function SettingsPage() {
       setMaxBranches(me.org?.max_branches||org.max_branches||1)
       setUserEmail(user.email||'');setUserId(user.id)
       setLogoUrl(org.logo_url||null)
-      const planMap: Record<string,string> = {'basic':'الأساسية','pro':'المتوسطة','advanced':'المتقدمة'}
-      setPlanName(planMap[org.plan||'']||org.plan||'')
+      setPlanName(planLabelFor(org.plan, me.org?.max_branches||org.max_branches))
       setPlanKey(org.plan||'')
       setLockedPlan(org.locked_plan_monthly ?? null)
       setBillingCycle(org.billing_cycle==='yearly'?'yearly':'monthly')
@@ -521,18 +521,7 @@ export default function SettingsPage() {
                     )}
                   </div>
 
-                  {/* أزرار الترقية - مؤقتاً عبر واتساب */}
-                  <div className="hide-in-app" style={{marginTop:16,background:'#fffbeb',border:'1.5px solid #fde68a',borderRadius:12,padding:'14px 16px',display:'flex',alignItems:'center',gap:12}}>
-                    <div style={{fontSize:22}}>📲</div>
-                    <div>
-                      <div style={{fontSize:13,fontWeight:700,color:'#92400e',marginBottom:2}}>للترقية تواصل معنا عبر واتساب</div>
-                      <div style={{fontSize:11,color:'#b45309'}}>الأساسية 99 · المتوسطة 249 · المتقدمة 499 ريال/شهر</div>
-                    </div>
-                    <a href="https://wa.me/966594351667?text=أريد الترقية في Storely" target="_blank" rel="noopener noreferrer"
-                      style={{marginRight:'auto',padding:'8px 16px',background:'#029FA2',color:'white',borderRadius:8,fontSize:12,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap'}}>
-                      تواصل معنا
-                    </a>
-                  </div>
+                  {orgId && planKey && <PlanUpgrade orgId={orgId} plan={planKey} maxBranches={maxBranches}/>}
                 </div>
 
               </div>

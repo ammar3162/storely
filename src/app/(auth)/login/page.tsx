@@ -57,10 +57,11 @@ const PHONE_RULES: Record<string,{length:number, prefix:string, placeholder:stri
   '+63':  { length:10, prefix:'9',  placeholder:'9xxxxxxxxx'  },  // الفلبين
 }
 
+// v = عدد الفروع (يحدد الباقة المطلوبة بعد التجربة) — التجربة نفسها بكل المميزات
 const PLANS = [
-  { v:1,  label:'الأساسية',  price:'99', yearlyPrice:'950', desc:'فرع · 3 موظفين · 3 موردين',                    color:'#029FA2' },
-  { v:3,  label:'المتوسطة',  price:'249', yearlyPrice:'2390', desc:'3 فروع · 10 موظفين · 10 موردين',               color:'#029FA2' },
-  { v:10, label:'المتقدمة',  price:'499', yearlyPrice:'4790', desc:'10 فروع · موظفون وموردون غير محدودين', color:'#7c3aed' },
+  { v:1, label:'الأساسية', price:'99',  yearlyPrice:'950',  desc:'فرع واحد · 3 موظفين · 5 موردين',          color:'#029FA2' },
+  { v:3, label:'الشاملة',  price:'249', yearlyPrice:'2390', desc:'كل المميزات · 3 فروع · 15 موظف · 20 مورد', color:'#029FA2' },
+  { v:6, label:'المتقدمة', price:'499', yearlyPrice:'4790', desc:'6 فروع · 50 موظف · 50 مورد',              color:'#7c3aed' },
 ]
 
 function GoogleIcon() {
@@ -104,7 +105,7 @@ function LoginPage() {
   const [branchCount, setBranchCount] = useState<number|null>(() => {
     if (typeof window !== 'undefined') {
       const b = new URLSearchParams(window.location.search).get('branches')
-      if (b && [1,3,10].includes(Number(b))) return Number(b)
+      if (b && [1,3,6].includes(Number(b))) return Number(b)
     }
     return null
   })
@@ -127,7 +128,7 @@ function LoginPage() {
     return null
   })
   const [agreedTerms, setAgreedTerms] = useState(false)
-  // كود المندوب (اختياري) — يتعبّى تلقائياً من رابطه storely.dev/r/الكود
+  // كود المندوب — ما فيه حقل بالنموذج، يجي بس من رابط المندوب storely.dev/r/الكود
   const [agentCode, setAgentCode] = useState('')
   useEffect(() => { const r = new URLSearchParams(window.location.search).get('ref'); if (r) setAgentCode(r.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12)) }, [])
   const [showPassword, setShowPassword] = useState(false)
@@ -617,11 +618,6 @@ function LoginPage() {
                     </div>
                   )}
 
-                  <div>
-                    <input className="inp" type="text" value={agentCode} onChange={e=>setAgentCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12))}
-                      placeholder="كود المندوب (اختياري)" dir="ltr" autoComplete="off" style={{textAlign:'center',letterSpacing:2}}/>
-                  </div>
-
                   <label style={{display:'flex',alignItems:'flex-start',gap:8,fontSize:12,color:'#4b5563',cursor:'pointer',marginTop:4}}>
                     <input type="checkbox" checked={agreedTerms} onChange={e=>setAgreedTerms(e.target.checked)}
                       style={{marginTop:2,flexShrink:0,cursor:'pointer'}}/>
@@ -732,5 +728,9 @@ function LoginPage() {
 }
 
 export default function Page() {
+  // الوضع (دخول/تسجيل) يُقرأ من الرابط بالمتصفح فقط — بدون هذا يطلع نموذج الدخول لحظة قبل التسجيل
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+  if (!mounted) return null
   return <LanguageProvider><Suspense fallback={null}><LoginPage /></Suspense></LanguageProvider>
 }
