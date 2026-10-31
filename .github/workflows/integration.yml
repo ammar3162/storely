@@ -1,0 +1,37 @@
+# اختبارات التكامل على قاعدة staging — تشتغل لحالها بعد كل رفع على staging (بدال ما تأخر النشر).
+# قبل «انشر»: تأكد إن آخر تشغيل هنا ناجح (علامة ✓ جنب آخر commit على staging).
+# المفاتيح من GitHub → Settings → Secrets and variables → Actions (مشروع staging فقط، مو الإنتاج).
+name: integration (staging)
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+concurrency:
+  group: integration-staging      # تشغيل واحد بنفس الوقت على نفس القاعدة
+  cancel-in-progress: false
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TEST_SUPABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
+      TEST_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.TEST_SUPABASE_SERVICE_ROLE_KEY }}
+      TEST_SUPABASE_ANON_KEY: ${{ secrets.TEST_SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # بدون المفاتيح الاختبارات تتخطى نفسها وتطلع «ناجحة» — نوقف بدالها
+      - name: Check secrets
+        run: |
+          for v in TEST_SUPABASE_URL TEST_SUPABASE_SERVICE_ROLE_KEY TEST_SUPABASE_ANON_KEY; do
+            if [ -z "${!v}" ]; then echo "::error::missing secret $v"; exit 1; fi
+          done
+          case "$TEST_SUPABASE_URL" in *vmdhaqpuobxeyydbksfu*) ;; *) echo "::error::TEST_SUPABASE_URL must be the staging project"; exit 1;; esac
+      - run: npm ci
+      - run: npm run test:integration
