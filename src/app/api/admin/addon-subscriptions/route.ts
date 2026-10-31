@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { INCLUDED_FROM_STANDARD } from '@/lib/changePlan'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
-import { syncStaffToLimit } from '@/lib/staffCapacity'
+import { syncStaffToLimit, staffLimitFor } from '@/lib/staffCapacity'
 import { activateAddon } from '@/lib/addonActivation'
 
 const sb = () => createClient(
@@ -101,5 +101,10 @@ export async function GET(req: Request) {
     return { ...a, subscription: s ? { ...s, isValid: s.status === 'active' && new Date(s.expires_at) > now } : null }
   })
 
-  return NextResponse.json({ success: true, addons: result, branches: branches || [] })
+  // استخدام الموظفين مقابل حد الباقة — تنبيه للأدمن لو المنشأة فوق حدها
+  const [{ count: activeStaff }, staffLimit] = await Promise.all([
+    supabase.from('staff_members').select('id', { count: 'exact', head: true }).eq('org_id', org_id).eq('is_active', true),
+    staffLimitFor(supabase, org_id),
+  ])
+  return NextResponse.json({ success: true, addons: result, branches: branches || [], staff_usage: { active: activeStaff || 0, limit: staffLimit } })
 }

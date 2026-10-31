@@ -100,11 +100,7 @@ export async function PATCH(req: Request) {
         if ((last as any)?.type === 'check_in' && Date.now() - Date.parse((last as any).recorded_at) < 20 * 3600e3) {
           return NextResponse.json({ error: 'الموظف داخل دوامه الحين — انقله بعد ما يسجّل انصرافه' }, { status: 409 })
         }
-        // حد الموظفين بالفرع الجديد (لو الموظف فعّال)
-        if (staff.is_active) {
-          const capacity = await checkStaffCapacity(db, org_id, targetId)
-          if (!capacity.ok) return NextResponse.json({ error: capacity.error }, { status: 403 })
-        }
+        // حد الموظفين للمنشأة كلها — النقل بين الفروع ما يغيّر العدد، فما يحتاج فحص حد
         update.branch_id = targetId
         // الشفت الخاص بالفرع القديم ينفك، والمنتجات المخصصة له (منتجات الفرع القديم) تنمسح
         if (staff.shift_id) {
@@ -138,6 +134,8 @@ export async function PATCH(req: Request) {
         }
       }
       update.is_active = activating
+      // تفعيل يدوي لموظف موقوف بسبب الحد: يطلع من قائمة "الموقوفين بسبب الحد" (ما يرجعه/يوقفه النظام تلقائياً كأنه منها)
+      if (activating) update.plan_locked_at = null
     }
 
     if (!Object.keys(update).length) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })

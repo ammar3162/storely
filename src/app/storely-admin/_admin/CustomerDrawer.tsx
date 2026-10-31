@@ -4,7 +4,7 @@ import NumberInput from '@/components/NumberInput'
 import { MessageCircle, Send, Trash2, PauseCircle, PlayCircle } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { toast } from '@/components/toast'
-import { billLines, PLAN_PRICING, PLAN_CAPS, ENTERPRISE_LABEL, addonPeriodEnd, proratedCharge, planPriceFor, unitPrice } from '@/lib/planPricing'
+import { billLines, PLAN_PRICING, PLAN_CAPS, ENTERPRISE_LABEL, addonPeriodEnd, proratedCharge, planPriceFor, unitPrice, type PlanKey } from '@/lib/planPricing'
 import { A, Badge, Btn, Card, Drawer, adminFetch, daysLeft, fmtDate, inputStyle } from './kit'
 import { type Customer, STATUS, PLAN_KEYS, PLAN_LIMITS, planLabel } from './customers'
 
@@ -23,6 +23,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   const [days, setDays] = useState(30)
   const [qty, setQty] = useState<Record<string, number>>({})
   const [branches, setBranches] = useState<{ id: string; name: string }[]>([])
+  const [staffUsage, setStaffUsage] = useState<{ active: number; limit: number } | null>(null)
   const [ent, setEnt] = useState({ branches: '', staff: '', suppliers: '', price: '' })
 
   const c = customer
@@ -34,7 +35,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   async function loadAddons(orgId: string) {
     setLoadingAddons(true)
     const j = await adminFetch(`/api/admin/addon-subscriptions?org_id=${orgId}`)
-    if (j.success) { setAddons(j.addons || []); setBranches(j.branches || []) }
+    if (j.success) { setAddons(j.addons || []); setBranches(j.branches || []); setStaffUsage(j.staff_usage || null) }
     setLoadingAddons(false)
   }
 
@@ -46,7 +47,12 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
 
   async function activate(type: 'trial' | 'paid', d: number) {
     const label = type === 'paid' ? 'تفعيل مدفوع' : 'تفعيل تجربة'
-    if (!(await confirmDialog({ title: label, message: `${label} لـ"${c!.org_name}" لمدة ${DURATIONS.find(x => x.d === d)?.l || d + ' يوم'}؟\n\nالإضافات المفعّلة تتجدد لنفس التاريخ.` }))) return
+    // أول اشتراك مدفوع بعد التجربة (على الشاملة): ذكّر الأدمن يحوّله للباقة اللي اختارها — مكافأة المندوب والفاتورة تنحسب على باقته الحالية
+    const wanted = c!.requested_plan as PlanKey | undefined
+    const planNote = type === 'paid' && c!.subscription_type === 'trial' && wanted && wanted !== c!.plan && (PLAN_KEYS as string[]).includes(wanted)
+      ? `\n\nانتبه: باقته الحالية «${planLabel(c!.plan)}» (التجربة)، واللي اختارها عند التسجيل «${planLabel(wanted)}». غيّر الباقة أول لو بيشترك فيها — الفاتورة ومكافأة المندوب تنحسب على الباقة الحالية.`
+      : ''
+    if (!(await confirmDialog({ title: label, message: `${label} لـ"${c!.org_name}" لمدة ${DURATIONS.find(x => x.d === d)?.l || d + ' يوم'}؟\n\nالإضافات المفعّلة تتجدد لنفس التاريخ.${planNote}`, type: planNote ? 'warning' : undefined }))) return
     setBusy('activate')
     const ends = new Date(Date.now() + d * 86400000).toISOString()
     const j = await adminFetch('/api/admin/activate-user', { method: 'POST', body: { userId: c!.id, type, ends } })
@@ -71,12 +77,14 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   async function changePlan(k: typeof PLAN_KEYS[number]) {
     if (k === c!.plan) return
     const lim = PLAN_LIMITS[k]
-    if (!(await confirmDialog({ title: 'تغيير الباقة', message: `تغيير الباقة إلى "${planLabel(k)}"؟\n\nلو فروعه أكثر من ${lim.branches} (+ الفروع المشتراة)، الأحدث تتوقف مؤقتاً مع موظفينها — بياناتها تبقى وترجع لو رقّى.` }))) return
+    if (!(await confirmDialog({ title: 'تغيير الباقة', message: `تغيير الباقة إلى "${planLabel(k)}"؟\n\nلو فروعه أكثر من ${lim.branches} (+ الفروع المشتراة)، الأحدث تتوقف مؤقتاً مع موظفينها. ولو موظفينه أكثر من ${lim.staff} (+ الإضافات)، يتوقف الأحدث مؤقتاً. البيانات كلها تبقى وترجع لو رقّى.` }))) return
     setBusy('plan')
     const j = await adminFetch('/api/admin/update-plan', { method: 'POST', body: { orgId: c!.org_id, maxBranches: lim.branches, maxStaff: lim.staff, maxSuppliers: lim.suppliers, planName: k, orgName: c!.org_name, billingCycle: c!.billing_cycle } })
     setBusy(null)
     if (!j.success) { toast(j.error || 'فشل تغيير الباقة', 'error'); return }
-    toast(j.locked ? `تم — توقف ${j.locked} فرع زايد عن الحد` : j.restored ? `تم — رجع ${j.restored} فرع` : 'تم تغيير الباقة', 'success')
+    const notes = [j.locked && `توقف ${j.locked} فرع`, j.restored && `رجع ${j.restored} فرع`, j.staffLocked && `توقف ${j.staffLocked} موظف (الأحدث) زايدين عن الحد`, j.staffRestored && `رجع ${j.staffRestored} موظف`].filter(Boolean)
+    toast(notes.length ? `تم — ${notes.join('، ')}` : 'تم تغيير الباقة', 'success')
+    loadAddons(c!.org_id)
     onChanged({ plan: k, max_branches: lim.branches })
   }
 
@@ -235,6 +243,13 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
           </div>
         </div>
       </Card>
+
+      {staffUsage && staffUsage.active > staffUsage.limit && staffUsage.limit < 999 && (
+        <div style={{ padding: '12px 14px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fcd34d', fontSize: 12.5, color: '#92400e', lineHeight: 1.8 }}>
+          <b>الموظفين فوق حد الباقة:</b> عنده {staffUsage.active} موظف نشط والحد {staffUsage.limit}.
+          فعّل له «موظف إضافي» × {staffUsage.active - staffUsage.limit}، أو رقّ باقته — أو لو ألغيت/قلّلت إضافة يتوقف الأحدث تلقائياً.
+        </div>
+      )}
 
       {/* الإضافات */}
       <Card title="الإضافات" subtitle="تنتهي وتتجدد مع الباقة، والدفع بالتناسب">
