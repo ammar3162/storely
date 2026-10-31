@@ -2,7 +2,7 @@
 -- ما يمسح أي بيانات: الإضافات القديمة تتوقف عن البيع (is_active=false) واشتراكاتها السارية تبقى شغالة
 begin;
 
--- ١) المشتركين الحاليين في «إدارة الموظفين» يبقون على سعرهم (39) قبل رفع السعر
+-- ١) المشتركين الحاليين في «إدارة الموظفين» يكملون على 39 لين تجديد اشتراكهم (التجديد يفك التثبيت — PRICE_UPDATE_ON_RENEWAL)
 update org_addon_subscriptions s set locked_price = a.monthly_price
 from marketplace_addons a
 where a.id = s.addon_id and a.slug = 'hr_full' and s.status = 'active' and s.locked_price is null;

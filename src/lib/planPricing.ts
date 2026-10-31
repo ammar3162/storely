@@ -70,6 +70,10 @@ export const UPGRADE_HINT_FROM = 150
 export const upgradeCandidate = (plan: string | null | undefined, monthlyBill: number) =>
   (plan || 'basic') === 'basic' && monthlyBill >= UPGRADE_HINT_FROM
 
+// إضافات تغيّر سعرها: المشترك يكمل بسعره المثبّت لين تجديد اشتراكه، ومن التجديد يصير على السعر الجديد
+// (إدارة الموظفين 39 → 59 — تغيير الباقات 2026-11)
+export const PRICE_UPDATE_ON_RENEWAL = ['hr_full']
+
 // إضافات تنباع بالوحدة (السعر × الكمية)
 export const QTY_ADDON_SLUGS = ['extra_branch', 'extra_staff', 'extra_suppliers']
 

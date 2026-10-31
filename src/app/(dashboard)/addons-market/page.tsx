@@ -267,11 +267,11 @@ export default function AddonsMarketPage() {
                     <div style={{ fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 4 }}>✅ مفعّلة{(a.slug==='extra_suppliers'||a.slug==='extra_branch') ? ` (${a.subscription?.quantity||1})` : ''}</div>
                     <div style={{ fontSize: 10, color: colors.text4 }}>حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA', { numberingSystem: 'latn' })}</div>
                     {a.slug === 'extra_branch' && (
-                      <a href="/branches" style={{ display: 'block', marginTop: 8, fontSize: 12, fontWeight: 700, color: colors.primary, textDecoration: 'none' }}>تحتاج فرع زيادة؟ أضفه من صفحة الفروع</a>
+                      <a href="/branches" style={{ display: 'block', marginTop: 8, fontSize: 12, fontWeight: 700, color: colors.primary, textDecoration: 'none' }}>تحتاج فرع زيادة؟ اطلبه من صفحة الفروع</a>
                     )}
                   </div>
                 ) : a.slug === 'extra_branch' ? (
-                  <a href="/branches" style={{ display: 'block', textAlign: 'center' as const, padding: '10px', borderRadius: 10, background: colors.primary, color: 'white', fontSize: 13, fontWeight: 800, textDecoration: 'none' }}>أضف فرع من صفحة الفروع</a>
+                  <a href="/branches" style={{ display: 'block', textAlign: 'center' as const, padding: '10px', borderRadius: 10, background: colors.primary, color: 'white', fontSize: 13, fontWeight: 800, textDecoration: 'none' }}>اطلب فرع من صفحة الفروع</a>
                 ) : (
                   <>
                     {a.slug === 'extra_suppliers' && (

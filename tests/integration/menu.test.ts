@@ -52,12 +52,18 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
     if (userId) await db.auth.admin.deleteUser(userId).catch(() => {})
   }, 180_000)
 
-  describe('new plans: org-wide limits and self-service branches', () => {
-    it('basic shares 3 staff across branches, the owner adds a 2nd branch himself (no more), upgrading drops the covered branch charge', async () => {
+  describe('new plans: org-wide limits and requested branches', () => {
+    it('basic shares 3 staff across branches, the owner requests a 2nd branch (admin approves, no more than 2), upgrading drops the covered branch charge, staff management reprices at renewal', async () => {
       const extra = await import('@/app/api/branches/extra/route')
+      const adminReqs = await import('@/app/api/admin/addon-requests/route')
+      const activateUser = await import('@/app/api/admin/activate-user/route')
       const { checkStaffCapacity } = await import('@/lib/staffCapacity')
       const { checkSupplierCapacity } = await import('@/lib/supplierCapacity')
       const { changeOrgPlan } = await import('@/lib/changePlan')
+      const admin = async (route: any, path: string, body: any) => {
+        const res = await route.POST(new Request(`http://test${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify(body) }))
+        return { status: res.status, json: await res.json() as any }
+      }
       await db.from('branches').update({ is_active: false, plan_locked_at: null } as any).eq('org_id', orgId).neq('id', branchA)
       await db.from('organizations').update({ plan: 'basic', max_branches: 1, max_staff: 3, max_suppliers: 5, billing_cycle: 'monthly' } as any).eq('id', orgId)
       await db.from('profiles').update({ subscription_ends_at: new Date(Date.now() + 10 * 864e5).toISOString() } as any).eq('id', userId)
@@ -67,37 +73,47 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
       for (let i = 0; i < 3; i++) await staff(i, branchA)
       expect((await checkStaffCapacity(db as any, orgId, branchA)).ok).toBe(false)
 
-      // المدير ما يقدر يضيف فرع للباقة
+      // المدير ما يقدر يطلب فرع
       auth.current = { userId, orgId, role: 'manager', branchId: branchA }
       expect((await call(extra.POST, 'POST', '/api/branches/extra', { org_id: orgId })).status).toBe(403)
       auth.current = { userId, orgId, role: 'owner', branchId: null }
 
       const offer = (await call(extra.GET, 'GET', `/api/branches/extra?org_id=${orgId}`)).json.offer
-      expect(offer).toMatchObject({ plan: 'basic', total: 1, maxTotal: 2, canAdd: true, price: 79, staff: 3, suppliers: 5, nextPlan: 'pro' })
-      const added = await call(extra.POST, 'POST', '/api/branches/extra', { org_id: orgId })
-      expect(added.status).toBe(200)
-      expect(added.json.max_branches).toBe(2)
-      // الفرع الثاني جاب معه ٣ موظفين و٥ موردين
+      expect(offer).toMatchObject({ plan: 'basic', total: 1, maxTotal: 2, pending: 0, canAdd: true, price: 79, staff: 3, suppliers: 5, nextPlan: 'pro' })
+      const asked = await call(extra.POST, 'POST', '/api/branches/extra', { org_id: orgId })
+      expect(asked.status).toBe(200)
+      // الطلب ينتظر الأدمن — الفرع ما ينفتح قبل الموافقة، وطلب ثاني يتجاوز حد الأساسية
+      expect((await checkStaffCapacity(db as any, orgId, branchA)).ok).toBe(false)
+      const again = await call(extra.POST, 'POST', '/api/branches/extra', { org_id: orgId })
+      expect(again.status).toBe(403)
+      expect(again.json.code).toBe('plan_max')
+
+      const { data: req } = await db.from('addon_requests').select('id,status').eq('org_id', orgId).eq('status', 'pending').single()
+      expect((await admin(adminReqs, '/api/admin/addon-requests', { id: (req as any).id, action: 'approve' })).status).toBe(200)
+      // بعد الموافقة: الفرع الثاني جاب معه ٣ موظفين و٥ موردين، وسعره 79 مثبّت
+      expect((await call(extra.GET, 'GET', `/api/branches/extra?org_id=${orgId}`)).json.offer).toMatchObject({ total: 2, pending: 0, canAdd: false })
       expect((await checkStaffCapacity(db as any, orgId, branchA)).ok).toBe(true)
+      expect((await checkSupplierCapacity(db as any, orgId)).ok).toBe(true)
       const { data: sub } = await db.from('org_addon_subscriptions').select('quantity,locked_price,status,marketplace_addons!inner(slug)').eq('org_id', orgId).eq('marketplace_addons.slug', 'extra_branch').single()
       expect(sub).toMatchObject({ quantity: 1, status: 'active' })
       expect(Number((sub as any).locked_price)).toBe(79)
-      const { data: auto } = await db.from('addon_requests').select('status,decided_by_name').eq('org_id', orgId).order('created_at', { ascending: false }).limit(1).single()
-      expect((auto as any).status).toBe('approved')
-      // الأساسية توصل فرعين بس
-      const third = await call(extra.POST, 'POST', '/api/branches/extra', { org_id: orgId })
-      expect(third.status).toBe(403)
-      expect(third.json.code).toBe('plan_max')
 
-      // الموردين: ٥ + ٥ مع الفرع
-      expect((await checkSupplierCapacity(db as any, orgId)).ok).toBe(true)
+      // إدارة الموظفين: يكمل على 39 لين التجديد، ومن التجديد على السعر الجديد
+      const { data: hr } = await db.from('marketplace_addons').select('id').eq('slug', 'hr_full').single()
+      await db.from('org_addon_subscriptions').upsert({ org_id: orgId, addon_id: (hr as any).id, status: 'active', quantity: 1, locked_price: 39,
+        activated_at: new Date().toISOString(), expires_at: new Date(Date.now() + 864e5).toISOString() } as any, { onConflict: 'org_id,addon_id' })
+      expect((await admin(activateUser, '/api/admin/activate-user', { userId, type: 'paid', ends: new Date(Date.now() + 30 * 864e5).toISOString() })).status).toBe(200)
+      const { data: hrSub } = await db.from('org_addon_subscriptions').select('locked_price').eq('org_id', orgId).eq('addon_id', (hr as any).id).single()
+      expect((hrSub as any).locked_price).toBeNull()
+      // الفرع الإضافي يبقى على سعره المثبّت بعد التجديد
+      const { data: br2 } = await db.from('org_addon_subscriptions').select('locked_price,marketplace_addons!inner(slug)').eq('org_id', orgId).eq('marketplace_addons.slug', 'extra_branch').single()
+      expect(Number((br2 as any).locked_price)).toBe(79)
 
       // ترقية للشاملة (٣ فروع): الفرع المشترى صار داخل الباقة وما ينحسب
       await changeOrgPlan(db as any, orgId, { planName: 'pro', maxBranches: 3, maxStaff: 15, maxSuppliers: 20 })
       const { data: after } = await db.from('org_addon_subscriptions').select('status,marketplace_addons!inner(slug)').eq('org_id', orgId).eq('marketplace_addons.slug', 'extra_branch').single()
       expect((after as any).status).toBe('cancelled')
-      const proOffer = (await call(extra.GET, 'GET', `/api/branches/extra?org_id=${orgId}`)).json.offer
-      expect(proOffer).toMatchObject({ plan: 'pro', total: 3, maxTotal: 5, price: 79 })
+      expect((await call(extra.GET, 'GET', `/api/branches/extra?org_id=${orgId}`)).json.offer).toMatchObject({ plan: 'pro', total: 3, maxTotal: 5, price: 79 })
 
       await db.from('addon_requests').delete().eq('org_id', orgId)
       await db.from('org_addon_subscriptions').delete().eq('org_id', orgId)

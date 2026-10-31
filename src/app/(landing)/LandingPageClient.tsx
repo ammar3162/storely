@@ -329,7 +329,7 @@ export default function LandingPage({ initialMarquee }: { initialMarquee?: strin
               </div>
             ))}
           </div>
-          <p className="lp-plans-foot">{lang==='ar'?'أضف فروع وموظفين وموردين بنفسك من داخل النظام في أي وقت. الموظفين والموردين لكل المنشأة، توزعهم على فروعك مثل ما تبي.':'Add branches, staff and suppliers yourself anytime from inside the app. Staff and suppliers are shared across your branches.'}</p>
+          <p className="lp-plans-foot">{lang==='ar'?'تقدر تطلب فروع وموظفين وموردين إضافيين من داخل النظام في أي وقت. الموظفين والموردين لكل المنشأة، توزعهم على فروعك مثل ما تبي.':'Request extra branches, staff and suppliers anytime from inside the app. Staff and suppliers are shared across your branches.'}</p>
           <div className="lp-compare rv">
             <h3>{lang==='ar'?'قارن الباقات':'Compare plans'}</h3>
             <div className="lp-compare-scroll">
