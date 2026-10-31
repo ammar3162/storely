@@ -58,10 +58,9 @@ export async function POST(req: Request) {
     const { data: settingsRow } = await supabase.from('platform_settings').select('terms_version').eq('id', 1).single()
     const TERMS_VERSION = (settingsRow as any)?.terms_version || '2026-06-b'
 
-    // الباقة اللي اختارها (requested_plan) — والتجربة المجانية على الشاملة بكل المميزات (أو المتقدمة لو اختارها)
-    // عشان يجرب كل شي، وبعد التجربة يختار باقته
+    // التجربة المجانية على الباقة اللي اختارها (الفروع والموظفين والموردين حسبها)، والمميزات كلها مفتوحة طول التجربة (lib/planFeatures)
     const requestedPlan: PlanKey = branchCount===1?'basic':branchCount<=5?'pro':'advanced'
-    const plan: PlanKey = requestedPlan === 'advanced' ? 'advanced' : 'pro'
+    const plan: PlanKey = requestedPlan
     const caps = PLAN_CAPS[plan]
     const maxB = caps.branches, maxStaff = caps.staff, maxSup = caps.suppliers
 

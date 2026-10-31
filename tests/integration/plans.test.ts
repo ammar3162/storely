@@ -38,7 +38,8 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
     orgId = (org as any).id
     const { data: br } = await db.from('branches').insert({ org_id: orgId, name: 'الفرع الرئيسي', is_active: true } as any).select('id').single()
     branchA = (br as any).id
-    await db.from('profiles').upsert({ id: userId, full_name: 'اختبار', org_id: orgId, role: 'owner', status: 'active' } as any)
+    // مشترك مدفوع — التجربة المجانية تفتح كل الميزات وهالاختبارات تفحص الباقة والإضافات
+    await db.from('profiles').upsert({ id: userId, full_name: 'اختبار', org_id: orgId, role: 'owner', status: 'active', subscription_type: 'paid' } as any)
     auth.current = { userId, orgId, role: 'owner', branchId: null }
   }, 180_000)
 

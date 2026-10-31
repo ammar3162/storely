@@ -96,8 +96,9 @@ export default function HRManagementPage() {
     // نفس قاعدة صفحة الموظفين: الموظفين الموقوفين تلقائياً بانتهاء إضافة «موظف إضافي» ما يطلعون
     const data = (staffRes.staff || []).filter((s:any) => !s.hidden_from_list)
     setBranches(branchesRes.branches||[])
+    // نفس قرار الخادم (/api/me features): إضافة «إدارة الموظفين» أو التجربة المجانية
     const hrAddon = (addonRes?.addons||[]).find((a:any)=>a.slug==='hr_full')
-    const access = { plan: me?.org?.plan || 'basic', addon: !!hrAddon?.subscription?.isValid }
+    const access = { plan: me?.org?.plan || 'basic', addon: !!me?.org?.features?.hr || !!hrAddon?.subscription?.isValid }
     setOrgPlan(access.plan); setHasHrAddon(access.addon)
     cache.set('hr-access:'+oid, access)
     setStaff(data||[])
