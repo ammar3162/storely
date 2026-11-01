@@ -1,69 +1,76 @@
-// بيانات المساعد الذكي — كل قسم مربوط بميزته (lib/planFeatures) وبصلاحية مدير الفرع (lib/managerPerms):
-// الاشتراك والباقة: دايماً | المخزون والمشتريات والتوقعات: الذكاء الاصطناعي | الموظفين والدوام والحضور: إدارة الموظفين
-// إقفالات الكاشير: إقفال الكاشير | الربحية: الربحية. القسم المقفل ما ينرسل للنموذج أصلاً.
+// سياق المساعد الذكي: التعليمات + الاشتراك (للمالك) + دليل الاستخدام + الأدوات المسموحة (lib/assistantTools).
+// البيانات ما تنرسل كلها — المساعد يطلب اللي يحتاجه بالأدوات، وكل أداة مربوطة بميزتها وصلاحية المدير.
+// تحليل البيانات مع ميزة الذكاء الاصطناعي؛ أسئلة الاشتراك وطريقة الاستخدام مجانية للكل.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { orgFeatures, FEATURE_LABEL, type Features } from '@/lib/planFeatures'
-import { managerMay } from '@/lib/managerPerms'
 import { billLines, planLabel, planKeyOf, activeDiscount, staffBase, supplierBase, PLAN_CAPS, PLAN_PRICING } from '@/lib/planPricing'
 import { getBranchLimit } from '@/lib/branchLimit'
 import { assistantGuide } from '@/lib/assistantGuide'
+import { allowedTools, ASSISTANT_TOOLS, type ToolCtx } from '@/lib/assistantTools'
 
 type Access = { role?: string | null; permissions?: Record<string, unknown> | null }
 const DAY = 864e5
 const saudiDay = (d: Date | string) => new Date(new Date(d).getTime() + 3 * 3600e3).toISOString().slice(0, 10)
-const saudiTime = (d: string) => new Date(new Date(d).getTime() + 3 * 3600e3).toISOString().slice(11, 16)
 const n = (v: unknown) => Math.round((Number(v) || 0) * 100) / 100
 
-export type AssistantContext = { prompt: string; sections: { key: string; label: string; on: boolean }[] }
+const TOOL_AR: Record<string, string> = {
+  purchases: 'المشتريات والفواتير', supplier_prices: 'مقارنة أسعار الموردين', dispense: 'الصرف حسب الموظف أو الصنف',
+  inventory: 'المخزون والتوقعات', vat: 'الضريبة', cashier_closings: 'إقفالات الكاشير', attendance: 'الحضور والغياب والتأخير',
+}
+
+export type AssistantContext = {
+  prompt: string
+  sections: { key: string; label: string; on: boolean }[]
+  tools: { name: string; description: string; input_schema: Record<string, unknown> }[]
+  features: Features
+  toolCtx: ToolCtx
+}
 
 export async function buildAssistantContext(db: SupabaseClient, orgId: string, branchId: string | null, access: Access): Promise<AssistantContext> {
   const { data: org } = await db.from('organizations')
-    .select('name,plan,max_branches,max_staff,max_suppliers,billing_cycle,locked_plan_monthly,discount_type,discount_value,discount_note,discount_until,currency')
+    .select('name,plan,max_branches,max_staff,max_suppliers,billing_cycle,locked_plan_monthly,discount_type,discount_value,discount_note,discount_until,currency,vat_registered,business_type')
     .eq('id', orgId).single()
   const o = (org || {}) as any
   const features = await orgFeatures(db, orgId, o.plan || 'basic')
   const isManager = access.role === 'manager'
+  const tools = allowedTools(features, access)
+  const on = new Set(tools.map(t => t.name))
 
-  // الأقسام المتاحة: الميزة مفعّلة + (للمدير) عنده صلاحيتها
-  const allow = {
-    data: features.ai && managerMay(access, 'ai_tools', 'inventory', 'reports'),
-    hr: features.hr && managerMay(access, 'staff', 'attendance', 'hr'),
-    salaries: features.hr && managerMay(access, 'hr'),
-    cashier: features.cashier && managerMay(access, 'reports'),
-    profit: features.profitability && managerMay(access, 'profitability'),
-  }
   const sections = [
     { key: 'subscription', label: 'الاشتراك والباقة', on: !isManager },
-    { key: 'data', label: 'المخزون والمشتريات والتوقعات', on: allow.data, feature: 'ai' as const },
-    { key: 'hr', label: 'الموظفين والدوامات والحضور', on: allow.hr, feature: 'hr' as const },
-    { key: 'cashier', label: 'إقفالات الكاشير', on: allow.cashier, feature: 'cashier' as const },
-    { key: 'profit', label: 'الربحية', on: allow.profit, feature: 'profitability' as const },
+    ...ASSISTANT_TOOLS.map(t => ({ key: t.name, label: TOOL_AR[t.name] || t.name, on: on.has(t.name) })),
   ]
+  // ليش القسم مقفل: الميزة غير مفعّلة، أو المدير ما عنده صلاحيته
+  const lockedWhy = (name: string) => {
+    if (!features.ai) return `يحتاج إضافة «${FEATURE_LABEL.ai}» (أو الباقة الشاملة)`
+    if (name === 'cashier_closings' && !features.cashier) return `يحتاج إضافة «${FEATURE_LABEL.cashier}»`
+    if (name === 'attendance' && !features.hr) return `يحتاج إضافة «${FEATURE_LABEL.hr}»`
+    return 'ما عندك صلاحيته — يفعّلها لك مالك المنشأة'
+  }
+  const locked = ASSISTANT_TOOLS.filter(t => !on.has(t.name)).map(t => `• ${TOOL_AR[t.name] || t.name}: ${lockedWhy(t.name)}`)
 
   const parts: string[] = []
   if (!isManager) parts.push(await subscriptionSection(db, orgId, o, features))
-  if (allow.data) parts.push(await inventorySection(db, orgId, branchId))
-  if (allow.hr) parts.push(await hrSection(db, orgId, branchId, allow.salaries))
-  if (allow.cashier) parts.push(await cashierSection(db, orgId, branchId))
-  if (allow.profit) parts.push(await profitSection(db, orgId, branchId))
   parts.push(await assistantGuide(db))
 
-  const locked = sections.filter(s => !s.on && s.key !== 'subscription').map(s => {
-    const f = (s as any).feature as keyof Features | undefined
-    const why = f && !features[f] ? `يحتاج إضافة «${FEATURE_LABEL[f]}» (أو الباقة الشاملة)` : 'ما عندك صلاحيته — يفعّلها لك مالك المنشأة'
-    return `• ${s.label}: ${why}`
-  })
-
-  const prompt = `أنت المساعد الذكي في نظام Storely لمنشأة «${o.name || ''}». تجاوب بالعربي (لهجة سعودية بسيطة)، مختصر وعملي، وبأرقام محددة من البيانات تحت فقط.
+  const prompt = `أنت المساعد الذكي في نظام Storely لمنشأة «${o.name || ''}». تجاوب بالعربي (لهجة سعودية بسيطة)، مختصر وعملي، وبأرقام محددة.
 
 قواعد:
 - تجاوب بس عن المنشأة وبياناتها وطريقة استخدام النظام والاشتراك. أي سؤال ثاني (عام، شخصي، معلومات خارجية) اعتذر بجملة وحدة وقل إنك مساعد المنشأة بس.
-- لا تخمّن ولا تخترع أرقام. لو المعلومة مو موجودة في البيانات قل ذلك بوضوح.
-- اليوم بتوقيت السعودية: ${saudiDay(new Date())}.
-- الأقسام المقفلة تحت ما عندك بياناتها: لو سأل عنها، قل إنها تحتاج تفعيل وكيف (بدون أي أرقام).${isManager ? '\n- المستخدم مدير فرع: أسئلة الاشتراك والفواتير يجاوب عليها مالك المنشأة.' : ''}
-${locked.length ? `\n═══ أقسام مقفلة ═══\n${locked.join('\n')}\n` : ''}
+- بيانات المنشأة (مشتريات، موردين، صرف، مخزون، ضريبة، كاشير، حضور) تجيبها بالأدوات بس — لا تخمّن ولا تخترع أرقام. لو الأداة ما رجعت بيانات قل ذلك.
+- اختر الأداة والفترة المناسبة للسؤال (أمس، هالشهر، شهر معيّن…) وجاوب على طول. معاني النظام: «الصرف/صرف/صرفنا» = صرف المخزون (أداة الصرف)، «اشترينا/المشتريات/الفواتير/دفعنا للمورد» = المشتريات. «أكثر موظف صرف» = الصرف حسب الموظف.
+- اسأل للتوضيح بس لو مستحيل تفهم السؤال، وبجملة وحدة بدون قوائم خيارات. وكمّل المحادثة: لو المستخدم رد على سؤالك السابق (رقم أو كلمة)، افهمه من المحادثة.
+- اليوم بتوقيت السعودية: ${saudiDay(new Date())}.${isManager ? '\n- المستخدم مدير فرع: بياناته لفرعه بس، وأسئلة الاشتراك والفواتير يجاوب عليها مالك المنشأة.' : ''}
+${tools.length ? `\nالأدوات المتاحة: ${tools.map(t => TOOL_AR[t.name] || t.name).join('، ')}` : `\nهالمنشأة ما عندها تحليل البيانات: دورك تعلّمها كيف تستخدم النظام (خطوات من الدليل ورابط فيديو الشرح)، وتجاوب عن اشتراكها وباقتها، وتشرح وش تسوي كل ميزة.
+لو سأل عن بياناته (مثل آخر فاتورة، أكثر موظف صرف، ضريبته): لا تجاوب بأرقام — قل له وين يلقاها بنفسه في النظام (اسم الصفحة والخطوة)، وإن المساعد يجاوبه عليها مباشرة مع إضافة «${FEATURE_LABEL.ai}» (أو الباقة الشاملة).`}
+${locked.length ? `\n═══ بيانات مقفلة (لو سأل عنها قل إنها تحتاج تفعيل، بدون أرقام) ═══\n${locked.join('\n')}\n` : ''}
 ${parts.join('\n\n')}`
-  return { prompt, sections: sections.map(({ key, label, on }) => ({ key, label, on })) }
+  return {
+    prompt, sections,
+    tools: tools.map(t => ({ name: t.name, description: t.description, input_schema: t.input_schema })),
+    features,
+    toolCtx: { db, orgId, branchId, vatRegistered: !!o.vat_registered, businessType: o.business_type || null },
+  }
 }
 
 /** الباقة والاشتراك والإضافات والفاتورة — للمالك دايماً */
@@ -113,105 +120,4 @@ ${bill.lines.map(l => `• ${l.label}: ${l.amount} ريال`).join('\n')}
 • الدفع السنوي بخصم 20%
 الإضافات للأساسية: ${forSale.join('، ')}
 الترقية: من الإعدادات ← الاشتراك ← «اطلب الترقية». الإضافات: من صفحة الإضافات. فرع إضافي: من صفحة الفروع.`
-}
-
-/** المخزون والصرف والمشتريات والتوقعات — ميزة الذكاء الاصطناعي */
-async function inventorySection(db: SupabaseClient, orgId: string, branchId: string | null) {
-  let pq = db.from('products').select('id,name,qty,reorder_point,unit,category').eq('org_id', orgId).eq('is_active', true)
-  if (branchId) pq = pq.eq('branch_id', branchId)
-  const since90 = new Date(Date.now() - 90 * DAY).toISOString()
-  let mq = db.from('stock_movements').select('qty_change,created_at,products!inner(id,org_id,branch_id)').eq('products.org_id', orgId).eq('type', 'out').gte('created_at', since90)
-  if (branchId) mq = mq.eq('products.branch_id', branchId)
-  let buyQ = db.from('purchases').select('amount,created_at,supplier').eq('org_id', orgId).is('deleted_at', null).gte('created_at', since90)
-  if (branchId) buyQ = buyQ.eq('branch_id', branchId)
-  const [{ data: products }, { data: moves }, { data: buys }] = await Promise.all([pq.order('name').limit(200), mq.limit(2000), buyQ.limit(300)])
-
-  const out = new Map<string, number>()
-  for (const m of (moves || []) as any[]) out.set(m.products.id, (out.get(m.products.id) || 0) + Math.abs(Number(m.qty_change) || 0))
-  const prods = ((products || []) as any[]).map(p => {
-    const total = out.get(p.id) || 0, daily = total / 90
-    return { ...p, total, daily, daysLeft: daily > 0 ? Math.round(Number(p.qty) / daily) : null }
-  })
-  const low = prods.filter(p => Number(p.qty) <= Number(p.reorder_point))
-  const soon = prods.filter(p => p.daysLeft != null && p.daysLeft <= 7).sort((a, b) => a.daysLeft! - b.daysLeft!)
-  const top = [...prods].sort((a, b) => b.total - a.total).slice(0, 15).filter(p => p.total > 0)
-  const idle = prods.filter(p => Number(p.qty) > 0 && !p.total).slice(0, 10)
-  const monthStart = saudiDay(new Date()).slice(0, 7)
-  const spent = ((buys || []) as any[]).reduce((t, b) => t + Number(b.amount || 0), 0)
-  const spentMonth = ((buys || []) as any[]).filter(b => saudiDay(b.created_at).startsWith(monthStart)).reduce((t, b) => t + Number(b.amount || 0), 0)
-  const bySupplier = new Map<string, number>()
-  for (const b of (buys || []) as any[]) if (b.supplier) bySupplier.set(b.supplier, (bySupplier.get(b.supplier) || 0) + Number(b.amount || 0))
-
-  return `═══ المخزون (${prods.length} صنف) ═══
-${prods.map(p => `• ${p.name}: ${n(p.qty)} ${p.unit} (حد الطلب ${n(p.reorder_point)}) | صرف يومي ${n(p.daily)}${p.daysLeft != null ? ` | يخلص خلال ${p.daysLeft} يوم` : ''}`).join('\n')}
-
-═══ التوقعات ═══
-ناقصة الحين (تحت حد الطلب): ${low.length ? low.map(p => p.name).join('، ') : 'لا يوجد'}
-تخلص خلال أسبوع: ${soon.length ? soon.map(p => `${p.name} (${p.daysLeft} يوم)`).join('، ') : 'لا يوجد'}
-الأكثر صرفاً (90 يوم): ${top.map(p => `${p.name} ${n(p.total)} ${p.unit}`).join('، ') || 'لا يوجد'}
-ما انصرف منها شي (90 يوم): ${idle.length ? idle.map(p => `${p.name} (${n(p.qty)} ${p.unit})`).join('، ') : 'لا يوجد'}
-
-═══ المشتريات ═══
-آخر 90 يوم: ${n(spent)} ريال (${(buys || []).length} فاتورة) | هالشهر: ${n(spentMonth)} ريال
-حسب المورد (90 يوم): ${[...bySupplier.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([s, v]) => `${s} ${n(v)}`).join('، ') || 'لا يوجد'}`
-}
-
-/** الموظفين والدوامات والحضور — ميزة إدارة الموظفين (الرواتب لمن عنده صلاحيتها) */
-async function hrSection(db: SupabaseClient, orgId: string, branchId: string | null, withSalaries: boolean) {
-  let sq = db.from('staff_members').select('id,name,role,branch_id,shift_id,monthly_salary,weekly_off_days,is_active').eq('org_id', orgId).eq('is_active', true)
-  if (branchId) sq = sq.eq('branch_id', branchId)
-  let shQ = db.from('shifts').select('id,name,start_time,end_time,is_24h,branch_id').eq('org_id', orgId)
-  if (branchId) shQ = shQ.eq('branch_id', branchId)
-  const since30 = new Date(Date.now() - 30 * DAY).toISOString()
-  let aq = db.from('staff_attendance').select('staff_id,type,recorded_at,late_minutes,overtime_minutes').eq('org_id', orgId).gte('recorded_at', since30)
-  if (branchId) aq = aq.eq('branch_id', branchId)
-  const [{ data: staff }, { data: shifts }, { data: att }, { data: branches }] = await Promise.all([
-    sq.order('name'), shQ, aq.order('recorded_at').limit(5000), db.from('branches').select('id,name').eq('org_id', orgId),
-  ])
-  const shiftName = new Map(((shifts || []) as any[]).map(s => [s.id, `${s.name} ${s.is_24h ? '24 ساعة' : `${String(s.start_time).slice(0, 5)}-${String(s.end_time).slice(0, 5)}`}`]))
-  const branchName = new Map(((branches || []) as any[]).map(b => [b.id, b.name]))
-  const today = saudiDay(new Date())
-  const DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
-
-  const lines = ((staff || []) as any[]).map(s => {
-    const mine = ((att || []) as any[]).filter(a => a.staff_id === s.id)
-    const ins = mine.filter(a => a.type === 'check_in')
-    const days = new Set(ins.map(a => saudiDay(a.recorded_at))).size
-    const late = ins.filter(a => Number(a.late_minutes) > 0)
-    const lateMin = late.reduce((t, a) => t + Number(a.late_minutes || 0), 0)
-    const todayIn = ins.find(a => saudiDay(a.recorded_at) === today)
-    const todayOut = mine.filter(a => a.type === 'check_out' && saudiDay(a.recorded_at) === today).pop()
-    const offs = Array.isArray(s.weekly_off_days) ? s.weekly_off_days.map((d: any) => DAYS[Number(d)]).filter(Boolean).join(' و') : ''
-    const todayTxt = todayIn ? `حضر ${saudiTime(todayIn.recorded_at)}${Number(todayIn.late_minutes) > 0 ? ` (متأخر ${todayIn.late_minutes} دقيقة)` : ''}${todayOut ? ` وانصرف ${saudiTime(todayOut.recorded_at)}` : ' وما انصرف'}` : 'ما سجّل حضور'
-    return `• ${s.name} (${s.role === 'cashier' ? 'كاشير' : 'موظف'}${branchId ? '' : ` — ${branchName.get(s.branch_id) || 'بدون فرع'}`}): الدوام ${shiftName.get(s.shift_id) || 'بدون شفت'}${offs ? ` | إجازته ${offs}` : ''}${withSalaries && Number(s.monthly_salary) > 0 ? ` | الراتب ${n(s.monthly_salary)}` : ''} | اليوم: ${todayTxt} | آخر 30 يوم: حضر ${days} يوم، تأخر ${late.length} مرة (${lateMin} دقيقة)`
-  })
-  return `═══ الموظفين والدوامات والحضور (${(staff || []).length} موظف نشط) ═══
-الشفتات: ${[...shiftName.values()].join('، ') || 'لا يوجد'}
-${lines.join('\n') || 'ما فيه موظفين'}`
-}
-
-/** إقفالات الكاشير — ميزة إقفال الكاشير */
-async function cashierSection(db: SupabaseClient, orgId: string, branchId: string | null) {
-  const since = saudiDay(new Date(Date.now() - 30 * DAY))
-  let q = db.from('cashier_closings').select('closing_date,branch_id,staff_name,total_sales,cash_amount,network_amount,difference,status').eq('org_id', orgId).gte('closing_date', since)
-  if (branchId) q = q.eq('branch_id', branchId)
-  const [{ data: rows }, { data: branches }] = await Promise.all([q.order('closing_date', { ascending: false }).limit(60), db.from('branches').select('id,name').eq('org_id', orgId)])
-  const bn = new Map(((branches || []) as any[]).map(b => [b.id, b.name]))
-  const list = (rows || []) as any[]
-  const month = saudiDay(new Date()).slice(0, 7)
-  const thisMonth = list.filter(r => String(r.closing_date).startsWith(month))
-  const sales = thisMonth.reduce((t, r) => t + Number(r.total_sales || 0), 0)
-  const diff = thisMonth.reduce((t, r) => t + Number(r.difference || 0), 0)
-  return `═══ إقفالات الكاشير (آخر 30 يوم) ═══
-هالشهر: ${thisMonth.length} إقفال | المبيعات ${n(sales)} ريال | مجموع الفروقات ${n(diff)} ريال (السالب = عجز)
-${list.slice(0, 30).map(r => `• ${r.closing_date}${branchId ? '' : ` ${bn.get(r.branch_id) || ''}`} — ${r.staff_name || ''}: مبيعات ${n(r.total_sales)} | كاش ${n(r.cash_amount)} | شبكة ${n(r.network_amount)} | الفرق ${n(r.difference)}`).join('\n') || 'ما فيه إقفالات'}`
-}
-
-/** الربحية — الشهور المقفلة */
-async function profitSection(db: SupabaseClient, orgId: string, branchId: string | null) {
-  let q = db.from('profitability_closings').select('month,branch_id,total_in,total_purchases,fixed_expenses_total,salary_expense_total,total_out,net_profit').eq('org_id', orgId)
-  if (branchId) q = q.eq('branch_id', branchId)
-  const { data } = await q.order('month', { ascending: false }).limit(6)
-  return `═══ الربحية (الشهور المقفلة) ═══
-${((data || []) as any[]).map(r => `• ${String(r.month).slice(0, 7)}: الدخل ${n(r.total_in)} | المشتريات ${n(r.total_purchases)} | المصاريف الثابتة ${n(r.fixed_expenses_total)} | الرواتب ${n(r.salary_expense_total)} | المصروف الكلي ${n(r.total_out)} | صافي الربح ${n(r.net_profit)}`).join('\n') || 'ما فيه شهور مقفلة — الشهر الحالي يتقفل من صفحة الربحية'}`
 }

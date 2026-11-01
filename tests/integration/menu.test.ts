@@ -151,41 +151,63 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
     }, 120_000)
   })
 
-  describe('AI assistant data follows the add-ons', () => {
-    it('subscription always; staff data only with staff management; a manager without permission gets nothing extra', async () => {
+  describe('AI assistant tools follow the add-ons', () => {
+    it('free = subscription and how-to only; data tools need the AI add-on; each tool returns the real numbers; managers get only their permitted tools', async () => {
       const { buildAssistantContext } = await import('@/lib/assistantContext')
+      const { runTool } = await import('@/lib/assistantTools')
       await db.from('profiles').update({ subscription_type: 'paid', subscription_ends_at: new Date(Date.now() + 9 * 864e5).toISOString() } as any).eq('id', userId)
-      await db.from('organizations').update({ plan: 'basic', max_branches: 1, max_staff: 3, max_suppliers: 5 } as any).eq('id', orgId)
-      await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: 'مساعد سر', phone: uniqPhone(), pin: 'x', is_active: true, role: 'staff', monthly_salary: 4321 } as any)
-      const on = (c: any) => c.sections.filter((x: any) => x.on).map((x: any) => x.key)
+      await db.from('organizations').update({ plan: 'basic', max_branches: 1, max_staff: 3, max_suppliers: 5, vat_registered: true } as any).eq('id', orgId)
+      const names = (c: any) => c.tools.map((t: any) => t.name).sort()
 
+      // الأساسية بدون إضافات: الاشتراك والدليل بس
       let c = await buildAssistantContext(db as any, orgId, null, { role: 'owner' })
-      expect(on(c)).toEqual(['subscription'])
-      expect(c.prompt).toContain('الأساسية')
+      expect(names(c)).toEqual([])
       expect(c.prompt).toContain('باقي 9 يوم')
-      expect(c.prompt).not.toContain('مساعد سر')          // بيانات الموظفين مقفلة
-      expect(c.prompt).toContain('يحتاج إضافة «إدارة الموظفين»')
+      expect(c.prompt).toContain('دليل استخدام النظام')
+      expect(c.prompt).toContain('يحتاج إضافة «الذكاء الاصطناعي»')
+      expect(c.prompt).toContain('قل له وين يلقاها بنفسه في النظام')   // بدون الذكاء: يعلّمه وين يلقى بياناته بدل الأرقام
 
-      const { data: hr } = await db.from('marketplace_addons').select('id').eq('slug', 'hr_full').single()
-      await db.from('org_addon_subscriptions').upsert({ org_id: orgId, addon_id: (hr as any).id, status: 'active', quantity: 1, activated_at: new Date().toISOString(), expires_at: new Date(Date.now() + 864e5).toISOString() } as any, { onConflict: 'org_id,addon_id' })
+      // إضافة الذكاء: أدوات البيانات (بدون الكاشير والحضور لأن إضافاتهم مو مفعّلة)
+      const { data: ads } = await db.from('marketplace_addons').select('id,slug').in('slug', ['ai_tools', 'hr_full'])
+      const idOf = (sl: string) => (ads as any[]).find(a => a.slug === sl).id
+      const end = new Date(Date.now() + 864e5).toISOString()
+      await db.from('org_addon_subscriptions').upsert({ org_id: orgId, addon_id: idOf('ai_tools'), status: 'active', quantity: 1, activated_at: new Date().toISOString(), expires_at: end } as any, { onConflict: 'org_id,addon_id' })
       c = await buildAssistantContext(db as any, orgId, null, { role: 'owner' })
-      expect(on(c)).toEqual(['subscription', 'hr'])
-      expect(c.prompt).toContain('مساعد سر')
-      expect(c.prompt).toContain('4321')
+      expect(names(c)).toEqual(['dispense', 'inventory', 'purchases', 'supplier_prices', 'vat'])
+      await db.from('org_addon_subscriptions').upsert({ org_id: orgId, addon_id: idOf('hr_full'), status: 'active', quantity: 1, activated_at: new Date().toISOString(), expires_at: end } as any, { onConflict: 'org_id,addon_id' })
+      c = await buildAssistantContext(db as any, orgId, null, { role: 'owner' })
+      expect(names(c)).toContain('attendance')
 
-      // مدير فرع بدون صلاحية الموظفين: لا اشتراك ولا موظفين
-      c = await buildAssistantContext(db as any, orgId, branchA, { role: 'manager', permissions: { inventory: true } })
-      expect(on(c)).toEqual([])
-      expect(c.prompt).not.toContain('مساعد سر')
-      // مدير عنده الحضور بس: الموظفين بدون الرواتب
-      c = await buildAssistantContext(db as any, orgId, branchA, { role: 'manager', permissions: { attendance: true } })
-      expect(c.prompt).toContain('مساعد سر')
-      expect(c.prompt).not.toContain('4321')
+      // بيانات حقيقية للأدوات
+      const tag = 'أداة-' + stamp
+      await db.from('purchases').insert([
+        { org_id: orgId, branch_id: branchA, name: tag, qty: 10, unit: 'كيس', amount: 100, has_vat: true, supplier: 'مورد غالي', category: 'مخزون', invoice_number: 'T1' },
+        { org_id: orgId, branch_id: branchA, name: tag, qty: 10, unit: 'كيس', amount: 80, has_vat: true, supplier: 'مورد رخيص', category: 'مخزون', invoice_number: 'T2' },
+      ] as any).then(r => { if (r.error) throw r.error })
+      const ctx = c.toolCtx
+      const sp: any = await runTool('supplier_prices', { product: tag }, ctx, c.features, { role: 'owner' })
+      expect(sp.items[0].suppliers[0].supplier).toBe('مورد رخيص')
+      const pu: any = await runTool('purchases', { supplier: 'مورد', product: tag }, ctx, c.features, { role: 'owner' })
+      expect(pu.invoices_count).toBe(2)
+      expect(pu.totals.net).toBe(180)
+      expect(pu.totals.vat).toBe(27)
+      const vat: any = await runTool('vat', {}, ctx, c.features, { role: 'owner' })
+      // فواتير بدون رقم ضريبي للمورد = ناقصة: ما تدخل خانة المشتريات، وتطلع بالمراجعة (نفس الإقرار)
+      expect(vat.incomplete_invoices.count).toBeGreaterThanOrEqual(2)
+      expect(vat.incomplete_invoices.vat).toBeGreaterThanOrEqual(27)
+      // أداة مقفلة ما تشتغل حتى لو انطلبت
+      expect(await runTool('cashier_closings', {}, ctx, c.features, { role: 'owner' })).toMatchObject({ error: expect.any(String) })
 
-      await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).eq('addon_id', (hr as any).id)
-      await db.from('staff_members').delete().eq('org_id', orgId).eq('name', 'مساعد سر')
-      await db.from('organizations').update({ plan: 'pro', max_branches: 1, max_staff: 1 } as any).eq('id', orgId)
-    }, 120_000)
+      // مدير فرع عنده المخزون بس: أداة المخزون بس، والمشتريات مقفلة
+      const m = await buildAssistantContext(db as any, orgId, branchA, { role: 'manager', permissions: { inventory: true } })
+      expect(names(m)).toEqual(['dispense', 'inventory'])
+      expect(m.prompt).not.toContain('باقي 9 يوم')   // الاشتراك للمالك
+      expect(await runTool('purchases', {}, m.toolCtx, m.features, { role: 'manager', permissions: { inventory: true } })).toMatchObject({ error: expect.any(String) })
+
+      await db.from('purchases').delete().eq('org_id', orgId).eq('name', tag)
+      await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).in('addon_id', [idOf('ai_tools'), idOf('hr_full')])
+      await db.from('organizations').update({ plan: 'pro', max_branches: 1, max_staff: 1, vat_registered: false } as any).eq('id', orgId)
+    }, 180_000)
   })
 
   describe('morning report', () => {

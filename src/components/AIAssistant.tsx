@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useRef, useEffect } from 'react'
+import { getMe } from '@/lib/session'
 
 const C = {
   primary:'#029FA2', primaryD:'#0f766e', primaryL:'#f0fdfa', primaryB:'#99f6e4',
@@ -8,16 +9,45 @@ const C = {
 }
 
 // اقتراحات سريعة — المساعد يجاوب على كل قسم مفعّل عند المنشأة (الاشتراك دايماً)
-const QUICK = [
+// اقتراحات سريعة — مع إضافة الذكاء: أسئلة بيانات، وبدونها: أسئلة تعليم واشتراك (المساعد يجاوب عليها مجاناً)
+const QUICK_AI = [
   { text:'متى ينتهي اشتراكي؟' },
   { text:'وش الأصناف اللي بتخلص هالأسبوع؟' },
-  { text:'مين تأخر اليوم؟' },
-  { text:'كم مبيعات الكاشير هالشهر؟' },
-  { text:'كم أنفقت على المشتريات هالشهر؟' },
-  { text:'وش الفرق بين باقتي والشاملة؟' },
+  { text:'وش آخر فاتورة شراء؟' },
+  { text:'كم ضريبتي هالشهر؟' },
+  { text:'مين أكثر موظف صرف هالشهر؟' },
+  { text:'مين تأخر هالأسبوع؟' },
 ]
+const QUICK_BASIC = [
+  { text:'كيف أضيف موظف؟' },
+  { text:'كيف أسجل فاتورة شراء؟' },
+  { text:'كيف أسوي جرد للمخزون؟' },
+  { text:'متى ينتهي اشتراكي؟' },
+  { text:'وش الفرق بين باقتي والشاملة؟' },
+  { text:'وش فايدة إضافة الذكاء الاصطناعي؟' },
+]
+const WELCOME_AI = 'هلا! أنا مساعدك الذكي في Storely.\n\nأقدر أساعدك في:\n• المخزون ووش بيخلص\n• المشتريات والموردين وأسعارهم\n• الصرف والموظفين والحضور\n• الكاشير والضريبة\n• اشتراكك وطريقة استخدام النظام\n\nوش تبي تعرف؟'
+const WELCOME_BASIC = 'هلا! أنا مساعدك في Storely.\n\nأقدر أعلمك كيف تستخدم النظام خطوة بخطوة مع فيديوهات الشرح، وأجاوبك عن اشتراكك وباقتك.\n\nوتحليل بياناتك (المخزون، المشتريات، الموظفين…) متاح مع إضافة الذكاء الاصطناعي.\n\nوش تبي تعرف؟'
 
 interface Msg { role:'user'|'ai'; text:string; time:string }
+
+// الروابط بالرد تنضغط: يوتيوب يطلع زر «مشاهدة فيديو الشرح»، والباقي الرابط نفسه — تفتح بتبويب جديد
+const URL_RE = /(https?:\/\/[^\s)<>»«"']+)/g
+function Linkified({ text }: { text: string }) {
+  const bits = text.split(URL_RE)
+  return <>{bits.map((b, i) => {
+    if (i % 2 === 0) return b
+    const url = b.replace(/[.,،؛]+$/, '')
+    const yt = /(?:youtu\.be|youtube\.com)/.test(url)
+    return (
+      <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+        style={yt ? { display:'inline-flex', alignItems:'center', gap:6, margin:'4px 0', padding:'6px 12px', borderRadius:8, background:'#029FA2', color:'white', fontWeight:700, fontSize:12, textDecoration:'none' }
+          : { color:'#029FA2', fontWeight:700, textDecoration:'underline', wordBreak:'break-all' }}>
+        {yt ? <><svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>مشاهدة فيديو الشرح</> : url}
+      </a>
+    )
+  })}</>
+}
 
 function renderText(text: string): React.ReactNode {
   const lines = text.split('\n')
@@ -86,7 +116,7 @@ function renderText(text: string): React.ReactNode {
       elements.push(
         <div key={i} style={{display:'flex',gap:6,marginBottom:4}}>
           <span style={{width:18,height:18,borderRadius:'50%',background:'#f0fdfa',border:'1px solid #99f6e4',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,color:'#029FA2',flexShrink:0,marginTop:2}}>{num[1]}</span>
-          <span style={{fontSize:12,color:'#374151',lineHeight:1.6}}>{parts.map((p,j)=>j%2===0?p:<b key={j} style={{color:'#111827'}}>{p}</b>)}</span>
+          <span style={{fontSize:12,color:'#374151',lineHeight:1.6}}>{parts.map((p,j)=>j%2===0?<Linkified key={j} text={p}/>:<b key={j} style={{color:'#111827'}}><Linkified text={p}/></b>)}</span>
         </div>
       )
       i++; continue
@@ -99,7 +129,7 @@ function renderText(text: string): React.ReactNode {
       elements.push(
         <div key={i} style={{display:'flex',gap:6,marginBottom:3}}>
           <span style={{color:'#029FA2',flexShrink:0,marginTop:3,fontSize:10}}>•</span>
-          <span style={{fontSize:12,color:'#374151',lineHeight:1.6,flex:1}}>{parts.map((p,j)=>j%2===0?p:<b key={j} style={{color:'#111827'}}>{p}</b>)}</span>
+          <span style={{fontSize:12,color:'#374151',lineHeight:1.6,flex:1}}>{parts.map((p,j)=>j%2===0?<Linkified key={j} text={p}/>:<b key={j} style={{color:'#111827'}}><Linkified text={p}/></b>)}</span>
         </div>
       )
       i++; continue
@@ -112,7 +142,7 @@ function renderText(text: string): React.ReactNode {
     const parts = line.split(/\*\*(.*?)\*\*/)
     elements.push(
       <div key={i} style={{fontSize:12,color:'#374151',lineHeight:1.7,marginBottom:2}}>
-        {parts.map((p,j)=>j%2===0?p:<b key={j} style={{color:'#111827'}}>{p}</b>)}
+        {parts.map((p,j)=>j%2===0?<Linkified key={j} text={p}/>:<b key={j} style={{color:'#111827'}}><Linkified text={p}/></b>)}
       </div>
     )
     i++
@@ -136,7 +166,8 @@ function MsgBubble({ msg }: { msg:Msg }) {
   const isUser = msg.role==='user'
   return (
     <div style={{display:'flex',flexDirection:'column',alignItems:isUser?'flex-start':'flex-end',gap:4}}>
-      <div style={{display:'flex',alignItems:'flex-end',gap:8,flexDirection:isUser?'row':'row-reverse'}}>
+      {/* width:100% — عشان maxWidth 78% للفقاعة ينحسب من عرض الشات (كان ينحسب من محتوى ضيق فالكلام ينكسر كلمة كلمة) */}
+      <div style={{display:'flex',alignItems:'flex-end',gap:8,flexDirection:isUser?'row':'row-reverse',width:'100%'}}>
         {!isUser && (
           <div style={{width:30,height:30,borderRadius:9,background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
             <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
@@ -151,7 +182,8 @@ function MsgBubble({ msg }: { msg:Msg }) {
           boxShadow: isUser ? `0 4px 14px ${C.primary}30` : '0 2px 8px rgba(0,0,0,.06)',
           border: isUser ? 'none' : `1px solid ${C.border}`,
         }}>
-          <>{renderText(msg.text)}</>
+          {/* رسالة العميل نص عادي أبيض (renderText يلوّن بالرمادي لردود المساعد) */}
+          {isUser ? <div style={{fontSize:13.5,fontWeight:600,color:'white',whiteSpace:'pre-wrap'}}>{msg.text}</div> : <>{renderText(msg.text)}</>}
         </div>
       </div>
       <div style={{fontSize:9,color:C.text4,marginRight:isUser?0:38,marginLeft:isUser?0:0,paddingRight:isUser?4:0,paddingLeft:isUser?0:4}}>{msg.time}</div>
@@ -161,6 +193,9 @@ function MsgBubble({ msg }: { msg:Msg }) {
 
 export default function AIAssistant() {
   const [open, setOpen]       = useState(false)
+  // عنده ميزة الذكاء (الباقة أو الإضافة أو التجربة)؟ — يحدد الترحيب والاقتراحات
+  const [hasAi, setHasAi] = useState<boolean|null>(null)
+  useEffect(()=>{ getMe().then(me=>setHasAi(!!me?.org?.features?.ai)).catch(()=>setHasAi(false)) },[])
   const [msgs, setMsgs]       = useState<Msg[]>(()=>{
     if(typeof window==='undefined') return []
     try { return JSON.parse(sessionStorage.getItem('ai_msgs')||'[]') } catch { return [] }
@@ -213,12 +248,12 @@ export default function AIAssistant() {
 
   useEffect(()=>{
     if(open && msgs.length===0) {
-      setMsgs([{role:'ai', text:'مرحباً! 👋 أنا مساعدك الذكي في Storely.\n\nيمكنني مساعدتك في:\n• تحليل مخزونك الحالي\n• معرفة الأصناف الناقصة\n• توصيات الشراء\n• إحصائيات الصرف\n\nكيف يمكنني مساعدتك اليوم؟', time:now()}])
+      setMsgs([{role:'ai', text: hasAi===false ? WELCOME_BASIC : WELCOME_AI, time:now()}])
     }
     if(open && !minimized) {
       setTimeout(()=>inputRef.current?.focus(), 300)
     }
-  },[open, minimized])
+  },[open, minimized, hasAi])
 
   useEffect(()=>{
     if(!minimized) bottomRef.current?.scrollIntoView({behavior:'smooth'})
@@ -248,7 +283,8 @@ export default function AIAssistant() {
       const res = await fetch('/api/ai-assistant', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({message:msg, org_id, branch_id})
+        // آخر رسائل المحادثة (بدون الترحيب) — عشان يفهم الردود القصيرة مثل «1» أو «وأمس؟»
+        body: JSON.stringify({message:msg, org_id, branch_id, history: msgs.slice(1).slice(-6).map(m=>({role:m.role==='user'?'user':'assistant', text:m.text}))})
       })
       const data = await res.json()
       setMsgs(m=>[...m, {role:'ai', text:data.reply||'عذراً، حدث خطأ', time:now()}])
@@ -404,7 +440,7 @@ export default function AIAssistant() {
                 <div style={{padding:'10px 14px 0',background:'white',borderTop:`1px solid ${C.border}`,flexShrink:0}}>
                   <div style={{fontSize:10,fontWeight:700,color:C.text4,marginBottom:8,textTransform:'uppercase',letterSpacing:'.06em'}}>اقتراحات سريعة</div>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:10}}>
-                    {QUICK.map(q=>(
+                    {(hasAi===false ? QUICK_BASIC : QUICK_AI).map(q=>(
                       <button key={q.text} className="quick-btn" onClick={()=>send(q.text)}
                         style={{display:'flex',alignItems:'center',gap:6,padding:'8px 10px',background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,fontSize:11,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
                         {q.text}
