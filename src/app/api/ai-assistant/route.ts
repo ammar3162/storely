@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { buildAssistantContext } from '@/lib/assistantContext'
+import { classifyTopic, OFF_TOPIC_REPLY, GREETING_REPLY } from '@/lib/assistantTopic'
 
 // المساعد الذكي: متاح للكل لأسئلة الاشتراك والباقات، وبيانات كل قسم بس لو ميزته مفعّلة
 // (الأقسام المقفلة ما تنرسل للنموذج أصلاً — lib/assistantContext)
@@ -13,6 +14,17 @@ export async function POST(req: NextRequest) {
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
   const branch_id = enforcedBranchId(access, requestedBranch)   // مدير الفرع: فرعه بس مهما أرسل الطلب
+
+  // سؤال خارج المنشأة أو تحية: رد جاهز بدون بيانات المنشأة (ما ينصرف توكن كامل)
+  const topic = await classifyTopic(String(message))
+  if (topic !== 'business') {
+    const reply = topic === 'greeting' ? GREETING_REPLY : OFF_TOPIC_REPLY
+    try {
+      await sb.from('assistant_questions').insert({ org_id, user_id: (access as any).userId || null, role: (access as any).role || null, branch_id: branch_id || null,
+        question: String(message).slice(0, 2000), reply, sections: [topic === 'greeting' ? 'greeting' : 'off_topic'] } as any)
+    } catch {}
+    return NextResponse.json({ reply })
+  }
 
   const ctx = await buildAssistantContext(sb, org_id, branch_id || null, access as any)
 
