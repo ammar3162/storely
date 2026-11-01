@@ -151,7 +151,8 @@ function MsgBubble({ msg }: { msg:Msg }) {
           boxShadow: isUser ? `0 4px 14px ${C.primary}30` : '0 2px 8px rgba(0,0,0,.06)',
           border: isUser ? 'none' : `1px solid ${C.border}`,
         }}>
-          <>{renderText(msg.text)}</>
+          {/* رسالة العميل نص عادي أبيض (renderText يلوّن بالرمادي لردود المساعد) */}
+          {isUser ? <div style={{fontSize:13.5,fontWeight:600,color:'white',whiteSpace:'pre-wrap'}}>{msg.text}</div> : <>{renderText(msg.text)}</>}
         </div>
       </div>
       <div style={{fontSize:9,color:C.text4,marginRight:isUser?0:38,marginLeft:isUser?0:0,paddingRight:isUser?4:0,paddingLeft:isUser?0:4}}>{msg.time}</div>
