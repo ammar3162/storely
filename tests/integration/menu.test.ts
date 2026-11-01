@@ -165,6 +165,7 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
       expect(c.prompt).toContain('باقي 9 يوم')
       expect(c.prompt).toContain('دليل استخدام النظام')
       expect(c.prompt).toContain('يحتاج إضافة «الذكاء الاصطناعي»')
+      expect(c.prompt).toContain('قل له وين يلقاها بنفسه في النظام')   // بدون الذكاء: يعلّمه وين يلقى بياناته بدل الأرقام
 
       // إضافة الذكاء: أدوات البيانات (بدون الكاشير والحضور لأن إضافاتهم مو مفعّلة)
       const { data: ads } = await db.from('marketplace_addons').select('id,slug').in('slug', ['ai_tools', 'hr_full'])

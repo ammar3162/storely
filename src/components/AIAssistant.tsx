@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useRef, useEffect } from 'react'
+import { getMe } from '@/lib/session'
 
 const C = {
   primary:'#029FA2', primaryD:'#0f766e', primaryL:'#f0fdfa', primaryB:'#99f6e4',
@@ -8,7 +9,8 @@ const C = {
 }
 
 // اقتراحات سريعة — المساعد يجاوب على كل قسم مفعّل عند المنشأة (الاشتراك دايماً)
-const QUICK = [
+// اقتراحات سريعة — مع إضافة الذكاء: أسئلة بيانات، وبدونها: أسئلة تعليم واشتراك (المساعد يجاوب عليها مجاناً)
+const QUICK_AI = [
   { text:'متى ينتهي اشتراكي؟' },
   { text:'وش الأصناف اللي بتخلص هالأسبوع؟' },
   { text:'وش آخر فاتورة شراء؟' },
@@ -16,6 +18,16 @@ const QUICK = [
   { text:'مين أكثر موظف صرف هالشهر؟' },
   { text:'مين تأخر هالأسبوع؟' },
 ]
+const QUICK_BASIC = [
+  { text:'كيف أضيف موظف؟' },
+  { text:'كيف أسجل فاتورة شراء؟' },
+  { text:'كيف أسوي جرد للمخزون؟' },
+  { text:'متى ينتهي اشتراكي؟' },
+  { text:'وش الفرق بين باقتي والشاملة؟' },
+  { text:'وش فايدة إضافة الذكاء الاصطناعي؟' },
+]
+const WELCOME_AI = 'هلا! أنا مساعدك الذكي في Storely.\n\nأقدر أساعدك في:\n• المخزون ووش بيخلص\n• المشتريات والموردين وأسعارهم\n• الصرف والموظفين والحضور\n• الكاشير والضريبة\n• اشتراكك وطريقة استخدام النظام\n\nوش تبي تعرف؟'
+const WELCOME_BASIC = 'هلا! أنا مساعدك في Storely.\n\nأقدر أعلمك كيف تستخدم النظام خطوة بخطوة مع فيديوهات الشرح، وأجاوبك عن اشتراكك وباقتك.\n\nوتحليل بياناتك (المخزون، المشتريات، الموظفين…) متاح مع إضافة الذكاء الاصطناعي.\n\nوش تبي تعرف؟'
 
 interface Msg { role:'user'|'ai'; text:string; time:string }
 
@@ -181,6 +193,9 @@ function MsgBubble({ msg }: { msg:Msg }) {
 
 export default function AIAssistant() {
   const [open, setOpen]       = useState(false)
+  // عنده ميزة الذكاء (الباقة أو الإضافة أو التجربة)؟ — يحدد الترحيب والاقتراحات
+  const [hasAi, setHasAi] = useState<boolean|null>(null)
+  useEffect(()=>{ getMe().then(me=>setHasAi(!!me?.org?.features?.ai)).catch(()=>setHasAi(false)) },[])
   const [msgs, setMsgs]       = useState<Msg[]>(()=>{
     if(typeof window==='undefined') return []
     try { return JSON.parse(sessionStorage.getItem('ai_msgs')||'[]') } catch { return [] }
@@ -233,12 +248,12 @@ export default function AIAssistant() {
 
   useEffect(()=>{
     if(open && msgs.length===0) {
-      setMsgs([{role:'ai', text:'هلا! أنا مساعدك الذكي في Storely.\n\nأقدر أساعدك في:\n• المخزون ووش بيخلص\n• المشتريات والموردين وأسعارهم\n• الصرف والموظفين والحضور\n• الكاشير والضريبة\n• اشتراكك وطريقة استخدام النظام\n\nوش تبي تعرف؟', time:now()}])
+      setMsgs([{role:'ai', text: hasAi===false ? WELCOME_BASIC : WELCOME_AI, time:now()}])
     }
     if(open && !minimized) {
       setTimeout(()=>inputRef.current?.focus(), 300)
     }
-  },[open, minimized])
+  },[open, minimized, hasAi])
 
   useEffect(()=>{
     if(!minimized) bottomRef.current?.scrollIntoView({behavior:'smooth'})
@@ -425,7 +440,7 @@ export default function AIAssistant() {
                 <div style={{padding:'10px 14px 0',background:'white',borderTop:`1px solid ${C.border}`,flexShrink:0}}>
                   <div style={{fontSize:10,fontWeight:700,color:C.text4,marginBottom:8,textTransform:'uppercase',letterSpacing:'.06em'}}>اقتراحات سريعة</div>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:10}}>
-                    {QUICK.map(q=>(
+                    {(hasAi===false ? QUICK_BASIC : QUICK_AI).map(q=>(
                       <button key={q.text} className="quick-btn" onClick={()=>send(q.text)}
                         style={{display:'flex',alignItems:'center',gap:6,padding:'8px 10px',background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,fontSize:11,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
                         {q.text}
