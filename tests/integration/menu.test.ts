@@ -199,10 +199,11 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
 
       const all = { ai: true, cashier: true, hr: true, profitability: true }
       const [rep] = await buildBranchReports(db as any, orgId, [{ id: branchA, name: 'الفرع الرئيسي' }], all, now)
-      expect(rep.sales).toContain('1,000 ريال')
-      expect(rep.sales).toContain('عجز 20 ريال')
-      expect(rep.staff).toContain('غائب التقرير')
-      expect(rep.stock).toContain('صنف التقرير')
+      expect(rep.sales!.join(' ')).toContain('1,000 ريال')
+      expect(rep.sales!.join(' ')).toContain('عجز: 20 ريال')
+      expect(rep.staff!.join(' ')).toContain('غائب التقرير')
+      expect(rep.staffNotable).toBe(true)
+      expect(rep.stock!.join(' ')).toContain('صنف التقرير')
       const basic = await buildBranchReports(db as any, orgId, [{ id: branchA, name: 'الفرع الرئيسي' }], { ai: false, cashier: false, hr: false, profitability: false }, now)
       expect(basic[0].sales).toBeNull()
       expect(basic[0].staff).toBeNull()

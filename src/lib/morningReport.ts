@@ -10,12 +10,15 @@ const DAY = 864e5
 const saudiDate = (ms: number) => new Date(ms + 3 * 3600e3).toISOString().slice(0, 10)
 const saudiDow = (date: string) => new Date(date + 'T12:00:00Z').getUTCDay()
 const DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
+const n2 = (v: unknown) => Math.round((Number(v) || 0) * 100) / 100
 const money = (v: number) => Math.round(v).toLocaleString('en-US')
+/** «خلال يوم / يومين / 3 أيام / 11 يوم» */
+const inDays = (d: number) => d <= 1 ? 'خلال يوم' : d === 2 ? 'خلال يومين' : d <= 10 ? `خلال ${d} أيام` : `خلال ${d} يوم`
 
 /** محتوى فرع واحد — كل قسم نص جاهز أو null (ما ينذكر) */
 export type BranchReport = {
   branchId: string; branchName: string
-  decisions: string[] | null; sales: string | null; staff: string | null; stock: string | null; purchases: string | null
+  decisions: string[] | null; sales: string[] | null; staff: string[] | null; staffNotable: boolean; stock: string[] | null; purchases: string | null
 }
 /** وش يشوف المستلم: المالك ورقم الفرع كل الأقسام المفعّلة، والمدير حسب صلاحياته */
 export type ReportView = { decisions: boolean; sales: boolean; staff: boolean; stock: boolean; purchases: boolean }
@@ -57,30 +60,35 @@ export async function buildBranchReports(db: SupabaseClient, orgId: string, bran
       }
       const soon = prods.map(p => { const d = (out30.get(p.id) || 0) / 30; return { p, left: d > 0 ? Number(p.qty) / d : null } })
         .filter(x => x.left != null && x.left <= 3).sort((a, z) => a.left! - z.left!).slice(0, 4)
-        .map(x => x.left! < 1 ? `اطلب ${x.p.name} اليوم — يخلص اليوم` : `اطلب ${x.p.name} — يخلص خلال ${Math.round(x.left!)} ${Math.round(x.left!) === 1 ? 'يوم' : 'أيام'}`)
+        .map(x => x.left! < 1 ? `اطلب ${x.p.name} اليوم (يخلص اليوم)` : `اطلب ${x.p.name} (يخلص ${inDays(Math.round(x.left!))})`)
       const avg = byDow.reduce((t, v) => t + v, 0) / 7
       const peak = byDow.indexOf(Math.max(...byDow))
       const dowToday = saudiDow(today)
       if (avg > 0 && byDow[peak] >= avg * 1.15) {
-        if (peak === dowToday) soon.push(`اليوم (${DAYS[peak]}) أكثر يوم زحمة عندك — تأكد إن الأصناف الأساسية جاهزة`)
-        else if (peak === (dowToday + 1) % 7) soon.push(`بكرة (${DAYS[peak]}) أكثر يوم زحمة عندك — جهّز مخزونك من اليوم`)
+        if (peak === dowToday) soon.push(`اليوم أكثر يوم زحمة عندك — تأكد إن الأصناف الأساسية جاهزة`)
+        else if (peak === (dowToday + 1) % 7) soon.push(`بكرة (${DAYS[peak]}) أكثر يوم زحمة — جهّز مخزونك من اليوم`)
       }
       decisions = soon.length ? soon : null
     }
 
     // مبيعات أمس
-    let sales: string | null = null
+    let sales: string[] | null = null
     if (f.cashier) {
       const cs = ((closings || []) as any[]).filter(c => c.branch_id === b.id)
       if (cs.length) {
         const sum = (k: string) => cs.reduce((t, c) => t + Number(c[k] || 0), 0)
         const diff = sum('difference')
-        sales = `${money(sum('total_sales'))} ريال (كاش ${money(sum('cash_amount'))} · شبكة ${money(sum('network_amount'))})${diff < 0 ? ` · عجز ${money(-diff)} ريال` : diff > 0 ? ` · زيادة ${money(diff)} ريال` : ''}`
+        sales = [
+          `الإجمالي: ${money(sum('total_sales'))} ريال`,
+          `كاش ${money(sum('cash_amount'))} | شبكة ${money(sum('network_amount'))}`,
+          ...(diff < 0 ? [`عجز: ${money(-diff)} ريال`] : diff > 0 ? [`زيادة: ${money(diff)} ريال`] : []),
+        ]
       }
     }
 
     // الموظفين: أمس (ما سجّل حضور / تأخر) واليوم (كم دوامه)
-    let staffTxt: string | null = null
+    let staffTxt: string[] | null = null
+    let staffNotable = false
     if (f.hr) {
       const team = ((staff || []) as any[]).filter(s => s.branch_id === b.id)
       if (team.length) {
@@ -90,46 +98,46 @@ export async function buildBranchReports(db: SupabaseClient, orgId: string, bran
         const absent = team.filter(s => works(s, yesterday) && !ins.some(a => a.staff_id === s.id)).map(s => s.name)
         const late = team.map(s => ({ s, a: ins.find(a => a.staff_id === s.id && Number(a.late_minutes) > 0) })).filter(x => x.a).map(x => `${x.s.name} (${x.a.late_minutes} دقيقة)`)
         const todayCount = team.filter(s => works(s, today)).length
-        const lines = [
-          absent.length ? `ما سجّل حضور أمس: ${absent.join('، ')}` : null,
-          late.length ? `تأخر أمس: ${late.join('، ')}` : null,
-          `دوام اليوم: ${todayCount} ${todayCount === 1 ? 'موظف' : 'موظفين'}`,
-        ].filter(Boolean)
-        staffTxt = lines.join('\n')
+        staffNotable = absent.length > 0 || late.length > 0
+        staffTxt = [
+          absent.length ? `غياب أمس: ${absent.join('، ')}` : null,
+          late.length ? `تأخير أمس: ${late.join('، ')}` : null,
+          `دوام اليوم: ${todayCount} ${todayCount === 1 ? 'موظف' : todayCount === 2 ? 'موظفين' : todayCount <= 10 ? 'موظفين' : 'موظف'}`,
+        ].filter(Boolean) as string[]
       }
     }
 
     // المخزون الناقص
     const out = prods.filter(p => Number(p.qty) <= 0).map(p => p.name)
-    const low = prods.filter(p => Number(p.qty) > 0 && Number(p.qty) <= Number(p.reorder_point)).map(p => `${p.name} (${p.qty}/${p.reorder_point} ${p.unit || ''})`.replace(' )', ')'))
-    const stock = out.length || low.length ? [out.length ? `نفد: ${out.join('، ')}` : null, low.length ? `ناقص: ${low.join('، ')}` : null].filter(Boolean).join('\n') : null
+    const low = prods.filter(p => Number(p.qty) > 0 && Number(p.qty) <= Number(p.reorder_point)).map(p => `${p.name} (${n2(p.qty)} من ${n2(p.reorder_point)}${p.unit ? ' ' + p.unit : ''})`)
+    const stock = out.length || low.length ? [out.length ? `نفد: ${out.join('، ')}` : null, low.length ? `ناقص: ${low.join('، ')}` : null].filter(Boolean) as string[] : null
 
     // مشتريات أمس
     const bs = ((buys || []) as any[]).filter(x => x.branch_id === b.id)
-    const purchases = bs.length ? `${money(bs.reduce((t, x) => t + Number(x.amount || 0), 0))} ريال (${bs.length} ${bs.length === 1 ? 'فاتورة' : 'فواتير'})` : null
+    const purchases = bs.length ? `${money(bs.reduce((t, x) => t + Number(x.amount || 0), 0))} ريال (${bs.length === 1 ? 'فاتورة وحدة' : bs.length === 2 ? 'فاتورتين' : `${bs.length} فواتير`})` : null
 
-    return { branchId: b.id, branchName: b.name, decisions, sales, staff: staffTxt, stock, purchases }
+    return { branchId: b.id, branchName: b.name, decisions, sales, staff: staffTxt, staffNotable, stock, purchases }
   })
 }
 
-/** نص قسم فرع حسب اللي يشوفه المستلم — null لو ما فيه شي يستاهل */
+/** نص قسم فرع حسب اللي يشوفه المستلم — null لو ما فيه شي يستاهل.
+ *  الترتيب: المبيعات ← المطلوب اليوم ← الموظفين ← المخزون ← المشتريات */
 export function branchBlock(r: BranchReport, v: ReportView): string | null {
+  const list = (items: string[]) => items.map(x => `• ${x}`).join('\n')
   const parts = [
-    v.decisions && r.decisions ? `*قرارات اليوم*\n${r.decisions.map(d => `• ${d}`).join('\n')}` : null,
-    v.sales && r.sales ? `*مبيعات أمس:* ${r.sales}` : null,
-    v.staff && r.staff ? `*الموظفين*\n${r.staff}` : null,
-    v.stock && r.stock ? `*المخزون*\n${r.stock}` : null,
-    v.purchases && r.purchases ? `*مشتريات أمس:* ${r.purchases}` : null,
+    v.sales && r.sales ? `*المبيعات (أمس)*\n${list(r.sales)}` : null,
+    v.decisions && r.decisions ? `*المطلوب اليوم*\n${list(r.decisions)}` : null,
+    v.staff && r.staff && r.staffNotable ? `*الموظفين*\n${list(r.staff)}` : null,
+    v.stock && r.stock ? `*المخزون*\n${list(r.stock)}` : null,
+    v.purchases && r.purchases ? `*المشتريات (أمس)*\n• ${r.purchases}` : null,
   ].filter(Boolean)
-  // دوام اليوم لحاله ما يكفي يرسل تقرير
-  const meaningful = parts.some(p => !String(p).startsWith('*الموظفين*') || /ما سجّل|تأخر/.test(String(p)))
-  return parts.length && meaningful ? parts.join('\n\n') : null
+  return parts.length ? parts.join('\n\n') : null
 }
 
 /** الرسالة كاملة: عنوان + فرع أو أكثر */
 export function reportMessage(orgName: string, blocks: { name: string; text: string }[], multiBranch: boolean, nowMs = Date.now()): string | null {
   if (!blocks.length) return null
   const date = new Date(nowMs).toLocaleDateString('ar-SA', { numberingSystem: 'latn', timeZone: 'Asia/Riyadh', weekday: 'long', day: 'numeric', month: 'long' })
-  const body = blocks.map(b => (multiBranch ? `━━ *${b.name}* ━━\n` : '') + b.text).join('\n\n')
-  return `*التقرير الصباحي — ${orgName}*\n${date}\n\n${body}\n\n_Storely_`
+  const body = blocks.map(b => (multiBranch ? `▬▬ *${b.name}* ▬▬\n\n` : '') + b.text).join('\n\n\n')
+  return `*التقرير الصباحي*\n${orgName} | ${date}\n\n${body}\n\n_ستورلي · storely.dev_`
 }
