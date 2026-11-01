@@ -45,7 +45,11 @@ function CustomersPage() {
   async function load() {
     setLoading(true); setError('')
     const j = await adminFetch('/api/admin/list-users')
-    if (j.users) setList(j.users.map(mapCustomer))
+    if (j.users) {
+      setList(j.users.map(mapCustomer))
+      // جاي من «صحة الحسابات»: يفتح ملف العميل على طول
+      const open = params.get('open'); if (open) setSelectedId(open)
+    }
     else setError(j.error === 'unauthorized' ? 'ما عندك صلاحية إدارة العملاء' : 'تعذّر تحميل العملاء')
     setLoading(false)
   }
