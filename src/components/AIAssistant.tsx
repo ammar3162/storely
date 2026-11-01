@@ -267,7 +267,8 @@ export default function AIAssistant() {
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes glow{0%,100%{box-shadow:0 4px 20px ${C.primary}40}50%{box-shadow:0 4px 28px ${C.primary}70}}
         .ai-fab{display:flex;transition:transform .15s}
-        @media(min-width:768px){.ai-fab{display:none!important}}
+        /* على الكمبيوتر: الزر والنافذة بالزاوية السفلية (ما فيه شريط سفلي مثل الجوال) */
+        @media(min-width:768px){.ai-fab{bottom:24px!important;left:24px!important;width:50px!important;height:50px!important}.ai-win{bottom:86px!important;left:24px!important;right:auto!important;width:400px;margin:0!important}}
         .ai-fab:active{transform:scale(.92)!important}
         .ai-win{animation:fadeUp .3s cubic-bezier(.34,1.56,.64,1)}
         .ai-input:focus{border-color:${C.primary}!important;box-shadow:0 0 0 3px ${C.primaryL}!important;outline:none!important}
