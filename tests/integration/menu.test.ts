@@ -151,6 +151,70 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
     }, 120_000)
   })
 
+  describe('AI assistant data follows the add-ons', () => {
+    it('subscription always; staff data only with staff management; a manager without permission gets nothing extra', async () => {
+      const { buildAssistantContext } = await import('@/lib/assistantContext')
+      await db.from('profiles').update({ subscription_type: 'paid', subscription_ends_at: new Date(Date.now() + 9 * 864e5).toISOString() } as any).eq('id', userId)
+      await db.from('organizations').update({ plan: 'basic', max_branches: 1, max_staff: 3, max_suppliers: 5 } as any).eq('id', orgId)
+      await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: 'مساعد سر', phone: uniqPhone(), pin: 'x', is_active: true, role: 'staff', monthly_salary: 4321 } as any)
+      const on = (c: any) => c.sections.filter((x: any) => x.on).map((x: any) => x.key)
+
+      let c = await buildAssistantContext(db as any, orgId, null, { role: 'owner' })
+      expect(on(c)).toEqual(['subscription'])
+      expect(c.prompt).toContain('الأساسية')
+      expect(c.prompt).toContain('باقي 9 يوم')
+      expect(c.prompt).not.toContain('مساعد سر')          // بيانات الموظفين مقفلة
+      expect(c.prompt).toContain('يحتاج إضافة «إدارة الموظفين»')
+
+      const { data: hr } = await db.from('marketplace_addons').select('id').eq('slug', 'hr_full').single()
+      await db.from('org_addon_subscriptions').upsert({ org_id: orgId, addon_id: (hr as any).id, status: 'active', quantity: 1, activated_at: new Date().toISOString(), expires_at: new Date(Date.now() + 864e5).toISOString() } as any, { onConflict: 'org_id,addon_id' })
+      c = await buildAssistantContext(db as any, orgId, null, { role: 'owner' })
+      expect(on(c)).toEqual(['subscription', 'hr'])
+      expect(c.prompt).toContain('مساعد سر')
+      expect(c.prompt).toContain('4321')
+
+      // مدير فرع بدون صلاحية الموظفين: لا اشتراك ولا موظفين
+      c = await buildAssistantContext(db as any, orgId, branchA, { role: 'manager', permissions: { inventory: true } })
+      expect(on(c)).toEqual([])
+      expect(c.prompt).not.toContain('مساعد سر')
+      // مدير عنده الحضور بس: الموظفين بدون الرواتب
+      c = await buildAssistantContext(db as any, orgId, branchA, { role: 'manager', permissions: { attendance: true } })
+      expect(c.prompt).toContain('مساعد سر')
+      expect(c.prompt).not.toContain('4321')
+
+      await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).eq('addon_id', (hr as any).id)
+      await db.from('staff_members').delete().eq('org_id', orgId).eq('name', 'مساعد سر')
+      await db.from('organizations').update({ plan: 'pro', max_branches: 1, max_staff: 1 } as any).eq('id', orgId)
+    }, 120_000)
+  })
+
+  describe('morning report', () => {
+    it('builds the branch sections from real data and respects the add-ons', async () => {
+      const { buildBranchReports, branchBlock, fullView } = await import('@/lib/morningReport')
+      const now = Date.now(), yesterday = new Date(now + 3 * 3600e3 - 864e5).toISOString().slice(0, 10)
+      const { data: shift } = await db.from('shifts').insert({ org_id: orgId, branch_id: branchA, name: 'تقرير', start_time: '00:00', end_time: '23:59' } as any).select('id').single()
+      await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: 'غائب التقرير', phone: uniqPhone(), pin: 'x', is_active: true, role: 'staff', shift_id: (shift as any).id } as any)
+      await db.from('products').insert({ org_id: orgId, branch_id: branchA, name: 'صنف التقرير', unit: 'حبة', reorder_point: 5, is_active: true } as any)
+      await db.from('cashier_closings').insert({ org_id: orgId, branch_id: branchA, staff_name: 'كاشير', closing_date: yesterday, total_sales: 1000, cash_amount: 400, network_amount: 600, difference: -20 } as any).then(r => { if (r.error) throw r.error })
+
+      const all = { ai: true, cashier: true, hr: true, profitability: true }
+      const [rep] = await buildBranchReports(db as any, orgId, [{ id: branchA, name: 'الفرع الرئيسي' }], all, now)
+      expect(rep.sales).toEqual(['عجز'])   // الحالة بس — بدون أرقام
+      expect(rep.staff!.join(' ')).toContain('غائب التقرير')
+      expect(rep.staffNotable).toBe(true)
+      expect(rep.stock!.join(' ')).toContain('صنف التقرير')
+      const basic = await buildBranchReports(db as any, orgId, [{ id: branchA, name: 'الفرع الرئيسي' }], { ai: false, cashier: false, hr: false, profitability: false }, now)
+      expect(basic[0].sales).toBeNull()
+      expect(basic[0].staff).toBeNull()
+      expect(branchBlock(basic[0], fullView({ ai: false, cashier: false, hr: false, profitability: false }))).toContain('صنف التقرير')
+
+      await db.from('cashier_closings').delete().eq('org_id', orgId).eq('closing_date', yesterday).eq('staff_name', 'كاشير')
+      await db.from('staff_members').delete().eq('org_id', orgId).eq('name', 'غائب التقرير')
+      await db.from('shifts').delete().eq('id', (shift as any).id)
+      await db.from('products').delete().eq('org_id', orgId).eq('name', 'صنف التقرير')
+    }, 120_000)
+  })
+
   describe('per-customer discount (admin)', () => {
     it('admin sets a discount, it shows as a bill line for the owner and in the admin bill; removing it restores the bill', async () => {
       const disc = await import('@/app/api/admin/org-discount/route')

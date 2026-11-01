@@ -60,6 +60,22 @@ function PermGrid({ value, onChange }: { value: Record<string, boolean>; onChang
   )
 }
 
+// رقم واتساب المدير (اختياري) + تأكيد موافقته على الرسائل
+function WaField({ phone, setPhone, consent, setConsent }: { phone: string; setPhone: (v: string) => void; consent: boolean; setConsent: (v: boolean) => void }) {
+  return (
+    <div style={{ marginBottom: 14, maxWidth: 420 }}>
+      <label style={{ fontSize: 12, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 5 }}>رقم واتساب المدير (اختياري) — يوصله التقرير الصباحي لفرعه</label>
+      <input dir="ltr" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} style={inp()} placeholder="05xxxxxxxx" autoComplete="off" />
+      {phone.trim() && (
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 12.5, color: colors.text2, cursor: 'pointer' }}>
+          <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} style={{ accentColor: colors.primary, width: 16, height: 16 }} />
+          المدير موافق يستلم رسائل واتساب من ستورلي
+        </label>
+      )}
+    </div>
+  )
+}
+
 export default function BranchManagersPage() {
   const [orgId, setOrgId] = useState('')
   const [branches, setBranches] = useState<any[]>([])
@@ -73,11 +89,16 @@ export default function BranchManagersPage() {
   const [branchId, setBranchId] = useState('')
   const [perms, setPerms] = useState<Record<string, boolean>>({ ...ALL_OFF, inventory: true, dispense: true, purchases: true, reports: true })
   const [saving, setSaving] = useState(false)
+  // رقم واتساب المدير (اختياري) — يوصله التقرير الصباحي لفرعه
+  const [waPhone, setWaPhone] = useState('')
+  const [waConsent, setWaConsent] = useState(false)
 
   const [editId, setEditId] = useState<string | null>(null)
   const [editPerms, setEditPerms] = useState<Record<string, boolean>>(ALL_OFF)
   const [editBranch, setEditBranch] = useState('')
   const [editSaving, setEditSaving] = useState(false)
+  const [editWa, setEditWa] = useState('')
+  const [editWaConsent, setEditWaConsent] = useState(false)
 
   useEffect(() => { init() }, [])
 
@@ -107,22 +128,24 @@ export default function BranchManagersPage() {
     if (password.length < 6) { toast('كلمة المرور ٦ أحرف على الأقل', 'warning'); return }
     if (!countOn(perms)) { toast('اختر صفحة وحدة على الأقل يشوفها المدير', 'warning'); return }
     setSaving(true)
-    const j = await api.post('/api/branch-managers', { org_id: orgId, full_name: name.trim(), email: email.trim(), password, branch_id: branchId, permissions: perms })
+    if (waPhone.trim() && !waConsent) { toast('أكّد إن المدير موافق يستلم رسائل واتساب', 'warning'); return }
+    const j = await api.post('/api/branch-managers', { org_id: orgId, full_name: name.trim(), email: email.trim(), password, branch_id: branchId, permissions: perms, report_whatsapp: waPhone.trim() || null, whatsapp_consent: waConsent })
     setSaving(false)
     if (!j.success) { toast(j.error || 'تعذر إضافة المدير', 'error'); return }
     toast('✅ تم إضافة مدير الفرع — يدخل بإيميله وكلمة المرور')
-    setName(''); setEmail(''); setPassword(''); setBranchId('')
+    setName(''); setEmail(''); setPassword(''); setBranchId(''); setWaPhone(''); setWaConsent(false)
     loadManagers(orgId)
   }
 
   function startEdit(m: any) {
-    setEditId(m.id); setEditBranch(m.branch_id || '')
+    setEditId(m.id); setEditBranch(m.branch_id || ''); setEditWa(m.report_whatsapp || ''); setEditWaConsent(!!m.report_whatsapp)
     setEditPerms({ ...ALL_OFF, ...Object.fromEntries(MANAGER_PERMS.map(p => [p.key, m.permissions?.[p.key] === true])) })
   }
 
   async function saveEdit(m: any) {
+    if (editWa.trim() && !editWaConsent) { toast('أكّد إن المدير موافق يستلم رسائل واتساب', 'warning'); return }
     setEditSaving(true)
-    const j = await api.patch('/api/branch-managers', { id: m.id, org_id: orgId, permissions: editPerms, ...(editBranch && editBranch !== m.branch_id ? { branch_id: editBranch } : {}) })
+    const j = await api.patch('/api/branch-managers', { id: m.id, org_id: orgId, permissions: editPerms, report_whatsapp: editWa.trim() || null, whatsapp_consent: editWaConsent, ...(editBranch && editBranch !== m.branch_id ? { branch_id: editBranch } : {}) })
     setEditSaving(false)
     if (!j.success) { toast(j.error || 'تعذر الحفظ', 'error'); return }
     toast('✅ انحفظت صلاحيات ' + m.full_name)
@@ -165,6 +188,7 @@ export default function BranchManagersPage() {
             </div>
           </div>
         </div>
+        <WaField phone={waPhone} setPhone={setWaPhone} consent={waConsent} setConsent={setWaConsent} />
         <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={16} /> وش يشوف؟ <span style={{ fontWeight: 600, color: colors.text4 }}>({countOn(perms)} من {MANAGER_PERMS.length})</span></div>
         <PermGrid value={perms} onChange={setPerms} />
         <button onClick={addManager} disabled={saving} style={{ ...btnPrimary, padding: '12px 22px', marginTop: 16 }}>{saving ? 'جاري الإضافة…' : 'أضف مدير الفرع'}</button>
@@ -194,6 +218,7 @@ export default function BranchManagersPage() {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
                       {on.length ? on.map(p => <span key={p.key} style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 99, background: colors.primaryLight, color: colors.primary, border: `1px solid ${colors.primaryBorder}` }}>{p.label}</span>)
                         : <span style={{ fontSize: 12.5, color: colors.warning }}>ما عنده صلاحيات — يشوف الرئيسية والإشعارات بس</span>}
+                      {m.report_whatsapp && <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 99, background: colors.bg, color: colors.text3, border: `1px solid ${colors.border}` }} dir="ltr">التقرير الصباحي: {m.report_whatsapp}</span>}
                     </div>
                   ) : (
                     <div style={{ marginTop: 14, display: 'grid', gap: 14 }}>
@@ -202,6 +227,7 @@ export default function BranchManagersPage() {
                           {branches.map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}
                         </select>
                       </div>
+                      <WaField phone={editWa} setPhone={setEditWa} consent={editWaConsent} setConsent={setEditWaConsent} />
                       <PermGrid value={editPerms} onChange={setEditPerms} />
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button onClick={() => saveEdit(m)} disabled={editSaving} style={{ ...btnPrimary, padding: '10px 20px' }}>{editSaving ? 'جاري الحفظ…' : 'حفظ التعديلات'}</button>

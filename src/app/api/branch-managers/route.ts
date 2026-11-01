@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { normalizeWhatsapp } from '@/lib/phoneNormalize'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { cleanManagerPerms } from '@/lib/managerPerms'
@@ -7,6 +8,16 @@ const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
+
+// رقم واتساب المدير للتقرير الصباحي (اختياري): لازم المالك يأكد إن المدير موافق يستلم الرسائل
+function reportPhone(raw: unknown, consent: unknown): { phone: string | null; error?: string } {
+  const v = String(raw ?? '').trim()
+  if (!v) return { phone: null }
+  const phone = normalizeWhatsapp(v)
+  if (!/^\+\d{10,15}$/.test(phone)) return { phone: null, error: 'رقم واتساب المدير غير صحيح' }
+  if (consent !== true) return { phone: null, error: 'أكّد إن المدير موافق يستلم رسائل واتساب' }
+  return { phone }
+}
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
@@ -18,7 +29,7 @@ export async function GET(req: Request) {
 
   const db = sb()
   const { data, error } = await db.from('profiles')
-    .select('id,full_name,branch_id,permissions,status,created_at,branches(name)')
+    .select('id,full_name,branch_id,permissions,status,created_at,report_whatsapp,whatsapp_consent,branches(name)')
     .eq('org_id', org_id).eq('role', 'manager')
     .order('created_at', { ascending: true })
   if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
@@ -26,7 +37,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const { org_id, full_name, email, password, branch_id, permissions } = await req.json()
+  const { org_id, full_name, email, password, branch_id, permissions, report_whatsapp, whatsapp_consent } = await req.json()
+  const report = reportPhone(report_whatsapp, whatsapp_consent)
+  if (report.error) return NextResponse.json({ error: report.error }, { status: 400 })
   if (!org_id || !full_name || !email || !password || !branch_id) {
     return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
   }
@@ -61,6 +74,7 @@ export async function POST(req: Request) {
     full_name, role: 'manager',
     permissions: cleanManagerPerms(permissions),
     status: 'active',
+    ...(report.phone ? { report_whatsapp: report.phone, whatsapp_consent: true, whatsapp_consent_at: new Date().toISOString() } : {}),
   })
   if (profileErr) {
     await db.auth.admin.deleteUser(newUser.user.id).catch(() => {})
@@ -71,7 +85,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const { id, org_id, branch_id, permissions } = await req.json()
+  const { id, org_id, branch_id, permissions, report_whatsapp, whatsapp_consent } = await req.json()
   if (!id || !org_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
@@ -86,6 +100,13 @@ export async function PATCH(req: Request) {
     update.branch_id = branch_id
   }
   if (permissions !== undefined) update.permissions = cleanManagerPerms(permissions)
+  if (report_whatsapp !== undefined) {
+    const report = reportPhone(report_whatsapp, whatsapp_consent)
+    if (report.error) return NextResponse.json({ error: report.error }, { status: 400 })
+    update.report_whatsapp = report.phone
+    update.whatsapp_consent = !!report.phone
+    if (report.phone) update.whatsapp_consent_at = new Date().toISOString()
+  }
   const { error } = await db.from('profiles').update(update).eq('id', id).eq('org_id', org_id).eq('role', 'manager')
   if (error) return NextResponse.json({ error: 'حدث خطأ أثناء التعديل' }, { status: 500 })
   return NextResponse.json({ success: true })

@@ -7,13 +7,14 @@ const C = {
   bg:'#f9fafb', surface:'#ffffff', border:'#f3f4f6', border2:'#e5e7eb',
 }
 
+// اقتراحات سريعة — المساعد يجاوب على كل قسم مفعّل عند المنشأة (الاشتراك دايماً)
 const QUICK = [
-  { icon:'⚡', text:'ما الأصناف التي ستنفد هذا الأسبوع؟' },
-  { icon:'💰', text:'كم أنفقت على المشتريات هذا الشهر؟' },
-  { icon:'♻️', text:'ما الأصناف التي أشتريها ولا أصرفها؟' },
-  { icon:'📦', text:'كم أحتاج أطلب من كل مورد هذا الشهر؟' },
-  { icon:'💡', text:'ما توصيتك لتقليل الهدر عندي؟' },
-  { icon:'📈', text:'__period__' },
+  { text:'متى ينتهي اشتراكي؟' },
+  { text:'وش الأصناف اللي بتخلص هالأسبوع؟' },
+  { text:'مين تأخر اليوم؟' },
+  { text:'كم مبيعات الكاشير هالشهر؟' },
+  { text:'كم أنفقت على المشتريات هالشهر؟' },
+  { text:'وش الفرق بين باقتي والشاملة؟' },
 ]
 
 interface Msg { role:'user'|'ai'; text:string; time:string }
@@ -232,9 +233,10 @@ export default function AIAssistant() {
     setLoading(true)
 
     // كشف طلب التواصل مع الدعم
-    const supportKeywords = ['دعم','مساعدة بشرية','موظف','تواصل','اتصال','شكوى','مشكلة تقنية','واتساب']
+    // طلب صريح لدعم بشري بس — كلمات عامة مثل «موظف» أو «واتساب» تروح للمساعد (أسئلة عن الموظفين والتقرير)
+    const supportKeywords = ['الدعم الفني','مساعدة بشرية','أكلم الدعم','اكلم الدعم','تواصل مع الدعم','شكوى','مشكلة تقنية']
     if (supportKeywords.some(k => msg.includes(k))) {
-      setMsgs(m=>[...m, {role:'ai', text:'يسعدنا مساعدتك! 😊 يمكنك التواصل مع فريق دعم Storely مباشرة عبر واتساب من خلال الزر أدناه، وسيرد عليك أحد المختصين في أقرب وقت.', time:now()}])
+      setMsgs(m=>[...m, {role:'ai', text:'يسعدنا مساعدتك! يمكنك التواصل مع فريق دعم Storely مباشرة عبر واتساب من خلال الزر أدناه، وسيرد عليك أحد المختصين في أقرب وقت.', time:now()}])
       setLoading(false)
       return
     }
@@ -267,7 +269,8 @@ export default function AIAssistant() {
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes glow{0%,100%{box-shadow:0 4px 20px ${C.primary}40}50%{box-shadow:0 4px 28px ${C.primary}70}}
         .ai-fab{display:flex;transition:transform .15s}
-        @media(min-width:768px){.ai-fab{display:none!important}}
+        /* على الكمبيوتر: الزر والنافذة بالزاوية السفلية (ما فيه شريط سفلي مثل الجوال) */
+        @media(min-width:768px){.ai-fab{bottom:24px!important;left:24px!important;width:50px!important;height:50px!important}.ai-win{bottom:86px!important;left:24px!important;right:auto!important;width:400px;margin:0!important}}
         .ai-fab:active{transform:scale(.92)!important}
         .ai-win{animation:fadeUp .3s cubic-bezier(.34,1.56,.64,1)}
         .ai-input:focus{border-color:${C.primary}!important;box-shadow:0 0 0 3px ${C.primaryL}!important;outline:none!important}
@@ -404,7 +407,6 @@ export default function AIAssistant() {
                     {QUICK.map(q=>(
                       <button key={q.text} className="quick-btn" onClick={()=>send(q.text)}
                         style={{display:'flex',alignItems:'center',gap:6,padding:'8px 10px',background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,fontSize:11,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
-                        <span style={{fontSize:14}}>{q.icon}</span>
                         {q.text}
                       </button>
                     ))}
