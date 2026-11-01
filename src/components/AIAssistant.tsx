@@ -213,7 +213,7 @@ export default function AIAssistant() {
 
   useEffect(()=>{
     if(open && msgs.length===0) {
-      setMsgs([{role:'ai', text:'مرحباً! 👋 أنا مساعدك الذكي في Storely.\n\nيمكنني مساعدتك في:\n• تحليل مخزونك الحالي\n• معرفة الأصناف الناقصة\n• توصيات الشراء\n• إحصائيات الصرف\n\nكيف يمكنني مساعدتك اليوم؟', time:now()}])
+      setMsgs([{role:'ai', text:'هلا! أنا مساعدك الذكي في Storely.\n\nأقدر أساعدك في:\n• المخزون ووش بيخلص\n• المشتريات والموردين وأسعارهم\n• الصرف والموظفين والحضور\n• الكاشير والضريبة\n• اشتراكك وطريقة استخدام النظام\n\nوش تبي تعرف؟', time:now()}])
     }
     if(open && !minimized) {
       setTimeout(()=>inputRef.current?.focus(), 300)
@@ -248,7 +248,8 @@ export default function AIAssistant() {
       const res = await fetch('/api/ai-assistant', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({message:msg, org_id, branch_id})
+        // آخر رسائل المحادثة (بدون الترحيب) — عشان يفهم الردود القصيرة مثل «1» أو «وأمس؟»
+        body: JSON.stringify({message:msg, org_id, branch_id, history: msgs.slice(1).slice(-6).map(m=>({role:m.role==='user'?'user':'assistant', text:m.text}))})
       })
       const data = await res.json()
       setMsgs(m=>[...m, {role:'ai', text:data.reply||'عذراً، حدث خطأ', time:now()}])

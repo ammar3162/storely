@@ -13,14 +13,19 @@ export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY || '')
-  const { message, org_id, branch_id: requestedBranch } = await req.json()
+  const { message, org_id, branch_id: requestedBranch, history: rawHistory } = await req.json()
+  // آخر رسائل المحادثة من المتصفح (نصوص بس، محدودة) — تتحقق وتتنظف قبل ما تنرسل للنموذج
+  const history = (Array.isArray(rawHistory) ? rawHistory : []).slice(-6)
+    .filter((h: any) => h && (h.role === 'user' || h.role === 'assistant') && typeof h.text === 'string' && h.text.trim())
+    .map((h: any) => ({ role: h.role as 'user' | 'assistant', content: String(h.text).slice(0, 1500) }))
   if (!message || !org_id) return NextResponse.json({ error: 'missing' }, { status: 400 })
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
   const branch_id = enforcedBranchId(access, requestedBranch)   // مدير الفرع: فرعه بس مهما أرسل الطلب
 
   // سؤال خارج المنشأة أو تحية: رد جاهز بدون بيانات المنشأة (ما ينصرف توكن كامل)
-  const topic = await classifyTopic(String(message))
+  const lastReply = [...history].reverse().find(h => h.role === 'assistant')?.content
+  const topic = await classifyTopic(String(message), lastReply)
   if (topic !== 'business') {
     const reply = topic === 'greeting' ? GREETING_REPLY : OFF_TOPIC_REPLY
     try {
@@ -33,7 +38,15 @@ export async function POST(req: NextRequest) {
   const ctx = await buildAssistantContext(sb, org_id, branch_id || null, access as any)
 
   // حلقة الأدوات: المساعد يطلب أداة ← النظام يجيب البيانات ← يكمل (أقصى 4 جولات)
-  const messages: any[] = [{ role: 'user', content: String(message).slice(0, 2000) }]
+  // المحادثة لازم تبدأ بالمستخدم وتتناوب — نشيل أي رسالة مساعد بالبداية ونجمع المتتالية
+  const turns: { role: 'user' | 'assistant'; content: string }[] = []
+  for (const h of [...history, { role: 'user' as const, content: String(message).slice(0, 2000) }]) {
+    if (!turns.length && h.role !== 'user') continue
+    const last = turns[turns.length - 1]
+    if (last && last.role === h.role) last.content += '\n' + h.content
+    else turns.push({ ...h })
+  }
+  const messages: any[] = turns
   const used: string[] = []
   let data: any = null
   for (let round = 0; round < 5; round++) {

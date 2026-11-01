@@ -8,16 +8,17 @@ export const GREETING_REPLY = 'هلا والله! أنا مساعد منشأتك
 const PROMPT = `صنّف رسالة مستخدم نظام إدارة منشأة (مطعم/كوفي/محل) إلى كلمة وحدة:
 business = أي سؤال عن منشأته أو بياناتها: المخزون، الأصناف، الصرف، المشتريات، الموردين، الطلبات، الموظفين، الحضور، الدوام، الرواتب، الكاشير، المبيعات، الأرباح، المصاريف، الفروع، التقارير، الاشتراك، الباقات، الفاتورة، الإضافات، أو طريقة استخدام النظام.
 greeting = تحية أو شكر بس بدون سؤال.
+لو فيه «رد المساعد السابق»، فرسالة المستخدم غالباً رد عليه (رقم خيار، «إيه»، «وأمس؟»، اسم صنف…) — صنّفها business.
 other = أي شي ثاني: أسئلة عامة أو شخصية أو معلومات خارجية أو طلبات ما لها علاقة بالمنشأة.
 رد بكلمة وحدة فقط: business أو greeting أو other.`
 
 /** يرجع business لو الفحص فشل (ما نمنع المستخدم بسبب عطل) */
-export async function classifyTopic(message: string): Promise<Topic> {
+export async function classifyTopic(message: string, lastAssistantReply?: string): Promise<Topic> {
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY!, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 5, system: PROMPT, messages: [{ role: 'user', content: String(message).slice(0, 500) }] }),
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 5, system: PROMPT, messages: [{ role: 'user', content: (lastAssistantReply ? `رد المساعد السابق: ${lastAssistantReply.slice(0, 400)}\n\nرسالة المستخدم: ` : '') + String(message).slice(0, 500) }] }),
     })
     if (!res.ok) return 'business'
     const j = await res.json() as any
