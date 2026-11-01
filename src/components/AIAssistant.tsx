@@ -136,7 +136,8 @@ function MsgBubble({ msg }: { msg:Msg }) {
   const isUser = msg.role==='user'
   return (
     <div style={{display:'flex',flexDirection:'column',alignItems:isUser?'flex-start':'flex-end',gap:4}}>
-      <div style={{display:'flex',alignItems:'flex-end',gap:8,flexDirection:isUser?'row':'row-reverse'}}>
+      {/* width:100% — عشان maxWidth 78% للفقاعة ينحسب من عرض الشات (كان ينحسب من محتوى ضيق فالكلام ينكسر كلمة كلمة) */}
+      <div style={{display:'flex',alignItems:'flex-end',gap:8,flexDirection:isUser?'row':'row-reverse',width:'100%'}}>
         {!isUser && (
           <div style={{width:30,height:30,borderRadius:9,background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
             <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
