@@ -4,7 +4,7 @@ import { RefreshCw } from 'lucide-react'
 import { A, Badge, Btn, Card, Loading, PageHeader, adminFetch, fmtDate, inputStyle } from '../_admin/kit'
 
 // سجل أسئلة المساعد الذكي: وش يسأل العملاء — يبيّن وش يهمهم ووين الصفحات مو واضحة
-const SECTION_AR: Record<string, string> = { subscription: 'الاشتراك', data: 'المخزون', hr: 'الموظفين', cashier: 'الكاشير', profit: 'الربحية' }
+const SECTION_AR: Record<string, string> = { subscription: 'الاشتراك', data: 'المخزون', hr: 'الموظفين', cashier: 'الكاشير', profit: 'الربحية', off_topic: 'سؤال خارجي (ما انرد عليه)', greeting: 'تحية' }
 // كلمات تبيّن نوع السؤال — للإحصائية فوق
 const TOPICS: [string, RegExp][] = [
   ['الاشتراك والباقات', /اشتراك|باق|فاتور|ينتهي|ترقي|إضاف|اضاف|سعر/],
