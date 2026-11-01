@@ -6,6 +6,7 @@ import { orgFeatures, FEATURE_LABEL, type Features } from '@/lib/planFeatures'
 import { managerMay } from '@/lib/managerPerms'
 import { billLines, planLabel, planKeyOf, activeDiscount, staffBase, supplierBase, PLAN_CAPS, PLAN_PRICING } from '@/lib/planPricing'
 import { getBranchLimit } from '@/lib/branchLimit'
+import { assistantGuide } from '@/lib/assistantGuide'
 
 type Access = { role?: string | null; permissions?: Record<string, unknown> | null }
 const DAY = 864e5
@@ -45,6 +46,7 @@ export async function buildAssistantContext(db: SupabaseClient, orgId: string, b
   if (allow.hr) parts.push(await hrSection(db, orgId, branchId, allow.salaries))
   if (allow.cashier) parts.push(await cashierSection(db, orgId, branchId))
   if (allow.profit) parts.push(await profitSection(db, orgId, branchId))
+  parts.push(await assistantGuide(db))
 
   const locked = sections.filter(s => !s.on && s.key !== 'subscription').map(s => {
     const f = (s as any).feature as keyof Features | undefined

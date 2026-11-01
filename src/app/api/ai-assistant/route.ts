@@ -37,5 +37,13 @@ export async function POST(req: NextRequest) {
     if (aiFailureKind(response.status, JSON.stringify(data))) return NextResponse.json({ reply: 'المساعد متوقف مؤقتاً — جرّب بعد شوي' })
   }
   const reply = data.content?.[0]?.text || 'عذراً، حدث خطأ'
+  // سجل الأسئلة (يطلع للأدمن) — فشل التسجيل ما يوقف الرد
+  try {
+    await sb.from('assistant_questions').insert({
+      org_id, user_id: (access as any).userId || null, role: (access as any).role || null, branch_id: branch_id || null,
+      question: String(message).slice(0, 2000), reply: String(reply).slice(0, 4000),
+      sections: ctx.sections.filter(x => x.on).map(x => x.key),
+    } as any)
+  } catch {}
   return NextResponse.json({ reply })
 }

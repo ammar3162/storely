@@ -502,7 +502,7 @@ export default function SettingsPage() {
                       placeholder={countryCode==='+966'?'5xxxxxxxx':countryCode==='+20'?'1xxxxxxxxx':'xxxxxxxxxx'} dir="ltr"
                       style={{background:'transparent',border:'none',padding:'12px',fontSize:14,color:'#1e293b',flex:1,outline:'none',fontFamily:'inherit'}}/>
                   </div>
-                  <div style={{fontSize:11,color:colors.text4,marginTop:6,display:'flex',alignItems:'center',gap:4}}><span>💡</span> يُستخدم لإرسال تنبيهات نقص المخزون</div>
+                  <div style={{fontSize:11,color:colors.text4,marginTop:6,display:'flex',alignItems:'center',gap:4}}><span>💡</span> يوصله التقرير الصباحي وتنبيهات النظام</div>
                 </div>
 
                 {orgId&&<VatRegistration orgId={orgId}/>}
@@ -552,7 +552,8 @@ export default function SettingsPage() {
               </div>
 
               <div style={{marginBottom:20}}>
-                <label style={lbl}>نوع الجدولة</label>
+                <label style={lbl}>التقرير الصباحي — متى يوصلك</label>
+                <div style={{fontSize:11,color:colors.text4,marginBottom:8,lineHeight:1.7}}>يوصلك على واتساب: قرارات اليوم، ومبيعات أمس، والموظفين، والمخزون الناقص، ومشتريات أمس (حسب المميزات المفعّلة). ومدير كل فرع يوصله تقرير فرعه لو حطيت رقمه بصفحة مديري الفروع.</div>
                 <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
                   {[{key:'daily',label:'يومي',icon:'📅'},{key:'weekly',label:'أسبوعي',icon:'📆'},{key:'manual',label:'يدوي',icon:'👆'}].map(s=>(
                     <button key={s.key} type="button" className={`sched-btn${form.notify_schedule===s.key?' active':''}`}

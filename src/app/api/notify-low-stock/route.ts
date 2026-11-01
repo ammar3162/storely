@@ -4,99 +4,68 @@ import { isCronRequest } from '@/lib/cronAuth'
 import { createClient } from '@supabase/supabase-js'
 import { isSubscriptionActive } from '@/lib/subscription'
 import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
+import { orgFeatures } from '@/lib/planFeatures'
+import { managerMay } from '@/lib/managerPerms'
+import { buildBranchReports, branchBlock, reportMessage, fullView } from '@/lib/morningReport'
 
+// التقرير الصباحي (lib/morningReport): المالك يوصله كل الفروع برسالة وحدة، ورقم كل فرع ومدير الفرع يوصلهم تقرير فرعهم
 async function sendForOrg(supabase: any, org: any) {
   const subActive = await isSubscriptionActive(supabase, org.id)
   if (!subActive) return { sent: 0, message: 'الاشتراك منتهي — لا يتم إرسال إشعارات' }
-  // واتساب فقط لمن وافق المالك على استلام الرسائل
-  const { data: owner } = await supabase.from('profiles').select('whatsapp_consent').eq('org_id', org.id).eq('role', 'owner').maybeSingle()
-  if ((owner as any)?.whatsapp_consent !== true) return { sent: 0, message: 'المالك لم يوافق على رسائل واتساب' }
 
-  const { data: branches } = await supabase
-    .from('branches').select('id,name,whatsapp_number')
-    .eq('org_id', org.id).eq('is_active', true)
+  const [{ data: owner }, { data: branches }, { data: managers }] = await Promise.all([
+    supabase.from('profiles').select('whatsapp_consent').eq('org_id', org.id).eq('role', 'owner').maybeSingle(),
+    supabase.from('branches').select('id,name,whatsapp_number').eq('org_id', org.id).eq('is_active', true).order('created_at'),
+    supabase.from('profiles').select('branch_id,report_whatsapp,whatsapp_consent,permissions,status').eq('org_id', org.id).eq('role', 'manager').not('report_whatsapp', 'is', null),
+  ])
+  if (!(branches || []).length) return { sent: 0, message: 'ما فيه فروع' }
 
-  const { data: products } = await supabase
-    .from('products').select('name,qty,unit,reorder_point,branch_id')
-    .eq('org_id', org.id).eq('is_active', true)
+  const features = await orgFeatures(supabase, org.id)
+  const reports = await buildBranchReports(supabase, org.id, branches as any[], features)
+  const full = fullView(features)
+  const multi = (branches || []).length > 1
 
-  const low = (products||[]).filter((p:any) => p.qty <= p.reorder_point)
-  if (low.length === 0) return { sent:0, message:'لا توجد منتجات ناقصة' }
-
-  const byBranch: Record<string, { name: string; phone: string|null; items: any[] }> = {}
-  for (const p of low) {
-    const branch = (branches||[]).find((b:any) => b.id === (p as any).branch_id)
-    const key = (p as any).branch_id || 'none'
-    if (!byBranch[key]) {
-      byBranch[key] = {
-        name: branch?.name || org.name,
-        phone: branch?.whatsapp_number || org.whatsapp_number || null,
-        items: [],
-      }
-    }
-    byBranch[key].items.push(p)
+  // المستلمين — رقم واحد ما يوصله أكثر من رسالة
+  const outbox = new Map<string, string>()
+  const add = (rawPhone: string | null | undefined, msg: string | null) => {
+    if (!rawPhone || !msg) return
+    const phone = formatPhone(rawPhone)
+    if (/^\d{10,15}$/.test(phone) && !outbox.has(phone)) outbox.set(phone, msg)
   }
-  const multiBranch = (branches||[]).length > 1
 
-  const now = new Date().toLocaleString('ar-SA', {numberingSystem:'latn',timeZone:'Asia/Riyadh',hour:'2-digit',minute:'2-digit',hour12:true,weekday:'long'})
+  // ١) المالك: كل الفروع (واتساب بس لو وافق على الرسائل — وموافقته تشمل أرقام فروعه)
+  const ownerOk = (owner as any)?.whatsapp_consent === true
+  if (ownerOk) {
+    const blocks = reports.map(r => ({ name: r.branchName, text: branchBlock(r, full) })).filter(b => b.text) as { name: string; text: string }[]
+    add(org.whatsapp_number, reportMessage(org.name, blocks, multi))
+  }
+  for (const r of reports) {
+    const branch = (branches as any[]).find(b => b.id === r.branchId)
+    // ٢) رقم الفرع (يحدده المالك): تقرير الفرع كامل
+    const text = branchBlock(r, full)
+    if (ownerOk) add(branch?.whatsapp_number, text ? reportMessage(org.name, [{ name: r.branchName, text }], multi) : null)
+    // ٣) مدير الفرع: تقرير فرعه حسب صلاحياته (وافق على الرسائل وحسابه شغال)
+    for (const m of ((managers || []) as any[]).filter(m => m.branch_id === r.branchId && m.whatsapp_consent === true && m.status !== 'suspended')) {
+      const v = { ...full, sales: full.sales && managerMay({ role: 'manager', permissions: m.permissions }, 'reports'), staff: full.staff && managerMay({ role: 'manager', permissions: m.permissions }, 'staff', 'attendance', 'hr') }
+      const mt = branchBlock(r, v)
+      add(m.report_whatsapp, mt ? reportMessage(org.name, [{ name: r.branchName, text: mt }], multi) : null)
+    }
+  }
+  if (!outbox.size) return { sent: 0, message: 'ما فيه شي يستاهل يتبلّغ اليوم' }
+
   let totalSent = 0
   const details: any[] = []
-
-  for (const key of Object.keys(byBranch)) {
-    const group = byBranch[key]
-    if (!group.phone) { details.push({ branch: group.name, sent: false }); continue }
-    const outStock = group.items.filter((p:any)=>p.qty===0)
-    const lowStock = group.items.filter((p:any)=>p.qty>0)
-  let body = ''
-  if(outStock.length>0) {
-    body += '🔴 *نفد المخزون*\n'
-    body += outStock.map((p:any)=>'▸ ' + p.name + ' | 0/' + p.reorder_point + ' ' + p.unit).join('\n')
-    body += '\n\n'
-  }
-  if(lowStock.length>0) {
-    body += '🟡 *مخزون منخفض*\n'
-    body += lowStock.map((p:any)=>'▸ ' + p.name + ' | ' + p.qty + '/' + p.reorder_point + ' ' + p.unit).join('\n')
-    body += '\n\n'
-  }
-  const msg =
-    '╬══════════════════════╬\n' +
-    '   📦 Storely Alert\n' +
-    '╚══════════════════════╝\n\n' +
-    '🏢 *' + org.name + '*  |  🕐 ' + now + '\n' +
-    (multiBranch ? ('🏪 *الفرع: ' + group.name + '*\n\n') : '\n') +
-    '━━━━━━━━━━━━━━━━━━━━━\n' +
-    '⚠️ *تنبيه نقص مخزون*\n' +
-    '━━━━━━━━━━━━━━━━━━━━━\n\n' +
-    body +
-    '━━━━━━━━━━━━━━━━━━━━━\n' +
-    '📊 الملخص: ' + outStock.length + ' نفد | ' + lowStock.length + ' منخفض\n' +
-    '━━━━━━━━━━━━━━━━━━━━━\n\n' +
-    '_Storely — نظام واحد يربط كل أعمال منشأتك_'
-
-    const phone = formatPhone(group.phone)
+  for (const [phone, msg] of outbox) {
     const result = await sendWhatsAppMessage(phone, msg)
-
-    try {
-      await supabase.from('whatsapp_logs').insert({
-        org_id: org.id, phone, message: msg,
-        status: result.ok ? 'sent' : 'failed',
-      })
-    } catch {}
-
+    try { await supabase.from('whatsapp_logs').insert({ org_id: org.id, phone, message: msg, status: result.ok ? 'sent' : 'failed' }) } catch {}
     if (result.ok) totalSent++
-    details.push({ branch: group.name, sent: result.ok })
+    details.push({ phone: phone.slice(-4), sent: result.ok })
     await delay(600)
   }
-
   if (totalSent > 0) {
-    try {
-      await supabase.from('organizations')
-        .update({ last_notified_at: new Date().toISOString() } as any)
-        .eq('id', org.id)
-    } catch {}
+    try { await supabase.from('organizations').update({ last_notified_at: new Date().toISOString() } as any).eq('id', org.id) } catch {}
   }
-
-  return { sent: totalSent, low_count: low.length, message: `تم إرسال ${totalSent} إشعار`, details }
+  return { sent: totalSent, message: `تم إرسال ${totalSent} تقرير`, details }
 }
 
 export async function POST(req: Request) {
