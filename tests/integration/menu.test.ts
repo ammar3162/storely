@@ -199,8 +199,7 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
 
       const all = { ai: true, cashier: true, hr: true, profitability: true }
       const [rep] = await buildBranchReports(db as any, orgId, [{ id: branchA, name: 'الفرع الرئيسي' }], all, now)
-      expect(rep.sales!.join(' ')).toContain('1,000 ريال')
-      expect(rep.sales!.join(' ')).toContain('عجز: 20 ريال')
+      expect(rep.sales).toEqual(['عجز'])   // الحالة بس — بدون أرقام
       expect(rep.staff!.join(' ')).toContain('غائب التقرير')
       expect(rep.staffNotable).toBe(true)
       expect(rep.stock!.join(' ')).toContain('صنف التقرير')

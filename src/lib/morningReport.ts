@@ -1,5 +1,5 @@
 // التقرير الصباحي (واتساب): لكل فرع أقسام — وكل قسم بس لو ميزته مفعّلة (lib/planFeatures، والتجربة تفتح الكل):
-// قرارات اليوم (الذكاء) · مبيعات أمس (الكاشير) · الموظفين أمس ودوام اليوم (إدارة الموظفين) · المخزون الناقص · مشتريات أمس.
+// قرارات اليوم (الذكاء) · حالة إقفال الكاشير أمس (الكاشير) · الموظفين أمس ودوام اليوم (إدارة الموظفين) · المخزون الناقص · مشتريات أمس.
 // المالك يوصله تقرير كل الفروع برسالة وحدة، ورقم الفرع ومدير الفرع يوصلهم تقرير فرعهم (lib — api/notify-low-stock يرسل).
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Features } from '@/lib/planFeatures'
@@ -36,7 +36,7 @@ export async function buildBranchReports(db: SupabaseClient, orgId: string, bran
     db.from('products').select('id,name,qty,unit,reorder_point,branch_id').eq('org_id', orgId).eq('is_active', true).in('branch_id', ids),
     f.ai ? db.from('stock_movements').select('qty_change,created_at,products!inner(id,org_id,branch_id)').eq('products.org_id', orgId).eq('type', 'out').gte('created_at', since56).limit(20000) : Promise.resolve({ data: [] as any[] }),
     db.from('purchases').select('amount,branch_id').eq('org_id', orgId).is('deleted_at', null).gte('created_at', startOf(yesterday)).lt('created_at', startOf(today)),
-    f.cashier ? db.from('cashier_closings').select('branch_id,total_sales,cash_amount,network_amount,difference').eq('org_id', orgId).eq('closing_date', yesterday) : Promise.resolve({ data: [] as any[] }),
+    f.cashier ? db.from('cashier_closings').select('branch_id,difference').eq('org_id', orgId).eq('closing_date', yesterday) : Promise.resolve({ data: [] as any[] }),
     f.hr ? db.from('staff_members').select('id,name,branch_id,shift_id,weekday_shifts,date_shifts,days_off_mode,weekly_off_days,biweekly_anchor,off_dates').eq('org_id', orgId).eq('is_active', true) : Promise.resolve({ data: [] as any[] }),
     f.hr ? db.from('staff_attendance').select('staff_id,type,late_minutes,recorded_at').eq('org_id', orgId).eq('type', 'check_in').gte('recorded_at', startOf(yesterday)).lt('recorded_at', startOf(today)) : Promise.resolve({ data: [] as any[] }),
   ])
@@ -71,18 +71,18 @@ export async function buildBranchReports(db: SupabaseClient, orgId: string, bran
       decisions = soon.length ? soon : null
     }
 
-    // مبيعات أمس
+    // إقفال الكاشير أمس: الحالة بس (مطابق / زيادة / عجز) بدون أرقام — العميل ممكن يكون مقفل إرسال الإقفالات على الواتساب
     let sales: string[] | null = null
     if (f.cashier) {
       const cs = ((closings || []) as any[]).filter(c => c.branch_id === b.id)
       if (cs.length) {
-        const sum = (k: string) => cs.reduce((t, c) => t + Number(c[k] || 0), 0)
-        const diff = sum('difference')
-        sales = [
-          `الإجمالي: ${money(sum('total_sales'))} ريال`,
-          `كاش ${money(sum('cash_amount'))} | شبكة ${money(sum('network_amount'))}`,
-          ...(diff < 0 ? [`عجز: ${money(-diff)} ريال`] : diff > 0 ? [`زيادة: ${money(diff)} ريال`] : []),
-        ]
+        const st = (c: any) => Number(c.difference || 0) < 0 ? 'عجز' : Number(c.difference || 0) > 0 ? 'زيادة' : 'مطابق'
+        if (cs.length === 1) sales = [st(cs[0])]
+        else {
+          const count = (k: string) => cs.filter(c => st(c) === k).length
+          const parts = (['مطابق', 'زيادة', 'عجز'] as const).filter(k => count(k)).map(k => `${count(k)} ${k}`)
+          sales = [count('مطابق') === cs.length ? `مطابق (${cs.length} إقفالات)` : parts.join(' · ')]
+        }
       }
     }
 
@@ -121,11 +121,11 @@ export async function buildBranchReports(db: SupabaseClient, orgId: string, bran
 }
 
 /** نص قسم فرع حسب اللي يشوفه المستلم — null لو ما فيه شي يستاهل.
- *  الترتيب: المبيعات ← المطلوب اليوم ← الموظفين ← المخزون ← المشتريات */
+ *  الترتيب: إقفال الكاشير ← المطلوب اليوم ← الموظفين ← المخزون ← المشتريات */
 export function branchBlock(r: BranchReport, v: ReportView): string | null {
   const list = (items: string[]) => items.map(x => `• ${x}`).join('\n')
   const parts = [
-    v.sales && r.sales ? `*المبيعات (أمس)*\n${list(r.sales)}` : null,
+    v.sales && r.sales ? `*إقفال الكاشير (أمس)*\n${list(r.sales)}` : null,
     v.decisions && r.decisions ? `*المطلوب اليوم*\n${list(r.decisions)}` : null,
     v.staff && r.staff && r.staffNotable ? `*الموظفين*\n${list(r.staff)}` : null,
     v.stock && r.stock ? `*المخزون*\n${list(r.stock)}` : null,
