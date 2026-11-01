@@ -19,6 +19,24 @@ const QUICK = [
 
 interface Msg { role:'user'|'ai'; text:string; time:string }
 
+// الروابط بالرد تنضغط: يوتيوب يطلع زر «مشاهدة فيديو الشرح»، والباقي الرابط نفسه — تفتح بتبويب جديد
+const URL_RE = /(https?:\/\/[^\s)<>»«"']+)/g
+function Linkified({ text }: { text: string }) {
+  const bits = text.split(URL_RE)
+  return <>{bits.map((b, i) => {
+    if (i % 2 === 0) return b
+    const url = b.replace(/[.,،؛]+$/, '')
+    const yt = /(?:youtu\.be|youtube\.com)/.test(url)
+    return (
+      <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+        style={yt ? { display:'inline-flex', alignItems:'center', gap:6, margin:'4px 0', padding:'6px 12px', borderRadius:8, background:'#029FA2', color:'white', fontWeight:700, fontSize:12, textDecoration:'none' }
+          : { color:'#029FA2', fontWeight:700, textDecoration:'underline', wordBreak:'break-all' }}>
+        {yt ? <><svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>مشاهدة فيديو الشرح</> : url}
+      </a>
+    )
+  })}</>
+}
+
 function renderText(text: string): React.ReactNode {
   const lines = text.split('\n')
   const elements: React.ReactNode[] = []
@@ -86,7 +104,7 @@ function renderText(text: string): React.ReactNode {
       elements.push(
         <div key={i} style={{display:'flex',gap:6,marginBottom:4}}>
           <span style={{width:18,height:18,borderRadius:'50%',background:'#f0fdfa',border:'1px solid #99f6e4',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,color:'#029FA2',flexShrink:0,marginTop:2}}>{num[1]}</span>
-          <span style={{fontSize:12,color:'#374151',lineHeight:1.6}}>{parts.map((p,j)=>j%2===0?p:<b key={j} style={{color:'#111827'}}>{p}</b>)}</span>
+          <span style={{fontSize:12,color:'#374151',lineHeight:1.6}}>{parts.map((p,j)=>j%2===0?<Linkified key={j} text={p}/>:<b key={j} style={{color:'#111827'}}><Linkified text={p}/></b>)}</span>
         </div>
       )
       i++; continue
@@ -99,7 +117,7 @@ function renderText(text: string): React.ReactNode {
       elements.push(
         <div key={i} style={{display:'flex',gap:6,marginBottom:3}}>
           <span style={{color:'#029FA2',flexShrink:0,marginTop:3,fontSize:10}}>•</span>
-          <span style={{fontSize:12,color:'#374151',lineHeight:1.6,flex:1}}>{parts.map((p,j)=>j%2===0?p:<b key={j} style={{color:'#111827'}}>{p}</b>)}</span>
+          <span style={{fontSize:12,color:'#374151',lineHeight:1.6,flex:1}}>{parts.map((p,j)=>j%2===0?<Linkified key={j} text={p}/>:<b key={j} style={{color:'#111827'}}><Linkified text={p}/></b>)}</span>
         </div>
       )
       i++; continue
@@ -112,7 +130,7 @@ function renderText(text: string): React.ReactNode {
     const parts = line.split(/\*\*(.*?)\*\*/)
     elements.push(
       <div key={i} style={{fontSize:12,color:'#374151',lineHeight:1.7,marginBottom:2}}>
-        {parts.map((p,j)=>j%2===0?p:<b key={j} style={{color:'#111827'}}>{p}</b>)}
+        {parts.map((p,j)=>j%2===0?<Linkified key={j} text={p}/>:<b key={j} style={{color:'#111827'}}><Linkified text={p}/></b>)}
       </div>
     )
     i++
