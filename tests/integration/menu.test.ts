@@ -221,10 +221,11 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
 
       const all = { ai: true, cashier: true, hr: true, profitability: true }
       const [rep] = await buildBranchReports(db as any, orgId, [{ id: branchA, name: 'الفرع الرئيسي' }], all, now)
-      expect(rep.sales).toEqual(['عجز'])   // الحالة بس — بدون أرقام
+      expect(rep.sales).toEqual(['عجز — راجع التفاصيل في صفحة الإقفال'])   // الحالة بس — بدون أرقام
       expect(rep.staff!.join(' ')).toContain('غائب التقرير')
       expect(rep.staffNotable).toBe(true)
-      expect(rep.stock!.join(' ')).toContain('صنف التقرير')
+      expect(rep.stockOut).toContain('صنف التقرير')   // كميته صفر → «خلصت»، وما يتكرر في «المطلوب اليوم»
+      expect((rep.decisions || []).join(' ')).not.toContain('صنف التقرير')
       const basic = await buildBranchReports(db as any, orgId, [{ id: branchA, name: 'الفرع الرئيسي' }], { ai: false, cashier: false, hr: false, profitability: false }, now)
       expect(basic[0].sales).toBeNull()
       expect(basic[0].staff).toBeNull()

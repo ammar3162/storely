@@ -1,5 +1,6 @@
 // التقرير الصباحي (واتساب): لكل فرع أقسام — وكل قسم بس لو ميزته مفعّلة (lib/planFeatures، والتجربة تفتح الكل):
-// قرارات اليوم (الذكاء) · حالة إقفال الكاشير أمس (الكاشير) · الموظفين أمس ودوام اليوم (إدارة الموظفين) · المخزون الناقص · مشتريات أمس.
+// قرارات اليوم (الذكاء) · حالة إقفال الكاشير أمس (الكاشير) · الموظفين أمس ودوام اليوم (إدارة الموظفين) · اللي خلص · اللي قرب يخلص · مشتريات أمس.
+// واضحة للكل: الصنف ما ينذكر مرتين، والقوائم مختصرة بالأهم أول (الباقي «تفاصيلها في صفحة المخزون»).
 // المالك يوصله تقرير كل الفروع برسالة وحدة، ورقم الفرع ومدير الفرع يوصلهم تقرير فرعهم (lib — api/notify-low-stock يرسل).
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Features } from '@/lib/planFeatures'
@@ -14,11 +15,16 @@ const n2 = (v: unknown) => Math.round((Number(v) || 0) * 100) / 100
 const money = (v: number) => Math.round(v).toLocaleString('en-US')
 /** «خلال يوم / يومين / 3 أيام / 11 يوم» */
 const inDays = (d: number) => d <= 1 ? 'خلال يوم' : d === 2 ? 'خلال يومين' : d <= 10 ? `خلال ${d} أيام` : `خلال ${d} يوم`
+/** «فاتورة وحدة / فاتورتين / 5 فواتير / 13 فاتورة» */
+export const invoicesAr = (n: number) => n === 1 ? 'فاتورة وحدة' : n === 2 ? 'فاتورتين' : n <= 10 ? `${n} فواتير` : `${n} فاتورة`
+const MAX_OUT = 10, MAX_LOW = 8
+const moreItems = (n: number) => `و ${n} ${n === 1 ? 'صنف ثاني' : n === 2 ? 'صنفين ثانيين' : n <= 10 ? 'أصناف ثانية' : 'صنف ثاني'}`
 
 /** محتوى فرع واحد — كل قسم نص جاهز أو null (ما ينذكر) */
 export type BranchReport = {
   branchId: string; branchName: string
-  decisions: string[] | null; sales: string[] | null; staff: string[] | null; staffNotable: boolean; stock: string[] | null; purchases: string | null
+  decisions: string[] | null; sales: string[] | null; staff: string[] | null; staffNotable: boolean
+  stockOut: string | null; stockLow: string[] | null; purchases: string | null
 }
 /** وش يشوف المستلم: المالك ورقم الفرع كل الأقسام المفعّلة، والمدير حسب صلاحياته */
 export type ReportView = { decisions: boolean; sales: boolean; staff: boolean; stock: boolean; purchases: boolean }
@@ -48,6 +54,7 @@ export async function buildBranchReports(db: SupabaseClient, orgId: string, bran
 
     // قرارات اليوم: أصناف تخلص خلال ٣ أيام (معدل آخر ٣٠ يوم) + يوم الذروة اليوم/بكرة (آخر ٨ أسابيع)
     let decisions: string[] | null = null
+    const decided = new Set<string>()   // أصناف انذكرت في «المطلوب اليوم» — ما تتكرر في «قربت تخلص»
     if (f.ai) {
       const mine = ((moves || []) as any[]).filter(m => m.products?.branch_id === b.id)
       const since30 = nowMs - 30 * DAY
@@ -58,9 +65,9 @@ export async function buildBranchReports(db: SupabaseClient, orgId: string, bran
         if (Date.parse(m.created_at) >= since30) out30.set(m.products.id, (out30.get(m.products.id) || 0) + q)
         byDow[saudiDow(saudiDate(Date.parse(m.created_at)))] += q
       }
-      const soon = prods.map(p => { const d = (out30.get(p.id) || 0) / 30; return { p, left: d > 0 ? Number(p.qty) / d : null } })
+      const soon = prods.filter(p => Number(p.qty) > 0).map(p => { const d = (out30.get(p.id) || 0) / 30; return { p, left: d > 0 ? Number(p.qty) / d : null } })
         .filter(x => x.left != null && x.left <= 3).sort((a, z) => a.left! - z.left!).slice(0, 4)
-        .map(x => x.left! < 1 ? `اطلب ${x.p.name} اليوم (يخلص اليوم)` : `اطلب ${x.p.name} (يخلص ${inDays(Math.round(x.left!))})`)
+        .map(x => { decided.add(x.p.id); return x.left! < 1 ? `اطلب ${x.p.name} اليوم (يخلص اليوم)` : `اطلب ${x.p.name} (يخلص ${inDays(Math.round(x.left!))})` })
       const avg = byDow.reduce((t, v) => t + v, 0) / 7
       const peak = byDow.indexOf(Math.max(...byDow))
       const dowToday = saudiDow(today)
@@ -77,7 +84,7 @@ export async function buildBranchReports(db: SupabaseClient, orgId: string, bran
       const cs = ((closings || []) as any[]).filter(c => c.branch_id === b.id)
       if (cs.length) {
         const st = (c: any) => Number(c.difference || 0) < 0 ? 'عجز' : Number(c.difference || 0) > 0 ? 'زيادة' : 'مطابق'
-        if (cs.length === 1) sales = [st(cs[0])]
+        if (cs.length === 1) { const k = st(cs[0]); sales = [k === 'مطابق' ? 'مطابق' : `${k} — راجع التفاصيل في صفحة الإقفال`] }
         else {
           const count = (k: string) => cs.filter(c => st(c) === k).length
           const parts = (['مطابق', 'زيادة', 'عجز'] as const).filter(k => count(k)).map(k => `${count(k)} ${k}`)
@@ -107,28 +114,34 @@ export async function buildBranchReports(db: SupabaseClient, orgId: string, bran
       }
     }
 
-    // المخزون الناقص
+    // المخزون: اللي خلص (سطر واحد) واللي قرب يخلص (الأقل نسبة لحد الطلب أول) — مختصرة
     const out = prods.filter(p => Number(p.qty) <= 0).map(p => p.name)
-    const low = prods.filter(p => Number(p.qty) > 0 && Number(p.qty) <= Number(p.reorder_point)).map(p => `${p.name} (${n2(p.qty)} من ${n2(p.reorder_point)}${p.unit ? ' ' + p.unit : ''})`)
-    const stock = out.length || low.length ? [out.length ? `نفد: ${out.join('، ')}` : null, low.length ? `ناقص: ${low.join('، ')}` : null].filter(Boolean) as string[] : null
+    const stockOut = out.length ? out.slice(0, MAX_OUT).join('، ') + (out.length > MAX_OUT ? `، ${moreItems(out.length - MAX_OUT)}` : '') : null
+    const low = prods.filter(p => Number(p.qty) > 0 && Number(p.qty) <= Number(p.reorder_point) && !decided.has(p.id))
+      .sort((a, z) => Number(a.qty) / (Number(a.reorder_point) || 1) - Number(z.qty) / (Number(z.reorder_point) || 1))
+    const stockLow = low.length ? [
+      ...low.slice(0, MAX_LOW).map(p => `${p.name} (باقي ${n2(p.qty)} من ${n2(p.reorder_point)}${p.unit ? ' ' + p.unit : ''})`),
+      ...(low.length > MAX_LOW ? [`${moreItems(low.length - MAX_LOW)} تحت الحد — تفاصيلها في صفحة المخزون`] : []),
+    ] : null
 
     // مشتريات أمس
     const bs = ((buys || []) as any[]).filter(x => x.branch_id === b.id)
-    const purchases = bs.length ? `${money(bs.reduce((t, x) => t + Number(x.amount || 0), 0))} ريال (${bs.length === 1 ? 'فاتورة وحدة' : bs.length === 2 ? 'فاتورتين' : `${bs.length} فواتير`})` : null
+    const purchases = bs.length ? `${money(bs.reduce((t, x) => t + Number(x.amount || 0), 0))} ريال (${invoicesAr(bs.length)})` : null
 
-    return { branchId: b.id, branchName: b.name, decisions, sales, staff: staffTxt, staffNotable, stock, purchases }
+    return { branchId: b.id, branchName: b.name, decisions, sales, staff: staffTxt, staffNotable, stockOut, stockLow, purchases }
   })
 }
 
 /** نص قسم فرع حسب اللي يشوفه المستلم — null لو ما فيه شي يستاهل.
- *  الترتيب: إقفال الكاشير ← المطلوب اليوم ← الموظفين ← المخزون ← المشتريات */
+ *  الترتيب: إقفال الكاشير ← خلصت ← المطلوب اليوم ← الموظفين ← قربت تخلص ← المشتريات */
 export function branchBlock(r: BranchReport, v: ReportView): string | null {
   const list = (items: string[]) => items.map(x => `• ${x}`).join('\n')
   const parts = [
     v.sales && r.sales ? `*إقفال الكاشير (أمس)*\n${list(r.sales)}` : null,
+    v.stock && r.stockOut ? `*خلصت — اطلبها اليوم*\n• ${r.stockOut}` : null,
     v.decisions && r.decisions ? `*المطلوب اليوم*\n${list(r.decisions)}` : null,
     v.staff && r.staff && r.staffNotable ? `*الموظفين*\n${list(r.staff)}` : null,
-    v.stock && r.stock ? `*المخزون*\n${list(r.stock)}` : null,
+    v.stock && r.stockLow ? `*قربت تخلص*\n${list(r.stockLow)}` : null,
     v.purchases && r.purchases ? `*المشتريات (أمس)*\n• ${r.purchases}` : null,
   ].filter(Boolean)
   return parts.length ? parts.join('\n\n') : null
