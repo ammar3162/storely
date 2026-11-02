@@ -88,6 +88,7 @@ const UI: Record<string,Record<string,string>> = {
   productName:   {ar:'اسم المنتج *',en:'Product name *',ur:'سامان کا نام *',hi:'उत्पाद का नाम *',tl:'Pangalan ng produkto *',bn:'পণ্যের নাম *',fr:'Nom du produit *'},
   qtyRequired:   {ar:'الكمية *',en:'Quantity *',ur:'مقدار *',hi:'मात्रा *',tl:'Dami *',bn:'পরিমাণ *',fr:'Quantité *'},
   unitPh:        {ar:'اكتب اسم الوحدة',en:'Type the unit',ur:'اکائی لکھیں',hi:'इकाई लिखें',tl:'Isulat ang unit',bn:'একক লিখুন',fr:"Saisissez l'unité"},
+  unitLbl:       {ar:'الوحدة',en:'Unit',ur:'اکائی',hi:'इकाई',tl:'Unit',bn:'একক',fr:'Unité'},
   categoryOpt:   {ar:'الفئة (اختياري)',en:'Category (optional)',ur:'زمرہ (اختیاری)',hi:'श्रेणी (वैकल्पिक)',tl:'Kategorya (opsyonal)',bn:'বিভাগ (ঐচ্ছিক)',fr:'Catégorie (facultatif)'},
   categoryPh:    {ar:'اكتب اسم الفئة',en:'Type the category',ur:'زمرہ لکھیں',hi:'श्रेणी लिखें',tl:'Isulat ang kategorya',bn:'বিভাগ লিখুন',fr:'Saisissez la catégorie'},
   adding:        {ar:'جاري الإضافة...',en:'Adding...',ur:'شامل ہو رہا ہے...',hi:'जोड़ा जा रहा है...',tl:'Idinadagdag...',bn:'যোগ হচ্ছে...',fr:'Ajout...'},
@@ -803,15 +804,26 @@ function StaffPageInner() {
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:200,backdropFilter:'blur(4px)'}} onClick={()=>setShowAddProduct(false)}>
           <div style={{background:'white',borderRadius:'24px 24px 0 0',padding:28,width:'100%',maxWidth:480,animation:'slideUp .3s ease'}} onClick={e=>e.stopPropagation()}>
             <div style={{fontSize:18,fontWeight:800,color:'#0f172a',marginBottom:20}}>{T('newProduct',lang)}</div>
-            <div style={{display:'flex',flexDirection:'column' as const,gap:10,marginBottom:20}}>
-              <input value={newProduct.name} onChange={e=>setNewProduct(p=>({...p,name:e.target.value}))} placeholder={T('productName',lang)} autoFocus
-                style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',boxSizing:'border-box' as const}}/>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                <NumberInput value={newProduct.qty} onChange={e=>setNewProduct(p=>({...p,qty:e.target.value}))} placeholder={T('qtyRequired',lang)}
-                  style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit'}}/>
-                <SelectOrOther value={newProduct.unit} onChange={v=>setNewProduct(p=>({...p,unit:v}))} options={unitsFor(bizType)} placeholder={T('unitPh',lang)} style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',background:'white',width:'100%',boxSizing:'border-box' as const}}/>
+            {/* كل خانة فوقها اسمها (يبقى واضح بعد الكتابة) — الخط 16 أسود عشان يكون واضح وما يقرّب الآيفون الشاشة */}
+            <div style={{display:'flex',flexDirection:'column' as const,gap:14,marginBottom:22}}>
+              <label style={{display:'block'}}>
+                <span style={apLbl}>{T('productName',lang)}</span>
+                <input value={newProduct.name} onChange={e=>setNewProduct(p=>({...p,name:e.target.value}))} autoFocus style={apInp}/>
+              </label>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                <label style={{display:'block',minWidth:0}}>
+                  <span style={apLbl}>{T('qtyRequired',lang)}</span>
+                  <NumberInput value={newProduct.qty} onChange={e=>setNewProduct(p=>({...p,qty:e.target.value}))} style={apInp}/>
+                </label>
+                <div style={{minWidth:0}}>
+                  <span style={apLbl}>{T('unitLbl',lang)}</span>
+                  <SelectOrOther value={newProduct.unit} onChange={v=>setNewProduct(p=>({...p,unit:v}))} options={unitsFor(bizType)} placeholder={T('unitPh',lang)} style={apInp}/>
+                </div>
               </div>
-              <SelectOrOther value={newProduct.category} onChange={v=>setNewProduct(p=>({...p,category:v}))} options={catsFor(bizType)} emptyLabel={T('categoryOpt',lang)} placeholder={T('categoryPh',lang)} style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',background:'white',width:'100%',boxSizing:'border-box' as const}}/>
+              <div>
+                <span style={apLbl}>{T('categoryOpt',lang)}</span>
+                <SelectOrOther value={newProduct.category} onChange={v=>setNewProduct(p=>({...p,category:v}))} options={catsFor(bizType)} emptyLabel="—" placeholder={T('categoryPh',lang)} style={apInp}/>
+              </div>
             </div>
             <div style={{display:'flex',gap:8}}>
               <button onClick={addProduct} disabled={savingProduct||!newProduct.name||!newProduct.qty}
@@ -829,6 +841,10 @@ function StaffPageInner() {
     </div>
   )
 }
+
+// خانات نافذة «إضافة منتج جديد»
+const apLbl: React.CSSProperties = { display:'block', fontSize:13, fontWeight:800, color:'#0f172a', marginBottom:6 }
+const apInp: React.CSSProperties = { width:'100%', padding:'13px 14px', border:'1.5px solid #cbd5e1', borderRadius:12, fontSize:16, fontWeight:600, color:'#0f172a', fontFamily:'inherit', background:'white', boxSizing:'border-box' }
 
 export default function StaffPage() {
   return <Suspense fallback={null}><StaffPageInner/></Suspense>

@@ -1,4 +1,5 @@
 import { ToastContainer } from '@/components/toast'
+import KeyboardInset from '@/components/KeyboardInset'
 import { ConfirmDialogContainer } from '@/components/ConfirmDialog'
 import PWAInstall from '@/components/PWAInstall'
 import FeatureAnnouncement from '@/components/FeatureAnnouncement'
@@ -73,6 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ApiBridge/>
         <DigitNormalizer/>
         <ToastContainer/>
+        <KeyboardInset/>
         <ConfirmDialogContainer/>
         <PWAInstall/>
         <FeatureAnnouncement/>

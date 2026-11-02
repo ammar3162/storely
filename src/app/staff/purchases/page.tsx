@@ -31,12 +31,12 @@ const C = {
   primary:'#029FA2', primaryD:'#0f766e', primaryL:'#f0fdfa', primaryB:'#99f6e4',
   danger:'#e24b4a', dangerL:'#fef2f2',
   warning:'#ba7517', warningL:'#fffbeb',
-  text:'#1c1c1a', text2:'#3d3d3a', text3:'#5f5e5a', text4:'#888780',
+  text:'#000000', text2:'#0f172a', text3:'#1e293b', text4:'#334155',   // كتابة سوداء واضحة
   bg:'#f5f5f4', surface:'#ffffff', border:'#ebebea', border2:'#e0e0dd',
 }
 
-const inp: React.CSSProperties = {width:'100%',padding:'10px 12px',border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box' as const,background:'white',color:C.text,fontFamily:'inherit'}
-const lbl: React.CSSProperties = {fontSize:10,fontWeight:700,color:C.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.06em'}
+const inp: React.CSSProperties = {width:'100%',padding:'11px 12px',border:`1.5px solid #cbd5e1`,borderRadius:10,fontSize:16,outline:'none',boxSizing:'border-box' as const,background:'white',color:C.text,fontFamily:'inherit'}
+const lbl: React.CSSProperties = {fontSize:12.5,fontWeight:800,color:'#000',display:'block',marginBottom:6}
 
 
 const PUI: Record<string,Record<'ar'|'en',string>> = {

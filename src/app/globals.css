@@ -35,8 +35,57 @@ body {
 }
 
 input, button, select, textarea { font-family: inherit !important; }
-/* لون الكتابة داخل الخانات أسود واضح (الخانات اللي ما لها لون محدد) */
-input, select, textarea { color: var(--text); }
+/* ── الوضع العادي: كتابة واضحة ──
+   أدوات المتصفح (قوائم الاختيار) فاتحة حتى لو الجوال بالوضع الليلي، والكتابة داخل الخانات سوداء،
+   والرمادي الفاتح اللي تكتبه الصفحات مباشرة يصير أغمق (بالوضع العادي بس — الوضع الليلي له ألوانه) */
+:root:not([data-theme="dark"]) { color-scheme: light; }
+
+/* النوافذ اللي تغطي الشاشة ترتفع فوق كيبورد الجوال (--kb من KeyboardInset)، ومحتواها يصير قابل للتمرير لو ما كفّت المساحة */
+[style*="position: fixed"][style*="inset: 0px"],
+[style*="position:fixed"][style*="inset:0"] { bottom: var(--kb, 0px) !important; transition: bottom .12s ease-out; }
+html.kb-open [style*="position: fixed"][style*="inset: 0px"] > div:last-child,
+html.kb-open [style*="position:fixed"][style*="inset:0"] > div:last-child { max-height: calc(100% - 12px); overflow-y: auto; }
+:root:not([data-theme="dark"]) input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+:root:not([data-theme="dark"]) select,
+:root:not([data-theme="dark"]) textarea { color: #0f172a !important; }
+:root:not([data-theme="dark"]) input::placeholder,
+:root:not([data-theme="dark"]) textarea::placeholder { color: #7b8698; opacity: 1; }
+:root:not([data-theme="dark"]) [style^="color:#94a3b8;" i],
+:root:not([data-theme="dark"]) [style*=";color:#94a3b8;" i],
+:root:not([data-theme="dark"]) [style$=";color:#94a3b8" i],
+:root:not([data-theme="dark"]) [style="color:#94a3b8" i],
+:root:not([data-theme="dark"]) [style^="color: rgb(148, 163, 184)"],
+:root:not([data-theme="dark"]) [style*="; color: rgb(148, 163, 184)"] { color: #475569 !important; }
+:root:not([data-theme="dark"]) [style^="color:#9ca3af;" i],
+:root:not([data-theme="dark"]) [style*=";color:#9ca3af;" i],
+:root:not([data-theme="dark"]) [style$=";color:#9ca3af" i],
+:root:not([data-theme="dark"]) [style="color:#9ca3af" i],
+:root:not([data-theme="dark"]) [style^="color: rgb(156, 163, 175)"],
+:root:not([data-theme="dark"]) [style*="; color: rgb(156, 163, 175)"] { color: #475569 !important; }
+:root:not([data-theme="dark"]) [style^="color:#98a2b3;" i],
+:root:not([data-theme="dark"]) [style*=";color:#98a2b3;" i],
+:root:not([data-theme="dark"]) [style$=";color:#98a2b3" i],
+:root:not([data-theme="dark"]) [style="color:#98a2b3" i],
+:root:not([data-theme="dark"]) [style^="color: rgb(152, 162, 179)"],
+:root:not([data-theme="dark"]) [style*="; color: rgb(152, 162, 179)"] { color: #475569 !important; }
+:root:not([data-theme="dark"]) [style^="color:#888780;" i],
+:root:not([data-theme="dark"]) [style*=";color:#888780;" i],
+:root:not([data-theme="dark"]) [style$=";color:#888780" i],
+:root:not([data-theme="dark"]) [style="color:#888780" i],
+:root:not([data-theme="dark"]) [style^="color: rgb(136, 135, 128)"],
+:root:not([data-theme="dark"]) [style*="; color: rgb(136, 135, 128)"] { color: #57534e !important; }
+:root:not([data-theme="dark"]) [style^="color:#8b8a84;" i],
+:root:not([data-theme="dark"]) [style*=";color:#8b8a84;" i],
+:root:not([data-theme="dark"]) [style$=";color:#8b8a84" i],
+:root:not([data-theme="dark"]) [style="color:#8b8a84" i],
+:root:not([data-theme="dark"]) [style^="color: rgb(139, 138, 132)"],
+:root:not([data-theme="dark"]) [style*="; color: rgb(139, 138, 132)"] { color: #57534e !important; }
+:root:not([data-theme="dark"]) [style^="color:#a8a7a1;" i],
+:root:not([data-theme="dark"]) [style*=";color:#a8a7a1;" i],
+:root:not([data-theme="dark"]) [style$=";color:#a8a7a1" i],
+:root:not([data-theme="dark"]) [style="color:#a8a7a1" i],
+:root:not([data-theme="dark"]) [style^="color: rgb(168, 167, 161)"],
+:root:not([data-theme="dark"]) [style*="; color: rgb(168, 167, 161)"] { color: #57534e !important; }
 
 a { text-decoration: none; color: inherit; }
 
