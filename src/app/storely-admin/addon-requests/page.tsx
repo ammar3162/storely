@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Check, X, Phone, ArrowUpCircle } from 'lucide-react'
+import { Check, X, Phone, ArrowUpCircle, Trash2 } from 'lucide-react'
 import { LEGACY_C, adminKey } from '../_admin/kit'
 
 const C = LEGACY_C
@@ -26,6 +26,17 @@ export default function AddonRequestsPage() {
     setPlanReqs(pj.requests || [])
   }
   useEffect(() => { load() }, [])
+
+  async function remove(r: any) {
+    const warn = r.status === 'pending' ? '\n\nالطلب لسا معلّق — الحذف ما يرفضه ولا يوصل العميل إشعار.' : '\n\nالإضافة المفعّلة ما تتأثر — ينحذف الطلب من القائمة بس.'
+    if (!confirm(`حذف طلب «${r.marketplace_addons?.name}» لـ ${r.organizations?.name}؟${warn}`)) return
+    setBusy(r.id); setMsg('')
+    const res = await fetch(`/api/admin/addon-requests?id=${r.id}`, { method: 'DELETE', headers: { 'x-admin-key': adminKey() } })
+    const j = await res.json().catch(() => ({}))
+    setBusy(null)
+    if (!res.ok) { setMsg(j.error || 'فشل الحذف'); return }
+    setRows(prev => prev.filter(x => x.id !== r.id)); setMsg('تم حذف الطلب')
+  }
 
   async function decide(r: any, action: 'approve' | 'reject') {
     let reason = ''
@@ -71,7 +82,13 @@ export default function AddonRequestsPage() {
                       <div style={{ color: C.text, fontSize: 15, fontWeight: 800 }}>{r.organizations?.name} <span style={{ color: C.text3, fontWeight: 600, fontSize: 13 }}>— من {PLAN_AR[r.current_plan] || '—'} إلى {PLAN_AR[r.target_plan]}</span></div>
                       <div style={{ color: C.text3, fontSize: 12, marginTop: 3 }}>{new Date(r.created_at).toLocaleString('ar-SA', { numberingSystem: 'latn' })}{r.bill_at_request != null ? ` · فاتورته وقت الطلب ${r.bill_at_request} ⃁/شهر` : ''}</div>
                     </div>
-                    <span style={{ color, fontSize: 12, fontWeight: 800, border: `1px solid ${color}`, borderRadius: 8, padding: '4px 10px', height: 'fit-content' }}>{label}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 'fit-content' }}>
+                    <span style={{ color, fontSize: 12, fontWeight: 800, border: `1px solid ${color}`, borderRadius: 8, padding: '4px 10px' }}>{label}</span>
+                    <button disabled={busy === r.id} onClick={() => remove(r)} title="حذف الطلب" aria-label="حذف الطلب"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'none', color: C.red, border: `1px solid ${C.red}`, borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      <Trash2 size={13} /> حذف
+                    </button>
+                  </div>
                   </div>
                   {r.reason && <div style={{ fontSize: 13, color: C.text2, marginTop: 8 }}>سبب الرفض: {r.reason}</div>}
                   {r.status === 'pending' && (
