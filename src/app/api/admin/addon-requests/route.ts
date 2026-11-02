@@ -74,3 +74,19 @@ export async function POST(req: Request) {
   await logAdminAction(admin, 'approve_addon_request', req0.org_id, orgName, { request_id: id, addon_name: addonName, quantity: res.quantity, prorated_amount: res.proratedAmount })
   return NextResponse.json({ success: true, proratedAmount: res.proratedAmount, proratedDays: res.proratedDays, quantity: res.quantity })
 }
+
+// حذف طلب من القائمة (التفعيل نفسه ما يتأثر — الاشتراك له جدوله)
+export async function DELETE(req: Request) {
+  const admin = await requirePermission(req.headers.get('x-admin-key'), 'manage_users')
+  if (!admin) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  const id = new URL(req.url).searchParams.get('id') || ''
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+  const db = sb()
+  const { data: r } = await db.from('addon_requests').select('id,org_id,status,quantity,organizations(name),marketplace_addons(name)').eq('id', id).maybeSingle()
+  if (!r) return NextResponse.json({ error: 'الطلب غير موجود' }, { status: 404 })
+  const { error } = await db.from('addon_requests').delete().eq('id', id)
+  if (error) return NextResponse.json({ error: 'تعذر الحذف' }, { status: 500 })
+  const x = r as any
+  await logAdminAction(admin, 'delete_addon_request', x.org_id, x.organizations?.name || null, { request_id: id, addon_name: x.marketplace_addons?.name, status: x.status, quantity: x.quantity })
+  return NextResponse.json({ success: true })
+}

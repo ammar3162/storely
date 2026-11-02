@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { Trash2 } from 'lucide-react'
 import { LEGACY_C } from '../_admin/kit'
 
 const C = LEGACY_C
@@ -34,6 +35,14 @@ export default function DemoRequestsPage() {
     setLoading(false)
   }
 
+  async function remove(r: any) {
+    if (!confirm(`حذف طلب العرض من ${r.first_name} ${r.last_name} (${r.business_name})؟\n\nينحذف من القائمة — بياناته تبقى بسجل الإدارة.`)) return
+    const res = await fetch(`/api/admin/demo-requests?id=${r.id}`, { method: 'DELETE', headers: { 'x-admin-key': key() } })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok) { alert(j.error || 'فشل الحذف'); return }
+    setRequests(prev => prev.filter(x => x.id !== r.id))
+  }
+
   async function updateStatus(id: string, status: string) {
     await fetch('/api/admin/demo-requests', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
@@ -61,8 +70,8 @@ export default function DemoRequestsPage() {
                 const isPaid = r.liveStatus && r.liveStatus.subscription_type && r.liveStatus.subscription_type !== 'trial'
                 return (
                 <div key={r.id} style={{background:C.card, border:`1px solid ${r.matched_org_id?C.green:C.border}`, borderRadius:12, padding:20}}>
-                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12}}>
-                    <div>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12, gap:10}}>
+                    <div style={{flex:1, minWidth:0}}>
                       <div style={{color:C.text, fontSize:16, fontWeight:700}}>{r.first_name} {r.last_name}</div>
                       <div style={{color:C.text3, fontSize:12, marginTop:2}}>{new Date(r.created_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
                     </div>
@@ -76,6 +85,10 @@ export default function DemoRequestsPage() {
                         {Object.entries(STATUS_LABELS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
                       </select>
                     )}
+                    <button onClick={()=>remove(r)} title="حذف الطلب" aria-label="حذف الطلب"
+                      style={{display:'inline-flex', alignItems:'center', gap:5, background:'none', color:C.red, border:`1px solid ${C.red}`, borderRadius:8, padding:'6px 10px', fontSize:12, fontWeight:800, cursor:'pointer', fontFamily:'inherit', flexShrink:0}}>
+                      <Trash2 size={13}/> حذف
+                    </button>
                   </div>
                   <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, fontSize:13, marginBottom:14}}>
                     <div style={{color:C.text2}}>🏢 <span style={{color:C.text}}>{r.business_name}</span></div>

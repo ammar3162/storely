@@ -127,6 +127,15 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
       expect((after as any).status).toBe('cancelled')
       expect((await call(extra.GET, 'GET', `/api/branches/extra?org_id=${orgId}`)).json.offer).toMatchObject({ plan: 'pro', total: 3, maxTotal: 5, price: 79 })
 
+      // الإدارة تحذف طلب من القائمة — الإضافة المفعّلة ما تتأثر، وبدون مفتاح الإدارة ينرفض
+      const { data: oneReq } = await db.from('addon_requests').select('id').eq('org_id', orgId).limit(1).single()
+      const subsBefore = (await db.from('org_addon_subscriptions').select('id', { count: 'exact', head: true }).eq('org_id', orgId)).count
+      const delReq = (key: string) => adminReqs.DELETE(new Request(`http://test/api/admin/addon-requests?id=${(oneReq as any).id}`, { method: 'DELETE', headers: { 'x-admin-key': key } }))
+      expect((await delReq('wrong')).status).toBe(401)
+      expect((await delReq('it-admin')).status).toBe(200)
+      expect((await db.from('addon_requests').select('id').eq('id', (oneReq as any).id).maybeSingle()).data).toBeNull()
+      expect((await db.from('org_addon_subscriptions').select('id', { count: 'exact', head: true }).eq('org_id', orgId)).count).toBe(subsBefore)
+
       await db.from('addon_requests').delete().eq('org_id', orgId)
       await db.from('org_addon_subscriptions').delete().eq('org_id', orgId)
       await db.from('staff_members').delete().eq('org_id', orgId).like('name', 'خطة %')
