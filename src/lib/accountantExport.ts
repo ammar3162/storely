@@ -49,7 +49,7 @@ export function taxInvoices(purchases: AccPurchase[]): TaxInvoice[] {
   }).sort((a, b) => a.date.localeCompare(b.date))
 }
 export type AccClosing = { date: string; branch?: string | null; staff: string | null; sales: number; mada: number; visa: number; mastercard: number; network: number
-  cash: number; expenses: number; difference: number; status: string | null; deficitReason: string | null; deficitDecision: string | null }
+  delivery?: number; cash: number; expenses: number; difference: number; status: string | null; deficitReason: string | null; deficitDecision: string | null }
 export type AccExpense = { date: string; branch?: string | null; staff: string | null; item: string; amount: number }
 export type AccPayroll = { name: string; basic: number; housing: number; transport: number; food: number; gross: number; overtime: number; bonuses: number
   deductions: number; latePenalties: number; advances: number; net: number
@@ -94,7 +94,7 @@ export function summarize(r: AccountantReport) {
     taxInvoices: tinv.length, taxComplete: tinv.filter(i => i.complete).length, taxVerified: tinv.filter(i => i.verified).length, taxMismatch: tinv.filter(i => i.mismatch).length,
     inputVatClaimable: claimable, inputVatReview: r2(inputVat - claimable),
     nonVatTotal: sum(r.purchases.filter(p => !(p.vat > 0)), p => p.total), nonVatCount: r.purchases.filter(p => !(p.vat > 0)).length,
-    sales, network: sum(c, x => x.network), cash: sum(c, x => x.cash), mada: sum(c, x => x.mada), visa: sum(c, x => x.visa), mastercard: sum(c, x => x.mastercard),
+    sales, network: sum(c, x => x.network), cash: sum(c, x => x.cash), mada: sum(c, x => x.mada), visa: sum(c, x => x.visa), mastercard: sum(c, x => x.mastercard), delivery: sum(c, x => x.delivery || 0),
     closingsCount: c.length,
     deficit: sum(c.filter(x => x.difference < 0), x => -x.difference), surplus: sum(c.filter(x => x.difference > 0), x => x.difference),
     purNet: sum(r.purchases, p => p.net), purVat: sum(r.purchases, p => p.vat), purTotal: sum(r.purchases, p => p.total),
@@ -225,10 +225,10 @@ export async function buildAccountantWorkbook(r: AccountantReport, opts: { water
   if (has('sales')) addTable(wb, 'المبيعات', [
     { header: 'التاريخ', key: 'date', width: 12 }, ...branchCol, { header: 'الكاشير', key: 'staff', width: 16 },
     { header: 'إجمالي المبيعات', key: 'sales', width: 15, money: true }, { header: 'مدى', key: 'mada', width: 12, money: true }, { header: 'فيزا', key: 'visa', width: 12, money: true },
-    { header: 'ماستركارد', key: 'mastercard', width: 12, money: true }, { header: 'الشبكة', key: 'network', width: 12, money: true }, { header: 'الكاش', key: 'cash', width: 12, money: true },
+    { header: 'ماستركارد', key: 'mastercard', width: 12, money: true }, { header: 'الشبكة', key: 'network', width: 12, money: true }, { header: 'التوصيل', key: 'delivery', width: 12, money: true }, { header: 'الكاش', key: 'cash', width: 12, money: true },
     { header: 'مصروفات', key: 'expenses', width: 11, money: true }, { header: 'الفرق', key: 'difference', width: 11, money: true }, { header: 'الحالة', key: 'status', width: 9 },
-  ], r.closings.map(c => ({ ...c, staff: c.staff || '—', status: CLOSING_STATUS[c.status || ''] || '—' })),
-  { date: 'الإجمالي', sales: t.sales, mada: t.mada, visa: t.visa, mastercard: t.mastercard, network: t.network, cash: t.cash, expenses: sum(r.closings, c => c.expenses), difference: sum(r.closings, c => c.difference) })
+  ], r.closings.map(c => ({ ...c, delivery: c.delivery || 0, staff: c.staff || '—', status: CLOSING_STATUS[c.status || ''] || '—' })),
+  { date: 'الإجمالي', sales: t.sales, mada: t.mada, visa: t.visa, mastercard: t.mastercard, network: t.network, delivery: t.delivery, cash: t.cash, expenses: sum(r.closings, c => c.expenses), difference: sum(r.closings, c => c.difference) })
 
   // الفواتير الضريبية تهم المنشأة المسجلة بس (هي اللي تخصم ضريبة المشتريات)
   if ((has('purchases') || has('vat')) && r.vatRegistered) {

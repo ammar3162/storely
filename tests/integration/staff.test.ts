@@ -259,4 +259,65 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
       expect(((await db.from('staff_members').select('deactivated_at').eq('id', sid).single()).data as any).deactivated_at).toBeNull()
     })
   })
+
+  describe('cashier closing with delivery apps', () => {
+    it('owner picks the apps, cashier enters each app amount, expected cash drops by the delivery, and edits recalculate', async () => {
+      process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
+      const { generateStaffToken } = await import('@/lib/staffAuth')
+      const orgSettings = await import('@/app/api/org-settings/route')
+      const staffOrg = await import('@/app/api/staff-org/route')
+      const closing = await import('@/app/api/cashier-closing/route')
+      const { editClosing } = await import('@/lib/cashierClosingEdit')
+
+      const set = await call(orgSettings.PATCH, 'PATCH', '/api/org-settings', { org_id: orgId, delivery_apps: ['هنقرستيشن', ' جاهز ', 'جاهز'] })
+      expect(set.status).toBe(200)
+      expect(((await db.from('organizations').select('delivery_apps').eq('id', orgId).single()).data as any).delivery_apps).toEqual(['هنقرستيشن', 'جاهز'])
+      expect((await call(orgSettings.PATCH, 'PATCH', '/api/org-settings', { org_id: orgId, delivery_apps: 'x' })).status).toBe(400)
+
+      const { data: st } = await db.from('staff_members').insert({
+        org_id: orgId, branch_id: branchA, name: 'كاشير توصيل', phone: `9665${String(stamp + 11).slice(-8)}`, pin: 'x', is_active: true, role: 'cashier',
+      } as any).select('id').single()
+      const token = generateStaffToken((st as any).id, orgId, branchA)
+      const withToken = (handler: any, method: string, body?: unknown) => handler(new Request('http://test/api', {
+        method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: body ? JSON.stringify(body) : undefined,
+      })).then(async (r: Response) => ({ status: r.status, json: await r.json() as any }))
+
+      expect((await withToken(staffOrg.GET, 'GET')).json.delivery_apps).toEqual(['هنقرستيشن', 'جاهز'])
+
+      // مبيعات 5000 = شبكة 2000 + هنقر 700 + جاهز 500 + كاش 1800 — وتطبيق مو بقائمة المالك ينرفض بصمت
+      const r = await withToken(closing.POST, 'POST', {
+        total_sales: 5000, mada_amount: 2000, cash_amount: 1800, purchases: [],
+        delivery: [{ name: 'هنقرستيشن', amount: 700 }, { name: 'جاهز', amount: 500 }, { name: 'تطبيق غريب', amount: 999 }],
+      })
+      expect(r.status).toBe(200)
+      const id = r.json.closing.id
+      const saved = (await db.from('cashier_closings').select('delivery,delivery_amount,expected_cash,difference,status,network_amount').eq('id', id).single()).data as any
+      expect(saved.delivery).toEqual([{ name: 'هنقرستيشن', amount: 700 }, { name: 'جاهز', amount: 500 }])
+      expect(Number(saved.delivery_amount)).toBe(1200)
+      expect(Number(saved.expected_cash)).toBe(1800)
+      expect(saved.status).toBe('balanced')
+
+      const bad = await withToken(closing.POST, 'POST', { total_sales: 100, cash_amount: 100, delivery: [{ name: 'جاهز', amount: -3 }] })
+      expect(bad.status).toBe(400)
+
+      // المالك شال «جاهز» من قائمته — التعديل لسا يقدر يغيّر مبلغه بالإقفال القديم
+      await call(orgSettings.PATCH, 'PATCH', '/api/org-settings', { org_id: orgId, delivery_apps: ['هنقرستيشن'] })
+      const e = await editClosing(db as any, orgId, id, { delivery: [{ name: 'هنقرستيشن', amount: 700 }, { name: 'جاهز', amount: 300 }], deficit_reason: 'اختبار العجز' }, 'اختبار')
+      expect(e.ok).toBe(true)
+      const after = (await db.from('cashier_closings').select('delivery_amount,difference,status').eq('id', id).single()).data as any
+      expect(Number(after.delivery_amount)).toBe(1000)
+      expect(Number(after.difference)).toBe(-200)
+      expect(after.status).toBe('deficit')
+      // تعديل بدون حقل التوصيل يحافظ على المبالغ
+      const e2 = await editClosing(db as any, orgId, id, { cash_amount: 2000 }, 'اختبار')
+      expect(e2.ok).toBe(true)
+      const after2 = (await db.from('cashier_closings').select('delivery_amount,status').eq('id', id).single()).data as any
+      expect(Number(after2.delivery_amount)).toBe(1000)
+      expect(after2.status).toBe('balanced')
+
+      const list = await call(closing.GET, 'GET', `/api/cashier-closing?org_id=${orgId}`)
+      expect(list.json.closings.find((c: any) => c.id === id).delivery_amount).toBe(1000)
+    })
+  })
 })
+

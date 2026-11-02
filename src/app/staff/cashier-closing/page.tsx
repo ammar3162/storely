@@ -53,6 +53,10 @@ const CUI: Record<string,Record<'ar'|'en',string>> = {
   mastercard:       {ar:'ماستركارد',en:'Mastercard'},
   networkTotal:     {ar:'إجمالي الشبكة',en:'Network Total'},
   networkErrorMsg:  {ar:'إجمالي الشبكة أكبر من إجمالي المبيعات — راجع الأرقام',en:'Network total exceeds sales total — check the numbers'},
+  deliveryLabel:    {ar:'تطبيقات التوصيل — مبلغ كل تطبيق من تقرير النظام',en:'Delivery apps — each app amount from the system report'},
+  deliveryTotal:    {ar:'إجمالي التوصيل',en:'Delivery Total'},
+  deliveryHint:     {ar:'فلوسها ما تدخل الدرج، فتنخصم من الكاش المتوقع',en:"This money doesn't go into the drawer, so it's deducted from expected cash"},
+  overSalesMsg:     {ar:'الشبكة والتوصيل مع بعض أكبر من إجمالي المبيعات — راجع الأرقام',en:'Network and delivery together exceed total sales — check the numbers'},
   cashInDrawer:     {ar:'الكاش الفعلي بالدرج',en:'Actual Cash in Drawer'},
   expectedCashPreview: {ar:'الكاش المتوقع (معاينة)',en:'Expected Cash (preview)'},
   step2Title:       {ar:'هل فيه مبالغ اتسحبت من الكاش لمشتريات؟',en:'Was any cash withdrawn for purchases?'},
@@ -196,6 +200,8 @@ export default function CashierClosingPage() {
   const [visaAmount, setVisaAmount] = useState('')
   const [mastercardAmount, setMastercardAmount] = useState('')
   const [cashAmount, setCashAmount] = useState('')
+  const [deliveryApps, setDeliveryApps] = useState<string[]>([])   // من إعدادات المالك
+  const [deliveryAmounts, setDeliveryAmounts] = useState<Record<string,string>>({})
   const [hasPurchases, setHasPurchases] = useState<'yes'|'no'|null>(null)
   const [purchases, setPurchases] = useState<Purchase[]>([{amount:'',reason:''}])
   const [deficitChoice, setDeficitChoice] = useState('')   // مفتاح من DEFICIT_REASONS
@@ -223,6 +229,7 @@ export default function CashierClosingPage() {
         if(org?.logo_url) setOrgLogo(org.logo_url)
         if(org?.business_day_start_hour != null) setDayStartHour(org.business_day_start_hour)
         if(org?.currency) setCurr(currencySymbol(org.currency))
+        if(Array.isArray(org?.delivery_apps)) setDeliveryApps(org.delivery_apps)
         // نفس قرار الخادم: الشاملة/المتقدمة أو إضافة «إقفال الكاشير»
         if(org && org.cashier_feature===false) setLocked(true)
       })
@@ -289,11 +296,14 @@ export default function CashierClosingPage() {
   const mastercard = Number(mastercardAmount)||0
   const network = mada + visa + mastercard
   const cash = Number(cashAmount)||0
+  const deliveryList = deliveryApps.map(name=>({name,amount:Number(deliveryAmounts[name])||0})).filter(d=>d.amount>0)
+  const delivery = Math.round(deliveryList.reduce((s,d)=>s+d.amount,0)*100)/100
   const anyNetworkEntered = !!(madaAmount || visaAmount || mastercardAmount)
-  const networkError = (totalSales && anyNetworkEntered && network > sales) ? ct('networkErrorMsg',lang) : ''
+  const networkError = (totalSales && anyNetworkEntered && network > sales) ? ct('networkErrorMsg',lang)
+    : (totalSales && delivery > 0 && network + delivery > sales) ? ct('overSalesMsg',lang) : ''
   const validPurchasesNow = hasPurchases==='yes' ? purchases.filter(p=>Number(p.amount)>0) : []
   const totalPurchasesNow = validPurchasesNow.reduce((sum,p)=>sum+(Number(p.amount)||0),0)
-  const expectedCash = sales - network
+  const expectedCash = sales - network - delivery
   // المسحوبات لا تؤثر على العجز/الزيادة — تُعرض للسجل فقط
   const cashAfterWithdrawal = cash - totalPurchasesNow
   const difference = cash - expectedCash
@@ -342,7 +352,7 @@ export default function CashierClosingPage() {
         body:JSON.stringify({
           total_sales: sales, network_amount: network,
           mada_amount: mada, visa_amount: visa, mastercard_amount: mastercard,
-          cash_amount: cash, purchases: validPurchases,
+          cash_amount: cash, purchases: validPurchases, delivery: deliveryList,
           network_image: networkImage, sales_image: salesImage,
           deficit_reason: status==='deficit' ? deficitReason : null,
         })
@@ -367,7 +377,7 @@ export default function CashierClosingPage() {
   }
 
   function resetForm() {
-    setTotalSales(''); setMadaAmount(''); setVisaAmount(''); setMastercardAmount(''); setCashAmount('')
+    setTotalSales(''); setMadaAmount(''); setVisaAmount(''); setMastercardAmount(''); setCashAmount(''); setDeliveryAmounts({})
     setHasPurchases(null); setPurchases([{amount:'',reason:''}])
     setNetworkImage(''); setSalesImage(''); setDeficitChoice(''); setDeficitNote('')
     setStep(1); setSaved(false)
@@ -463,8 +473,29 @@ export default function CashierClosingPage() {
                       <span style={{color:'#2563eb',direction:'ltr' as const}}>{fmt(network)} {curr}</span>
                     </div>
                   )}
-                  {networkError && <div style={{fontSize:11,color:'#dc2626',fontWeight:700,marginTop:6,display:'flex',alignItems:'center',gap:4}}>⚠️ {ct('networkErrorMsg',lang)}</div>}
+                  {networkError && <div style={{fontSize:11,color:'#dc2626',fontWeight:700,marginTop:6,display:'flex',alignItems:'center',gap:4}}>⚠️ {networkError}</div>}
                 </div>
+                {deliveryApps.length>0 && (
+                  <div style={{marginBottom:16}}>
+                    <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>{ct('deliveryLabel',lang)}</label>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(120px,1fr))',gap:8}}>
+                      {deliveryApps.map(name=>(
+                        <div key={name}>
+                          <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const,whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{name}</div>
+                          <NumberInput value={deliveryAmounts[name]||''} onChange={e=>{const v=e.target.value; setDeliveryAmounts(prev=>({...prev,[name]:v}))}} placeholder="0.00"
+                            style={{width:'100%',padding:'11px 8px',border:'1.5px solid #e5e5e2',borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'center' as const,background:'white'}}/>
+                        </div>
+                      ))}
+                    </div>
+                    {delivery>0 && (
+                      <div style={{display:'flex',justifyContent:'space-between',marginTop:8,padding:'8px 10px',background:'#fff7ed',borderRadius:8,fontSize:11,fontWeight:700}}>
+                        <span style={{color:'#c2410c'}}>{ct('deliveryTotal',lang)}</span>
+                        <span style={{color:'#c2410c',direction:'ltr' as const}}>{fmt(delivery)} {curr}</span>
+                      </div>
+                    )}
+                    <div style={{fontSize:10.5,color:'#a8a7a1',marginTop:6}}>{ct('deliveryHint',lang)}</div>
+                  </div>
+                )}
                 <div style={{marginBottom: (totalSales && anyNetworkEntered && !networkError) ? 16 : 0}}>
                   <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>{ct('cashInDrawer',lang)}</label>
                   <MoneyInput value={cashAmount} onChange={setCashAmount} placeholder="0.00" icon="💵" iconBg="#fffbeb" iconColor="#d97706" currency={curr}/>
@@ -574,6 +605,7 @@ export default function CashierClosingPage() {
                   ...(mada>0?[{label:`— ${ct('mada',lang)}`,value:mada,sign:'−'}]:[]),
                   ...(visa>0?[{label:`— ${ct('visa',lang)}`,value:visa,sign:'−'}]:[]),
                   ...(mastercard>0?[{label:`— ${ct('mastercard',lang)}`,value:mastercard,sign:'−'}]:[]),
+                  ...deliveryList.map(d=>({label:`— ${d.name}`,value:d.amount,sign:'−'})),
                 ].map((r,i)=>(
                   <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:13,borderBottom:'1px dashed #eeeeeb'}}>
                     <span style={{color:'#8b8a84',fontWeight:600}}>{r.label}</span>
