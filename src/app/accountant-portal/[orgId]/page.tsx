@@ -7,8 +7,10 @@ import { PortalShell, PeriodBar, presetRange } from '@/components/accountant/Por
 import AccountantReportView from '@/components/accountant/AccountantReportView'
 import AccountantRequestsPanel, { RequestDialog, type RequestTarget } from '@/components/accountant/AccountantRequests'
 import PortalLocks from '@/components/accountant/PortalLocks'
+import CashierClosingEditor from '@/components/CashierClosingEditor'
+import PurchaseEditDialog, { type PurchaseEditTarget } from '@/components/accountant/PurchaseEditDialog'
 
-// صفحة منشأة في بوابة المحاسب — قراءة فقط، بالأقسام اللي سمح فيها المالك
+// صفحة منشأة في بوابة المحاسب — بالأقسام اللي سمح فيها المالك، والمحاسب يقدر يعدّل الإقفالات والمصروفات والمشتريات (يطلع «معدّل من المحاسب»)
 type Tab = 'report' | 'requests' | 'locks'
 export default function PortalClientPage() {
   const orgId = useParams().orgId as string
@@ -18,6 +20,9 @@ export default function PortalClientPage() {
   const [error, setError] = useState('')
   const [reqTarget, setReqTarget] = useState<RequestTarget | null | undefined>(undefined)   // undefined = مقفل، null = طلب عام
   const [reqKey, setReqKey] = useState(0)
+  const [reload, setReload] = useState(0)
+  const [editClosing, setEditClosing] = useState<any>(null)
+  const [editPurchase, setEditPurchase] = useState<PurchaseEditTarget | null>(null)
 
   // الفترة والتبويب من الرابط (بعد التحميل — عشان ما يختلف عن السيرفر)
   useEffect(() => {
@@ -30,7 +35,15 @@ export default function PortalClientPage() {
     setData(null); setError('')
     fetch(`/api/accountant-portal/report?org_id=${orgId}&from=${range.from}&to=${range.to}`).then(r => r.json())
       .then(j => j.success ? setData(j) : setError(j.error || 'تعذر التحميل')).catch(() => setError('تأكد من الإنترنت'))
-  }, [orgId, range])
+  }, [orgId, range, reload])
+
+  // تعديل المحاسب يتطبّق على طول — بعده نعيد تحميل التقرير
+  const sendEdit = (payload: Record<string, unknown>) => fetch('/api/accountant-portal/edit', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ org_id: orgId, ...payload }) }).then(r => r.json()).catch(() => ({ error: 'تأكد من الإنترنت' }))
+  // بيانات الإقفال بنفس شكل محرر الإقفال
+  const closingForEditor = (c: any) => ({ id: c.id, staff_name: c.staff, closing_date: c.date, total_sales: c.sales, mada_amount: c.mada, visa_amount: c.visa,
+    mastercard_amount: c.mastercard, network_amount: c.network, cash_amount: c.cash, purchases: c.drawer || [], delivery: c.deliveryApps || [],
+    deficit_reason: c.deficitReason, deficit_decision: c.deficitDecision, status: c.status })
 
   const name = data?.report?.orgName || ''
   const xlsx = range ? `/api/accountant-portal/report?org_id=${orgId}&from=${range.from}&to=${range.to}&format=xlsx` : '#'
@@ -68,11 +81,18 @@ export default function PortalClientPage() {
           : !data ? <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={24} color={colors.primary} className="spin" /></div>
           : <AccountantReportView data={data} kicker="بوابة المحاسب" hideHeader downloadHref={xlsx}
               onRequest={inv => setReqTarget({ invoice_group: inv.group, purchase_id: inv.firstId, label: `${inv.supplier || '—'} · ${inv.date} · ${Number(inv.total).toFixed(2)}${inv.invoiceNumber ? ` · ${inv.invoiceNumber}` : ''}` })}
-              onRequestMissing={requestMissing} />}
+              onRequestMissing={requestMissing}
+              onEditClosing={c => setEditClosing(closingForEditor(c))} onEditPurchase={setEditPurchase} />}
       </>}
       {tab === 'requests' && <AccountantRequestsPanel orgId={orgId} refreshKey={reqKey} onNew={() => setReqTarget(null)} />}
       {tab === 'locks' && <PortalLocks orgId={orgId} />}
 
+      {editClosing && <CashierClosingEditor orgId={orgId} closing={editClosing} curr={data?.report?.currency || '⃁'} onClose={() => setEditClosing(null)}
+        onSaved={() => { setEditClosing(null); setReload(x => x + 1) }}
+        submit={payload => sendEdit({ kind: 'closing', id: editClosing.id, total_sales: payload.total_sales, mada_amount: payload.mada_amount, visa_amount: payload.visa_amount,
+          mastercard_amount: payload.mastercard_amount, cash_amount: payload.cash_amount, purchases: payload.purchases, delivery: payload.delivery, deficit_reason: payload.deficit_reason })} />}
+      {editPurchase && <PurchaseEditDialog target={editPurchase} onClose={() => setEditPurchase(null)}
+        submit={async payload => { const j = await sendEdit({ kind: 'purchase', id: editPurchase.id, ...payload }); if (j.success) setReload(x => x + 1); return j }} />}
       {reqTarget !== undefined && <RequestDialog orgId={orgId} target={reqTarget} onClose={() => setReqTarget(undefined)} onSent={() => { setReqKey(k => k + 1); setTab('requests') }} />}
     </PortalShell>
   )

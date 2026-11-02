@@ -16,15 +16,19 @@ export const ACC_SECTIONS: { key: AccSection; label: string; hint: string }[] = 
 
 export type AccPurchase = { date: string; branch?: string | null; supplier: string | null; name: string; category: string | null; qty: number | null; unit: string | null
   net: number; vat: number; total: number; paid: boolean; invoiceUrl: string | null
-  id?: string; invoiceNumber?: string | null; supplierVat?: string | null; group?: string | null; verified?: boolean; mismatch?: boolean }
+  id?: string; invoiceNumber?: string | null; supplierVat?: string | null; group?: string | null; verified?: boolean; mismatch?: boolean
+  hasVat?: boolean; editedSource?: string | null }   // editedSource: owner/accountant لو انعدّل
 
 // فاتورة ضريبية = أصناف نفس الفاتورة مجموعة بسطر واحد (اللي فيها ضريبة بس)
 export type TaxInvoice = { date: string; branch?: string | null; invoiceNumber: string | null; supplier: string | null; supplierVat: string | null
   items: number; net: number; vat: number; total: number; invoiceUrl: string | null; complete: boolean; missing: string[]
   verified: boolean; mismatch: boolean     // verified = من باركود الهيئة · mismatch = المسجّل أكبر من الأصلية
-  group: string | null; firstId: string | null }   // لربط طلبات المحاسب بالفاتورة
+  group: string | null; firstId: string | null; editedSource?: string | null }   // لربط طلبات المحاسب بالفاتورة
 
 const VAT_RE = /^3\d{13}3$/
+/** علامة التعديل بالتقرير والإكسل */
+export const editedLabel = (src: string | null | undefined) => src === 'accountant' ? 'معدّل من المحاسب' : src === 'owner' ? 'معدّل من المنشأة' : ''
+
 export function taxInvoices(purchases: AccPurchase[]): TaxInvoice[] {
   const map = new Map<string, TaxInvoice>()
   for (const p of purchases) {
@@ -32,9 +36,10 @@ export function taxInvoices(purchases: AccPurchase[]): TaxInvoice[] {
     // الفواتير الجديدة مربوطة بـ group؛ القديمة: نفس الصورة + المورد + التاريخ = نفس الفاتورة
     const key = p.group || `${p.date}|${p.supplier || ''}|${p.invoiceUrl || p.id || Math.random()}`
     const e = map.get(key) || { date: p.date, branch: p.branch, invoiceNumber: p.invoiceNumber || null, supplier: p.supplier, supplierVat: p.supplierVat || null,
-      items: 0, net: 0, vat: 0, total: 0, invoiceUrl: p.invoiceUrl, complete: false, missing: [], verified: false, mismatch: false, group: p.group || null, firstId: p.id || null }
+      items: 0, net: 0, vat: 0, total: 0, invoiceUrl: p.invoiceUrl, complete: false, missing: [], verified: false, mismatch: false, group: p.group || null, firstId: p.id || null, editedSource: null as string | null }
     e.items++; e.net = r2(e.net + p.net); e.vat = r2(e.vat + p.vat); e.total = r2(e.total + p.total)
     e.verified ||= !!p.verified; e.mismatch ||= !!p.mismatch
+    if (p.editedSource && e.editedSource !== 'accountant') e.editedSource = p.editedSource
     e.invoiceNumber ||= p.invoiceNumber || null; e.supplierVat ||= p.supplierVat || null; e.invoiceUrl ||= p.invoiceUrl
     map.set(key, e)
   }
@@ -49,7 +54,7 @@ export function taxInvoices(purchases: AccPurchase[]): TaxInvoice[] {
   }).sort((a, b) => a.date.localeCompare(b.date))
 }
 export type AccClosing = { date: string; branch?: string | null; staff: string | null; sales: number; mada: number; visa: number; mastercard: number; network: number
-  delivery?: number; cash: number; expenses: number; difference: number; status: string | null; deficitReason: string | null; deficitDecision: string | null }
+  delivery?: number; cash: number; id?: string; editedSource?: string | null; expenses: number; difference: number; status: string | null; deficitReason: string | null; deficitDecision: string | null }
 export type AccExpense = { date: string; branch?: string | null; staff: string | null; item: string; amount: number }
 export type AccPayroll = { name: string; basic: number; housing: number; transport: number; food: number; gross: number; overtime: number; bonuses: number
   deductions: number; latePenalties: number; advances: number; net: number
@@ -227,7 +232,8 @@ export async function buildAccountantWorkbook(r: AccountantReport, opts: { water
     { header: 'إجمالي المبيعات', key: 'sales', width: 15, money: true }, { header: 'مدى', key: 'mada', width: 12, money: true }, { header: 'فيزا', key: 'visa', width: 12, money: true },
     { header: 'ماستركارد', key: 'mastercard', width: 12, money: true }, { header: 'الشبكة', key: 'network', width: 12, money: true }, { header: 'التوصيل', key: 'delivery', width: 12, money: true }, { header: 'الكاش', key: 'cash', width: 12, money: true },
     { header: 'مصروفات', key: 'expenses', width: 11, money: true }, { header: 'الفرق', key: 'difference', width: 11, money: true }, { header: 'الحالة', key: 'status', width: 9 },
-  ], r.closings.map(c => ({ ...c, delivery: c.delivery || 0, staff: c.staff || '—', status: CLOSING_STATUS[c.status || ''] || '—' })),
+    { header: 'التعديل', key: 'edited', width: 17 },
+  ], r.closings.map(c => ({ ...c, delivery: c.delivery || 0, staff: c.staff || '—', status: CLOSING_STATUS[c.status || ''] || '—', edited: editedLabel(c.editedSource) })),
   { date: 'الإجمالي', sales: t.sales, mada: t.mada, visa: t.visa, mastercard: t.mastercard, network: t.network, delivery: t.delivery, cash: t.cash, expenses: sum(r.closings, c => c.expenses), difference: sum(r.closings, c => c.difference) })
 
   // الفواتير الضريبية تهم المنشأة المسجلة بس (هي اللي تخصم ضريبة المشتريات)
@@ -238,7 +244,8 @@ export async function buildAccountantWorkbook(r: AccountantReport, opts: { water
       { header: 'الرقم الضريبي للمورد', key: 'supplierVat', width: 19 }, { header: 'أصناف', key: 'items', width: 7 },
       { header: 'قبل الضريبة', key: 'net', width: 13, money: true }, { header: 'الضريبة', key: 'vat', width: 11, money: true }, { header: 'الإجمالي', key: 'total', width: 13, money: true },
       { header: 'الحالة', key: 'status', width: 11 }, { header: 'الناقص / تنبيه', key: 'missingText', width: 34 }, { header: 'صورة الفاتورة', key: 'invoice', width: 15 },
-    ], list.map(i => ({ ...i, invoiceNumber: i.invoiceNumber || '—', supplier: i.supplier || '—', supplierVat: i.supplierVat || '—',
+      { header: 'التعديل', key: 'edited', width: 17 },
+    ], list.map(i => ({ ...i, edited: editedLabel(i.editedSource), invoiceNumber: i.invoiceNumber || '—', supplier: i.supplier || '—', supplierVat: i.supplierVat || '—',
       status: !i.complete ? 'ناقصة' : i.verified ? 'موثقة' : 'مكتملة',
       missingText: [i.mismatch && '⚠️ المسجّل أكبر من الفاتورة الأصلية', i.missing.join('، ')].filter(Boolean).join(' · '), invoice: null })),
     { date: 'الإجمالي', net: sum(list, i => i.net), vat: sum(list, i => i.vat), total: sum(list, i => i.total) }, 'ما فيه فواتير ضريبية بهذي الفترة')
@@ -264,8 +271,8 @@ export async function buildAccountantWorkbook(r: AccountantReport, opts: { water
       { header: 'التاريخ', key: 'date', width: 12 }, ...branchCol, { header: 'المورد', key: 'supplier', width: 20 }, { header: 'الصنف', key: 'name', width: 26 },
       { header: 'الفئة', key: 'category', width: 14 }, { header: 'الكمية', key: 'qty', width: 9 }, { header: 'الوحدة', key: 'unit', width: 9 },
       { header: 'قبل الضريبة', key: 'net', width: 13, money: true }, { header: 'الضريبة', key: 'vat', width: 11, money: true }, { header: 'الإجمالي', key: 'total', width: 13, money: true },
-      { header: 'الدفع', key: 'paid', width: 10 }, { header: 'صورة الفاتورة', key: 'invoice', width: 16 },
-    ], r.purchases.map(p => ({ ...p, supplier: p.supplier || '—', category: p.category || '—', paid: p.paid ? 'مدفوعة' : 'آجلة', invoice: null })),
+      { header: 'الدفع', key: 'paid', width: 10 }, { header: 'صورة الفاتورة', key: 'invoice', width: 16 }, { header: 'التعديل', key: 'edited', width: 17 },
+    ], r.purchases.map(p => ({ ...p, supplier: p.supplier || '—', category: p.category || '—', paid: p.paid ? 'مدفوعة' : 'آجلة', invoice: null, edited: editedLabel(p.editedSource) })),
     { date: 'الإجمالي', net: t.purNet, vat: t.purVat, total: t.purTotal })
     r.purchases.forEach((p, i) => {
       if (!p.invoiceUrl || !/^https:\/\//.test(p.invoiceUrl)) return

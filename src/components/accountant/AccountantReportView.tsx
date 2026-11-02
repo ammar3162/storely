@@ -42,7 +42,17 @@ function Table({ head, rows, moneyCols = [] }: { head: string[]; rows: (string |
   )
 }
 
-export default function AccountantReportView({ data, downloadHref, kicker = 'تقرير المحاسب', onRequest, onRequestMissing, hideHeader }: { data: any; downloadHref: string; kicker?: string; onRequest?: (inv: any) => void; onRequestMissing?: (invs: any[]) => void; hideHeader?: boolean }) {
+// شارة التعديل جنب التاريخ: «معدّل من المحاسب» أو «معدّل من المنشأة»
+function Edited({ date, src }: { date: string; src?: string | null }) {
+  if (!src) return <>{date}</>
+  const acc = src === 'accountant'
+  return <>{date}<div style={{ marginTop: 3 }}><span style={{ fontSize: 10.5, fontWeight: 800, borderRadius: 999, padding: '1px 7px', whiteSpace: 'nowrap',
+    color: acc ? '#7c3aed' : colors.warning, background: acc ? '#f5f3ff' : colors.warningLight }}>{acc ? 'معدّل من المحاسب' : 'معدّل من المنشأة'}</span></div></>
+}
+const editBtn = (onClick: () => void) => <button onClick={onClick} style={{ fontSize: 12, fontWeight: 800, color: colors.primary, background: '#fff', border: `1px solid ${colors.primaryBorder}`, borderRadius: 8, padding: '4px 9px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>تعديل</button>
+
+export default function AccountantReportView({ data, downloadHref, kicker = 'تقرير المحاسب', onRequest, onRequestMissing, hideHeader, onEditClosing, onEditPurchase }: { data: any; downloadHref: string; kicker?: string; onRequest?: (inv: any) => void; onRequestMissing?: (invs: any[]) => void; hideHeader?: boolean
+  onEditClosing?: (c: any) => void; onEditPurchase?: (t: { id: string; mode: 'invoice' | 'line'; label: string; amount?: number; hasVat?: boolean; invoiceNumber?: string | null; supplierVat?: string | null }) => void }) {
   const r = data.report, t = data.totals
   // «اعرض الناقصة»: من تنبيه الإقرار ينزل لجدول الفواتير الضريبية ويعرض الناقصة بس
   const [onlyMissing, setOnlyMissing] = useState(false)
@@ -70,8 +80,10 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
     <div className="rv-grid">
     {has('sales') && <Card wide title="المبيعات">
       <Lines rows={[['إجمالي المبيعات', t.sales, true], ['مدى', t.mada], ['فيزا', t.visa], ['ماستركارد', t.mastercard], ...(t.delivery > 0 ? [['تطبيقات التوصيل', t.delivery] as [string, number]] : []), ['الكاش', t.cash]]} />
-      <Table head={['التاريخ', ...(multi ? ['الفرع'] : []), 'الكاشير', 'المبيعات', 'الشبكة', 'الكاش']} moneyCols={multi ? [3, 4, 5] : [2, 3, 4]}
-        rows={r.closings.map((c: any) => [c.date, ...(multi ? [c.branch] : []), c.staff || '—', c.sales, c.network, c.cash])} />
+      <Table head={['التاريخ', ...(multi ? ['الفرع'] : []), 'الكاشير', 'المبيعات', 'الشبكة', ...(t.delivery > 0 ? ['التوصيل'] : []), 'الكاش', ...(onEditClosing ? [''] : [])]}
+        moneyCols={(multi ? [3, 4, 5] : [2, 3, 4]).concat(t.delivery > 0 ? [multi ? 6 : 5] : [])}
+        rows={r.closings.map((c: any) => [<Edited key="d" date={c.date} src={c.editedSource} />, ...(multi ? [c.branch] : []), c.staff || '—', c.sales, c.network, ...(t.delivery > 0 ? [c.delivery || 0] : []), c.cash,
+          ...(onEditClosing && c.id ? [editBtn(() => onEditClosing(c))] : onEditClosing ? [''] : [])])} />
     </Card>}
 
     {(has('purchases') || has('vat')) && r.vatRegistered && <div id="rv-tax" className="rv-wide" style={{ scrollMarginTop: 16 }}><Card wide title={`الفواتير الضريبية (${invoicesLabel(t.taxInvoices)})`}>
@@ -85,16 +97,17 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
         {onRequestMissing && missing.length > 0 && <button onClick={() => onRequestMissing(missing)} style={btn(true)}>اطلب من المنشأة تكمّلها</button>}
         <button onClick={() => setOnlyMissing(false)} style={btn(false)}>اعرض الكل</button>
       </div>}
-      <Table head={['التاريخ', 'رقم الفاتورة', 'المورد', 'الرقم الضريبي', 'الضريبة', 'الإجمالي', 'الحالة', 'الفاتورة', ...(onRequest ? [''] : [])]} moneyCols={[4, 5]}
-        rows={(onlyMissing ? missing : allTax).map(i => [i.date, i.invoiceNumber || '—', i.supplier || '—', i.supplierVat || '—', i.vat, i.total, (i.mismatch ? '⚠️ أكبر من الأصلية · ' : '') + (!i.complete ? `ناقص: ${i.missing.filter(m => m !== 'صورة الفاتورة').join('، ')}` : i.verified ? '✓ موثقة' : '✓ مكتملة'),
+      <Table head={['التاريخ', 'رقم الفاتورة', 'المورد', 'الرقم الضريبي', 'الضريبة', 'الإجمالي', 'الحالة', 'الفاتورة', ...(onRequest ? [''] : []), ...(onEditPurchase ? [''] : [])]} moneyCols={[4, 5]}
+        rows={(onlyMissing ? missing : allTax).map(i => [<Edited key="d" date={i.date} src={i.editedSource} />, i.invoiceNumber || '—', i.supplier || '—', i.supplierVat || '—', i.vat, i.total, (i.mismatch ? '⚠️ أكبر من الأصلية · ' : '') + (!i.complete ? `ناقص: ${i.missing.filter(m => m !== 'صورة الفاتورة').join('، ')}` : i.verified ? '✓ موثقة' : '✓ مكتملة'),
           i.invoiceUrl && /^https:\/\//.test(i.invoiceUrl) ? <a href={i.invoiceUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>عرض</a> : '—',
-          ...(onRequest ? [<button key="rq" onClick={() => onRequest(i)} style={{ fontSize: 12, fontWeight: 800, color: colors.primary, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, borderRadius: 8, padding: '4px 9px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>اطلب</button>] : [])])} />
+          ...(onRequest ? [<button key="rq" onClick={() => onRequest(i)} style={{ fontSize: 12, fontWeight: 800, color: colors.primary, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, borderRadius: 8, padding: '4px 9px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>اطلب</button>] : []), ...(onEditPurchase ? [i.firstId ? editBtn(() => onEditPurchase({ id: i.firstId!, mode: 'invoice', label: `${i.supplier || '—'} · ${i.date}`, invoiceNumber: i.invoiceNumber, supplierVat: i.supplierVat })) : ''] : [])])} />
     </Card></div>}
 
     {has('purchases') && <Card wide title={`المشتريات (${invoicesLabel(t.invoices)})`}>
       <Lines rows={[['قبل الضريبة', t.purNet], ['الضريبة', t.purVat], ['الإجمالي', t.purTotal, true], ['منها آجلة', t.purUnpaid]]} />
-      <Table head={['التاريخ', ...(multi ? ['الفرع'] : []), 'المورد', 'الصنف', 'قبل الضريبة', 'الضريبة', 'الإجمالي', 'الدفع']} moneyCols={multi ? [4, 5, 6] : [3, 4, 5]}
-        rows={r.purchases.map((p: any) => [p.date, ...(multi ? [p.branch] : []), p.supplier || '—', p.name, p.net, p.vat, p.total, p.paid ? 'مدفوعة' : 'آجلة'])} />
+      <Table head={['التاريخ', ...(multi ? ['الفرع'] : []), 'المورد', 'الصنف', 'قبل الضريبة', 'الضريبة', 'الإجمالي', 'الدفع', ...(onEditPurchase ? [''] : [])]} moneyCols={multi ? [4, 5, 6] : [3, 4, 5]}
+        rows={r.purchases.map((p: any) => [<Edited key="d" date={p.date} src={p.editedSource} />, ...(multi ? [p.branch] : []), p.supplier || '—', p.name, p.net, p.vat, p.total, p.paid ? 'مدفوعة' : 'آجلة',
+          ...(onEditPurchase ? [p.id ? editBtn(() => onEditPurchase({ id: p.id, mode: 'line', label: `${p.supplier || '—'} · ${p.name}`, amount: p.net, hasVat: p.hasVat !== false && p.vat > 0, invoiceNumber: p.invoiceNumber, supplierVat: p.supplierVat })) : ''] : [])])} />
     </Card>}
 
     {has('vat') && <Card wide title="الإقرار الضريبي — ضريبة القيمة المضافة">
@@ -115,7 +128,9 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
 
     {has('expenses') && <Card title="المصروفات من الدرج">
       <Lines rows={[['الإجمالي', t.expenses, true]]} />
-      <Table head={['التاريخ', ...(multi ? ['الفرع'] : []), 'الموظف', 'البند', 'المبلغ']} moneyCols={multi ? [4] : [3]} rows={r.expenses.map((e: any) => [e.date, ...(multi ? [e.branch] : []), e.staff || '—', e.item, e.amount])} />
+      <Table head={['التاريخ', ...(multi ? ['الفرع'] : []), 'الموظف', 'البند', 'المبلغ', ...(onEditClosing ? [''] : [])]} moneyCols={multi ? [4] : [3]}
+        rows={r.expenses.map((e: any) => [<Edited key="d" date={e.date} src={e.editedSource} />, ...(multi ? [e.branch] : []), e.staff || '—', e.item, e.amount,
+          ...(onEditClosing ? [(() => { const c = r.closings.find((x: any) => x.id && x.id === e.closingId); return c ? editBtn(() => onEditClosing(c)) : '' })()] : [])])} />
     </Card>}
 
     {has('cash_diff') && <Card title="فروقات الكاشير">

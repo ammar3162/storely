@@ -14,7 +14,8 @@ import { zatcaDate } from '@/lib/zatcaQr'
 import { normalizeVat, isValidVat } from '@/lib/taxInvoice'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
-import { Clock, CheckCircle2, Ban, Percent } from 'lucide-react'
+import { Clock, CheckCircle2, Ban, Percent, Pencil } from 'lucide-react'
+import EditHistoryDialog from '@/components/EditHistoryDialog'
 import { colors as dsColors } from '@/lib/ds'
 import { cache } from '@/lib/cache'
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
@@ -43,6 +44,8 @@ const inp: React.CSSProperties = {width:'100%',padding:'10px 12px',border:`1px s
 
 export default function PurchasesPage() {
   const [history, setHistory]       = useState<any[]>([])
+  const [isOwner, setIsOwner]       = useState(false)
+  const [editLog, setEditLog]       = useState<any|null>(null)   // سجل تعديلات فاتورة (والترجيع)
   const [payables, setPayables]     = useState<any[]>([])
   const [showPayables, setShowPayables] = useState(false)
   const [payingId, setPayingId]     = useState<string|null>(null)
@@ -107,7 +110,7 @@ export default function PurchasesPage() {
       oid=me.org_id
     }
     setOrgId(oid)
-    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setBizType(me?.org?.business_type??null) })
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setBizType(me?.org?.business_type??null); setIsOwner(me?.role==='owner') })
     loadProducts(oid);loadHistory(oid);loadPayables(oid)
     api.get('/api/suppliers',{org_id:oid}).then(j=>{ if(j.success) setSuppliers((j.suppliers||[]).map((x:any)=>({name:x.name,vat_number:x.vat_number||null}))) }).catch(()=>{})
   }
@@ -656,6 +659,10 @@ export default function PurchasesPage() {
                             📎 فاتورة
                           </a>
                         )}
+                        {p.edited_at&&(()=>{ const acc=p.edited_source==='accountant'
+                          return <button onClick={()=>isOwner&&setEditLog(p)} title={`عدّله ${p.edited_by||''}${isOwner?' — اضغط تشوف السجل':''}`}
+                            style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:10,fontWeight:800,color:acc?'#7c3aed':C.warning,background:acc?'#f5f3ff':C.warningL,border:'none',borderRadius:99,padding:'2px 8px',cursor:isOwner?'pointer':'default',fontFamily:'inherit'}}>
+                            <Pencil size={10} strokeWidth={2.5}/> {acc?'معدّل من المحاسب':'معدّل'}</button> })()}
                       </div>
                       <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:2}}>{p.name}</div>
                       {p.qty&&<div style={{fontSize:11,color:C.text4,marginBottom:1}}>{p.qty} {p.unit}</div>}
@@ -682,6 +689,8 @@ export default function PurchasesPage() {
           </div>
         </div>
       </div>
+      {editLog && <EditHistoryDialog orgId={sessionStorage.getItem('s_org_id')||''} kind="purchase" id={editLog.id}
+        title={`${editLog.supplier||'—'} · ${editLog.name}`} onClose={()=>setEditLog(null)} onReverted={()=>{ setEditLog(null); loadHistory(sessionStorage.getItem('s_org_id')||'') }}/>}
     </div>
   )
 }

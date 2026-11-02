@@ -14,6 +14,7 @@ import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag,
 import { toast } from '@/components/toast'
 // أجزاء تنفتح عند الطلب بس — ما تنحمّل مع الصفحة
 const CashierClosingEditor = lazy(() => import('@/components/CashierClosingEditor'))
+const EditHistoryDialog = lazy(() => import('@/components/EditHistoryDialog'))
 // صافي الإقفال: الشبكة + التوصيل (تحوّله التطبيقات) + الكاش − المسحوبات
 const netOf = (c: any) => Number(c.network_amount||0) + Number(c.delivery_amount||0) + Number(c.cash_amount||0) - Number(c.total_purchases||0)
 const PasswordBox = lazy(() => import('@/components/CashierClosingEditor').then(m => ({ default: m.PasswordBox })))
@@ -1248,6 +1249,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   const [curr, setCurr] = useState('⃁')
   const [isOwner, setIsOwner] = useState(false)
   const [deciding, setDeciding] = useState<string|null>(null)
+  const [history, setHistory] = useState<any|null>(null)   // سجل تعديلات إقفال (والترجيع)
   // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
   useLiveRefresh(typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null, ['cashier_closings'], ()=>load())
   useEffect(()=>{
@@ -1444,7 +1446,10 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                   <tr key={c.id} style={{borderBottom:`1px solid ${colors.border}`}}>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>
                       <div style={{fontWeight:600,color:colors.text}}>{new Date(c.closing_date+'T12:00:00Z').toLocaleDateString('ar-SA', {numberingSystem:'latn',calendar:'gregory',timeZone:'UTC'})}</div>
-                      {c.edited_at && <div title={`عدّله ${c.edited_by||'المالك'} — ${new Date(c.edited_at).toLocaleString('ar-SA',{numberingSystem:'latn',timeZone:'Asia/Riyadh'})}`} style={{display:'inline-block',fontSize:10,fontWeight:700,color:colors.warning,background:colors.warningLight,borderRadius:5,padding:'1px 6px',marginTop:3}}>✏️ معدّل{c.edit_count>1?` (${c.edit_count})`:''}</div>}
+                      {c.edited_at && (()=>{ const acc = c.edited_source==='accountant'
+                        return <button onClick={()=>isOwner&&setHistory(c)} title={`عدّله ${c.edited_by||'المالك'} — ${new Date(c.edited_at).toLocaleString('ar-SA',{numberingSystem:'latn',timeZone:'Asia/Riyadh'})}${isOwner?' — اضغط تشوف السجل':''}`}
+                          style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:10,fontWeight:800,color:acc?'#7c3aed':colors.warning,background:acc?'#f5f3ff':colors.warningLight,border:'none',borderRadius:5,padding:'2px 7px',marginTop:3,cursor:isOwner?'pointer':'default',fontFamily:'inherit'}}>
+                          <Pencil size={10} strokeWidth={2.5}/> {acc?'معدّل من المحاسب':'معدّل'}{c.edit_count>1?` (${c.edit_count})`:''}</button> })()}
                       {c.created_at && (
                         <div style={{fontSize:11,color:colors.text4,marginTop:2,whiteSpace:'nowrap' as const}}>
                           قُفل {new Date(c.created_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'})}
@@ -1550,6 +1555,10 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
         )}
       </div>
 
+      {history && (
+        <Suspense fallback={null}><EditHistoryDialog orgId={sessionStorage.getItem('s_org_id')||''} kind="closing" id={history.id}
+          title={`إقفال ${history.staff_name||''} · ${history.closing_date}`} onClose={()=>setHistory(null)} onReverted={()=>load()}/></Suspense>
+      )}
       {editing && (
         <Suspense fallback={null}><CashierClosingEditor orgId={sessionStorage.getItem('s_org_id')||''} closing={editing} curr={curr} onClose={()=>setEditing(null)}
           onSaved={()=>{ setEditing(null); load() }}/></Suspense>

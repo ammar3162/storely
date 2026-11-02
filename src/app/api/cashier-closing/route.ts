@@ -244,7 +244,7 @@ export async function GET(req: Request) {
     const { data, error } = await selectAll(() => {
       let query = supabase
         .from('cashier_closings')
-        .select('id,branch_id,staff_id,closing_date,created_at,staff_name,total_sales,network_amount,mada_amount,visa_amount,mastercard_amount,cash_amount,delivery,delivery_amount,edited_at,edited_by,edit_count,total_purchases,difference,status,deficit_reason,deficit_decision,deficit_decided_at,sales_image,network_image,purchases')
+        .select('id,branch_id,staff_id,closing_date,created_at,staff_name,total_sales,network_amount,mada_amount,visa_amount,mastercard_amount,cash_amount,delivery,delivery_amount,edited_at,edited_by,edited_source,edit_count,total_purchases,difference,status,deficit_reason,deficit_decision,deficit_decided_at,sales_image,network_image,purchases')
         .eq('org_id', org_id)
         .order('closing_date', { ascending: false })
         .order('created_at', { ascending: false })
