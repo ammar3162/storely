@@ -5,6 +5,7 @@ import { isInApp, isStaffDevice, setStaffDevice } from '@/lib/inApp'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
 import { SIGNUP_BUSINESS_TYPES } from '@/lib/businessTypes'
+import { SIGNUP_SOURCES, captureUtm, type Utm } from '@/lib/signupSource'
 import { LanguageProvider, useTranslation } from '@/lib/i18n/LanguageContext'
 
 const COUNTRY_CODES = [
@@ -132,6 +133,11 @@ function LoginPage() {
   const [agentCode, setAgentCode] = useState('')
   useEffect(() => { const r = new URLSearchParams(window.location.search).get('ref'); if (r) setAgentCode(r.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12)) }, [])
   const [showPassword, setShowPassword] = useState(false)
+  // مصدر العميل: «من وين سمعت عنا؟» + رابط الحملة (أول utm يفوز، محفوظ في المتصفح)
+  const [signupSource, setSignupSource] = useState('')
+  const [signupSourceDetail, setSignupSourceDetail] = useState('')
+  const [utm, setUtm] = useState<Utm>({})
+  useEffect(() => { let st: Storage | null = null; try { st = window.localStorage } catch {} setUtm(captureUtm(window.location.search, st)) }, [])
   const supabase = createClient()
 
   // جهاز موظف داخل التطبيق: يفتح على دخول الموظفين مباشرة
@@ -293,6 +299,7 @@ function LoginPage() {
           trialEnds: new Date(Date.now() + 14*24*60*60*1000).toISOString(),
           termsAcceptedAt: new Date().toISOString(),
           agentCode: agentCode.trim() || undefined,
+          signupSource: signupSource || undefined, signupSourceDetail: signupSourceDetail.trim() || undefined, utm,
         })
       })
       const regData = await regRes.json()
@@ -329,6 +336,7 @@ function LoginPage() {
           trialEnds,
           termsAcceptedAt: new Date().toISOString(),
           agentCode: agentCode.trim() || undefined,
+          signupSource: signupSource || undefined, signupSourceDetail: signupSourceDetail.trim() || undefined, utm,
         })
       })
       const regData = await regRes.json()
@@ -617,6 +625,22 @@ function LoginPage() {
                       ✓ {t('login.freeTrialConfirm')}
                     </div>
                   )}
+
+                  <div style={{marginTop:6}}>
+                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:8}}>{t('login.sourceLabel')}</label>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                      {SIGNUP_SOURCES.map(src=>(
+                        <button key={src.v} type="button" onClick={()=>setSignupSource(signupSource===src.v?'':src.v)}
+                          style={{padding:'7px 12px',borderRadius:99,border:`1.5px solid ${signupSource===src.v?'#029FA2':'#e5e7eb'}`,background:signupSource===src.v?'#f0fdfa':'white',color:signupSource===src.v?'#029FA2':'#4b5563',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                          {lang==='ar'?src.ar:src.en}
+                        </button>
+                      ))}
+                    </div>
+                    {signupSource==='other' && (
+                      <input className="inp" type="text" maxLength={100} value={signupSourceDetail} onChange={e=>setSignupSourceDetail(e.target.value)}
+                        placeholder={t('login.sourceOtherPlaceholder')} style={{marginTop:8}}/>
+                    )}
+                  </div>
 
                   <label style={{display:'flex',alignItems:'flex-start',gap:8,fontSize:12,color:'#4b5563',cursor:'pointer',marginTop:4}}>
                     <input type="checkbox" checked={agreedTerms} onChange={e=>setAgreedTerms(e.target.checked)}
