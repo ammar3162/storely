@@ -26,14 +26,24 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
     mastercard_amount: String(closing.mastercard_amount ?? 0), cash_amount: String(closing.cash_amount ?? ''),
     purchases: ((closing.purchases || []) as any[]).map(p => ({ amount: String(p.amount ?? ''), reason: String(p.reason ?? '') })),
     deficit_reason: String(closing.deficit_reason ?? ''),
+    delivery: Object.fromEntries(((closing.delivery || []) as any[]).map(d => [String(d.name), String(d.amount ?? '')])) as Record<string, string>,
   }))
+  // تطبيقات التوصيل: قائمة المنشأة + اللي مسجّلة بهالإقفال
+  const [apps, setApps] = useState<string[]>(() => Object.keys(f.delivery))
+  useEffect(() => {
+    api.get('/api/org-settings', { org_id: orgId }).then(j => {
+      const list: string[] = Array.isArray(j?.settings?.delivery_apps) ? j.settings.delivery_apps : []
+      setApps(prev => [...new Set([...list, ...prev])])
+    })
+  }, [orgId])
   // إقفالات قديمة بدون تفصيل الشبكة: نحط الإجمالي في «مدى» عشان ما يضيع
   useEffect(() => {
     if (!Number(closing.mada_amount) && !Number(closing.visa_amount) && !Number(closing.mastercard_amount) && Number(closing.network_amount))
       setF(x => ({ ...x, mada_amount: String(closing.network_amount) }))
   }, [])
   const [password, setPassword] = useState(''), [busy, setBusy] = useState(false), [err, setErr] = useState('')
-  const calc = useMemo(() => computeClosing({ ...f, purchases: f.purchases }), [f])
+  const deliveryList = apps.map(name => ({ name, amount: f.delivery[name] || '0' })).filter(d => Number(d.amount) > 0)
+  const calc = useMemo(() => computeClosing({ ...f, purchases: f.purchases, delivery: deliveryList }), [f, apps])
   const today = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
   const set = (k: string, v: any) => setF(x => ({ ...x, [k]: v }))
   const lbl: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 700, color: colors.text3, marginBottom: 5 }
@@ -44,7 +54,7 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
     if (calc.status === 'deficit' && f.deficit_reason.trim().length < 3) return setErr('فيه عجز — اكتب سببه')
     if (!password) return setErr('اكتب كلمة مرور حسابك')
     setBusy(true)
-    const j = await api.patch('/api/cashier-closing', { org_id: orgId, id: closing.id, password, ...f, purchases: f.purchases.filter(p => Number(p.amount) > 0) })
+    const j = await api.patch('/api/cashier-closing', { org_id: orgId, id: closing.id, password, ...f, purchases: f.purchases.filter(p => Number(p.amount) > 0), delivery: deliveryList })
     setBusy(false)
     if (!j.success) return setErr(j.error || 'تعذر حفظ التعديل')
     toast('✅ تم تعديل الإقفال — التقارير والأرباح وتقرير المحاسب تحدّثت')
@@ -83,6 +93,17 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
               ))}
             </div>
           </div>
+          {apps.length > 0 && (
+            <div>
+              <label style={lbl}>تطبيقات التوصيل</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 8 }}>
+                {apps.map(name => (
+                  <div key={name}><div style={{ fontSize: 11, color: colors.text4, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+                    <NumberInput value={f.delivery[name] || ''} onChange={e => { const v = e.target.value; set('delivery', { ...f.delivery, [name]: v }) }} style={inp()} /></div>
+                ))}
+              </div>
+            </div>
+          )}
           <div>
             <label style={lbl}>الكاش الفعلي بالدرج</label>
             <NumberInput value={f.cash_amount} onChange={e => set('cash_amount', e.target.value)} style={inp()} />
@@ -100,8 +121,9 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
           </div>
 
           {calc && (
-            <div style={{ background: colors.bg, borderRadius: 12, padding: 12, display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 8, textAlign: 'center' }}>
+            <div style={{ background: colors.bg, borderRadius: 12, padding: 12, display: 'grid', gridTemplateColumns: `repeat(${calc.delivery_amount > 0 ? 4 : 3},minmax(0,1fr))`, gap: 8, textAlign: 'center' }}>
               <div><div style={{ fontSize: 11, color: colors.text4 }}>الشبكة</div><div style={{ fontSize: 15, fontWeight: 800 }}>{calc.network_amount.toFixed(2)}</div></div>
+              {calc.delivery_amount > 0 && <div><div style={{ fontSize: 11, color: colors.text4 }}>التوصيل</div><div style={{ fontSize: 15, fontWeight: 800 }}>{calc.delivery_amount.toFixed(2)}</div></div>}
               <div><div style={{ fontSize: 11, color: colors.text4 }}>المتوقع بالدرج</div><div style={{ fontSize: 15, fontWeight: 800 }}>{calc.expected_cash.toFixed(2)}</div></div>
               <div><div style={{ fontSize: 11, color: colors.text4 }}>النتيجة</div><div style={{ fontSize: 15, fontWeight: 800, color: stColor }}>{stLabel}{calc.status !== 'balanced' ? ` ${Math.abs(calc.difference).toFixed(2)}` : ''}</div></div>
             </div>

@@ -69,7 +69,7 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
 
     <div className="rv-grid">
     {has('sales') && <Card wide title="المبيعات">
-      <Lines rows={[['إجمالي المبيعات', t.sales, true], ['مدى', t.mada], ['فيزا', t.visa], ['ماستركارد', t.mastercard], ['الكاش', t.cash]]} />
+      <Lines rows={[['إجمالي المبيعات', t.sales, true], ['مدى', t.mada], ['فيزا', t.visa], ['ماستركارد', t.mastercard], ...(t.delivery > 0 ? [['تطبيقات التوصيل', t.delivery] as [string, number]] : []), ['الكاش', t.cash]]} />
       <Table head={['التاريخ', ...(multi ? ['الفرع'] : []), 'الكاشير', 'المبيعات', 'الشبكة', 'الكاش']} moneyCols={multi ? [3, 4, 5] : [2, 3, 4]}
         rows={r.closings.map((c: any) => [c.date, ...(multi ? [c.branch] : []), c.staff || '—', c.sales, c.network, c.cash])} />
     </Card>}

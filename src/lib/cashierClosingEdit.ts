@@ -2,10 +2,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { computeClosing } from '@/lib/cashierClosingCalc'
 import { lockedFor, lockedFromError } from '@/lib/periodLock'
 import { saudiToday } from '@/lib/accountantSchedule'
+import { cleanAppList, deliveryFromInput, deliveryNames } from '@/lib/deliveryApps'
 
 // تعديل/حذف إقفال الكاشير من المالك — كل شي يتحدث معه: الفرق، قرار العجز، خصم الراتب، وسجل التعديلات
-const FIELDS = 'id,org_id,branch_id,staff_id,staff_name,closing_date,total_sales,network_amount,mada_amount,visa_amount,mastercard_amount,cash_amount,purchases,total_purchases,expected_cash,difference,status,deficit_reason,deficit_decision,edit_count'
-const AUDIT = ['closing_date', 'total_sales', 'mada_amount', 'visa_amount', 'mastercard_amount', 'network_amount', 'cash_amount', 'purchases', 'total_purchases', 'difference', 'status', 'deficit_reason', 'deficit_decision'] as const
+const FIELDS = 'id,org_id,branch_id,staff_id,staff_name,closing_date,total_sales,network_amount,mada_amount,visa_amount,mastercard_amount,cash_amount,delivery,delivery_amount,purchases,total_purchases,expected_cash,difference,status,deficit_reason,deficit_decision,edit_count'
+const AUDIT = ['closing_date', 'total_sales', 'mada_amount', 'visa_amount', 'mastercard_amount', 'network_amount', 'cash_amount', 'delivery', 'delivery_amount', 'purchases', 'total_purchases', 'difference', 'status', 'deficit_reason', 'deficit_decision'] as const
 const pick = (o: any) => Object.fromEntries(AUDIT.map(k => [k, o?.[k] ?? null]))
 type Fail = { ok: false; error: string; status: number }
 
@@ -34,9 +35,15 @@ export async function editClosing(db: SupabaseClient, orgId: string, id: string,
   const date = String(input?.closing_date || c.closing_date)
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(Date.parse(date + 'T00:00:00Z'))) return { ok: false, error: 'التاريخ غير صحيح', status: 400 }
   if (date > saudiToday()) return { ok: false, error: 'ما ينفع تاريخ بالمستقبل', status: 400 }
+  // التوصيل: تطبيقات المنشأة الحالية + اللي مسجّلة بالإقفال نفسه (لو المالك شال تطبيق من قائمته بعدين)
+  let delivery = c.delivery
+  if (input?.delivery !== undefined) {
+    const { data: org } = await db.from('organizations').select('delivery_apps').eq('id', orgId).maybeSingle()
+    delivery = deliveryFromInput(input.delivery, [...new Set([...(cleanAppList((org as any)?.delivery_apps) || []), ...deliveryNames(c.delivery)])])
+  }
   const calc = computeClosing({
     total_sales: input?.total_sales ?? c.total_sales, mada_amount: input?.mada_amount ?? c.mada_amount, visa_amount: input?.visa_amount ?? c.visa_amount,
-    mastercard_amount: input?.mastercard_amount ?? c.mastercard_amount, cash_amount: input?.cash_amount ?? c.cash_amount, purchases: input?.purchases ?? c.purchases,
+    mastercard_amount: input?.mastercard_amount ?? c.mastercard_amount, cash_amount: input?.cash_amount ?? c.cash_amount, purchases: input?.purchases ?? c.purchases, delivery,
   })
   if (!calc) return { ok: false, error: 'مبالغ غير صالحة', status: 400 }
   const reason = calc.status === 'deficit' ? String(input?.deficit_reason ?? c.deficit_reason ?? '').trim().slice(0, 500) : ''

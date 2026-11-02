@@ -172,7 +172,7 @@ export const ASSISTANT_TOOLS: Tool[] = [
     allowed: (f, a) => data(f) && f.cashier && managerMay(a, 'reports'),
     run: async (ctx, i) => {
       const p = period(i)
-      let q = ctx.db.from('cashier_closings').select('closing_date,branch_id,staff_name,total_sales,cash_amount,network_amount,difference,status')
+      let q = ctx.db.from('cashier_closings').select('closing_date,branch_id,staff_name,total_sales,cash_amount,network_amount,delivery_amount,difference,status')
         .eq('org_id', ctx.orgId).gte('closing_date', p.from).lte('closing_date', p.to).order('closing_date', { ascending: false }).limit(500)
       if (ctx.branchId) q = q.eq('branch_id', ctx.branchId)
       if (i?.staff) q = q.ilike('staff_name', like(i.staff))
@@ -181,8 +181,8 @@ export const ASSISTANT_TOOLS: Tool[] = [
       const sum = (k: string) => r2(list.reduce((t, r) => t + Number(r[k] || 0), 0))
       return {
         period: `${p.from} → ${p.to}`, closings: list.length,
-        totals: { sales: sum('total_sales'), cash: sum('cash_amount'), network: sum('network_amount'), difference: sum('difference'), deficits: list.filter(r => Number(r.difference) < 0).length },
-        latest: list.slice(0, 20).map(r => ({ date: r.closing_date, branch: bn.get(r.branch_id) || null, cashier: r.staff_name, sales: r2(r.total_sales), cash: r2(r.cash_amount), network: r2(r.network_amount), difference: r2(r.difference) })),
+        totals: { sales: sum('total_sales'), cash: sum('cash_amount'), network: sum('network_amount'), delivery_apps: sum('delivery_amount'), difference: sum('difference'), deficits: list.filter(r => Number(r.difference) < 0).length },
+        latest: list.slice(0, 20).map(r => ({ date: r.closing_date, branch: bn.get(r.branch_id) || null, cashier: r.staff_name, sales: r2(r.total_sales), cash: r2(r.cash_amount), network: r2(r.network_amount), delivery_apps: r2(r.delivery_amount), difference: r2(r.difference) })),
       }
     },
   },
