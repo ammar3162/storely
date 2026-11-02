@@ -6,6 +6,7 @@ import { colors, radius, font, inp, btnPrimary, btnSecondary } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { ACC_SECTIONS, type AccSection } from '@/lib/accountantExport'
+import { groupLogs, timesAr } from '@/lib/accountantActivity'
 
 // بوابة المحاسب (جهة المالك): يدعو محاسبه، يحدد وش يشوف، ويسحب الإذن متى ما بغى
 const DEFAULT: AccSection[] = ['sales', 'purchases', 'vat', 'payables', 'expenses', 'cash_diff']
@@ -22,6 +23,7 @@ const ago = (iso: string) => {
 export default function AccountantPortalAccess({ orgId, onChange }: { orgId: string; onChange?: () => void }) {
   const [list, setList] = useState<any[]>([])
   const [logs, setLogs] = useState<any[]>([])
+  const [allLogs, setAllLogs] = useState(false)
   const [branches, setBranches] = useState<any[]>([])
   const [adding, setAdding] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', sections: DEFAULT, branch_id: '', vat_registered: true, expires_on: '' })
@@ -145,16 +147,29 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
         <button onClick={() => setAdding(true)} style={{ ...btnSecondary, padding: '10px 16px', display: 'inline-flex', alignItems: 'center', gap: 6 }}><UserPlus size={15} /> ادعُ محاسب</button>
       )}
 
-      {logs.length > 0 && (
-        <div style={{ marginTop: 12, borderTop: `1px solid ${colors.border}`, paddingTop: 10 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.text2, marginBottom: 6 }}>آخر نشاط</div>
-          {logs.map((l, i) => (
-            <div key={i} style={{ fontSize: 12, color: colors.text3, padding: '3px 0' }}>
-              {l.accountant_users?.name || l.accountant_users?.email} {l.action === 'download' ? 'حمّل ملف' : 'شاف التقرير'} ({l.period_start} → {l.period_end}) · {ago(l.created_at)}
-            </div>
-          ))}
-        </div>
-      )}
+      {logs.length > 0 && (() => {
+        // نفس التقرير المفتوح أكثر من مرة = سطر واحد فيه العدد، ونعرض آخر ٣ بس
+        const groups = groupLogs(logs)
+        const shown = allLogs ? groups : groups.slice(0, 3)
+        return (
+          <div style={{ marginTop: 12, borderTop: `1px solid ${colors.border}`, paddingTop: 10 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.text2, marginBottom: 6 }}>آخر نشاط</div>
+            {shown.map((l, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: colors.text3, padding: '4px 0' }}>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  {l.accountant_users?.name || l.accountant_users?.email} {l.action === 'download' ? 'حمّل ملف' : 'شاف التقرير'} ({l.period_start} → {l.period_end}) · {ago(l.created_at)}
+                </span>
+                {l.count > 1 && <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, color: colors.text2, background: colors.bg, borderRadius: 999, padding: '1px 8px' }}>{timesAr(l.count)}</span>}
+              </div>
+            ))}
+            {groups.length > 3 && (
+              <button onClick={() => setAllLogs(v => !v)} style={{ marginTop: 4, background: 'none', border: 'none', padding: 0, color: colors.primary, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
+                {allLogs ? 'عرض أقل' : `عرض الكل (${groups.length})`}
+              </button>
+            )}
+          </div>
+        )
+      })()}
     </div>
   )
 }
