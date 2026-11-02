@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Loader2, Wallet, Copy, Check, MessageCircle, LogOut, Users, BadgeCheck, Banknote } from 'lucide-react'
 import { colors, font } from '@/lib/ds'
 
-// محفظة المندوب: الدخول برمز على الإيميل، وبعدها الرصيد والمنشآت والصرف
+// محفظة السفير: الدخول برمز على الإيميل، وبعدها الرصيد والمنشآت والصرف
 const sar = (n: number) => `${Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`
 const dt = (iso: string) => new Date(iso).toLocaleDateString('ar-SA-u-nu-latn', { day: 'numeric', month: 'short', year: 'numeric' })
 const inp: React.CSSProperties = { width: '100%', padding: '13px 14px', borderRadius: 12, border: `1.5px solid ${colors.border}`, fontSize: 15, fontFamily: font.family, boxSizing: 'border-box', background: '#fff' }
@@ -23,7 +23,7 @@ function Login({ onDone }: { onDone: () => void }) {
       <div style={{ maxWidth: 420, margin: '0 auto' }}>
         <a href="/agents" style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#fff', textDecoration: 'none', marginBottom: 26 }}>
           <img src="/storely-logo.png" alt="Storely" width={38} height={38} style={{ borderRadius: 10, background: '#fff' }} />
-          <div><div style={{ fontSize: 17, fontWeight: 800 }} dir="ltr">Storely</div><div style={{ fontSize: 12, opacity: .7 }}>محفظة المندوب</div></div>
+          <div><div style={{ fontSize: 17, fontWeight: 800 }} dir="ltr">Storely</div><div style={{ fontSize: 12, opacity: .7 }}>محفظة السفير</div></div>
         </a>
         <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: 20, padding: 26, boxShadow: '0 20px 50px rgba(15,23,42,.1)' }}>
           <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 6 }}>{step === 'email' ? 'ادخل محفظتك' : 'اكتب الرمز'}</div>
@@ -38,7 +38,7 @@ function Login({ onDone }: { onDone: () => void }) {
             <button onClick={() => { setStep('email'); setCode(''); setMsg(null) }} style={{ ...btn, background: 'transparent', color: colors.text3, fontSize: 13, marginTop: 4 }}>تغيير الإيميل أو طلب رمز جديد</button>
           </>)}
           {msg && <div style={{ marginTop: 12, fontSize: 13, color: msg.bad ? colors.danger : colors.text3, lineHeight: 1.7 }}>{msg.t}</div>}
-          <div style={{ fontSize: 13, color: colors.text3, marginTop: 16, textAlign: 'center' }}>ما عندك حساب؟ <a href="/agents" style={{ color: colors.primary, fontWeight: 800 }}>سجّل كمندوب</a></div>
+          <div style={{ fontSize: 13, color: colors.text3, marginTop: 16, textAlign: 'center' }}>ما عندك حساب؟ <a href="/agents" style={{ color: colors.primary, fontWeight: 800 }}>سجّل كسفير</a></div>
         </div>
       </div>
     </div>
@@ -72,7 +72,7 @@ export default function AgentWalletPage() {
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <img src="/storely-logo.png" alt="Storely" width={36} height={36} style={{ borderRadius: 10, background: '#fff' }} />
-            <div><div style={{ fontSize: 16, fontWeight: 800 }}>{d.agent.name}</div><div style={{ fontSize: 12, opacity: .7 }}>مندوب Storely · <span dir="ltr">{d.agent.code}</span></div></div>
+            <div><div style={{ fontSize: 16, fontWeight: 800 }}>{d.agent.name}</div><div style={{ fontSize: 12, opacity: .7 }}>سفير Storely · <span dir="ltr">{d.agent.code}</span></div></div>
             <button onClick={async () => { await post('/api/agents/logout', {}); setD(null) }} title="خروج" style={{ marginInlineStart: 'auto', background: 'rgba(255,255,255,.1)', border: 'none', color: '#fff', borderRadius: 10, padding: 9, cursor: 'pointer' }}><LogOut size={16} /></button>
           </div>
           <div style={{ marginTop: 26 }}>

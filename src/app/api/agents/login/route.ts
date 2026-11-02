@@ -7,9 +7,9 @@ import { sendEmail } from '@/lib/email'
 import { brandEmail } from '@/lib/emailTemplates'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-const GENERIC = 'إذا كان إيميلك مسجّل كمندوب، بيوصلك رمز الدخول خلال دقيقة'
+const GENERIC = 'إذا كان إيميلك مسجّل كسفير، بيوصلك رمز الدخول خلال دقيقة'
 
-// رمز دخول لمحفظة المندوب — نفس الرد للكل (ما نكشف مين مسجّل)
+// رمز دخول لمحفظة السفير — نفس الرد للكل (ما نكشف مين مسجّل)
 export async function POST(req: Request) {
   try {
     const email = normalizeEmail((await req.json()).email)
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     if (!agent || (agent as any).status !== 'active') return NextResponse.json({ success: true, message: GENERIC })
     const code = newCode()
     await db.from('agent_login_codes').insert({ email, code_hash: hashAgentCode(email, code), ip, expires_at: new Date(Date.now() + AGENT_CODE_MINUTES * 60e3).toISOString() } as any)
-    await sendEmail({ to: email, subject: `رمز دخول محفظة المندوب: ${code}`,
+    await sendEmail({ to: email, subject: `رمز دخول محفظة السفير: ${code}`,
       html: brandEmail({ title: 'رمز دخول محفظتك', preheader: `رمزك ${code}`, code, paragraphs: [`اكتب هذا الرمز في صفحة الدخول. صالح ${AGENT_CODE_MINUTES} دقايق.`], small: 'إذا ما طلبت الرمز، تجاهل هالإيميل.' }) })
     return NextResponse.json({ success: true, message: GENERIC })
   } catch {

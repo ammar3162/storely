@@ -8,7 +8,7 @@ export const SIGNUP_SOURCES = [
   { v: 'x', ar: 'إكس (تويتر)', en: 'X (Twitter)' },
   { v: 'google', ar: 'بحث قوقل', en: 'Google search' },
   { v: 'friend', ar: 'صديق أو معرفة', en: 'A friend' },
-  { v: 'agent', ar: 'مندوب ستورلي', en: 'Storely agent' },
+  { v: 'agent', ar: 'ترشيح من سفير ستورلي', en: 'A Storely ambassador' },
   { v: 'other', ar: 'غير ذلك', en: 'Other' },
 ] as const
 

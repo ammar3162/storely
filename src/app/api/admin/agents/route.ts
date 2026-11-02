@@ -7,7 +7,7 @@ import { notifyAgent } from '@/lib/agentNotify'
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 const UUID_RE = /^[0-9a-f-]{36}$/i
 
-// المناديب في لوحة الإدارة: الرصيد لكل مندوب، والصرف، والإيقاف
+// السفراء في لوحة الإدارة: الرصيد لكل سفير، والصرف، والإيقاف
 export async function GET(req: Request) {
   if (!(await requirePermission(req.headers.get('x-admin-key'), 'manage_users'))) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const db = sb()
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     if (!UUID_RE.test(String(b.agent_id || ''))) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const db = sb()
     const { data: agent } = await db.from('sales_agents').select('id,name,iban_enc,payout_method').eq('id', b.agent_id).maybeSingle()
-    if (!agent) return NextResponse.json({ error: 'المندوب غير موجود' }, { status: 404 })
+    if (!agent) return NextResponse.json({ error: 'السفير غير موجود' }, { status: 404 })
 
     if (b.action === 'reveal_iban') {
       await logAdminAction(admin, 'agent_reveal_iban', b.agent_id, (agent as any).name, {})

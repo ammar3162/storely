@@ -114,7 +114,7 @@ export async function POST(req: Request) {
       user_agent: userAgent,
     }).then(({ error }: any) => { if (error) console.log('consent_logs insert error:', error.message) })
 
-    // مندوب: الكود المكتوب في التسجيل، وإلا كوكي رابطه (أفضل جهد — ما يوقف التسجيل)
+    // سفير: الكود المكتوب في التسجيل، وإلا كوكي رابطه (أفضل جهد — ما يوقف التسجيل)
     try {
       const refCookie = (req.headers.get('cookie') || '').match(new RegExp(`(?:^|;\\s*)${REF_COOKIE}=([A-Z0-9]+)`))?.[1]
       await attachReferral(supabase, { orgId: org.id, orgName, code: agentCode || refCookie, ownerEmail: authedUser.email, ownerPhone: fullPhone })
