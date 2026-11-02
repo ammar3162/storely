@@ -39,6 +39,12 @@ input, button, select, textarea { font-family: inherit !important; }
    أدوات المتصفح (قوائم الاختيار) فاتحة حتى لو الجوال بالوضع الليلي، والكتابة داخل الخانات سوداء،
    والرمادي الفاتح اللي تكتبه الصفحات مباشرة يصير أغمق (بالوضع العادي بس — الوضع الليلي له ألوانه) */
 :root:not([data-theme="dark"]) { color-scheme: light; }
+
+/* النوافذ اللي تغطي الشاشة ترتفع فوق كيبورد الجوال (--kb من KeyboardInset)، ومحتواها يصير قابل للتمرير لو ما كفّت المساحة */
+[style*="position: fixed"][style*="inset: 0px"],
+[style*="position:fixed"][style*="inset:0"] { bottom: var(--kb, 0px) !important; transition: bottom .12s ease-out; }
+html.kb-open [style*="position: fixed"][style*="inset: 0px"] > div:last-child,
+html.kb-open [style*="position:fixed"][style*="inset:0"] > div:last-child { max-height: calc(100% - 12px); overflow-y: auto; }
 :root:not([data-theme="dark"]) input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 :root:not([data-theme="dark"]) select,
 :root:not([data-theme="dark"]) textarea { color: #0f172a !important; }
