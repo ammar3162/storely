@@ -4,7 +4,7 @@ import { normalizeAgentCode, REF_COOKIE, REF_DAYS } from '@/lib/agentRewards'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-// رابط المندوب: يحفظ كوده ٦٠ يوم في جهاز العميل ويودّيه للتسجيل — أول رابط يفوز
+// رابط السفير: يحفظ كوده ٦٠ يوم في جهاز العميل ويودّيه للتسجيل — أول رابط يفوز
 export async function GET(req: Request, ctx: { params: Promise<{ code: string }> }) {
   const code = normalizeAgentCode((await ctx.params).code)
   const url = new URL('/login?mode=register', req.url)

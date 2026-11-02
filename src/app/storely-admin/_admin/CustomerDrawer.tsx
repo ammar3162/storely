@@ -50,10 +50,10 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
 
   async function activate(type: 'trial' | 'paid', d: number) {
     const label = type === 'paid' ? 'تفعيل مدفوع' : 'تفعيل تجربة'
-    // أول اشتراك مدفوع بعد التجربة (على الشاملة): ذكّر الأدمن يحوّله للباقة اللي اختارها — مكافأة المندوب والفاتورة تنحسب على باقته الحالية
+    // أول اشتراك مدفوع بعد التجربة (على الشاملة): ذكّر الأدمن يحوّله للباقة اللي اختارها — مكافأة السفير والفاتورة تنحسب على باقته الحالية
     const wanted = c!.requested_plan as PlanKey | undefined
     const planNote = type === 'paid' && c!.subscription_type === 'trial' && wanted && wanted !== c!.plan && (PLAN_KEYS as string[]).includes(wanted)
-      ? `\n\nانتبه: باقته الحالية «${planLabel(c!.plan)}» (التجربة)، واللي اختارها عند التسجيل «${planLabel(wanted)}». غيّر الباقة أول لو بيشترك فيها — الفاتورة ومكافأة المندوب تنحسب على الباقة الحالية.`
+      ? `\n\nانتبه: باقته الحالية «${planLabel(c!.plan)}» (التجربة)، واللي اختارها عند التسجيل «${planLabel(wanted)}». غيّر الباقة أول لو بيشترك فيها — الفاتورة ومكافأة السفير تنحسب على الباقة الحالية.`
       : ''
     if (!(await confirmDialog({ title: label, message: `${label} لـ"${c!.org_name}" لمدة ${DURATIONS.find(x => x.d === d)?.l || d + ' يوم'}؟\n\nالإضافات المفعّلة تتجدد لنفس التاريخ.${planNote}`, type: planNote ? 'warning' : undefined }))) return
     setBusy('activate')

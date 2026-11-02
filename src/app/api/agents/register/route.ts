@@ -10,7 +10,7 @@ import { siteUrl } from '@/lib/accountantSend'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-// تسجيل مندوب جديد — مفتوح لأي أحد، وياخذ رابطه على طول
+// تسجيل سفير جديد — مفتوح لأي أحد، وياخذ رابطه على طول
 export async function POST(req: Request) {
   try {
     const b = await req.json()
@@ -52,9 +52,9 @@ export async function POST(req: Request) {
     if (!row) return NextResponse.json({ error: 'تعذر التسجيل، حاول مرة ثانية' }, { status: 500 })
 
     const link = `${siteUrl()}/r/${row.code}`
-    await notifyAgent(db, row.id, { title: 'أهلاً بك في برنامج مناديب Storely',
+    await notifyAgent(db, row.id, { title: 'أهلاً بك في برنامج سفراء Storely',
       lines: [`رابطك الخاص: ${link}`, `كودك: ${row.code}`, 'أي منشأة تسجّل من رابطك أو تكتب كودك وتشترك، تنضاف مكافأتك في محفظتك ويوصلك إشعار.'],
-      whatsapp: `🎉 أهلاً ${name} في برنامج مناديب Storely\n\nرابطك: ${link}\nكودك: *${row.code}*\n\nكل منشأة تشترك عن طريقك = مكافأة في محفظتك.` })
+      whatsapp: `🎉 أهلاً ${name} في برنامج سفراء Storely\n\nرابطك: ${link}\nكودك: *${row.code}*\n\nكل منشأة تشترك عن طريقك = مكافأة في محفظتك.` })
     return NextResponse.json({ success: true, code: row.code, link })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ، حاول مرة ثانية' }, { status: 500 })

@@ -7,7 +7,7 @@ import { A, Badge, Btn, Card, Empty, Loading, PageHeader, Stat, adminFetch, fmtD
 
 const sar = (n: number) => `${Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })} ⃁`
 
-// المناديب: مين جاب مين، وكم يستاهل كل واحد، وتسجيل الصرف
+// السفراء: مين جاب مين، وكم يستاهل كل واحد، وتسجيل الصرف
 export default function AgentsPage() {
   const [list, setList] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -24,7 +24,7 @@ export default function AgentsPage() {
   async function reveal(a: any) { const j = await act({ agent_id: a.id, action: 'reveal_iban' }); if (j.success) setIban(m => ({ ...m, [a.id]: j.iban || '—' })) }
   async function toggle(a: any) {
     const to = a.status === 'active' ? 'suspended' : 'active'
-    if (to === 'suspended' && !(await confirmDialog({ title: 'إيقاف المندوب', message: `إيقاف ${a.name}؟ رابطه يوقف وما ينحسب له عملاء جدد.`, type: 'warning' }))) return
+    if (to === 'suspended' && !(await confirmDialog({ title: 'إيقاف السفير', message: `إيقاف ${a.name}؟ رابطه يوقف وما ينحسب له عملاء جدد.`, type: 'warning' }))) return
     const j = await act({ agent_id: a.id, action: 'status', status: to }); if (j.success) load()
   }
   async function submitPay() {
@@ -38,16 +38,16 @@ export default function AgentsPage() {
   const tot = (k: string) => list.reduce((s, a) => s + Number(a[k] || 0), 0)
   return (
     <>
-      <PageHeader title="المناديب" subtitle="كل مندوب: كم منشأة جاب، وكم يستاهل، وكم انصرف له"
+      <PageHeader title="السفراء" subtitle="كل سفير: كم منشأة جاب، وكم يستاهل، وكم انصرف له"
         actions={<Btn onClick={load} loading={loading}><RefreshCw size={14} /> تحديث</Btn>} />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12, marginBottom: 16 }}>
-        <Stat label="المناديب" value={list.length} />
+        <Stat label="السفراء" value={list.length} />
         <Stat label="منشآت سجّلت عن طريقهم" value={tot('signups')} />
         <Stat label="اشتركت ودفعت" value={tot('paidCustomers')} tone="primary" />
         <Stat label="مستحق للصرف" value={sar(tot('balance'))} tone={tot('balance') > 0 ? 'warning' : 'default'} />
       </div>
       {err && <div style={{ color: A.danger, fontSize: 13, marginBottom: 10 }}>{err}</div>}
-      {loading ? <Loading /> : !list.length ? <Card><Empty title="ما فيه مناديب للحين" hint="صفحة التسجيل: storely.dev/agents" /></Card> : (
+      {loading ? <Loading /> : !list.length ? <Card><Empty title="ما فيه سفراء للحين" hint="صفحة التسجيل: storely.dev/agents" /></Card> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {list.map(a => (
             <Card key={a.id} pad={18}>

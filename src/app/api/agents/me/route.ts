@@ -7,7 +7,7 @@ import { notifyAgent } from '@/lib/agentNotify'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-// محفظة المندوب: الرصيد، والمنشآت اللي جابها، والمكافآت، والصرف
+// محفظة السفير: الرصيد، والمنشآت اللي جابها، والمكافآت، والصرف
 export async function GET(req: Request) {
   try {
     const db = sb()
@@ -55,7 +55,7 @@ export async function PATCH(req: Request) {
   }
 }
 
-// تنبيه على الإيميل والواتساب كل ما تغيّرت طريقة الاستلام — لو أحد غيّرها بدون علم المندوب يعرف فوراً
+// تنبيه على الإيميل والواتساب كل ما تغيّرت طريقة الاستلام — لو أحد غيّرها بدون علم السفير يعرف فوراً
 async function payoutChanged(db: any, agentId: string, what: string) {
   const when = new Date().toLocaleString('ar-SA', { timeZone: 'Asia/Riyadh', dateStyle: 'medium', timeStyle: 'short' })
   try {

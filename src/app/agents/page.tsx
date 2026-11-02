@@ -5,7 +5,7 @@ import { colors, font } from '@/lib/ds'
 import { AGENT_REWARD } from '@/lib/agentRewards'
 import { AGENT_TERMS } from '@/lib/agentTerms'
 
-// صفحة برنامج المناديب: شرح + تسجيل + الرابط الخاص مباشرة بعد التسجيل
+// صفحة برنامج السفراء: شرح + تسجيل + الرابط الخاص مباشرة بعد التسجيل
 const inp: React.CSSProperties = { width: '100%', padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${colors.border}`, fontSize: 15, fontFamily: font.family, boxSizing: 'border-box', background: '#fff' }
 const lbl: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 700, color: colors.text2, marginBottom: 6 }
 const btn: React.CSSProperties = { width: '100%', padding: 14, borderRadius: 12, border: 'none', background: colors.primary, color: '#fff', fontSize: 15.5, fontWeight: 800, cursor: 'pointer', fontFamily: font.family }
@@ -41,7 +41,7 @@ export default function AgentsPage() {
         <div style={{ maxWidth: 980, margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 34 }}>
             <img src="/storely-logo.png" alt="Storely" width={40} height={40} style={{ borderRadius: 10, background: '#fff' }} />
-            <div><div style={{ fontSize: 18, fontWeight: 800 }} dir="ltr">Storely</div><div style={{ fontSize: 12, opacity: .7 }}>برنامج المناديب</div></div>
+            <div><div style={{ fontSize: 18, fontWeight: 800 }} dir="ltr">Storely</div><div style={{ fontSize: 12, opacity: .7 }}>برنامج السفراء</div></div>
             <a href="/agents/wallet" style={{ marginInlineStart: 'auto', color: '#fff', fontSize: 13.5, fontWeight: 700, textDecoration: 'none', border: '1px solid rgba(255,255,255,.3)', borderRadius: 10, padding: '8px 14px' }}>محفظتي</a>
           </div>
           <h1 style={{ fontSize: 'clamp(26px,5vw,40px)', lineHeight: 1.4, fontWeight: 800, margin: '0 0 12px' }}>عرّف المحلات على Storely<br /><span style={{ color: '#5eead4' }}>واكسب على كل اشتراك</span></h1>
@@ -99,7 +99,7 @@ export default function AgentsPage() {
             </div>
           ) : (
             <form onSubmit={submit} noValidate>
-              <div style={{ fontSize: 19, fontWeight: 800, marginBottom: 4 }}>سجّل كمندوب</div>
+              <div style={{ fontSize: 19, fontWeight: 800, marginBottom: 4 }}>سجّل كسفير</div>
               <div style={{ fontSize: 13, color: colors.text3, marginBottom: 16 }}>مجاناً — وتاخذ رابطك على طول.</div>
               <div style={{ display: 'grid', gap: 12 }}>
                 <div><label style={lbl}>الاسم</label><input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} maxLength={80} autoComplete="name" style={inp} /></div>

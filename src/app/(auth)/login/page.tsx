@@ -129,7 +129,7 @@ function LoginPage() {
     return null
   })
   const [agreedTerms, setAgreedTerms] = useState(false)
-  // كود المندوب — ما فيه حقل بالنموذج، يجي بس من رابط المندوب storely.dev/r/الكود
+  // كود السفير — ما فيه حقل بالنموذج، يجي بس من رابط السفير storely.dev/r/الكود
   const [agentCode, setAgentCode] = useState('')
   useEffect(() => { const r = new URLSearchParams(window.location.search).get('ref'); if (r) setAgentCode(r.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12)) }, [])
   const [showPassword, setShowPassword] = useState(false)
