@@ -4,6 +4,7 @@
  * المتغيرات والـ mocks مشتركة: harness.ts و setup.ts.
  */
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
+import crypto from 'node:crypto'
 import { URL_, KEY, enabled, uniqPhone, newStamp, auth, ocrFixture, call } from './harness'
 
 describe.skipIf(!enabled)('integration (staging) — staff', async () => {
@@ -259,4 +260,158 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
       expect(((await db.from('staff_members').select('deactivated_at').eq('id', sid).single()).data as any).deactivated_at).toBeNull()
     })
   })
+
+  describe('cashier closing with delivery apps', () => {
+    it('cashier picks the apps and enters each amount, expected cash drops by the delivery, new apps are remembered, and edits recalculate', async () => {
+      process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
+      const { generateStaffToken } = await import('@/lib/staffAuth')
+      const staffOrg = await import('@/app/api/staff-org/route')
+      const closing = await import('@/app/api/cashier-closing/route')
+      const { editClosing } = await import('@/lib/cashierClosingEdit')
+
+      const { data: st, error: stErr } = await db.from('staff_members').insert({
+        org_id: orgId, branch_id: branchA, name: 'كاشير توصيل', phone: uniqPhone(), pin: 'x', is_active: true, role: 'cashier',
+      } as any).select('id').single()
+      if (stErr) throw stErr
+      const token = generateStaffToken((st as any).id, orgId, branchA)
+      const withToken = (handler: any, method: string, body?: unknown) => handler(new Request('http://test/api', {
+        method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: body ? JSON.stringify(body) : undefined,
+      })).then(async (r: Response) => ({ status: r.status, json: await r.json() as any }))
+
+      // بدون أي إعداد: الكاشير يشوف التطبيقات الأشهر
+      expect((await withToken(staffOrg.GET, 'GET')).json.delivery_apps).toEqual(['هنقرستيشن', 'جاهز', 'كيتا', 'مرسول', 'ذا شفز', 'تويو'])
+
+      // مبيعات 5000 = شبكة 2000 + هنقر 700 + تطبيق كتبه الكاشير 500 + كاش 1800
+      const r = await withToken(closing.POST, 'POST', {
+        total_sales: 5000, mada_amount: 2000, cash_amount: 1800, purchases: [],
+        delivery: [{ name: 'هنقرستيشن', amount: 700 }, { name: ' لقمة ', amount: 500 }, { name: 'كيتا', amount: 0 }],
+      })
+      expect(r.status).toBe(200)
+      const id = r.json.closing.id
+      const saved = (await db.from('cashier_closings').select('delivery,delivery_amount,expected_cash,status').eq('id', id).single()).data as any
+      expect(saved.delivery).toEqual([{ name: 'هنقرستيشن', amount: 700 }, { name: 'لقمة', amount: 500 }])
+      expect(Number(saved.delivery_amount)).toBe(1200)
+      expect(Number(saved.expected_cash)).toBe(1800)
+      expect(saved.status).toBe('balanced')
+      // التطبيق الجديد ينحفظ للمنشأة ويطلع جاهز المرة الجاية
+      expect(((await db.from('organizations').select('delivery_apps').eq('id', orgId).single()).data as any).delivery_apps).toEqual(['لقمة'])
+      expect((await withToken(staffOrg.GET, 'GET')).json.delivery_apps).toContain('لقمة')
+
+      const bad = await withToken(closing.POST, 'POST', { total_sales: 100, cash_amount: 100, delivery: [{ name: 'جاهز', amount: -3 }] })
+      expect(bad.status).toBe(400)
+
+      // المالك يعدّل مبلغ التوصيل — الفرق يتحسب من جديد
+      const e = await editClosing(db as any, orgId, id, { delivery: [{ name: 'هنقرستيشن', amount: 700 }, { name: 'لقمة', amount: 300 }], deficit_reason: 'اختبار العجز' }, 'اختبار')
+      expect(e.ok).toBe(true)
+      const after = (await db.from('cashier_closings').select('delivery_amount,difference,status').eq('id', id).single()).data as any
+      expect(Number(after.delivery_amount)).toBe(1000)
+      expect(Number(after.difference)).toBe(-200)
+      expect(after.status).toBe('deficit')
+      // تعديل بدون حقل التوصيل يحافظ على المبالغ
+      const e2 = await editClosing(db as any, orgId, id, { cash_amount: 2000 }, 'اختبار')
+      expect(e2.ok).toBe(true)
+      const after2 = (await db.from('cashier_closings').select('delivery_amount,status').eq('id', id).single()).data as any
+      expect(Number(after2.delivery_amount)).toBe(1000)
+      expect(after2.status).toBe('balanced')
+
+      const list = await call(closing.GET, 'GET', `/api/cashier-closing?org_id=${orgId}`)
+      expect(list.json.closings.find((c: any) => c.id === id).delivery_amount).toBe(1000)
+    })
+  })
+
+  describe('accountant edits from the portal', () => {
+    it('accountant edits a closing and an invoice (applied at once, marked «from the accountant»), is limited by sections/branch/locks, and the owner can revert', async () => {
+      process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
+      const { makeSession } = await import('@/lib/accountantPortalAuth')
+      const edit = await import('@/app/api/accountant-portal/edit/route')
+      const dataEdits = await import('@/app/api/data-edits/route')
+      const today = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
+
+      // محاسب بإذن مفعّل على كل الفروع + جلسة جهاز
+      const { data: acc, error: aErr } = await db.from('accountant_users').insert({ email: `it-acc-${stamp}@storely.test`, name: 'محاسب الاختبار' } as any).select('id').single()
+      if (aErr) throw aErr
+      const accId = (acc as any).id
+      const { data: access } = await db.from('accountant_access').insert({ org_id: orgId, email: `it-acc-${stamp}@storely.test`, accountant_id: accId, status: 'active',
+        sections: ['sales', 'purchases', 'vat', 'expenses'] } as any).select('id').single()
+      const { data: sess } = await db.from('accountant_sessions').insert({ accountant_id: accId } as any).select('id').single()
+      const cookie = `acc_session=${makeSession(accId, (sess as any).id)}`
+      const portal = (body: any) => edit.POST(new Request('http://test/api/accountant-portal/edit', { method: 'POST', headers: { 'Content-Type': 'application/json', cookie }, body: JSON.stringify({ org_id: orgId, ...body }) }))
+        .then(async r => ({ status: r.status, json: await r.json() as any }))
+
+      try {
+        // إقفال مطابق: مبيعات 1000 = مدى 600 + كاش 400
+        const { data: cl, error: cErr } = await db.from('cashier_closings').insert({ org_id: orgId, branch_id: branchA, staff_name: 'كاشير', closing_date: today,
+          total_sales: 1000, mada_amount: 600, network_amount: 600, cash_amount: 400, expected_cash: 400, difference: 0, status: 'balanced' } as any).select('id').single()
+        if (cErr) throw cErr
+        const closingId = (cl as any).id
+
+        const e1 = await portal({ kind: 'closing', id: closingId, total_sales: 1000, mada_amount: 600, cash_amount: 380, purchases: [], delivery: [], deficit_reason: 'عدّ المحاسب' })
+        expect(e1.status).toBe(200)
+        const after1 = (await db.from('cashier_closings').select('cash_amount,status,difference,edited_source,edited_by').eq('id', closingId).single()).data as any
+        expect(after1).toMatchObject({ status: 'deficit', edited_source: 'accountant', edited_by: 'محاسب الاختبار' })
+        expect(Number(after1.difference)).toBe(-20)
+        const log = (await db.from('cashier_closing_edits').select('id,source,accountant_id').eq('closing_id', closingId).single()).data as any
+        expect(log).toMatchObject({ source: 'accountant', accountant_id: accId })
+        const { count: notes } = await db.from('notifications').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('ref_type', 'accountant_edit').eq('ref_id', log.id)
+        expect(notes).toBe(1)
+
+        // فاتورة بسطرين: الرقم الضريبي ينطبق على الفاتورة كلها، والمبلغ على السطر
+        const group = crypto.randomUUID()
+        const { data: rows, error: pErr } = await db.from('purchases').insert([
+          { org_id: orgId, branch_id: branchA, name: 'كاسات', category: 'مشتريات', supplier: 'مورد', amount: 100, has_vat: true, invoice_group: group },
+          { org_id: orgId, branch_id: branchA, name: 'أكياس', category: 'مشتريات', supplier: 'مورد', amount: 50, has_vat: true, invoice_group: group },
+        ] as any).select('id,name')
+        if (pErr) throw pErr
+        const line = (rows as any[]).find(r => r.name === 'كاسات').id
+        expect((await portal({ kind: 'purchase', id: line, supplier_vat_number: '123' })).status).toBe(400)
+        const e2 = await portal({ kind: 'purchase', id: line, amount: 120, has_vat: true, supplier_vat_number: '300000000000003', invoice_number: 'INV-9' })
+        expect(e2.status).toBe(200)
+        const pr = ((await db.from('purchases').select('id,name,amount,supplier_vat_number,invoice_number,edited_source').eq('invoice_group', group)).data || []) as any[]
+        expect(pr.find(r => r.name === 'كاسات')).toMatchObject({ amount: 120, supplier_vat_number: '300000000000003', invoice_number: 'INV-9', edited_source: 'accountant' })
+        expect(pr.find(r => r.name === 'أكياس')).toMatchObject({ amount: 50, supplier_vat_number: '300000000000003', edited_source: 'accountant' })
+        const pe = ((await db.from('purchase_edits').select('batch_id,source').eq('org_id', orgId).in('purchase_id', pr.map(r => r.id))).data || []) as any[]
+        expect(pe.length).toBe(2); expect(new Set(pe.map(e => e.batch_id)).size).toBe(1)
+
+        // قسم مو مسموح: بدون المبيعات والمصروفات ما يعدّل الإقفال
+        await db.from('accountant_access').update({ sections: ['stock'] } as any).eq('id', (access as any).id)
+        expect((await portal({ kind: 'closing', id: closingId, cash_amount: 400 })).status).toBe(403)
+        expect((await portal({ kind: 'purchase', id: line, amount: 1 })).status).toBe(403)
+        // فرع ثاني: الإذن على فرع ما فيه الإقفال
+        const { data: br2 } = await db.from('branches').insert({ org_id: orgId, name: 'فرع المحاسب', is_active: true } as any).select('id').single()
+        await db.from('accountant_access').update({ sections: ['sales', 'purchases'], branch_id: (br2 as any).id } as any).eq('id', (access as any).id)
+        expect((await portal({ kind: 'closing', id: closingId, cash_amount: 400 })).status).toBe(403)
+        expect((await portal({ kind: 'purchase', id: line, amount: 1 })).status).toBe(403)
+        await db.from('accountant_access').update({ branch_id: null } as any).eq('id', (access as any).id)
+        // شهر مقفل: ما ينعدّل
+        const month = today.slice(0, 7) + '-01'
+        await db.from('period_locks').insert({ org_id: orgId, month } as any)
+        expect((await portal({ kind: 'closing', id: closingId, cash_amount: 400 })).status).toBe(423)
+        await db.from('period_locks').delete().eq('org_id', orgId).eq('month', month)
+
+        // المالك يشوف السجل ويرجّع
+        const hist = await call(dataEdits.GET, 'GET', `/api/data-edits?org_id=${orgId}&kind=closing&id=${closingId}`)
+        expect(hist.json.edits[0]).toMatchObject({ source: 'accountant' })
+        expect((await call(dataEdits.POST, 'POST', '/api/data-edits', { org_id: orgId, kind: 'closing', id: log.id })).status).toBe(200)
+        const back = (await db.from('cashier_closings').select('cash_amount,status,edited_source').eq('id', closingId).single()).data as any
+        expect(back).toMatchObject({ status: 'balanced', edited_source: 'owner' })
+        expect(Number(back.cash_amount)).toBe(400)
+        expect((await call(dataEdits.POST, 'POST', '/api/data-edits', { org_id: orgId, kind: 'closing', id: log.id })).status).toBe(409)
+
+        expect((await call(dataEdits.POST, 'POST', '/api/data-edits', { org_id: orgId, kind: 'purchase', id: pe[0].batch_id })).status).toBe(200)
+        const pr2 = ((await db.from('purchases').select('name,amount,supplier_vat_number,invoice_number').eq('invoice_group', group)).data || []) as any[]
+        expect(pr2.find(r => r.name === 'كاسات')).toMatchObject({ amount: 100, supplier_vat_number: null, invoice_number: null })
+        expect(pr2.find(r => r.name === 'أكياس')).toMatchObject({ supplier_vat_number: null })
+
+        // مدير فرع ما يقدر يرجّع (للمالك بس)
+        const ownerAuth = auth.current
+        auth.current = { ...ownerAuth!, role: 'branch_manager', branchId: branchA }
+        expect((await call(dataEdits.GET, 'GET', `/api/data-edits?org_id=${orgId}&kind=closing&id=${closingId}`)).status).toBe(403)
+        auth.current = ownerAuth
+      } finally {
+        await db.from('period_locks').delete().eq('org_id', orgId)
+        await db.from('accountant_users').delete().eq('id', accId)
+      }
+    })
+  })
 })
+

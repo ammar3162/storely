@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { orgFeatures } from '@/lib/planFeatures'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
+import { appChoices } from '@/lib/deliveryApps'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,7 +16,7 @@ export async function GET(req: Request) {
     if (!auth.valid || !auth.data) return NextResponse.json({ error: auth.error, reason: auth.reason }, { status: 401 })
 
     const db = sb()
-    const { data: org, error } = await db.from('organizations').select('logo_url,currency,plan,staff_salary_visible,business_day_start_hour,business_type').eq('id', auth.data.org_id).single()
+    const { data: org, error } = await db.from('organizations').select('logo_url,currency,plan,staff_salary_visible,business_day_start_hour,business_type,delivery_apps').eq('id', auth.data.org_id).single()
     if (error || !org) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
     // الميزات المتاحة للموظف — من السيرفر (الموظف ما يقدر يقرأ متجر الإضافات حق المالك)
     const plan = (org as any).plan || 'basic'
@@ -30,6 +31,7 @@ export async function GET(req: Request) {
       business_day_start_hour: (org as any).business_day_start_hour ?? null,
       business_type: (org as any).business_type || null,
       hr_feature: hr, cashier_feature: cashier,
+      delivery_apps: appChoices((org as any).delivery_apps),
     })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })

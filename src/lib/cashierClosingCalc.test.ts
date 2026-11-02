@@ -15,4 +15,11 @@ describe('cashier closing calc', () => {
     expect(computeClosing({ total_sales: -5, cash_amount: 1 })).toBeNull()
     expect(computeClosing({ total_sales: 'abc', cash_amount: 1 })).toBeNull()
   })
+  it('delivery apps are deducted from expected cash like the network', () => {
+    const c = computeClosing({ total_sales: 5000, mada_amount: 2000, cash_amount: 1800, delivery: [{ name: 'هنقرستيشن', amount: 700 }, { name: 'جاهز', amount: 500 }, { name: 'كيتا', amount: 0 }] })!
+    expect(c.delivery_amount).toBe(1200); expect(c.expected_cash).toBe(1800); expect(c.status).toBe('balanced')
+    expect(c.delivery).toEqual([{ name: 'هنقرستيشن', amount: 700 }, { name: 'جاهز', amount: 500 }])
+    expect(computeClosing({ total_sales: 100, cash_amount: 100 })!.delivery_amount).toBe(0)
+    expect(computeClosing({ total_sales: 100, cash_amount: 1, delivery: [{ name: 'جاهز', amount: -5 }] })).toBeNull()
+  })
 })

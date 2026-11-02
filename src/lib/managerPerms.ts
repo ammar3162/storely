@@ -52,6 +52,7 @@ export const API_GUARDS: Record<string, { read?: Rule; write?: Rule }> = {
   '/api/accountant-access': { read: OWNER, write: OWNER },
   '/api/accountant-link': { read: OWNER, write: OWNER },
   '/api/accountant-requests': { read: OWNER, write: OWNER },
+  '/api/data-edits': { read: OWNER, write: OWNER },
   '/api/period-locks': { read: OWNER, write: OWNER },
   '/api/backup': { read: OWNER, write: OWNER },
   '/api/branch-comparison': { read: OWNER, write: OWNER },

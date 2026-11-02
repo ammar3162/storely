@@ -6,6 +6,7 @@ import { colors, font, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import NumberInput from '@/components/NumberInput'
 import { computeClosing } from '@/lib/cashierClosingCalc'
+import { appChoices } from '@/lib/deliveryApps'
 
 // كلمة مرور حساب المالك (نفس كلمة الدخول) — يتحقق منها الخادم قبل التعديل أو الحذف
 export function PasswordBox({ value, onChange, onEnter }: { value: string; onChange: (v: string) => void; onEnter?: () => void }) {
@@ -19,21 +20,32 @@ export function PasswordBox({ value, onChange, onEnter }: { value: string; onCha
 }
 
 // تعديل إقفال الكاشير: التاريخ والمبالغ والمسحوبات — والفرق يتحسب من جديد قدامك
-export default function CashierClosingEditor({ orgId, closing, curr, onClose, onSaved }: { orgId: string; closing: any; curr: string; onClose: () => void; onSaved: (c: any) => void }) {
+// submit: بوابة المحاسب ترسل التعديل لمسارها (بدون كلمة مرور المالك وبدون تغيير التاريخ)
+export default function CashierClosingEditor({ orgId, closing, curr, onClose, onSaved, submit }: { orgId: string; closing: any; curr: string; onClose: () => void; onSaved: (c: any) => void
+  submit?: (payload: any) => Promise<{ success?: boolean; error?: string; closing?: any }> }) {
+  const byAccountant = !!submit
   const [f, setF] = useState(() => ({
     closing_date: closing.closing_date as string,
     total_sales: String(closing.total_sales ?? ''), mada_amount: String(closing.mada_amount ?? 0), visa_amount: String(closing.visa_amount ?? 0),
     mastercard_amount: String(closing.mastercard_amount ?? 0), cash_amount: String(closing.cash_amount ?? ''),
     purchases: ((closing.purchases || []) as any[]).map(p => ({ amount: String(p.amount ?? ''), reason: String(p.reason ?? '') })),
     deficit_reason: String(closing.deficit_reason ?? ''),
+    delivery: Object.fromEntries(((closing.delivery || []) as any[]).map(d => [String(d.name), String(d.amount ?? '')])) as Record<string, string>,
   }))
+  // تطبيقات التوصيل: المسجّلة بهالإقفال + الأشهر + اللي استخدمتها المنشأة قبل
+  const [apps, setApps] = useState<string[]>(() => [...new Set([...Object.keys(f.delivery), ...appChoices([])])])
+  useEffect(() => {
+    if (byAccountant) return
+    api.get('/api/org-settings', { org_id: orgId }).then(j => setApps(prev => [...new Set([...prev, ...appChoices(j?.settings?.delivery_apps)])]))
+  }, [orgId])
   // إقفالات قديمة بدون تفصيل الشبكة: نحط الإجمالي في «مدى» عشان ما يضيع
   useEffect(() => {
     if (!Number(closing.mada_amount) && !Number(closing.visa_amount) && !Number(closing.mastercard_amount) && Number(closing.network_amount))
       setF(x => ({ ...x, mada_amount: String(closing.network_amount) }))
   }, [])
   const [password, setPassword] = useState(''), [busy, setBusy] = useState(false), [err, setErr] = useState('')
-  const calc = useMemo(() => computeClosing({ ...f, purchases: f.purchases }), [f])
+  const deliveryList = apps.map(name => ({ name, amount: f.delivery[name] || '0' })).filter(d => Number(d.amount) > 0)
+  const calc = useMemo(() => computeClosing({ ...f, purchases: f.purchases, delivery: deliveryList }), [f, apps])
   const today = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
   const set = (k: string, v: any) => setF(x => ({ ...x, [k]: v }))
   const lbl: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 700, color: colors.text3, marginBottom: 5 }
@@ -42,12 +54,13 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
     setErr('')
     if (!calc) return setErr('تأكد من المبالغ')
     if (calc.status === 'deficit' && f.deficit_reason.trim().length < 3) return setErr('فيه عجز — اكتب سببه')
-    if (!password) return setErr('اكتب كلمة مرور حسابك')
+    if (!byAccountant && !password) return setErr('اكتب كلمة مرور حسابك')
     setBusy(true)
-    const j = await api.patch('/api/cashier-closing', { org_id: orgId, id: closing.id, password, ...f, purchases: f.purchases.filter(p => Number(p.amount) > 0) })
+    const payload = { ...f, purchases: f.purchases.filter(p => Number(p.amount) > 0), delivery: deliveryList }
+    const j = byAccountant ? await submit!(payload) : await api.patch('/api/cashier-closing', { org_id: orgId, id: closing.id, password, ...payload })
     setBusy(false)
     if (!j.success) return setErr(j.error || 'تعذر حفظ التعديل')
-    toast('✅ تم تعديل الإقفال — التقارير والأرباح وتقرير المحاسب تحدّثت')
+    toast(byAccountant ? 'تم التعديل — يطلع للمنشأة «معدّل من المحاسب»' : '✅ تم تعديل الإقفال — التقارير والأرباح وتقرير المحاسب تحدّثت')
     onSaved(j.closing)
   }
 
@@ -61,16 +74,16 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
           <span style={{ width: 36, height: 36, borderRadius: 10, background: colors.primaryLight, color: colors.primary, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Pencil size={17} /></span>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 16, fontWeight: 800 }}>تعديل إقفال الكاشير</div>
-            <div style={{ fontSize: 12, color: colors.text3 }}>{closing.staff_name} · التعديل يتسجل في سجل التعديلات</div>
+            <div style={{ fontSize: 12, color: colors.text3 }}>{closing.staff_name}{byAccountant ? ` · ${closing.closing_date} · يوصل المنشأة إشعار بالتعديل` : ' · التعديل يتسجل في سجل التعديلات'}</div>
           </div>
           <button onClick={() => !busy && onClose()} aria-label="إغلاق" style={{ background: colors.bg, border: 'none', borderRadius: 9, padding: 7, cursor: 'pointer', display: 'inline-flex' }}><X size={18} /></button>
         </div>
 
         <div style={{ padding: 20, display: 'grid', gap: 14 }}>
-          <div>
+          {!byAccountant && <div>
             <label style={lbl}>تاريخ الإقفال</label>
             <input type="date" value={f.closing_date} max={today} onChange={e => set('closing_date', e.target.value)} style={inp()} />
-          </div>
+          </div>}
           <div>
             <label style={lbl}>إجمالي المبيعات</label>
             <NumberInput value={f.total_sales} onChange={e => set('total_sales', e.target.value)} style={inp()} />
@@ -83,6 +96,17 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
               ))}
             </div>
           </div>
+          {apps.length > 0 && (
+            <div>
+              <label style={lbl}>تطبيقات التوصيل (اللي ما فيها مبلغ اتركها فاضية)</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 8 }}>
+                {apps.map(name => (
+                  <div key={name}><div style={{ fontSize: 11, color: colors.text4, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+                    <NumberInput value={f.delivery[name] || ''} onChange={e => { const v = e.target.value; set('delivery', { ...f.delivery, [name]: v }) }} style={inp()} /></div>
+                ))}
+              </div>
+            </div>
+          )}
           <div>
             <label style={lbl}>الكاش الفعلي بالدرج</label>
             <NumberInput value={f.cash_amount} onChange={e => set('cash_amount', e.target.value)} style={inp()} />
@@ -100,8 +124,9 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
           </div>
 
           {calc && (
-            <div style={{ background: colors.bg, borderRadius: 12, padding: 12, display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 8, textAlign: 'center' }}>
+            <div style={{ background: colors.bg, borderRadius: 12, padding: 12, display: 'grid', gridTemplateColumns: `repeat(${calc.delivery_amount > 0 ? 4 : 3},minmax(0,1fr))`, gap: 8, textAlign: 'center' }}>
               <div><div style={{ fontSize: 11, color: colors.text4 }}>الشبكة</div><div style={{ fontSize: 15, fontWeight: 800 }}>{calc.network_amount.toFixed(2)}</div></div>
+              {calc.delivery_amount > 0 && <div><div style={{ fontSize: 11, color: colors.text4 }}>التوصيل</div><div style={{ fontSize: 15, fontWeight: 800 }}>{calc.delivery_amount.toFixed(2)}</div></div>}
               <div><div style={{ fontSize: 11, color: colors.text4 }}>المتوقع بالدرج</div><div style={{ fontSize: 15, fontWeight: 800 }}>{calc.expected_cash.toFixed(2)}</div></div>
               <div><div style={{ fontSize: 11, color: colors.text4 }}>النتيجة</div><div style={{ fontSize: 15, fontWeight: 800, color: stColor }}>{stLabel}{calc.status !== 'balanced' ? ` ${Math.abs(calc.difference).toFixed(2)}` : ''}</div></div>
             </div>
@@ -117,11 +142,11 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
             <div style={{ fontSize: 12, color: colors.info, background: colors.infoLight, borderRadius: 10, padding: '8px 10px' }}>العجز راح — الخصم اللي انخصم من راتب الكاشير بينشال.</div>
           )}
 
-          <PasswordBox value={password} onChange={setPassword} onEnter={save} />
+          {!byAccountant && <PasswordBox value={password} onChange={setPassword} onEnter={save} />}
           {err && <div style={{ fontSize: 13, color: colors.danger, fontWeight: 600 }}>{err}</div>}
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => !busy && onClose()} style={{ flex: 1, padding: 12, background: colors.bg, color: colors.text3, border: 'none', borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>إلغاء</button>
-            <button onClick={save} disabled={busy || !password} style={{ flex: 2, padding: 12, background: busy || !password ? colors.border2 : colors.primary, color: '#fff', border: 'none', borderRadius: 11, fontSize: 14, fontWeight: 800, cursor: busy || !password ? 'default' : 'pointer', fontFamily: font.family }}>{busy ? 'جاري الحفظ...' : 'حفظ التعديل'}</button>
+            <button onClick={save} disabled={busy || (!byAccountant && !password)} style={{ flex: 2, padding: 12, background: busy || (!byAccountant && !password) ? colors.border2 : colors.primary, color: '#fff', border: 'none', borderRadius: 11, fontSize: 14, fontWeight: 800, cursor: busy || (!byAccountant && !password) ? 'default' : 'pointer', fontFamily: font.family }}>{busy ? 'جاري الحفظ...' : 'حفظ التعديل'}</button>
           </div>
           <div style={{ fontSize: 11, color: colors.text4, textAlign: 'center' }}>{curr} · الإقفالات في شهر مقفل من المحاسب أو في الأرباح ما تتعدّل</div>
         </div>

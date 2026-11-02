@@ -5,7 +5,7 @@ import PageIcon from '@/components/PageIcon'
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
-import { CalendarDays, FileText, Trophy, Inbox, Loader2, Paperclip, Trash2, Pencil, PartyPopper, Lock, AlertTriangle, Download, BarChart3, CreditCard, Upload, Receipt, ClipboardList, Wallet, Flame, X } from 'lucide-react'
+import { CalendarDays, FileText, Trophy, Inbox, Loader2, Paperclip, Trash2, Pencil, PartyPopper, Lock, AlertTriangle, Download, BarChart3, CreditCard, Upload, Receipt, ClipboardList, Wallet, Flame, X, Bike } from 'lucide-react'
 import { cache } from '@/lib/cache'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
@@ -14,6 +14,9 @@ import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag,
 import { toast } from '@/components/toast'
 // أجزاء تنفتح عند الطلب بس — ما تنحمّل مع الصفحة
 const CashierClosingEditor = lazy(() => import('@/components/CashierClosingEditor'))
+const EditHistoryDialog = lazy(() => import('@/components/EditHistoryDialog'))
+// صافي الإقفال: الشبكة + التوصيل (تحوّله التطبيقات) + الكاش − المسحوبات
+const netOf = (c: any) => Number(c.network_amount||0) + Number(c.delivery_amount||0) + Number(c.cash_amount||0) - Number(c.total_purchases||0)
 const PasswordBox = lazy(() => import('@/components/CashierClosingEditor').then(m => ({ default: m.PasswordBox })))
 const StaffMonthlyDetail = lazy(() => import('@/components/reports/StaffMonthlyReport'))
 
@@ -1246,6 +1249,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   const [curr, setCurr] = useState('⃁')
   const [isOwner, setIsOwner] = useState(false)
   const [deciding, setDeciding] = useState<string|null>(null)
+  const [history, setHistory] = useState<any|null>(null)   // سجل تعديلات إقفال (والترجيع)
   // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
   useLiveRefresh(typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null, ['cashier_closings'], ()=>load())
   useEffect(()=>{
@@ -1281,6 +1285,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
           { header: 'الكاشير', key: 'staff' },
           { header: 'المبيعات', key: 'sales', align: 'left' },
           { header: 'الشبكة', key: 'network', align: 'left' },
+          ...(hasDelivery ? [{ header: 'التوصيل', key: 'delivery', align: 'left' as const }] : []),
           { header: 'الكاش الفعلي', key: 'cash', align: 'left' },
           { header: 'المسحوبات', key: 'withdrawals', align: 'left' },
           { header: 'الكاش بعد الخصم', key: 'cashAfter', align: 'left' },
@@ -1293,10 +1298,11 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
           staff: c.staff_name || '—',
           sales: Number(c.total_sales || 0).toFixed(2) + ' ' + curr,
           network: Number(c.network_amount || 0).toFixed(2) + ' ' + curr,
+          delivery: Number(c.delivery_amount || 0) > 0 ? Number(c.delivery_amount).toFixed(2) + ' ' + curr : '—',
           cash: Number(c.cash_amount || 0).toFixed(2) + ' ' + curr,
           withdrawals: Number(c.total_purchases || 0) > 0 ? '−' + Number(c.total_purchases).toFixed(2) + ' ' + curr : '—',
           cashAfter: (Number(c.cash_amount||0)-Number(c.total_purchases||0)).toFixed(2) + ' ' + curr,
-          net: (Number(c.network_amount||0)+Number(c.cash_amount||0)-Number(c.total_purchases||0)).toFixed(2) + ' ' + curr,
+          net: netOf(c).toFixed(2) + ' ' + curr,
           result: c.difference > 0 ? `زيادة ${c.difference.toFixed(2)}` : c.difference < 0 ? `عجز ${Math.abs(c.difference).toFixed(2)}` : 'مطابق',
           reason: c.status === 'deficit' ? (c.deficit_reason || '—') : '',
         })),
@@ -1310,10 +1316,11 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
           staff: '—',
           sales: closings.reduce((s:number,c:any)=>s+Number(c.total_sales||0),0).toFixed(2) + ' ' + curr,
           network: closings.reduce((s:number,c:any)=>s+Number(c.network_amount||0),0).toFixed(2) + ' ' + curr,
+          delivery: totalDelivery.toFixed(2) + ' ' + curr,
           cash: closings.reduce((s:number,c:any)=>s+Number(c.cash_amount||0),0).toFixed(2) + ' ' + curr,
           withdrawals: closings.reduce((s:number,c:any)=>s+Number(c.total_purchases||0),0) > 0 ? '−' + closings.reduce((s:number,c:any)=>s+Number(c.total_purchases||0),0).toFixed(2) + ' ' + curr : '—',
           cashAfter: closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount||0)-Number(c.total_purchases||0)),0).toFixed(2) + ' ' + curr,
-          net: closings.reduce((s:number,c:any)=>s+Number(c.network_amount||0)+Number(c.cash_amount||0)-Number(c.total_purchases||0),0).toFixed(2) + ' ' + curr,
+          net: closings.reduce((s:number,c:any)=>s+netOf(c),0).toFixed(2) + ' ' + curr,
           result: '—',
           reason: '',
         },
@@ -1353,6 +1360,10 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   const totalDeficit = closings.filter(c=>c.status==='deficit').reduce((s,c)=>s+Math.abs(Number(c.difference)),0)
   const totalSurplus = closings.filter(c=>c.status==='surplus').reduce((s,c)=>s+Number(c.difference),0)
   const balancedCount = closings.filter(c=>c.status==='balanced').length
+  // التوصيل: العمود والملخص يطلعون بس لو فيه إقفالات فيها مبالغ تطبيقات
+  const totalDelivery = closings.reduce((s,c)=>s+Number(c.delivery_amount||0),0)
+  const hasDelivery = totalDelivery > 0
+  const deliveryByApp = Object.entries(closings.reduce((m:Record<string,number>,c:any)=>{ for(const d of (c.delivery||[])) m[d.name]=(m[d.name]||0)+Number(d.amount||0); return m },{})).sort((a,b)=>b[1]-a[1])
   const statusLabel: Record<string,string> = {deficit:'عجز',surplus:'زيادة',balanced:'مطابق'}
   const statusColor: Record<string,string> = {deficit:colors.danger,surplus:colors.info,balanced:colors.primary}
   return (
@@ -1408,6 +1419,15 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
         </div>
       )}
 
+      {hasDelivery && (
+        <div style={{...card,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap' as const}}>
+          <span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:font.sm,fontWeight:800,color:colors.text}}><Bike size={15} strokeWidth={2.25}/> التوصيل بالفترة: {totalDelivery.toFixed(0)} {curr}</span>
+          {deliveryByApp.map(([name,amt])=>(
+            <span key={name} style={{fontSize:font.xs,fontWeight:700,color:colors.text2,background:colors.bg,borderRadius:999,padding:'4px 10px'}}>{name} {amt.toFixed(0)} {curr}</span>
+          ))}
+        </div>
+      )}
+
       <div style={{...card,overflow:'hidden'}}>
         {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
         ):closings.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><Inbox size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد تقارير إقفال</div></div>
@@ -1416,7 +1436,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
             <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`,position:'sticky' as const,top:0,zIndex:2}}>
-                  {['التاريخ','الكاشير','المبيعات','الشبكة','الكاش الفعلي','المسحوبات','الكاش بعد الخصم','الصافي','النتيجة','المرفقات','إجراء'].map((h,i)=>(
+                  {['التاريخ','الكاشير','المبيعات','الشبكة',...(hasDelivery?['التوصيل']:[]),'الكاش الفعلي','المسحوبات','الكاش بعد الخصم','الصافي','النتيجة','المرفقات','إجراء'].map((h,i)=>(
                     <th key={i} style={{padding:'10px 16px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em',background:colors.bg}}>{h}</th>
                   ))}
                 </tr>
@@ -1426,7 +1446,10 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                   <tr key={c.id} style={{borderBottom:`1px solid ${colors.border}`}}>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>
                       <div style={{fontWeight:600,color:colors.text}}>{new Date(c.closing_date+'T12:00:00Z').toLocaleDateString('ar-SA', {numberingSystem:'latn',calendar:'gregory',timeZone:'UTC'})}</div>
-                      {c.edited_at && <div title={`عدّله ${c.edited_by||'المالك'} — ${new Date(c.edited_at).toLocaleString('ar-SA',{numberingSystem:'latn',timeZone:'Asia/Riyadh'})}`} style={{display:'inline-block',fontSize:10,fontWeight:700,color:colors.warning,background:colors.warningLight,borderRadius:5,padding:'1px 6px',marginTop:3}}>✏️ معدّل{c.edit_count>1?` (${c.edit_count})`:''}</div>}
+                      {c.edited_at && (()=>{ const acc = c.edited_source==='accountant'
+                        return <button onClick={()=>isOwner&&setHistory(c)} title={`عدّله ${c.edited_by||'المالك'} — ${new Date(c.edited_at).toLocaleString('ar-SA',{numberingSystem:'latn',timeZone:'Asia/Riyadh'})}${isOwner?' — اضغط تشوف السجل':''}`}
+                          style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:10,fontWeight:800,color:acc?'#7c3aed':colors.warning,background:acc?'#f5f3ff':colors.warningLight,border:'none',borderRadius:5,padding:'2px 7px',marginTop:3,cursor:isOwner?'pointer':'default',fontFamily:'inherit'}}>
+                          <Pencil size={10} strokeWidth={2.5}/> {acc?'معدّل من المحاسب':'معدّل'}{c.edit_count>1?` (${c.edit_count})`:''}</button> })()}
                       {c.created_at && (
                         <div style={{fontSize:11,color:colors.text4,marginTop:2,whiteSpace:'nowrap' as const}}>
                           قُفل {new Date(c.created_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'})}
@@ -1437,6 +1460,16 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{c.staff_name}</td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.total_sales).toFixed(0)} {curr}</td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.network_amount).toFixed(0)} {curr}</td>
+                    {hasDelivery && (
+                      <td style={{padding:'12px 16px',fontSize:font.sm,color:Number(c.delivery_amount)>0?colors.text2:colors.text4}}>
+                        {Number(c.delivery_amount)>0 ? (
+                          <div title={(c.delivery||[]).map((d:any)=>`${d.name}: ${Number(d.amount).toFixed(2)}`).join('\n')}>
+                            {Number(c.delivery_amount).toFixed(0)} {curr}
+                            {(c.delivery||[]).map((d:any,di:number)=>(<div key={di} style={{fontSize:10,color:colors.text4,marginTop:2,whiteSpace:'nowrap' as const}}>{d.name} {Number(d.amount).toFixed(0)}</div>))}
+                          </div>
+                        ) : '—'}
+                      </td>
+                    )}
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.cash_amount).toFixed(0)} {curr}</td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:Number(c.total_purchases)>0?colors.danger:colors.text4}}>
                       {Number(c.total_purchases)>0 ? (
@@ -1454,7 +1487,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                       ) : '—'}
                     </td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{(Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} {curr}</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{(Number(c.network_amount)+Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} {curr}</td>
+                    <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{netOf(c).toFixed(0)} {curr}</td>
                     <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:statusColor[c.status],minWidth:150}}>
                       {statusLabel[c.status]}{c.status!=='balanced'?` (${Math.abs(Number(c.difference)).toFixed(0)} ${curr})`:''}
                       {c.status==='deficit' && (
@@ -1508,10 +1541,11 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}} colSpan={2}>الإجمالي ({closings.length})</td>
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_sales),0).toFixed(0)} {curr}</td>
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.network_amount),0).toFixed(0)} {curr}</td>
+                  {hasDelivery && <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{totalDelivery.toFixed(0)} {curr}</td>}
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.cash_amount),0).toFixed(0)} {curr}</td>
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0)>0?'−'+closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0).toFixed(0)+' '+curr:'—'}</td>
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount)-Number(c.total_purchases)),0).toFixed(0)} {curr}</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{closings.reduce((s:number,c:any)=>s+Number(c.network_amount)+Number(c.cash_amount)-Number(c.total_purchases),0).toFixed(0)} {curr}</td>
+                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{closings.reduce((s:number,c:any)=>s+netOf(c),0).toFixed(0)} {curr}</td>
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.difference),0).toFixed(0)} {curr}</td>
                   <td/><td/>
                 </tr>
@@ -1521,6 +1555,10 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
         )}
       </div>
 
+      {history && (
+        <Suspense fallback={null}><EditHistoryDialog orgId={sessionStorage.getItem('s_org_id')||''} kind="closing" id={history.id}
+          title={`إقفال ${history.staff_name||''} · ${history.closing_date}`} onClose={()=>setHistory(null)} onReverted={()=>load()}/></Suspense>
+      )}
       {editing && (
         <Suspense fallback={null}><CashierClosingEditor orgId={sessionStorage.getItem('s_org_id')||''} closing={editing} curr={curr} onClose={()=>setEditing(null)}
           onSaved={()=>{ setEditing(null); load() }}/></Suspense>

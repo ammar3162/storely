@@ -11,6 +11,8 @@ import { editClosing, deleteClosing } from '@/lib/cashierClosingEdit'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { computeBusinessDate } from '@/lib/businessDate'
 import { selectAll } from '@/lib/selectAll'
+import { computeClosing } from '@/lib/cashierClosingCalc'
+import { deliveryFromInput, rememberApps } from '@/lib/deliveryApps'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -43,8 +45,8 @@ export async function POST(req: Request) {
     const { org_id, staff_id } = auth.data
 
     const {
-      total_sales, network_amount, mada_amount, visa_amount, mastercard_amount,
-      cash_amount, purchases, network_image, sales_image, deficit_reason,
+      total_sales, mada_amount, visa_amount, mastercard_amount,
+      cash_amount, purchases, delivery, network_image, sales_image, deficit_reason,
     } = await req.json()
 
     // الاسم والفرع والدور من قاعدة البيانات — وما يقفل الصندوق إلا كاشير فعّال
@@ -55,33 +57,20 @@ export async function POST(req: Request) {
     const staff_name: string = (staffRow as any).name
     const branch_id: string | null = (staffRow as any).branch_id ?? auth.data.branch_id ?? null
 
-    const { data: orgCheck } = await sb().from('organizations').select('plan').eq('id', org_id).single()
+    const { data: orgCheck } = await sb().from('organizations').select('plan,delivery_apps').eq('id', org_id).single()
     if (!(await orgHasFeature(sb(), org_id, 'cashier', (orgCheck as any)?.plan))) {
       return NextResponse.json({ error: lockedMessage('cashier') }, { status: 403 })
     }
 
-    // مبالغ موجبة ومعقولة بس — أي قيمة غريبة تنرفض
-    const money = (v: unknown) => { const n = Number(v); return Number.isFinite(n) && n >= 0 && n < 1e9 ? Math.round(n * 100) / 100 : NaN }
-    const sales = money(total_sales || 0)
-    const mada = money(mada_amount || 0)
-    const visa = money(visa_amount || 0)
-    const mastercard = money(mastercard_amount || 0)
-    const cash = money(cash_amount || 0)
-    const network = network_amount ? money(network_amount) : Math.round((mada + visa + mastercard) * 100) / 100
-    if ([sales, mada, visa, mastercard, cash, network].some(Number.isNaN)) {
-      return NextResponse.json({ error: 'مبالغ غير صالحة' }, { status: 400 })
-    }
-    // المسحوبات: مبلغ وسبب فقط (ما نخزّن أي حقول ثانية من الطلب)
-    const purchasesList = (Array.isArray(purchases) ? purchases : []).slice(0, 50)
-      .map((p: any) => ({ amount: money(p?.amount), reason: String(p?.reason ?? '').trim().slice(0, 200) }))
-      .filter(p => p.amount > 0)
-    const totalPurchases = purchasesList.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0)
-
-    const expectedCash = sales - network
-    // المسحوبات لا تؤثر على حساب العجز/الزيادة إطلاقاً — الكاشير عدّ الكاش الفعلي بعد ما سحب المبلغ أصلاً
-    const cashAfterWithdrawal = cash - totalPurchases // للعرض/التقرير فقط
-    const difference = cash - expectedCash
-    const status = Math.abs(difference) < 0.01 ? 'balanced' : (difference < 0 ? 'deficit' : 'surplus')
+    // نفس حساب التعديل (lib/cashierClosingCalc) — مبالغ موجبة ومعقولة بس، وأي قيمة غريبة تنرفض
+    // التوصيل: الكاشير يختار التطبيق ويكتب مبلغه
+    const calc = computeClosing({
+      total_sales, mada_amount, visa_amount, mastercard_amount, cash_amount, purchases,
+      delivery: deliveryFromInput(delivery),
+    })
+    if (!calc) return NextResponse.json({ error: 'مبالغ غير صالحة' }, { status: 400 })
+    const { total_sales: sales, mada_amount: mada, visa_amount: visa, mastercard_amount: mastercard, cash_amount: cash, network_amount: network,
+      purchases: purchasesList, total_purchases: totalPurchases, delivery: deliveryList, delivery_amount: deliveryAmount, expected_cash: expectedCash, difference, status } = calc
 
     // العجز لازم له سبب — ما ينقبل التقفيل بدونه
     const deficitReason = status === 'deficit' ? String(deficit_reason || '').trim().slice(0, 500) : ''
@@ -110,6 +99,8 @@ export async function POST(req: Request) {
         visa_amount: visa,
         mastercard_amount: mastercard,
         cash_amount: cash,
+        delivery: deliveryList,
+        delivery_amount: deliveryAmount,
         purchases: purchasesList,
         total_purchases: totalPurchases,
         expected_cash: expectedCash,
@@ -128,6 +119,9 @@ export async function POST(req: Request) {
     if (error) {
       return NextResponse.json({ error: 'حدث خطأ أثناء حفظ التقرير' }, { status: 500 })
     }
+    // تطبيق جديد كتبه الكاشير يطلع جاهز بالإقفال الجاي
+    const remembered = rememberApps((orgCheck as any)?.delivery_apps, deliveryList)
+    if (remembered) await supabase.from('organizations').update({ delivery_apps: remembered } as any).eq('id', org_id)
 
     // إرسال إشعار واتساب فوري للمالك
     try {
@@ -190,6 +184,10 @@ export async function POST(req: Request) {
           if (visa > 0) networkLines += `  • فيزا: ${visa.toFixed(2)} ر.س\n`
           if (mastercard > 0) networkLines += `  • ماستركارد: ${mastercard.toFixed(2)} ر.س\n`
 
+          const deliveryLine = deliveryAmount > 0
+            ? `\n\n🛵 التوصيل:\n${deliveryList.map(d => `  • ${d.name}: ${d.amount.toFixed(2)} ر.س`).join('\n')}\n  إجمالي: *${deliveryAmount.toFixed(2)} ر.س*`
+            : ''
+
           let purchasesLine = ''
           if (totalPurchases > 0) {
             const itemsList = purchasesList.map((p: any) => `  • ${p.reason || 'بدون سبب'}: ${Number(p.amount).toFixed(2)} ر.س`).join('\n')
@@ -201,7 +199,8 @@ export async function POST(req: Request) {
             branchLine +
             `🕐 ${timeStr} · ${dateStr}\n\n` +
             `📊 إجمالي المبيعات: *${sales.toFixed(2)} ر.س*\n\n` +
-            `💳 الشبكة:\n${networkLines}  إجمالي: *${network.toFixed(2)} ر.س*\n\n` +
+            `💳 الشبكة:\n${networkLines}  إجمالي: *${network.toFixed(2)} ر.س*` +
+            deliveryLine + `\n\n` +
             `💵 الكاش الفعلي: *${cash.toFixed(2)} ر.س*` +
             purchasesLine +
             `\n\n${statusLine}`
@@ -245,7 +244,7 @@ export async function GET(req: Request) {
     const { data, error } = await selectAll(() => {
       let query = supabase
         .from('cashier_closings')
-        .select('id,branch_id,staff_id,closing_date,created_at,staff_name,total_sales,network_amount,mada_amount,visa_amount,mastercard_amount,cash_amount,edited_at,edited_by,edit_count,total_purchases,difference,status,deficit_reason,deficit_decision,deficit_decided_at,sales_image,network_image,purchases')
+        .select('id,branch_id,staff_id,closing_date,created_at,staff_name,total_sales,network_amount,mada_amount,visa_amount,mastercard_amount,cash_amount,delivery,delivery_amount,edited_at,edited_by,edited_source,edit_count,total_purchases,difference,status,deficit_reason,deficit_decision,deficit_decided_at,sales_image,network_image,purchases')
         .eq('org_id', org_id)
         .order('closing_date', { ascending: false })
         .order('created_at', { ascending: false })
@@ -284,7 +283,7 @@ export async function PATCH(req: Request) {
     if (!/^[0-9a-f-]{36}$/i.test(String(b.id || ''))) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const r = await editClosing(sb(), b.org_id, b.id, {
       closing_date: b.closing_date, total_sales: b.total_sales, mada_amount: b.mada_amount, visa_amount: b.visa_amount,
-      mastercard_amount: b.mastercard_amount, cash_amount: b.cash_amount, purchases: b.purchases, deficit_reason: b.deficit_reason,
+      mastercard_amount: b.mastercard_amount, cash_amount: b.cash_amount, purchases: b.purchases, delivery: b.delivery, deficit_reason: b.deficit_reason,
     }, g.editor!)
     if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status })
     return NextResponse.json({ success: true, closing: r.closing })

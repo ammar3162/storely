@@ -10,6 +10,7 @@ import { getStaffOrg } from '@/lib/session'
 import { useStaffLang, localeOf, isRtlLang } from '@/lib/staffLang'
 import { CASHIER_EXTRA, THANKS_EXTRA } from '@/lib/staffI18n/cashier'
 import StaffLangButton from '@/components/StaffLangButton'
+import { DELIVERY_APP_PRESETS } from '@/lib/deliveryApps'
 
 interface StaffSession {
   id: string; name: string; org_id: string; branch_id: string | null
@@ -53,6 +54,14 @@ const CUI: Record<string,Record<'ar'|'en',string>> = {
   mastercard:       {ar:'ماستركارد',en:'Mastercard'},
   networkTotal:     {ar:'إجمالي الشبكة',en:'Network Total'},
   networkErrorMsg:  {ar:'إجمالي الشبكة أكبر من إجمالي المبيعات — راجع الأرقام',en:'Network total exceeds sales total — check the numbers'},
+  deliveryLabel:    {ar:'التطبيقات',en:'Delivery apps'},
+  addDeliveryApp:   {ar:'إضافة تطبيق',en:'Add an app'},
+  cancelPick:       {ar:'إلغاء',en:'Cancel'},
+  otherApp:         {ar:'تطبيق ثاني',en:'Other app'},
+  appNamePh:        {ar:'اسم التطبيق',en:'App name'},
+  addApp:           {ar:'إضافة',en:'Add'},
+  deliveryHint:     {ar:'المبلغ من تقرير النظام. فلوسها ما تدخل الدرج، فتنخصم من الكاش المتوقع',en:"This money doesn't go into the drawer, so it's deducted from expected cash"},
+  overSalesMsg:     {ar:'الشبكة والتوصيل مع بعض أكبر من إجمالي المبيعات — راجع الأرقام',en:'Network and delivery together exceed total sales — check the numbers'},
   cashInDrawer:     {ar:'الكاش الفعلي بالدرج',en:'Actual Cash in Drawer'},
   expectedCashPreview: {ar:'الكاش المتوقع (معاينة)',en:'Expected Cash (preview)'},
   step2Title:       {ar:'هل فيه مبالغ اتسحبت من الكاش لمشتريات؟',en:'Was any cash withdrawn for purchases?'},
@@ -115,7 +124,7 @@ function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconColor, err
           {icon}
         </div>
         <NumberInput value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
-          style={{width:'100%',padding:'14px 54px 14px 46px',border:`1.5px solid ${error?'#dc2626':'#e5e5e2'}`,borderRadius:12,fontSize:16,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'right',color:'#1c1c1a',transition:'border-color .15s',background:error?'#fef7f7':'white'}}
+          style={{width:'100%',padding:'14px 54px 14px 46px',border:`1.5px solid ${error?'#dc2626':'#e5e5e2'}`,borderRadius:12,fontSize:16,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'right',color:'#000',transition:'border-color .15s',background:error?'#fef7f7':'white'}}
           onFocus={e=>{if(!error)e.target.style.borderColor=iconColor}}
           onBlur={e=>{if(!error)e.target.style.borderColor='#e5e5e2'}}
         />
@@ -123,6 +132,35 @@ function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconColor, err
       </div>
       {error && <div style={{fontSize:11,color:'#dc2626',fontWeight:700,marginTop:6,display:'flex',alignItems:'center',gap:4}}>⚠️ {error}</div>}
     </div>
+  )
+}
+
+// خانة مبلغ صغيرة: الاسم فوق والرقم تحته داخل نفس الإطار — الخط 16 عشان الآيفون ما يقرّب الشاشة وقت الكتابة
+function AmountTile({ label, value, onChange, error }: { label: string; value: string; onChange: (v: string) => void; error?: boolean }) {
+  const filled = Number(value) > 0
+  return (
+    <label className="amt-tile" style={{display:'block',minWidth:0,border:`1.5px solid ${error?'#dc2626':filled?'#99f6e4':'#e5e5e2'}`,borderRadius:12,background:error?'#fef7f7':filled?'#f0fdfa':'white',padding:'8px 11px 5px',cursor:'text',transition:'background .15s,border-color .15s'}}>
+      <span style={{display:'block',fontSize:11.5,fontWeight:800,color:'#000',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{label}</span>
+      <NumberInput value={value} onChange={e=>onChange(e.target.value)} placeholder="0.00"
+        style={{display:'block',width:'100%',border:'none',outline:'none',background:'transparent',fontSize:16,fontWeight:800,padding:'3px 0 2px',direction:'ltr',textAlign:'right',fontFamily:'inherit',color:'#000',boxSizing:'border-box'}}/>
+    </label>
+  )
+}
+
+// سطر تطبيق توصيل: الاسم بجهة والمبلغ بالجهة الثانية — قائمة مرتبة بدل مربعات كبيرة
+function DeliveryRow({ name, value, onChange, onRemove, currency, last }: { name: string; value: string; onChange: (v: string) => void; onRemove: () => void; currency: string; last?: boolean }) {
+  const filled = Number(value) > 0
+  return (
+    <label className="dl-row" style={{display:'flex',alignItems:'center',gap:10,padding:'7px 12px',borderBottom:last?'none':'1px solid #f1f1ee',background:filled?'#f0fdfa':'white',cursor:'text',transition:'background .15s'}}>
+      <span style={{flex:1,minWidth:0,fontSize:14,fontWeight:800,color:'#000',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{name}</span>
+      <span className="dl-field" style={{display:'flex',alignItems:'center',gap:6,width:'46%',flexShrink:0,background:filled?'white':'#f7f7f5',border:`1.5px solid ${filled?'#99f6e4':'transparent'}`,borderRadius:10,padding:'0 10px',transition:'all .15s'}}>
+        <NumberInput value={value} onChange={e=>onChange(e.target.value)}
+          style={{flex:1,minWidth:0,border:'none',outline:'none',background:'transparent',fontSize:16,fontWeight:800,padding:'9px 0',direction:'ltr',textAlign:'right',fontFamily:'inherit',color:'#000'}}/>
+        <span style={{fontSize:11,fontWeight:700,color:'#3d3d3a'}}>{currency}</span>
+      </span>
+      <button type="button" onClick={e=>{e.preventDefault(); onRemove()}} aria-label="حذف"
+        style={{width:30,height:30,flexShrink:0,borderRadius:9,border:'none',background:'#fef2f2',color:'#dc2626',cursor:'pointer',fontSize:16,fontWeight:700,lineHeight:1}}>×</button>
+    </label>
   )
 }
 
@@ -196,6 +234,12 @@ export default function CashierClosingPage() {
   const [visaAmount, setVisaAmount] = useState('')
   const [mastercardAmount, setMastercardAmount] = useState('')
   const [cashAmount, setCashAmount] = useState('')
+  const [deliveryChoices, setDeliveryChoices] = useState<string[]>([...DELIVERY_APP_PRESETS])   // الأشهر + اللي استخدمتها المنشأة قبل
+  const [deliveryApps, setDeliveryApps] = useState<string[]>([])   // اللي أضافها الكاشير بهالإقفال
+  const [appPickerOpen, setAppPickerOpen] = useState(false)
+  const [deliveryAmounts, setDeliveryAmounts] = useState<Record<string,string>>({})
+  const [otherAppOpen, setOtherAppOpen] = useState(false)
+  const [otherAppName, setOtherAppName] = useState('')
   const [hasPurchases, setHasPurchases] = useState<'yes'|'no'|null>(null)
   const [purchases, setPurchases] = useState<Purchase[]>([{amount:'',reason:''}])
   const [deficitChoice, setDeficitChoice] = useState('')   // مفتاح من DEFICIT_REASONS
@@ -223,6 +267,7 @@ export default function CashierClosingPage() {
         if(org?.logo_url) setOrgLogo(org.logo_url)
         if(org?.business_day_start_hour != null) setDayStartHour(org.business_day_start_hour)
         if(org?.currency) setCurr(currencySymbol(org.currency))
+        if(Array.isArray(org?.delivery_apps) && org.delivery_apps.length) setDeliveryChoices(org.delivery_apps)
         // نفس قرار الخادم: الشاملة/المتقدمة أو إضافة «إقفال الكاشير»
         if(org && org.cashier_feature===false) setLocked(true)
       })
@@ -276,6 +321,17 @@ export default function CashierClosingPage() {
     kind==='network'?setUploadingNetwork(false):setUploadingSales(false)
   }
 
+  function addDeliveryApp(raw:string) {
+    const name = raw.replace(/\s+/g,' ').trim().slice(0,40)
+    if(!name) return
+    if(!deliveryApps.includes(name)) setDeliveryApps(prev=>[...prev,name])
+    setOtherAppName(''); setOtherAppOpen(false); setAppPickerOpen(false)
+  }
+  function removeDeliveryApp(name:string) {
+    setDeliveryApps(prev=>prev.filter(x=>x!==name))
+    setDeliveryAmounts(prev=>{const n={...prev}; delete n[name]; return n})
+  }
+
   function addPurchaseRow() { setPurchases(prev=>[...prev,{amount:'',reason:''}]) }
   function removePurchaseRow(idx:number) { setPurchases(prev=>prev.filter((_,i)=>i!==idx)) }
   function updatePurchase(idx:number, field:'amount'|'reason', value:string) {
@@ -289,11 +345,14 @@ export default function CashierClosingPage() {
   const mastercard = Number(mastercardAmount)||0
   const network = mada + visa + mastercard
   const cash = Number(cashAmount)||0
+  const deliveryList = deliveryApps.map(name=>({name,amount:Number(deliveryAmounts[name])||0})).filter(d=>d.amount>0)
+  const delivery = Math.round(deliveryList.reduce((s,d)=>s+d.amount,0)*100)/100
   const anyNetworkEntered = !!(madaAmount || visaAmount || mastercardAmount)
-  const networkError = (totalSales && anyNetworkEntered && network > sales) ? ct('networkErrorMsg',lang) : ''
+  const networkError = (totalSales && anyNetworkEntered && network > sales) ? ct('networkErrorMsg',lang)
+    : (totalSales && delivery > 0 && network + delivery > sales) ? ct('overSalesMsg',lang) : ''
   const validPurchasesNow = hasPurchases==='yes' ? purchases.filter(p=>Number(p.amount)>0) : []
   const totalPurchasesNow = validPurchasesNow.reduce((sum,p)=>sum+(Number(p.amount)||0),0)
-  const expectedCash = sales - network
+  const expectedCash = sales - network - delivery
   // المسحوبات لا تؤثر على العجز/الزيادة — تُعرض للسجل فقط
   const cashAfterWithdrawal = cash - totalPurchasesNow
   const difference = cash - expectedCash
@@ -342,7 +401,7 @@ export default function CashierClosingPage() {
         body:JSON.stringify({
           total_sales: sales, network_amount: network,
           mada_amount: mada, visa_amount: visa, mastercard_amount: mastercard,
-          cash_amount: cash, purchases: validPurchases,
+          cash_amount: cash, purchases: validPurchases, delivery: deliveryList,
           network_image: networkImage, sales_image: salesImage,
           deficit_reason: status==='deficit' ? deficitReason : null,
         })
@@ -367,7 +426,7 @@ export default function CashierClosingPage() {
   }
 
   function resetForm() {
-    setTotalSales(''); setMadaAmount(''); setVisaAmount(''); setMastercardAmount(''); setCashAmount('')
+    setTotalSales(''); setMadaAmount(''); setVisaAmount(''); setMastercardAmount(''); setCashAmount(''); setDeliveryApps([]); setDeliveryAmounts({}); setAppPickerOpen(false); setOtherAppOpen(false); setOtherAppName('')
     setHasPurchases(null); setPurchases([{amount:'',reason:''}])
     setNetworkImage(''); setSalesImage(''); setDeficitChoice(''); setDeficitNote('')
     setStep(1); setSaved(false)
@@ -393,7 +452,7 @@ export default function CashierClosingPage() {
 
   return (
     <div style={{minHeight:'100vh',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:rtl?'rtl':'ltr',paddingBottom:50}}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}} .fu{animation:fadeUp .3s ease both}`}</style>
+      <style>{`.amt-tile:focus-within{border-color:#029FA2!important;background:white!important;box-shadow:0 0 0 3px rgba(2,159,162,.12)} .dl-row:focus-within .dl-field{border-color:#029FA2!important;background:white!important;box-shadow:0 0 0 3px rgba(2,159,162,.12)} @keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}} .fu{animation:fadeUp .3s ease both}`}</style>
 
       {toast && (
         <div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:9999,background:toast.type==='success'?'#029FA2':'#dc2626',color:'white',padding:'12px 24px',borderRadius:40,fontSize:14,fontWeight:700,boxShadow:'0 8px 24px rgba(0,0,0,.25)',whiteSpace:'nowrap'}}>
@@ -435,27 +494,15 @@ export default function CashierClosingPage() {
                   {ct('step1Title',lang)}
                 </div>
                 <div style={{marginBottom:16}}>
-                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>{ct('totalSalesLabel',lang)}</label>
+                  <label style={{fontSize:12.5,fontWeight:800,color:'#000',display:'block',marginBottom:7}}>{ct('totalSalesLabel',lang)}</label>
                   <MoneyInput value={totalSales} onChange={setTotalSales} placeholder="0.00" icon="📊" iconBg="#f0fdfa" iconColor="#029FA2" currency={curr}/>
                 </div>
                 <div style={{marginBottom:16}}>
-                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>{ct('networkLabel',lang)}</label>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
-                    <div>
-                      <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>{ct('mada',lang)}</div>
-                      <NumberInput value={madaAmount} onChange={e=>setMadaAmount(e.target.value)} placeholder="0.00"
-                        style={{width:'100%',padding:'11px 8px',border:`1.5px solid ${networkError?'#dc2626':'#e5e5e2'}`,borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'center' as const,background:networkError?'#fef7f7':'white'}}/>
-                    </div>
-                    <div>
-                      <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>{ct('visa',lang)}</div>
-                      <NumberInput value={visaAmount} onChange={e=>setVisaAmount(e.target.value)} placeholder="0.00"
-                        style={{width:'100%',padding:'11px 8px',border:`1.5px solid ${networkError?'#dc2626':'#e5e5e2'}`,borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'center' as const,background:networkError?'#fef7f7':'white'}}/>
-                    </div>
-                    <div>
-                      <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>{ct('mastercard',lang)}</div>
-                      <NumberInput value={mastercardAmount} onChange={e=>setMastercardAmount(e.target.value)} placeholder="0.00"
-                        style={{width:'100%',padding:'11px 8px',border:`1.5px solid ${networkError?'#dc2626':'#e5e5e2'}`,borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'center' as const,background:networkError?'#fef7f7':'white'}}/>
-                    </div>
+                  <label style={{fontSize:12.5,fontWeight:800,color:'#000',display:'block',marginBottom:7}}>{ct('networkLabel',lang)}</label>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:8}}>
+                    <AmountTile label={ct('mada',lang)} value={madaAmount} onChange={setMadaAmount} error={!!networkError}/>
+                    <AmountTile label={ct('visa',lang)} value={visaAmount} onChange={setVisaAmount} error={!!networkError}/>
+                    <AmountTile label={ct('mastercard',lang)} value={mastercardAmount} onChange={setMastercardAmount} error={!!networkError}/>
                   </div>
                   {anyNetworkEntered && (
                     <div style={{display:'flex',justifyContent:'space-between',marginTop:8,padding:'8px 10px',background:'#eff6ff',borderRadius:8,fontSize:11,fontWeight:700}}>
@@ -463,10 +510,59 @@ export default function CashierClosingPage() {
                       <span style={{color:'#2563eb',direction:'ltr' as const}}>{fmt(network)} {curr}</span>
                     </div>
                   )}
-                  {networkError && <div style={{fontSize:11,color:'#dc2626',fontWeight:700,marginTop:6,display:'flex',alignItems:'center',gap:4}}>⚠️ {ct('networkErrorMsg',lang)}</div>}
+                  {networkError && <div style={{fontSize:11,color:'#dc2626',fontWeight:700,marginTop:6,display:'flex',alignItems:'center',gap:4}}>⚠️ {networkError}</div>}
+                </div>
+                <div style={{marginBottom:16,paddingTop:14,borderTop:'1px dashed #eeeeeb'}}>
+                  <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',gap:8,marginBottom:8}}>
+                    <label style={{fontSize:12.5,fontWeight:800,color:'#000'}}>{ct('deliveryLabel',lang)}</label>
+                    {delivery>0 && <span style={{fontSize:12.5,fontWeight:800,color:'#0f766e',direction:'ltr' as const,whiteSpace:'nowrap' as const}}>{fmt(delivery)} {curr}</span>}
+                  </div>
+                  {deliveryApps.length>0 && (
+                    <div style={{border:'1px solid #eeeeeb',borderRadius:14,overflow:'hidden',marginBottom:8}}>
+                      {deliveryApps.map((name,i)=>(
+                        <DeliveryRow key={name} name={name} value={deliveryAmounts[name]||''} currency={curr} last={i===deliveryApps.length-1}
+                          onChange={v=>setDeliveryAmounts(prev=>({...prev,[name]:v}))} onRemove={()=>removeDeliveryApp(name)}/>
+                      ))}
+                    </div>
+                  )}
+                  {!appPickerOpen ? (
+                    <button type="button" onClick={()=>setAppPickerOpen(true)}
+                      style={{display:'block',width:'100%',padding:'12px',borderRadius:12,border:'1.5px dashed #b8b7b1',background:'white',color:'#000',fontSize:13.5,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+                      + {ct('addDeliveryApp',lang)}
+                    </button>
+                  ) : (
+                    <div style={{border:'1.5px solid #029FA2',borderRadius:14,padding:12,background:'#fafaf8'}}>
+                      <div style={{display:'flex',flexWrap:'wrap' as const,gap:6}}>
+                        {deliveryChoices.filter(n=>!deliveryApps.includes(n)).map(name=>(
+                          <button key={name} type="button" onClick={()=>addDeliveryApp(name)}
+                            style={{padding:'9px 14px',borderRadius:999,border:'1.5px solid #e5e5e2',background:'white',color:'#000',fontSize:13.5,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                            {name}
+                          </button>
+                        ))}
+                        {!otherAppOpen && (
+                          <button type="button" onClick={()=>setOtherAppOpen(true)}
+                            style={{padding:'9px 14px',borderRadius:999,border:'1.5px dashed #b8b7b1',background:'transparent',color:'#000',fontSize:13.5,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                            + {ct('otherApp',lang)}
+                          </button>
+                        )}
+                      </div>
+                      {otherAppOpen && (
+                        <div style={{display:'flex',gap:6,marginTop:10}}>
+                          <input value={otherAppName} onChange={e=>setOtherAppName(e.target.value)} maxLength={40} placeholder={ct('appNamePh',lang)} autoFocus
+                            onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); addDeliveryApp(otherAppName) } }}
+                            style={{flex:1,minWidth:0,padding:'11px 12px',border:'1.5px solid #e5e5e2',borderRadius:12,fontSize:16,fontFamily:'inherit',outline:'none',boxSizing:'border-box',color:'#000',background:'white'}}/>
+                          <button type="button" onClick={()=>addDeliveryApp(otherAppName)} disabled={!otherAppName.trim()}
+                            style={{padding:'0 16px',borderRadius:12,border:'none',background:otherAppName.trim()?'#029FA2':'#d4d3ce',color:'white',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{ct('addApp',lang)}</button>
+                        </div>
+                      )}
+                      <button type="button" onClick={()=>{setAppPickerOpen(false);setOtherAppOpen(false);setOtherAppName('')}}
+                        style={{display:'block',margin:'10px auto 0',border:'none',background:'none',color:'#3d3d3a',fontSize:12.5,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{ct('cancelPick',lang)}</button>
+                    </div>
+                  )}
+                  {deliveryApps.length>0 && <div style={{fontSize:11,color:'#3d3d3a',marginTop:7}}>{ct('deliveryHint',lang)}</div>}
                 </div>
                 <div style={{marginBottom: (totalSales && anyNetworkEntered && !networkError) ? 16 : 0}}>
-                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>{ct('cashInDrawer',lang)}</label>
+                  <label style={{fontSize:12.5,fontWeight:800,color:'#000',display:'block',marginBottom:7}}>{ct('cashInDrawer',lang)}</label>
                   <MoneyInput value={cashAmount} onChange={setCashAmount} placeholder="0.00" icon="💵" iconBg="#fffbeb" iconColor="#d97706" currency={curr}/>
                 </div>
                 {totalSales && anyNetworkEntered && !networkError && (
@@ -500,11 +596,11 @@ export default function CashierClosingPage() {
                       <div key={idx} style={{display:'flex',gap:8,marginBottom:10,alignItems:'center',background:'#faf9f7',padding:10,borderRadius:12,border:'1px solid #f0efec'}}>
                         <div style={{flex:1}}>
                           <NumberInput value={p.amount} onChange={e=>updatePurchase(idx,'amount',e.target.value)} placeholder={ct('amountPh',lang)}
-                            style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e5e2',borderRadius:9,fontSize:14,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'right'}}/>
+                            style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e5e2',borderRadius:9,fontSize:16,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'right'}}/>
                         </div>
                         <div style={{flex:1.4}}>
                           <input type="text" value={p.reason} onChange={e=>updatePurchase(idx,'reason',e.target.value)} placeholder={ct('reasonPh',lang)}
-                            style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e5e2',borderRadius:9,fontSize:13,fontFamily:'inherit',outline:'none',boxSizing:'border-box'}}/>
+                            style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e5e2',borderRadius:9,fontSize:16,fontFamily:'inherit',outline:'none',boxSizing:'border-box'}}/>
                         </div>
                         {purchases.length>1 && (
                           <button onClick={()=>removePurchaseRow(idx)} style={{width:34,height:34,flexShrink:0,borderRadius:9,border:'none',background:'#fef2f2',color:'#dc2626',cursor:'pointer',fontSize:16,fontWeight:700}}>×</button>
@@ -574,6 +670,7 @@ export default function CashierClosingPage() {
                   ...(mada>0?[{label:`— ${ct('mada',lang)}`,value:mada,sign:'−'}]:[]),
                   ...(visa>0?[{label:`— ${ct('visa',lang)}`,value:visa,sign:'−'}]:[]),
                   ...(mastercard>0?[{label:`— ${ct('mastercard',lang)}`,value:mastercard,sign:'−'}]:[]),
+                  ...deliveryList.map(d=>({label:`— ${d.name}`,value:d.amount,sign:'−'})),
                 ].map((r,i)=>(
                   <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:13,borderBottom:'1px dashed #eeeeeb'}}>
                     <span style={{color:'#8b8a84',fontWeight:600}}>{r.label}</span>
@@ -640,7 +737,7 @@ export default function CashierClosingPage() {
                         <label style={{display:'block',fontSize:12,fontWeight:700,color:'#5f5e5a',marginBottom:6}}>{ct(deficitChoice==='other'?'deficitOtherLbl':'deficitNoteLbl',lang)}</label>
                         <textarea value={deficitNote} onChange={e=>setDeficitNote(e.target.value.slice(0,400))} rows={2}
                           placeholder={ct('deficitReasonPh',lang)}
-                          style={{width:'100%',padding:'11px 12px',border:`1.5px solid ${deficitChoice==='other'&&!deficitReasonOk?'#fca5a5':'#e5e5e2'}`,borderRadius:12,fontSize:14,fontFamily:'inherit',boxSizing:'border-box' as const,resize:'vertical' as const,background:'white',outline:'none'}}/>
+                          style={{width:'100%',padding:'11px 12px',border:`1.5px solid ${deficitChoice==='other'&&!deficitReasonOk?'#fca5a5':'#e5e5e2'}`,borderRadius:12,fontSize:16,fontFamily:'inherit',boxSizing:'border-box' as const,resize:'vertical' as const,background:'white',outline:'none'}}/>
                       </>
                     )}
                     {!deficitReasonOk && <div style={{fontSize:11.5,color:'#b42318',marginTop:5,fontWeight:600}}>{ct(deficitChoice==='other'?'deficitOtherReq':'deficitReasonReq',lang)}</div>}
