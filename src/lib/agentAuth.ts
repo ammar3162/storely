@@ -1,7 +1,7 @@
 import crypto from 'crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-// دخول المندوب: رمز ٦ أرقام على الإيميل → جلسة موقّعة بكوكي HttpOnly (نفس طريقة بوابة المحاسب، بمفتاح مستقل)
+// دخول السفير: رمز ٦ أرقام على الإيميل → جلسة موقّعة بكوكي HttpOnly (نفس طريقة بوابة المحاسب، بمفتاح مستقل)
 const KEY = () => crypto.createHmac('sha256', process.env.STAFF_TOKEN_SECRET || '').update('sales-agent-v1').digest()
 const sign = (data: string) => crypto.createHmac('sha256', KEY()).update(data).digest('base64url')
 
@@ -36,7 +36,7 @@ export function cookieValue(req: Request, name: string) {
 }
 
 export type SalesAgent = { id: string; code: string; name: string; email: string; phone: string; payout_method: string; iban_last4: string | null; status: string; sessionId: string }
-/** المندوب الحالي من الكوكي — والجهاز لازم يكون ما انطلّع */
+/** السفير الحالي من الكوكي — والجهاز لازم يكون ما انطلّع */
 export async function currentAgent(db: SupabaseClient, req: Request): Promise<SalesAgent | null> {
   const s = readAgentSession(cookieValue(req, AGENT_COOKIE))
   if (!s) return null

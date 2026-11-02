@@ -5,7 +5,7 @@ import { notifyAgent } from '@/lib/agentNotify'
 
 const last9 = (p: string | null | undefined) => String(p || '').replace(/\D/g, '').slice(-9)
 
-/** منشأة جديدة سجّلت بكود مندوب → نربطها فيه (مو لو المندوب سجّل نفسه) */
+/** منشأة جديدة سجّلت بكود سفير → نربطها فيه (مو لو السفير سجّل نفسه) */
 export async function attachReferral(db: SupabaseClient, o: { orgId: string; orgName: string; code: unknown; ownerEmail?: string | null; ownerPhone?: string | null }) {
   const code = normalizeAgentCode(o.code)
   if (!code) return null
@@ -22,7 +22,7 @@ export async function attachReferral(db: SupabaseClient, o: { orgId: string; org
   return agent.id as string
 }
 
-/** أول اشتراك مدفوع لمنشأة جاء بها مندوب → مكافأة وحدة في محفظته (القيد الفريد على org_id يمنع التكرار) */
+/** أول اشتراك مدفوع لمنشأة جاء بها سفير → مكافأة وحدة في محفظته (القيد الفريد على org_id يمنع التكرار) */
 export async function awardAgentCommission(db: SupabaseClient, orgId: string) {
   const { data: org } = await db.from('organizations').select('name,plan,max_branches,billing_cycle,referred_by_agent').eq('id', orgId).maybeSingle()
   const o = org as any

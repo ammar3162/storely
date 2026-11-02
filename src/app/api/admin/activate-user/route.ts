@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     }
   } catch {}
 
-  // مكافأة المندوب على أول اشتراك مدفوع (مرة وحدة لكل منشأة)
+  // مكافأة السفير على أول اشتراك مدفوع (مرة وحدة لكل منشأة)
   let agentReward: number | null = null
   if (type === 'paid' && orgIdForUpdate) {
     try { agentReward = await awardAgentCommission(supabase, orgIdForUpdate) } catch (e) { console.error('AGENT_COMMISSION_FAILED', e) }
