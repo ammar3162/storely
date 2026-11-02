@@ -7,11 +7,15 @@ import ApiBridge from '@/components/ApiBridge'
 import SpeedInsightsRoute from '@/components/SpeedInsightsRoute'
 import DigitNormalizer from '@/components/DigitNormalizer'
 import { IN_APP_SCRIPT } from '@/lib/inApp'
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import Script from "next/script"
 // الخط من موقعنا نفسه بدل Google (أسرع — بدون اتصالات خارجية تعطّل الرسم). الخط أوزانه لين 700 بس
 import "./fonts.css"
 import "./globals.css"
+
+// تكبير الشاشة مقفول: Next يضيف وسم viewport افتراضي بدون قفل التكبير، فنحدده هنا بدل وسم يدوي ثاني
+// (الآيفون كان يقرّب الشاشة لما تضغط على خانة كتابة)
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, maximumScale: 1, userScalable: false }
 
 export const metadata: Metadata = {
   title: "Storely — نظام واحد يربط كل أعمال منشأتك",
@@ -52,7 +56,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preload" href="/fonts/ibm-plex-sans-arabic-arabic-700-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous"/>
         <script dangerouslySetInnerHTML={{__html: IN_APP_SCRIPT}}/>
         <meta name="theme-color" content="#042f2e"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
         <meta name="mobile-web-app-capable" content="yes"/>
         <meta name="apple-mobile-web-app-capable" content="yes"/>
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
