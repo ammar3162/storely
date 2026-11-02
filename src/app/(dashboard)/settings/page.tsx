@@ -11,7 +11,6 @@ import { PLAN_PRICING, planKeyOf, billLines, planPriceFor, planLabel as planLabe
 import PlanUpgrade from '@/components/PlanUpgrade'
 import { colors, radius, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import AccountantHub from '@/components/AccountantHub'
-import DeliveryAppsSettings from '@/components/DeliveryAppsSettings'
 
 const lbl: React.CSSProperties = { fontSize: font.xs, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }
 
@@ -24,7 +23,6 @@ const TABS = [
   {key:'account', label:'الحساب',     icon:'👤'},
   {key:'org',    label:'المؤسسة',    icon:'🏢'},
   {key:'notify', label:'الإشعارات',  icon:'🔔'},
-  {key:'cashier', label:'إقفال الكاشير', icon:'🧾', ownerOnly:true},
   {key:'backup', label:'النسخ الاحتياطي', icon:'💾'},
   {key:'accountant', label:'المحاسب', icon:'📊', ownerOnly:true},
   {key:'security',label:'الأمان',   icon:'🔐'},
@@ -533,10 +531,6 @@ export default function SettingsPage() {
                 {saving?'⏳ جاري الحفظ...':'💾 حفظ البيانات'}
               </button>
             </form>
-          )}
-
-          {activeTab==='cashier'&&isOwner&&orgId&&(
-            <div className="su"><DeliveryAppsSettings orgId={orgId}/></div>
           )}
 
           {/* NOTIFY TAB */}

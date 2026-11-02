@@ -10,6 +10,7 @@ import { getStaffOrg } from '@/lib/session'
 import { useStaffLang, localeOf, isRtlLang } from '@/lib/staffLang'
 import { CASHIER_EXTRA, THANKS_EXTRA } from '@/lib/staffI18n/cashier'
 import StaffLangButton from '@/components/StaffLangButton'
+import { DELIVERY_APP_PRESETS, MAX_DELIVERY_APPS } from '@/lib/deliveryApps'
 
 interface StaffSession {
   id: string; name: string; org_id: string; branch_id: string | null
@@ -53,7 +54,11 @@ const CUI: Record<string,Record<'ar'|'en',string>> = {
   mastercard:       {ar:'ماستركارد',en:'Mastercard'},
   networkTotal:     {ar:'إجمالي الشبكة',en:'Network Total'},
   networkErrorMsg:  {ar:'إجمالي الشبكة أكبر من إجمالي المبيعات — راجع الأرقام',en:'Network total exceeds sales total — check the numbers'},
-  deliveryLabel:    {ar:'تطبيقات التوصيل — مبلغ كل تطبيق من تقرير النظام',en:'Delivery apps — each app amount from the system report'},
+  deliveryLabel:    {ar:'طلبات تطبيقات التوصيل (اختياري)',en:'Delivery app orders (optional)'},
+  deliveryPick:     {ar:'اختر التطبيق واكتب مبلغه من تقرير النظام',en:'Pick the app and enter its amount from the system report'},
+  otherApp:         {ar:'تطبيق ثاني',en:'Other app'},
+  appNamePh:        {ar:'اسم التطبيق',en:'App name'},
+  addApp:           {ar:'إضافة',en:'Add'},
   deliveryTotal:    {ar:'إجمالي التوصيل',en:'Delivery Total'},
   deliveryHint:     {ar:'فلوسها ما تدخل الدرج، فتنخصم من الكاش المتوقع',en:"This money doesn't go into the drawer, so it's deducted from expected cash"},
   overSalesMsg:     {ar:'الشبكة والتوصيل مع بعض أكبر من إجمالي المبيعات — راجع الأرقام',en:'Network and delivery together exceed total sales — check the numbers'},
@@ -200,8 +205,11 @@ export default function CashierClosingPage() {
   const [visaAmount, setVisaAmount] = useState('')
   const [mastercardAmount, setMastercardAmount] = useState('')
   const [cashAmount, setCashAmount] = useState('')
-  const [deliveryApps, setDeliveryApps] = useState<string[]>([])   // من إعدادات المالك
+  const [deliveryChoices, setDeliveryChoices] = useState<string[]>([...DELIVERY_APP_PRESETS])   // الأشهر + اللي استخدمتها المنشأة قبل
+  const [deliveryApps, setDeliveryApps] = useState<string[]>([])   // اللي اختارها الكاشير بهالإقفال
   const [deliveryAmounts, setDeliveryAmounts] = useState<Record<string,string>>({})
+  const [otherAppOpen, setOtherAppOpen] = useState(false)
+  const [otherAppName, setOtherAppName] = useState('')
   const [hasPurchases, setHasPurchases] = useState<'yes'|'no'|null>(null)
   const [purchases, setPurchases] = useState<Purchase[]>([{amount:'',reason:''}])
   const [deficitChoice, setDeficitChoice] = useState('')   // مفتاح من DEFICIT_REASONS
@@ -229,7 +237,7 @@ export default function CashierClosingPage() {
         if(org?.logo_url) setOrgLogo(org.logo_url)
         if(org?.business_day_start_hour != null) setDayStartHour(org.business_day_start_hour)
         if(org?.currency) setCurr(currencySymbol(org.currency))
-        if(Array.isArray(org?.delivery_apps)) setDeliveryApps(org.delivery_apps)
+        if(Array.isArray(org?.delivery_apps) && org.delivery_apps.length) setDeliveryChoices(org.delivery_apps)
         // نفس قرار الخادم: الشاملة/المتقدمة أو إضافة «إقفال الكاشير»
         if(org && org.cashier_feature===false) setLocked(true)
       })
@@ -281,6 +289,20 @@ export default function CashierClosingPage() {
       showToast(ct('imgUploadFailed',lang),'error')
     }
     kind==='network'?setUploadingNetwork(false):setUploadingSales(false)
+  }
+
+  function toggleDeliveryApp(name:string) {
+    if(deliveryApps.includes(name)){
+      setDeliveryApps(prev=>prev.filter(x=>x!==name))
+      setDeliveryAmounts(prev=>{const n={...prev}; delete n[name]; return n})
+    } else if(deliveryApps.length<MAX_DELIVERY_APPS) setDeliveryApps(prev=>[...prev,name])
+  }
+  function addOtherApp() {
+    const name = otherAppName.replace(/\s+/g,' ').trim().slice(0,40)
+    if(!name) return
+    if(!deliveryChoices.includes(name)) setDeliveryChoices(prev=>[...prev,name])
+    if(!deliveryApps.includes(name) && deliveryApps.length<MAX_DELIVERY_APPS) setDeliveryApps(prev=>[...prev,name])
+    setOtherAppName(''); setOtherAppOpen(false)
   }
 
   function addPurchaseRow() { setPurchases(prev=>[...prev,{amount:'',reason:''}]) }
@@ -377,7 +399,7 @@ export default function CashierClosingPage() {
   }
 
   function resetForm() {
-    setTotalSales(''); setMadaAmount(''); setVisaAmount(''); setMastercardAmount(''); setCashAmount(''); setDeliveryAmounts({})
+    setTotalSales(''); setMadaAmount(''); setVisaAmount(''); setMastercardAmount(''); setCashAmount(''); setDeliveryApps([]); setDeliveryAmounts({}); setOtherAppOpen(false); setOtherAppName('')
     setHasPurchases(null); setPurchases([{amount:'',reason:''}])
     setNetworkImage(''); setSalesImage(''); setDeficitChoice(''); setDeficitNote('')
     setStep(1); setSaved(false)
@@ -475,10 +497,37 @@ export default function CashierClosingPage() {
                   )}
                   {networkError && <div style={{fontSize:11,color:'#dc2626',fontWeight:700,marginTop:6,display:'flex',alignItems:'center',gap:4}}>⚠️ {networkError}</div>}
                 </div>
-                {deliveryApps.length>0 && (
-                  <div style={{marginBottom:16}}>
-                    <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>{ct('deliveryLabel',lang)}</label>
-                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(120px,1fr))',gap:8}}>
+                <div style={{marginBottom:16}}>
+                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:3}}>{ct('deliveryLabel',lang)}</label>
+                  <div style={{fontSize:10.5,color:'#a8a7a1',marginBottom:8}}>{ct('deliveryPick',lang)}</div>
+                  <div style={{display:'flex',flexWrap:'wrap' as const,gap:6}}>
+                    {deliveryChoices.map(name=>{
+                      const on = deliveryApps.includes(name)
+                      return (
+                        <button key={name} type="button" onClick={()=>toggleDeliveryApp(name)}
+                          style={{padding:'7px 12px',borderRadius:999,border:`1.5px solid ${on?'#029FA2':'#e5e5e2'}`,background:on?'#f0fdfa':'white',color:on?'#0f766e':'#5f5e5a',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                          {on?'✓ ':''}{name}
+                        </button>
+                      )
+                    })}
+                    {!otherAppOpen && (
+                      <button type="button" onClick={()=>setOtherAppOpen(true)}
+                        style={{padding:'7px 12px',borderRadius:999,border:'1.5px dashed #d4d3ce',background:'transparent',color:'#5f5e5a',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                        + {ct('otherApp',lang)}
+                      </button>
+                    )}
+                  </div>
+                  {otherAppOpen && (
+                    <div style={{display:'flex',gap:6,marginTop:8}}>
+                      <input value={otherAppName} onChange={e=>setOtherAppName(e.target.value)} maxLength={40} placeholder={ct('appNamePh',lang)} autoFocus
+                        onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); addOtherApp() } }}
+                        style={{flex:1,minWidth:0,padding:'10px 12px',border:'1.5px solid #e5e5e2',borderRadius:10,fontSize:13,fontFamily:'inherit',outline:'none',boxSizing:'border-box'}}/>
+                      <button type="button" onClick={addOtherApp} disabled={!otherAppName.trim()}
+                        style={{padding:'0 14px',borderRadius:10,border:'none',background:otherAppName.trim()?'#029FA2':'#d4d3ce',color:'white',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{ct('addApp',lang)}</button>
+                    </div>
+                  )}
+                  {deliveryApps.length>0 && (
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(120px,1fr))',gap:8,marginTop:10}}>
                       {deliveryApps.map(name=>(
                         <div key={name}>
                           <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const,whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{name}</div>
@@ -487,15 +536,17 @@ export default function CashierClosingPage() {
                         </div>
                       ))}
                     </div>
-                    {delivery>0 && (
+                  )}
+                  {delivery>0 && (
+                    <>
                       <div style={{display:'flex',justifyContent:'space-between',marginTop:8,padding:'8px 10px',background:'#fff7ed',borderRadius:8,fontSize:11,fontWeight:700}}>
                         <span style={{color:'#c2410c'}}>{ct('deliveryTotal',lang)}</span>
                         <span style={{color:'#c2410c',direction:'ltr' as const}}>{fmt(delivery)} {curr}</span>
                       </div>
-                    )}
-                    <div style={{fontSize:10.5,color:'#a8a7a1',marginTop:6}}>{ct('deliveryHint',lang)}</div>
-                  </div>
-                )}
+                      <div style={{fontSize:10.5,color:'#a8a7a1',marginTop:6}}>{ct('deliveryHint',lang)}</div>
+                    </>
+                  )}
+                </div>
                 <div style={{marginBottom: (totalSales && anyNetworkEntered && !networkError) ? 16 : 0}}>
                   <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>{ct('cashInDrawer',lang)}</label>
                   <MoneyInput value={cashAmount} onChange={setCashAmount} placeholder="0.00" icon="💵" iconBg="#fffbeb" iconColor="#d97706" currency={curr}/>

@@ -3,7 +3,6 @@ import { normalizeWhatsapp } from '@/lib/phoneNormalize'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { MAX_BUSINESS_DAY_START_HOUR } from '@/lib/businessDate'
-import { cleanAppList, MAX_DELIVERY_APPS } from '@/lib/deliveryApps'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -90,12 +89,6 @@ export async function PATCH(req: Request) {
     }
     if ('notify_cashier_closing_wa' in body) update.notify_cashier_closing_wa = !!body.notify_cashier_closing_wa
     if ('notify_supplier_wa' in body) update.notify_supplier_wa = !!body.notify_supplier_wa
-    // تطبيقات التوصيل اللي تطلع للكاشير بالإقفال
-    if ('delivery_apps' in body) {
-      const apps = cleanAppList(body.delivery_apps)
-      if (!apps) return NextResponse.json({ error: `أقصى عدد ${MAX_DELIVERY_APPS} تطبيقات` }, { status: 400 })
-      update.delivery_apps = apps
-    }
     if ('staff_salary_visible' in body) update.staff_salary_visible = !!body.staff_salary_visible
     if ('vat_registered' in body) update.vat_registered = body.vat_registered === null ? null : !!body.vat_registered
     // إعدادات الأوفر تايم (صفحة الحضور والانصراف)

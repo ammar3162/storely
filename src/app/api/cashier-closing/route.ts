@@ -12,7 +12,7 @@ import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { computeBusinessDate } from '@/lib/businessDate'
 import { selectAll } from '@/lib/selectAll'
 import { computeClosing } from '@/lib/cashierClosingCalc'
-import { cleanAppList, deliveryFromInput } from '@/lib/deliveryApps'
+import { deliveryFromInput, rememberApps } from '@/lib/deliveryApps'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -63,10 +63,10 @@ export async function POST(req: Request) {
     }
 
     // نفس حساب التعديل (lib/cashierClosingCalc) — مبالغ موجبة ومعقولة بس، وأي قيمة غريبة تنرفض
-    // التوصيل: بس التطبيقات اللي اختارها المالك بالإعدادات
+    // التوصيل: الكاشير يختار التطبيق ويكتب مبلغه
     const calc = computeClosing({
       total_sales, mada_amount, visa_amount, mastercard_amount, cash_amount, purchases,
-      delivery: deliveryFromInput(delivery, cleanAppList((orgCheck as any)?.delivery_apps) || []),
+      delivery: deliveryFromInput(delivery),
     })
     if (!calc) return NextResponse.json({ error: 'مبالغ غير صالحة' }, { status: 400 })
     const { total_sales: sales, mada_amount: mada, visa_amount: visa, mastercard_amount: mastercard, cash_amount: cash, network_amount: network,
@@ -119,6 +119,9 @@ export async function POST(req: Request) {
     if (error) {
       return NextResponse.json({ error: 'حدث خطأ أثناء حفظ التقرير' }, { status: 500 })
     }
+    // تطبيق جديد كتبه الكاشير يطلع جاهز بالإقفال الجاي
+    const remembered = rememberApps((orgCheck as any)?.delivery_apps, deliveryList)
+    if (remembered) await supabase.from('organizations').update({ delivery_apps: remembered } as any).eq('id', org_id)
 
     // إرسال إشعار واتساب فوري للمالك
     try {

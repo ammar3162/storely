@@ -6,6 +6,7 @@ import { colors, font, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import NumberInput from '@/components/NumberInput'
 import { computeClosing } from '@/lib/cashierClosingCalc'
+import { appChoices } from '@/lib/deliveryApps'
 
 // كلمة مرور حساب المالك (نفس كلمة الدخول) — يتحقق منها الخادم قبل التعديل أو الحذف
 export function PasswordBox({ value, onChange, onEnter }: { value: string; onChange: (v: string) => void; onEnter?: () => void }) {
@@ -28,13 +29,10 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
     deficit_reason: String(closing.deficit_reason ?? ''),
     delivery: Object.fromEntries(((closing.delivery || []) as any[]).map(d => [String(d.name), String(d.amount ?? '')])) as Record<string, string>,
   }))
-  // تطبيقات التوصيل: قائمة المنشأة + اللي مسجّلة بهالإقفال
-  const [apps, setApps] = useState<string[]>(() => Object.keys(f.delivery))
+  // تطبيقات التوصيل: المسجّلة بهالإقفال + الأشهر + اللي استخدمتها المنشأة قبل
+  const [apps, setApps] = useState<string[]>(() => [...new Set([...Object.keys(f.delivery), ...appChoices([])])])
   useEffect(() => {
-    api.get('/api/org-settings', { org_id: orgId }).then(j => {
-      const list: string[] = Array.isArray(j?.settings?.delivery_apps) ? j.settings.delivery_apps : []
-      setApps(prev => [...new Set([...list, ...prev])])
-    })
+    api.get('/api/org-settings', { org_id: orgId }).then(j => setApps(prev => [...new Set([...prev, ...appChoices(j?.settings?.delivery_apps)])]))
   }, [orgId])
   // إقفالات قديمة بدون تفصيل الشبكة: نحط الإجمالي في «مدى» عشان ما يضيع
   useEffect(() => {
@@ -95,7 +93,7 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
           </div>
           {apps.length > 0 && (
             <div>
-              <label style={lbl}>تطبيقات التوصيل</label>
+              <label style={lbl}>تطبيقات التوصيل (اللي ما فيها مبلغ اتركها فاضية)</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 8 }}>
                 {apps.map(name => (
                   <div key={name}><div style={{ fontSize: 11, color: colors.text4, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>

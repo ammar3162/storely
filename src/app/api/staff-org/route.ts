@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { orgFeatures } from '@/lib/planFeatures'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
-import { cleanAppList } from '@/lib/deliveryApps'
+import { appChoices } from '@/lib/deliveryApps'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,7 +31,7 @@ export async function GET(req: Request) {
       business_day_start_hour: (org as any).business_day_start_hour ?? null,
       business_type: (org as any).business_type || null,
       hr_feature: hr, cashier_feature: cashier,
-      delivery_apps: cleanAppList((org as any).delivery_apps) || [],
+      delivery_apps: appChoices((org as any).delivery_apps),
     })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
