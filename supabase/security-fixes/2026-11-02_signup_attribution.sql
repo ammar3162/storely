@@ -14,3 +14,4 @@ create table if not exists public.signup_attribution (
 create index if not exists signup_attribution_created_idx on public.signup_attribution (created_at desc);
 -- قراءة وكتابة من الخادم بس (service role) — ما فيه سياسات للمتصفح
 alter table public.signup_attribution enable row level security;
+revoke all on public.signup_attribution from anon, authenticated, public;
