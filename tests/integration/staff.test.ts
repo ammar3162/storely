@@ -274,9 +274,10 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
       expect(((await db.from('organizations').select('delivery_apps').eq('id', orgId).single()).data as any).delivery_apps).toEqual(['هنقرستيشن', 'جاهز'])
       expect((await call(orgSettings.PATCH, 'PATCH', '/api/org-settings', { org_id: orgId, delivery_apps: 'x' })).status).toBe(400)
 
-      const { data: st } = await db.from('staff_members').insert({
-        org_id: orgId, branch_id: branchA, name: 'كاشير توصيل', phone: `9665${String(stamp + 11).slice(-8)}`, pin: 'x', is_active: true, role: 'cashier',
+      const { data: st, error: stErr } = await db.from('staff_members').insert({
+        org_id: orgId, branch_id: branchA, name: 'كاشير توصيل', phone: uniqPhone(), pin: 'x', is_active: true, role: 'cashier',
       } as any).select('id').single()
+      if (stErr) throw stErr
       const token = generateStaffToken((st as any).id, orgId, branchA)
       const withToken = (handler: any, method: string, body?: unknown) => handler(new Request('http://test/api', {
         method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: body ? JSON.stringify(body) : undefined,
