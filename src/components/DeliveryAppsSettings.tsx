@@ -1,13 +1,13 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { X, Bike, Plus, Check } from 'lucide-react'
+import { Bike, Plus, Check } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import { colors, font, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { DELIVERY_APP_PRESETS, MAX_DELIVERY_APPS } from '@/lib/deliveryApps'
 
-// المالك يختار تطبيقات التوصيل اللي يشتغل معها — تطلع للكاشير خانة لكل تطبيق بالإقفال
-export default function DeliveryAppsSettings({ orgId, onClose, onSaved }: { orgId: string; onClose: () => void; onSaved?: (apps: string[]) => void }) {
+// المالك يختار تطبيقات التوصيل اللي يشتغل معها — تطلع للكاشير خانة لكل تطبيق بالإقفال (الإعدادات ← إقفال الكاشير)
+export default function DeliveryAppsSettings({ orgId }: { orgId: string }) {
   const [apps, setApps] = useState<string[] | null>(null)
   const [custom, setCustom] = useState('')
   const [busy, setBusy] = useState(false)
@@ -31,24 +31,18 @@ export default function DeliveryAppsSettings({ orgId, onClose, onSaved }: { orgI
     setBusy(false)
     if (!r.success) { toast(r.error || 'تعذر الحفظ', 'error'); return }
     toast(list.length ? 'تم حفظ تطبيقات التوصيل — تطلع للكاشير بالإقفال الجاي' : 'تم إلغاء تطبيقات التوصيل من الإقفال')
-    onSaved?.(list)
-    onClose()
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, fontFamily: font.family }}>
-      <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,.45)', backdropFilter: 'blur(6px)' }} onClick={() => !busy && onClose()} />
-      <div style={{ background: colors.surface, borderRadius: 18, width: '100%', maxWidth: 480, maxHeight: '92vh', overflowY: 'auto', position: 'relative', boxShadow: '0 24px 60px rgba(0,0,0,.25)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px', borderBottom: `1px solid ${colors.border}` }}>
+    <div style={{ fontFamily: font.family }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
           <span style={{ width: 36, height: 36, borderRadius: 10, background: colors.primaryLight, color: colors.primary, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Bike size={18} /></span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: colors.text }}>تطبيقات التوصيل</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: colors.text }}>تطبيقات التوصيل</div>
             <div style={{ fontSize: 12, color: colors.text3 }}>اختر التطبيقات اللي تشتغل معها</div>
           </div>
-          <button onClick={() => !busy && onClose()} aria-label="إغلاق" style={{ background: colors.bg, border: 'none', borderRadius: 9, padding: 7, cursor: 'pointer', display: 'inline-flex', color: colors.text2 }}><X size={18} /></button>
         </div>
-
-        <div style={{ padding: 20, display: 'grid', gap: 14 }}>
+        <div style={{ display: 'grid', gap: 14 }}>
           <div style={{ fontSize: 12.5, color: colors.text2, lineHeight: 1.8, background: colors.bg, borderRadius: 10, padding: '10px 12px' }}>
             الكاشير يكتب بالإقفال مبلغ كل تطبيق من تقرير نظام المبيعات. فلوس التطبيقات ما تدخل الدرج، فتنخصم من الكاش المتوقع مثل الشبكة، وما يطلع عجز غلط.
           </div>
@@ -80,14 +74,12 @@ export default function DeliveryAppsSettings({ orgId, onClose, onSaved }: { orgI
                 </div>
                 {full && <div style={{ fontSize: 11.5, color: colors.text4, marginTop: 5 }}>أقصى عدد {MAX_DELIVERY_APPS} تطبيقات</div>}
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => !busy && onClose()} style={{ flex: 1, padding: 12, background: colors.bg, color: colors.text3, border: 'none', borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>إلغاء</button>
-                <button onClick={save} disabled={busy} style={{ flex: 2, padding: 12, background: busy ? colors.border2 : colors.primary, color: '#fff', border: 'none', borderRadius: 11, fontSize: 14, fontWeight: 800, cursor: busy ? 'default' : 'pointer', fontFamily: font.family }}>{busy ? 'جاري الحفظ...' : 'حفظ'}</button>
+              <div style={{ display: 'flex' }}>
+                <button onClick={save} disabled={busy} style={{ flex: 1, padding: 12, background: busy ? colors.border2 : colors.primary, color: '#fff', border: 'none', borderRadius: 11, fontSize: 14, fontWeight: 800, cursor: busy ? 'default' : 'pointer', fontFamily: font.family }}>{busy ? 'جاري الحفظ...' : 'حفظ'}</button>
               </div>
             </>
           )}
         </div>
-      </div>
     </div>
   )
 }

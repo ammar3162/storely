@@ -14,7 +14,6 @@ import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag,
 import { toast } from '@/components/toast'
 // أجزاء تنفتح عند الطلب بس — ما تنحمّل مع الصفحة
 const CashierClosingEditor = lazy(() => import('@/components/CashierClosingEditor'))
-const DeliveryAppsSettings = lazy(() => import('@/components/DeliveryAppsSettings'))
 // صافي الإقفال: الشبكة + التوصيل (تحوّله التطبيقات) + الكاش − المسحوبات
 const netOf = (c: any) => Number(c.network_amount||0) + Number(c.delivery_amount||0) + Number(c.cash_amount||0) - Number(c.total_purchases||0)
 const PasswordBox = lazy(() => import('@/components/CashierClosingEditor').then(m => ({ default: m.PasswordBox })))
@@ -1249,7 +1248,6 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
   const [curr, setCurr] = useState('⃁')
   const [isOwner, setIsOwner] = useState(false)
   const [deciding, setDeciding] = useState<string|null>(null)
-  const [deliverySettings, setDeliverySettings] = useState(false)
   // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
   useLiveRefresh(typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null, ['cashier_closings'], ()=>load())
   useEffect(()=>{
@@ -1371,18 +1369,10 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
       <BackBtn onClick={onBack}/>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap' as const,gap:8}}>
         <PeriodBadge period={period} from={from} to={to}/>
-        <div style={{display:'flex',gap:8,flexWrap:'wrap' as const}}>
-        {isOwner && (
-          <button onClick={()=>setDeliverySettings(true)}
-            style={{...btnSecondary,padding:'8px 16px',fontSize:font.xs,display:'flex',alignItems:'center',gap:6}}>
-            <Bike size={14} strokeWidth={2.25}/> تطبيقات التوصيل
-          </button>
-        )}
         <button onClick={handleExportPdf} disabled={exportingPdf || closings.length===0}
           style={{...btnSecondary,padding:'8px 16px',fontSize:font.xs,opacity:exportingPdf||closings.length===0?0.6:1,cursor:exportingPdf||closings.length===0?'not-allowed':'pointer',display:'flex',alignItems:'center',gap:6}}>
           {exportingPdf?<span style={{display:'inline-flex',alignItems:'center',gap:6}}><Loader2 size={14} strokeWidth={2.25} className="spin-icon"/> جاري التصدير...</span>:<span style={{display:'inline-flex',alignItems:'center',gap:6}}><FileText size={14} strokeWidth={2.25}/> تصدير PDF</span>}
         </button>
-        </div>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16,marginTop:12}}>
         {[
@@ -1434,9 +1424,6 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
             <span key={name} style={{fontSize:font.xs,fontWeight:700,color:colors.text2,background:colors.bg,borderRadius:999,padding:'4px 10px'}}>{name} {amt.toFixed(0)} {curr}</span>
           ))}
         </div>
-      )}
-      {deliverySettings && (
-        <Suspense fallback={null}><DeliveryAppsSettings orgId={sessionStorage.getItem('s_org_id')||''} onClose={()=>setDeliverySettings(false)}/></Suspense>
       )}
 
       <div style={{...card,overflow:'hidden'}}>
