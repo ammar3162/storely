@@ -55,3 +55,19 @@ export async function POST(req: Request) {
   await logAdminAction(admin, 'approve_plan_request', q.org_id, orgName, { request_id: id, target_plan: q.target_plan })
   return NextResponse.json({ success: true })
 }
+
+// حذف طلب ترقية من القائمة (الباقة الحالية للعميل ما تتأثر)
+export async function DELETE(req: Request) {
+  const admin = await requirePermission(req.headers.get('x-admin-key'), 'manage_users')
+  if (!admin) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  const id = new URL(req.url).searchParams.get('id') || ''
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+  const db = sb()
+  const { data: r } = await db.from('plan_requests').select('id,org_id,current_plan,target_plan,status,organizations(name)').eq('id', id).maybeSingle()
+  if (!r) return NextResponse.json({ error: 'الطلب غير موجود' }, { status: 404 })
+  const { error } = await db.from('plan_requests').delete().eq('id', id)
+  if (error) return NextResponse.json({ error: 'تعذر الحذف' }, { status: 500 })
+  const x = r as any
+  await logAdminAction(admin, 'delete_plan_request', x.org_id, x.organizations?.name || null, { request_id: id, current_plan: x.current_plan, target_plan: x.target_plan, status: x.status })
+  return NextResponse.json({ success: true })
+}

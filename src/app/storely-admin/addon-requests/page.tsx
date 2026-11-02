@@ -38,6 +38,16 @@ export default function AddonRequestsPage() {
     setRows(prev => prev.filter(x => x.id !== r.id)); setMsg('تم حذف الطلب')
   }
 
+  async function removePlan(r: any) {
+    if (!confirm(`حذف طلب ترقية «${r.organizations?.name}»؟${r.status === 'pending' ? '\n\nالطلب لسا معلّق — الحذف ما يرفضه ولا يوصل العميل إشعار.' : '\n\nباقة العميل الحالية ما تتأثر — ينحذف الطلب من القائمة بس.'}`)) return
+    setBusy(r.id); setMsg('')
+    const res = await fetch(`/api/admin/plan-requests?id=${r.id}`, { method: 'DELETE', headers: { 'x-admin-key': adminKey() } })
+    const j = await res.json().catch(() => ({}))
+    setBusy(null)
+    if (!res.ok) { setMsg(j.error || 'فشل الحذف'); return }
+    setPlanReqs(prev => prev.filter(x => x.id !== r.id)); setMsg('تم حذف الطلب')
+  }
+
   async function decide(r: any, action: 'approve' | 'reject') {
     let reason = ''
     if (action === 'reject') { const v = prompt('سبب الرفض (اختياري — يوصل للعميل)'); if (v === null) return; reason = v }
@@ -84,7 +94,7 @@ export default function AddonRequestsPage() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 'fit-content' }}>
                     <span style={{ color, fontSize: 12, fontWeight: 800, border: `1px solid ${color}`, borderRadius: 8, padding: '4px 10px' }}>{label}</span>
-                    <button disabled={busy === r.id} onClick={() => remove(r)} title="حذف الطلب" aria-label="حذف الطلب"
+                    <button disabled={busy === r.id} onClick={() => removePlan(r)} title="حذف الطلب" aria-label="حذف الطلب"
                       style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'none', color: C.red, border: `1px solid ${C.red}`, borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
                       <Trash2 size={13} /> حذف
                     </button>
@@ -117,7 +127,13 @@ export default function AddonRequestsPage() {
                     <div style={{ color: C.text, fontSize: 16, fontWeight: 800 }}>{r.marketplace_addons?.name} <span style={{ color: C.text3, fontWeight: 600, fontSize: 13 }}>— {r.organizations?.name}</span></div>
                     <div style={{ color: C.text3, fontSize: 12, marginTop: 3 }}>{new Date(r.created_at).toLocaleString('ar-SA', { numberingSystem: 'latn' })}</div>
                   </div>
-                  <span style={{ color, fontSize: 12, fontWeight: 800, border: `1px solid ${color}`, borderRadius: 8, padding: '4px 10px', height: 'fit-content' }}>{label}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 'fit-content' }}>
+                    <span style={{ color, fontSize: 12, fontWeight: 800, border: `1px solid ${color}`, borderRadius: 8, padding: '4px 10px' }}>{label}</span>
+                    <button disabled={busy === r.id} onClick={() => remove(r)} title="حذف الطلب" aria-label="حذف الطلب"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'none', color: C.red, border: `1px solid ${C.red}`, borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      <Trash2 size={13} /> حذف
+                    </button>
+                  </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 8, fontSize: 13, color: C.text2, marginTop: 12 }}>
                   <div>المطلوب: <b style={{ color: C.text }}>{r.branch_names?.length && r.marketplace_addons?.slug !== 'extra_staff' ? `${r.branch_names.length} فرع` : `${r.quantity} وحدة`}</b> ({(r.branch_names?.length && r.marketplace_addons?.slug !== 'extra_staff' ? r.branch_names.length : r.quantity) * (r.marketplace_addons?.monthly_price || 0)} ⃁/شهر)</div>
