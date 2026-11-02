@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { isInApp } from '@/lib/inApp'
 import { Check, Minus, Play, ArrowLeft, MessageCircle } from 'lucide-react'
-import { Billing, PLAN_BRANCHES, PLANS, COMPARE, LS, FAQ_ITEMS, FEATURES, BRANCH_OPTIONS, BRANCH_OPTIONS_EN } from './landing-data'
+import { Billing, PLAN_BRANCHES, PLANS, COMPARE, LS, FAQ_ITEMS, FEATURES, BRANCH_OPTIONS, BRANCH_OPTIONS_EN, SOCIAL_LINKS } from './landing-data'
 import { FaqItem } from './landing-components'
 
 // لون لكل ميزة — نفس ألوان صفحات لوحة التحكم
@@ -421,6 +421,13 @@ export default function LandingPage({ initialMarquee }: { initialMarquee?: strin
             <div>
               <div className="lp-brand" style={{color:'#fff'}}><img src="/storely-logo.png" alt=""/><span>Storely</span></div>
               <p className="lp-foot-tag">{t('footerTagline')}</p>
+              <div className="lp-foot-social">
+                {SOCIAL_LINKS.map(s=>(
+                  <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label} title={s.label}>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d={s.path}/></svg>
+                  </a>
+                ))}
+              </div>
             </div>
             {[
               {title:t('footerPlatform'),links:[[t('footerLogin'),'/login'],[t('footerSignup'),'/login?mode=register'],[t('footerPricing'),'#pricing']]},
@@ -663,6 +670,9 @@ html{scroll-behavior:smooth}
 .lp-foot-title{font-size:13px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:14px}
 .lp-foot-link{display:block;text-decoration:none;font-size:14.5px;color:rgba(255,255,255,.88);margin-bottom:10px}
 .lp-foot-link:hover{color:var(--mint)}
+.lp-foot-social{display:flex;gap:10px;margin-top:18px}
+.lp-foot-social a{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.85);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);transition:background .2s,color .2s}
+.lp-foot-social a:hover{background:rgba(255,255,255,.16);color:var(--mint)}
 .lp-foot-bottom{border-top:1px solid rgba(255,255,255,.1);padding-top:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-size:13px}
 .lp-foot-bottom small{display:block;color:rgba(255,255,255,.45);margin-top:6px;font-size:11.5px}
 .lp-wa-float{position:fixed;bottom:24px;left:24px;z-index:999;width:56px;height:56px;border-radius:50%;background:#25d366;display:grid;place-items:center;box-shadow:0 12px 26px -8px rgba(37,211,102,.55);transition:transform .2s}
