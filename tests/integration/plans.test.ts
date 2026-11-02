@@ -95,6 +95,13 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
       // من المتوسطة ما يقدر يطلب المتوسطة مرة ثانية
       expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'pro' })).status).toBe(400)
 
+      // الإدارة تحذف طلب الترقية من القائمة — الباقة ما تتأثر، وبدون مفتاح الإدارة ينرفض
+      const delPlan = (key: string) => adminReqs.DELETE(new Request(`http://test/api/admin/plan-requests?id=${mine.id}`, { method: 'DELETE', headers: { 'x-admin-key': key } }))
+      expect((await delPlan('wrong')).status).toBe(401)
+      expect((await delPlan('it-admin')).status).toBe(200)
+      expect((await db.from('plan_requests').select('id').eq('id', mine.id).maybeSingle()).data).toBeNull()
+      expect(((await db.from('organizations').select('plan').eq('id', orgId).single()).data as any).plan).toBe('pro')
+
       await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).in('addon_id', slugs.map(idOf))
       await db.from('plan_requests').delete().eq('org_id', orgId)
       await db.from('branches').update({ is_active: false, plan_locked_at: null } as any).eq('org_id', orgId).neq('id', branchA)
