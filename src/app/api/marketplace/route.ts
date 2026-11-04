@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId, getCurrentProfile } from '@/lib/verifyOrgAccess'
+import { DEVICE_UNVERIFIED_ERROR, DEVICE_UNVERIFIED_REASON } from '@/lib/deviceMessages'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,7 +29,9 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const view = searchParams.get('view')
-    if (!(await getCurrentProfile())) return NextResponse.json({ error: 'غير مسجل دخول' }, { status: 401 })
+    const me = await getCurrentProfile()
+    if (!me) return NextResponse.json({ error: 'غير مسجل دخول' }, { status: 401 })
+    if (me.deviceTrusted === false) return NextResponse.json({ error: DEVICE_UNVERIFIED_ERROR, reason: DEVICE_UNVERIFIED_REASON }, { status: 403 })
     const db = sb()
 
     if (view === 'list') {

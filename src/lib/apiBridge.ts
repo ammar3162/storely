@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/client'
 import { setApiToken } from '@/lib/api-client'
+import { DEVICE_STORAGE_KEY } from '@/lib/deviceMessages'
 
 /**
  * جسر تطبيق الجوال — يشتغل فقط لو NEXT_PUBLIC_API_BASE_URL مضبوط (نسخة التطبيق).
@@ -40,6 +41,10 @@ export function installApiBridge() {
     await trackToken()
     const headers = new Headers(init?.headers)
     if (token && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`)
+    // معرّف الجهاز الموثوق (الموقع يستخدم كوكي httpOnly بداله)
+    let device: string | null = null
+    try { device = localStorage.getItem(DEVICE_STORAGE_KEY) } catch {}
+    if (device && !headers.has('x-storely-device')) headers.set('x-storely-device', device)
     return originalFetch(BASE_URL + url, { ...init, headers, credentials: 'omit' })
   }
   trackToken()

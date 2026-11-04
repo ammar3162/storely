@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/verifyOrgAccess'
 import { combineBranchLimit, EXTRA_BRANCH_SLUG } from '@/lib/branchLimit'
 import { orgFeatures } from '@/lib/planFeatures'
+import { DEVICE_UNVERIFIED_ERROR, DEVICE_UNVERIFIED_REASON } from '@/lib/deviceMessages'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,6 +16,7 @@ export async function GET() {
   try {
     const profile = await getCurrentProfile()
     if (!profile) return NextResponse.json({ error: 'غير مسجل دخول', reason: 'unauthenticated' }, { status: 401 })
+    if (profile.deviceTrusted === false) return NextResponse.json({ error: DEVICE_UNVERIFIED_ERROR, reason: DEVICE_UNVERIFIED_REASON }, { status: 403 })
     if (!profile.orgId) return NextResponse.json({ error: 'لا توجد مؤسسة مرتبطة بالحساب', reason: 'no_org', status: profile.status }, { status: 404 })
 
     const db = sb()

@@ -169,6 +169,25 @@ export function resetPasswordEmail(o: { name?: string; link: string }) {
   }
 }
 
+// رمز الدخول: عند التسجيل (أول جهاز) أو الدخول من جهاز جديد
+export function deviceCodeEmail(o: { name?: string; code: string; device: string; firstTime: boolean }) {
+  return {
+    subject: o.firstTime ? `رمز تأكيد حسابك في Storely: ${o.code}` : `رمز الدخول إلى Storely: ${o.code}`,
+    html: brandEmail({
+      title: o.firstTime ? 'تأكيد حسابك' : 'الدخول من جهاز جديد',
+      preheader: `رمزك ${o.code} — صالح لمدة 10 دقائق`,
+      eyebrow: 'أمان الحساب',
+      greeting: `مرحباً${o.name ? ` ${o.name}` : ''}،`,
+      paragraphs: [o.firstTime
+        ? 'شكراً لتسجيلك في Storely. أدخل الرمز التالي لتأكيد بريدك الإلكتروني وتفعيل حسابك:'
+        : `طُلب الدخول إلى حسابك من جهاز جديد (${o.device}). أدخل الرمز التالي لإكمال الدخول:`],
+      code: o.code,
+      note: 'الرمز صالح لمدة 10 دقائق، ويُستخدم مرة واحدة فقط. بعد التحقق لن يُطلب منك رمز على هذا الجهاز مرة أخرى.',
+      small: o.firstTime ? 'إذا لم تسجّل في Storely، تجاهل هذه الرسالة.' : 'إذا لم تحاول الدخول، لا تشارك هذا الرمز مع أحد، وغيّر كلمة المرور من الإعدادات.',
+    }),
+  }
+}
+
 export function welcomeEmail(o: { name: string; trialEnds?: string | null }) {
   return {
     subject: 'أهلاً بك في Storely 👋',

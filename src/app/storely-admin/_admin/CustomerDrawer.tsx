@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import NumberInput from '@/components/NumberInput'
-import { MessageCircle, Send, Trash2, PauseCircle, PlayCircle } from 'lucide-react'
+import { MessageCircle, Send, Trash2, PauseCircle, PlayCircle, KeyRound } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { toast } from '@/components/toast'
 import { billLines, activeDiscount, PLAN_PRICING, PLAN_CAPS, ENTERPRISE_LABEL, addonPeriodEnd, proratedCharge, planPriceFor, unitPrice, type PlanKey } from '@/lib/planPricing'
@@ -20,6 +20,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   const [addons, setAddons] = useState<any[]>([])
   const [loadingAddons, setLoadingAddons] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
+  const [deviceCode, setDeviceCode] = useState<string | null>(null)
   const [days, setDays] = useState(30)
   const [qty, setQty] = useState<Record<string, number>>({})
   const [branches, setBranches] = useState<{ id: string; name: string }[]>([])
@@ -163,6 +164,16 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
     if (on && j.proratedAmount > 0 && hasPhone) {
       await sendInvoice([{ label: `إضافة "${a.name}"${q > 1 ? ` × ${q}` : ''} — ${j.proratedDays} يوم لين تجديد الباقة`, amount: j.proratedAmount }], 'إرسال فاتورة الإضافة؟')
     }
+  }
+
+  // رمز دخول مؤقت لما رمز الإيميل ما يوصل العميل (يطلع مرة وحدة، صالح 10 دقايق، لأي جهاز)
+  async function issueDeviceCode() {
+    if (!(await confirmDialog({ title: 'رمز دخول مؤقت', message: `إصدار رمز دخول لـ "${c!.full_name || c!.org_name}"؟ أعطه للعميل بعد ما تتأكد إنه صاحب الحساب.` }))) return
+    setBusy('device-code')
+    const j = await adminFetch('/api/admin/device-code', { method: 'POST', body: { userId: c!.id } })
+    setBusy(null)
+    if (!j.success) { toast(j.error || 'فشل إصدار الرمز', 'error'); return }
+    setDeviceCode(j.code)
   }
 
   async function remove() {
@@ -368,8 +379,15 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {c.status === 'active' && <Btn loading={busy === 'suspend'} disabled={!!busy} onClick={suspend}><PauseCircle size={15} /> إيقاف الحساب</Btn>}
           {c.status === 'suspended' && <Btn kind="primary" disabled={!!busy} onClick={() => activate(c.subscription_type === 'paid' ? 'paid' : 'trial', 30)}><PlayCircle size={15} /> إعادة تفعيل (شهر)</Btn>}
+          <Btn loading={busy === 'device-code'} disabled={!!busy} onClick={issueDeviceCode}><KeyRound size={15} /> رمز دخول مؤقت</Btn>
           <Btn kind="danger" loading={busy === 'delete'} disabled={!!busy} onClick={remove}><Trash2 size={15} /> حذف نهائي</Btn>
         </div>
+        {deviceCode && (
+          <div style={{ marginTop: 12, padding: '12px 14px', borderRadius: 10, background: A.primarySoft, fontSize: 13, color: A.text }}>
+            رمز الدخول: <b dir="ltr" style={{ fontSize: 20, letterSpacing: 4, color: A.primary }}>{deviceCode}</b>
+            <div style={{ fontSize: 12, color: A.text2, marginTop: 4 }}>صالح 10 دقايق ولمرة وحدة. العميل يكتبه في صفحة «تحقق من جهازك».</div>
+          </div>
+        )}
       </Card>
     </Drawer>
   )

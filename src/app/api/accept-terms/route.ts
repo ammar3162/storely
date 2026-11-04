@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
+import { DEVICE_UNVERIFIED_ERROR, DEVICE_UNVERIFIED_REASON } from '@/lib/deviceMessages'
+import { currentDeviceAllowed } from '@/lib/deviceTrust'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,6 +18,7 @@ export async function POST(req: Request) {
     const supabase = sb()
     const { data: profile } = await supabase.from('profiles').select('org_id,role').eq('id', user.id).single()
     if (!profile) return NextResponse.json({ error: 'الملف الشخصي غير موجود' }, { status: 404 })
+    if (!(await currentDeviceAllowed(user.id, (profile as any).role ?? null))) return NextResponse.json({ error: DEVICE_UNVERIFIED_ERROR, reason: DEVICE_UNVERIFIED_REASON }, { status: 403 })
 
     const { data: settingsRow } = await supabase.from('platform_settings').select('terms_version').eq('id', 1).single()
     const TERMS_VERSION = (settingsRow as any)?.terms_version || '2026-06-b'

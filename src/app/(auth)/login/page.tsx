@@ -7,6 +7,7 @@ import { api } from '@/lib/api-client'
 import { SIGNUP_BUSINESS_TYPES } from '@/lib/businessTypes'
 import { SIGNUP_SOURCES, captureUtm, type Utm } from '@/lib/signupSource'
 import { LanguageProvider, useTranslation } from '@/lib/i18n/LanguageContext'
+import { DEVICE_UNVERIFIED_REASON, VERIFY_DEVICE_PATH } from '@/lib/deviceMessages'
 
 const COUNTRY_CODES = [
   { code: '+966', flag: '🇸🇦', name: 'السعودية' },
@@ -187,6 +188,8 @@ function LoginPage() {
     }
     if (data.session) {
       const me = await api.get('/api/me')
+      // جهاز جديد: رمز على الإيميل قبل أي شي
+      if (me.reason === DEVICE_UNVERIFIED_REASON) { window.location.href = VERIFY_DEVICE_PATH; return }
       const profile = { status: me.status as string | null, org_id: me.org_id as string | null }
 
       if (profile?.status === 'suspended' || profile?.status === 'deleted') {
@@ -308,7 +311,8 @@ function LoginPage() {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ name: orgName.trim(), phone: fullPhone })
       }).catch(()=>{})
-      window.location.href = '/dashboard'
+      // حساب قوقل جديد: صفحة التحقق توثّق الجهاز مباشرة (قوقل أكّد الإيميل)
+      window.location.href = VERIFY_DEVICE_PATH
       return
     }
     const { data, error } = await supabase.auth.signUp({ email, password })
@@ -356,7 +360,8 @@ function LoginPage() {
       // حاول تسجيل الدخول مباشرة بعد التسجيل
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password })
       if (!signInErr) {
-        window.location.href = '/dashboard'
+        // رمز تأكيد الإيميل قبل الدخول للوحة
+        window.location.href = VERIFY_DEVICE_PATH
       } else {
         setMode('registered' as any)
       }

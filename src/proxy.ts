@@ -8,7 +8,7 @@ function corsHeaders(origin: string): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'GET,POST,PATCH,PUT,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 'Authorization, Content-Type, x-admin-key',
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type, x-admin-key, x-storely-device',
     'Access-Control-Max-Age': '86400',
     'Vary': 'Origin',
   }

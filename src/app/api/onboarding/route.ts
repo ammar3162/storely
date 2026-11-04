@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { SIGNUP_BUSINESS_TYPES } from '@/lib/businessTypes'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, getCurrentProfile } from '@/lib/verifyOrgAccess'
+import { DEVICE_UNVERIFIED_ERROR, DEVICE_UNVERIFIED_REASON } from '@/lib/deviceMessages'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,6 +14,7 @@ export async function GET() {
   try {
     const profile = await getCurrentProfile()
     if (!profile) return NextResponse.json({ error: 'غير مسجل دخول', reason: 'unauthenticated' }, { status: 401 })
+    if (profile.deviceTrusted === false) return NextResponse.json({ error: DEVICE_UNVERIFIED_ERROR, reason: DEVICE_UNVERIFIED_REASON }, { status: 403 })
     if (!profile.orgId) return NextResponse.json({ error: 'لا توجد مؤسسة', reason: 'no_org' }, { status: 404 })
 
     const db = sb()
