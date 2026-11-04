@@ -88,6 +88,33 @@ describe.skipIf(!enabled)('integration (staging) — inventory', async () => {
     })
   })
 
+  describe('batched writes (N+1 removed)', () => {
+    it('onboarding adds products and their opening stock in one batch', async () => {
+      const onboarding = await import('@/app/api/onboarding/route')
+      const items = [{ name: `دفعة_أ_${stamp}`, unit: 'كيلو', qty: 7, reorder: 2, category: 'خضار' }, { name: `دفعة_ب_${stamp}`, unit: 'حبة', qty: 0, reorder: 1, category: 'خضار' }, { name: `دفعة_ج_${stamp}`, unit: 'لتر', qty: 3, reorder: 1, category: 'مشروبات' }]
+      const r = await call(onboarding.POST, 'POST', '/api/onboarding', { org_id: orgId, branch_id: branchA, products: items })
+      expect(r.status).toBe(200); expect(r.json.failed).toBe(0)
+      const a = await productByName(`دفعة_أ_${stamp}`), b = await productByName(`دفعة_ب_${stamp}`), c = await productByName(`دفعة_ج_${stamp}`)
+      expect([Number(a.qty), Number(b.qty), Number(c.qty)]).toEqual([7, 0, 3])
+      const { data: mv } = await db.from('stock_movements').select('product_id,qty_change').in('product_id', [a.id, b.id, c.id])
+      expect((mv as any[]).length).toBe(2)
+    })
+    it('daily task copies are created once per day for each template', async () => {
+      process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
+      const { generateStaffToken } = await import('@/lib/staffAuth')
+      const tasks = await import('@/app/api/staff-tasks/route')
+      const { data: st } = await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: 'مهام يومية', phone: uniqPhone(), pin: 'x', is_active: true, role: 'staff' } as any).select('id').single()
+      const sid = (st as any).id
+      await db.from('staff_tasks').insert([1, 2, 3].map(n => ({ org_id: orgId, branch_id: branchA, staff_id: sid, title: `يومية ${n}`, is_daily: true, status: 'pending' })) as any)
+      const get = () => tasks.GET(new Request('http://test/api/staff-tasks', { headers: { Authorization: `Bearer ${generateStaffToken(sid, orgId, branchA)}` } }))
+      const first = await (await get()).json() as any, second = await (await get()).json() as any
+      expect(first.tasks.length).toBe(3); expect(second.tasks.length).toBe(3)
+      const { data: copies } = await db.from('staff_tasks').select('id').eq('staff_id', sid).eq('is_daily', false)
+      expect((copies as any[]).length).toBe(3)
+      await db.from('staff_tasks').delete().eq('staff_id', sid); await db.from('staff_members').delete().eq('id', sid)
+    })
+  })
+
   describe('dispense and waste', () => {
     it('dispensing reduces stock', async () => {
       const milk = await productByName('حليب')
