@@ -42,12 +42,14 @@ export default function DemoRequestsPage() {
     const d = await adminFetch(`/api/admin/demo-requests?id=${r.id}`, { method: 'DELETE' })
     if (!d.ok) { alert(d.error || 'فشل الحذف'); return }
     setRequests(prev => prev.filter(x => x.id !== r.id))
+    window.dispatchEvent(new Event('admin-counts-refresh'))
   }
 
   async function updateStatus(id: string, status: string) {
     setRequests(prev => prev.map(x => x.id === id ? { ...x, status } : x))
     const d = await adminFetch('/api/admin/demo-requests', { method: 'PATCH', body: { id, status } })
     if (!d.ok) load()
+    window.dispatchEvent(new Event('admin-counts-refresh'))
   }
 
   return (

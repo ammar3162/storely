@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { notifyAdminsLater } from '@/lib/adminNotify'
 import { createClient } from '@supabase/supabase-js'
 import { requestExtraBranch } from '@/lib/extraBranch'
 import { EXTRA_BRANCH_SLUG } from '@/lib/branchLimit'
@@ -31,6 +32,7 @@ export async function POST(req: Request) {
     // الفرع الإضافي: نفس طلب صفحة الفروع (حد الباقة وسعرها)
     if ((addon as any).slug === EXTRA_BRANCH_SLUG) {
       const res = await requestExtraBranch(db, org_id, access.userId || null)
+      if (res.ok) notifyAdminsLater(db, org_id, { kind: 'addon', addonName: (addon as any).name, quantity: res.pending })
       return res.ok ? NextResponse.json({ success: true }) : NextResponse.json({ error: res.error, code: res.code }, { status: res.status })
     }
 
@@ -51,6 +53,8 @@ export async function POST(req: Request) {
       ? await db.from('addon_requests').update({ ...row, created_at: new Date().toISOString() } as any).eq('id', (pending as any).id)
       : await db.from('addon_requests').insert(row as any)
     if (error) return NextResponse.json({ error: 'فشل إرسال الطلب' }, { status: 500 })
+    // إيميل للإدارة بعد الرد على العميل
+    notifyAdminsLater(db, org_id, { kind: 'addon', addonName: (addon as any).name, quantity: row.quantity, note: row.note })
     return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
