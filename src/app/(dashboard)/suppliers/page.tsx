@@ -11,6 +11,7 @@ import { colors, font, pageTitle, pageSub, card, btnPrimary, btnSecondary, inp }
 import { toast } from '@/components/toast'
 import { Send, Clock, Trash2, Truck } from 'lucide-react'
 import { cache } from '@/lib/cache'
+import { ListSkeleton } from '@/components/PageSkeleton'
 export const dynamic = 'force-dynamic'
 
 const DAYS = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت']
@@ -371,7 +372,7 @@ function SupplierCard({ s, products, orgId, onRefresh, allSuppliers, rating, cur
               <button onClick={()=>setShowTimeline(false)} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:'#94a3b8'}}>✕</button>
             </div>
             {timelineLoading ? (
-              <div style={{textAlign:'center' as const,padding:40,color:'#94a3b8',fontSize:12}}>جاري التحميل...</div>
+              <ListSkeleton/>
             ) : timelineEvents.length === 0 ? (
               <div style={{textAlign:'center' as const,padding:40,color:'#94a3b8',fontSize:12}}>لا يوجد سجل تواصل بعد مع هذا المورد</div>
             ) : (
@@ -479,7 +480,7 @@ export default function SuppliersPage() {
 
   const refresh = () => { loadSuppliers(orgId); loadProducts(orgId) }
 
-  if (loading) return <div style={{ padding:40, textAlign:'center', color:colors.text3, fontFamily:font.family }}>جاري التحميل...</div>
+  if (loading) return <ListSkeleton/>
 
   const unlinkedProducts = products.filter((p:any)=>!p.supplier_id)
 

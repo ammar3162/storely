@@ -9,6 +9,7 @@ import { colors, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub, 
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { cache } from '@/lib/cache'
+import { ListSkeleton } from '@/components/PageSkeleton'
 
 type CartItem = { productId: string; name: string; unit: string; qty: number; available: number }
 
@@ -353,7 +354,7 @@ export default function TransferStockPage() {
         </div>
 
         {loadingHistory ? (
-          <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
+          <ListSkeleton/>
         ) : filteredHistory.length===0 ? (
           <div style={{textAlign:'center' as const,padding:'28px 16px'}}>
             <div style={{fontSize:28,marginBottom:8,opacity:0.5}}>📭</div>

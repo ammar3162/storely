@@ -4,6 +4,7 @@ import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { sendPushToOrg } from '@/lib/push'
+import { fetchExternal } from '@/lib/fetchExternal'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
     const dateStr = now.toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'long',day:'numeric',month:'long',timeZone:'Asia/Riyadh'})
     const msg = `🟢 *Storely*\n\nمرحباً ${(org as any).name}،\n${branchLine}\n👤 *${staff_name}* قام بصرف:\n• ${product_name} — *${qty} ${unit}*\n\n🕐 ${timeStr} · ${dateStr}`
 
-    const waRes = await fetch('https://www.wasenderapi.com/api/send-message', {
+    const waRes = await fetchExternal('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

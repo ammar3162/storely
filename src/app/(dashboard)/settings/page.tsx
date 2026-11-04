@@ -6,6 +6,7 @@ import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
+import { getAddonsMarket } from '@/lib/addonsCache'
 import { getMe } from '@/lib/session'
 import { PLAN_PRICING, planKeyOf, billLines, planPriceFor, planLabel as planLabelFor } from '@/lib/planPricing'
 import PlanUpgrade from '@/components/PlanUpgrade'
@@ -210,7 +211,7 @@ export default function SettingsPage() {
       setSubEndsAt(org.subscription_ends_at||null)
       setBranches(bList||[])
       loadInactiveBranches(me.org_id)
-      api.get('/api/addons-market',{org_id:me.org_id}).then(j=>{ if(j.success) setBillAddons(j.addons||[]) })
+      getAddonsMarket(me.org_id).then(j=>{ if(j.success) setBillAddons(j.addons||[]) })
     }
     setLoading(false)
     setTimeout(()=>setVisible(true),50)

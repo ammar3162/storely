@@ -1,3 +1,4 @@
+import { fetchExternal } from '@/lib/fetchExternal'
 /**
  * أدوات مشتركة لإرسال رسائل واتساب بشكل موثوق:
  * - تأخير تلقائي بين كل رسالة والتانية (يحترم حدود إرسال Wasender API)
@@ -25,7 +26,7 @@ export async function sendWhatsAppMessage(phone: string, text: string, retries =
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const res = await fetch('https://www.wasenderapi.com/api/send-message', {
+      const res = await fetchExternal('https://www.wasenderapi.com/api/send-message', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -71,7 +72,7 @@ export async function sendWhatsAppDocument(phone: string, documentUrl: string, f
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const res = await fetch('https://www.wasenderapi.com/api/send-message', {
+      const res = await fetchExternal('https://www.wasenderapi.com/api/send-message', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +113,7 @@ export async function sendWhatsAppDocument(phone: string, documentUrl: string, f
 export async function sendWhatsAppMessageWithKey(apiKey: string, phone: string, text: string, retries = 2): Promise<SendResult> {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const res = await fetch('https://www.wasenderapi.com/api/send-message', {
+      const res = await fetchExternal('https://www.wasenderapi.com/api/send-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({ to: formatPhone(phone), text }),
@@ -177,7 +178,7 @@ export async function sendWhatsAppCloudAPI(phone: string, text: string): Promise
   const phoneNumberId = process.env.META_WA_PHONE_NUMBER_ID!
 
   try {
-    const res = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
+    const res = await fetchExternal(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -217,7 +218,7 @@ export async function sendWhatsAppTemplate(
   const phoneNumberId = process.env.META_WA_PHONE_NUMBER_ID!
 
   try {
-    const res = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
+    const res = await fetchExternal(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

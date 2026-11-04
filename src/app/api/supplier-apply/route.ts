@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { sanitizeShortText, sanitizeLongText } from '@/lib/sanitize'
 import { toLatinDigits } from '@/lib/digits'
 import { getCurrentProfile } from '@/lib/verifyOrgAccess'
+import { fetchExternal } from '@/lib/fetchExternal'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
     if(error) return NextResponse.json({ error: 'تعذر إرسال الطلب، حاول مرة ثانية' }, { status: 500 })
 
     // إشعار واتساب للأدمن
-    await fetch('https://www.wasenderapi.com/api/send-message', {
+    await fetchExternal('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

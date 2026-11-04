@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
+import { fetchExternal } from '@/lib/fetchExternal'
 const API_KEY      = process.env.WASENDER_API_KEY!
 const SESSION      = process.env.WASENDER_SESSION_ID!
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -15,7 +16,7 @@ async function send(to: string, text: string) {
     // لما توصلنا رسالة fromMe لاحقاً، نقارنها بهذا الجدول بنفس الرقم والنص وبفارق وقت قصير
     // عشان نميّز رد البوت التلقائي عن رد إنسان حقيقي كتب يدوياً من واتساب ويب
     try { await sb().from('bot_sent_messages' as any).insert({ phone: to, body: text }) } catch {}
-    await fetch('https://www.wasenderapi.com/api/send-message', {
+    await fetchExternal('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${API_KEY}`, 'X-Session-Id':SESSION },
       body: JSON.stringify({ to, text }),

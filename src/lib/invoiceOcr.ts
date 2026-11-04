@@ -1,6 +1,7 @@
 // قراءة فاتورة شراء (صورة أو PDF) بالذكاء الاصطناعي — مكان واحد لصفحة المشتريات ووكيل الفواتير
 import { reportAiFailure, aiFailureKind } from '@/lib/aiAlert'
 import { normalizeVat, isValidVat, normalizeInvoiceNumber } from '@/lib/taxInvoice'
+import { fetchExternal } from '@/lib/fetchExternal'
 
 export type OcrResult =
   | { ok: true; data: any }
@@ -34,7 +35,7 @@ const PROMPT = `أنت تحلل فاتورة شراء (صورة أو ملف PDF)
 لو الصورة مو واضحة أو مو فاتورة أصلاً، أرجع: {"error": "لم يتم التعرف على فاتورة واضحة بالصورة"}`
 
 export async function readInvoice(image: string, type: string): Promise<OcrResult> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetchExternal('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

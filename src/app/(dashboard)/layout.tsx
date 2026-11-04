@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
 import { getMeResult, refreshMe } from '@/lib/session'
+import { getAddonsMarket } from '@/lib/addonsCache'
+import PageSkeleton from '@/components/PageSkeleton'
 import { DEVICE_UNVERIFIED_REASON, VERIFY_DEVICE_PATH } from '@/lib/deviceMessages'
 import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import { useRouter, usePathname } from 'next/navigation'
@@ -103,6 +105,18 @@ function Icon({ d, size=20, stroke='currentColor', width=2 }: { d:string; size?:
 }
 
 // لا نضيف شيء هنا — الإشعار سيكون في الداشبورد مباشرة
+// عرض الشاشة نفس نقطة الـ CSS (768px) — يتحدث لو تغيّر العرض
+function useIsDesktop() {
+  const [desk, setDesk] = useState<boolean | null>(null)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    const on = () => setDesk(mq.matches)
+    on(); mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [])
+  return desk
+}
+
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { t, lang, setLang } = useTranslation()
   const [orgName, setOrgName]       = useState('')
@@ -135,8 +149,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   // الميزات من الخادم (/api/me): الباقة + الإضافات + التجربة المجانية
   const [orgFeat, setOrgFeat]       = useState<{ hr?: boolean; profitability?: boolean }>({})
   // الإضافات المفعّلة (الحضور، الربحية، الذكاء، الفروع الإضافية) — تتحدث لحالها لما تتغير (useLiveRefresh تحت)
-  const loadAddons = useCallback((oid: string) => {
-    fetch(`/api/addons-market?org_id=${oid}`).then(r=>r.json()).then(j=>{
+  const loadAddons = useCallback((oid: string, fresh = false) => {
+    getAddonsMarket(oid, fresh).then(j=>{
       if (j.success) {
         const hrAddon = (j.addons||[]).find((a:any)=>a.slug==='hr_full')
         setHasHrAddon(!!hrAddon?.subscription?.isValid)
@@ -151,7 +165,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   // إضافة تفعّلت/انتهت أو الباقة تغيّرت والصفحة مفتوحة → القائمة تتحدث بدون تحديث الصفحة
   useLiveRefresh(typeof window!=='undefined' ? sessionStorage.getItem('s_org_id') : null, ['org_addon_subscriptions','plan_requests'], () => {
     const oid = sessionStorage.getItem('s_org_id'); if (!oid) return
-    loadAddons(oid)
+    loadAddons(oid, true)
     refreshMe().then(me => { if (me?.org?.plan) setOrgPlan(me.org.plan); if (me?.org?.features) setOrgFeat(me.org.features) }).catch(()=>{})
   })
   const [orgMaxBranches, setOrgMaxBranches] = useState<number>(1)
@@ -161,6 +175,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [showBranch, setShowBranch] = useState(false)
   const [branchLowCounts, setBranchLowCounts] = useState<Record<string, number>>({})
   const [ready, setReady]           = useState(false)
+  // الصفحة تنرسم في تخطيط واحد بس (جوال أو كمبيوتر حسب العرض) — كانت تنرسم في الاثنين ويختفي واحد بالـ CSS، فكل طلب بيانات واشتراك لحظي يتكرر مرتين
+  const isDesk = useIsDesktop()
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showConsent, setShowConsent] = useState(false)
   const [showWaInvite, setShowWaInvite] = useState(false)
@@ -683,7 +699,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
           <div className="mob-content">
             {banners}
-            {ready ? children : <div className="sh-loading"><span className="sh-spinner"/></div>}
+            {!ready ? <PageSkeleton/> : isDesk === false ? children : null}
           </div>
 
           <nav className="mob-bottom-nav">
@@ -770,7 +786,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
           <main className="desk-content">
             {banners}
-            {ready ? children : <div className="sh-loading"><span className="sh-spinner"/></div>}
+            {!ready ? <PageSkeleton/> : isDesk ? children : null}
           </main>
         </div>
       </div>

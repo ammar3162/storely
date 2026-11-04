@@ -5,6 +5,7 @@ import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { buildAssistantContext } from '@/lib/assistantContext'
 import { runTool } from '@/lib/assistantTools'
 import { classifyTopic, OFF_TOPIC_REPLY, GREETING_REPLY } from '@/lib/assistantTopic'
+import { fetchExternal } from '@/lib/fetchExternal'
 
 // المساعد الذكي: متاح للكل لأسئلة الاشتراك وطريقة الاستخدام، وبيانات المنشأة بالأدوات (lib/assistantTools)
 // مع ميزة الذكاء الاصطناعي — الأداة المقفلة ما تنعرض على النموذج أصلاً
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
   const used: string[] = []
   let data: any = null
   for (let round = 0; round < 5; round++) {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetchExternal('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY!, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({

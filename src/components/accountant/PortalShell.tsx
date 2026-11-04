@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { LayoutGrid, MessageSquareText, Lock, Smartphone, LogOut, Menu, X } from 'lucide-react'
 import { colors, font, radius } from '@/lib/ds'
+import { ListSkeleton } from '@/components/PageSkeleton'
 
 // إطار بوابة المحاسب (App Shell): قائمة جانبية بهوية Storely + شعارات المنشآت + شريط علوي
 // نفس ألوان وقياسات قائمة لوحة المالك عشان التجربة وحدة
@@ -81,7 +82,7 @@ export function PortalShell({ title, subtitle, actions, children, orgLogo }: {
 
       <div style={{ padding: '10px 12px 6px', flex: 1, overflowY: 'auto', minHeight: 0 }}>
         <div className="ap-sec">عملاؤك {data ? `(${data.orgs.length})` : ''}</div>
-        {!data ? <div style={{ fontSize: 12, opacity: .6, padding: '6px 10px' }}>جاري التحميل...</div>
+        {!data ? <ListSkeleton/>
           : !data.orgs.length ? <div style={{ fontSize: 12, opacity: .6, padding: '6px 10px', lineHeight: 1.7 }}>ما عندك عملاء للحين — تطلع المنشآت هنا أول ما تدعوك</div>
           : data.orgs.map(o => {
             const href = `/accountant-portal/${o.org_id}`, on = path === href

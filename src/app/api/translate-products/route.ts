@@ -2,6 +2,7 @@ import { reportAiFailure } from '@/lib/aiAlert'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
+import { fetchExternal } from '@/lib/fetchExternal'
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!
 
@@ -81,7 +82,7 @@ ${namesToTranslate.map((n: string) => `- ${n}`).join('\n')}
 أعطني فقط كائن JSON بهذا الشكل بدون أي شرح أو نص إضافي:
 {"الاسم العربي 1": "Translated Name 1", "الاسم العربي 2": "Translated Name 2"}`
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetchExternal('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

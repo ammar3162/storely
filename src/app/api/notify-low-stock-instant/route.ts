@@ -5,6 +5,7 @@ import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { sendPushToOrg } from '@/lib/push'
 import { orderedSinceLastRestock, logSupplierOrder } from '@/lib/supplierOrderGate'
+import { fetchExternal } from '@/lib/fetchExternal'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -18,7 +19,7 @@ function formatPhone(raw: string): string {
 
 async function sendWA(phone: string, text: string): Promise<{ ok: boolean }> {
   try {
-    const res = await fetch('https://www.wasenderapi.com/api/send-message', {
+    const res = await fetchExternal('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -4,6 +4,7 @@ import PageIcon from '@/components/PageIcon'
 import NumberInput from '@/components/NumberInput'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
+import { getAddonsMarket } from '@/lib/addonsCache'
 import { getMe, getOrgId } from '@/lib/session'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
@@ -11,6 +12,7 @@ import { confirmDialog } from '@/components/ConfirmDialog'
 import ExtraDayDecision from '@/components/ExtraDayDecision'
 import { cache } from '@/lib/cache'
 import { ThumbsUp, ThumbsDown, ClipboardList, ChevronDown, Plus, Camera, CalendarDays, BarChart3 } from 'lucide-react'
+import { ListSkeleton } from '@/components/PageSkeleton'
 
 export default function HRManagementPage() {
   const [orgId, setOrgId] = useState('')
@@ -90,7 +92,7 @@ export default function HRManagementPage() {
       api.get('/api/staff-payroll-adjustments', { org_id: oid }),
       api.get('/api/staff-report', { org_id: oid, month: curMonth }),
       api.get('/api/extra-days', { org_id: oid, status: 'pending' }).then(r => { if (r.success) { setExtraDays(r.extra_days || []); setCanDecideExtra(!!r.canDecide) } return r }),
-      api.get('/api/addons-market', { org_id: oid }),
+      getAddonsMarket(oid),
       api.get('/api/branches', { org_id: oid }),
     ])
     // نفس قاعدة صفحة الموظفين: الموظفين الموقوفين تلقائياً بانتهاء إضافة «موظف إضافي» ما يطلعون
@@ -632,7 +634,7 @@ export default function HRManagementPage() {
                     {/* السلف والخصومات */}
                     {hrTab==='adj' && <div>
                       {loadingAdjustments ? (
-                        <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
+                        <ListSkeleton/>
                       ) : (
                         <>
                           {pendingAdvances.length>0 && (
@@ -684,7 +686,7 @@ export default function HRManagementPage() {
                         <CalendarDays size={14} strokeWidth={2.25}/> الرصيد المتبقي: {s.leave_balance_days ?? 21} يوم
                       </div>
                       {loadingLeave ? (
-                        <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
+                        <ListSkeleton/>
                       ) : (
                         <>
                           {leaveRequests.filter((l:any)=>l.status==='pending').length>0 && (
@@ -724,7 +726,7 @@ export default function HRManagementPage() {
                     {hrTab==='excuse' && <div>
                       <div style={{fontSize:12.5,color:colors.text3,marginBottom:10}}>طلبات الانصراف المبكر من الدوام</div>
                       {loadingExcuse ? (
-                        <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
+                        <ListSkeleton/>
                       ) : excuseRequests.filter((e:any)=>e.status==='pending').length===0 ? (
                         <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>ما فيه طلبات استئذان معلّقة</div>
                       ) : (
@@ -756,7 +758,7 @@ export default function HRManagementPage() {
                         </label>
                       </div>
                       {loadingTasks ? (
-                        <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
+                        <ListSkeleton/>
                       ) : tasks.length===0 ? (
                         <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>ما فيه مهام بعد</div>
                       ) : (

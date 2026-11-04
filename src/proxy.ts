@@ -33,27 +33,6 @@ export async function proxy(request: NextRequest) {
     return res
   }
 
-  let supabaseResponse = NextResponse.next({ request })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return request.cookies.getAll() },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  const { data: { user } } = await supabase.auth.getUser()
-
   const path       = request.nextUrl.pathname
   const isLogin    = path.startsWith('/login')
   const isPending  = path.startsWith('/pending')
@@ -77,8 +56,35 @@ export async function proxy(request: NextRequest) {
     if (!isAdminRoot && !isAuthed) {
       return NextResponse.redirect(new URL('/storely-admin', request.url))
     }
-    return supabaseResponse
+    return NextResponse.next({ request })
   }
+
+  // صفحات ما تعتمد على جلسة Supabase (الموقع، الموظفين بالرقم السري، الاستعادة، الملفات): بدون فحص الجلسة —
+  // كان getUser رحلة لخادم Supabase (سيدني) مع كل زيارة، وهنا ما له أي استخدام
+  if (isLanding || isStaff || isStatic || isReset || isAuthCallback) return NextResponse.next({ request })
+
+  let supabaseResponse = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+
 
   if (!user && !isPublic) {
     return NextResponse.redirect(new URL('/login', request.url))
@@ -131,6 +137,8 @@ export async function proxy(request: NextRequest) {
   return supabaseResponse
 }
 
+// الـ proxy يشتغل في سيدني قبل كاش الـ CDN — نستثني اللي ما يحتاجه عشان ينخدم من أقرب نقطة للزائر:
+// الصفحة الرئيسية (".+" ما تطابق "/")، صفحات الموقع العامة، صفحات الموظفين (رقم سري، مو جلسة)، والملفات الثابتة
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|staff|privacy|terms|permission|book|suppliers-join|unsubscribe|r/|videos/|fonts/|images/|.*\\.(?:png|jpg|jpeg|svg|ico|webp|gif|mp4|woff2|txt|xml|webmanifest)$).+)'],
 }

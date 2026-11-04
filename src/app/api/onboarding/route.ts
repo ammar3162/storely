@@ -74,19 +74,23 @@ export async function POST(req: Request) {
       if (!b) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
     }
 
+    // المنتجات دفعة وحدة، وحركات الكمية الأولية دفعة وحدة (كانت طلبين لكل منتج — 500 منتج = 1000 طلب)
+    // لو فشلت الدفعة (سطر غلط) نرجع للإضافة وحدة وحدة عشان سطر واحد ما يوقف الباقي
+    const rows = products.slice(0, 500).map((p: any) => ({
+      org_id, branch_id: branch_id || null, name: String(p.name || '').trim(), unit: p.unit,
+      qty: Math.max(0, Number(p.qty) || 0), reorder_point: Number(p.reorder) || 0, category: p.category, is_active: true,
+    }))
+    const moveFor = (np: { id: string; qty: number | null }) => ({ product_id: np.id, org_id, profile_id: access.userId, type: 'in', qty_change: Number(np.qty) || 0, note: 'إضافة أولية عند الإعداد' })
     let failed = 0
-    for (const p of products.slice(0, 500)) {
-      const qty = Math.max(0, Number(p.qty) || 0)
-      const { data: np, error } = await db.from('products').insert({
-        org_id, branch_id: branch_id || null, name: String(p.name || '').trim(), unit: p.unit,
-        qty, reorder_point: Number(p.reorder) || 0, category: p.category, is_active: true,
-      } as any).select('id').single()
-      if (error || !np) { failed++; continue }
-      if (qty > 0) {
-        const { error: moveErr } = await db.from('stock_movements').insert({
-          product_id: (np as any).id, org_id, profile_id: access.userId, type: 'in', qty_change: qty, note: 'إضافة أولية عند الإعداد',
-        } as any)
-        if (moveErr) failed++
+    const { data: inserted, error: bulkErr } = await db.from('products').insert(rows as any).select('id,qty')
+    if (!bulkErr && inserted) {
+      const moves = (inserted as any[]).filter(np => Number(np.qty) > 0).map(moveFor)
+      if (moves.length) { const { error: moveErr } = await db.from('stock_movements').insert(moves as any); if (moveErr) failed += moves.length }
+    } else {
+      for (const row of rows) {
+        const { data: np, error } = await db.from('products').insert(row as any).select('id,qty').single()
+        if (error || !np) { failed++; continue }
+        if (row.qty > 0) { const { error: moveErr } = await db.from('stock_movements').insert(moveFor(np as any) as any); if (moveErr) failed++ }
       }
     }
     return NextResponse.json({ success: true, failed })

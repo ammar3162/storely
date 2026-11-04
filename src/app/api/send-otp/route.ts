@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { fetchExternal } from '@/lib/fetchExternal'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -7,7 +8,7 @@ async function sendWhatsApp(to: string, text: string): Promise<{ ok: boolean; er
   try {
     // إزالة علامة + قبل الإرسال — مطلوبة لواتساب/Wasender (نفس نمط formatPhone المستخدم بباقي المشروع)
     const cleanTo = to.replace(/^\+/, '')
-    const res = await fetch('https://www.wasenderapi.com/api/send-message', {
+    const res = await fetchExternal('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

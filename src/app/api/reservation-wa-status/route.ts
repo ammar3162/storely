@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { fetchExternal } from '@/lib/fetchExternal'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,7 +24,7 @@ export async function GET(req: Request) {
     if (!sessionId || !apiKey) return NextResponse.json({ success: true, status: 'disconnected' })
 
     // فحص الحالة يستخدم مفتاح الجلسة نفسها — مو المفتاح الإداري الرئيسي
-    const res = await fetch('https://www.wasenderapi.com/api/status', {
+    const res = await fetchExternal('https://www.wasenderapi.com/api/status', {
       headers: { 'Authorization': `Bearer ${apiKey}` },
     })
     const j = await res.json().catch(() => ({}))

@@ -1,3 +1,4 @@
+import { fetchExternal } from '@/lib/fetchExternal'
 // فحص سريع قبل المساعد: السؤال عن المنشأة/النظام/الاشتراك؟ — الأسئلة الخارجية (العمر، أسئلة عامة…)
 // ترجع رد جاهز بدون ما نرسل بيانات المنشأة للنموذج، فما ينصرف توكن كامل (الفحص نفسه ~100 توكن)
 export type Topic = 'business' | 'greeting' | 'other'
@@ -15,7 +16,7 @@ other = أي شي ثاني: أسئلة عامة أو شخصية أو معلوم�
 /** يرجع business لو الفحص فشل (ما نمنع المستخدم بسبب عطل) */
 export async function classifyTopic(message: string, lastAssistantReply?: string): Promise<Topic> {
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetchExternal('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY!, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 5, system: PROMPT, messages: [{ role: 'user', content: (lastAssistantReply ? `رد المساعد السابق: ${lastAssistantReply.slice(0, 400)}\n\nرسالة المستخدم: ` : '') + String(message).slice(0, 500) }] }),

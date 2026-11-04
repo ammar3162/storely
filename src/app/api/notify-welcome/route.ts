@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { formatPhone as normalizePhone } from '@/lib/whatsapp'
+import { fetchExternal } from '@/lib/fetchExternal'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
 
 ابدأ الآن بإضافة مخزونك`
 
-    const res = await fetch('https://www.wasenderapi.com/api/send-message', {
+    const res = await fetchExternal('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

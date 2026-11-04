@@ -53,21 +53,20 @@ export async function GET(req: Request) {
       .select('id,org_id,branch_id,staff_id,title,description,requires_photo')
       .eq('org_id', org_id).eq('staff_id', staff_id).eq('is_daily', true)
 
-    for (const tpl of (templates || []) as any[]) {
-      const { data: existing } = await supabase
-        .from('staff_tasks')
-        .select('id')
-        .eq('template_id', tpl.id)
+    // نسخ اليوم من المهام اليومية: طلب واحد يجيب اللي انسخت اليوم، وإضافة وحدة للناقص (بدل طلبين لكل قالب)
+    const tpls = (templates || []) as any[]
+    if (tpls.length) {
+      const { data: todays } = await supabase.from('staff_tasks').select('template_id')
+        .in('template_id', tpls.map(t => t.id))
         .gte('created_at', `${today}T00:00:00.000+03:00`)
         .lte('created_at', `${today}T23:59:59.999+03:00`)
-        .maybeSingle()
-      if (!existing) {
-        await supabase.from('staff_tasks').insert({
-          org_id: tpl.org_id, branch_id: tpl.branch_id, staff_id: tpl.staff_id,
-          title: tpl.title, description: tpl.description, requires_photo: tpl.requires_photo,
-          status: 'pending', template_id: tpl.id, is_daily: false,
-        } as any)
-      }
+      const done = new Set(((todays || []) as any[]).map(r => r.template_id))
+      const missing = tpls.filter(t => !done.has(t.id)).map(tpl => ({
+        org_id: tpl.org_id, branch_id: tpl.branch_id, staff_id: tpl.staff_id,
+        title: tpl.title, description: tpl.description, requires_photo: tpl.requires_photo,
+        status: 'pending', template_id: tpl.id, is_daily: false,
+      }))
+      if (missing.length) await supabase.from('staff_tasks').insert(missing as any)
     }
 
     const { data, error } = await supabase

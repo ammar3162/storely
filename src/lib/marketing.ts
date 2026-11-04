@@ -4,6 +4,7 @@ import crypto from 'node:crypto'
 import { Resend } from 'resend'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { brandEmail, esc, BRAND } from '@/lib/emailTemplates'
+import { withTimeout, EXTERNAL_TIMEOUT_MS } from '@/lib/fetchExternal'
 
 export const SEGMENTS = {
   all: 'كل العملاء',
@@ -127,13 +128,13 @@ export async function sendCampaign(c: CampaignContent, recipients: Recipient[], 
         ...(process.env.MARKETING_REPLY_TO ? { replyTo: process.env.MARKETING_REPLY_TO } : {}),
       }
     })
-    const { data, error } = await resend.batch.send(msgs)
+    const { data, error } = await withTimeout(resend.batch.send(msgs), 30_000, 'Resend batch').catch((e: Error) => ({ data: null, error: { message: e.message } as never }))
     if (!error) sent += (data as any)?.data?.length ?? chunk.length
     else {
       // فشل الدفعة: نرسل واحد واحد عشان عنوان غلط ما يحرم الباقين
       console.error('MARKETING_BATCH_FAILED:', error)
       for (const m of msgs) {
-        const one = await resend.emails.send(m as any)
+        const one = await withTimeout(resend.emails.send(m as any), EXTERNAL_TIMEOUT_MS.messaging, 'Resend').catch((e: Error) => ({ data: null, error: { message: e.message } as never }))
         if (one.error) { failed++; console.error('MARKETING_SEND_FAILED:', one.error.message) } else sent++
         await delay(550)
       }

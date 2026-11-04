@@ -12,6 +12,7 @@ import { currencySymbol } from '@/lib/currencySymbol'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { cache } from '@/lib/cache'
 import { UserPlus, Users, UserCheck, PauseCircle, Package, BarChart3, ShieldCheck, Clock, Bell, BellOff, RefreshCw, Copy, AlertTriangle, ChevronDown, User, Lock, Wallet, Smartphone, Check, Send, ShoppingCart, Save, CheckCircle2, AlertCircle, TrendingUp, Pencil, Search, X, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { ListSkeleton } from '@/components/PageSkeleton'
 
 function generatePin() { return String(Math.floor(1000 + Math.random() * 9000)) }
 const COUNTRY_CODES = ['+966','+971','+965','+973','+974','+968','+20','+962','+1','+44','+91','+92','+880','+63']
@@ -808,7 +809,7 @@ export default function StaffManagementPage() {
             {/* List */}
             <div style={{overflowY:'auto',flex:1}}>
               {reportLoading?(
-                <div style={{padding:'40px',textAlign:'center',color:'#888780',fontSize:13}}>جاري التحميل...</div>
+                <ListSkeleton/>
               ):staffClosings.length===0?(
                 <div style={{padding:'40px',textAlign:'center',fontSize:13,color:'#888780'}}>لا توجد تقارير إقفال بعد</div>
               ):staffClosings.map((c:any,i:number)=>{
@@ -864,7 +865,7 @@ export default function StaffManagementPage() {
             {/* List */}
             <div style={{overflowY:'auto',flex:1}}>
               {reportLoading?(
-                <div style={{padding:'40px',textAlign:'center',color:'#888780',fontSize:13}}>جاري التحميل...</div>
+                <ListSkeleton/>
               ):staffReport.length===0?(
                 <div style={{padding:'40px',textAlign:'center',fontSize:13,color:'#888780'}}>لا توجد عمليات صرف بعد</div>
               ):staffReport.map((m:any,i:number)=>(

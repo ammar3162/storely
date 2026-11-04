@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission } from '@/lib/adminAuth'
 
@@ -33,6 +34,7 @@ export async function POST(req: Request) {
 
   const { error } = await db.from('marquee_messages').insert(rows as any)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  revalidatePath('/')   // الصفحة الرئيسية من الكاش — تتحدث بالرسائل الجديدة
   return NextResponse.json({ success: true, count: rows.length })
 }
 
@@ -49,6 +51,7 @@ export async function PATCH(req: Request) {
   if (Object.keys(updates).length === 0) return NextResponse.json({ error: 'لا يوجد تحديث' }, { status: 400 })
   const { error } = await sb().from('marquee_messages').update(updates).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  revalidatePath('/')   // الصفحة الرئيسية من الكاش — تتحدث بالرسائل الجديدة
   return NextResponse.json({ success: true })
 }
 
@@ -61,5 +64,6 @@ export async function DELETE(req: Request) {
   if (!id) return NextResponse.json({ error: 'id مطلوب' }, { status: 400 })
   const { error } = await sb().from('marquee_messages').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  revalidatePath('/')   // الصفحة الرئيسية من الكاش — تتحدث بالرسائل الجديدة
   return NextResponse.json({ success: true })
 }

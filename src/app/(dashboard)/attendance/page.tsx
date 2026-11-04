@@ -5,12 +5,13 @@ import PageIcon from '@/components/PageIcon'
 import NumberInput from '@/components/NumberInput'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
+import { getMe } from '@/lib/session'
 import { colors, font, card, btnPrimary, pageTitle, pageSub, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
-import { exportReportPdf } from '@/lib/pdfExport'
 import StaffDaysOffEditor, { type OffPatch } from '@/components/StaffDaysOffEditor'
 import StaffDayShiftsEditor, { type SchedulePatch } from '@/components/StaffDayShiftsEditor'
+import { ListSkeleton } from '@/components/PageSkeleton'
 
 // كل الأوقات والتواريخ بالتقرير بتوقيت السعودية
 const saudiToday = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
@@ -69,8 +70,9 @@ export default function AttendancePage() {
   useEffect(() => { if (orgId && periodMode === 'range') loadRange(orgId, rangeFrom, rangeTo) }, [rangeFrom, rangeTo, periodMode, staffFilter])
 
   async function init() {
-    const me = await api.get('/api/me')
-    if (!me.success || !me.org_id) return
+    // نفس طلب /api/me اللي يسويه إطار لوحة التحكم (getMe يشاركه) — كانت الصفحة تطلبه مرة ثانية
+    const me = await getMe()
+    if (!me || !me.org_id) return
     const oid: string = me.org_id
     sessionStorage.setItem('s_org_id', oid)
     const orgName = me.org?.name || '', orgPlan = me.org?.plan || ''
@@ -128,7 +130,7 @@ export default function AttendancePage() {
           hours_worked: d.hours_worked ?? '—', late_minutes: d.late_minutes || '—',
           overtime: d.overtime_minutes ? `${fmtMinutes(d.overtime_minutes)} (${d.overtime_pay} ⃁)` : '—',
         }))
-        await exportReportPdf({
+        await (await import('@/lib/pdfExport')).exportReportPdf({
           title: `سجل حضور ${one.name}`,
           subtitle: `من ${rangeFrom} إلى ${rangeTo}`,
           orgName,
@@ -151,7 +153,7 @@ export default function AttendancePage() {
         setExporting(false)
         return
       }
-      await exportReportPdf({
+      await (await import('@/lib/pdfExport')).exportReportPdf({
         title: 'تقرير الحضور والانصراف',
         subtitle: `من ${rangeFrom} إلى ${rangeTo}`,
         orgName,
@@ -456,7 +458,7 @@ export default function AttendancePage() {
 
               <div style={{ ...card, overflow: 'hidden' }}>
                 {loading ? (
-                  <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>جاري التحميل...</div>
+                  <ListSkeleton/>
                 ) : rows.length === 0 ? (
                   <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>ما فيه موظفين نشطين بهذا الفرع</div>
                 ) : (
@@ -510,7 +512,7 @@ export default function AttendancePage() {
           ) : (
             <div style={{ ...card, overflow: 'hidden' }}>
               {loading ? (
-                <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>جاري التحميل...</div>
+                <ListSkeleton/>
               ) : rangeRows.length === 0 ? (
                 <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>ما فيه بيانات لهذي الفترة</div>
               ) : (

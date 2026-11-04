@@ -8,9 +8,9 @@ import { currencySymbol } from '@/lib/currencySymbol'
 import { colors, radius, font, card, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { cache } from '@/lib/cache'
-import { exportReportPdf } from '@/lib/pdfExport'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { changePctVisible } from '@/lib/aiPhrases'
+import PageSkeleton from '@/components/PageSkeleton'
 
 const ARABIC_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
 
@@ -129,7 +129,7 @@ export default function ProfitabilityPage() {
         ...fixedList.map((e:any)=>({name:e.name, type:'مصروف ثابت', amount: Number(e.amount).toFixed(0)+' '+curr})),
         ...variableList.map((e:any)=>({name:e.name, type:'مصروف متغيّر', amount: Number(e.amount).toFixed(0)+' '+curr})),
       ]
-      await exportReportPdf({
+      await (await import('@/lib/pdfExport')).exportReportPdf({
         title: 'تقرير الربحية الشهرية',
         subtitle: `${monthLabel(month)}${data.closed?' — مقفل '+new Date(data.closedAt).toLocaleDateString('ar-SA',{numberingSystem:'latn',day:'numeric',month:'long',year:'numeric'}):''}`,
         orgName: '',
@@ -274,9 +274,7 @@ export default function ProfitabilityPage() {
       </div>
 
       {loading ? (
-        <div style={{padding:48,textAlign:'center' as const}}>
-          <div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto'}}/>
-        </div>
+        <PageSkeleton/>
       ) : data && (
         <>
         {/* بطاقة صافي الربح الرئيسية */}

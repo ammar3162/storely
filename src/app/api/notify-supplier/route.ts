@@ -6,6 +6,7 @@ import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { isCronRequest } from '@/lib/cronAuth'
 import { orderedSinceLastRestock, failedRecently } from '@/lib/supplierOrderGate'
 import { isSubscriptionActive } from '@/lib/subscription'
+import { fetchExternal } from '@/lib/fetchExternal'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -144,7 +145,7 @@ async function run(body: any) {
           for (const waitMs of delays) {
             await delay(waitMs)
             try {
-              const infoRes = await fetch(`https://www.wasenderapi.com/api/messages/${numericMsgId}/info`, {
+              const infoRes = await fetchExternal(`https://www.wasenderapi.com/api/messages/${numericMsgId}/info`, {
                 headers: { 'Authorization': `Bearer ${process.env.WASENDER_API_KEY}` },
               })
               const infoData = await infoRes.json().catch(() => null)

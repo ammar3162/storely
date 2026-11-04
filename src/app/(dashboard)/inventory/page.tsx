@@ -17,7 +17,6 @@ import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh'
 import Pagination from '@/components/pagination'
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 const StockCountSheet = lazy(() => import('@/components/StockCountSheet'))
-import Papa from 'papaparse'
 
 // موحّد مع نظام التصميم المشترك (@/lib/ds)
 const C = {
@@ -209,7 +208,9 @@ export default function InventoryPage() {
     URL.revokeObjectURL(url)
   }
 
-  function handleImportFile(file: File) {
+  // مكتبة CSV تنحمّل وقت الاستيراد بس (مو مع فتح الصفحة)
+  async function handleImportFile(file: File) {
+    const Papa = (await import('papaparse')).default
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,

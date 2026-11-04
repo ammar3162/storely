@@ -5,6 +5,7 @@ import { api } from '@/lib/api-client'
 import { colors, font } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
+import { ListSkeleton } from '@/components/PageSkeleton'
 
 // سجل تعديلات إقفال أو فاتورة: مين عدّل (المنشأة/المحاسب)، وش تغيّر من وإلى، والمالك يرجّع آخر تعديل ما انرجع
 const LABEL: Record<string, string> = {
@@ -49,7 +50,7 @@ export default function EditHistoryDialog({ orgId, kind, id, title, onClose, onR
           <button onClick={() => !busy && onClose()} aria-label="إغلاق" style={{ background: colors.bg, border: 'none', borderRadius: 9, padding: 7, cursor: 'pointer', display: 'inline-flex' }}><X size={18} /></button>
         </div>
         <div style={{ padding: 16, display: 'grid', gap: 10 }}>
-          {edits === null ? <div style={{ fontSize: 13, color: colors.text4, textAlign: 'center', padding: 20 }}>جاري التحميل...</div>
+          {edits === null ? <ListSkeleton/>
             : !edits.length ? <div style={{ fontSize: 13, color: colors.text4, textAlign: 'center', padding: 20 }}>ما فيه تعديلات مسجّلة</div>
             : edits.map(e => {
               const acc = e.source === 'accountant'
