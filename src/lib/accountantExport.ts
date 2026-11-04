@@ -1,18 +1,11 @@
-import ExcelJS from 'exceljs'
+// مكتبة الإكسل تتحمّل وقت بناء الملف بس — الدوال الحسابية تحت تستخدمها صفحة تقرير المحاسب بدونها
+import type ExcelJS from 'exceljs'
+const loadExcel = async () => (await import('exceljs')).default
 
 // تقرير المحاسب — نموذج واحد يُبنى منه ملف الإكسل والإيميل وصفحة التقرير ورسالة الواتساب
 
-export type AccSection = 'sales' | 'purchases' | 'vat' | 'payables' | 'payroll' | 'expenses' | 'cash_diff' | 'stock'
-export const ACC_SECTIONS: { key: AccSection; label: string; hint: string }[] = [
-  { key: 'sales', label: 'المبيعات', hint: 'من إقفالات الكاشير: كاش وشبكة' },
-  { key: 'purchases', label: 'المشتريات', hint: 'كل فاتورة مع الضريبة وصورتها' },
-  { key: 'vat', label: 'ضريبة القيمة المضافة', hint: 'ضريبة المبيعات ناقص ضريبة المشتريات' },
-  { key: 'payables', label: 'الموردين الآجلين', hint: 'كم عليك لكل مورد' },
-  { key: 'payroll', label: 'الرواتب', hint: 'بالتقرير الشهري فقط' },
-  { key: 'expenses', label: 'المصروفات', hint: 'المسحوبات من درج الكاشير' },
-  { key: 'cash_diff', label: 'العجز والزيادة', hint: 'فروقات إقفال الكاشير' },
-  { key: 'stock', label: 'قيمة المخزون', hint: 'الكمية × متوسط التكلفة' },
-]
+export { ACC_SECTIONS, type AccSection } from './accountantSections'
+import type { AccSection } from './accountantSections'
 
 export type AccPurchase = { date: string; branch?: string | null; supplier: string | null; name: string; category: string | null; qty: number | null; unit: string | null
   net: number; vat: number; total: number; paid: boolean; invoiceUrl: string | null
@@ -186,7 +179,7 @@ function addTable(wb: ExcelJS.Workbook, title: string, cols: Col[], rows: Record
 
 // watermark: «نسخة فلان · الوقت» — يطلع أسفل كل ورقة وبالملخص (لو تسرّب الملف نعرف من وين)
 export async function buildAccountantWorkbook(r: AccountantReport, opts: { watermark?: string } = {}): Promise<Buffer> {
-  const wb = new ExcelJS.Workbook()
+  const wb = new (await loadExcel()).Workbook()
   wb.creator = 'Storely'
   wb.created = new Date()
   const has = (s: AccSection) => r.sections.includes(s)
@@ -355,7 +348,7 @@ export async function buildAccountantWorkbook(r: AccountantReport, opts: { water
 /** ملخص كل عملاء المحاسب بملف واحد — سطر لكل منشأة */
 export async function buildClientsWorkbook(rows: { name: string; branch: string | null; sales: number | null; purchases: number | null; vatNet: number | null
   payables: number | null; taxInvoices: number; incomplete: number; mismatch: number; note?: string }[], label: string, watermark?: string): Promise<Buffer> {
-  const wb = new ExcelJS.Workbook()
+  const wb = new (await loadExcel()).Workbook()
   wb.creator = 'Storely'
   const ws = addTable(wb, 'العملاء', [
     { header: 'المنشأة', key: 'name', width: 26 }, { header: 'الفرع', key: 'branch', width: 16 }, { header: 'المبيعات', key: 'sales', width: 14, money: true },

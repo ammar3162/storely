@@ -5,7 +5,7 @@ import { api } from '@/lib/api-client'
 import { colors, radius, font, inp, btnPrimary, btnSecondary } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
-import { ACC_SECTIONS, type AccSection } from '@/lib/accountantExport'
+import { ACC_SECTIONS, type AccSection } from '@/lib/accountantSections'
 import { nextSend, periodLabel, hourLabel, type AccFrequency, type ManualPeriodKey } from '@/lib/accountantSchedule'
 import { ListSkeleton } from '@/components/PageSkeleton'
 
