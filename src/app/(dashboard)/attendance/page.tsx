@@ -5,6 +5,7 @@ import PageIcon from '@/components/PageIcon'
 import NumberInput from '@/components/NumberInput'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
+import { getMe } from '@/lib/session'
 import { colors, font, card, btnPrimary, pageTitle, pageSub, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
@@ -68,8 +69,9 @@ export default function AttendancePage() {
   useEffect(() => { if (orgId && periodMode === 'range') loadRange(orgId, rangeFrom, rangeTo) }, [rangeFrom, rangeTo, periodMode, staffFilter])
 
   async function init() {
-    const me = await api.get('/api/me')
-    if (!me.success || !me.org_id) return
+    // نفس طلب /api/me اللي يسويه إطار لوحة التحكم (getMe يشاركه) — كانت الصفحة تطلبه مرة ثانية
+    const me = await getMe()
+    if (!me || !me.org_id) return
     const oid: string = me.org_id
     sessionStorage.setItem('s_org_id', oid)
     const orgName = me.org?.name || '', orgPlan = me.org?.plan || ''

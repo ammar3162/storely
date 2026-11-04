@@ -4,6 +4,7 @@ import PageIcon from '@/components/PageIcon'
 import NumberInput from '@/components/NumberInput'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
+import { getAddonsMarket } from '@/lib/addonsCache'
 import { getMe, getOrgId } from '@/lib/session'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
@@ -90,7 +91,7 @@ export default function HRManagementPage() {
       api.get('/api/staff-payroll-adjustments', { org_id: oid }),
       api.get('/api/staff-report', { org_id: oid, month: curMonth }),
       api.get('/api/extra-days', { org_id: oid, status: 'pending' }).then(r => { if (r.success) { setExtraDays(r.extra_days || []); setCanDecideExtra(!!r.canDecide) } return r }),
-      api.get('/api/addons-market', { org_id: oid }),
+      getAddonsMarket(oid),
       api.get('/api/branches', { org_id: oid }),
     ])
     // نفس قاعدة صفحة الموظفين: الموظفين الموقوفين تلقائياً بانتهاء إضافة «موظف إضافي» ما يطلعون

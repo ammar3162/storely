@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
 import { getMeResult, refreshMe } from '@/lib/session'
+import { getAddonsMarket } from '@/lib/addonsCache'
 import { DEVICE_UNVERIFIED_REASON, VERIFY_DEVICE_PATH } from '@/lib/deviceMessages'
 import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import { useRouter, usePathname } from 'next/navigation'
@@ -147,8 +148,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   // الميزات من الخادم (/api/me): الباقة + الإضافات + التجربة المجانية
   const [orgFeat, setOrgFeat]       = useState<{ hr?: boolean; profitability?: boolean }>({})
   // الإضافات المفعّلة (الحضور، الربحية، الذكاء، الفروع الإضافية) — تتحدث لحالها لما تتغير (useLiveRefresh تحت)
-  const loadAddons = useCallback((oid: string) => {
-    fetch(`/api/addons-market?org_id=${oid}`).then(r=>r.json()).then(j=>{
+  const loadAddons = useCallback((oid: string, fresh = false) => {
+    getAddonsMarket(oid, fresh).then(j=>{
       if (j.success) {
         const hrAddon = (j.addons||[]).find((a:any)=>a.slug==='hr_full')
         setHasHrAddon(!!hrAddon?.subscription?.isValid)
@@ -163,7 +164,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   // إضافة تفعّلت/انتهت أو الباقة تغيّرت والصفحة مفتوحة → القائمة تتحدث بدون تحديث الصفحة
   useLiveRefresh(typeof window!=='undefined' ? sessionStorage.getItem('s_org_id') : null, ['org_addon_subscriptions','plan_requests'], () => {
     const oid = sessionStorage.getItem('s_org_id'); if (!oid) return
-    loadAddons(oid)
+    loadAddons(oid, true)
     refreshMe().then(me => { if (me?.org?.plan) setOrgPlan(me.org.plan); if (me?.org?.features) setOrgFeat(me.org.features) }).catch(()=>{})
   })
   const [orgMaxBranches, setOrgMaxBranches] = useState<number>(1)
