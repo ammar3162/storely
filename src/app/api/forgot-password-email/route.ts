@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import { sendEmail } from '@/lib/email'
 import { resetPasswordEmail } from '@/lib/emailTemplates'
+import { findAuthUserByEmail } from '@/lib/authUsers'
 import { guard, limit, ipOf } from '@/lib/rateLimit'
 
 const sb = () => createClient(
@@ -23,9 +24,8 @@ export async function POST(req: Request) {
 
     const genericResponse = NextResponse.json({ success: true, message: 'إذا كان البريد مسجّل، وصلتك رسالة فيها رابط الاستعادة' })
 
-    const { data: usersList } = await db.auth.admin.listUsers({ page: 1, perPage: 1000 })
-    const authUser = usersList?.users?.find(u => u.email?.toLowerCase() === String(email).toLowerCase())
-    if (!authUser) return genericResponse
+    const authUser = await findAuthUserByEmail(db, String(email))
+    if (!authUser?.email) return genericResponse
 
     const { data: profile } = await db.from('profiles').select('full_name').eq('id', authUser.id).maybeSingle()
 
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     const resetLink = `https://storely.dev/reset-password-wa?token=${token}`
     const mail = resetPasswordEmail({ name: (profile as any)?.full_name || '', link: resetLink })
 
-    await sendEmail({ to: email, subject: mail.subject, html: mail.html })
+    await sendEmail({ to: authUser.email, subject: mail.subject, html: mail.html })
 
     return genericResponse
   } catch (err: any) {
