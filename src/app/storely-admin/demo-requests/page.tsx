@@ -1,114 +1,112 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { Trash2 } from 'lucide-react'
-import { LEGACY_C } from '../_admin/kit'
-
-const C = LEGACY_C
+import { useEffect, useState } from 'react'
+import { Trash2, Building2, Store, Phone, Mail, MessageCircle, RefreshCw } from 'lucide-react'
+import { A, Badge, Btn, Card, Empty, Loading, Notice, PageHeader, adminFetch, fmtDate, inputStyle } from '../_admin/kit'
 
 // حالات يدوية — تتحكم فيها أنت لمتابعة التواصل قبل التسجيل
-const STATUS_LABELS: Record<string,string> = { new:'جديد', contacted:'تم التواصل', rejected:'مرفوض' }
-const STATUS_COLORS: Record<string,string> = { new:'#3b82f6', contacted:'#f59e0b', rejected:'#ef4444' }
+const STATUS_LABELS: Record<string, string> = { new: 'جديد', contacted: 'تم التواصل', rejected: 'مرفوض' }
+
+const digits = (p: string) => String(p || '').replace(/[^0-9]/g, '')
+
+function inviteText(r: any) {
+  return [
+    `مرحباً ${r.first_name}،`,
+    '',
+    `شكراً لطلبك عرض ستورلي لإدارة "${r.business_name}".`,
+    '',
+    'ودّي أوريك النظام مباشرة وأجاوب على أي سؤال عندك — متى يناسبك اتصال سريع 5 دقائق؟',
+    '',
+    'ولو حاب تبدأ بنفسك، تقدر تسجّل حسابك المجاني (14 يوم بدون بطاقة) من هنا:',
+    'https://storely.dev/login?mode=register',
+    '',
+    'فريق ستورلي',
+  ].join('\n')
+}
 
 export default function DemoRequestsPage() {
   const [requests, setRequests] = useState<any[]>([])
-  const [authChecked, setAuthChecked] = useState(false)
   const [loading, setLoading] = useState(true)
-
-  function key() { return sessionStorage.getItem('storely_admin_pass') || '' }
-
-  useEffect(() => {
-    fetch('/api/admin/whoami', { headers: { 'x-admin-key': key() } })
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(data => {
-        if (!data.authenticated) { window.location.href = '/storely-admin'; return }
-        setAuthChecked(true)
-        load()
-      })
-      .catch(() => { window.location.href = '/storely-admin' })
-  }, [])
+  const [error, setError] = useState('')
 
   async function load() {
-    setLoading(true)
-    const res = await fetch('/api/admin/demo-requests', { headers: { 'x-admin-key': key() } })
-    const data = await res.json()
-    setRequests(data.requests || [])
+    setLoading(true); setError('')
+    const d = await adminFetch('/api/admin/demo-requests')
+    if (!d.ok) setError(d.error || 'تعذّر جلب الطلبات')
+    setRequests(d.requests || [])
     setLoading(false)
   }
+  useEffect(() => { load() }, [])
 
   async function remove(r: any) {
     if (!confirm(`حذف طلب العرض من ${r.first_name} ${r.last_name} (${r.business_name})؟\n\nينحذف من القائمة — بياناته تبقى بسجل الإدارة.`)) return
-    const res = await fetch(`/api/admin/demo-requests?id=${r.id}`, { method: 'DELETE', headers: { 'x-admin-key': key() } })
-    const j = await res.json().catch(() => ({}))
-    if (!res.ok) { alert(j.error || 'فشل الحذف'); return }
+    const d = await adminFetch(`/api/admin/demo-requests?id=${r.id}`, { method: 'DELETE' })
+    if (!d.ok) { alert(d.error || 'فشل الحذف'); return }
     setRequests(prev => prev.filter(x => x.id !== r.id))
   }
 
   async function updateStatus(id: string, status: string) {
-    await fetch('/api/admin/demo-requests', {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
-      body: JSON.stringify({ id, status })
-    })
-    load()
+    setRequests(prev => prev.map(x => x.id === id ? { ...x, status } : x))
+    const d = await adminFetch('/api/admin/demo-requests', { method: 'PATCH', body: { id, status } })
+    if (!d.ok) load()
   }
 
-  if (!authChecked) return null
-
   return (
-    <div style={{direction:'rtl'}}>
-      <div style={{maxWidth:1000, margin:'0 auto'}}>
-        <h1 style={{color:C.text, fontSize:24, fontWeight:800, marginBottom:8}}>طلبات عرض النظام</h1>
-        <p style={{color:C.text3, fontSize:13, marginBottom:28}}>الطلبات اللي وصلت من نموذج "اطلب عرض النظام" بالصفحة الرئيسية ({requests.length}) — الحالة الخضراء تلقائية، تُكتشف من رقم الجوال نفسه لما يسجّل العميل حساب</p>
+    <>
+      <PageHeader title="طلبات العرض" subtitle={`الطلبات من نموذج «اطلب عرض النظام» بالصفحة الرئيسية (${requests.length}) — لما يسجّل صاحب الطلب حساب، تنعرف حالته تلقائياً من رقم جواله`}
+        actions={<Btn onClick={load} loading={loading}><RefreshCw size={14} /> تحديث</Btn>} />
 
-        {loading ? <div style={{color:C.text3}}>جاري التحميل...</div> :
-          requests.length === 0 ? (
-            <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:24, color:C.text3, fontSize:13}}>
-              لا توجد طلبات بعد
-            </div>
-          ) : (
-            <div style={{display:'flex', flexDirection:'column', gap:12}}>
-              {requests.map((r:any) => {
-                const isPaid = r.liveStatus && r.liveStatus.subscription_type && r.liveStatus.subscription_type !== 'trial'
-                return (
-                <div key={r.id} style={{background:C.card, border:`1px solid ${r.matched_org_id?C.green:C.border}`, borderRadius:12, padding:20}}>
-                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12, gap:10}}>
-                    <div style={{flex:1, minWidth:0}}>
-                      <div style={{color:C.text, fontSize:16, fontWeight:700}}>{r.first_name} {r.last_name}</div>
-                      <div style={{color:C.text3, fontSize:12, marginTop:2}}>{new Date(r.created_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
-                    </div>
-                    {r.matched_org_id ? (
-                      <div style={{background:isPaid?'#f0fdfa':'#eff6ff', border:`1px solid ${isPaid?'#99f6e4':'#bfdbfe'}`, borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:800, color:isPaid?C.green:C.blue}}>
-                        {isPaid ? '💳 مشترك مدفوع' : '🎁 أنشأ حساب — في فترة التجربة'}
-                      </div>
-                    ) : (
-                      <select value={r.status} onChange={e=>updateStatus(r.id, e.target.value)}
-                        style={{background:C.bg, color:STATUS_COLORS[r.status]||C.text2, border:`1px solid ${C.border}`, borderRadius:8, padding:'6px 10px', fontSize:12, fontWeight:700}}>
-                        {Object.entries(STATUS_LABELS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
-                      </select>
-                    )}
-                    <button onClick={()=>remove(r)} title="حذف الطلب" aria-label="حذف الطلب"
-                      style={{display:'inline-flex', alignItems:'center', gap:5, background:'none', color:C.red, border:`1px solid ${C.red}`, borderRadius:8, padding:'6px 10px', fontSize:12, fontWeight:800, cursor:'pointer', fontFamily:'inherit', flexShrink:0}}>
-                      <Trash2 size={13}/> حذف
-                    </button>
+      {error && <div style={{ marginBottom: 16 }}><Notice tone="danger">{error}</Notice></div>}
+
+      {loading ? <Loading /> : requests.length === 0 ? <Card><Empty title="لا توجد طلبات بعد" /></Card> : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {requests.map((r: any) => {
+            const isPaid = r.liveStatus?.subscription_type && r.liveStatus.subscription_type !== 'trial'
+            const phone = digits(r.phone)
+            return (
+              <Card key={r.id} style={r.matched_org_id ? { borderColor: A.primary } : undefined}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: A.text }}>{r.first_name} {r.last_name}</div>
+                    <div style={{ fontSize: 12, color: A.text3, marginTop: 2 }}>{fmtDate(r.created_at, true)}</div>
                   </div>
-                  <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, fontSize:13, marginBottom:14}}>
-                    <div style={{color:C.text2}}>🏢 <span style={{color:C.text}}>{r.business_name}</span></div>
-                    <div style={{color:C.text2}}>🏪 <span style={{color:C.text}}>{r.branch_count || 'غير محدد'}</span></div>
-                    <div style={{color:C.text2}}>📱 <a href={`https://wa.me/${r.phone.replace(/[^0-9]/g,'')}`} target="_blank" style={{color:C.blue}}>{r.phone}</a></div>
-                    <div style={{color:C.text2}}>✉️ <a href={`mailto:${r.email}`} style={{color:C.blue}}>{r.email}</a></div>
-                  </div>
-                  {!r.matched_org_id && (
-                    <a href={`https://wa.me/${r.phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent('مرحباً '+r.first_name+'! 🎉\\n\\nشكراً لطلبك عرض Storely لإدارة مخزون "'+r.business_name+'".\\n\\nودّي أوريك النظام مباشرة وأجاوب على أي سؤال عندك — متى يناسبك اتصال سريع 5 دقائق؟\\n\\nأو لو حاب تبدأ فوراً بنفسك، تقدر تسجّل حسابك المجاني (14 يوم بدون بطاقة ائتمان) من هنا:\\nhttps://storely.dev/login?mode=register')}`}
-                      target="_blank" rel="noreferrer"
-                      style={{display:'inline-flex', alignItems:'center', gap:8, background:'#14b8a6', color:'white', padding:'9px 16px', borderRadius:8, fontSize:13, fontWeight:700, textDecoration:'none'}}>
-                      📲 تواصل معه عبر واتساب
-                    </a>
+                  {r.matched_org_id ? (
+                    <Badge tone={isPaid ? 'primary' : 'info'}>{isPaid ? 'مشترك مدفوع' : 'أنشأ حساب — في فترة التجربة'}</Badge>
+                  ) : (
+                    <select value={r.status} onChange={e => updateStatus(r.id, e.target.value)} aria-label="حالة الطلب"
+                      style={{ ...inputStyle, width: 'auto', padding: '6px 10px', fontSize: 12.5, fontWeight: 700 }}>
+                      {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                    </select>
                   )}
+                  <Btn small kind="danger" onClick={() => remove(r)} title="حذف الطلب"><Trash2 size={13} /> حذف</Btn>
                 </div>
-              )})}
-            </div>
-          )
-        }
-      </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 10, fontSize: 13, marginBottom: r.matched_org_id ? 0 : 14 }}>
+                  <Info icon={<Building2 size={15} />}>{r.business_name}</Info>
+                  <Info icon={<Store size={15} />}>{r.branch_count || 'عدد الفروع غير محدد'}</Info>
+                  <Info icon={<Phone size={15} />}><a href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer" style={{ color: A.info, direction: 'ltr' }}>{r.phone}</a></Info>
+                  <Info icon={<Mail size={15} />}><a href={`mailto:${r.email}`} style={{ color: A.info }}>{r.email}</a></Info>
+                </div>
+
+                {!r.matched_org_id && (
+                  <a href={`https://wa.me/${phone}?text=${encodeURIComponent(inviteText(r))}`} target="_blank" rel="noreferrer" className="adm-btn adm-btn-primary"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: A.primary, color: 'white', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+                    <MessageCircle size={15} /> تواصل معه عبر واتساب
+                  </a>
+                )}
+              </Card>
+            )
+          })}
+        </div>
+      )}
+    </>
+  )
+}
+
+function Info({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: A.text, minWidth: 0 }}>
+      <span style={{ color: A.text3, display: 'flex', flexShrink: 0 }}>{icon}</span>
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{children}</span>
     </div>
   )
 }

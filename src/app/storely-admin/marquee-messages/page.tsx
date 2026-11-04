@@ -1,160 +1,99 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { Pencil, Trash2, Eye, EyeOff, Plus } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
-import { LEGACY_C } from '../_admin/kit'
-
-const C = LEGACY_C
+import { A, Badge, Btn, Card, Empty, Field, Loading, Notice, PageHeader, adminFetch, inputStyle } from '../_admin/kit'
 
 export default function MarqueeMessagesPage() {
   const [messages, setMessages] = useState<any[]>([])
-  const [authChecked, setAuthChecked] = useState(false)
   const [loading, setLoading] = useState(true)
   const [text, setText] = useState('')
   const [saving, setSaving] = useState(false)
-  const [msg, setMsg] = useState('')
-  const [editingId, setEditingId] = useState<string|null>(null)
+  const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
   const [savingEdit, setSavingEdit] = useState(false)
 
-  function key() { return sessionStorage.getItem('storely_admin_pass') || '' }
-
-  useEffect(() => {
-    fetch('/api/admin/whoami', { headers: { 'x-admin-key': key() } })
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(data => {
-        if (!data.authenticated) { window.location.href = '/storely-admin'; return }
-        setAuthChecked(true)
-        load()
-      })
-      .catch(() => { window.location.href = '/storely-admin' })
-  }, [])
-
   async function load() {
     setLoading(true)
-    const res = await fetch('/api/admin/marquee-messages', { headers: { 'x-admin-key': key() } })
-    const data = await res.json()
-    setMessages(data.messages || [])
+    const d = await adminFetch('/api/admin/marquee-messages')
+    setMessages(d.messages || [])
     setLoading(false)
   }
+  useEffect(() => { load() }, [])
 
   async function addMessages() {
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
-    if (lines.length === 0) { setMsg('اكتب رسالة وحدة على الأقل'); return }
-    setSaving(true); setMsg('')
-    try {
-      const res = await fetch('/api/admin/marquee-messages', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
-        body: JSON.stringify({ messages: lines })
-      })
-      const data = await res.json()
-      if (data.success) { setText(''); setMsg(`✅ تمت إضافة ${data.count} رسالة`); load() }
-      else setMsg(data.error || 'خطأ')
-    } catch { setMsg('خطأ بالاتصال') }
+    if (lines.length === 0) { setMsg({ ok: false, t: 'اكتب رسالة وحدة على الأقل' }); return }
+    setSaving(true); setMsg(null)
+    const d = await adminFetch('/api/admin/marquee-messages', { method: 'POST', body: { messages: lines } })
+    if (d.success) { setText(''); setMsg({ ok: true, t: `تمت إضافة ${d.count} رسالة` }); load() }
+    else setMsg({ ok: false, t: d.error || 'تعذّرت الإضافة' })
     setSaving(false)
   }
 
   async function toggleActive(id: string, current: boolean) {
-    await fetch('/api/admin/marquee-messages', {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
-      body: JSON.stringify({ id, is_active: !current })
-    })
-    load()
-  }
-
-  function startEdit(m: any) {
-    setEditingId(m.id)
-    setEditText(m.message)
-  }
-
-  function cancelEdit() {
-    setEditingId(null)
-    setEditText('')
+    setMessages(prev => prev.map(m => m.id === id ? { ...m, is_active: !current } : m))
+    const d = await adminFetch('/api/admin/marquee-messages', { method: 'PATCH', body: { id, is_active: !current } })
+    if (!d.ok) load()
   }
 
   async function saveEdit(id: string) {
     if (!editText.trim()) return
     setSavingEdit(true)
-    await fetch('/api/admin/marquee-messages', {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
-      body: JSON.stringify({ id, message: editText.trim() })
-    })
-    setSavingEdit(false)
-    setEditingId(null)
+    await adminFetch('/api/admin/marquee-messages', { method: 'PATCH', body: { id, message: editText.trim() } })
+    setSavingEdit(false); setEditingId(null)
     load()
   }
 
   async function deleteMessage(id: string) {
     if (!(await confirmDialog({ title: 'حذف الرسالة', message: 'حذف هذي الرسالة من الشريط؟' }))) return
-    await fetch('/api/admin/marquee-messages', {
-      method: 'DELETE', headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
-      body: JSON.stringify({ id })
-    })
+    await adminFetch('/api/admin/marquee-messages', { method: 'DELETE', body: { id } })
     load()
   }
 
-  if (!authChecked) return null
+  const activeCount = messages.filter(m => m.is_active).length
 
   return (
-    <div style={{direction:'rtl'}}>
-      <div style={{maxWidth:800, margin:'0 auto'}}>
-        <h1 style={{color:C.text, fontSize:24, fontWeight:800, marginBottom:8}}>رسائل الشريط المتحرك بالصفحة التسويقية</h1>
-        <p style={{color:C.text3, fontSize:13, marginBottom:28}}>تظهر هذي الرسائل بالشريط الأخضر المتحرك أعلى الصفحة الرئيسية لموقع Storely، وتتناوب فيما بينها</p>
+    <>
+      <PageHeader title="الشريط الإخباري" subtitle="رسائل الشريط المتحرك أعلى الصفحة الرئيسية لموقع ستورلي — تتناوب فيما بينها" />
 
-        <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:20, marginBottom:24}}>
-          <h2 style={{color:C.text, fontSize:15, fontWeight:700, marginBottom:6}}>إضافة رسالة أو أكثر</h2>
-          <p style={{color:C.text3, fontSize:12, marginBottom:14}}>اكتب كل رسالة بسطر لحالها — تُضاف كلها دفعة وحدة</p>
-          {msg && <div style={{color:msg.startsWith('✅')?C.green:C.red, fontSize:13, marginBottom:12}}>{msg}</div>}
-          <textarea placeholder={'رسالة 1\nرسالة 2\nرسالة 3...'} value={text} onChange={e=>setText(e.target.value)} rows={4}
-            style={{width:'100%', padding:'10px 12px', borderRadius:8, border:`1px solid ${C.border}`, background:C.bg, color:C.text, fontSize:14, marginBottom:14, boxSizing:'border-box' as const, fontFamily:'inherit', resize:'vertical' as const}}/>
-          <button onClick={addMessages} disabled={saving}
-            style={{background:C.green, color:'white', border:'none', borderRadius:8, padding:'10px 20px', fontSize:14, fontWeight:700, cursor:'pointer'}}>
-            {saving?'⏳ جاري الحفظ...':'إضافة'}
-          </button>
-        </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 820 }}>
+        <Card title="إضافة رسالة أو أكثر" subtitle="كل رسالة بسطر لحالها — تنضاف كلها دفعة وحدة">
+          <Field label="الرسائل">
+            <textarea placeholder={'رسالة 1\nرسالة 2\nرسالة 3'} value={text} onChange={e => setText(e.target.value)} rows={4}
+              style={{ ...inputStyle, resize: 'vertical', fontSize: 14 }} />
+          </Field>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+            <Btn kind="primary" onClick={addMessages} loading={saving}><Plus size={14} /> إضافة</Btn>
+            {msg && <span style={{ fontSize: 13, fontWeight: 600, color: msg.ok ? A.primary : A.danger }}>{msg.t}</span>}
+          </div>
+        </Card>
 
-        <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:20}}>
-          <h2 style={{color:C.text, fontSize:15, fontWeight:700, marginBottom:14}}>الرسائل الحالية ({messages.length})</h2>
-          {loading ? <div style={{color:C.text3}}>جاري التحميل...</div> :
-            messages.length === 0 ? <div style={{color:C.text3, fontSize:13}}>لا توجد رسائل مضافة بعد</div> :
-            <div style={{display:'flex', flexDirection:'column', gap:10}}>
-              {messages.map((m:any) => (
-                <div key={m.id} style={{padding:'10px 12px', background:C.bg, borderRadius:8, opacity:m.is_active?1:.5}}>
-                  {editingId===m.id ? (
-                    <div style={{display:'flex', alignItems:'center', gap:8}}>
-                      <input value={editText} onChange={e=>setEditText(e.target.value)} autoFocus
-                        style={{flex:1, padding:'8px 10px', borderRadius:6, border:`1px solid ${C.blue}`, background:C.card, color:C.text, fontSize:14}}/>
-                      <button onClick={()=>saveEdit(m.id)} disabled={savingEdit}
-                        style={{background:C.green, color:'white', border:'none', borderRadius:6, padding:'6px 12px', fontSize:12, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' as const}}>
-                        {savingEdit?'...':'حفظ'}
-                      </button>
-                      <button onClick={cancelEdit}
-                        style={{background:'transparent', color:C.text3, border:`1px solid ${C.border}`, borderRadius:6, padding:'6px 12px', fontSize:12, cursor:'pointer'}}>
-                        إلغاء
-                      </button>
-                    </div>
-                  ) : (
-                    <div style={{display:'flex', alignItems:'center', gap:12}}>
-                      <span style={{color:C.text, fontSize:14, fontWeight:600, flex:1}}>{m.message}</span>
-                      <button onClick={()=>startEdit(m)}
-                        style={{background:'transparent', color:C.blue, border:`1px solid ${C.blue}`, borderRadius:6, padding:'6px 12px', fontSize:12, cursor:'pointer', whiteSpace:'nowrap' as const}}>
-                        ✏️ تعديل
-                      </button>
-                      <button onClick={()=>toggleActive(m.id, m.is_active)}
-                        style={{background:'transparent', color:m.is_active?C.green:C.text3, border:`1px solid ${m.is_active?C.green:C.text3}`, borderRadius:6, padding:'6px 12px', fontSize:12, cursor:'pointer', whiteSpace:'nowrap' as const}}>
-                        {m.is_active?'✅ مفعّلة':'⏸ موقفة'}
-                      </button>
-                      <button onClick={()=>deleteMessage(m.id)}
-                        style={{background:'transparent', color:C.red, border:`1px solid ${C.red}`, borderRadius:6, padding:'6px 12px', fontSize:12, cursor:'pointer'}}>
-                        حذف
-                      </button>
-                    </div>
-                  )}
+        <Card title="الرسائل الحالية" subtitle={`${messages.length} رسالة · ${activeCount} مفعّلة`} pad={0}>
+          {loading ? <Loading /> : messages.length === 0 ? <Empty title="لا توجد رسائل مضافة بعد" /> : messages.map((m: any) => (
+            <div key={m.id} style={{ padding: '12px 20px', borderBottom: `1px solid ${A.border}` }}>
+              {editingId === m.id ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <input value={editText} onChange={e => setEditText(e.target.value)} autoFocus style={{ ...inputStyle, flex: 1, minWidth: 200, fontSize: 14 }} />
+                  <Btn small kind="primary" onClick={() => saveEdit(m.id)} loading={savingEdit}>حفظ</Btn>
+                  <Btn small kind="ghost" onClick={() => setEditingId(null)}>إلغاء</Btn>
                 </div>
-              ))}
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <span style={{ flex: 1, minWidth: 200, fontSize: 14, fontWeight: 600, color: m.is_active ? A.text : A.text3 }}>{m.message}</span>
+                  <Badge tone={m.is_active ? 'primary' : 'neutral'}>{m.is_active ? 'مفعّلة' : 'موقفة'}</Badge>
+                  <Btn small onClick={() => { setEditingId(m.id); setEditText(m.message) }}><Pencil size={13} /> تعديل</Btn>
+                  <Btn small onClick={() => toggleActive(m.id, m.is_active)}>{m.is_active ? <><EyeOff size={13} /> إيقاف</> : <><Eye size={13} /> تفعيل</>}</Btn>
+                  <Btn small kind="danger" onClick={() => deleteMessage(m.id)}><Trash2 size={13} /> حذف</Btn>
+                </div>
+              )}
             </div>
-          }
-        </div>
+          ))}
+        </Card>
+
+        {messages.length > 0 && activeCount === 0 && <Notice tone="warning">ولا رسالة مفعّلة — الشريط ما بيظهر بالصفحة الرئيسية.</Notice>}
       </div>
-    </div>
+    </>
   )
 }

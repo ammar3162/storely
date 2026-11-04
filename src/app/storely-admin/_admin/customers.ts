@@ -7,7 +7,8 @@ export type Customer = {
   subscription_type: string; subscription_ends_at: string | null; billing_cycle: 'monthly' | 'yearly'
   max_branches: number; plan: PlanKey; requested_plan: string
   locked_plan_monthly: number | null   // سعر مثبّت لمشترك قبل تغيير الأسعار
-  monthly_bill: number | null          // الباقة + الإضافات السارية شهرياً (بعد الخصم)
+  monthly_bill: number | null          // الباقة + الإضافات السارية شهرياً (بعد الخصم، السنوي ÷ 12)
+  bill_addons: number | null           // منها: الإضافات
   discount: OrgDiscount                // خصم خاص من لوحة الإدارة
 }
 
@@ -47,13 +48,17 @@ export function mapCustomer(p: any): Customer {
     requested_plan: p.organizations?.requested_plan || '',
     locked_plan_monthly: p.organizations?.locked_plan_monthly ?? null,
     monthly_bill: p.monthly_bill ?? null,
+    bill_addons: p.bill_addons ?? null,
     discount: { discount_type: p.organizations?.discount_type ?? null, discount_value: p.organizations?.discount_value ?? null, discount_note: p.organizations?.discount_note ?? null, discount_until: p.organizations?.discount_until ?? null },
   }
 }
 
-/** الإيراد الشهري المتوقع من المشتركين المدفوعين النشطين (السنوي يُقسم على 12) */
+/** الإيراد الشهري المتوقع من المشتركين المدفوعين النشطين = فاتورتهم الفعلية (الباقة + الإضافات − الخصم، السنوي ÷ 12).
+ *  لو ما وصلت الفاتورة من الخادم نرجع لسعر الباقة بس */
 export function monthlyRevenue(list: Customer[]) {
-  return list
-    .filter(u => u.subscription_type === 'paid' && u.status === 'active')
-    .reduce((s, u) => { const p = planPriceFor(u.plan, u.locked_plan_monthly); return s + (u.billing_cycle === 'yearly' ? p.yearly / 12 : p.monthly) }, 0)
+  const paid = list.filter(u => u.subscription_type === 'paid' && u.status === 'active')
+  const planOnly = (u: Customer) => { const p = planPriceFor(u.plan, u.locked_plan_monthly); return u.billing_cycle === 'yearly' ? p.yearly / 12 : p.monthly }
+  const total = paid.reduce((s, u) => s + (u.monthly_bill ?? planOnly(u)), 0)
+  const addons = paid.reduce((s, u) => s + (u.bill_addons ?? 0), 0)
+  return { total, addons }
 }

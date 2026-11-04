@@ -1,107 +1,72 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { LEGACY_C } from '../_admin/kit'
-
-const C = LEGACY_C
+import { useEffect, useState } from 'react'
+import { Activity, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { A, Badge, Btn, Card, Empty, Loading, Notice, PageHeader, adminFetch, adminKey, fmtDate, useAdmin } from '../_admin/kit'
 
 export default function HealthPage() {
+  const { can } = useAdmin()
+  const allowed = can('view_health')
   const [logs, setLogs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [authChecked, setAuthChecked] = useState(false)
   const [error, setError] = useState('')
   const [running, setRunning] = useState(false)
 
-  useEffect(() => {
-    const key = sessionStorage.getItem('storely_admin_pass') || ''
-    fetch('/api/admin/whoami', { headers: { 'x-admin-key': key } })
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(data => {
-        if (!data.authenticated || (data.admin?.role !== 'super_admin' && !data.admin?.permissions?.view_health)) { window.location.href = '/storely-admin'; return }
-        setAuthChecked(true)
-      })
-      .catch(() => { window.location.href = '/storely-admin' })
-  }, [])
-
-  useEffect(() => { if (authChecked) load() }, [authChecked])
-
   async function load() {
     setLoading(true); setError('')
-    try {
-      const key = sessionStorage.getItem('storely_admin_pass') || ''
-      const res = await fetch('/api/admin/health-logs', { headers: { 'x-admin-key': key } })
-      const data = await res.json()
-      if (!res.ok || !data.success) { setError('حدث خطأ بجلب البيانات'); setLoading(false); return }
-      setLogs(data.logs || [])
-    } catch { setError('حدث خطأ') }
+    const d = await adminFetch('/api/admin/health-logs')
+    if (!d.ok || !d.success) setError(d.error || 'تعذّر جلب البيانات')
+    else setLogs(d.logs || [])
     setLoading(false)
   }
+  useEffect(() => { if (allowed) load() }, [allowed])
 
   async function runNow() {
     setRunning(true)
-    try { await fetch('/api/health-check', { headers: { 'x-admin-key': sessionStorage.getItem('storely_admin_pass') || '' } }) } catch {}
+    try { await fetch('/api/health-check', { headers: { 'x-admin-key': adminKey() } }) } catch {}
     setRunning(false)
     load()
   }
 
+  if (!allowed) return <Card><Empty title="ما عندك صلاحية على هالصفحة" /></Card>
   const latest = logs[0]
 
-  if (!authChecked) return (
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{color:C.text2,fontSize:13}}>⏳ جاري التحقق...</div>
-    </div>
-  )
-
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,flexWrap:'wrap' as const,gap:12}}>
-        <div>
-          <h1 style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:4}}>فحص صحة النظام</h1>
-          <div style={{fontSize:12,color:C.text3}}>فحص تلقائي دوري لمشاكل البيانات (منتجات بدون فرع، مؤسسات بدون فرع فعّال، تكرارات، إلخ)</div>
-        </div>
-        <div style={{display:'flex',gap:10}}>
-          <button onClick={runNow} disabled={running} style={{padding:'8px 16px',background:C.green+'22',color:C.green,border:`1px solid ${C.green}44`,borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-            {running?'جاري الفحص...':'⚡ فحص الآن'}
-          </button>
-        </div>
-      </div>
+    <>
+      <PageHeader title="صحة النظام" subtitle="فحص تلقائي دوري لمشاكل البيانات: منتجات بدون فرع، منشآت بدون فرع فعّال، تكرارات، وغيرها"
+        actions={<Btn kind="primary" onClick={runNow} loading={running}><Activity size={14} /> فحص الآن</Btn>} />
 
-      {error && <div style={{background:'#fef3f2',color:'#d92d20',padding:'10px 14px',borderRadius:10,fontSize:13,marginBottom:16}}>{error}</div>}
+      {error && <div style={{ marginBottom: 16 }}><Notice tone="danger">{error}</Notice></div>}
 
       {latest && (
-        <div style={{background: latest.issues_count>0 ? '#fef3f2' : '#e7f6f5', border:`1.5px solid ${latest.issues_count>0?'#fecdca':'#99d9d6'}`, borderRadius:14, padding:'16px 18px', marginBottom:20}}>
-          <div style={{fontSize:14,fontWeight:800,color: latest.issues_count>0 ? '#d92d20' : C.green}}>
-            {latest.issues_count>0 ? `⚠️ ${latest.issues_count} مشكلة مكتشفة` : '✅ كل شي سليم'}
-          </div>
-          <div style={{fontSize:11,color:C.text3,marginTop:4}}>آخر فحص: {new Date(latest.checked_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
+        <div style={{ marginBottom: 20 }}>
+          <Notice tone={latest.issues_count > 0 ? 'danger' : 'primary'}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {latest.issues_count > 0 ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />}
+              <span>{latest.issues_count > 0 ? `${latest.issues_count} مشكلة مكتشفة` : 'كل شي سليم'}</span>
+              <span style={{ fontWeight: 500, color: A.text2, fontSize: 12 }}>· آخر فحص {fmtDate(latest.checked_at, true)}</span>
+            </div>
+          </Notice>
         </div>
       )}
 
-      {loading ? (
-        <div style={{textAlign:'center',padding:60,color:C.text3}}>جاري التحميل...</div>
-      ) : logs.length === 0 ? (
-        <div style={{background:C.card,borderRadius:14,padding:40,textAlign:'center',border:`1px solid ${C.border}`}}>
-          <div style={{fontSize:32,marginBottom:10}}>📭</div>
-          <div style={{color:C.text2}}>ما فيه سجلات فحص بعد</div>
-        </div>
-      ) : (
-        <div style={{display:'flex',flexDirection:'column',gap:10}}>
-          {logs.map((log)=>(
-            <div key={log.id} style={{background:C.card,borderRadius:12,border:`1px solid ${C.border}`,padding:'14px 16px'}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:log.issues_count>0?10:0}}>
-                <div style={{fontSize:12,fontWeight:700,color: log.issues_count>0?C.red:C.green}}>
-                  {log.issues_count>0 ? `${log.issues_count} مشكلة` : 'سليم ✅'}
-                </div>
-                <div style={{fontSize:11,color:C.text3}}>{new Date(log.checked_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
+      {loading ? <Loading /> : (
+        <Card title="سجل الفحوصات" pad={0}>
+          {logs.length === 0 ? <Empty title="ما فيه سجلات فحص بعد" /> : logs.map(log => (
+            <div key={log.id} style={{ padding: '12px 20px', borderBottom: `1px solid ${A.border}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                <Badge tone={log.issues_count > 0 ? 'danger' : 'primary'}>{log.issues_count > 0 ? `${log.issues_count} مشكلة` : 'سليم'}</Badge>
+                <span style={{ fontSize: 12, color: A.text3 }}>{fmtDate(log.checked_at, true)}</span>
               </div>
-              {(log.issues||[]).map((issue:any,i:number)=>(
-                <div key={i} style={{fontSize:12,color:issue.severity==='critical'?'#d92d20':'#b54708',padding:'6px 10px',background:'#f9fafb',borderRadius:8,marginTop:6}}>
-                  <b>{issue.severity==='critical'?'🔴':'🟡'} {issue.type}:</b> {issue.detail}
+              {(log.issues || []).map((issue: any, i: number) => (
+                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12.5, color: A.text, padding: '8px 10px', background: '#f9fafb', borderRadius: 8, marginTop: 8 }}>
+                  <Badge tone={issue.severity === 'critical' ? 'danger' : 'warning'}>{issue.severity === 'critical' ? 'حرج' : 'تنبيه'}</Badge>
+                  <span><b>{issue.type}:</b> {issue.detail}</span>
                 </div>
               ))}
             </div>
           ))}
-        </div>
+        </Card>
       )}
-    </div>
+    </>
   )
 }

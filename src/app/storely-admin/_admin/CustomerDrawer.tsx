@@ -7,6 +7,7 @@ import { toast } from '@/components/toast'
 import { billLines, activeDiscount, PLAN_PRICING, PLAN_CAPS, ENTERPRISE_LABEL, addonPeriodEnd, proratedCharge, planPriceFor, unitPrice, type PlanKey } from '@/lib/planPricing'
 import { A, Badge, Btn, Card, Drawer, adminFetch, daysLeft, fmtDate, inputStyle } from './kit'
 import { type Customer, STATUS, PLAN_KEYS, PLAN_LIMITS, planLabel } from './customers'
+import ActivityCard from './ActivityCard'
 
 const QTY_SLUGS = ['extra_staff', 'extra_suppliers', 'extra_branch']
 const DURATIONS = [{ d: 7, l: '7 أيام' }, { d: 30, l: 'شهر' }, { d: 90, l: '3 أشهر' }, { d: 365, l: 'سنة' }]
@@ -220,6 +221,9 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
           </a>
         )}
       </Card>
+
+      {/* النشاط */}
+      {c.org_id && <ActivityCard orgId={c.org_id} />}
 
       {/* الاشتراك */}
       <Card title="الاشتراك" subtitle="تفعيل أو تجديد لمدة تبدأ من اليوم">

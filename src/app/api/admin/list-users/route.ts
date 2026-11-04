@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { monthlyBills } from '@/lib/orgBill'
+import { orgRevenues } from '@/lib/orgBill'
 import { requirePermission } from '@/lib/adminAuth'
 
 export async function GET(req: Request) {
@@ -23,7 +23,11 @@ export async function GET(req: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // الفاتورة الشهرية لكل منشأة — عشان نعلّم المرشّحين للترقية
-  const orgs = ((data || []) as any[]).filter(u => u.org_id).map(u => ({ id: u.org_id, plan: u.organizations?.plan, max_branches: u.organizations?.max_branches, locked_plan_monthly: u.organizations?.locked_plan_monthly, discount_type: u.organizations?.discount_type, discount_value: u.organizations?.discount_value, discount_until: u.organizations?.discount_until }))
-  const bills = await monthlyBills(supabase, orgs).catch(() => ({} as Record<string, number>))
-  return NextResponse.json({ users: ((data || []) as any[]).map(u => ({ ...u, monthly_bill: u.org_id ? bills[u.org_id] ?? null : null })) })
+  const orgs = ((data || []) as any[]).filter(u => u.org_id).map(u => ({ id: u.org_id, plan: u.organizations?.plan, max_branches: u.organizations?.max_branches, locked_plan_monthly: u.organizations?.locked_plan_monthly, billing_cycle: u.organizations?.billing_cycle, discount_type: u.organizations?.discount_type, discount_value: u.organizations?.discount_value, discount_until: u.organizations?.discount_until }))
+  // الفاتورة بالشهر (السنوي ÷ 12): الباقة + الإضافات − الخصم — مصدر رقم الإيراد بالنظرة العامة
+  const bills = await orgRevenues(supabase, orgs).catch(() => ({} as Awaited<ReturnType<typeof orgRevenues>>))
+  return NextResponse.json({ users: ((data || []) as any[]).map(u => {
+    const b = u.org_id ? bills[u.org_id] : undefined
+    return { ...u, monthly_bill: b ? b.total : null, bill_plan: b ? b.plan : null, bill_addons: b ? b.addons : null }
+  }) })
 }

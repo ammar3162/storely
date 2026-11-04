@@ -46,7 +46,8 @@ export default function OverviewPage() {
       expiring,
       expired: active.filter(u => { const d = daysLeft(u.subscription_ends_at); return d !== null && d <= 0 }).length,
       newThisMonth: list.filter(u => new Date(u.created_at) >= monthStart).length,
-      revenue: Math.round(monthlyRevenue(list)),
+      revenue: Math.round(monthlyRevenue(list).total),
+      revenueAddons: Math.round(monthlyRevenue(list).addons),
       byPlan: PLAN_KEYS.map(k => ({ k, n: active.filter(u => u.plan === k).length })),
       latest: list.slice(0, 6),
     }
@@ -91,7 +92,7 @@ export default function OverviewPage() {
 
           {/* الأرقام */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12 }}>
-            <Stat label="الإيراد الشهري المتوقع" value={`${s.revenue.toLocaleString('en')} ⃁`} hint={`من ${s.paid} مشترك مدفوع`} tone="primary" />
+            <Stat label="الإيراد الشهري المتوقع" value={`${s.revenue.toLocaleString('en')} ⃁`} hint={`من ${s.paid} مشترك مدفوع${s.revenueAddons ? ` · منها ${s.revenueAddons.toLocaleString('en')} ⃁ إضافات` : ''}`} tone="primary" />
             <Stat label="المنشآت المسجّلة" value={s.total} hint={`${s.newThisMonth} جديدة هذا الشهر`} onClick={() => router.push('/storely-admin/customers')} />
             <Stat label="مفعّلة" value={s.active} hint={`${s.paid} مدفوع · ${s.trial} تجربة`} />
             <Stat label="بانتظار التفعيل" value={s.pending.length} tone={s.pending.length ? 'warning' : 'default'} onClick={() => router.push('/storely-admin/customers?filter=pending')} />

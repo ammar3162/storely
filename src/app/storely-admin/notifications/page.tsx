@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { toast } from '@/components/toast'
 import { A } from '../_admin/kit'
+import { Bell, Megaphone, Check } from 'lucide-react'
 
 const C = {
   primary:A.primary, primaryL:A.primarySoft, primaryB:A.primary+'55',
@@ -123,10 +124,10 @@ export default function AdminNotificationsPage() {
                 <label style={{fontSize:10,fontWeight:700,color:C.text3,display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>طريقة الإرسال</label>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                   <button onClick={()=>setDeliveryType('internal')} style={{padding:'10px',borderRadius:8,border:`1.5px solid ${deliveryType==='internal'?'#029FA2':'#e2e8f0'}`,background:deliveryType==='internal'?'#f0fdfa':'white',color:deliveryType==='internal'?'#029FA2':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
-                    🔔 إشعار داخلي<br/><span style={{fontSize:10,fontWeight:400}}>في جرس الإشعارات</span>
+                    <span style={{display:'inline-flex',alignItems:'center',gap:5}}><Bell size={14}/> إشعار داخلي</span><br/><span style={{fontSize:10,fontWeight:400}}>في جرس الإشعارات</span>
                   </button>
                   <button onClick={()=>setDeliveryType('banner')} style={{padding:'10px',borderRadius:8,border:`1.5px solid ${deliveryType==='banner'?'#7c3aed':'#e2e8f0'}`,background:deliveryType==='banner'?'#f5f3ff':'white',color:deliveryType==='banner'?'#7c3aed':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
-                    📢 بانر عام<br/><span style={{fontSize:10,fontWeight:400}}>شريط في الداشبورد</span>
+                    <span style={{display:'inline-flex',alignItems:'center',gap:5}}><Megaphone size={14}/> بانر عام</span><br/><span style={{fontSize:10,fontWeight:400}}>شريط في الداشبورد</span>
                   </button>
                 </div>
               </div>
@@ -181,7 +182,7 @@ export default function AdminNotificationsPage() {
               </div>
             </div>
             <div style={{padding:'8px 14px',borderBottom:`1px solid ${C.border}`}}>
-              <input value={orgSearch} onChange={e=>setOrgSearch(e.target.value)} placeholder="🔍 بحث بالاسم..."
+              <input value={orgSearch} onChange={e=>setOrgSearch(e.target.value)} placeholder="بحث بالاسم..."
                 style={{width:'100%',padding:'6px 10px',border:`1px solid ${C.border2}`,borderRadius:7,fontSize:11,fontFamily:'inherit',color:C.text,boxSizing:'border-box' as const}}/>
             </div>
             <div style={{maxHeight:340,overflowY:'auto'}}>
@@ -195,7 +196,7 @@ export default function AdminNotificationsPage() {
                   <div key={org.id} className="rh" onClick={()=>toggleOrg(org.id)}
                     style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',borderBottom:i<arr.length-1?`1px solid ${C.border}`:'none',cursor:'pointer',background:isSel?C.primaryL:'white',transition:'background .1s'}}>
                     <div style={{width:18,height:18,borderRadius:5,border:`2px solid ${isSel?C.primary:C.border2}`,background:isSel?C.primary:'white',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                      {isSel&&<span style={{color:'white',fontSize:10,fontWeight:900}}>✓</span>}
+                      {isSel&&<Check size={12} color="white" strokeWidth={3}/>}
                     </div>
                     <span style={{fontSize:12,fontWeight:600,color:C.text,flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{org.name}</span>
                   </div>
