@@ -34,4 +34,10 @@ describe('requestEmail', () => {
     expect(m.subject).not.toMatch(/[\r\n]/)
     expect(m.html).not.toContain('<script>')
   })
+
+  it('signup: plan, source and link to customers', () => {
+    const m = requestEmail({ kind: 'signup', email: 'owner@mail.com', businessType: 'كوفي', plan: 'pro', branches: 3, billing: 'monthly', source: 'tiktok', sourceDetail: null, agentCode: 'AB12', demoMatched: true }, { name: 'كوفي الورد', owner: 'سارة', phone: '0555555555' })
+    expect(m.subject).toBe('تسجيل جديد: كوفي الورد')
+    for (const t of ['الشاملة', '3 فروع', 'تيك توك', 'AB12', 'owner@mail.com', 'كوفي', 'storely-admin/customers', 'طلب عرض سابق']) expect(m.html).toContain(t)
+  })
 })

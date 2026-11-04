@@ -1,4 +1,4 @@
-// إيميل للإدارة لما عميل يطلب إضافة أو ترقية — عشان يوصلك الطلب حتى لو لوحة الإدارة مقفلة.
+// إيميل للإدارة لما عميل جديد يسجّل، أو عميل يطلب إضافة أو ترقية — عشان يوصلك حتى لو لوحة الإدارة مقفلة.
 // المستلمون: المشرفون النشطون اللي يقدرون يوافقون على الطلبات (المشرف العام أو صلاحية manage_users).
 // الإرسال بعد الرد على العميل (after) وفشله ما يأثر على الطلب نفسه.
 import { after } from 'next/server'
@@ -6,8 +6,10 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { brandEmail, type EmailRow } from '@/lib/emailTemplates'
 import { planLabel } from '@/lib/planPricing'
+import { SIGNUP_SOURCES } from '@/lib/signupSource'
 
 export const ADMIN_REQUESTS_URL = 'https://storely.dev/storely-admin/addon-requests'
+export const ADMIN_CUSTOMERS_URL = 'https://storely.dev/storely-admin/customers'
 
 type AdminRow = { email: string | null; role: string | null; is_active: boolean | null; permissions?: Record<string, boolean> | null }
 
@@ -24,22 +26,54 @@ export function approverEmails(admins: AdminRow[]): string[] {
 export type RequestNotice =
   | { kind: 'addon'; addonName: string; quantity: number; note?: string | null }
   | { kind: 'plan'; fromPlan: string; toPlan: string; billAtRequest?: number | null }
+  | { kind: 'signup'; email?: string | null; businessType?: string | null; plan: string; branches: number; billing: 'monthly' | 'yearly'; source?: string | null; sourceDetail?: string | null; agentCode?: string | null; demoMatched?: boolean }
+
+const sourceLabel = (v?: string | null) => SIGNUP_SOURCES.find(x => x.v === v)?.ar || null
 
 export function requestEmail(n: RequestNotice, org: { name: string; owner?: string | null; phone?: string | null }) {
+  const oneLine = (t: string) => t.replace(/[\r\n]+/g, ' ').slice(0, 180)
+  const who: EmailRow[] = [
+    { label: 'المنشأة', value: org.name, strong: true },
+    ...(org.owner ? [{ label: 'المالك', value: org.owner }] : []),
+    ...(org.phone ? [{ label: 'الجوال', value: org.phone }] : []),
+  ]
+
+  if (n.kind === 'signup') {
+    const src = [sourceLabel(n.source), n.sourceDetail].filter(Boolean).join(' — ')
+    const rows: EmailRow[] = [
+      ...who,
+      ...(n.email ? [{ label: 'الإيميل', value: n.email }] : []),
+      ...(n.businessType ? [{ label: 'النشاط', value: n.businessType }] : []),
+      { label: 'الباقة المختارة', value: `${planLabel(n.plan)} · ${n.branches} ${n.branches === 1 ? 'فرع' : 'فروع'} · ${n.billing === 'yearly' ? 'سنوي' : 'شهري'}`, strong: true },
+      ...(src ? [{ label: 'من وين سمع عنا', value: src }] : []),
+      ...(n.agentCode ? [{ label: 'رمز السفير', value: n.agentCode }] : []),
+      ...(n.demoMatched ? [{ label: 'طلب عرض سابق', value: 'نعم — انربط بطلب العرض تلقائياً' }] : []),
+    ]
+    return {
+      subject: oneLine(`تسجيل جديد: ${org.name}`),
+      html: brandEmail({
+        title: 'عميل جديد سجّل في ستورلي',
+        eyebrow: 'لوحة الإدارة',
+        paragraphs: ['بدأ فترة التجربة المجانية الحين. تواصل معه في أول يومين يساعده يبدأ صح.'],
+        rows,
+        button: { label: 'فتح العملاء', url: ADMIN_CUSTOMERS_URL },
+        small: 'وصلك هذا الإيميل لأنك مشرف في لوحة إدارة ستورلي.',
+      }),
+    }
+  }
+
   const what = n.kind === 'addon'
     ? `إضافة «${n.addonName}»${n.quantity > 1 ? ` (${n.quantity})` : ''}`
     : `ترقية إلى ${planLabel(n.toPlan)}`
   const rows: EmailRow[] = [
-    { label: 'المنشأة', value: org.name, strong: true },
-    ...(org.owner ? [{ label: 'المالك', value: org.owner }] : []),
-    ...(org.phone ? [{ label: 'الجوال', value: org.phone }] : []),
+    ...who,
     { label: 'الطلب', value: what, strong: true },
     ...(n.kind === 'plan' ? [{ label: 'الباقة الحالية', value: planLabel(n.fromPlan) }] : []),
     ...(n.kind === 'plan' && n.billAtRequest != null ? [{ label: 'فاتورته الحالية', value: `${n.billAtRequest} ر.س شهرياً` }] : []),
     ...(n.kind === 'addon' && n.note ? [{ label: 'ملاحظة', value: n.note }] : []),
   ]
   return {
-    subject: `طلب جديد: ${what} — ${org.name}`.replace(/[\r\n]+/g, ' ').slice(0, 180),
+    subject: oneLine(`طلب جديد: ${what} — ${org.name}`),
     html: brandEmail({
       title: n.kind === 'addon' ? 'طلب إضافة جديد' : 'طلب ترقية جديد',
       preheader: `${org.name} يطلب ${what}`,

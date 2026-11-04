@@ -11,7 +11,8 @@ import { formatPhone } from '@/lib/whatsapp'
 import { currencyForDialCode } from '@/lib/currencyByCountry'
 import { sendEmail } from '@/lib/email'
 import { welcomeEmail } from '@/lib/emailTemplates'
-import { buildAttributionRow } from '@/lib/signupSource'
+import { buildAttributionRow, normalizeSignupSource, normalizeSourceDetail } from '@/lib/signupSource'
+import { notifyAdminsLater } from '@/lib/adminNotify'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -126,11 +127,13 @@ export async function POST(req: Request) {
       if (error) console.error('SIGNUP_ATTRIBUTION_FAILED (non-fatal):', error.message)
     } catch (e) { console.error('SIGNUP_ATTRIBUTION_FAILED (non-fatal):', e) }
 
+    let demoMatched = false
     // ربط تلقائي بطلب عرض سابق (لو وجد) — نطابق آخر 9 أرقام من رقم الجوال، بدون تدخل يدوي
     try {
       const last9 = fullPhone.replace(/[^0-9]/g,'').slice(-9)
       const { data: pendingRequests } = await supabase.from('demo_requests').select('id,phone').in('status',['new','contacted']).is('matched_org_id', null)
       const match = (pendingRequests||[]).find((r:any) => (r.phone||'').replace(/[^0-9]/g,'').slice(-9) === last9)
+      demoMatched = !!match
       if (match) {
         await supabase.from('demo_requests').update({ matched_org_id: org.id } as any).eq('id', (match as any).id)
       }
@@ -143,6 +146,14 @@ export async function POST(req: Request) {
         await sendEmail({ to: authedUser.email, subject: mail.subject, html: mail.html })
       } catch (e) { console.error('WELCOME_EMAIL_FAILED (non-fatal):', e) }
     }
+
+    // إيميل للإدارة: عميل جديد سجّل (بعد الرد على العميل — فشله ما يأثر على التسجيل)
+    const src = normalizeSignupSource(body.signupSource)
+    notifyAdminsLater(supabase, org.id, {
+      kind: 'signup', email: authedUser.email, businessType, plan, branches: Number(branchCount) || 1,
+      billing: billing === 'yearly' ? 'yearly' : 'monthly', source: src, sourceDetail: normalizeSourceDetail(src, body.signupSourceDetail),
+      agentCode: typeof agentCode === 'string' ? agentCode.slice(0, 20) : null, demoMatched,
+    })
 
     return NextResponse.json({ success: true, org_id: org.id })
   } catch (err: any) {
