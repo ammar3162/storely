@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
 import { getMeResult, refreshMe } from '@/lib/session'
+import { DEVICE_UNVERIFIED_REASON, VERIFY_DEVICE_PATH } from '@/lib/deviceMessages'
 import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import { useRouter, usePathname } from 'next/navigation'
 
@@ -213,6 +214,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       if (ms.maintenanceMode) { setMaintenanceMsg(ms.maintenanceMessage); setShowMaintenance(true); return }
     } catch {}
     const { me, reason } = await meRes
+    // جهاز جديد ما تحقق: صفحة الرمز (مو صفحة الدخول — المستخدم داخل أصلاً، والدخول يرجعه هنا فتصير حلقة)
+    if(reason===DEVICE_UNVERIFIED_REASON){ window.location.href=VERIFY_DEVICE_PATH; return }
     if(!me){ router.replace(reason==='no_org'?'/pending':'/login'); return }
     const user={id:me.user_id}
     const p:any={ id:me.user_id, full_name:me.full_name, org_id:me.org_id, role:me.role, branch_id:me.branch_id, permissions:me.permissions,
