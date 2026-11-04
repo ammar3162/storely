@@ -28,7 +28,7 @@ export default function HelpVideosPage() {
     const j = await adminFetch('/api/admin/help-videos', { method: 'PUT', body: { page_key: key, url: d.url, title: d.title || rows[key]?.title || '' } })
     setBusy('')
     if (!j.success) { setMsg({ key, t: j.error || 'تعذر الحفظ', bad: true }); return }
-    setDraft(x => ({ ...x, [key]: { url: '', title: '' } })); setMsg({ key, t: '✅ انحفظ — الزر طلع في الصفحة' }); load()
+    setDraft(x => ({ ...x, [key]: { url: '', title: '' } })); setMsg({ key, t: 'انحفظ — الزر طلع في الصفحة' }); load()
   }
   async function remove(key: string, label: string) {
     if (!(await confirmDialog({ title: 'شيل الفيديو', message: `شيل فيديو «${label}»؟ الزر يختفي من الصفحة.` }))) return

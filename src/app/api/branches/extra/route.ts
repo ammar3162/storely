@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { notifyAdminsLater } from '@/lib/adminNotify'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { branchOffer, requestExtraBranch } from '@/lib/extraBranch'
@@ -21,8 +22,11 @@ export async function POST(req: Request) {
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
     if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
-    const res = await requestExtraBranch(sb(), org_id, access.userId || null)
+    const db = sb()
+    const res = await requestExtraBranch(db, org_id, access.userId || null)
     if (!res.ok) return NextResponse.json({ error: res.error, code: res.code }, { status: res.status })
+    // إيميل للإدارة بعد الرد على العميل
+    notifyAdminsLater(db, org_id, { kind: 'addon', addonName: 'فرع إضافي', quantity: res.pending })
     return NextResponse.json({ success: true, pending: res.pending })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })

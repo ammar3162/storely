@@ -27,11 +27,6 @@ export const A = {
   font: "'IBM Plex Sans Arabic', system-ui, sans-serif",
 }
 
-// ألوان الصفحات القديمة (كانت داكنة) — نفس المفاتيح، بثيم اللوحة الفاتح
-export const LEGACY_C = {
-  bg: A.bg, card: A.surface, border: A.border, text: A.text, text2: A.text2, text3: A.text3,
-  green: A.primary, blue: A.info, purple: A.violet, red: A.danger, amber: A.warning, yellow: A.warning,
-}
 
 // ── الجلسة ──
 export type AdminInfo = { id: string; email: string; full_name: string; role: string; permissions?: Record<string, boolean>; totp_enabled?: boolean }

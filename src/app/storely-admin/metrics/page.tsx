@@ -1,124 +1,84 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { LEGACY_C } from '../_admin/kit'
+import { useEffect, useState } from 'react'
+import { RefreshCw, UserPlus, BadgeCheck, Ban, ArrowUpCircle, ArrowDownCircle, RotateCw, Circle, type LucideIcon } from 'lucide-react'
+import { A, Badge, Btn, Card, Empty, Loading, Notice, PageHeader, Stat, adminFetch, fmtDate, useAdmin, type Tone } from '../_admin/kit'
+import { planLabel } from '../_admin/customers'
+import { planKeyOf } from '@/lib/planPricing'
 
-const C = LEGACY_C
-
-const EVENT_LABELS: Record<string,{label:string;color:string;icon:string}> = {
-  trial_started: { label:'بدأ تجربة', color:C.blue, icon:'🎁' },
-  activated:     { label:'اشترك (مدفوع)', color:C.green, icon:'✅' },
-  cancelled:     { label:'ألغى/أُوقف', color:C.red, icon:'⛔' },
-  upgraded:      { label:'رقّى الباقة', color:C.purple, icon:'⬆️' },
-  downgraded:    { label:'خفّض الباقة', color:'#f59e0b', icon:'⬇️' },
-  renewed:       { label:'جدّد الاشتراك', color:C.green, icon:'🔄' },
+const EVENTS: Record<string, { label: string; tone: Tone; icon: LucideIcon }> = {
+  trial_started: { label: 'بدأ تجربة', tone: 'info', icon: UserPlus },
+  activated: { label: 'اشترك (مدفوع)', tone: 'primary', icon: BadgeCheck },
+  cancelled: { label: 'ألغى / أُوقف', tone: 'danger', icon: Ban },
+  upgraded: { label: 'رقّى الباقة', tone: 'violet', icon: ArrowUpCircle },
+  downgraded: { label: 'خفّض الباقة', tone: 'warning', icon: ArrowDownCircle },
+  renewed: { label: 'جدّد الاشتراك', tone: 'primary', icon: RotateCw },
 }
 
+const money = (n: number) => `${Math.round(n || 0).toLocaleString('en')} ⃁`
+
 export default function MetricsPage() {
+  const { can } = useAdmin()
+  const allowed = can('view_metrics')
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [authChecked, setAuthChecked] = useState(false)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    const key = sessionStorage.getItem('storely_admin_pass') || ''
-    fetch('/api/admin/whoami', { headers: { 'x-admin-key': key } })
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(d => {
-        if (!d.authenticated || (d.admin?.role !== 'super_admin' && !d.admin?.permissions?.view_metrics)) { window.location.href = '/storely-admin'; return }
-        setAuthChecked(true)
-      })
-      .catch(() => { window.location.href = '/storely-admin' })
-  }, [])
-
-  useEffect(() => { if (authChecked) load() }, [authChecked])
 
   async function load() {
     setLoading(true); setError('')
-    try {
-      const key = sessionStorage.getItem('storely_admin_pass') || ''
-      const res = await fetch('/api/admin/metrics', { headers: { 'x-admin-key': key } })
-      const d = await res.json()
-      if (!res.ok || !d.success) { setError('حدث خطأ بجلب البيانات'); setLoading(false); return }
-      setData(d)
-    } catch { setError('حدث خطأ') }
+    const d = await adminFetch('/api/admin/metrics')
+    if (!d.ok || !d.success) setError(d.error || 'تعذّر جلب البيانات')
+    else setData(d)
     setLoading(false)
   }
+  useEffect(() => { if (allowed) load() }, [allowed])
 
-  if (!authChecked) return (
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{color:C.text2,fontSize:13}}>⏳ جاري التحقق...</div>
-    </div>
-  )
+  if (!allowed) return <Card><Empty title="ما عندك صلاحية على هالصفحة" /></Card>
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,flexWrap:'wrap' as const,gap:12}}>
-        <div>
-          <h1 style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:4}}>مقاييس العمل التجاري</h1>
-          <div style={{fontSize:12,color:C.text3}}>الإيراد المتكرر، معدل التحويل، وسجل أحداث الاشتراكات</div>
-        </div>
-        <div style={{display:'flex',gap:10}}>
-          <button onClick={load} disabled={loading} style={{padding:'8px 16px',background:'#f2f4f7',color:C.text,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-            {loading?'...':'↺ تحديث'}
-          </button>
-        </div>
-      </div>
+    <>
+      <PageHeader title="مقاييس الإيراد" subtitle="الإيراد المتكرر، معدل التحويل، وسجل أحداث الاشتراكات"
+        actions={<Btn onClick={load} loading={loading}><RefreshCw size={14} /> تحديث</Btn>} />
 
-      {error && <div style={{background:'#fef3f2',color:'#d92d20',padding:'10px 14px',borderRadius:10,fontSize:13,marginBottom:16}}>{error}</div>}
+      {error && <div style={{ marginBottom: 16 }}><Notice tone="danger">{error}</Notice></div>}
 
-      {loading && !data ? (
-        <div style={{textAlign:'center',padding:60,color:C.text3}}>جاري التحميل...</div>
-      ) : data && (
-        <>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:14,marginBottom:24}}>
-            {[
-              { label:'الإيراد الشهري (MRR)', value:`${data.mrr.toLocaleString()} ⃁`, color:C.green, icon:'💰' },
-              { label:'الإيراد السنوي المتوقع (ARR)', value:`${data.arr.toLocaleString()} ⃁`, color:C.blue, icon:'📈' },
-              { label:'معدل التحويل لمدفوع', value:`${data.conversionRate}%`, color:C.purple, icon:'🎯' },
-              { label:'مشتركون مدفوعون نشطون', value:data.paidCount, color:C.green, icon:'✅' },
-              { label:'بالتجربة المجانية', value:data.trialCount, color:C.blue, icon:'🎁' },
-              { label:'موقوفون/ملغيون', value:data.suspendedCount, color:C.red, icon:'⛔' },
-            ].map((s,i)=>(
-              <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:'16px 18px'}}>
-                <div style={{fontSize:20,marginBottom:8}}>{s.icon}</div>
-                <div style={{fontSize:20,fontWeight:800,color:s.color}}>{s.value}</div>
-                <div style={{fontSize:11,color:C.text3,marginTop:4}}>{s.label}</div>
-              </div>
-            ))}
+      {loading && !data ? <Loading /> : data && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
+            <Stat label="الإيراد الشهري (MRR)" value={money(data.mrr)} tone="primary"
+              hint={`باقات ${money(data.mrrPlans)} · إضافات ${money(data.mrrAddons)}${data.mrrDiscount ? ` · خصم ${money(data.mrrDiscount)}` : ''}`} />
+            <Stat label="الإيراد السنوي المتوقع (ARR)" value={money(data.arr)} hint="الشهري × 12" />
+            <Stat label="معدل التحويل لمدفوع" value={`${data.conversionRate}%`} tone="violet" hint={`${data.paidCount} من ${data.totalOwners} منشأة`} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
+            <Stat label="مشتركون مدفوعون نشطون" value={data.paidCount} />
+            <Stat label="بالتجربة المجانية" value={data.trialCount} />
+            <Stat label="موقوفون / ملغيون" value={data.suspendedCount} tone={data.suspendedCount ? 'danger' : 'default'} />
           </div>
 
-          <div style={{background:'#eff8ff',border:'1px solid #1e3a5f',borderRadius:12,padding:'12px 16px',marginBottom:20,fontSize:12,color:C.text2}}>
-            ℹ️ سجل الأحداث (تفعيل، إلغاء، ترقية) بدأ التسجيل اليوم — كل ما مرّ وقت أكثر، تصير مقاييس زي معدل الإلغاء الشهري (Churn) أدق.
-          </div>
+          <Notice tone="info">الإيراد = فاتورة كل مشترك مدفوع فعلياً: الباقة + الإضافات السارية − الخصم، والاشتراك السنوي محسوب بمقابله الشهري.</Notice>
 
-          <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>آخر أحداث الاشتراكات</div>
-          {(!data.recentEvents || data.recentEvents.length===0) ? (
-            <div style={{background:C.card,borderRadius:14,padding:40,textAlign:'center',border:`1px solid ${C.border}`}}>
-              <div style={{fontSize:32,marginBottom:10}}>📭</div>
-              <div style={{color:C.text2}}>ما فيه أحداث مسجّلة بعد — بتظهر هنا أول ما تفعّل/تلغي/ترقّي أي اشتراك</div>
-            </div>
-          ) : (
-            <div style={{display:'flex',flexDirection:'column',gap:8}}>
-              {data.recentEvents.map((e:any)=>{
-                const cfg = EVENT_LABELS[e.event_type] || { label:e.event_type, color:C.text2, icon:'•' }
-                return (
-                  <div key={e.id} style={{background:C.card,borderRadius:10,border:`1px solid ${C.border}`,padding:'10px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap' as const}}>
-                    <div style={{display:'flex',alignItems:'center',gap:10}}>
-                      <span style={{fontSize:16}}>{cfg.icon}</span>
-                      <div>
-                        <span style={{fontSize:12,fontWeight:700,color:cfg.color}}>{cfg.label}</span>
-                        <span style={{fontSize:12,color:C.text2}}> — {e.org_name}</span>
-                        {e.plan && <span style={{fontSize:11,color:C.text3}}> ({e.plan})</span>}
-                      </div>
+          <Card title="آخر أحداث الاشتراكات" pad={0}>
+            {!data.recentEvents?.length ? (
+              <Empty title="ما فيه أحداث مسجّلة بعد" hint="بتظهر هنا أول ما تفعّل أو تلغي أو ترقّي أي اشتراك" />
+            ) : data.recentEvents.map((e: any) => {
+              const cfg = EVENTS[e.event_type] || { label: e.event_type, tone: 'neutral' as Tone, icon: Circle }
+              const Icon = cfg.icon
+              return (
+                <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: `1px solid ${A.border}` }}>
+                  <Icon size={18} color={A.text2} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: A.text }}>{e.org_name}</div>
+                    <div style={{ fontSize: 12, color: A.text3, marginTop: 2 }}>
+                      {fmtDate(e.created_at, true)}{e.plan ? ` · ${planLabel(planKeyOf(e.plan))}` : ''}{e.amount ? ` · ${money(e.amount)}` : ''}
                     </div>
-                    <div style={{fontSize:11,color:C.text3}}>{new Date(e.created_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
                   </div>
-                )
-              })}
-            </div>
-          )}
-        </>
+                  <Badge tone={cfg.tone}>{cfg.label}</Badge>
+                </div>
+              )
+            })}
+          </Card>
+        </div>
       )}
-    </div>
+    </>
   )
 }

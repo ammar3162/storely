@@ -83,6 +83,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // طلبات الإضافات المعلّقة: عدّاد بالقائمة + تنبيه لما يوصل طلب جديد
   const [pendingAddons, setPendingAddons] = useState(0)
+  const [pendingDemos, setPendingDemos] = useState(0)   // طلبات عرض جديدة ما انتواصل معها
   const [newAlert, setNewAlert] = useState(false)
   useEffect(() => {
     if (!admin || !can('manage_users')) return
@@ -94,9 +95,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       if (last >= 0 && n > last) setNewAlert(true)
       last = n; setPendingAddons(n)
     })
-    tick()
-    const t = setInterval(tick, 60_000)
-    return () => clearInterval(t)
+    const tickDemos = () => count('/api/admin/demo-requests?count=1').then(setPendingDemos)
+    const all = () => { tick(); tickDemos() }
+    all()
+    const t = setInterval(all, 60_000)
+    // صفحة طلبات العرض تطلب تحديث العدّاد فوراً لما تتغير حالة طلب
+    window.addEventListener('admin-counts-refresh', tickDemos)
+    return () => { clearInterval(t); window.removeEventListener('admin-counts-refresh', tickDemos) }
   }, [admin, pathname])
 
   const can = useCallback((perm?: string | string[]) => {
@@ -159,9 +164,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   className={`adm-nav${active ? ' on' : ''}`}>
                   <Icon size={17} />
                   <span>{item.label}</span>
-                  {item.href === '/storely-admin/addon-requests' && pendingAddons > 0 && (
-                    <span style={{ marginInlineStart: 'auto', background: '#ef4444', color: 'white', borderRadius: 99, fontSize: 11, fontWeight: 800, minWidth: 20, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>{pendingAddons}</span>
-                  )}
+                  {(() => {
+                    const n = item.href === '/storely-admin/addon-requests' ? pendingAddons : item.href === '/storely-admin/demo-requests' ? pendingDemos : 0
+                    return n > 0 && (
+                      <span style={{ marginInlineStart: 'auto', background: '#ef4444', color: 'white', borderRadius: 99, fontSize: 11, fontWeight: 800, minWidth: 20, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>{n}</span>
+                    )
+                  })()}
                 </a>
               )
             })}

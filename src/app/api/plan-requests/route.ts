@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { notifyAdminsLater } from '@/lib/adminNotify'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { monthlyBill } from '@/lib/orgBill'
@@ -31,10 +32,13 @@ export async function POST(req: Request) {
 
     const { data: pending } = await db.from('plan_requests').select('id').eq('org_id', org_id).eq('status', 'pending').maybeSingle()
     if (pending) return NextResponse.json({ error: 'عندك طلب ترقية قيد المراجعة' }, { status: 409 })
+    const bill = await monthlyBill(db, org_id)
     const { error } = await db.from('plan_requests').insert({
-      org_id, current_plan: current, target_plan, bill_at_request: await monthlyBill(db, org_id), requested_by: access.userId,
+      org_id, current_plan: current, target_plan, bill_at_request: bill, requested_by: access.userId,
     } as any)
     if (error) return NextResponse.json({ error: 'فشل إرسال الطلب' }, { status: 500 })
+    // إيميل للإدارة بعد الرد على العميل
+    notifyAdminsLater(db, org_id, { kind: 'plan', fromPlan: current, toPlan: target_plan, billAtRequest: bill })
     return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })

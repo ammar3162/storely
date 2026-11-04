@@ -110,6 +110,41 @@ async function signalsFor(db: SupabaseClient, orgId: string, now: number) {
   }
 }
 
+async function buildRow(db: SupabaseClient, o: any, owner: any, slugs: string[], lastLogin: string | null, now: number): Promise<AccountHealthRow> {
+  const trial = owner.subscription_type === 'trial' && !!owner.subscription_ends_at && new Date(owner.subscription_ends_at).getTime() > now
+  const features = featuresFrom(o.plan, slugs, trial)
+  const planOnly = featuresFrom(o.plan, [], false)
+  const paidAddons = FEATURES.filter(f => !trial && !planOnly[f] && FEATURE_ADDONS[f].some(sl => slugs.includes(sl)))
+  const sig = await signalsFor(db, o.id, now)
+  const s: OrgSignals = { now, createdAt: o.created_at, subscriptionType: owner.subscription_type, endsAt: owner.subscription_ends_at, lastLogin, ...sig, paidAddons, features }
+  const h = assessHealth(s)
+  return {
+    org_id: o.id, org_name: o.name || '—', owner_id: owner.id, owner_name: owner.full_name, phone: owner.phone,
+    plan: o.plan || 'basic', plan_label: planLabel(o.plan, o.max_branches), subscription_type: owner.subscription_type, ends_at: owner.subscription_ends_at, profile_status: owner.status,
+    status: h.status, reasons: h.reasons, unused_paid: h.unusedPaid.map(f => FEATURE_LABEL[f]), unused_included: h.unusedIncluded.map(f => FEATURE_LABEL[f]),
+    last_login: s.lastLogin, last_op: s.lastOp, ops7: s.ops7, products: s.products, staff: s.staff,
+    closing_days7: features.cashier ? s.closingDays7 : null, attendance7: features.hr ? s.attendance7 : null, wa_sent7: s.waSent7, wa_failed7: s.waFailed7,
+  }
+}
+
+/** صحة منشأة وحدة (لملف العميل بالأدمن) — نفس حساب صفحة «صحة الحسابات»، بدون المرور على كل الحسابات */
+export async function loadOrgHealth(db: SupabaseClient, orgId: string, now = Date.now()): Promise<(AccountHealthRow & { branches: number; managers: number }) | null> {
+  const [{ data: o }, { data: profiles }, { data: addonRows }, { count: branches }] = await Promise.all([
+    db.from('organizations').select('id,name,plan,max_branches,created_at').eq('id', orgId).maybeSingle(),
+    db.from('profiles').select('id,org_id,role,full_name,phone,status,subscription_type,subscription_ends_at').eq('org_id', orgId).in('role', ['owner', 'manager']),
+    db.from('org_addon_subscriptions').select('org_id,status,expires_at,marketplace_addons!inner(slug)').eq('org_id', orgId).eq('status', 'active'),
+    db.from('branches').select('id', { count: 'exact', head: true }).eq('org_id', orgId),
+  ])
+  const owner = ((profiles || []) as any[]).find(p => p.role === 'owner')
+  if (!o || !owner) return null
+  // آخر دخول: الأحدث بين المالك ومديري الفروع
+  const logins = await Promise.all(((profiles || []) as any[]).map(async p => (await db.auth.admin.getUserById(p.id)).data?.user?.last_sign_in_at || null))
+  const lastLogin = (logins.filter(Boolean) as string[]).sort().at(-1) || null
+  const slugs = ((addonRows || []) as any[]).filter(a => !a.expires_at || new Date(a.expires_at).getTime() >= now).map(a => a.marketplace_addons.slug)
+  const row = await buildRow(db, o, owner, slugs, lastLogin, now)
+  return { ...row, branches: branches || 0, managers: ((profiles || []) as any[]).filter(p => p.role === 'manager').length }
+}
+
 export async function loadAccountHealth(db: SupabaseClient, now = Date.now()): Promise<AccountHealthRow[]> {
   const [{ data: orgs }, { data: profiles }, { data: addonRows }] = await Promise.all([
     db.from('organizations').select('id,name,plan,max_branches,created_at'),
@@ -140,24 +175,7 @@ export async function loadAccountHealth(db: SupabaseClient, now = Date.now()): P
   const list = ((orgs || []) as any[]).filter(o => owners.has(o.id) && owners.get(o.id).status !== 'deleted' && !String(o.name || '').startsWith('__it_'))
   const rows: AccountHealthRow[] = []
   for (let i = 0; i < list.length; i += 6) {   // 6 منشآت بالتوازي — ما نضغط القاعدة
-    await Promise.all(list.slice(i, i + 6).map(async o => {
-      const owner = owners.get(o.id)
-      const trial = owner.subscription_type === 'trial' && !!owner.subscription_ends_at && new Date(owner.subscription_ends_at).getTime() > now
-      const slugs = addons.get(o.id) || []
-      const features = featuresFrom(o.plan, slugs, trial)
-      const planOnly = featuresFrom(o.plan, [], false)
-      const paidAddons = FEATURES.filter(f => !trial && !planOnly[f] && FEATURE_ADDONS[f].some(sl => slugs.includes(sl)))
-      const sig = await signalsFor(db, o.id, now)
-      const s: OrgSignals = { now, createdAt: o.created_at, subscriptionType: owner.subscription_type, endsAt: owner.subscription_ends_at, lastLogin: loginByOrg.get(o.id) || null, ...sig, paidAddons, features }
-      const h = assessHealth(s)
-      rows.push({
-        org_id: o.id, org_name: o.name || '—', owner_id: owner.id, owner_name: owner.full_name, phone: owner.phone,
-        plan: o.plan || 'basic', plan_label: planLabel(o.plan, o.max_branches), subscription_type: owner.subscription_type, ends_at: owner.subscription_ends_at, profile_status: owner.status,
-        status: h.status, reasons: h.reasons, unused_paid: h.unusedPaid.map(f => FEATURE_LABEL[f]), unused_included: h.unusedIncluded.map(f => FEATURE_LABEL[f]),
-        last_login: s.lastLogin, last_op: s.lastOp, ops7: s.ops7, products: s.products, staff: s.staff,
-        closing_days7: features.cashier ? s.closingDays7 : null, attendance7: features.hr ? s.attendance7 : null, wa_sent7: s.waSent7, wa_failed7: s.waFailed7,
-      })
-    }))
+    rows.push(...await Promise.all(list.slice(i, i + 6).map(o => buildRow(db, o, owners.get(o.id), addons.get(o.id) || [], loginByOrg.get(o.id) || null, now))))
   }
   const rank: Record<HealthStatus, number> = { dormant: 0, attention: 1, expired: 2, active: 3 }
   return rows.sort((a, b) => rank[a.status] - rank[b.status] || b.reasons.length - a.reasons.length || a.org_name.localeCompare(b.org_name, 'ar'))

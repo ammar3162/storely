@@ -13,6 +13,11 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
   const db = sb()
+  // ?count=1 : عدد الطلبات الجديدة اللي ما انتواصل معها ولا صار لها حساب (للرقم الأحمر بالقائمة)
+  if (new URL(req.url).searchParams.get('count')) {
+    const { count } = await db.from('demo_requests').select('id', { count: 'exact', head: true }).eq('status', 'new').is('matched_org_id', null)
+    return NextResponse.json({ pending: count || 0 })
+  }
   const { data, error } = await db.from('demo_requests').select('*').order('created_at', { ascending: false })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -39,6 +44,7 @@ export async function PATCH(req: Request) {
   }
   const { id, status } = await req.json()
   if (!id || !status) return NextResponse.json({ error: 'id وstatus مطلوبان' }, { status: 400 })
+  if (!['new', 'contacted', 'rejected'].includes(status)) return NextResponse.json({ error: 'حالة غير صحيحة' }, { status: 400 })
   const { error } = await sb().from('demo_requests').update({ status } as any).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })
