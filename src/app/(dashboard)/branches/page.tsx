@@ -9,6 +9,7 @@ import { colors, radius, font, card, btnPrimary, inp, pageTitle, pageSub } from 
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { cache } from '@/lib/cache'
+import { ListSkeleton } from '@/components/PageSkeleton'
 
 export default function BranchesPage() {
   const [loading, setLoading] = useState(true)
@@ -239,7 +240,7 @@ export default function BranchesPage() {
     window.location.href='/dashboard'
   }
 
-  if (loading) return <div style={{padding:40,textAlign:'center',color:colors.text3,fontFamily:font.family}}>جاري التحميل...</div>
+  if (loading) return <ListSkeleton/>
 
   return (
     <div style={{padding:'24px',fontFamily:font.family,direction:'rtl'}}>

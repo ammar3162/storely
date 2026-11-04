@@ -12,6 +12,7 @@ import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
 import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, tag, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
+import { ListSkeleton } from '@/components/PageSkeleton'
 // أجزاء تنفتح عند الطلب بس — ما تنحمّل مع الصفحة
 const CashierClosingEditor = lazy(() => import('@/components/CashierClosingEditor'))
 const EditHistoryDialog = lazy(() => import('@/components/EditHistoryDialog'))
@@ -296,7 +297,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
             تصدير
           </button>
         </div>
-        {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
+        {loading?(<ListSkeleton/>
         ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><Inbox size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
         ):(
           <>
@@ -457,7 +458,7 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
             تصدير
           </button>
         </div>
-        {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
+        {loading?(<ListSkeleton/>
         ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><Inbox size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
         ):(
           <>
@@ -676,7 +677,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
             تصدير
           </button>
         </div>
-        {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
+        {loading?(<ListSkeleton/>
         ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><Receipt size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
         ):(
           <>
@@ -741,7 +742,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
         {showDeletedLog && (
           <div style={{borderTop:`1px solid ${colors.border2}`,padding:'12px 18px 18px'}}>
             {loadingDeleted ? (
-              <div style={{textAlign:'center' as const,padding:20,fontSize:12,color:colors.text3}}>⏳ جاري التحميل...</div>
+              <ListSkeleton/>
             ) : deletedList.length===0 ? (
               <div style={{textAlign:'center' as const,padding:20,fontSize:12,color:colors.text4,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><PartyPopper size={14} strokeWidth={2.25}/> ما فيه فواتير محذوفة</div>
             ) : (
@@ -930,7 +931,7 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
           </div>
           <button onClick={exportCSV} style={{...btnPrimary,padding:'9px 14px',fontSize:font.xs,display:'inline-flex',alignItems:'center',gap:6}}><Download size={13} strokeWidth={2.25}/> تصدير</button>
         </div>
-        {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
+        {loading?(<ListSkeleton/>
         ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><ClipboardList size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
         ):(
           <div style={{overflowX:'auto'}}>
@@ -1163,7 +1164,7 @@ function AttendanceDetail({ onBack }: { onBack:()=>void }) {
       )}
       <div style={{ ...card, padding:0, overflow:'hidden' }}>
         {loading ? (
-          <div style={{ textAlign:'center' as const, padding:48, color:colors.text4, fontSize:13 }}>جاري التحميل...</div>
+          <ListSkeleton/>
         ) : person ? (
           <>
             {person.shift_warning && (
@@ -1429,7 +1430,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
       )}
 
       <div style={{...card,overflow:'hidden'}}>
-        {loading?(<div style={{padding:48,textAlign:'center'}}><div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite',margin:'0 auto'}}/></div>
+        {loading?(<ListSkeleton/>
         ):closings.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><Inbox size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد تقارير إقفال</div></div>
         ):(
           <div style={{overflowX:'auto',overflowY:'auto',maxHeight:480}}>
@@ -1674,7 +1675,7 @@ export default function ReportsPage() {
 
   if (view==='staffMonthly') return (
     <div style={{fontFamily:font.family,direction:'rtl'}}>
-      <Suspense fallback={<div style={{padding:40,textAlign:'center',color:'#94a3b8',fontSize:13}}>جاري التحميل...</div>}><StaffMonthlyDetail onBack={()=>setView('home')}/></Suspense>
+      <Suspense fallback={<ListSkeleton/>}><StaffMonthlyDetail onBack={()=>setView('home')}/></Suspense>
     </div>
   )
 

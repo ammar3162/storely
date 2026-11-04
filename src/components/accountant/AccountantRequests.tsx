@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { MessageSquarePlus, CheckCircle2, RotateCcw, X } from 'lucide-react'
 import { colors, font, radius } from '@/lib/ds'
 import { REQUEST_KINDS, type RequestKind } from '@/lib/accountantRequests'
+import { ListSkeleton } from '@/components/PageSkeleton'
 
 // طلبات المحاسب على منشأة: إنشاء طلب (على فاتورة أو عام) + متابعة الردود
 export type RequestTarget = { invoice_group?: string | null; purchase_id?: string | null; label?: string }
@@ -66,7 +67,7 @@ export default function AccountantRequestsPanel({ orgId, refreshKey, onNew }: { 
         <button onClick={onNew} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 9, border: `1px solid ${colors.primaryBorder}`, background: colors.primaryLight, color: colors.primary, fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: font.family }}>
           <MessageSquarePlus size={14} /> طلب عام</button>
       </div>
-      {!list ? <div style={{ fontSize: 12.5, color: colors.text4 }}>جاري التحميل...</div>
+      {!list ? <ListSkeleton/>
         : !list.length ? <div style={{ fontSize: 12.5, color: colors.text4 }}>ما فيه طلبات. تقدر تطلب من جنب أي فاتورة ضريبية تحت، أو طلب عام.</div>
         : list.map(r => (
           <div key={r.id} style={{ borderTop: `1px solid ${colors.border}`, padding: '10px 0' }}>

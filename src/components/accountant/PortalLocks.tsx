@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { Lock, Unlock } from 'lucide-react'
 import { colors, font, radius } from '@/lib/ds'
+import { ListSkeleton } from '@/components/PageSkeleton'
 
 // إقفال الشهور (المحاسب): بعد المراجعة يقفل الشهر — ما ينقدر يتعدّل فيه مشتريات ولا إقفالات كاشير
 export default function PortalLocks({ orgId }: { orgId: string }) {
@@ -27,7 +28,7 @@ export default function PortalLocks({ orgId }: { orgId: string }) {
     <section style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: radius.lg, padding: 16, marginBottom: 14, fontFamily: font.family }}>
       <h2 style={{ fontSize: 15, fontWeight: 800, color: colors.primary, margin: '0 0 4px' }}>إقفال الشهور</h2>
       <div style={{ fontSize: 12, color: colors.text4, marginBottom: 10 }}>{canLock ? 'بعد ما تراجع الشهر أقفله — ما ينقدر يتعدّل فيه شي إلا لو فتحته أنت.' : 'إذنك على فرع واحد — إقفال الشهر يسويه محاسب المنشأة كاملة. تقدر تشوف حالة كل شهر.'}</div>
-      {!months ? <div style={{ fontSize: 12.5, color: colors.text4 }}>جاري التحميل...</div> : list.map(m => (
+      {!months ? <ListSkeleton/> : list.map(m => (
         <div key={m.month} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 0', borderTop: `1px solid ${colors.border}` }}>
           <span style={{ width: 30, height: 30, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', background: m.locked ? '#ecfdf5' : '#f8fafc', color: m.locked ? '#047857' : colors.text4 }}>
             {m.locked ? <Lock size={15} /> : <Unlock size={15} />}</span>

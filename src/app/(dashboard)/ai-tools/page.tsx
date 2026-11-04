@@ -15,6 +15,7 @@ import { ClipboardList, Pencil, Trash2, AlertTriangle, Wallet, Info } from 'luci
 import { riyal } from '@/lib/aiPhrases'
 import SmartOrder from '@/components/SmartOrder'
 import TodayDecisions from '@/components/TodayDecisions'
+import { ListSkeleton } from '@/components/PageSkeleton'
 // نافذة الوصفة تنحمّل بس لما تنفتح
 const RecipeCreateModal = lazy(() => import('@/components/RecipeCreateModal'))
 
@@ -810,7 +811,7 @@ export default function AIToolsPage() {
 
       {showRecipeModal && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:16,backdropFilter:'blur(4px)'}} onClick={()=>{setShowRecipeModal(false);setEditingRecipeId(null)}}>
-          <Suspense fallback={<div style={{background:'white',borderRadius:16,padding:40,fontSize:13,color:'#6b7280'}}>جاري التحميل...</div>}>
+          <Suspense fallback={<ListSkeleton/>}>
           <RecipeCreateModal
             onClose={()=>{setShowRecipeModal(false);setEditingRecipeId(null)}}
             onSaved={()=>{setShowRecipeModal(false);setEditingRecipeId(null);if(showRecipesList)loadRecipesList()}}

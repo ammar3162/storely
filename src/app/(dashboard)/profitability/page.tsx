@@ -10,6 +10,7 @@ import { toast } from '@/components/toast'
 import { cache } from '@/lib/cache'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { changePctVisible } from '@/lib/aiPhrases'
+import PageSkeleton from '@/components/PageSkeleton'
 
 const ARABIC_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
 
@@ -273,9 +274,7 @@ export default function ProfitabilityPage() {
       </div>
 
       {loading ? (
-        <div style={{padding:48,textAlign:'center' as const}}>
-          <div style={{width:32,height:32,border:`3px solid ${colors.border}`,borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto'}}/>
-        </div>
+        <PageSkeleton/>
       ) : data && (
         <>
         {/* بطاقة صافي الربح الرئيسية */}

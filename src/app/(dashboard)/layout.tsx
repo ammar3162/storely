@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
 import { getMeResult, refreshMe } from '@/lib/session'
 import { getAddonsMarket } from '@/lib/addonsCache'
+import PageSkeleton from '@/components/PageSkeleton'
 import { DEVICE_UNVERIFIED_REASON, VERIFY_DEVICE_PATH } from '@/lib/deviceMessages'
 import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import { useRouter, usePathname } from 'next/navigation'
@@ -698,7 +699,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
           <div className="mob-content">
             {banners}
-            {!ready ? <div className="sh-loading"><span className="sh-spinner"/></div> : isDesk === false ? children : null}
+            {!ready ? <PageSkeleton/> : isDesk === false ? children : null}
           </div>
 
           <nav className="mob-bottom-nav">
@@ -785,7 +786,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
           <main className="desk-content">
             {banners}
-            {!ready ? <div className="sh-loading"><span className="sh-spinner"/></div> : isDesk ? children : null}
+            {!ready ? <PageSkeleton/> : isDesk ? children : null}
           </main>
         </div>
       </div>

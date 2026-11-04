@@ -7,6 +7,7 @@ import { getMe } from '@/lib/session'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { colors, font, card, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
+import { ListSkeleton } from '@/components/PageSkeleton'
 
 async function pdfOrgInfo() {
   const me = await getMe()
@@ -168,7 +169,7 @@ export default function StaffMonthlyDetail({ onBack }: { onBack: () => void }) {
       </div>
 
       {loading ? (
-        <div style={{ ...card, textAlign: 'center' as const, padding: 48, color: colors.text4, fontSize: 13 }}>جاري التحميل...</div>
+        <ListSkeleton/>
       ) : error ? (
         <div style={{ ...card, textAlign: 'center' as const, padding: 40, color: colors.text3, fontSize: 13.5, fontWeight: 600 }}>{error}</div>
       ) : one ? (

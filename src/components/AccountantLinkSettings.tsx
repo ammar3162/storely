@@ -7,6 +7,7 @@ import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { ACC_SECTIONS, type AccSection } from '@/lib/accountantExport'
 import { nextSend, periodLabel, hourLabel, type AccFrequency, type ManualPeriodKey } from '@/lib/accountantSchedule'
+import { ListSkeleton } from '@/components/PageSkeleton'
 
 // الربط مع المحاسب — المالك يحدد محاسبه، وش يوصله، ومتى، وبأي طريقة
 const WEEKDAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
@@ -109,7 +110,7 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
     toast('تم إيقاف الربط')
   }
 
-  if (loading) return <div style={{ padding: 30, textAlign: 'center', color: colors.text4, fontSize: 13 }}>جاري التحميل...</div>
+  if (loading) return <ListSkeleton/>
 
   const status = (s: string | null) => s === 'sent' ? <CheckCircle2 size={14} color="#059669" /> : s === 'failed' ? <XCircle size={14} color={colors.danger} /> : <span style={{ color: colors.text4 }}>—</span>
 

@@ -12,6 +12,7 @@ import { confirmDialog } from '@/components/ConfirmDialog'
 import ExtraDayDecision from '@/components/ExtraDayDecision'
 import { cache } from '@/lib/cache'
 import { ThumbsUp, ThumbsDown, ClipboardList, ChevronDown, Plus, Camera, CalendarDays, BarChart3 } from 'lucide-react'
+import { ListSkeleton } from '@/components/PageSkeleton'
 
 export default function HRManagementPage() {
   const [orgId, setOrgId] = useState('')
@@ -633,7 +634,7 @@ export default function HRManagementPage() {
                     {/* السلف والخصومات */}
                     {hrTab==='adj' && <div>
                       {loadingAdjustments ? (
-                        <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
+                        <ListSkeleton/>
                       ) : (
                         <>
                           {pendingAdvances.length>0 && (
@@ -685,7 +686,7 @@ export default function HRManagementPage() {
                         <CalendarDays size={14} strokeWidth={2.25}/> الرصيد المتبقي: {s.leave_balance_days ?? 21} يوم
                       </div>
                       {loadingLeave ? (
-                        <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
+                        <ListSkeleton/>
                       ) : (
                         <>
                           {leaveRequests.filter((l:any)=>l.status==='pending').length>0 && (
@@ -725,7 +726,7 @@ export default function HRManagementPage() {
                     {hrTab==='excuse' && <div>
                       <div style={{fontSize:12.5,color:colors.text3,marginBottom:10}}>طلبات الانصراف المبكر من الدوام</div>
                       {loadingExcuse ? (
-                        <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
+                        <ListSkeleton/>
                       ) : excuseRequests.filter((e:any)=>e.status==='pending').length===0 ? (
                         <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>ما فيه طلبات استئذان معلّقة</div>
                       ) : (
@@ -757,7 +758,7 @@ export default function HRManagementPage() {
                         </label>
                       </div>
                       {loadingTasks ? (
-                        <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
+                        <ListSkeleton/>
                       ) : tasks.length===0 ? (
                         <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>ما فيه مهام بعد</div>
                       ) : (

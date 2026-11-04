@@ -12,6 +12,7 @@ import { colors, font, card, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { billLines, planKeyOf, addonPeriodEnd, proratedCharge, unitPrice, branchPriceFor, PLAN_PRICING } from '@/lib/planPricing'
 import { isInApp } from '@/lib/inApp'
+import { ListSkeleton } from '@/components/PageSkeleton'
 
 export default function AddonsMarketPage() {
   const [addons, setAddons] = useState<any[]>([])
@@ -145,7 +146,7 @@ export default function AddonsMarketPage() {
     </div>
   )
 
-  if (loading) return <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontFamily: font.family }}>جاري التحميل...</div>
+  if (loading) return <ListSkeleton/>
 
   return (
     <div style={{ fontFamily: font.family, direction: 'rtl' }}>

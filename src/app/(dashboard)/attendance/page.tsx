@@ -11,6 +11,7 @@ import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import StaffDaysOffEditor, { type OffPatch } from '@/components/StaffDaysOffEditor'
 import StaffDayShiftsEditor, { type SchedulePatch } from '@/components/StaffDayShiftsEditor'
+import { ListSkeleton } from '@/components/PageSkeleton'
 
 // كل الأوقات والتواريخ بالتقرير بتوقيت السعودية
 const saudiToday = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
@@ -457,7 +458,7 @@ export default function AttendancePage() {
 
               <div style={{ ...card, overflow: 'hidden' }}>
                 {loading ? (
-                  <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>جاري التحميل...</div>
+                  <ListSkeleton/>
                 ) : rows.length === 0 ? (
                   <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>ما فيه موظفين نشطين بهذا الفرع</div>
                 ) : (
@@ -511,7 +512,7 @@ export default function AttendancePage() {
           ) : (
             <div style={{ ...card, overflow: 'hidden' }}>
               {loading ? (
-                <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>جاري التحميل...</div>
+                <ListSkeleton/>
               ) : rangeRows.length === 0 ? (
                 <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>ما فيه بيانات لهذي الفترة</div>
               ) : (
