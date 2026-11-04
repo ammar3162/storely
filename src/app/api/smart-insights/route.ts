@@ -1,4 +1,5 @@
 import { reportAiFailure, aiFailureKind } from '@/lib/aiAlert'
+import { guard, limit } from '@/lib/rateLimit'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
@@ -13,6 +14,8 @@ export async function POST(req: NextRequest) {
   if (!org_id) return NextResponse.json({ error: 'missing' }, { status: 400 })
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+  const limited = await guard([limit('aiInsightsOrg', org_id)], sb)
+  if (limited) return limited
   const branch_id = enforcedBranchId(access, requestedBranch)   // مدير الفرع: فرعه بس مهما أرسل الطلب
 
   let pq = sb.from('products').select('id,name,qty,reorder_point,unit,category,branch_id').eq('org_id', org_id).eq('is_active', true)

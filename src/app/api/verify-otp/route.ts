@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { guard, limit, ipOf } from '@/lib/rateLimit'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -7,6 +8,8 @@ export async function POST(req: Request) {
   try {
     const { phone, countryCode, otp } = await req.json()
     const fullPhone = (countryCode || '+966') + phone.trim().replace(/^0+/, '')
+    const limited = await guard([limit('otpVerifyPhone', fullPhone), limit('otpVerifyIp', ipOf(req))])
+    if (limited) return limited
 
     const { data: session } = await sb()
       .from('whatsapp_sessions')

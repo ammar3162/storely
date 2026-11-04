@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import { sendEmail } from '@/lib/email'
 import { resetPasswordEmail } from '@/lib/emailTemplates'
+import { guard, limit, ipOf } from '@/lib/rateLimit'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,6 +17,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'أدخل بريد إلكتروني صحيح' }, { status: 400 })
     }
 
+    const limited = await guard([limit('resetTarget', String(email).trim()), limit('resetIp', ipOf(req))])
+    if (limited) return limited
     const db = sb()
 
     const genericResponse = NextResponse.json({ success: true, message: 'إذا كان البريد مسجّل، وصلتك رسالة فيها رابط الاستعادة' })

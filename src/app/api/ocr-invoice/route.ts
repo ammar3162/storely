@@ -5,6 +5,7 @@ import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { staffHasPermission, NO_PURCHASES } from '@/lib/staffPermission'
 import { createClient } from '@supabase/supabase-js'
 import { OCR_TYPES } from '@/lib/invoiceFile'
+import { guard, limit } from '@/lib/rateLimit'
 
 // قراءة فاتورة مفصّلة تاخذ أكثر من ١٠ ثواني — بدون هذا السيرفر يقطعها قبل ما تخلص
 export const maxDuration = 60
@@ -35,6 +36,8 @@ export async function POST(req: Request) {
       if (!ownerAuth.authorized) return NextResponse.json({ error: ownerAuth.error }, { status: ownerAuth.status })
     }
 
+    const limited = await guard([limit('aiScanOrg', org_id)])
+    if (limited) return limited
     const r = await readInvoice(image, type)
     if (!r.ok) return NextResponse.json({ error: r.error, ...(r.unavailable ? { unavailable: true } : {}) }, { status: r.status })
     return NextResponse.json({ success: true, data: r.data })

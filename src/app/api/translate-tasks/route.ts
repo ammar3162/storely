@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { fetchExternal } from '@/lib/fetchExternal'
+import { guard, limit } from '@/lib/rateLimit'
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!
 
@@ -25,6 +26,8 @@ export async function POST(req: Request) {
     const auth = await verifyStaffToken(extractStaffToken(req))
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
     const { org_id: orgId, staff_id: staffId } = auth.data!
+    const limited = await guard([limit('aiTranslateOrg', orgId)])
+    if (limited) return limited
 
     const { targetLang } = await req.json()
     if (!targetLang) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })

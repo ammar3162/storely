@@ -287,7 +287,7 @@ export default function AIAssistant() {
         body: JSON.stringify({message:msg, org_id, branch_id, history: msgs.slice(1).slice(-6).map(m=>({role:m.role==='user'?'user':'assistant', text:m.text}))})
       })
       const data = await res.json()
-      setMsgs(m=>[...m, {role:'ai', text:data.reply||'عذراً، حدث خطأ', time:now()}])
+      setMsgs(m=>[...m, {role:'ai', text:data.reply||data.error||'عذراً، حدث خطأ', time:now()}])
     } catch {
       setMsgs(m=>[...m, {role:'ai', text:'عذراً، حدث خطأ في الاتصال. تأكد من اتصالك بالإنترنت.', time:now()}])
     }

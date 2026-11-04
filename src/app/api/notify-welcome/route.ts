@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { formatPhone as normalizePhone } from '@/lib/whatsapp'
 import { fetchExternal } from '@/lib/fetchExternal'
+import { guard, limit } from '@/lib/rateLimit'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
     // رابط مفتوح (يُستدعى بعد التسجيل مباشرة) — فما نثق بأي نص من الطلب:
     // الاسم من قاعدة البيانات، وبس لمالك سجّل خلال آخر 15 دقيقة. غير كذا أي أحد يقدر يرسل نص من رقمنا لعملائنا
     const cleanPhone = normalizePhone(phone)
+    if (await guard([limit('welcomePhone', cleanPhone)])) return NextResponse.json({ success: false })
     const { data: profile } = await sb().from('profiles').select('whatsapp_consent,role,created_at,organizations(name)').eq('phone', cleanPhone).eq('role', 'owner').maybeSingle()
     if ((profile as any)?.whatsapp_consent !== true) return NextResponse.json({ success: false, message: 'لا يوجد موافقة واتساب' })
     if (!(profile as any)?.created_at || Date.now() - new Date((profile as any).created_at).getTime() > 15 * 60_000) return NextResponse.json({ success: false })

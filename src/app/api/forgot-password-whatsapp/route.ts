@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
+import { guard, limit, ipOf } from '@/lib/rateLimit'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,6 +31,9 @@ export async function POST(req: Request) {
     if (localDigits.length < 7) {
       return NextResponse.json({ error: 'رقم الجوال غير صحيح' }, { status: 400 })
     }
+
+    const limited = await guard([limit('resetTarget', localDigits), limit('resetIp', ipOf(req))])
+    if (limited) return limited
 
     const { data: profile } = await db
       .from('profiles')

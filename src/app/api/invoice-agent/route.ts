@@ -6,6 +6,7 @@ import { OCR_TYPES } from '@/lib/invoiceFile'
 import { readInvoice } from '@/lib/invoiceOcr'
 import { noteInvoiceScan } from '@/lib/scanUsage'
 import { classifyItems, applyAnswer, draftStatus, aliasKey, type AgentItem } from '@/lib/invoiceAgent'
+import { guard, limit } from '@/lib/rateLimit'
 
 // قراءة فاتورة مفصّلة تاخذ أكثر من ١٠ ثواني
 export const maxDuration = 60
@@ -48,6 +49,8 @@ export async function POST(req: Request) {
     }
 
     const type = (OCR_TYPES as readonly string[]).includes(mediaType) ? mediaType : 'image/jpeg'
+    const limited = await guard([limit('aiScanOrg', org_id)], db)
+    if (limited) return limited
     const ocr = await readInvoice(image, type)
     if (!ocr.ok) return NextResponse.json({ error: ocr.error, ...(ocr.unavailable ? { unavailable: true } : {}) }, { status: ocr.status })
     const d = ocr.data

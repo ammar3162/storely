@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { fetchExternal } from '@/lib/fetchExternal'
+import { guard, limit, ipOf } from '@/lib/rateLimit'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -35,6 +36,8 @@ export async function POST(req: Request) {
     if (!phone) return NextResponse.json({ error: 'رقم الجوال مطلوب' }, { status: 400 })
 
     const fullPhone = (countryCode || '+966') + phone.trim().replace(/^0+/, '')
+    const limited = await guard([limit('otpSendPhone', fullPhone), limit('otpSendIp', ipOf(req))])
+    if (limited) return limited
     const otp = Math.floor(100000 + Math.random() * 900000).toString()
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString() // 5 دقائق
 
