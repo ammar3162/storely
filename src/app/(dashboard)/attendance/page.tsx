@@ -8,7 +8,6 @@ import { api } from '@/lib/api-client'
 import { colors, font, card, btnPrimary, pageTitle, pageSub, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
-import { exportReportPdf } from '@/lib/pdfExport'
 import StaffDaysOffEditor, { type OffPatch } from '@/components/StaffDaysOffEditor'
 import StaffDayShiftsEditor, { type SchedulePatch } from '@/components/StaffDayShiftsEditor'
 
@@ -128,7 +127,7 @@ export default function AttendancePage() {
           hours_worked: d.hours_worked ?? '—', late_minutes: d.late_minutes || '—',
           overtime: d.overtime_minutes ? `${fmtMinutes(d.overtime_minutes)} (${d.overtime_pay} ⃁)` : '—',
         }))
-        await exportReportPdf({
+        await (await import('@/lib/pdfExport')).exportReportPdf({
           title: `سجل حضور ${one.name}`,
           subtitle: `من ${rangeFrom} إلى ${rangeTo}`,
           orgName,
@@ -151,7 +150,7 @@ export default function AttendancePage() {
         setExporting(false)
         return
       }
-      await exportReportPdf({
+      await (await import('@/lib/pdfExport')).exportReportPdf({
         title: 'تقرير الحضور والانصراف',
         subtitle: `من ${rangeFrom} إلى ${rangeTo}`,
         orgName,

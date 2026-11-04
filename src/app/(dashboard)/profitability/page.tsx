@@ -8,7 +8,6 @@ import { currencySymbol } from '@/lib/currencySymbol'
 import { colors, radius, font, card, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { cache } from '@/lib/cache'
-import { exportReportPdf } from '@/lib/pdfExport'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { changePctVisible } from '@/lib/aiPhrases'
 
@@ -129,7 +128,7 @@ export default function ProfitabilityPage() {
         ...fixedList.map((e:any)=>({name:e.name, type:'مصروف ثابت', amount: Number(e.amount).toFixed(0)+' '+curr})),
         ...variableList.map((e:any)=>({name:e.name, type:'مصروف متغيّر', amount: Number(e.amount).toFixed(0)+' '+curr})),
       ]
-      await exportReportPdf({
+      await (await import('@/lib/pdfExport')).exportReportPdf({
         title: 'تقرير الربحية الشهرية',
         subtitle: `${monthLabel(month)}${data.closed?' — مقفل '+new Date(data.closedAt).toLocaleDateString('ar-SA',{numberingSystem:'latn',day:'numeric',month:'long',year:'numeric'}):''}`,
         orgName: '',

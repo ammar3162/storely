@@ -1,5 +1,5 @@
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+// الصفحة تنبني مرة وتنخدم من الكاش (CDN) — تتحدث كل 5 دقايق، وفوراً لما الأدمن يغيّر رسائل الشريط (revalidatePath بـ admin/marquee-messages)
+export const revalidate = 300
 
 import LandingPageClient from './LandingPageClient'
 import { getMarqueeMessages } from '@/lib/marquee'

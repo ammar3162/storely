@@ -103,6 +103,18 @@ function Icon({ d, size=20, stroke='currentColor', width=2 }: { d:string; size?:
 }
 
 // لا نضيف شيء هنا — الإشعار سيكون في الداشبورد مباشرة
+// عرض الشاشة نفس نقطة الـ CSS (768px) — يتحدث لو تغيّر العرض
+function useIsDesktop() {
+  const [desk, setDesk] = useState<boolean | null>(null)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    const on = () => setDesk(mq.matches)
+    on(); mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [])
+  return desk
+}
+
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { t, lang, setLang } = useTranslation()
   const [orgName, setOrgName]       = useState('')
@@ -161,6 +173,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [showBranch, setShowBranch] = useState(false)
   const [branchLowCounts, setBranchLowCounts] = useState<Record<string, number>>({})
   const [ready, setReady]           = useState(false)
+  // الصفحة تنرسم في تخطيط واحد بس (جوال أو كمبيوتر حسب العرض) — كانت تنرسم في الاثنين ويختفي واحد بالـ CSS، فكل طلب بيانات واشتراك لحظي يتكرر مرتين
+  const isDesk = useIsDesktop()
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showConsent, setShowConsent] = useState(false)
   const [showWaInvite, setShowWaInvite] = useState(false)
@@ -683,7 +697,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
           <div className="mob-content">
             {banners}
-            {ready ? children : <div className="sh-loading"><span className="sh-spinner"/></div>}
+            {!ready ? <div className="sh-loading"><span className="sh-spinner"/></div> : isDesk === false ? children : null}
           </div>
 
           <nav className="mob-bottom-nav">
@@ -770,7 +784,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
           <main className="desk-content">
             {banners}
-            {ready ? children : <div className="sh-loading"><span className="sh-spinner"/></div>}
+            {!ready ? <div className="sh-loading"><span className="sh-spinner"/></div> : isDesk ? children : null}
           </main>
         </div>
       </div>

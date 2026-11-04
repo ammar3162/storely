@@ -39,7 +39,7 @@ export default function VerifyDevicePage() {
     if (j.email) setEmail(j.email)
     setWait(Number(j.wait) || 60)
     if (j.sent) setInfo('أرسلنا رمزاً جديداً')
-    inputRef.current?.focus()
+    setTimeout(() => inputRef.current?.focus(), 0)   // بعد ما يرجع الحقل مفعّل
   }
 
   async function verify(value = code) {
@@ -83,6 +83,7 @@ export default function VerifyDevicePage() {
         .vd-email{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 12px;border-radius:99px;background:#f3f4f6;font-size:14px;font-weight:600;color:#111827}
         .vd label{display:block;text-align:right;font-size:14px;font-weight:600;color:#111827;margin:22px 0 6px}
         .vd input{width:100%;padding:14px;border:1.5px solid #d1d5db;border-radius:12px;font-size:26px;font-weight:700;letter-spacing:10px;text-align:center;color:#111827;font-family:inherit;outline:none;direction:ltr}
+        .vd input:disabled{background:#f3f4f6}
         .vd input:focus{border-color:#0f766e;box-shadow:0 0 0 3px rgba(15,118,110,.12)}
         .vd-btn{width:100%;margin-top:14px;padding:14px;border:none;border-radius:12px;background:#0b3b3a;color:#fff;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer}
         .vd-btn:disabled{opacity:.6;cursor:not-allowed}
@@ -103,7 +104,7 @@ export default function VerifyDevicePage() {
 
         <form onSubmit={e => { e.preventDefault(); verify() }}>
           <label htmlFor="vd-code">رمز التحقق</label>
-          <input id="vd-code" ref={inputRef} value={code} inputMode="numeric" autoComplete="one-time-code" placeholder="------"
+          <input id="vd-code" ref={inputRef} value={code} disabled={sending} inputMode="numeric" autoComplete="one-time-code" placeholder="------"
             onChange={e => { const v = toLatin(e.target.value); setCode(v); setError(''); if (v.length === 6 && !checking) verify(v) }} />
           <button className="vd-btn" type="submit" disabled={checking || code.length !== 6}>{checking ? 'جاري التحقق…' : 'تأكيد'}</button>
         </form>
