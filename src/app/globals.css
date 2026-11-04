@@ -43,8 +43,11 @@ input, button, select, textarea { font-family: inherit !important; }
 /* النوافذ اللي تغطي الشاشة ترتفع فوق كيبورد الجوال (--kb من KeyboardInset)، ومحتواها يصير قابل للتمرير لو ما كفّت المساحة */
 [style*="position: fixed"][style*="inset: 0px"],
 [style*="position:fixed"][style*="inset:0"] { bottom: var(--kb, 0px) !important; transition: bottom .12s ease-out; }
+/* الآيفون: نحط النافذة على الجزء الظاهر من الشاشة بالضبط (فوق الكيبورد) بدل حساب ارتفاع الكيبورد — كان يطلع شريط من الصفحة تحتها */
+html.kb-open [style*="position: fixed"][style*="inset: 0px"],
+html.kb-open [style*="position:fixed"][style*="inset:0"] { top: var(--vvt, 0px) !important; bottom: auto !important; height: var(--vvh, 100%) !important; }
 html.kb-open [style*="position: fixed"][style*="inset: 0px"] > div:last-child,
-html.kb-open [style*="position:fixed"][style*="inset:0"] > div:last-child { max-height: calc(100% - 12px); overflow-y: auto; }
+html.kb-open [style*="position:fixed"][style*="inset:0"] > div:last-child { max-height: calc(100% - 12px) !important; overflow-y: auto !important; }
 :root:not([data-theme="dark"]) input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 :root:not([data-theme="dark"]) select,
 :root:not([data-theme="dark"]) textarea { color: #0f172a !important; }
@@ -653,3 +656,13 @@ button[data-navitem]:hover {
 button[data-navitem][data-active="true"]:hover {
   transform: translateX(-2px);
 }
+
+/* حقول التاريخ والوقت في الجوال: الآيفون يعطيها عرض ثابت أكبر من الشاشة ويدفع النموذج كله لبرا */
+@media (pointer: coarse) {
+  input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] {
+    -webkit-appearance: none; appearance: none; display: block; min-width: 0; max-width: 100%; min-height: 42px; text-align: right;
+  }
+  input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-date-and-time-value { text-align: right; }
+}
+/* أعمدة الشبكة (1fr 1fr) ما تتوسع بسبب حقل عريض — تبقى داخل الشاشة */
+[style*="grid-template-columns: 1fr 1fr"] > *, [style*="grid-template-columns:1fr 1fr"] > * { min-width: 0; }

@@ -12,6 +12,9 @@ export default function KeyboardInset() {
       const kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop))
       const open = kb > 80   // أقل من كذا = شريط المتصفح مو كيبورد
       root.style.setProperty('--kb', open ? `${kb}px` : '0px')
+      // الجزء الظاهر من الشاشة (بداية ارتفاعه) — النوافذ تنحط عليه بالضبط وقت الكيبورد
+      root.style.setProperty('--vvt', `${Math.round(vv.offsetTop)}px`)
+      root.style.setProperty('--vvh', `${Math.round(vv.height)}px`)
       root.classList.toggle('kb-open', open)
     }
     vv.addEventListener('resize', update)
