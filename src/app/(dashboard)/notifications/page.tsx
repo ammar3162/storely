@@ -48,8 +48,11 @@ export default function NotificationsPage() {
   async function markRead(id: string) {
     const orgId = sessionStorage.getItem('s_org_id')
     if (!orgId) return
-    await api.patch('/api/notifications', { org_id: orgId, id })
+    // تحديث فوري (بدون انتظار الخادم)، ويرجع زي ما كان لو فشل الحفظ
     setNotifications(prev => prev.map(n => n.id === id ? {...n, read: true} : n))
+    const r = await api.patch('/api/notifications', { org_id: orgId, id })
+    if (!r.success) setNotifications(prev => prev.map(n => n.id === id ? {...n, read: false} : n))
+    window.dispatchEvent(new Event('notifications-updated'))
   }
 
   // أزرار القرار حسب نوع الطلب — نفس الـAPI اللي تستخدمه صفحة إدارة الموظفين
@@ -81,8 +84,11 @@ export default function NotificationsPage() {
     const orgId = sessionStorage.getItem('s_org_id')
     if (!orgId) return
     const bidAll = sessionStorage.getItem('s_branch_id')
-    await api.patch('/api/notifications', { org_id: orgId, all: true, branch_id: bidAll })
+    // تحديث فوري، ويرجع زي ما كان لو فشل الحفظ
+    const before = notifications
     setNotifications(prev => prev.map(n => ({...n, read: true})))
+    const r = await api.patch('/api/notifications', { org_id: orgId, all: true, branch_id: bidAll })
+    if (!r.success) setNotifications(before)
     window.dispatchEvent(new Event('notifications-updated'))
   }
 
