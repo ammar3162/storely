@@ -82,7 +82,9 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // تحقق محلي من توقيع الجلسة (بدون رحلة لخادم الدخول مع كل صفحة) — ويجدد الجلسة لو قربت تنتهي
+  const { data: cd } = await supabase.auth.getClaims()
+  const user = cd?.claims?.sub ? { id: String(cd.claims.sub) } : null
 
 
 

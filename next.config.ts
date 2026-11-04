@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['@supabase/supabase-js'],
   },
+  // ما نستخدم next/image — نقفل خدمة تحسين الصور (/_next/image) كلها: أقل باب للهجمات (ثغرة SVG في 16.4.0)
+  images: { unoptimized: true },
   serverExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
   outputFileTracingIncludes: {
     '/api/admin/send-invoice': ['./node_modules/@sparticuz/chromium/bin/**'],

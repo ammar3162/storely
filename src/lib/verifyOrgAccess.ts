@@ -29,8 +29,12 @@ export async function getCurrentProfile() {
       )
     : await createCookieClient()
 
-  const { data: { user } } = token ? await supabase.auth.getUser(token) : await supabase.auth.getUser()
-  if (!user) return null
+  // التحقق من الجلسة محلياً (توقيع ES256 + مفاتيح Supabase المحفوظة) بدل سؤال خادم الدخول مع كل طلب —
+  // getUser كان رحلة لـ Supabase Auth لكل طلب، وتحت الضغط (~100 طلب بنفس اللحظة) يرفض الزايد فيطلع «غير مسجل دخول»
+  const { data: cd } = token ? await supabase.auth.getClaims(token) : await supabase.auth.getClaims()
+  const claims = cd?.claims
+  if (!claims?.sub) return null
+  const user = { id: String(claims.sub), email: typeof claims.email === 'string' ? claims.email : null }
 
   // permissions (صلاحيات مدير الفرع) مو بأنواع قاعدة البيانات المولّدة — نقرأها بدون أنواع
   const { data: profile } = await (supabase as any)
