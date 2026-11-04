@@ -137,6 +137,8 @@ export async function proxy(request: NextRequest) {
   return supabaseResponse
 }
 
+// الـ proxy يشتغل في سيدني قبل كاش الـ CDN — نستثني اللي ما يحتاجه عشان ينخدم من أقرب نقطة للزائر:
+// الصفحة الرئيسية (".+" ما تطابق "/")، صفحات الموقع العامة، صفحات الموظفين (رقم سري، مو جلسة)، والملفات الثابتة
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|staff|privacy|terms|permission|book|suppliers-join|unsubscribe|r/|videos/|fonts/|images/|.*\\.(?:png|jpg|jpeg|svg|ico|webp|gif|mp4|woff2|txt|xml|webmanifest)$).+)'],
 }
