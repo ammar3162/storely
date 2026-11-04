@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { requirePermission } from '@/lib/adminAuth'
 import { sendEmail } from '@/lib/email'
 import { activationEmail } from '@/lib/emailTemplates'
+import { fetchExternal } from '@/lib/fetchExternal'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '').replace(/^\+/, '')
@@ -77,7 +78,7 @@ export async function POST(req: Request) {
       `🔗 storely.dev\n\n` +
       `_Storely — نظام واحد يربط كل أعمال منشأتك_`
 
-    const res = await fetch('https://www.wasenderapi.com/api/send-message', {
+    const res = await fetchExternal('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

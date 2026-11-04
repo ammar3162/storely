@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { fetchExternal } from '@/lib/fetchExternal'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,7 +25,7 @@ export async function GET(req: Request) {
     const token = process.env.WASENDER_PERSONAL_ACCESS_TOKEN
     if (!token) return NextResponse.json({ error: 'إعدادات الخادم ناقصة' }, { status: 500 })
 
-    const res = await fetch(`https://www.wasenderapi.com/api/whatsapp-sessions/${sessionId}/qrcode`, {
+    const res = await fetchExternal(`https://www.wasenderapi.com/api/whatsapp-sessions/${sessionId}/qrcode`, {
       headers: { 'Authorization': `Bearer ${token}` },
     })
     const j = await res.json()

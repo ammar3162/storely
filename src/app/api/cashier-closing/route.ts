@@ -13,6 +13,7 @@ import { computeBusinessDate } from '@/lib/businessDate'
 import { selectAll } from '@/lib/selectAll'
 import { computeClosing } from '@/lib/cashierClosingCalc'
 import { deliveryFromInput, rememberApps } from '@/lib/deliveryApps'
+import { fetchExternal } from '@/lib/fetchExternal'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -206,7 +207,7 @@ export async function POST(req: Request) {
             `\n\n${statusLine}`
         }
 
-        await fetch('https://www.wasenderapi.com/api/send-message', {
+        await fetchExternal('https://www.wasenderapi.com/api/send-message', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

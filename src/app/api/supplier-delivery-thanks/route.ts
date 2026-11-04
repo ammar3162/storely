@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { sendPushToOrg } from '@/lib/push'
+import { fetchExternal } from '@/lib/fetchExternal'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -77,7 +78,7 @@ export async function POST(req: Request) {
 
     const msg = `🟢 *Storely*\n\nشكراً لكم على توصيل الطلب بنجاح ✅\n\nالصنف: *${product_name}*\n\nنقدّر تعاملكم ونتطلع للتعامل معكم دايماً 🌿`
 
-    await fetch('https://www.wasenderapi.com/api/send-message', {
+    await fetchExternal('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

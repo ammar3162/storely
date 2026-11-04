@@ -2,6 +2,7 @@ import { reportAiFailure, aiFailureKind } from '@/lib/aiAlert'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { fetchExternal } from '@/lib/fetchExternal'
 
 export async function POST(req: NextRequest) {
   const sb = createClient(
@@ -131,7 +132,7 @@ ${neverDispensed.map((p: any) => `• ${p.name}: مخزون ${p.qty} ${p.unit}`)
 
 ${branchSummary ? `═══ مقارنة الفروع ═══\n${branchSummary}` : ''}`
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetchExternal('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

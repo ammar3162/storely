@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { withTimeout, EXTERNAL_TIMEOUT_MS } from '@/lib/fetchExternal'
 
 // دالة مركزية لإرسال الإيميلات — كل الإيميلات بالنظام تمر من هنا
 // عشان اسم المرسل يكون "Storely" دايماً بمكان واحد، ما نكرره بكل ملف
@@ -28,7 +29,8 @@ export async function sendEmail({ to, subject, html, text, fromName, fromAddress
     return { success: false, error: 'RESEND_API_KEY missing' }
   }
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const { data, error } = await resend.emails.send({
+  // حد وقت 15 ثانية: لو علق Resend نرجّع فشل عادي بدل ما يعلق الطلب
+  const { data, error } = await withTimeout(resend.emails.send({
     from: `${fromName ? cleanName(fromName) || 'Storely' : 'Storely'} <${fromAddress || 'noreply@storely.dev'}>`,
     to,
     subject,
@@ -36,7 +38,7 @@ export async function sendEmail({ to, subject, html, text, fromName, fromAddress
     text: text || htmlToText(html),
     ...(replyTo ? { replyTo } : {}),
     ...(attachments?.length ? { attachments } : {}),
-  })
+  }), EXTERNAL_TIMEOUT_MS.messaging, 'Resend').catch((e: Error) => ({ data: null, error: { message: e.message, name: 'timeout' } as never }))
   if (error) {
     console.error('EMAIL_SEND_FAILED:', error)
     return { success: false, error: error.message }

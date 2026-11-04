@@ -2,6 +2,7 @@ import { reportAiFailure } from '@/lib/aiAlert'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
+import { fetchExternal } from '@/lib/fetchExternal'
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!
 
@@ -61,7 +62,7 @@ ${itemsToTranslate.map((t: any) => `- id: ${t.id}\n  title: ${t.title}\n  descri
 أعطني فقط كائن JSON بهذا الشكل بدون أي شرح:
 {"task_id_1": {"title": "Translated title", "description": "Translated description or empty string"}}`
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetchExternal('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 2000, messages: [{ role: 'user', content: prompt }] }),
