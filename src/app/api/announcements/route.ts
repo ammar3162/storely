@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/verifyOrgAccess'
+import { DEVICE_UNVERIFIED_ERROR, DEVICE_UNVERIFIED_REASON } from '@/lib/deviceMessages'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,6 +13,7 @@ export async function GET() {
   try {
     const profile = await getCurrentProfile()
     if (!profile) return NextResponse.json({ error: 'غير مسجل دخول' }, { status: 401 })
+    if (profile.deviceTrusted === false) return NextResponse.json({ error: DEVICE_UNVERIFIED_ERROR, reason: DEVICE_UNVERIFIED_REASON }, { status: 403 })
 
     const db = sb()
     const [{ data: p }, { data: org }, { data: all }, { data: seen }] = await Promise.all([
@@ -45,6 +47,7 @@ export async function POST(req: Request) {
   try {
     const profile = await getCurrentProfile()
     if (!profile) return NextResponse.json({ error: 'غير مسجل دخول' }, { status: 401 })
+    if (profile.deviceTrusted === false) return NextResponse.json({ error: DEVICE_UNVERIFIED_ERROR, reason: DEVICE_UNVERIFIED_REASON }, { status: 403 })
 
     const { version, welcome } = await req.json()
     const db = sb()

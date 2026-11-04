@@ -2,6 +2,8 @@ import { createClient as createCookieClient } from '@/lib/supabase/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { headers } from 'next/headers'
 import { managerApiAllowed } from '@/lib/managerPerms'
+import { currentDeviceAllowed } from '@/lib/deviceTrust'
+import { DEVICE_UNVERIFIED_ERROR } from '@/lib/deviceMessages'
 import type { Database } from '@/lib/database.types'
 
 /**
@@ -37,12 +39,15 @@ export async function getCurrentProfile() {
     .eq('id', user.id)
     .single()
 
+  const role = ((profile as any)?.role as string | null) ?? null
   return {
     userId: user.id,
+    // المالك ومدير الفرع: الجهاز لازم يكون موثوق (رمز الإيميل) — lib/deviceTrust
+    deviceTrusted: await currentDeviceAllowed(user.id, role),
     status: ((profile as any)?.status as string | null) ?? null,
     email: user.email ?? null,
     orgId: (profile?.org_id as string | null) ?? null,
-    role: ((profile as any)?.role as string | null) ?? null,
+    role,
     branchId: ((profile as any)?.branch_id as string | null) ?? null,
     permissions: ((profile as any)?.permissions as Record<string, unknown> | null) ?? null,
   }
@@ -65,6 +70,10 @@ export async function verifyOrgAccess(requestedOrgId: string) {
 
   if (!profile) {
     return { authorized: false, error: 'غير مسجل دخول', status: 401 as const }
+  }
+
+  if (profile.deviceTrusted === false) {
+    return { authorized: false, error: DEVICE_UNVERIFIED_ERROR, status: 403 as const }
   }
 
   if (!profile.orgId || profile.orgId !== requestedOrgId) {

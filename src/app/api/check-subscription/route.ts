@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/verifyOrgAccess'
+import { DEVICE_UNVERIFIED_ERROR, DEVICE_UNVERIFIED_REASON } from '@/lib/deviceMessages'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,6 +15,7 @@ export async function GET() {
     // المستخدم من جلسته — مو من الرابط (كان أي أحد يعرف رقم حساب يشوف تاريخ نهاية اشتراكه)
     const me = await getCurrentProfile()
     if (!me) return NextResponse.json({ error: 'سجّل دخولك' }, { status: 401 })
+    if (me.deviceTrusted === false) return NextResponse.json({ error: DEVICE_UNVERIFIED_ERROR, reason: DEVICE_UNVERIFIED_REASON }, { status: 403 })
     const profile_id = me.userId
 
     const { data: profile } = await sb()

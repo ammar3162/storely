@@ -11,6 +11,7 @@ import { PLAN_PRICING, planKeyOf, billLines, planPriceFor, planLabel as planLabe
 import PlanUpgrade from '@/components/PlanUpgrade'
 import { colors, radius, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import AccountantHub from '@/components/AccountantHub'
+import TrustedDevices from '@/components/TrustedDevices'
 
 const lbl: React.CSSProperties = { fontSize: font.xs, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }
 
@@ -701,6 +702,8 @@ export default function SettingsPage() {
                   {pwSaving?'⏳ جاري التحقق والحفظ...':'🔐 تغيير كلمة المرور'}
                 </button>
               </form>
+
+              <TrustedDevices />
 
               {/* Delete account */}
               <div style={{marginTop:28,paddingTop:24,borderTop:`1px solid ${colors.dangerBorder}`}}>

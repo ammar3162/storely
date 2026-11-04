@@ -11,6 +11,8 @@
  *   if (!j.success) toast(j.error, 'error')
  */
 
+import { DEVICE_UNVERIFIED_ERROR, VERIFY_DEVICE_PATH } from '@/lib/deviceMessages'
+
 let apiToken: string | null = null
 export function setApiToken(token: string | null) { apiToken = token }
 
@@ -39,6 +41,10 @@ async function request<T>(method: string, path: string, params?: Params, body?: 
     })
     const j = await res.json().catch(() => ({}))
     if (!res.ok && !j.error) j.error = 'حدث خطأ'
+    // جهاز جديد ما تحقق: أي طلب بيانات يرجع 403 — نوديه لصفحة الرمز
+    if (res.status === 403 && j.error === DEVICE_UNVERIFIED_ERROR && typeof window !== 'undefined' && window.location.pathname !== VERIFY_DEVICE_PATH) {
+      window.location.href = VERIFY_DEVICE_PATH
+    }
     return j
   } catch {
     return { success: false, error: 'خطأ بالاتصال' } as ApiResult<T>

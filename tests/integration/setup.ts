@@ -2,7 +2,7 @@
 import { vi } from 'vitest'
 import './harness'
 
-vi.mock('next/headers', () => ({ headers: async () => new Headers(), cookies: async () => ({ getAll: () => [], set: () => {} }) }))
+vi.mock('next/headers', () => ({ headers: async () => new Headers(), cookies: async () => ({ getAll: () => [], get: () => undefined, set: () => {} }) }))
 // ما نرسل واتساب حقيقي من الاختبارات
 vi.mock('@/lib/whatsapp', () => ({ sendWhatsAppMessage: async () => ({ ok: true, success: true }), formatPhone: (x: string) => x }))
 // لوحة الأدمن: جلسة أدمن وهمية للاختبار بس
