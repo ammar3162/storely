@@ -4,6 +4,7 @@ import { getCurrentProfile } from '@/lib/verifyOrgAccess'
 import { combineBranchLimit, EXTRA_BRANCH_SLUG } from '@/lib/branchLimit'
 import { orgFeatures } from '@/lib/planFeatures'
 import { DEVICE_UNVERIFIED_ERROR, DEVICE_UNVERIFIED_REASON } from '@/lib/deviceMessages'
+import { readDeviceId, deviceCookie } from '@/lib/deviceTrust'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,7 +41,7 @@ export async function GET() {
     const features = await orgFeatures(db, profile.orgId, o.plan || 'basic')
     const e: any = extra || {}
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
       user_id: profile.userId,
       org_id: profile.orgId,
@@ -75,6 +76,10 @@ export async function GET() {
       } : null,
       branches: branches || [],
     })
+    // الجهاز الموثوق: نجدد عمر الكوكي مع كل فتح للنظام — ما ينتهي طالما الجهاز مستخدم
+    const deviceId = await readDeviceId()
+    if (deviceId && profile.deviceTrusted) res.cookies.set(deviceCookie(deviceId))
+    return res
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
