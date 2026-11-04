@@ -6,6 +6,7 @@ import { buildAssistantContext } from '@/lib/assistantContext'
 import { runTool } from '@/lib/assistantTools'
 import { classifyTopic, OFF_TOPIC_REPLY, GREETING_REPLY } from '@/lib/assistantTopic'
 import { fetchExternal } from '@/lib/fetchExternal'
+import { guard, limit } from '@/lib/rateLimit'
 
 // المساعد الذكي: متاح للكل لأسئلة الاشتراك وطريقة الاستخدام، وبيانات المنشأة بالأدوات (lib/assistantTools)
 // مع ميزة الذكاء الاصطناعي — الأداة المقفلة ما تنعرض على النموذج أصلاً
@@ -22,6 +23,8 @@ export async function POST(req: NextRequest) {
   if (!message || !org_id) return NextResponse.json({ error: 'missing' }, { status: 400 })
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+  const limited = await guard([limit('aiChatOrg', org_id), limit('aiChatOrgDay', org_id)])
+  if (limited) return limited
   const branch_id = enforcedBranchId(access, requestedBranch)   // مدير الفرع: فرعه بس مهما أرسل الطلب
 
   // سؤال خارج المنشأة أو تحية: رد جاهز بدون بيانات المنشأة (ما ينصرف توكن كامل)

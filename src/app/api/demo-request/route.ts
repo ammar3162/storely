@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
 import { sanitizeShortText } from '@/lib/sanitize'
+import { guard, limit, ipOf } from '@/lib/rateLimit'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,6 +11,8 @@ const sb = () => createClient(
 
 export async function POST(req: Request) {
   try {
+    const limited = await guard([limit('demoIp', ipOf(req))])
+    if (limited) return limited
     let { firstName, lastName, phone, email, businessName, branchCount } = await req.json()
 
     firstName = sanitizeShortText(firstName, 60)
