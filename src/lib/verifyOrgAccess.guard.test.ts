@@ -5,7 +5,7 @@ const state = { headers: new Headers(), profile: {} as Record<string, unknown>, 
 vi.mock('next/headers', () => ({ headers: async () => state.headers, cookies: async () => ({ getAll: () => [] }) }))
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
-    auth: { getUser: async () => ({ data: { user: { id: 'u1', email: null } } }) },
+    auth: { getClaims: async () => ({ data: { claims: { sub: 'u1' } } }) },
     from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: state.profile }) }) }) }),
   }),
 }))
