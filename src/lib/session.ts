@@ -29,7 +29,7 @@ export type Me = {
   branches: { id: string; name: string; location: string | null }[]
 }
 
-export type MeResult = { me: Me | null; reason?: 'unauthenticated' | 'no_org' | 'error' }
+export type MeResult = { me: Me | null; reason?: 'unauthenticated' | 'no_org' | 'device_unverified' | 'error' }
 
 let mePromise: Promise<MeResult> | null = null
 
