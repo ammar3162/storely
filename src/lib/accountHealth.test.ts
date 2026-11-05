@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { assessHealth, type OrgSignals } from './accountHealth'
+import { assessHealth, stuckCodeAt, type OrgSignals } from './accountHealth'
 
 const NOW = Date.parse('2026-11-01T18:00:00Z'), DAY = 86400e3
 const iso = (daysAgo: number) => new Date(NOW - daysAgo * DAY).toISOString()
@@ -45,5 +45,30 @@ describe('assessHealth', () => {
   it('trial ending soon is a warning', () => {
     const h = assessHealth(base({ subscriptionType: 'trial', endsAt: iso(-2) }))
     expect(h.status).toBe('attention'); expect(h.reasons[0].text).toContain('التجربة تنتهي')
+  })
+})
+
+describe('stuck on the login code', () => {
+  const H = 3600e3, at = (hAgo: number) => new Date(NOW - hAgo * H).toISOString()
+  it('code requested 3 hours ago, never used, no device after → stuck', () => {
+    expect(stuckCodeAt([{ user_id: 'u1', created_at: at(3), used_at: null }], [], ['u1'], NOW)).toBe(at(3))
+  })
+  it('not stuck: used, too recent, device trusted after, older than 3 days, or another org user', () => {
+    expect(stuckCodeAt([{ user_id: 'u1', created_at: at(3), used_at: at(2.9) }], [], ['u1'], NOW)).toBeNull()
+    expect(stuckCodeAt([{ user_id: 'u1', created_at: at(0.2), used_at: null }], [], ['u1'], NOW)).toBeNull()
+    expect(stuckCodeAt([{ user_id: 'u1', created_at: at(3), used_at: null }], [{ user_id: 'u1', created_at: at(1) }], ['u1'], NOW)).toBeNull()
+    expect(stuckCodeAt([{ user_id: 'u1', created_at: at(80), used_at: null }], [], ['u1'], NOW)).toBeNull()
+    expect(stuckCodeAt([{ user_id: 'u2', created_at: at(3), used_at: null }], [], ['u1'], NOW)).toBeNull()
+  })
+  it('not stuck when he signed in later from an already-trusted device', () => {
+    expect(stuckCodeAt([{ user_id: 'u1', created_at: at(3), used_at: null }], [{ user_id: 'u1', created_at: at(200), last_seen_at: at(1) }], ['u1'], NOW)).toBeNull()
+  })
+  it('only the latest code counts (an older unused one then a used one → fine)', () => {
+    expect(stuckCodeAt([{ user_id: 'u1', created_at: at(5), used_at: null }, { user_id: 'u1', created_at: at(4), used_at: at(4) }], [], ['u1'], NOW)).toBeNull()
+  })
+  it('shows as a follow-up reason with how long ago', () => {
+    const h = assessHealth(base({ stuckCodeAt: new Date(NOW - 3 * H).toISOString() }))
+    expect(h.status).toBe('attention')
+    expect(h.reasons[0].text).toContain('طلب رمز دخول قبل 3 ساعات وما أدخله')
   })
 })
