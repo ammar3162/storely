@@ -68,12 +68,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'تعذر إنشاء حساب الدخول — حاول مرة ثانية' }, { status: 500 })
   }
 
+  // المدير يأخذ اشتراك المالك (النوع والتاريخ) — حسابه يتبع اشتراك المنشأة
+  const { data: owner } = await db.from('profiles').select('subscription_type,subscription_ends_at').eq('org_id', org_id).eq('role', 'owner').maybeSingle()
   const { error: profileErr } = await (db as any).from('profiles').insert({
     id: newUser.user.id,
     org_id, branch_id,
     full_name, role: 'manager',
     permissions: cleanManagerPerms(permissions),
     status: 'active',
+    ...(owner ? { subscription_type: (owner as any).subscription_type, subscription_ends_at: (owner as any).subscription_ends_at } : {}),
     ...(report.phone ? { report_whatsapp: report.phone, whatsapp_consent: true, whatsapp_consent_at: new Date().toISOString() } : {}),
   })
   if (profileErr) {

@@ -18,11 +18,10 @@ export async function GET() {
     if (me.deviceTrusted === false) return NextResponse.json({ error: DEVICE_UNVERIFIED_ERROR, reason: DEVICE_UNVERIFIED_REASON }, { status: 403 })
     const profile_id = me.userId
 
-    const { data: profile } = await sb()
-      .from('profiles')
-      .select('subscription_ends_at,subscription_type')
-      .eq('id', profile_id)
-      .maybeSingle()
+    // اشتراك المنشأة = اشتراك المالك: المدير يتبعه (حسابه نفسه ممكن ما فيه تاريخ — كان يدخل بعد انتهاء اشتراك المنشأة)
+    const { data: profile } = me.orgId
+      ? await sb().from('profiles').select('subscription_ends_at,subscription_type').eq('org_id', me.orgId).eq('role', 'owner').maybeSingle()
+      : await sb().from('profiles').select('subscription_ends_at,subscription_type').eq('id', profile_id).maybeSingle()
 
     if (!profile?.subscription_ends_at) {
       return NextResponse.json({ hasSubscription: false, expired: false, daysLeft: null })

@@ -11,7 +11,7 @@
  *   if (!j.success) toast(j.error, 'error')
  */
 
-import { DEVICE_UNVERIFIED_ERROR, VERIFY_DEVICE_PATH } from '@/lib/deviceMessages'
+import { DEVICE_UNVERIFIED_ERROR, VERIFY_DEVICE_PATH, SUBSCRIPTION_BLOCKED_ERROR, EXPIRED_PATH } from '@/lib/deviceMessages'
 
 let apiToken: string | null = null
 export function setApiToken(token: string | null) { apiToken = token }
@@ -44,6 +44,10 @@ async function request<T>(method: string, path: string, params?: Params, body?: 
     // جهاز جديد ما تحقق: أي طلب بيانات يرجع 403 — نوديه لصفحة الرمز
     if (res.status === 403 && j.error === DEVICE_UNVERIFIED_ERROR && typeof window !== 'undefined' && window.location.pathname !== VERIFY_DEVICE_PATH) {
       window.location.href = VERIFY_DEVICE_PATH
+    }
+    // اشتراك المنشأة انتهى أو انوقف: صفحة الانتهاء (للمالك والمدراء)
+    if (res.status === 403 && j.error === SUBSCRIPTION_BLOCKED_ERROR && typeof window !== 'undefined' && window.location.pathname !== EXPIRED_PATH) {
+      window.location.href = EXPIRED_PATH
     }
     return j
   } catch {
