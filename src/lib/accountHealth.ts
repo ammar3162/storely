@@ -28,6 +28,7 @@ export type OrgSignals = {
   usage30: Record<Feature, number>   // استخدام كل ميزة آخر 30 يوم (الربحية 60)
   paidAddons: Feature[]         // ميزات مفتوحة بإضافة مدفوعة (مو من الباقة ولا التجربة)
   features: Features
+  stuckCodeAt?: string | null   // طلب رمز دخول (جهاز جديد) وما أدخله — غالباً علق في الدخول
 }
 
 const daysSince = (now: number, d: string | null) => d ? Math.floor((now - new Date(d).getTime()) / DAY) : null
@@ -43,6 +44,11 @@ export function assessHealth(s: OrgSignals): { status: HealthStatus; reasons: He
   if (left !== null && left < 0) {
     reasons.push({ tone: 'danger', text: `الاشتراك منتهي من ${-left} يوم` })
     return { status: 'expired', reasons, unusedPaid, unusedIncluded }
+  }
+  if (s.stuckCodeAt) {
+    const h = Math.floor((s.now - new Date(s.stuckCodeAt).getTime()) / 3600e3)
+    const when = h < 1 ? 'قبل أقل من ساعة' : h < 24 ? `قبل ${h} ${h === 1 ? 'ساعة' : h === 2 ? 'ساعتين' : h <= 10 ? 'ساعات' : 'ساعة'}` : ago(Math.floor(h / 24))
+    reasons.push({ tone: 'warning', text: `طلب رمز دخول ${when} وما أدخله — يمكن علق في الدخول، أرسل له «رمز دخول مؤقت» من ملفه` })
   }
   const login = daysSince(s.now, s.lastLogin), op = daysSince(s.now, s.lastOp)
   const dormant = s.ops7 === 0 && (login === null || login >= 7) && age >= 3
@@ -63,6 +69,35 @@ export function assessHealth(s: OrgSignals): { status: HealthStatus; reasons: He
   return { status, reasons, unusedPaid, unusedIncluded }
 }
 
+// ---------- علق في رمز الدخول ----------
+type CodeRow = { user_id: string; created_at: string; used_at: string | null }
+type DeviceRow = { user_id: string; created_at: string; last_seen_at?: string | null }
+const STUCK_AFTER_MS = 30 * 60e3, STUCK_WINDOW_MS = 3 * DAY
+
+/** آخر رمز دخول طلبه أحد المستخدمين وما أدخله (أقدم من 30 دقيقة، آخر 3 أيام) وما وثّق جهاز بعده — يرجع وقته أو null */
+export function stuckCodeAt(codes: CodeRow[], devices: DeviceRow[], userIds: string[], now: number): string | null {
+  let out: string | null = null
+  for (const uid of userIds) {
+    const latest = codes.filter(c => c.user_id === uid && now - new Date(c.created_at).getTime() <= STUCK_WINDOW_MS)
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+    if (!latest || latest.used_at || now - new Date(latest.created_at).getTime() < STUCK_AFTER_MS) continue
+    // وثّق جهاز بعده، أو دخل من جهاز موثّق من قبل → مو عالق
+    if (devices.some(d => d.user_id === uid && (d.created_at > latest.created_at || (d.last_seen_at || '') > latest.created_at))) continue
+    if (!out || latest.created_at > out) out = latest.created_at
+  }
+  return out
+}
+
+async function recentCodes(db: SupabaseClient, userIds: string[], now: number): Promise<{ codes: CodeRow[]; devices: DeviceRow[] }> {
+  if (!userIds.length) return { codes: [], devices: [] }
+  const since = new Date(now - STUCK_WINDOW_MS).toISOString()
+  const [{ data: codes }, { data: devices }] = await Promise.all([
+    db.from('login_codes').select('user_id,created_at,used_at').in('user_id', userIds).gte('created_at', since).limit(5000),
+    db.from('trusted_devices').select('user_id,created_at,last_seen_at').in('user_id', userIds).is('revoked_at', null).or(`created_at.gte.${since},last_seen_at.gte.${since}`).limit(5000),
+  ])
+  return { codes: (codes || []) as CodeRow[], devices: (devices || []) as DeviceRow[] }
+}
+
 // ---------- جمع الإشارات ----------
 export type AccountHealthRow = {
   org_id: string; org_name: string; owner_id: string; owner_name: string | null; phone: string | null
@@ -70,6 +105,7 @@ export type AccountHealthRow = {
   status: HealthStatus; reasons: HealthReason[]; unused_paid: string[]; unused_included: string[]
   last_login: string | null; last_op: string | null; ops7: number; products: number; staff: number
   closing_days7: number | null; attendance7: number | null; wa_sent7: number; wa_failed7: number
+  stuck_code_at: string | null
 }
 
 async function count(q: any): Promise<number> { const { count: c } = await q; return c || 0 }
@@ -110,13 +146,13 @@ async function signalsFor(db: SupabaseClient, orgId: string, now: number) {
   }
 }
 
-async function buildRow(db: SupabaseClient, o: any, owner: any, slugs: string[], lastLogin: string | null, now: number): Promise<AccountHealthRow> {
+async function buildRow(db: SupabaseClient, o: any, owner: any, slugs: string[], lastLogin: string | null, now: number, stuck: string | null = null): Promise<AccountHealthRow> {
   const trial = owner.subscription_type === 'trial' && !!owner.subscription_ends_at && new Date(owner.subscription_ends_at).getTime() > now
   const features = featuresFrom(o.plan, slugs, trial)
   const planOnly = featuresFrom(o.plan, [], false)
   const paidAddons = FEATURES.filter(f => !trial && !planOnly[f] && FEATURE_ADDONS[f].some(sl => slugs.includes(sl)))
   const sig = await signalsFor(db, o.id, now)
-  const s: OrgSignals = { now, createdAt: o.created_at, subscriptionType: owner.subscription_type, endsAt: owner.subscription_ends_at, lastLogin, ...sig, paidAddons, features }
+  const s: OrgSignals = { now, createdAt: o.created_at, subscriptionType: owner.subscription_type, endsAt: owner.subscription_ends_at, lastLogin, ...sig, paidAddons, features, stuckCodeAt: stuck }
   const h = assessHealth(s)
   return {
     org_id: o.id, org_name: o.name || '—', owner_id: owner.id, owner_name: owner.full_name, phone: owner.phone,
@@ -124,6 +160,7 @@ async function buildRow(db: SupabaseClient, o: any, owner: any, slugs: string[],
     status: h.status, reasons: h.reasons, unused_paid: h.unusedPaid.map(f => FEATURE_LABEL[f]), unused_included: h.unusedIncluded.map(f => FEATURE_LABEL[f]),
     last_login: s.lastLogin, last_op: s.lastOp, ops7: s.ops7, products: s.products, staff: s.staff,
     closing_days7: features.cashier ? s.closingDays7 : null, attendance7: features.hr ? s.attendance7 : null, wa_sent7: s.waSent7, wa_failed7: s.waFailed7,
+    stuck_code_at: stuck,
   }
 }
 
@@ -141,7 +178,9 @@ export async function loadOrgHealth(db: SupabaseClient, orgId: string, now = Dat
   const logins = await Promise.all(((profiles || []) as any[]).map(async p => (await db.auth.admin.getUserById(p.id)).data?.user?.last_sign_in_at || null))
   const lastLogin = (logins.filter(Boolean) as string[]).sort().at(-1) || null
   const slugs = ((addonRows || []) as any[]).filter(a => !a.expires_at || new Date(a.expires_at).getTime() >= now).map(a => a.marketplace_addons.slug)
-  const row = await buildRow(db, o, owner, slugs, lastLogin, now)
+  const ids = ((profiles || []) as any[]).map(p => p.id)
+  const rc = await recentCodes(db, ids, now)
+  const row = await buildRow(db, o, owner, slugs, lastLogin, now, stuckCodeAt(rc.codes, rc.devices, ids, now))
   return { ...row, branches: branches || 0, managers: ((profiles || []) as any[]).filter(p => p.role === 'manager').length }
 }
 
@@ -159,9 +198,10 @@ export async function loadAccountHealth(db: SupabaseClient, now = Date.now()): P
     for (const u of users) if (u.last_sign_in_at) lastSignIn.set(u.id, u.last_sign_in_at)
     if (users.length < 1000) break
   }
-  const owners = new Map<string, any>(), loginByOrg = new Map<string, string>()
+  const owners = new Map<string, any>(), loginByOrg = new Map<string, string>(), usersByOrg = new Map<string, string[]>()
   for (const p of (profiles || []) as any[]) {
     if (!p.org_id) continue
+    usersByOrg.set(p.org_id, [...(usersByOrg.get(p.org_id) || []), p.id])
     if (p.role === 'owner') owners.set(p.org_id, p)
     const l = lastSignIn.get(p.id)
     if (l && (!loginByOrg.get(p.org_id) || l > loginByOrg.get(p.org_id)!)) loginByOrg.set(p.org_id, l)
@@ -173,9 +213,11 @@ export async function loadAccountHealth(db: SupabaseClient, now = Date.now()): P
   }
   // منشآت العملاء بس: لها مالك ومو محذوف، وبدون منشآت الاختبارات الآلية
   const list = ((orgs || []) as any[]).filter(o => owners.has(o.id) && owners.get(o.id).status !== 'deleted' && !String(o.name || '').startsWith('__it_'))
+  const rc = await recentCodes(db, list.flatMap(o => usersByOrg.get(o.id) || []), now)
   const rows: AccountHealthRow[] = []
   for (let i = 0; i < list.length; i += 6) {   // 6 منشآت بالتوازي — ما نضغط القاعدة
-    rows.push(...await Promise.all(list.slice(i, i + 6).map(o => buildRow(db, o, owners.get(o.id), addons.get(o.id) || [], loginByOrg.get(o.id) || null, now))))
+    rows.push(...await Promise.all(list.slice(i, i + 6).map(o => buildRow(db, o, owners.get(o.id), addons.get(o.id) || [], loginByOrg.get(o.id) || null, now,
+      stuckCodeAt(rc.codes, rc.devices, usersByOrg.get(o.id) || [], now)))))
   }
   const rank: Record<HealthStatus, number> = { dormant: 0, attention: 1, expired: 2, active: 3 }
   return rows.sort((a, b) => rank[a.status] - rank[b.status] || b.reasons.length - a.reasons.length || a.org_name.localeCompare(b.org_name, 'ar'))

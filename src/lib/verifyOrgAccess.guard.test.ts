@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // حارس مدير الفرع داخل verifyOrgAccess: المسار يجي من proxy بالهيدر x-storely-path
-const state = { headers: new Headers(), profile: {} as Record<string, unknown>, deviceOk: true }
+const state = { headers: new Headers(), profile: {} as Record<string, unknown>, deviceOk: true, subBlocked: false }
 vi.mock('next/headers', () => ({ headers: async () => state.headers, cookies: async () => ({ getAll: () => [] }) }))
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
@@ -13,12 +13,15 @@ vi.mock('@/lib/supabase/server', () => ({
 // التحقق من الجهاز (lib/deviceTrust) — موثوق إلا لو الاختبار غيّره
 vi.mock('@/lib/deviceTrust', () => ({ currentDeviceAllowed: async () => state.deviceOk }))
 
+// اشتراك المنشأة (من ملف المالك) — ساري إلا لو الاختبار غيّره
+vi.mock('@/lib/subscription', () => ({ orgSubscriptionState: async () => ({ blocked: state.subBlocked, reason: state.subBlocked ? 'expired' : null, endsAt: null, type: null }) }))
+
 const { verifyOrgAccess } = await import('./verifyOrgAccess')
-const { DEVICE_UNVERIFIED_ERROR } = await import('./deviceMessages')
+const { DEVICE_UNVERIFIED_ERROR, SUBSCRIPTION_BLOCKED_ERROR } = await import('./deviceMessages')
 const at = (path: string, method: string) => { state.headers = new Headers({ 'x-storely-path': path, 'x-storely-method': method }) }
 
 describe('verifyOrgAccess — branch manager API guard', () => {
-  beforeEach(() => { state.deviceOk = true; state.profile = { org_id: 'o1', role: 'manager', branch_id: 'b1', status: 'active', permissions: { inventory: true } } })
+  beforeEach(() => { state.deviceOk = true; state.subBlocked = false; state.profile = { org_id: 'o1', role: 'manager', branch_id: 'b1', status: 'active', permissions: { inventory: true } } })
 
   it('refuses a manager on a route their permissions do not cover', async () => {
     at('/api/staff-payroll-adjustments', 'POST')
@@ -46,6 +49,14 @@ describe('verifyOrgAccess — branch manager API guard', () => {
     expect(await verifyOrgAccess('o1')).toMatchObject({ authorized: false, status: 403, error: DEVICE_UNVERIFIED_ERROR })
     state.profile = { org_id: 'o1', role: 'owner', branch_id: null, status: 'active', permissions: null }
     expect(await verifyOrgAccess('o1')).toMatchObject({ authorized: false, status: 403, error: DEVICE_UNVERIFIED_ERROR })
+  })
+
+  it('refuses the owner and the manager once the organization subscription ended', async () => {
+    state.subBlocked = true
+    at('/api/products', 'GET')
+    expect(await verifyOrgAccess('o1')).toMatchObject({ authorized: false, status: 403, error: SUBSCRIPTION_BLOCKED_ERROR })
+    state.profile = { org_id: 'o1', role: 'owner', branch_id: null, status: 'active', permissions: null }
+    expect(await verifyOrgAccess('o1')).toMatchObject({ authorized: false, status: 403, error: SUBSCRIPTION_BLOCKED_ERROR })
   })
 
   it('still refuses another organization first', async () => {

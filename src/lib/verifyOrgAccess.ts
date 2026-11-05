@@ -3,7 +3,8 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { headers } from 'next/headers'
 import { managerApiAllowed } from '@/lib/managerPerms'
 import { currentDeviceAllowed } from '@/lib/deviceTrust'
-import { DEVICE_UNVERIFIED_ERROR } from '@/lib/deviceMessages'
+import { DEVICE_UNVERIFIED_ERROR, SUBSCRIPTION_BLOCKED_ERROR } from '@/lib/deviceMessages'
+import { orgSubscriptionState } from '@/lib/subscription'
 import type { Database } from '@/lib/database.types'
 
 /**
@@ -82,6 +83,12 @@ export async function verifyOrgAccess(requestedOrgId: string) {
 
   if (!profile.orgId || profile.orgId !== requestedOrgId) {
     return { authorized: false, error: 'غير مصرح بالوصول لهذا الحساب', status: 403 as const }
+  }
+
+  // اشتراك المنشأة (من ملف المالك) منتهي أو موقوف: ما فيه وصول للبيانات لأي حساب فيها — المالك والمدراء
+  const sub = await orgSubscriptionState(profile.orgId)
+  if (sub.blocked) {
+    return { authorized: false, error: SUBSCRIPTION_BLOCKED_ERROR, status: 403 as const }
   }
 
   // مدير الفرع: نفس صلاحيات صفحاته على مستوى الـ API (المسار يجي من proxy)
