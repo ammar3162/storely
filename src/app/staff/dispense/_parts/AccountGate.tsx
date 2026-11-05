@@ -1,0 +1,52 @@
+'use client'
+import { T } from './strings'
+import type { StaffDispense, PageVals } from './useStaffDispense'
+
+export default function AccountGate({ m, v }: { m: StaffDispense; v: PageVals }) {
+  const { lang, needsReauth, subscriptionExpired, reauthPin, setReauthPin, reauthError, setReauthError, reauthLoading, logout, submitReauth } = m
+  const { session } = v
+  return (
+    <>
+      {subscriptionExpired && (
+        <div style={{position:'fixed',inset:0,zIndex:6000,background:'#0C213B',display:'flex',alignItems:'center',justifyContent:'center',padding:24,textAlign:'center' as const}}>
+          <div>
+            <div style={{fontSize:56,marginBottom:16}}>⏰</div>
+            <div style={{fontSize:18,fontWeight:800,color:'white',marginBottom:8}}>{T('subExpired',lang)}</div>
+            <div style={{fontSize:13,color:'rgba(255,255,255,.7)',lineHeight:1.8,maxWidth:320,marginLeft:'auto',marginRight:'auto',marginBottom:24}}>
+              {T('subExpiredSub',lang)}
+            </div>
+            <button onClick={logout} style={{padding:'12px 28px',background:'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+              {T('signOut',lang)}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {needsReauth && (
+        <div style={{position:'fixed',inset:0,zIndex:5000,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,animation:'fadeIn .2s ease'}}>
+          <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:340,padding:28,textAlign:'center' as const,animation:'slideUp .3s ease'}}>
+            <div style={{fontSize:40,marginBottom:10}}>🔒</div>
+            <div style={{fontSize:15,fontWeight:800,color:'#0f172a',marginBottom:4}}>{T('sessionEnded',lang)}</div>
+            <div style={{fontSize:12,color:'#64748b',marginBottom:18}}>{T('enterPin',lang,{name:session?.name||''})}</div>
+            <input
+              type="password" inputMode="numeric" maxLength={6} autoFocus
+              value={reauthPin}
+              onChange={e=>{setReauthPin(e.target.value.replace(/\D/g,'')); setReauthError('')}}
+              onKeyDown={e=>{if(e.key==='Enter') submitReauth()}}
+              style={{width:'100%',padding:'14px',fontSize:22,fontWeight:700,textAlign:'center' as const,letterSpacing:8,border:`1.5px solid ${reauthError?'#ef4444':'#e2e8f0'}`,borderRadius:12,marginBottom:10,fontFamily:'inherit',boxSizing:'border-box' as const}}
+              placeholder="••••"
+            />
+            {reauthError && <div style={{fontSize:12,color:'#ef4444',fontWeight:600,marginBottom:10}}>{reauthError}</div>}
+            <button onClick={submitReauth} disabled={!reauthPin||reauthLoading}
+              style={{width:'100%',padding:13,background:!reauthPin||reauthLoading?'#cbd5e1':'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:!reauthPin||reauthLoading?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:10}}>
+              {reauthLoading?T('verifying',lang):T('login',lang)}
+            </button>
+            <button onClick={logout} style={{width:'100%',padding:10,background:'none',border:'none',fontSize:12,color:'#94a3b8',cursor:'pointer',fontFamily:'inherit'}}>
+              {T('fullSignOut',lang)}
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
