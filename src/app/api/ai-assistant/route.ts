@@ -1,4 +1,5 @@
 import { reportAiFailure, aiFailureKind } from '@/lib/aiAlert'
+import { logAiUsage } from '@/lib/aiUsage'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
 
   // سؤال خارج المنشأة أو تحية: رد جاهز بدون بيانات المنشأة (ما ينصرف توكن كامل)
   const lastReply = [...history].reverse().find(h => h.role === 'assistant')?.content
-  const topic = await classifyTopic(String(message), lastReply)
+  const topic = await classifyTopic(String(message), lastReply, org_id)
   if (topic !== 'business') {
     const reply = topic === 'greeting' ? GREETING_REPLY : OFF_TOPIC_REPLY
     try {
@@ -64,6 +65,7 @@ export async function POST(req: NextRequest) {
       }),
     })
     data = await response.json()
+    if (response.ok) await logAiUsage({ orgId: org_id, feature: 'assistant', model: 'claude-haiku-4-5-20251001', usage: data.usage })
     if (!response.ok) {
       await reportAiFailure(response.status, JSON.stringify(data), 'المساعد الذكي')
       if (aiFailureKind(response.status, JSON.stringify(data))) return NextResponse.json({ reply: 'المساعد متوقف مؤقتاً — جرّب بعد شوي' })

@@ -1,4 +1,5 @@
 import { fetchExternal } from '@/lib/fetchExternal'
+import { logAiUsage } from '@/lib/aiUsage'
 // فحص سريع قبل المساعد: السؤال عن المنشأة/النظام/الاشتراك؟ — الأسئلة الخارجية (العمر، أسئلة عامة…)
 // ترجع رد جاهز بدون ما نرسل بيانات المنشأة للنموذج، فما ينصرف توكن كامل (الفحص نفسه ~100 توكن)
 export type Topic = 'business' | 'greeting' | 'other'
@@ -14,7 +15,7 @@ other = أي شي ثاني: أسئلة عامة أو شخصية أو معلوم�
 رد بكلمة وحدة فقط: business أو greeting أو other.`
 
 /** يرجع business لو الفحص فشل (ما نمنع المستخدم بسبب عطل) */
-export async function classifyTopic(message: string, lastAssistantReply?: string): Promise<Topic> {
+export async function classifyTopic(message: string, lastAssistantReply?: string, orgId?: string | null): Promise<Topic> {
   try {
     const res = await fetchExternal('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -23,6 +24,7 @@ export async function classifyTopic(message: string, lastAssistantReply?: string
     })
     if (!res.ok) return 'business'
     const j = await res.json() as any
+    await logAiUsage({ orgId, feature: 'assistant_topic', model: 'claude-haiku-4-5-20251001', usage: j.usage })
     const t = String(j.content?.[0]?.text || '').trim().toLowerCase()
     return t.startsWith('other') ? 'other' : t.startsWith('greeting') ? 'greeting' : 'business'
   } catch {

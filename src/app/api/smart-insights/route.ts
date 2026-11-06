@@ -1,4 +1,5 @@
 import { reportAiFailure, aiFailureKind } from '@/lib/aiAlert'
+import { logAiUsage } from '@/lib/aiUsage'
 import { guard, limit } from '@/lib/rateLimit'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
@@ -151,6 +152,7 @@ ${branchSummary ? `═══ مقارنة الفروع ═══\n${branchSummar
   })
 
   const data = await response.json()
+  if (response.ok) await logAiUsage({ orgId: org_id, feature: 'smart_insights', model: 'claude-haiku-4-5-20251001', usage: data.usage })
   if (!response.ok) {
     console.error('anthropic api error:', JSON.stringify(data))
     await reportAiFailure(response.status, JSON.stringify(data), 'الرؤى الذكية')

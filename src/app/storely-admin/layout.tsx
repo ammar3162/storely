@@ -4,7 +4,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { PlayCircle, Wallet, Mail, PackagePlus,
   LayoutDashboard, Users, TrendingUp, Inbox, Truck, Handshake, Bell, Megaphone,
   Activity, MessageCircle, HardDrive, ScrollText, FileCheck, ShieldAlert,
-  Package, UserCog, Settings, LogOut, Menu, X, MessageCircleQuestion, HeartPulse,
+  Package, UserCog, Settings, LogOut, Menu, X, MessageCircleQuestion, HeartPulse, Sparkles,
 } from 'lucide-react'
 import AdminLogin from './_admin/Login'
 import { A, ADMIN_CSS, AdminContext, adminKey, type AdminInfo } from './_admin/kit'
@@ -18,6 +18,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
     { href: '/storely-admin/customers', label: 'العملاء', icon: Users, perm: 'manage_users' },
     { href: '/storely-admin/account-health', label: 'صحة الحسابات', icon: HeartPulse, perm: 'manage_users' },
     { href: '/storely-admin/metrics', label: 'مقاييس الإيراد', icon: TrendingUp, perm: 'view_metrics' },
+    { href: '/storely-admin/ai-usage', label: 'تكلفة الذكاء الاصطناعي', icon: Sparkles, perm: 'view_metrics' },
   ] },
   { title: 'المبيعات والشراكات', items: [
     { href: '/storely-admin/addon-requests', label: 'طلبات الإضافات والترقية', icon: PackagePlus, perm: 'manage_users' },

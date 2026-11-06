@@ -1,5 +1,6 @@
 // قراءة فاتورة شراء (صورة أو PDF) بالذكاء الاصطناعي — مكان واحد لصفحة المشتريات ووكيل الفواتير
 import { reportAiFailure, aiFailureKind } from '@/lib/aiAlert'
+import { logAiUsage, type AiFeature } from '@/lib/aiUsage'
 import { normalizeVat, isValidVat, normalizeInvoiceNumber } from '@/lib/taxInvoice'
 import { fetchExternal } from '@/lib/fetchExternal'
 
@@ -34,7 +35,7 @@ const PROMPT = `أنت تحلل فاتورة شراء (صورة أو ملف PDF)
 
 لو الصورة مو واضحة أو مو فاتورة أصلاً، أرجع: {"error": "لم يتم التعرف على فاتورة واضحة بالصورة"}`
 
-export async function readInvoice(image: string, type: string): Promise<OcrResult> {
+export async function readInvoice(image: string, type: string, meta: { orgId?: string | null; feature?: AiFeature } = {}): Promise<OcrResult> {
   const res = await fetchExternal('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -66,6 +67,7 @@ export async function readInvoice(image: string, type: string): Promise<OcrResul
   }
 
   const data = await res.json()
+  await logAiUsage({ orgId: meta.orgId, feature: meta.feature || 'invoice_scan', model: 'claude-sonnet-4-6', usage: data.usage })
   const text = data.content?.[0]?.text || '{}'
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) return { ok: false, status: 422, error: 'تعذر استخراج بيانات من الصورة' }

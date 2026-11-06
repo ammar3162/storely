@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     const type = (OCR_TYPES as readonly string[]).includes(mediaType) ? mediaType : 'image/jpeg'
     const limited = await guard([limit('aiScanOrg', org_id)], db)
     if (limited) return limited
-    const ocr = await readInvoice(image, type)
+    const ocr = await readInvoice(image, type, { orgId: org_id, feature: 'invoice_agent' })
     if (!ocr.ok) return NextResponse.json({ error: ocr.error, ...(ocr.unavailable ? { unavailable: true } : {}) }, { status: ocr.status })
     const d = ocr.data
     const rawItems = Array.isArray(d.items) && d.items.length ? d.items
