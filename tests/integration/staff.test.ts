@@ -261,6 +261,45 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
     })
   })
 
+  describe('owner edits a shift', () => {
+    it('changes name and times, switches to 24h, validates input, and refuses branch managers', async () => {
+      const shifts = await import('@/app/api/shifts/route')
+      const created = await call(shifts.POST, 'POST', '/api/shifts', { org_id: orgId, branch_id: branchA, name: 'صباحي', start_time: '08:00', end_time: '16:00', is_24h: false })
+      expect(created.status).toBe(200)
+      const id = created.json.shift.id
+      const row = async () => (await db.from('shifts').select('name,start_time,end_time,is_24h').eq('id', id).single()).data as any
+
+      // تعديل الاسم والأوقات (شفت ليلي يعدّي منتصف الليل)
+      const edited = await call(shifts.PATCH, 'PATCH', '/api/shifts', { id, name: '  مسائي  ', start_time: '18:00', end_time: '02:00', is_24h: false })
+      expect(edited.status).toBe(200)
+      expect(await row()).toMatchObject({ name: 'مسائي', is_24h: false })
+      expect(String((await row()).start_time).slice(0, 5)).toBe('18:00')
+      expect(String((await row()).end_time).slice(0, 5)).toBe('02:00')
+
+      // دوام 24 ساعة يثبّت الأوقات
+      expect((await call(shifts.PATCH, 'PATCH', '/api/shifts', { id, name: 'مفتوح', is_24h: true })).status).toBe(200)
+      expect(await row()).toMatchObject({ name: 'مفتوح', is_24h: true })
+      expect(String((await row()).end_time).slice(0, 5)).toBe('23:59')
+
+      // مدخلات غلط ما تحفظ شي
+      expect((await call(shifts.PATCH, 'PATCH', '/api/shifts', { id, name: '', start_time: '08:00', end_time: '16:00' })).status).toBe(400)
+      expect((await call(shifts.PATCH, 'PATCH', '/api/shifts', { id, name: 'x', start_time: '25:00', end_time: '16:00' })).status).toBe(400)
+      expect((await call(shifts.PATCH, 'PATCH', '/api/shifts', { id, name: 'x', start_time: '08:00', end_time: '08:00' })).status).toBe(400)
+      expect((await call(shifts.PATCH, 'PATCH', '/api/shifts', { id: crypto.randomUUID(), name: 'x', start_time: '08:00', end_time: '16:00' })).status).toBe(404)
+      expect((await row()).name).toBe('مفتوح')
+
+      // مدير الفرع (حتى مع صلاحية الحضور) ما يعدّل الشفتات
+      const ownerAuth = auth.current
+      auth.current = { userId, orgId, role: 'manager', branchId: branchA, permissions: { attendance: true } }
+      try {
+        expect((await call(shifts.PATCH, 'PATCH', '/api/shifts', { id, name: 'مدير', start_time: '09:00', end_time: '17:00' })).status).toBe(403)
+      } finally { auth.current = ownerAuth }
+      expect((await row()).name).toBe('مفتوح')
+
+      await call(shifts.DELETE, 'DELETE', `/api/shifts?id=${id}`)
+    })
+  })
+
   describe('cashier closing with delivery apps', () => {
     it('cashier picks the apps and enters each amount, expected cash drops by the delivery, new apps are remembered, and edits recalculate', async () => {
       process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'

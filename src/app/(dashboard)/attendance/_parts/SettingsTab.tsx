@@ -3,10 +3,11 @@ import NumberInput from '@/components/NumberInput'
 import { colors, card, btnPrimary, inp } from '@/lib/ds'
 import StaffDaysOffEditor from '@/components/StaffDaysOffEditor'
 import StaffDayShiftsEditor from '@/components/StaffDayShiftsEditor'
+import { Pencil } from 'lucide-react'
 import type { AttendancePage } from './useAttendance'
 
 export default function SettingsTab({ m }: { m: AttendancePage }) {
-  const { tab, shifts, newShiftName, setNewShiftName, newShiftStart, setNewShiftStart, newShiftEnd, setNewShiftEnd, newShift24h, setNewShift24h, savingShift, staffList, late, setLate, savingLate, ot, setOt, savingOt, saveOvertime, patchOff, addShift, deleteShift, assignShift, saveLate } = m
+  const { editShift, setEditShift, savingEditShift, startEditShift, saveEditShift, tab, shifts, newShiftName, setNewShiftName, newShiftStart, setNewShiftStart, newShiftEnd, setNewShiftEnd, newShift24h, setNewShift24h, savingShift, staffList, late, setLate, savingLate, ot, setOt, savingOt, saveOvertime, patchOff, addShift, deleteShift, assignShift, saveLate } = m
   return (
     <>
       {tab === 'settings' && (() => {
@@ -62,12 +63,54 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 10, marginBottom: 14 }}>
                 {shifts.map((sh: any) => {
                   const n = staffOn(sh.id)
+                  if (editShift && editShift.id === sh.id) {
+                    const es = editShift
+                    const eDur = durMin(es.start, es.end)
+                    return (
+                      <div key={sh.id} style={{ border: `1.5px solid ${colors.primary}`, borderRadius: 14, padding: 14, background: colors.surface }}>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10 }}>تعديل الشفت</div>
+                        <label style={fieldLabel}>اسم الشفت</label>
+                        <input value={es.name} onChange={e => setEditShift({ ...es, name: e.target.value })} style={inp()} />
+                        {!es.is24h && (
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
+                            <div>
+                              <label style={fieldLabel}>يبدأ الساعة</label>
+                              <input type="time" value={es.start} onChange={e => setEditShift({ ...es, start: e.target.value })} style={inp()} />
+                            </div>
+                            <div>
+                              <label style={fieldLabel}>ينتهي الساعة</label>
+                              <input type="time" value={es.end} onChange={e => setEditShift({ ...es, end: e.target.value })} style={inp()} />
+                            </div>
+                          </div>
+                        )}
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: colors.text2, cursor: 'pointer', fontWeight: 600, marginTop: 10 }}>
+                          <input type="checkbox" checked={es.is24h} onChange={e => setEditShift({ ...es, is24h: e.target.checked })} style={{ width: 16, height: 16, accentColor: colors.primary }} />
+                          دوام 24 ساعة
+                        </label>
+                        {!es.is24h && eDur > 0 && (
+                          <div style={{ fontSize: 12, color: colors.text3, marginTop: 8 }}>من {t12(es.start)} إلى {t12(es.end)} · {durLabel(eDur)}{crossesMidnight(es.start, es.end) ? ' · ينتهي اليوم الثاني' : ''}</div>
+                        )}
+                        <div style={{ fontSize: 11.5, color: colors.text3, background: colors.bg, borderRadius: 8, padding: '8px 10px', marginTop: 10, lineHeight: 1.7 }}>
+                          التعديل يطبّق من الحضور الجاي{n ? ` على ${n} موظف` : ''}. الحضور والتأخير اللي انسجّل قبل ما يتغيّر.
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                          <button onClick={saveEditShift} disabled={savingEditShift} style={{ ...btnPrimary, flex: 2, padding: '9px 12px' }}>{savingEditShift ? 'جاري الحفظ...' : 'حفظ التعديل'}</button>
+                          <button onClick={() => setEditShift(null)} disabled={savingEditShift}
+                            style={{ flex: 1, padding: '9px 12px', borderRadius: 10, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text2, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
+                        </div>
+                      </div>
+                    )
+                  }
                   return (
                     <div key={sh.id} style={{ border: `1px solid ${colors.border}`, borderRadius: 14, padding: '14px 14px 12px', background: colors.surface, position: 'relative' as const }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                         <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>{sh.name}</div>
-                        <button onClick={() => deleteShift(sh.id)} aria-label={`حذف ${sh.name}`} title="حذف الشفت"
-                          style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text4, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button onClick={() => startEditShift(sh)} aria-label={`تعديل ${sh.name}`} title="تعديل الشفت"
+                            style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text3, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Pencil size={13} strokeWidth={2.25}/></button>
+                          <button onClick={() => deleteShift(sh.id)} aria-label={`حذف ${sh.name}`} title="حذف الشفت"
+                            style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text4, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                        </div>
                       </div>
                       {sh.is_24h ? (
                         <div style={{ fontSize: 13, color: colors.text2, marginTop: 6, fontWeight: 600 }}>دوام 24 ساعة</div>

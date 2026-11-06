@@ -316,6 +316,26 @@ export function useAttendance() {
     loadShifts(orgId, branchId)
   }
 
+  // تعديل شفت موجود — نموذج داخل بطاقة الشفت نفسها
+  const [editShift, setEditShift] = useState<{ id: string; name: string; start: string; end: string; is24h: boolean } | null>(null)
+  const [savingEditShift, setSavingEditShift] = useState(false)
+
+  function startEditShift(sh: any) {
+    setEditShift({ id: sh.id, name: sh.name || '', start: String(sh.start_time || '08:00').slice(0, 5), end: String(sh.end_time || '16:00').slice(0, 5), is24h: !!sh.is_24h })
+  }
+
+  async function saveEditShift() {
+    if (!editShift) return
+    if (!editShift.name.trim()) { toast('أدخل اسم الشفت', 'warning'); return }
+    setSavingEditShift(true)
+    const j = await api.patch('/api/shifts', { id: editShift.id, name: editShift.name.trim(), start_time: editShift.start, end_time: editShift.end, is_24h: editShift.is24h })
+    setSavingEditShift(false)
+    if (!j.success) { toast(j.error || 'فشل الحفظ', 'error'); return }
+    setEditShift(null)
+    toast('تم تعديل الشفت')
+    loadShifts(orgId, branchId)
+  }
+
   async function deleteShift(id: string) {
     if (!(await confirmDialog({ title: 'حذف الشفت', message: 'حذف هذا الشفت؟ الموظفين المرتبطين فيه راح يفكّون منه تلقائياً' }))) return
     const j = await api.del('/api/shifts', { id })
@@ -352,7 +372,7 @@ export function useAttendance() {
     s.startsWith('حاضر') ? colors.primary : s.startsWith('انصرف') ? colors.info : s.startsWith('إجازة') ? '#1d4ed8' : colors.text4
   const statusBg = (s: string) =>
     s.startsWith('حاضر') ? colors.primaryLight : s.startsWith('انصرف') ? colors.infoLight : s.startsWith('إجازة') ? '#eff6ff' : colors.bg
-  return { tab, setTab, orgId, setOrgId, orgName, setOrgName, isOwner, setIsOwner, waiving, setWaiving, checkoutFor, setCheckoutFor, coTime, setCoTime, coExcused, setCoExcused, savingCo, setSavingCo, locked, setLocked, branchId, setBranchId, periodMode, setPeriodMode, date, setDate, rangeFrom, setRangeFrom, rangeTo, setRangeTo, staffFilter, setStaffFilter, rows, setRows, rangeRows, setRangeRows, loading, setLoading, exporting, setExporting, monthStats, setMonthStats, shifts, setShifts, newShiftName, setNewShiftName, newShiftStart, setNewShiftStart, newShiftEnd, setNewShiftEnd, newShift24h, setNewShift24h, savingShift, setSavingShift, staffList, setStaffList, late, setLate, savingLate, setSavingLate, ot, setOt, savingOt, setSavingOt, presentCount, absentCount, offCount, statusColor, statusBg, init, loadMonthOverview, loadRange, exportRangePdf, load, toggleWaive, openManualCheckout, submitManualCheckout, checkOutCell, penaltyCell, loadShifts, loadStaff, loadOvertime, saveOvertime, patchOff, addShift, deleteShift, assignShift, saveLate }
+  return { editShift, setEditShift, savingEditShift, startEditShift, saveEditShift, tab, setTab, orgId, setOrgId, orgName, setOrgName, isOwner, setIsOwner, waiving, setWaiving, checkoutFor, setCheckoutFor, coTime, setCoTime, coExcused, setCoExcused, savingCo, setSavingCo, locked, setLocked, branchId, setBranchId, periodMode, setPeriodMode, date, setDate, rangeFrom, setRangeFrom, rangeTo, setRangeTo, staffFilter, setStaffFilter, rows, setRows, rangeRows, setRangeRows, loading, setLoading, exporting, setExporting, monthStats, setMonthStats, shifts, setShifts, newShiftName, setNewShiftName, newShiftStart, setNewShiftStart, newShiftEnd, setNewShiftEnd, newShift24h, setNewShift24h, savingShift, setSavingShift, staffList, setStaffList, late, setLate, savingLate, setSavingLate, ot, setOt, savingOt, setSavingOt, presentCount, absentCount, offCount, statusColor, statusBg, init, loadMonthOverview, loadRange, exportRangePdf, load, toggleWaive, openManualCheckout, submitManualCheckout, checkOutCell, penaltyCell, loadShifts, loadStaff, loadOvertime, saveOvertime, patchOff, addShift, deleteShift, assignShift, saveLate }
 }
 
 export type AttendancePage = ReturnType<typeof useAttendance>
