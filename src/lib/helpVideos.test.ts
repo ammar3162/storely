@@ -32,8 +32,9 @@ describe('help pages cover every page', () => {
   })
   it('every dashboard and staff page has an entry', async () => {
     const fs = await import('fs')
-    const dash = fs.readdirSync('src/app/(dashboard)', { withFileTypes: true }).filter(d => d.isDirectory()).map(d => '/' + d.name)
-    const staff = fs.readdirSync('src/app/staff', { withFileTypes: true }).filter(d => d.isDirectory() && !d.name.startsWith('qa-') && d.name !== 'choose').map(d => '/staff/' + d.name)
+    // المجلدات اللي تبدأ بـ _ مجلدات خاصة في Next.js (أجزاء الصفحة) — مو صفحات
+    const dash = fs.readdirSync('src/app/(dashboard)', { withFileTypes: true }).filter(d => d.isDirectory() && !d.name.startsWith('_')).map(d => '/' + d.name)
+    const staff = fs.readdirSync('src/app/staff', { withFileTypes: true }).filter(d => d.isDirectory() && !d.name.startsWith('_') && !d.name.startsWith('qa-') && d.name !== 'choose').map(d => '/staff/' + d.name)
     const keys = new Set(HELP_PAGES.map(p => p.key))
     expect([...dash, ...staff].filter(k => !keys.has(k))).toEqual([])
   })
