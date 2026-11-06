@@ -1,0 +1,89 @@
+'use client'
+import VatRegistration from '@/components/VatRegistration'
+import PlanUpgrade from '@/components/PlanUpgrade'
+import { colors, radius, font, btnPrimary, inp } from '@/lib/ds'
+import { lbl, COUNTRY_CODES } from './constants'
+import type { SettingsState } from './useSettings'
+
+export default function OrgTab({ m }: { m: SettingsState }) {
+  const { saving, orgId, maxBranches, activeTab, countryCode, setCountryCode, logoUrl, logoUploading, planName, subEndsAt, planKey, form, setForm, planLabel, handleSave, uploadLogo } = m
+  return (
+    <>
+          {activeTab==='org'&&(
+            <form onSubmit={handleSave}>
+              <div style={{display:'flex',flexDirection:'column' as const,gap:18}}>
+
+                {/* هوية المنشأة — شعار مدمج + اسم بنفس الصف */}
+                <div>
+                  <label style={lbl}>هوية المنشأة</label>
+                  <div style={{display:'flex',alignItems:'center',gap:14,background:colors.bg,border:`1px solid ${colors.border}`,borderRadius:radius.md,padding:'14px'}}>
+                    <input type="file" accept="image/*" id="logoInput" style={{display:'none'}}
+                      onChange={e=>{ const f=e.target.files?.[0]; if(f) uploadLogo(f) }}/>
+                    <label htmlFor="logoInput" style={{cursor:'pointer',flexShrink:0}}>
+                      <div style={{position:'relative',width:64,height:64,borderRadius:'50%',overflow:'hidden',background:logoUrl?'transparent':'linear-gradient(135deg,#f0fdfa,#ccfbf1)',border:`2px solid ${colors.primaryBorder}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                        {logoUrl ? (
+                          <img src={logoUrl} alt="شعار" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                        ) : (
+                          <span style={{fontSize:24}}>🏢</span>
+                        )}
+                        {logoUploading && (
+                          <div style={{position:'absolute',inset:0,background:'rgba(255,255,255,.85)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>⏳</div>
+                        )}
+                        <div style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(0,0,0,.55)',color:'white',fontSize:9,fontWeight:700,textAlign:'center',padding:'3px 0'}}>
+                          تغيير
+                        </div>
+                      </div>
+                    </label>
+                    <div style={{flex:1,minWidth:0}}>
+                      <label style={{...lbl,marginBottom:4}}>اسم المؤسسة</label>
+                      <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp()} placeholder="مثال: مطعم الأصيل"/>
+                    </div>
+                  </div>
+                  <div style={{fontSize:11,color:colors.text4,marginTop:6}}>PNG أو JPG · يُفضّل مربع الشكل</div>
+                </div>
+                <div>
+                  <label style={lbl}>رقم واتساب التنبيهات</label>
+                  <div style={{display:'flex',borderRadius:12,overflow:'hidden',border:'1.5px solid #e2e8f0',background:'#f8fafc'}}>
+                    <select value={countryCode} onChange={e=>setCountryCode(e.target.value)}
+                      style={{background:'transparent',color:'#1e293b',border:'none',borderLeft:'1.5px solid #e2e8f0',padding:'12px 8px',fontSize:13,fontFamily:'inherit',outline:'none',flexShrink:0,cursor:'pointer',direction:'ltr',minWidth:130}}>
+                      {COUNTRY_CODES.map(c=>(
+                        <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
+                      ))}
+                    </select>
+                    <input value={form.whatsapp_number} onChange={e=>setForm({...form,whatsapp_number:e.target.value})}
+                      placeholder={countryCode==='+966'?'5xxxxxxxx':countryCode==='+20'?'1xxxxxxxxx':'xxxxxxxxxx'} dir="ltr"
+                      style={{background:'transparent',border:'none',padding:'12px',fontSize:14,color:'#1e293b',flex:1,outline:'none',fontFamily:'inherit'}}/>
+                  </div>
+                  <div style={{fontSize:11,color:colors.text4,marginTop:6,display:'flex',alignItems:'center',gap:4}}><span>💡</span> يوصله التقرير الصباحي وتنبيهات النظام</div>
+                </div>
+
+                {orgId&&<VatRegistration orgId={orgId}/>}
+
+                {/* تفاصيل الاشتراك */}
+                <div>
+                  <label style={lbl}>الاشتراك</label>
+                  <div style={{background:colors.bg,border:`1px solid ${colors.border}`,borderRadius:radius.md,padding:'14px 16px'}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:subEndsAt?10:0}}>
+                      <span style={{fontSize:font.sm,color:colors.text3}}>الباقة الحالية</span>
+                      <span style={{fontSize:font.sm,fontWeight:800,color:colors.primary}}>{planName||planLabel}</span>
+                    </div>
+                    {subEndsAt && (
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:10,borderTop:`1px solid ${colors.border}`}}>
+                        <span style={{fontSize:font.sm,color:colors.text3}}>ينتهي في</span>
+                        <span style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{new Date(subEndsAt).toLocaleDateString('ar-SA', {numberingSystem:'latn',year:'numeric',month:'long',day:'numeric'})}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {orgId && planKey && <PlanUpgrade orgId={orgId} plan={planKey} maxBranches={maxBranches}/>}
+                </div>
+
+              </div>
+              <button type="submit" disabled={saving} style={{...btnPrimary,width:'100%',padding:'13px',marginTop:20,opacity:saving?0.7:1,cursor:saving?'not-allowed':'pointer'}}>
+                {saving?'⏳ جاري الحفظ...':'💾 حفظ البيانات'}
+              </button>
+            </form>
+          )}
+    </>
+  )
+}
