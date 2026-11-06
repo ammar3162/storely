@@ -58,6 +58,41 @@ export async function POST(req: Request) {
   }
 }
 
+// تعديل شفت موجود (الاسم والأوقات أو دوام 24 ساعة) — المالك فقط، مثل الإضافة والحذف.
+// الحضور اللي انسجّل قبل التعديل ما يتغيّر: التأخير والغرامة ينحفظون وقت الحضور، والشفت المفتوح يكمّل على أوقاته القديمة.
+export async function PATCH(req: Request) {
+  try {
+    const { id, name, start_time, end_time, is_24h } = await req.json()
+    if (!id) return NextResponse.json({ error: 'id مطلوب' }, { status: 400 })
+    const cleanName = typeof name === 'string' ? name.trim() : ''
+    if (!cleanName) return NextResponse.json({ error: 'اكتب اسم الشفت' }, { status: 400 })
+    const isTime = (t: unknown) => typeof t === 'string' && /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(t)
+    if (!is_24h && (!isTime(start_time) || !isTime(end_time))) return NextResponse.json({ error: 'حدد وقت البداية والنهاية' }, { status: 400 })
+    if (!is_24h && String(start_time).slice(0, 5) === String(end_time).slice(0, 5)) return NextResponse.json({ error: 'وقت النهاية لازم يختلف عن البداية' }, { status: 400 })
+
+    const supabase = sb()
+    const { data: existing } = await supabase.from('shifts').select('org_id').eq('id', id).single()
+    if (!existing) return NextResponse.json({ error: 'غير موجود' }, { status: 404 })
+
+    const access = await verifyOrgAccess((existing as any).org_id)
+    if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
+    if (!managerMay(access as any, 'attendance', 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على هالقسم — كلّم مالك المنشأة' }, { status: 403 })
+    if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
+
+    const { data, error } = await supabase.from('shifts').update({
+      name: cleanName,
+      start_time: is_24h ? '00:00' : start_time,
+      end_time: is_24h ? '23:59' : end_time,
+      is_24h: !!is_24h,
+    } as any).eq('id', id).eq('org_id', (existing as any).org_id).select().single()
+
+    if (error) return NextResponse.json({ error: 'حدث خطأ أثناء الحفظ' }, { status: 500 })
+    return NextResponse.json({ success: true, shift: data })
+  } catch {
+    return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+  }
+}
+
 export async function DELETE(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
