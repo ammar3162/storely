@@ -1,6 +1,6 @@
 'use client'
 import { Suspense } from 'react'
-import { Send, Boxes, ShoppingCart } from 'lucide-react'
+import { Send, Boxes, ShoppingCart, Lock, BarChart3 } from 'lucide-react'
 import { T } from './_parts/strings'
 import { useStaffDispense, type PageVals } from './_parts/useStaffDispense'
 import AccountGate from './_parts/AccountGate'
@@ -22,7 +22,7 @@ function StaffPageInner() {
   if (!hasAnyPermission) {
     return (
       <div style={{minHeight:'100vh',display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',background:'#f5f5f4',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:20,textAlign:'center' as const}}>
-        <div style={{fontSize:48,marginBottom:16}}>🔒</div>
+        <div style={{display:'flex',justifyContent:'center',marginBottom:16,color:'#5f5e5a'}}><Lock size={44} strokeWidth={1.5}/></div>
         <div style={{fontSize:16,fontWeight:800,color:'#1c1c1a',marginBottom:8}}>{T('noPerm',lang)}</div>
         <div style={{fontSize:13,color:'#5f5e5a',marginBottom:20}}>{T('noPermSub',lang)}</div>
         <button onClick={()=>{localStorage.removeItem('staff_session');localStorage.removeItem('staff_token');router.push('/staff')}}
@@ -88,7 +88,7 @@ function StaffPageInner() {
       {/* ═══ PURCHASES TAB ═══ */}
       {tab==='purchases' && (
         <div style={{padding:'60px 20px',textAlign:'center',animation:'fadeIn .3s'}}>
-          <div style={{fontSize:64,marginBottom:16}}>🛒</div>
+          <div style={{display:'flex',justifyContent:'center',marginBottom:16,color:'#029FA2'}}><ShoppingCart size={60} strokeWidth={1.5}/></div>
           <div style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:8}}>{T('purchasesTitle',lang)}</div>
           <div style={{fontSize:14,color:'#64748b',marginBottom:28,maxWidth:300,margin:'0 auto 28px'}}>{T('purchasesSub',lang)}</div>
           <button onClick={()=>router.push('/staff/purchases')}
@@ -101,7 +101,7 @@ function StaffPageInner() {
       {/* ═══ REPORTS TAB ═══ */}
       {tab==='reports' && (
         <div style={{padding:'60px 20px',textAlign:'center',animation:'fadeIn .3s'}}>
-          <div style={{fontSize:64,marginBottom:16}}>📊</div>
+          <div style={{display:'flex',justifyContent:'center',marginBottom:16,color:'#029FA2'}}><BarChart3 size={60} strokeWidth={1.5}/></div>
           <div style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:8}}>{T('reports',lang)}</div>
           <div style={{fontSize:14,color:'#64748b'}}>{T('soon',lang)}</div>
         </div>

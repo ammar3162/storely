@@ -16,7 +16,7 @@ export const UI: Record<string,Record<string,string>> = {
   qty:           {ar:'الكمية المراد صرفها',en:'Quantity to dispense',ur:'تقسیم کی مقدار',hi:'वितरित करने की मात्रा',tl:'Dami',bn:'পরিমাণ',fr:'Quantité'},
   confirm:       {ar:'✓ تسجيل الصرف',en:'✓ Confirm',ur:'✓ تصدیق',hi:'✓ पुष्टि करें',tl:'✓ Kumpirmahin',bn:'✓ নিশ্চিত করুন',fr:'✓ Confirmer'},
   saving:        {ar:'جاري الحفظ...',en:'Saving...',ur:'محفوظ ہو رہا ہے...',hi:'सहेजा जा रहा है...',tl:'Sine-save...',bn:'সংরক্ষণ হচ্ছে...',fr:'Enregistrement...'},
-  success:       {ar:'✅ تم الصرف بنجاح',en:'✅ Dispensed!',ur:'✅ کامیاب',hi:'✅ सफल',tl:'✅ Matagumpay',bn:'✅ সফল',fr:'✅ Succès'},
+  success:       {ar:'تم الصرف بنجاح',en:'Dispensed!',ur:'کامیاب',hi:'सफल',tl:'Matagumpay',bn:'সফল',fr:'Succès'},
   tooMuch:       {ar:'الكمية أكبر من المتاح',en:'Exceeds available',ur:'مقدار زیادہ ہے',hi:'मात्रा अधिक है',tl:'Sobra sa available',bn:'পরিমাণ বেশি',fr:'Quantité dépassée'},
   error:         {ar:'حدث خطأ، حاول مرة أخرى',en:'Error, try again',ur:'خرابی، دوبارہ کوشش کریں',hi:'त्रुटि, फिर से प्रयास करें',tl:'May error',bn:'ত্রুটি হয়েছে',fr:'Erreur, réessayez'},
   netError:      {ar:'تعذر الاتصال',en:'Connection failed',ur:'کنکشن نہیں ہو سکا',hi:'कनेक्शन विफल',tl:'Hindi makakonekta',bn:'সংযোগ ব্যর্থ',fr:'Connexion impossible'},
@@ -81,7 +81,7 @@ export const UI: Record<string,Record<string,string>> = {
   w_lost:        {ar:'سرقة/فقدان',en:'Theft/lost',ur:'چوری/گم',hi:'चोरी/गुम',tl:'Nanakaw/nawala',bn:'চুরি/হারানো',fr:'Vol/perte'},
   w_prep:        {ar:'خطأ تحضير',en:'Preparation error',ur:'تیاری میں غلطی',hi:'तैयारी में गलती',tl:'Mali sa paghahanda',bn:'প্রস্তুতিতে ভুল',fr:'Erreur de préparation'},
   w_other:       {ar:'أخرى',en:'Other',ur:'دیگر',hi:'अन्य',tl:'Iba pa',bn:'অন্যান্য',fr:'Autre'},
-  translating:   {ar:'⏳ جاري تجهيز الترجمة...',en:'⏳ Preparing translation...',ur:'⏳ ترجمہ تیار ہو رہا ہے...',hi:'⏳ अनुवाद तैयार हो रहा है...',tl:'⏳ Inihahanda...',bn:'⏳ অনুবাদ হচ্ছে...',fr:'⏳ Traduction en cours...'},
+  translating:   {ar:'جاري تجهيز الترجمة...',en:'Preparing translation...',ur:'ترجمہ تیار ہو رہا ہے...',hi:'अनुवाद तैयार हो रहा है...',tl:'Inihahanda...',bn:'অনুবাদ হচ্ছে...',fr:'Traduction en cours...'},
 }
 
 export const T = (key: string, lang: string, vars?: Record<string, string | number>) => {

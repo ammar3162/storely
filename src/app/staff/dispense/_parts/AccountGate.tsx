@@ -1,4 +1,5 @@
 'use client'
+import { Lock } from 'lucide-react'
 import { T } from './strings'
 import type { StaffDispense, PageVals } from './useStaffDispense'
 
@@ -25,7 +26,7 @@ export default function AccountGate({ m, v }: { m: StaffDispense; v: PageVals })
       {needsReauth && (
         <div style={{position:'fixed',inset:0,zIndex:5000,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,animation:'fadeIn .2s ease'}}>
           <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:340,padding:28,textAlign:'center' as const,animation:'slideUp .3s ease'}}>
-            <div style={{fontSize:40,marginBottom:10}}>🔒</div>
+            <div style={{display:'flex',justifyContent:'center',marginBottom:10,color:'#64748b'}}><Lock size={38} strokeWidth={1.5}/></div>
             <div style={{fontSize:15,fontWeight:800,color:'#0f172a',marginBottom:4}}>{T('sessionEnded',lang)}</div>
             <div style={{fontSize:12,color:'#64748b',marginBottom:18}}>{T('enterPin',lang,{name:session?.name||''})}</div>
             <input
