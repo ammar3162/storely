@@ -87,7 +87,7 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                     const extraStaff = Math.max(0, staff - 6 * branchCount) * CUSTOM_STAFF_STEP
                     const better = picked.length ? NEW_PLANS
                       .map(k => ({ k, total: planPriceFor(k, null, branchCount).monthly + signupAddonsMonthly(k, picked as unknown as string[], branchCount) + extraStaff }))
-                      .filter(x => x.total <= monthly).sort((a, b) => a.total - b.total || NEW_PLANS.indexOf(b.k) - NEW_PLANS.indexOf(a.k))[0] : undefined
+                      .filter(x => x.total < monthly).sort((a, b) => a.total - b.total || NEW_PLANS.indexOf(b.k) - NEW_PLANS.indexOf(a.k))[0] : undefined
                     return (
                       <div style={{border:'1.5px solid #e5e7eb',borderRadius:12,padding:'12px 14px',display:'flex',flexDirection:'column',gap:8}}>
                         <div style={{fontSize:14,fontWeight:800,color:'#111827'}}>{lang==='ar'?'اختر المزايا':'Pick your features'}</div>
@@ -117,7 +117,7 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                           <button type="button" onClick={()=>{ setPlanChoice(better.k); setSignupAddons(picked.filter(s => signupAddonsFor(better.k).includes(s as any))) }}
                             style={{padding:'10px 12px',borderRadius:10,border:'1.5px solid #029FA2',background:'#f0fdfa',color:'#0f766e',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',textAlign:'right',lineHeight:1.7}}>
                             {lang==='ar'
-                              ? `باقة «${PLAN_PRICING[better.k].label}» تعطيك نفس اختيارك${better.total < monthly ? ` بـ ${cur(better.total)} ⃁ (توفّر ${cur(monthly - better.total)} ⃁)` : ' بنفس السعر وفيها مزايا أكثر'} — اضغط للتحويل`
+                              ? `باقة «${PLAN_PRICING[better.k].label}» تعطيك نفس اختيارك بـ ${cur(better.total)} ⃁ (توفّر ${cur(monthly - better.total)} ⃁) — اضغط للتحويل`
                               : `The ${better.k} plan covers the same for ${cur(better.total)} SAR — tap to switch`}
                           </button>
                         )}
@@ -142,7 +142,7 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                     // باقة أعلى تعطيه نفس اختياره بسعر أقل؟ (مثلاً الأساسية + كاشير لفرعين أغلى من التشغيل)
                     const better = (higherPlans(pc) as NewPlanKey[])
                       .map(k => ({ k, total: planPriceFor(k, null, branchCount).monthly + signupAddonsMonthly(k, signupAddons, branchCount) }))
-                      .filter(x => x.total <= monthly).sort((a, b) => a.total - b.total)[0]
+                      .filter(x => x.total < monthly).sort((a, b) => a.total - b.total || NEW_PLANS.indexOf(b.k) - NEW_PLANS.indexOf(a.k))[0]
                     return (
                       <div style={{border:'1.5px solid #e5e7eb',borderRadius:12,padding:'12px 14px',display:'flex',flexDirection:'column',gap:8}}>
                         <div style={{fontSize:14,fontWeight:800,color:'#111827'}}>{lang==='ar'?'تبي تضيف لباقتك؟':'Add to your plan?'}</div>
@@ -163,7 +163,7 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                           <button type="button" onClick={()=>setPlanChoice(better.k)}
                             style={{padding:'10px 12px',borderRadius:10,border:'1.5px solid #029FA2',background:'#f0fdfa',color:'#0f766e',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',textAlign:'right',lineHeight:1.7}}>
                             {lang==='ar'
-                              ? `باقة «${PLAN_PRICING[better.k].label}» تعطيك نفس اختيارك بـ ${billing==='yearly'?yearlyOf(better.total):better.total} ⃁${better.total < monthly ? ` (توفّر ${billing==='yearly'?yearlyOf(monthly-better.total):monthly-better.total} ⃁)` : ''} — اضغط للتحويل`
+                              ? `باقة «${PLAN_PRICING[better.k].label}» تعطيك نفس اختيارك بـ ${billing==='yearly'?yearlyOf(better.total):better.total} ⃁ (توفّر ${billing==='yearly'?yearlyOf(monthly-better.total):monthly-better.total} ⃁) — اضغط للتحويل`
                               : `The ${better.k === 'ops' ? 'Operations' : 'Complete'} plan gives you the same for ${billing==='yearly'?yearlyOf(better.total):better.total} SAR — tap to switch`}
                           </button>
                         )}

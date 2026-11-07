@@ -69,11 +69,11 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
   const picked = CUSTOM_MODULE_ORDER.filter(s => mods.includes(s))
   const buildTotal = customMonthly(Object.fromEntries(picked.map(s => [s, CUSTOM_MODULES[s].perBranch ? branches : 1])), branches, staff)
   const extraStaffCost = Math.max(0, staff - PLAN_CAPS.custom.staff * branches) * CUSTOM_STAFF_STEP
-  // باقة جاهزة أرخص (أو بنفس السعر) لنفس الاختيار؟
+  // باقة جاهزة أرخص فعلاً لنفس الاختيار؟ (بنفس السعر ما نقترحها — نفس المزايا)
   const better = picked.length ? NEW_PLANS
     .map(k => ({ k, total: planPriceFor(k, null, branches).monthly + signupAddonsMonthly(k, picked as unknown as string[], branches) + extraStaffCost }))
     // التعادل: الباقة الأعلى (فيها مزايا أكثر)
-    .filter(x => x.total <= buildTotal).sort((a, b) => a.total - b.total || NEW_PLANS.indexOf(b.k) - NEW_PLANS.indexOf(a.k))[0] : undefined
+    .filter(x => x.total < buildTotal).sort((a, b) => a.total - b.total || NEW_PLANS.indexOf(b.k) - NEW_PLANS.indexOf(a.k))[0] : undefined
   const goPlan = (k: PlanKey) => {
     setFocus(k)
     document.getElementById(`plan-${k}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -145,7 +145,7 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
         </div>
         {better && (
           <button type="button" className="st-better" onClick={() => goPlan(better.k)}>
-            باقة «{PLAN_PRICING[better.k].label}» تعطيك نفس اختيارك{better.total < buildTotal ? ` بـ ${shown(better.total)} ⃁ (توفّر ${shown(buildTotal - better.total)} ⃁)` : ' بنفس السعر وفيها مزايا أكثر'} — اعرضها
+            باقة «{PLAN_PRICING[better.k].label}» تعطيك نفس اختيارك بـ {shown(better.total)} ⃁ (توفّر {shown(buildTotal - better.total)} ⃁) — اعرضها
           </button>
         )}
         <div className="st-build-total">
