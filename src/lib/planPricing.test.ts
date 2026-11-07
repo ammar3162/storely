@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { customMonthly, customModuleAmount, billLines, activeDiscount, planKeyOf, addonPeriodEnd, proratedCharge, staffBase, supplierBase, maxSelfServeBranches, branchPriceFor, planLabel, PLAN_CAPS, planPriceFor, addonPriceFor, addonIncludedIn, addonsForPlan, nextPlanOf, signupAddonsFor, signupAddonsMonthly, higherPlans } from './planPricing'
+import { alaCarteMonthly, customMonthly, customModuleAmount, billLines, activeDiscount, planKeyOf, addonPeriodEnd, proratedCharge, staffBase, supplierBase, maxSelfServeBranches, branchPriceFor, planLabel, PLAN_CAPS, planPriceFor, addonPriceFor, addonIncludedIn, addonsForPlan, nextPlanOf, signupAddonsFor, signupAddonsMonthly, higherPlans } from './planPricing'
 
 const branch = (qty: number, isValid = true) => ({ name: 'فرع إضافي', slug: 'extra_branch', monthly_price: 49, subscription: { isValid, quantity: qty } })
 
@@ -218,5 +218,14 @@ describe('custom HR price (89) keeps «الكاملة» the better deal', () => 
     expect(customModuleAmount('hr_full', 1)).toBe(89)
     expect(customModuleAmount('hr_full', 2)).toBe(124)
     expect(customMonthly({ mod_inventory: 1, cashier_closing: 1, hr_full: 1 }, 1, 6)).toBe(198)
+  })
+})
+
+describe('ready plan vs the same features picked one by one', () => {
+  it('equal for essential/ops on one branch, full cheaper; plans cheaper with more branches', () => {
+    expect([alaCarteMonthly('essential', 1), planPriceFor('essential', null, 1).monthly]).toEqual([119, 119])
+    expect([alaCarteMonthly('ops', 1), planPriceFor('ops', null, 1).monthly]).toEqual([159, 159])
+    expect([alaCarteMonthly('full', 1), planPriceFor('full', null, 1).monthly]).toEqual([263, 219])
+    expect([alaCarteMonthly('full', 2), planPriceFor('full', null, 2).monthly]).toEqual([378, 274])
   })
 })

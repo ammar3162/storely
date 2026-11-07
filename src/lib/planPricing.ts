@@ -43,6 +43,17 @@ export function customMonthly(modules: Record<string, number>, branches: number,
   const st = Math.max(CUSTOM_MIN_STAFF_PER_BRANCH * Math.max(1, branches), staff)
   return Math.max(CUSTOM_MIN_MONTHLY, mods + (st - base) * CUSTOM_STAFF_STEP)
 }
+/** مزايا كل باقة جاهزة بلغة «ابنِ باقتك» — عشان نحسب سعرها لو انشرت بالقطعة */
+export const PLAN_MODULES: Record<NewPlanKey, string[]> = {
+  essential: ['mod_inventory', 'mod_purchases'],
+  ops:       ['mod_inventory', 'mod_purchases', 'cashier_closing'],
+  full:      ['mod_inventory', 'mod_purchases', 'cashier_closing', 'hr_full', 'ai_tools'],
+}
+/** سعر نفس مزايا الباقة لو اختارها العميل بنفسه («ابنِ باقتك») — يطلع مشطوب جنب سعر الباقة */
+export function alaCarteMonthly(plan: NewPlanKey, branches: number): number {
+  const b = Math.max(1, branches)
+  return customMonthly(Object.fromEntries(PLAN_MODULES[plan].map(s => [s, CUSTOM_MODULES[s].perBranch ? b : 1])), b, PLAN_CAPS.custom.staff * b)
+}
 /** الإضافة تنباع لكل فرع (branch_ids والكمية = عدد الفروع)؟ */
 export const isPerBranchAddon = (plan: string | null | undefined, slug: string) =>
   isCustomPlan(plan) ? !!CUSTOM_MODULES[slug]?.perBranch : isNewPlan(plan) && !!NEW_ADDON_PRICES[slug]?.perBranch

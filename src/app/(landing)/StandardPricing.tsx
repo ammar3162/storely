@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check, Minus, Plus, ChevronDown, Wallet, UserCheck, Sparkles, Users, Store, ArrowLeft, Sun, MessageCircle, TrendingUp, GitCompare, Calculator, UserCog, Languages, Truck, Bell, FileDown, Percent, type LucideIcon } from 'lucide-react'
 import type { Billing } from './landing-data'
-import { CUSTOM_MIN_STAFF_PER_BRANCH, CUSTOM_MODULES, CUSTOM_MODULE_ORDER, CUSTOM_STAFF_STEP, NEW_ADDON_PRICES, NEW_PLANS, PLAN_CAPS, PLAN_PRICING, YEARLY_FACTOR, customModuleAmount, customMonthly, planPriceFor, signupAddonsMonthly, type NewPlanKey } from '@/lib/planPricing'
+import { CUSTOM_MIN_STAFF_PER_BRANCH, CUSTOM_MODULES, CUSTOM_MODULE_ORDER, CUSTOM_STAFF_STEP, NEW_ADDON_PRICES, NEW_PLANS, PLAN_CAPS, PLAN_PRICING, YEARLY_FACTOR, customModuleAmount, customMonthly, planPriceFor, signupAddonsMonthly, type NewPlanKey, alaCarteMonthly } from '@/lib/planPricing'
 
 type PlanKey = NewPlanKey
 const price = (k: PlanKey) => PLAN_PRICING[k].monthly
@@ -30,7 +30,6 @@ const MOD_NAME: Record<string, string> = {
   mod_inventory: 'المخزون والموردين', mod_purchases: 'المشتريات والفواتير', cashier_closing: 'إقفال الكاشير',
   hr_full: 'الحضور والرواتب', ai_tools: 'أدوات الذكاء الاصطناعي',
 }
-const FULL_SAVES = price('essential') + NEW_ADDON_PRICES.cashier_closing.monthly + NEW_ADDON_PRICES.hr_full.monthly + NEW_ADDON_PRICES.ai_tools.monthly - price('full')
 type Cell = boolean | 'addon' | string
 // كل المميزات: [المجموعة، المميزات، حالتها في (الأساسية، التشغيل، الكاملة)]
 const ALL: [string, string[], [Cell, Cell, Cell]][] = [
@@ -103,12 +102,22 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
         {PLANS.map(p => (
           <div key={p.key} id={`plan-${p.key}`} className={`st-card${p.popular ? ' pop' : ''}${focus === p.key ? ' focus' : ''}`}>
             {p.popular && <div className="st-badge">الأكثر اختياراً</div>}
-            {p.key === 'full' && <div className="st-save">وفّر {shown(FULL_SAVES)} ⃁ مقارنة بالإضافات</div>}
-            <h3>{p.name}</h3>
-            <p className="st-desc">{p.desc}</p>
-            <div className="st-price"><strong>{shown(p.price)}</strong><span>⃁ / شهرياً<br />لكل فرع</span></div>
-            <p className="st-sub">{yearly ? `تُدفع سنوياً · ` : ''}الفرع الإضافي {shown(p.extra)} ⃁ · يشمل {PLAN_CAPS[p.key].staff} موظفين لكل فرع</p>
-            {branches > 1 && <p className="st-total">المجموع لـ {branchWord}: <b>{shown(p.price + p.extra * (branches - 1))} ⃁</b> شهرياً</p>}
+            {(() => {
+              // خصم الباقة: نفس مزاياها لو اختارها العميل بنفسه بـ «ابنِ باقتك»
+              const total = p.price + p.extra * (branches - 1), alone = alaCarteMonthly(p.key as NewPlanKey, branches)
+              const pct = alone > total ? Math.round((1 - total / alone) * 100) : 0
+              return (<>
+                {pct > 0 && <div className="st-save">وفّر {pct}% عن اختيار المزايا بنفسك</div>}
+                <h3>{p.name}</h3>
+                <p className="st-desc">{p.desc}</p>
+                <div className="st-price">
+                  {pct > 0 && branches === 1 && <s className="st-was">{shown(alone)}</s>}
+                  <strong>{shown(p.price)}</strong><span>⃁ / شهرياً<br />لكل فرع</span>
+                </div>
+                <p className="st-sub">{yearly ? `تُدفع سنوياً · ` : ''}الفرع الإضافي {shown(p.extra)} ⃁ · يشمل {PLAN_CAPS[p.key].staff} موظفين لكل فرع</p>
+                {branches > 1 && <p className="st-total">المجموع لـ {branchWord}: {pct > 0 && <><s className="st-was sm">{shown(alone)}</s>{' '}</>}<b>{shown(total)} ⃁</b> شهرياً</p>}
+              </>)
+            })()}
             <button type="button" className={`st-cta${p.popular ? ' dark' : ''}`} onClick={() => router.push(`/login?mode=register&plan=${p.key}&branches=${branches}&billing=${billing}`)}>ابدأ تجربتك المجانية</button>
             <div className="st-list">
               <ul>{cumulative(PLANS.indexOf(p)).map(({ f, isNew }) => <li key={f} className={isNew ? 'new' : ''}><Check size={16} />{f}{isNew && <em>جديد</em>}</li>)}</ul>
@@ -122,7 +131,7 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
 
       <section className="st-sec st-build" id="build">
         <h3 className="st-h">ابنِ باقتك بنفسك</h3>
-        <p className="st-hsub">اختر المزايا اللي تحتاجها بس. السعر حسب عدد الفروع اللي فوق، وتقدر تحدد من داخل النظام أي فرع ياخذ كل ميزة.</p>
+        <p className="st-hsub">اختر المزايا اللي تحتاجها بس، وكل ميزة بسعرها. لو تحتاج أغلب المزايا، الباقة الجاهزة أوفر لأن فيها خصم. السعر حسب عدد الفروع اللي فوق، وتحدد من داخل النظام أي فرع ياخذ كل ميزة.</p>
         <div className="st-mods">
           {CUSTOM_MODULE_ORDER.map(slug => {
             const m = CUSTOM_MODULES[slug], on = mods.includes(slug)
@@ -276,6 +285,8 @@ button.st-cmp-row{cursor:pointer;transition:background-color .15s}
 .st-cmp-list li{position:relative;padding-inline-start:12px;line-height:1.6}
 .st-cmp-list li::before{content:"";position:absolute;inset-inline-start:0;top:.7em;width:4px;height:4px;border-radius:2px;background:#c4ccca}
 @media(max-width:640px){.st-cmp-row{grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr));padding:0 10px}.st-cmp-name{font-size:14px;gap:6px}.st-cmp-name em{display:none}.st-cmp-head{font-size:13px}.st-cmp-list{grid-template-columns:1fr;padding-inline-start:30px}}
+.st-was{color:#98a2b3;font-size:20px;font-weight:600;margin-inline-end:8px;text-decoration-thickness:1.5px;align-self:center}
+.st-was.sm{font-size:14px;font-weight:500;margin-inline-end:6px}
 .st-yes{color:var(--teal2)}
 .st-no{color:#c4ccca}
 .st-addon{font-size:12px;font-weight:500;color:var(--ink2);background:#f4f5f6;border-radius:6px;padding:2px 8px}

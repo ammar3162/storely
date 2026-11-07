@@ -1,12 +1,23 @@
 'use client'
 import { SIGNUP_SOURCES } from '@/lib/signupSource'
 import { Check, Minus, Plus } from 'lucide-react'
-import { CUSTOM_MIN_STAFF_PER_BRANCH, CUSTOM_MODULES, CUSTOM_MODULE_ORDER, CUSTOM_STAFF_STEP, NEW_ADDON_PRICES, NEW_PLANS, PLAN_PRICING, customModuleAmount, customMonthly, higherPlans, planPriceFor, signupAddonsFor, signupAddonsMonthly, yearlyOf, type NewPlanKey } from '@/lib/planPricing'
+import { CUSTOM_MIN_STAFF_PER_BRANCH, CUSTOM_MODULES, CUSTOM_MODULE_ORDER, CUSTOM_STAFF_STEP, NEW_ADDON_PRICES, NEW_PLANS, PLAN_PRICING, customModuleAmount, customMonthly, higherPlans, planPriceFor, signupAddonsFor, signupAddonsMonthly, yearlyOf, type NewPlanKey, alaCarteMonthly } from '@/lib/planPricing'
 import { PLANS, PLAN_EN } from './constants'
 import type { LoginState } from './useLogin'
 
+// أسماء المزايا والإضافات للملخص
+const FEAT: Record<string, { ar: string; en: string }> = {
+  mod_inventory: { ar: 'المخزون والموردين', en: 'Inventory & suppliers' },
+  mod_purchases: { ar: 'المشتريات والفواتير', en: 'Purchases & invoices' },
+  cashier_closing: { ar: 'إقفال الكاشير', en: 'Cashier closing' },
+  hr_full: { ar: 'الحضور والرواتب', en: 'Attendance & payroll' },
+  ai_tools: { ar: 'أدوات الذكاء الاصطناعي', en: 'AI tools' },
+}
+
 export default function RegisterStep2({ m }: { m: LoginState }) {
-  const { t, lang, mode, step, setStep, planChoice, setPlanChoice, signupAddons, setSignupAddons, staffCount, setStaffCount, branchCount, setBranchCount, billing, setBilling, loading, error, setError, agreedTerms, setAgreedTerms, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, handleRegister } = m
+  const { planFromLink, editPlan, setEditPlan, t, lang, mode, step, setStep, planChoice, setPlanChoice, signupAddons, setSignupAddons, staffCount, setStaffCount, branchCount, setBranchCount, billing, setBilling, loading, error, setError, agreedTerms, setAgreedTerms, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, handleRegister } = m
+  // جا من صفحة الأسعار ومعه باقة؟ ملخص بدل الاختيار من جديد (إلا لو ضغط «تغيير الباقة»)
+  const showSummary = planFromLink && !editPlan && !!planChoice && !(planChoice === 'custom' && !signupAddons.length)
   return (
     <>
             {/* Register Step 2 */}
@@ -22,11 +33,55 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                     style={{background:'none',border:'none',color:'#6b7280',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:0,marginBottom:12,display:'flex',alignItems:'center',gap:4}}>
                     {t('login.back')}
                   </button>
-                  <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:6,letterSpacing:'-0.5px'}}>{t('login.choosePlanTitle')}</h1>
-                  <p style={{fontSize:14,color:'#6b7280'}}>{t('login.changePlanLater')}</p>
+                  <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:6,letterSpacing:'-0.5px'}}>{showSummary ? (lang==='ar'?'خطوة أخيرة':'Last step') : t('login.choosePlanTitle')}</h1>
+                  <p style={{fontSize:14,color:'#6b7280'}}>{showSummary ? (lang==='ar'?'راجع باقتك وأنشئ حسابك':'Review your plan and create your account') : t('login.changePlanLater')}</p>
                 </div>
                 {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
                 <form onSubmit={handleRegister} style={{display:'flex',flexDirection:'column',gap:10}}>
+                  {showSummary ? (() => {
+                    // ملخص الباقة اللي اختارها من صفحة الأسعار
+                    const isCustom = planChoice === 'custom'
+                    const pc = planChoice as NewPlanKey
+                    const minStaff = CUSTOM_MIN_STAFF_PER_BRANCH * branchCount
+                    const staff = Math.max(minStaff, staffCount ?? 6 * branchCount)
+                    const picked = CUSTOM_MODULE_ORDER.filter(s => signupAddons.includes(s))
+                    const monthly = isCustom
+                      ? customMonthly(Object.fromEntries(picked.map(s => [s, CUSTOM_MODULES[s].perBranch ? branchCount : 1])), branchCount, staff)
+                      : planPriceFor(pc, null, branchCount).monthly + signupAddonsMonthly(pc, signupAddons, branchCount)
+                    const alone = !isCustom && !signupAddons.length ? alaCarteMonthly(pc, branchCount) : 0
+                    const cur = (v: number) => billing==='yearly' ? yearlyOf(v) : v
+                    const per = billing==='yearly' ? (lang==='ar'?'سنة':'yr') : (lang==='ar'?'شهر':'mo')
+                    const feats = isCustom ? picked : signupAddons.filter(s => FEAT[s])
+                    return (
+                      <div style={{border:'1.5px solid #e5e7eb',borderRadius:14,padding:'16px 18px',display:'flex',flexDirection:'column',gap:10}}>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12}}>
+                          <div>
+                            <div style={{fontSize:13,color:'#4b5563'}}>{lang==='ar'?'باقتك':'Your plan'}</div>
+                            <div style={{fontSize:18,fontWeight:800,color:'#111827'}}>{lang==='ar'?PLAN_PRICING[planChoice!].label:(isCustom?'Custom plan':PLAN_EN[pc])}</div>
+                            <div style={{fontSize:13,color:'#374151',marginTop:2}}>
+                              {lang==='ar' ? (branchCount===1?'فرع واحد':branchCount===2?'فرعين':`${branchCount} فروع`) : `${branchCount} branch${branchCount>1?'es':''}`}
+                              {isCustom ? ` · ${staff} ${lang==='ar'?'موظف':'staff'}` : ''}
+                              {` · ${billing==='yearly'?(lang==='ar'?'سنوي':'yearly'):(lang==='ar'?'شهري':'monthly')}`}
+                            </div>
+                          </div>
+                          <div className="hide-in-app" style={{textAlign:'left',flexShrink:0}}>
+                            {alone > monthly && <div style={{fontSize:13,color:'#98a2b3',textDecoration:'line-through'}}>{cur(alone)} {lang==='ar'?'⃁':'SAR'}</div>}
+                            <div><span style={{fontSize:22,fontWeight:800,color:'#111827'}}>{cur(monthly)}</span> <span style={{fontSize:12,color:'#4b5563'}}>{lang==='ar'?'⃁':'SAR'}/{per}</span></div>
+                          </div>
+                        </div>
+                        {feats.length > 0 && (
+                          <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                            {feats.map(f => <span key={f} style={{fontSize:12,fontWeight:600,color:'#111827',background:'#f3f4f6',borderRadius:6,padding:'4px 8px',display:'inline-flex',alignItems:'center',gap:4}}><Check size={12}/>{lang==='ar'?FEAT[f].ar:FEAT[f].en}</span>)}
+                          </div>
+                        )}
+                        {alone > monthly && <div className="hide-in-app" style={{fontSize:12,color:'#0f766e',fontWeight:700}}>{lang==='ar'?`وفّرت ${cur(alone-monthly)} ⃁ بالباقة بدل اختيار المزايا بنفسك`:`You save ${cur(alone-monthly)} SAR with the plan`}</div>}
+                        <button type="button" onClick={()=>setEditPlan(true)}
+                          style={{alignSelf:'flex-start',background:'none',border:'none',padding:0,color:'#0f766e',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',textDecoration:'underline',textUnderlineOffset:3}}>
+                          {lang==='ar'?'تغيير الباقة':'Change plan'}
+                        </button>
+                      </div>
+                    )
+                  })() : (<>
                   <div className="hide-in-app" style={{display:'flex',justifyContent:'center',marginBottom:6}}>
                     <div style={{display:'inline-flex',gap:4,background:'#f3f4f6',padding:4,borderRadius:12}}>
                       <button type="button" onClick={()=>setBilling('monthly')} style={{padding:'8px 18px',borderRadius:9,border:'none',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',background:billing==='monthly'?'white':'transparent',color:billing==='monthly'?'#111827':'#6b7280',boxShadow:billing==='monthly'?'0 1px 4px rgba(0,0,0,.08)':'none'}}>{t('login.planMonthly')}</button>
@@ -57,6 +112,9 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                         <div style={{fontSize:12,color:'#374151'}}>{lang==='ar'?p.desc:p.descEn}</div>
                       </div>
                       <div className="hide-in-app" style={{flexShrink:0,marginRight:12,textAlign:'left'}}>
+                        {(() => { const alone = alaCarteMonthly(p.v, branchCount); return alone > price.monthly
+                          ? <div style={{fontSize:12,color:'#98a2b3'}}><s>{billing==='yearly'?yearlyOf(alone):alone}</s> <b style={{color:'#0f766e',fontWeight:700}}>{lang==='ar'?`وفّر ${Math.round((1-price.monthly/alone)*100)}%`:`save ${Math.round((1-price.monthly/alone)*100)}%`}</b></div>
+                          : null })()}
                         <span style={{fontSize:20,fontWeight:800,color:on?p.color:'#111827'}}>{billing==='yearly'?price.yearly:price.monthly}</span>
                         <span style={{fontSize:12,color:'#4b5563'}}> {lang==='ar'?'⃁':'SAR'}/{billing==='yearly'?(lang==='ar'?'سنة':'yr'):(lang==='ar'?'شهر':'mo')}</span>
                       </div>
@@ -177,6 +235,7 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                     )
                   })()}
 
+                  </>)}
                   {planChoice && (
                     <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:8,padding:'11px 14px',fontSize:13,color:'#029FA2',fontWeight:600,display:'flex',alignItems:'center',gap:8}}>
                       ✓ {t('login.freeTrialConfirm')}
