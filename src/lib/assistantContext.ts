@@ -28,7 +28,7 @@ export type AssistantContext = {
 
 export async function buildAssistantContext(db: SupabaseClient, orgId: string, branchId: string | null, access: Access): Promise<AssistantContext> {
   const { data: org } = await db.from('organizations')
-    .select('name,plan,max_branches,max_staff,max_suppliers,billing_cycle,locked_plan_monthly,discount_type,discount_value,discount_note,discount_until,currency,vat_registered,business_type')
+    .select('name,plan,max_branches,max_staff,max_suppliers,staff_included,billing_cycle,locked_plan_monthly,discount_type,discount_value,discount_note,discount_until,currency,vat_registered,business_type')
     .eq('id', orgId).single()
   const o = (org || {}) as any
   const features = await orgFeatures(db, orgId, o.plan || 'basic')
@@ -87,7 +87,7 @@ async function subscriptionSection(db: SupabaseClient, orgId: string, o: any, fe
   const rows = ((addons || []) as any[]).map(a => ({ ...a, subscriptions: ((subs || []) as any[]).filter(s => s.addon_id === a.id).map(s => ({ ...s, isValid: new Date(s.expires_at).getTime() > now })) }))
   const plan = planKeyOf(o.plan, o.max_branches)
   const cycle = o.billing_cycle === 'yearly' ? 'yearly' : 'monthly'
-  const bill = billLines(plan, cycle, rows, o.locked_plan_monthly, o, o.max_branches)
+  const bill = billLines(plan, cycle, rows, o.locked_plan_monthly, o, o.max_branches, o.staff_included)
   const ow = (owner || {}) as any
   const ends = ow.subscription_ends_at ? new Date(ow.subscription_ends_at) : null
   const daysLeft = ends ? Math.ceil((ends.getTime() - now) / DAY) : null
@@ -104,7 +104,7 @@ async function subscriptionSection(db: SupabaseClient, orgId: string, o: any, fe
 نوع الاشتراك: ${ow.subscription_type === 'trial' ? 'تجربة مجانية (كل المميزات مفتوحة طول التجربة)' : 'مدفوع'}
 ينتهي: ${ends ? `${saudiDay(ends)} (${daysLeft! >= 0 ? `باقي ${daysLeft} يوم` : `منتهي من ${-daysLeft!} يوم`})` : 'غير محدد'}
 الفروع: ${limit.total} مسموح (${limit.base} من الباقة + ${limit.extra} إضافي)
-الموظفين النشطين: ${staffCount || 0} من ${staffBase(o.plan, o.max_staff, limit.extra, limit.base) + extraStaff}
+الموظفين النشطين: ${staffCount || 0} من ${staffBase(o.plan, o.max_staff, limit.extra, limit.base, o.staff_included) + extraStaff}
 الموردين النشطين: ${supCount || 0} من ${supplierBase(o.plan, o.max_suppliers, limit.extra, limit.base) + extraSup}
 الإضافات المفعّلة: ${active.length ? active.join('، ') : 'لا يوجد'}
 الميزات المفتوحة: ${(Object.keys(features) as (keyof Features)[]).filter(k => features[k]).map(k => FEATURE_LABEL[k]).join('، ') || 'الأساسية فقط'}

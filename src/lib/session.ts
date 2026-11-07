@@ -22,8 +22,10 @@ export type Me = {
     name: string; plan: string; billing_cycle: 'monthly' | 'yearly'; currency: string | null; logo_url: string | null
     deletion_scheduled_at: string | null; max_staff: number; max_suppliers: number
     max_branches: number; country_code: string; business_type: string | null; onboarding_done: boolean; vat_registered?: boolean | null
-    features?: { cashier: boolean; hr: boolean; ai: boolean; profitability: boolean }
+    features?: { inventory?: boolean; purchases?: boolean; cashier: boolean; hr: boolean; ai: boolean; profitability: boolean }
+    branch_features?: Record<string, { inventory?: boolean; purchases?: boolean; cashier: boolean; hr: boolean; ai: boolean; profitability: boolean }>
     locked_plan_monthly?: number | null
+    staff_included?: number | null
     discount_type?: string | null; discount_value?: number | null; discount_note?: string | null; discount_until?: string | null
   } | null
   branches: { id: string; name: string; location: string | null }[]
@@ -68,7 +70,7 @@ export async function getOrgId(): Promise<string | null> {
 }
 
 /** بيانات عرض المنشأة لصفحات الموظفين (دخول الـ PIN) — تُجلب مرة وحدة لكل تحميل صفحة */
-export type StaffOrg = { logo_url: string | null; currency: string | null; plan: string | null; staff_salary_visible?: boolean; business_day_start_hour?: number | null; business_type?: string | null; hr_feature?: boolean; cashier_feature?: boolean; delivery_apps?: string[] }
+export type StaffOrg = { logo_url: string | null; currency: string | null; plan: string | null; staff_salary_visible?: boolean; business_day_start_hour?: number | null; business_type?: string | null; hr_feature?: boolean; cashier_feature?: boolean; inventory_feature?: boolean; purchases_feature?: boolean; delivery_apps?: string[] }
 
 let staffOrgPromise: Promise<StaffOrg | null> | null = null
 let staffOrgToken: string | null = null

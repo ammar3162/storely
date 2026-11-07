@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/verifyOrgAccess'
 import { combineBranchLimit, EXTRA_BRANCH_SLUG } from '@/lib/branchLimit'
-import { orgFeatures } from '@/lib/planFeatures'
+import { orgFeatures, branchFeaturesMap } from '@/lib/planFeatures'
 import { DEVICE_UNVERIFIED_ERROR, DEVICE_UNVERIFIED_REASON } from '@/lib/deviceMessages'
 import { readDeviceId, deviceCookie } from '@/lib/deviceTrust'
 
@@ -26,7 +26,7 @@ export async function GET() {
 
     const [{ data: org }, { data: extra }, { data: branches }, { data: branchSubs }] = await Promise.all([
       db.from('organizations')
-        .select('id,name,plan,billing_cycle,currency,logo_url,deletion_scheduled_at,max_staff,max_suppliers,max_branches,country_code,business_type,onboarding_done,vat_registered,locked_plan_monthly,discount_type,discount_value,discount_note,discount_until')
+        .select('id,name,plan,billing_cycle,currency,logo_url,deletion_scheduled_at,max_staff,max_suppliers,max_branches,country_code,business_type,onboarding_done,vat_registered,locked_plan_monthly,staff_included,discount_type,discount_value,discount_note,discount_until')
         .eq('id', profile.orgId).single(),
       db.from('profiles')
         .select('full_name,phone,subscription_ends_at,permissions,whatsapp_consent,whatsapp_first_contact_confirmed,terms_version_accepted')
@@ -39,6 +39,8 @@ export async function GET() {
     const o: any = org || {}
     // الميزات المفتوحة (الباقة + الإضافات) — نفس المصدر اللي يستخدمه الخادم للقفل
     const features = await orgFeatures(db, profile.orgId, o.plan || 'basic')
+    // ميزات كل فرع (الإضافات ممكن تكون لفروع معيّنة) — الواجهة تقفل الصفحة للفرع اللي ما فيه الميزة
+    const branchFeatures = await branchFeaturesMap(db, profile.orgId, o.plan || 'basic', ((branches || []) as any[]).map(b => b.id))
     const e: any = extra || {}
 
     const res = NextResponse.json({
@@ -70,7 +72,9 @@ export async function GET() {
         business_type: o.business_type || null,
         onboarding_done: o.onboarding_done !== false,
         features,
+        branch_features: branchFeatures,
         locked_plan_monthly: o.locked_plan_monthly ?? null,
+        staff_included: o.staff_included ?? null,
         // الخصم الخاص (من لوحة الإدارة) — يطلع سطر بالفاتورة
         discount_type: o.discount_type ?? null, discount_value: o.discount_value ?? null, discount_note: o.discount_note ?? null, discount_until: o.discount_until ?? null,
       } : null,

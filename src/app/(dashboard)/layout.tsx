@@ -14,10 +14,13 @@ import OnboardingModal from './_shell/OnboardingModal'
 import MoreMenuSheet from './_shell/MoreMenuSheet'
 import MobileShell from './_shell/MobileShell'
 import DesktopShell from './_shell/DesktopShell'
+import FeatureLock from './_shell/FeatureLock'
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const m = useDashboardShell()
   const banners = <Banners m={m}/>
+  // صفحة تحتاج ميزة مو مفعّلة (للفرع المختار): بطاقة قفل بدل الصفحة
+  const content = m.pageLock ? <FeatureLock feature={m.pageLock.feature} otherBranch={m.pageLock.otherBranch} owner={m.userRole !== 'manager'} /> : children
 
   if (m.showMaintenance) return <MaintenanceScreen m={m}/>
 
@@ -33,8 +36,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
       <div className="sh-root">
         <style>{SHELL_CSS}</style>
-        <MobileShell m={m} banners={banners}>{children}</MobileShell>
-        <DesktopShell m={m} banners={banners}>{children}</DesktopShell>
+        <MobileShell m={m} banners={banners}>{content}</MobileShell>
+        <DesktopShell m={m} banners={banners}>{content}</DesktopShell>
       </div>
       <AIAssistant/>
     </>

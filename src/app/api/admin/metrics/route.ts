@@ -18,7 +18,7 @@ export async function GET(req: Request) {
 
     const { data: owners } = await supabase
       .from('profiles')
-      .select('id,org_id,status,subscription_type,organizations(max_branches,plan,locked_plan_monthly,billing_cycle,discount_type,discount_value,discount_until)')
+      .select('id,org_id,status,subscription_type,organizations(max_branches,plan,locked_plan_monthly,staff_included,billing_cycle,discount_type,discount_value,discount_until)')
       .eq('role', 'owner')
 
     const ownersList = owners || []

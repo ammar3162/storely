@@ -6,6 +6,9 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 // الإضافة اللي تفتح كل ميزة على الأساسية
 export const FEATURE_ADDONS = {
+  // المخزون والمشتريات مفتوحة لكل الباقات — تنقفل بـ «ابنِ باقتك» (custom) لو ما اختارها
+  inventory: ['mod_inventory'],
+  purchases: ['mod_purchases'],
   cashier: ['cashier_closing'],
   hr: ['hr_full'],
   ai: ['ai_tools'],
@@ -14,17 +17,22 @@ export const FEATURE_ADDONS = {
 export type Feature = keyof typeof FEATURE_ADDONS
 export type Features = Record<Feature, boolean>
 
-const ALL: Feature[] = ['cashier', 'hr', 'ai', 'profitability']
+const ALL: Feature[] = ['inventory', 'purchases', 'cashier', 'hr', 'ai', 'profitability']
 // الميزات المضمّنة بكل باقة (بدون إضافات)
 const PLAN_FEATURES: Record<string, Feature[]> = {
   pro: ALL, advanced: ALL, full: ALL,
-  ops: ['cashier', 'profitability'],
-  essential: ['profitability'],
+  ops: ['inventory', 'purchases', 'cashier', 'profitability'],
+  essential: ['inventory', 'purchases', 'profitability'],
+  basic: ['inventory', 'purchases'],
+  custom: ['profitability'],
 }
-export const planIncludes = (plan: string | null | undefined, f: Feature) => (PLAN_FEATURES[plan || 'basic'] || []).includes(f)
+// باقة غير معروفة = الأساسية القديمة (نفس السلوك القبل)
+export const planIncludes = (plan: string | null | undefined, f: Feature) => (PLAN_FEATURES[plan || 'basic'] || PLAN_FEATURES.basic).includes(f)
 const planHasAll = (plan: string | null | undefined) => ALL.every(f => planIncludes(plan, f))
 
 export const FEATURE_LABEL: Record<Feature, string> = {
+  inventory: 'المخزون والموردين',
+  purchases: 'المشتريات والفواتير',
   cashier: 'إقفال الكاشير',
   hr: 'الحضور والرواتب',
   ai: 'الذكاء الاصطناعي',
@@ -76,9 +84,37 @@ export async function orgOnTrial(db: SupabaseClient, orgId: string): Promise<boo
   return (data as any)?.subscription_type === 'trial' && !!(data as any)?.subscription_ends_at && new Date((data as any).subscription_ends_at).getTime() > Date.now()
 }
 
+/**
+ * ميزات كل فرع (للواجهة) — للباقات اللي إضافاتها ممكن تكون لفروع معيّنة. استعلام واحد للإضافات.
+ * باقة فيها كل شي أو تجربة: نفس الميزات لكل الفروع.
+ */
+export async function branchFeaturesMap(db: SupabaseClient, orgId: string, plan: string | null | undefined, branchIds: string[]): Promise<Record<string, Features>> {
+  const out: Record<string, Features> = {}
+  if (!branchIds.length) return out
+  if (planHasAll(plan) || await orgOnTrial(db, orgId)) {
+    const f = featuresFrom(plan, [], !planHasAll(plan))
+    for (const id of branchIds) out[id] = f
+    return out
+  }
+  const { data } = await db.from('org_addon_subscriptions')
+    .select('expires_at,branch_ids,marketplace_addons!inner(slug)')
+    .eq('org_id', orgId).eq('status', 'active')
+  const now = Date.now()
+  const live = ((data || []) as any[]).filter(s => !s.expires_at || new Date(s.expires_at).getTime() > now)
+  for (const id of branchIds) out[id] = featuresFrom(plan, live.filter(s => addonCoversBranch(s.branch_ids, id)).map(s => s.marketplace_addons?.slug).filter(Boolean))
+  return out
+}
+
 /** branchId = نتحقق إن الميزة مفعّلة لهالفرع بالذات */
 export async function orgHasFeature(db: SupabaseClient, orgId: string, f: Feature, plan?: string | null, branchId?: string | null) {
-  return (await orgFeatures(db, orgId, plan, branchId))[f]
+  let p = plan
+  if (p === undefined) {
+    const { data: org } = await db.from('organizations').select('plan').eq('id', orgId).maybeSingle()
+    p = (org as any)?.plan ?? null
+  }
+  // الباقة فيها الميزة: بدون استعلامات زيادة (أغلب الطلبات — مثل المخزون لكل الباقات الثابتة)
+  if (planIncludes(p, f)) return true
+  return (await orgFeatures(db, orgId, p, branchId))[f]
 }
 
 /** رسالة موحّدة لما الميزة مقفلة — forBranch = مفعّلة بفروع ثانية بس */

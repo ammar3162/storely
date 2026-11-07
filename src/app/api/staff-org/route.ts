@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     // الميزات المتاحة للموظف — من السيرفر (الموظف ما يقدر يقرأ متجر الإضافات حق المالك)
     const plan = (org as any).plan || 'basic'
     // ميزات فرع الموظف (الإضافة ممكن تكون لفروع معيّنة)
-    const { hr, cashier } = await orgFeatures(db, auth.data.org_id, plan, auth.data.branch_id || null)
+    const { hr, cashier, inventory, purchases } = await orgFeatures(db, auth.data.org_id, plan, auth.data.branch_id || null)
 
     return NextResponse.json({
       success: true,
@@ -32,6 +32,8 @@ export async function GET(req: Request) {
       business_day_start_hour: (org as any).business_day_start_hour ?? null,
       business_type: (org as any).business_type || null,
       hr_feature: hr, cashier_feature: cashier,
+      // «ابنِ باقتك»: المخزون والمشتريات ممكن ما تكون لفرع الموظف
+      inventory_feature: inventory, purchases_feature: purchases,
       delivery_apps: appChoices((org as any).delivery_apps),
     })
   } catch {

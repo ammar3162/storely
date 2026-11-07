@@ -36,6 +36,9 @@ export default function ChoosePage() {
   const [salaryVisible, setSalaryVisible] = useState(false)
   const [hasHrFeature, setHasHrFeature] = useState(false) // مخفي افتراضياً لحد ما يتأكد الفحص — يمنع ظهور الأزرار للحظة ثم اختفائها
   const [hasCashierFeature, setHasCashierFeature] = useState(false) // نفس المبدأ — مخفي لحد ما يتأكد الفحص
+  // المخزون والمشتريات مفتوحة لكل الباقات — تنقفل بس لـ «ابنِ باقتك» لو ما اختارها
+  const [hasInvFeature, setHasInvFeature] = useState(true)
+  const [hasPurFeature, setHasPurFeature] = useState(true)
   const [showRequests, setShowRequests] = useState(false)
   const [requestHistory, setRequestHistory] = useState<any[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
@@ -80,6 +83,8 @@ export default function ChoosePage() {
         // السيرفر يحدد الميزات (الباقة أو الإضافات المشتراة)
         setHasHrFeature(!!org?.hr_feature)
         setHasCashierFeature(!!org?.cashier_feature)
+        setHasInvFeature(org?.inventory_feature !== false)
+        setHasPurFeature(org?.purchases_feature !== false)
       })
     const interval = setInterval(loadNotifications, 30000) // احتياط — الإشعارات توصل فوراً عبر useLiveRefresh
     // تحديث دوري لحالة الحضور وطلب الاستئذان -- بدونه الموظف يفضل يشوف "قيد الانتظار" حتى لو انوافق عليه فعلياً، لين يسوي رفرش يدوي
@@ -272,11 +277,11 @@ export default function ChoosePage() {
 
   // أزرار العمل — نفس الشكل للكل، اللون بس بالأيقونة
   const workActions = [
-    canDispense && { key:'d', icon:<Package size={20} strokeWidth={2}/>, title:t('dispense'), sub:t('dispenseSub'), c:'#0f766e', bg:'#f0fdfa', go:()=>router.push('/staff/dispense') },
+    canDispense && hasInvFeature && { key:'d', icon:<Package size={20} strokeWidth={2}/>, title:t('dispense'), sub:t('dispenseSub'), c:'#0f766e', bg:'#f0fdfa', go:()=>router.push('/staff/dispense') },
     isCashier && hasCashierFeature && { key:'c', icon:<Store size={20} strokeWidth={2}/>, title:t('cashierClosing'), sub:t('cashierSub'), c:'#334155', bg:'#f1f5f9', go:()=>router.push('/staff/cashier-closing') },
-    canInventory && { key:'i', icon:<Boxes size={20} strokeWidth={2}/>, title:t('inventory'), sub:t('inventorySub'), c:'#6d28d9', bg:'#f5f3ff', go:()=>router.push('/staff/inventory') },
-    canPurchases && { key:'p', icon:<ShoppingCart size={20} strokeWidth={2}/>, title:t('purchases'), sub:t('purchasesSub'), c:'#1d4ed8', bg:'#eff6ff', go:()=>router.push('/staff/purchases') },
-    !canDispense && !(isCashier && hasCashierFeature) && { key:'e', icon:<Package size={20} strokeWidth={2}/>, title:t('enterSystem'), sub:t('dispenseSub'), c:'#0f766e', bg:'#f0fdfa', go:()=>router.push('/staff/dispense') },
+    canInventory && hasInvFeature && { key:'i', icon:<Boxes size={20} strokeWidth={2}/>, title:t('inventory'), sub:t('inventorySub'), c:'#6d28d9', bg:'#f5f3ff', go:()=>router.push('/staff/inventory') },
+    canPurchases && hasPurFeature && { key:'p', icon:<ShoppingCart size={20} strokeWidth={2}/>, title:t('purchases'), sub:t('purchasesSub'), c:'#1d4ed8', bg:'#eff6ff', go:()=>router.push('/staff/purchases') },
+    !(canDispense && hasInvFeature) && !(isCashier && hasCashierFeature) && hasInvFeature && { key:'e', icon:<Package size={20} strokeWidth={2}/>, title:t('enterSystem'), sub:t('dispenseSub'), c:'#0f766e', bg:'#f0fdfa', go:()=>router.push('/staff/dispense') },
   ].filter(Boolean) as { key:string; icon:any; title:string; sub:string; c:string; bg:string; go:()=>void }[]
 
   const sectionTitle = (txt: string) => (

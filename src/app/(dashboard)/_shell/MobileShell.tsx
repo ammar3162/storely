@@ -6,7 +6,7 @@ import { C, Icon } from './nav'
 import type { DashboardShell } from './useDashboardShell'
 
 export default function MobileShell({ m, banners, children }: { m: DashboardShell; banners: React.ReactNode; children: React.ReactNode }) {
-  const { t, orgName, orgLogo, branchName, userInit, lowCount, unread, branches, setShowMore, ready, isDesk, router, isActive, BOT_NAV, openBranchSelector, navVisible } = m
+  const { t, orgName, orgLogo, branchName, userInit, lowCount, unread, branches, setShowMore, ready, isDesk, router, isActive, BOT_NAV, openBranchSelector, navAllowed } = m
   return (
     <>
         {/* ═══ الجوال ═══ */}
@@ -35,7 +35,7 @@ export default function MobileShell({ m, banners, children }: { m: DashboardShel
           </div>
 
           <nav className="mob-bottom-nav">
-            {BOT_NAV.filter(item=>navVisible(item.href)).map(item=>{
+            {BOT_NAV.filter(item=>navAllowed(item.href)).map(item=>{
               const active=isActive(item.href)
               return (
                 <button key={item.href} className={`sh-tab${active?' on':''}`} onClick={()=>router.push(item.href)} onMouseEnter={()=>router.prefetch(item.href)}>

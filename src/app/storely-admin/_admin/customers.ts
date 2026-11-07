@@ -21,7 +21,7 @@ export const STATUS: Record<string, { label: string; tone: Tone }> = {
 
 // حدود كل باقة (فروع الباقة الأساسية — الفروع الإضافية تنحسب من الإضافات)
 // من مصدر واحد (lib/planPricing PLAN_CAPS) — الموظفين والموردين للمنشأة كلها
-const NEW_DESC: Record<string, string> = { essential: 'المخزون والمشتريات', ops: '+ إقفال الكاشير', full: 'كل المميزات' }
+const NEW_DESC: Record<string, string> = { essential: 'المخزون والمشتريات', ops: '+ إقفال الكاشير', full: 'كل المميزات', custom: 'يختار المزايا بنفسه (من الإضافات)' }
 const capsDesc = (k: PlanKey) => {
   const c = PLAN_CAPS[k]
   if (isNewPlan(k)) return `لكل فرع: ${c.staff} موظفين · ${c.suppliers} مورد · ${NEW_DESC[k]} · الفرع الإضافي ${c.branchPrice} ⃁ · يوصل ${c.maxBranches} فروع`
@@ -32,11 +32,11 @@ export const PLAN_LIMITS = Object.fromEntries(
 ) as unknown as Record<PlanKey, { branches: number; staff: number; suppliers: number; desc: string }>
 
 // الجديدة أول (للمشتركين الجدد) — القديمة باقية للمشتركين قبل 2026-11
-export const PLAN_KEYS: PlanKey[] = ['essential', 'ops', 'full', 'basic', 'pro', 'advanced']
+export const PLAN_KEYS: PlanKey[] = ['essential', 'ops', 'full', 'custom', 'basic', 'pro', 'advanced']
 // المتقدمة بفروع فوق حدها = «المؤسسات»
 // بالأدمن نميّز الباقات القديمة «(قديمة)» عن الجديدة اللي بنفس الاسم
 export const planLabel = (k: PlanKey, maxBranches?: number | null) => adminPlanLabel(k, maxBranches)
-export const PLAN_TONE: Record<PlanKey, Tone> = { basic: 'primary', pro: 'info', advanced: 'violet', essential: 'primary', ops: 'info', full: 'violet' }
+export const PLAN_TONE: Record<PlanKey, Tone> = { basic: 'primary', pro: 'info', advanced: 'violet', essential: 'primary', ops: 'info', full: 'violet', custom: 'warning' }
 
 export function mapCustomer(p: any): Customer {
   const maxB = p.organizations?.max_branches || 1

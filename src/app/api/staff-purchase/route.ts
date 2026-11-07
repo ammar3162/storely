@@ -6,6 +6,7 @@ import { resolvePurchaseTax, notifyQrMismatch } from '@/lib/taxInvoice'
 import { staffHasPermission, NO_PURCHASES } from '@/lib/staffPermission'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
+import { staffFeatureError } from '@/lib/featureRoutes'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,6 +18,9 @@ export async function POST(req: Request) {
     const rawStaffToken = extractStaffToken(req)
     const auth = await verifyStaffToken(rawStaffToken)
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
+    // «ابنِ باقتك»: الميزة لازم تكون لفرع الموظف
+    const featureLocked = await staffFeatureError(auth.data as any, 'purchases')
+    if (featureLocked) return NextResponse.json({ error: featureLocked }, { status: 403 })
     const { org_id, staff_id, branch_id } = auth.data!
 
     const body = await req.json()

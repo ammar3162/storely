@@ -2,7 +2,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
 import { syncStaffToLimit } from '@/lib/staffCapacity'
-import { addonPeriodEnd, addonPriceFor, branchPriceFor, isNewPlan, NEW_ADDON_PRICES, planKeyOf, proratedCharge, unitPrice, YEARLY_FACTOR } from '@/lib/planPricing'
+import { clearFeatureCache } from '@/lib/featureRoutes'
+import { addonPeriodEnd, addonPriceFor, branchPriceFor, isPerBranchAddon, planKeyOf, proratedCharge, unitPrice, YEARLY_FACTOR } from '@/lib/planPricing'
 
 export type ActivateResult =
   | { ok: true; expiresAt: string; quantity: number; proratedAmount: number; proratedDays: number; branchIds: string[] | null; slug: string; name: string }
@@ -34,7 +35,7 @@ export async function activateAddon(db: SupabaseClient, input: { orgId: string; 
 
   // إضافة لكل فرع (الباقات الجديدة): الفروع المختارة (افتراضياً كل الفروع النشطة) والكمية = عددها
   let branchIds: string[] | null = null
-  if (isNewPlan(plan) && NEW_ADDON_PRICES[slug]?.perBranch) {
+  if (isPerBranchAddon(plan, slug)) {
     const { data: branches } = await db.from('branches').select('id').eq('org_id', orgId).eq('is_active', true)
     const live = ((branches || []) as any[]).map(b => b.id as string)
     const wanted = Array.isArray(input.branchIds) && input.branchIds.length ? input.branchIds.filter(id => live.includes(id)) : live
@@ -61,6 +62,7 @@ export async function activateAddon(db: SupabaseClient, input: { orgId: string; 
     ...(wasActive ? {} : { locked_price: Number(input.unitPrice) > 0 ? Number(input.unitPrice) : null }),
   } as any, { onConflict: 'org_id,addon_id' })
   if (error) return { ok: false, status: 500, error: 'فشل التفعيل' }
+  clearFeatureCache(orgId)
 
   // نطبّق الفرق بس على حدود المنشأة
   if (slug === 'extra_branch') {

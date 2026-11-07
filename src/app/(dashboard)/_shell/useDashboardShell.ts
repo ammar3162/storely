@@ -14,6 +14,12 @@ import { useTranslation } from '@/lib/i18n/LanguageContext'
 import { NAV_GROUPS } from './nav'
 import { planIncludes } from '@/lib/planFeatures'
 import { isNewPlan } from '@/lib/planPricing'
+import type { Feature } from '@/lib/planFeatures'
+// الصفحات اللي تحتاج ميزة (يكفي وحدة منها) — «ابنِ باقتك» ممكن ما فيها المخزون أو المشتريات
+const PAGE_FEATURES: Record<string, Feature[]> = {
+  '/inventory': ['inventory'], '/dispense': ['inventory'], '/transfer-stock': ['inventory'],
+  '/purchases': ['purchases'], '/suppliers': ['inventory', 'purchases'], '/marketplace': ['inventory', 'purchases'],
+}
 
 let _cache: any = null
 
@@ -61,7 +67,9 @@ export function useDashboardShell() {
   const [branches, setBranches]     = useState<any[]>([])
   const [orgPlan, setOrgPlan]       = useState<string>('basic')
   // الميزات من الخادم (/api/me): الباقة + الإضافات + التجربة المجانية
-  const [orgFeat, setOrgFeat]       = useState<{ hr?: boolean; profitability?: boolean }>({})
+  const [orgFeat, setOrgFeat]       = useState<Partial<Record<Feature, boolean>>>({})
+  // ميزات كل فرع («ابنِ باقتك»/إضافات لفروع معيّنة) — نقفل الصفحة للفرع اللي ما فيه الميزة
+  const [branchFeat, setBranchFeat] = useState<Record<string, Partial<Record<Feature, boolean>>>>({})
   // الإضافات المفعّلة (الحضور، الربحية، الذكاء، الفروع الإضافية) — تتحدث لحالها لما تتغير (useLiveRefresh تحت)
   const loadAddons = useCallback((oid: string, fresh = false) => {
     getAddonsMarket(oid, fresh).then(j=>{
@@ -80,7 +88,7 @@ export function useDashboardShell() {
   useLiveRefresh(typeof window!=='undefined' ? sessionStorage.getItem('s_org_id') : null, ['org_addon_subscriptions','plan_requests'], () => {
     const oid = sessionStorage.getItem('s_org_id'); if (!oid) return
     loadAddons(oid, true)
-    refreshMe().then(me => { if (me?.org?.plan) setOrgPlan(me.org.plan); if (me?.org?.features) setOrgFeat(me.org.features) }).catch(()=>{})
+    refreshMe().then(me => { if (me?.org?.plan) setOrgPlan(me.org.plan); if (me?.org?.features) setOrgFeat(me.org.features); if (me?.org?.branch_features) setBranchFeat(me.org.branch_features) }).catch(()=>{})
   })
   const [orgMaxBranches, setOrgMaxBranches] = useState<number>(1)
   const [userRole, setUserRole]     = useState<string>('owner')
@@ -192,6 +200,7 @@ export function useDashboardShell() {
     const orgPlan=(orgData as any)?.plan||'basic'
     setOrgPlan(orgPlan)
     setOrgFeat((orgData as any)?.features || {})
+    setBranchFeat((orgData as any)?.branch_features || {})
     setOrgMaxBranches((orgData as any)?.max_branches||1)
     sessionStorage.setItem('s_plan',orgPlan)
     sessionStorage.setItem('s_country_code',(orgData as any)?.country_code||'+966')
@@ -390,6 +399,9 @@ export function useDashboardShell() {
   // عناصر القائمة المسموحة لهذا الحساب (الباقة، الإضافات، عدد الفروع، صلاحيات المدير، داخل التطبيق)
   function navAllowed(href:string){
     if(href==='/addons-market' && inApp) return false
+    // المخزون والمشتريات: تنخفي لو ما هي باشتراكه («ابنِ باقتك»)
+    const need = PAGE_FEATURES[href]
+    if(need && !need.some(f => orgFeat[f] !== false)) return false
     const branchPages=['/branches','/branch-compare','/branch-managers','/transfer-stock']
     if(branchPages.includes(href) && (orgPlan==='basic'||isNewPlan(orgPlan)) && !hasExtraBranchAddon && orgMaxBranches<=1) return false
     if((href==='/attendance'||href==='/hr-management') && !planIncludes(orgPlan,'hr') && !hasHrAddon && !orgFeat.hr) return false
@@ -397,10 +409,17 @@ export function useDashboardShell() {
     if(['/branch-compare','/branch-managers','/transfer-stock'].includes(href) && branches.length<=1) return false
     return navVisible(href)
   }
+  // الصفحة الحالية تحتاج ميزة مو مفعّلة للفرع المختار؟ (الصفحة تنقفل مكانها بطاقة)
+  const curBranch = typeof window !== 'undefined' ? sessionStorage.getItem('s_branch_id') : null
+  const pageNeed = Object.entries(PAGE_FEATURES).find(([p]) => pathname === p || pathname?.startsWith(p + '/'))?.[1] || null
+  const featNow = (curBranch && branchFeat[curBranch]) || orgFeat
+  const pageLock: { feature: Feature; otherBranch: boolean } | null = pageNeed && !pageNeed.some(f => featNow[f] !== false)
+    ? { feature: pageNeed[0], otherBranch: pageNeed.some(f => orgFeat[f] !== false) }
+    : null
   const visibleGroups = NAV_GROUPS.map(g=>({...g, items:g.items.filter(i=>navAllowed(i.href))})).filter(g=>g.items.length)
   async function signOut(){ await sb.auth.signOut(); _cache=null; sessionStorage.clear(); window.location.href='/login' }
 
-  return { t, lang, setLang, orgName, setOrgName, subDaysLeft, setSubDaysLeft, orgLogo, setOrgLogo, hasHrAddon, setHasHrAddon, hasProfitAddon, setHasProfitAddon, hasAiAddon, setHasAiAddon, hasExtraBranchAddon, setHasExtraBranchAddon, inApp, setInApp, branchName, setBranchName, userName, setUserName, userInit, setUserInit, lowCount, setLowCount, unread, setUnread, branches, setBranches, orgPlan, setOrgPlan, orgFeat, setOrgFeat, orgMaxBranches, setOrgMaxBranches, userRole, setUserRole, managerPermissions, setManagerPermissions, showMore, setShowMore, showBranch, setShowBranch, branchLowCounts, setBranchLowCounts, ready, setReady, showOnboarding, setShowOnboarding, showConsent, setShowConsent, showWaInvite, setShowWaInvite, consentChecked, setConsentChecked, consentSaving, setConsentSaving, showMaintenance, setShowMaintenance, showEnableNotif, setShowEnableNotif, enablingPush, setEnablingPush, maintenanceMsg, setMaintenanceMsg, showTermsConsent, setShowTermsConsent, termsChecked, setTermsChecked, termsSaving, setTermsSaving, profileId, setProfileId, onboardingStep, setOnboardingStep, theme, setTheme, confirmStopBranch, setConfirmStopBranch, stoppingBranch, setStoppingBranch, loadAddons, isDesk, router, pathname, navRef, sb, load, isActive, BOT_NAV, visibleGroups, toggleTheme, acceptConsent, confirmWaFirstContact, acceptTermsConsent, enablePush, loadBranchLowCounts, openBranchSelector, selectBranch, stopBranch, navVisible, navAllowed, signOut }
+  return { pageLock, branchFeat, t, lang, setLang, orgName, setOrgName, subDaysLeft, setSubDaysLeft, orgLogo, setOrgLogo, hasHrAddon, setHasHrAddon, hasProfitAddon, setHasProfitAddon, hasAiAddon, setHasAiAddon, hasExtraBranchAddon, setHasExtraBranchAddon, inApp, setInApp, branchName, setBranchName, userName, setUserName, userInit, setUserInit, lowCount, setLowCount, unread, setUnread, branches, setBranches, orgPlan, setOrgPlan, orgFeat, setOrgFeat, orgMaxBranches, setOrgMaxBranches, userRole, setUserRole, managerPermissions, setManagerPermissions, showMore, setShowMore, showBranch, setShowBranch, branchLowCounts, setBranchLowCounts, ready, setReady, showOnboarding, setShowOnboarding, showConsent, setShowConsent, showWaInvite, setShowWaInvite, consentChecked, setConsentChecked, consentSaving, setConsentSaving, showMaintenance, setShowMaintenance, showEnableNotif, setShowEnableNotif, enablingPush, setEnablingPush, maintenanceMsg, setMaintenanceMsg, showTermsConsent, setShowTermsConsent, termsChecked, setTermsChecked, termsSaving, setTermsSaving, profileId, setProfileId, onboardingStep, setOnboardingStep, theme, setTheme, confirmStopBranch, setConfirmStopBranch, stoppingBranch, setStoppingBranch, loadAddons, isDesk, router, pathname, navRef, sb, load, isActive, BOT_NAV, visibleGroups, toggleTheme, acceptConsent, confirmWaFirstContact, acceptTermsConsent, enablePush, loadBranchLowCounts, openBranchSelector, selectBranch, stopBranch, navVisible, navAllowed, signOut }
 }
 
 export type DashboardShell = ReturnType<typeof useDashboardShell>

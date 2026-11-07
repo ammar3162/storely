@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { billLines, activeDiscount, planKeyOf, addonPeriodEnd, proratedCharge, staffBase, supplierBase, maxSelfServeBranches, branchPriceFor, planLabel, PLAN_CAPS, planPriceFor, addonPriceFor, addonIncludedIn, addonsForPlan, nextPlanOf, signupAddonsFor, signupAddonsMonthly } from './planPricing'
+import { customMonthly, customModuleAmount, billLines, activeDiscount, planKeyOf, addonPeriodEnd, proratedCharge, staffBase, supplierBase, maxSelfServeBranches, branchPriceFor, planLabel, PLAN_CAPS, planPriceFor, addonPriceFor, addonIncludedIn, addonsForPlan, nextPlanOf, signupAddonsFor, signupAddonsMonthly } from './planPricing'
 
 const branch = (qty: number, isValid = true) => ({ name: 'فرع إضافي', slug: 'extra_branch', monthly_price: 49, subscription: { isValid, quantity: qty } })
 
@@ -129,7 +129,7 @@ describe('new plans (2026-11): price per branch', () => {
     const cashier = { name: 'إقفال الكاشير', slug: 'cashier_closing', monthly_price: 29, subscription: { isValid: true, quantity: 2, locked_price: 40 } }
     const ai = { name: 'الذكاء', slug: 'ai_tools', monthly_price: 29, subscription: { isValid: true, quantity: 1, locked_price: 15 } }
     const { lines, total } = billLines('essential', 'monthly', [cashier, ai], null, null, 3)
-    expect(lines[0]).toEqual({ label: 'اشتراك باقة "الأساسية" (3 فروع) (شهرياً)', amount: 179 })
+    expect(lines[0]).toEqual({ label: 'اشتراك باقة "الأساسية" (3 فروع) (شهرياً)', amount: 179, kind: 'plan' })
     expect(lines[1]).toEqual({ label: 'إضافة "إقفال الكاشير" (2 فروع × 40 ر.س)', amount: 80 })
     expect(total).toBe(179 + 80 + 15)
   })
@@ -173,5 +173,36 @@ describe('add-ons chosen at signup', () => {
     expect(signupAddonsMonthly('essential', ['cashier_closing', 'ai_tools'], 2)).toBe(95)
     // الكاشير مضمّن بالتشغيل فما ينحسب
     expect(signupAddonsMonthly('ops', ['cashier_closing', 'hr_full'], 1)).toBe(69)
+  })
+})
+
+describe('«ابنِ باقتك» (custom)', () => {
+  const mod = (slug: string, qty: number) => ({ name: slug, slug, monthly_price: 0, subscription: { isValid: true, quantity: qty } })
+  it('each module: first branch + extra branch × the rest; AI once', () => {
+    expect(customModuleAmount('cashier_closing', 1)).toBe(40)
+    expect(customModuleAmount('cashier_closing', 3)).toBe(90)
+    expect(customModuleAmount('mod_inventory', 2)).toBe(104)
+    expect(customModuleAmount('ai_tools', 5)).toBe(15)
+  })
+  it('cashier alone, 1 branch, 6 staff = 49 minimum; 3 staff → still the minimum', () => {
+    expect(customMonthly({ cashier_closing: 1 }, 1, 6)).toBe(49)
+    expect(customMonthly({ cashier_closing: 1, mod_purchases: 1 }, 1, 6)).toBe(90)
+    expect(customMonthly({ cashier_closing: 1, mod_purchases: 1 }, 1, 3)).toBe(60)
+    expect(customMonthly({ cashier_closing: 1, mod_purchases: 1 }, 1, 9)).toBe(120)
+    expect(customMonthly({ cashier_closing: 1, mod_purchases: 1 }, 1, 1)).toBe(60)   // أقل شي 3 لكل فرع
+  })
+  it('bill: modules per branch, staff discount, minimum, no plan line', () => {
+    const b = billLines('custom', 'monthly', [mod('mod_inventory', 3), mod('cashier_closing', 2), mod('ai_tools', 1)], null, null, 3, 12)
+    expect(b.lines.map(l => l.amount)).toEqual([69 + 70, 40 + 25, 15, -60])
+    expect(b.total).toBe(139 + 65 + 15 - 60)
+    expect(billLines('custom', 'monthly', [mod('cashier_closing', 1)], null, null, 1, 6).total).toBe(49)
+    expect(billLines('custom', 'yearly', [mod('mod_purchases', 1)], null, null, 1, 6).total).toBe(Math.round(50 * 12 * 0.8))
+    expect(billLines('custom', 'yearly', [mod('cashier_closing', 1)], null, null, 1, 6).total).toBe(Math.round(49 * 12 * 0.8))
+  })
+  it('modules show only for custom, with first/extra prices', () => {
+    const list = addonsForPlan('custom', [{ slug: 'mod_inventory', monthly_price: 69 }, { slug: 'cashier_closing', monthly_price: 29 }, { slug: 'profitability', monthly_price: 29 }, { slug: 'extra_branch', monthly_price: 79 }])
+    expect(list).toEqual([{ slug: 'mod_inventory', monthly_price: 69, per_branch: true, extra_price: 35 }, { slug: 'cashier_closing', monthly_price: 40, per_branch: true, extra_price: 25 }])
+    expect(addonsForPlan('ops', [{ slug: 'mod_inventory', monthly_price: 69 }])).toEqual([])
+    expect(addonsForPlan('basic', [{ slug: 'mod_purchases', monthly_price: 50 }])).toEqual([])
   })
 })

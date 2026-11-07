@@ -228,17 +228,17 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
       await db.from('products').insert({ org_id: orgId, branch_id: branchA, name: 'صنف التقرير', unit: 'حبة', reorder_point: 5, is_active: true } as any)
       await db.from('cashier_closings').insert({ org_id: orgId, branch_id: branchA, staff_name: 'كاشير', closing_date: yesterday, total_sales: 1000, cash_amount: 400, network_amount: 600, difference: -20 } as any).then(r => { if (r.error) throw r.error })
 
-      const all = { ai: true, cashier: true, hr: true, profitability: true }
+      const all = { inventory: true, purchases: true, ai: true, cashier: true, hr: true, profitability: true }
       const [rep] = await buildBranchReports(db as any, orgId, [{ id: branchA, name: 'الفرع الرئيسي' }], all, now)
       expect(rep.sales).toEqual(['عجز — راجع التفاصيل في صفحة الإقفال'])   // الحالة بس — بدون أرقام
       expect(rep.staff!.join(' ')).toContain('غائب التقرير')
       expect(rep.staffNotable).toBe(true)
       expect(rep.stockOut).toContain('صنف التقرير')   // كميته صفر → «خلصت»، وما يتكرر في «المطلوب اليوم»
       expect((rep.decisions || []).join(' ')).not.toContain('صنف التقرير')
-      const basic = await buildBranchReports(db as any, orgId, [{ id: branchA, name: 'الفرع الرئيسي' }], { ai: false, cashier: false, hr: false, profitability: false }, now)
+      const basic = await buildBranchReports(db as any, orgId, [{ id: branchA, name: 'الفرع الرئيسي' }], { inventory: true, purchases: true, ai: false, cashier: false, hr: false, profitability: false }, now)
       expect(basic[0].sales).toBeNull()
       expect(basic[0].staff).toBeNull()
-      expect(branchBlock(basic[0], fullView({ ai: false, cashier: false, hr: false, profitability: false }))).toContain('صنف التقرير')
+      expect(branchBlock(basic[0], fullView({ inventory: true, purchases: true, ai: false, cashier: false, hr: false, profitability: false }))).toContain('صنف التقرير')
 
       await db.from('cashier_closings').delete().eq('org_id', orgId).eq('closing_date', yesterday).eq('staff_name', 'كاشير')
       await db.from('staff_members').delete().eq('org_id', orgId).eq('name', 'غائب التقرير')

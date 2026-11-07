@@ -4,7 +4,7 @@ import { billLines, planKeyOf, type BillingCycle } from '@/lib/planPricing'
 
 import type { OrgDiscount } from '@/lib/planPricing'
 
-type Org = { id: string; plan?: string | null; max_branches?: number | null; locked_plan_monthly?: number | null; billing_cycle?: string | null } & OrgDiscount
+type Org = { id: string; plan?: string | null; max_branches?: number | null; locked_plan_monthly?: number | null; billing_cycle?: string | null; staff_included?: number | null } & OrgDiscount
 
 /** فاتورة المنشأة بالشهر: total = المجموع بعد الخصم، plan = الباقة، addons = الإضافات، discount = الخصم (موجب) */
 export type OrgRevenue = { total: number; plan: number; addons: number; discount: number }
@@ -22,8 +22,9 @@ export function computeOrgRevenue(orgs: Org[], addons: AddonRow[], subs: SubRow[
     }))
     const cycle: BillingCycle = o.billing_cycle === 'yearly' ? 'yearly' : 'monthly'
     const div = cycle === 'yearly' ? 12 : 1
-    const { lines, total } = billLines(planKeyOf(o.plan, o.max_branches), cycle, rows as any, o.locked_plan_monthly, o, o.max_branches)
-    const plan = lines[0]?.amount || 0
+    const { lines, total } = billLines(planKeyOf(o.plan, o.max_branches), cycle, rows as any, o.locked_plan_monthly, o, o.max_branches, o.staff_included)
+    // الباقة = سطرها، أو مزايا «ابنِ باقتك»
+    const plan = lines.filter(l => l.kind === 'plan' || l.kind === 'module').reduce((t, l) => t + l.amount, 0)
     const discount = lines.filter(l => l.amount < 0).reduce((s, l) => s - l.amount, 0)
     const r = (n: number) => Math.round(n / div)
     out[o.id] = { total: r(total), plan: r(plan), addons: r(total + discount - plan), discount: r(discount) }
@@ -49,7 +50,7 @@ export async function monthlyBills(db: SupabaseClient, orgs: Org[]): Promise<Rec
 }
 
 export async function monthlyBill(db: SupabaseClient, orgId: string) {
-  const { data: org } = await db.from('organizations').select('id,plan,max_branches,locked_plan_monthly,discount_type,discount_value,discount_note,discount_until').eq('id', orgId).maybeSingle()
+  const { data: org } = await db.from('organizations').select('id,plan,max_branches,locked_plan_monthly,billing_cycle,staff_included,discount_type,discount_value,discount_note,discount_until').eq('id', orgId).maybeSingle()
   if (!org) return 0
   return (await monthlyBills(db, [org as any]))[orgId] || 0
 }

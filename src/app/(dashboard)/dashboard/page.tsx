@@ -58,6 +58,9 @@ export default function DashboardPage() {
   const [weeklyD, setWeeklyD]   = useState<{label:string;value:number}[]>([])
   const [visible, setVisible]   = useState(false)
   const [notifs, setNotifs]     = useState<any[]>([])
+  // «ابنِ باقتك»: نخفي أقسام المخزون/المشتريات لو ما هي باشتراكه (الافتراضي ظاهر)
+  const [feat, setFeat]         = useState<{ inventory?: boolean; purchases?: boolean }>({})
+  const inv = feat.inventory !== false, pur = feat.purchases !== false
   const [curr, setCurr]         = useState('⃁')
   const [subExpired, setSubExpired] = useState(false)
   const sb = createClient()
@@ -112,6 +115,7 @@ export default function DashboardPage() {
       }
     }
     const me=await getMe(); if(!me)return
+    if(me.org?.features) setFeat(me.org.features)
     {
       setUserName(me.full_name||'')
       setOrgName(me.org?.name||'')
@@ -206,9 +210,9 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="dh-actions">
-          <button className="sh-btn" onClick={()=>router.push('/purchases')}><ShoppingCart size={16}/> تسجيل شراء</button>
-          <button className="sh-btn" onClick={()=>router.push('/inventory')}><Plus size={16}/> إضافة منتج</button>
-          <button className="sh-btn sh-btn-primary" onClick={()=>router.push('/dispense')}><ArrowUpRight size={16}/> تسجيل صرف</button>
+          {pur && <button className="sh-btn" onClick={()=>router.push('/purchases')}><ShoppingCart size={16}/> تسجيل شراء</button>}
+          {inv && <button className="sh-btn" onClick={()=>router.push('/inventory')}><Plus size={16}/> إضافة منتج</button>}
+          {inv && <button className="sh-btn sh-btn-primary" onClick={()=>router.push('/dispense')}><ArrowUpRight size={16}/> تسجيل صرف</button>}
         </div>
       </div>
 
@@ -217,11 +221,11 @@ export default function DashboardPage() {
       {/* الأرقام */}
       <div className="dh-kpis">
         {[
-          {label:t('dashboard.statItems'), val:stats.products, note:t('dashboard.inStock'), href:'/inventory', tone:TONES.teal, Icon:Package},
-          {label:'تحت الحد الأدنى', val:stats.lowStock, note:stats.outOfStock>0?`منها ${stats.outOfStock} نفدت`:'لا يوجد صنف نافد', href:'/inventory', tone:TONES.rose, Icon:AlertTriangle, alert:stats.lowStock>0},
-          {label:t('dashboard.statTodayPurchase'), val:stats.todayPurchases, note:t('dashboard.invoice'), href:'/purchases', tone:TONES.indigo, Icon:Receipt},
-          {label:t('dashboard.statTodayDispense'), val:stats.todayDispenses, note:t('dashboard.operation'), href:'/dispense', tone:TONES.amber, Icon:Send},
-        ].map((k,i)=>(
+          inv && {label:t('dashboard.statItems'), val:stats.products, note:t('dashboard.inStock'), href:'/inventory', tone:TONES.teal, Icon:Package},
+          inv && {label:'تحت الحد الأدنى', val:stats.lowStock, note:stats.outOfStock>0?`منها ${stats.outOfStock} نفدت`:'لا يوجد صنف نافد', href:'/inventory', tone:TONES.rose, Icon:AlertTriangle, alert:stats.lowStock>0},
+          pur && {label:t('dashboard.statTodayPurchase'), val:stats.todayPurchases, note:t('dashboard.invoice'), href:'/purchases', tone:TONES.indigo, Icon:Receipt},
+          inv && {label:t('dashboard.statTodayDispense'), val:stats.todayDispenses, note:t('dashboard.operation'), href:'/dispense', tone:TONES.amber, Icon:Send},
+        ].filter((k): k is Exclude<typeof k, false> => !!k).map((k,i)=>(
           <button key={i} className="dh-kpi" onClick={()=>router.push(k.href)}
             style={{'--tone':k.tone.fg,'--tone-bg':k.tone.bg,'--tone-soft':k.tone.soft,animationDelay:`${i*60}ms`} as React.CSSProperties}>
             <div className="dh-kpi-top">
@@ -299,7 +303,7 @@ export default function DashboardPage() {
         )}
 
         {/* تحتاج إعادة طلب */}
-        <section className="dh-card">
+        {inv && <section className="dh-card">
           <div className="dh-card-head">
             <span className="dh-card-title"><span className="dh-card-icon" style={{color:TONES.amber.fg,background:TONES.amber.bg}}><RotateCcw size={15}/></span>تحتاج إعادة طلب</span>
             {lowItems.length>0 && <button className="dh-link" onClick={()=>router.push('/inventory')}>عرض المخزون</button>}
@@ -317,10 +321,10 @@ export default function DashboardPage() {
               </button>
             )
           })}
-        </section>
+        </section>}
 
         {/* آخر الحركات */}
-        <section className="dh-card">
+        {inv && <section className="dh-card">
           <div className="dh-card-head">
             <span className="dh-card-title"><span className="dh-card-icon" style={{color:TONES.indigo.fg,background:TONES.indigo.bg}}><Activity size={15}/></span>آخر الحركات</span>
             {activity.length>0 && <button className="dh-link" onClick={()=>router.push('/reports')}>التقارير</button>}
@@ -334,13 +338,13 @@ export default function DashboardPage() {
               <div className="dh-qty" style={{color:m.qty_change<0?dsColors.danger:dsColors.primary}}>{m.qty_change>0?'+':''}{m.qty_change} <span className="dh-muted">{(m.products as any)?.unit}</span></div>
             </div>
           ))}
-        </section>
+        </section>}
 
         {/* الأسبوع */}
         {[
-          {title:'المشتريات آخر 7 أيام', data:weeklyP, unit:'فاتورة', tone:TONES.indigo, Icon:ShoppingCart},
-          {title:'الصرف آخر 7 أيام', data:weeklyD, unit:'عملية', tone:TONES.amber, Icon:Send},
-        ].map((c,i)=>(
+          pur && {title:'المشتريات آخر 7 أيام', data:weeklyP, unit:'فاتورة', tone:TONES.indigo, Icon:ShoppingCart},
+          inv && {title:'الصرف آخر 7 أيام', data:weeklyD, unit:'عملية', tone:TONES.amber, Icon:Send},
+        ].filter((c): c is Exclude<typeof c, false> => !!c).map((c,i)=>(
           <section key={i} className="dh-card">
             <div className="dh-card-head"><span className="dh-card-title"><span className="dh-card-icon" style={{color:c.tone.fg,background:c.tone.bg}}><c.Icon size={15}/></span>{c.title}</span><span className="dh-total" style={{color:c.tone.fg,background:c.tone.bg}}>{c.data.reduce((s,d)=>s+d.value,0)} {c.unit}</span></div>
             <div style={{padding:'16px 18px 16px'}}><Bar data={c.data} color={c.tone.fg} soft={c.tone.soft}/></div>

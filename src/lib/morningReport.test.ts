@@ -8,7 +8,7 @@ const r = {
   staff: ['غياب أمس: خالد', 'دوام اليوم: 5 موظفين'], staffNotable: true,
   stockOut: 'طماطم', stockLow: ['خس (باقي 1 من 5 كيس)'], purchases: null,
 }
-const all = fullView({ ai: true, cashier: true, hr: true, profitability: true })
+const all = fullView({ inventory: true, purchases: true, ai: true, cashier: true, hr: true, profitability: true })
 
 describe('morning report', () => {
   it('cashier status first, then out of stock, today’s actions, staff, running low, purchases — each as a titled list', () => {
@@ -22,7 +22,7 @@ describe('morning report', () => {
     expect(t).not.toContain('ريال')   // إقفال الكاشير بدون أرقام
   })
   it('hides sections whose feature is off (basic without add-ons: stock and purchases only)', () => {
-    const t = branchBlock(r, fullView({ ai: false, cashier: false, hr: false, profitability: false }))!
+    const t = branchBlock(r, fullView({ inventory: true, purchases: true, ai: false, cashier: false, hr: false, profitability: false }))!
     expect(t).not.toContain('المطلوب اليوم')
     expect(t).not.toContain('إقفال الكاشير')
     expect(t).not.toContain('خالد')

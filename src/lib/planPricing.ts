@@ -1,14 +1,51 @@
 // أسعار الباقات وحساب الفاتورة — مصدر واحد للوحة الإدارة (الفاتورة المرسلة) وحساب العميل (الإعدادات)
 // الباقات القديمة (basic/pro/advanced) باقية للمشتركين قبل 2026-11 بأسعارهم وحدودهم بدون تغيير.
 // الباقات الجديدة (essential/ops/full) سعرها لكل فرع: الفرع الأول + الفرع الإضافي × (عدد فروع الباقة − 1).
+// «ابنِ باقتك» (custom): ما لها سعر باقة — العميل يختار المزايا (CUSTOM_MODULES)، وكل ميزة سعرها للفرع الأول + الإضافي.
 export type LegacyPlanKey = 'basic' | 'pro' | 'advanced'
 export type NewPlanKey = 'essential' | 'ops' | 'full'
-export type PlanKey = LegacyPlanKey | NewPlanKey
+export type PlanKey = LegacyPlanKey | NewPlanKey | 'custom'
 export type BillingCycle = 'monthly' | 'yearly'
 
 export const NEW_PLANS: NewPlanKey[] = ['essential', 'ops', 'full']
 export const LEGACY_PLANS: LegacyPlanKey[] = ['basic', 'pro', 'advanced']
-export const isNewPlan = (plan: string | null | undefined): plan is NewPlanKey => NEW_PLANS.includes(plan as NewPlanKey)
+export const CUSTOM_PLAN = 'custom' as const
+export const isCustomPlan = (plan: string | null | undefined): plan is 'custom' => plan === CUSTOM_PLAN
+/** الباقات الجديدة (2026-11) ومعها «ابنِ باقتك» — الحدود لكل فرع والأسعار من الكود */
+export const isNewPlan = (plan: string | null | undefined): plan is NewPlanKey | 'custom' => NEW_PLANS.includes(plan as NewPlanKey) || isCustomPlan(plan)
+
+/**
+ * «ابنِ باقتك»: سعر كل ميزة للفرع الأول، وكل فرع إضافي فيه الميزة. الذكاء للمنشأة كلها.
+ * mod_inventory / mod_purchases مفتوحة لكل الباقات الثانية — تنباع لـ custom بس.
+ */
+export const CUSTOM_MODULES: Record<string, { first: number; extra: number; perBranch: boolean }> = {
+  mod_inventory:   { first: 69, extra: 35, perBranch: true },
+  mod_purchases:   { first: 50, extra: 20, perBranch: true },
+  cashier_closing: { first: 40, extra: 25, perBranch: true },
+  hr_full:         { first: 69, extra: 35, perBranch: true },
+  ai_tools:        { first: 15, extra: 0,  perBranch: false },
+}
+export const CUSTOM_MODULE_ORDER = ['mod_inventory', 'mod_purchases', 'cashier_closing', 'hr_full', 'ai_tools'] as const
+export const CUSTOM_STAFF_STEP = 10          // كل موظف أقل/أكثر من 6 لكل فرع
+export const CUSTOM_MIN_STAFF_PER_BRANCH = 3
+export const CUSTOM_MIN_MONTHLY = 49
+/** سعر ميزة «ابنِ باقتك» لعدد الفروع اللي فيها (first = المثبّت للمشترك لو موجود) */
+export function customModuleAmount(slug: string, branches: number, first?: number | null): number {
+  const m = CUSTOM_MODULES[slug]
+  if (!m) return 0
+  const f = Number(first) > 0 ? Number(first) : m.first
+  return m.perBranch ? f + m.extra * (Math.max(1, branches) - 1) : f
+}
+/** فاتورة «ابنِ باقتك» الشهرية قبل الخصم: modules = الميزة ← عدد فروعها، staff = عدد الموظفين */
+export function customMonthly(modules: Record<string, number>, branches: number, staff: number): number {
+  const mods = Object.entries(modules).filter(([, n]) => n > 0).reduce((t, [slug, n]) => t + customModuleAmount(slug, n), 0)
+  const base = PLAN_CAPS.custom.staff * Math.max(1, branches)
+  const st = Math.max(CUSTOM_MIN_STAFF_PER_BRANCH * Math.max(1, branches), staff)
+  return Math.max(CUSTOM_MIN_MONTHLY, mods + (st - base) * CUSTOM_STAFF_STEP)
+}
+/** الإضافة تنباع لكل فرع (branch_ids والكمية = عدد الفروع)؟ */
+export const isPerBranchAddon = (plan: string | null | undefined, slug: string) =>
+  isCustomPlan(plan) ? !!CUSTOM_MODULES[slug]?.perBranch : isNewPlan(plan) && !!NEW_ADDON_PRICES[slug]?.perBranch
 
 // السنوي = الشهري × 12 بخصم 20%
 export const YEARLY_FACTOR = 0.8
@@ -21,6 +58,7 @@ export const PLAN_PRICING: Record<PlanKey, { label: string; monthly: number; yea
   essential: { label: 'الأساسية', monthly: 119, yearly: yearlyOf(119) },
   ops:       { label: 'التشغيل', monthly: 159, yearly: yearlyOf(159) },
   full:      { label: 'الكاملة', monthly: 219, yearly: yearlyOf(219) },
+  custom:    { label: 'باقتك المخصصة', monthly: 0, yearly: 0 },
 }
 
 /** اسم الباقة للأدمن — يميّز القديمة عن الجديدة اللي بنفس الاسم */
@@ -42,6 +80,7 @@ export const NEW_ADDON_PRICES: Record<string, { monthly: number; perBranch: bool
 /** سعر الإضافة لمنشأة على باقة جديدة (null = يستخدم سعر الإضافة العادي) */
 export function addonPriceFor(plan: string | null | undefined, slug: string): number | null {
   if (!isNewPlan(plan)) return null
+  if (isCustomPlan(plan) && CUSTOM_MODULES[slug]) return CUSTOM_MODULES[slug].first
   if (slug === 'extra_branch') return PLAN_CAPS[plan].branchPrice
   const p = NEW_ADDON_PRICES[slug]
   return p ? p.monthly : null
@@ -49,7 +88,10 @@ export function addonPriceFor(plan: string | null | undefined, slug: string): nu
 
 /** الإضافة مضمّنة بالباقة (ما تنباع لها) */
 export function addonIncludedIn(plan: string | null | undefined, slug: string): boolean {
-  if (isNewPlan(plan)) return !!NEW_ADDON_PRICES[slug]?.includedIn.includes(plan)
+  // المخزون والمشتريات مفتوحة لكل الباقات — تنباع لـ «ابنِ باقتك» بس
+  if (slug.startsWith('mod_')) return !isCustomPlan(plan)
+  if (isCustomPlan(plan)) return slug === 'profitability'
+  if (isNewPlan(plan)) return !!NEW_ADDON_PRICES[slug]?.includedIn.includes(plan as NewPlanKey)
   return (plan === 'pro' || plan === 'advanced') && ['hr_full', 'profitability', 'ai_tools', 'cashier_closing'].includes(slug)
 }
 
@@ -57,13 +99,16 @@ export function addonIncludedIn(plan: string | null | undefined, slug: string): 
  * الإضافات اللي تنعرض للمنشأة حسب باقتها: نشيل المضمّنة بالباقة، والجديدة تاخذ سعرها من NEW_ADDON_PRICES
  * (per_branch = السعر لكل فرع). الموردين بالباقات الجديدة مجاناً لين حدها، فما تنباع «مورد إضافي».
  */
-export function addonsForPlan<T extends { slug: string; monthly_price: number | string }>(plan: string | null | undefined, addons: T[]): (T & { per_branch?: boolean })[] {
+export function addonsForPlan<T extends { slug: string; monthly_price: number | string }>(plan: string | null | undefined, addons: T[]): (T & { per_branch?: boolean; extra_price?: number })[] {
   return addons
     .filter(a => !addonIncludedIn(plan, a.slug))
     .filter(a => !(isNewPlan(plan) && a.slug === 'extra_suppliers'))
+    // «ابنِ باقتك»: الفرع الإضافي ما له سعر — كل ميزة تنحسب حسب فروعها
+    .filter(a => !(isCustomPlan(plan) && a.slug === 'extra_branch'))
     .map(a => {
       const p = addonPriceFor(plan, a.slug)
-      return p != null ? { ...a, monthly_price: p, per_branch: !!NEW_ADDON_PRICES[a.slug]?.perBranch } : a
+      const extra = isCustomPlan(plan) && CUSTOM_MODULES[a.slug]?.perBranch ? CUSTOM_MODULES[a.slug].extra : undefined
+      return p != null ? { ...a, monthly_price: p, per_branch: isPerBranchAddon(plan, a.slug), ...(extra != null ? { extra_price: extra } : {}) } : a
     })
 }
 
@@ -105,6 +150,7 @@ export const PLAN_CAPS: Record<PlanKey, { branches: number; maxBranches: number;
   essential: { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 30 },
   ops:       { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 40 },
   full:      { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 55 },
+  custom:    { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 0 },
 }
 
 /** اسم الباقة للعرض — المتقدمة بفروع فوق حدها تنعرض «المؤسسات» */
@@ -123,8 +169,10 @@ const perPlan = (plan: string | null | undefined, cap: number, baseBranches?: nu
   isNewPlan(plan) ? cap * Math.max(1, Number(baseBranches) || 1) : cap
 
 /** حد موظفين المنشأة (قبل إضافة «موظف إضافي»): حد الباقة + موظفين كل فرع إضافي */
-export function staffBase(plan: string | null | undefined, storedMax: number | null | undefined, extraBranches: number, baseBranches?: number | null): number {
+export function staffBase(plan: string | null | undefined, storedMax: number | null | undefined, extraBranches: number, baseBranches?: number | null, staffIncluded?: number | null): number {
   const c = PLAN_CAPS[planKeyOf(plan)]
+  // «ابنِ باقتك»: عدد الموظفين اللي اختاره (لو حدده)
+  if (isCustomPlan(plan) && Number(staffIncluded) > 0) return Number(staffIncluded) + Math.max(0, extraBranches) * c.branchStaff
   return keepUnlimited(storedMax, perPlan(plan, c.staff, baseBranches)) + Math.max(0, extraBranches) * c.branchStaff
 }
 
@@ -178,7 +226,7 @@ type AddonSub = { isValid?: boolean; quantity?: number | null; locked_price?: nu
 // سعر وحدة الاشتراك: المثبّت له لو موجود، وإلا سعر الإضافة الحالي
 export const unitPrice = (addonPrice: number | string, sub?: AddonSub | null) => Number(sub?.locked_price) > 0 ? Number(sub!.locked_price) : (Number(addonPrice) || 0)
 type AddonRow = { name: string; slug: string; monthly_price: number | string; subscription?: AddonSub | null; subscriptions?: AddonSub[] }
-export type BillLine = { label: string; amount: number }
+export type BillLine = { label: string; amount: number; kind?: 'plan' | 'module' }
 
 // خصم خاص للمنشأة (من لوحة الإدارة): نسبة من الفاتورة كلها، أو مبلغ ثابت شهرياً (×12 بالسنوي) — لين تاريخ انتهائه لو محدد
 export type OrgDiscount = { discount_type?: string | null; discount_value?: number | string | null; discount_note?: string | null; discount_until?: string | null }
@@ -194,16 +242,28 @@ export function activeDiscount(d: OrgDiscount | null | undefined, now = new Date
 }
 
 /** branches = فروع الباقة (organizations.max_branches) — يأثر على الباقات الجديدة بس */
-export function billLines(plan: PlanKey, cycle: BillingCycle, addons: AddonRow[], lockedPlanMonthly?: number | string | null, discount?: OrgDiscount | null, branches?: number | null): { lines: BillLine[]; total: number } {
+/** staffIncluded = عدد موظفين «ابنِ باقتك» (لو أقل من 6 لكل فرع ينقص من الفاتورة) */
+export function billLines(plan: PlanKey, cycle: BillingCycle, addons: AddonRow[], lockedPlanMonthly?: number | string | null, discount?: OrgDiscount | null, branches?: number | null, staffIncluded?: number | null): { lines: BillLine[]; total: number } {
   const p = planPriceFor(plan, lockedPlanMonthly, branches)
   const n = Math.max(1, Number(branches) || 1)
-  const lines: BillLine[] = [{
+  const custom = isCustomPlan(plan) && !(Number(lockedPlanMonthly) > 0)
+  // «ابنِ باقتك» ما لها سطر باقة — الفاتورة = المزايا اللي اختارها (والسعر الخاص لو الأدمن حدده)
+  const lines: BillLine[] = custom ? [] : [{
     label: `اشتراك باقة "${p.label}"${isNewPlan(plan) && n > 1 && !(Number(lockedPlanMonthly) > 0) ? ` (${n} فروع)` : ''} (${cycle === 'yearly' ? 'سنوياً' : 'شهرياً'})`,
-    amount: cycle === 'yearly' ? p.yearly : p.monthly,
+    amount: cycle === 'yearly' ? p.yearly : p.monthly, kind: 'plan',
   }]
   for (const a of addons) {
     const active = (a.subscriptions || (a.subscription ? [a.subscription] : [])).filter(s => s?.isValid)
     if (!active.length) continue
+    // ميزة «ابنِ باقتك»: الفرع الأول + الإضافي × الباقي (بخصم السنوي)
+    if (isCustomPlan(plan) && CUSTOM_MODULES[a.slug]) {
+      if (!custom) continue   // سعر خاص من الأدمن يشمل المزايا
+      const qty = Math.max(1, Number(active[0].quantity) || 1)
+      const monthly = customModuleAmount(a.slug, qty, Number(active[0].locked_price) || null)
+      lines.push({ label: `"${a.name}"${CUSTOM_MODULES[a.slug].perBranch && qty > 1 ? ` (${qty} فروع)` : ''} (${cycle === 'yearly' ? 'سنوياً' : 'شهرياً'})`, amount: cycle === 'yearly' ? yearlyOf(monthly) : monthly, kind: 'module' })
+      continue
+    }
+    if (a.slug === 'extra_branch' && isCustomPlan(plan)) continue
     // الإضافات تتجدد مع الباقة: بالباقة السنوية = سعرها الشهري × 12 (الفرع الإضافي بنفس خصم السنوي 20%)
     const months = cycle === 'yearly' ? (a.slug === 'extra_branch' ? 12 * YEARLY_FACTOR : 12) : 1
     const per = cycle === 'yearly' ? 'سنوياً' : 'شهرياً'
@@ -218,6 +278,14 @@ export function billLines(plan: PlanKey, cycle: BillingCycle, addons: AddonRow[]
       const qty = Math.max(1, Number(active[0].quantity) || 1)
       lines.push({ label: qty > 1 ? `إضافة "${a.name}" (${qty} فروع × ${price} ر.س${months > 1 ? ' × 12 شهر' : ''})` : `إضافة "${a.name}" (${per})`, amount: price * qty * months })
     }
+  }
+  if (custom) {
+    // موظفين أقل من 6 لكل فرع: ينقص من الفاتورة (بحد أدنى 3 لكل فرع)
+    const less = Number(staffIncluded) > 0 ? PLAN_CAPS.custom.staff * n - Math.max(CUSTOM_MIN_STAFF_PER_BRANCH * n, Number(staffIncluded)) : 0
+    if (less > 0) lines.push({ label: `موظفين أقل (${less} موظف)`, amount: -less * CUSTOM_STAFF_STEP * (cycle === 'yearly' ? 12 * YEARLY_FACTOR : 1) })
+    const sub = lines.reduce((t, l) => t + l.amount, 0)
+    const floor = cycle === 'yearly' ? yearlyOf(CUSTOM_MIN_MONTHLY) : CUSTOM_MIN_MONTHLY
+    if (sub < floor) lines.push({ label: 'الحد الأدنى للاشتراك', amount: floor - sub })
   }
   const subtotal = lines.reduce((s, l) => s + l.amount, 0)
   const d = activeDiscount(discount)

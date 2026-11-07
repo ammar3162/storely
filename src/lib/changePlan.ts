@@ -2,12 +2,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
 import { syncStaffToLimit } from '@/lib/staffCapacity'
+import { clearFeatureCache } from '@/lib/featureRoutes'
 import { PLAN_CAPS, addonIncludedIn, planKeyOf, planPriceFor } from '@/lib/planPricing'
 
 export { PLAN_CAPS }
 
 // إضافات ممكن تكون مضمّنة بالباقة (حسب addonIncludedIn)
-export const INCLUDED_FROM_STANDARD = ['hr_full', 'profitability', 'ai_tools', 'cashier_closing']
+export const INCLUDED_FROM_STANDARD = ['hr_full', 'profitability', 'ai_tools', 'cashier_closing', 'mod_inventory', 'mod_purchases']
 
 /** lockedMonthly = سعر شهري خاص (باقة المؤسسات) — يتثبّت للمنشأة */
 export async function changeOrgPlan(db: SupabaseClient, orgId: string, input: { planName: string; maxBranches: number; maxStaff?: number; maxSuppliers?: number; billingCycle?: string; lockedMonthly?: number | null }) {
@@ -44,6 +45,7 @@ export async function changeOrgPlan(db: SupabaseClient, orgId: string, input: { 
 
   const { error } = await db.from('organizations').update(updatePayload).eq('id', orgId)
   if (error) return { ok: false as const, error: error.message }
+  clearFeatureCache(orgId)
 
   // تخفيض: الفروع الزايدة تتوقف مؤقتاً (مع موظفينها). ترقية: ترجع تلقائياً
   const branchSync = await syncBranchesToLimit(db, orgId)
