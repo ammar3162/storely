@@ -188,12 +188,13 @@ describe.skipIf(!enabled)('integration (staging) — orgs', async () => {
         expect((await get()).status).toBe(403)                       // منشأة ثانية
         auth.current = { userId, orgId, role: 'owner', branchId: null }
         const ok = await get()
-        expect(ok.status).toBe(302)                                  // المالك: يتحوّل لرابط موقّع قصير
-        expect(ok.headers.get('location')).toMatch(/\/object\/sign\/invoices\//)
+        expect(ok.status).toBe(200)                                  // المالك: الملف نفسه من رابطنا (بدون رابط ثاني)
+        expect(ok.headers.get('location')).toBeNull()
+        expect(await ok.text()).toBe('فاتورة')
         auth.current = null
         const { data: st } = await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: 'موظف ملفات', phone: uniqPhone(), pin: 'x', is_active: true, role: 'staff' } as any).select('id').single()
         const tok = generateStaffToken((st as any).id, orgId, branchA)
-        expect((await get({ Authorization: `Bearer ${tok}` })).status).toBe(302)   // موظف المنشأة
+        expect((await get({ Authorization: `Bearer ${tok}` })).status).toBe(200)   // موظف المنشأة
         const otherTok = generateStaffToken((st as any).id, '00000000-0000-0000-0000-000000000000', null)
         expect((await get({ Authorization: `Bearer ${otherTok}` })).status).toBe(403)
         expect((await get({}, 'https://evil.com/x.jpg')).status).toBe(400)
