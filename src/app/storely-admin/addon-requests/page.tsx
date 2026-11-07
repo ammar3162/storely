@@ -1,4 +1,5 @@
 'use client'
+import { adminPlanLabel } from '@/lib/planPricing'
 import { useEffect, useState } from 'react'
 import { Check, X, Phone, ArrowUpCircle, Trash2 } from 'lucide-react'
 import { A, Badge, Btn, Card, Empty, Loading, Notice, PageHeader, adminKey, fmtDate, type Tone } from '../_admin/kit'
@@ -13,7 +14,8 @@ export default function AddonRequestsPage() {
   const [busy, setBusy] = useState<string | null>(null)
   const [msg, setMsg] = useState('')
   const [planReqs, setPlanReqs] = useState<any[]>([])
-  const PLAN_AR: Record<string, string> = { basic: 'الأساسية', pro: 'الشاملة', advanced: 'المتقدمة' }
+  // أسماء الباقات من نفس المصدر (الجديدة + القديمة بعلامة «قديمة» + «ابنِ باقتك»)
+  const PLAN_AR: Record<string, string> = Object.fromEntries(['essential','ops','full','custom','basic','pro','advanced'].map(k => [k, adminPlanLabel(k)]))
 
   async function load() {
     setLoading(true)
