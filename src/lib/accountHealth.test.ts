@@ -28,7 +28,7 @@ describe('assessHealth', () => {
   it('flags a paid add-on that is not used', () => {
     const h = assessHealth(base({ paidAddons: ['hr'], usage30: { cashier: 28, hr: 0, ai: 5, profitability: 2 }, attendance7: 0 }))
     expect(h.status).toBe('attention'); expect(h.unusedPaid).toEqual(['hr'])
-    expect(h.reasons.some(r => r.text.includes('يدفع على «إدارة الموظفين»'))).toBe(true)
+    expect(h.reasons.some(r => r.text.includes('يدفع على «الحضور والرواتب»'))).toBe(true)
   })
   it('included-but-unused features are info only, not a problem', () => {
     const h = assessHealth(base({ usage30: { cashier: 28, hr: 100, ai: 0, profitability: 0 } }))

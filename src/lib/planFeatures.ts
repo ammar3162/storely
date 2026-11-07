@@ -26,7 +26,7 @@ const planHasAll = (plan: string | null | undefined) => ALL.every(f => planInclu
 
 export const FEATURE_LABEL: Record<Feature, string> = {
   cashier: 'إقفال الكاشير',
-  hr: 'إدارة الموظفين',
+  hr: 'الحضور والرواتب',
   ai: 'الذكاء الاصطناعي',
   profitability: 'الربحية',
 }

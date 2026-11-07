@@ -30,7 +30,7 @@ export async function GET(req: Request) {
     const db = sb()
     const { data: org } = await db.from('organizations').select('plan').eq('id', org_id).single()
     if (!(await orgHasHrFeature(db, org_id, (org as any)?.plan))) {
-      return NextResponse.json({ error: 'التقرير متاح بالباقة الشاملة أو المتقدمة، أو بإضافة إدارة الموظفين الكاملة', reason: 'locked' }, { status: 403 })
+      return NextResponse.json({ error: 'التقرير يحتاج ميزة «الحضور والرواتب» — بالباقة أو بإضافتها من صفحة الإضافات', reason: 'locked' }, { status: 403 })
     }
 
     // مدير الفرع: موظفين فرعه بس

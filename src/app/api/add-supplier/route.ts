@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     const capacity = await checkSupplierCapacity(supabase, org_id)
     if (!capacity.ok) return NextResponse.json({ error: capacity.error }, { status: 403 })
     const addonSubscriptionId = capacity.addonSubscriptionId
-    // حد الإضافة: 10 موردين بالساعة لكل منشأة
+    // حد الإضافة: 20 مورد بالساعة لكل منشأة
     const limited = await guard([limit('supplierAddOrg', org_id)], supabase)
     if (limited) return limited
 

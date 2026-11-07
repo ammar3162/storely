@@ -22,7 +22,7 @@ export default function AttendancePage() {
         <div style={{...card,padding:14,marginBottom:18,background:colors.warningLight,border:`1px solid ${colors.warningBorder}`,display:'flex',alignItems:'center',gap:10}}>
           <span style={{fontSize:20}}>🔒</span>
           <div>
-            <div style={{fontSize:13,fontWeight:800,color:colors.text}}>وضع قراءة فقط — انتهى اشتراك ميزة "إدارة الموظفين الكاملة"</div>
+            <div style={{fontSize:13,fontWeight:800,color:colors.text}}>وضع قراءة فقط — ميزة «الحضور والرواتب» غير مفعّلة</div>
             <div style={{fontSize:12,color:colors.text3}}>سجلاتك القديمة محفوظة وتقدر تشوفها، بس ما تقدر تسجّل حضور جديد أو تعدّل الشفتات إلا بعد تجديد الاشتراك</div>
           </div>
         </div>
