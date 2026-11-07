@@ -16,11 +16,6 @@ import { planIncludes } from '@/lib/planFeatures'
 import { isNewPlan } from '@/lib/planPricing'
 import type { Feature } from '@/lib/planFeatures'
 // الصفحات اللي تحتاج ميزة (يكفي وحدة منها) — «ابنِ باقتك» ممكن ما فيها المخزون أو المشتريات
-// صفحات القائمة ← ميزاتها (لعلامة «تجربة»)
-const NAV_TRIAL: Record<string, Feature[]> = {
-  '/inventory': ['inventory'], '/dispense': ['inventory'], '/transfer-stock': ['inventory'], '/purchases': ['purchases'],
-  '/suppliers': ['inventory', 'purchases'], '/attendance': ['hr'], '/hr-management': ['hr'], '/ai-tools': ['ai'], '/profitability': ['profitability'],
-}
 const PAGE_FEATURES: Record<string, Feature[]> = {
   '/inventory': ['inventory'], '/dispense': ['inventory'], '/transfer-stock': ['inventory'],
   '/purchases': ['purchases'], '/suppliers': ['inventory', 'purchases'], '/marketplace': ['inventory', 'purchases'],
@@ -75,7 +70,7 @@ export function useDashboardShell() {
   const [orgFeat, setOrgFeat]       = useState<Partial<Record<Feature, boolean>>>({})
   // ميزات كل فرع («ابنِ باقتك»/إضافات لفروع معيّنة) — نقفل الصفحة للفرع اللي ما فيه الميزة
   const [branchFeat, setBranchFeat] = useState<Record<string, Partial<Record<Feature, boolean>>>>({})
-  // التجربة: المزايا اللي تنقفل بعدها (شريط + علامة «تجربة» بالقائمة)
+  // التجربة: المزايا اللي تنقفل بعدها (للشريط)
   const [trialLocked, setTrialLocked] = useState<Feature[]>([])
   const [trialEnds, setTrialEnds] = useState<string | null>(null)
   // الإضافات المفعّلة (الحضور، الربحية، الذكاء، الفروع الإضافية) — تتحدث لحالها لما تتغير (useLiveRefresh تحت)
@@ -429,9 +424,7 @@ export function useDashboardShell() {
   const visibleGroups = NAV_GROUPS.map(g=>({...g, items:g.items.filter(i=>navAllowed(i.href))})).filter(g=>g.items.length)
   async function signOut(){ await sb.auth.signOut(); _cache=null; sessionStorage.clear(); window.location.href='/login' }
 
-  // صفحة مفتوحة بس بسبب التجربة؟ (كل ميزاتها تنقفل بعد التجربة)
-  const navTrialTag = (href: string) => { const f = NAV_TRIAL[href]; return !!f && trialLocked.length > 0 && f.every(x => trialLocked.includes(x)) }
-  return { pageLock, branchFeat, trialLocked, trialEnds, navTrialTag, t, lang, setLang, orgName, setOrgName, subDaysLeft, setSubDaysLeft, orgLogo, setOrgLogo, hasHrAddon, setHasHrAddon, hasProfitAddon, setHasProfitAddon, hasAiAddon, setHasAiAddon, hasExtraBranchAddon, setHasExtraBranchAddon, inApp, setInApp, branchName, setBranchName, userName, setUserName, userInit, setUserInit, lowCount, setLowCount, unread, setUnread, branches, setBranches, orgPlan, setOrgPlan, orgFeat, setOrgFeat, orgMaxBranches, setOrgMaxBranches, userRole, setUserRole, managerPermissions, setManagerPermissions, showMore, setShowMore, showBranch, setShowBranch, branchLowCounts, setBranchLowCounts, ready, setReady, showOnboarding, setShowOnboarding, showConsent, setShowConsent, showWaInvite, setShowWaInvite, consentChecked, setConsentChecked, consentSaving, setConsentSaving, showMaintenance, setShowMaintenance, showEnableNotif, setShowEnableNotif, enablingPush, setEnablingPush, maintenanceMsg, setMaintenanceMsg, showTermsConsent, setShowTermsConsent, termsChecked, setTermsChecked, termsSaving, setTermsSaving, profileId, setProfileId, onboardingStep, setOnboardingStep, theme, setTheme, confirmStopBranch, setConfirmStopBranch, stoppingBranch, setStoppingBranch, loadAddons, isDesk, router, pathname, navRef, sb, load, isActive, BOT_NAV, visibleGroups, toggleTheme, acceptConsent, confirmWaFirstContact, acceptTermsConsent, enablePush, loadBranchLowCounts, openBranchSelector, selectBranch, stopBranch, navVisible, navAllowed, signOut }
+  return { pageLock, branchFeat, trialLocked, trialEnds, t, lang, setLang, orgName, setOrgName, subDaysLeft, setSubDaysLeft, orgLogo, setOrgLogo, hasHrAddon, setHasHrAddon, hasProfitAddon, setHasProfitAddon, hasAiAddon, setHasAiAddon, hasExtraBranchAddon, setHasExtraBranchAddon, inApp, setInApp, branchName, setBranchName, userName, setUserName, userInit, setUserInit, lowCount, setLowCount, unread, setUnread, branches, setBranches, orgPlan, setOrgPlan, orgFeat, setOrgFeat, orgMaxBranches, setOrgMaxBranches, userRole, setUserRole, managerPermissions, setManagerPermissions, showMore, setShowMore, showBranch, setShowBranch, branchLowCounts, setBranchLowCounts, ready, setReady, showOnboarding, setShowOnboarding, showConsent, setShowConsent, showWaInvite, setShowWaInvite, consentChecked, setConsentChecked, consentSaving, setConsentSaving, showMaintenance, setShowMaintenance, showEnableNotif, setShowEnableNotif, enablingPush, setEnablingPush, maintenanceMsg, setMaintenanceMsg, showTermsConsent, setShowTermsConsent, termsChecked, setTermsChecked, termsSaving, setTermsSaving, profileId, setProfileId, onboardingStep, setOnboardingStep, theme, setTheme, confirmStopBranch, setConfirmStopBranch, stoppingBranch, setStoppingBranch, loadAddons, isDesk, router, pathname, navRef, sb, load, isActive, BOT_NAV, visibleGroups, toggleTheme, acceptConsent, confirmWaFirstContact, acceptTermsConsent, enablePush, loadBranchLowCounts, openBranchSelector, selectBranch, stopBranch, navVisible, navAllowed, signOut }
 }
 
 export type DashboardShell = ReturnType<typeof useDashboardShell>

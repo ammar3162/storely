@@ -65,7 +65,8 @@ export const SHELL_CSS = `
   .sh-branch-inline:disabled{cursor:default}
 
   .sh-banner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;margin-bottom:16px;border-radius:10px;border:1px solid ${C.primaryB};background:${C.primaryL};color:${C.text};font-size:13px}
-  .sh-trial-tag{font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px;background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+  .sh-banner-quiet{border-color:${C.border};background:${C.surface}}
+  .sh-link-btn{background:none;border:none;padding:0;font:inherit;font-weight:700;color:${C.primary};cursor:pointer;text-decoration:underline;text-underline-offset:3px}
   .sh-banner-warn{border-color:#fedf89;background:#fffaeb}
 
   .sh-overlay{position:fixed;inset:0;z-index:1000;background:rgba(16,24,40,.45);display:flex;align-items:center;justify-content:center;padding:20px;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;direction:rtl}
