@@ -43,7 +43,7 @@ export default function LandingPage({ initialMarquee, stats = null }: { initialM
 
       <OwnerStory m={m}/>
 
-      <LossCalculator m={m} rate={stats?.deficitRate ?? null}/>
+      <LossCalculator m={m} bands={stats?.bands ?? null}/>
 
       <PricingTeaser m={m}/>
 
